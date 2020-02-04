@@ -44,12 +44,11 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.lang.System.nanoTime;
 
-import ffx.algorithms.cli.DynamicsOptions;
-import ffx.algorithms.dynamics.thermostats.Thermostat;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.abs;
 
 import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
@@ -86,6 +85,7 @@ import static ffx.utilities.Constants.NS2SEC;
  * @author Michael J. Schnieders
  * @author Hernan Beranbe
  * @author Mallory R. Tollefson
+ * @author Jacob Litman
  * @since 1.0
  */
 public class MonteCarloOST extends BoltzmannMC {
@@ -151,14 +151,14 @@ public class MonteCarloOST extends BoltzmannMC {
      * <p>
      * Constructor for MonteCarloOST.</p>
      *
-     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
-     * @param orthogonalSpaceTempering                a {@link OrthogonalSpaceTempering} object.
-     * @param molecularAssembly   a {@link ffx.potential.MolecularAssembly} object.
-     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param dynamics            CLI object containing key information.
-     * @param verbose             Whether to be verbose.
-     * @param cycleLength         Length of an MC cycle in MD steps.
+     * @param potentialEnergy          a {@link ffx.numerics.Potential} object.
+     * @param orthogonalSpaceTempering a {@link OrthogonalSpaceTempering} object.
+     * @param molecularAssembly        a {@link ffx.potential.MolecularAssembly} object.
+     * @param properties               a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener                 a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param dynamics                 CLI object containing key information.
+     * @param verbose                  Whether to be verbose.
+     * @param cycleLength              Length of an MC cycle in MD steps.
      */
     public MonteCarloOST(Potential potentialEnergy, OrthogonalSpaceTempering orthogonalSpaceTempering,
                          MolecularAssembly molecularAssembly, CompositeConfiguration properties,
@@ -469,6 +469,11 @@ public class MonteCarloOST extends BoltzmannMC {
         }
     }
 
+    /**
+     * Propose a lambda move.
+     *
+     * @return The proposed lambda.
+     */
     private double singleStepLambda() {
         lambdaMove.move();
         double proposedLambda = orthogonalSpaceTempering.getLambda();
@@ -476,8 +481,10 @@ public class MonteCarloOST extends BoltzmannMC {
         return proposedLambda;
     }
 
+    /**
+     * Run MD in an approximate potential U* (U star) that does not include the OST bias.
+     */
     private void singleStepMD() {
-        // Run MD in an approximate potential U* (U star) that does not include the OST bias.
         long mdMoveTime = -nanoTime();
         mdMove.move(mdVerbosityLevel);
         mdMoveTime += nanoTime();

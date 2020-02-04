@@ -550,7 +550,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     radii[index] = atom.getVDWType().radius / 2.0;
                     index++;
                 }
-                connollyRegion = new ConnollyRegion(atoms, x, y, z, radii, threadCount);
+                connollyRegion = new ConnollyRegion(atoms, radii, threadCount);
+                double wiggle = forceField.getDouble("WIGGLE", ConnollyRegion.DEFAULT_WIGGLE);
+                connollyRegion.setWiggle(wiggle);
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
                 surfaceAreaRegion = null;
                 gaussVol = null;
@@ -619,6 +621,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             connollyRegion.setSurfaceTension(surfaceTension);
             connollyRegion.setSolventPressure(solventPressue);
             connollyRegion.setCrossOver(crossOver);
+        }
+        if (surfaceAreaRegion != null) {
+            surfaceAreaRegion.setSurfaceTension(surfaceTension);
         }
         double dispersionOffset = forceField.getDouble("DISPERSION_OFFSET", DEFAULT_DISP_OFFSET);
         if (dispersionRegion != null) {
@@ -1099,7 +1104,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     dispersionEnergy = dispersionRegion.getEnergy();
                     dispersionTime += System.nanoTime();
                     cavitationTime = -System.nanoTime();
-                    connollyRegion.init(atoms, x, y, z, gradient, grad);
+                    connollyRegion.init(atoms, gradient, grad);
                     connollyRegion.runVolume();
                     cavitationEnergy = connollyRegion.getEnergy();
                     cavitationTime += System.nanoTime();

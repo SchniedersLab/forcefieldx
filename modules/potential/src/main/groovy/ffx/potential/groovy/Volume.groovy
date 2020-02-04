@@ -77,17 +77,24 @@ class Volume extends PotentialScript {
     private boolean connolly = false
 
     /**
-     * -m or --molecular If using the Connolly algorithm, compute molecular volume and surface area (instead of SEV/SASA).
+     * -m or --molecular For Connolly, compute molecular volume and surface area (instead of SEV/SASA).
      */
     @CommandLine.Option(names = ['-m', '--molecular'], paramLabel = "false",
-            description = "If using the Connolly algorithm, compute molecular volume and surface area (instead of SEV/SASA).")
+            description = "For Connolly, compute molecular volume and surface area (instead of SEV/SASA).")
     private boolean molecular = false
 
     /**
-     * -p or --probe If using the Connolly algorithm, set the exclude radius (SASA) or probe radius (molecular surface).
+     * --vdW or --vanDerWaals For Connolly, compute van der Waals volume and surface area (instead of SEV/SASA).
+     */
+    @CommandLine.Option(names = ['--vdW', '--vanDerWaals'], paramLabel = "false",
+            description = "For Connolly, compute van der Waals volume and surface area (instead of SEV/SASA)")
+    private boolean vdW = false
+
+    /**
+     * -p or --probe For Connolly, set the exclude radius (SASA) or probe (molecular surface). Ignored for vdW.
      */
     @CommandLine.Option(names = ['-p', '--probe'], paramLabel = "1.4",
-            description = "If using the Connolly algorithm, set the exclude radius (SASA) or probe radius (molecular surface).")
+            description = "For Connolly, set the exclude radius (SASA) or probe radius (molecular surface). Ignored for vdW.")
     private double probe = 1.4
 
     /**
@@ -244,23 +251,20 @@ class Volume extends PotentialScript {
             totalVolume = gaussVol.getVolume()
             totalSurfaceArea = gaussVol.getSurfaceArea()
         } else {
-            // Connolly algorithm.
-
-            // For molecular, use the chosen probe and set exclude to 0.0.
+            // For Connolly molecular volume & surface area, use the chosen probe and set exclude to 0.0.
             double exclude = 0.0
 
-            // For SEV/SASA, set exclude to the chosen probe, and zero the probe.
-            if (!molecular) {
+            if (vdW) {
+                // For Connolly vdW, both exclude & probe are zero.
+                exclude = 0.0
+                probe = 0.0
+            } else if (!molecular) {
+                // For Connolly SEV/SASA, set exclude to the chosen probe, and zero the probe.
                 exclude = probe
                 probe = 0.0
             }
 
-            // Connolly Volume and Surface Area.
             double[] radii = new double[nAtoms]
-            double[] x = new double[nAtoms]
-            double[] y = new double[nAtoms]
-            double[] z = new double[nAtoms]
-
             int index = 0
             for (Atom atom : atoms) {
                 radii[index] = atom.getVDWType().radius / 2.0
@@ -271,15 +275,12 @@ class Volume extends PotentialScript {
                 if (!includeHydrogen && hydrogen) {
                     radii[index] = 0.0
                 }
-                x[index] = atom.getX()
-                y[index] = atom.getY()
-                z[index] = atom.getZ()
                 index++
             }
 
             // Note that the VolumeRegion code is currently limited to a single thread.
             ParallelTeam parallelTeam = new ParallelTeam(1)
-            ConnollyRegion connollyRegion = new ConnollyRegion(atoms, x, y, z, radii, parallelTeam.getThreadCount())
+            ConnollyRegion connollyRegion = new ConnollyRegion(atoms, radii, parallelTeam.getThreadCount())
             connollyRegion.setSolventPressure(solventPressure)
             connollyRegion.setSurfaceTension(surfaceTension)
             connollyRegion.setCrossOver(crossOver)
@@ -289,7 +290,9 @@ class Volume extends PotentialScript {
             connollyRegion.setProbe(probe)
             connollyRegion.runVolume();
 
-            if (!molecular) {
+            if (vdW || (probe == 0.0 && exclude == 0.0)) {
+                logger.info("\n Connolly van der Waals Surface Area and Volume\n")
+            } else if (!molecular) {
                 logger.info("\n Connolly Solvent Accessible Surface Area and Solvent Excluded Volume\n")
                 logger.info(format("  Exclude radius:      %8.4f (Ang)", exclude))
             } else {

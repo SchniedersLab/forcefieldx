@@ -39,7 +39,7 @@ package ffx.ui;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.util.Enumeration;
+import java.util.Iterator;
 
 import org.jogamp.java3d.Appearance;
 import org.jogamp.java3d.Bounds;
@@ -124,9 +124,9 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
      */
     private void createAxis() {
         Appearance ap = new Appearance();
-        Color3f col = new Color3f(Color.lightGray);
-        Color3f black = new Color3f(Color.black);
-        Color3f white = new Color3f(Color.white);
+        Color3f col = new Color3f(Color.lightGray.getRGBColorComponents(new float[3]));
+        Color3f black = new Color3f(Color.black.getRGBColorComponents(new float[3]));
+        Color3f white = new Color3f(Color.white.getRGBColorComponents(new float[3]));
         Material mat = new Material(col, black, col, white, 50.0f);
         mat.setLightingEnable(true);
         ap.setMaterial(mat);
@@ -189,7 +189,7 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         addChild(sphere);
         // Labels
         ap = new Appearance();
-        col = new Color3f(Color.green);
+        col = new Color3f(Color.green.getRGBColorComponents(new float[3]));
         mat = new Material(col, black, col, white, 50.0f);
         mat.setLightingEnable(true);
         ap.setMaterial(mat);
@@ -200,9 +200,7 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         addChild(createAxisLabel("Z", font3d, ap, 0.0, 0.0, 11.0));
     }
 
-    @SuppressWarnings("unchecked")
-    private TransformGroup createAxisLabel(String letter, Font3D font3d,
-                                           Appearance ap, double x, double y, double z) {
+    private TransformGroup createAxisLabel(String letter, Font3D font3d, Appearance ap, double x, double y, double z) {
         Text3D text = new Text3D(font3d, letter);
         text.setUserData(this);
         Transform3D t3D = new Transform3D();
@@ -210,8 +208,8 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         TransformGroup tg = new TransformGroup(t3D);
         Shape3D text3d = new Shape3D(text, ap);
         text3d.setUserData(this);
-        for (Enumeration<Geometry> e = text3d.getAllGeometries(); e.hasMoreElements(); ) {
-            Geometry g = e.nextElement();
+        for (Iterator<Geometry> e = text3d.getAllGeometries(); e.hasNext(); ) {
+            Geometry g = e.next();
             g.setCapability(Geometry.ALLOW_INTERSECT);
         }
         text3d.setCapability(Shape3D.ENABLE_PICK_REPORTING);

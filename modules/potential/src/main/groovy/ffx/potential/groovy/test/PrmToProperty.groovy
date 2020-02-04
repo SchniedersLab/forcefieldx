@@ -37,75 +37,64 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import org.apache.commons.io.FilenameUtils
+import org.apache.commons.configuration2.CompositeConfiguration
 
-import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.ForceFieldFilter
+import ffx.utilities.Keyword
 
 import picocli.CommandLine.Command
-import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
- * The SaveAsSIFTPDB script saves a file as a PDB file or as a SIFTPDB file
+ * The PrmToProperty script converts a TINKER *.prm file to Java properties.
  * <br>
  * Usage:
  * <br>
- * ffxc SaveAsSIFTPDB [options] &lt;filename&gt;
+ * ffxc test.PrmToProperty &lt;filename&gt;
  */
-@Command(description = " Save SIFT scores into the PDB b-factor column.", name = "ffxc SaveAsSIFTPDB")
-class SaveAsSIFTPDB extends PotentialScript {
-
-    /**
-     * -f or --filename to input file of sift scores to enter
-     */
-    @Option(names = ['--fileName', '-f'],
-            description = 'File of sift scores to enter.')
-    boolean siftFilename = null
+@Command(description = "PrmToProperty converts a TINKER *.prm file to Java properties.", name = "ffxc PrmToProperty")
+class PrmToProperty extends PotentialScript {
 
     /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
-            description = 'The atomic coordinate file in PDB or XYZ format.')
-    List<String> filenames = null
+            description = 'TINKER *.prm file(s).')
+    private List<String> filenames = null
 
     /**
      * Execute the script.
      */
     @Override
-    SaveAsSIFTPDB run() {
+    PrmToProperty run() {
 
         if (!init()) {
-            return this
+            return
         }
 
-        MolecularAssembly[] assemblies
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
+        // Read in the command line file.
+        List<String> arguments = filenames
+        String xyzname = arguments.get(0)
+        CompositeConfiguration properties = Keyword.loadProperties(null)
+        properties.setProperty("parameters", xyzname)
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties)
+
+        ForceField forceField = forceFieldFilter.parse()
+
+        int prms = arguments.size()
+        for (int i = 1; i < prms; i++) {
+            xyzname = arguments.get(i)
+            properties = Keyword.loadProperties(null)
+            properties.setProperty("parameters", xyzname)
+            forceFieldFilter = new ForceFieldFilter(properties)
+            ForceField forceField2 = forceFieldFilter.parse()
+            forceField.append(forceField2)
         }
 
-        String filename = activeAssembly.getFile().getAbsolutePath()
-
-        String[] data
-        File siftFile = new File(siftFilename)
-
-        if (siftFile.exists()) {
-            data = siftFile.text.split('\n')
-        }
-
-        logger.info("\n Writing out PDB for " + filename)
-
-        filename = FilenameUtils.removeExtension(filename) + ".pdb";
-
-        if (siftFilename == null) {
-            potentialFunctions.saveAsPDB(activeAssembly, new File(filename));
-        } else {
-            potentialFunctions.saveAsSIFTPDB(activeAssembly, new File(filename), data)
+        if (forceField != null) {
+            forceField.print()
         }
 
         return this

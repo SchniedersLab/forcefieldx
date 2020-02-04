@@ -38,12 +38,11 @@
 package ffx.potential;
 
 import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
@@ -52,10 +51,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import static java.lang.String.format;
 
-import ffx.utilities.StringUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.jogamp.java3d.Appearance;
 import org.jogamp.java3d.BoundingSphere;
@@ -83,7 +80,6 @@ import org.jogamp.vecmath.Vector3d;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Indexing;
 import ffx.potential.bonded.Bond;
@@ -95,12 +91,12 @@ import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.parameters.ForceField;
+import ffx.utilities.StringUtils;
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.r;
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
-import static ffx.potential.extended.ExtUtils.initializeBackgroundMultipoles;
 import static ffx.potential.extended.ExtUtils.prop;
 
 /**
@@ -1814,35 +1810,29 @@ public class MolecularAssembly extends MSGroup {
         if (node instanceof Shape3D) {
             Shape3D s3d = (Shape3D) node;
             PickTool.setCapabilities(s3d, PickTool.INTERSECT_COORD);
-            return;
         } else if (node instanceof SharedGroup) {
             SharedGroup sg = (SharedGroup) node;
-            for (Enumeration<Node> e = sg.getAllChildren(); e.hasMoreElements(); ) {
-                recurseVRML(e.nextElement());
+            for (Iterator<Node> e = sg.getAllChildren(); e.hasNext(); ) {
+                recurseVRML(e.next());
             }
-            return;
         } else if (node instanceof BranchGroup) {
             BranchGroup bg = (BranchGroup) node;
-            for (Enumeration<Node> e = bg.getAllChildren(); e.hasMoreElements(); ) {
-                recurseVRML(e.nextElement());
+            for (Iterator<Node> e = bg.getAllChildren(); e.hasNext(); ) {
+                recurseVRML(e.next());
             }
-            return;
         } else if (node instanceof TransformGroup) {
             TransformGroup vrmlTG1 = (TransformGroup) node;
-            for (Enumeration<Node> e = vrmlTG1.getAllChildren(); e.hasMoreElements(); ) {
-                node = e.nextElement();
+            for (Iterator<Node> e = vrmlTG1.getAllChildren(); e.hasNext(); ) {
+                node = e.next();
                 recurseVRML(node);
             }
-            return;
         } else if (node instanceof Link) {
             Link link = (Link) node;
             recurseVRML(link.getSharedGroup());
-            return;
         } else if (node instanceof Group) {
             Group group = (Group) node;
-            for (Enumeration<Node> e = group.getAllChildren(); e.hasMoreElements(); ) {
-                Node n = e.nextElement();
-                recurseVRML(n);
+            for (Iterator<Node> e = group.getAllChildren(); e.hasNext(); ) {
+                recurseVRML(e.next());
             }
         }
     }

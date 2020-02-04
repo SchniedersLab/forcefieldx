@@ -39,7 +39,7 @@ package ffx.ui.behaviors;
 
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
-import java.util.Enumeration;
+import java.util.Iterator;
 
 import org.jogamp.java3d.Behavior;
 import org.jogamp.java3d.Transform3D;
@@ -47,6 +47,7 @@ import org.jogamp.java3d.TransformGroup;
 import org.jogamp.java3d.WakeupCriterion;
 import org.jogamp.java3d.WakeupOnAWTEvent;
 import org.jogamp.vecmath.Vector3d;
+import static org.apache.commons.math3.util.FastMath.abs;
 
 /**
  * The MouseTranslate class implements a mouse translate behavior.
@@ -56,8 +57,8 @@ import org.jogamp.vecmath.Vector3d;
 public class MouseTranslate extends MouseBehavior {
 
     private static Vector3d zero3d = new Vector3d(0.0, 0.0, 0.0);
-    private double x_factor = 0.05; // .01;
-    private double y_factor = 0.05; // .01;
+    private double xFactor = 0.05; // .01;
+    private double yFactor = 0.05; // .01;
     private Vector3d translation = new Vector3d();
     private MouseBehaviorCallback callback = null;
     private int mouseButton = MouseEvent.BUTTON3_DOWN_MASK;
@@ -84,8 +85,7 @@ public class MouseTranslate extends MouseBehavior {
      * @param postID   a int.
      * @param dID      a int.
      */
-    public MouseTranslate(int flags, TransformGroup VPTG, Behavior behavior,
-                          int postID, int dID) {
+    public MouseTranslate(int flags, TransformGroup VPTG, Behavior behavior, int postID, int dID) {
         super(flags, VPTG, behavior, postID);
         doneID = dID;
     }
@@ -99,7 +99,7 @@ public class MouseTranslate extends MouseBehavior {
      * @return a double.
      */
     public double getXFactor() {
-        return x_factor;
+        return xFactor;
     }
 
     /**
@@ -110,7 +110,7 @@ public class MouseTranslate extends MouseBehavior {
      * @return a double.
      */
     public double getYFactor() {
-        return y_factor;
+        return yFactor;
     }
 
     /**
@@ -121,8 +121,8 @@ public class MouseTranslate extends MouseBehavior {
         super.initialize();
         if ((flags & INVERT_INPUT) == INVERT_INPUT) {
             invert = true;
-            x_factor *= -1;
-            y_factor *= -1;
+            xFactor *= -1;
+            yFactor *= -1;
         }
     }
 
@@ -139,11 +139,11 @@ public class MouseTranslate extends MouseBehavior {
     /**
      * {@inheritDoc}
      */
-    public void processStimulus(Enumeration criteria) {
-        while (criteria.hasMoreElements()) {
-            WakeupCriterion wakeup = (WakeupCriterion) criteria.nextElement();
+    public void processStimulus(Iterator<WakeupCriterion> criteria) {
+        while (criteria.hasNext()) {
+            WakeupCriterion wakeup = criteria.next();
             if (wakeup instanceof WakeupOnAWTEvent) {
-                AWTEvent event[] = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+                AWTEvent[] event = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
                 for (AWTEvent awtEvent : event) {
                     MouseEvent mevent = (MouseEvent) awtEvent;
                     processMouseEvent(mevent);
@@ -153,22 +153,20 @@ public class MouseTranslate extends MouseBehavior {
                     if (!rightButton) {
                         rightButton = ((mod & MouseEvent.SHIFT_DOWN_MASK) == MouseEvent.SHIFT_DOWN_MASK);
                     }
-                    if ((id == MouseEvent.MOUSE_DRAGGED) && rightButton
-                            && transformGroup != null) {
+                    if ((id == MouseEvent.MOUSE_DRAGGED) && rightButton && transformGroup != null) {
                         x = ((MouseEvent) awtEvent).getX();
                         y = ((MouseEvent) awtEvent).getY();
-                        int dx = x - x_last;
-                        int dy = y - y_last;
-                        if ((!reset)
-                                && ((Math.abs(dy) < 50) && (Math.abs(dx) < 50))) {
+                        int dx = x - xLast;
+                        int dy = y - yLast;
+                        if ((!reset) && ((abs(dy) < 50) && (abs(dx) < 50))) {
                             transformGroup.getTransform(currXform);
                             Transform3D VPTG_T3D = new Transform3D();
                             ViewerTG.getTransform(VPTG_T3D);
                             VPTG_T3D.setTranslation(zero3d);
                             VPTG_T3D.invert();
                             currXform.mul(VPTG_T3D, currXform);
-                            translation.x = dx * x_factor;
-                            translation.y = -dy * y_factor;
+                            translation.x = dx * xFactor;
+                            translation.y = -dy * yFactor;
                             transformX.set(translation);
                             if (invert) {
                                 currXform.mul(currXform, transformX);
@@ -180,19 +178,17 @@ public class MouseTranslate extends MouseBehavior {
                             transformGroup.setTransform(currXform);
                             transformChanged(currXform);
                             if (callback != null) {
-                                callback.transformChanged(
-                                        MouseBehaviorCallback.TRANSLATE,
-                                        currXform);
+                                callback.transformChanged(MouseBehaviorCallback.TRANSLATE, currXform);
                             }
                         } else {
                             reset = false;
                         }
-                        x_last = x;
-                        y_last = y;
+                        xLast = x;
+                        yLast = y;
                     }
                     if (id == MouseEvent.MOUSE_PRESSED) {
-                        x_last = ((MouseEvent) awtEvent).getX();
-                        y_last = ((MouseEvent) awtEvent).getY();
+                        xLast = ((MouseEvent) awtEvent).getX();
+                        yLast = ((MouseEvent) awtEvent).getY();
                     } else if (id == MouseEvent.MOUSE_RELEASED) {
                         setTransformGroup(null);
                     }
@@ -216,7 +212,7 @@ public class MouseTranslate extends MouseBehavior {
      * @param factor a double.
      */
     public void setFactor(double factor) {
-        x_factor = y_factor = factor;
+        xFactor = yFactor = factor;
     }
 
     /**
@@ -229,8 +225,8 @@ public class MouseTranslate extends MouseBehavior {
      * @param yFactor a double.
      */
     public void setFactor(double xFactor, double yFactor) {
-        x_factor = xFactor;
-        y_factor = yFactor;
+        this.xFactor = xFactor;
+        this.yFactor = yFactor;
     }
 
     /**

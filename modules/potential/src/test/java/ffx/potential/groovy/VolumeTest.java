@@ -6,6 +6,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 import ffx.potential.groovy.Volume;
+import ffx.potential.groovy.test.Gradient;
 
 import groovy.lang.Binding;
 
@@ -31,7 +32,7 @@ public class VolumeTest {
     }
 
     /**
-     *  Test GaussVol without hydrogen and a 0.4 A radii offset.
+     * Test GaussVol without hydrogen and a 0.4 A radii offset.
      */
     @Test
     public void testGaussVolButane() {
@@ -45,7 +46,7 @@ public class VolumeTest {
     }
 
     /**
-     *  Test GaussVol without hydrogen and a 0.4 A radii offset.
+     * Test GaussVol without hydrogen and a 0.4 A radii offset.
      */
     @Test
     public void testGaussVolEthylbenzene() {
@@ -167,6 +168,40 @@ public class VolumeTest {
     }
 
     /**
+     * Test Connolly SEV & SASA with hydrogen and a 1.4 A exclude radius.
+     */
+    @Test
+    public void testConnollySEVHydrogenEthylbenzeneDerivatives() {
+        Gradient gradient = new Gradient();
+        binding = new Binding();
+        gradient.setBinding(binding);
+
+        String[] args = {"--tol", "5.0e-2", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        gradient.run();
+
+        assertEquals("Ethylbenzene gradient failures: ", 0, gradient.nFailures);
+        gradient.destroyPotentials();
+        System.gc();
+    }
+
+    /**
+     * Test GaussVol without hydrogen and a 0.0 A radii offset.
+     */
+    @Test
+    public void testGaussVolCrambin() {
+        String[] args = {"-o", "0.0", "src/main/java/ffx/potential/structures/crambin.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(4371.667466648112, volume.totalVolume, 0.001);
+        assertEquals(3977.079123178555, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
      * Test Connolly vdW volume and surface area (probe radius = 0.0).
      */
     @Test
@@ -195,6 +230,20 @@ public class VolumeTest {
     }
 
     /**
+     * Test Connolly SEV & SASA with a 1.4 A exclude radius and hydrogen atoms.
+     */
+    @Test
+    public void testConnollyMolecularHydrogenCrambin() {
+        String[] args = {"-c", "-m", "-p", "1.4", "-y", "src/main/java/ffx/potential/structures/crambin.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(5890.028072142157, volume.totalVolume, 0.001);
+        assertEquals(2456.835858765312, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
      * Test Connolly SEV & SASA with a 1.4 A exclude radius.
      */
     @Test
@@ -206,6 +255,20 @@ public class VolumeTest {
         volume.run();
         assertEquals(8956.620463626994, volume.totalVolume, 0.001);
         assertEquals(3015.7687533888334, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
+     * Test Connolly SEV & SASA with a 1.4 A exclude radius and hydrogen atoms.
+     */
+    @Test
+    public void testConnollySEVHydrogenCrambin() {
+        String[] args = {"-c", "-p", "1.4", "-y", "src/main/java/ffx/potential/structures/crambin.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(9804.262055253388, volume.totalVolume, 0.001);
+        assertEquals(3142.106787870207, volume.totalSurfaceArea, 0.001);
     }
 
 }

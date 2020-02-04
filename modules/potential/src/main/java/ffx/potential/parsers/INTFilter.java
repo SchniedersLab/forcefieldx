@@ -47,6 +47,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 
@@ -55,6 +56,7 @@ import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
+import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 
@@ -112,6 +114,9 @@ public class INTFilter extends SystemFilter {
             logger.warning("No force field is associated with " + intFile.toString());
             return false;
         }
+
+        logger.info(" Opening " + intFile.toString());
+
         // Open a data stream to the Internal Coordinate file
         try {
             FileReader fr = new FileReader(intFile);
@@ -162,9 +167,12 @@ public class INTFilter extends SystemFilter {
                 // Atom number, name, type
                 String name = tokens[1];
                 int type = parseInt(tokens[2]);
-                AtomType atomType = forceField.getAtomType(String.valueOf(type));
+                AtomType atomType = forceField.getAtomType(Integer.toString(type));
                 if (atomType == null) {
-                    logger.severe("  Check atom " + (i + 1) + " in " + activeMolecularAssembly.getFile().getName());
+                    StringBuilder message = new StringBuilder("Check atom type ");
+                    message.append(type).append(" for Atom ").append(i + 1);
+                    message.append(" in ").append(activeMolecularAssembly.getFile().getName());
+                    logger.warning(message.toString());
                     return false;
                 }
                 Atom atom = new Atom(i + 1, name, atomType, d);
@@ -252,14 +260,32 @@ public class INTFilter extends SystemFilter {
                     if (!del) {
                         Atom atom1 = atomList.get(i);
                         Atom atom2 = atomList.get(partner - 1);
-                        bondList.add(new Bond(atom1, atom2));
+                        Bond bond = new Bond(atom1, atom2);
+                        int[] c = {atom1.getAtomType().atomClass, atom2.getAtomType().atomClass};
+                        String key = BondType.sortKey(c);
+                        BondType bondType = forceField.getBondType(key);
+                        if (bondType == null) {
+                            logger.severe(format(" No BondType for key %s", key));
+                        } else {
+                            bond.setBondType(bondType);
+                        }
+                        bondList.add(bond);
                     }
                 }
                 // Add additional bonds
                 for (int[] pair : zadd) {
                     Atom atom1 = atomList.get(pair[0] - 1);
                     Atom atom2 = atomList.get(pair[1] - 1);
-                    bondList.add(new Bond(atom1, atom2));
+                    Bond bond = new Bond(atom1, atom2);
+                    int[] c = {atom1.getAtomType().atomClass, atom2.getAtomType().atomClass};
+                    String key = BondType.sortKey(c);
+                    BondType bondType = forceField.getBondType(key);
+                    if (bondType == null) {
+                        logger.severe(format(" No BondType for key %s", key));
+                    } else {
+                        bond.setBondType(bondType);
+                    }
+                    bondList.add(bond);
                 }
                 // Determine coordinates from Z-matrix values
                 for (int i = 0; i < numberOfAtoms; i++) {
@@ -297,41 +323,6 @@ public class INTFilter extends SystemFilter {
      */
     @Override
     public boolean writeFile(File saveFile, boolean append) {
-        /*
-         * Would need to add something for writing reduced hydrogen coordinates.
-         *
-         * File xyzfile = getFile(); if (xyzfile == null) { return false; } try
-         * { FileWriter fw = new FileWriter(xyzfile); BufferedWriter bw = new
-         * BufferedWriter(fw); // XYZ File First Line FSystem M = getFSystem();
-         * int numatoms = M.getAtomList().size(); String blanks = new
-         * String(" "); int len = (new String("" + numatoms)).length();
-         * bw.write(blanks.substring(0, 6 - len) + numatoms + " " + M.toString()
-         * + "\n"); Atom a, a2; Bond b; ArrayList bonds; StringBuilder line;
-         * StringBuilder lines[] = new StringBuilder[numatoms]; String indexS, id,
-         * type, xS, yS, zS; int xi, yi, zi; // XYZ File Atom Lines List atoms =
-         * M.getAtomList(); Vector3d offset = M.getOffset(); for (ListIterator
-         * li = atoms.listIterator(); li.hasNext(); ) { a = (Atom) li.next();
-         * indexS = new String("" + a.getXYZIndex()); line = new
-         * StringBuilder(blanks.substring(0, 6 - indexS.length()) + indexS +
-         * " "); id = a.getID(); line.append(id + blanks.substring(0, 3 -
-         * id.length())); xS = formatCoord.format(a.getX() - offset.x); yS =
-         * formatCoord.format(a.getY() - offset.y); zS =
-         * formatCoord.format(a.getZ() - offset.z);
-         * line.append(blanks.substring(0, 12 - xS.length()) + xS);
-         * line.append(blanks.substring(0, 12 - yS.length()) + yS);
-         * line.append(blanks.substring(0, 12 - zS.length()) + zS); type = new
-         * String("" + a.getAtomType()); line.append(blanks.substring(0, 6 -
-         * type.length()) + type); bonds = a.getBonds(); if (bonds != null) {
-         * for (ListIterator lj = bonds.listIterator(); lj.hasNext(); ) { b =
-         * (Bond) lj.next(); a2 = b.getOtherAtom(a); xS =
-         * formatBond.format(a2.xyzindex); line.append(blanks.substring(0, 6 -
-         * xS.length()) + xS); } lines[a.getXYZIndex() - 1] = line.append("\n");
-         * } } for (int i = 0; i < numatoms; i++) { try {
-         * bw.write(lines[i].toString()); } catch (Exception e) {
-         * System.out.println("" + i); } } bw.close(); fw.close(); } catch
-         * (IOException e) { System.out.println("" + e); return false; } return
-         * true;
-         */
         return false;
     }
 

@@ -484,29 +484,6 @@ public class PotentialsUtils implements PotentialsFunctions {
     }
 
     /**
-     * <p>saveAsSIFTPDB.</p>
-     *
-     * @param assembly    a {@link ffx.potential.MolecularAssembly} object.
-     * @param file        a {@link java.io.File} object.
-     * @param resAndScore an array of {@link java.lang.String} objects.
-     */
-    public void saveAsSIFTPDB(MolecularAssembly assembly, File file, String[] resAndScore) {
-        if (assembly == null) {
-            logger.info(" Assembly to save was null.");
-        } else if (file == null) {
-            logger.info(" No valid file provided to save assembly to.");
-        } else if (resAndScore == null) {
-            logger.info(" Res and score array was null.");
-        } else {
-            PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
-            if (!pdbFilter.writeSIFTFile(file, false, resAndScore)) {
-                logger.info(format(" Save failed for %s", assembly.toString()));
-            }
-            lastFilter = pdbFilter;
-        }
-    }
-
-    /**
      * {@inheritDoc}
      * <p>
      * Saves the current state of an array of MolecularAssemblys to a PDB file.
@@ -523,27 +500,6 @@ public class PotentialsUtils implements PotentialsFunctions {
             PDBFilter pdbFilter = new PDBFilter(file,
                     Arrays.asList(assemblies), null, null);
             pdbFilter.writeFile(file, false);
-            lastFilter = pdbFilter;
-        }
-    }
-
-    /**
-     * <p>saveAsSIFTPDB.</p>
-     *
-     * @param assemblies  an array of {@link ffx.potential.MolecularAssembly} objects.
-     * @param file        a {@link java.io.File} object.
-     * @param resAndScore an array of {@link java.lang.String} objects.
-     */
-    public void saveAsSIFTPDB(MolecularAssembly[] assemblies, File file, String[] resAndScore) {
-        if (assemblies == null) {
-            logger.info(" Assembly to save was null.");
-        } else if (file == null) {
-            logger.info(" No valid file provided to save assembly to.");
-        } else if (resAndScore == null) {
-            logger.info(" Res and score array was null.");
-        } else {
-            PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assemblies), null, null);
-            pdbFilter.writeSIFTFile(file, false, resAndScore);
             lastFilter = pdbFilter;
         }
     }
@@ -599,46 +555,4 @@ public class PotentialsUtils implements PotentialsFunctions {
         return lastFilter;
     }
 
-    /**
-     * <p>analysis.</p>
-     *
-     * @param molecularAssemblies an array of {@link ffx.potential.MolecularAssembly} objects.
-     */
-    public static void analysis(MolecularAssembly[] molecularAssemblies) {
-        for (MolecularAssembly mola : molecularAssemblies) {
-            analysis(mola);
-        }
-    }
-
-    /**
-     * <p>analysis.</p>
-     *
-     * @param mola a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public static void analysis(MolecularAssembly mola) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(format("\n Array Pos., XYZ Index, Residue, Atom Name, Type, Class\n"));
-        Atom[] atoms = mola.getAtomArray();
-        for (int i = 0; i < atoms.length; i++) {
-            String resName = atoms[i].getResidueName();
-            String atomName = atoms[i].getName();
-            AtomType atomType = atoms[i].getAtomType();
-            int typeNum = atomType.type;
-            int classNum = atomType.atomClass;
-            int xyzIndex = atoms[i].getIndex();
-            sb.append(format("     %6d     %6d   %6s     %6s%6d %6d\n", i, xyzIndex, resName, atomName, typeNum, classNum));
-        }
-        logger.info(sb.toString());
-    }
-
-    /**
-     * <p>assertEquals.</p>
-     *
-     * @param expected  a double.
-     * @param actual    a double.
-     * @param tolerance a double.
-     */
-    public static void assertEquals(double expected, double actual, double tolerance) {
-        assert (Math.abs(expected - actual) < tolerance);
-    }
 }
