@@ -203,9 +203,8 @@ class Cluster extends PotentialScript {
         for (int i = 0; i < twss.size(); i++) {
             twss[i] = Double.MAX_VALUE;
         }
-
         for (int clusters = minClusters; clusters <= maxClusters; clusters++) {
-            logger.info(String.format("\n%d Clusters:\n", clusters))
+            logger.info(String.format("%d Clusters:", clusters))
             for (int k = 0; k < numIterations; k++) {
                 double currentTWSS = 0;
                 KMeansPlusPlusClusterer<ClusterWrapper> kClust1 = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters, 10000);
@@ -240,11 +239,11 @@ class Cluster extends PotentialScript {
                     //logger.info(String.format("Cluster WSS: %f", wss));
                     currentTWSS += wss;
                 }
-                if (algorithm==1 && currentTWSS < twss[clusters - 1]) {
+                if (algorithm == 1 && currentTWSS < twss[clusters - 1]) {
                     twss[clusters - 1] = currentTWSS;
                 }
             }
-            logger.info(String.format("\nTotal WSS: %f", twss[clusters - 1]));
+            logger.info(String.format("Total WSS: %f\n", twss[clusters - 1]));
         }
         if (algorithm == 0) {
             double[] d2TWSS = new double[twss.size() - 2];
