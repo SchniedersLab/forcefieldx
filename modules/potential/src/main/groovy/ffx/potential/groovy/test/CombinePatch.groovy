@@ -139,9 +139,12 @@ class CombinePatch extends PotentialScript {
                 int num
 
                 String[] tokens = line.split("\\s+")
+                String tokensOut = ""
                 for(String token in tokens){
-                    logger.info(token)
+                    tokensOut +=token;
+                    tokensOut +=" ";
                 }
+                logger.info(tokensOut);
                 switch(tokens[0]){
                     case "atom":
                         num = tokens[1].toInteger()
@@ -200,7 +203,7 @@ class CombinePatch extends PotentialScript {
                         }
                         bwNewPatch.write(line2 + "\n")
                         break;
-                    case "strbond":
+                    case "strbnd":
                         num = tokens[1].toInteger()
                         num+=atomCount;
                         tokens[1]=num.toString()
