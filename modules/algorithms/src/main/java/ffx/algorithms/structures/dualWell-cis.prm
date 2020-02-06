@@ -1,0 +1,46 @@
+polarizeterm false
+vdwterm false
+
+atom          401    401    C     "butane center       "         6    12.011    4
+atom          402    402    C     "butane edge         "         6    12.011    4
+
+multipole   401  401  402               0.00000
+                                        0.00000    0.00000    0.00000
+                                        0.00000
+                                        0.00000    0.00000
+                                        0.00000    0.00000    0.00000
+multipole   402  401                    0.00000
+                                        0.00000    0.00000    0.00000
+                                        0.00000
+                                        0.00000    0.00000
+                                        0.00000    0.00000    0.00000
+
+      ############################
+      ##                        ##
+      ## Force Field Definition ##
+      ##                        ##
+      ############################
+
+forcefield          CG-BUTANE-TORSONLY
+
+torsionunit             0.5
+vdwtype                 LENNARD-JONES
+radiusrule              ARITHMETIC
+radiustype              R-MIN
+radiussize              DIAMETER
+epsilonrule             GEOMETRIC
+dielectric              1.0
+vdw-13-scale            0.0
+vdw-14-scale            0.0
+vdw-15-scale            1.0
+
+vdw       401  3.8200   0.1010
+vdw       402  3.8200   0.1010
+
+bond      401   401   453.0000    1.5267
+bond      401   402   323.0000    1.5263
+
+angle     401   401   402    48.2000  112.8715
+
+torsion   402   401   401   402       2.0000 180.0 1   3.0000 180.0 2
+

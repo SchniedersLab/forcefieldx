@@ -46,6 +46,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import static org.apache.commons.math3.util.FastMath.toDegrees;
+
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.Residue.AA3;
@@ -54,6 +56,7 @@ import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.dihedralAngle;
 import static ffx.numerics.math.VectorMath.r;
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.buildHeavy;
@@ -182,7 +185,7 @@ public class AminoAcidUtils {
         // Backbone heavy atoms.
         Atom N = (Atom) residue.getAtomNode("N");
         if (N != null) {
-            N.setAtomType(BondedUtils.findAtomType(AA_N[j][aminoAcidNumber], forceField));
+            N.setAtomType(findAtomType(AA_N[j][aminoAcidNumber], forceField));
             if (position != FIRST_RESIDUE) {
                 buildBond(pC, N, forceField, bondList);
             }
@@ -203,14 +206,20 @@ public class AminoAcidUtils {
                 if (O == null) {
                     O = (Atom) residue.getAtomNode("OT1");
                 }
-                AtomType atomType = findAtomType(AA_O[j][aminoAcidNumber], forceField);
                 if (O == null) {
-                    MissingHeavyAtomException missingHeavyAtom
-                            = new MissingHeavyAtomException("O", atomType, C);
-                    throw missingHeavyAtom;
+                    // Build the carbonyl oxygen; assume the final residue has beta-sheet psi
+                    double psi = 135.0;
+                    if (nextResidue != null && N != null) {
+                        Atom nextN = (Atom) nextResidue.getAtomNode("N");
+                        psi = toDegrees(dihedralAngle(N.getXYZ(null), CA.getXYZ(null), C.getXYZ(null), nextN.getXYZ(null)));
+                    }
+                    O = buildHeavy(residue, "O", C, 1.25, CA, 117.0, N, psi - 180.0, 0,
+                            AA_O[j][aminoAcidNumber], forceField, bondList);
+                } else {
+                    AtomType atomType = findAtomType(AA_O[j][aminoAcidNumber], forceField);
+                    O.setAtomType(atomType);
+                    buildBond(C, O, forceField, bondList);
                 }
-                O.setAtomType(atomType);
-                buildBond(C, O, forceField, bondList);
             }
         }
 
@@ -1761,15 +1770,6 @@ public class AminoAcidUtils {
                 if (C == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("C", null, null);
                     logger.warning(format(" Residue %c-%s is missing its C-terminal carboxyl carbon", residue.getChainID(), residue));
-                    throw e;
-                }
-                Atom O = (Atom) residue.getAtomNode("O");
-                if (O == null && position == LAST_RESIDUE) {
-                    O = (Atom) residue.getAtomNode("OT1");
-                }
-                if (O == null) {
-                    MissingHeavyAtomException e = new MissingHeavyAtomException("O", null, null);
-                    logger.warning(format(" Residue %c-%s is missing its C-terminal carboxyl oxygen", residue.getChainID(), residue));
                     throw e;
                 }
             }

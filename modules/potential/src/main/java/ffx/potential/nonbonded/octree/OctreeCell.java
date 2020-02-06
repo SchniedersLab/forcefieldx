@@ -1,4 +1,4 @@
-package ffx.potential.nonbonded.implicit;
+package ffx.potential.nonbonded.octree;
 
 import java.util.ArrayList;
 

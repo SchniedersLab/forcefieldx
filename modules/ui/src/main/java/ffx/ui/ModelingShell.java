@@ -336,10 +336,13 @@ public final class ModelingShell extends Console implements AlgorithmListener {
             before();
             try {
                 Object o = getShell().run(file, args);
-                if (o instanceof PotentialScript) {
-                    ((PotentialScript) o).destroyPotentials();
-                } else if (o instanceof AlgorithmsScript) {
-                    ((AlgorithmsScript) o).destroyPotentials();
+                // Do not destroy the system when using the GUI.
+                if (headless) {
+                    if (o instanceof PotentialScript) {
+                        ((PotentialScript) o).destroyPotentials();
+                    } else if (o instanceof AlgorithmsScript) {
+                        ((AlgorithmsScript) o).destroyPotentials();
+                    }
                 }
             } catch (Exception ex) {
                 logger.log(Level.SEVERE, " Uncaught error: FFX is shutting down.\n", ex);
