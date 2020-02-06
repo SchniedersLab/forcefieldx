@@ -37,10 +37,16 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
@@ -50,6 +56,7 @@ import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.dihedralAngle;
 import static ffx.numerics.math.VectorMath.r;
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.buildHeavy;
@@ -81,44 +88,28 @@ public class AminoAcidUtils {
     private static final Logger logger = Logger.getLogger(AminoAcidUtils.class.getName());
 
     /**
-     * Only the first nitrogen should have H1, H2 and H3 atoms, unless it's an
-     * NME cap.
+     * Assign atom types to an amino acid polymer.
      *
-     * @param aminoAcid 3-letter amino acid name.
-     * @param residue   the amino acid Residue.
+     * @param residues The residues to assign atom types to.
+     * @throws MissingHeavyAtomException A needed heavy atom was not found.
+     * @throws MissingAtomTypeException  An atom type could not be found.
+     * @since 1.0
      */
-    public static void removeH1_H2_H3(AminoAcid3 aminoAcid, Residue residue) {
-        if (aminoAcid != AminoAcid3.NME) {
-            if (aminoAcid != AminoAcid3.NH2) {
-                Atom H1 = (Atom) residue.getAtomNode("H1");
-                if (H1 != null) {
-                    residue.deleteAtom(H1);
-                }
-                Atom H2 = (Atom) residue.getAtomNode("H2");
-                if (H2 != null) {
-                    residue.deleteAtom(H2);
-                }
+    public static void assignAminoAcidAtomTypes(List<Residue> residues, ForceField forceField, ArrayList<Bond> bondList)
+            throws MissingHeavyAtomException, MissingAtomTypeException {
+        // Loop over amino acid residues.
+        int numberOfResidues = residues.size();
+        for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
+            Residue residue = residues.get(residueNumber);
+            Residue previousResidue = null;
+            Residue nextResidue = null;
+            if (residueNumber > 0) {
+                previousResidue = residues.get(residueNumber - 1);
             }
-            Atom H3 = (Atom) residue.getAtomNode("H3");
-            if (H3 != null) {
-                residue.deleteAtom(H3);
+            if (residueNumber < numberOfResidues - 1) {
+                nextResidue = residues.get(residueNumber + 1);
             }
-        }
-    }
-
-    /**
-     * Only the last residue in a chain should have an OXT/OT2 atom.
-     *
-     * @param residue the amino acid residue.
-     */
-    public static void removeOXT_OT2(Residue residue) {
-        Atom OXT = (Atom) residue.getAtomNode("OXT");
-        if (OXT != null) {
-            residue.deleteAtom(OXT);
-        }
-        Atom OT2 = (Atom) residue.getAtomNode("OT2");
-        if (OT2 != null) {
-            residue.deleteAtom(OT2);
+            AminoAcidUtils.assignAminoAcidAtomTypes(residue, previousResidue, nextResidue, forceField, bondList);
         }
     }
 
@@ -194,7 +185,7 @@ public class AminoAcidUtils {
         // Backbone heavy atoms.
         Atom N = (Atom) residue.getAtomNode("N");
         if (N != null) {
-            N.setAtomType(BondedUtils.findAtomType(AA_N[j][aminoAcidNumber], forceField));
+            N.setAtomType(findAtomType(AA_N[j][aminoAcidNumber], forceField));
             if (position != FIRST_RESIDUE) {
                 buildBond(pC, N, forceField, bondList);
             }
@@ -215,14 +206,20 @@ public class AminoAcidUtils {
                 if (O == null) {
                     O = (Atom) residue.getAtomNode("OT1");
                 }
-                AtomType atomType = findAtomType(AA_O[j][aminoAcidNumber], forceField);
                 if (O == null) {
-                    MissingHeavyAtomException missingHeavyAtom
-                            = new MissingHeavyAtomException("O", atomType, C);
-                    throw missingHeavyAtom;
+                    // Build the carbonyl oxygen; assume the final residue has beta-sheet psi
+                    double psi = 135.0;
+                    if (nextResidue != null && N != null) {
+                        Atom nextN = (Atom) nextResidue.getAtomNode("N");
+                        psi = toDegrees(dihedralAngle(N.getXYZ(null), CA.getXYZ(null), C.getXYZ(null), nextN.getXYZ(null)));
+                    }
+                    O = buildHeavy(residue, "O", C, 1.25, CA, 117.0, N, psi - 180.0, 0,
+                            AA_O[j][aminoAcidNumber], forceField, bondList);
+                } else {
+                    AtomType atomType = findAtomType(AA_O[j][aminoAcidNumber], forceField);
+                    O.setAtomType(atomType);
+                    buildBond(C, O, forceField, bondList);
                 }
-                O.setAtomType(atomType);
-                buildBond(C, O, forceField, bondList);
             }
         }
 
@@ -408,6 +405,329 @@ public class AminoAcidUtils {
     }
 
     /**
+     * Assign atom types to a single amino acid side chain.
+     *
+     * @param position   The position of this amino acid in the chain.
+     * @param aminoAcid  The amino acid to use.
+     * @param residue    The residue node.
+     * @param CA         The C-alpha carbon of this residue.
+     * @param N          The peptide nitrogen of this residue.
+     * @param C          The peptide carbonyl carbon.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     */
+    private static void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
+                                                 Atom CA, Atom N, Atom C, ForceField forceField, ArrayList<Bond> bondList) {
+        int k = AA_CB[aminoAcid.ordinal()];
+        switch (aminoAcid) {
+            case GLY:
+                switch (position) {
+                    case FIRST_RESIDUE:
+                        k = AA_HA[0][k];
+                        break;
+                    case LAST_RESIDUE:
+                        k = AA_HA[2][k];
+                        break;
+                    default:
+                        k = AA_HA[1][k];
+
+                }
+                buildHydrogen(residue, "HA3", CA, 1.10, N, 109.5, C, 109.5, 1, k, forceField, bondList);
+                break;
+            case ALA:
+                buildAlanine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case VAL:
+                buildValine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case LEU:
+                buildLeucine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ILE:
+                buildIsoleucine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case SER:
+                buildSerine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case THR:
+                buildThreonine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case CYS:
+                buildCysteine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case CYX:
+                buildCystine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case CYD:
+                buildDeprotonatedCysteine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case PRO:
+                buildProline(residue, CA, N, C, k, position, forceField, bondList);
+                break;
+            case PHE:
+                buildPhenylalanine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case TYR:
+                buildTyrosine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case TYD:
+                buildDeprotonatedTyrosine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case TRP:
+                buildTryptophan(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case HIS:
+                buildHistidine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case HID:
+                buildNeutralHistidineD(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case HIE:
+                buildNeutralHistidineE(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ASP:
+                buildAspartate(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ASH:
+                buildNeutralAsparticAcid(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ASN:
+                buildAsparagine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case GLU:
+                buildGlutamate(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case GLH:
+                buildNeutralGlutamicAcid(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case GLN:
+                buildGlutamine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case MET:
+                buildMethionine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case LYS:
+                buildLysine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case LYD:
+                buildDeprotonatedLysine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ARG:
+                buildArginine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ORN:
+                buildOrnithine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case AIB:
+                buildAIB(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case PCA:
+                buildPCA(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case UNK:
+                String residueName = residue.getName();
+                logger.log(Level.INFO, " Patching side-chain {0}", residueName);
+                HashMap<String, AtomType> types = forceField.getAtomTypes(residueName);
+                if (!types.isEmpty()) {
+                    boolean patched = true;
+                    ArrayList<Atom> residueAtoms = residue.getAtomList();
+                    // Assign atom types for side-chain atoms.
+                    for (Atom atom : residueAtoms) {
+                        String atomName = atom.getName().toUpperCase();
+                        AtomType type = atom.getAtomType();
+                        if (type == null) {
+                            type = types.get(atomName);
+                            atom.setAtomType(type);
+                            types.remove(atomName);
+                        }
+                    }
+                    // Create bonds between known atoms.
+                    for (Atom atom : residueAtoms) {
+                        String atomName = atom.getName();
+                        String[] bonds = forceField.getBonds(residueName, atomName);
+                        if (bonds != null) {
+                            for (String name : bonds) {
+                                Atom atom2 = (Atom) residue.getAtomNode(name);
+                                if (atom2 != null && !atom.isBonded(atom2)) {
+                                    buildBond(atom, atom2, forceField, bondList);
+                                }
+                            }
+                        }
+                    }
+
+                    // Create missing hydrogen atoms.
+                    if (!types.isEmpty()) {
+                        // Create a hashmap of the molecule's atoms
+                        HashMap<String, Atom> atomMap = new HashMap<>();
+                        for (Atom atom : residueAtoms) {
+                            atomMap.put(atom.getName().toUpperCase(), atom);
+                        }
+                        for (String atomName : types.keySet()) {
+                            AtomType type = types.get(atomName);
+                            String[] bonds = forceField.getBonds(residueName, atomName.toUpperCase());
+                            if (bonds == null || bonds.length != 1) {
+                                patched = false;
+                                logger.log(Level.INFO, " Check biotype for hydrogen {0}.", type.name);
+                                break;
+                            }
+                            // Get the heavy atom the hydrogen is bonded to.
+                            Atom ia = atomMap.get(bonds[0].toUpperCase());
+                            Atom hydrogen = new Atom(0, atomName, ia.getAltLoc(), new double[3],
+                                    ia.getResidueName(), ia.getResidueNumber(), ia.getChainID(),
+                                    ia.getOccupancy(), ia.getTempFactor(), ia.getSegID());
+                            logger.log(Level.FINE, " Created hydrogen {0}.", atomName);
+                            hydrogen.setAtomType(type);
+                            hydrogen.setHetero(true);
+                            residue.addMSNode(hydrogen);
+                            int valence = ia.getAtomType().valence;
+                            List<Bond> aBonds = ia.getBonds();
+                            int numBonds = aBonds.size();
+                            // Try to find the following configuration: ib-ia-ic
+                            Atom ib = null;
+                            Atom ic = null;
+                            Atom id = null;
+                            if (numBonds > 0) {
+                                Bond bond = aBonds.get(0);
+                                ib = bond.get1_2(ia);
+                            }
+                            if (numBonds > 1) {
+                                Bond bond = aBonds.get(1);
+                                ic = bond.get1_2(ia);
+                            }
+                            if (numBonds > 2) {
+                                Bond bond = aBonds.get(2);
+                                id = bond.get1_2(ia);
+                            }
+
+                            // Building the hydrogens depends on hybridization and the locations of other bonded atoms.
+                            logger.log(Level.FINE, " Bonding {0} to {1} ({2} of {3}).",
+                                    new Object[]{atomName, ia.getName(), numBonds, valence});
+                            switch (valence) {
+                                case 4:
+                                    switch (numBonds) {
+                                        case 3:
+                                            // Find the average coordinates of atoms ib, ic and id.
+                                            double b[] = ib.getXYZ(null);
+                                            double c[] = ib.getXYZ(null);
+                                            double d[] = ib.getXYZ(null);
+                                            double a[] = new double[3];
+                                            a[0] = (b[0] + c[0] + d[0]) / 3.0;
+                                            a[1] = (b[1] + c[1] + d[1]) / 3.0;
+                                            a[2] = (b[2] + c[2] + d[2]) / 3.0;
+
+                                            // Place the hydrogen at chiral position #1.
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
+                                            double e1[] = hydrogen.getXYZ(null);
+                                            double ret[] = new double[3];
+                                            diff(a, e1, ret);
+                                            double l1 = r(ret);
+
+                                            // Place the hydrogen at chiral position #2.
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
+                                            double e2[] = hydrogen.getXYZ(null);
+                                            diff(a, e2, ret);
+                                            double l2 = r(ret);
+
+                                            // Revert to #1 if it is farther from the average.
+                                            if (l1 > l2) {
+                                                hydrogen.setXYZ(e1);
+                                            }
+                                            break;
+                                        case 2:
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
+                                            break;
+                                        case 1:
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, null, 0.0, 0);
+                                            break;
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
+                                            patched = false;
+                                    }
+                                    break;
+                                case 3:
+                                    switch (numBonds) {
+                                        case 2:
+                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 180.0, 0);
+                                            break;
+                                        case 1:
+                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
+                                            break;
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
+                                            patched = false;
+                                    }
+                                    break;
+                                case 2:
+                                    switch (numBonds) {
+                                        case 1:
+                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
+                                            break;
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
+                                            patched = false;
+                                    }
+                                    break;
+                                case 1:
+                                    switch (numBonds) {
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
+                                            patched = false;
+                                    }
+                                    break;
+                                default:
+                                    logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
+                                    patched = false;
+                            }
+                            if (!patched) {
+                                break;
+                            } else {
+                                buildBond(ia, hydrogen, forceField, bondList);
+                            }
+                        }
+                    }
+                    if (!patched) {
+                        logger.log(Level.SEVERE, format(" Could not patch %s.", residueName));
+                    } else {
+                        logger.log(Level.INFO, " Patch for {0} succeeded.", residueName);
+                        residueAtoms = residue.getAtomList();
+                        // Assign atom types for side-chain atoms.
+                        double charge = 0.0;
+                        for (Atom atom : residueAtoms) {
+                            logger.info(atom.toString() + " -> " + atom.getAtomType().toString());
+                        }
+                    }
+                } else {
+                    switch (position) {
+                        case FIRST_RESIDUE:
+                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 355,
+                                    forceField, bondList);
+                            break;
+                        case LAST_RESIDUE:
+                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 506,
+                                    forceField, bondList);
+                            break;
+                        default:
+                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 6,
+                                    forceField, bondList);
+                    }
+                }
+                break;
+        }
+    }
+
+    /**
      * <p>copyResidue.</p>
      *
      * @param fromResidue a {@link ffx.potential.bonded.Residue} object.
@@ -503,6 +823,48 @@ public class AminoAcidUtils {
         }
         for (String atomName : atomNames) {
             copyCoordinates(fromResidue, toResidue, atomName);
+        }
+    }
+
+    /**
+     * Only the first nitrogen should have H1, H2 and H3 atoms, unless it's an
+     * NME cap.
+     *
+     * @param aminoAcid 3-letter amino acid name.
+     * @param residue   the amino acid Residue.
+     */
+    public static void removeH1_H2_H3(AminoAcid3 aminoAcid, Residue residue) {
+        if (aminoAcid != AminoAcid3.NME) {
+            if (aminoAcid != AminoAcid3.NH2) {
+                Atom H1 = (Atom) residue.getAtomNode("H1");
+                if (H1 != null) {
+                    residue.deleteAtom(H1);
+                }
+                Atom H2 = (Atom) residue.getAtomNode("H2");
+                if (H2 != null) {
+                    residue.deleteAtom(H2);
+                }
+            }
+            Atom H3 = (Atom) residue.getAtomNode("H3");
+            if (H3 != null) {
+                residue.deleteAtom(H3);
+            }
+        }
+    }
+
+    /**
+     * Only the last residue in a chain should have an OXT/OT2 atom.
+     *
+     * @param residue the amino acid residue.
+     */
+    public static void removeOXT_OT2(Residue residue) {
+        Atom OXT = (Atom) residue.getAtomNode("OXT");
+        if (OXT != null) {
+            residue.deleteAtom(OXT);
+        }
+        Atom OT2 = (Atom) residue.getAtomNode("OT2");
+        if (OT2 != null) {
+            residue.deleteAtom(OT2);
         }
     }
 
@@ -1361,424 +1723,6 @@ public class AminoAcidUtils {
     }
 
     /**
-     * <p>renameGlycineAlphaHydrogens.</p>
-     *
-     * @param residue  a {@link ffx.potential.bonded.Residue} object.
-     * @param resAtoms a {@link java.util.List} object.
-     */
-    public static void renameGlycineAlphaHydrogens(Residue residue, List<Atom> resAtoms) {
-        Atom HA2 = (Atom) residue.getAtomNode("HA2");
-        Atom HA3 = (Atom) residue.getAtomNode("HA3");
-        if (HA2 != null) {
-            resAtoms.remove(HA2);
-        }
-        if (HA3 != null) {
-            resAtoms.remove(HA3);
-        }
-        if (HA2 == null && !resAtoms.isEmpty()) {
-            resAtoms.get(0).setName("HA2");
-            resAtoms.remove(0);
-        }
-        if (HA3 == null && !resAtoms.isEmpty()) {
-            resAtoms.get(0).setName("HA3");
-        }
-    }
-
-    /**
-     * <p>renameHydrogenType.</p>
-     *
-     * @param residue      a {@link ffx.potential.bonded.Residue} object.
-     * @param resAtoms     a {@link java.util.List} object.
-     * @param indices      a int.
-     * @param hydrogenType a {@link java.lang.String} object.
-     */
-    public static void renameHydrogenType(Residue residue, List<Atom> resAtoms, int indices, String hydrogenType) {
-        // Planned to replace rename<Beta/Gamma/...>Hydrogens methods.
-    }
-
-    /**
-     * <p>renameBetaHydrogens.</p>
-     *
-     * @param residue  a {@link ffx.potential.bonded.Residue} object.
-     * @param resAtoms a {@link java.util.List} object.
-     * @param indexes  a int.
-     */
-    public static void renameBetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
-        Atom[] HBn = new Atom[3];
-        switch (indexes) {
-            case 12:
-                HBn[0] = (Atom) residue.getAtomNode("HB1");
-                HBn[1] = (Atom) residue.getAtomNode("HB2");
-                break;
-            case 13:
-                HBn[0] = (Atom) residue.getAtomNode("HB1");
-                HBn[2] = (Atom) residue.getAtomNode("HB3");
-                break;
-            case 23:
-                HBn[1] = (Atom) residue.getAtomNode("HB2");
-                HBn[2] = (Atom) residue.getAtomNode("HB3");
-                break;
-            default:
-                return;
-        }
-        for (Atom HBatom : HBn) {
-            if (resAtoms.contains(HBatom)) {
-                resAtoms.remove(HBatom);
-            }
-        }
-        if (!resAtoms.isEmpty() && HBn[0] == null && (indexes == 12 || indexes == 13)) {
-            resAtoms.get(0).setName("HB1");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HBn[1] == null && (indexes == 12 || indexes == 23)) {
-            resAtoms.get(0).setName("HB2");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HBn[2] == null && (indexes == 13 || indexes == 23)) {
-            resAtoms.get(0).setName("HB3");
-            resAtoms.remove(0);
-        }
-    }
-
-    /**
-     * <p>renameGammaHydrogens.</p>
-     *
-     * @param residue  a {@link ffx.potential.bonded.Residue} object.
-     * @param resAtoms a {@link java.util.List} object.
-     * @param indexes  a int.
-     */
-    public static void renameGammaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
-        Atom[] HGn = new Atom[3];
-        switch (indexes) {
-            case 12:
-                HGn[0] = (Atom) residue.getAtomNode("HG1");
-                HGn[1] = (Atom) residue.getAtomNode("HG2");
-                break;
-            case 13:
-                HGn[0] = (Atom) residue.getAtomNode("HG1");
-                HGn[2] = (Atom) residue.getAtomNode("HG3");
-                break;
-            case 23:
-                HGn[1] = (Atom) residue.getAtomNode("HG2");
-                HGn[2] = (Atom) residue.getAtomNode("HG3");
-                break;
-            default:
-                return;
-        }
-        for (Atom HGatom : HGn) {
-            if (resAtoms.contains(HGatom)) {
-                resAtoms.remove(HGatom);
-            }
-        }
-        if (!resAtoms.isEmpty() && HGn[0] == null && (indexes == 12 || indexes == 13)) {
-            resAtoms.get(0).setName("HG1");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HGn[1] == null && (indexes == 12 || indexes == 23)) {
-            resAtoms.get(0).setName("HG2");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HGn[2] == null && (indexes == 13 || indexes == 23)) {
-            resAtoms.get(0).setName("HG3");
-            resAtoms.remove(0);
-        }
-    }
-
-    /**
-     * <p>renameDeltaHydrogens.</p>
-     *
-     * @param residue  a {@link ffx.potential.bonded.Residue} object.
-     * @param resAtoms a {@link java.util.List} object.
-     * @param indexes  a int.
-     */
-    public static void renameDeltaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
-        Atom[] HDn = new Atom[3];
-        switch (indexes) {
-            case 12:
-                HDn[0] = (Atom) residue.getAtomNode("HD1");
-                HDn[1] = (Atom) residue.getAtomNode("HD2");
-                break;
-            case 13:
-                HDn[0] = (Atom) residue.getAtomNode("HD1");
-                HDn[2] = (Atom) residue.getAtomNode("HD3");
-                break;
-            case 23:
-                HDn[1] = (Atom) residue.getAtomNode("HD2");
-                HDn[2] = (Atom) residue.getAtomNode("HD3");
-                break;
-            default:
-                return;
-        }
-        for (Atom HDatom : HDn) {
-            if (resAtoms.contains(HDatom)) {
-                resAtoms.remove(HDatom);
-            }
-        }
-        if (!resAtoms.isEmpty() && HDn[0] == null && (indexes == 12 || indexes == 13)) {
-            resAtoms.get(0).setName("HD1");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HDn[1] == null && (indexes == 12 || indexes == 23)) {
-            resAtoms.get(0).setName("HD2");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HDn[2] == null && (indexes == 13 || indexes == 23)) {
-            resAtoms.get(0).setName("HD3");
-            resAtoms.remove(0);
-        }
-    }
-
-    /**
-     * <p>renameEpsilonHydrogens.</p>
-     *
-     * @param residue  a {@link ffx.potential.bonded.Residue} object.
-     * @param resAtoms a {@link java.util.List} object.
-     * @param indexes  a int.
-     */
-    public static void renameEpsilonHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
-        Atom[] HEn = new Atom[3];
-        switch (indexes) {
-            case 12:
-                HEn[0] = (Atom) residue.getAtomNode("HE1");
-                HEn[1] = (Atom) residue.getAtomNode("HE2");
-                break;
-            case 13:
-                HEn[0] = (Atom) residue.getAtomNode("HE1");
-                HEn[2] = (Atom) residue.getAtomNode("HE3");
-                break;
-            case 23:
-                HEn[1] = (Atom) residue.getAtomNode("HE2");
-                HEn[2] = (Atom) residue.getAtomNode("HE3");
-                break;
-            default:
-                return;
-        }
-        for (Atom HEatom : HEn) {
-            if (resAtoms.contains(HEatom)) {
-                resAtoms.remove(HEatom);
-            }
-        }
-        if (!resAtoms.isEmpty() && HEn[0] == null && (indexes == 12 || indexes == 13)) {
-            resAtoms.get(0).setName("HE1");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HEn[1] == null && (indexes == 12 || indexes == 23)) {
-            resAtoms.get(0).setName("HE2");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HEn[2] == null && (indexes == 13 || indexes == 23)) {
-            resAtoms.get(0).setName("HE3");
-            resAtoms.remove(0);
-        }
-    }
-
-    /**
-     * <p>renameZetaHydrogens.</p>
-     *
-     * @param residue  a {@link ffx.potential.bonded.Residue} object.
-     * @param resAtoms a {@link java.util.List} object.
-     * @param indexes  a int.
-     */
-    public static void renameZetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
-        Atom[] HZn = new Atom[3];
-        switch (indexes) {
-            case 12:
-                HZn[0] = (Atom) residue.getAtomNode("HZ1");
-                HZn[1] = (Atom) residue.getAtomNode("HZ2");
-                break;
-            case 13:
-                HZn[0] = (Atom) residue.getAtomNode("HZ1");
-                HZn[2] = (Atom) residue.getAtomNode("HZ3");
-                break;
-            case 23:
-                HZn[1] = (Atom) residue.getAtomNode("HZ2");
-                HZn[2] = (Atom) residue.getAtomNode("HZ3");
-                break;
-            default:
-                return;
-        }
-        for (Atom HZatom : HZn) {
-            if (resAtoms.contains(HZatom)) {
-                resAtoms.remove(HZatom);
-            }
-        }
-        if (!resAtoms.isEmpty() && HZn[0] == null && (indexes == 12 || indexes == 13)) {
-            resAtoms.get(0).setName("HZ1");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HZn[1] == null && (indexes == 12 || indexes == 23)) {
-            resAtoms.get(0).setName("HZ2");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HZn[2] == null && (indexes == 13 || indexes == 23)) {
-            resAtoms.get(0).setName("HZ3");
-            resAtoms.remove(0);
-        }
-    }
-
-    /**
-     * <p>renameIsoleucineHydrogens.</p>
-     *
-     * @param residue  a {@link ffx.potential.bonded.Residue} object.
-     * @param resAtoms a {@link java.util.List} object.
-     */
-    public static void renameIsoleucineHydrogens(Residue residue, List<Atom> resAtoms) {
-        Atom HG12 = (Atom) residue.getAtomNode("HG12");
-        Atom HG13 = (Atom) residue.getAtomNode("HG13");
-        if (HG12 != null) {
-            resAtoms.remove(HG12);
-        }
-        if (HG13 != null) {
-            resAtoms.remove(HG13);
-        }
-        if (HG12 == null && !resAtoms.isEmpty()) {
-            resAtoms.get(0).setName("HG12");
-            resAtoms.remove(0);
-        }
-        if (HG13 == null && !resAtoms.isEmpty()) {
-            resAtoms.get(0).setName("HG13");
-        }
-    }
-
-    /**
-     * <p>renameAsparagineHydrogens.</p>
-     *
-     * @param residue  a {@link ffx.potential.bonded.Residue} object.
-     * @param resAtoms a {@link java.util.List} object.
-     */
-    public static void renameAsparagineHydrogens(Residue residue, List<Atom> resAtoms) {
-        Atom HD21 = (Atom) residue.getAtomNode("HD21");
-        Atom HD22 = (Atom) residue.getAtomNode("HD22");
-        if (HD21 != null) {
-            resAtoms.remove(HD21);
-        }
-        if (HD22 != null) {
-            resAtoms.remove(HD22);
-        }
-        if (!resAtoms.isEmpty() && HD21 == null) {
-            resAtoms.get(0).setName("HD21");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HD22 == null) {
-            resAtoms.get(0).setName("HD21");
-        }
-    }
-
-    /**
-     * <p>renameGlutamineHydrogens.</p>
-     *
-     * @param residue  a {@link ffx.potential.bonded.Residue} object.
-     * @param resAtoms a {@link java.util.List} object.
-     */
-    public static void renameGlutamineHydrogens(Residue residue, List<Atom> resAtoms) {
-        Atom HE21 = (Atom) residue.getAtomNode("HE21");
-        Atom HE22 = (Atom) residue.getAtomNode("HE22");
-        if (HE21 != null) {
-            resAtoms.remove(HE21);
-        }
-        if (HE22 != null) {
-            resAtoms.remove(HE22);
-        }
-        if (!resAtoms.isEmpty() && HE21 == null) {
-            resAtoms.get(0).setName("HE21");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HE22 == null) {
-            resAtoms.get(0).setName("HE21");
-        }
-    }
-
-    /**
-     * <p>renameArginineHydrogens.</p>
-     *
-     * @param residue  a {@link ffx.potential.bonded.Residue} object.
-     * @param resAtoms a {@link java.util.List} object.
-     */
-    public static void renameArginineHydrogens(Residue residue, List<Atom> resAtoms) {
-        Atom HH11 = (Atom) residue.getAtomNode("HH11");
-        Atom HH12 = (Atom) residue.getAtomNode("HH12");
-        Atom HH21 = (Atom) residue.getAtomNode("HH21");
-        Atom HH22 = (Atom) residue.getAtomNode("HH22");
-        if (HH11 != null) {
-            resAtoms.remove(HH11);
-        }
-        if (HH12 != null) {
-            resAtoms.remove(HH12);
-        }
-        if (HH21 != null) {
-            resAtoms.remove(HH21);
-        }
-        if (HH22 != null) {
-            resAtoms.remove(HH22);
-        }
-        if (!resAtoms.isEmpty() && HH11 == null) {
-            resAtoms.get(0).setName("HH11");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HH12 == null) {
-            resAtoms.get(0).setName("HH12");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HH21 == null) {
-            resAtoms.get(0).setName("HH21");
-            resAtoms.remove(0);
-        }
-        if (!resAtoms.isEmpty() && HH22 == null) {
-            resAtoms.get(0).setName("HH22");
-            resAtoms.remove(0);
-        }
-    }
-
-    /**
-     * <p>renameNTerminusHydrogens.</p>
-     *
-     * @param residue a {@link ffx.potential.bonded.Residue} object.
-     */
-    public static void renameNTerminusHydrogens(Residue residue) {
-        Atom[] h = new Atom[3];
-        h[0] = (Atom) residue.getAtomNode("H1");
-        h[1] = (Atom) residue.getAtomNode("H2");
-        h[2] = (Atom) residue.getAtomNode("H3");
-        int numAtoms = 0;
-        for (Atom atom : h) {
-            numAtoms += (atom == null ? 0 : 1);
-        }
-        if (numAtoms == 3) {
-            return;
-        }
-        List<Atom> resAtoms = residue.getAtomList();
-        for (Atom resAtom : resAtoms) {
-            // Check if already contained in h[].
-            boolean doContinue = false;
-            for (Atom hAtom : h) {
-                if (resAtom.equals(hAtom)) {
-                    doContinue = true;
-                    break;
-                }
-            }
-            if (doContinue) {
-                continue;
-            }
-
-            // If the hydrogen matches H or H[1-3], assign to first null h entity.
-            String atomName = resAtom.getName().toUpperCase();
-            if (atomName.equals("H") || atomName.matches("H[1-3]") || atomName.matches("[1-3]H")) {
-                ++numAtoms;
-                for (int i = 0; i < h.length; i++) {
-                    if (h[i] == null) {
-                        resAtom.setName("H" + (i + 1));
-                        h[i] = resAtom;
-                        break;
-                    }
-                }
-                if (numAtoms == 3) {
-                    return;
-                }
-            }
-        }
-    }
-
-    /**
      * Check for missing heavy atoms. This check ignores special terminating
      * groups like FOR, NH2, etc.
      *
@@ -1821,339 +1765,7 @@ public class AminoAcidUtils {
                     logger.warning(format(" Residue %c-%s is missing its C-terminal carboxyl carbon", residue.getChainID(), residue));
                     throw e;
                 }
-                Atom O = (Atom) residue.getAtomNode("O");
-                if (O == null && position == LAST_RESIDUE) {
-                    O = (Atom) residue.getAtomNode("OT1");
-                }
-                if (O == null) {
-                    MissingHeavyAtomException e = new MissingHeavyAtomException("O", null, null);
-                    logger.warning(format(" Residue %c-%s is missing its C-terminal carboxyl oxygen", residue.getChainID(), residue));
-                    throw e;
-                }
             }
-        }
-    }
-
-    /**
-     * Assign atom types to a single amino acid side chain.
-     *
-     * @param position   The position of this amino acid in the chain.
-     * @param aminoAcid  The amino acid to use.
-     * @param residue    The residue node.
-     * @param CA         The C-alpha carbon of this residue.
-     * @param N          The peptide nitrogen of this residue.
-     * @param C          The peptide carbonyl carbon.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
-     */
-    private static void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
-                                                 Atom CA, Atom N, Atom C, ForceField forceField, ArrayList<Bond> bondList) {
-        int k = AA_CB[aminoAcid.ordinal()];
-        switch (aminoAcid) {
-            case GLY:
-                switch (position) {
-                    case FIRST_RESIDUE:
-                        k = AA_HA[0][k];
-                        break;
-                    case LAST_RESIDUE:
-                        k = AA_HA[2][k];
-                        break;
-                    default:
-                        k = AA_HA[1][k];
-
-                }
-                buildHydrogen(residue, "HA3", CA, 1.10, N, 109.5, C, 109.5, 1, k, forceField, bondList);
-                break;
-            case ALA:
-                buildAlanine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case VAL:
-                buildValine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case LEU:
-                buildLeucine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ILE:
-                buildIsoleucine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case SER:
-                buildSerine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case THR:
-                buildThreonine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case CYS:
-                buildCysteine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case CYX:
-                buildCystine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case CYD:
-                buildDeprotonatedCysteine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case PRO:
-                buildProline(residue, CA, N, C, k, position, forceField, bondList);
-                break;
-            case PHE:
-                buildPhenylalanine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case TYR:
-                buildTyrosine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case TYD:
-                buildDeprotonatedTyrosine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case TRP:
-                buildTryptophan(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case HIS:
-                buildHistidine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case HID:
-                buildNeutralHistidineD(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case HIE:
-                buildNeutralHistidineE(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ASP:
-                buildAspartate(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ASH:
-                buildNeutralAsparticAcid(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ASN:
-                buildAsparagine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case GLU:
-                buildGlutamate(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case GLH:
-                buildNeutralGlutamicAcid(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case GLN:
-                buildGlutamine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case MET:
-                buildMethionine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case LYS:
-                buildLysine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case LYD:
-                buildDeprotonatedLysine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ARG:
-                buildArginine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ORN:
-                buildOrnithine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case AIB:
-                buildAIB(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case PCA:
-                buildPCA(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case UNK:
-                String residueName = residue.getName();
-                logger.log(Level.INFO, " Patching side-chain {0}", residueName);
-                HashMap<String, AtomType> types = forceField.getAtomTypes(residueName);
-                if (!types.isEmpty()) {
-                    boolean patched = true;
-                    ArrayList<Atom> residueAtoms = residue.getAtomList();
-                    // Assign atom types for side-chain atoms.
-                    for (Atom atom : residueAtoms) {
-                        String atomName = atom.getName().toUpperCase();
-                        AtomType type = atom.getAtomType();
-                        if (type == null) {
-                            type = types.get(atomName);
-                            atom.setAtomType(type);
-                            types.remove(atomName);
-                        }
-                    }
-                    // Create bonds between known atoms.
-                    for (Atom atom : residueAtoms) {
-                        String atomName = atom.getName();
-                        String[] bonds = forceField.getBonds(residueName, atomName);
-                        if (bonds != null) {
-                            for (String name : bonds) {
-                                Atom atom2 = (Atom) residue.getAtomNode(name);
-                                if (atom2 != null && !atom.isBonded(atom2)) {
-                                    buildBond(atom, atom2, forceField, bondList);
-                                }
-                            }
-                        }
-                    }
-
-                    // Create missing hydrogen atoms.
-                    if (!types.isEmpty()) {
-                        // Create a hashmap of the molecule's atoms
-                        HashMap<String, Atom> atomMap = new HashMap<>();
-                        for (Atom atom : residueAtoms) {
-                            atomMap.put(atom.getName().toUpperCase(), atom);
-                        }
-                        for (String atomName : types.keySet()) {
-                            AtomType type = types.get(atomName);
-                            String[] bonds = forceField.getBonds(residueName, atomName.toUpperCase());
-                            if (bonds == null || bonds.length != 1) {
-                                patched = false;
-                                logger.log(Level.INFO, " Check biotype for hydrogen {0}.", type.name);
-                                break;
-                            }
-                            // Get the heavy atom the hydrogen is bonded to.
-                            Atom ia = atomMap.get(bonds[0].toUpperCase());
-                            Atom hydrogen = new Atom(0, atomName, ia.getAltLoc(), new double[3],
-                                    ia.getResidueName(), ia.getResidueNumber(), ia.getChainID(),
-                                    ia.getOccupancy(), ia.getTempFactor(), ia.getSegID());
-                            logger.log(Level.FINE, " Created hydrogen {0}.", atomName);
-                            hydrogen.setAtomType(type);
-                            hydrogen.setHetero(true);
-                            residue.addMSNode(hydrogen);
-                            int valence = ia.getAtomType().valence;
-                            List<Bond> aBonds = ia.getBonds();
-                            int numBonds = aBonds.size();
-                            // Try to find the following configuration: ib-ia-ic
-                            Atom ib = null;
-                            Atom ic = null;
-                            Atom id = null;
-                            if (numBonds > 0) {
-                                Bond bond = aBonds.get(0);
-                                ib = bond.get1_2(ia);
-                            }
-                            if (numBonds > 1) {
-                                Bond bond = aBonds.get(1);
-                                ic = bond.get1_2(ia);
-                            }
-                            if (numBonds > 2) {
-                                Bond bond = aBonds.get(2);
-                                id = bond.get1_2(ia);
-                            }
-
-                            // Building the hydrogens depends on hybridization and the locations of other bonded atoms.
-                            logger.log(Level.FINE, " Bonding {0} to {1} ({2} of {3}).",
-                                    new Object[]{atomName, ia.getName(), numBonds, valence});
-                            switch (valence) {
-                                case 4:
-                                    switch (numBonds) {
-                                        case 3:
-                                            // Find the average coordinates of atoms ib, ic and id.
-                                            double b[] = ib.getXYZ(null);
-                                            double c[] = ib.getXYZ(null);
-                                            double d[] = ib.getXYZ(null);
-                                            double a[] = new double[3];
-                                            a[0] = (b[0] + c[0] + d[0]) / 3.0;
-                                            a[1] = (b[1] + c[1] + d[1]) / 3.0;
-                                            a[2] = (b[2] + c[2] + d[2]) / 3.0;
-
-                                            // Place the hydrogen at chiral position #1.
-                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
-                                            double e1[] = hydrogen.getXYZ(null);
-                                            double ret[] = new double[3];
-                                            diff(a, e1, ret);
-                                            double l1 = r(ret);
-
-                                            // Place the hydrogen at chiral position #2.
-                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
-                                            double e2[] = hydrogen.getXYZ(null);
-                                            diff(a, e2, ret);
-                                            double l2 = r(ret);
-
-                                            // Revert to #1 if it is farther from the average.
-                                            if (l1 > l2) {
-                                                hydrogen.setXYZ(e1);
-                                            }
-                                            break;
-                                        case 2:
-                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
-                                            break;
-                                        case 1:
-                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, null, 0.0, 0);
-                                            break;
-                                        case 0:
-                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                                            break;
-                                        default:
-                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
-                                            patched = false;
-                                    }
-                                    break;
-                                case 3:
-                                    switch (numBonds) {
-                                        case 2:
-                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 180.0, 0);
-                                            break;
-                                        case 1:
-                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
-                                            break;
-                                        case 0:
-                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                                            break;
-                                        default:
-                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
-                                            patched = false;
-                                    }
-                                    break;
-                                case 2:
-                                    switch (numBonds) {
-                                        case 1:
-                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
-                                            break;
-                                        case 0:
-                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                                            break;
-                                        default:
-                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
-                                            patched = false;
-                                    }
-                                    break;
-                                case 1:
-                                    switch (numBonds) {
-                                        case 0:
-                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                                            break;
-                                        default:
-                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
-                                            patched = false;
-                                    }
-                                    break;
-                                default:
-                                    logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
-                                    patched = false;
-                            }
-                            if (!patched) {
-                                break;
-                            } else {
-                                buildBond(ia, hydrogen, forceField, bondList);
-                            }
-                        }
-                    }
-                    if (!patched) {
-                        logger.log(Level.SEVERE, format(" Could not patch %s.", residueName));
-                    } else {
-                        logger.log(Level.INFO, " Patch for {0} succeeded.", residueName);
-                        residueAtoms = residue.getAtomList();
-                        // Assign atom types for side-chain atoms.
-                        double charge = 0.0;
-                        for (Atom atom : residueAtoms) {
-                            logger.info(atom.toString() + " -> " + atom.getAtomType().toString());
-                        }
-                    }
-                } else {
-                    switch (position) {
-                        case FIRST_RESIDUE:
-                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 355,
-                                    forceField, bondList);
-                            break;
-                        case LAST_RESIDUE:
-                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 506,
-                                    forceField, bondList);
-                            break;
-                        default:
-                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 6,
-                                    forceField, bondList);
-                    }
-                }
-                break;
         }
     }
 

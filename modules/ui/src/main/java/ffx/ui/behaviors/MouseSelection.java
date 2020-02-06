@@ -39,7 +39,7 @@ package ffx.ui.behaviors;
 
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
-import java.util.Enumeration;
+import java.util.Iterator;
 
 import org.jogamp.java3d.Transform3D;
 import org.jogamp.java3d.TransformGroup;
@@ -53,9 +53,9 @@ import org.jogamp.java3d.WakeupOnAWTEvent;
  */
 public class MouseSelection extends MouseBehavior {
 
-    private double x_angle, y_angle;
-    private double x_factor = .03;
-    private double y_factor = .03;
+    private double xAngle, yAngle;
+    private double xFactor = .03;
+    private double yFactor = .03;
     private MouseBehaviorCallback callback = null;
 
     /**
@@ -77,7 +77,7 @@ public class MouseSelection extends MouseBehavior {
      * @return a double.
      */
     public double getXFactor() {
-        return x_factor;
+        return xFactor;
     }
 
     /**
@@ -88,7 +88,7 @@ public class MouseSelection extends MouseBehavior {
      * @return a double.
      */
     public double getYFactor() {
-        return y_factor;
+        return yFactor;
     }
 
     /**
@@ -97,48 +97,43 @@ public class MouseSelection extends MouseBehavior {
      */
     public void initialize() {
         super.initialize();
-        x_angle = 0;
-        y_angle = 0;
+        xAngle = 0;
+        yAngle = 0;
         if ((flags & INVERT_INPUT) == INVERT_INPUT) {
             invert = true;
-            x_factor *= -1;
-            y_factor *= -1;
+            xFactor *= -1;
+            yFactor *= -1;
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public void processStimulus(Enumeration criteria) {
-        WakeupCriterion wakeup;
-        AWTEvent[] event;
-        int id;
-        while (criteria.hasMoreElements()) {
-            wakeup = (WakeupCriterion) criteria.nextElement();
+    public void processStimulus(Iterator<WakeupCriterion> criteria) {
+        while (criteria.hasNext()) {
+            WakeupCriterion wakeup = criteria.next();
             if (wakeup instanceof WakeupOnAWTEvent) {
-                event = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
-                for (int i = 0; i < event.length; i++) {
-                    processMouseEvent((MouseEvent) event[i]);
+                AWTEvent[] event = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+                for (AWTEvent awtEvent : event) {
+                    processMouseEvent((MouseEvent) awtEvent);
                     if (((buttonPress) && ((flags & MANUAL_WAKEUP) == 0))
                             || ((wakeUp) && ((flags & MANUAL_WAKEUP) != 0))) {
-                        id = event[i].getID();
+                        int id = awtEvent.getID();
                         if ((id == MouseEvent.MOUSE_DRAGGED)) {
                             if (!reset) {
                                 transformChanged(currXform);
                                 if (callback != null) {
-                                    callback.transformChanged(
-                                            MouseBehaviorCallback.SELECTION,
-                                            currXform);
+                                    callback.transformChanged(MouseBehaviorCallback.SELECTION, currXform);
                                 }
                             } else {
                                 reset = false;
                             }
-                            x_last = ((MouseEvent) event[i]).getX();
-                            y_last = ((MouseEvent) event[i]).getY();
+                            xLast = ((MouseEvent) awtEvent).getX();
+                            yLast = ((MouseEvent) awtEvent).getY();
                         }
                         if (id == MouseEvent.MOUSE_PRESSED) {
-                            x_last = ((MouseEvent) event[i]).getX();
-                            y_last = ((MouseEvent) event[i]).getY();
+                            xLast = ((MouseEvent) awtEvent).getX();
+                            yLast = ((MouseEvent) awtEvent).getY();
                         }
                     }
                 }
@@ -156,7 +151,7 @@ public class MouseSelection extends MouseBehavior {
      * @param factor a double.
      */
     public void setFactor(double factor) {
-        x_factor = y_factor = factor;
+        xFactor = yFactor = factor;
     }
 
     /**
@@ -169,8 +164,8 @@ public class MouseSelection extends MouseBehavior {
      * @param yFactor a double.
      */
     public void setFactor(double xFactor, double yFactor) {
-        x_factor = xFactor;
-        y_factor = yFactor;
+        this.xFactor = xFactor;
+        this.yFactor = yFactor;
     }
 
     /**

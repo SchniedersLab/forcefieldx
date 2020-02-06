@@ -164,7 +164,7 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
         if (len != stretchTorsionType2.forceConstants.length) {
             return null;
         }
-        double forceConstants[] = new double[len];
+        double[] forceConstants = new double[len];
         for (int i = 0; i < len; i++) {
             forceConstants[i] = (stretchTorsionType1.forceConstants[i]
                     + stretchTorsionType2.forceConstants[i]) / 2.0;

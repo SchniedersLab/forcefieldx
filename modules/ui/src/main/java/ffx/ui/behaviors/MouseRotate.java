@@ -39,7 +39,7 @@ package ffx.ui.behaviors;
 
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
-import java.util.Enumeration;
+import java.util.Iterator;
 
 import org.jogamp.java3d.Behavior;
 import org.jogamp.java3d.Transform3D;
@@ -62,9 +62,9 @@ public class MouseRotate extends MouseBehavior {
     private static final Vector3d zero3d = new Vector3d(0.0, 0.0, 0.0);
     private static Vector3d translation = new Vector3d();
     private static Matrix4d mat = new Matrix4d();
-    double x_angle, y_angle;
-    double x_factor = 0.001;
-    double y_factor = 0.001;
+    double xAngle, yAngle;
+    double xFactor = 0.001;
+    double yFactor = 0.001;
     int doneID = 0;
     private MouseBehaviorCallback callback = null;
 
@@ -89,38 +89,27 @@ public class MouseRotate extends MouseBehavior {
      * @param postID   a int.
      * @param dID      a int.
      */
-    public MouseRotate(int flags, TransformGroup VPTG, Behavior behavior,
-                       int postID, int dID) {
+    public MouseRotate(int flags, TransformGroup VPTG, Behavior behavior, int postID, int dID) {
         super(flags, VPTG, behavior, postID);
         doneID = dID;
     }
 
-    /*
-     * Return the x-axis movement multipler.
-     */
-
     /**
-     * <p>
-     * getXFactor</p>
+     * Return the x-axis movement multipler.
      *
      * @return a double.
      */
     public double getXFactor() {
-        return x_factor;
+        return xFactor;
     }
 
-    /*
-     * Return the y-axis movement multipler.
-     */
-
     /**
-     * <p>
-     * getYFactor</p>
+     * Return the y-axis movement multipler.
      *
      * @return a double.
      */
     public double getYFactor() {
-        return y_factor;
+        return yFactor;
     }
 
     /**
@@ -129,40 +118,40 @@ public class MouseRotate extends MouseBehavior {
      */
     public void initialize() {
         super.initialize();
-        x_angle = 0;
-        y_angle = 0;
+        xAngle = 0;
+        yAngle = 0;
         if ((flags & INVERT_INPUT) == INVERT_INPUT) {
             invert = true;
-            x_factor *= -1;
-            y_factor *= -1;
+            xFactor *= -1;
+            yFactor *= -1;
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public void processStimulus(Enumeration criteria) {
-        while (criteria.hasMoreElements()) {
-            WakeupCriterion wakeup = (WakeupCriterion) criteria.nextElement();
+    public void processStimulus(Iterator<WakeupCriterion> criteria) {
+        while (criteria.hasNext()) {
+            WakeupCriterion wakeup = criteria.next();
             if (wakeup instanceof WakeupOnAWTEvent) {
-                AWTEvent event[] = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
-                for (int i = 0; i < event.length; i++) {
-                    MouseEvent mevent = (MouseEvent) event[i];
+                AWTEvent[] event = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+                for (AWTEvent awtEvent : event) {
+                    MouseEvent mevent = (MouseEvent) awtEvent;
                     processMouseEvent(mevent);
-                    int id = event[i].getID();
+                    int id = awtEvent.getID();
                     // Drag and Button 1 down
                     if ((id == MouseEvent.MOUSE_DRAGGED)
                             && ((mevent.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) == MouseEvent.BUTTON1_DOWN_MASK)
                             && transformGroup != null) {
-                        x = ((MouseEvent) event[i]).getX();
-                        y = ((MouseEvent) event[i]).getY();
-                        int dx = x - x_last;
-                        int dy = y - y_last;
+                        x = ((MouseEvent) awtEvent).getX();
+                        y = ((MouseEvent) awtEvent).getY();
+                        int dx = x - xLast;
+                        int dy = y - yLast;
                         if (!reset) {
-                            x_angle = dy * y_factor;
-                            y_angle = dx * x_factor;
-                            transformX.rotX(x_angle);
-                            transformY.rotY(y_angle);
+                            xAngle = dy * yFactor;
+                            yAngle = dx * xFactor;
+                            transformX.rotX(xAngle);
+                            transformY.rotY(yAngle);
                             transformGroup.getTransform(currXform);
                             currXform.get(mat);
                             currXform.setTranslation(zero3d);
@@ -188,18 +177,16 @@ public class MouseRotate extends MouseBehavior {
                             transformGroup.setTransform(currXform);
                             transformChanged(currXform);
                             if (callback != null) {
-                                callback.transformChanged(
-                                        MouseBehaviorCallback.TRANSLATE,
-                                        currXform);
+                                callback.transformChanged(MouseBehaviorCallback.TRANSLATE, currXform);
                             }
                         } else {
                             reset = false;
                         }
-                        x_last = x;
-                        y_last = y;
+                        xLast = x;
+                        yLast = y;
                     } else if (id == MouseEvent.MOUSE_PRESSED) {
-                        x_last = ((MouseEvent) event[i]).getX();
-                        y_last = ((MouseEvent) event[i]).getY();
+                        xLast = ((MouseEvent) awtEvent).getX();
+                        yLast = ((MouseEvent) awtEvent).getY();
                     } else if (id == MouseEvent.MOUSE_RELEASED) {
                         setTransformGroup(null);
                     }
@@ -214,35 +201,25 @@ public class MouseRotate extends MouseBehavior {
         }
     }
 
-    /*
-     * Set the x-axis amd y-axis movement multipler with factor.
-     */
-
     /**
-     * <p>
-     * setFactor</p>
+     * Set the x-axis amd y-axis movement multipler with factor.
      *
      * @param factor a double.
      */
     public void setFactor(double factor) {
-        x_factor = y_factor = factor;
+        xFactor = yFactor = factor;
     }
 
-    /*
+    /**
      * Set the x-axis amd y-axis movement multipler with xFactor and yFactor
      * respectively.
-     */
-
-    /**
-     * <p>
-     * setFactor</p>
      *
      * @param xFactor a double.
      * @param yFactor a double.
      */
     public void setFactor(double xFactor, double yFactor) {
-        x_factor = xFactor;
-        y_factor = yFactor;
+        this.xFactor = xFactor;
+        this.yFactor = yFactor;
     }
 
     /**

@@ -91,43 +91,43 @@ public class RendererCache {
     /**
      * Constant <code>ORANGE</code>
      */
-    static final Color3f ORANGE = new Color3f(Color.orange);
+    static final Color3f ORANGE = new Color3f(Color.orange.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>RED</code>
      */
-    static final Color3f RED = new Color3f(Color.red);
+    static final Color3f RED = new Color3f(Color.red.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>BLUE</code>
      */
-    static final Color3f BLUE = new Color3f(Color.blue);
+    static final Color3f BLUE = new Color3f(Color.blue.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>GRAY</code>
      */
-    static final Color3f GRAY = new Color3f(Color.lightGray);
+    static final Color3f GRAY = new Color3f(Color.lightGray.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>YELLOW</code>
      */
-    static final Color3f YELLOW = new Color3f(Color.yellow);
+    static final Color3f YELLOW = new Color3f(Color.yellow.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>CYAN</code>
      */
-    static final Color3f CYAN = new Color3f(Color.cyan);
+    static final Color3f CYAN = new Color3f(Color.cyan.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>GREEN</code>
      */
-    static final Color3f GREEN = new Color3f(Color.green);
+    static final Color3f GREEN = new Color3f(Color.green.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>WHITE</code>
      */
-    static final Color3f WHITE = new Color3f(Color.white);
+    static final Color3f WHITE = new Color3f(Color.white.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>PINK</code>
      */
-    static final Color3f PINK = new Color3f(Color.pink);
+    static final Color3f PINK = new Color3f(Color.pink.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>MAGENTA</code>
      */
-    static final Color3f MAGENTA = new Color3f(Color.magenta);
+    static final Color3f MAGENTA = new Color3f(Color.magenta.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>nullAp</code>
      */
@@ -135,7 +135,7 @@ public class RendererCache {
     /**
      * Constant <code>BLACK</code>
      */
-    public static final Color3f BLACK = new Color3f(Color.black);
+    public static final Color3f BLACK = new Color3f(Color.black.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>detail=3</code>
      */
@@ -748,7 +748,7 @@ public class RendererCache {
     /**
      * Constant <code>NULLColor</code>
      */
-    private static final Color3f NULLColor = new Color3f(Color.darkGray);
+    private static final Color3f NULLColor = new Color3f(Color.darkGray.getRGBColorComponents(new float[3]));
     /**
      * Constant <code>lineAttributes</code>
      */

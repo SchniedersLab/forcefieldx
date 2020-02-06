@@ -410,12 +410,19 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
         double cosine3 = cosine * cosine2 - sine * sine2;
         double sine3 = cosine * sine2 + sine * cosine2;
         double phi1 = 1.0 + (cosine * tcos[0] + sine * tsin[0]);
-        double phi2 = 1.0 + (cosine2 * tcos[1] + sine2 * tsin[1]);
-        double phi3 = 1.0 + (cosine3 * tcos[2] + sine3 * tsin[2]);
         double dphi1 = (cosine * tsin[0] - sine * tcos[0]);
-        double dphi2 = 2.0 * (cosine2 * tsin[1] - sine2 * tcos[1]);
-        double dphi3 = 3.0 * (cosine3 * tsin[2] - sine3 * tcos[2]);
-
+        double phi2 = 0.0;
+        double dphi2 = 0.0;
+        double phi3 = 0.0;
+        double dphi3 = 0.0;
+        if (tsin.length > 1) {
+            phi2 = 1.0 + (cosine2 * tcos[1] + sine2 * tsin[1]);
+            dphi2 = 2.0 * (cosine2 * tsin[1] - sine2 * tcos[1]);
+            if (tsin.length > 2) {
+                phi3 = 1.0 + (cosine3 * tcos[2] + sine3 * tsin[2]);
+                dphi3 = 3.0 * (cosine3 * tsin[2] - sine3 * tcos[2]);
+            }
+        }
         // Set the angle-torsion parameters for the first angle
         double v1 = constants[0];
         double v2 = constants[1];

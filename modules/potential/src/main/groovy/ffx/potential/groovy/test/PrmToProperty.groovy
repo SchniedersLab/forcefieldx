@@ -35,63 +35,67 @@
 // exception statement from your version.
 //
 //******************************************************************************
+package ffx.potential.groovy.test
+
+import org.apache.commons.configuration2.CompositeConfiguration
 
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.ForceFieldFilter
+import ffx.utilities.Keyword
 
 import picocli.CommandLine.Command
-import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
- * The Cluster script clusters structures by RMSD.
+ * The PrmToProperty script converts a TINKER *.prm file to Java properties.
  * <br>
  * Usage:
  * <br>
- * ffxc Cluster [options] &lt;filename&gt;
+ * ffxc test.PrmToProperty &lt;filename&gt;
  */
-@Command(description = " Cluster structures using an RMSD matrix.", name = "ffxc Cluster")
-class Cluster extends PotentialScript {
-
-    /**
-     * -a or --algorithm Clustering algorithm to use.
-     */
-    @Option(names = ['-a', '--algorithm'], paramLabel = "kmeans",
-            description = "Print out a file with density adjusted to match mean calculated density")
-    private String algorithm = "kmeans";
+@Command(description = "PrmToProperty converts a TINKER *.prm file to Java properties.", name = "ffxc PrmToProperty")
+class PrmToProperty extends PotentialScript {
 
     /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
-            description = 'The RMSD matrix.')
-    List<String> filenames = null
-
-    private File baseDir = null
-
-    void setBaseDir(File baseDir) {
-        this.baseDir = baseDir
-    }
+            description = 'TINKER *.prm file(s).')
+    private List<String> filenames = null
 
     /**
      * Execute the script.
      */
     @Override
-    Cluster run() {
+    PrmToProperty run() {
+
         if (!init()) {
-            return this
+            return
         }
 
-        if (filenames == null || filenames.isEmpty()) {
-            logger.info(helpString())
-            return this
+        // Read in the command line file.
+        List<String> arguments = filenames
+        String xyzname = arguments.get(0)
+        CompositeConfiguration properties = Keyword.loadProperties(null)
+        properties.setProperty("parameters", xyzname)
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties)
+
+        ForceField forceField = forceFieldFilter.parse()
+
+        int prms = arguments.size()
+        for (int i = 1; i < prms; i++) {
+            xyzname = arguments.get(i)
+            properties = Keyword.loadProperties(null)
+            properties.setProperty("parameters", xyzname)
+            forceFieldFilter = new ForceFieldFilter(properties)
+            ForceField forceField2 = forceFieldFilter.parse()
+            forceField.append(forceField2)
         }
 
-        // TODO: Read in the RMSD matrix.
-
-        // TODO: Input the RMSD matrix to the clustering algorithm
-        // Use the org.apache.commons.math3.ml.clustering package.
-
-        // TODO: Output the clusters in a useful way.
+        if (forceField != null) {
+            forceField.print()
+        }
 
         return this
     }

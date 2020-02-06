@@ -39,7 +39,7 @@ package ffx.ui.behaviors;
 
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
-import java.util.Enumeration;
+import java.util.Iterator;
 
 import org.jogamp.java3d.Behavior;
 import org.jogamp.java3d.Transform3D;
@@ -54,7 +54,7 @@ import org.jogamp.java3d.WakeupOnAWTEvent;
  */
 public class MouseZoom extends MouseBehavior {
 
-    private double z_factor = 0.0002;
+    private double zFactor = 0.0002;
     private MouseBehaviorCallback callback = null;
     private int mouseButton = MouseEvent.BUTTON2_DOWN_MASK;
     private int doneID = 0;
@@ -80,8 +80,7 @@ public class MouseZoom extends MouseBehavior {
      * @param postID   a int.
      * @param dID      a int.
      */
-    public MouseZoom(int flags, TransformGroup VPTG, Behavior behavior,
-                     int postID, int dID) {
+    public MouseZoom(int flags, TransformGroup VPTG, Behavior behavior, int postID, int dID) {
         super(flags, VPTG, behavior, postID);
         doneID = dID;
     }
@@ -95,7 +94,7 @@ public class MouseZoom extends MouseBehavior {
      * @return a double.
      */
     public double getFactor() {
-        return z_factor;
+        return zFactor;
     }
 
     /**
@@ -105,7 +104,7 @@ public class MouseZoom extends MouseBehavior {
     public void initialize() {
         super.initialize();
         if ((flags & INVERT_INPUT) == INVERT_INPUT) {
-            z_factor *= -1;
+            zFactor *= -1;
             invert = true;
         }
     }
@@ -123,13 +122,12 @@ public class MouseZoom extends MouseBehavior {
     /**
      * {@inheritDoc}
      */
-    public void processStimulus(Enumeration criteria) {
-        AWTEvent[] event;
+    public void processStimulus(Iterator<WakeupCriterion> criteria) {
         boolean done = false;
-        while (criteria.hasMoreElements()) {
-            WakeupCriterion wakeup = (WakeupCriterion) criteria.nextElement();
+        while (criteria.hasNext()) {
+            WakeupCriterion wakeup = criteria.next();
             if (wakeup instanceof WakeupOnAWTEvent) {
-                event = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+                AWTEvent[] event = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
                 for (AWTEvent awtEvent : event) {
                     processMouseEvent((MouseEvent) awtEvent);
                     int id = awtEvent.getID();
@@ -141,10 +139,10 @@ public class MouseZoom extends MouseBehavior {
                     }
                     if ((id == MouseEvent.MOUSE_DRAGGED) && middleButton) {
                         y = ((MouseEvent) awtEvent).getY();
-                        int dy = y - y_last;
+                        int dy = y - yLast;
                         if (!reset) {
                             transformGroup.getTransform(currXform);
-                            double z = (-1.0) * dy * z_factor;
+                            double z = (-1.0) * dy * zFactor;
                             double scale = currXform.getScale() + z;
                             if (scale > 0) {
                                 currXform.setScale(scale);
@@ -152,18 +150,17 @@ public class MouseZoom extends MouseBehavior {
                                 transformChanged(currXform);
                             }
                             if (callback != null) {
-                                callback.transformChanged(
-                                        MouseBehaviorCallback.ZOOM, currXform);
+                                callback.transformChanged(MouseBehaviorCallback.ZOOM, currXform);
                             }
                         } else {
                             reset = false;
                         }
-                        x_last = x;
-                        y_last = y;
+                        xLast = x;
+                        yLast = y;
                     }
                     if (id == MouseEvent.MOUSE_PRESSED) {
-                        x_last = ((MouseEvent) awtEvent).getX();
-                        y_last = ((MouseEvent) awtEvent).getY();
+                        xLast = ((MouseEvent) awtEvent).getX();
+                        yLast = ((MouseEvent) awtEvent).getY();
                     } else if (id == MouseEvent.MOUSE_RELEASED) {
                         done = true;
                     }
@@ -189,7 +186,7 @@ public class MouseZoom extends MouseBehavior {
      * @param factor a double.
      */
     public void setFactor(double factor) {
-        z_factor = factor;
+        zFactor = factor;
     }
 
     /**

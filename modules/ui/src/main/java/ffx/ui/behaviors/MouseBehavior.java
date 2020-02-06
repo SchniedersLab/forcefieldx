@@ -38,7 +38,7 @@
 package ffx.ui.behaviors;
 
 import java.awt.event.MouseEvent;
-import java.util.Enumeration;
+import java.util.Iterator;
 
 import org.jogamp.java3d.Behavior;
 import org.jogamp.java3d.Transform3D;
@@ -54,21 +54,18 @@ import org.jogamp.java3d.WakeupOr;
  * @author Michael J. Schnieders
  */
 public abstract class MouseBehavior extends Behavior {
-    /*
-     * Set this flag if you want to manually wakeup the behavior.
-     */
-
     /**
      * Constant <code>MANUAL_WAKEUP=0x1</code>
+     * <p>
+     * Set this flag if you want to manually wakeup the behavior.
      */
     public static final int MANUAL_WAKEUP = 0x1;
-    /*
+    /**
+     * Constant <code>INVERT_INPUT=0x2</code>
+     * <p>
      * Set this flag if you want to invert the inputs. This is useful when the
      * transform for the view platform is being changed instead of the transform
      * for the object.
-     */
-    /**
-     * Constant <code>INVERT_INPUT=0x2</code>
      */
     public static final int INVERT_INPUT = 0x2;
     protected WakeupCriterion[] mouseEvents;
@@ -77,23 +74,17 @@ public abstract class MouseBehavior extends Behavior {
     protected int id;
     protected WakeupOnBehaviorPost postCriterion;
     protected int x, y;
-    protected int x_last, y_last;
+    protected int xLast, yLast;
     protected TransformGroup transformGroup;
     protected Transform3D transformX;
     protected Transform3D transformY;
     protected Transform3D currXform;
     protected boolean buttonPress = false;
-    protected boolean reset = false;
+    protected boolean reset;
     protected boolean invert = false;
     protected boolean wakeUp = false;
-    protected int flags = 0;
+    protected int flags;
     protected TransformGroup ViewerTG;
-    /*
-     * Swap a new transformGroup replacing the old one. This allows manipulators
-     * to operate on different nodes.
-     * @param transformGroup The *new* transform group to be manipulated.
-     */
-    Transform3D t3d = new Transform3D();
 
     /**
      * <p>
@@ -127,10 +118,6 @@ public abstract class MouseBehavior extends Behavior {
         id = i;
     }
 
-    /*
-     * Initializes the behavior.
-     */
-
     /**
      * <p>
      * initialize</p>
@@ -149,13 +136,9 @@ public abstract class MouseBehavior extends Behavior {
         }
         x = 0;
         y = 0;
-        x_last = 0;
-        y_last = 0;
+        xLast = 0;
+        yLast = 0;
     }
-
-    /*
-     * Handles mouse events
-     */
 
     /**
      * <p>
@@ -175,7 +158,7 @@ public abstract class MouseBehavior extends Behavior {
     /**
      * {@inheritDoc}
      */
-    public abstract void processStimulus(Enumeration criteria);
+    public abstract void processStimulus(Iterator<WakeupCriterion> criteria);
 
     /**
      * <p>
@@ -191,14 +174,9 @@ public abstract class MouseBehavior extends Behavior {
         reset = true;
     }
 
-    /*
+    /**
      * Manually wake up the behavior. If MANUAL_WAKEUP flag was set upon
      * creation, you must wake up this behavior each time it is handled.
-     */
-
-    /**
-     * <p>
-     * wakeup</p>
      */
     public void wakeup() {
         wakeUp = true;

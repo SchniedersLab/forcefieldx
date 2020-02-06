@@ -116,7 +116,7 @@ import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ARCFileFilter;
 import ffx.potential.parsers.BiojavaDataFilter;
-import ffx.potential.parsers.BiojavaFilter;
+import ffx.potential.parsers.BioJavaFilter;
 import ffx.potential.parsers.ConversionFilter;
 import ffx.potential.parsers.DYNFileFilter;
 import ffx.potential.parsers.FFXFileFilter;
@@ -1569,7 +1569,7 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         // Decide what parser to use.
         if (biojavaDataFilter.accept(data)) {
-            convFilter = new BiojavaFilter((Structure) data, newSystem, forceField, properties);
+            convFilter = new BioJavaFilter((Structure) data, newSystem, forceField, properties);
         } else {
             throw new IllegalArgumentException("Not a recognized data structure.");
         }

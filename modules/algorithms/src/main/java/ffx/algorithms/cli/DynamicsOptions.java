@@ -90,7 +90,7 @@ public class DynamicsOptions {
      * (0.1 psec default).
      */
     @Option(names = {"-r", "--report"}, paramLabel = "0.25",
-            description = "Interval to report thermodynamics (psec).")
+            description = "Interval in psec to report thermodynamics (psec).")
     double report = 0.25;
 
     /**
@@ -98,7 +98,7 @@ public class DynamicsOptions {
      * default).
      */
     @Option(names = {"-w", "--write"}, paramLabel = "10.0",
-            description = "Interval to write out coordinates (psec).")
+            description = "Interval in psec to write out coordinates (psec).")
     double write = 10.0;
 
     /**
@@ -114,7 +114,7 @@ public class DynamicsOptions {
      */
     @Option(names = {"-n", "--numberOfSteps"}, paramLabel = "1000000",
             description = "Number of molecular dynamics steps.")
-    int steps = 1000000;
+    long steps = 1000000;
 
     /**
      * -o or --optimize saves low-energy snapshots discovered (only for single topology simulations).
@@ -127,9 +127,13 @@ public class DynamicsOptions {
      * -k or --checkpoint sets the restart save frequency in picoseconds (1.0 psec default).
      */
     @CommandLine.Option(names = {"-k", "--checkpoint"}, paramLabel = "1.0",
-            description = "Interval to write out restart files (.dyn, .his, etc).")
+            description = "Interval in psec to write out restart files (.dyn, .his, etc).")
     private double checkpoint = 1.0;
 
+    /**
+     * --mdE or --molecularDynamicsEngine over-rides the default engine choice for
+     * integrating the equations of motion
+     */
     @CommandLine.Option(names = {"--mdE", "--molecularDynamicsEngine"}, paramLabel = "FFX",
             description = "Use FFX or OpenMM to integrate dynamics.")
     private String engineString = null;
@@ -191,7 +195,7 @@ public class DynamicsOptions {
             molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential, activeAssembly.getProperties(), sh, thermostat, integrator, engine);
         }
         molDyn.setFileType(writeout.getFileType());
-        molDyn.setRestartFrequency(write);
+        molDyn.setRestartFrequency(checkpoint);
         molDyn.setIntervalSteps(trajSteps);
 
         return molDyn;
@@ -200,7 +204,7 @@ public class DynamicsOptions {
     /**
      * <p>Getter for the field <code>temp</code>.</p>
      *
-     * @return a double.
+     * @return Temperature in Kelvins.
      */
     public double getTemp() {
         return temp;
@@ -209,7 +213,7 @@ public class DynamicsOptions {
     /**
      * <p>Getter for the field <code>dt</code>.</p>
      *
-     * @return a double.
+     * @return Timestep in femtoseconds.
      */
     public double getDt() {
         return dt;
@@ -218,7 +222,7 @@ public class DynamicsOptions {
     /**
      * <p>Getter for the field <code>report</code>.</p>
      *
-     * @return a double.
+     * @return Thermodynamics logging interval in picoseconds.
      */
     public double getReport() {
         return report;
@@ -227,18 +231,38 @@ public class DynamicsOptions {
     /**
      * <p>Getter for the field <code>checkpoint</code>.</p>
      *
-     * @return a double.
+     * @return Restart file interval in picoseconds.
      */
     public double getCheckpoint() {
         return checkpoint;
     }
 
     /**
+     * Write/snapshot appending interval.
+     * @return Interval between appending snapshots in psec.
+     */
+    public double getSnapshotInterval() {
+        return write;
+    }
+
+    public long getNumSteps() {
+        return steps;
+    }
+
+    /**
      * <p>Getter for the field <code>optimize</code>.</p>
      *
-     * @return a boolean.
+     * @return Whether to optimize structures.
      */
     public boolean getOptimize() {
         return optimize;
+    }
+
+    /**
+     * Re-sets the thermostat; intended for MC-OST going to ADIABATIC.
+     * @param thermo Thermostat to replace the requested one with.
+     */
+    public void setThermostat(ThermostatEnum thermo) {
+        thermostat = thermo;
     }
 }

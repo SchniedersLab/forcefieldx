@@ -100,46 +100,13 @@ public class ThermodynamicsTest extends PJDependentTest {
                         null, null, null, null, new String[]{}, new String[]{}, new String[]{"-h", "true"}
                 },
                 {
-                        "Acetamide Implicit Solvation Free Energy: -8.5 kcal/mol",
+                        "Acetamide Implicit Solvation Free Energy: -10.5 kcal/mol",
                         new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                        ThermoTestMode.FREE, false, -8.97, 1.0, null, null, null, null, null, null,
+                        ThermoTestMode.FREE, false, -10.468, 1.0, null, null, null, null, null, null,
                         new String[]{"-C", "10", "--s1", "1", "--f1", "9", "-d", "1.0",
                                 "-n", "20000", "-w", "5", "--bM", "0.25", "--tp", "2.0"},
                         new String[]{"randomseed", "42"}, new String[]{}
                 },
-                /*{
-                        "Acetamide Implicit Solvation Gradients: L = 0.9",
-                        new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                        ThermoTestMode.GRAD, false, 0, 0, intRange(1, 3),
-                        // new double[]{-19.5922844295, Double.NaN}, new double[]{-9.19007695807, Double.NaN},
-                        new double[]{ -18.85584096, Double.NaN}, new double[]{-8.371806437, Double.NaN},
-                        new double[]{-0.411272333503, Double.NaN},
-                        new double[][][]{
-                                {{-0.9032063972624029, -0.9091307927702053, 0.07070715071076905},
-                                        {6.336321525587566, -0.9091139791706401, 5.073742114349582}},
-                                new double[2][3]},
-                        new double[][][]{
-                                {{2.0679591685061096, -0.4446936399271604, 1.2610754559142918},
-                                        {-10.490557931892937, -1.382090643790419, -4.493259894567457}},
-                                new double[2][3]},
-                        new String[]{"-l", "0.9", "--s1", "1", "--f1", "9", "--s1", "1", "--f1", "9"}, new String[]{}, new String[]{}
-                },*/
-                /*{
-                        "Acetamide Implicit Solvation Gradients: L = 1.0",
-                        new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                        ThermoTestMode.GRAD, false, 0, 0, intRange(1, 3),
-                        new double[]{-19.68445574427762, Double.NaN}, new double[]{-8.067900244458935, Double.NaN},
-                        new double[]{7.5710964747886464, Double.NaN},
-                        new double[][][]{
-                                {{-0.6943279470072035, -0.9537582511328658, 0.198314546700465},
-                                        {5.287165262047079, -1.046675303630384, 4.624270493233988}},
-                                new double[2][3]},
-                        new double[][][]{
-                                {{2.143024730254365, -0.45122930785646503, 1.315837310988282},
-                                        {-10.494445226130521, -1.3588903479284937, -4.49831592705943}},
-                                new double[2][3]},
-                        new String[]{"-l", "1.0", "--s1", "1", "--f1", "9", "--s1", "1", "--f1", "9"}, new String[]{}, new String[]{}
-                },*/
                 {
                         // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the ions, and some water.
                         "Calbindin D9k Ca/Mg Simultaneous Bookending: L = 0.0",
@@ -655,6 +622,72 @@ public class ThermodynamicsTest extends PJDependentTest {
                         new String[]{"-d", "1.0", "-l", "0.5", "--la1", "1-3", "--la2", "1", "-n", "20000", "-Q", "5000", "-k", "20.0", "-w", "20.0", "-r", "5.0", "-C", "10"},
                         new String[]{"disable-neighbor-updates", "true", "lambda-bin-width", "0.025", "flambda-bin-width", "5.0", "randomseed", "2019"},
                         new String[]{}
+                },
+                {
+                        "Dual Well Gradient Test: L = 0.5",
+                        new String[]{"ffx/algorithms/structures/dualWell-cis.xyz", "ffx/algorithms/structures/dualWell-trans.xyz"},
+                        ThermoTestMode.GRAD, false, 0, 0, new int[]{0, 1, 2, 3},
+                        new double[]{1.0, 1.0}, new double[]{2.0, 2.0}, new double[]{0, Double.NaN},
+                        new double[][][]{
+                                {{8.561159028211611E-6, 5.743324479222663E-6, -1.4984967045837012E-10},
+                                        {-7.001815021252073E-6, -4.427074139684514E-6, 1.2219984010349385E-10},
+                                        {-2.1489889641599235E-6, 7.92540413855834E-9, 8.443778889936074E-12},
+                                        {5.896449572003855E-7, -1.3241757436767075E-6, 1.9206051464940198E-11}},
+                                new double[4][3]},
+                        new double[][][]{
+                                {{-4.504521213498369E-18, -1.6250327093073752E-17, -8.651645616845026E-13},
+                                        {-4.504521213498369E-18, -1.6250327093073752E-17, -8.651646266038085E-13},
+                                        {4.504097697024742E-18, 1.6249944935630753E-17, 8.651645891779005E-13},
+                                        {4.504203576143149E-18, 1.6249903576600125E-17, 8.651645991104025E-13}},
+                                new double[4][3]},
+                        new String[]{"-l", "0.5"},
+                        new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
+                                "true", "ost-temperOffset", "6.0", "randomseed", "2020"},
+                        new String[0]
+                },
+                {
+                        "Dual Well 1-Step MC-OST Test",
+                        new String[]{"ffx/algorithms/structures/dualWell-cis.xyz", "ffx/algorithms/structures/dualWell-trans.xyz"},
+                        ThermoTestMode.FREE, true, 0, 0.8, null, null, null, null, null, null,
+                        new String[]{"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0", "-k", "1000.0",
+                                "-w", "1000.0", "-r", "1.0", "-Q", "1000", "-n", "250000", "-t", "298.15", "--tp", "6.0",
+                                "--mcMD", "10", "--mcL", "0.10"},
+                        new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
+                                "true", "ost-temperOffset", "6.0", "randomseed", "445"},
+                        new String[]{"--mc", "true"}
+                },
+                {
+                        "Dual Well 2-Step MC-OST Test",
+                        new String[]{"ffx/algorithms/structures/dualWell-cis.xyz", "ffx/algorithms/structures/dualWell-trans.xyz"},
+                        ThermoTestMode.FREE, true, 0, 0.8, null, null, null, null, null, null,
+                        new String[]{"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0", "-k", "1000.0",
+                                "-w", "1000.0", "-r", "1.0", "-Q", "1000", "-n", "250000", "-t", "298.15", "--tp", "6.0",
+                                "--mcMD", "10", "--mcL", "0.10"},
+                        new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
+                                "true", "ost-temperOffset", "6.0", "randomseed", "445"},
+                        new String[]{"--mc", "true", "--ts", "true"}
+                },
+                {
+                        "Short 1-Step MC-OST Test",
+                        new String[]{"ffx/algorithms/structures/dualWell-cis.xyz", "ffx/algorithms/structures/dualWell-trans.xyz"},
+                        ThermoTestMode.FREE, false, 0, 2.0, null, null, null, null, null, null,
+                        new String[]{"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0", "-k", "1000.0",
+                                "-w", "1000.0", "-r", "0.01", "-Q", "100", "-n", "200", "-t", "100.0", "--tp", "6.0",
+                                "--mcMD", "10", "--mcL", "0.10"},
+                        new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
+                                "true", "ost-temperOffset", "6.0", "randomseed", "445"},
+                        new String[]{"--mc", "true"}
+                },
+                {
+                        "Short 2-Step MC-OST Test",
+                        new String[]{"ffx/algorithms/structures/dualWell-cis.xyz", "ffx/algorithms/structures/dualWell-trans.xyz"},
+                        ThermoTestMode.FREE, true, 0, 2.0, null, null, null, null, null, null,
+                        new String[]{"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0", "-k", "1000.0",
+                                "-w", "1000.0", "-r", "0.01", "-Q", "100", "-n", "200", "-t", "100.0", "--tp", "6.0",
+                                "--mcMD", "10", "--mcL", "0.10"},
+                        new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
+                                "true", "ost-temperOffset", "6.0", "randomseed", "445"},
+                        new String[]{"--mc", "true", "--ts", "true"}
                 }
         });
     }
@@ -820,7 +853,7 @@ public class ThermodynamicsTest extends PJDependentTest {
             this.filenames = Arrays.copyOf(filenames, nFiles);
             copiedFiles = new File[nFiles];
 
-            String[] copiedExtensions = new String[]{"dyn", "key", "properties", "his", "lam"};
+            String[] copiedExtensions = new String[]{"dyn", "key", "properties", "his", "lam", "prm"};
             for (int i = 0; i < nFiles; i++) {
                 File srcFile = new File("src/main/java/" + filenames[i]);
                 File tempFile = new File(tempDirName + FilenameUtils.getName(filenames[i]));

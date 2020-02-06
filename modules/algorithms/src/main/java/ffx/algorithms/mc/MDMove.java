@@ -37,18 +37,19 @@
 //******************************************************************************
 package ffx.algorithms.mc;
 
+import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
 
+import ffx.algorithms.cli.DynamicsOptions;
+import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
-import ffx.algorithms.dynamics.integrators.IntegratorEnum;
-import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 
@@ -68,27 +69,27 @@ public class MDMove implements MCMove {
     /**
      * Number of MD steps per move.
      */
-    private int mdSteps = 50;
+    private final long mdSteps;
     /**
      * Time step in femtoseconds.
      */
-    private double timeStep = 1.0;
+    private final double timeStep;
     /**
      * Print interval in picoseconds.
      */
-    private double printInterval = 0.05;
+    private final double printInterval;
     /**
      * Temperature in Kelvin.
      */
-    private double temperature = 298.15;
+    private final double temperature;
     /**
      * Number of MD moves.
      */
     private int mdMoveCounter = 0;
     /**
-     * MD save interval.
+     * Snapshot appending interval in psec.
      */
-    private final double saveInterval = 10000.0;
+    private final double saveInterval;
     /**
      * The total energy change for the current move.
      */
@@ -105,7 +106,18 @@ public class MDMove implements MCMove {
      * Potential to operate on.
      */
     private final Potential potential;
-
+    /**
+     * Kinetic energy at the start of the move.
+     */
+    private double initialKinetic;
+    /**
+     * Potential energy at the start of the move.
+     */
+    private double initialPotential;
+    /**
+     * Total energy at the start of the move.
+     */
+    private double initialTotal;
 
     /**
      * <p>Constructor for MDMove.</p>
@@ -114,44 +126,33 @@ public class MDMove implements MCMove {
      * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
      * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param requestedThermostat a {@link ThermostatEnum} object.
-     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+     * @param dynamics            CLI object containing key MD information.
+     * @param stepsPerCycle       Number of MD steps per MC cycle.
      */
     public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
                   CompositeConfiguration properties, AlgorithmListener listener,
-                  ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
+                  DynamicsOptions dynamics, long stepsPerCycle) {
         this.potential = potentialEnergy;
-        molecularDynamics = MolecularDynamics.dynamicsFactory(assembly,
-                potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+        molecularDynamics = MolecularDynamics.dynamicsFactory(assembly, potentialEnergy,
+                properties, listener, dynamics.thermostat, dynamics.integrator);
+        molecularDynamics.setAutomaticWriteouts(false);
 
-        // Ensure at least one interval is printed.
-        if (printInterval < mdSteps * timeStep) {
-            printInterval = mdSteps * timeStep;
-        }
+        timeStep = dynamics.getDt();
+        double dtPs = timeStep * Constants.FSEC_TO_PSEC;
+        mdSteps = stepsPerCycle;
 
         molecularDynamics.setVerbosityLevel(MolecularDynamics.VerbosityLevel.QUIET);
         molecularDynamics.setObtainVelAcc(false);
-    }
+        collectEnergies();
+        molecularDynamics.setRestartFrequency(dynamics.getCheckpoint());
+        this.saveInterval = dynamics.getSnapshotInterval();
 
-    /**
-     * <p>Setter for the field <code>temperature</code>.</p>
-     *
-     * @param temperature a double.
-     */
-    public void setTemperature(double temperature) {
-        this.temperature = temperature;
-    }
+        double requestedPrint = dynamics.getReport();
+        double maxPrintInterval = dtPs * mdSteps;
+        // Log at least once/cycle.
+        printInterval = Math.min(requestedPrint, maxPrintInterval);
 
-    /**
-     * <p>setMDParameters.</p>
-     *
-     * @param mdSteps  a int.
-     * @param timeStep a double.
-     */
-    public void setMDParameters(int mdSteps, double timeStep) {
-        this.mdSteps = mdSteps;
-        this.timeStep = timeStep;
-        printInterval = mdSteps * timeStep / 1000;
+        this.temperature = dynamics.getTemp();
     }
 
     /**
@@ -160,6 +161,15 @@ public class MDMove implements MCMove {
     @Override
     public void move() {
         move(MolecularDynamics.VerbosityLevel.QUIET);
+    }
+
+    private void collectEnergies() {
+        initialTotal = molecularDynamics.getInitialTotalEnergy();
+        initialKinetic = molecularDynamics.getInitialKineticEnergy();
+        initialPotential = molecularDynamics.getInitialPotentialEnergy();
+        // If total energy is non-tiny, assert that kinetic + potential = total to within tolerance.
+        assert Math.abs(initialTotal) < 1.0E-3 ||  Math.abs((initialKinetic + initialPotential - initialTotal) / initialTotal) < 1.0E-7;
+        // If there's ever a need to store run-terminal energies, do it here.
     }
 
     /**
@@ -172,7 +182,9 @@ public class MDMove implements MCMove {
         mdMoveCounter++;
 
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, true, null);
-        energyChange = molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();
+        // IMPORTANT: Initial energy as of the start of this run is not equal to initial energy at the end of the last run!
+        collectEnergies();
+        energyChange = molecularDynamics.getTotalEnergy() - initialTotal;
 
         if (molecularDynamics instanceof MolecularDynamicsOpenMM && logger.isLoggable(Level.FINE)) {
             energyDriftNet += energyChange;
@@ -198,13 +210,16 @@ public class MDMove implements MCMove {
         molecularDynamics.setIntervalSteps(intervalSteps);
     }
 
-    /**
-     * <p>getStartingKineticEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getStartingKineticEnergy() {
-        return molecularDynamics.getStartingKineticEnergy();
+    public double getInitialKinetic() {
+        return initialKinetic;
+    }
+
+    public double getInitialPotential() {
+        return initialPotential;
+    }
+
+    public double getInitialTotal() {
+        return initialTotal;
     }
 
     /**
@@ -238,6 +253,13 @@ public class MDMove implements MCMove {
     }
 
     /**
+     * Triggers MD to write out its stored snapshots in case of error.
+     */
+    public void writeErrorFiles() {
+        molecularDynamics.writeStoredSnapshots();
+    }
+
+    /**
      * Get the total energy change for the current move.
      *
      * @return Total energy change.
@@ -247,13 +269,11 @@ public class MDMove implements MCMove {
     }
 
     /**
-     * Write coordinate and velocity restart files out for MC-OST.
+     * Write restart and trajectory files if the provided step matches the frequency.
+     *
+     * @param mdStep MD step (not MC cycle number) to write files (if any) for.
      */
-    public void writeRestart() {
-        molecularDynamics.writeRestart();
-    }
-
-    public void writeLambdaThresholdRestart(double lambda, double lambdaWriteOut) {
-        molecularDynamics.writeLambdaThresholdRestart(lambda, lambdaWriteOut);
+    public EnumSet<MolecularDynamics.WriteActions> writeFilesForStep(long mdStep) {
+        return molecularDynamics.writeFilesForStep(mdStep);
     }
 }

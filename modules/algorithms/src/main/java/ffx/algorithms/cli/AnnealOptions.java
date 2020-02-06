@@ -159,15 +159,15 @@ public class AnnealOptions {
                                              AlgorithmListener alist, File dynFile) {
         AnnealingSchedule schedule = getSchedule();
         double totNormLen = schedule.totalWindowLength();
-        int totSteps = dynOpts.steps;
-        int perWindowSteps = (int) (totSteps / totNormLen);
+        long totSteps = dynOpts.steps;
+        long perWindowSteps = (long) (totSteps / totNormLen);
 
         if (totSteps > perWindowSteps * totNormLen) {
             ++perWindowSteps;
         }
 
-        int minWindowSteps = (int) (perWindowSteps * schedule.minWindowLength());
-        int maxWindowSteps = (int) (perWindowSteps * schedule.maxWindowLength());
+        long minWindowSteps = (long) (perWindowSteps * schedule.minWindowLength());
+        long maxWindowSteps = (long) (perWindowSteps * schedule.maxWindowLength());
         int nWindows = schedule.getNumWindows();
 
         if (minWindowSteps == maxWindowSteps && minWindowSteps == perWindowSteps) {

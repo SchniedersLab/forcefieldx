@@ -103,8 +103,8 @@ public final class VectorMath {
             sb = new StringBuilder(format(" %16s = [", "v"));
         }
 
-        for (int i = 0; i < v.length; i++) {
-            sb.append(format(" %16.8f", v[i]));
+        for (double value : v) {
+            sb.append(format(" %16.8f", value));
         }
         sb.append(" ]");
         logger.info(sb.toString());
