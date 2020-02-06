@@ -77,8 +77,8 @@ import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Hybrid36;
 import ffx.utilities.StringUtils;
-import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard;
 import static ffx.potential.bonded.BondedUtils.numberAtoms;
+import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard;
 import static ffx.potential.bonded.PolymerUtils.assignAtomTypes;
 import static ffx.potential.bonded.PolymerUtils.buildDisulfideBonds;
 import static ffx.potential.bonded.PolymerUtils.buildMissingResidues;
@@ -1252,7 +1252,7 @@ public final class PDBFilter extends SystemFilter {
      * @return Success of writing.
      */
     public boolean writeFile(File saveFile, boolean append, boolean printLinear, boolean writeEnd) {
-        return writeFile(saveFile, append, printLinear, Collections.emptySet(), writeEnd);
+        return writeFile(saveFile, append, printLinear, Collections.emptySet(), writeEnd, true);
     }
 
     /**
@@ -1264,9 +1264,11 @@ public final class PDBFilter extends SystemFilter {
      * @param printLinear Whether to print atoms linearly or by element.
      * @param toExclude   A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
      * @param writeEnd    True if this is the final model.
+     * @param versioning  True if the file being saved to should be versioned. False if the file being saved to should
+     *                    be overwritten.
      * @return Success of writing.
      */
-    public boolean writeFile(File saveFile, boolean append, boolean printLinear, Set<Atom> toExclude, boolean writeEnd) {
+    public boolean writeFile(File saveFile, boolean append, boolean printLinear, Set<Atom> toExclude, boolean writeEnd, boolean versioning) {
         if (standardizeAtomNames) {
             renameAtomsToPDBStandard(activeMolecularAssembly);
         }
@@ -1297,8 +1299,7 @@ public final class PDBFilter extends SystemFilter {
         try {
             File newFile = saveFile;
             if (!append) {
-                boolean noVersioning = false;
-                if (!noVersioning) {
+                if (versioning) {
                     newFile = version(saveFile);
                 }
             } else if (modelsWritten >= 0) {
@@ -1664,6 +1665,18 @@ public final class PDBFilter extends SystemFilter {
     @Override
     public boolean writeFile(File saveFile, boolean append) {
         return writeFile(saveFile, append, false, true);
+    }
+
+    /**
+     * Writes out the atomic information in PDB format.
+     *
+     * @param saveFile   The file to save information to.
+     * @param append     True if the current data should be appended to the saveFile (as in arc files).
+     * @param versioning True if the saveFile should be versioned. False if the saveFile should be overwritten.
+     * @return Success of writing.
+     */
+    public boolean writeFile(File saveFile, boolean append, boolean versioning) {
+        return writeFile(saveFile, append, false, Collections.emptySet(), true, versioning);
     }
 
     /**

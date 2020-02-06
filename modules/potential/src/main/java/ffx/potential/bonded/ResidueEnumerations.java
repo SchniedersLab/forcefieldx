@@ -64,6 +64,24 @@ public class ResidueEnumerations {
     }
 
     /**
+     * This method takes a one letter amino acid code and converts it to a three letter amino acid code. This method
+     * relies on the AminoAcid1 and AminoAcid3 enums having amino acids in exactly the same order.
+     *
+     * @param residueName The one letter amino acid code.
+     * @return The three letter amino acid code.
+     */
+    public static AminoAcid3 getAminoAcid3From1(String residueName) {
+        for (AminoAcid1 aminoAcid : aminoAcid1List) {
+            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+                int position = AminoAcid1.valueOf(residueName).ordinal();
+                AminoAcid3 aminoAcid3 = AminoAcid3.values()[position];
+                return aminoAcid3;
+            }
+        }
+        return AminoAcid3.UNK;
+    }
+
+    /**
      * <p>getAminoAcidNumber.</p>
      *
      * @param residueName a {@link java.lang.String} object.
@@ -80,6 +98,9 @@ public class ResidueEnumerations {
         return aminoAcidNumber;
     }
 
+    /**
+     * Single letter amino acid codes (need to
+     */
     public enum AminoAcid1 {
 
         G, A, V, L, I, S, T, C, X, c,
@@ -131,6 +152,11 @@ public class ResidueEnumerations {
      * Constant <code>aminoAcidList</code>
      */
     public static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
+
+    /**
+     * List of values from the AminoAcid1 enum.
+     */
+    public static final List<AminoAcid1> aminoAcid1List = Arrays.asList(AminoAcid1.values());
 
     /**
      * Constant <code>nucleicAcidList</code>
