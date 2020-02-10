@@ -59,8 +59,6 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.asin;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -1301,6 +1299,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         protected final int rank;
         private boolean independentWalkers = false;
+
         /**
          * Flag to indicate if OST should send and receive counts between processes
          * synchronously or asynchronously. The latter can be faster by ~40% because
@@ -1311,25 +1310,13 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * The CountReceiveThread accumulates OST statistics from multiple asynchronous walkers.
          */
-        private final CountReceiveThread receiveThread;
-        /**
-         * The recursionWeights stores the [Lambda, FLambda] weight for each
-         * process. Therefore the array is of size [number of Processes][2].
-         * <p>
-         * Each 2 entry array must be wrapped inside a Parallel Java DoubleBuf for the
-         * All-Gather communication calls.
-         */
-        private final double[][] recursionWeights;
-        private final double[] myRecursionWeight;
-        /**
-         * These DoubleBufs wrap the recursionWeight arrays.
-         */
-        private final DoubleBuf[] recursionWeightsBuf;
-        private final DoubleBuf myRecursionWeightBuf;
+        private final AsynchronousSend asynchronousSend;
+        private final SynchronousSend synchronousSend;
+
         /**
          * Most recent lambda values for each Walker.
          */
-        private final double[] currentLambdaValues;
+        private double[] currentLambdaValues;
 
         /**
          * Histogram constructor.
@@ -1423,22 +1410,18 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             rank = world.rank();
             if (asynchronous) {
                 // Use asynchronous communication.
-                myRecursionWeight = new double[4];
-                myRecursionWeightBuf = DoubleBuf.buffer(myRecursionWeight);
-                receiveThread = new CountReceiveThread(this);
-                receiveThread.start();
-                recursionWeights = null;
-                recursionWeightsBuf = null;
+                asynchronousSend = new AsynchronousSend(this);
+                asynchronousSend.start();
+                synchronousSend = null;
             } else {
-                // Use synchronous communication.
-                recursionWeights = new double[numProc][3];
-                recursionWeightsBuf = new DoubleBuf[numProc];
+                Histogram[] histograms = new Histogram[numProc];
+                int[] rankToHistogramMap = new int[numProc];
                 for (int i = 0; i < numProc; i++) {
-                    recursionWeightsBuf[i] = DoubleBuf.buffer(recursionWeights[i]);
+                    histograms[i] = this;
+                    rankToHistogramMap[i] = 0;
                 }
-                myRecursionWeight = recursionWeights[rank];
-                myRecursionWeightBuf = recursionWeightsBuf[rank];
-                receiveThread = null;
+                synchronousSend = new SynchronousSend(histograms, rankToHistogramMap, independentWalkers);
+                asynchronousSend = null;
             }
             currentLambdaValues = new double[world.size()];
 
@@ -1453,6 +1436,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         public void setIndependentWalkers(boolean independentWalkers) {
             this.independentWalkers = independentWalkers;
+            if (synchronousSend != null) {
+                synchronousSend.setIndependentWalkers(independentWalkers);
+            }
         }
 
         /**
@@ -1462,6 +1448,22 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         public boolean getIndependentWalkers() {
             return independentWalkers;
+        }
+
+        public boolean getResetStatistics() {
+            return resetStatistics;
+        }
+
+        public void setResetStatistics(boolean resetStatistics) {
+            this.resetStatistics = resetStatistics;
+        }
+
+        public double getLambdaResetValue() {
+            return lambdaResetValue;
+        }
+
+        public void setCurrentLambdaValues(double[] currentLambdaValues) {
+            this.currentLambdaValues = currentLambdaValues;
         }
 
         /**
@@ -2249,9 +2251,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         void addBias(double dEdU, double[] x, double[] gradient) {
             // Communicate adding the bias to all walkers.
             if (asynchronous) {
-                asynchronousSend(lambda, dEdU);
+                asynchronousSend.send(lambda, dEdU, temperingWeight);
             } else {
-                synchronousSend(lambda, dEdU);
+                synchronousSend.send(lambda, dEdU, temperingWeight);
             }
             biasCount++;
 
@@ -2319,94 +2321,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * Send an OST count to all other processes while also receiving an OST
-         * count from all other processes.
-         *
-         * @param lambda Current value of lambda.
-         * @param dUdL   Current value of dU/dL.
-         */
-        private void synchronousSend(double lambda, double dUdL) {
-            // All-Gather counts from each walker.
-            myRecursionWeight[0] = lambda;
-            myRecursionWeight[1] = dUdL;
-            myRecursionWeight[2] = temperingWeight;
-            try {
-                world.allGather(myRecursionWeightBuf, recursionWeightsBuf);
-            } catch (IOException ex) {
-                String message = " Multi-walker OST allGather failed.";
-                logger.log(Level.SEVERE, message, ex);
-            }
-
-            // Find the minimum and maximum FLambda bin for the gathered counts.
-            double minRequired = Double.MAX_VALUE;
-            double maxRequired = Double.MIN_VALUE;
-            for (int i = 0; i < numProc; i++) {
-
-                // Only include this walkers bias.
-                if (independentWalkers && i != rank) {
-                    continue;
-                }
-
-                minRequired = min(minRequired, recursionWeights[i][1]);
-                maxRequired = max(maxRequired, recursionWeights[i][1]);
-            }
-
-            // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
-            checkRecursionKernelSize(minRequired);
-            checkRecursionKernelSize(maxRequired);
-
-            // Increment the Recursion Kernel based on the input of each walker.
-            for (int i = 0; i < numProc; i++) {
-                currentLambdaValues[i] = recursionWeights[i][0];
-
-                // Only include this walkers bias.
-                if (independentWalkers && i != rank) {
-                    continue;
-                }
-
-                int walkerLambda = binForLambda(recursionWeights[i][0]);
-                int walkerFLambda = binForFLambda(recursionWeights[i][1]);
-                double weight = recursionWeights[i][2];
-
-                // If the weight is less than 1.0, then a walker has activated tempering.
-                if (!tempering && weight < 1.0) {
-                    tempering = true;
-                    logger.info(format(" Tempering activated due to received weight of (%8.6f)", weight));
-                }
-
-                if (resetStatistics && recursionWeights[i][0] > lambdaResetValue) {
-                    allocateRecursionKernel();
-                    resetStatistics = false;
-                    logger.info(format(" Cleared OST histogram (Lambda = %6.4f).", recursionWeights[i][0]));
-                }
-
-                addToRecursionKernelValue(walkerLambda, walkerFLambda, weight);
-            }
-        }
-
-        /**
-         * Send an OST count to all other processes.
-         *
-         * @param lambda Current value of lambda.
-         * @param dUdL   Current value of dU/dL.
-         */
-        private void asynchronousSend(double lambda, double dUdL) {
-            myRecursionWeight[0] = world.rank();
-            myRecursionWeight[1] = lambda;
-            myRecursionWeight[2] = dUdL;
-            myRecursionWeight[3] = temperingWeight;
-
-            for (int i = 0; i < numProc; i++) {
-                try {
-                    world.send(i, myRecursionWeightBuf);
-                } catch (Exception ex) {
-                    String message = " Asynchronous Multiwalker OST send failed.";
-                    logger.log(Level.SEVERE, message, ex);
-                }
-            }
-        }
-
-        /**
          * Update a local array of current lambda values for each walker.
          *
          * @param rank   Walker rank.
@@ -2417,14 +2331,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         void destroy() {
-            if (receiveThread != null && receiveThread.isAlive()) {
+            if (asynchronousSend != null && asynchronousSend.isAlive()) {
                 double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
                 DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
                 try {
                     logger.fine(" Sending the termination message.");
                     world.send(rank, killBuf);
                     logger.fine(" Termination message was sent successfully.");
-                    logger.fine(format(" Receive thread alive %b status %s", receiveThread.isAlive(), receiveThread.getState()));
+                    logger.fine(format(" Receive thread alive %b status %s", asynchronousSend.isAlive(), asynchronousSend.getState()));
                 } catch (Exception ex) {
                     String message = format(" Asynchronous Multiwalker OST termination signal " +
                             "failed to be sent for process %d.", rank);
