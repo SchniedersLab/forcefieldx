@@ -194,11 +194,21 @@ public class LambdaMove implements MCMove {
         isContinuous = continuous;
     }
 
+    /**
+     * Pulls a delta-lambda from a continuous Gaussian distribution.
+     *
+     * @return A random Gaussian value with width of moveSize.
+     */
     private double continuousMove() {
         // Draw a trial move from the distribution.
         return random.nextGaussian() * moveSize;
     }
 
+    /**
+     * Pulls a continuous lambda move of width moveSize.
+     *
+     * @return +/- moveSize (never 0)
+     */
     private double discreteMove() {
         // Make a discrete move.
         double dL = moveSize;
