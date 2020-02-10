@@ -65,9 +65,15 @@ public class LambdaMove implements MCMove {
      */
     private Random random;
     /**
-     * Lambda move standard deviation.
+     * Lambda move size:
+     * 1) The standard deviation for continuous moves from a Gaussian distribution.
+     * 2) The step size for discrete moves.
      */
-    private double stdDev = 0.1;
+    private double moveSize = 0.1;
+    /**
+     * If true, do continuous moves. Otherwise, use discrete moves.
+     */
+    private boolean isContinuous = true;
 
     /**
      * <p>Constructor for LambdaMove.</p>
@@ -91,23 +97,19 @@ public class LambdaMove implements MCMove {
     }
 
     /**
-     * <p>Setter for the field <code>stdDev</code>.</p>
-     *
-     * @param stdDev a double.
-     */
-    public void setStdDev(double stdDev) {
-        this.stdDev = stdDev;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
     public void move() {
         currentLambda = orthogonalSpaceTempering.getLambda();
 
-        // Draw a trial move from the distribution.
-        double dL = random.nextGaussian() * stdDev;
+        // Draw a trial move.
+        double dL;
+        if (isContinuous()) {
+            dL = continuousMove();
+        } else {
+            dL = discreteMove();
+        }
         double newLambda = currentLambda + dL;
 
         // Map values into the range 0.0 .. 1.0 using mirror boundary conditions.
@@ -130,11 +132,48 @@ public class LambdaMove implements MCMove {
     }
 
     /**
-     * Get the Lambda move standard deviation.
+     * Get the Lambda move size, which is a standard deviation for continuous moves or step size for discrete moves.
      *
-     * @return The standard deviation of the lambda move.
+     * @param moveSize a double.
      */
-    public double getStandardDeviation() {
-        return stdDev;
+    public void setMoveSize(double moveSize) {
+        this.moveSize = moveSize;
+    }
+
+    /**
+     * Get the Lambda move size, which is a standard deviation for continuous moves or step size for discrete moves.
+     *
+     * @return The lambda move size.
+     */
+    public double getMoveSize() {
+        return moveSize;
+    }
+
+    /**
+     * If true, do continuous moves. Otherwise, use discrete moves.
+     */
+    public boolean isContinuous() {
+        return isContinuous;
+    }
+
+    /**
+     * If true, do continuous moves. Otherwise, use discrete moves.
+     */
+    public void setContinuous(boolean continuous) {
+        isContinuous = continuous;
+    }
+
+    private double continuousMove() {
+        // Draw a trial move from the distribution.
+        return random.nextGaussian() * moveSize;
+    }
+
+    private double discreteMove() {
+        // Make a discrete move.
+        double dL = moveSize;
+        if (random.nextBoolean()) {
+            dL = -moveSize;
+        }
+        return dL;
     }
 }
