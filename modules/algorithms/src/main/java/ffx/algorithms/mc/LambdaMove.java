@@ -108,17 +108,53 @@ public class LambdaMove implements MCMove {
 
         // Draw a trial move from the distribution.
         double dL = random.nextGaussian() * stdDev;
-        double newLambda = currentLambda + dL;
-
-        // Map values into the range 0.0 .. 1.0 using mirror boundary conditions.
-        if (newLambda > 1.0) {
-            newLambda = (2.0 - newLambda);
-        } else if (newLambda < 0.0) {
-            newLambda = abs(newLambda);
-        }
+        double newLambda = mirror(currentLambda, dL);
 
         // Update the OST instance.
         orthogonalSpaceTempering.setLambda(newLambda);
+    }
+
+    /**
+     * Applies 0-1 mirroring conditions to lam + dL. Skips any moves where
+     * dL is greater than 1 or less than -1, and skips 50% of moves from
+     * 0 or 1 (exact).
+     *
+     * @param lam Initial lambda.
+     * @param dL  Change in lambda.
+     * @return    Correctly mirrored lam + dL
+     */
+    private double mirror(double lam, double dL) {
+        // Telescope to public static method because a public static method
+        // may be useful in the future.
+        return mirror(random, lam, dL);
+    }
+
+    /**
+     * Applies 0-1 mirroring conditions to lam + dL. Skips any moves where
+     * dL is greater than 1 or less than -1, and skips 50% of moves from
+     * 0 or 1 (exact).
+     *
+     * @param random Source of randomness.
+     * @param lam    Initial lambda.
+     * @param dL     Change in lambda.
+     * @return       Correctly mirrored lam + dL
+     */
+    public static double mirror(Random random, double lam, double dL) {
+        if (lam == 0 || lam == 1) {
+            boolean skip = random.nextBoolean();
+            if (skip) {
+                return lam;
+            }
+        }
+        // Eliminate really weird edge cases.
+        if (Math.abs(dL) > 1.0) {
+            logger.warning(String.format(" Skipping extremely large lambda move of %.3f not between -1 and +1", dL));
+            return lam;
+        }
+        // Math.abs to mirror negative values.
+        double newLam = Math.abs(lam + dL);
+        // If greater than 1, mirror via 2.0 - val
+        return newLam <= 1.0 ? newLam : 2.0 - newLam;
     }
 
     /**
