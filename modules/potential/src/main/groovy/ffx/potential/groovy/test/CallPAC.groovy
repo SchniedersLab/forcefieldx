@@ -271,7 +271,9 @@ class CallPAC extends PotentialScript {
 //            logger.info(String.format((key+" ==> "+envMap.get(key));
 //        }
         // Run this on Windows, cmd, /c = terminate after this run
-        processBuilder.command("/bin/bash", "-c", "/Users/anessler/Research/MTPC/PACCOM/src_bin_analysis_forFFX_33_Aaron_org/comp_rmsd_33_ffx_L");
+        processBuilder.command("/bin/bash", "-c", "comp_rmsd_33_ffx_L");
+//        processBuilder.command("/bin/bash", "-c", "/Users/anessler/Research/MTPC/PACCOM/src_bin_analysis_forFFX_33_Aaron_org/comp_rmsd_33_ffx_L");
+
 
         try {
             logger.info(String.format("Running PACCOM"));
@@ -334,21 +336,21 @@ class CallPAC extends PotentialScript {
             e.printStackTrace();
         }
 
-        if (data33.exists()){
-            data33.delete()
-        }
-        if (structs1.exists()) {
-            structs1.delete()
-        }
-        if (props1.exists()) {
-            props1.delete()
-        }
-        if (structs2.exists()) {
-            structs2.delete()
-        }
-        if (props2.exists()) {
-            props2.delete()
-        }
+//        if (data33.exists()){
+//            data33.delete()
+//        }
+//        if (structs1.exists()) {
+//            structs1.delete()
+//        }
+//        if (props1.exists()) {
+//            props1.delete()
+//        }
+//        if (structs2.exists()) {
+//            structs2.delete()
+//        }
+//        if (props2.exists()) {
+//            props2.delete()
+//        }
 
         return this
     }
