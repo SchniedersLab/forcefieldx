@@ -360,6 +360,7 @@ public class ForceFieldFilter {
     private void parse(String input, BufferedReader br) {
 
         // Split the line on the pound symbol to remove comments.
+        String originalInput = input;
         String[] inputs = input.split("#");
 
         if (inputs.length < 1) {
@@ -448,7 +449,9 @@ public class ForceFieldFilter {
                     baseType = RelativeSolvationType.parse(input, tokens);
                     break;
                 case SOLUTE:
-                    baseType = SoluteType.parse(input, tokens);
+                    // SOLUTE lines can't be split on #'s because of SMARTS strings syntax
+                    baseType = SoluteType.parse(originalInput,originalInput.trim().split(" +"));
+                    //baseType = SoluteType.parse(input, tokens);
                     break;
                 default:
                     logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
