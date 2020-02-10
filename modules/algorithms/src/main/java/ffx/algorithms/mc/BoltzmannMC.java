@@ -78,16 +78,28 @@ public abstract class BoltzmannMC implements MetropolisMC {
      */
     @Override
     public boolean evaluateMove(double e1, double e2) {
+        return evaluateMove(random, kbTinv, e1, e2);
+    }
+
+    /**
+     * <p>
+     * Boltzmann-weighted acceptance probability
+     *
+     * @param random Source of randomness
+     * @param invKT  1.0 / (Boltzmann constant * temperature)
+     * @param e1     Energy before move
+     * @param e2     Proposed energy
+     * @return       Whether to accept the move.
+     */
+    public static boolean evaluateMove(Random random, double invKT, double e1, double e2) {
         if (e2 <= e1) {
             return true;
         } else {
             // p(X) = exp(-U(X)/kb*T)
-            double prob = exp(kbTinv * (e2 - e1));
-
+            double prob = exp(invKT * (e2 - e1));
             assert (prob >= 0.0 && prob <= 1.0) : "Probability of a Monte Carlo move up in energy should be 0-1";
 
             double trial = random.nextDouble();
-
             return (trial <= prob);
         }
     }

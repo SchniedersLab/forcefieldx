@@ -276,4 +276,8 @@ public class MDMove implements MCMove {
     public EnumSet<MolecularDynamics.WriteActions> writeFilesForStep(long mdStep) {
         return molecularDynamics.writeFilesForStep(mdStep);
     }
+
+    public MolecularDynamics getMD() {
+        return molecularDynamics;
+    }
 }
