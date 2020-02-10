@@ -232,7 +232,7 @@ public class MonteCarloOST extends BoltzmannMC {
      * @param stdDev a double.
      */
     public void setLambdaStdDev(double stdDev) {
-        lambdaMove.setStdDev(stdDev);
+        lambdaMove.setMoveSize(stdDev);
     }
 
     /**
