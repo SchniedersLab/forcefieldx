@@ -1,6 +1,7 @@
 package ffx.algorithms.thermodynamics;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -113,6 +114,7 @@ public class SynchronousSend {
         myRecursionWeight[0] = lambda;
         myRecursionWeight[1] = dUdL;
         myRecursionWeight[2] = temperingWeight;
+
         try {
             world.allGather(myRecursionWeightBuf, recursionWeightsBuf);
         } catch (IOException ex) {
@@ -147,7 +149,7 @@ public class SynchronousSend {
             int walkerLambda = currentHistogram.binForLambda(recursionWeights[i][0]);
             int walkerFLambda = currentHistogram.binForFLambda(recursionWeights[i][1]);
             double weight = recursionWeights[i][2];
-
+            
             // If the weight is less than 1.0, then a walker has activated tempering.
             boolean tempering = currentHistogram.isTempering();
             if (!tempering && weight < 1.0) {
@@ -167,4 +169,17 @@ public class SynchronousSend {
         }
     }
 
+    public int[] getRankToHistogramMap() {
+        return Arrays.copyOf(rankToHistogramMap, rankToHistogramMap.length);
+    }
+
+    /**
+     * Update the map of rank-to-histogram.
+     *
+     * @param updatedRankToHisto Updated rank-to-histogram mappings.
+     */
+    public void updateRanks(int[] updatedRankToHisto) {
+        assert updatedRankToHisto.length == rankToHistogramMap.length;
+        System.arraycopy(updatedRankToHisto, 0, rankToHistogramMap, 0, rankToHistogramMap.length);
+    }
 }

@@ -37,6 +37,8 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
+import ffx.algorithms.thermodynamics.MonteCarloOST
+
 import java.util.stream.Collectors
 
 import org.apache.commons.configuration2.Configuration
@@ -76,34 +78,34 @@ import picocli.CommandLine
 class Thermodynamics extends AlgorithmsScript {
 
     @CommandLine.Mixin
-    private AlchemicalOptions alchemical
+    AlchemicalOptions alchemical
 
     @CommandLine.Mixin
-    private TopologyOptions topology
+    TopologyOptions topology
 
     @CommandLine.Mixin
-    private BarostatOptions barostat
+    BarostatOptions barostat
 
     @CommandLine.Mixin
-    private DynamicsOptions dynamics
+    DynamicsOptions dynamics
 
     @CommandLine.Mixin
-    private WriteoutOptions writeout
+    WriteoutOptions writeout
 
     @CommandLine.Mixin
-    private LambdaParticleOptions lambdaParticle
+    LambdaParticleOptions lambdaParticle
 
     @CommandLine.Mixin
-    private MultiDynamicsOptions multidynamics
+    MultiDynamicsOptions multidynamics
 
     @CommandLine.Mixin
-    private OSTOptions ostOptions
+    OSTOptions ostOptions
 
     @CommandLine.Mixin
-    private RandomSymopOptions randomSymop
+    RandomSymopOptions randomSymop
 
     @CommandLine.Mixin
-    private ThermodynamicsOptions thermodynamics
+    ThermodynamicsOptions thermodynamics
 
     /**
      * -r or --rectangular uses a rectangular prism as the output rather than a cube;
@@ -111,7 +113,7 @@ class Thermodynamics extends AlgorithmsScript {
      */
     @CommandLine.Option(names = ['-v', '--verbose'],
             description = "Log additional information (primarily for MC-OST).")
-    private boolean verbose = false;
+    boolean verbose = false;
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -119,12 +121,12 @@ class Thermodynamics extends AlgorithmsScript {
     @CommandLine.Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
-    private int threadsAvail = ParallelTeam.getDefaultThreadCount()
-    private int threadsPer = threadsAvail
+    int threadsAvail = ParallelTeam.getDefaultThreadCount()
+    int threadsPer = threadsAvail
     MolecularAssembly[] topologies
     CrystalPotential potential
     OrthogonalSpaceTempering orthogonalSpaceTempering = null
-    private Configuration additionalProperties
+    Configuration additionalProperties
 
     /**
      * Sets an optional Configuration with additional properties.
@@ -209,7 +211,7 @@ class Thermodynamics extends AlgorithmsScript {
 
         File lambdaRestart = new File(withRankName + ".lam")
         File dyn = new File(withRankName + ".dyn")
-        if (ostOptions.independentWalkers) {
+        if (ostOptions.getIndependentWalkers()) {
             histogramRestart = new File(withRankName + ".his");
         }
 
@@ -285,10 +287,12 @@ class Thermodynamics extends AlgorithmsScript {
             CrystalPotential ostPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
                     dynamics, lambdaParticle, barostat, hisExists)
             if (ostOptions.mc) {
-                ostOptions.beginMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose, algorithmListener);
+                MonteCarloOST mcOST = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose, algorithmListener);
+                ostOptions.beginMCOST(mcOST);
             } else {
                 ostOptions.beginMDOST(orthogonalSpaceTempering, topologies, ostPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
             }
+
             logger.info(" Done running OST");
         } else {
             orthogonalSpaceTempering = null;
