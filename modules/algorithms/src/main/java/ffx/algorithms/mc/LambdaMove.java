@@ -39,7 +39,8 @@ package ffx.algorithms.mc;
 
 import java.util.Random;
 import java.util.logging.Logger;
-import static java.lang.Math.abs;
+
+import static org.apache.commons.math3.util.FastMath.abs;
 
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
 
@@ -144,12 +145,12 @@ public class LambdaMove implements MCMove {
             }
         }
         // Eliminate really weird edge cases.
-        if (Math.abs(dL) > 1.0) {
-            logger.warning(String.format(" Skipping extremely large lambda move of %.3f not between -1 and +1", dL));
+        if (abs(dL) > 1.0) {
+            logger.warning(String.format(" Skipping large lambda move of %.3f not between -1 and +1", dL));
             return lam;
         }
         // Math.abs to mirror negative values.
-        double newLam = Math.abs(lam + dL);
+        double newLam = abs(lam + dL);
         // If greater than 1, mirror via 2.0 - val
         return newLam <= 1.0 ? newLam : 2.0 - newLam;
     }

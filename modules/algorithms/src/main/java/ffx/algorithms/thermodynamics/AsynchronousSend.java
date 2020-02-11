@@ -174,6 +174,11 @@ class AsynchronousSend extends Thread {
             int walkerFLambda = histogram.binForFLambda(fLambda);
             double weight = recursionCount[3];
 
+            // In the case of using a bias magnitude of zero (i.e. no 2D bias) add a count of 1.0.
+            if (histogram.biasMag <= 0.0) {
+                weight = 1.0;
+            }
+
             // If the weight is less than 1.0, then a walker has activated tempering.
             if (!histogram.isTempering() && weight < 1.0) {
                 histogram.setTempering(true);
