@@ -194,6 +194,13 @@ public class MonteCarloOST extends BoltzmannMC {
             lambdaMove = new LambdaMove(orthogonalSpaceTempering);
         }
 
+        boolean discreteLambda = properties.getBoolean("discrete-lambda", false);
+        if (discreteLambda) {
+            lambdaMove.setContinuous(false);
+            // Set the move size to the Lambda bin width.
+            lambdaMove.setMoveSize(orthogonalSpaceTempering.getHistogram().dL);
+        }
+
         // Changing the value of lambda will be handled by this class, as well as adding the time dependent bias.
         orthogonalSpaceTempering.setPropagateLambda(false);
         biasDepositionFrequency = properties.getInt("mc-ost-biasf", 1);
@@ -245,6 +252,13 @@ public class MonteCarloOST extends BoltzmannMC {
      * @param stdDev a double.
      */
     public void setLambdaStdDev(double stdDev) {
+        if (!lambdaMove.isContinuous()) {
+            if (stdDev != orthogonalSpaceTempering.getHistogram().dL) {
+                logger.info(format(" Requested Lambda step size change %6.4f is not equal to OST bin width %6.4f.",
+                        stdDev, orthogonalSpaceTempering.getHistogram().dL));
+                return;
+            }
+        }
         lambdaMove.setMoveSize(stdDev);
     }
 
