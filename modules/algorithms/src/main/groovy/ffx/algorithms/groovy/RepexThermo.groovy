@@ -238,7 +238,7 @@ class RepexThermo extends Thermodynamics {
                 boolean hisExists = rankIHisto.exists();
 
                 orthogonalSpaceTempering = ostOptions.constructOST(potential, lambdaRestart, rankIHisto, topologies[0],
-                        additionalProperties, dynamics, thermodynamics, algorithmListener, false);
+                        additionalProperties, dynamics, thermodynamics, algorithmListener, false, i);
                 allOST[i] = orthogonalSpaceTempering;
 
                 if (!lamExists) {

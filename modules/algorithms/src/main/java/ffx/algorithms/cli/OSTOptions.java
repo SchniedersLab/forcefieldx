@@ -231,7 +231,7 @@ public class OSTOptions {
                                                  MolecularAssembly firstAssembly, Configuration addedProperties,
                                                  DynamicsOptions dynamics, MultiDynamicsOptions mdo, ThermodynamicsOptions thermo,
                                                  AlgorithmListener aListener) {
-        return constructOST(potential, lambdaRestart, histogramRestart, firstAssembly, addedProperties, dynamics, thermo, aListener, !mdo.isSynchronous());
+        return constructOST(potential, lambdaRestart, histogramRestart, firstAssembly, addedProperties, dynamics, thermo, aListener, !mdo.isSynchronous(), 0);
     }
 
     /**
@@ -247,12 +247,13 @@ public class OSTOptions {
      * @param thermo           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
      * @param aListener        a {@link ffx.algorithms.AlgorithmListener} object.
      * @param async            If OST should use asynchronous communications.
+     * @param replicateNum     Index of the replicate (0 for non-repex OST).
      * @return a {@link OrthogonalSpaceTempering} object.
      */
     public OrthogonalSpaceTempering constructOST(CrystalPotential potential, File lambdaRestart, File histogramRestart,
                                                  MolecularAssembly firstAssembly, Configuration addedProperties,
                                                  DynamicsOptions dynamics, ThermodynamicsOptions thermo,
-                                                 AlgorithmListener aListener, boolean async) {
+                                                 AlgorithmListener aListener, boolean async, int replicateNum) {
 
         LambdaInterface linter = (LambdaInterface) potential;
         CompositeConfiguration allProperties = new CompositeConfiguration(firstAssembly.getProperties());
@@ -270,7 +271,8 @@ public class OSTOptions {
         Histogram histogram = orthogonalSpaceTempering.getHistogram();
         histogram.checkRecursionKernelSize();
         histogram.setIndependentWalkers(independentWalkers);
-        histogram.setTemperingThreshold(temperThreshold[0]);
+        histogram.setTemperingThreshold(temperThreshold[replicateNum]);
+        histogram.setTemperingParameter(temperParam[replicateNum]);
 
         // Do NOT run applyOSTOptions here, because that can mutate the OST to a Barostat.
         return orthogonalSpaceTempering;
