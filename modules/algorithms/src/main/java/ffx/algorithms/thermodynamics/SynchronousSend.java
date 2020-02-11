@@ -148,12 +148,7 @@ public class SynchronousSend {
             int walkerLambda = currentHistogram.binForLambda(recursionWeights[i][0]);
             int walkerFLambda = currentHistogram.binForFLambda(recursionWeights[i][1]);
             double weight = recursionWeights[i][2];
-
-            // In the case of using a bias magnitude of zero (i.e. no 2D bias) add a count of 1.0.
-            if (currentHistogram.biasMag <= 0.0) {
-                weight = 1.0;
-            }
-
+            
             // If the weight is less than 1.0, then a walker has activated tempering.
             boolean tempering = currentHistogram.isTempering();
             if (!tempering && weight < 1.0) {
