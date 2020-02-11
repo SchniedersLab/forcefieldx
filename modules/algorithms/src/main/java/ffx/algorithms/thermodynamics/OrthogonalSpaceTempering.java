@@ -45,6 +45,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -306,11 +307,15 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         // Load the OST lambda restart file if it exists.
         if (lambdaFile != null && lambdaFile.exists()) {
             try {
-                LambdaReader lambdaReader = new LambdaReader(this, new FileReader(lambdaFile));
+                LambdaReader lambdaReader = new LambdaReader(new FileReader(lambdaFile));
                 lambdaReader.readLambdaFile(resetNumSteps);
+                lambdaReader.setVariables(this);
+                lambdaReader.close();
                 logger.info(format("\n Continuing OST lambda from %s.", lambdaFile.getName()));
             } catch (FileNotFoundException ex) {
                 logger.info(" Lambda restart file could not be found and will be ignored.");
+            } catch (IOException ioe) {
+                logger.warning(" Could not close lambda restart file reader!");
             }
         }
 
@@ -640,6 +645,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         } else {
             logger.info(" OST count interval must be greater than 0.");
         }
+    }
+
+    /**
+     * Set the number of counts.
+     * @param counts
+     */
+    public void setEnergyCount(long counts) {
+        this.energyCount = counts;
     }
 
     public void setMolecularAssembly(MolecularAssembly molecularAssembly) {
@@ -1430,6 +1443,26 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
+         * Return the SynchronousSend associated with this Histogram, if any.
+         *
+         * @return The SynchronousSend, if any.
+         */
+        public Optional<SynchronousSend> getSynchronousSend() {
+            return Optional.ofNullable(synchronousSend);
+        }
+
+        /**
+         * Sets the tempering threshold/offset in kcal/mol; is ignored if given a negative value.
+         *
+         * @param threshold Threshold to set: ignored if < 0.
+         */
+        public void setTemperingThreshold(double threshold) {
+            if (threshold >= 0) {
+                temperOffset = threshold;
+            } // Else, silently keep the default value set by property.
+        }
+
+        /**
          * For MPI parallel jobs, set if the walkers are independent (i.e. contribute to only their own histogram).
          *
          * @param independentWalkers If true, the walkers will be independent.
@@ -1456,6 +1489,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
         public void setResetStatistics(boolean resetStatistics) {
             this.resetStatistics = resetStatistics;
+        }
+
+        public void setHalfThetaVelocity(double halfThetaV) {
+            halfThetaVelocity = halfThetaV;
         }
 
         public double getLambdaResetValue() {
