@@ -42,6 +42,7 @@ import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 
 import ffx.algorithms.cli.DynamicsOptions;
+import ffx.algorithms.cli.RepexOSTOptions;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.utilities.Constants;
@@ -53,6 +54,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
+import java.util.logging.Logger;
 
 /**
  * An implementation of RepEx between Orthogonal Space Tempering potentials.
@@ -62,6 +64,8 @@ import java.util.function.LongConsumer;
  * @since 1.0
  */
 public class RepExOST {
+    private static final Logger logger = Logger.getLogger(RepExOST.class.getName());
+
     private final OrthogonalSpaceTempering[] osts;
     private final SynchronousSend[] sends;
     private final LongConsumer algoRun;
@@ -186,14 +190,18 @@ public class RepExOST {
             Arrays.stream(mcOSTs).forEach((MonteCarloOST mco) -> mco.setEquilibration(equilibrate));
         }
         for (int i = 0; i < numExchanges; i++) {
+            logger.info(String.format(" Beginning of repex loop %d", i));
             world.barrier(mainLoopTag);
             algoRun.accept(stepsBetweenExchanges);
             for (int j = 0; j < numPairs; j++) {
                 if (j == rank) {
+                    logger.info(String.format(" Rank %d proposing swap up for exchange %d.", rank, j));
                     proposeSwapUp();
                 } else if (j == (rank - 1)) {
+                    logger.info(String.format(" Rank %d proposing swap down for exchange %d.", rank, j));
                     proposeSwapDown();
                 } else {
+                    logger.info(String.format(" Rank %d listening for swap for exchange %d.", rank, j));
                     listenSwap(j);
                 }
             }
@@ -229,7 +237,10 @@ public class RepExOST {
         double eji = otherHisto.computeBiasEnergy(currentLambda, currentDUDL);
         double ejj = otherHisto.computeBiasEnergy(otherLam, otherDUDL);
 
-        testSwap(eii, eij, eji, ejj, rankUp);
+        logger.info(String.format(" Lambda: %.4f dU/dL: %.5f Received lambda: %.4f Received dU/dL %.5f", currentLambda, currentDUDL, otherLam, otherDUDL));
+        logger.info(String.format(" eii: %.4f eij: %.4f eji: %.4f ejj: %.4f", eii, eij, eji, ejj));
+
+        testSwap(eii, eij, eji, ejj);
     }
 
     /**
@@ -243,6 +254,8 @@ public class RepExOST {
         OrthogonalSpaceTempering currOST = osts[ostIndex];
         double currentLambda = currOST.getLambda();
         double currentDUDL = currOST.getdEdL();
+
+        logger.info(String.format(" Rank %d sending to rank %d lambda %.4f dU/dL %.5f", rank, rankDown, currentLambda, currentDUDL));
 
         lamBuf.put(0, currentLambda);
         world.send(rankDown, lamTag, lamBuf);
@@ -272,14 +285,14 @@ public class RepExOST {
      * @param eij          Bias energy i of L/FL j
      * @param eji          Bias energy j of L/FL i
      * @param ejj          Bias energy j of L/FL j
-     * @param rankUp       Rank above this process
      * @throws IOException For Parallel Java
      */
-    private void testSwap(double eii, double eij, double eji, double ejj, int rankUp) throws IOException {
+    private void testSwap(double eii, double eij, double eji, double ejj) throws IOException {
         double e1 = eii + ejj;
         double e2 = eji + eij;
         // I'm assuming this class extends BoltzmannMC here.
         boolean accept = BoltzmannMC.evaluateMove(random, invKT, e1, e2);
+        logger.info(String.format(" Rank %d: %s move", rank, (accept ? "accepted" : "rejected")));
         swapBuf.put(0, accept);
 
         // All other processes should be calling comm.broadcast via the listenSwap method.
@@ -300,6 +313,8 @@ public class RepExOST {
         rankToHisto[rootRank] = histoUp;
         rankToHisto[rootRank + 1] = histoDown;
         currentOST = rankToHisto[rank];
+
+        logger.info(String.format(" Rank %d accepting swap: new rankToHisto map %s, targeting histogram %d", rank, Arrays.toString(rankToHisto), currentOST));
 
         for (SynchronousSend send : sends) {
             send.updateRanks(rankToHisto);
