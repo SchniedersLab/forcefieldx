@@ -1,6 +1,7 @@
 package ffx.algorithms.thermodynamics;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -168,4 +169,17 @@ public class SynchronousSend {
         }
     }
 
+    public int[] getRankToHistogramMap() {
+        return Arrays.copyOf(rankToHistogramMap, rankToHistogramMap.length);
+    }
+
+    /**
+     * Update the map of rank-to-histogram.
+     *
+     * @param updatedRankToHisto Updated rank-to-histogram mappings.
+     */
+    public void updateRanks(int[] updatedRankToHisto) {
+        assert updatedRankToHisto.length == rankToHistogramMap.length;
+        System.arraycopy(updatedRankToHisto, 0, rankToHistogramMap, 0, rankToHistogramMap.length);
+    }
 }

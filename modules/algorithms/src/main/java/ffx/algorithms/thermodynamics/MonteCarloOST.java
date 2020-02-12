@@ -229,7 +229,20 @@ public class MonteCarloOST extends BoltzmannMC {
                 mdMove.setMDIntervalSteps(stepsPerMove);
             }
         }
+        setRunLength(totalSteps);
+    }
+
+    /**
+     * Sets the next number of steps MC-OST should run.
+     *
+     * @param totalSteps The length of the next MC-OST run.
+     */
+    public void setRunLength(long totalSteps) {
         this.totalSteps = totalSteps;
+    }
+
+    public MolecularDynamics getMD() {
+        return mdMove.getMD();
     }
 
     /**

@@ -38,6 +38,7 @@
 package ffx.algorithms.cli;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -80,9 +81,9 @@ public class OSTOptions {
     /**
      * --bM or --biasMag sets the initial Gaussian bias magnitude in kcal/mol.
      */
-    @CommandLine.Option(names = {"--bM", "--biasMag"}, paramLabel = "0.05",
-            description = "Orthogonal Space Gaussian bias magnitude (kcal/mol).")
-    private double biasMag = 0.05;
+    @CommandLine.Option(names = {"--bM", "--biasMag"}, paramLabel = "0.05", split = ",",
+            description = "Orthogonal Space Gaussian bias magnitude (kcal/mol); repex OST uses a comma-separated list.")
+    private double[] biasMag = new double[]{0.05};
 
     /**
      * --iW or --independentWalkers enforces that each walker maintains their own histogram.
@@ -95,9 +96,16 @@ public class OSTOptions {
      * --tp or --temperingParam sets the Dama et al tempering rate parameter, in
      * multiples of kBT.
      */
-    @CommandLine.Option(names = {"--tp", "--temperingParam"}, paramLabel = "4.0",
-            description = "Tempering rate parameter in multiples of kBT")
-    private double temperParam = 4.0;
+    @CommandLine.Option(names = {"--tp", "--temperingParam"}, paramLabel = "4.0", split=",",
+            description = "Tempering rate parameter in multiples of kBT; repex OST uses a comma-separated list.")
+    private double[] temperParam = new double[]{4.0};
+
+    /**
+     * --tth or --temperingThreshold sets the tempering threshold/offset in kcal/mol.
+     */
+    @CommandLine.Option(names = {"--tth", "--temperingThreshold"}, paramLabel = "20*bias", split=",",
+            description = "Tempering threshold in kcal/mol; repex OST uses a comma-separated list.")
+    private double[] temperThreshold = new double[]{-1};
 
     /**
      * --mc or --monteCarlo sets the Monte Carlo scheme for Orthogonal Space Tempering.
@@ -153,7 +161,24 @@ public class OSTOptions {
      * @return a double.
      */
     public double getTemperParam() {
-        return temperParam;
+        return temperParam[0];
+    }
+
+    /**
+     * Returns an array of all tempering parameters.
+     *
+     * @return All tempering parameters to be used.
+     */
+    public double[] getAllTemperingParameters() {
+        return Arrays.copyOf(temperParam, temperParam.length);
+    }
+
+    /**
+     * Returns an array of all tempering thresholds.
+     * @return All tempering thresholds to be used.
+     */
+    public double[] getTemperThreshold() {
+        return Arrays.copyOf(temperThreshold, temperThreshold.length);
     }
 
     /**
@@ -206,6 +231,29 @@ public class OSTOptions {
                                                  MolecularAssembly firstAssembly, Configuration addedProperties,
                                                  DynamicsOptions dynamics, MultiDynamicsOptions mdo, ThermodynamicsOptions thermo,
                                                  AlgorithmListener aListener) {
+        return constructOST(potential, lambdaRestart, histogramRestart, firstAssembly, addedProperties, dynamics, thermo, aListener, !mdo.isSynchronous(), 0);
+    }
+
+    /**
+     * <p>
+     * constructOST.</p>
+     *
+     * @param potential        a {@link ffx.crystal.CrystalPotential} object.
+     * @param lambdaRestart    a {@link java.io.File} object.
+     * @param histogramRestart a {@link java.io.File} object.
+     * @param firstAssembly    a {@link ffx.potential.MolecularAssembly} object.
+     * @param addedProperties  a {@link org.apache.commons.configuration2.Configuration} object.
+     * @param dynamics         a {@link ffx.algorithms.cli.DynamicsOptions} object.
+     * @param thermo           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
+     * @param aListener        a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param async            If OST should use asynchronous communications.
+     * @param replicateNum     Index of the replicate (0 for non-repex OST).
+     * @return a {@link OrthogonalSpaceTempering} object.
+     */
+    public OrthogonalSpaceTempering constructOST(CrystalPotential potential, File lambdaRestart, File histogramRestart,
+                                                 MolecularAssembly firstAssembly, Configuration addedProperties,
+                                                 DynamicsOptions dynamics, ThermodynamicsOptions thermo,
+                                                 AlgorithmListener aListener, boolean async, int replicateNum) {
 
         LambdaInterface linter = (LambdaInterface) potential;
         CompositeConfiguration allProperties = new CompositeConfiguration(firstAssembly.getProperties());
@@ -216,7 +264,6 @@ public class OSTOptions {
         double dT = dynamics.getDt();
         double report = dynamics.getReport();
         double ckpt = dynamics.getCheckpoint();
-        boolean async = !mdo.isSynchronous();
         boolean resetNSteps = thermo.getResetNumSteps();
         OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(linter, potential, lambdaRestart,
                 histogramRestart, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
@@ -224,6 +271,8 @@ public class OSTOptions {
         Histogram histogram = orthogonalSpaceTempering.getHistogram();
         histogram.checkRecursionKernelSize();
         histogram.setIndependentWalkers(independentWalkers);
+        histogram.setTemperingThreshold(temperThreshold[replicateNum]);
+        histogram.setTemperingParameter(temperParam[replicateNum]);
 
         // Do NOT run applyOSTOptions here, because that can mutate the OST to a Barostat.
         return orthogonalSpaceTempering;
@@ -260,6 +309,33 @@ public class OSTOptions {
     }
 
     /**
+     * Assembles a MolecularDynamics wrapped around a Potential.
+     *
+     * @param topologies MolecularAssembly[]
+     * @param potential  Potential to run on
+     * @param dynamics   DynamicsOptions
+     * @param aListener  AlgorithmListener
+     * @return           MolecularDynamics
+     */
+    public MolecularDynamics assembleMolecularDynamics(MolecularAssembly[] topologies, CrystalPotential potential,
+                                                       DynamicsOptions dynamics, AlgorithmListener aListener) {
+        // Create the MolecularDynamics instance.
+        MolecularAssembly firstTop = topologies[0];
+        CompositeConfiguration props = firstTop.getProperties();
+
+        dynamics.init();
+
+        MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(firstTop, potential, props,
+                aListener, dynamics.thermostat, dynamics.integrator, MolecularDynamics.DynamicsEngine.FFX);
+        for (int i = 1; i < topologies.length; i++) {
+            molDyn.addAssembly(topologies[i], topologies[i].getProperties());
+        }
+        molDyn.setRestartFrequency(dynamics.getCheckpoint());
+
+        return molDyn;
+    }
+
+    /**
      * Begins MD-OST sampling from an assembled OST.
      *
      * @param orthogonalSpaceTempering The OST object.
@@ -281,15 +357,10 @@ public class OSTOptions {
 
         dynamics.init();
 
-        MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(firstTop, potential, props,
-                aListener, dynamics.thermostat, dynamics.integrator, MolecularDynamics.DynamicsEngine.FFX);
-        for (int i = 1; i < topologies.length; i++) {
-            molDyn.addAssembly(topologies[i], topologies[i].getProperties());
-        }
+        MolecularDynamics molDyn = assembleMolecularDynamics(topologies, potential, dynamics, aListener);
 
         boolean initVelocities = true;
         long nSteps = dynamics.steps;
-        molDyn.setRestartFrequency(dynamics.getCheckpoint());
         // Start sampling.
         long nEquil = thermo.getEquilSteps();
         if (nEquil > 0) {
@@ -318,21 +389,21 @@ public class OSTOptions {
 
     /**
      * <p>
-     * beginMCOST.</p>
+     * setupMCOST.</p>
      *
      * @param orthogonalSpaceTempering a {@link OrthogonalSpaceTempering} object.
      * @param topologies               an array of {@link ffx.potential.MolecularAssembly} objects.
      * @param dynamics                 a {@link ffx.algorithms.cli.DynamicsOptions} object.
      * @param thermodynamics           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
      * @param verbose                  Whether to print out additional information about MC-OST.
+     * @param listener                 An AlgorithmListener
+     * @return                         An assembled MonteCarloOST ready to run.
      */
-    public void beginMCOST(OrthogonalSpaceTempering orthogonalSpaceTempering, MolecularAssembly[] topologies,
+    public MonteCarloOST setupMCOST(OrthogonalSpaceTempering orthogonalSpaceTempering, MolecularAssembly[] topologies,
                            DynamicsOptions dynamics, ThermodynamicsOptions thermodynamics, boolean verbose,
                            AlgorithmListener listener) {
         dynamics.init();
 
-        /*MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(), orthogonalSpaceTempering, topologies[0],
-                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator, verbose, dynamics.getCheckpoint());*/
         MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(),
                 orthogonalSpaceTempering, topologies[0], topologies[0].getProperties(), listener, dynamics, verbose, mcMD);
 
@@ -356,6 +427,15 @@ public class OSTOptions {
         if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
             monteCarloOST.setLambdaWriteOut(lambdaWriteOut);
         }
+        return monteCarloOST;
+    }
+
+    /**
+     * Runs MC-OST.
+     *
+     * @param monteCarloOST MC-OST to run.
+     */
+    public void beginMCOST(MonteCarloOST monteCarloOST) {
         if (ts) {
             monteCarloOST.sampleTwoStep();
         } else {
@@ -372,10 +452,10 @@ public class OSTOptions {
      */
     private void applyOSTOptions(OrthogonalSpaceTempering orthogonalSpaceTempering, boolean histogramExists) {
         Histogram histogram = orthogonalSpaceTempering.getHistogram();
-        histogram.setTemperingParameter(temperParam);
+        histogram.setTemperingParameter(temperParam[0]);
         if (!histogramExists) {
             orthogonalSpaceTempering.setCountInterval(countFreq);
-            histogram.setBiasMagnitude(biasMag);
+            histogram.setBiasMagnitude(biasMag[0]);
         }
     }
 
@@ -383,5 +463,33 @@ public class OSTOptions {
                              WriteoutOptions writeout, boolean initVelocities, File dyn) {
         molDyn.dynamic(numSteps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp,
                 initVelocities, writeout.getFileType(), dynamics.getCheckpoint(), dyn);
+    }
+
+    /**
+     * Checks if independent walkers has been specified.
+     *
+     * @return Walker independence.
+     */
+    public boolean getIndependentWalkers() {
+        return independentWalkers;
+    }
+
+    /**
+     * Checks if use of the Monte Carlo algorithm has been specified.
+     *
+     * @return Monte Carlo OST (as opposed to molecular dynamics OST).
+     */
+    public boolean isMc() {
+        return mc;
+    }
+
+    /**
+     * Returns true if the 2-step option is enabled (not guaranteed to
+     * also mean that MC is enabled!).
+     *
+     * @return If --ts is enabled.
+     */
+    public boolean isTwoStep() {
+        return ts;
     }
 }
