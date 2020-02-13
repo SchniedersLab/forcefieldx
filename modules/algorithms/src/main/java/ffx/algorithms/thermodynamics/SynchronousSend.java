@@ -182,4 +182,8 @@ public class SynchronousSend {
         assert updatedRankToHisto.length == rankToHistogramMap.length;
         System.arraycopy(updatedRankToHisto, 0, rankToHistogramMap, 0, rankToHistogramMap.length);
     }
+
+    public int getHistogramIndex() {
+        return rankToHistogramMap[rank];
+    }
 }
