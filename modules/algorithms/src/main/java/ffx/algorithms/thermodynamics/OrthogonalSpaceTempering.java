@@ -270,7 +270,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                                     double temperature, double dt, double printInterval,
                                     double saveInterval, boolean asynchronous, boolean resetNumSteps,
                                     AlgorithmListener algorithmListener) {
-
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
         this.lambdaFile = lambdaFile;
@@ -2383,6 +2382,15 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 }
             } else {
                 logger.fine(" CountReceiveThread was either not initialized, or is not alive. This is the case for the Histogram script.");
+            }
+        }
+
+        int getHistogramIndex() {
+            if (asynchronous) {
+                // TODO: Make AsynchronousSend do this properly.
+                return 0;
+            } else {
+                return synchronousSend.getHistogramIndex();
             }
         }
     }

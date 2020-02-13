@@ -184,7 +184,7 @@ class RepexThermo extends Thermodynamics {
         // Read in files.
         logger.info(String.format(" Initializing %d topologies...", nArgs))
         if (fromActive) {
-            topologyList.add(alchemical.processFile(topology, mola, 0))
+            topologyList.add(alchemical.processFile(topology, activeAssembly, 0))
         } else {
             for (int i = 0; i < nArgs; i++) {
                 topologyList.add(multidynamics.openFile(algorithmFunctions, topology,
@@ -276,19 +276,19 @@ class RepexThermo extends Thermodynamics {
 
     @Override
     OrthogonalSpaceTempering getOST() {
-        return repex == null ? null : repex.getCurrentOST();
+        return repExOST == null ? null : repExOST.getCurrentOST();
     }
 
     @Override
     CrystalPotential getPotential() {
-        return (repex == null) ? potential : repex.getCurrentOST();
+        return (repExOST == null) ? potential : repExOST.getCurrentOST();
     }
 
     @Override
     List<Potential> getPotentials() {
-        if (repex == null) {
+        if (repExOST == null) {
             return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
         }
-        return Arrays.stream(repex.getAllOST()).collect(Collectors.toList());
+        return Arrays.stream(repExOST.getAllOST()).collect(Collectors.toList());
     }
 }
