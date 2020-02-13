@@ -55,6 +55,7 @@ import java.util.Random;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 /**
  * An implementation of RepEx between Orthogonal Space Tempering potentials.
@@ -91,6 +92,9 @@ public class RepExOST {
     // Message tags to use.
     private static final int lamTag = 42;
     private static final int mainLoopTag = 2020;
+
+    private double currentLambda;
+    private double currentDUDL;
 
     /**
      * Private constructor used here to centralize shared logic.
@@ -144,7 +148,12 @@ public class RepExOST {
                 map(OrthogonalSpaceTempering.Histogram::getSynchronousSend).
                 map(Optional::get).
                 toArray(SynchronousSend[]::new);
-        rankToHisto = sends[0].getRankToHistogramMap();
+        rankToHisto = IntStream.range(0, size).toArray();
+
+        OrthogonalSpaceTempering.Histogram[] histos = Arrays.stream(osts).
+                map(OrthogonalSpaceTempering::getHistogram).
+                toArray(OrthogonalSpaceTempering.Histogram[]::new);
+        Arrays.stream(sends).forEach((SynchronousSend ss) -> ss.setHistograms(histos, rankToHisto));
     }
 
     /**
@@ -192,6 +201,8 @@ public class RepExOST {
         for (int i = 0; i < numExchanges; i++) {
             logger.info(String.format(" Beginning of repex loop %d", i));
             world.barrier(mainLoopTag);
+            currentLambda = osts[currentOST].getLambda();
+            currentDUDL = osts[currentOST].getdEdL();
             algoRun.accept(stepsBetweenExchanges);
             for (int j = 0; j < numPairs; j++) {
                 if (j == rank) {
@@ -224,9 +235,6 @@ public class RepExOST {
         double otherDUDL = lamBuf.get(0);
 
         int ostIndex = rankToHisto[rank];
-        OrthogonalSpaceTempering currOST = osts[ostIndex];
-        double currentLambda = currOST.getLambda();
-        double currentDUDL = currOST.getdEdL();
         OrthogonalSpaceTempering.Histogram currentHistogram = osts[ostIndex].getHistogram();
 
         double eii = currentHistogram.computeBiasEnergy(currentLambda, currentDUDL);
@@ -252,8 +260,6 @@ public class RepExOST {
 
         int ostIndex = rankToHisto[rank];
         OrthogonalSpaceTempering currOST = osts[ostIndex];
-        double currentLambda = currOST.getLambda();
-        double currentDUDL = currOST.getdEdL();
 
         logger.info(String.format(" Rank %d sending to rank %d lambda %.4f dU/dL %.5f", rank, rankDown, currentLambda, currentDUDL));
 
@@ -292,6 +298,8 @@ public class RepExOST {
         double e2 = eji + eij;
         // I'm assuming this class extends BoltzmannMC here.
         boolean accept = BoltzmannMC.evaluateMove(random, invKT, e1, e2);
+        assert accept || e1 < e2 : "A rejected move must go down in energy!";
+
         logger.info(String.format(" Rank %d: %s move", rank, (accept ? "accepted" : "rejected")));
         swapBuf.put(0, accept);
 
@@ -313,6 +321,10 @@ public class RepExOST {
         rankToHisto[rootRank] = histoUp;
         rankToHisto[rootRank + 1] = histoDown;
         currentOST = rankToHisto[rank];
+
+        osts[currentOST].setLambda(currentLambda);
+        // TODO: If there is ever a case where an algorithm will not update coordinates itself at the start, we have to
+        // update coordinates here (from the OST we used to be running on to the new OST).
 
         logger.info(String.format(" Rank %d accepting swap: new rankToHisto map %s, targeting histogram %d", rank, Arrays.toString(rankToHisto), currentOST));
 
@@ -355,10 +367,6 @@ public class RepExOST {
 
     public OrthogonalSpaceTempering getCurrentOST() {
         return osts[currentOST];
-    }
-
-    int getCurrentIndex() {
-        return currentOST;
     }
 
     public OrthogonalSpaceTempering[] getAllOST() {
