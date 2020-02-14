@@ -44,6 +44,7 @@ import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.MultiplicativeSwitch;
@@ -169,14 +170,14 @@ public class ChandlerCavitation {
         if (gaussVol != null) {
             return energyAndGradientGausVol(positions, gradient);
         } else {
-            return energyAndGradientConnolly(positions, gradient);
+            return energyAndGradientConnolly(gradient);
         }
     }
 
     /**
      * Compute the cavitation energy.
      */
-    public double energyAndGradientConnolly(double[][] positions, AtomicDoubleArray3D gradient) {
+    public double energyAndGradientConnolly(AtomicDoubleArray3D gradient) {
 
         connollyRegion.init(atoms, true);
         connollyRegion.runVolume();
@@ -285,54 +286,50 @@ public class ChandlerCavitation {
         surfaceAreaEnergy = surfaceArea * surfaceTension;
 
         // Use SA to find an effective cavity radius.
-//        effectiveRadius = 0.5 * sqrt(surfaceArea / PI) + effectiveRadiusProbe;
-//        double reff = effectiveRadius;
-//        double reff2 = reff * reff;
-//        double reff3 = reff2 * reff;
-//        double reff4 = reff3 * reff;
-//        double reff5 = reff4 * reff;
-//        double dreff = reff / (2.0 * surfaceArea);
-
-        // Use Volume to find an effective cavity radius.
-        double vdwVolume = volume;
-
-        effectiveRadius = cbrt(3.0 * vdwVolume / (4.0 * PI));
+        effectiveRadius = 0.5 * sqrt(surfaceArea / PI);
         double reff = effectiveRadius;
         double reff2 = reff * reff;
         double reff3 = reff2 * reff;
         double reff4 = reff3 * reff;
         double reff5 = reff4 * reff;
-        double vdWVolPI23 = pow(vdwVolume / PI, 2.0 / 3.0);
-        double dReffdvdW = 1.0 / (pow(6.0, 2.0 / 3.0) * PI * vdWVolPI23);
+        double dRdSA = reff / (2.0 * surfaceArea);
 
-        // double sevSASAChainRule = 4.0 * pow(2.0, 1.0/3.0) * reff / (pow(3.0, 2.0/3.0) * volPI23);
-        // logger.info(format(" Volume Reff: %16.8f, %16.8f", reff, dreff));
+        // Use Volume to find an effective cavity radius.
+//        effectiveRadius = cbrt(3.0 * volume / (4.0 * PI));
+//        double reff = effectiveRadius;
+//        double reff2 = reff * reff;
+//        double reff3 = reff2 * reff;
+//        double reff4 = reff3 * reff;
+//        double reff5 = reff4 * reff;
+//        double volPI23 = pow(volume / PI, 2.0 / 3.0);
+//        double dReffdvdW = 1.0 / (pow(6.0, 2.0 / 3.0) * PI * volPI23);
 
         // Find the cavitation energy using a combination of volume and surface area dependence.
         if (reff < volumeOff) {
             // Find cavity energy from only the molecular volume.
             cavitationEnergy = volumeEnergy;
-            addVolumeGradient(solventPressure, gradient, volumeGradient);
+            addVolumeGradient(0.0, solventPressure, surfaceAreaGradient, volumeGradient, gradient);
         } else if (reff <= volumeCut) {
             // Include a tapered molecular volume.
             double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
-            double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
+            double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dRdSA;
             cavitationEnergy = taper * volumeEnergy;
-            double factor = dtaper * volumeEnergy + taper * solventPressure;
-            addVolumeGradient(factor, gradient, volumeGradient);
+            double factorSA = dtaper * volumeEnergy;
+            double factorVol = taper * solventPressure;
+            addVolumeGradient(factorSA, factorVol, surfaceAreaGradient, volumeGradient, gradient);
         }
 
         if (reff > surfaceAreaOff) {
             // Find cavity energy from only SA.
             cavitationEnergy = surfaceAreaEnergy;
-            addSurfaceAreaGradient(0.0, surfaceTension, gradient, volumeGradient, surfaceAreaGradient);
+            addSurfaceAreaGradient(surfaceTension, surfaceAreaGradient, gradient);
         } else if (reff >= surfaceAreaCut) {
             // Include a tapered surface area term.
             double taperSA = surfaceAreaSwitch.taper(reff, reff2, reff3, reff4, reff5);
-            double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
+            double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dRdSA;
             cavitationEnergy += taperSA * surfaceAreaEnergy;
-            addSurfaceAreaGradient(dtaperSA * surfaceAreaEnergy, taperSA * surfaceTension, gradient,
-                    volumeGradient, surfaceAreaGradient);
+            double factor = dtaperSA * surfaceAreaEnergy + taperSA * surfaceTension;
+            addSurfaceAreaGradient(factor, surfaceAreaGradient, gradient);
         }
 
         if (logger.isLoggable(Level.FINE)) {
@@ -350,15 +347,20 @@ public class ChandlerCavitation {
     /**
      * Collect the volume base cavitation energy and gradient contributions.
      *
-     * @param factor   dTaper/dReff * dReff/dVolvdW * Vsev + Tapered volume (A^3) * dVolSEV/dVolvdW
-     * @param gradient Array to accumulate derivatives.
+     * @param factorSA            Factor to multiply surface area gradient by.
+     * @param factorVol           Factor to multiply surface area gradient by.
+     * @param surfaceAreaGradient Surface area gradient.
+     * @param volumeGradient      Volume gradient.
+     * @param gradient            Array to accumulate derivatives.
      */
-    private void addVolumeGradient(double factor, AtomicDoubleArray3D gradient, double[] volumeGradient) {
+    private void addVolumeGradient(double factorSA, double factorVol,
+                                   double[] surfaceAreaGradient, double[] volumeGradient,
+                                   AtomicDoubleArray3D gradient) {
         for (int i = 0; i < nAtoms; i++) {
             int index = i * 3;
-            double gx = factor * volumeGradient[index++];
-            double gy = factor * volumeGradient[index++];
-            double gz = factor * volumeGradient[index];
+            double gx = factorSA * surfaceAreaGradient[index] + factorVol * volumeGradient[index++];
+            double gy = factorSA * surfaceAreaGradient[index] + factorVol * volumeGradient[index++];
+            double gz = factorSA * surfaceAreaGradient[index] + factorVol * volumeGradient[index];
             gradient.add(0, i, gx, gy, gz);
         }
     }
@@ -366,17 +368,16 @@ public class ChandlerCavitation {
     /**
      * Collect the surface area based cavitation energy and gradient contributions.
      *
-     * @param volFactor Factor to multiply vdW volume gradient by.
-     * @param saFactor  Factor to multiply vdw surface area by.
-     * @param gradient  Array to accumulate derivatives.
+     * @param factor              Factor to multiply surface area gradient by.
+     * @param surfaceAreaGradient Surface area gradient.
+     * @param gradient            Array to accumulate derivatives.
      */
-    private void addSurfaceAreaGradient(double volFactor, double saFactor, AtomicDoubleArray3D gradient,
-                                        double[] volumeGradient, double[] surfaceAreaGradient) {
+    private void addSurfaceAreaGradient(double factor, double[] surfaceAreaGradient, AtomicDoubleArray3D gradient) {
         for (int i = 0; i < nAtoms; i++) {
             int index = i * 3;
-            double gx = volFactor * volumeGradient[index] + saFactor * surfaceAreaGradient[index++];
-            double gy = volFactor * volumeGradient[index] + saFactor * surfaceAreaGradient[index++];
-            double gz = volFactor * volumeGradient[index] + saFactor * surfaceAreaGradient[index];
+            double gx = factor * surfaceAreaGradient[index++];
+            double gy = factor * surfaceAreaGradient[index++];
+            double gz = factor * surfaceAreaGradient[index];
             gradient.add(0, i, gx, gy, gz);
         }
     }
