@@ -39,10 +39,11 @@ package ffx.algorithms.thermodynamics;
 
 import edu.rit.mp.BooleanBuf;
 import edu.rit.mp.DoubleBuf;
+import edu.rit.mp.ObjectBuf;
 import edu.rit.pj.Comm;
 
 import ffx.algorithms.cli.DynamicsOptions;
-import ffx.algorithms.cli.RepexOSTOptions;
+import ffx.algorithms.cli.OSTOptions;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.utilities.Constants;
@@ -52,8 +53,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
@@ -104,11 +105,12 @@ public class RepExOST {
      * @param dyns          A MolecularDynamics for each repex rung (never null).
      * @param oType         Type of OST to run (MD, MC 1-step, MC 2-step).
      * @param dynamics      DynamicsOptions to apply universally.
+     * @param ostOpts       OST options to apply.
      * @param fileType      File type to save to.
      * @param repexInterval Interval in psec between repex attempts.
      */
     private RepExOST(OrthogonalSpaceTempering[] osts, MonteCarloOST[] mcOSTs, MolecularDynamics[] dyns, OstType oType,
-                     DynamicsOptions dynamics, String fileType, double repexInterval) {
+                     DynamicsOptions dynamics, OSTOptions ostOpts, String fileType, double repexInterval) {
         this.osts = osts;
         switch (oType) {
             case MD:
@@ -154,6 +156,14 @@ public class RepExOST {
                 map(OrthogonalSpaceTempering::getHistogram).
                 toArray(OrthogonalSpaceTempering.Histogram[]::new);
         Arrays.stream(sends).forEach((SynchronousSend ss) -> ss.setHistograms(histos, rankToHisto));
+        for (int i = 0; i < size; i++) {
+            histos[i].setBiasMagnitude(ostOpts.getBiasMag(i), Level.FINE);
+            histos[i].setTemperingParameter(ostOpts.getTemperingParameter(i), Level.FINE);
+            histos[i].setTemperingThreshold(ostOpts.getTemperingThreshold(i));
+            logger.info(String.format(" Parameters for histogram %d set by replica exchange: %s", i, osts[i].histoInfo()));
+        }
+
+        currentOST = rankToHisto[rank];
     }
 
     /**
@@ -162,16 +172,18 @@ public class RepExOST {
      * @param osts          An OrthogonalSpaceTempering for each repex rung.
      * @param mcOSTs        A MonteCarloOST for each repex rung
      * @param dynamics      DynamicsOptions to apply universally.
+     * @param ostOpts       OST options to apply.
      * @param fileType      File type to save to.
      * @param twoStep       Whether to use the 2-step MC algorithm (instead of the 1-step).
      * @param repexInterval Interval in psec between repex attempts.
      * @return              A RepExOST.
      */
     public static RepExOST repexMC(OrthogonalSpaceTempering[] osts, MonteCarloOST[] mcOSTs,
-                                   DynamicsOptions dynamics, String fileType, boolean twoStep, double repexInterval) {
+                                   DynamicsOptions dynamics, OSTOptions ostOpts,
+                                   String fileType, boolean twoStep, double repexInterval) {
         MolecularDynamics[] dyns = Arrays.stream(mcOSTs).map(MonteCarloOST::getMD).toArray(MolecularDynamics[]::new);
         OstType type = twoStep ? OstType.MC_TWOSTEP : OstType.MC_ONESTEP;
-        return new RepExOST(osts, mcOSTs, dyns, type, dynamics, fileType, repexInterval);
+        return new RepExOST(osts, mcOSTs, dyns, type, dynamics, ostOpts, fileType, repexInterval);
     }
 
     /**
@@ -180,13 +192,15 @@ public class RepExOST {
      * @param osts          An OrthogonalSpaceTempering for each repex rung.
      * @param dyns          A MolecularDynamics for each repex rung.
      * @param dynamics      DynamicsOptions to apply universally.
+     * @param ostOpts       OST options to apply.
      * @param fileType      File type to save to.
      * @param repexInterval Interval in psec between repex attempts.
      * @return              A RepExOST.
      */
     public static RepExOST repexMD(OrthogonalSpaceTempering[] osts, MolecularDynamics[] dyns,
-                                   DynamicsOptions dynamics, String fileType, double repexInterval) {
-        return new RepExOST(osts, null, dyns, OstType.MD, dynamics, fileType, repexInterval);
+                                   DynamicsOptions dynamics, OSTOptions ostOpts,
+                                   String fileType, double repexInterval) {
+        return new RepExOST(osts, null, dyns, OstType.MD, dynamics, ostOpts, fileType, repexInterval);
     }
 
     /**
@@ -194,29 +208,44 @@ public class RepExOST {
      * @throws IOException Possible from Parallel Java.
      */
     public void mainLoop(long numTimesteps, boolean equilibrate) throws IOException {
-        long numExchanges = numTimesteps / stepsBetweenExchanges;
         if (isMC) {
             Arrays.stream(mcOSTs).forEach((MonteCarloOST mco) -> mco.setEquilibration(equilibrate));
         }
-        for (int i = 0; i < numExchanges; i++) {
-            logger.info(String.format(" Beginning of repex loop %d", i));
-            world.barrier(mainLoopTag);
-            currentLambda = osts[currentOST].getLambda();
-            currentDUDL = osts[currentOST].getdEdL();
-            algoRun.accept(stepsBetweenExchanges);
-            for (int j = 0; j < numPairs; j++) {
-                if (j == rank) {
-                    logger.info(String.format(" Rank %d proposing swap up for exchange %d.", rank, j));
-                    proposeSwapUp();
-                } else if (j == (rank - 1)) {
-                    logger.info(String.format(" Rank %d proposing swap down for exchange %d.", rank, j));
-                    proposeSwapDown();
-                } else {
-                    logger.info(String.format(" Rank %d listening for swap for exchange %d.", rank, j));
-                    listenSwap(j);
-                }
-            }
+        currentLambda = osts[currentOST].getLambda();
+        currentDUDL = osts[currentOST].getdEdL();
+
+        int swapsAccepted = 0;
+        if (equilibrate) {
+            logger.info(String.format(" Equilibrating repex OST without exchanges on histogram %d.", currentOST));
+            algoRun.accept(numTimesteps);
             reinitVelocities = false;
+        } else {
+            long numExchanges = numTimesteps / stepsBetweenExchanges;
+            for (int i = 0; i < numExchanges; i++) {
+                logger.info(String.format(" Beginning of repex loop %d, operating on histogram %d", (i+1), currentOST));
+                world.barrier(mainLoopTag);
+                algoRun.accept(stepsBetweenExchanges);
+                world.barrier(mainLoopTag);
+                currentLambda = osts[currentOST].getLambda();
+                currentDUDL = osts[currentOST].getdEdL();
+
+                for (int j = 0; j < numPairs; j++) {
+                    if (j == rank) {
+                        logger.info(String.format(" Rank %d proposing swap up for exchange %d.", rank, j));
+                        if (proposeSwapUp()) {
+                            ++swapsAccepted;
+                        }
+                        logger.info(String.format(" Rate of acceptance for going up: %.5f %%", 100.0 * (swapsAccepted / (i+1))));
+                    } else if (j == (rank - 1)) {
+                        logger.info(String.format(" Rank %d proposing swap down for exchange %d.", rank, j));
+                        proposeSwapDown();
+                    } else {
+                        logger.info(String.format(" Rank %d listening for swap for exchange %d.", rank, j));
+                        listenSwap(j);
+                    }
+                }
+                reinitVelocities = false;
+            }
         }
     }
 
@@ -226,7 +255,7 @@ public class RepExOST {
      * be updated.
      * @throws IOException If Parallel Java has an issue
      */
-    private void proposeSwapUp() throws IOException {
+    private boolean proposeSwapUp() throws IOException {
         int rankUp = rank + 1;
 
         world.receive(rankUp, lamTag, lamBuf);
@@ -248,7 +277,7 @@ public class RepExOST {
         logger.info(String.format(" Lambda: %.4f dU/dL: %.5f Received lambda: %.4f Received dU/dL %.5f", currentLambda, currentDUDL, otherLam, otherDUDL));
         logger.info(String.format(" eii: %.4f eij: %.4f eji: %.4f ejj: %.4f", eii, eij, eji, ejj));
 
-        testSwap(eii, eij, eji, ejj);
+        return testSwap(eii, eij, eji, ejj);
     }
 
     /**
@@ -257,9 +286,6 @@ public class RepExOST {
      */
     private void proposeSwapDown() throws IOException {
         int rankDown = rank - 1;
-
-        int ostIndex = rankToHisto[rank];
-        OrthogonalSpaceTempering currOST = osts[ostIndex];
 
         logger.info(String.format(" Rank %d sending to rank %d lambda %.4f dU/dL %.5f", rank, rankDown, currentLambda, currentDUDL));
 
@@ -293,10 +319,9 @@ public class RepExOST {
      * @param ejj          Bias energy j of L/FL j
      * @throws IOException For Parallel Java
      */
-    private void testSwap(double eii, double eij, double eji, double ejj) throws IOException {
+    private boolean testSwap(double eii, double eij, double eji, double ejj) throws IOException {
         double e1 = eii + ejj;
         double e2 = eji + eij;
-        // I'm assuming this class extends BoltzmannMC here.
         boolean accept = BoltzmannMC.evaluateMove(random, invKT, e1, e2);
         assert accept || e1 < e2 : "A rejected move must go down in energy!";
 
@@ -308,6 +333,7 @@ public class RepExOST {
         if (accept) {
             acceptSwap(rank);
         }
+        return accept;
     }
 
     /**

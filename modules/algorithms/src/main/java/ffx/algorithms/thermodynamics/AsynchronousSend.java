@@ -187,7 +187,8 @@ class AsynchronousSend extends Thread {
             }
 
             // Increase the Recursion Kernel based on the input of current walker.
-            histogram.addToRecursionKernelValue(walkerLambda, walkerFLambda, weight);
+            // Guaranteed to be from a different process.
+            histogram.addToRecursionKernelValue(walkerLambda, walkerFLambda, weight, true);
             if (isInterrupted()) {
                 logger.log(Level.FINE, " CountReceiveThread was interrupted; ceasing execution.");
                 // No pending message receipt, so no warning.

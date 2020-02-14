@@ -165,7 +165,8 @@ public class SynchronousSend {
                 logger.info(format(" Cleared OST histogram (Lambda = %6.4f).", recursionWeights[i][0]));
             }
 
-            currentHistogram.addToRecursionKernelValue(walkerLambda, walkerFLambda, weight);
+            // For i == rank, the addBias method will handle updating FLambda (and optionally printing).
+            currentHistogram.addToRecursionKernelValue(walkerLambda, walkerFLambda, weight, i != rank);
         }
     }
 

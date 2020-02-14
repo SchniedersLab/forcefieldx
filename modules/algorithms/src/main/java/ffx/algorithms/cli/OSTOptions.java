@@ -150,10 +150,6 @@ public class OSTOptions {
             description = "Only write out snapshots if lambda is greater than the value specified.")
     private double lambdaWriteOut = 0.0;
 
-    @CommandLine.Option(names = {"--mcMDE", "--mcMDEquilibration"},
-            description = "Specifies whether the user wants to equilibrate the system using shorter MD trajectories than those used for production sampling.")
-    private boolean mcMDE = false;
-
     /**
      * <p>
      * Getter for the field <code>temperParam</code>.</p>
@@ -353,7 +349,6 @@ public class OSTOptions {
                            File dyn, AlgorithmListener aListener) {
         // Create the MolecularDynamics instance.
         MolecularAssembly firstTop = topologies[0];
-        CompositeConfiguration props = firstTop.getProperties();
 
         dynamics.init();
 
@@ -409,9 +404,22 @@ public class OSTOptions {
 
         long nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
-            logger.info("\n Beginning MC-OST equilibration.");
             monteCarloOST.setEquilibration(true);
-            monteCarloOST.setMDMoveParameters(nEquil, mcMD, mcMDE);
+        }
+        return monteCarloOST;
+    }
+
+    /**G
+     * Runs MC-OST.
+     *
+     * @param monteCarloOST MC-OST to run.
+     */
+    public void beginMCOST(MonteCarloOST monteCarloOST, DynamicsOptions dynamics, ThermodynamicsOptions thermo) {
+        long nEquil = thermo.getEquilSteps();
+
+        if (nEquil > 0) {
+            logger.info("\n Beginning MC-OST equilibration.");
+            monteCarloOST.setMDMoveParameters(nEquil);
             if (ts) {
                 monteCarloOST.sampleTwoStep();
             } else {
@@ -423,19 +431,11 @@ public class OSTOptions {
 
         logger.info("\n Beginning MC-OST sampling.");
         monteCarloOST.setLambdaStdDev(mcL);
-        monteCarloOST.setMDMoveParameters(dynamics.steps, mcMD, mcMDE);
+        monteCarloOST.setMDMoveParameters(dynamics.steps);
         if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
             monteCarloOST.setLambdaWriteOut(lambdaWriteOut);
         }
-        return monteCarloOST;
-    }
 
-    /**
-     * Runs MC-OST.
-     *
-     * @param monteCarloOST MC-OST to run.
-     */
-    public void beginMCOST(MonteCarloOST monteCarloOST) {
         if (ts) {
             monteCarloOST.sampleTwoStep();
         } else {
@@ -491,5 +491,35 @@ public class OSTOptions {
      */
     public boolean isTwoStep() {
         return ts;
+    }
+
+    /**
+     * Returns the initial bias magnitude associated with a walker.
+     *
+     * @param i Index of a walker
+     * @return  Its intended initial bias magnitude in kcal/mol.
+     */
+    public double getBiasMag(int i) {
+        return biasMag[i];
+    }
+
+    /**
+     * Returns the tempering threshold associated with a walker.
+     *
+     * @param i Index of a walker
+     * @return  Its intended tempering threshold in kcal/mol.
+     */
+    public double getTemperingThreshold(int i) {
+        return temperThreshold[i];
+    }
+
+    /**
+     * Returns the tempering parameter associated with a walker.
+     *
+     * @param i Index of a walker
+     * @return  Its intended tempering parameter in kBT.
+     */
+    public double getTemperingParameter(int i) {
+        return temperParam[i];
     }
 }

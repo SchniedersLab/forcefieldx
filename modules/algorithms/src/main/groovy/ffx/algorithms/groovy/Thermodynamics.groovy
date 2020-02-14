@@ -288,7 +288,7 @@ class Thermodynamics extends AlgorithmsScript {
                     dynamics, lambdaParticle, barostat, hisExists)
             if (ostOptions.mc) {
                 MonteCarloOST mcOST = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose, algorithmListener);
-                ostOptions.beginMCOST(mcOST);
+                ostOptions.beginMCOST(mcOST, dynamics, thermodynamics);
             } else {
                 ostOptions.beginMDOST(orthogonalSpaceTempering, topologies, ostPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
             }

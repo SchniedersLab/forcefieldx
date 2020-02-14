@@ -256,12 +256,13 @@ class RepexThermo extends Thermodynamics {
             }
 
             if (isMC) {
-                repExOST = RepExOST.repexMC(allOST, allMC, dynamics, writeout.getFileType(), twoStep, repex.getRepexFrequency());
+                repExOST = RepExOST.repexMC(allOST, allMC, dynamics, ostOptions, writeout.getFileType(), twoStep, repex.getRepexFrequency());
             } else {
-                repExOST = RepExOST.repexMD(allOST, allMD, dynamics, writeout.getFileType(), repex.getRepexFrequency());
+                repExOST = RepExOST.repexMD(allOST, allMD, dynamics, ostOptions, writeout.getFileType(), repex.getRepexFrequency());
             }
 
-            repExOST.mainLoop(thermodynamics.getEquilSteps(), true);
+            // TODO: Re-instate after dealing with issues in ostOptions.setupMCOST.
+            //repExOST.mainLoop(thermodynamics.getEquilSteps(), true);
             repExOST.mainLoop(dynamics.getNumSteps(), false);
         } else {
             logger.severe(" RepexThermo currently does not support fixed-lambda alchemy!")
