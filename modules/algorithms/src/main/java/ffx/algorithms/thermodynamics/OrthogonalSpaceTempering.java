@@ -1725,6 +1725,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             if (updateFLambda) {
                 updateFLambda(false, false);
             }
+            ++biasCount;
         }
 
         /**
@@ -2324,7 +2325,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             } else {
                 synchronousSend.send(lambda, dEdU, temperingWeight);
             }
-            biasCount++;
 
             // Update F(L)
             fLambdaUpdates++;

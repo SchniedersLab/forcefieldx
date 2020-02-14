@@ -404,8 +404,21 @@ public class OSTOptions {
 
         long nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
-            logger.info("\n Beginning MC-OST equilibration.");
             monteCarloOST.setEquilibration(true);
+        }
+        return monteCarloOST;
+    }
+
+    /**G
+     * Runs MC-OST.
+     *
+     * @param monteCarloOST MC-OST to run.
+     */
+    public void beginMCOST(MonteCarloOST monteCarloOST, DynamicsOptions dynamics, ThermodynamicsOptions thermo) {
+        long nEquil = thermo.getEquilSteps();
+
+        if (nEquil > 0) {
+            logger.info("\n Beginning MC-OST equilibration.");
             monteCarloOST.setMDMoveParameters(nEquil);
             if (ts) {
                 monteCarloOST.sampleTwoStep();
@@ -415,15 +428,6 @@ public class OSTOptions {
             monteCarloOST.setEquilibration(false);
             logger.info("\n Finished MC-OST equilibration.");
         }
-        return monteCarloOST;
-    }
-
-    /**
-     * Runs MC-OST.
-     *
-     * @param monteCarloOST MC-OST to run.
-     */
-    public void beginMCOST(MonteCarloOST monteCarloOST, DynamicsOptions dynamics) {
 
         logger.info("\n Beginning MC-OST sampling.");
         monteCarloOST.setLambdaStdDev(mcL);
