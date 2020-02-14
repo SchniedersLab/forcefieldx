@@ -575,6 +575,15 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     /**
+     * Returns basic information about the histogram.
+     *
+     * @return Tempering parameter, threshold, and bias magnitude.
+     */
+    String histoInfo() {
+        return String.format(" Tempering parameter: %.5f kBT. Threshold: %.5f kcal/mol. Bias magnitude: %.5f kcal/mol", histogram.temperingFactor, histogram.temperOffset, histogram.biasMag);
+    }
+
+    /**
      * <p>getPotentialEnergy.</p>
      *
      * @return a {@link ffx.numerics.Potential} object.
@@ -1517,9 +1526,19 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * @param biasMag Gaussian biasing potential magnitude (kcal/mol)
          */
         public void setBiasMagnitude(double biasMag) {
+            setBiasMagnitude(biasMag, Level.INFO);
+        }
+
+        /**
+         * Set the OST Gaussian biasing potential magnitude (kcal/mol).
+         *
+         * @param biasMag      Gaussian biasing potential magnitude (kcal/mol).
+         * @param loggingLevel Logging level (default INFO).
+         */
+        public void setBiasMagnitude(double biasMag, Level loggingLevel) {
             // TODO: Delete this method and make as much as possible final.
             histogram.biasMag = biasMag;
-            logger.info(format("  Gaussian Bias Magnitude:        %6.4f (kcal/mol)", biasMag));
+            logger.log(loggingLevel, format("  Gaussian Bias Magnitude:        %6.4f (kcal/mol)", biasMag));
 
             double defaultOffset = 20.0 * biasMag;
             String propString = System.getProperty("ost-temperOffset", Double.toString(defaultOffset));
@@ -1527,13 +1546,13 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             try {
                 temperOffset = Double.parseDouble(propString);
             } catch (NumberFormatException ex) {
-                logger.info(format(" Exception in parsing ost-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
+                logger.log(loggingLevel, format(" Exception in parsing ost-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
                 temperOffset = defaultOffset;
             }
             if (temperOffset < 0.0) {
                 temperOffset = 0.0;
             }
-            logger.info(format("  Coverage before tempering:      %6.4f (kcal/mol)", temperOffset));
+            logger.log(loggingLevel, format("  Coverage before tempering:      %6.4f (kcal/mol)", temperOffset));
         }
 
         /**
@@ -1551,6 +1570,16 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * @param temper a double.
          */
         public void setTemperingParameter(double temper) {
+            setTemperingParameter(temper, Level.INFO);
+        }
+
+        /**
+         * Sets the Dama et al tempering parameter, as a multiple of kBT.
+         *
+         * @param temper   a double.
+         * @param logLevel Level to log at.
+         */
+        public void setTemperingParameter(double temper, Level logLevel) {
             // TODO: Delete this method and make as much as possible final.
             temperingFactor = temper;
             if (temperingFactor > 0.0) {
@@ -1558,7 +1587,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             } else {
                 deltaT = Double.MAX_VALUE;
             }
-            logger.info(String.format(" Tempering parameter: %.5f kBT, %.5f kcal/mol", temperingFactor, deltaT));
+            logger.log(logLevel, String.format(" Tempering parameter: %.5f kBT, %.5f kcal/mol", temperingFactor, deltaT));
         }
 
         /**
@@ -1686,12 +1715,16 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * Add to the value of a recursion kernel bin.
          *
-         * @param lambdaBin  The lambda bin.
-         * @param fLambdaBin The dU/dL bin.
-         * @param value      The value of the bin.
+         * @param lambdaBin     The lambda bin.
+         * @param fLambdaBin    The dU/dL bin.
+         * @param value         The value of the bin.
+         * @param updateFLambda Whether to update the 1D bias (typically true for biases received from other processes)
          */
-        void addToRecursionKernelValue(int lambdaBin, int fLambdaBin, double value) {
+        void addToRecursionKernelValue(int lambdaBin, int fLambdaBin, double value, boolean updateFLambda) {
             recursionKernel[lambdaBin][fLambdaBin] += value;
+            if (updateFLambda) {
+                updateFLambda(false, false);
+            }
         }
 
         /**

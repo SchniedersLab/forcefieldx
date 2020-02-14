@@ -217,18 +217,8 @@ public class MonteCarloOST extends BoltzmannMC {
      * class
      *
      * @param totalSteps   a int.
-     * @param stepsPerMove a int.
-     * @param mcMDE        a boolean
      */
-    public void setMDMoveParameters(long totalSteps, int stepsPerMove, boolean mcMDE) {
-
-        if (mcMDE) {
-            if (equilibration) {
-                this.stepsPerMove = (int) Math.round(stepsPerMove * 0.1);
-            } else {
-                mdMove.setMDIntervalSteps(stepsPerMove);
-            }
-        }
+    public void setMDMoveParameters(long totalSteps) {
         setRunLength(totalSteps);
     }
 
