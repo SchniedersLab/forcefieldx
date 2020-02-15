@@ -1933,13 +1933,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         for (int i = 0; i < nAtoms; i++) {
             if (!assignMultipole(i)) {
                 Atom atom = atoms[i];
-                String message = " No multipole could be assigned to atom:\n"
-                        + atom + "\nof type:\n" + atom.getAtomType();
-                StringBuilder sb = new StringBuilder(message);
+                logger.info(format("No MultipoleType could be assigned:\n %s --> %s", atom, atom.getAtomType()));
+                StringBuilder sb = new StringBuilder();
                 for (Bond b : atom.getBonds()) {
                     Atom a2 = b.get1_2(atom);
                     AtomType aType2 = a2.getAtomType();
-                    sb.append(format("\n  Atom %s with type %s", a2, aType2));
+                    sb.append(format("\n  %s --> %s", a2, aType2));
                 }
                 logger.log(Level.SEVERE, sb.toString());
             }

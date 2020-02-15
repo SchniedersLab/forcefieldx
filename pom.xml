@@ -585,7 +585,7 @@
                                     <version>3.0.5</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>[1.8,14.1]</version>
+                                    <version>[1.8,15.1]</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>

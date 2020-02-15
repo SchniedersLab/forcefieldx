@@ -140,15 +140,15 @@ if [ -x "$awkCmd" ]; then
     fi
 fi
 
-# Detect JDK version; disallow JDKs below 1.8 and above 14.
+# Detect JDK version; disallow JDKs below 1.8 and above 15.
 if [ $hasAwkSed ]; then
     JVERS="`java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g'`"
     JVFIRST="`echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }'`"
     JVSEC="`echo "$JVERS" | awk 'BEGIN { FS = "."; } { print $2 }'`"
 
     USE_EXPTL_FLAGS=''
-    if [ $JVFIRST -gt 14 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JDK 1.8 through JDK 14." 1>&2
+    if [ $JVFIRST -gt 15 ]; then
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 1.8 through JDK 15." 1>&2
 #       exit 1
     elif [ $JVFIRST -eq 9 ]; then
         USE_EXPTL_FLAGS='1'
@@ -162,8 +162,10 @@ if [ $hasAwkSed ]; then
         USE_EXPTL_FLAGS='1'
     elif [ $JVFIRST -eq 14 ]; then
         USE_EXPTL_FLAGS='1'
+    elif [ $JVFIRST -eq 15 ]; then
+        USE_EXPTL_FLAGS='1'
     elif [ $JVSEC -lt 8 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JDK 1.8 through JDK 14." 1>&2
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 1.8 through JDK 15." 1>&2
         exit 1
     fi
 
@@ -192,7 +194,7 @@ if [ $hasAwkSed ]; then
       fi
     fi
 else
-    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 1.8 through JDK 14 and (optionally) CUDA toolkit 10.1."
+    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 1.8 through JDK 15 and (optionally) CUDA toolkit 10.1."
 fi
 
 # For Cygwin, switch paths to Windows format before running java

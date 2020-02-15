@@ -66,6 +66,7 @@ import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.norm;
 import static ffx.numerics.math.VectorMath.r;
 import static ffx.numerics.math.VectorMath.scalar;
+import static ffx.potential.bonded.Bond.logNoBondType;
 import static ffx.potential.bonded.NamingUtils.nameAcetylCap;
 
 /**
@@ -325,9 +326,7 @@ public class BondedUtils {
         String key = BondType.sortKey(c);
         BondType bondType = forceField.getBondType(key);
         if (bondType == null) {
-            logger.severe(format("No BondType for key: %s\n %s\n %s\n %s\n %s", key,
-                    a1.toString(), a1.getAtomType().toString(),
-                    a2.toString(), a2.getAtomType().toString()));
+            logNoBondType(a1, a2, key);
         } else {
             bond.setBondType(bondType);
         }
