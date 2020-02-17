@@ -64,7 +64,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Density [options] &lt;filename&gt;
  */
-@CompileStatic
+//@CompileStatic
 @Command(description = " Calculates system density.", name = "ffxc Density")
 class Density extends PotentialScript {
 
