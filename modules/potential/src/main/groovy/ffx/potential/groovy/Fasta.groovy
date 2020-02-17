@@ -65,17 +65,17 @@ import picocli.CommandLine.Parameters
 class Fasta extends PotentialScript {
 
     /**
-     * -f or --firstResidue defines the first Fasta residue to keep (index of the first residue is 0).
+     * -f or --firstResidue defines the first Fasta residue to keep (index of the first residue is 1).
      */
-    @Option(names = ['-f', '--firstResidue'], paramLabel = "0",
-            description = 'Define the first Fasta residue to keep (index of the first residue is 0).')
-    private int firstResidue = 0
+    @Option(names = ['-f', '--firstResidue'], paramLabel = "1",
+            description = 'Define the first Fasta residue to keep (index of the first residue is 1).')
+    private int firstResidue = 1
 
     /**
-     * -l or --lastResidue defines the last Fasta residue to keep (index of the last residue is n - 1).
+     * -l or --lastResidue defines the last Fasta residue to keep (index of the last residue is n).
      */
     @Option(names = ['-l', '--lastResidue'], paramLabel = "-1",
-            description = 'Define the last Fasta residue to keep (index of the last residue is n - 1).')
+            description = 'Define the last Fasta residue to keep (index of the last residue is n).')
     private int lastResidue = -1
 
     /**
@@ -112,17 +112,16 @@ class Fasta extends PotentialScript {
         ProteinSequence sequence = fastaData.values()[0]
         String seq = sequence.sequenceAsString
         int length = seq.length()
-        logger.info(format("\n %s of length: %d\n %s", sequence.description, length, seq))
-
-
-        if (firstResidue < 0 || firstResidue >= length) {
-            firstResidue = 0
+        logger.info(format("\n %s of length: %d\n %s", sequence.getOriginalHeader(), length, seq))
+        
+        if (firstResidue < 1 || firstResidue > length) {
+            firstResidue = 1
         }
-        if (lastResidue <= firstResidue || lastResidue >= length) {
-            lastResidue = length - 1
+        if (lastResidue < firstResidue || lastResidue > length) {
+            lastResidue = length
         }
 
-        proteinSequence = new ProteinSequence(seq.substring(firstResidue, lastResidue + 1))
+        proteinSequence = new ProteinSequence(seq.substring(firstResidue - 1, lastResidue))
         proteinSequence.setOriginalHeader(sequence.getOriginalHeader())
         length = proteinSequence.length
         logger.info(format("\n New sequence from residue %d to residue %d is of length %d: \n %s",
