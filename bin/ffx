@@ -210,6 +210,9 @@ fi
 
 EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS}"
 
+# This is for trying to use the GraalVM native image generation 
+# EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -agentlib:native-image-agent=config-merge-dir=modules/ui/src/META-INF/native-image"
+
 if $darwin; then
   exec "$JAVACMD" $JAVA_OPTS \
   $EXTRA_JVM_ARGUMENTS \

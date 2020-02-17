@@ -1935,10 +1935,20 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 Atom atom = atoms[i];
                 logger.info(format("No MultipoleType could be assigned:\n %s --> %s", atom, atom.getAtomType()));
                 StringBuilder sb = new StringBuilder();
-                for (Bond b : atom.getBonds()) {
+                List<Bond> bonds = atom.getBonds();
+                for (Bond b : bonds) {
                     Atom a2 = b.get1_2(atom);
                     AtomType aType2 = a2.getAtomType();
                     sb.append(format("\n  %s --> %s", a2, aType2));
+                }
+                if (bonds.size() == 1) {
+                    Atom atom2 = bonds.get(0).get1_2(atom);
+                    bonds = atom2.getBonds();
+                    for (Bond b : bonds) {
+                        Atom a2 = b.get1_2(atom2);
+                        AtomType aType2 = a2.getAtomType();
+                        sb.append(format("\n  1-3 %s --> %s", a2, aType2));
+                    }
                 }
                 logger.log(Level.SEVERE, sb.toString());
             }

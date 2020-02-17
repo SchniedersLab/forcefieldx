@@ -726,7 +726,9 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
         acidScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         // Load the FFX commands.xml file that defines FFX commands.
         try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            String provider =
+                    "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance(provider, null);
             DocumentBuilder db = dbf.newDocumentBuilder();
             db.setEntityResolver(new DTDResolver());
             URL comURL = getClass().getClassLoader().getResource(

@@ -210,6 +210,13 @@ fi
 
 EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS}"
 
+# This is for trying the GraalVM; the GraalVM EE compiler causes errors for FFX.
+# EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -Dgraal.CompilerConfiguration=community"
+# EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -XX:-UseJVMCICompiler"
+
+# This is for trying to use the GraalVM native image generation
+# EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -agentlib:native-image-agent=config-merge-dir=modules/ui/src/META-INF/native-image"
+
 exec "$JAVACMD" $JAVA_OPTS \
   $EXTRA_JVM_ARGUMENTS \
   -classpath "$CLASSPATH" \
@@ -222,3 +229,4 @@ exec "$JAVACMD" $JAVA_OPTS \
   -Dbasedir="$BASEDIR" \
   ffx.Main \
   "$@"
+
