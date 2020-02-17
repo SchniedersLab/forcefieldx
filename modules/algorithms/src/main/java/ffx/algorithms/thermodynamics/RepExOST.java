@@ -39,6 +39,7 @@ package ffx.algorithms.thermodynamics;
 
 import edu.rit.mp.BooleanBuf;
 import edu.rit.mp.DoubleBuf;
+import edu.rit.mp.LongBuf;
 import edu.rit.mp.ObjectBuf;
 import edu.rit.pj.Comm;
 
@@ -47,12 +48,14 @@ import ffx.algorithms.cli.OSTOptions;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.utilities.Constants;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.LongConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -81,7 +84,8 @@ public class RepExOST {
     private final int rank;
     private final int numPairs;
     private int currentOST;
-    private int[] rankToHisto;
+    private final int[] rankToHisto;
+    private final int[] histoToRank;
     private final boolean isMC;
     private boolean reinitVelocities = true;
 
@@ -110,7 +114,8 @@ public class RepExOST {
      * @param repexInterval Interval in psec between repex attempts.
      */
     private RepExOST(OrthogonalSpaceTempering[] osts, MonteCarloOST[] mcOSTs, MolecularDynamics[] dyns, OstType oType,
-                     DynamicsOptions dynamics, OSTOptions ostOpts, String fileType, double repexInterval) {
+                     DynamicsOptions dynamics, OSTOptions ostOpts, CompositeConfiguration properties,
+                     String fileType, double repexInterval) throws IOException {
         this.osts = osts;
         switch (oType) {
             case MD:
@@ -139,8 +144,20 @@ public class RepExOST {
         int size = world.size();
 
         this.numPairs = size - 1;
-        this.random = new Random();
         this.invKT = -1.0 / (Constants.R * dynamics.getTemp());
+        
+        long seed;
+        // TODO: Set this per-process individually if we move back to sending accept/reject messages up/down the chain.
+        LongBuf seedBuf = LongBuf.buffer(0L);
+        if (rank == 0) {
+            seed = properties.getLong("randomseed", ThreadLocalRandom.current().nextLong());
+            seedBuf.put(0, seed);
+            world.broadcast(0, seedBuf);
+        } else {
+            world.broadcast(0, seedBuf);
+            seed = seedBuf.get(0);
+        }
+        this.random = new Random(seed);
 
         double timestep = dynamics.getDt() * Constants.FSEC_TO_PSEC;
         stepsBetweenExchanges = Math.max(1, (int) (repexInterval / timestep));
@@ -151,6 +168,8 @@ public class RepExOST {
                 map(Optional::get).
                 toArray(SynchronousSend[]::new);
         rankToHisto = IntStream.range(0, size).toArray();
+        // TODO: Properly back-copy instead of assuming everything is in order at the start.
+        histoToRank = Arrays.copyOf(rankToHisto, size);
 
         OrthogonalSpaceTempering.Histogram[] histos = Arrays.stream(osts).
                 map(OrthogonalSpaceTempering::getHistogram).
@@ -179,11 +198,11 @@ public class RepExOST {
      * @return              A RepExOST.
      */
     public static RepExOST repexMC(OrthogonalSpaceTempering[] osts, MonteCarloOST[] mcOSTs,
-                                   DynamicsOptions dynamics, OSTOptions ostOpts,
-                                   String fileType, boolean twoStep, double repexInterval) {
+                                   DynamicsOptions dynamics, OSTOptions ostOpts, CompositeConfiguration properties,
+                                   String fileType, boolean twoStep, double repexInterval) throws IOException {
         MolecularDynamics[] dyns = Arrays.stream(mcOSTs).map(MonteCarloOST::getMD).toArray(MolecularDynamics[]::new);
         OstType type = twoStep ? OstType.MC_TWOSTEP : OstType.MC_ONESTEP;
-        return new RepExOST(osts, mcOSTs, dyns, type, dynamics, ostOpts, fileType, repexInterval);
+        return new RepExOST(osts, mcOSTs, dyns, type, dynamics, ostOpts, properties, fileType, repexInterval);
     }
 
     /**
@@ -198,9 +217,9 @@ public class RepExOST {
      * @return              A RepExOST.
      */
     public static RepExOST repexMD(OrthogonalSpaceTempering[] osts, MolecularDynamics[] dyns,
-                                   DynamicsOptions dynamics, OSTOptions ostOpts,
-                                   String fileType, double repexInterval) {
-        return new RepExOST(osts, null, dyns, OstType.MD, dynamics, ostOpts, fileType, repexInterval);
+                                   DynamicsOptions dynamics, OSTOptions ostOpts, CompositeConfiguration properties,
+                                   String fileType, double repexInterval) throws IOException {
+        return new RepExOST(osts, null, dyns, OstType.MD, dynamics, ostOpts, properties, fileType, repexInterval);
     }
 
     /**
@@ -214,7 +233,6 @@ public class RepExOST {
         currentLambda = osts[currentOST].getLambda();
         currentDUDL = osts[currentOST].getdEdL();
 
-        int swapsAccepted = 0;
         if (equilibrate) {
             logger.info(String.format(" Equilibrating repex OST without exchanges on histogram %d.", currentOST));
             algoRun.accept(numTimesteps);
@@ -228,8 +246,12 @@ public class RepExOST {
                 world.barrier(mainLoopTag);
                 currentLambda = osts[currentOST].getLambda();
                 currentDUDL = osts[currentOST].getdEdL();
+                
+                proposeSwaps();
 
-                for (int j = 0; j < numPairs; j++) {
+                // Old, (mostly) functional, code that used inter-process communication to keep processes in sync rather than relying on PRNG coherency and repex moves always falling on a bias deposition tick.
+                // Primary bug: looped over adjacent processes, not over adjacent histograms.
+                /*for (int j = 0; j < numPairs; j++) {
                     if (j == rank) {
                         logger.info(String.format(" Rank %d proposing swap up for exchange %d.", rank, j));
                         if (proposeSwapUp()) {
@@ -243,9 +265,64 @@ public class RepExOST {
                         logger.info(String.format(" Rank %d listening for swap for exchange %d.", rank, j));
                         listenSwap(j);
                     }
-                }
+                }*/
+                
                 reinitVelocities = false;
             }
+        }
+    }
+    
+    private void proposeSwaps() {
+        for (int i = 0; i < numPairs; i++) {
+            int rankLow = histoToRank[i];
+            int rankHigh = histoToRank[i+1];
+            OrthogonalSpaceTempering.Histogram histoLow = osts[i].getHistogram();
+            OrthogonalSpaceTempering.Histogram histoHigh = osts[i+1].getHistogram();
+            
+            double lamLow = histoLow.getCurrentLambda(rankLow);
+            double dUdLLow = histoLow.getCurrentDUDL(rankLow);
+            double lamHigh = histoHigh.getCurrentLambda(rankHigh);
+            double dUdLHigh = histoHigh.getCurrentDUDL(rankHigh);
+            
+            double eii = histoLow.computeBiasEnergy(lamLow, dUdLLow);
+            double eij = histoLow.computeBiasEnergy(lamHigh, dUdLHigh);
+            double eji = histoHigh.computeBiasEnergy(lamLow, dUdLLow);
+            double ejj = histoHigh.computeBiasEnergy(lamHigh, dUdLHigh);
+
+            logger.info(String.format(" Proposing move between histograms %d and %d: " +
+                    "Li: %.6f Lj: %.6f dUdLi: %.6f dUdLj: %.6f", rankLow, rankHigh, lamLow, 
+                    lamHigh, dUdLLow, dUdLHigh));
+
+            double e1 = eii + ejj;
+            double e2 = eji + eij;
+            boolean accept = BoltzmannMC.evaluateMove(random, invKT, e1, e2);
+            double acceptChance = BoltzmannMC.acceptChance(invKT, e1, e2);
+            
+            String desc = accept ? "Accepted" : "Rejected";
+            logger.info(String.format(" %s move with probability %.5f based on eii %.6f, ejj %.6f, eij %.6f, eji %.6f kcal/mol", desc, acceptChance, eii, ejj, eij, eji));
+
+            if (accept) {
+                switchHistos(rankLow, rankHigh, i);
+            }
+        }
+    }
+
+    private void switchHistos(int rankLow, int rankHigh, int histoLow) {
+        int histoHigh = histoLow + 1;
+        rankToHisto[rankLow] = histoHigh;
+        rankToHisto[rankHigh] = histoLow;
+        histoToRank[histoLow] = rankHigh;
+        histoToRank[histoHigh] = rankLow;
+        currentOST = rankToHisto[rank];
+
+        osts[currentOST].setLambda(currentLambda);
+        /* TODO: If there is ever a case where an algorithm will not update coordinates itself at the start, we have to
+          * update coordinates here (from the OST we used to be running on to the new OST). */
+
+        logger.info(String.format(" Rank %d accepting swap: new rankToHisto map %s, targeting histogram %d", rank, Arrays.toString(rankToHisto), currentOST));
+
+        for (SynchronousSend send : sends) {
+            send.updateRanks(rankToHisto);
         }
     }
 

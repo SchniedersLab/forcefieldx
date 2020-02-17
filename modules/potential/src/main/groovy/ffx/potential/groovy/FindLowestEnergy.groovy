@@ -62,7 +62,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc FindLowestEnergy [options] &lt;filename&gt;
  */
-@CompileStatic
+//@CompileStatic
 @Command(description = " Finds the lowest energy structures in an arc file.", name = "ffxc FindLowestEnergy")
 class FindLowestEnergy extends PotentialScript {
 

@@ -196,7 +196,7 @@ class RepexThermo extends Thermodynamics {
 
         StringBuilder sb = new StringBuilder("\n Running ");
         switch (thermodynamics.getAlgorithm()) {
-        // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
+            // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
             case ThermodynamicsOptions.ThermodynamicsAlgorithm.OST:
                 ostAlg: {
                     sb.append("Orthogonal Space Tempering");
@@ -256,22 +256,20 @@ class RepexThermo extends Thermodynamics {
             }
 
             if (isMC) {
-                repExOST = RepExOST.repexMC(allOST, allMC, dynamics, ostOptions, writeout.getFileType(), twoStep, repex.getRepexFrequency());
+                repExOST = RepExOST.repexMC(allOST, allMC, dynamics, ostOptions, topologies[0].getProperties(), writeout.getFileType(), twoStep, repex.getRepexFrequency());
             } else {
-                repExOST = RepExOST.repexMD(allOST, allMD, dynamics, ostOptions, writeout.getFileType(), repex.getRepexFrequency());
+                repExOST = RepExOST.repexMD(allOST, allMD, dynamics, ostOptions, topologies[0].getProperties(), writeout.getFileType(), repex.getRepexFrequency());
             }
 
-            // TODO: Re-instate after dealing with issues in ostOptions.setupMCOST.
-            //repExOST.mainLoop(thermodynamics.getEquilSteps(), true);
+            repExOST.mainLoop(thermodynamics.getEquilSteps(), true);
             repExOST.mainLoop(dynamics.getNumSteps(), false);
         } else {
             logger.severe(" RepexThermo currently does not support fixed-lambda alchemy!")
         }
 
-        logger.info(" Algorithm with Histogram Replica Exchange Done: " + thermodynamics.getAlgorithm());
+        logger.info(" ${thermodynamics.getAlgorithm()} with Histogram Replica Exchange Done.");
 
         return this
-
     }
 
 

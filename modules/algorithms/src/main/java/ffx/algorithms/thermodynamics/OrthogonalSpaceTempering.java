@@ -1338,7 +1338,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * Most recent lambda values for each Walker.
          */
-        private double[] currentLambdaValues;
+        private final double[] currentLambdaValues;
+        private final double[] currentDUDL;
 
         /**
          * Histogram constructor.
@@ -1445,7 +1446,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 synchronousSend = new SynchronousSend(histograms, rankToHistogramMap, independentWalkers);
                 asynchronousSend = null;
             }
-            currentLambdaValues = new double[world.size()];
+            currentLambdaValues = new double[numProc];
+            currentDUDL = new double[numProc];
 
             // Attempt to load a restart file if one exists.
             readRestart();
@@ -1509,7 +1511,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         public void setCurrentLambdaValues(double[] currentLambdaValues) {
-            this.currentLambdaValues = currentLambdaValues;
+            System.arraycopy(currentLambdaValues, 0, this.currentLambdaValues, 0, currentLambdaValues.length);
+        }
+
+        public void setCurrentDUDL(double[] currentDUDL) {
+            System.arraycopy(currentDUDL, 0, this.currentDUDL, 0, currentDUDL.length);
         }
 
         /**
@@ -2401,6 +2407,24 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         void setCurrentLambdaforRank(int rank, double lambda) {
             currentLambdaValues[rank] = lambda;
+        }
+
+        /**
+         * Update a local array of current dU/dL values for each walker.
+         *
+         * @param rank Walker rank.
+         * @param dUdL Walker's current dU/dL value.
+         */
+        void setCurrentdUdLForRank(int rank, double dUdL) {
+            currentDUDL[rank] = dUdL;
+        }
+
+        double getCurrentLambda(int rank) {
+            return currentLambdaValues[rank];
+        }
+
+        double getCurrentDUDL(int rank) {
+            return currentDUDL[rank];
         }
 
         void destroy() {

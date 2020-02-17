@@ -60,6 +60,10 @@ public class SynchronousSend {
      * Most recent lambda values for each Walker.
      */
     private final double[] currentLambdaValues;
+    /**
+     * Most recent dU/dL values for each walker.
+     */
+    private final double[] currentDUDL;
 
     /**
      * Constructor.
@@ -81,6 +85,7 @@ public class SynchronousSend {
         myRecursionWeightBuf = recursionWeightsBuf[rank];
 
         currentLambdaValues = new double[numProc];
+        currentDUDL = new double[numProc];
         this.histograms = histograms;
         this.rankToHistogramMap = rankToHistogramMap;
         this.independentWalkers = independentWalkers;
@@ -125,6 +130,7 @@ public class SynchronousSend {
         // Find the minimum and maximum FLambda bin for the gathered counts.
         for (int i = 0; i < numProc; i++) {
             currentLambdaValues[i] = recursionWeights[i][0];
+            currentDUDL[i] = recursionWeights[i][1];
             // Only include this walkers bias.
             if (independentWalkers && i != rank) {
                 continue;
@@ -145,6 +151,7 @@ public class SynchronousSend {
             Histogram currentHistogram = histograms[his];
 
             currentHistogram.setCurrentLambdaValues(currentLambdaValues);
+            currentHistogram.setCurrentDUDL(currentDUDL);
 
             int walkerLambda = currentHistogram.binForLambda(recursionWeights[i][0]);
             int walkerFLambda = currentHistogram.binForFLambda(recursionWeights[i][1]);

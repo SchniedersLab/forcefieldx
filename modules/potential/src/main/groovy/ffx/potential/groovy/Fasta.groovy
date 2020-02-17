@@ -60,7 +60,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Fasta [options] &lt;filename.fasta&gt;
  */
-@CompileStatic
+//@CompileStatic
 @Command(description = " Fasta outputs a sub-sequence from a FASTA file.", name = "ffxc Fasta")
 class Fasta extends PotentialScript {
 
