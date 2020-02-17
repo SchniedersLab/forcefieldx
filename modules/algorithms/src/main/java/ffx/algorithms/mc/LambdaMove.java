@@ -138,7 +138,7 @@ public class LambdaMove implements MCMove {
      * @return       Correctly mirrored lam + dL
      */
     public static double mirror(Random random, double lam, double dL) {
-        if (lam == 0 || lam == 1) {
+        if (lam == 0.0 || lam == 1.0) {
             boolean skip = random.nextBoolean();
             if (skip) {
                 return lam;

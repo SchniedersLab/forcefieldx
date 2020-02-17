@@ -82,10 +82,10 @@ class Energy extends PotentialScript {
     @Option(names = ['--es1', '--noElecStart1'], paramLabel = "1",
             description = 'Starting no-electrostatics atom for 1st topology')
     private int es1 = 1
+
     /**
      * * --fl or --findLowest Return the n lowest energy structures from an ARC or PDB file.
      */
-
     @Option(names = ['--fl', '--findLowest'], paramLabel = "0",
             description = 'Return the n lowest energy structures from an ARC or PDB file.')
     private int fl = 0

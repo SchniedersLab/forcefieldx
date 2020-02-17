@@ -37,6 +37,8 @@
 //******************************************************************************
 package ffx.potential.groovy
 
+import groovy.transform.CompileStatic
+
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Bond
@@ -52,6 +54,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Biotype &lt;filename&gt;
  */
+@CompileStatic
 @Command(description = " Print out Biotype records for the atoms in an XYZ file.", name = "ffxc Biotype")
 class Biotype extends PotentialScript {
 
@@ -71,7 +74,7 @@ class Biotype extends PotentialScript {
         }
 
         if (xyzFile != null && xyzFile.size() > 0) {
-            MolecularAssembly[] assemblies = potentialFunctions.open(xyzFile.get(0))
+            MolecularAssembly[] assemblies = potentialFunctions.open(xyzFile.get(0)) as MolecularAssembly[]
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())

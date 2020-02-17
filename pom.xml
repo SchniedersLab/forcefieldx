@@ -1150,7 +1150,7 @@
         <cdk.version>2.0</cdk.version>
         <clustering.version>1.2.0</clustering.version>
         <fastutil.version>8.3.0</fastutil.version>
-        <picocli.version>4.0.4</picocli.version>
+        <picocli.version>4.1.4</picocli.version>
         <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
         <tensorflow.version>1.12.0</tensorflow.version>
         <!-- Maven Core Plugin Versions -->

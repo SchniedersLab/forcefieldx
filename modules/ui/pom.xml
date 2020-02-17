@@ -21,7 +21,32 @@
     </description>
     <build>
         <plugins>
-
+            <!-- plugin>
+                <groupId>com.oracle.substratevm</groupId>
+                <artifactId>native-image-maven-plugin</artifactId>
+                <version>19.2.1</version>
+                <configuration>
+                    <skip>true</skip>
+                    <buildArgs>
+                        -report-unsupported-elements-at-runtime
+                        -initialize-at-build-time
+                        -initialize-at-run-time=groovy.grape.GrapeIvy
+                        -no-fallback
+                        -no-server
+                        -allow-incomplete-classpath
+                        -H:ConfigurationFileDirectories=conf=../src/META-INF/native-image
+                    </buildArgs>
+                    <mainClass>ffx.Main</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>native-image</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+            </plugin -->
             <!-- Create a shaded jar with all FFX dependencies -->
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -269,5 +294,10 @@
             <version>${MRJToolkitStubs.version}</version>
             <type>jar</type>
         </dependency>
+        <!-- dependency>
+            <groupId>org.apache.ivy</groupId>
+            <artifactId>ivy</artifactId>
+            <version>2.5.0</version>
+        </dependency -->
     </dependencies>
 </project>

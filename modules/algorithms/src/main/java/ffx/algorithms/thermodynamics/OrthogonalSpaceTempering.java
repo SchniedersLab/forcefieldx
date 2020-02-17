@@ -657,6 +657,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
     /**
      * Set the number of counts.
+     *
      * @param counts
      */
     public void setEnergyCount(long counts) {
@@ -1888,7 +1889,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                     double deltaFL2 = deltaFL * deltaFL;
                     double weight = mirrorFactor * rc;
                     if (weight > 0) {
-                        double e = weight * biasMag * L2exp * exp(-deltaFL2 * invFLs2);
+                        double e = weight * L2exp * exp(-deltaFL2 * invFLs2);
+                        if (biasMag != 0.0) {
+                            e *= biasMag;
+                        }
                         sum += e;
                     }
                 }
@@ -2284,7 +2288,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 }
             }
 
-            if (tempering) {
+            if (tempering && biasMag > 0.0) {
                 double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
                 temperingWeight = exp(temperEnergy / deltaT);
             }
