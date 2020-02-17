@@ -158,14 +158,15 @@ class AsynchronousSend extends Thread {
 
             int rank = (int) round(recursionCount[0]);
             double lambda = recursionCount[1];
+            double fLambda = recursionCount[2];
             histogram.setCurrentLambdaforRank(rank, lambda);
+            histogram.setCurrentdUdLForRank(rank, fLambda);
 
             // If independent, only add bias values from this walker
             if (histogram.getIndependentWalkers() && histogram.getRank() != rank) {
                 continue;
             }
 
-            double fLambda = recursionCount[2];
             // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
             histogram.checkRecursionKernelSize(fLambda);
 

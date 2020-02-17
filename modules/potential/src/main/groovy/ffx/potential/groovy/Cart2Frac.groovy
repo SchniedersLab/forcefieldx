@@ -59,7 +59,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Cart2Frac &lt;filename&gt;
  */
-@CompileStatic
+//@CompileStatic
 @Command(description = " Convert Cartesian coordinates to fractional.", name = "ffxc Cart2Frac")
 class Cart2Frac extends PotentialScript {
 
