@@ -113,7 +113,7 @@ class Fasta extends PotentialScript {
         String seq = sequence.sequenceAsString
         int length = seq.length()
         logger.info(format("\n %s of length: %d\n %s", sequence.getOriginalHeader(), length, seq))
-        
+
         if (firstResidue < 1 || firstResidue > length) {
             firstResidue = 1
         }
