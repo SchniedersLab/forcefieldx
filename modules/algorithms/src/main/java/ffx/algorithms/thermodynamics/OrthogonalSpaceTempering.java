@@ -310,7 +310,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 lambdaReader.readLambdaFile(resetNumSteps);
                 lambdaReader.setVariables(this);
                 lambdaReader.close();
-                logger.info(format("\n Continuing OST lambda from %s.", lambdaFile.getName()));
+                logger.info(format("\n Continuing OST lambda from %s.", lambdaFile.toString()));
             } catch (FileNotFoundException ex) {
                 logger.info(" Lambda restart file could not be found and will be ignored.");
             } catch (IOException ioe) {

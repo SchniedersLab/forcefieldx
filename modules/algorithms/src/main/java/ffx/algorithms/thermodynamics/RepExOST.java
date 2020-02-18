@@ -287,7 +287,7 @@ public class RepExOST {
                 osts[currentOST].logOutputFiles();
                 molDyns[currentOST].logOutputFiles();
                 world.barrier(mainLoopTag);
-                proposeSwaps();
+                proposeSwaps((i % 2), 2);
 
 
                 // Old, (mostly) functional, code that used inter-process communication to keep processes in sync rather than relying on PRNG coherency and repex moves always falling on a bias deposition tick.
@@ -323,8 +323,8 @@ public class RepExOST {
         Arrays.stream(molDyns).forEach((MolecularDynamics md) -> md.setTrajectoryFiles(trajFiles));
     }
     
-    private void proposeSwaps() {
-        for (int i = 0; i < numPairs; i++) {
+    private void proposeSwaps(final int offset, final int stride) {
+        for (int i = offset; i < numPairs; i+= stride) {
             int rankLow = histoToRank[i];
             int rankHigh = histoToRank[i+1];
             OrthogonalSpaceTempering.Histogram histoLow = osts[i].getHistogram();
