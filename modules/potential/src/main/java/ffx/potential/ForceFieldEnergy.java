@@ -3212,7 +3212,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     public boolean destroy() {
         if (destroyed) {
-            logger.info(format(" This ForceFieldEnergy is already destroyed: %s", this.toString()));
+            // This regularly occurs with Repex OST, as multiple OrthogonalSpaceTempering objects wrap a single FFE.
+            logger.fine(format(" This ForceFieldEnergy is already destroyed: %s", this.toString()));
             return true;
         } else {
             try {

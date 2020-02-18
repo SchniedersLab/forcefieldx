@@ -158,29 +158,6 @@ class RepexThermo extends Thermodynamics {
         File lambdaRestart = new File("${withRankName}.lam");
         boolean lamExists = lambdaRestart.exists();
 
-        int histoRank = rank;
-        if (lamExists) {
-            LambdaReader lr = new LambdaReader(new BufferedReader(new FileReader(lambdaRestart)));
-            lr.readLambdaFile(false);
-            histoRank = lr.getHistogramIndex();
-            lr.close();
-        }
-        File dynFile = new File("${withRankName}.dyn");
-
-        String histoDirName = "${filepath}${histoRank}";
-        File histoDir = new File(histoDirName);
-        if (!histoDir.exists()) {
-            histoDir.mkdir();
-        }
-        histoDirName = "${histoDirName}${File.separator}";
-        String withHistoName = "${histoDirName}${fileBase}";
-
-        File histogramRestart = new File("${withHistoName}.his");
-        File[] trajectoryFiles = new File[nArgs];
-        for (int i = 0; i < nArgs; i++) {
-            trajectoryFiles[i] = new File(String.format("%s%s.arc", histoDirName, FilenameUtils.getBaseName(args[i])));
-        }
-
         // Read in files.
         logger.info(String.format(" Initializing %d topologies...", nArgs))
         if (fromActive) {

@@ -58,6 +58,7 @@ public class LambdaReader extends BufferedReader {
     private double halfThetaVel;
     private int nSteps = 0;
     private int histoIndex = 0;
+    private boolean resetEnergyCount = false;
 
     /**
      * Constructor.
@@ -74,6 +75,7 @@ public class LambdaReader extends BufferedReader {
      * @param resetEnergyCount Flag to indicate if the energy count should be read in.
      */
     public void readLambdaFile(boolean resetEnergyCount) {
+        this.resetEnergyCount = resetEnergyCount;
         try {
             lambda = Double.parseDouble(readLine().split(" +")[1]);
             halfThetaVel = Double.parseDouble(readLine().split(" +")[1]);
@@ -92,24 +94,15 @@ public class LambdaReader extends BufferedReader {
             String message = " Invalid OST Lambda file.";
             logger.log(Level.SEVERE, message, e);
         }
-        if (!resetEnergyCount) {
-            try {
-                //orthogonalSpaceTempering.energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
-            } catch (Exception e) {
-                String message = format(" Could not find number of steps taken in OST Lambda file: %s. This warning is expected for MC-OST.", e.toString());
-                logger.log(Level.INFO, message);
-            }
-        }
     }
 
     void setVariables(OrthogonalSpaceTempering ost) {
         ost.setLambda(lambda);
         Histogram histo = ost.getHistogram();
         histo.setHalfThetaVelocity(halfThetaVel);
-        if (nSteps > 0) {
+        if (!resetEnergyCount && nSteps > 0) {
             ost.setEnergyCount(nSteps);
         }
-
     }
 
     /**
