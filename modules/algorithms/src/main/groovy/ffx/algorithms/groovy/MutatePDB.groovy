@@ -109,19 +109,21 @@ class MutatePDB extends AlgorithmsScript {
     MutatePDB run() {
 
         if (!init()) {
-            return this
+            return null
         }
-        //Used if --allChains is true. The false assembly provides access to the chainIDs without compromising the mutated molecular assembly.
+
+        // Used if --allChains is true.
+        // The false assembly provides access to the chainIDs without compromising the mutated molecular assembly.
         MolecularAssembly falseAssembly
-        //Set false assembly.
+        // Set false assembly.
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
             falseAssembly = assemblies[0]
         } else if (falseAssembly == null) {
             logger.info(helpString())
-            return
+            return null
         }
-        //For every chain, mutate the residue.
+        // For every chain, mutate the residue.
         Polymer[] chains = falseAssembly.getChains()
 
         if (chains.size() == 1 && chain == ' ') {
@@ -132,24 +134,23 @@ class MutatePDB extends AlgorithmsScript {
         if (rotamer > -1) {
             destRotamer = rotamer
         }
-        RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary()
 
         logger.info("\n Mutating residue number " + resID + " of chain " + chain + " to " + resName)
 
         // Read in command line.
         String filename = filenames.get(0)
-        File structure = new File(filename)
+        File structureFile = new File(filename)
         int index = filename.lastIndexOf(".")
         String name = filename.substring(0, index)
         MolecularAssembly molecularAssembly = new MolecularAssembly(name)
-        molecularAssembly.setFile(structure)
+        molecularAssembly.setFile(structureFile)
 
-        CompositeConfiguration properties = Keyword.loadProperties(structure)
+        CompositeConfiguration properties = Keyword.loadProperties(structureFile)
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties)
         ForceField forceField = forceFieldFilter.parse()
         molecularAssembly.setForceField(forceField)
 
-        PDBFilter pdbFilter = new PDBFilter(structure, molecularAssembly, forceField, properties)
+        PDBFilter pdbFilter = new PDBFilter(structureFile, molecularAssembly, forceField, properties)
         if (allChains) {
             for (Polymer currentChain : chains) {
                 pdbFilter.mutate(currentChain.chainID, resID, resName)
@@ -162,7 +163,7 @@ class MutatePDB extends AlgorithmsScript {
         molecularAssembly.finalize(true, forceField)
 
         if (destRotamer > -1) {
-            rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.Richardson, true)
+            RotamerLibrary rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.Richardson, true)
             if (allChains) {
                 chains = molecularAssembly.getChains()
                 for (Polymer currentChain : chains) {
@@ -185,14 +186,23 @@ class MutatePDB extends AlgorithmsScript {
                 }
             }
         }
-        pdbFilter.writeFile(structure, false)
+        pdbFilter.writeFile(structureFile, false)
+
+        forceFieldEnergy = molecularAssembly.getPotentialEnergy()
 
         return this
     }
 
     @Override
     List<Potential> getPotentials() {
-        return forceFieldEnergy != null ? Collections.singletonList(forceFieldEnergy) : new ArrayList<>();
+        List<Potential> potentials
+        if (forceFieldEnergy == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(forceFieldEnergy)
+        }
+        return potentials
     }
+
 }
 

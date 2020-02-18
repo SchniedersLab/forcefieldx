@@ -37,9 +37,6 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import ffx.potential.parsers.PDBFilter
-import ffx.potential.parsers.SystemFilter
-import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
 import static org.apache.commons.math3.util.FastMath.abs
 
@@ -52,6 +49,9 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.MolecularAssembly.FractionalMode
 import ffx.potential.XtalEnergy
+import ffx.potential.parsers.PDBFilter
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XYZFilter
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -97,28 +97,29 @@ class CrystalMin extends AlgorithmsScript {
     @Parameters(arity = "1", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
     List<String> filenames = null
 
-    private XtalEnergy xtalEnergy;
+    private XtalEnergy xtalEnergy
+    private CrystalMinimize crystalMinimize
 
     @Override
     CrystalMin run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
-        String modelfilename
+        String modelFilename
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
+            modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath()
+            modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
 
-        logger.info("\n Running CrystalMinimize on " + modelfilename)
+        logger.info("\n Running CrystalMinimize on " + modelFilename)
         logger.info("\n RMS gradient convergence criteria: " + minimizeOptions.eps)
 
         ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
@@ -145,7 +146,7 @@ class CrystalMin extends AlgorithmsScript {
         }
 
         // Handle Single Topology Cases.
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
+        modelFilename = activeAssembly.getFile().getAbsolutePath()
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
@@ -170,7 +171,7 @@ class CrystalMin extends AlgorithmsScript {
             saveFile = algorithmFunctions.versionFile(saveFile)
             writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
             int numModels = systemFilter.countNumModels()
-            if(numModels>1){
+            if (numModels > 1) {
                 writeFilter.setModelNumbering(0)
             }
             writeFilter.writeFile(saveFile, true, false, false)
@@ -181,13 +182,14 @@ class CrystalMin extends AlgorithmsScript {
                 if (systemFilter instanceof PDBFilter) {
                     saveFile.append("ENDMDL\n")
                     runMinimize()
-                    writeFilter.writeFile(saveFile, true, false, false)
-                } else if(systemFilter instanceof XYZFilter){
+                    PDBFilter pdbFilter = (PDBFilter) writeFilter
+                    pdbFilter.writeFile(saveFile, true, false, false)
+                } else if (systemFilter instanceof XYZFilter) {
                     runMinimize()
                     writeFilter.writeFile(saveFile, true)
                 }
             }
-            if(systemFilter instanceof PDBFilter) {
+            if (systemFilter instanceof PDBFilter) {
                 saveFile.append("END\n")
             }
         }
@@ -196,7 +198,7 @@ class CrystalMin extends AlgorithmsScript {
     }
 
     void runMinimize() {
-        CrystalMinimize crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, algorithmListener)
+        crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, algorithmListener)
         crystalMinimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
         double energy = crystalMinimize.getEnergy()
 
@@ -236,6 +238,13 @@ class CrystalMin extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
-        return xtalEnergy == null ? Collections.emptyList() : Collections.singletonList(xtalEnergy);
+        List<Potential> potentials
+        if (xtalEnergy == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(xtalEnergy)
+        }
+        return potentials
     }
+
 }

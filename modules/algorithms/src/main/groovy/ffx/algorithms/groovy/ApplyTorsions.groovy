@@ -70,9 +70,9 @@ class ApplyTorsions extends AlgorithmsScript {
             description = 'Single character chain name (default is \" \").')
     String chain = " "
     /**
-     * -r or --resid selects the residue to apply torsions to.
+     * -r or --resID selects the residue to apply torsions to.
      */
-    @Option(names = ["-r", "--resid"], paramLabel = '1',
+    @Option(names = ["-r", "--resID"], paramLabel = '1',
             description = 'Residue number.')
     int resID = 1
     /**
@@ -105,22 +105,22 @@ class ApplyTorsions extends AlgorithmsScript {
     ApplyTorsions run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
-        String modelfilename
+        String modelFilename
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
+            modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath()
+            modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
 
-        String newName = FilenameUtils.getBaseName(modelfilename)
+        String newName = FilenameUtils.getBaseName(modelFilename)
 
         String videoFile
         if (vidFileName != null) {
@@ -138,18 +138,18 @@ class ApplyTorsions extends AlgorithmsScript {
         Polymer polymer = activeAssembly.getChain(chain)
         if (polymer == null) {
             logger.info(" Polymer + " + chain + " does not exist.")
-            return
+            return null
         }
         Residue residue = polymer.getResidue(resID)
         if (residue == null) {
             logger.info(" Residue + " + resID + " does not exist.")
-            return
+            return null
         }
 
-        GenerateRotamers genr = new GenerateRotamers(activeAssembly,
+        GenerateRotamers generateRotamers = new GenerateRotamers(activeAssembly,
                 activeAssembly.getPotentialEnergy(), residue, outFile, nChi, algorithmListener)
-        genr.setVideo(videoFile)
-        genr.applyAndSaveTorsions(torSets)
+        generateRotamers.setVideo(videoFile)
+        generateRotamers.applyAndSaveTorsions(torSets)
 
         return this
     }

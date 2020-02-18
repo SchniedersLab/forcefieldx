@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import ffx.potential.parsers.PDBFilter
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.ParallelTeam
@@ -52,6 +51,7 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
+import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
 
@@ -60,12 +60,11 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 /**
- * The Minimize script uses a limited-memory BFGS algorithm to minimize the 
- * energy of a molecular system or supersystem.
+ * The Minimize script uses a limited-memory BFGS algorithm to minimize the energy of a molecular system.
  * <br>
  * Usage:
  * <br>
- * ffxc Minimizer [options] &lt;filename [file2...]&gt;
+ * ffxc Minimize [options] &lt;filename [file2...]&gt;
  */
 @Command(description = " Run L-BFGS minimization on a system.", name = "ffxc Minimize")
 class Minimizer extends AlgorithmsScript {
@@ -99,7 +98,7 @@ class Minimizer extends AlgorithmsScript {
     Minimizer run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
         List<String> arguments = filenames
@@ -110,7 +109,7 @@ class Minimizer extends AlgorithmsScript {
         topologies = new MolecularAssembly[nArgs]
 
         int numParallel = topology.getNumParallel(threadsAvail, nArgs)
-        threadsPer = threadsAvail / numParallel
+        threadsPer = (int) (threadsAvail / numParallel)
 
         // Turn on computation of lambda derivatives if softcore atoms exist.
         boolean lambdaTerm = alchemical.hasSoftcore() || topology.hasSoftcore()
@@ -131,18 +130,16 @@ class Minimizer extends AlgorithmsScript {
 
         List<MolecularAssembly> topologyList = new ArrayList<>(4)
 
-        /**
-         * Read in files.
-         */
+        // Read in files.
         if (!arguments || arguments.isEmpty()) {
-            MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
-            if (mola == null) {
+            MolecularAssembly molecularAssembly = algorithmFunctions.getActiveAssembly()
+            if (molecularAssembly == null) {
                 logger.info(helpString())
-                return this
+                return null
             }
             arguments = new ArrayList<>()
-            arguments.add(mola.getFile().getName())
-            topologyList.add(alchemical.processFile(topology, mola, 0))
+            arguments.add(molecularAssembly.getFile().getName())
+            topologyList.add(alchemical.processFile(topology, molecularAssembly, 0))
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs))
             for (int i = 0; i < nArgs; i++) {
@@ -154,12 +151,10 @@ class Minimizer extends AlgorithmsScript {
         MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
         if (topologies.length == 1) {
-            alchemical.setActiveAtoms(topologies[0]);
+            alchemical.setActiveAtoms(topologies[0])
         }
 
-        /**
-         * Configure the potential to test.
-         */
+        // Configure the potential to test.
         StringBuilder sb = new StringBuilder("\n Minimizing energy of ")
         potential = topology.assemblePotential(topologies, threadsAvail, sb)
 
@@ -167,7 +162,6 @@ class Minimizer extends AlgorithmsScript {
 
         LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null
         linter?.setLambda(lambda)
-
 
 
         SystemFilter systemFilter = algorithmFunctions.getFilter()
@@ -184,8 +178,8 @@ class Minimizer extends AlgorithmsScript {
 
         if (topologies.length > 1) {
             // Handle Multiple Topology Cases.
-            for (mola in topologies) {
-                String modelFilename = mola.getFile().getAbsolutePath()
+            for (molecularAssembly in topologies) {
+                String modelFilename = molecularAssembly.getFile().getAbsolutePath()
 
                 if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
                     saveDir = new File(FilenameUtils.getFullPath(modelFilename))
@@ -197,9 +191,9 @@ class Minimizer extends AlgorithmsScript {
                 fileName = FilenameUtils.removeExtension(fileName)
 
                 if (ext.toUpperCase().contains("XYZ")) {
-                    algorithmFunctions.saveAsXYZ(mola, new File(dirName + fileName + ".xyz"))
+                    algorithmFunctions.saveAsXYZ(molecularAssembly, new File(dirName + fileName + ".xyz"))
                 } else {
-                    algorithmFunctions.saveAsPDB(mola, new File(dirName + fileName + ".pdb"))
+                    algorithmFunctions.saveAsPDB(molecularAssembly, new File(dirName + fileName + ".pdb"))
                 }
             }
         } else {
@@ -230,7 +224,7 @@ class Minimizer extends AlgorithmsScript {
                 saveFile = algorithmFunctions.versionFile(saveFile)
                 writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
                 int numModels = systemFilter.countNumModels()
-                if(numModels>1){
+                if (numModels > 1) {
                     writeFilter.setModelNumbering(0)
                 }
                 writeFilter.writeFile(saveFile, true, false, false)
@@ -244,13 +238,14 @@ class Minimizer extends AlgorithmsScript {
                     if (systemFilter instanceof PDBFilter) {
                         saveFile.append("ENDMDL\n")
                         minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
-                        writeFilter.writeFile(saveFile, true, false, false)
-                    } else if(systemFilter instanceof XYZFilter){
+                        PDBFilter pdbFilter = (PDBFilter) systemFilter
+                        pdbFilter.writeFile(saveFile, true, false, false)
+                    } else if (systemFilter instanceof XYZFilter) {
                         minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
                         writeFilter.writeFile(saveFile, true)
                     }
                 }
-                if(systemFilter instanceof PDBFilter) {
+                if (systemFilter instanceof PDBFilter) {
                     saveFile.append("END\n")
                 }
             }
@@ -261,6 +256,13 @@ class Minimizer extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
-        return potential == null ? Collections.emptyList() : Collections.singletonList(potential)
+        List<Potential> potentials
+        if (potential == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(potential)
+        }
+        return potentials
     }
+
 }

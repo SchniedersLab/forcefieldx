@@ -82,21 +82,21 @@ class Histogram extends AlgorithmsScript {
             return this
         }
 
-        String modelfilename
+        String modelFilename
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
+            modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
             return this
         } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath()
+            modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
 
-        println("\n Evaluating Histogram for " + modelfilename)
+        println("\n Evaluating Histogram for " + modelFilename)
 
-        File structureFile = new File(FilenameUtils.normalize(modelfilename))
+        File structureFile = new File(FilenameUtils.normalize(modelFilename))
         structureFile = new File(structureFile.getAbsolutePath())
         String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
         File histogramRestart = new File(baseFilename + ".his")
@@ -115,7 +115,7 @@ class Histogram extends AlgorithmsScript {
         double saveInterval = 100.0
         double temperature = 298.15
 
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
+        modelFilename = activeAssembly.getFile().getAbsolutePath()
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
@@ -149,6 +149,13 @@ class Histogram extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
-        return orthogonalSpaceTempering == null ? Collections.emptyList() : Collections.singletonList(orthogonalSpaceTempering)
+        List<Potential> potentials
+        if (orthogonalSpaceTempering == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(orthogonalSpaceTempering)
+        }
+        return potentials
     }
+
 }
