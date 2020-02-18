@@ -1907,10 +1907,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                     double deltaFL2 = deltaFL * deltaFL;
                     double weight = mirrorFactor * rc;
                     if (weight > 0) {
-                        double e = weight * L2exp * exp(-deltaFL2 * invFLs2);
-                        if (biasMag != 0.0) {
-                            e *= biasMag;
-                        }
+                        // TODO: should special logic be applied for a biasMag of 0?
+                        double e = weight * biasMag * L2exp * exp(-deltaFL2 * invFLs2);
                         sum += e;
                     }
                 }
