@@ -880,13 +880,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         assemblyInfo();
 
-        if (dyn == null) {
-            this.restartFile = fallbackDynFile;
-            loadRestart = false;
-        } else {
-            this.restartFile = dyn;
-            loadRestart = dyn.exists();
-        }
+        this.restartFile = (dyn == null) ? fallbackDynFile : dyn;
+        loadRestart = restartFile.exists() && !initialized;
 
         if (dynFilter == null) {
             dynFilter = new DYNFilter(molecularAssembly.getName());
@@ -896,8 +891,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         this.initVelocities = initVelocities;
         done = false;
 
-        if (dyn != null && dyn.exists()) {
-            logger.info(" Continuing from " + dyn.getAbsolutePath());
+        if (loadRestart) {
+            logger.info(" Continuing from " + restartFile.getAbsolutePath());
         }
 
         if (!verbosityLevel.isQuiet) {
@@ -908,7 +903,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             //logger.info(format(" Archive file: %s", archiveFile.getName()));
             for (int i = 0; i < assemblies.size(); i++) {
                 AssemblyInfo ai = assemblies.get(i);
-                logger.info(format(" Archive file %3d: %s", i, ai.archiveFile.getName()));
+                logger.info(format(" Archive file %3d: %s", (i+1), ai.archiveFile.getName()));
             }
             logger.info(format(" Restart file:     %s", restartFile.getName()));
         }
