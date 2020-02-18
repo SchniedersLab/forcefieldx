@@ -47,7 +47,7 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
-import ffx.potential.parsers.PDBFilter
+import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -64,50 +64,46 @@ import picocli.CommandLine.Parameters
 class ManyBody extends AlgorithmsScript {
 
     @Mixin
-    ManyBodyOptions manyBody;
+    ManyBodyOptions manyBody
 
     /**
      * One or more filenames.
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
-    private List<String> filenames;
+    private List<String> filenames
 
-    private File baseDir = null;
-    boolean testing = null;
+    private File baseDir = null
+    boolean testing = null
 
-    ForceFieldEnergy potentialEnergy;
+    ForceFieldEnergy potentialEnergy
 
-    boolean monteCarloTesting = false;
+    boolean monteCarloTesting = false
 
     @Override
     ManyBody run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
-        String priorGKwarn = System.getProperty("gk-suppressWarnings");
+        String priorGKwarn = System.getProperty("gk-suppressWarnings")
         if (priorGKwarn == null || priorGKwarn.isEmpty()) {
-            System.setProperty("gk-suppressWarnings", "true");
+            System.setProperty("gk-suppressWarnings", "true")
         }
 
-        String modelFileName;
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0));
-            activeAssembly = assemblies[0];
+            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
+            activeAssembly = assemblies[0]
             if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
-                PDBFilter.renameAtomsToPDBStandard(activeAssembly);
+                renameAtomsToPDBStandard(activeAssembly)
             }
-            modelFileName = activeAssembly.getFile().getAbsolutePath();
         } else if (activeAssembly == null) {
-            logger.info(helpString());
-            return this;
-        } else {
-            // TODO: Get the active assembly from the User Interface/GUI. Or die.
-            logger.warning("Could not load file or active assembly.");
+            logger.info(helpString())
+            return null
         }
-        activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
-        potentialEnergy = activeAssembly.getPotentialEnergy();
+
+        activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
+        potentialEnergy = activeAssembly.getPotentialEnergy()
 
         // End rotamer adding code
 
@@ -125,57 +121,57 @@ class ManyBody extends AlgorithmsScript {
         }
         manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
-        ArrayList<Residue> residueList = rotamerOptimization.getResidues();
+        ArrayList<Residue> residueList = rotamerOptimization.getResidues()
 
-        boolean master = true;
+        boolean master = true
         if (Comm.world().size() > 1) {
-            int rank = Comm.world().rank();
+            int rank = Comm.world().rank()
             if (rank != 0) {
-                master = false;
+                master = false
             }
         }
 
         algorithmFunctions.energy(activeAssembly)
 
-        RotamerLibrary.measureRotamers(residueList, false);
+        RotamerLibrary.measureRotamers(residueList, false)
 
-        RotamerOptimization.Algorithm algo;
+        RotamerOptimization.Algorithm algorithm
         switch (manyBody.getAlgorithmNumber()) {
             case 1:
-                algo = RotamerOptimization.Algorithm.INDEPENDENT;
-                break;
+                algorithm = RotamerOptimization.Algorithm.INDEPENDENT
+                break
             case 2:
-                algo = RotamerOptimization.Algorithm.ALL;
-                break;
+                algorithm = RotamerOptimization.Algorithm.ALL
+                break
             case 3:
-                algo = RotamerOptimization.Algorithm.BRUTE_FORCE;
-                break;
+                algorithm = RotamerOptimization.Algorithm.BRUTE_FORCE
+                break
             case 4:
-                algo = RotamerOptimization.Algorithm.WINDOW;
-                break;
+                algorithm = RotamerOptimization.Algorithm.WINDOW
+                break
             case 5:
-                algo = RotamerOptimization.Algorithm.BOX;
-                break;
+                algorithm = RotamerOptimization.Algorithm.BOX
+                break
             default:
-                throw new IllegalArgumentException(String.format(" Algorithm choice was %d, not in range 1-5!", manyBody.getAlgorithmNumber()));
+                throw new IllegalArgumentException(String.format(" Algorithm choice was %d, not in range 1-5!", manyBody.getAlgorithmNumber()))
         }
-        rotamerOptimization.optimize(algo);
+        rotamerOptimization.optimize(algorithm)
 
         if (master) {
-            logger.info(" Final Minimum Energy");
+            logger.info(" Final Minimum Energy")
 
-            File modelFile = saveDirFile(activeAssembly.getFile());
-            algorithmFunctions.saveAsPDB(activeAssembly, modelFile);
-            algorithmFunctions.energy(activeAssembly);
+            File modelFile = saveDirFile(activeAssembly.getFile())
+            algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
+            algorithmFunctions.energy(activeAssembly)
         }
 
         //manyBody.saveEliminatedRotamers();
 
         if (priorGKwarn == null) {
-            System.clearProperty("gk-suppressWarnings");
+            System.clearProperty("gk-suppressWarnings")
         }
 
-        return this;
+        return this
     }
 
     /**
@@ -183,12 +179,18 @@ class ManyBody extends AlgorithmsScript {
      * @return potentialEnergy Potential energy of the active assembly.
      */
     ForceFieldEnergy getPotential() {
-        return potentialEnergy;
+        return potentialEnergy
     }
 
     @Override
     List<Potential> getPotentials() {
-        return potentialEnergy == null ? Collections.emptyList() : Collections.singletonList(potentialEnergy);
+        List<Potential> potentials
+        if (potentialEnergy == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(potentialEnergy)
+        }
+        return potentials
     }
 
     /**
@@ -196,7 +198,7 @@ class ManyBody extends AlgorithmsScript {
      * @param testing A boolean flag that turns off elimination criteria for testing purposes.
      */
     void setTesting(boolean testing) {
-        this.testing = testing;
+        this.testing = testing
     }
 
     /**
@@ -204,7 +206,7 @@ class ManyBody extends AlgorithmsScript {
      * @return testing A boolean flag that turns off elimination criteria for testing purposes.
      */
     boolean getTesting() {
-        return testing;
+        return testing
     }
 
     /**
@@ -213,6 +215,6 @@ class ManyBody extends AlgorithmsScript {
      * @param bool True ONLY when a deterministic monte carlo approach is desired. False in all other cases.
      */
     void setMonteCarloTesting(boolean bool) {
-        this.monteCarloTesting = bool;
+        this.monteCarloTesting = bool
     }
 }

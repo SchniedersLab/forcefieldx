@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy;
+package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
@@ -43,8 +43,12 @@ import ffx.algorithms.optimize.RotamerOptimization
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
-import ffx.potential.parsers.PDBFilter;
-import picocli.CommandLine;
+import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Parameters
+
 /**
  * The IdentifyRotamers script attempts to identify which rotamer each Residue in the system is in.
  * <br>
@@ -52,16 +56,16 @@ import picocli.CommandLine;
  * <br>
  * ffxc IdentifyRotamers [options] &lt;filename&gt;
  */
-@CommandLine.Command(description = " Identify the rotamers a system is in.", name = "ffxc IdentifyRotamers")
+@Command(description = " Identify the rotamers a system is in.", name = "ffxc IdentifyRotamers")
 class IdentifyRotamers extends AlgorithmsScript {
 
-    @CommandLine.Mixin
-    ManyBodyOptions mbOpts;
+    @Mixin
+    ManyBodyOptions mbOpts
 
     /**
      * The final argument(s) should be one or more filenames.
      */
-    @CommandLine.Parameters(arity = "1", paramLabel = "files",
+    @Parameters(arity = "1", paramLabel = "files",
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
@@ -75,38 +79,36 @@ class IdentifyRotamers extends AlgorithmsScript {
     IdentifyRotamers run() {
 
         if (!init()) {
-            return this;
+            return null
         }
 
-        mbOpts.setOriginalCoordinates(false);
+        mbOpts.setOriginalCoordinates(false)
 
-        String modelFileName;
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0));
-            activeAssembly = assemblies[0];
+            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
+            activeAssembly = assemblies[0]
             if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
-                PDBFilter.renameAtomsToPDBStandard(activeAssembly);
+                renameAtomsToPDBStandard(activeAssembly)
             }
-            modelFileName = activeAssembly.getFile().getAbsolutePath();
         } else if (activeAssembly == null) {
-            logger.info(helpString());
-            return this;
-        } else {
-            // TODO: Get the active assembly from the User Interface/GUI. Or die.
-            logger.warning("Could not load file or active assembly.");
+            logger.info(helpString())
+            return null
         }
-        activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
+
+        activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
 
         RotamerOptimization rotopt = new RotamerOptimization(
                 activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
-        mbOpts.initRotamerOptimization(rotopt, activeAssembly);
+        mbOpts.initRotamerOptimization(rotopt, activeAssembly)
 
-        List<Residue> residues = rotopt.getResidues();
-        RotamerLibrary rLib = mbOpts.getRotamerLibrary();
+        List<Residue> residues = rotopt.getResidues()
+        RotamerLibrary rLib = mbOpts.getRotamerLibrary()
 
         for (Residue residue : residues) {
-            RotamerLibrary.RotamerGuess guess = rLib.guessRotamer(residue);
-            logger.info(guess.toString());
+            RotamerLibrary.RotamerGuess guess = rLib.guessRotamer(residue)
+            logger.info(guess.toString())
         }
+
+        return this
     }
 }

@@ -37,15 +37,16 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import ffx.numerics.Potential
-import ffx.potential.cli.WriteoutOptions
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing
+import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.potential.cli.WriteoutOptions
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -67,7 +68,7 @@ class Anneal extends AlgorithmsScript {
     AnnealOptions anneal
 
     @Mixin
-    WriteoutOptions writeout;
+    WriteoutOptions writeOut
 
     /**
      * One or more filenames.
@@ -76,33 +77,33 @@ class Anneal extends AlgorithmsScript {
             description = "XYZ or PDB input files.")
     private List<String> filenames
 
-    private SimulatedAnnealing simulatedAnnealing = null;
+    private SimulatedAnnealing simulatedAnnealing = null
 
-    private Potential potential;
+    private Potential potential
 
     void setBaseDir(File baseDir) {
-        this.saveDir = baseDir;
+        this.saveDir = baseDir
     }
 
     @Override
     Anneal run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
         dynamics.init()
 
         String modelFilename
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return
+            return null
         }
 
-        modelFilename = activeAssembly.getFile().getAbsolutePath();
+        modelFilename = activeAssembly.getFile().getAbsolutePath()
 
         logger.info("\n Running simulated annealing on " + modelFilename + "\n")
 
@@ -112,19 +113,19 @@ class Anneal extends AlgorithmsScript {
             dyn = null
         }
 
-        potential = activeAssembly.getPotentialEnergy();
+        potential = activeAssembly.getPotentialEnergy()
 
         simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly,
                 activeAssembly.getPotentialEnergy(), activeAssembly.getProperties(),
-                algorithmListener, dyn);
+                algorithmListener, dyn)
 
-        simulatedAnnealing.setPrintInterval(dynamics.report);
-        simulatedAnnealing.setSaveFrequency(dynamics.write);
+        simulatedAnnealing.setPrintInterval(dynamics.report)
+        simulatedAnnealing.setSaveFrequency(dynamics.write)
         simulatedAnnealing.setRestartFrequency(dynamics.checkpoint)
-        simulatedAnnealing.setTrajectorySteps(dynamics.trajSteps);
+        simulatedAnnealing.setTrajectorySteps(dynamics.trajSteps)
 
 
-        simulatedAnnealing.anneal();
+        simulatedAnnealing.anneal()
 
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
@@ -134,7 +135,7 @@ class Anneal extends AlgorithmsScript {
         String fileName = FilenameUtils.getName(modelFilename)
         fileName = FilenameUtils.removeExtension(fileName)
 
-        writeout.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly);
+        writeOut.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly)
 
         return this
     }
@@ -144,12 +145,18 @@ class Anneal extends AlgorithmsScript {
     }
 
     @Override
-    public List<Potential> getPotentials() {
-        return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
+    List<Potential> getPotentials() {
+        List<Potential> potentials
+        if (potential == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(potential)
+        }
+        return potentials
     }
 
     @Override
-    public boolean destroyPotentials() {
-        return getPotentials().stream().allMatch({ it.destroy(); });
+    boolean destroyPotentials() {
+        return getPotentials().stream().allMatch({ it.destroy() })
     }
 }
