@@ -41,8 +41,6 @@ import static java.lang.String.format
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.transform.CompileStatic
-
 import ffx.crystal.Crystal
 import ffx.numerics.math.FFXSummaryStatistics
 import ffx.potential.ForceFieldEnergy
@@ -64,7 +62,6 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Density [options] &lt;filename&gt;
  */
-//@CompileStatic
 @Command(description = " Calculates system density.", name = "ffxc Density")
 class Density extends PotentialScript {
 

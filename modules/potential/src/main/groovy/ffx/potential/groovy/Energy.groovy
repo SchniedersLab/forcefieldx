@@ -155,8 +155,7 @@ class Energy extends PotentialScript {
         }
 
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
+            activeAssembly = potentialFunctions.open(filenames.get(0))
         } else if (activeAssembly == null) {
             logger.info(helpString())
             return this
@@ -284,7 +283,7 @@ class Energy extends PotentialScript {
 
     @Override
     List<Potential> getPotentials() {
-        return forceFieldEnergy == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergy)
+        return forceFieldEnergy == null ? Collections<Potential>.emptyList() : Collections<Potential>.singletonList(forceFieldEnergy)
     }
 }
 

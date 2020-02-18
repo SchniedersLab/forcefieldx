@@ -41,8 +41,6 @@ import com.google.common.collect.MinMaxPriorityQueue
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.transform.CompileStatic
-
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -62,7 +60,6 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc FindLowestEnergy [options] &lt;filename&gt;
  */
-//@CompileStatic
 @Command(description = " Finds the lowest energy structures in an arc file.", name = "ffxc FindLowestEnergy")
 class FindLowestEnergy extends PotentialScript {
 

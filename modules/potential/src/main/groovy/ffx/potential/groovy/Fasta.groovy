@@ -44,8 +44,6 @@ import org.biojava.nbio.core.sequence.ProteinSequence
 import org.biojava.nbio.core.sequence.io.FastaReaderHelper
 import org.biojava.nbio.core.sequence.io.FastaWriterHelper
 
-import groovy.transform.CompileStatic
-
 import ffx.potential.cli.PotentialScript
 
 import picocli.CommandLine.Command
@@ -60,7 +58,6 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Fasta [options] &lt;filename.fasta&gt;
  */
-//@CompileStatic
 @Command(description = " Fasta outputs a sub-sequence from a FASTA file.", name = "ffxc Fasta")
 class Fasta extends PotentialScript {
 

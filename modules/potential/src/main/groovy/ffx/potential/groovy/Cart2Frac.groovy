@@ -41,8 +41,6 @@ import java.util.stream.Collectors
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.transform.CompileStatic
-
 import ffx.crystal.Crystal
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
@@ -59,7 +57,6 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Cart2Frac &lt;filename&gt;
  */
-//@CompileStatic
 @Command(description = " Convert Cartesian coordinates to fractional.", name = "ffxc Cart2Frac")
 class Cart2Frac extends PotentialScript {
 
@@ -69,7 +66,7 @@ class Cart2Frac extends PotentialScript {
     @Parameters(arity = "1..*", paramLabel = "files",
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
-    private MolecularAssembly[] assemblies;
+    private MolecularAssembly[] assemblies
 
     public double[][] cartCoordinates = null
     public double[][] fracCoordinates = null

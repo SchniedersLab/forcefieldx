@@ -98,7 +98,7 @@ class XYZtoQE extends PotentialScript {
 
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
 
-        activeAssembly.computeFractionalCoordinates();
+        activeAssembly.computeFractionalCoordinates()
 
         Atom[] atoms = activeAssembly.getAtomArray()
 
@@ -112,24 +112,22 @@ class XYZtoQE extends PotentialScript {
         File modelFile = new File(dirName + File.separator + fileName)
 
         Crystal crystal = activeAssembly.getCrystal().getUnitCell()
+        double xtalA = crystal.a
+        double xtalB = crystal.b
+        double xtalC = crystal.c
 
-        HashMap<String, Double> atomTypes = new HashMap<String, Double>();
+        HashMap<String, Double> atomTypes = new HashMap<String, Double>()
         String atomicPositions = ""
         for (atom in atoms) {
             if (!atomTypes.containsKey(atom.name)) {
-                atomTypes.put(atom.name, atom.mass)
+                atomTypes.put(atom.name, atom.getAtomType().atomicWeight)
             }
             double[] xyz = atom.getXYZ(null)
             crystal.toFractionalCoordinates(xyz, xyz)
             atomicPositions += format("%2s %16.12f %16.12f %16.12f\n", atom.name, xyz[0], xyz[1], xyz[2])
         }
 
-        double xtalA = crystal.a;
-        double xtalB = crystal.b;
-        double xtalC = crystal.c;
-
         BufferedWriter bwQE = new BufferedWriter(new FileWriter(modelFile))
-
         bwQE.write("&CONTROL\n" +
                 "\tcalculation = 'vc-relax',\n" +
                 "\trestart_mode = 'from_scratch',\n" +
@@ -168,11 +166,11 @@ class XYZtoQE extends PotentialScript {
                 "\tcell_dynamics = 'bfgs',\n" +
                 "/\n")
 
-        String line = "";
-        Iterator it = atomTypes.entrySet().iterator();
+        String line = ""
+        Iterator it = atomTypes.entrySet().iterator()
         while (it.hasNext()) {
-            Map.Entry pair = (Map.Entry) it.next();
-            line += " " + pair.getKey() + " " + pair.getValue() + " " + pair.getKey() + ".b86bpbe.UPF\n";
+            Map.Entry pair = (Map.Entry) it.next()
+            line += " " + pair.getKey() + " " + pair.getValue() + " " + pair.getKey() + ".b86bpbe.UPF\n"
         }
         bwQE.write("ATOMIC_SPECIES\n" + line + "\n")
 
@@ -188,7 +186,7 @@ class XYZtoQE extends PotentialScript {
         int k2
         int k3
         if (xtalA < 5) {
-            k1 = 8;
+            k1 = 8
         } else if (xtalA <= 8) {
             k1 = 6
         } else if (xtalA <= 12) {
@@ -198,7 +196,7 @@ class XYZtoQE extends PotentialScript {
         }
 
         if (xtalB < 5) {
-            k2 = 8;
+            k2 = 8
         } else if (xtalB <= 8) {
             k2 = 6
         } else if (xtalB <= 12) {
@@ -208,7 +206,7 @@ class XYZtoQE extends PotentialScript {
         }
 
         if (xtalC < 5) {
-            k3 = 8;
+            k3 = 8
         } else if (xtalC <= 8) {
             k3 = 6
         } else if (xtalC <= 12) {
@@ -217,10 +215,9 @@ class XYZtoQE extends PotentialScript {
             k3 = 1
         }
 
-        bwQE.write("K_POINTS automatic\n" +
-                k1 + " " + k2 + " " + k3 + " 1 1 1\n")
-        bwQE.close()
+        bwQE.write("K_POINTS automatic\n" + k1 + " " + k2 + " " + k3 + " 1 1 1\n")
 
+        bwQE.close()
         return this
     }
 }
