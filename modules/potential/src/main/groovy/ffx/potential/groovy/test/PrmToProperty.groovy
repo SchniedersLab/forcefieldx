@@ -71,23 +71,28 @@ class PrmToProperty extends PotentialScript {
     PrmToProperty run() {
 
         if (!init()) {
-            return
+            return null
+        }
+
+        if (filenames == null || filenames.size() < 1) {
+            logger.info(helpString())
+            return null
         }
 
         // Read in the command line file.
         List<String> arguments = filenames
-        String xyzname = arguments.get(0)
+        String prmName = arguments.get(0)
         CompositeConfiguration properties = Keyword.loadProperties(null)
-        properties.setProperty("parameters", xyzname)
+        properties.setProperty("parameters", prmName)
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties)
 
         ForceField forceField = forceFieldFilter.parse()
 
         int prms = arguments.size()
         for (int i = 1; i < prms; i++) {
-            xyzname = arguments.get(i)
+            prmName = arguments.get(i)
             properties = Keyword.loadProperties(null)
-            properties.setProperty("parameters", xyzname)
+            properties.setProperty("parameters", prmName)
             forceFieldFilter = new ForceFieldFilter(properties)
             ForceField forceField2 = forceFieldFilter.parse()
             forceField.append(forceField2)

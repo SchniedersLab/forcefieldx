@@ -41,8 +41,6 @@ import com.google.common.collect.MinMaxPriorityQueue
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.transform.CompileStatic
-
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -62,9 +60,15 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc FindLowestEnergy [options] &lt;filename&gt;
  */
-//@CompileStatic
 @Command(description = " Finds the lowest energy structures in an arc file.", name = "ffxc FindLowestEnergy")
 class FindLowestEnergy extends PotentialScript {
+
+    /**
+     * -K or --nLowest Finds the K lowest energy structures in an arc file.
+     */
+    @Option(names = ['-K', '--nLowest'], paramLabel = "1", defaultValue = "1",
+            description = 'Finds the K lowest energy structures in an arc file.')
+    int numSnaps = 1
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -72,13 +76,6 @@ class FindLowestEnergy extends PotentialScript {
     @Parameters(arity = "1", paramLabel = "files",
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
-
-    /**
-     * -K or --nLowest Finds the K lowest energy structures in an arc file.
-     */
-    @Option(names = ['-K', '--nLowest'], paramLabel = "1",
-            description = 'Finds the K lowest energy structures in an arc file.')
-    int numSnaps = 1
 
     private File baseDir = null
 
@@ -119,16 +116,14 @@ class FindLowestEnergy extends PotentialScript {
     @Override
     FindLowestEnergy run() {
         if (!init()) {
-            return this
+            return null
         }
 
-        MolecularAssembly[] assemblies
         if (filenames == null || filenames.size() != 1) {
-            logger.warning(" Invalid arguments provided! Must have one non-null argument.")
             logger.info(helpString())
-            return this
+            return null
         } else {
-            assemblies = potentialFunctions.open(filenames.get(0)) as MolecularAssembly[]
+            MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]
         }
 
@@ -151,7 +146,7 @@ class FindLowestEnergy extends PotentialScript {
         firstContainer = new StateContainer(assemblyState, energy)
         energyQueue.add(firstContainer)
 
-        int maxnum = 1
+        int maxNumber = 1
         if (systemFilter instanceof XYZFilter) {
             XYZFilter xyzFilter = (XYZFilter) systemFilter
             while (xyzFilter.readNext()) {
@@ -160,16 +155,15 @@ class FindLowestEnergy extends PotentialScript {
                 assemblyState = new AssemblyState(activeAssembly)
                 // Save the new assembly if the energy is less than the current energy
                 energyQueue.add(new StateContainer(assemblyState, energy))
-                maxnum = maxnum + 1
-
+                maxNumber = maxNumber + 1
             }
         } else {
-            logger.severe(String.format(" System %s does not appear to be a .arc or .xyz file!", filenames.get(0)));
+            logger.severe(String.format(" System %s does not appear to be a .arc or .xyz file!", filenames.get(0)))
         }
 
-        if (numSnaps > maxnum) {
-            logger.info(String.format(" The archive does not contain enough entries; all %d energies will be reported.", maxnum))
-            numSnaps = maxnum
+        if (numSnaps > maxNumber) {
+            logger.info(String.format(" The archive does not contain enough entries; all %d energies will be reported.", maxNumber))
+            numSnaps = maxNumber
         }
 
         for (int i = 0; i < numSnaps - 1; i++) {
@@ -215,15 +209,15 @@ class FindLowestEnergy extends PotentialScript {
      * Returns the lowest energy found.
      * @return Lowest potential energy.
      */
-    public double getLowestEnergy() {
-        return energy;
+    double getLowestEnergy() {
+        return energy
     }
 
     /**
      * Returns a copy of the lowest-energy state found.
      * @return Lowest-energy state found.
      */
-    public AssemblyState getOptimumState() {
-        return AssemblyState.copyState(assemblyState);
+    AssemblyState getOptimumState() {
+        return AssemblyState.copyState(assemblyState)
     }
 }

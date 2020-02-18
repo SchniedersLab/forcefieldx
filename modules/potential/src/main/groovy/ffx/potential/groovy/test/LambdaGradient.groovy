@@ -113,7 +113,7 @@ class LambdaGradient extends PotentialScript {
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
     MolecularAssembly[] topologies
-    private Potential potential;
+    private Potential potential
 
     public int ndEdLFailures = 0
     public int ndEdXFailures = 0
@@ -129,7 +129,7 @@ class LambdaGradient extends PotentialScript {
     LambdaGradient run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
         List<String> arguments = filenames
@@ -140,7 +140,7 @@ class LambdaGradient extends PotentialScript {
         topologies = new MolecularAssembly[nArgs]
 
         int numParallel = topology.getNumParallel(threadsAvail, nArgs)
-        threadsPer = threadsAvail / numParallel
+        threadsPer = (int) (threadsAvail / numParallel)
 
         // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
         /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
@@ -184,9 +184,7 @@ class LambdaGradient extends PotentialScript {
 
         MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
-        /**
-         * Configure the potential to test.
-         */
+        // Configure the potential to test.
         StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ")
         potential = topology.assemblePotential(topologies, threadsAvail, sb)
 
@@ -198,8 +196,6 @@ class LambdaGradient extends PotentialScript {
 
         LambdaInterface linter = (LambdaInterface) potential
 
-        // End boilerplate open-topologies code.
-
         // Reset the number of variables for the case of dual topology.
         int n = potential.getNumberOfVariables()
         double[] x = new double[n]
@@ -209,7 +205,7 @@ class LambdaGradient extends PotentialScript {
 
         // Number of independent atoms.
         assert (n % 3 == 0)
-        int nAtoms = n / 3
+        int nAtoms = (int) (n / 3)
 
         // Compute the Lambda = 0.0 energy.
         double lambda = 0.0
@@ -223,7 +219,7 @@ class LambdaGradient extends PotentialScript {
         // Scan intermediate lambda values.
         if (lambdaScan) {
             for (int i = 1; i <= 9; i++) {
-                lambda = i * 0.1;
+                lambda = i * 0.1
                 linter.setLambda(lambda)
                 double e = potential.energyAndGradient(x, gradient)
                 dEdL = linter.getdEdL()
@@ -251,7 +247,7 @@ class LambdaGradient extends PotentialScript {
         // Test Lambda gradient in the neighborhood of the lambda variable.
         for (int j = 0; j < 3; j++) {
             // Loop-local counter for printout.
-            int jd2EdXdLFailures = 0;
+            int jd2EdXdLFailures = 0
 
             lambda = alchemical.initialLambda - lambdaMoveSize + lambdaMoveSize * j
 
@@ -334,7 +330,7 @@ class LambdaGradient extends PotentialScript {
                         logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa, dYa, dZa))
                         logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ))
                         ndEdXdLFailures++
-                        jd2EdXdLFailures++;
+                        jd2EdXdLFailures++
                     }
                 }
                 rmsError = Math.sqrt(rmsError / nAtoms)
@@ -459,6 +455,13 @@ class LambdaGradient extends PotentialScript {
 
     @Override
     List<Potential> getPotentials() {
-        return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
+        List<Potential> potentials
+        if (potential == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(potential)
+        }
+        return potentials
     }
+
 }

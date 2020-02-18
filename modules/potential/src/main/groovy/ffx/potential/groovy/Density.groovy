@@ -41,8 +41,6 @@ import static java.lang.String.format
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.transform.CompileStatic
-
 import ffx.crystal.Crystal
 import ffx.numerics.math.FFXSummaryStatistics
 import ffx.potential.ForceFieldEnergy
@@ -64,39 +62,39 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Density [options] &lt;filename&gt;
  */
-//@CompileStatic
 @Command(description = " Calculates system density.", name = "ffxc Density")
 class Density extends PotentialScript {
 
     @CommandLine.Mixin
-    private WriteoutOptions writeout;
+    private WriteoutOptions writeout
 
     /**
      * -s or --start First frame to evaluate (1-indexed).
      */
-    @Option(names = ['-s', '--start'], paramLabel = "1",
+    @Option(names = ['-s', '--start'], paramLabel = "1", defaultValue = "1",
             description = 'First frame to evaluate (1-indexed).')
     private int start = 1
 
     /**
      * -f or --final Last frame to evaluate (1-indexed); values less than 1 evaluate to end of trajectory.
      */
-    @Option(names = ['-f', '--final'], paramLabel = "all frames",
+    @Option(names = ['-f', '--final'], paramLabel = "all frames", defaultValue = "0",
             description = 'Last frame to evaluate (1-indexed); values less than 1 evaluate to end of trajectory.')
-    private int finish = 0;
+    private int finish = 0
 
     /**
      * --st or --stride Stride: evaluate density every N frames. Must be positive.
      */
-    @Option(names = ['--st', '--stride'], paramLabel = "1",
+    @Option(names = ['--st', '--stride'], paramLabel = "1", defaultValue = "1",
             description = "Stride: evaluate density every N frames. Must be positive.")
-    private int stride = 1;
+    private int stride = 1
 
     /**
      * -p or --printout writes out a file with density adjusted to match mean calculated density.
      */
-    @Option(names = ['-p', '--printout'], description = "Print out a file with density adjusted to match mean calculated density")
-    private boolean doPrint = false;
+    @Option(names = ['-p', '--printout'], defaultValue = "false",
+            description = "Print out a file with density adjusted to match mean calculated density.")
+    private boolean doPrint = false
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -119,12 +117,12 @@ class Density extends PotentialScript {
     @Override
     Density run() {
         if (!init()) {
-            return this
+            return null
         }
 
         if (filenames == null || filenames.isEmpty() || stride < 1) {
             logger.info(helpString())
-            return this
+            return null
         }
 
         for (String filename : filenames) {
@@ -150,14 +148,14 @@ class Density extends PotentialScript {
                     logger.info(format(" Evaluating density for system %s: total mass %16.7g g/mol", filename, totMass))
                     logger.info(format(" Density at frame %9d is %16.7g g/mL from a volume of %16.7g Ang^3", 1, density, volume))
 
-                    int ctr = 1;
+                    int ctr = 1
                     // TODO: Optimize by skipping frames by stride.
                     while (openFilter.readNext(false, false)) {
                         volume = crystal.getUnitCell().volume
                         density = crystal.getDensity(totMass)
                         logger.info(format(" Density at frame %9d is %16.7g g/mL from a volume of %16.7g Ang^3",
                                 ++ctr, density, volume))
-                        int i = ctr - 1;
+                        int i = ctr - 1
                         densities[i] = density
                         unitCellParams[i] = crystal.getUnitCellParams()
                     }

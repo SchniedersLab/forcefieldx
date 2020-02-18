@@ -44,8 +44,6 @@ import org.biojava.nbio.core.sequence.ProteinSequence
 import org.biojava.nbio.core.sequence.io.FastaReaderHelper
 import org.biojava.nbio.core.sequence.io.FastaWriterHelper
 
-import groovy.transform.CompileStatic
-
 import ffx.potential.cli.PotentialScript
 
 import picocli.CommandLine.Command
@@ -60,21 +58,20 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Fasta [options] &lt;filename.fasta&gt;
  */
-//@CompileStatic
 @Command(description = " Fasta outputs a sub-sequence from a FASTA file.", name = "ffxc Fasta")
 class Fasta extends PotentialScript {
 
     /**
      * -f or --firstResidue defines the first Fasta residue to keep (index of the first residue is 1).
      */
-    @Option(names = ['-f', '--firstResidue'], paramLabel = "1",
+    @Option(names = ['-f', '--firstResidue'], paramLabel = "1", defaultValue = "1",
             description = 'Define the first Fasta residue to keep (index of the first residue is 1).')
     private int firstResidue = 1
 
     /**
      * -l or --lastResidue defines the last Fasta residue to keep (index of the last residue is n).
      */
-    @Option(names = ['-l', '--lastResidue'], paramLabel = "-1",
+    @Option(names = ['-l', '--lastResidue'], paramLabel = "-1", defaultValue = "-1",
             description = 'Define the last Fasta residue to keep (index of the last residue is n).')
     private int lastResidue = -1
 
@@ -87,7 +84,7 @@ class Fasta extends PotentialScript {
 
     private File baseDir = null
 
-    private ProteinSequence proteinSequence;
+    private ProteinSequence proteinSequence
 
     void setBaseDir(File baseDir) {
         this.baseDir = baseDir
@@ -100,7 +97,12 @@ class Fasta extends PotentialScript {
     Fasta run() {
 
         if (!init()) {
-            return this
+            return null
+        }
+
+        if (filenames === null || filenames.size() == 0) {
+            logger.info(helpString())
+            return null
         }
 
         String fastaName = filenames.get(0)
@@ -113,7 +115,7 @@ class Fasta extends PotentialScript {
         String seq = sequence.sequenceAsString
         int length = seq.length()
         logger.info(format("\n %s of length: %d\n %s", sequence.getOriginalHeader(), length, seq))
-        
+
         if (firstResidue < 1 || firstResidue > length) {
             firstResidue = 1
         }
