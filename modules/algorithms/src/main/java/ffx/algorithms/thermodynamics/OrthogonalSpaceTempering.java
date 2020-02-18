@@ -329,6 +329,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         logger.info(format("  Save Interval:                  %6.3f psec", saveInterval));
     }
 
+    // TODO: Delete method when debugging of RepexOST is done.
+    public void logOutputFiles() {
+        logger.info(String.format(" OST: Lambda file %s, histogram %s", lambdaFile, histogram.histogramFile));
+    }
+
     /**
      * Return the 2D Histogram of counts.
      *
@@ -1320,6 +1325,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * Rank of this process.
          */
         protected final int rank;
+        private boolean writeIndependent = false;
         private boolean independentWalkers = false;
 
         /**
@@ -1480,9 +1486,21 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         public void setIndependentWalkers(boolean independentWalkers) {
             this.independentWalkers = independentWalkers;
+            if (this.independentWalkers) {
+                setIndependentWrites(true);
+            } // True implies independent writes true, but false does not imply independent writes false.
             if (synchronousSend != null) {
                 synchronousSend.setIndependentWalkers(independentWalkers);
             }
+        }
+
+        /**
+         * Sets whether every process (not just rank 0) writes its own histogram.
+         *
+         * @param writeIndependent If all processes should write histogram restarts.
+         */
+        public void setIndependentWrites(boolean writeIndependent) {
+            this.writeIndependent = writeIndependent;
         }
 
         /**
@@ -1617,7 +1635,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 }
                 logger.info(stringBuilder.toString());
             }
-            if (rank == 0 || independentWalkers) {
+            if (rank == 0 || writeIndependent) {
                 try {
                     HistogramWriter histogramWriter = new HistogramWriter(this,
                             new BufferedWriter(new FileWriter(histogramFile)));

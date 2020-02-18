@@ -347,6 +347,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private final int dynSleepTime;
 
     /**
+     * If asked to perform dynamics with a null dynamics file, write here.
+     */
+    private File fallbackDynFile;
+
+    /**
      * Method that determines whether a dynamics is done by the java
      * implementation native to ffx or the OpenMM implementation
      *
@@ -448,6 +453,28 @@ public class MolecularDynamics implements Runnable, Terminatable {
                              AlgorithmListener listener,
                              ThermostatEnum requestedThermostat,
                              IntegratorEnum requestedIntegrator) {
+        this(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator, defaultFallbackDyn(assembly));
+    }
+
+    /**
+     * <p>
+     * Constructor for MolecularDynamics.</p>
+     *
+     * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param requestedThermostat a {@link ThermostatEnum} object.
+     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+     * @param fallbackDyn         File to write restarts to if none is provided by the dynamics method.
+     */
+    public MolecularDynamics(MolecularAssembly assembly,
+                             Potential potentialEnergy,
+                             CompositeConfiguration properties,
+                             AlgorithmListener listener,
+                             ThermostatEnum requestedThermostat,
+                             IntegratorEnum requestedIntegrator,
+                             File fallbackDyn) {
         this.molecularAssembly = assembly;
         assemblies = new ArrayList<>();
         assemblies.add(new AssemblyInfo(assembly));
@@ -566,6 +593,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         verboseDynamicsState = properties.getBoolean("md-verbose", false);
         done = true;
 
+        fallbackDynFile = fallbackDyn;
+
         logger.info(" Molecular Dynamics instance created.");
     }
 
@@ -673,6 +702,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
         return thermostat;
     }
 
+    public void logOutputFiles() {
+        File[] arcFiles = assemblies.stream().map((AssemblyInfo ai) -> ai.archiveFile).toArray(File[]::new);
+        logger.info(String.format(" Dynamics file %s, archive file(s) %s", restartFile, Arrays.toString(arcFiles)));
+    }
+
     /**
      * Adds a MolecularAssembly to be tracked by this MolecularDynamics. Note:
      * does not affect the underlying Potential.
@@ -755,6 +789,26 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Creates the "default" fallback dynamics file object (does not create actual file!)
+     *
+     * @param assembly First assembly.
+     * @return         Default fallback file.
+     */
+    private static File defaultFallbackDyn(MolecularAssembly assembly) {
+        String firstFileName = FilenameUtils.removeExtension(assembly.getFile().getAbsolutePath());
+        return new File(firstFileName + ".dyn");
+    }
+
+    /**
+     * Sets the "fallback" .dyn file to write to if none is passed to the dynamic method.
+     *
+     * @param fallback Fallback dynamics restart file.
+     */
+    public void setFallbackDynFile(File fallback) {
+        this.fallbackDynFile = fallback;
+    }
+
+    /**
      * <p>
      * init</p>
      *
@@ -826,10 +880,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         assemblyInfo();
 
-        String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
-
         if (dyn == null) {
-            this.restartFile = new File(firstFileName + ".dyn");
+            this.restartFile = fallbackDynFile;
             loadRestart = false;
         } else {
             this.restartFile = dyn;
@@ -867,7 +919,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * assemblyInfo.</p>
      */
     void assemblyInfo() {
-        assemblies.stream().parallel().forEach((ainfo) -> {
+        assemblies.forEach((ainfo) -> {
             MolecularAssembly mola = ainfo.getAssembly();
             CompositeConfiguration aprops = ainfo.compositeConfiguration;
             File file = mola.getFile();
@@ -1226,7 +1278,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     logger.warning(format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
                 }
             } else if (saveSnapshotAsPDB) {
-                if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
+                if (ai.pdbFilter.writeFile(ai.pdbFile, true)) {
                     logger.log(basicLogging, format(" Wrote PDB file to %s", ai.pdbFile.getName()));
                 } else {
                     logger.warning(format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
@@ -1492,6 +1544,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
         molecularAssembly.setFile(origFile);
     }
 
+    public MolecularAssembly[] getAssemblies() {
+        return assemblies.stream().map(AssemblyInfo::getAssembly).toArray(MolecularAssembly[]::new);
+    }
+
+    public void setTrajectoryFiles(File[] outputFiles) {
+        int nFi = assemblies.size();
+        assert outputFiles.length == nFi;
+        for (int i = 0; i < nFi; i++) {
+            AssemblyInfo ai = assemblies.get(i);
+            ai.setArchiveFile(outputFiles[i]);
+        }
+    }
+
     /**
      * Get the total system energy (kinetic plus potential).
      *
@@ -1597,7 +1662,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * members breaks encapsulation a bit, but the private inner class shouldn't
      * be used externally anyways.
      */
-    protected class AssemblyInfo {
+    protected static class AssemblyInfo {
 
         private final MolecularAssembly assembly;
         CompositeConfiguration compositeConfiguration;
@@ -1616,6 +1681,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         public MolecularAssembly getAssembly() {
             return assembly;
+        }
+
+        void setArchiveFile(File file) {
+            archiveFile = file;
         }
     }
 

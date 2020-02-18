@@ -47,10 +47,15 @@ import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.cli.OSTOptions;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.mc.BoltzmannMC;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.cli.WriteoutOptions;
 import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -75,7 +80,6 @@ public class RepExOST {
     private final SynchronousSend[] sends;
     private final LongConsumer algoRun;
     private final MolecularDynamics[] molDyns;
-    private final File[] dynFiles;
     private final DynamicsOptions dynamics;
     private final String fileType;
     private final MonteCarloOST[] mcOSTs;
@@ -83,21 +87,29 @@ public class RepExOST {
     private final Comm world;
     private final int rank;
     private final int numPairs;
-    private int currentOST;
     private final int[] rankToHisto;
     private final int[] histoToRank;
     private final boolean isMC;
-    private boolean reinitVelocities = true;
-
     private final Random random;
     private final double invKT;
-    
-    private DoubleBuf lamBuf = DoubleBuf.buffer(0);
-    private BooleanBuf swapBuf = BooleanBuf.buffer(false);
+    private final String basePath;
+    private final String baseFileName;
+    private final String[] allFilenames;
+    private final File lambdaFile;
+    private final File dynFile;
+    private final String extension;
+    private final MolecularAssembly[] allAssemblies;
+
     // Message tags to use.
     private static final int lamTag = 42;
     private static final int mainLoopTag = 2020;
 
+    private boolean reinitVelocities = true;
+    private int currentOST;
+
+    // Largely obsolete variables used for the original repex/communication scheme.
+    private DoubleBuf lamBuf = DoubleBuf.buffer(0);
+    private BooleanBuf swapBuf = BooleanBuf.buffer(false);
     private double currentLambda;
     private double currentDUDL;
 
@@ -134,14 +146,41 @@ public class RepExOST {
                 throw new IllegalArgumentException(" Could not recognize whether this is supposed to be MD, MC 1-step, or MC 2-step!");
         }
         this.molDyns = dyns;
-        this.dynFiles = Arrays.stream(molDyns).map(MolecularDynamics::getDynFile).toArray(File[]::new);
         this.dynamics = dynamics;
         this.fileType = fileType;
         this.mcOSTs = mcOSTs;
+        this.extension = WriteoutOptions.toArchiveExtension(fileType);
 
         this.world = Comm.world();
         this.rank = world.rank();
         int size = world.size();
+
+        allAssemblies = molDyns[0].getAssemblies();
+        allFilenames = Arrays.stream(allAssemblies).
+                map(MolecularAssembly::getFile).
+                map(File::getName).
+                map(FilenameUtils::getBaseName).
+                toArray(String[]::new);
+
+        File firstFile = allAssemblies[0].getFile();
+        basePath = FilenameUtils.getFullPath(firstFile.getAbsolutePath()) + File.separator;
+        baseFileName = FilenameUtils.getBaseName(firstFile.getAbsolutePath());
+        dynFile = new File(String.format("%s%d%s%s.dyn", basePath, rank, File.separator, baseFileName));
+        Arrays.stream(molDyns).forEach((MolecularDynamics md) -> md.setFallbackDynFile(dynFile));
+
+        lambdaFile = new File(String.format("%s%d%s%s.lam", basePath, rank, File.separator, baseFileName));
+        currentOST = rank;
+        if (lambdaFile.exists()) {
+            try (LambdaReader lr = new LambdaReader(new BufferedReader(new FileReader(lambdaFile)))) {
+                lr.readLambdaFile(false);
+                currentOST = lr.getHistogramIndex();
+            }
+        }
+
+        Arrays.stream(osts).map(OrthogonalSpaceTempering::getHistogram).
+                forEach((OrthogonalSpaceTempering.Histogram h) -> h.setIndependentWrites(true));
+
+        setFiles();
 
         this.numPairs = size - 1;
         this.invKT = -1.0 / (Constants.R * dynamics.getTemp());
@@ -232,6 +271,7 @@ public class RepExOST {
         }
         currentLambda = osts[currentOST].getLambda();
         currentDUDL = osts[currentOST].getdEdL();
+        setFiles();
 
         if (equilibrate) {
             logger.info(String.format(" Equilibrating repex OST without exchanges on histogram %d.", currentOST));
@@ -243,14 +283,17 @@ public class RepExOST {
                 logger.info(String.format(" Beginning of repex loop %d, operating on histogram %d", (i+1), currentOST));
                 world.barrier(mainLoopTag);
                 algoRun.accept(stepsBetweenExchanges);
+                setFiles();
+                osts[currentOST].logOutputFiles();
+                molDyns[currentOST].logOutputFiles();
                 world.barrier(mainLoopTag);
-                currentLambda = osts[currentOST].getLambda();
-                currentDUDL = osts[currentOST].getdEdL();
-                
                 proposeSwaps();
+
 
                 // Old, (mostly) functional, code that used inter-process communication to keep processes in sync rather than relying on PRNG coherency and repex moves always falling on a bias deposition tick.
                 // Primary bug: looped over adjacent processes, not over adjacent histograms.
+                //currentLambda = osts[currentOST].getLambda();
+                //currentDUDL = osts[currentOST].getdEdL();
                 /*for (int j = 0; j < numPairs; j++) {
                     if (j == rank) {
                         logger.info(String.format(" Rank %d proposing swap up for exchange %d.", rank, j));
@@ -270,6 +313,14 @@ public class RepExOST {
                 reinitVelocities = false;
             }
         }
+    }
+
+    private void setFiles() {
+        File[] trajFiles = Arrays.stream(allFilenames).
+                map((String fn) -> String.format("%s%d%s%s.%s", basePath, currentOST, File.separator, fn, extension)).
+                map(File::new).
+                toArray(File[]::new);
+        Arrays.stream(molDyns).forEach((MolecularDynamics md) -> md.setTrajectoryFiles(trajFiles));
     }
     
     private void proposeSwaps() {
@@ -463,9 +514,8 @@ public class RepExOST {
      */
     private void runMD(long numSteps) {
         MolecularDynamics molDyn = molDyns[currentOST];
-        File dyn = dynFiles[currentOST];
         molDyn.dynamic(numSteps, dynamics.getDt(), dynamics.getReport(), dynamics.getSnapshotInterval(), dynamics.getTemp(),
-                reinitVelocities, fileType, dynamics.getCheckpoint(), dyn);
+                reinitVelocities, fileType, dynamics.getCheckpoint(), dynFile);
     }
 
     public OrthogonalSpaceTempering getCurrentOST() {
