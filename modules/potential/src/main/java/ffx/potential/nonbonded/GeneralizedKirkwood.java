@@ -58,13 +58,15 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.nonbonded.implicit.BornGradRegion;
 import ffx.potential.nonbonded.implicit.BornRadiiRegion;
-import ffx.potential.nonbonded.implicit.SurfaceAreaRegion;
+import ffx.potential.nonbonded.implicit.ChandlerCavitation;
+import ffx.potential.nonbonded.implicit.ConnollyRegion;
 import ffx.potential.nonbonded.implicit.DispersionRegion;
 import ffx.potential.nonbonded.implicit.GKEnergyRegion;
+import ffx.potential.nonbonded.implicit.GaussVol;
 import ffx.potential.nonbonded.implicit.InducedGKFieldRegion;
 import ffx.potential.nonbonded.implicit.InitializationRegion;
 import ffx.potential.nonbonded.implicit.PermanentGKFieldRegion;
-import ffx.potential.nonbonded.implicit.ConnollyRegion;
+import ffx.potential.nonbonded.implicit.SurfaceAreaRegion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteRadii;
@@ -120,7 +122,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * A S.P. of 0.0343 kcal/mol/A^3 is obtained assuming a macroscopic surface tension of 0.103 kcal/mol/A^3
      * and a cross-over of 9.0 (i.e. S.P. = 3 * S.T. / Cross-Over)
      * <p>
-     * Both values are in reasonably good agreement, and 0.334 is chosen as our default.
+     * Both values are in reasonably good agreement, and 0.0334 is chosen as our default.
      */
     public static final double DEFAULT_SOLVENT_PRESSURE = 0.0334;
     /**
@@ -341,14 +343,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private final SurfaceAreaRegion surfaceAreaRegion;
     /**
-     * Parallel computation of Volume.
+     * Volume to Surface Area Cavitation Dependence.
      */
-    private final ConnollyRegion connollyRegion;
-    /**
-     * Gaussian Based Volume and Surface Area
-     */
-    private final GaussVol gaussVol;
-
+    private final ChandlerCavitation chandlerCavitation;
     /**
      * GK cut-off distance.
      */
@@ -493,7 +490,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         fieldGKCR = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
 
         nativeEnvironmentApproximation = forceField.getBoolean("NATIVE_ENVIRONMENT_APPROXIMATION", false);
-        double tempProbe = forceField.getDouble("PROBE_RADIUS", 1.4);
+        probe = forceField.getDouble("PROBE_RADIUS", 1.4);
         cutoff = forceField.getDouble("GK_CUTOFF", particleMeshEwald.getEwaldCutoff());
         cut2 = cutoff * cutoff;
         lambdaTerm = forceField.getBoolean("GK_LAMBDATERM",
@@ -524,25 +521,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
         double tensionDefault;
         switch (nonPolar) {
             case CAV:
-                probe = tempProbe;
                 tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
                 surfaceAreaRegion = new SurfaceAreaRegion(atoms, x, y, z, use, neighborLists,
                         grad, threadCount, probe, tensionDefault);
-                connollyRegion = null;
                 dispersionRegion = null;
-                gaussVol = null;
+                chandlerCavitation = null;
                 break;
             case CAV_DISP:
-                probe = tempProbe;
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 surfaceAreaRegion = new SurfaceAreaRegion(atoms, x, y, z, use, neighborLists,
                         grad, threadCount, probe, tensionDefault);
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
-                connollyRegion = null;
-                gaussVol = null;
+                chandlerCavitation = null;
                 break;
             case SEV_DISP:
-                probe = tempProbe;
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 double[] radii = new double[nAtoms];
                 int index = 0;
@@ -550,18 +542,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     radii[index] = atom.getVDWType().radius / 2.0;
                     index++;
                 }
-                connollyRegion = new ConnollyRegion(atoms, radii, threadCount);
+                ConnollyRegion connollyRegion = new ConnollyRegion(atoms, radii, threadCount);
                 double wiggle = forceField.getDouble("WIGGLE", ConnollyRegion.DEFAULT_WIGGLE);
                 connollyRegion.setWiggle(wiggle);
+                chandlerCavitation = new ChandlerCavitation(atoms, connollyRegion);
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
                 surfaceAreaRegion = null;
-                gaussVol = null;
                 break;
             case GAUSS_DISP:
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
                 surfaceAreaRegion = null;
-                connollyRegion = null;
-                gaussVol = new GaussVol(nAtoms, null);
+                GaussVol gaussVol = new GaussVol(nAtoms, null);
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 boolean[] isHydrogen = new boolean[nAtoms];
                 radii = new double[nAtoms];
@@ -569,7 +560,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double[] gamma = new double[nAtoms];
                 double fourThirdsPI = 4.0 / 3.0 * PI;
                 offset = forceField.getDouble("GAUSSVOL_OFFSET", DEFAULT_GAUSSVOL_RADII_OFFSET);
-                probe = forceField.getDouble("PROBE_RADIUS", GaussVol.DEFAULT_VDW_PROBE);
                 index = 0;
                 for (Atom atom : atoms) {
                     isHydrogen[index] = atom.isHydrogen();
@@ -586,41 +576,32 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 } catch (Exception e) {
                     logger.severe(" Exception creating GaussVol: " + e.toString());
                 }
-                gaussVol.setEffectiveRadiusProbe(probe);
+                chandlerCavitation = new ChandlerCavitation(atoms, gaussVol);
                 break;
             case BORN_CAV_DISP:
-                probe = tempProbe;
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 surfaceAreaRegion = null;
-                connollyRegion = null;
-                gaussVol = null;
+                chandlerCavitation = null;
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
                 break;
             case HYDROPHOBIC_PMF:
             case BORN_SOLV:
             case NONE:
             default:
-                probe = tempProbe;
                 tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
                 surfaceAreaRegion = null;
-                connollyRegion = null;
                 dispersionRegion = null;
-                gaussVol = null;
+                chandlerCavitation = null;
                 break;
         }
 
         surfaceTension = forceField.getDouble("SURFACE_TENSION", tensionDefault);
         solventPressue = forceField.getDouble("SOLVENT_PRESSURE", DEFAULT_SOLVENT_PRESSURE);
         crossOver = forceField.getDouble("CROSS_OVER", DEFAULT_CROSSOVER);
-        if (gaussVol != null) {
-            gaussVol.setSurfaceTension(surfaceTension);
-            gaussVol.setSolventPressure(solventPressue);
-            gaussVol.setCrossOver(crossOver);
-        }
-        if (connollyRegion != null) {
-            connollyRegion.setSurfaceTension(surfaceTension);
-            connollyRegion.setSolventPressure(solventPressue);
-            connollyRegion.setCrossOver(crossOver);
+        if (chandlerCavitation != null) {
+            chandlerCavitation.setSurfaceTension(surfaceTension);
+            chandlerCavitation.setSolventPressure(solventPressue);
+            chandlerCavitation.setCrossOver(crossOver);
         }
         if (surfaceAreaRegion != null) {
             surfaceAreaRegion.setSurfaceTension(surfaceTension);
@@ -652,15 +633,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         if (surfaceAreaRegion != null) {
             logger.info(format("   Cavitation Probe Radius:            %8.3f (A)", probe));
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
-        } else if (gaussVol != null) {
-            logger.info(format("   Cavitation Radii Offset:            %8.3f (A)", offset));
-            if (probe != 0.0) {
-                logger.info(format("   Cavitation Effective Radius Probe:  %8.3f (A)", probe));
-            }
-            logger.info(format("   Cavitation Solvent Pressure:        %8.3f (Kcal/mol/A^3)", solventPressue));
-            logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
-            logger.info(format("   Cavitation Cross-Over Radius:       %8.3f (A)", crossOver));
-        } else if (connollyRegion != null) {
+        } else if (chandlerCavitation != null) {
             logger.info(format("   Cavitation Solvent Pressure:        %8.3f (Kcal/mol/A^3)", solventPressue));
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
             logger.info(format("   Cavitation Cross-Over Radius:       %8.3f (A)", crossOver));
@@ -685,8 +658,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
      *
      * @return GaussVol.
      */
-    public GaussVol getGaussVol() {
-        return gaussVol;
+    public ChandlerCavitation getChandlerCavitation() {
+        return chandlerCavitation;
     }
 
     /**
@@ -696,14 +669,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     public void setGaussVolRadiiOffset(double offset) {
         this.offset = offset;
+        GaussVol gaussVol = chandlerCavitation.getGaussVol();
         if (gaussVol != null) {
             double[] radii = new double[nAtoms];
             double[] volume = new double[nAtoms];
             double fourThirdsPI = 4.0 / 3.0 * PI;
             int index = 0;
             for (Atom atom : atoms) {
-                radii[index] = atom.getVDWType().radius / 2.0;
-                radii[index] += offset;
+                radii[index] = atom.getVDWType().radius / 2.0 + offset;
                 volume[index] = fourThirdsPI * pow(radii[index], 3);
                 index++;
             }
@@ -717,10 +690,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     public DispersionRegion getDispersionRegion() {
         return dispersionRegion;
-    }
-
-    public ConnollyRegion getConnollyRegion() {
-        return connollyRegion;
     }
 
     public AtomicDoubleArray3D getGrad() {
@@ -952,28 +921,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
             surfaceAreaRegion.init();
         }
 
-        if (gaussVol != null) {
-            boolean[] isHydrogen = new boolean[nAtoms];
-            double[] radii = new double[nAtoms];
-            double[] volume = new double[nAtoms];
-            double[] gamma = new double[nAtoms];
-            double fourThirdsPI = 4.0 / 3.0 * PI;
-            int index = 0;
-            for (Atom atom : atoms) {
-                isHydrogen[index] = atom.isHydrogen();
-                radii[index] = atom.getVDWType().radius / 2.0;
-                radii[index] += offset;
-                volume[index] = fourThirdsPI * pow(radii[index], 3);
-                gamma[index] = 1.0;
-                index++;
-            }
-
-            try {
-                gaussVol.setGammas(gamma);
-                gaussVol.setRadiiAndVolumes(radii, volume);
-                gaussVol.setIsHydrogen(isHydrogen);
-            } catch (Exception e) {
-                logger.severe(" Exception creating GaussVol: " + e.toString());
+        if (chandlerCavitation != null) {
+            GaussVol gaussVol = chandlerCavitation.getGaussVol();
+            if (gaussVol != null) {
+                boolean[] isHydrogen = new boolean[nAtoms];
+                double[] radii = new double[nAtoms];
+                double[] volume = new double[nAtoms];
+                double[] gamma = new double[nAtoms];
+                double fourThirdsPI = 4.0 / 3.0 * PI;
+                int index = 0;
+                for (Atom atom : atoms) {
+                    isHydrogen[index] = atom.isHydrogen();
+                    radii[index] = atom.getVDWType().radius / 2.0;
+                    radii[index] += offset;
+                    volume[index] = fourThirdsPI * pow(radii[index], 3);
+                    gamma[index] = 1.0;
+                    index++;
+                }
+                try {
+                    gaussVol.setGammas(gamma);
+                    gaussVol.setRadiiAndVolumes(radii, volume);
+                    gaussVol.setIsHydrogen(isHydrogen);
+                } catch (Exception e) {
+                    logger.severe(" Exception creating GaussVol: " + e.toString());
+                }
             }
         }
     }
@@ -1104,9 +1075,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     dispersionEnergy = dispersionRegion.getEnergy();
                     dispersionTime += System.nanoTime();
                     cavitationTime = -System.nanoTime();
-                    connollyRegion.init(atoms, gradient, grad);
-                    connollyRegion.runVolume();
-                    cavitationEnergy = connollyRegion.getEnergy();
+                    cavitationTime = -System.nanoTime();
+                    double[][] positions = new double[nAtoms][3];
+                    for (int i = 0; i < nAtoms; i++) {
+                        positions[i][0] = atoms[i].getX();
+                        positions[i][1] = atoms[i].getY();
+                        positions[i][2] = atoms[i].getZ();
+                    }
+                    chandlerCavitation.energyAndGradient(positions, grad);
+                    cavitationEnergy = chandlerCavitation.getEnergy();
                     cavitationTime += System.nanoTime();
                     break;
                 case GAUSS_DISP:
@@ -1116,14 +1093,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     dispersionEnergy = dispersionRegion.getEnergy();
                     dispersionTime += System.nanoTime();
                     cavitationTime = -System.nanoTime();
-                    double[][] positions = new double[nAtoms][3];
+                    positions = new double[nAtoms][3];
                     for (int i = 0; i < nAtoms; i++) {
                         positions[i][0] = atoms[i].getX();
                         positions[i][1] = atoms[i].getY();
                         positions[i][2] = atoms[i].getZ();
                     }
-                    gaussVol.energyAndGradient(positions, grad);
-                    cavitationEnergy = gaussVol.getEnergy();
+                    chandlerCavitation.energyAndGradient(positions, grad);
+                    cavitationEnergy = chandlerCavitation.getEnergy();
                     cavitationTime += System.nanoTime();
                     break;
                 case BORN_CAV_DISP:

@@ -82,10 +82,10 @@ class Energy extends PotentialScript {
     @Option(names = ['--es1', '--noElecStart1'], paramLabel = "1",
             description = 'Starting no-electrostatics atom for 1st topology')
     private int es1 = 1
+
     /**
      * * --fl or --findLowest Return the n lowest energy structures from an ARC or PDB file.
      */
-
     @Option(names = ['--fl', '--findLowest'], paramLabel = "0",
             description = 'Return the n lowest energy structures from an ARC or PDB file.')
     private int fl = 0
@@ -155,8 +155,7 @@ class Energy extends PotentialScript {
         }
 
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
+            activeAssembly = potentialFunctions.open(filenames.get(0))
         } else if (activeAssembly == null) {
             logger.info(helpString())
             return this
@@ -284,7 +283,7 @@ class Energy extends PotentialScript {
 
     @Override
     List<Potential> getPotentials() {
-        return forceFieldEnergy == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergy)
+        return forceFieldEnergy == null ? Collections<Potential>.emptyList() : Collections<Potential>.singletonList(forceFieldEnergy)
     }
 }
 

@@ -138,11 +138,25 @@ public class Angle extends BondedTerm {
         String key = AngleType.sortKey(c);
         AngleType angleType = forceField.getAngleType(key);
         if (angleType == null) {
-            logger.severe("No AngleType for key: " + key);
+            logNoAngleType(a1, ac, a3, key);
             return null;
         }
         newAngle.setAngleType(angleType);
         return newAngle;
+    }
+
+    /**
+     * Log that no AngleType exists.
+     * @param a1 Atom 1.
+     * @param ac Atom 2.
+     * @param a3 Atom 3.
+     * @param key The class key.
+     */
+    public static void logNoAngleType(Atom a1, Atom ac, Atom a3, String key) {
+        logger.severe(format("No AngleType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s", key,
+                a1.toString(), a1.getAtomType().toString(),
+                ac.toString(), ac.getAtomType().toString(),
+                a3.toString(), a3.getAtomType().toString()));
     }
 
     /**

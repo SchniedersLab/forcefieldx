@@ -1,4 +1,4 @@
-clear all;
+clearvars;
 close all;
 figure(1);
 ffxHist = load('histogram.txt');
@@ -11,6 +11,15 @@ title('Sampling Bias and Free Energy','FontSize', 16);
 xlabel('Lambda');
 ylabel('Energy (kcal/mol)');
 legend('<dU/dL>', 'Free Energy', 'Free Energy + Bias');
+
+fig = gcf;
+fig.PaperUnits = 'inches';
+sizeX = 6.8;
+sizeY = 5.6;
+fig.PaperSize = [ sizeX sizeY ];
+fig.PaperPosition = [0.0 0.0 sizeX sizeY];
+
+print('Fig1-1DHistogram.pdf', '-dpdf');
 
 figure(2);
 ffxPMF = load('pmf.txt');
@@ -31,6 +40,15 @@ ylabel('dU/dL (kcal/mol)');
 legend('Total Bias PMF','<dU/dL>');
 hold off;
 
+fig = gcf;
+fig.PaperUnits = 'inches';
+sizeX = 6.8;
+sizeY = 5.6;
+fig.PaperSize = [ sizeX sizeY ];
+fig.PaperPosition = [0.0 0.0 sizeX sizeY];
+
+print('Fig2-PMF.pdf', '-dpdf');
+
 figure(3);
 ffxBias = load('pmf.2D.txt');
 y = ffxBias(:,1);
@@ -48,3 +66,12 @@ xlabel('Lambda');
 ylabel('dU/dL (kcal/mol)');
 legend('2D Bias PMF','<dU/dL>');
 hold off;
+
+fig = gcf;
+fig.PaperUnits = 'inches';
+sizeX = 6.8;
+sizeY = 5.6;
+fig.PaperSize = [ sizeX sizeY ];
+fig.PaperPosition = [0.0 0.0 sizeX sizeY];
+
+print('Fig3-2Dpmf.pdf', '-dpdf');

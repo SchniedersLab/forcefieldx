@@ -66,7 +66,7 @@ class Cart2Frac extends PotentialScript {
     @Parameters(arity = "1..*", paramLabel = "files",
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
-    private MolecularAssembly[] assemblies;
+    private MolecularAssembly[] assemblies
 
     public double[][] cartCoordinates = null
     public double[][] fracCoordinates = null

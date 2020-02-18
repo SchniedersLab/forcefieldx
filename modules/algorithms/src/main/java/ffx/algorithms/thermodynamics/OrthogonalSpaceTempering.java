@@ -45,6 +45,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,8 +60,6 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.asin;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -271,7 +270,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                                     double temperature, double dt, double printInterval,
                                     double saveInterval, boolean asynchronous, boolean resetNumSteps,
                                     AlgorithmListener algorithmListener) {
-
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
         this.lambdaFile = lambdaFile;
@@ -308,11 +306,15 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         // Load the OST lambda restart file if it exists.
         if (lambdaFile != null && lambdaFile.exists()) {
             try {
-                LambdaReader lambdaReader = new LambdaReader(this, new FileReader(lambdaFile));
+                LambdaReader lambdaReader = new LambdaReader(new FileReader(lambdaFile));
                 lambdaReader.readLambdaFile(resetNumSteps);
+                lambdaReader.setVariables(this);
+                lambdaReader.close();
                 logger.info(format("\n Continuing OST lambda from %s.", lambdaFile.getName()));
             } catch (FileNotFoundException ex) {
                 logger.info(" Lambda restart file could not be found and will be ignored.");
+            } catch (IOException ioe) {
+                logger.warning(" Could not close lambda restart file reader!");
             }
         }
 
@@ -573,6 +575,15 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     /**
+     * Returns basic information about the histogram.
+     *
+     * @return Tempering parameter, threshold, and bias magnitude.
+     */
+    String histoInfo() {
+        return String.format(" Tempering parameter: %.5f kBT. Threshold: %.5f kcal/mol. Bias magnitude: %.5f kcal/mol", histogram.temperingFactor, histogram.temperOffset, histogram.biasMag);
+    }
+
+    /**
      * <p>getPotentialEnergy.</p>
      *
      * @return a {@link ffx.numerics.Potential} object.
@@ -642,6 +653,15 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         } else {
             logger.info(" OST count interval must be greater than 0.");
         }
+    }
+
+    /**
+     * Set the number of counts.
+     *
+     * @param counts
+     */
+    public void setEnergyCount(long counts) {
+        this.energyCount = counts;
     }
 
     public void setMolecularAssembly(MolecularAssembly molecularAssembly) {
@@ -1301,6 +1321,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         protected final int rank;
         private boolean independentWalkers = false;
+
         /**
          * Flag to indicate if OST should send and receive counts between processes
          * synchronously or asynchronously. The latter can be faster by ~40% because
@@ -1311,25 +1332,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * The CountReceiveThread accumulates OST statistics from multiple asynchronous walkers.
          */
-        private final CountReceiveThread receiveThread;
-        /**
-         * The recursionWeights stores the [Lambda, FLambda] weight for each
-         * process. Therefore the array is of size [number of Processes][2].
-         * <p>
-         * Each 2 entry array must be wrapped inside a Parallel Java DoubleBuf for the
-         * All-Gather communication calls.
-         */
-        private final double[][] recursionWeights;
-        private final double[] myRecursionWeight;
-        /**
-         * These DoubleBufs wrap the recursionWeight arrays.
-         */
-        private final DoubleBuf[] recursionWeightsBuf;
-        private final DoubleBuf myRecursionWeightBuf;
+        private final AsynchronousSend asynchronousSend;
+        private final SynchronousSend synchronousSend;
+
         /**
          * Most recent lambda values for each Walker.
          */
         private final double[] currentLambdaValues;
+        private final double[] currentDUDL;
 
         /**
          * Histogram constructor.
@@ -1423,27 +1433,44 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             rank = world.rank();
             if (asynchronous) {
                 // Use asynchronous communication.
-                myRecursionWeight = new double[4];
-                myRecursionWeightBuf = DoubleBuf.buffer(myRecursionWeight);
-                receiveThread = new CountReceiveThread(this);
-                receiveThread.start();
-                recursionWeights = null;
-                recursionWeightsBuf = null;
+                asynchronousSend = new AsynchronousSend(this);
+                asynchronousSend.start();
+                synchronousSend = null;
             } else {
-                // Use synchronous communication.
-                recursionWeights = new double[numProc][3];
-                recursionWeightsBuf = new DoubleBuf[numProc];
+                Histogram[] histograms = new Histogram[numProc];
+                int[] rankToHistogramMap = new int[numProc];
                 for (int i = 0; i < numProc; i++) {
-                    recursionWeightsBuf[i] = DoubleBuf.buffer(recursionWeights[i]);
+                    histograms[i] = this;
+                    rankToHistogramMap[i] = 0;
                 }
-                myRecursionWeight = recursionWeights[rank];
-                myRecursionWeightBuf = recursionWeightsBuf[rank];
-                receiveThread = null;
+                synchronousSend = new SynchronousSend(histograms, rankToHistogramMap, independentWalkers);
+                asynchronousSend = null;
             }
-            currentLambdaValues = new double[world.size()];
+            currentLambdaValues = new double[numProc];
+            currentDUDL = new double[numProc];
 
             // Attempt to load a restart file if one exists.
             readRestart();
+        }
+
+        /**
+         * Return the SynchronousSend associated with this Histogram, if any.
+         *
+         * @return The SynchronousSend, if any.
+         */
+        public Optional<SynchronousSend> getSynchronousSend() {
+            return Optional.ofNullable(synchronousSend);
+        }
+
+        /**
+         * Sets the tempering threshold/offset in kcal/mol; is ignored if given a negative value.
+         *
+         * @param threshold Threshold to set: ignored if < 0.
+         */
+        public void setTemperingThreshold(double threshold) {
+            if (threshold >= 0) {
+                temperOffset = threshold;
+            } // Else, silently keep the default value set by property.
         }
 
         /**
@@ -1453,6 +1480,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         public void setIndependentWalkers(boolean independentWalkers) {
             this.independentWalkers = independentWalkers;
+            if (synchronousSend != null) {
+                synchronousSend.setIndependentWalkers(independentWalkers);
+            }
         }
 
         /**
@@ -1462,6 +1492,30 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         public boolean getIndependentWalkers() {
             return independentWalkers;
+        }
+
+        public boolean getResetStatistics() {
+            return resetStatistics;
+        }
+
+        public void setResetStatistics(boolean resetStatistics) {
+            this.resetStatistics = resetStatistics;
+        }
+
+        public void setHalfThetaVelocity(double halfThetaV) {
+            halfThetaVelocity = halfThetaV;
+        }
+
+        public double getLambdaResetValue() {
+            return lambdaResetValue;
+        }
+
+        public void setCurrentLambdaValues(double[] currentLambdaValues) {
+            System.arraycopy(currentLambdaValues, 0, this.currentLambdaValues, 0, currentLambdaValues.length);
+        }
+
+        public void setCurrentDUDL(double[] currentDUDL) {
+            System.arraycopy(currentDUDL, 0, this.currentDUDL, 0, currentDUDL.length);
         }
 
         /**
@@ -1479,9 +1533,19 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * @param biasMag Gaussian biasing potential magnitude (kcal/mol)
          */
         public void setBiasMagnitude(double biasMag) {
+            setBiasMagnitude(biasMag, Level.INFO);
+        }
+
+        /**
+         * Set the OST Gaussian biasing potential magnitude (kcal/mol).
+         *
+         * @param biasMag      Gaussian biasing potential magnitude (kcal/mol).
+         * @param loggingLevel Logging level (default INFO).
+         */
+        public void setBiasMagnitude(double biasMag, Level loggingLevel) {
             // TODO: Delete this method and make as much as possible final.
             histogram.biasMag = biasMag;
-            logger.info(format("  Gaussian Bias Magnitude:        %6.4f (kcal/mol)", biasMag));
+            logger.log(loggingLevel, format("  Gaussian Bias Magnitude:        %6.4f (kcal/mol)", biasMag));
 
             double defaultOffset = 20.0 * biasMag;
             String propString = System.getProperty("ost-temperOffset", Double.toString(defaultOffset));
@@ -1489,13 +1553,13 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             try {
                 temperOffset = Double.parseDouble(propString);
             } catch (NumberFormatException ex) {
-                logger.info(format(" Exception in parsing ost-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
+                logger.log(loggingLevel, format(" Exception in parsing ost-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
                 temperOffset = defaultOffset;
             }
             if (temperOffset < 0.0) {
                 temperOffset = 0.0;
             }
-            logger.info(format("  Coverage before tempering:      %6.4f (kcal/mol)", temperOffset));
+            logger.log(loggingLevel, format("  Coverage before tempering:      %6.4f (kcal/mol)", temperOffset));
         }
 
         /**
@@ -1513,6 +1577,16 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * @param temper a double.
          */
         public void setTemperingParameter(double temper) {
+            setTemperingParameter(temper, Level.INFO);
+        }
+
+        /**
+         * Sets the Dama et al tempering parameter, as a multiple of kBT.
+         *
+         * @param temper   a double.
+         * @param logLevel Level to log at.
+         */
+        public void setTemperingParameter(double temper, Level logLevel) {
             // TODO: Delete this method and make as much as possible final.
             temperingFactor = temper;
             if (temperingFactor > 0.0) {
@@ -1520,7 +1594,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             } else {
                 deltaT = Double.MAX_VALUE;
             }
-            logger.info(String.format(" Tempering parameter: %.5f kBT, %.5f kcal/mol", temperingFactor, deltaT));
+            logger.log(logLevel, String.format(" Tempering parameter: %.5f kBT, %.5f kcal/mol", temperingFactor, deltaT));
         }
 
         /**
@@ -1648,12 +1722,17 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * Add to the value of a recursion kernel bin.
          *
-         * @param lambdaBin  The lambda bin.
-         * @param fLambdaBin The dU/dL bin.
-         * @param value      The value of the bin.
+         * @param lambdaBin     The lambda bin.
+         * @param fLambdaBin    The dU/dL bin.
+         * @param value         The value of the bin.
+         * @param updateFLambda Whether to update the 1D bias (typically true for biases received from other processes)
          */
-        void addToRecursionKernelValue(int lambdaBin, int fLambdaBin, double value) {
+        void addToRecursionKernelValue(int lambdaBin, int fLambdaBin, double value, boolean updateFLambda) {
             recursionKernel[lambdaBin][fLambdaBin] += value;
+            if (updateFLambda) {
+                updateFLambda(false, false);
+            }
+            ++biasCount;
         }
 
         /**
@@ -1810,7 +1889,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                     double deltaFL2 = deltaFL * deltaFL;
                     double weight = mirrorFactor * rc;
                     if (weight > 0) {
-                        double e = weight * biasMag * L2exp * exp(-deltaFL2 * invFLs2);
+                        double e = weight * L2exp * exp(-deltaFL2 * invFLs2);
+                        if (biasMag != 0.0) {
+                            e *= biasMag;
+                        }
                         sum += e;
                     }
                 }
@@ -2206,7 +2288,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 }
             }
 
-            if (tempering) {
+            if (tempering && biasMag > 0.0) {
                 double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
                 temperingWeight = exp(temperEnergy / deltaT);
             }
@@ -2249,11 +2331,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         void addBias(double dEdU, double[] x, double[] gradient) {
             // Communicate adding the bias to all walkers.
             if (asynchronous) {
-                asynchronousSend(lambda, dEdU);
+                asynchronousSend.send(lambda, dEdU, temperingWeight);
             } else {
-                synchronousSend(lambda, dEdU);
+                synchronousSend.send(lambda, dEdU, temperingWeight);
             }
-            biasCount++;
 
             // Update F(L)
             fLambdaUpdates++;
@@ -2319,94 +2400,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * Send an OST count to all other processes while also receiving an OST
-         * count from all other processes.
-         *
-         * @param lambda Current value of lambda.
-         * @param dUdL   Current value of dU/dL.
-         */
-        private void synchronousSend(double lambda, double dUdL) {
-            // All-Gather counts from each walker.
-            myRecursionWeight[0] = lambda;
-            myRecursionWeight[1] = dUdL;
-            myRecursionWeight[2] = temperingWeight;
-            try {
-                world.allGather(myRecursionWeightBuf, recursionWeightsBuf);
-            } catch (IOException ex) {
-                String message = " Multi-walker OST allGather failed.";
-                logger.log(Level.SEVERE, message, ex);
-            }
-
-            // Find the minimum and maximum FLambda bin for the gathered counts.
-            double minRequired = Double.MAX_VALUE;
-            double maxRequired = Double.MIN_VALUE;
-            for (int i = 0; i < numProc; i++) {
-
-                // Only include this walkers bias.
-                if (independentWalkers && i != rank) {
-                    continue;
-                }
-
-                minRequired = min(minRequired, recursionWeights[i][1]);
-                maxRequired = max(maxRequired, recursionWeights[i][1]);
-            }
-
-            // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
-            checkRecursionKernelSize(minRequired);
-            checkRecursionKernelSize(maxRequired);
-
-            // Increment the Recursion Kernel based on the input of each walker.
-            for (int i = 0; i < numProc; i++) {
-                currentLambdaValues[i] = recursionWeights[i][0];
-
-                // Only include this walkers bias.
-                if (independentWalkers && i != rank) {
-                    continue;
-                }
-
-                int walkerLambda = binForLambda(recursionWeights[i][0]);
-                int walkerFLambda = binForFLambda(recursionWeights[i][1]);
-                double weight = recursionWeights[i][2];
-
-                // If the weight is less than 1.0, then a walker has activated tempering.
-                if (!tempering && weight < 1.0) {
-                    tempering = true;
-                    logger.info(format(" Tempering activated due to received weight of (%8.6f)", weight));
-                }
-
-                if (resetStatistics && recursionWeights[i][0] > lambdaResetValue) {
-                    allocateRecursionKernel();
-                    resetStatistics = false;
-                    logger.info(format(" Cleared OST histogram (Lambda = %6.4f).", recursionWeights[i][0]));
-                }
-
-                addToRecursionKernelValue(walkerLambda, walkerFLambda, weight);
-            }
-        }
-
-        /**
-         * Send an OST count to all other processes.
-         *
-         * @param lambda Current value of lambda.
-         * @param dUdL   Current value of dU/dL.
-         */
-        private void asynchronousSend(double lambda, double dUdL) {
-            myRecursionWeight[0] = world.rank();
-            myRecursionWeight[1] = lambda;
-            myRecursionWeight[2] = dUdL;
-            myRecursionWeight[3] = temperingWeight;
-
-            for (int i = 0; i < numProc; i++) {
-                try {
-                    world.send(i, myRecursionWeightBuf);
-                } catch (Exception ex) {
-                    String message = " Asynchronous Multiwalker OST send failed.";
-                    logger.log(Level.SEVERE, message, ex);
-                }
-            }
-        }
-
-        /**
          * Update a local array of current lambda values for each walker.
          *
          * @param rank   Walker rank.
@@ -2416,15 +2409,33 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             currentLambdaValues[rank] = lambda;
         }
 
+        /**
+         * Update a local array of current dU/dL values for each walker.
+         *
+         * @param rank Walker rank.
+         * @param dUdL Walker's current dU/dL value.
+         */
+        void setCurrentdUdLForRank(int rank, double dUdL) {
+            currentDUDL[rank] = dUdL;
+        }
+
+        double getCurrentLambda(int rank) {
+            return currentLambdaValues[rank];
+        }
+
+        double getCurrentDUDL(int rank) {
+            return currentDUDL[rank];
+        }
+
         void destroy() {
-            if (receiveThread != null && receiveThread.isAlive()) {
+            if (asynchronousSend != null && asynchronousSend.isAlive()) {
                 double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
                 DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
                 try {
                     logger.fine(" Sending the termination message.");
                     world.send(rank, killBuf);
                     logger.fine(" Termination message was sent successfully.");
-                    logger.fine(format(" Receive thread alive %b status %s", receiveThread.isAlive(), receiveThread.getState()));
+                    logger.fine(format(" Receive thread alive %b status %s", asynchronousSend.isAlive(), asynchronousSend.getState()));
                 } catch (Exception ex) {
                     String message = format(" Asynchronous Multiwalker OST termination signal " +
                             "failed to be sent for process %d.", rank);
@@ -2432,6 +2443,15 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 }
             } else {
                 logger.fine(" CountReceiveThread was either not initialized, or is not alive. This is the case for the Histogram script.");
+            }
+        }
+
+        int getHistogramIndex() {
+            if (asynchronous) {
+                // TODO: Make AsynchronousSend do this properly.
+                return 0;
+            } else {
+                return synchronousSend.getHistogramIndex();
             }
         }
     }

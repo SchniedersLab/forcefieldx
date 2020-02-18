@@ -47,8 +47,6 @@ import java.util.List;
 import java.util.function.DoubleConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static ffx.utilities.Constants.*;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -85,7 +83,9 @@ import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.Constants;
+import static ffx.utilities.Constants.FSEC_TO_PSEC;
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static ffx.utilities.Constants.NS2SEC;
 
 /**
  * Run NVE, NVT, or NPT molecular dynamics.
@@ -910,7 +910,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public void init(final long nSteps, final double timeStep, final double loggingInterval,
                      final double trajectoryInterval, final double temperature, final boolean initVelocities,
                      final File dyn) {
-        init(nSteps, timeStep, loggingInterval, trajectoryInterval, "XYZ",  restartInterval, temperature, initVelocities, dyn);
+        init(nSteps, timeStep, loggingInterval, trajectoryInterval, "XYZ", restartInterval, temperature, initVelocities, dyn);
     }
 
     /**
@@ -1025,7 +1025,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Enable or disable automatic writeout of trajectory snapshots and restart files.
-     *
+     * <p>
      * Primarily intended for use with MC-OST, which handles the timing itself.
      *
      * @param autoWriteout Whether to automatically write out trajectory and restart files.
@@ -1039,7 +1039,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      *
      * @param interval Interval between events in ps
      * @param describe Description of the event.
-     * @return         Frequency of event in timesteps per event.
+     * @return Frequency of event in timesteps per event.
      * @throws IllegalArgumentException If interval is not a positive finite value.
      */
     private int intervalToFreq(double interval, String describe) throws IllegalArgumentException {
@@ -1255,7 +1255,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Log thermodynamics to the screen.
      *
      * @param time Clock time (in nsec) since this was last called.
-     * @return     Clock time at the end of this call.
+     * @return Clock time at the end of this call.
      */
     private long logThermodynamics(long time) {
         time = System.nanoTime() - time;
@@ -1365,7 +1365,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
 
             if (automaticWriteouts) {
-                writeFilesForStep(step);
+                writeFilesForStep(step, true, true);
             }
 
             // Notify the algorithmListeners.
@@ -1388,20 +1388,22 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Write restart and trajectory files if the provided step matches the frequency.
      *
-     * @param step Step to write files (if any) for.
+     * @param step     Step to write files (if any) for.
+     * @param snapShot Write archive files.
+     * @param restart  Write restart files.
      * @return EnumSet of actions taken by this method.
      */
-    public EnumSet<WriteActions> writeFilesForStep(long step) {
+    public EnumSet<WriteActions> writeFilesForStep(long step, boolean snapShot, boolean restart) {
         EnumSet<WriteActions> written = EnumSet.noneOf(WriteActions.class);
         if (step != 0) {
             // Write out snapshots in selected format every saveSnapshotFrequency steps.
-            if (trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
+            if (snapShot && trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
                 appendSnapshot();
                 written.add(WriteActions.SNAPSHOT);
             }
 
             // Write out restart files every saveRestartFileFrequency steps.
-            if (restartFrequency > 0 && step % restartFrequency == 0) {
+            if (restart && restartFrequency > 0 && step % restartFrequency == 0) {
                 writeRestart();
                 written.add(WriteActions.RESTART);
             }
@@ -1528,13 +1530,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Gets the kinetic energy at the start of the last dynamics run.
-     * 
+     *
      * @return Kinetic energy at the start of the run.
      */
     public double getInitialKineticEnergy() {
         return initialKinetic;
     }
-    
+
     /**
      * Gets the temperature at the start of the last dynamics run.
      *
@@ -1543,7 +1545,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public double getInitialTemperature() {
         return initialTemp;
     }
-    
+
     /**
      * Gets the potential energy at the start of the last dynamics run.
      *
@@ -1552,7 +1554,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public double getInitialPotentialEnergy() {
         return initialPotential;
     }
-    
+
     /**
      * Gets the total energy at the start of the last dynamics run.
      *
@@ -1820,6 +1822,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * No-op; FFX does not need to occasionally return information from FFX.
+     *
      * @param intervalSteps Ignored.
      */
     public void setIntervalSteps(int intervalSteps) {

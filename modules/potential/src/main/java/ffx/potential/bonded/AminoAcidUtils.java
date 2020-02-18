@@ -375,7 +375,7 @@ public class AminoAcidUtils {
         for (Atom atom : resAtoms) {
             atomType = atom.getAtomType();
             if (atomType == null) {
-                /**
+                /*
                  * Sometimes, with deuterons, a proton has been constructed in
                  * its place, so we have a "dummy" deuteron still hanging
                  * around.
@@ -393,7 +393,6 @@ public class AminoAcidUtils {
                     atom = correspH;
                     atomType = atom.getAtomType();
                 }
-
             }
             int numberOfBonds = atom.getNumBonds();
 

@@ -66,6 +66,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
+import static ffx.potential.bonded.Bond.logNoBondType;
 
 /**
  * The XYZFilter class parses TINKER Cartesian coordinate (*.XYZ) files.
@@ -285,7 +286,7 @@ public class XYZFilter extends SystemFilter {
                         String key = BondType.sortKey(c);
                         BondType bondType = forceField.getBondType(key);
                         if (bondType == null) {
-                            logger.severe(format(" No BondType for key %s", key));
+                            logNoBondType(atom1, atom2, key);
                         } else {
                             bond.setBondType(bondType);
                         }

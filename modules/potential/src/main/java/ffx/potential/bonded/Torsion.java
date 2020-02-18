@@ -37,10 +37,7 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import java.util.Arrays;
 import java.util.logging.Logger;
-
-import static ffx.numerics.math.VectorMath.*;
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.acos;
@@ -50,6 +47,12 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
+import static ffx.numerics.math.VectorMath.cross;
+import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.dot;
+import static ffx.numerics.math.VectorMath.r;
+import static ffx.numerics.math.VectorMath.scalar;
+import static ffx.numerics.math.VectorMath.sum;
 
 /**
  * The Torsion class represents a torsional angle formed between four bonded
@@ -110,13 +113,15 @@ public class Torsion extends BondedTerm implements LambdaInterface {
      * @return a new Torsion, or null.
      */
     static Torsion torsionFactory(Bond bond1, Bond middleBond, Bond bond3, ForceField forceField) {
-        Atom atom1 = middleBond.getAtom(0);
-        Atom atom2 = middleBond.getAtom(1);
+        Atom a0 = bond1.getOtherAtom(middleBond);
+        Atom a1 = middleBond.getAtom(0);
+        Atom a2 = middleBond.getAtom(1);
+        Atom a3 = bond3.getOtherAtom(middleBond);
 
-        int c0 = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
-        int c1 = atom1.getAtomType().atomClass;
-        int c2 = atom2.getAtomType().atomClass;
-        int c3 = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
+        int c0 = a0.getAtomType().atomClass;
+        int c1 = a1.getAtomType().atomClass;
+        int c2 = a2.getAtomType().atomClass;
+        int c3 = a3.getAtomType().atomClass;
 
         TorsionType torsionType = getTorsionType(c0, c1, c2, c3, forceField);
 
@@ -144,14 +149,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
         if (torsionType == null) {
             int[] c = {c0, c1, c2, c3};
             String key = TorsionType.sortKey(c);
-
-            logger.info(format(" No TorsionType for key: %s\n%s\n%s\n%s\n",
-                    key, bond1.toString(), middleBond.toString(), bond3.toString()));
-            logger.info(" Atom 1: " + bond1.getAtom(0));
-            logger.info(" Atom 2: " + bond1.getAtom(1));
-            logger.info(" Atom 3: " + bond3.getAtom(0));
-            logger.info(" Atom 4: " + bond3.getAtom(1));
-            logger.severe(" Force Field X will exit.");
+            logNoTorsionType(a0, a1, a2, a3, key);
             return null;
         }
 
@@ -160,6 +158,23 @@ public class Torsion extends BondedTerm implements LambdaInterface {
         torsion.units = forceField.getDouble("TORSIONUNIT", 1.0);
 
         return torsion;
+    }
+
+    /**
+     * Log that no TorsionType exists.
+     *
+     * @param a0  Atom 0.
+     * @param a1  Atom 1.
+     * @param a2  Atom 2.
+     * @param a3  Atom 3.
+     * @param key The class key.
+     */
+    public static void logNoTorsionType(Atom a0, Atom a1, Atom a2, Atom a3, String key) {
+        logger.severe(format("No TorsionType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s\n %s -> %s", key,
+                a0.toString(), a0.getAtomType().toString(),
+                a1.toString(), a1.getAtomType().toString(),
+                a2.toString(), a2.getAtomType().toString(),
+                a3.toString(), a3.getAtomType().toString()));
     }
 
     /**
@@ -328,11 +343,11 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 double error = cosine + 1.0;
                 if (Math.abs(error) > 1E-5) {
                     logger.warning(String.format(" Severe discrepancy in calculating dihedral angle " +
-                            "for torsion %s; cosine of angle calculated as %12.7f < -1.0 by %12.7g radians",
+                                    "for torsion %s; cosine of angle calculated as %12.7f < -1.0 by %12.7g radians",
                             this.toString(), cosine, error));
                 } else {
                     logger.fine(String.format(" Minor, likely numerical discrepancy in calculating dihedral " +
-                            "angle for torsion %s; cosine of angle calculated as %12.7f < -1.0 by %12.7g radians",
+                                    "angle for torsion %s; cosine of angle calculated as %12.7f < -1.0 by %12.7g radians",
                             this.toString(), cosine, error));
                 }
             } else if (cosine > 1.0) {
@@ -340,11 +355,11 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 double error = cosine - 1.0;
                 if (Math.abs(error) > 1E-5) {
                     logger.warning(String.format(" Severe discrepancy in calculating dihedral angle for " +
-                            "torsion %s; cosine of angle calculated as %12.7f > +1.0 by %12.7g radians",
+                                    "torsion %s; cosine of angle calculated as %12.7f > +1.0 by %12.7g radians",
                             this.toString(), cosine, error));
                 } else {
                     logger.fine(String.format(" Minor, likely numerical discrepancy in calculating dihedral " +
-                            "angle for torsion %s; cosine of angle calculated as %12.7f > +1.0 by %12.7g radians",
+                                    "angle for torsion %s; cosine of angle calculated as %12.7f > +1.0 by %12.7g radians",
                             this.toString(), cosine, error));
                 }
             } else {

@@ -125,7 +125,7 @@ class FindLowestEnergy extends PotentialScript {
             logger.info(helpString())
             return this
         } else {
-            assemblies = potentialFunctions.open(filenames.get(0));
+            assemblies = potentialFunctions.open(filenames.get(0)) as MolecularAssembly[]
             activeAssembly = assemblies[0]
         }
 

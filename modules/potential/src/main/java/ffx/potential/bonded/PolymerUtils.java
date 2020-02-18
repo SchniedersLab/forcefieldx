@@ -61,6 +61,7 @@ import static ffx.numerics.math.VectorMath.r;
 import static ffx.numerics.math.VectorMath.scalar;
 import static ffx.numerics.math.VectorMath.sum;
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
+import static ffx.potential.bonded.Bond.logNoBondType;
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.buildHeavy;
 import static ffx.potential.bonded.BondedUtils.buildHydrogen;
@@ -645,7 +646,7 @@ public class PolymerUtils {
             String key = BondType.sortKey(c);
             BondType bondType = forceField.getBondType(key);
             if (bondType == null) {
-                logger.severe(format("No BondType for key: %s\n %s\n %s", key, a1, a2));
+                logNoBondType(a1, a2, key);
             } else {
                 bond.setBondType(bondType);
             }

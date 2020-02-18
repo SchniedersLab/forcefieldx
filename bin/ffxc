@@ -140,15 +140,15 @@ if [ -x "$awkCmd" ]; then
     fi
 fi
 
-# Detect JDK version; disallow JDKs below 1.8 and above 13.
+# Detect JDK version; disallow JDKs below 1.8 and above 15.
 if [ $hasAwkSed ]; then
     JVERS="`java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g'`"
     JVFIRST="`echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }'`"
     JVSEC="`echo "$JVERS" | awk 'BEGIN { FS = "."; } { print $2 }'`"
 
     USE_EXPTL_FLAGS=''
-    if [ $JVFIRST -gt 13 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JDK 1.8 through JDK 13." 1>&2
+    if [ $JVFIRST -gt 15 ]; then
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 1.8 through JDK 15." 1>&2
 #       exit 1
     elif [ $JVFIRST -eq 9 ]; then
         USE_EXPTL_FLAGS='1'
@@ -160,8 +160,12 @@ if [ $hasAwkSed ]; then
         USE_EXPTL_FLAGS='1'
     elif [ $JVFIRST -eq 13 ]; then
         USE_EXPTL_FLAGS='1'
+    elif [ $JVFIRST -eq 14 ]; then
+        USE_EXPTL_FLAGS='1'
+    elif [ $JVFIRST -eq 15 ]; then
+        USE_EXPTL_FLAGS='1'
     elif [ $JVSEC -lt 8 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JDK 1.8 through JDK 13." 1>&2
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 1.8 through JDK 15." 1>&2
         exit 1
     fi
 
@@ -172,7 +176,7 @@ if [ $hasAwkSed ]; then
     nvccComm='which nvcc'
     hasNVCC=''
     if [ -x "$nvccComm" ]; then
-	hasNVCC='1'
+      hasNVCC='1'
     fi
     if [ $hasNVCC ]; then
       CVERS="`nvcc --version`"
@@ -190,7 +194,7 @@ if [ $hasAwkSed ]; then
       fi
     fi
 else
-    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 1.8 through JDK 13 and (optionally) CUDA toolkit 10.1."
+    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 1.8 through JDK 15 and (optionally) CUDA toolkit 10.1."
 fi
 
 # For Cygwin, switch paths to Windows format before running java
@@ -206,6 +210,13 @@ fi
 
 EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS}"
 
+# This is for trying the GraalVM; the GraalVM EE compiler causes errors for FFX.
+# EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -Dgraal.CompilerConfiguration=community"
+# EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -XX:-UseJVMCICompiler"
+
+# This is for trying to use the GraalVM native image generation
+# EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -agentlib:native-image-agent=config-merge-dir=modules/ui/src/META-INF/native-image"
+
 exec "$JAVACMD" $JAVA_OPTS \
   $EXTRA_JVM_ARGUMENTS \
   -classpath "$CLASSPATH" \
@@ -218,3 +229,4 @@ exec "$JAVACMD" $JAVA_OPTS \
   -Dbasedir="$BASEDIR" \
   ffx.Main \
   "$@"
+

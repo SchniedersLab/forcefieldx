@@ -66,6 +66,7 @@ import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.norm;
 import static ffx.numerics.math.VectorMath.r;
 import static ffx.numerics.math.VectorMath.scalar;
+import static ffx.potential.bonded.Bond.logNoBondType;
 import static ffx.potential.bonded.NamingUtils.nameAcetylCap;
 
 /**
@@ -325,9 +326,7 @@ public class BondedUtils {
         String key = BondType.sortKey(c);
         BondType bondType = forceField.getBondType(key);
         if (bondType == null) {
-            logger.severe(format("No BondType for key: %s\n %s\n %s\n %s\n %s", key,
-                    a1.toString(), a1.getAtomType().toString(),
-                    a2.toString(), a2.getAtomType().toString()));
+            logNoBondType(a1, a2, key);
         } else {
             bond.setBondType(bondType);
         }
@@ -366,22 +365,20 @@ public class BondedUtils {
     /**
      * <p>buildHeavyAtom.</p>
      *
-     * @param residue    a {@link ffx.potential.bonded.MSGroup} object.
-     * @param atomName   a {@link java.lang.String} object.
-     * @param ia         a {@link ffx.potential.bonded.Atom} object.
-     * @param bond       a double.
-     * @param ib         a {@link ffx.potential.bonded.Atom} object.
-     * @param angle1     a double.
-     * @param ic         a {@link ffx.potential.bonded.Atom} object.
-     * @param angle2     a double.
-     * @param chiral     a int.
-     * @param atomType   a {@link ffx.potential.parameters.AtomType} object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param residue  a {@link ffx.potential.bonded.MSGroup} object.
+     * @param atomName a {@link java.lang.String} object.
+     * @param ia       a {@link ffx.potential.bonded.Atom} object.
+     * @param bond     a double.
+     * @param ib       a {@link ffx.potential.bonded.Atom} object.
+     * @param angle1   a double.
+     * @param ic       a {@link ffx.potential.bonded.Atom} object.
+     * @param angle2   a double.
+     * @param chiral   a int.
+     * @param atomType a {@link ffx.potential.parameters.AtomType} object.
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
     private static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-                                       Atom ic, double angle2, int chiral, AtomType atomType, ForceField forceField, ArrayList<Bond> bondList) {
+                                       Atom ic, double angle2, int chiral, AtomType atomType) {
         Atom atom = (Atom) residue.getAtomNode(atomName);
         if (atomType == null) {
             return null;
@@ -400,9 +397,57 @@ public class BondedUtils {
             intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
         }
         atom.setAtomType(atomType);
+        return atom;
+    }
+
+
+    /**
+     * <p>buildHeavyAtom.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.MSGroup} object.
+     * @param atomName   a {@link java.lang.String} object.
+     * @param ia         a {@link ffx.potential.bonded.Atom} object.
+     * @param bond       a double.
+     * @param ib         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle1     a double.
+     * @param ic         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle2     a double.
+     * @param chiral     a int.
+     * @param atomType   a {@link ffx.potential.parameters.AtomType} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
+    private static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
+                                       Atom ic, double angle2, int chiral, AtomType atomType,
+                                       ForceField forceField, ArrayList<Bond> bondList) {
+        Atom atom = buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
         buildBond(ia, atom, forceField, bondList);
         return atom;
     }
+
+    /**
+     * <p>buildHeavy.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.MSGroup} object.
+     * @param atomName   a {@link java.lang.String} object.
+     * @param ia         a {@link ffx.potential.bonded.Atom} object.
+     * @param bond       a double.
+     * @param ib         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle1     a double.
+     * @param ic         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle2     a double.
+     * @param chiral     a int.
+     * @param lookUp     a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
+    public static Atom buildHeavy(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
+                                  Atom ic, double angle2, int chiral, int lookUp, ForceField forceField) {
+        AtomType atomType = findAtomType(lookUp, forceField);
+        return buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
+    }
+
 
     /**
      * <p>buildHeavy.</p>

@@ -47,8 +47,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import org.apache.commons.math3.util.FastMath;
-
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.numerics.math.VectorMath;
@@ -267,7 +265,6 @@ public class NucleicAcidUtils {
                 }
             } else {
                 if (position == FIRST_RESIDUE) {
-
                     /*
                      * The 5' O5' oxygen of the nucleic acid is generally terminated by
                      * 1.) A phosphate group PO3 (-3).
@@ -291,9 +288,19 @@ public class NucleicAcidUtils {
                             sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1234, forceField, bondList);
                         }
                     } else if (isDNA) {
-                        sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1244, forceField, bondList);
+                        Atom O5 = residue.getAtomByName("O5\'", true);
+                        if (O5 == null) {
+                            sugarO5 = buildSugarO5(residue, 1244, forceField);
+                        } else {
+                            sugarO5 = buildHeavy(residue, "O5\'", null, 1244, forceField, bondList);
+                        }
                     } else {
-                        sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1232, forceField, bondList);
+                        Atom O5 = residue.getAtomByName("O5\'", true);
+                        if (O5 == null) {
+                            sugarO5 = buildSugarO5(residue, 1232, forceField);
+                        } else {
+                            sugarO5 = buildHeavy(residue, "O5\'", null, 1232, forceField, bondList);
+                        }
                     }
                 } else {
                     phosphate = buildHeavy(residue, "P", pSugarO3, NA_P[naNumber], forceField, bondList);
@@ -484,6 +491,22 @@ public class NucleicAcidUtils {
     }
 
     /**
+     * Builds a sugar O5 atom. No bonds are made to it.
+     *
+     * @param residue    The residue to operate on.
+     * @param lookUp     Biotype lookup.
+     * @param forceField The ForceField to use.
+     * @return The created sugar O5 atoms.
+     */
+    private static Atom buildSugarO5(Residue residue, int lookUp, ForceField forceField) {
+        Atom C5 = residue.getAtomByName("C5\'", true);
+        Atom C4 = residue.getAtomByName("C4\'", true);
+        Atom C3 = residue.getAtomByName("C3\'", true);
+        return buildHeavy(residue, "O5\'", C5, 1.43,
+                C4, 109.5, C3, 180.0, 0, 1244, forceField);
+    }
+
+    /**
      * Builds a missing OP3 atom. Can be applied either to 5'-terminal or 3'-terminal phosphates.
      *
      * @param residue         Residue to build an OP3 for.
@@ -498,46 +521,38 @@ public class NucleicAcidUtils {
     private static void buildOP3(Residue residue, Atom phosphate, int aType,
                                  ForceField forceField, ArrayList<Bond> bondList, Residue adjacentResidue,
                                  boolean at5prime) throws MissingHeavyAtomException {
-        List<Atom> resAts = residue.getAtomList();
-
         Atom P = null;
         Atom OP1 = null;
         Atom OP2 = null;
         Atom riboOxygen = null;
         Atom riboCarbon = null;
-
         boolean foundOP3 = false;
 
+        List<Atom> residueAtoms = residue.getAtomList();
         // Label for a break statement: OP3 causes a break from a switch to the surrounding for loop.
-        ATLOOP:
-        for (Atom at : resAts) {
+        AtomLoop:
+        for (Atom at : residueAtoms) {
             String atName = at.getName().toUpperCase();
             switch (atName) {
-                case "OP3": {
+                case "OP3":
                     buildHeavy(residue, "OP3", phosphate, aType, forceField, bondList);
                     foundOP3 = true;
-                    break ATLOOP;
-                }
-                case "OP1": {
+                    break AtomLoop;
+                case "OP1":
                     OP1 = at;
                     break;
-                }
-                case "OP2": {
+                case "OP2":
                     OP2 = at;
                     break;
-                }
-                case "P": {
+                case "P":
                     P = at;
                     break;
-                }
-                case "O5\'": {
+                case "O5\'":
                     riboOxygen = at;
                     break;
-                }
-                case "C5\'": {
+                case "C5\'":
                     riboCarbon = at;
                     break;
-                }
             }
         }
 
@@ -552,11 +567,10 @@ public class NucleicAcidUtils {
         }
 
         if (!foundOP3) {
-            logger.info(format(" EXPERIMENTAL: OP3 of residue %s not found, being rebuilt based on ideal geometry", residue));
+            logger.fine(format(" EXPERIMENTAL: OP3 of residue %s not found, being rebuilt based on ideal geometry", residue));
             if (P == null || OP1 == null || OP2 == null) {
                 throw new IllegalArgumentException(format(" Attempted to build OP3 for residue %s, but one of P, OP1, OP2, O5\', or C5\' were null", residue));
             }
-
             if (at5prime) {
                 if (riboOxygen == null) {
                     logger.fine(" Attempting to find O5\' of subsequent residue");
@@ -595,16 +609,19 @@ public class NucleicAcidUtils {
             double distChiral1 = dist(xyzChiral1, xyzOP2);
 
             // Measure OP3-OP2 distance for test dihedral + 240 degrees.
-            //intxyz(OP3, P, pOP1, OP1, op1Pop2, O5s, 109.4, 1);
             intxyz(OP3, P, distance, riboOxygen, angle, riboCarbon, dihedralOP1 + 240, 0);
             double[] xyzChiral2 = new double[3];
             xyzChiral2 = OP3.getXYZ(xyzChiral2);
             double distChiral2 = dist(xyzChiral2, xyzOP2);
 
-            logger.fine(format(" Bond: %10.5f Angle: %10.5f Dihedral: %10.5f", distance, angle, dihedralOP1));
-            logger.fine(format(" OP2 position: %s", Arrays.toString(xyzOP2)));
-            logger.fine(format(" Position 1: %10.6g %10.6g %10.6g with distance %10.6g", xyzChiral1[0], xyzChiral1[1], xyzChiral1[2], distChiral1));
-            logger.fine(format(" Position 2: %10.6g %10.6g %10.6g with distance %10.6g", xyzChiral2[0], xyzChiral2[1], xyzChiral2[2], distChiral2));
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(format(" Bond: %10.5f Angle: %10.5f Dihedral: %10.5f", distance, angle, dihedralOP1));
+                logger.fine(format(" OP2 position: %s", Arrays.toString(xyzOP2)));
+                logger.fine(format(" Position 1: %10.6g %10.6g %10.6g with distance %10.6g",
+                        xyzChiral1[0], xyzChiral1[1], xyzChiral1[2], distChiral1));
+                logger.fine(format(" Position 2: %10.6g %10.6g %10.6g with distance %10.6g",
+                        xyzChiral2[0], xyzChiral2[1], xyzChiral2[2], distChiral2));
+            }
             if (distChiral1 > distChiral2) {
                 logger.fine(" Picked dihedral +120");
                 OP3.setXYZ(xyzChiral1);
@@ -1388,7 +1405,7 @@ public class NucleicAcidUtils {
     };
     /**
      * Should be NA_HO5' (' replaced by T in the name).
-     *
+     * <p>
      * Constant <code>NA_HO5T</code>
      */
     public static final int[] NA_HO5T = {
@@ -1397,7 +1414,7 @@ public class NucleicAcidUtils {
     };
     /**
      * Should be NA_HO3' (' replaced by T in the name).
-     *
+     * <p>
      * Constant <code>NA_HO3T</code>
      */
     public static final int[] NA_HO3T = {
