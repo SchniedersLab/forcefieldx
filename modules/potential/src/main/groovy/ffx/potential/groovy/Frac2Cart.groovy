@@ -65,8 +65,9 @@ class Frac2Cart extends PotentialScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files",
             description = 'The atomic coordinate file in PDB or XYZ format.')
+
     List<String> filenames = null
-    private MolecularAssembly[] assemblies;
+    private MolecularAssembly[] assemblies
 
     public double[][] cartCoordinates = null
     public double[][] fracCoordinates = null
@@ -84,7 +85,7 @@ class Frac2Cart extends PotentialScript {
     Frac2Cart run() {
 
         if (!init()) {
-            return
+            return null
         }
 
         if (filenames != null && filenames.size() > 0) {
@@ -92,7 +93,7 @@ class Frac2Cart extends PotentialScript {
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return
+            return null
         } else {
             assemblies = [activeAssembly]
         }
@@ -112,7 +113,7 @@ class Frac2Cart extends PotentialScript {
             double[] frac = new double[3]
             double[] cart = new double[3]
 
-            int index = 0;
+            int index = 0
             for (Atom atom in atoms) {
                 atom.getXYZ(frac)
                 crystal.toCartesianCoordinates(frac, cart)

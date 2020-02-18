@@ -37,14 +37,15 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import ffx.potential.cli.SaveOptions
 import org.apache.commons.io.FilenameUtils
 
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
+import ffx.potential.cli.SaveOptions
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
+
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
@@ -82,18 +83,17 @@ class SaveAsPDB extends PotentialScript {
     SaveAsPDB run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
-        MolecularAssembly[] assemblies
         SystemFilter openFilter = null
         if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
             openFilter = potentialFunctions.getFilter()
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         }
 
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
@@ -113,16 +113,15 @@ class SaveAsPDB extends PotentialScript {
         PDBFilter saveFilter
 
         int numModels = openFilter.countNumModels()
-        if(numModels>1){
+        if (numModels > 1) {
             BufferedWriter bw = new BufferedWriter(new FileWriter(saveFile))
             bw.write("MODEL        1\n")
             bw.flush()
-            saveOptions.preSaveOperations(activeAssembly);
+            saveOptions.preSaveOperations(activeAssembly)
             potentialFunctions.saveAsPDB(activeAssembly, saveFile, false, true)
             bw.close()
-        }
-        else {
-            saveOptions.preSaveOperations(activeAssembly);
+        } else {
+            saveOptions.preSaveOperations(activeAssembly)
             potentialFunctions.saveAsPDB(activeAssembly, saveFile)
         }
         try {
@@ -133,12 +132,12 @@ class SaveAsPDB extends PotentialScript {
         }
 
         //If SaveAsPDB is run on an arc file, iterate through the models in the arc file and save each as a pdb file.
-        if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter) && numModels>1) {
+        if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter) && numModels > 1) {
             saveFilter.setModelNumbering(1)
             try {
                 while (openFilter.readNext(false)) {
                     saveFile.append("ENDMDL\n")
-                    saveOptions.preSaveOperations(activeAssembly);
+                    saveOptions.preSaveOperations(activeAssembly)
                     saveFilter.writeFile(saveFile, true, true, false)
                 }
             } catch (Exception e) {

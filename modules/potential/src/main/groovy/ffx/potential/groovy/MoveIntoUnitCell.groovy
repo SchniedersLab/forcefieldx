@@ -64,8 +64,9 @@ class MoveIntoUnitCell extends PotentialScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files",
             description = 'The atomic coordinate file in PDB or XYZ format.')
+
     List<String> filenames = null
-    MolecularAssembly[] assemblies = null;
+    MolecularAssembly[] assemblies = null
 
     public double[][] origCoordinates = null
     public double[][] unitCellCoordinates = null
@@ -83,7 +84,7 @@ class MoveIntoUnitCell extends PotentialScript {
     MoveIntoUnitCell run() {
 
         if (!init()) {
-            return
+            return null
         }
 
         if (filenames != null && filenames.size() > 0) {
@@ -91,13 +92,13 @@ class MoveIntoUnitCell extends PotentialScript {
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return
+            return null
         } else {
             assemblies = [activeAssembly]
         }
 
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
-        logger.info("\n Moving molecular centers of mass into the unit cell for " + modelFilename + "\n");
+        logger.info("\n Moving molecular centers of mass into the unit cell for " + modelFilename + "\n")
 
         // Loop over each system.
         for (int i = 0; i < assemblies.length; i++) {

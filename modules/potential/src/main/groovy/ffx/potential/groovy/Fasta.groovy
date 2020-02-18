@@ -64,14 +64,14 @@ class Fasta extends PotentialScript {
     /**
      * -f or --firstResidue defines the first Fasta residue to keep (index of the first residue is 1).
      */
-    @Option(names = ['-f', '--firstResidue'], paramLabel = "1",
+    @Option(names = ['-f', '--firstResidue'], paramLabel = "1", defaultValue = "1",
             description = 'Define the first Fasta residue to keep (index of the first residue is 1).')
     private int firstResidue = 1
 
     /**
      * -l or --lastResidue defines the last Fasta residue to keep (index of the last residue is n).
      */
-    @Option(names = ['-l', '--lastResidue'], paramLabel = "-1",
+    @Option(names = ['-l', '--lastResidue'], paramLabel = "-1", defaultValue = "-1",
             description = 'Define the last Fasta residue to keep (index of the last residue is n).')
     private int lastResidue = -1
 
@@ -84,7 +84,7 @@ class Fasta extends PotentialScript {
 
     private File baseDir = null
 
-    private ProteinSequence proteinSequence;
+    private ProteinSequence proteinSequence
 
     void setBaseDir(File baseDir) {
         this.baseDir = baseDir
@@ -97,7 +97,12 @@ class Fasta extends PotentialScript {
     Fasta run() {
 
         if (!init()) {
-            return this
+            return null
+        }
+
+        if (filenames === null || filenames.size() == 0) {
+            logger.info(helpString())
+            return null
         }
 
         String fastaName = filenames.get(0)
