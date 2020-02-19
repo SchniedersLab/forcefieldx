@@ -76,13 +76,14 @@ import ffx.utilities.Constants;
 public class RepExOST {
     private static final Logger logger = Logger.getLogger(RepExOST.class.getName());
 
-    private final OrthogonalSpaceTempering[] osts;
+    private final OrthogonalSpaceTempering ost;
+    private final OrthogonalSpaceTempering.Histogram[] allHistograms;
     private final SynchronousSend[] sends;
     private final LongConsumer algoRun;
-    private final MolecularDynamics[] molDyns;
+    private final MolecularDynamics molDyn;
     private final DynamicsOptions dynamics;
     private final String fileType;
-    private final MonteCarloOST[] mcOSTs;
+    private final MonteCarloOST mcOST;
     private final long stepsBetweenExchanges;
     private final Comm world;
     private final int rank;
@@ -93,19 +94,17 @@ public class RepExOST {
     private final Random random;
     private final double invKT;
     private final String basePath;
-    private final String baseFileName;
     private final String[] allFilenames;
-    private final File lambdaFile;
     private final File dynFile;
     private final String extension;
-    private final MolecularAssembly[] allAssemblies;
 
     // Message tags to use.
     private static final int lamTag = 42;
     private static final int mainLoopTag = 2020;
 
     private boolean reinitVelocities = true;
-    private int currentOST;
+    private int currentHistoIndex;
+    private OrthogonalSpaceTempering.Histogram currentHistogram;
 
     // Largely obsolete variables used for the original repex/communication scheme.
     private DoubleBuf lamBuf = DoubleBuf.buffer(0);
@@ -116,19 +115,19 @@ public class RepExOST {
     /**
      * Private constructor used here to centralize shared logic.
      *
-     * @param osts          An OrthogonalSpaceTempering for each repex rung.
-     * @param mcOSTs        A MonteCarloOST for each repex rung, or null (for MD).
-     * @param dyns          A MolecularDynamics for each repex rung (never null).
+     * @param ost           An OrthogonalSpaceTempering for each repex rung.
+     * @param mcOST         A MonteCarloOST for each repex rung, or null (for MD).
+     * @param dyn           A MolecularDynamics for each repex rung (never null).
      * @param oType         Type of OST to run (MD, MC 1-step, MC 2-step).
      * @param dynamics      DynamicsOptions to apply universally.
      * @param ostOpts       OST options to apply.
      * @param fileType      File type to save to.
      * @param repexInterval Interval in psec between repex attempts.
      */
-    private RepExOST(OrthogonalSpaceTempering[] osts, MonteCarloOST[] mcOSTs, MolecularDynamics[] dyns, OstType oType,
+    private RepExOST(OrthogonalSpaceTempering ost, MonteCarloOST mcOST, MolecularDynamics dyn, OstType oType,
                      DynamicsOptions dynamics, OSTOptions ostOpts, CompositeConfiguration properties,
                      String fileType, double repexInterval) throws IOException {
-        this.osts = osts;
+        this.ost = ost;
         switch (oType) {
             case MD:
                 algoRun = this::runMD;
@@ -145,17 +144,17 @@ public class RepExOST {
             default:
                 throw new IllegalArgumentException(" Could not recognize whether this is supposed to be MD, MC 1-step, or MC 2-step!");
         }
-        this.molDyns = dyns;
+        this.molDyn = dyn;
         this.dynamics = dynamics;
         this.fileType = fileType;
-        this.mcOSTs = mcOSTs;
+        this.mcOST = mcOST;
         this.extension = WriteoutOptions.toArchiveExtension(fileType);
 
         this.world = Comm.world();
         this.rank = world.rank();
         int size = world.size();
 
-        allAssemblies = molDyns[0].getAssemblies();
+        MolecularAssembly[] allAssemblies = molDyn.getAssemblies();
         allFilenames = Arrays.stream(allAssemblies).
                 map(MolecularAssembly::getFile).
                 map(File::getName).
@@ -164,23 +163,21 @@ public class RepExOST {
 
         File firstFile = allAssemblies[0].getFile();
         basePath = FilenameUtils.getFullPath(firstFile.getAbsolutePath()) + File.separator;
-        baseFileName = FilenameUtils.getBaseName(firstFile.getAbsolutePath());
+        String baseFileName = FilenameUtils.getBaseName(firstFile.getAbsolutePath());
         dynFile = new File(String.format("%s%d%s%s.dyn", basePath, rank, File.separator, baseFileName));
-        Arrays.stream(molDyns).forEach((MolecularDynamics md) -> md.setFallbackDynFile(dynFile));
+        molDyn.setFallbackDynFile(dynFile);
 
-        lambdaFile = new File(String.format("%s%d%s%s.lam", basePath, rank, File.separator, baseFileName));
-        currentOST = rank;
+        File lambdaFile = new File(String.format("%s%d%s%s.lam", basePath, rank, File.separator, baseFileName));
+        currentHistoIndex = rank;
         if (lambdaFile.exists()) {
             try (LambdaReader lr = new LambdaReader(new BufferedReader(new FileReader(lambdaFile)))) {
                 lr.readLambdaFile(false);
-                currentOST = lr.getHistogramIndex();
+                currentHistoIndex = lr.getHistogramIndex();
             }
         }
-
-        Arrays.stream(osts).map(OrthogonalSpaceTempering::getHistogram).
-                forEach((OrthogonalSpaceTempering.Histogram h) -> h.setIndependentWrites(true));
-
-        setFiles();
+        
+        allHistograms = ost.getAllHistograms();
+        Arrays.stream(allHistograms).forEach((OrthogonalSpaceTempering.Histogram h) -> h.setIndependentWrites(true));
 
         this.numPairs = size - 1;
         this.invKT = -1.0 / (Constants.R * dynamics.getTemp());
@@ -201,8 +198,7 @@ public class RepExOST {
         double timestep = dynamics.getDt() * Constants.FSEC_TO_PSEC;
         stepsBetweenExchanges = Math.max(1, (int) (repexInterval / timestep));
 
-        sends = Arrays.stream(osts).
-                map(OrthogonalSpaceTempering::getHistogram).
+        sends = Arrays.stream(allHistograms).
                 map(OrthogonalSpaceTempering.Histogram::getSynchronousSend).
                 map(Optional::get).
                 toArray(SynchronousSend[]::new);
@@ -210,25 +206,29 @@ public class RepExOST {
         // TODO: Properly back-copy instead of assuming everything is in order at the start.
         histoToRank = Arrays.copyOf(rankToHisto, size);
 
-        OrthogonalSpaceTempering.Histogram[] histos = Arrays.stream(osts).
-                map(OrthogonalSpaceTempering::getHistogram).
-                toArray(OrthogonalSpaceTempering.Histogram[]::new);
-        Arrays.stream(sends).forEach((SynchronousSend ss) -> ss.setHistograms(histos, rankToHisto));
+        Arrays.stream(sends).forEach((SynchronousSend ss) -> ss.setHistograms(allHistograms, rankToHisto));
         for (int i = 0; i < size; i++) {
-            histos[i].setBiasMagnitude(ostOpts.getBiasMag(i), Level.FINE);
-            histos[i].setTemperingParameter(ostOpts.getTemperingParameter(i), Level.FINE);
-            histos[i].setTemperingThreshold(ostOpts.getTemperingThreshold(i));
-            logger.info(String.format(" Parameters for histogram %d set by replica exchange: %s", i, osts[i].histoInfo()));
+            allHistograms[i].setBiasMagnitude(ostOpts.getBiasMag(i), Level.FINE);
+            allHistograms[i].setTemperingParameter(ostOpts.getTemperingParameter(i), Level.FINE);
+            allHistograms[i].setTemperingThreshold(ostOpts.getTemperingThreshold(i));
+            logger.info(String.format(" Parameters for histogram %d set by replica exchange: %s", i, ost.histoInfo(i)));
         }
 
-        currentOST = rankToHisto[rank];
+        setFiles();
+        setHistogram(rank);
+    }
+
+    private void setHistogram(int index) {
+        currentHistoIndex = index;
+        currentHistogram = allHistograms[index];
+        ost.switchHistogram(index);
     }
 
     /**
      * Construct a RepExOST for Monte Carlo orthogonal space tempering.
      *
-     * @param osts          An OrthogonalSpaceTempering for each repex rung.
-     * @param mcOSTs        A MonteCarloOST for each repex rung
+     * @param ost           An OrthogonalSpaceTempering for each repex rung.
+     * @param mcOST         A MonteCarloOST for each repex rung
      * @param dynamics      DynamicsOptions to apply universally.
      * @param ostOpts       OST options to apply.
      * @param fileType      File type to save to.
@@ -236,29 +236,29 @@ public class RepExOST {
      * @param repexInterval Interval in psec between repex attempts.
      * @return A RepExOST.
      */
-    public static RepExOST repexMC(OrthogonalSpaceTempering[] osts, MonteCarloOST[] mcOSTs,
+    public static RepExOST repexMC(OrthogonalSpaceTempering ost, MonteCarloOST mcOST,
                                    DynamicsOptions dynamics, OSTOptions ostOpts, CompositeConfiguration properties,
                                    String fileType, boolean twoStep, double repexInterval) throws IOException {
-        MolecularDynamics[] dyns = Arrays.stream(mcOSTs).map(MonteCarloOST::getMD).toArray(MolecularDynamics[]::new);
+        MolecularDynamics md = mcOST.getMD();
         OstType type = twoStep ? OstType.MC_TWOSTEP : OstType.MC_ONESTEP;
-        return new RepExOST(osts, mcOSTs, dyns, type, dynamics, ostOpts, properties, fileType, repexInterval);
+        return new RepExOST(ost, mcOST, md, type, dynamics, ostOpts, properties, fileType, repexInterval);
     }
 
     /**
      * Construct a RepExOST for Molecular Dynamics orthogonal space tempering.
      *
-     * @param osts          An OrthogonalSpaceTempering for each repex rung.
-     * @param dyns          A MolecularDynamics for each repex rung.
+     * @param ost           An OrthogonalSpaceTempering for each repex rung.
+     * @param dyn           A MolecularDynamics for each repex rung.
      * @param dynamics      DynamicsOptions to apply universally.
      * @param ostOpts       OST options to apply.
      * @param fileType      File type to save to.
      * @param repexInterval Interval in psec between repex attempts.
      * @return A RepExOST.
      */
-    public static RepExOST repexMD(OrthogonalSpaceTempering[] osts, MolecularDynamics[] dyns,
+    public static RepExOST repexMD(OrthogonalSpaceTempering ost, MolecularDynamics dyn,
                                    DynamicsOptions dynamics, OSTOptions ostOpts, CompositeConfiguration properties,
                                    String fileType, double repexInterval) throws IOException {
-        return new RepExOST(osts, null, dyns, OstType.MD, dynamics, ostOpts, properties, fileType, repexInterval);
+        return new RepExOST(ost, null, dyn, OstType.MD, dynamics, ostOpts, properties, fileType, repexInterval);
     }
 
     /**
@@ -268,28 +268,28 @@ public class RepExOST {
      */
     public void mainLoop(long numTimesteps, boolean equilibrate) throws IOException {
         if (isMC) {
-            Arrays.stream(mcOSTs).forEach((MonteCarloOST mco) -> mco.setEquilibration(equilibrate));
+            //Arrays.stream(mcOSTs).forEach((MonteCarloOST mco) -> mco.setEquilibration(equilibrate));
+            mcOST.setEquilibration(equilibrate);
         }
-        currentLambda = osts[currentOST].getLambda();
-        currentDUDL = osts[currentOST].getdEdL();
-        setFiles();
+        currentLambda = currentHistogram.getLastReceivedLambda();
+        currentDUDL = currentHistogram.getLastReceivedDUDL();
+        //setFiles();
 
         if (equilibrate) {
-            logger.info(String.format(" Equilibrating repex OST without exchanges on histogram %d.", currentOST));
+            logger.info(String.format(" Equilibrating repex OST without exchanges on histogram %d.", currentHistoIndex));
             algoRun.accept(numTimesteps);
             reinitVelocities = false;
         } else {
             long numExchanges = numTimesteps / stepsBetweenExchanges;
             for (int i = 0; i < numExchanges; i++) {
-                logger.info(String.format(" Beginning of repex loop %d, operating on histogram %d", (i + 1), currentOST));
+                logger.info(String.format(" Beginning of repex loop %d, operating on histogram %d", (i + 1), currentHistoIndex));
                 world.barrier(mainLoopTag);
                 algoRun.accept(stepsBetweenExchanges);
-                setFiles();
-                osts[currentOST].logOutputFiles();
-                molDyns[currentOST].logOutputFiles();
+                ost.logOutputFiles(currentHistoIndex);
+                molDyn.logOutputFiles();
                 world.barrier(mainLoopTag);
                 proposeSwaps((i % 2), 2);
-
+                setFiles();
 
                 // Old, (mostly) functional, code that used inter-process communication to keep processes in sync rather than relying on PRNG coherency and repex moves always falling on a bias deposition tick.
                 // Primary bug: looped over adjacent processes, not over adjacent histograms.
@@ -314,14 +314,16 @@ public class RepExOST {
                 reinitVelocities = false;
             }
         }
+
+        logger.info(" Final rank-to-histogram mapping: " + Arrays.toString(rankToHisto));
     }
 
     private void setFiles() {
         File[] trajFiles = Arrays.stream(allFilenames).
-                map((String fn) -> String.format("%s%d%s%s.%s", basePath, currentOST, File.separator, fn, extension)).
+                map((String fn) -> String.format("%s%d%s%s.%s", basePath, currentHistoIndex, File.separator, fn, extension)).
                 map(File::new).
                 toArray(File[]::new);
-        Arrays.stream(molDyns).forEach((MolecularDynamics md) -> md.setTrajectoryFiles(trajFiles));
+        molDyn.setTrajectoryFiles(trajFiles);
     }
 
     /**
@@ -336,8 +338,8 @@ public class RepExOST {
         for (int i = offset; i < numPairs; i += stride) {
             int rankLow = histoToRank[i];
             int rankHigh = histoToRank[i + 1];
-            OrthogonalSpaceTempering.Histogram histoLow = osts[i].getHistogram();
-            OrthogonalSpaceTempering.Histogram histoHigh = osts[i+1].getHistogram();
+            OrthogonalSpaceTempering.Histogram histoLow = allHistograms[i];
+            OrthogonalSpaceTempering.Histogram histoHigh = allHistograms[i+1];
             
             double lamLow = histoLow.getLastReceivedLambda();
             double dUdLLow = histoLow.getLastReceivedDUDL();
@@ -375,15 +377,15 @@ public class RepExOST {
         rankToHisto[rankHigh] = histoLow;
         histoToRank[histoLow] = rankHigh;
         histoToRank[histoHigh] = rankLow;
-        currentOST = rankToHisto[rank];
+        setHistogram(rankToHisto[rank]);
 
-        osts[currentOST].setLambda(currentLambda);
+        ost.setLambda(currentLambda);
         /* TODO: If there is ever a case where an algorithm will not update coordinates itself at the start, we have to
          * update coordinates here (from the OST we used to be running on to the new OST). */
 
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(String.format(" Rank %d accepting swap: new rankToHisto map %s, targeting histogram %d",
-                    rank, Arrays.toString(rankToHisto), currentOST));
+                    rank, Arrays.toString(rankToHisto), currentHistoIndex));
         }
 
         for (SynchronousSend send : sends) {
@@ -407,13 +409,13 @@ public class RepExOST {
         double otherDUDL = lamBuf.get(0);
 
         int ostIndex = rankToHisto[rank];
-        OrthogonalSpaceTempering.Histogram currentHistogram = osts[ostIndex].getHistogram();
+        OrthogonalSpaceTempering.Histogram currentHistogram = ost.getHistogram(ostIndex);
 
         double eii = currentHistogram.computeBiasEnergy(currentLambda, currentDUDL);
         double eij = currentHistogram.computeBiasEnergy(otherLam, otherDUDL);
 
         ostIndex = rankToHisto[rankUp];
-        OrthogonalSpaceTempering.Histogram otherHisto = osts[ostIndex].getHistogram();
+        OrthogonalSpaceTempering.Histogram otherHisto = ost.getHistogram(ostIndex);
         double eji = otherHisto.computeBiasEnergy(currentLambda, currentDUDL);
         double ejj = otherHisto.computeBiasEnergy(otherLam, otherDUDL);
 
@@ -490,13 +492,13 @@ public class RepExOST {
         int histoUp = rankToHisto[rootRank + 1];
         rankToHisto[rootRank] = histoUp;
         rankToHisto[rootRank + 1] = histoDown;
-        currentOST = rankToHisto[rank];
+        currentHistoIndex = rankToHisto[rank];
 
-        osts[currentOST].setLambda(currentLambda);
+        ost.setLambda(currentLambda);
         // TODO: If there is ever a case where an algorithm will not update coordinates itself at the start, we have to
         // update coordinates here (from the OST we used to be running on to the new OST).
 
-        logger.info(String.format(" Rank %d accepting swap: new rankToHisto map %s, targeting histogram %d", rank, Arrays.toString(rankToHisto), currentOST));
+        logger.info(String.format(" Rank %d accepting swap: new rankToHisto map %s, targeting histogram %d", rank, Arrays.toString(rankToHisto), currentHistoIndex));
 
         for (SynchronousSend send : sends) {
             send.updateRanks(rankToHisto);
@@ -509,8 +511,8 @@ public class RepExOST {
      * @param numSteps Number of MD steps (not MC cycles) to run.
      */
     private void runMCOneStep(long numSteps) {
-        mcOSTs[currentOST].setRunLength(numSteps);
-        mcOSTs[currentOST].sampleOneStep();
+        mcOST.setRunLength(numSteps);
+        mcOST.sampleOneStep();
     }
 
     /**
@@ -519,9 +521,8 @@ public class RepExOST {
      * @param numSteps Number of MD steps (not MC cycles) to run.
      */
     private void runMCTwoStep(long numSteps) {
-        MonteCarloOST currMC = mcOSTs[currentOST];
-        currMC.setRunLength(numSteps);
-        currMC.sampleTwoStep();
+        mcOST.setRunLength(numSteps);
+        mcOST.sampleTwoStep();
     }
 
     /**
@@ -530,17 +531,12 @@ public class RepExOST {
      * @param numSteps MD steps to run.
      */
     private void runMD(long numSteps) {
-        MolecularDynamics molDyn = molDyns[currentOST];
         molDyn.dynamic(numSteps, dynamics.getDt(), dynamics.getReport(), dynamics.getSnapshotInterval(), dynamics.getTemp(),
                 reinitVelocities, fileType, dynamics.getCheckpoint(), dynFile);
     }
 
-    public OrthogonalSpaceTempering getCurrentOST() {
-        return osts[currentOST];
-    }
-
-    public OrthogonalSpaceTempering[] getAllOST() {
-        return Arrays.copyOf(osts, osts.length);
+    public OrthogonalSpaceTempering getOST() {
+        return ost;
     }
 
     private enum OstType {

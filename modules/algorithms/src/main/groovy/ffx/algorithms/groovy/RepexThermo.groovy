@@ -41,18 +41,16 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.RepexOSTOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
-import ffx.algorithms.thermodynamics.LambdaReader
 import ffx.algorithms.thermodynamics.MonteCarloOST
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.algorithms.thermodynamics.RepExOST
-import ffx.algorithms.thermodynamics.SynchronousSend
+import ffx.algorithms.groovy.Thermodynamics
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine
-import ffx.algorithms.groovy.Thermodynamics
 
 import java.util.stream.Collectors;
 
@@ -71,11 +69,7 @@ class RepexThermo extends Thermodynamics {
     RepexOSTOptions repex;
 
     private RepExOST repExOST;
-    private OrthogonalSpaceTempering[] allOST;
-    private MonteCarloOST[] allMC;
-    private MolecularDynamics[] allMD;
-    // Can be either identical to allOST, or a set of Barostats built on top of them.
-    private CrystalPotential[] allPotentials;
+    private CrystalPotential finalPotential;
 
     @Override
     RepexThermo run() {
@@ -200,42 +194,45 @@ class RepexThermo extends Thermodynamics {
             randomSymop.randomize(topologies[0], potential)
         }
 
-        multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size)
+        multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size);
 
-        allOST = new OrthogonalSpaceTempering[size];
-        allMD = new MolecularDynamics[size];
-        allPotentials = new CrystalPotential[size];
         boolean isMC = ostOptions.isMc();
         boolean twoStep = ostOptions.isTwoStep();
-        allMC = isMC ? new MonteCarloOST[size] : null;
+        MonteCarloOST mcOST = null;
+        MolecularDynamics md;
 
         if (thermodynamics.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
-            for (int i = 0; i < size; i++) {
-                File rankIHisto = new File("${filepath}${i}${File.separator}${fileBase}.his");
-                boolean hisExists = rankIHisto.exists();
+            File firstHisto = new File("${filepath}0${File.separator}${fileBase}.his");
+            boolean hisExists = firstHisto.exists();
 
-                orthogonalSpaceTempering = ostOptions.constructOST(potential, lambdaRestart, rankIHisto, topologies[0],
-                        additionalProperties, dynamics, thermodynamics, algorithmListener, false, i);
-                allOST[i] = orthogonalSpaceTempering;
+            orthogonalSpaceTempering = ostOptions.constructOST(potential, lambdaRestart, firstHisto, topologies[0],
+                    additionalProperties, dynamics, thermodynamics, algorithmListener, false, 0);
+            finalPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
+                    dynamics, lambdaParticle, barostat, hisExists);
 
-                if (!lamExists) {
-                    orthogonalSpaceTempering.setLambda(initLambda);
-                }
-                CrystalPotential ostPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
-                        dynamics, lambdaParticle, barostat, hisExists)
-                allPotentials[i] = ostPotential;
-                if (isMC) {
-                    allMC[i] = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose, algorithmListener);
-                    allMD[i] = allMC[i].getMD();
+            if (isMC) {
+                mcOST = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose, algorithmListener);
+                md = mcOST.getMD();
+            } else {
+                md = ostOptions.assembleMolecularDynamics(topologies, finalPotential, dynamics, algorithmListener);
+            }
+            if (!lamExists) {
+                if (finalPotential instanceof LambdaInterface) {
+                    ((LambdaInterface) finalPotential).setLambda(initLambda);
                 } else {
-                    allMD[i] = ostOptions.assembleMolecularDynamics(topologies, ostPotential, dynamics, algorithmListener);
+                    orthogonalSpaceTempering.setLambda(initLambda);
                 }
             }
 
+            for (int i = 1; i < size; i++) {
+                File rankIHisto = new File("${filepath}${i}${File.separator}${fileBase}.his");
+                orthogonalSpaceTempering.addHistogram(rankIHisto);
+            }
+
             if (isMC) {
-                repExOST = RepExOST.repexMC(allOST, allMC, dynamics, ostOptions, topologies[0].getProperties(), writeout.getFileType(), twoStep, repex.getRepexFrequency());
+                repExOST = RepExOST.repexMC(orthogonalSpaceTempering, mcOST, dynamics, ostOptions, topologies[0].getProperties(), writeout.getFileType(), twoStep, repex.getRepexFrequency());
             } else {
-                repExOST = RepExOST.repexMD(allOST, allMD, dynamics, ostOptions, topologies[0].getProperties(), writeout.getFileType(), repex.getRepexFrequency());
+                repExOST = RepExOST.repexMD(orthogonalSpaceTempering, md, dynamics, ostOptions, topologies[0].getProperties(), writeout.getFileType(), repex.getRepexFrequency());
             }
 
             repExOST.mainLoop(thermodynamics.getEquilSteps(), true);
@@ -252,12 +249,12 @@ class RepexThermo extends Thermodynamics {
 
     @Override
     OrthogonalSpaceTempering getOST() {
-        return repExOST == null ? null : repExOST.getCurrentOST();
+        return repExOST == null ? null : repExOST.getOST();
     }
 
     @Override
     CrystalPotential getPotential() {
-        return (repExOST == null) ? potential : repExOST.getCurrentOST();
+        return (repExOST == null) ? potential : repExOST.getOST();
     }
 
     @Override
@@ -265,6 +262,6 @@ class RepexThermo extends Thermodynamics {
         if (repExOST == null) {
             return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
         }
-        return Arrays.stream(repExOST.getAllOST()).collect(Collectors.toList());
+        return Collections.singletonList(repExOST.getOST())
     }
 }
