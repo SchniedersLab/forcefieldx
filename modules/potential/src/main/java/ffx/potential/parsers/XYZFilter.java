@@ -458,7 +458,7 @@ public class XYZFilter extends SystemFilter {
      * {@inheritDoc}
      */
     @Override
-    public boolean writeFile(File saveFile, boolean append) {
+    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
         if (saveFile == null) {
             return false;
         }
@@ -479,7 +479,14 @@ public class XYZFilter extends SystemFilter {
 
             // XYZ File First Line
             int numberOfAtoms = activeMolecularAssembly.getAtomList().size();
-            String output = format("%7d  %s\n", numberOfAtoms, activeMolecularAssembly.toString());
+            StringBuilder sb = new StringBuilder(format("%7d  %s", numberOfAtoms, activeMolecularAssembly.toString()));
+            if (extraLines != null) {
+                for (String line : extraLines) {
+                    line = line.replaceAll("\n", " ");
+                    sb.append(" ").append(line);
+                }
+            }
+            String output = sb.append("\n").toString();
             bw.write(output);
 
             Crystal crystal = activeMolecularAssembly.getCrystal();
@@ -543,6 +550,20 @@ public class XYZFilter extends SystemFilter {
      * @return a boolean.
      */
     public boolean writeFileAsP1(File saveFile, boolean append, Crystal crystal) {
+        return writeFileAsP1(saveFile, append, crystal, null);
+    }
+
+    /**
+     * <p>
+     * writeFileAsP1</p>
+     *
+     * @param saveFile   a {@link java.io.File} object.
+     * @param append     a boolean.
+     * @param crystal    a {@link ffx.crystal.Crystal} object.
+     * @param extraLines Additional lines to print in the header.
+     * @return a boolean.
+     */
+    public boolean writeFileAsP1(File saveFile, boolean append, Crystal crystal, String[] extraLines) {
         if (saveFile == null) {
             return false;
         }
@@ -558,7 +579,14 @@ public class XYZFilter extends SystemFilter {
             int nSymm = crystal.spaceGroup.symOps.size();
             // XYZ File First Line
             int numberOfAtoms = activeMolecularAssembly.getAtomList().size() * nSymm;
-            String output = format("%7d %s\n", numberOfAtoms, activeMolecularAssembly.toString());
+            StringBuilder sb = new StringBuilder(format("%7d  %s", numberOfAtoms, activeMolecularAssembly.toString()));
+            if (extraLines != null) {
+                for (String line : extraLines) {
+                    line = line.replaceAll("\n", " ");
+                    sb.append(" ").append(line);
+                }
+            }
+            String output = sb.append("\n").toString();
             bw.write(output);
 
             if (!crystal.aperiodic()) {
