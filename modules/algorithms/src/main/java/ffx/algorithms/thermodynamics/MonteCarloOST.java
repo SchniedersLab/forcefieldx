@@ -304,6 +304,10 @@ public class MonteCarloOST extends BoltzmannMC {
      * 5.) Add to the bias.
      */
     public void sampleTwoStep() {
+        // Validate the starting value of lambda.
+        lambda = orthogonalSpaceTempering.getLambda();
+        lambda = lambdaMove.validateLambda(lambda);
+        orthogonalSpaceTempering.setLambda(lambda);
 
         int n = potential.getNumberOfVariables();
         double[] gradient = new double[n];
@@ -526,6 +530,10 @@ public class MonteCarloOST extends BoltzmannMC {
      * 4.) Add to the bias.
      */
     public void sampleOneStep() {
+        // Validate the starting value of lambda.
+        lambda = orthogonalSpaceTempering.getLambda();
+        lambda = lambdaMove.validateLambda(lambda);
+        orthogonalSpaceTempering.setLambda(lambda);
 
         int n = potential.getNumberOfVariables();
         double[] gradient = new double[n];
