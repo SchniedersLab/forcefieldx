@@ -56,14 +56,6 @@ public class SynchronousSend {
      * Map from ranks to histograms
      */
     private int[] rankToHistogramMap;
-    /**
-     * Most recent lambda values for each Walker.
-     */
-    private final double[] currentLambdaValues;
-    /**
-     * Most recent dU/dL values for each walker.
-     */
-    private final double[] currentDUDL;
 
     /**
      * Constructor.
@@ -84,8 +76,6 @@ public class SynchronousSend {
         myRecursionWeight = recursionWeights[rank];
         myRecursionWeightBuf = recursionWeightsBuf[rank];
 
-        currentLambdaValues = new double[numProc];
-        currentDUDL = new double[numProc];
         this.histograms = histograms;
         this.rankToHistogramMap = rankToHistogramMap;
         this.independentWalkers = independentWalkers;
@@ -129,8 +119,6 @@ public class SynchronousSend {
 
         // Find the minimum and maximum FLambda bin for the gathered counts.
         for (int i = 0; i < numProc; i++) {
-            currentLambdaValues[i] = recursionWeights[i][0];
-            currentDUDL[i] = recursionWeights[i][1];
             // Only include this walkers bias.
             if (independentWalkers && i != rank) {
                 continue;
@@ -150,8 +138,8 @@ public class SynchronousSend {
             int his = rankToHistogramMap[i];
             Histogram currentHistogram = histograms[his];
 
-            currentHistogram.setCurrentLambdaValues(currentLambdaValues);
-            currentHistogram.setCurrentDUDL(currentDUDL);
+            currentHistogram.setLastReceivedLambda(lambda);
+            currentHistogram.setLastReceiveddUdL(dUdL);
 
             int walkerLambda = currentHistogram.binForLambda(recursionWeights[i][0]);
             int walkerFLambda = currentHistogram.binForFLambda(recursionWeights[i][1]);
@@ -175,10 +163,6 @@ public class SynchronousSend {
             // For i == rank, the addBias method will handle updating FLambda (and optionally printing).
             currentHistogram.addToRecursionKernelValue(walkerLambda, walkerFLambda, weight, i != rank);
         }
-    }
-
-    public int[] getRankToHistogramMap() {
-        return Arrays.copyOf(rankToHistogramMap, rankToHistogramMap.length);
     }
 
     /**

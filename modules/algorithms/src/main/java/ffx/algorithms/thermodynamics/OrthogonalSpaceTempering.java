@@ -1344,8 +1344,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * Most recent lambda values for each Walker.
          */
-        private final double[] currentLambdaValues;
-        private final double[] currentDUDL;
+        private double lastReceivedLambda;
+        private double lastReceiveddUdL;
 
         /**
          * Histogram constructor.
@@ -1452,8 +1452,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 synchronousSend = new SynchronousSend(histograms, rankToHistogramMap, independentWalkers);
                 asynchronousSend = null;
             }
-            currentLambdaValues = new double[numProc];
-            currentDUDL = new double[numProc];
+            /*currentLambdaValues = new double[numProc];
+            currentDUDL = new double[numProc];*/
+            lastReceivedLambda = getLambda();
+            lastReceiveddUdL = getdEdL();
 
             // Attempt to load a restart file if one exists.
             readRestart();
@@ -1528,12 +1530,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             return lambdaResetValue;
         }
 
-        public void setCurrentLambdaValues(double[] currentLambdaValues) {
-            System.arraycopy(currentLambdaValues, 0, this.currentLambdaValues, 0, currentLambdaValues.length);
+        public void setLastReceivedLambda(double lastReceivedLambda) {
+            this.lastReceivedLambda = lastReceivedLambda;
         }
 
-        public void setCurrentDUDL(double[] currentDUDL) {
-            System.arraycopy(currentDUDL, 0, this.currentDUDL, 0, currentDUDL.length);
+        public void setLastReceiveddUdL(double lastReceiveddUdL) {
+            this.lastReceiveddUdL = lastReceiveddUdL;
         }
 
         /**
@@ -1625,16 +1627,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * Write a Histogram restart file (skipped for rank > 0).
+         * Write a Histogram restart file (sometimes skipped for rank > 0).
          */
         void writeRestart() {
-            if (rank == 0) {
-                StringBuilder stringBuilder = new StringBuilder(" Current Lambda Values:");
-                for (double lambda : currentLambdaValues) {
-                    stringBuilder.append(format(" %6.4f", lambda));
-                }
-                logger.info(stringBuilder.toString());
-            }
             if (rank == 0 || writeIndependent) {
                 try {
                     HistogramWriter histogramWriter = new HistogramWriter(this,
@@ -2418,31 +2413,23 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * Update a local array of current lambda values for each walker.
+         * Gets the last lambda value received by this Histogram. This can be out-of-date w.r.t. the OST's
+         * current lambda!
          *
-         * @param rank   Walker rank.
-         * @param lambda Walker's current lambda value.
+         * @return Lambda value of the last bias added to this Histogram.
          */
-        void setCurrentLambdaforRank(int rank, double lambda) {
-            currentLambdaValues[rank] = lambda;
+        double getLastReceivedLambda() {
+            return lastReceivedLambda;
         }
 
         /**
-         * Update a local array of current dU/dL values for each walker.
+         * Gets the last dU/dL value received by this Histogram. This can be out-of-date w.r.t. the OST's
+         * current dU/dL!
          *
-         * @param rank Walker rank.
-         * @param dUdL Walker's current dU/dL value.
+         * @return dU/dL value of the last bias added to this Histogram.
          */
-        void setCurrentdUdLForRank(int rank, double dUdL) {
-            currentDUDL[rank] = dUdL;
-        }
-
-        double getCurrentLambda(int rank) {
-            return currentLambdaValues[rank];
-        }
-
-        double getCurrentDUDL(int rank) {
-            return currentDUDL[rank];
+        double getLastReceivedDUDL() {
+            return lastReceiveddUdL;
         }
 
         void destroy() {
@@ -2466,8 +2453,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
         int getHistogramIndex() {
             if (asynchronous) {
-                // TODO: Make AsynchronousSend do this properly.
-                return 0;
+                return writeIndependent ? rank : 0;
             } else {
                 return synchronousSend.getHistogramIndex();
             }
