@@ -1247,12 +1247,12 @@ public final class PDBFilter extends SystemFilter {
      *
      * @param saveFile    a {@link java.io.File} object.
      * @param append      Whether to append to saveFile (vs over-write).
-     * @param printLinear Whether to print atoms linearly or by element.
+     * @param printLinear Ignored (remains to present a different method signature).
      * @param writeEnd    True if this is the final model.
      * @return Success of writing.
      */
     public boolean writeFile(File saveFile, boolean append, boolean printLinear, boolean writeEnd) {
-        return writeFile(saveFile, append, printLinear, Collections.emptySet(), writeEnd, true);
+        return writeFile(saveFile, append, Collections.emptySet(), writeEnd, true);
     }
 
     /**
@@ -1261,14 +1261,30 @@ public final class PDBFilter extends SystemFilter {
      *
      * @param saveFile    a {@link java.io.File} object to save to.
      * @param append      Whether to append to saveFile (vs over-write).
-     * @param printLinear Whether to print atoms linearly or by element.
      * @param toExclude   A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
      * @param writeEnd    True if this is the final model.
      * @param versioning  True if the file being saved to should be versioned. False if the file being saved to should
      *                    be overwritten.
      * @return Success of writing.
      */
-    public boolean writeFile(File saveFile, boolean append, boolean printLinear, Set<Atom> toExclude, boolean writeEnd, boolean versioning) {
+    public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd, boolean versioning) {
+        return writeFile(saveFile, append, toExclude, writeEnd, versioning, null);
+    }
+
+    /**
+     * <p>
+     * writeFile</p>
+     *
+     * @param saveFile    a {@link java.io.File} object to save to.
+     * @param append      Whether to append to saveFile (vs over-write).
+     * @param toExclude   A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
+     * @param writeEnd    True if this is the final model.
+     * @param versioning  True if the file being saved to should be versioned. False if the file being saved to should
+     *                    be overwritten.
+     * @param extraLines  Extra comment/header lines to write.
+     * @return Success of writing.
+     */
+    public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd, boolean versioning, String[] extraLines) {
         if (standardizeAtomNames) {
             renameAtomsToPDBStandard(activeMolecularAssembly);
         }
@@ -1322,6 +1338,11 @@ public final class PDBFilter extends SystemFilter {
             String[] headerLines = activeMolecularAssembly.getHeaderLines();
             for (String line : headerLines) {
                 bw.write(format("%s\n", line));
+            }
+            if (extraLines != null) {
+                for (String line : extraLines) {
+                    bw.write(format("REMARK 999 %s\n", line));
+                }
             }
             if (model != null) {
                 bw.write(model.toString());
@@ -1667,6 +1688,10 @@ public final class PDBFilter extends SystemFilter {
         return writeFile(saveFile, append, false, true);
     }
 
+    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
+        return writeFile(saveFile, append, Collections.emptySet(), false, !append, extraLines);
+    }
+
     /**
      * Writes out the atomic information in PDB format.
      *
@@ -1676,7 +1701,7 @@ public final class PDBFilter extends SystemFilter {
      * @return Success of writing.
      */
     public boolean writeFile(File saveFile, boolean append, boolean versioning) {
-        return writeFile(saveFile, append, false, Collections.emptySet(), true, versioning);
+        return writeFile(saveFile, append, Collections.emptySet(), true, versioning);
     }
 
     /**

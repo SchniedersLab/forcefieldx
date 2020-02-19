@@ -51,6 +51,8 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
+import edu.rit.pj.Comm;
+import ffx.potential.bonded.LambdaInterface;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -1264,16 +1266,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Append a snapshot to the trajectory file.
      */
-    public void appendSnapshot() {
+    protected void appendSnapshot(String[] extraLines) {
         for (AssemblyInfo ai : assemblies) {
             if (ai.archiveFile != null && !saveSnapshotAsPDB) {
-                if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
+                if (ai.xyzFilter.writeFile(ai.archiveFile, true, extraLines)) {
                     logger.log(basicLogging, format(" Appended snap shot to %s", ai.archiveFile.getName()));
                 } else {
                     logger.warning(format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
                 }
             } else if (saveSnapshotAsPDB) {
-                if (ai.pdbFilter.writeFile(ai.pdbFile, true)) {
+                if (ai.pdbFilter.writeFile(ai.pdbFile, true, extraLines)) {
                     logger.log(basicLogging, format(" Wrote PDB file to %s", ai.pdbFile.getName()));
                 } else {
                     logger.warning(format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
@@ -1441,11 +1443,30 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @return EnumSet of actions taken by this method.
      */
     public EnumSet<WriteActions> writeFilesForStep(long step, boolean snapShot, boolean restart) {
+        return writeFilesForStep(step, snapShot, restart, null);
+    }
+
+    public EnumSet<WriteActions> writeFilesForStep(long step, boolean snapShot, boolean restart, String[] extraLines) {
+        List<String> linesList = (extraLines == null) ? new ArrayList<>() : new ArrayList<>(Arrays.asList(extraLines));
+
+        if (potential instanceof LambdaInterface) {
+            String lamString = String.format("Lambda: %.8f", ((LambdaInterface) potential).getLambda());
+            linesList.add(lamString);
+        }
+        Comm world = Comm.world();
+        if (world != null && world.size() > 1) {
+            String rankString = String.format("Rank: %d", world.rank());
+            linesList.add(rankString);
+        }
+
+        String[] allLines = new String[linesList.size()];
+        allLines = linesList.toArray(allLines);
+
         EnumSet<WriteActions> written = EnumSet.noneOf(WriteActions.class);
         if (step != 0) {
             // Write out snapshots in selected format every saveSnapshotFrequency steps.
             if (snapShot && trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
-                appendSnapshot();
+                appendSnapshot(allLines);
                 written.add(WriteActions.SNAPSHOT);
             }
 

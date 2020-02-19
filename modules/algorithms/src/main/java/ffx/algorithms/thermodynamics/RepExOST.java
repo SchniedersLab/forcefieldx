@@ -324,17 +324,25 @@ public class RepExOST {
         Arrays.stream(molDyns).forEach((MolecularDynamics md) -> md.setTrajectoryFiles(trajFiles));
     }
 
+    /**
+     * Main loop for consistent PRNG-based repex (i.e. every process tests every swap independently).
+     * Typically, to create an odd-even staggered schedule (i.e. each pair is tested every other cycle),
+     * offset is either 0 or 1, and stride is 2.
+     *
+     * @param offset Index of the first pair to test swaps for.
+     * @param stride Test every nth pair.
+     */
     private void proposeSwaps(final int offset, final int stride) {
         for (int i = offset; i < numPairs; i += stride) {
             int rankLow = histoToRank[i];
             int rankHigh = histoToRank[i + 1];
             OrthogonalSpaceTempering.Histogram histoLow = osts[i].getHistogram();
-            OrthogonalSpaceTempering.Histogram histoHigh = osts[i + 1].getHistogram();
-
-            double lamLow = histoLow.getCurrentLambda(rankLow);
-            double dUdLLow = histoLow.getCurrentDUDL(rankLow);
-            double lamHigh = histoHigh.getCurrentLambda(rankHigh);
-            double dUdLHigh = histoHigh.getCurrentDUDL(rankHigh);
+            OrthogonalSpaceTempering.Histogram histoHigh = osts[i+1].getHistogram();
+            
+            double lamLow = histoLow.getLastReceivedLambda();
+            double dUdLLow = histoLow.getLastReceivedDUDL();
+            double lamHigh = histoHigh.getLastReceivedLambda();
+            double dUdLHigh = histoHigh.getLastReceivedDUDL();
 
             double eii = histoLow.computeBiasEnergy(lamLow, dUdLLow);
             double eij = histoLow.computeBiasEnergy(lamHigh, dUdLHigh);

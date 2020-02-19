@@ -213,12 +213,12 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     @Override
-    public void appendSnapshot() {
+    protected void appendSnapshot(String[] extraLines) {
         if (!getAllVars) {
             // If !getAllVars, need to ensure coordinates are synced before writing a snapshot.
             getOpenMMEnergiesAndPositions();
         }
-        super.appendSnapshot();
+        super.appendSnapshot(extraLines);
     }
 
     @Override

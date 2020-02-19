@@ -44,9 +44,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -125,7 +123,15 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     /**
      * Contains counts for the OST bias.
      */
-    private final Histogram histogram;
+    private Histogram histogram;
+    /**
+     * Index of the current Histogram.
+     */
+    private int histogramIndex;
+    /**
+     * List of additional Histograms this OST can switch to.
+     */
+    private final List<Histogram> allHistograms = new ArrayList<>();
     /**
      * Parameters to control saving local optimizations.
      */
@@ -221,6 +227,22 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * If true, values of (lambda, dU/dL) that have not been observed are rejected.
      */
     private boolean hardWallConstraint = false;
+    /**
+     * Properties.
+     */
+    private final CompositeConfiguration properties;
+    /**
+     * Temperature in Kelvins.
+     */
+    private final double temperature;
+    /**
+     * Timestep.
+     */
+    private final double dt;
+    /**
+     * Whether to use asynchronous communications.
+     */
+    private final boolean asynchronous;
 
     /**
      * OST Constructor.
@@ -301,7 +323,13 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         dUdXdL = new double[nVariables];
 
         // Init the Histogram and read a restart file if it exists.
+        this.properties = properties;
+        this.temperature = temperature;
+        this.dt = dt;
+        this.asynchronous = asynchronous;
         histogram = new Histogram(properties, temperature, dt, histogramFile, asynchronous);
+        histogramIndex = 0;
+        allHistograms.add(histogram);
 
         // Load the OST lambda restart file if it exists.
         if (lambdaFile != null && lambdaFile.exists()) {
@@ -332,6 +360,43 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     // TODO: Delete method when debugging of RepexOST is done.
     public void logOutputFiles() {
         logger.info(String.format(" OST: Lambda file %s, histogram %s", lambdaFile, histogram.histogramFile));
+    }
+
+    /**
+     * Add an alternate Histogram this OST can use.
+     *
+     * @param histogramFile Restart file for the new Histogram.
+     */
+    public void addHistogram(File histogramFile) {
+        Histogram newHisto = new Histogram(properties, temperature, dt, histogramFile, asynchronous);
+        allHistograms.add(newHisto);
+    }
+
+    /**
+     * Switch to an alternate Histogram.
+     *
+     * @param index Index of the Histogram to use.
+     */
+    public void switchHistogram(int index) {
+        histogramIndex = index;
+        histogram = allHistograms.get(histogramIndex);
+    }
+
+    /**
+     * Switch to an alternate Histogram.
+     *
+     * @param histo Histogram to switch to.
+     */
+    public void switchHistogram(Histogram histo) {
+        if (allHistograms.contains(histo)) {
+            histogram = histo;
+            histogramIndex = allHistograms.indexOf(histo);
+        } else {
+            logger.warning(" Likely unintended behavior: switching to a Histogram this OST does not yet know about!");
+            histogram = histo;
+            allHistograms.add(histogram);
+            histogramIndex = allHistograms.size() - 1;
+        }
     }
 
     /**
@@ -1344,8 +1409,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * Most recent lambda values for each Walker.
          */
-        private final double[] currentLambdaValues;
-        private final double[] currentDUDL;
+        private double lastReceivedLambda;
+        private double lastReceiveddUdL;
 
         /**
          * Histogram constructor.
@@ -1452,8 +1517,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 synchronousSend = new SynchronousSend(histograms, rankToHistogramMap, independentWalkers);
                 asynchronousSend = null;
             }
-            currentLambdaValues = new double[numProc];
-            currentDUDL = new double[numProc];
+            lastReceivedLambda = getLambda();
+            lastReceiveddUdL = getdEdL();
 
             // Attempt to load a restart file if one exists.
             readRestart();
@@ -1528,12 +1593,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             return lambdaResetValue;
         }
 
-        public void setCurrentLambdaValues(double[] currentLambdaValues) {
-            System.arraycopy(currentLambdaValues, 0, this.currentLambdaValues, 0, currentLambdaValues.length);
+        public void setLastReceivedLambda(double lastReceivedLambda) {
+            this.lastReceivedLambda = lastReceivedLambda;
         }
 
-        public void setCurrentDUDL(double[] currentDUDL) {
-            System.arraycopy(currentDUDL, 0, this.currentDUDL, 0, currentDUDL.length);
+        public void setLastReceiveddUdL(double lastReceiveddUdL) {
+            this.lastReceiveddUdL = lastReceiveddUdL;
         }
 
         /**
@@ -1625,16 +1690,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * Write a Histogram restart file (skipped for rank > 0).
+         * Write a Histogram restart file (sometimes skipped for rank > 0).
          */
         void writeRestart() {
-            if (rank == 0) {
-                StringBuilder stringBuilder = new StringBuilder(" Current Lambda Values:");
-                for (double lambda : currentLambdaValues) {
-                    stringBuilder.append(format(" %6.4f", lambda));
-                }
-                logger.info(stringBuilder.toString());
-            }
             if (rank == 0 || writeIndependent) {
                 try {
                     HistogramWriter histogramWriter = new HistogramWriter(this,
@@ -2434,31 +2492,23 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * Update a local array of current lambda values for each walker.
+         * Gets the last lambda value received by this Histogram. This can be out-of-date w.r.t. the OST's
+         * current lambda!
          *
-         * @param rank   Walker rank.
-         * @param lambda Walker's current lambda value.
+         * @return Lambda value of the last bias added to this Histogram.
          */
-        void setCurrentLambdaforRank(int rank, double lambda) {
-            currentLambdaValues[rank] = lambda;
+        double getLastReceivedLambda() {
+            return lastReceivedLambda;
         }
 
         /**
-         * Update a local array of current dU/dL values for each walker.
+         * Gets the last dU/dL value received by this Histogram. This can be out-of-date w.r.t. the OST's
+         * current dU/dL!
          *
-         * @param rank Walker rank.
-         * @param dUdL Walker's current dU/dL value.
+         * @return dU/dL value of the last bias added to this Histogram.
          */
-        void setCurrentdUdLForRank(int rank, double dUdL) {
-            currentDUDL[rank] = dUdL;
-        }
-
-        double getCurrentLambda(int rank) {
-            return currentLambdaValues[rank];
-        }
-
-        double getCurrentDUDL(int rank) {
-            return currentDUDL[rank];
+        double getLastReceivedDUDL() {
+            return lastReceiveddUdL;
         }
 
         void destroy() {
@@ -2482,8 +2532,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
         int getHistogramIndex() {
             if (asynchronous) {
-                // TODO: Make AsynchronousSend do this properly.
-                return 0;
+                return writeIndependent ? rank : 0;
             } else {
                 return synchronousSend.getHistogramIndex();
             }
