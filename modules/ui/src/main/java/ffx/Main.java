@@ -81,7 +81,6 @@ import ffx.ui.MainPanel;
 import ffx.ui.OSXAdapter;
 import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
 
-import jdk.internal.module.IllegalAccessLogger;
 import sun.misc.Unsafe;
 
 /**
@@ -126,7 +125,9 @@ public final class Main extends JFrame {
      * Force Field X process ID.
      */
     private static int procID = -1;
-    /** Print version and exit */
+    /**
+     * Print version and exit
+     */
     private static boolean printVersionAndExit = false;
 
     /**
