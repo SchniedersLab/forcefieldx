@@ -207,6 +207,7 @@ class RepexThermo extends Thermodynamics {
 
             orthogonalSpaceTempering = ostOptions.constructOST(potential, lambdaRestart, firstHisto, topologies[0],
                     additionalProperties, dynamics, thermodynamics, algorithmListener, false, 0);
+            ostOptions.applyHistogramOptions(orthogonalSpaceTempering, hisExists, 0);
             finalPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
                     dynamics, lambdaParticle, barostat, hisExists);
 
@@ -227,6 +228,7 @@ class RepexThermo extends Thermodynamics {
             for (int i = 1; i < size; i++) {
                 File rankIHisto = new File("${filepath}${i}${File.separator}${fileBase}.his");
                 orthogonalSpaceTempering.addHistogram(rankIHisto);
+                ostOptions.applyHistogramOptions(orthogonalSpaceTempering, rankIHisto.exists(), i);
             }
 
             if (isMC) {

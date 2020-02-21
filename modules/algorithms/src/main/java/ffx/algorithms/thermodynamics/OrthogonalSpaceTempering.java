@@ -1566,6 +1566,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             lambdaFileName = FileUtils.relativePathTo(lambdaFile).toString();
         }
 
+        public String toString() {
+            return String.format(" Histogram with tempering rate %.3f, tempering offset/threshold %.3f, " +
+                    "bias magnitude %.3g, writing to restart file %s.\n", temperingFactor, temperOffset, biasMag,
+                    FileUtils.relativePathTo(histogramFile).toString());
+        }
+
         /**
          * Return the SynchronousSend associated with this Histogram, if any.
          *

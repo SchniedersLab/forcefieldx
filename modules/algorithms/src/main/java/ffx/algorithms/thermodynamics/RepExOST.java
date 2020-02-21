@@ -207,12 +207,6 @@ public class RepExOST {
         histoToRank = Arrays.copyOf(rankToHisto, size);
 
         Arrays.stream(sends).forEach((SynchronousSend ss) -> ss.setHistograms(allHistograms, rankToHisto));
-        for (int i = 0; i < size; i++) {
-            allHistograms[i].setBiasMagnitude(ostOpts.getBiasMag(i), Level.FINE);
-            allHistograms[i].setTemperingParameter(ostOpts.getTemperingParameter(i), Level.FINE);
-            allHistograms[i].setTemperingThreshold(ostOpts.getTemperingThreshold(i));
-            logger.info(String.format(" Parameters for histogram %d set by replica exchange: %s", i, ost.histoInfo(i)));
-        }
 
         setFiles();
         setHistogram(rank);
@@ -352,9 +346,9 @@ public class RepExOST {
             double ejj = histoHigh.computeBiasEnergy(lamHigh, dUdLHigh);
 
             logger.info(String.format("\n Proposing exchange between histograms %d (rank %d) and %d (rank %d).\n" +
-                            " Li: %.6f Lj: %.6f dU/dLi: %.6f dU/dLj: %.6f",
+                            " Li: %.6f dU/dLi: %.6f Lj: %.6f dU/dLj: %.6f",
                     i, rankLow, i + 1, rankHigh,
-                    lamLow, lamHigh, dUdLLow, dUdLHigh));
+                    lamLow, dUdLLow, lamHigh, dUdLHigh));
 
             double e1 = eii + ejj;
             double e2 = eji + eij;
