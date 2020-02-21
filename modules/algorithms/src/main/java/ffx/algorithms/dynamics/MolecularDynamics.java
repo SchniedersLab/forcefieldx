@@ -38,6 +38,7 @@
 package ffx.algorithms.dynamics;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -47,12 +48,15 @@ import java.util.List;
 import java.util.function.DoubleConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.Comm;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.utilities.FileUtils;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -705,8 +709,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     public void logOutputFiles() {
-        File[] arcFiles = assemblies.stream().map((AssemblyInfo ai) -> ai.archiveFile).toArray(File[]::new);
-        logger.info(String.format(" Dynamics file %s, archive file(s) %s", restartFile, Arrays.toString(arcFiles)));
+        String arcFiles = assemblies.stream().
+                map((AssemblyInfo ai) -> ai.archiveFile).
+                map(FileUtils::relativePathTo).
+                map(Path::toString).
+                collect(Collectors.joining(","));
+        logger.info(String.format(" Dynamics file %s, archive file(s) %s", FileUtils.relativePathTo(restartFile).toString(), arcFiles));
     }
 
     /**
@@ -1269,16 +1277,18 @@ public class MolecularDynamics implements Runnable, Terminatable {
     protected void appendSnapshot(String[] extraLines) {
         for (AssemblyInfo ai : assemblies) {
             if (ai.archiveFile != null && !saveSnapshotAsPDB) {
+                String aiName = FileUtils.relativePathTo(ai.archiveFile).toString();
                 if (ai.xyzFilter.writeFile(ai.archiveFile, true, extraLines)) {
-                    logger.log(basicLogging, format(" Appended snap shot to %s", ai.archiveFile.getName()));
+                    logger.log(basicLogging, format(" Appended snap shot to %s", aiName));
                 } else {
-                    logger.warning(format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
+                    logger.warning(format(" Appending snap shot to %s failed", aiName));
                 }
             } else if (saveSnapshotAsPDB) {
+                String aiName = FileUtils.relativePathTo(ai.pdbFile).toString();
                 if (ai.pdbFilter.writeFile(ai.pdbFile, true, extraLines)) {
-                    logger.log(basicLogging, format(" Wrote PDB file to %s", ai.pdbFile.getName()));
+                    logger.log(basicLogging, format(" Wrote PDB file to %s", aiName));
                 } else {
-                    logger.warning(format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
+                    logger.warning(format(" Writing PDB file to %s failed.", aiName));
                 }
             }
         }
@@ -1319,10 +1329,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     public void writeRestart() {
         potential.writeAdditionalRestartInfo(true);
+        String dynName = FileUtils.relativePathTo(restartFile).toString();
         if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-            logger.log(basicLogging, " Wrote dynamics restart file to " + restartFile.getName());
+            logger.log(basicLogging, " Wrote dynamics restart file to " + dynName);
         } else {
-            logger.log(basicLogging, " Writing dynamics restart file to " + restartFile.getName() + " failed");
+            logger.log(basicLogging, " Writing dynamics restart file to " + dynName + " failed");
         }
     }
 
@@ -1565,6 +1576,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     public void setTrajectoryFiles(File[] outputFiles) {
+        logger.info(" Setting files " + Arrays.toString(outputFiles));
         int nFi = assemblies.size();
         assert outputFiles.length == nFi;
         for (int i = 0; i < nFi; i++) {
