@@ -49,6 +49,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParseResult;
+import static picocli.CommandLine.usage;
 
 /**
  * <p>BaseScript class.</p>
@@ -85,9 +86,15 @@ public class BaseScript extends Script {
     public ParseResult parseResult = null;
 
     /**
-     * -h or --help to print a help message
+     * -V or --version Prints the FFX version and exits.
      */
-    @Option(names = {"-h", "--help"}, usageHelp = true, description = "Print this help message.")
+    @Option(names = {"-V", "--version"}, versionHelp = true, description = "Print the Force Field X version and exit.")
+    public boolean version = false;
+
+    /**
+     * -h or --help Prints a help message.
+     */
+    @Option(names = {"-h", "--help"}, usageHelp = true, description = "Print command help and exit.")
     public boolean help = false;
 
     /**
@@ -118,8 +125,15 @@ public class BaseScript extends Script {
             throw uae;
         }
 
+        // Print help info exit.
         if (help) {
             logger.info(helpString());
+            return false;
+        }
+
+        // Version info is printed by default.
+        if (version) {
+            // This should not be reached, due to the FFX Main class handling the "-V, --version" flag and exiting.
             return false;
         }
 
@@ -134,7 +148,7 @@ public class BaseScript extends Script {
     public String helpString() {
         try {
             StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream());
-            picocli.CommandLine.usage(this, sos, color);
+            usage(this, sos, color);
             return " " + sos.toString();
         } catch (UnsupportedEncodingException e) {
             logger.log(Level.WARNING, e.toString());
