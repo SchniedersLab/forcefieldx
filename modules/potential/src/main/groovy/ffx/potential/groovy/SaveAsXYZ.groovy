@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import ffx.potential.cli.SaveOptions
 import org.apache.commons.io.FilenameUtils
 
 import ffx.crystal.Crystal
@@ -45,12 +44,13 @@ import ffx.crystal.SymOp
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
+import ffx.potential.cli.SaveOptions
 import ffx.potential.parameters.ForceField
 
 import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-import picocli.CommandLine.Mixin
 
 /**
  * The SaveAsXYZ script saves a file as an XYZ file
@@ -106,16 +106,15 @@ class SaveAsXYZ extends PotentialScript {
     SaveAsXYZ run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
-        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         }
 
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
@@ -124,13 +123,13 @@ class SaveAsXYZ extends PotentialScript {
 
         // Positive offset atom types.
         if (posOffset > 0) {
-            offset = posOffset;
+            offset = posOffset
         }
 
         // Negative offset atom types.
         if (negOffset > 0) {
-            offset = negOffset;
-            offset = -offset;
+            offset = negOffset
+            offset = -offset
         }
 
         logger.info("\n Writing out XYZ for " + modelFilename)
@@ -147,7 +146,7 @@ class SaveAsXYZ extends PotentialScript {
             logger.info(String.format("\n Applying random Cartesian SymOp\n: %s", symOp.toString()))
             Crystal crystal = activeAssembly.getCrystal()
             Atom[] atoms = activeAssembly.getAtomArray()
-            double[] xyz = new double[3];
+            double[] xyz = new double[3]
             for (int i = 0; i < atoms.length; i++) {
                 atoms[i].getXYZ(xyz)
                 crystal.applyCartesianSymOp(xyz, xyz, symOp)

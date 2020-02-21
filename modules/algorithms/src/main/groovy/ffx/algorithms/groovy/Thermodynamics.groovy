@@ -53,6 +53,7 @@ import ffx.algorithms.cli.MultiDynamicsOptions
 import ffx.algorithms.cli.OSTOptions
 import ffx.algorithms.cli.RandomSymopOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
+import ffx.algorithms.thermodynamics.MonteCarloOST
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
@@ -62,7 +63,10 @@ import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.cli.WriteoutOptions
 
-import picocli.CommandLine
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The Thermodynamics script uses the Transition-Tempered Orthogonal Space Random Walk
@@ -72,59 +76,59 @@ import picocli.CommandLine
  * <br>
  * ffxc Thermodynamics [options] &lt;filename&gt [file2...];
  */
-@CommandLine.Command(description = " Use the Transition-Tempered Orthogonal Space Random Walk algorithm to estimate a free energy.", name = "ffxc Thermodynamics")
+@Command(description = " Use the Transition-Tempered Orthogonal Space Random Walk algorithm to estimate a free energy.", name = "ffxc Thermodynamics")
 class Thermodynamics extends AlgorithmsScript {
 
-    @CommandLine.Mixin
-    private AlchemicalOptions alchemical
+    @Mixin
+    AlchemicalOptions alchemical
 
-    @CommandLine.Mixin
-    private TopologyOptions topology
+    @Mixin
+    TopologyOptions topology
 
-    @CommandLine.Mixin
-    private BarostatOptions barostat
+    @Mixin
+    BarostatOptions barostat
 
-    @CommandLine.Mixin
-    private DynamicsOptions dynamics
+    @Mixin
+    DynamicsOptions dynamics
 
-    @CommandLine.Mixin
-    private WriteoutOptions writeout
+    @Mixin
+    WriteoutOptions writeout
 
-    @CommandLine.Mixin
-    private LambdaParticleOptions lambdaParticle
+    @Mixin
+    LambdaParticleOptions lambdaParticle
 
-    @CommandLine.Mixin
-    private MultiDynamicsOptions multidynamics
+    @Mixin
+    MultiDynamicsOptions multidynamics
 
-    @CommandLine.Mixin
-    private OSTOptions ostOptions
+    @Mixin
+    OSTOptions ostOptions
 
-    @CommandLine.Mixin
-    private RandomSymopOptions randomSymop
+    @Mixin
+    RandomSymopOptions randomSymop
 
-    @CommandLine.Mixin
-    private ThermodynamicsOptions thermodynamics
+    @Mixin
+    ThermodynamicsOptions thermodynamics
 
     /**
      * -r or --rectangular uses a rectangular prism as the output rather than a cube;
      * this reduces overall box size, but is not recommended for simulations long enough to see solute rotation.
      */
-    @CommandLine.Option(names = ['-v', '--verbose'],
+    @Option(names = ['-v', '--verbose'],
             description = "Log additional information (primarily for MC-OST).")
-    private boolean verbose = false;
+    boolean verbose = false
 
     /**
      * The final argument(s) should be one or more filenames.
      */
-    @CommandLine.Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
-    private int threadsAvail = ParallelTeam.getDefaultThreadCount()
-    private int threadsPer = threadsAvail
+    int threadsAvail = ParallelTeam.getDefaultThreadCount()
+    int threadsPer = threadsAvail
     MolecularAssembly[] topologies
     CrystalPotential potential
     OrthogonalSpaceTempering orthogonalSpaceTempering = null
-    private Configuration additionalProperties
+    Configuration additionalProperties
 
     /**
      * Sets an optional Configuration with additional properties.
@@ -139,7 +143,7 @@ class Thermodynamics extends AlgorithmsScript {
 
         // Begin boilerplate "make a topology" code.
         if (!init()) {
-            return
+            return null
         }
 
         List<String> arguments = filenames
@@ -150,7 +154,7 @@ class Thermodynamics extends AlgorithmsScript {
         topologies = new MolecularAssembly[nArgs]
 
         int numParallel = topology.getNumParallel(threadsAvail, nArgs)
-        threadsPer = threadsAvail / numParallel
+        threadsPer = (int) (threadsAvail / numParallel)
 
         // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
         /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
@@ -209,19 +213,20 @@ class Thermodynamics extends AlgorithmsScript {
 
         File lambdaRestart = new File(withRankName + ".lam")
         File dyn = new File(withRankName + ".dyn")
-        if (ostOptions.independentWalkers) {
-            histogramRestart = new File(withRankName + ".his");
+        if (ostOptions.getIndependentWalkers()) {
+            histogramRestart = new File(withRankName + ".his")
         }
 
         // Read in files.
         if (!arguments || arguments.isEmpty()) {
-            MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
-            if (mola == null) {
-                return helpString()
+            MolecularAssembly molecularAssembly = algorithmFunctions.getActiveAssembly()
+            if (molecularAssembly == null) {
+                logger.info(helpString())
+                return null
             }
             arguments = new ArrayList<>()
-            arguments.add(mola.getFile().getName())
-            topologyList.add(alchemical.processFile(topology, mola, 0))
+            arguments.add(molecularAssembly.getFile().getName())
+            topologyList.add(alchemical.processFile(topology, molecularAssembly, 0))
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs))
             for (int i = 0; i < nArgs; i++) {
@@ -232,26 +237,29 @@ class Thermodynamics extends AlgorithmsScript {
 
         MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
-        StringBuilder sb = new StringBuilder("\n Running ");
+        StringBuilder sb = new StringBuilder("\n Running ")
         switch (thermodynamics.getAlgorithm()) {
-            // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
+        // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
             case ThermodynamicsOptions.ThermodynamicsAlgorithm.OST:
-                ostAlg: {
-                    sb.append("Orthogonal Space Tempering");
+                ostAlg:
+                {
+                    sb.append("Orthogonal Space Tempering")
                 }
-                break;
+                break
             case ThermodynamicsOptions.ThermodynamicsAlgorithm.FIXED:
-                fixedAlg: {
-                    sb.append("Fixed-Lambda Sampling at Lambda ").append(String.format("%8.3f ", alchemical.getInitialLambda(true)));
+                fixedAlg:
+                {
+                    sb.append("Fixed-Lambda Sampling at Lambda ").append(String.format("%8.3f ", alchemical.getInitialLambda(true)))
                 }
-                break;
+                break
             default:
-                defAlg: {
-                    sb.append("Unknown algorithm starting at Lambda ").append(String.format("%8.3f", alchemical.getInitialLambda(true)));
+                defAlg:
+                {
+                    sb.append("Unknown algorithm starting at Lambda ").append(String.format("%8.3f", alchemical.getInitialLambda(true)))
                 }
-                break;
+                break
         }
-        sb.append(" for ");
+        sb.append(" for ")
 
         potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
         LambdaInterface linter = (LambdaInterface) potential
@@ -285,19 +293,21 @@ class Thermodynamics extends AlgorithmsScript {
             CrystalPotential ostPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
                     dynamics, lambdaParticle, barostat, hisExists)
             if (ostOptions.mc) {
-                ostOptions.beginMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose, algorithmListener);
+                MonteCarloOST mcOST = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose, algorithmListener)
+                ostOptions.beginMCOST(mcOST, dynamics, thermodynamics)
             } else {
                 ostOptions.beginMDOST(orthogonalSpaceTempering, topologies, ostPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
             }
-            logger.info(" Done running OST");
+
+            logger.info(" Done running OST")
         } else {
-            orthogonalSpaceTempering = null;
-            potential = barostat.checkNPT(topologies[0], potential);
-            thermodynamics.runFixedAlchemy(topologies, potential, dynamics, writeout, dyn, algorithmListener);
-            logger.info(" Done running Fixed");
+            orthogonalSpaceTempering = null
+            potential = barostat.checkNPT(topologies[0], potential)
+            thermodynamics.runFixedAlchemy(topologies, potential, dynamics, writeout, dyn, algorithmListener)
+            logger.info(" Done running Fixed")
         }
 
-        logger.info(" Algorithm Done: " + thermodynamics.getAlgorithm());
+        logger.info(" Algorithm Done: " + thermodynamics.getAlgorithm())
 
         return this
     }
@@ -312,11 +322,17 @@ class Thermodynamics extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
+        List<Potential> potentials
         if (orthogonalSpaceTempering == null) {
-            return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
+            if (potential == null) {
+                potentials = Collections.emptyList()
+            } else {
+                potentials = Collections.singletonList(potential)
+            }
         } else {
-            return Collections.singletonList(orthogonalSpaceTempering);
+            potentials = Collections.singletonList(orthogonalSpaceTempering)
         }
+        return potentials
     }
 
     @Override

@@ -940,5 +940,20 @@ public abstract class SystemFilter {
      * @param append   a boolean.
      * @return a boolean.
      */
-    public abstract boolean writeFile(File saveFile, boolean append);
+    public boolean writeFile(File saveFile, boolean append) {
+        return writeFile(saveFile, append, null);
+    }
+
+    /**
+     * This method is different for each subclass and must be overidden.
+     * <p>
+     * If the append flag is true, "saveFile" will be appended to. Otherwise the
+     * default versioning scheme will be applied.
+     *
+     * @param saveFile   a {@link java.io.File} object.
+     * @param append     a boolean.
+     * @param extraLines Additional lines to append to a comments section, or null.
+     * @return a boolean.
+     */
+    public abstract boolean writeFile(File saveFile, boolean append, String[] extraLines);
 }

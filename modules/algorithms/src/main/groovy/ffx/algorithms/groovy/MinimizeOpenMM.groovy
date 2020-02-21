@@ -85,7 +85,7 @@ class MinimizerOpenMM extends AlgorithmsScript {
     MinimizerOpenMM run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
         if (System.getProperty("platform") != null && !System.getProperty("platform").isEmpty()) {
@@ -95,11 +95,11 @@ class MinimizerOpenMM extends AlgorithmsScript {
         }
 
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         }
 
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
@@ -165,6 +165,13 @@ class MinimizerOpenMM extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
-        return forceFieldEnergy == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergy)
+        List<Potential> potentials
+        if (forceFieldEnergy == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(forceFieldEnergy)
+        }
+        return potentials
     }
+
 }

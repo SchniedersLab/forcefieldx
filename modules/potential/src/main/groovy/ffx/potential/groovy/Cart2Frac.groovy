@@ -66,7 +66,7 @@ class Cart2Frac extends PotentialScript {
     @Parameters(arity = "1..*", paramLabel = "files",
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
-    private MolecularAssembly[] assemblies;
+    private MolecularAssembly[] assemblies
 
     public double[][] cartCoordinates = null
     public double[][] fracCoordinates = null
@@ -84,7 +84,7 @@ class Cart2Frac extends PotentialScript {
     Cart2Frac run() {
 
         if (!init()) {
-            return
+            return null
         }
 
         if (filenames != null && filenames.size() > 0) {
@@ -92,7 +92,7 @@ class Cart2Frac extends PotentialScript {
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return
+            return null
         } else {
             assemblies = [activeAssembly]
         }
@@ -149,15 +149,15 @@ class Cart2Frac extends PotentialScript {
     }
 
     @Override
-    public List<Potential> getPotentials() {
+    List<Potential> getPotentials() {
         if (assemblies == null) {
-            return new ArrayList<Potential>();
+            return new ArrayList<Potential>()
         } else {
             return Arrays.stream(assemblies).
                     filter { a -> a != null }.
                     map { a -> a.getPotentialEnergy() }.
                     filter { e -> e != null }.
-                    collect(Collectors.toList());
+                    collect(Collectors.toList())
         }
     }
 }

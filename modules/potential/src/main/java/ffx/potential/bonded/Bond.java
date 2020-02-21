@@ -41,6 +41,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Geometry;
 import org.jogamp.java3d.LineArray;
@@ -177,6 +179,18 @@ public class Bond extends BondedTerm {
     }
 
     /**
+     * Log that no BondType exists.
+     * @param a1 Atom 1.
+     * @param a2 Atom 2.
+     * @param key The class key.
+     */
+    public static void logNoBondType(Atom a1, Atom a2, String key) {
+        logger.severe(format("No BondType for key: %s\n %s -> %s\n %s -> %s", key,
+                a1.toString(), a1.getAtomType().toString(),
+                a2.toString(), a2.getAtomType().toString()));
+    }
+
+    /**
      * <p>
      * Setter for the field <code>rigidScale</code>.</p>
      *
@@ -249,7 +263,7 @@ public class Bond extends BondedTerm {
      * Log details for this Bond energy term.
      */
     public void log() {
-        logger.info(String.format(" %-8s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
+        logger.info(format(" %-8s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
                 "Bond", atoms[0].getIndex(), atoms[0].getAtomType().name,
                 atoms[1].getIndex(), atoms[1].getAtomType().name,
                 bondType.distance, value, energy));

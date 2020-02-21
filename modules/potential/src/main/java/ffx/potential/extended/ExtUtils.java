@@ -195,7 +195,7 @@ public final class ExtUtils {
             Atom bg = backgroundAtoms.get(i);
             MultipoleType type = MultipoleType.multipoleTypeFactory(bg, ff);
             if (type == null) {
-                logger.severe(format("No multipole could be assigned to atom %s of type %s.",
+                logger.severe(format("No MultipoleType could be assigned:\n %s --> %s",
                         bg.toString(), bg.getAtomType()));
             }
         }

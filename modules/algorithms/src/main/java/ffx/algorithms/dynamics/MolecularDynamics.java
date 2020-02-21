@@ -47,12 +47,12 @@ import java.util.List;
 import java.util.function.DoubleConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static ffx.utilities.Constants.*;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
+import edu.rit.pj.Comm;
+import ffx.potential.bonded.LambdaInterface;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -85,7 +85,9 @@ import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.Constants;
+import static ffx.utilities.Constants.FSEC_TO_PSEC;
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static ffx.utilities.Constants.NS2SEC;
 
 /**
  * Run NVE, NVT, or NPT molecular dynamics.
@@ -347,6 +349,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private final int dynSleepTime;
 
     /**
+     * If asked to perform dynamics with a null dynamics file, write here.
+     */
+    private File fallbackDynFile;
+
+    /**
      * Method that determines whether a dynamics is done by the java
      * implementation native to ffx or the OpenMM implementation
      *
@@ -448,6 +455,28 @@ public class MolecularDynamics implements Runnable, Terminatable {
                              AlgorithmListener listener,
                              ThermostatEnum requestedThermostat,
                              IntegratorEnum requestedIntegrator) {
+        this(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator, defaultFallbackDyn(assembly));
+    }
+
+    /**
+     * <p>
+     * Constructor for MolecularDynamics.</p>
+     *
+     * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param requestedThermostat a {@link ThermostatEnum} object.
+     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+     * @param fallbackDyn         File to write restarts to if none is provided by the dynamics method.
+     */
+    public MolecularDynamics(MolecularAssembly assembly,
+                             Potential potentialEnergy,
+                             CompositeConfiguration properties,
+                             AlgorithmListener listener,
+                             ThermostatEnum requestedThermostat,
+                             IntegratorEnum requestedIntegrator,
+                             File fallbackDyn) {
         this.molecularAssembly = assembly;
         assemblies = new ArrayList<>();
         assemblies.add(new AssemblyInfo(assembly));
@@ -566,6 +595,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         verboseDynamicsState = properties.getBoolean("md-verbose", false);
         done = true;
 
+        fallbackDynFile = fallbackDyn;
+
         logger.info(" Molecular Dynamics instance created.");
     }
 
@@ -673,6 +704,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
         return thermostat;
     }
 
+    public void logOutputFiles() {
+        File[] arcFiles = assemblies.stream().map((AssemblyInfo ai) -> ai.archiveFile).toArray(File[]::new);
+        logger.info(String.format(" Dynamics file %s, archive file(s) %s", restartFile, Arrays.toString(arcFiles)));
+    }
+
     /**
      * Adds a MolecularAssembly to be tracked by this MolecularDynamics. Note:
      * does not affect the underlying Potential.
@@ -755,6 +791,26 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Creates the "default" fallback dynamics file object (does not create actual file!)
+     *
+     * @param assembly First assembly.
+     * @return         Default fallback file.
+     */
+    private static File defaultFallbackDyn(MolecularAssembly assembly) {
+        String firstFileName = FilenameUtils.removeExtension(assembly.getFile().getAbsolutePath());
+        return new File(firstFileName + ".dyn");
+    }
+
+    /**
+     * Sets the "fallback" .dyn file to write to if none is passed to the dynamic method.
+     *
+     * @param fallback Fallback dynamics restart file.
+     */
+    public void setFallbackDynFile(File fallback) {
+        this.fallbackDynFile = fallback;
+    }
+
+    /**
      * <p>
      * init</p>
      *
@@ -826,15 +882,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         assemblyInfo();
 
-        String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
-
-        if (dyn == null) {
-            this.restartFile = new File(firstFileName + ".dyn");
-            loadRestart = false;
-        } else {
-            this.restartFile = dyn;
-            loadRestart = dyn.exists();
-        }
+        this.restartFile = (dyn == null) ? fallbackDynFile : dyn;
+        loadRestart = restartFile.exists() && !initialized;
 
         if (dynFilter == null) {
             dynFilter = new DYNFilter(molecularAssembly.getName());
@@ -844,8 +893,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         this.initVelocities = initVelocities;
         done = false;
 
-        if (dyn != null && dyn.exists()) {
-            logger.info(" Continuing from " + dyn.getAbsolutePath());
+        if (loadRestart) {
+            logger.info(" Continuing from " + restartFile.getAbsolutePath());
         }
 
         if (!verbosityLevel.isQuiet) {
@@ -856,7 +905,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             //logger.info(format(" Archive file: %s", archiveFile.getName()));
             for (int i = 0; i < assemblies.size(); i++) {
                 AssemblyInfo ai = assemblies.get(i);
-                logger.info(format(" Archive file %3d: %s", i, ai.archiveFile.getName()));
+                logger.info(format(" Archive file %3d: %s", (i+1), ai.archiveFile.getName()));
             }
             logger.info(format(" Restart file:     %s", restartFile.getName()));
         }
@@ -867,7 +916,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * assemblyInfo.</p>
      */
     void assemblyInfo() {
-        assemblies.stream().parallel().forEach((ainfo) -> {
+        assemblies.forEach((ainfo) -> {
             MolecularAssembly mola = ainfo.getAssembly();
             CompositeConfiguration aprops = ainfo.compositeConfiguration;
             File file = mola.getFile();
@@ -910,7 +959,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public void init(final long nSteps, final double timeStep, final double loggingInterval,
                      final double trajectoryInterval, final double temperature, final boolean initVelocities,
                      final File dyn) {
-        init(nSteps, timeStep, loggingInterval, trajectoryInterval, "XYZ",  restartInterval, temperature, initVelocities, dyn);
+        init(nSteps, timeStep, loggingInterval, trajectoryInterval, "XYZ", restartInterval, temperature, initVelocities, dyn);
     }
 
     /**
@@ -1025,7 +1074,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Enable or disable automatic writeout of trajectory snapshots and restart files.
-     *
+     * <p>
      * Primarily intended for use with MC-OST, which handles the timing itself.
      *
      * @param autoWriteout Whether to automatically write out trajectory and restart files.
@@ -1039,7 +1088,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      *
      * @param interval Interval between events in ps
      * @param describe Description of the event.
-     * @return         Frequency of event in timesteps per event.
+     * @return Frequency of event in timesteps per event.
      * @throws IllegalArgumentException If interval is not a positive finite value.
      */
     private int intervalToFreq(double interval, String describe) throws IllegalArgumentException {
@@ -1217,16 +1266,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Append a snapshot to the trajectory file.
      */
-    public void appendSnapshot() {
+    protected void appendSnapshot(String[] extraLines) {
         for (AssemblyInfo ai : assemblies) {
             if (ai.archiveFile != null && !saveSnapshotAsPDB) {
-                if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
+                if (ai.xyzFilter.writeFile(ai.archiveFile, true, extraLines)) {
                     logger.log(basicLogging, format(" Appended snap shot to %s", ai.archiveFile.getName()));
                 } else {
                     logger.warning(format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
                 }
             } else if (saveSnapshotAsPDB) {
-                if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
+                if (ai.pdbFilter.writeFile(ai.pdbFile, true, extraLines)) {
                     logger.log(basicLogging, format(" Wrote PDB file to %s", ai.pdbFile.getName()));
                 } else {
                     logger.warning(format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
@@ -1255,7 +1304,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Log thermodynamics to the screen.
      *
      * @param time Clock time (in nsec) since this was last called.
-     * @return     Clock time at the end of this call.
+     * @return Clock time at the end of this call.
      */
     private long logThermodynamics(long time) {
         time = System.nanoTime() - time;
@@ -1365,7 +1414,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
 
             if (automaticWriteouts) {
-                writeFilesForStep(step);
+                writeFilesForStep(step, true, true);
             }
 
             // Notify the algorithmListeners.
@@ -1388,20 +1437,41 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Write restart and trajectory files if the provided step matches the frequency.
      *
-     * @param step Step to write files (if any) for.
+     * @param step     Step to write files (if any) for.
+     * @param snapShot Write archive files.
+     * @param restart  Write restart files.
      * @return EnumSet of actions taken by this method.
      */
-    public EnumSet<WriteActions> writeFilesForStep(long step) {
+    public EnumSet<WriteActions> writeFilesForStep(long step, boolean snapShot, boolean restart) {
+        return writeFilesForStep(step, snapShot, restart, null);
+    }
+
+    public EnumSet<WriteActions> writeFilesForStep(long step, boolean snapShot, boolean restart, String[] extraLines) {
+        List<String> linesList = (extraLines == null) ? new ArrayList<>() : new ArrayList<>(Arrays.asList(extraLines));
+
+        if (potential instanceof LambdaInterface) {
+            String lamString = String.format("Lambda: %.8f", ((LambdaInterface) potential).getLambda());
+            linesList.add(lamString);
+        }
+        Comm world = Comm.world();
+        if (world != null && world.size() > 1) {
+            String rankString = String.format("Rank: %d", world.rank());
+            linesList.add(rankString);
+        }
+
+        String[] allLines = new String[linesList.size()];
+        allLines = linesList.toArray(allLines);
+
         EnumSet<WriteActions> written = EnumSet.noneOf(WriteActions.class);
         if (step != 0) {
             // Write out snapshots in selected format every saveSnapshotFrequency steps.
-            if (trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
-                appendSnapshot();
+            if (snapShot && trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
+                appendSnapshot(allLines);
                 written.add(WriteActions.SNAPSHOT);
             }
 
             // Write out restart files every saveRestartFileFrequency steps.
-            if (restartFrequency > 0 && step % restartFrequency == 0) {
+            if (restart && restartFrequency > 0 && step % restartFrequency == 0) {
                 writeRestart();
                 written.add(WriteActions.RESTART);
             }
@@ -1490,6 +1560,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
         molecularAssembly.setFile(origFile);
     }
 
+    public MolecularAssembly[] getAssemblies() {
+        return assemblies.stream().map(AssemblyInfo::getAssembly).toArray(MolecularAssembly[]::new);
+    }
+
+    public void setTrajectoryFiles(File[] outputFiles) {
+        int nFi = assemblies.size();
+        assert outputFiles.length == nFi;
+        for (int i = 0; i < nFi; i++) {
+            AssemblyInfo ai = assemblies.get(i);
+            ai.setArchiveFile(outputFiles[i]);
+        }
+    }
+
     /**
      * Get the total system energy (kinetic plus potential).
      *
@@ -1528,13 +1611,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Gets the kinetic energy at the start of the last dynamics run.
-     * 
+     *
      * @return Kinetic energy at the start of the run.
      */
     public double getInitialKineticEnergy() {
         return initialKinetic;
     }
-    
+
     /**
      * Gets the temperature at the start of the last dynamics run.
      *
@@ -1543,7 +1626,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public double getInitialTemperature() {
         return initialTemp;
     }
-    
+
     /**
      * Gets the potential energy at the start of the last dynamics run.
      *
@@ -1552,7 +1635,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public double getInitialPotentialEnergy() {
         return initialPotential;
     }
-    
+
     /**
      * Gets the total energy at the start of the last dynamics run.
      *
@@ -1595,7 +1678,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * members breaks encapsulation a bit, but the private inner class shouldn't
      * be used externally anyways.
      */
-    protected class AssemblyInfo {
+    protected static class AssemblyInfo {
 
         private final MolecularAssembly assembly;
         CompositeConfiguration compositeConfiguration;
@@ -1614,6 +1697,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         public MolecularAssembly getAssembly() {
             return assembly;
+        }
+
+        void setArchiveFile(File file) {
+            archiveFile = file;
         }
     }
 
@@ -1820,6 +1907,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * No-op; FFX does not need to occasionally return information from FFX.
+     *
      * @param intervalSteps Ignored.
      */
     public void setIntervalSteps(int intervalSteps) {

@@ -39,18 +39,15 @@ package ffx.potential.groovy
 
 import static java.lang.String.format
 
-import org.apache.commons.io.FilenameUtils
-import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.pow
+
+import edu.rit.pj.ParallelTeam
 
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
-import ffx.potential.nonbonded.GaussVol
-import ffx.potential.nonbonded.GeneralizedKirkwood
-
-import edu.rit.pj.ParallelTeam
 import ffx.potential.nonbonded.implicit.ConnollyRegion
+import ffx.potential.nonbonded.implicit.GaussVol
 
 import picocli.CommandLine
 import picocli.CommandLine.Command
@@ -152,33 +149,22 @@ class Volume extends PotentialScript {
     @Override
     Volume run() {
         if (!init()) {
-            return this
+            return null
         }
 
-        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.openAll(filenames.get(0))
+            MolecularAssembly[] assemblies = potentialFunctions.openAll(filenames.get(0))
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         }
 
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
         logger.info("\n Calculating volume and surface area for " + modelFilename)
 
-        File saveDir = baseDir
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-
         Atom[] atoms = activeAssembly.getAtomArray()
         int nAtoms = atoms.length
-
-        CompositeConfiguration properties = activeAssembly.getProperties()
-        double solventPressure = properties.getDouble("solvent-pressure", GeneralizedKirkwood.DEFAULT_SOLVENT_PRESSURE)
-        double surfaceTension = properties.getDouble("surface-tension", GeneralizedKirkwood.DEFAULT_CAVDISP_SURFACE_TENSION)
-        double crossOver = properties.getDouble("cross-over", GeneralizedKirkwood.DEFAULT_CROSSOVER)
 
         if (!connolly) {
             // Input
@@ -198,7 +184,7 @@ class Volume extends PotentialScript {
                 }
                 radii[index] = atom.getVDWType().radius / 2.0
                 if (sigma) {
-                    radii[index] *= rminToSigma;
+                    radii[index] *= rminToSigma
                 }
                 radii[index] += offset
                 volume[index] = fourThirdsPI * pow(radii[index], 3)
@@ -210,10 +196,6 @@ class Volume extends PotentialScript {
 
             // Run Volume calculation to get vdw volume of molecule
             GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen)
-            gaussVol.setSolventPressure(solventPressure)
-            gaussVol.setSurfaceTension(surfaceTension)
-            gaussVol.setCrossOver(crossOver)
-
             gaussVol.computeVolumeAndSA(positions)
 
             if (verbose) {
@@ -237,16 +219,8 @@ class Volume extends PotentialScript {
             }
             logger.info(format("  Radii offset:        %8.4f (Ang)", offset))
             logger.info(format("  Include hydrogen:    %8b", includeHydrogen))
-            logger.info(format("\n  Volume:              %8.4f (Ang^3)", gaussVol.getVolume()))
-            logger.info(format("  Solvent Pressure:    %8.4f (kcal/mol/Ang^3)", gaussVol.getSolventPressure()))
-            logger.info(format("  Volume Energy:       %8.4f (kcal/mol)", gaussVol.getVolumeEnergy()))
-            logger.info(format("\n  Surface Area:        %8.4f (Ang^2)", gaussVol.getSurfaceArea()))
-            logger.info(format("  Surface Tension:     %8.4f (kcal/mol/Ang^2)", gaussVol.getSurfaceTension()))
-            logger.info(format("  Surface Area Energy: %8.4f (kcal/mol)", gaussVol.getSurfaceAreaEnergy()))
-            logger.info(format("\n  Effective Radius:    %8.4f (Ang)", gaussVol.getEffectiveRadius()))
-            logger.info(format("  Cross-over Radius:   %8.4f (Ang)", gaussVol.getCrossOver()))
-            logger.info(format("  Volume + SA Energy:  %8.4f (kcal/mol)", gaussVol.getEnergy()))
-
+            logger.info(format("  Volume:              %8.4f (Ang^3)", gaussVol.getVolume()))
+            logger.info(format("  Surface Area:        %8.4f (Ang^2)", gaussVol.getSurfaceArea()))
             // Set JUnit testing variables based on output volume and surface area
             totalVolume = gaussVol.getVolume()
             totalSurfaceArea = gaussVol.getSurfaceArea()
@@ -269,7 +243,7 @@ class Volume extends PotentialScript {
             for (Atom atom : atoms) {
                 radii[index] = atom.getVDWType().radius / 2.0
                 if (sigma) {
-                    radii[index] *= rminToSigma;
+                    radii[index] *= rminToSigma
                 }
                 boolean hydrogen = atom.isHydrogen()
                 if (!includeHydrogen && hydrogen) {
@@ -281,16 +255,13 @@ class Volume extends PotentialScript {
             // Note that the VolumeRegion code is currently limited to a single thread.
             ParallelTeam parallelTeam = new ParallelTeam(1)
             ConnollyRegion connollyRegion = new ConnollyRegion(atoms, radii, parallelTeam.getThreadCount())
-            connollyRegion.setSolventPressure(solventPressure)
-            connollyRegion.setSurfaceTension(surfaceTension)
-            connollyRegion.setCrossOver(crossOver)
             // For solvent excluded volume.
             connollyRegion.setExclude(exclude)
             // For molecular surface.
             connollyRegion.setProbe(probe)
-            connollyRegion.runVolume();
+            connollyRegion.runVolume()
 
-            if (vdW || (probe == 0.0 && exclude == 0.0)) {
+            if (vdW || (probe == 0.0 && exclude == new Double(0.0))) {
                 logger.info("\n Connolly van der Waals Surface Area and Volume\n")
             } else if (!molecular) {
                 logger.info("\n Connolly Solvent Accessible Surface Area and Solvent Excluded Volume\n")
@@ -299,7 +270,6 @@ class Volume extends PotentialScript {
                 logger.info("\n Connolly Molecular Surface Area and Volume")
                 logger.info(format("  Probe radius:       %8.4f (Ang)", probe))
             }
-
             if (sigma) {
                 logger.info(format("  Radii:                  Sigma"))
             } else {
@@ -307,14 +277,7 @@ class Volume extends PotentialScript {
             }
             logger.info(format("  Include hydrogen:    %8b", includeHydrogen))
             logger.info(format("  Volume:              %8.4f (Ang^3)", connollyRegion.getVolume()))
-            logger.info(format("  Solvent Pressure:    %8.4f (kcal/mol/Ang^3)", connollyRegion.getSolventPressure()))
-            logger.info(format("  Volume Energy:       %8.4f (kcal/mol)", connollyRegion.getVolumeEnergy()))
-            logger.info(format("\n  Surface Area:        %8.4f (Ang^2)", connollyRegion.getSurfaceArea()))
-            logger.info(format("  Surface Tension:     %8.4f (kcal/mol/Ang^2)", connollyRegion.getSurfaceTension()))
-            logger.info(format("  Surface Area Energy: %8.4f (kcal/mol)", connollyRegion.getSurfaceAreaEnergy()))
-            logger.info(format("\n  Effective Radius:    %8.4f (Ang)", connollyRegion.getEffectiveRadius()))
-            logger.info(format("  Cross-over Radius:   %8.4f (Ang)", connollyRegion.getCrossOver()))
-            logger.info(format("  Volume + SA Energy:  %8.4f (kcal/mol)", connollyRegion.getEnergy()))
+            logger.info(format("  Surface Area:        %8.4f (Ang^2)", connollyRegion.getSurfaceArea()))
 
             // Set JUnit testing variables based on output volume and surface area
             totalVolume = connollyRegion.getVolume()

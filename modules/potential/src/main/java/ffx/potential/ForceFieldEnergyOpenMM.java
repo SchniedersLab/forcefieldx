@@ -586,6 +586,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return numParticles;
     }
 
+    @Override
+    public void setCoordinates(double[] x) {
+        super.setCoordinates(x);
+        setOpenMMPositions(x, x.length);
+    }
+
     /**
      * Compute the energy using the pure Java code path.
      *
@@ -657,7 +663,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         unscaleCoordinates(x);
 
         setCoordinates(x);
-        setOpenMMPositions(x, x.length);
 
         PointerByReference state = openMMContext.getState(OpenMM_State_Energy);
 
@@ -706,7 +711,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         getContext();
 
         setCoordinates(x);
-        setOpenMMPositions(x, x.length);
 
         int infoMask = OpenMM_State_Energy + OpenMM_State_Forces;
         PointerByReference state = openMMContext.getState(infoMask);

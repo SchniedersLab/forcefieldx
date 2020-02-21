@@ -58,6 +58,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
+import static ffx.potential.bonded.Bond.logNoBondType;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 
 /**
@@ -265,7 +266,7 @@ public class INTFilter extends SystemFilter {
                         String key = BondType.sortKey(c);
                         BondType bondType = forceField.getBondType(key);
                         if (bondType == null) {
-                            logger.severe(format(" No BondType for key %s", key));
+                            logNoBondType(atom1, atom2, key);
                         } else {
                             bond.setBondType(bondType);
                         }
@@ -281,7 +282,7 @@ public class INTFilter extends SystemFilter {
                     String key = BondType.sortKey(c);
                     BondType bondType = forceField.getBondType(key);
                     if (bondType == null) {
-                        logger.severe(format(" No BondType for key %s", key));
+                        logNoBondType(atom1, atom2, key);
                     } else {
                         bond.setBondType(bondType);
                     }
@@ -322,7 +323,7 @@ public class INTFilter extends SystemFilter {
      * {@inheritDoc}
      */
     @Override
-    public boolean writeFile(File saveFile, boolean append) {
+    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
         return false;
     }
 

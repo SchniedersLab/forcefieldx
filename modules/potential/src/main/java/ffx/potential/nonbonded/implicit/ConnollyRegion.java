@@ -48,11 +48,9 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.asin;
 import static org.apache.commons.math3.util.FastMath.atan2;
-import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -61,10 +59,7 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 
-import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.numerics.switching.MultiplicativeSwitch;
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.utils.EnergyException;
 import static ffx.numerics.math.VectorMath.cross;
 import static ffx.numerics.math.VectorMath.dist;
@@ -129,36 +124,13 @@ public class ConnollyRegion extends ParallelRegion {
     /**
      * Array to store volume gradient
      **/
-    private final double[][] dex;
+    private final double[][] volumeGradient;
     private final int[] itab;
-    /**
-     * A 3D array to store the gradient.
-     */
-    private AtomicDoubleArray3D grad;
 
+    private final ParallelTeam parallelTeam;
     private final VolumeLoop[] volumeLoop;
     private final SharedDouble sharedVolume;
     private final SharedDouble sharedArea;
-    /**
-     * Surface area (Ang^2).
-     */
-    private double surfaceArea;
-    /**
-     * Surface area energy (kcal/mol).
-     */
-    private double surfaceAreaEnergy;
-    /**
-     * Volume (Ang^3).
-     */
-    private double volume;
-    /**
-     * Volume energy (kcal/mol).
-     */
-    private double volumeEnergy;
-    /**
-     * Cavitation energy, which is a function of volume and/or surface area.
-     */
-    private double cavitationEnergy;
     /**
      * Probe is used for molecular (contact/reentrant) volume and surface area.
      */
@@ -175,56 +147,6 @@ public class ConnollyRegion extends ParallelRegion {
      * Size of a vector to randomly perturb coordinates.
      */
     private double wiggle = DEFAULT_WIGGLE;
-    /**
-     * Solvent pressure for small solutes.
-     */
-    private double solventPressure = GeneralizedKirkwood.DEFAULT_SOLVENT_PRESSURE;
-    /**
-     * Chandler cross-over point between small solutes and large solutes.
-     */
-    private double crossOver = GeneralizedKirkwood.DEFAULT_CROSSOVER;
-    /**
-     * Surface tension for large solutes.
-     */
-    private double surfaceTension = GeneralizedKirkwood.DEFAULT_CAVDISP_SURFACE_TENSION;
-
-    /**
-     * Effective radius probe.
-     * <p>
-     * In cavitation volume scaling regime, approximate solvent excluded volume
-     * and effective radius are computed as follow.
-     * <p>
-     * 1) GaussVol vdW volume is computed from defined radii.
-     * 2) Effective radius is computed as Reff = cbrt(3.0 * volume / (4.0 * PI)) + effectiveRadiusProbe.
-     * 3) Solvent Excluded Volume = 4/3 * Pi * Reff^3
-     */
-    private double effectiveRadius;
-    private double switchRange = 3.5;
-    private double saSwitchRangeOff = 3.9;
-    /**
-     * Begin turning off the Volume term.
-     */
-    private double volumeOff = crossOver - switchRange;
-    /**
-     * Volume term is zero at the cut-off.
-     */
-    private double volumeCut = crossOver + switchRange;
-    /**
-     * Begin turning off the SA term.
-     */
-    private double surfaceAreaOff = crossOver + saSwitchRangeOff;
-    /**
-     * SA term is zero at the cut-off.
-     */
-    private double surfaceAreaCut = crossOver - switchRange;
-    /**
-     * Volume multiplicative switch.
-     */
-    private MultiplicativeSwitch volumeSwitch = new MultiplicativeSwitch(volumeCut, volumeOff);
-    /**
-     * Surface area multiplicative switch.
-     */
-    private MultiplicativeSwitch surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
 
     /**
      * 3D grid for finding atom neighbors.
@@ -522,8 +444,6 @@ public class ConnollyRegion extends ParallelRegion {
      */
     private final int[] nextAtomPointer;
 
-    private final ParallelTeam parallelTeam;
-
     /**
      * VolumeRegion constructor.
      *
@@ -632,7 +552,7 @@ public class ConnollyRegion extends ParallelRegion {
         nextAtomPointer = new int[nAtoms];
 
         // Volume derivative variables.
-        dex = new double[3][nAtoms];
+        volumeGradient = new double[3][nAtoms];
         itab = new int[nAtoms];
     }
 
@@ -643,30 +563,10 @@ public class ConnollyRegion extends ParallelRegion {
      *
      * @param atoms    Array of atoms.
      * @param gradient Compute the atomic coordinate gradient.
-     * @param grad     Array to accumulate the gradient.
      */
-    public void init(Atom[] atoms, boolean gradient, AtomicDoubleArray3D grad) {
+    public void init(Atom[] atoms, boolean gradient) {
         this.atoms = atoms;
         this.gradient = gradient;
-        this.grad = grad;
-    }
-
-    public void setSolventPressure(double solventPressure) {
-        this.solventPressure = solventPressure;
-    }
-
-    public void setSurfaceTension(double surfaceTension) {
-        this.surfaceTension = surfaceTension;
-    }
-
-    public void setCrossOver(double crossOver) {
-        this.crossOver = crossOver;
-        volumeOff = crossOver - switchRange;
-        volumeCut = crossOver + switchRange;
-        surfaceAreaOff = crossOver + saSwitchRangeOff;
-        surfaceAreaCut = crossOver - switchRange;
-        volumeSwitch = new MultiplicativeSwitch(volumeCut, volumeOff);
-        surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
     }
 
     public void setExclude(double exclude) {
@@ -675,6 +575,14 @@ public class ConnollyRegion extends ParallelRegion {
 
     public void setProbe(double probe) {
         this.probe = probe;
+    }
+
+    public double getExclude() {
+        return exclude;
+    }
+
+    public double getProbe() {
+        return probe;
     }
 
     /**
@@ -689,57 +597,15 @@ public class ConnollyRegion extends ParallelRegion {
     }
 
     public double getSurfaceArea() {
-        return surfaceArea;
+        return sharedArea.get();
     }
 
     public double getVolume() {
-        return volume;
+        return sharedVolume.get();
     }
 
-    public double getSolventPressure() {
-        return solventPressure;
-    }
-
-    public double getSurfaceTension() {
-        return surfaceTension;
-    }
-
-    public double getCrossOver() {
-        return crossOver;
-    }
-
-    /**
-     * Return Volume based cavitation energy.
-     *
-     * @return Volume based cavitation energy.
-     */
-    public double getVolumeEnergy() {
-        return volumeEnergy;
-    }
-
-    /**
-     * Return Surface Area based cavitation energy.
-     *
-     * @return Surface Area based cavitation energy.
-     */
-    public double getSurfaceAreaEnergy() {
-        return surfaceAreaEnergy;
-    }
-
-    public double getEnergy() {
-        return cavitationEnergy;
-    }
-
-    public double getEffectiveRadius() {
-        return effectiveRadius;
-    }
-
-    public double getProbe() {
-        return probe;
-    }
-
-    public double getExclude() {
-        return exclude;
+    public double[][] getVolumeGradient() {
+        return volumeGradient;
     }
 
     /**
@@ -778,11 +644,6 @@ public class ConnollyRegion extends ParallelRegion {
         }
     }
 
-    @Override
-    public void finish() {
-        energy();
-    }
-
     /**
      * Construct the 3-dimensional random unit vector.
      *
@@ -806,87 +667,6 @@ public class ConnollyRegion extends ParallelRegion {
         s = 2.0 * sqrt(1.0 - s);
         vector[1] = s * y;
         vector[0] = s * x;
-    }
-
-    /**
-     * Compute the cavitation energy.
-     */
-    private void energy() {
-
-        // Calculate a purely surface area based cavitation energy.
-        surfaceArea = sharedArea.get();
-        surfaceAreaEnergy = surfaceArea * surfaceTension;
-
-        // Calculate a purely volume based cavitation energy.
-        volume = sharedVolume.get();
-        volumeEnergy = volume * solventPressure;
-
-        // Use Volume to find an effective cavity radius.
-        effectiveRadius = cbrt(3.0 * volume / (4.0 * PI));
-        double reff = effectiveRadius;
-        double reff2 = reff * reff;
-        double reff3 = reff2 * reff;
-        double reff4 = reff3 * reff;
-        double reff5 = reff4 * reff;
-        double vdWVolPI23 = pow(volume / PI, 2.0 / 3.0);
-        double dReffdvdW = 1.0 / (pow(6.0, 2.0 / 3.0) * PI * vdWVolPI23);
-
-        if (gradient && logger.isLoggable(Level.FINE)) {
-            for (int i = 0; i < nAtoms; i++) {
-                logger.fine(format(" Gradient %d (%16.8f, %16.8f, %16.8f)", i, dex[0][i], dex[1][i], dex[2][i]));
-            }
-        }
-
-        // Find the cavitation energy using a combination of volume and surface area dependence.
-        if (reff < volumeOff) {
-            // Find cavity energy from only the molecular volume.
-            cavitationEnergy = volumeEnergy;
-            if (gradient) {
-                for (int i = 0; i < nAtoms; i++) {
-                    double dx = solventPressure * dex[0][i];
-                    double dy = solventPressure * dex[1][i];
-                    double dz = solventPressure * dex[2][i];
-                    grad.add(0, i, dx, dy, dz);
-                }
-            }
-        } else if (reff <= volumeCut) {
-            // Include a tapered molecular volume.
-            double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
-            cavitationEnergy = taper * volumeEnergy;
-
-            if (gradient) {
-                double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
-                double factor = dtaper * volumeEnergy + taper * solventPressure;
-                for (int i = 0; i < nAtoms; i++) {
-                    double dx = factor * dex[0][i];
-                    double dy = factor * dex[1][i];
-                    double dz = factor * dex[2][i];
-                    grad.add(0, i, dx, dy, dz);
-                }
-            }
-        }
-
-        // TODO: We need to include the surface area contribution to the gradient.
-        if (reff > surfaceAreaOff) {
-            // Find cavity energy from only SA.
-            cavitationEnergy = surfaceAreaEnergy;
-            // addSurfaceAreaGradient(0.0, surfaceTension, gradient);
-        } else if (reff >= surfaceAreaCut) {
-            // Include a tapered surface area term.
-            double taperSA = surfaceAreaSwitch.taper(reff, reff2, reff3, reff4, reff5);
-            cavitationEnergy += taperSA * surfaceAreaEnergy;
-            // double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
-            // addSurfaceAreaGradient(dtaperSA * surfaceAreaEnergy, taperSA * surfaceTension, gradient);
-        }
-
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(format("\n Volume:              %8.3f (Ang^3)", volume));
-            logger.fine(format(" Volume Energy:       %8.3f (kcal/mol)", volumeEnergy));
-            logger.fine(format(" Surface Area:        %8.3f (Ang^2)", surfaceArea));
-            logger.fine(format(" Surface Area Energy: %8.3f (kcal/mol)", surfaceAreaEnergy));
-            logger.fine(format(" Volume + SA Energy:  %8.3f (kcal/mol)", cavitationEnergy));
-            logger.fine(format(" Effective Radius:    %8.3f (Ang)", reff));
-        }
     }
 
     /**
@@ -916,9 +696,9 @@ public class ConnollyRegion extends ParallelRegion {
             localVolume = 0.0;
             localSurfaceArea = 0.0;
             if (gradient) {
-                fill(dex[0], 0.0);
-                fill(dex[1], 0.0);
-                fill(dex[2], 0.0);
+                fill(volumeGradient[0], 0.0);
+                fill(volumeGradient[1], 0.0);
+                fill(volumeGradient[2], 0.0);
             }
         }
 
@@ -4172,9 +3952,9 @@ public class ConnollyRegion extends ParallelRegion {
                         zgrid += zstep;
                     }
                 }
-                dex[0][ir] = 0.5 * rrsq * pre_dx;
-                dex[1][ir] = 0.5 * rrsq * pre_dy;
-                dex[2][ir] = 0.5 * rrsq * pre_dz;
+                volumeGradient[0][ir] = 0.5 * rrsq * pre_dx;
+                volumeGradient[1][ir] = 0.5 * rrsq * pre_dy;
+                volumeGradient[2][ir] = 0.5 * rrsq * pre_dz;
             }
         }
     }

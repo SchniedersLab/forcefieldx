@@ -194,6 +194,13 @@ public class MonteCarloOST extends BoltzmannMC {
             lambdaMove = new LambdaMove(orthogonalSpaceTempering);
         }
 
+        boolean discreteLambda = properties.getBoolean("discrete-lambda", false);
+        if (discreteLambda) {
+            lambdaMove.setContinuous(false);
+            // Set the move size to the Lambda bin width.
+            lambdaMove.setMoveSize(orthogonalSpaceTempering.getHistogram().dL);
+        }
+
         // Changing the value of lambda will be handled by this class, as well as adding the time dependent bias.
         orthogonalSpaceTempering.setPropagateLambda(false);
         biasDepositionFrequency = properties.getInt("mc-ost-biasf", 1);
@@ -209,20 +216,23 @@ public class MonteCarloOST extends BoltzmannMC {
      * the stepsPerMove and timeStep parameters to the current value in this
      * class
      *
-     * @param totalSteps   a int.
-     * @param stepsPerMove a int.
-     * @param mcMDE        a boolean
+     * @param totalSteps a int.
      */
-    public void setMDMoveParameters(long totalSteps, int stepsPerMove, boolean mcMDE) {
+    public void setMDMoveParameters(long totalSteps) {
+        setRunLength(totalSteps);
+    }
 
-        if (mcMDE) {
-            if (equilibration) {
-                this.stepsPerMove = (int) Math.round(stepsPerMove * 0.1);
-            } else {
-                mdMove.setMDIntervalSteps(stepsPerMove);
-            }
-        }
+    /**
+     * Sets the next number of steps MC-OST should run.
+     *
+     * @param totalSteps The length of the next MC-OST run.
+     */
+    public void setRunLength(long totalSteps) {
         this.totalSteps = totalSteps;
+    }
+
+    public MolecularDynamics getMD() {
+        return mdMove.getMD();
     }
 
     /**
@@ -232,7 +242,14 @@ public class MonteCarloOST extends BoltzmannMC {
      * @param stdDev a double.
      */
     public void setLambdaStdDev(double stdDev) {
-        lambdaMove.setStdDev(stdDev);
+        if (!lambdaMove.isContinuous()) {
+            if (stdDev != orthogonalSpaceTempering.getHistogram().dL) {
+                logger.info(format(" Requested Lambda step size change %6.4f is not equal to OST bin width %6.4f.",
+                        stdDev, orthogonalSpaceTempering.getHistogram().dL));
+                return;
+            }
+        }
+        lambdaMove.setMoveSize(stdDev);
     }
 
     /**
@@ -287,6 +304,10 @@ public class MonteCarloOST extends BoltzmannMC {
      * 5.) Add to the bias.
      */
     public void sampleTwoStep() {
+        // Validate the starting value of lambda.
+        lambda = orthogonalSpaceTempering.getLambda();
+        lambda = lambdaMove.validateLambda(lambda);
+        orthogonalSpaceTempering.setLambda(lambda);
 
         int n = potential.getNumberOfVariables();
         double[] gradient = new double[n];
@@ -458,9 +479,11 @@ public class MonteCarloOST extends BoltzmannMC {
                 // Update the current OST Energy to be the sum of the current Force Field Energy and updated OST Bias.
                 currentOSTEnergy = currentForceFieldEnergy + currentBiasEnergy;
 
-                if (lambda >= orthogonalSpaceTempering.lambdaWriteOut) {
-                    long mdMoveNum = imove * stepsPerMove;
-                    mdMove.writeFilesForStep(mdMoveNum);
+                long mdMoveNum = imove * stepsPerMove;
+                boolean snapShot = lambda >= orthogonalSpaceTempering.lambdaWriteOut;
+                EnumSet<MolecularDynamics.WriteActions> written = mdMove.writeFilesForStep(mdMoveNum, snapShot, true);
+                if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
+                    orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
                 }
             }
 
@@ -507,6 +530,10 @@ public class MonteCarloOST extends BoltzmannMC {
      * 4.) Add to the bias.
      */
     public void sampleOneStep() {
+        // Validate the starting value of lambda.
+        lambda = orthogonalSpaceTempering.getLambda();
+        lambda = lambdaMove.validateLambda(lambda);
+        orthogonalSpaceTempering.setLambda(lambda);
 
         int n = potential.getNumberOfVariables();
         double[] gradient = new double[n];
@@ -671,13 +698,13 @@ public class MonteCarloOST extends BoltzmannMC {
                 // Update the current OST Energy to be the sum of the current Force Field Energy and updated OST Bias.
                 currentOSTEnergy = currentForceFieldEnergy + currentBiasEnergy;
 
-                if (lambda >= orthogonalSpaceTempering.lambdaWriteOut) {
-                    long mdMoveNum = imove * stepsPerMove;
-                    EnumSet<MolecularDynamics.WriteActions> written = mdMove.writeFilesForStep(mdMoveNum);
-                    if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
-                        orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
-                    }
+                boolean snapShot = lambda >= orthogonalSpaceTempering.lambdaWriteOut;
+                long mdMoveNum = imove * stepsPerMove;
+                EnumSet<MolecularDynamics.WriteActions> written = mdMove.writeFilesForStep(mdMoveNum, snapShot, true);
+                if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
+                    orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
                 }
+
             }
 
             totalMoveTime += nanoTime();

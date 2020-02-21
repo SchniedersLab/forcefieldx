@@ -37,21 +37,20 @@
 //******************************************************************************
 
 
-import ffx.potential.cli.WriteoutOptions
-import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine
-
 import static java.lang.String.format
+
+import org.apache.commons.io.FilenameUtils
 
 import ffx.crystal.Crystal
 import ffx.numerics.math.FFXSummaryStatistics
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
+import ffx.potential.cli.WriteoutOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.utilities.Constants
 
+import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -67,34 +66,35 @@ import picocli.CommandLine.Parameters
 class Density extends PotentialScript {
 
     @CommandLine.Mixin
-    private WriteoutOptions writeout;
+    private WriteoutOptions writeout
 
     /**
      * -s or --start First frame to evaluate (1-indexed).
      */
-    @Option(names = ['-s', '--start'], paramLabel = "1",
+    @Option(names = ['-s', '--start'], paramLabel = "1", defaultValue = "1",
             description = 'First frame to evaluate (1-indexed).')
     private int start = 1
 
     /**
      * -f or --final Last frame to evaluate (1-indexed); values less than 1 evaluate to end of trajectory.
      */
-    @Option(names = ['-f', '--final'], paramLabel = "all frames",
+    @Option(names = ['-f', '--final'], paramLabel = "all frames", defaultValue = "0",
             description = 'Last frame to evaluate (1-indexed); values less than 1 evaluate to end of trajectory.')
-    private int finish = 0;
+    private int finish = 0
 
     /**
      * --st or --stride Stride: evaluate density every N frames. Must be positive.
      */
-    @Option(names = ['--st', '--stride'], paramLabel = "1",
+    @Option(names = ['--st', '--stride'], paramLabel = "1", defaultValue = "1",
             description = "Stride: evaluate density every N frames. Must be positive.")
-    private int stride = 1;
+    private int stride = 1
 
     /**
      * -p or --printout writes out a file with density adjusted to match mean calculated density.
      */
-    @Option(names = ['-p', '--printout'], description = "Print out a file with density adjusted to match mean calculated density")
-    private boolean doPrint = false;
+    @Option(names = ['-p', '--printout'], defaultValue = "false",
+            description = "Print out a file with density adjusted to match mean calculated density.")
+    private boolean doPrint = false
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -117,61 +117,61 @@ class Density extends PotentialScript {
     @Override
     Density run() {
         if (!init()) {
-            return this
+            return null
         }
 
         if (filenames == null || filenames.isEmpty() || stride < 1) {
-            logger.info(helpString());
-            return this;
+            logger.info(helpString())
+            return null
         }
 
-        for (String fname : filenames) {
-            MolecularAssembly ma = null;
+        for (String filename : filenames) {
+            MolecularAssembly molecularAssembly = null
             try {
-                ma = potentialFunctions.open(fname);
-                SystemFilter openFilter = potentialFunctions.getFilter();
-                Atom[] atoms = ma.getAtomArray();
-                double totMass = Arrays.stream(atoms).mapToDouble({ it.getMass(); }).sum();
-                Crystal cryst = ma.getCrystal();
+                molecularAssembly = potentialFunctions.open(filename)
+                SystemFilter openFilter = potentialFunctions.getFilter()
+                double totMass = molecularAssembly.getMass()
+                Crystal crystal = molecularAssembly.getCrystal()
 
-                if (cryst.aperiodic()) {
-                    logger.info(format(" System %s appears aperiodic: total mass %16.7g g/mol", fname, totMass));
+                if (crystal.aperiodic()) {
+                    logger.info(format(" System %s appears aperiodic: total mass %16.7g g/mol", filename, totMass))
                 } else {
-                    double vol = cryst.getUnitCell().volume * Constants.LITERS_PER_CUBIC_ANGSTROM * 0.001;
-                    double density = cryst.getDensity(totMass);
-                    int nFrames = openFilter.countNumModels();
-                    double[] densities = new double[nFrames];
-                    double[][] unitCellParams = new double[nFrames][];
-                    int lastFrame = (finish < 1) ? nFrames : finish;
+                    double volume = crystal.getUnitCell().volume * Constants.LITERS_PER_CUBIC_ANGSTROM * 0.001
+                    double density = crystal.getDensity(totMass)
+                    int nFrames = openFilter.countNumModels()
+                    double[] densities = new double[nFrames]
+                    double[][] unitCellParams = new double[nFrames][]
+                    int lastFrame = (finish < 1) ? nFrames : finish
 
-                    densities[0] = density;
-                    unitCellParams[0] = cryst.getUnitCellParams();
-                    logger.info(format(" Evaluating density for system %s: total mass %16.7g g/mol", fname, totMass));
-                    logger.info(format(" Density at frame %9d is %16.7g g/mL from a volume of %16.7g Ang^3", 1, density, vol));
+                    densities[0] = density
+                    unitCellParams[0] = crystal.getUnitCellParams()
+                    logger.info(format(" Evaluating density for system %s: total mass %16.7g g/mol", filename, totMass))
+                    logger.info(format(" Density at frame %9d is %16.7g g/mL from a volume of %16.7g Ang^3", 1, density, volume))
 
-                    int ctr = 1;
+                    int ctr = 1
                     // TODO: Optimize by skipping frames by stride.
                     while (openFilter.readNext(false, false)) {
-                        vol = cryst.getUnitCell().volume;
-                        density = cryst.getDensity(totMass);
-                        logger.info(format(" Density at frame %9d is %16.7g g/mL from a volume of %16.7g Ang^3", ++ctr, density, vol));
-                        int i = ctr - 1;
-                        densities[i] = density;
-                        unitCellParams[i] = cryst.getUnitCellParams();
+                        volume = crystal.getUnitCell().volume
+                        density = crystal.getDensity(totMass)
+                        logger.info(format(" Density at frame %9d is %16.7g g/mL from a volume of %16.7g Ang^3",
+                                ++ctr, density, volume))
+                        int i = ctr - 1
+                        densities[i] = density
+                        unitCellParams[i] = crystal.getUnitCellParams()
                     }
 
-                    FFXSummaryStatistics densStats = new FFXSummaryStatistics(densities, start - 1, lastFrame, stride);
-                    logger.info(" Summary statistics for density:");
-                    logger.info(densStats.toString());
+                    FFXSummaryStatistics densStats = new FFXSummaryStatistics(densities, start - 1, lastFrame, stride)
+                    logger.info(" Summary statistics for density:")
+                    logger.info(densStats.toString())
 
                     if (doPrint) {
-                        cryst.setDensity(densStats.mean, totMass);
-                        String outFileName = FilenameUtils.removeExtension(fname);
-                        writeout.saveFile(outFileName, potentialFunctions, ma);
+                        crystal.setDensity(densStats.mean, totMass)
+                        String outFileName = FilenameUtils.removeExtension(filename)
+                        writeout.saveFile(outFileName, potentialFunctions, molecularAssembly)
                     }
                 }
             } finally {
-                ma?.destroy();
+                molecularAssembly?.destroy()
             }
         }
 

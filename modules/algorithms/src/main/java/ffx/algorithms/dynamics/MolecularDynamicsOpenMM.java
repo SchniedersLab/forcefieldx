@@ -43,9 +43,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import static edu.uiowa.jopenmm.OpenMMLibrary.*;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.*;
 import static java.lang.String.format;
 
 import com.sun.jna.ptr.PointerByReference;
@@ -53,6 +50,19 @@ import com.sun.jna.ptr.PointerByReference;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_setStepSize;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velocities;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getForces;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getKineticEnergy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPositions;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getVelocities;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
@@ -133,12 +143,12 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * dynamics using native OpenMM routines, avoiding the cost of communicating
      * coordinates, gradients, and energies back and forth across the PCI bus.
      *
-     * @param assembly               MolecularAssembly to operate on
-     * @param potential              Either a ForceFieldEnergyOpenMM, or a Barostat.
-     * @param properties             Associated properties
-     * @param listener               a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param thermostat             May have to be slightly modified for native OpenMM routines
-     * @param integratorMD           May have to be slightly modified for native OpenMM routines
+     * @param assembly     MolecularAssembly to operate on
+     * @param potential    Either a ForceFieldEnergyOpenMM, or a Barostat.
+     * @param properties   Associated properties
+     * @param listener     a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param thermostat   May have to be slightly modified for native OpenMM routines
+     * @param integratorMD May have to be slightly modified for native OpenMM routines
      */
     public MolecularDynamicsOpenMM(MolecularAssembly assembly, Potential potential,
                                    CompositeConfiguration properties, AlgorithmListener listener,
@@ -203,12 +213,12 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     @Override
-    public void appendSnapshot() {
+    protected void appendSnapshot(String[] extraLines) {
         if (!getAllVars) {
             // If !getAllVars, need to ensure coordinates are synced before writing a snapshot.
             getOpenMMEnergiesAndPositions();
         }
-        super.appendSnapshot();
+        super.appendSnapshot(extraLines);
     }
 
     @Override
@@ -563,7 +573,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             time = logThermoForTime(i, time);
 
             if (automaticWriteouts) {
-                writeFilesForStep(i);
+                writeFilesForStep(i, true, true);
             }
         }
     }

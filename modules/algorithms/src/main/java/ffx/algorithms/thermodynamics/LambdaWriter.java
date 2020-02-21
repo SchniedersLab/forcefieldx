@@ -74,5 +74,6 @@ class LambdaWriter extends PrintWriter {
         printf("Lambda          %15.8f\n", orthogonalSpaceTempering.lambda);
         printf("Lambda-Velocity %15.8e\n", histogram.halfThetaVelocity);
         printf("Steps-Taken     %15d\n", orthogonalSpaceTempering.energyCount);
+        printf("Histogram       %15d\n", orthogonalSpaceTempering.getHistogram().getHistogramIndex());
     }
 }

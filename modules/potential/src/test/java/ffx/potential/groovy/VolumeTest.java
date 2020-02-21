@@ -188,6 +188,29 @@ public class VolumeTest {
     }
 
     /**
+     * Test GaussVol derivatives.
+     */
+    @Test
+    public void testGaussVolHydrogenEthylbenzeneDerivatives() {
+        Gradient gradient = new Gradient();
+        binding = new Binding();
+        gradient.setBinding(binding);
+
+        System.setProperty("cavmodel", "gauss-disp");
+
+        String[] args = {"src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        gradient.run();
+
+        System.clearProperty("cavmodel");
+        assertEquals("Ethylbenzene gradient failures: ", 0, gradient.nFailures);
+        gradient.destroyPotentials();
+        System.gc();
+    }
+
+    /**
      * Test GaussVol without hydrogen and a 0.0 A radii offset.
      */
     @Test
@@ -199,6 +222,31 @@ public class VolumeTest {
         volume.run();
         assertEquals(4371.667466648112, volume.totalVolume, 0.001);
         assertEquals(3977.079123178555, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
+     * Test GaussVol derivatives.
+     */
+    @Test
+    public void testGaussCrambinDerivatives() {
+        Gradient gradient = new Gradient();
+        binding = new Binding();
+        gradient.setBinding(binding);
+
+        System.setProperty("gkterm", "true");
+        System.setProperty("cavmodel", "gauss-disp");
+
+        String[] args = {"-a", "100", "--la", "100", "src/main/java/ffx/potential/structures/crambin.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        gradient.run();
+
+        System.clearProperty("gkterm");
+        System.clearProperty("cavmodel");
+        assertEquals("Ethylbenzene gradient failures: ", 0, gradient.nFailures);
+        gradient.destroyPotentials();
+        System.gc();
     }
 
     /**

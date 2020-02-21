@@ -69,7 +69,7 @@ class Timer extends PotentialScript {
     @Parameters(arity = "1", paramLabel = "files",
             description = "XYZ or PDB input files.")
     private List<String> filenames
-    private ForceFieldEnergy energy = null;
+    private ForceFieldEnergy energy = null
 
     /**
      * Execute the script.
@@ -78,20 +78,20 @@ class Timer extends PotentialScript {
     Timer run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
         // Set the number of threads.
         if (timer.threads > 0) {
-            System.setProperty("pj.nt", Integer.toString(timer.threads));
+            System.setProperty("pj.nt", Integer.toString(timer.threads))
         }
 
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         }
 
         if (timer.noGradient) {
@@ -115,7 +115,7 @@ class Timer extends PotentialScript {
             if (!timer.getVerbose()) {
                 logger.info(String.format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
             }
-            minTime = time < minTime ? time : minTime;
+            minTime = time < minTime ? time : minTime
             if (i >= (int) (nEvals / 2)) {
                 double time2 = time * 1.0E-9
                 sumTime2 += (time2 * time2)
@@ -132,7 +132,13 @@ class Timer extends PotentialScript {
 
     @Override
     List<Potential> getPotentials() {
-        return energy == null ? Collections.emptyList() : Collections.singletonList(energy);
+        List<Potential> potentials
+        if (energy == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(energy)
+        }
+        return potentials
     }
 
 }
