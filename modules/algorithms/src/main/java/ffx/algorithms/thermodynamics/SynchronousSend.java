@@ -138,8 +138,8 @@ public class SynchronousSend {
             int his = rankToHistogramMap[i];
             Histogram currentHistogram = histograms[his];
 
-            currentHistogram.setLastReceivedLambda(lambda);
-            currentHistogram.setLastReceiveddUdL(dUdL);
+            currentHistogram.setLastReceivedLambda(recursionWeights[i][0]);
+            currentHistogram.setLastReceiveddUdL(recursionWeights[i][1]);
 
             int walkerLambda = currentHistogram.binForLambda(recursionWeights[i][0]);
             int walkerFLambda = currentHistogram.binForFLambda(recursionWeights[i][1]);

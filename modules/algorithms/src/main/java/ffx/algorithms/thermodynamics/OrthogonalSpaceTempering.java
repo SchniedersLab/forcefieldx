@@ -51,6 +51,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
+import ffx.utilities.FileUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -338,7 +339,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 lambdaReader.readLambdaFile(resetNumSteps);
                 lambdaReader.setVariables(this);
                 lambdaReader.close();
-                logger.info(format("\n Continuing OST lambda from %s.", lambdaFile.toString()));
+                logger.info(format("\n Continuing OST lambda from %s.", histogram.lambdaFileName));
             } catch (FileNotFoundException ex) {
                 logger.info(" Lambda restart file could not be found and will be ignored.");
             } catch (IOException ioe) {
@@ -358,8 +359,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     // TODO: Delete method when debugging of RepexOST is done.
-    public void logOutputFiles() {
-        logger.info(String.format(" OST: Lambda file %s, histogram %s", lambdaFile, histogram.histogramFile));
+    public void logOutputFiles(int index) {
+        logger.info(String.format(" OST: Lambda file %s, histogram %s", histogram.lambdaFileName, allHistograms.get(index).hisFileName));
     }
 
     /**
@@ -380,6 +381,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     public void switchHistogram(int index) {
         histogramIndex = index;
         histogram = allHistograms.get(histogramIndex);
+        logger.info(" OST switching to histogram " + histogramIndex);
+    }
+
+    public Histogram[] getAllHistograms() {
+        int nHisto = allHistograms.size();
+        Histogram[] ret = new Histogram[nHisto];
+        ret = allHistograms.toArray(ret);
+        return ret;
     }
 
     /**
@@ -400,12 +409,22 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     /**
-     * Return the 2D Histogram of counts.
+     * Return the current 2D Histogram of counts.
      *
      * @return the Histogram.
      */
     public Histogram getHistogram() {
         return histogram;
+    }
+
+    /**
+     * Return a 2D Histogram of counts.
+     *
+     * @param index Index of the Histogram to fetch.
+     * @return the index'th Histogram.
+     */
+    public Histogram getHistogram(int index) {
+        return allHistograms.get(index);
     }
 
     /**
@@ -579,7 +598,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             lambdaWriter.writeLambdaFile();
             lambdaWriter.flush();
             lambdaWriter.close();
-            logger.info(format(" Wrote lambda restart file to %s.", lambdaFile.getName()));
+            logger.info(format(" Wrote lambda restart file to %s.", histogram.lambdaFileName));
         } catch (IOException ex) {
             String message = format(" Exception writing lambda restart file %s.", lambdaFile);
             logger.log(Level.INFO, Utilities.stackTraceToString(ex));
@@ -645,12 +664,23 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     /**
-     * Returns basic information about the histogram.
+     * Returns basic information about the current histogram.
      *
      * @return Tempering parameter, threshold, and bias magnitude.
      */
     String histoInfo() {
-        return String.format(" Tempering parameter: %.5f kBT. Threshold: %.5f kcal/mol. Bias magnitude: %.5f kcal/mol", histogram.temperingFactor, histogram.temperOffset, histogram.biasMag);
+        return histoInfo(histogramIndex);
+    }
+
+    /**
+     * Returns basic information about the histogram.
+     *
+     * @param index Index of the histogram to print information about.
+     * @return Tempering parameter, threshold, and bias magnitude.
+     */
+    String histoInfo(int index) {
+        Histogram histo = allHistograms.get(index);
+        return String.format(" Tempering parameter: %.5f kBT. Threshold: %.5f kcal/mol. Bias magnitude: %.5f kcal/mol", histo.temperingFactor, histo.temperOffset, histo.biasMag);
     }
 
     /**
@@ -1383,10 +1413,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         protected final Comm world;
         /**
-         * Number of processes.
-         */
-        private final int numProc;
-        /**
          * Rank of this process.
          */
         protected final int rank;
@@ -1411,6 +1437,17 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         private double lastReceivedLambda;
         private double lastReceiveddUdL;
+
+        /**
+         * Relative path to the histogram restart file.
+         * Assumption: a Histogram object will never change its histogram or lambda files.
+         */
+        private final String hisFileName;
+        /**
+         * Relative path to the lambda restart file.
+         * Assumption: a Histogram object will never change its histogram or lambda files.
+         */
+        private final String lambdaFileName;
 
         /**
          * Histogram constructor.
@@ -1500,7 +1537,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
              communication between nodes.
             */
             world = Comm.world();
-            numProc = world.size();
+            /**
+             * Number of processes.
+             */
+            int numProc = world.size();
             rank = world.rank();
             if (asynchronous) {
                 // Use asynchronous communication.
@@ -1522,6 +1562,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
             // Attempt to load a restart file if one exists.
             readRestart();
+            hisFileName = FileUtils.relativePathTo(histogramFile).toString();
+            lambdaFileName = FileUtils.relativePathTo(lambdaFile).toString();
+        }
+
+        public String toString() {
+            return String.format(" Histogram with tempering rate %.3f, tempering offset/threshold %.3f, " +
+                    "bias magnitude %.3g, writing to restart file %s.\n", temperingFactor, temperOffset, biasMag,
+                    FileUtils.relativePathTo(histogramFile).toString());
         }
 
         /**
@@ -1700,7 +1748,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                     histogramWriter.writeHistogramFile();
                     histogramWriter.flush();
                     histogramWriter.close();
-                    logger.info(format(" Wrote histogram restart file to %s.", histogramFile.getName()));
+                    logger.info(format(" Wrote histogram restart file to %s.", hisFileName));
                 } catch (IOException ex) {
                     String message = " Exception writing OST histogram restart file.";
                     logger.log(Level.INFO, Utilities.stackTraceToString(ex));
@@ -1733,7 +1781,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                     HistogramReader histogramReader = new HistogramReader(this, new FileReader(histogramToRead));
                     histogramReader.readHistogramFile();
                     updateFLambda(true, false);
-                    logger.info(format("\n Read OST histogram from %s.", histogramFile.getName()));
+                    logger.info(format("\n Read OST histogram from %s.", hisFileName));
                 } catch (FileNotFoundException ex) {
                     logger.info(" Histogram restart file could not be found and will be ignored.");
                 }

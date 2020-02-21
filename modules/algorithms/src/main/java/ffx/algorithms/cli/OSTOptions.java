@@ -46,7 +46,6 @@ import org.apache.commons.configuration2.Configuration;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.algorithms.thermodynamics.MonteCarloOST;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
@@ -264,11 +263,6 @@ public class OSTOptions {
         OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(linter, potential, lambdaRestart,
                 histogramRestart, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
         orthogonalSpaceTempering.setHardWallConstraint(mcHW);
-        Histogram histogram = orthogonalSpaceTempering.getHistogram();
-        histogram.checkRecursionKernelSize();
-        histogram.setIndependentWalkers(independentWalkers);
-        histogram.setTemperingThreshold(temperThreshold[replicateNum]);
-        histogram.setTemperingParameter(temperParam[replicateNum]);
 
         // Do NOT run applyOSTOptions here, because that can mutate the OST to a Barostat.
         return orthogonalSpaceTempering;
@@ -292,7 +286,7 @@ public class OSTOptions {
                                                DynamicsOptions dynamics, LambdaParticleOptions lpo,
                                                BarostatOptions barostat, boolean histogramExists) {
 
-        applyOSTOptions(orthogonalSpaceTempering, histogramExists);
+        applyHistogramOptions(orthogonalSpaceTempering, histogramExists);
         if (!histogramExists) {
             orthogonalSpaceTempering.setThetaFrication(lpo.getLambdaFriction());
             orthogonalSpaceTempering.setThetaMass(lpo.getLambdaMass());
@@ -445,18 +439,33 @@ public class OSTOptions {
 
     /**
      * <p>
-     * applyOSTOptions.</p>
+     * applyHistogramOptions.</p>
      *
      * @param orthogonalSpaceTempering a {@link OrthogonalSpaceTempering} object.
      * @param histogramExists          a boolean.
      */
-    private void applyOSTOptions(OrthogonalSpaceTempering orthogonalSpaceTempering, boolean histogramExists) {
-        Histogram histogram = orthogonalSpaceTempering.getHistogram();
-        histogram.setTemperingParameter(temperParam[0]);
+    public void applyHistogramOptions(OrthogonalSpaceTempering orthogonalSpaceTempering, boolean histogramExists) {
+        applyHistogramOptions(orthogonalSpaceTempering, histogramExists, 0);
+    }
+
+    /**
+     * Applies histogram-related options to a histogram.
+     * @param orthogonalSpaceTempering OST containing the histogram.
+     * @param histogramExists          Whether the .his restart file exists.
+     * @param index                    Index of the histogram.
+     */
+    public void applyHistogramOptions(OrthogonalSpaceTempering orthogonalSpaceTempering, boolean histogramExists, int index) {
+        assert index >= 0;
+        Histogram histogram = orthogonalSpaceTempering.getHistogram(index);
         if (!histogramExists) {
             orthogonalSpaceTempering.setCountInterval(countFreq);
-            histogram.setBiasMagnitude(biasMag[0]);
+            histogram.setBiasMagnitude(biasMag[index]);
         }
+        histogram.setIndependentWalkers(independentWalkers);
+        histogram.setTemperingThreshold(temperThreshold[index]);
+        histogram.setTemperingParameter(temperParam[index]);
+        histogram.setBiasMagnitude(biasMag[index]);
+        histogram.checkRecursionKernelSize();
     }
 
     private void runDynamics(MolecularDynamics molDyn, long numSteps, DynamicsOptions dynamics,
