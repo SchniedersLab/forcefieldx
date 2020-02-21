@@ -219,7 +219,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
     }
 
-    private static MinimizationEngine defaultEngine(MolecularAssembly molecularAssembly,
+    public static MinimizationEngine defaultEngine(MolecularAssembly molecularAssembly,
                                                     Potential potentialEnergy) {
         CompositeConfiguration properties = molecularAssembly.getProperties();
         String minimizeEngine = properties.getString("minimize-engine", null);

@@ -64,7 +64,7 @@ class MultiResidue extends Script {
      * <br>
      * ffxc test.MultiResidue [options] &lt;filename&gt;
      */
-    public class Options {
+    class Options {
         /**
          * -h or --help to print a help message.
          */
@@ -99,12 +99,12 @@ class MultiResidue extends Script {
     MultiResidue run() {
 
         // Create the command line parser.
-        def cli = new CliBuilder(usage: ' ffxc test.MultiResidue [options] <filename>', header: ' Options:');
+        def cli = new CliBuilder(usage: ' ffxc test.MultiResidue [options] <filename>', header: ' Options:')
         def options = new Options()
         cli.parseFromInstance(options, args)
         if (options.help) {
             cli.usage()
-            return this
+            return null
         }
 
         List<String> arguments = options.filenames
@@ -118,7 +118,7 @@ class MultiResidue extends Script {
             modelFilename = active.getFile()
         }
 
-        logger.info("\n Running MultiResidue on " + modelFilename + "\n");
+        logger.info("\n Running MultiResidue on " + modelFilename + "\n")
 
         // This is an interface specifying the closure-like methods.
         PotentialsFunctions functions
@@ -132,42 +132,42 @@ class MultiResidue extends Script {
             functions = new PotentialsUtils()
         }
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        ffx.potential.MolecularAssembly[] assemblies = functions.open(modelFilename)
-        ForceField forceField = assemblies[0].getForceField();
-        ffx.potential.ForceFieldEnergy forceFieldEnergy = assemblies[0].getPotentialEnergy();
+        ffx.potential.MolecularAssembly[] assemblies = [functions.open(modelFilename)]
+        ForceField forceField = assemblies[0].getForceField()
+        ffx.potential.ForceFieldEnergy forceFieldEnergy = assemblies[0].getPotentialEnergy()
 
         int resID = options.resID
         Character chain = options.chain
         String name = options.name
 
-        ffx.potential.bonded.MultiResidue multiResidue;
-        Residue residue;
-        Polymer[] polymers = assemblies[0].getChains();
+        ffx.potential.bonded.MultiResidue multiResidue
+        Residue residue
+        Polymer[] polymers = assemblies[0].getChains()
         for (int i = 0; i < polymers.length; i++) {
-            Polymer polymer = polymers[i];
-            if (chain.equals(polymer.getChainID())) {
-                residue = polymer.getResidue(resID);
+            Polymer polymer = polymers[i]
+            if (chain == polymer.getChainID()) {
+                residue = polymer.getResidue(resID)
                 if (residue != null) {
-                    multiResidue = new ffx.potential.bonded.MultiResidue(residue, forceField, forceFieldEnergy);
-                    polymer.addMultiResidue(multiResidue);
+                    multiResidue = new ffx.potential.bonded.MultiResidue(residue, forceField, forceFieldEnergy)
+                    polymer.addMultiResidue(multiResidue)
                 }
             }
         }
 
         if (residue == null) {
-            logger.info(" Chain " + chain + " residue " + resID + " was not found.");
-            return;
+            logger.info(" Chain " + chain + " residue " + resID + " was not found.")
+            return
         }
 
-        ResidueType type = residue.getResidueType();
-        int resNumber = residue.getResidueNumber();
-        multiResidue.addResidue(new Residue(name, resNumber, type));
+        ResidueType type = residue.getResidueType()
+        int resNumber = residue.getResidueNumber()
+        multiResidue.addResidue(new Residue(name, resNumber, type))
 
-        int numResidues = multiResidue.getResidueCount();
+        int numResidues = multiResidue.getResidueCount()
         for (int i = 0; i < numResidues; i++) {
-            multiResidue.setActiveResidue(i);
-            logger.info(" Active Residue: " + multiResidue.toString());
-            forceFieldEnergy.energy(true, true);
+            multiResidue.setActiveResidue(i)
+            logger.info(" Active Residue: " + multiResidue.toString())
+            forceFieldEnergy.energy(true, true)
         }
 
         return this

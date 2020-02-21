@@ -44,7 +44,6 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
-import ffx.potential.cli.WriteoutOptions
 import ffx.algorithms.dynamics.Barostat
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.ReplicaExchange
@@ -52,6 +51,8 @@ import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
+import ffx.potential.cli.WriteoutOptions
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
@@ -68,20 +69,20 @@ import picocli.CommandLine.Parameters
 class Dynamics extends AlgorithmsScript {
 
     @Mixin
-    DynamicsOptions dynamics;
+    DynamicsOptions dynamics
 
     @Mixin
-    BarostatOptions barostatOpt;
+    BarostatOptions barostatOpt
 
     @Mixin
-    WriteoutOptions writeout;
+    WriteoutOptions writeOut
 
     /**
      * -r or --repEx to execute temperature replica exchange.
      */
     @Option(names = ['-x', '--repEx'], paramLabel = 'false',
             description = 'Execute temperature replica exchange')
-    boolean repEx = false;
+    boolean repEx = false
 
     /**
      * One or more filenames.
@@ -114,23 +115,23 @@ class Dynamics extends AlgorithmsScript {
 
         dynamics.init()
 
-        String modelfilename
+        String modelFilename
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
+            modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
             return this
         } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath()
+            modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
 
-        File structureFile = new File(FilenameUtils.normalize(modelfilename))
+        File structureFile = new File(FilenameUtils.normalize(modelFilename))
         structureFile = new File(structureFile.getAbsolutePath())
         String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
 
-        potential = activeAssembly.getPotentialEnergy();
+        potential = activeAssembly.getPotentialEnergy()
         boolean updatesDisabled = activeAssembly.getForceField().getBoolean("DISABLE_NEIGHBOR_UPDATES", false)
         if (updatesDisabled) {
             logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart")
@@ -154,20 +155,20 @@ class Dynamics extends AlgorithmsScript {
         int size = world.size()
 
         if (!repEx || size < 2) {
-            logger.info("\n Running molecular dynamics on " + modelfilename)
+            logger.info("\n Running molecular dynamics on " + modelFilename)
             // Restart File
-            File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn")
+            File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
             if (!dyn.exists()) {
                 dyn = null
             }
 
-            molDyn = dynamics.getDynamics(writeout, potential, activeAssembly, algorithmListener)
+            molDyn = dynamics.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
 
             molDyn.dynamic(dynamics.steps, dynamics.dt,
                     dynamics.report, dynamics.write, dynamics.temp, true, dyn)
 
         } else {
-            logger.info("\n Running replica exchange molecular dynamics on " + modelfilename)
+            logger.info("\n Running replica exchange molecular dynamics on " + modelFilename)
             int rank = world.rank()
             File rankDirectory = new File(structureFile.getParent() + File.separator
                     + Integer.toString(rank))
@@ -180,12 +181,12 @@ class Dynamics extends AlgorithmsScript {
                 dyn = null
             }
 
-            molDyn = dynamics.getDynamics(writeout, potential, activeAssembly, algorithmListener)
+            molDyn = dynamics.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
             ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener, dynamics.temp)
 
-            int totalSteps = dynamics.steps
+            long totalSteps = dynamics.steps
             int nSteps = 100
-            int cycles = totalSteps / nSteps
+            int cycles = (int) (totalSteps / nSteps)
             if (cycles <= 0) {
                 cycles = 1
             }
@@ -198,6 +199,13 @@ class Dynamics extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
-        return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
+        List<Potential> potentials
+        if (potential == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(potential)
+        }
+        return potentials
     }
+
 }

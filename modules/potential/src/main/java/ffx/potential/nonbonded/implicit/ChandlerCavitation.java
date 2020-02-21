@@ -159,6 +159,10 @@ public class ChandlerCavitation {
         return gaussVol;
     }
 
+    public ConnollyRegion getConnollyRegion() {
+        return getConnollyRegion();
+    }
+
     /**
      * Compute molecular volume and surface area.
      *

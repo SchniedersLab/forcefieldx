@@ -43,6 +43,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import static java.lang.String.format;
 
 /**
@@ -92,4 +95,16 @@ public class FileUtils {
         return tmpFile.toString();
     }
 
+    /**
+     * Constructs a relative path from the present working directory to a file.
+     *
+     * @param fi Construct a relative path to File fi.
+     * @return   Relative path to fi.
+     */
+    public static Path relativePathTo(File fi) {
+        File pwd = new File(".");
+        Path pwdPath = Paths.get(pwd.getAbsolutePath());
+        Path otherPath = Paths.get(fi.getAbsolutePath());
+        return pwdPath.relativize(otherPath);
+    }
 }

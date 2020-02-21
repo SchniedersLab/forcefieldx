@@ -43,8 +43,10 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Residue.ResidueType
 import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.bonded.RotamerLibrary.NucleicSugarPucker
 import ffx.potential.cli.PotentialScript
 
 import picocli.CommandLine.Command
@@ -131,22 +133,22 @@ class SaveRotamers extends PotentialScript {
     SaveRotamers run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
         String modelFilename
         if (filenames != null && filenames.size() > 0) {
             modelFilename = filenames.get(0)
-            MolecularAssembly[] assemblies = potentialFunctions.open(modelFilename)
+            MolecularAssembly[] assemblies = [potentialFunctions.open(modelFilename)]
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         } else {
             modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
 
-        RotamerLibrary rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), true);
+        RotamerLibrary rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), true)
         String chain = Character.toString(c)
 
         boolean saveAllRotamers = false
@@ -159,7 +161,7 @@ class SaveRotamers extends PotentialScript {
 
         logger.info("\n Saving rotamers for residue number " + resID + " of chain " + chain + ".")
 
-        RotamerLibrary.initializeDefaultAtomicCoordinates(activeAssembly.getChains());
+        RotamerLibrary.initializeDefaultAtomicCoordinates(activeAssembly.getChains())
         Polymer polymer = activeAssembly.getChain(chain)
         if (polymer == null) {
             logger.info(" Polymer + " + chain + " does not exist.")
@@ -178,14 +180,14 @@ class SaveRotamers extends PotentialScript {
         int nrotamers = rotamers.length
 
         boolean isDeoxy = false // Applies to prevResidue.
-        Residue prevResidue
+        Residue prevResidue = null
         // If upstreamPucker is specified true, ensure that it is valid to apply it
         // (residue is nucleic acid with an upstream partner), and set isDeoxy.
         // If it is invalid, set upstreamPucker false.
         if (upstreamPucker) {
             // Exception gets thrown if it's an amino acid, since "NA" is undefined.
             try {
-                if (residue.getResidueType() == NA) {
+                if (residue.getResidueType() == ResidueType.NA) {
                     prevResidue = (Residue) residue.getPreviousResidue()
                     // If no previous residue, set upstream pucker false.
                     // The method used will ensure prevResidue is a nucleic acid.
@@ -213,19 +215,15 @@ class SaveRotamers extends PotentialScript {
                 logger.info(" Specified start range is outside of rotamer range. No action taken.")
             } else {
                 for (int i = allStart; i < nrotamers; i++) {
-                    RotamerLibrary.applyRotamer(residue, rotamers[i], independent);
+                    RotamerLibrary.applyRotamer(residue, rotamers[i], independent)
                     if (upstreamPucker) {
-                        double prevDelta = rotamers[i].chi1;
-                        if (RotamerLibrary.checkPucker(prevDelta) == 1) {
-                            // North pucker
-                            RotamerLibrary.applySugarPucker(prevResidue, 1, isDeoxy, true);
-                        } else {
-                            RotamerLibrary.applySugarPucker(prevResidue, 2, isDeoxy, true);
-                        }
+                        double prevDelta = rotamers[i].chi1
+                        NucleicSugarPucker sugarPucker = NucleicSugarPucker.checkPucker(prevDelta, isDeoxy)
+                        RotamerLibrary.applySugarPucker(prevResidue, sugarPucker, isDeoxy, true)
                     }
                     if (ext.toUpperCase().contains("XYZ")) {
                         logger.info(String.format("Saving rotamer %d", i))
-                        potentialFunctions.saveAsXYZ(activeAssembly, new File(modelFilename + ".xyz"));
+                        potentialFunctions.saveAsXYZ(activeAssembly, new File(modelFilename + ".xyz"))
                     } else {
                         logger.info(String.format("Saving rotamer %d", i))
                         potentialFunctions.saveAsPDB(activeAssembly, new File(modelFilename + ".pdb"))
@@ -246,16 +244,12 @@ class SaveRotamers extends PotentialScript {
                     RotamerLibrary.applyRotamer(residue, rotamers[i], independent)
                     if (upstreamPucker) {
                         double prevDelta = rotamers[i].chi1
-                        if (RotamerLibrary.checkPucker(prevDelta) == 1) {
-                            // North pucker
-                            RotamerLibrary.applySugarPucker(prevResidue, 1, isDeoxy, true)
-                        } else {
-                            RotamerLibrary.applySugarPucker(prevResidue, 2, isDeoxy, true)
-                        }
+                        NucleicSugarPucker sugarPucker = NucleicSugarPucker.checkPucker(prevDelta, isDeoxy)
+                        RotamerLibrary.applySugarPucker(prevResidue, sugarPucker, isDeoxy, true)
                     }
                     if (ext.toUpperCase().contains("XYZ")) {
                         logger.info(String.format("Saving rotamer %d", i))
-                        potentialFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"))
+                        potentialFunctions.saveAsXYZ(activeAssembly, new File(modelFilename + ".xyz"))
                     } else {
                         logger.info(String.format("Saving rotamer %d", i))
                         potentialFunctions.saveAsPDB(activeAssembly, new File(modelFilename + ".pdb"))

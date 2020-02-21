@@ -39,8 +39,6 @@ package ffx.potential.groovy
 
 import static java.lang.String.format
 
-import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
 import static org.apache.commons.math3.util.FastMath.pow
 
 import edu.rit.pj.ParallelTeam
@@ -48,7 +46,6 @@ import edu.rit.pj.ParallelTeam
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
-import ffx.potential.nonbonded.GeneralizedKirkwood
 import ffx.potential.nonbonded.implicit.ConnollyRegion
 import ffx.potential.nonbonded.implicit.GaussVol
 
@@ -152,33 +149,22 @@ class Volume extends PotentialScript {
     @Override
     Volume run() {
         if (!init()) {
-            return this
+            return null
         }
 
-        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.openAll(filenames.get(0))
+            MolecularAssembly[] assemblies = potentialFunctions.openAll(filenames.get(0))
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         }
 
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
         logger.info("\n Calculating volume and surface area for " + modelFilename)
 
-        File saveDir = baseDir
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-
         Atom[] atoms = activeAssembly.getAtomArray()
         int nAtoms = atoms.length
-
-        CompositeConfiguration properties = activeAssembly.getProperties()
-        double solventPressure = properties.getDouble("solvent-pressure", GeneralizedKirkwood.DEFAULT_SOLVENT_PRESSURE)
-        double surfaceTension = properties.getDouble("surface-tension", GeneralizedKirkwood.DEFAULT_CAVDISP_SURFACE_TENSION)
-        double crossOver = properties.getDouble("cross-over", GeneralizedKirkwood.DEFAULT_CROSSOVER)
 
         if (!connolly) {
             // Input
@@ -198,7 +184,7 @@ class Volume extends PotentialScript {
                 }
                 radii[index] = atom.getVDWType().radius / 2.0
                 if (sigma) {
-                    radii[index] *= rminToSigma;
+                    radii[index] *= rminToSigma
                 }
                 radii[index] += offset
                 volume[index] = fourThirdsPI * pow(radii[index], 3)
@@ -257,7 +243,7 @@ class Volume extends PotentialScript {
             for (Atom atom : atoms) {
                 radii[index] = atom.getVDWType().radius / 2.0
                 if (sigma) {
-                    radii[index] *= rminToSigma;
+                    radii[index] *= rminToSigma
                 }
                 boolean hydrogen = atom.isHydrogen()
                 if (!includeHydrogen && hydrogen) {
@@ -275,7 +261,7 @@ class Volume extends PotentialScript {
             connollyRegion.setProbe(probe)
             connollyRegion.runVolume()
 
-            if (vdW || (probe == 0.0 && exclude == 0.0)) {
+            if (vdW || (probe == 0.0 && exclude == new Double(0.0))) {
                 logger.info("\n Connolly van der Waals Surface Area and Volume\n")
             } else if (!molecular) {
                 logger.info("\n Connolly Solvent Accessible Surface Area and Solvent Excluded Volume\n")

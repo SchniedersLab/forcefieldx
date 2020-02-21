@@ -102,14 +102,14 @@ class CoordShakeEnergy extends PotentialScript {
     CoordShakeEnergy run() {
 
         if (!init()) {
-            return
+            return null
         }
 
         if (filenames != null && filenames.size() == 1) {
             activeAssembly = potentialFunctions.open(filenames.get(0))
         } else if (activeAssembly == null || filenames.size() != 1) {
             logger.info(helpString())
-            return
+            return null
         }
 
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
@@ -128,7 +128,7 @@ class CoordShakeEnergy extends PotentialScript {
         Potential thePotential = activeAssembly.getPotentialEnergy()
 
         if (lambdaTerm) {
-            ((LambdaInterface) thePotential).setLambda(initialLambda);
+            ((LambdaInterface) thePotential).setLambda(initialLambda)
         }
 
         def eFunct

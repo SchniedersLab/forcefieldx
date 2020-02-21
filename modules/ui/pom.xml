@@ -21,18 +21,19 @@
     </description>
     <build>
         <plugins>
-            <plugin>
+            <!-- plugin>
                 <groupId>com.oracle.substratevm</groupId>
                 <artifactId>native-image-maven-plugin</artifactId>
                 <version>19.2.1</version>
                 <configuration>
                     <skip>true</skip>
-                    <buildArgs>--report-unsupported-elements-at-runtime
-                        --initialize-at-build-time
-                        --initialize-at-run-time=groovy.grape.GrapeIvy
-                        --no-fallback
-                        --no-server
-                        --allow-incomplete-classpath
+                    <buildArgs>
+                        -report-unsupported-elements-at-runtime
+                        -initialize-at-build-time
+                        -initialize-at-run-time=groovy.grape.GrapeIvy
+                        -no-fallback
+                        -no-server
+                        -allow-incomplete-classpath
                         -H:ConfigurationFileDirectories=conf=../src/META-INF/native-image
                     </buildArgs>
                     <mainClass>ffx.Main</mainClass>
@@ -45,7 +46,7 @@
                         <phase>package</phase>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin -->
             <!-- Create a shaded jar with all FFX dependencies -->
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>

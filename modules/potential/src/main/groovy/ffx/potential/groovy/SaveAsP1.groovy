@@ -37,11 +37,12 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import ffx.potential.cli.SaveOptions
 import org.apache.commons.io.FilenameUtils
 
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
+import ffx.potential.cli.SaveOptions
+
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
@@ -78,7 +79,7 @@ class SaveAsP1 extends PotentialScript {
     @Override
     SaveAsP1 run() {
         if (!init()) {
-            return
+            return null
         }
 
         MolecularAssembly[] assemblies
@@ -87,7 +88,7 @@ class SaveAsP1 extends PotentialScript {
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         }
 
         String modelFilename = activeAssembly.getFile().getAbsolutePath()

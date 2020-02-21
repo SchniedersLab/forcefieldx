@@ -67,7 +67,7 @@ class Gradient extends PotentialScript {
     @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
-    private ForceFieldEnergy energy;
+    private ForceFieldEnergy energy
     public int nFailures = 0
 
     /**
@@ -77,7 +77,7 @@ class Gradient extends PotentialScript {
     Gradient run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
         String modelFilename
@@ -87,12 +87,12 @@ class Gradient extends PotentialScript {
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         } else {
             modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
 
-        logger.info("\n Testing the atomic coordinate gradient of " + modelFilename + "\n");
+        logger.info("\n Testing the atomic coordinate gradient of " + modelFilename + "\n")
 
         energy = activeAssembly.getPotentialEnergy()
         Atom[] atoms = activeAssembly.getAtomArray()
@@ -224,6 +224,13 @@ class Gradient extends PotentialScript {
 
     @Override
     List<Potential> getPotentials() {
-        return energy == null ? Collections.emptyList() : Collections.singletonList(energy);
+        List<Potential> potentials
+        if (energy == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(energy)
+        }
+        return potentials
     }
+
 }

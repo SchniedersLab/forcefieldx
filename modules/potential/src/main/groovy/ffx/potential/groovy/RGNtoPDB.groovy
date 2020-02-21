@@ -86,7 +86,12 @@ class RGNtoPDB extends PotentialScript {
     RGNtoPDB run() {
 
         if (!init()) {
-            return this
+            return null
+        }
+
+        if (filenames == null || filenames.size() < 2) {
+            logger.info(helpString())
+            return null
         }
 
         String rgnName = filenames.get(0)
@@ -122,7 +127,7 @@ class RGNtoPDB extends PotentialScript {
 
         if (remainder != 0) {
             logger.info(format(" RGN record %d atoms are not divisible by 3 (%d atoms left).", remainder))
-            return
+            return null
         }
 
         File saveDir = baseDir
@@ -139,7 +144,7 @@ class RGNtoPDB extends PotentialScript {
         FileWriter fw = new FileWriter(saveFile, false)
         BufferedWriter bw = new BufferedWriter(fw)
 
-        int atomNumber = 0;
+        int atomNumber = 0
         double[] xyz = new double[3]
         double occupancy = 1.0
         double bfactor = 1.0
@@ -150,7 +155,7 @@ class RGNtoPDB extends PotentialScript {
         for (int i = 6; i < 80; i++) {
             sb.append(' ')
         }
-        sb.setCharAt(21, chain);
+        sb.setCharAt(21, chain)
 
         for (int i = 0; i < nAmino; i++) {
             int resID = i + 1
@@ -186,7 +191,7 @@ class RGNtoPDB extends PotentialScript {
 
         bw.close()
 
-        MolecularAssembly[] assemblies = potentialFunctions.open(saveFile)
+        MolecularAssembly[] assemblies = [potentialFunctions.open(saveFile.getAbsolutePath())]
         activeAssembly = assemblies[0]
         PDBFilter pdbFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
         pdbFilter.writeFile(saveFile, false, false)
@@ -199,7 +204,7 @@ class RGNtoPDB extends PotentialScript {
      * @param res The one letter amino acid code.
      * @return The three letter amino acid code.
      */
-    private String convertToThreeLetter(String res) {
+    private static String convertToThreeLetter(String res) {
         ResidueEnumerations.AminoAcid3 aminoAcid3 = ResidueEnumerations.getAminoAcid3From1(res)
         return aminoAcid3.toString()
     }
@@ -225,7 +230,7 @@ class RGNtoPDB extends PotentialScript {
             name = name + " "
         }
 
-        sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
+        sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)))
         Character altLoc = atom.getAltLoc()
         if (altLoc != null) {
             sb.setCharAt(16, altLoc)
@@ -255,8 +260,7 @@ class RGNtoPDB extends PotentialScript {
                 String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3)
                 logger.info(format(" XYZ %d coordinate %8.3f for atom %s "
                         + "overflowed bounds of 8.3f string specified by PDB "
-                        + "format; truncating value to %s", i, xyz[i], atom.toString(),
-                        newValue))
+                        + "format; truncating value to %s", i, xyz[i], atom.toString(), newValue))
                 decimals.append(newValue)
             }
         }

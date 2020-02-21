@@ -81,6 +81,7 @@ import ffx.ui.MainPanel;
 import ffx.ui.OSXAdapter;
 import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
 
+import jdk.internal.module.IllegalAccessLogger;
 import sun.misc.Unsafe;
 
 /**
@@ -125,6 +126,8 @@ public final class Main extends JFrame {
      * Force Field X process ID.
      */
     private static int procID = -1;
+    /** Print version and exit */
+    private static boolean printVersionAndExit = false;
 
     /**
      * Main does some window initializations.
@@ -193,17 +196,14 @@ public final class Main extends JFrame {
      * This Runnable is used to init the GUI using SwingUtilities.
      */
     final private Runnable initGUI = new Runnable() {
-        /**
-         * Create the MainPanel and MainMenu, then add them to the JFrame.
-         */
+        // Create the MainPanel and MainMenu, then add them to the JFrame.
         public void run() {
 
             Toolkit.getDefaultToolkit().setDynamicLayout(true);
 
             // Set the Title and Icon
             Main.this.setTitle("Force Field X");
-            URL iconURL = getClass().getClassLoader().getResource(
-                    "ffx/ui/icons/icon64.png");
+            URL iconURL = getClass().getClassLoader().getResource("ffx/ui/icons/icon64.png");
             if (iconURL != null) {
                 ImageIcon icon = new ImageIcon(iconURL);
                 Main.this.setIconImage(icon.getImage());
@@ -249,6 +249,11 @@ public final class Main extends JFrame {
         List<String> newArgs = new ArrayList<>();
         for (String arg : args) {
             arg = arg.trim();
+
+            if (arg.equals("-V") || arg.equals("--version")) {
+                printVersionAndExit = true;
+            }
+
             if (arg.startsWith("-D")) {
                 // Remove -D from the front of String.
                 arg = arg.substring(2);
@@ -312,7 +317,7 @@ public final class Main extends JFrame {
             theUnsafe.setAccessible(true);
             Unsafe u = (Unsafe) theUnsafe.get(null);
 
-            Class cls = Class.forName("jdk.internal.module.IllegalAccessLogger");
+            Class<?> cls = Class.forName("jdk.internal.module.IllegalAccessLogger");
             Field logger = cls.getDeclaredField("logger");
             u.putObjectVolatile(cls, u.staticFieldOffset(logger), null);
         } catch (Exception e) {
@@ -329,6 +334,12 @@ public final class Main extends JFrame {
         sb.append(MainPanel.title).append("\n");
         sb.append(MainPanel.aboutString).append("\n");
         sb.append(MainPanel.border);
+
+        // Print the FFX version and exit.
+        if (printVersionAndExit && GraphicsEnvironment.isHeadless()) {
+            logger.info(sb.toString());
+            System.exit(0);
+        }
 
         sb.append("\n ").append(new Date());
         sb.append(format("\n Process ID %d on %s.", procID, hostName));

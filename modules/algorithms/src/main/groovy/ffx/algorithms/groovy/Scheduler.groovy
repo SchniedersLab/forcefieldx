@@ -80,11 +80,11 @@ class Scheduler extends AlgorithmsScript {
     int port = 20617
 
     /**
-     * -W or --webport to define the port the Server will serve a webpage to (generally not used).
+     * -W or --webPort to define the port the Server will serve a webpage to (generally not used).
      */
-    @Option(names = ['-W', '--webport'], paramLabel = '8080',
+    @Option(names = ['-W', '--webPort'], paramLabel = '8080',
             description = 'Set the port the server will serve a webpage to.')
-    int webport = 8080
+    int webPort = 8080
 
     /**
      * --ib or --infiniband Replace the "hpc" domain with the "ipoib" domain to use the Argon high-speed network.
@@ -111,7 +111,7 @@ class Scheduler extends AlgorithmsScript {
     Scheduler run() {
 
         if (!init()) {
-            return
+            return null
         }
 
         // Determine the number of CPUs per node
@@ -123,7 +123,7 @@ class Scheduler extends AlgorithmsScript {
         if (p > 0) {
             int n = p
             if (n < CPUs && CPUs % n == 0) {
-                processes = CPUs / n
+                processes = (int) (CPUs / n)
                 CPUs = n
             }
         }
@@ -154,7 +154,7 @@ class Scheduler extends AlgorithmsScript {
                 for (line in nodes) {
                     hostnames[i] = line.split(" +")[0]
                     if (ipoib) {
-                        hostnames[i] = hostnames[i].replace("hpc", "ipoib");
+                        hostnames[i] = hostnames[i].replace("hpc", "ipoib")
                     }
                     i++
                 }
@@ -171,20 +171,20 @@ class Scheduler extends AlgorithmsScript {
         while (!PortUtils.isTcpPortAvailable(port)) {
             logger.info(format(" Scheduler port %d is not available.", port))
             if (++port > PortUtils.MAX_TCP_PORT) {
-                logger.severe(" Reached port 65535 without finding an open scheduler port!");
+                logger.severe(" Reached port 65535 without finding an open scheduler port!")
             }
         }
         logger.info(format(" Scheduler port: %d.", port))
         String logFile = format("scheduler.%d.log", port)
 
         // Check the availability of the desired web port.
-        while (!PortUtils.isTcpPortAvailable(webport) || webport == port) {
-            logger.info(format(" Web port %d is not available.", webport))
-            if (++webport > PortUtils.MAX_TCP_PORT) {
-                logger.severe(" Reached port 65535 without finding an open web port!");
+        while (!PortUtils.isTcpPortAvailable(webPort) || webPort == port) {
+            logger.info(format(" Web port %d is not available.", webPort))
+            if (++webPort > PortUtils.MAX_TCP_PORT) {
+                logger.severe(" Reached port 65535 without finding an open web port!")
             }
         }
-        logger.info(format(" Web port: %d.", webport))
+        logger.info(format(" Web port: %d.", webPort))
 
         // Create the Parallel Java cluster configuration file.
         String frontend = hostnames[0]
@@ -193,7 +193,7 @@ class Scheduler extends AlgorithmsScript {
         sb.append("cluster Force Field X Cluster\n")
         sb.append(format("logfile %s\n", logFile))
         sb.append("webhost 127.0.0.1\n")
-        sb.append(format("webport %d\n", webport))
+        sb.append(format("webport %d\n", webPort))
         sb.append("schedulerhost localhost\n")
         sb.append(format("schedulerport %d\n", port))
         sb.append(format("frontendhost %s\n", frontend))

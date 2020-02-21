@@ -37,17 +37,17 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
+import java.util.logging.Level
+import static java.lang.String.format
+
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
+
 import picocli.CommandLine
-
-import java.util.logging.Level
-
-import static java.lang.String.format
 
 /**
  * The Energy script compares the energy of a system with OpenMM versus FFX platforms.
@@ -83,22 +83,17 @@ class EnergyOpenMM extends PotentialScript {
     private List<String> filenames = null
 
     @Override
-    List<Potential> getPotentials() {
-        return forceFieldEnergy == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergy)
-    }
-
-    @Override
     EnergyOpenMM run() {
         if (!init()) {
-            return this
+            return null
         }
 
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         }
 
         String filename = activeAssembly.getFile().getAbsolutePath()
@@ -106,7 +101,7 @@ class EnergyOpenMM extends PotentialScript {
 
         forceFieldEnergy = activeAssembly.getPotentialEnergy()
         if (!forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
-            logger.severe(" test.EnergyOpenMM requires use of an OpenMM platform!");
+            logger.severe(" test.EnergyOpenMM requires use of an OpenMM platform!")
         }
         Atom[] atoms = activeAssembly.getAtomArray()
 
@@ -131,28 +126,40 @@ class EnergyOpenMM extends PotentialScript {
         double[] x = new double[nVars]
         forceFieldEnergy.getCoordinates(x)
 
-        double[] gFFX = new double[nVars];
-        double[] gOMM = new double[nVars];
+        double[] gFFX = new double[nVars]
+        double[] gOMM = new double[nVars]
 
-        ForceFieldEnergyOpenMM feOMM = (ForceFieldEnergyOpenMM) forceFieldEnergy;
-        double dE = feOMM.energyAndGradientVsFFX(x, gOMM, gFFX, true);
-        logger.info(format(" Difference in energy: %14.8g kcal/mol", dE));
-        int nActAts = nVars / 3;
+        ForceFieldEnergyOpenMM feOMM = (ForceFieldEnergyOpenMM) forceFieldEnergy
+        double dE = feOMM.energyAndGradientVsFFX(x, gOMM, gFFX, true)
+        logger.info(format(" Difference in energy: %14.8g kcal/mol", dE))
+        int nActAts = (int) (nVars / 3)
 
         for (int i = 0; i < nActAts; i++) {
-            double[] dG = new double[3];
-            int i3 = 3*i;
-            double rmse = 0;
+            double[] dG = new double[3]
+            int i3 = 3 * i
+            double rmse = 0
             for (int j = 0; j < 3; j++) {
-                dG[j] = gFFX[i3+j] - gOMM[i3+j];
-                rmse += (dG[j] * dG[j]);
+                dG[j] = gFFX[i3 + j] - gOMM[i3 + j]
+                rmse += (dG[j] * dG[j])
             }
-            rmse /= 3;
-            rmse = Math.sqrt(rmse);
-            Level toPrint = (rmse > 1E-8) ? Level.INFO : Level.FINE;
-            logger.log(toPrint, format(" Active atom %d dG RMSE: %14.8g kcal/mol/A", i, rmse));
+            rmse /= 3
+            rmse = Math.sqrt(rmse)
+            Level toPrint = (rmse > 1E-8) ? Level.INFO : Level.FINE
+            logger.log(toPrint, format(" Active atom %d dG RMSE: %14.8g kcal/mol/A", i, rmse))
         }
 
-        return this;
+        return this
     }
+
+    @Override
+    List<Potential> getPotentials() {
+        List<Potential> potentials
+        if (forceFieldEnergy == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(forceFieldEnergy)
+        }
+        return potentials
+    }
+
 }
