@@ -86,7 +86,7 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.cli.PotentialScript;
 import ffx.potential.utils.PotentialsFunctions;
 
-import groovy.ui.Console;
+import groovy.console.ui.Console;
 
 /**
  * The ModelingShell is used to script Multiscale Modeling Routines via the
