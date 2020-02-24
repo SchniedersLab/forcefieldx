@@ -59,7 +59,6 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-
 /**
  * The Energy script evaluates the energy of a system.
  * <br>
@@ -112,7 +111,6 @@ class Energy extends PotentialScript {
     @Parameters(arity = "1", paramLabel = "files",
             description = 'The atomic coordinate file in PDB or XYZ format.')
     private List<String> filenames = null
-
 
     public double energy = 0.0
     public ForceFieldEnergy forceFieldEnergy = null
