@@ -43,6 +43,7 @@ import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.pow;
 
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
@@ -63,7 +64,7 @@ public class COMRestraint implements LambdaInterface {
     private final int nAtoms;
     private final Polymer[] polymers;
     private final List<MSNode> molecules;
-    private final List<MSNode> waters;
+    private final List<MSNode> water;
     private final List<MSNode> ions;
     private final int nMolecules;
     /**
@@ -89,21 +90,16 @@ public class COMRestraint implements LambdaInterface {
      * This COMRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param atoms      the Atom array to construct the restraint from.
-     * @param polymers   the system Polymer array.
-     * @param molecules  the system Molecule array.
-     * @param waters     the system Water List.
-     * @param ions       the system Ion List.
-     * @param forceField the ForceField to apply.
+     * @param molecularAssembly The MolecularAssembly to operate on.
      */
-    public COMRestraint(Atom[] atoms, Polymer[] polymers, List<MSNode> molecules,
-                        List<MSNode> waters, List<MSNode> ions, ForceField forceField) {
-        this.atoms = atoms;
+    public COMRestraint(MolecularAssembly molecularAssembly) {
+        this.atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
-        this.polymers = polymers;
-        this.molecules = molecules;
-        this.waters = waters;
-        this.ions = ions;
+        this.polymers = molecularAssembly.getChains();
+        this.molecules = molecularAssembly.getMolecules();
+        this.water = molecularAssembly.getWaters();
+        this.ions = molecularAssembly.getIons();
+        ForceField forceField = molecularAssembly.getForceField();
 
         nMolecules = countMolecules();
         initialCOM = new double[3][nMolecules];
@@ -224,7 +220,7 @@ public class COMRestraint implements LambdaInterface {
             }
 
             // Loop over each water
-            for (MSNode water : waters) {
+            for (MSNode water : water) {
                 List<Atom> list = water.getAtomList();
                 // Find the center of mass
                 com[0][i] = 0.0;
@@ -303,7 +299,7 @@ public class COMRestraint implements LambdaInterface {
             }
 
             // Loop over each water
-            for (MSNode water : waters) {
+            for (MSNode water : water) {
                 List<Atom> list = water.getAtomList();
                 double totalMass = 0.0;
                 for (Atom atom : list) {
@@ -348,8 +344,8 @@ public class COMRestraint implements LambdaInterface {
         if (molecules != null) {
             count += molecules.size();
         }
-        if (waters != null) {
-            count += waters.size();
+        if (water != null) {
+            count += water.size();
         }
         if (ions != null) {
             count += ions.size();

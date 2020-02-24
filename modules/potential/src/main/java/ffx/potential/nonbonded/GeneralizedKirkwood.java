@@ -363,7 +363,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private double lambda = 1.0;
     /**
-     * lPow equals lambda^polarizationLambdaExponent, where polarizationLambdaExponent also used by PME.
+     * lPow equals lambda^polarizationLambdaExponent, where polarizationLambdaExponent is also used by PME.
      */
     private double lPow = 1.0;
     /**
@@ -495,7 +495,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
         cut2 = cutoff * cutoff;
         lambdaTerm = forceField.getBoolean("GK_LAMBDATERM",
                 forceField.getBoolean("LAMBDATERM", false));
-
 
         /*
           If polarization lambda exponent is set to 0.0, then we're running
