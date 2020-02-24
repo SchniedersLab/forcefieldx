@@ -202,15 +202,12 @@ public class UniformBSpline {
      */
     private static void bSplineRecursion(final double x, final int order,
                                          final double[] coefficients, final double[] newCoefficients) {
-
         // The logging statement below prevents a bug in the GraalVM JIT that perhaps
         // is involved with in-lining or un-rolling this method.
-
         final double div = 1.0 / (double) order;
         final double k1mw = order + (1.0 - x);
         final int km1 = order - 1;
         newCoefficients[order] = div * x * coefficients[km1];
-
         for (int i = 1; i < order; i++) {
             final int kmi = order - i;
             final int km1i = km1 - i;
@@ -222,7 +219,6 @@ public class UniformBSpline {
                         div, x1, coefficients[km1i], k1mwi, coefficients[kmi]));
             }
         }
-
         double oneX = 1.0 - x;
         newCoefficients[0] = div * oneX * coefficients[0];
     }

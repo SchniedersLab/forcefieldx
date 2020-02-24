@@ -220,11 +220,9 @@ public class ReciprocalSpace {
     private SpatialDensityRegion spatialDensityRegion;
     private final SpatialPermanentLoop[] spatialPermanentLoops;
     private final SpatialInducedLoop[] spatialInducedLoops;
-
     private SliceRegion sliceRegion;
     private final SlicePermanentLoop[] slicePermanentLoops;
     private final SliceInducedLoop[] sliceInducedLoops;
-
     private RowRegion rowRegion;
     private final RowPermanentLoop[] rowPermanentLoops;
     private final RowInducedLoop[] rowInducedLoops;
