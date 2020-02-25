@@ -189,7 +189,7 @@ public class ForceField {
         bioTypes = new TreeMap<>(new BioType(0, null, null, 0, null));
         bondTypes = new TreeMap<>(new BondType(new int[2], 0, 0, null));
         chargeTypes = new TreeMap<>(new ChargeType(0, 0));
-        soluteTypes = new TreeMap<>(new SoluteType(0, "", 0.0));
+        soluteTypes = new TreeMap<>(new SoluteType(0, 0.0, 0.0));
         multipoleTypes = new TreeMap<>(new MultipoleType(new double[10], null, null, false));
         outOfPlaneBendTypes = new TreeMap<>(new OutOfPlaneBendType(new int[4], 0));
         piTorsionTypes = new TreeMap<>(new PiTorsionType(new int[2], 0));
@@ -823,7 +823,7 @@ public class ForceField {
     public SoluteType getSoluteType(String key) {
         return soluteTypes.get(key);
     }
-    
+
     public Map<String, SoluteType> getSoluteTypes() {
         return soluteTypes;
     }
@@ -1070,6 +1070,7 @@ public class ForceField {
 
     /**
      * The AngleFunction in use by this ForceField.
+     *
      * @param angleFunction The AngleFunction to use.
      */
     public void setAngleFunction(AngleType.AngleFunction angleFunction) {
@@ -1083,6 +1084,7 @@ public class ForceField {
 
     /**
      * The BondFunction in use by this ForceField.
+     *
      * @param bondFunction The BondFunction to use.
      */
     public void setBondFunction(BondType.BondFunction bondFunction) {
