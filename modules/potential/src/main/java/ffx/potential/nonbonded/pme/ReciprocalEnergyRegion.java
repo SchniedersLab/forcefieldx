@@ -40,6 +40,8 @@ package ffx.potential.nonbonded.pme;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
@@ -325,11 +327,11 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
 
     @Override
     public void finish() {
-            /*
-              The permanent multipole self energy contributions are large
-              enough that rounding differences that result from threads
-              finishing in different orders removes deterministic behavior.
-             */
+        /*
+          The permanent multipole self energy contributions are large
+          enough that rounding differences that result from threads
+          finishing in different orders removes deterministic behavior.
+         */
         permanentSelfEnergy = 0.0;
         permanentReciprocalEnergy = 0.0;
         for (int i = 0; i < maxThreads; i++) {

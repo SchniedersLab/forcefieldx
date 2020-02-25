@@ -37,19 +37,22 @@
  */
 package ffx.numerics.func1d;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.testng.Assert;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.OptionalDouble;
+import static java.lang.String.format;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import static ffx.numerics.func1d.QuasiLinearThetaMap.Branch;
-import static ffx.numerics.func1d.QuasiLinearThetaMap.Branch.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static ffx.numerics.func1d.QuasiLinearThetaMap.Branch.A;
+import static ffx.numerics.func1d.QuasiLinearThetaMap.Branch.B;
+import static ffx.numerics.func1d.QuasiLinearThetaMap.Branch.C;
+import static ffx.numerics.func1d.QuasiLinearThetaMap.Branch.D;
 
 @RunWith(Parameterized.class)
 public class QuasiLinearSwitchTest {
@@ -185,13 +188,13 @@ public class QuasiLinearSwitchTest {
         primaryBranch = primary;
         secondaryBranch = secondary;
         nVals = eVals.length;
-        assertTrue(nVals == primary.length && nVals == secondary.length, "Inequal number of arguments for expected vals & branches!");
+        assertTrue("Inequal number of arguments for expected vals & branches!", nVals == primary.length && nVals == secondary.length);
     }
 
     @Test
     public void testPoints() {
         for (int i = 0; i < 4; i++) {
-            assertEquals(mapF.getConstants()[i], expectedConsts[i], TOL, "Incorrect constant " + i + ": ");
+            assertEquals("Incorrect constant " + i + ": ", mapF.getConstants()[i], expectedConsts[i], TOL);
         }
         for (int i = 0; i < nVals; i++) {
             double[] exp = expecteds[i];
@@ -207,66 +210,52 @@ public class QuasiLinearSwitchTest {
 
     private void testMidPoint(double[] expect, Branch br) {
         double t = expect[0];
-        assertEquals(br, mapF.getBranch(t), "Incorrect branching!");
-
+        assertEquals("Incorrect branching!", br, mapF.getBranch(t));
         double eVal = expect[1];
         double val = mapF.valueAt(t);
-        // Commented lines are useful to debug a test.
-        //StringBuilder sb = new StringBuilder("" + val);
-        Assert.assertEquals(val, eVal, TOL, "A midpoint value was incorrect!");
+        assertEquals("A midpoint value was incorrect!", val, eVal, TOL);
         val = mapF.val(t, br);
-        Assert.assertEquals(val, eVal, TOL, "A midpoint value was incorrect when the branch was specified!");
+        assertEquals("A midpoint value was incorrect when the branch was specified!", val, eVal, TOL);
 
         eVal = expect[2];
         val = mapF.firstDerivative(t);
-        //sb.append(", ").append(val);
-        Assert.assertEquals(val, eVal, TOL, "A midpoint first derivative was incorrect!");
+        assertEquals("A midpoint first derivative was incorrect!", val, eVal, TOL);
         val = mapF.fd(t, br);
-        Assert.assertEquals(val, eVal, TOL, "A midpoint first derivative was incorrect when the branch was specified!");
+        assertEquals("A midpoint first derivative was incorrect when the branch was specified!", val, eVal, TOL);
 
         eVal = expect[3];
         val = mapF.secondDerivative(t);
-        //sb.append(", ").append(val);
-        Assert.assertEquals(val, eVal, TOL, "A midpoint second derivative was incorrect!");
+        assertEquals("A midpoint second derivative was incorrect!", val, eVal, TOL);
         val = mapF.sd(t, br);
-        Assert.assertEquals(val, eVal, TOL, "A midpoint second derivative was incorrect when the branch was specified!");
-
-        //logger.info(sb.toString());
+        assertEquals("A midpoint second derivative was incorrect when the branch was specified!", val, eVal, TOL);
     }
 
     private void testJoint(double[] expect, Branch prim, Branch second) {
         double t = expect[0];
         Branch received = mapF.getBranch(t);
         boolean rightBranch = (prim == received) || (second == received);
-        Assert.assertTrue(rightBranch, String.format(" Did not find any expected branch! Found: %s. " +
-                "Primary expected: %s. Secondary expected: %s", received, prim, second));
+        assertTrue(format(" Did not find any expected branch! Found: %s. " +
+                "Primary expected: %s. Secondary expected: %s", received, prim, second), rightBranch);
 
         double eVal = expect[1];
         double val = mapF.valueAt(t);
-        // Commented lines are useful to debug a test.
-        //StringBuilder sb = new StringBuilder("" + val);
-        Assert.assertEquals(val, eVal, TOL, "A joint value was incorrect!");
+        assertEquals("A joint value was incorrect!", val, eVal, TOL);
         val = mapF.val(t, prim);
-        Assert.assertEquals(val, eVal, TOL, "A joint value was incorrect when the branch was specified!");
+        assertEquals("A joint value was incorrect when the branch was specified!", val, eVal, TOL);
         val = mapF.val(t, second);
-        Assert.assertEquals(val, eVal, TOL, "A joint value was incorrect for the alternate branch!");
+        assertEquals("A joint value was incorrect for the alternate branch!", val, eVal, TOL);
 
         eVal = expect[2];
         val = mapF.firstDerivative(t);
-        //sb.append(", ").append(val);
-        Assert.assertEquals(val, eVal, TOL, "A joint first derivative was incorrect!");
+        assertEquals("A joint first derivative was incorrect!", val, eVal, TOL);
         val = mapF.fd(t, prim);
-        Assert.assertEquals(val, eVal, TOL, "A joint first derivative was incorrect when the branch was specified!");
+        assertEquals("A joint first derivative was incorrect when the branch was specified!", val, eVal, TOL);
         val = mapF.fd(t, second);
-        Assert.assertEquals(val, eVal, TOL, "A joint first derivative was incorrect for the alternate branch!");
+        assertEquals("A joint first derivative was incorrect for the alternate branch!", val, eVal, TOL);
 
         eVal = expect[3];
         val = mapF.sd(t, prim);
-        //sb.append(", ").append(val);
-        Assert.assertEquals(val, eVal, TOL, "A joint second derivative was incorrect!");
-        // Second derivatives are not required to be continuous!
-
-        //logger.info(sb.toString());
+        assertEquals("A joint second derivative was incorrect!", val, eVal, TOL);
     }
 
     @Override

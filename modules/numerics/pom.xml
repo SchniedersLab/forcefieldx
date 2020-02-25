@@ -85,24 +85,19 @@
             <groupId>org.jcuda</groupId>
             <artifactId>jcuda</artifactId>
             <version>${jcuda.version}</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.jcuda</groupId>
             <artifactId>jcufft</artifactId>
             <version>${jcuda.version}</version>
-        </dependency>
-
-        <!-- dependency>
-            <groupId>jcuda</groupId>
-            <artifactId>jcuda-all</artifactId>
             <type>jar</type>
-            <version>${jcuda.version}</version>
-        </dependency -->
-
+        </dependency>
         <dependency>
             <groupId>org.jogamp</groupId>
             <artifactId>jogamp-fat</artifactId>
             <version>${jogamp-fat.version}</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

@@ -86,7 +86,7 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
+            <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
             <type>jar</type>
             <version>${commons-beanutils.version}</version>

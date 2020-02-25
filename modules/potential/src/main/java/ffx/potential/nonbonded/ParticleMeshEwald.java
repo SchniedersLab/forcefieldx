@@ -144,26 +144,20 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
     protected int[][] ip13;
 
     /**
-     * Total electrostatic energy == permanentMultipole + polarizationEnergy +
-     * generalizedKirkwood.
-     */
-    protected double totalElectrostaticEnergy;
-    /**
-     * Total multipole energy == permanentMultipole + polarizationEnergy (no
-     * GK).
+     * Total multipole energy = permanentMultipoleEnergy + polarizationEnergy.
+     * <br>
+     * This does not include GK.
      */
     protected double totalMultipoleEnergy;
     /**
-     * Permanent multipole energy in kcal/mol == permanentRealSpace +
-     * permanentSelf + permanentReciprocal.
+     * Permanent multipole energy = permanentRealSpaceEnergy + permanentSelfEnergy + permanentReciprocalEnergy.
      */
     protected double permanentMultipoleEnergy;
     protected double permanentRealSpaceEnergy;
     protected double permanentSelfEnergy;
     protected double permanentReciprocalEnergy;
     /**
-     * Polarization energy in kcal/mol == inducedRealSpace + inducedSelf +
-     * inducedReciprocal.
+     * Polarization energy = inducedRealSpaceEnergy + inducedSelfEnergy + inducedReciprocalEnergy.
      */
     protected double polarizationEnergy;
     protected double inducedRealSpaceEnergy;
@@ -218,7 +212,6 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      */
     public double[][] vacuumDirectDipole;
     public double[][] vacuumDirectDipoleCR;
-
 
     /**
      * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py

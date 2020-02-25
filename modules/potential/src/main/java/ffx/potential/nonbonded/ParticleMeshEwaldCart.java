@@ -731,14 +731,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         if (count > 0 && logger.isLoggable(Level.FINE)) {
             logger.fine(format(" Softcore atom count: %d", count));
-            /**
-             int[] allSoftcore = IntStream.range(0, nAtoms).filter(i -> isSoft[i]).toArray();
-             List<int[]> softcoreRanges = StringUtils.consecutiveInts(allSoftcore);
-             for (int[] range : softcoreRanges) {
-             int min = range[0];
-             int max = range[1];
-             logger.info(format(" Softcore range %d (%s) to %d (%s)", min + 1, atoms[min], max + 1, atoms[max]));
-             } */
             logger.fine(sb.toString());
         }
 

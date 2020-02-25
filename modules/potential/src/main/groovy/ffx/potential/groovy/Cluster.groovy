@@ -48,9 +48,6 @@ import java.util.logging.Level
 
 import com.apporiented.algorithm.clustering.ClusteringAlgorithm
 import com.apporiented.algorithm.clustering.CompleteLinkageStrategy
-
-// import com.apporiented.algorithm.clustering.Cluster
-
 import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm
 import com.apporiented.algorithm.clustering.visualization.DendrogramPanel
 
@@ -62,6 +59,7 @@ import static org.apache.commons.math3.util.FastMath.pow
 import static org.apache.commons.math3.util.FastMath.sqrt
 
 import ffx.potential.cli.PotentialScript
+import ffx.potential.groovy.Superpose
 import ffx.potential.parsers.SystemFilter
 
 import picocli.CommandLine.Command
@@ -529,53 +527,55 @@ class Cluster extends PotentialScript {
 
         return distMatrix
     }
+
+    class ClusterWrapper implements Clusterable {
+        private double[] point
+        private final int UUID
+
+        ClusterWrapper(double[] distances, int ID) {
+            this.point = distances
+            UUID = ID
+        }
+
+        double[] getPoint() {
+            return point
+        }
+
+        int getUUID() {
+            return UUID
+        }
+
+        /* Min-Max normalization of distances (not important if all inputs are on the same scale)
+              double minimumDist=0;
+              double maximumDist=0;
+              for (double[] distArray in distMatrix){
+                  for (double dist in distArray){
+                      if( minimumDist>dist){
+                          minimumDist = dist;
+                      }
+                      if(maximumDist<dist){
+                          maximumDist = dist;
+                      }
+                  }
+              }
+              for(int i = 0; i<distMatrix.size(); i++) {
+                  for (int j = 0; j < distMatrix.get(i).size(); j++) {
+                      distMatrix.get(i)[j] = (distMatrix.get(i)[j] - minimumDist) / (maximumDist - minimumDist);
+                  }
+              }
+
+              if (logger.isLoggable(Level.FINEST)) {
+                  logger.finest(String.format("\nNormalized Matrix:\n"));
+                  String tempString2 = "";
+                  for (double[] i : distMatrix) {
+                      for (int j = 0; j < nDim; j++) {
+                          tempString2 += String.format("%f\t", i[j]);
+                      }
+                      tempString2 += "\n";
+                  }
+                  logger.finest(tempString2);
+              } */
+    }
 }
 
-class ClusterWrapper implements Clusterable {
-    private double[] point
-    private final int UUID
 
-    ClusterWrapper(double[] distances, int ID) {
-        this.point = distances
-        UUID = ID
-    }
-
-    double[] getPoint() {
-        return point
-    }
-
-    int getUUID() {
-        return UUID
-    }
-
-    /* Min-Max normalization of distances (not important if all inputs are on the same scale)
-          double minimumDist=0;
-          double maximumDist=0;
-          for (double[] distArray in distMatrix){
-              for (double dist in distArray){
-                  if( minimumDist>dist){
-                      minimumDist = dist;
-                  }
-                  if(maximumDist<dist){
-                      maximumDist = dist;
-                  }
-              }
-          }
-          for(int i = 0; i<distMatrix.size(); i++) {
-              for (int j = 0; j < distMatrix.get(i).size(); j++) {
-                  distMatrix.get(i)[j] = (distMatrix.get(i)[j] - minimumDist) / (maximumDist - minimumDist);
-              }
-          }
-
-          if (logger.isLoggable(Level.FINEST)) {
-              logger.finest(String.format("\nNormalized Matrix:\n"));
-              String tempString2 = "";
-              for (double[] i : distMatrix) {
-                  for (int j = 0; j < nDim; j++) {
-                      tempString2 += String.format("%f\t", i[j]);
-                  }
-                  tempString2 += "\n";
-              }
-              logger.finest(tempString2);
-          } */
-}

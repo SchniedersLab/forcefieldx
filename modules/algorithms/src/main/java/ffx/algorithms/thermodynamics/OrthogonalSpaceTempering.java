@@ -1537,9 +1537,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
              communication between nodes.
             */
             world = Comm.world();
-            /**
-             * Number of processes.
-             */
             int numProc = world.size();
             rank = world.rank();
             if (asynchronous) {
@@ -1563,7 +1560,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             // Attempt to load a restart file if one exists.
             readRestart();
             hisFileName = FileUtils.relativePathTo(histogramFile).toString();
-            lambdaFileName = FileUtils.relativePathTo(lambdaFile).toString();
+            if (lambdaFile != null) {
+                lambdaFileName = FileUtils.relativePathTo(lambdaFile).toString();
+            } else {
+                lambdaFileName = FilenameUtils.removeExtension(hisFileName) + ".lam";
+            }
         }
 
         public String toString() {

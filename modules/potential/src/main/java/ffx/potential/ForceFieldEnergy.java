@@ -56,8 +56,6 @@ import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
 
-import ffx.potential.utils.ConvexHullOps;
-import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -94,7 +92,6 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.OutOfPlaneBend;
 import ffx.potential.bonded.PiOrbitalTorsion;
-import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.RelativeSolvation;
 import ffx.potential.bonded.RelativeSolvation.SolvationLibrary;
 import ffx.potential.bonded.Residue;
@@ -115,12 +112,15 @@ import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
+import ffx.potential.nonbonded.RestrainGroups;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.utils.ConvexHullOps;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
+import ffx.utilities.Constants;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
 /**
@@ -237,6 +237,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     private final COMRestraint comRestraint;
     /**
+     * Restrain groups
+     **/
+    private final RestrainGroups restrainGroups;
+    /**
      * Non-Bonded van der Waals energy.
      */
     private final VanDerWaals vanderWaals;
@@ -296,6 +300,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * Number of Restraint Bond terms in the system.
      */
     private int nRestraintBonds = 0;
+    /**
+     * Number of Restraint Bond terms in the system.
+     */
+    private int nRestrainGroups = 0;
     /**
      * Number of van der Waals interactions evaluated.
      */
@@ -453,6 +461,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     private boolean restrainTermOrig;
     /**
+     * Evaluate Restrain Group energy term.
+     */
+    private boolean restrainGroupTerm;
+    /**
+     * Original state of the Restrain Group energy term flag.
+     */
+    private boolean restrainGroupTermOrig;
+    /**
      * Evaluate COM energy term.
      */
     private boolean comTerm;
@@ -569,6 +585,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     private double comRestraintEnergy;
     /**
+     * The total COM Restraint Energy.
+     */
+    private double restrainGroupEnergy;
+    /**
      * The total system energy.
      */
     private double totalEnergy;
@@ -640,6 +660,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * Time to evaluate Center of Mass restraint term.
      */
     private long comRestraintTime;
+    /**
+     * Time to evaluate restrain group term.
+     */
+    private long restrainGroupTime;
     /**
      * Time to evaluate all energy terms.
      */
@@ -798,6 +822,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         lambdaTorsions = forceField.getBoolean("TORSION_LAMBDATERM", false);
         printOnFailure = forceField.getBoolean("PRINT_ON_FAILURE", false);
 
+        if (properties.containsKey("restrain-groups")) {
+            restrainGroupTerm = true;
+        }
+
         // For RESPA
         bondTermOrig = bondTerm;
         angleTermOrig = angleTerm;
@@ -818,6 +846,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         ncsTermOrig = ncsTerm;
         restrainTermOrig = restrainTerm;
         comTermOrig = comTerm;
+        restrainGroupTermOrig = restrainGroupTerm;
 
         // Determine the unit cell dimensions and Spacegroup
         String spacegroup;
@@ -1229,12 +1258,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (restraints != null) {
             coordRestraints.addAll(restraints);
         }
+
         if (restrainTerm) {
             this.autoCoordRestraint = new CoordRestraint(atoms, forceField);
             coordRestraints.add(autoCoordRestraint);
         } else {
             autoCoordRestraint = null;
         }
+
         if (!coordRestraints.isEmpty()) {
             restrainTerm = true;
             restrainTermOrig = restrainTerm;
@@ -1242,13 +1273,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
 
         if (comTerm) {
-            Polymer[] polymers = molecularAssembly.getChains();
-            List<MSNode> molecules = molecularAssembly.getMolecules();
-            List<MSNode> waters = molecularAssembly.getWaters();
-            List<MSNode> ions = molecularAssembly.getIons();
-            comRestraint = new COMRestraint(atoms, polymers, molecules, waters, ions, forceField);
+            comRestraint = new COMRestraint(molecularAssembly);
         } else {
             comRestraint = null;
+        }
+
+        if (restrainGroupTerm) {
+            restrainGroups = new RestrainGroups(molecularAssembly);
+            nRestrainGroups = restrainGroups.getNumberOfRestraints();
+        } else {
+            restrainGroups = null;
         }
 
         bondedRegion = new BondedRegion();
@@ -2056,6 +2090,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     comRestraintEnergy = comRestraint.residual(gradient, print);
                     comRestraintTime += System.nanoTime();
                 }
+                if (restrainGroupTerm) {
+                    restrainGroupTime = -System.nanoTime();
+                    restrainGroupEnergy = restrainGroups.energy(gradient);
+                    restrainGroupTime += System.nanoTime();
+                }
                 // Compute non-bonded terms.
                 if (vanderWaalsTerm) {
                     vanDerWaalsTime = -System.nanoTime();
@@ -2100,7 +2139,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
                     + torsionEnergy + angleTorsionEnergy + stretchTorsionEnergy
                     + piOrbitalTorsionEnergy + improperTorsionEnergy
-                    + torsionTorsionEnergy + ncsEnergy + restrainEnergy;
+                    + torsionTorsionEnergy + ncsEnergy + restrainEnergy + restrainGroupEnergy;
             totalNonBondedEnergy = vanDerWaalsEnergy + totalMultipoleEnergy + relativeSolvationEnergy;
             totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
             if (esvTerm) {
@@ -2329,7 +2368,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     "Improper Torsion  ", improperTorsionEnergy,
                     nImproperTorsions, improperTorsionTime * toSeconds));
         }
-
         if (restraintBondTerm && nRestraintBonds > 0) {
             sb.append(format("  %s %16.8f %12d %12.3f\n",
                     "Bond Restraint    ", restraintBondEnergy, nRestraintBonds,
@@ -2353,6 +2391,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             sb.append(format("  %s %16.8f %12d %12.3f\n",
                     "COM Restraint     ", comRestraintEnergy, nAtoms,
                     comRestraintTime * toSeconds));
+        }
+        if (restrainGroupTerm) {
+            sb.append(format("  %s %16.8f %12d %12.3f\n", "Restrain Groups   ", restrainGroupEnergy,
+                    nRestrainGroups, restrainGroupTime * toSeconds));
         }
         if (vanderWaalsTerm && nVanDerWaalInteractions > 0) {
             sb.append(format("  %s %16.8f %12d %12.3f\n",
@@ -2380,7 +2422,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             sb.append(format("  %s %16.8f %12d\n",
                     "Solvation         ", solvationEnergy, nGKInteractions));
         }
-
         if (relativeSolvationTerm) {
             sb.append(format("  %s %16.8f %12d\n",
                     "Relative Solvation", relativeSolvationEnergy, nRelativeSolvations));
@@ -3073,6 +3114,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 restraintBondTerm = restraintBondTermOrig;
                 ncsTerm = ncsTermOrig;
                 restrainTerm = restrainTermOrig;
+                restrainGroupTerm = restrainGroupTermOrig;
                 comTerm = comTermOrig;
                 vanderWaalsTerm = false;
                 multipoleTerm = false;
@@ -3099,6 +3141,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 ncsTerm = false;
                 restrainTerm = false;
                 comTerm = false;
+                restrainGroupTerm = false;
                 break;
             default:
                 bondTerm = bondTermOrig;
@@ -3116,6 +3159,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 ncsTerm = ncsTermOrig;
                 restrainTermOrig = restrainTerm;
                 comTermOrig = comTerm;
+                restrainGroupTermOrig = restrainGroupTerm;
                 vanderWaalsTerm = vanderWaalsTermOrig;
                 multipoleTerm = multipoleTermOrig;
                 polarizationTerm = polarizationTermOrig;
@@ -3156,7 +3200,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             particleMeshEwald.setCrystal(this.crystal);
         }
     }
-
 
     private Crystal configureNCS(ForceField forceField, Crystal unitCell) {
         // MTRIXn to be permuted with standard space group in NCSCrystal.java for experimental refinement.
@@ -3641,7 +3684,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public double getGKEnergy() {
         return particleMeshEwald.getGKEnergy();
     }
-
 
     /**
      * <p>getEsvBiasEnergy.</p>

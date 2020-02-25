@@ -92,7 +92,6 @@ public class CoordRestraint implements LambdaInterface {
     private final AtomType atom3Type;
     private boolean ignoreHydrogen = true;
 
-
     /**
      * This CoordRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
