@@ -98,6 +98,9 @@ public class RepExOST {
     private final File dynFile;
     private final String extension;
 
+    private final long[] totalSwaps;
+    private final long[] acceptedSwaps;
+
     // Message tags to use.
     private static final int lamTag = 42;
     private static final int mainLoopTag = 2020;
@@ -208,6 +211,11 @@ public class RepExOST {
 
         Arrays.stream(sends).forEach((SynchronousSend ss) -> ss.setHistograms(allHistograms, rankToHisto));
 
+        totalSwaps = new long[numPairs];
+        acceptedSwaps = new long[numPairs];
+        Arrays.fill(totalSwaps, 0);
+        Arrays.fill(acceptedSwaps, 0);
+
         setFiles();
         setHistogram(rank);
     }
@@ -262,12 +270,13 @@ public class RepExOST {
      */
     public void mainLoop(long numTimesteps, boolean equilibrate) throws IOException {
         if (isMC) {
-            //Arrays.stream(mcOSTs).forEach((MonteCarloOST mco) -> mco.setEquilibration(equilibrate));
             mcOST.setEquilibration(equilibrate);
         }
         currentLambda = currentHistogram.getLastReceivedLambda();
         currentDUDL = currentHistogram.getLastReceivedDUDL();
-        //setFiles();
+
+        Arrays.fill(totalSwaps, 0);
+        Arrays.fill(acceptedSwaps, 0);
 
         if (equilibrate) {
             logger.info(String.format(" Equilibrating repex OST without exchanges on histogram %d.", currentHistoIndex));
@@ -359,9 +368,14 @@ public class RepExOST {
             logger.info(String.format(" %s exchange with probability %.5f based on Eii %.6f, Ejj %.6f, Eij %.6f, Eji %.6f kcal/mol",
                     desc, acceptChance, eii, ejj, eij, eji));
 
+            ++totalSwaps[i];
             if (accept) {
+                ++acceptedSwaps[i];
                 switchHistos(rankLow, rankHigh, i);
             }
+
+            double acceptRate = ((double) acceptedSwaps[i]) / ((double) totalSwaps[i]);
+            logger.info(String.format(" Replica exchange acceptance rate for pair %d-%d is %.4f%%", i, (i+1), acceptRate));
         }
     }
 
