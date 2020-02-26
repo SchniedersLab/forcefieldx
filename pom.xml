@@ -1147,6 +1147,7 @@
         <pj.version>1.0.1</pj.version>
         <jna.version>4.1.0</jna.version>
         <biojava.version>5.3.0</biojava.version>
+        <ciftools-java.version>0.7.2</ciftools-java.version>
         <cdk.version>2.0</cdk.version>
         <clustering.version>1.2.0</clustering.version>
         <fastutil.version>8.3.0</fastutil.version>

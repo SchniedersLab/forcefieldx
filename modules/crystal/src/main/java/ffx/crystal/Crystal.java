@@ -44,7 +44,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import ffx.numerics.math.VectorMath;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
@@ -63,12 +62,14 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
+import ffx.numerics.math.VectorMath;
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.dot;
 import static ffx.numerics.math.VectorMath.mat3Mat3;
 import static ffx.numerics.math.VectorMath.mat3SymVec6;
 import static ffx.numerics.math.VectorMath.r;
 import static ffx.numerics.math.VectorMath.transpose3;
+import static ffx.utilities.StringUtils.padRight;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -633,6 +634,7 @@ public class Crystal {
 
     /**
      * Gets the unit cell parameters in order: a, b, c, alpha, beta, gamma.
+     *
      * @return Unit cell parameters.
      */
     public double[] getUnitCellParams() {
@@ -1641,6 +1643,16 @@ public class Crystal {
      */
     public String toShortString() {
         return format("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f", a, b, c, alpha, beta, gamma);
+    }
+
+    /**
+     * Return a CRYST1 record useful for writing a PDB file.
+     *
+     * @return The CRYST1 record.
+     */
+    public String toCRYST1() {
+        return format("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f %10s\n", a, b, c, alpha, beta, gamma,
+                padRight(spaceGroup.pdbName, 10));
     }
 
     /**

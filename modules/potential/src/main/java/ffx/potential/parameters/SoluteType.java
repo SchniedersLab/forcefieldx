@@ -45,7 +45,6 @@ import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
-import ffx.potential.parameters.ForceField.ForceFieldType;
 import static ffx.potential.parameters.ForceField.ForceFieldType.SOLUTE;
 
 /**
@@ -62,42 +61,62 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     private static final Logger logger = Logger.getLogger(SoluteType.class.getName());
 
     /**
-     * Atom class for this solute type.
+     * Atom type for this solute type.
      */
-    private int atomClass;
+    private int atomType;
 
     /**
-     * Solute atomic diameter.
+     * Solute atomic diameter for GK.
      */
     public double diameter;
 
     /**
-     * Solute atom chemical description.
+     * Solute atomic diameter for ddCOSMO / PB.
      */
-    public final String description;
+    public double pbDiameter;
+
+    /**
+     * Optional SMARTS description.
+     */
+    public String description;
 
     /**
      * <p>Constructor for SoluteType.</p>
      *
-     * @param atomClass a int.
-     * @param diameter  a double.
+     * @param atomType   Atom type.
+     * @param diameter   Diameter for GK continuum electrostatics.
+     * @param pbDiameter Diameter for ddCOSMO / PB continuum electrostatics.
      */
-    public SoluteType(int atomClass, String description, double diameter) {
-        super(SOLUTE, Integer.toString(atomClass));
-        this.atomClass = atomClass;
+    public SoluteType(int atomType, double diameter, double pbDiameter) {
+        super(SOLUTE, Integer.toString(atomType));
+        this.atomType = atomType;
         this.diameter = diameter;
+        this.pbDiameter = pbDiameter;
+        this.description = null;
+    }
+
+    /**
+     * <p>Constructor for SoluteType.</p>
+     *
+     * @param atomType   Atom type.
+     * @param description Smarts descrption.
+     * @param diameter   Diameter for GK continuum electrostatics.
+     * @param pbDiameter Diameter for ddCOSMO / PB continuum electrostatics.
+     */
+    public SoluteType(int atomType, String description, double diameter, double pbDiameter) {
+        this(atomType, diameter, pbDiameter);
         this.description = description;
     }
 
     /**
      * <p>
-     * incrementClasses</p>
+     * incrementType</p>
      *
      * @param increment a int.
      */
     void incrementType(int increment) {
-        atomClass += increment;
-        setKey(Integer.toString(atomClass));
+        atomType += increment;
+        setKey(Integer.toString(atomType));
     }
 
     /**
@@ -112,10 +131,18 @@ public final class SoluteType extends BaseType implements Comparator<String> {
             logger.log(Level.WARNING, "Invalid SOLUTE type:\n{0}", input);
         } else {
             try {
-                int atomType = parseInt(tokens[1].trim());
-                String description = tokens[2].trim();
-                double diameter = parseDouble(tokens[3].trim());
-                return new SoluteType(atomType, description, diameter);
+                if (tokens.length == 4) {
+                    int atomType = parseInt(tokens[1].trim());
+                    double diameter = parseDouble(tokens[2].trim());
+                    double pbDiameter = parseDouble(tokens[3].trim());
+                    return new SoluteType(atomType, diameter, pbDiameter);
+                } else {
+                    int atomType = parseInt(tokens[1].trim());
+                    String description = tokens[2].trim();
+                    double diameter = parseDouble(tokens[3].trim());
+                    double pbDiameter = parseDouble(tokens[4].trim());
+                    return new SoluteType(atomType, description, diameter, pbDiameter);
+                }
             } catch (NumberFormatException e) {
                 String message = "Exception parsing SOLUTE type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -131,7 +158,11 @@ public final class SoluteType extends BaseType implements Comparator<String> {
      */
     @Override
     public String toString() {
-        return format("solute  %4d  %30s  %7.5f", atomClass, description, diameter);
+        if (description == null) {
+            return format("solute  %4d  %7.4f  %7.4f", atomType, diameter, pbDiameter);
+        } else {
+            return format("solute  %4d  %30s  %7.4f  %7.4f", atomType, description, diameter, pbDiameter);
+        }
     }
 
     /**
@@ -152,7 +183,7 @@ public final class SoluteType extends BaseType implements Comparator<String> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SoluteType soluteType = (SoluteType) o;
-        return soluteType.atomClass == this.atomClass;
+        return soluteType.atomType == this.atomType;
     }
 
     /**
@@ -160,6 +191,6 @@ public final class SoluteType extends BaseType implements Comparator<String> {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(atomClass);
+        return Objects.hash(atomType);
     }
 }
