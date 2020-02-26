@@ -146,6 +146,10 @@ public class MonteCarloOST extends BoltzmannMC {
      * Deposit a bias once every N MC cycles. Defaults to 1.
      */
     private final int biasDepositionFrequency;
+    /**
+     * True if MC-OST should handle writing out files.
+     */
+    private boolean automaticWriteouts = true;
 
     /**
      * <p>
@@ -479,17 +483,23 @@ public class MonteCarloOST extends BoltzmannMC {
                 // Update the current OST Energy to be the sum of the current Force Field Energy and updated OST Bias.
                 currentOSTEnergy = currentForceFieldEnergy + currentBiasEnergy;
 
-                long mdMoveNum = imove * stepsPerMove;
-                boolean snapShot = lambda >= orthogonalSpaceTempering.lambdaWriteOut;
-                EnumSet<MolecularDynamics.WriteActions> written = mdMove.writeFilesForStep(mdMoveNum, snapShot, true);
-                if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
-                    orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
+                if (automaticWriteouts) {
+                    long mdMoveNum = imove * stepsPerMove;
+                    boolean snapShot = lambda >= orthogonalSpaceTempering.lambdaWriteOut;
+                    EnumSet<MolecularDynamics.WriteActions> written = mdMove.writeFilesForStep(mdMoveNum, snapShot, true);
+                    if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
+                        orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
+                    }
                 }
             }
 
             totalMoveTime += nanoTime();
             logger.info(format(" Round complete in %6.3f sec.", totalMoveTime * NS2SEC));
         }
+    }
+
+    public void setAutomaticWriteouts(boolean autoWrite) {
+        automaticWriteouts = autoWrite;
     }
 
     /**
