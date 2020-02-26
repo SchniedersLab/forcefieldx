@@ -116,6 +116,8 @@ public class RepExOST {
     private double currentLambda;
     private double currentDUDL;
 
+    private boolean automaticWriteouts = true; // False if the repex OST is not responsible for writing files out.
+
     /**
      * Private constructor used here to centralize shared logic.
      *
@@ -153,6 +155,9 @@ public class RepExOST {
         this.dynamics = dynamics;
         this.fileType = fileType;
         this.mcOST = mcOST;
+        if (mcOST != null) {
+            mcOST.setAutomaticWriteouts(false);
+        }
         this.extension = WriteoutOptions.toArchiveExtension(fileType);
 
         this.world = Comm.world();
@@ -299,9 +304,11 @@ public class RepExOST {
                 //boolean snapShot = lambda >= orthogonalSpaceTempering.lambdaWriteOut;
                 double currLambda = ost.getLambda();
                 boolean forceSnapshot = currLambda >= ost.lambdaWriteOut;
-                EnumSet<MolecularDynamics.WriteActions> written = molDyn.writeFilesForStep(mdMoveNum, forceSnapshot, true);
-                if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
-                    ost.writeAdditionalRestartInfo(false);
+                if (automaticWriteouts) {
+                    EnumSet<MolecularDynamics.WriteActions> written = molDyn.writeFilesForStep(mdMoveNum, forceSnapshot, true);
+                    if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
+                        ost.writeAdditionalRestartInfo(false);
+                    }
                 }
 
                 // Old, (mostly) functional, code that used inter-process communication to keep processes in sync rather than relying on PRNG coherency and repex moves always falling on a bias deposition tick.
