@@ -75,6 +75,7 @@ public abstract class SystemFilter {
     private static int absoluteCounter = 0;
 
     private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
+    protected static final Pattern lambdaPattern = Pattern.compile("Lambda: +([01]\\.\\d+)");
 
     private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
 
@@ -956,4 +957,22 @@ public abstract class SystemFilter {
      * @return a boolean.
      */
     public abstract boolean writeFile(File saveFile, boolean append, String[] extraLines);
+
+    /**
+     * Gets all remark lines read by the last readFile or readNext call.
+     *
+     * @return Array of Strings representing remark lines, if any.
+     */
+    public String[] getRemarkLines() {
+        return new String[0];
+    }
+
+    /**
+     * Gets the last read lambda value read by the filter, if any.
+     *
+     * @return Last lambda value read by this filter.
+     */
+    public OptionalDouble getLastReadLambda() {
+        return OptionalDouble.empty();
+    }
 }

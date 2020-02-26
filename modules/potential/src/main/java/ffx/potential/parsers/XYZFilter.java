@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.OptionalDouble;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -79,6 +80,7 @@ public class XYZFilter extends SystemFilter {
     private static final Logger logger = Logger.getLogger(XYZFilter.class.getName());
     private BufferedReader bufferedReader = null;
     private int snapShot;
+    private String remarkLine;
 
     /**
      * <p>
@@ -143,6 +145,7 @@ public class XYZFilter extends SystemFilter {
                 getActiveMolecularSystem().setName(tokens[1]);
             }
             logger.info(format(" Opening %s with %d atoms\n", xyzFile.getName(), numberOfAtoms));
+            remarkLine = data.trim();
 
             // The header line is reasonable. Check for periodic box dimensions.
             br.mark(10000);
@@ -411,6 +414,8 @@ public class XYZFilter extends SystemFilter {
                 logger.warning(e.toString());
                 return false;
             }
+
+            remarkLine = data;
 
             // The header line is reasonable. Check for periodic box dimensions.
             bufferedReader.mark(10000);
@@ -794,5 +799,25 @@ public class XYZFilter extends SystemFilter {
             }
         }
         return true;
+    }
+
+    @Override
+    public String[] getRemarkLines() {
+        return new String[]{remarkLine};
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public OptionalDouble getLastReadLambda() {
+        String[] toks = remarkLine.split("\\s+");
+        int nToks = toks.length;
+        for (int i = 0; i < (nToks - 1); i++) {
+            if (toks[i].equals("Lambda:")) {
+                return OptionalDouble.of(Double.parseDouble(toks[i+1]));
+            }
+        }
+        return OptionalDouble.empty();
     }
 }
