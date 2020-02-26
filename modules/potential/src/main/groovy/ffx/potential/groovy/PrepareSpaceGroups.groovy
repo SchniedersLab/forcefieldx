@@ -122,7 +122,7 @@ class PrepareSpaceGroups extends PotentialScript {
 
     public int numberCreated = 0
     public File baseDir = null
-    private ForceFieldEnergy energy;
+    private ForceFieldEnergy energy
 
     /**
      * Execute the script.
@@ -136,9 +136,8 @@ class PrepareSpaceGroups extends PotentialScript {
 
         System.setProperty("ewald-alpha", "0.0")
 
-        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
@@ -155,7 +154,7 @@ class PrepareSpaceGroups extends PotentialScript {
         File coordFile = activeAssembly.getFile()
         String coordName = FilenameUtils.getName(coordFile.getPath())
 
-        File propertyFile = new File(config.getProperty("propertyFile"))
+        File propertyFile = new File(config.getString("propertyFile"))
 
         Atom[] atoms = activeAssembly.getAtomArray()
         double mass = activeAssembly.getMass()
@@ -194,7 +193,7 @@ class PrepareSpaceGroups extends PotentialScript {
             }
 
             logger.info(String.format("\n Preparing %s (CSD percent: %7.4f, PDB Rank: %d)",
-                    spacegroup.shortName, spacegroup.csdPercent[num - 1], SpaceGroup.getPDBRank(spacegroup)));
+                    spacegroup.shortName, spacegroup.csdPercent[num - 1], SpaceGroup.getPDBRank(spacegroup)))
 
             // Create the directory.
             String sgDirName = spacegroup.shortName.replace('/', '_')
@@ -214,8 +213,8 @@ class PrepareSpaceGroups extends PotentialScript {
             double[] abc = spacegroup.randomUnitCellParams()
             Crystal crystal = new Crystal(abc[0], abc[1], abc[2], abc[3], abc[4], abc[5], spacegroup.shortName)
             crystal.setDensity(density, mass)
-            double cutoff2 = energy.getCutoffPlusBuffer() * 2.0;
-            crystal = ReplicatesCrystal.replicatesCrystalFactory(crystal, cutoff2);
+            double cutoff2 = energy.getCutoffPlusBuffer() * 2.0
+            crystal = ReplicatesCrystal.replicatesCrystalFactory(crystal, cutoff2)
             energy.setCrystal(crystal)
 
             if (symScalar > 0.0) {
@@ -245,7 +244,7 @@ class PrepareSpaceGroups extends PotentialScript {
                 out = new PrintWriter(new BufferedWriter(new FileWriter(keyFile)))
                 keyReader = new BufferedReader(new FileReader(propertyFile))
                 while (keyReader.ready()) {
-                    String line = keyReader.readLine().trim();
+                    String line = keyReader.readLine().trim()
                     if (line != null && !line.equalsIgnoreCase("")) {
                         String[] tokens = line.split(" +")
                         if (tokens != null && tokens.length > 1) {
@@ -291,6 +290,13 @@ class PrepareSpaceGroups extends PotentialScript {
 
     @Override
     List<Potential> getPotentials() {
-        return energy == null ? Collections.emptyList() : Collections.singletonList(energy);
+        List<Potential> potentials
+        if (energy == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(energy)
+        }
+        return potentials
     }
+
 }

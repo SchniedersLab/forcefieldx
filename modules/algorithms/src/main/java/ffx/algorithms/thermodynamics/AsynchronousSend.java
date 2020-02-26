@@ -121,6 +121,9 @@ class AsynchronousSend extends Thread {
         myRecursionWeight[2] = dUdL;
         myRecursionWeight[3] = temperingWeight;
 
+        histogram.setLastReceivedLambda(lambda);
+        histogram.setLastReceiveddUdL(dUdL);
+
         for (int i = 0; i < numProc; i++) {
             try {
                 world.send(i, myRecursionWeightBuf);
@@ -159,8 +162,6 @@ class AsynchronousSend extends Thread {
             int rank = (int) round(recursionCount[0]);
             double lambda = recursionCount[1];
             double fLambda = recursionCount[2];
-            histogram.setCurrentLambdaforRank(rank, lambda);
-            histogram.setCurrentdUdLForRank(rank, fLambda);
 
             // If independent, only add bias values from this walker
             if (histogram.getIndependentWalkers() && histogram.getRank() != rank) {

@@ -76,7 +76,7 @@ public class MergeFilter extends SystemFilter {
 
     /** {@inheritDoc} */
     @Override
-    public boolean writeFile(File saveFile, boolean append) {
+    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
         return false;
     }
 

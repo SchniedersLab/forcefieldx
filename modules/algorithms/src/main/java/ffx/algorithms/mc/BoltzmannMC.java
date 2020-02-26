@@ -114,7 +114,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
      * @return      Chance of accepting this move
      */
     public static double acceptChance(double invKT, double e1, double e2) {
-        return exp(invKT * (e2 - e1));
+        return Math.min(exp(invKT * (e2 - e1)), 1.0);
     }
 
     /**

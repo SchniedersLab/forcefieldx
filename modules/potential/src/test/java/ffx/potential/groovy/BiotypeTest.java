@@ -39,6 +39,7 @@ package ffx.potential.groovy;
 
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.Before;
@@ -62,6 +63,7 @@ public class BiotypeTest {
         biotype.setBinding(binding);
     }
 
+    @After
     public void after() {
         biotype.destroyPotentials();
         System.gc();
@@ -88,6 +90,7 @@ public class BiotypeTest {
         binding.setVariable("args", args);
 
         // Evaluate the script.
+
         biotype.run();
 
         // Pull out the biotype results to check.

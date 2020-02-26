@@ -59,6 +59,7 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+
 /**
  * The Energy script evaluates the energy of a system.
  * <br>
@@ -72,38 +73,38 @@ class Energy extends PotentialScript {
     /**
      * -g or --gradient to print out gradients.
      */
-    @Option(names = ['-g', '--gradient'], paramLabel = "false",
+    @Option(names = ['-g', '--gradient'], paramLabel = "false", defaultValue = "false",
             description = 'Print out atomic gradients as well as energy.')
     private boolean gradient = false
 
     /**
      * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
      */
-    @Option(names = ['--es1', '--noElecStart1'], paramLabel = "1",
-            description = 'Starting no-electrostatics atom for 1st topology')
+    @Option(names = ['--es1', '--noElecStart1'], paramLabel = "1", defaultValue = "1",
+            description = 'Starting no-electrostatics atom for 1st topology.')
     private int es1 = 1
 
     /**
      * * --fl or --findLowest Return the n lowest energy structures from an ARC or PDB file.
      */
-    @Option(names = ['--fl', '--findLowest'], paramLabel = "0",
+    @Option(names = ['--fl', '--findLowest'], paramLabel = "0", defaultValue = "0",
             description = 'Return the n lowest energy structures from an ARC or PDB file.')
     private int fl = 0
 
     /**
      * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
      */
-    @Option(names = ['--ef1', '--noElecFinal1'], paramLabel = "-1",
-            description = 'Final no-electrostatics atom for 1st topology')
+    @Option(names = ['--ef1', '--noElecFinal1'], paramLabel = "-1", defaultValue = "-1",
+            description = 'Final no-electrostatics atom for 1st topology.')
     private int ef1 = -1
 
     /**
      * -v or --verbose enables printing out all energy components for multi-snapshot files (
      * the first snapshot is always printed verbosely).
      */
-    @Option(names = ['-v', '--verbose'], paramLabel = "false",
-            description = "Print out all energy components for multi-snapshot files")
-    private boolean verbose = false;
+    @Option(names = ['-v', '--verbose'], paramLabel = "false", defaultValue = "false",
+            description = "Print out all energy components for each snapshot.")
+    private boolean verbose = false
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -151,14 +152,14 @@ class Energy extends PotentialScript {
     Energy run() {
 
         if (!init()) {
-            return this
+            return null
         }
 
         if (filenames != null && filenames.size() > 0) {
             activeAssembly = potentialFunctions.open(filenames.get(0))
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
+            return null
         }
 
         String filename = activeAssembly.getFile().getAbsolutePath()
@@ -190,7 +191,7 @@ class Energy extends PotentialScript {
 
         if (gradient) {
             double[] g = new double[nVars]
-            int nAts = nVars / 3
+            int nAts = (int) (nVars / 3)
             energy = forceFieldEnergy.energyAndGradient(x, g, true)
             logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"))
             for (int i = 0; i < nAts; i++) {
@@ -225,8 +226,8 @@ class Energy extends PotentialScript {
                 forceFieldEnergy.setCrystal(crystal)
                 forceFieldEnergy.getCoordinates(x)
                 if (verbose) {
-                    logger.info(format(" Snapshot %4d", index));
-                    energy = forceFieldEnergy.energy(x, true);
+                    logger.info(format(" Snapshot %4d", index))
+                    energy = forceFieldEnergy.energy(x, true)
                 } else {
                     energy = forceFieldEnergy.energy(x, false)
                     logger.info(format(" Snapshot %4d: %16.8f (kcal/mol)", index, energy))
@@ -283,7 +284,14 @@ class Energy extends PotentialScript {
 
     @Override
     List<Potential> getPotentials() {
-        return forceFieldEnergy == null ? Collections<Potential>.emptyList() : Collections<Potential>.singletonList(forceFieldEnergy)
+        List<Potential> potentials
+        if (forceFieldEnergy == null) {
+            potentials = Collections.emptyList()
+        } else {
+            potentials = Collections.singletonList(forceFieldEnergy)
+        }
+        return potentials
     }
+
 }
 

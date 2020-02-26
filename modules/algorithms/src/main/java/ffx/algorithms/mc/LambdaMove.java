@@ -41,6 +41,8 @@ import java.util.Random;
 import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
 
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
 
@@ -119,7 +121,7 @@ public class LambdaMove implements MCMove {
      *
      * @param lam Initial lambda.
      * @param dL  Change in lambda.
-     * @return    Correctly mirrored lam + dL
+     * @return Correctly mirrored lam + dL
      */
     private double mirror(double lam, double dL) {
         // Telescope to public static method because a public static method
@@ -135,7 +137,7 @@ public class LambdaMove implements MCMove {
      * @param random Source of randomness.
      * @param lam    Initial lambda.
      * @param dL     Change in lambda.
-     * @return       Correctly mirrored lam + dL
+     * @return Correctly mirrored lam + dL
      */
     public static double mirror(Random random, double lam, double dL) {
         if (lam == 0.0 || lam == 1.0) {
@@ -153,6 +155,27 @@ public class LambdaMove implements MCMove {
         double newLam = abs(lam + dL);
         // If greater than 1, mirror via 2.0 - val
         return newLam <= 1.0 ? newLam : 2.0 - newLam;
+    }
+
+    /**
+     * Validate lambda is in the range [0 .. 1].
+     * <p>
+     * For discrete moves, set Lambda to the closest valid value [0, dL, 2dL, .. 1].
+     *
+     * @param lambda Input lambda value.
+     * @return Validated lambda value.
+     */
+    public double validateLambda(double lambda) {
+        lambda = max(0.0, min(lambda, 1.0));
+        if (isContinuous) {
+            return lambda;
+        }
+        double remainder = lambda % moveSize;
+        if (remainder < moveSize / 2.0) {
+            return max(0.0, lambda - remainder);
+        } else {
+            return min(lambda + (moveSize - remainder), 1.0);
+        }
     }
 
     /**

@@ -68,6 +68,10 @@ public class WriteoutOptions {
         return fileType;
     }
 
+    public static String toArchiveExtension(String fileType) {
+        return Extensions.nameToExt(fileType).archive;
+    }
+
     /**
      * Saves a single-snapshot file to either .xyz or .pdb, depending on the value of fileType.
      * @param baseFileName Basic file name without extension.
@@ -90,5 +94,28 @@ public class WriteoutOptions {
             pFuncts.saveAsPDB(ma, outFile);
         }
         return outFile;
+    }
+
+    private enum Extensions {
+        XYZ("xyz", "arc"), PDB("pdb", "pdb");
+
+        private final String single;
+        private final String archive;
+
+        Extensions(String single, String archive) {
+            this.single = single;
+            this.archive = archive;
+        }
+
+        static Extensions nameToExt(String name) {
+            switch(name.toLowerCase()) {
+                case "pdb":
+                    return PDB;
+                case "xyz":
+                case "arc":
+                default:
+                    return XYZ;
+            }
+        }
     }
 }
