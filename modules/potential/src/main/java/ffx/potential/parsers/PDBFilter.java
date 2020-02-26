@@ -43,14 +43,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -192,6 +185,9 @@ public final class PDBFilter extends SystemFilter {
     private int modelsWritten = -1;
     private File readFile;
 
+    private List<String> remarkLines = Collections.emptyList();
+    private double lastReadLambda = Double.NaN;
+
     private final static Set<String> backboneNames;
 
     static {
@@ -271,6 +267,24 @@ public final class PDBFilter extends SystemFilter {
      */
     public void mutate(List<Mutation> mutations) {
         this.mutations.addAll(mutations);
+    }
+
+    /**
+     * Returns all the remark lines found by the last readFile call.
+     * @return Remark lines from the last readFile call.
+     */
+    @Override
+    public String[] getRemarkLines() {
+        int nRemarks = remarkLines.size();
+        return remarkLines.toArray(new String[nRemarks]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public OptionalDouble getLastReadLambda() {
+        return Double.isNaN(lastReadLambda) ? OptionalDouble.empty() : OptionalDouble.of(lastReadLambda);
     }
 
     /**
@@ -371,6 +385,7 @@ public final class PDBFilter extends SystemFilter {
      */
     @Override
     public boolean readFile() {
+        remarkLines = new ArrayList<>();
         // First atom is #1, to match xyz file format
         int xyzIndex = 1;
         setFileRead(false);
@@ -1116,6 +1131,13 @@ public final class PDBFilter extends SystemFilter {
                             properties.addProperty("MTRIX3", MTRX3);
                             break;
                         case REMARK:
+                            remarkLines.add(line.trim());
+                            if (line.contains("Lambda:")) {
+                                Matcher m = lambdaPattern.matcher(line);
+                                if (m.find()) {
+                                    lastReadLambda = Double.parseDouble(m.group(1));
+                                }
+                            }
 // =================================================================================
 // REMARK 350: presents all transformations, both crystallographic and non-crystallographic, needed to
 // generate the biomolecule. These transformations operate on the coordinates in the entry. Both author
@@ -1879,6 +1901,7 @@ public final class PDBFilter extends SystemFilter {
      */
     @Override
     public boolean readNext(boolean resetPosition, boolean print) {
+        remarkLines = new ArrayList<>(remarkLines.size());
         // ^ is beginning of line, \\s+ means "one or more whitespace", (\\d+) means match and capture one or more digits.
         Pattern modelPatt = Pattern.compile("^MODEL\\s+(\\d+)");
         modelsRead = resetPosition ? 1 : modelsRead + 1;
@@ -2021,6 +2044,16 @@ public final class PDBFilter extends SystemFilter {
                             case END: // Technically speaking, END should be at the end of the file, not end of the model.
                                 logger.log(Level.FINE, format(" Model %d successfully read", modelsRead));
                                 modelDone = true;
+                                break;
+                            case REMARK:
+                                remarkLines.add(line.trim());
+                                if (line.contains("Lambda:")) {
+                                    Matcher m = lambdaPattern.matcher(line);
+                                    if (m.find()) {
+                                        lastReadLambda = Double.parseDouble(m.group(1));
+                                    }
+                                }
+                                break;
                             default:
                                 break;
                         }
