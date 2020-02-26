@@ -7819,8 +7819,10 @@ atom    396     71  O2    "D-5-Phosphate OP"          8   15.9990  1
 atom    399     62  OS    "D-3-Phosphate O3"         8   15.9990  2
 atom    400     70  P     "D-3-Phosphate P"          15   30.9740  4
 atom    401     71  O2    "D-3-Phosphate OP"          8   15.9990  1
+
 bond     62     70   450.10   1.5900
 bond     62     79   484.00   1.4150
+
 angle     71     70     71   89.88  121.20
 angle     70     62     79   80.30  110.80
 angle     62     79     75   75.00  113.00
