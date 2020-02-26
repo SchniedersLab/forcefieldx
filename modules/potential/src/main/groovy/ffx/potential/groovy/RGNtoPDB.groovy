@@ -48,9 +48,7 @@ import ffx.potential.bonded.Atom
 import ffx.potential.bonded.ResidueEnumerations
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
-import ffx.utilities.Hybrid36
-import ffx.utilities.StringUtils
-import static ffx.utilities.StringUtils.padLeft
+import static ffx.potential.parsers.PDBFilter.toPDBAtomLine
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
@@ -144,49 +142,39 @@ class RGNtoPDB extends PotentialScript {
         FileWriter fw = new FileWriter(saveFile, false)
         BufferedWriter bw = new BufferedWriter(fw)
 
-        int atomNumber = 0
+        int atomNumber = 1
         double[] xyz = new double[3]
         double occupancy = 1.0
         double bfactor = 1.0
         char altLoc = ' '
         char chain = 'A'
         String segID = "A"
-        StringBuilder sb = new StringBuilder("ATOM  ")
-        for (int i = 6; i < 80; i++) {
-            sb.append(' ')
-        }
-        sb.setCharAt(21, chain)
 
         for (int i = 0; i < nAmino; i++) {
             int resID = i + 1
             String oneLetterResidue = sequence.charAt(i)
             String resName = convertToThreeLetter(oneLetterResidue)
-            sb.replace(17, 20, padLeft(resName.toUpperCase(), 3))
-            sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)))
 
             // Write N
             xyz[0] = Double.parseDouble(tokenizedLines[2][atomNumber]) / 100.0
             xyz[1] = Double.parseDouble(tokenizedLines[3][atomNumber]) / 100.0
             xyz[2] = Double.parseDouble(tokenizedLines[4][atomNumber]) / 100.0
-            Atom atom = new Atom(atomNumber, "N", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
-            writeAtom(atom, atomNumber + 1, sb, bw)
-            atomNumber++
+            Atom atom = new Atom(atomNumber++, "N", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
+            bw.write(toPDBAtomLine(atom))
 
             // Write CA
             xyz[0] = Double.parseDouble(tokenizedLines[2][atomNumber]) / 100.0
             xyz[1] = Double.parseDouble(tokenizedLines[3][atomNumber]) / 100.0
             xyz[2] = Double.parseDouble(tokenizedLines[4][atomNumber]) / 100.0
-            atom = new Atom(atomNumber, "CA", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
-            writeAtom(atom, atomNumber + 1, sb, bw)
-            atomNumber++
+            atom = new Atom(atomNumber++, "CA", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
+            bw.write(toPDBAtomLine(atom))
 
             // Write C
             xyz[0] = Double.parseDouble(tokenizedLines[2][atomNumber]) / 100.0
             xyz[1] = Double.parseDouble(tokenizedLines[3][atomNumber]) / 100.0
             xyz[2] = Double.parseDouble(tokenizedLines[4][atomNumber]) / 100.0
-            atom = new Atom(atomNumber, "C", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
-            writeAtom(atom, atomNumber + 1, sb, bw)
-            atomNumber++
+            atom = new Atom(atomNumber++, "C", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
+            bw.write(toPDBAtomLine(atom))
         }
 
         bw.close()
@@ -209,79 +197,4 @@ class RGNtoPDB extends PotentialScript {
         return aminoAcid3.toString()
     }
 
-    /**
-     * <p>
-     * writeAtom</p>
-     *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @param serial a int.
-     * @param sb a {@link java.lang.StringBuilder} object.
-     * @param bw a {@link java.io.BufferedWriter} object.
-     * @throws java.io.IOException if any.
-     */
-    private static void writeAtom(Atom atom, int serial, StringBuilder sb, BufferedWriter bw)
-            throws IOException {
-        String name = atom.getName()
-        if (name.length() > 4) {
-            name = name.substring(0, 4)
-        } else if (name.length() == 1) {
-            name = name + "  "
-        } else if (name.length() == 2) {
-            name = name + " "
-        }
-
-        sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)))
-        Character altLoc = atom.getAltLoc()
-        if (altLoc != null) {
-            sb.setCharAt(16, altLoc)
-        } else {
-            char blankChar = ' '
-            sb.setCharAt(16, blankChar)
-        }
-
-        /*
-         * On the following code:
-         * #1: StringBuilder.replace will allow for longer strings, expanding the StringBuilder's length if necessary.
-         *
-         * #2: sb was never re-initialized, so if there was overflow,
-         * sb would continue to be > 80 characters long, resulting in broken PDB files
-         *
-         * #3: It may be wiser to have XYZ coordinates result in shutdown, not
-         * truncation of coordinates. #4: Excessive B-factors aren't much of an
-         * issue; if the B-factor is past 999.99, that's the difference between
-         * "density extends to Venus" and "density extends to Pluto".
-         */
-        double[] xyz = atom.getXYZ(null)
-        StringBuilder decimals = new StringBuilder()
-        for (int i = 0; i < 3; i++) {
-            try {
-                decimals.append(StringUtils.fwFpDec(xyz[i], 8, 3))
-            } catch (IllegalArgumentException ex) {
-                String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3)
-                logger.info(format(" XYZ %d coordinate %8.3f for atom %s "
-                        + "overflowed bounds of 8.3f string specified by PDB "
-                        + "format; truncating value to %s", i, xyz[i], atom.toString(), newValue))
-                decimals.append(newValue)
-            }
-        }
-        try {
-            decimals.append(StringUtils.fwFpDec(atom.getOccupancy(), 6, 2))
-        } catch (IllegalArgumentException ex) {
-            logger.severe(format(" Occupancy %f for atom %s is impossible; "
-                    + "value must be between 0 and 1", atom.getOccupancy(), atom.toString()))
-        }
-        try {
-            decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2))
-        } catch (IllegalArgumentException ex) {
-            String newValue = StringUtils.fwFpTrunc(atom.getTempFactor(), 6, 2)
-            logger.info(format(" Atom temp factor %6.2f for atom %s overflowed "
-                    + "bounds of 6.2f string specified by PDB format; truncating "
-                    + "value to %s", atom.getTempFactor(), atom.toString(), newValue))
-            decimals.append(newValue)
-        }
-        sb.replace(30, 66, decimals.toString())
-        sb.replace(78, 80, format("%2d", 0))
-        bw.write(sb.toString())
-        bw.newLine()
-    }
 }
