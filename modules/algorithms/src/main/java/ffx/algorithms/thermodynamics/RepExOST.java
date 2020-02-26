@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -148,6 +149,7 @@ public class RepExOST {
                 throw new IllegalArgumentException(" Could not recognize whether this is supposed to be MD, MC 1-step, or MC 2-step!");
         }
         this.molDyn = dyn;
+        molDyn.setAutomaticWriteouts(false);
         this.dynamics = dynamics;
         this.fileType = fileType;
         this.mcOST = mcOST;
@@ -289,10 +291,18 @@ public class RepExOST {
                 world.barrier(mainLoopTag);
                 algoRun.accept(stepsBetweenExchanges);
                 ost.logOutputFiles(currentHistoIndex);
-                molDyn.logOutputFiles();
                 world.barrier(mainLoopTag);
                 proposeSwaps((i % 2), 2);
                 setFiles();
+
+                long mdMoveNum = i * stepsBetweenExchanges;
+                //boolean snapShot = lambda >= orthogonalSpaceTempering.lambdaWriteOut;
+                double currLambda = ost.getLambda();
+                boolean forceSnapshot = currLambda >= ost.lambdaWriteOut;
+                EnumSet<MolecularDynamics.WriteActions> written = molDyn.writeFilesForStep(mdMoveNum, forceSnapshot, true);
+                if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
+                    ost.writeAdditionalRestartInfo(false);
+                }
 
                 // Old, (mostly) functional, code that used inter-process communication to keep processes in sync rather than relying on PRNG coherency and repex moves always falling on a bias deposition tick.
                 // Primary bug: looped over adjacent processes, not over adjacent histograms.
