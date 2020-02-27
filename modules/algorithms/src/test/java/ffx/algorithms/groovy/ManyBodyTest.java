@@ -46,7 +46,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.testng.Assert;
+import org.junit.Assert;
 
 import ffx.algorithms.misc.PJDependentTest;
 import ffx.potential.PotentialComponent;
