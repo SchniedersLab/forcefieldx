@@ -52,6 +52,12 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>${shade.version}</version>
                 <configuration>
+                    <!-- artifactSet>
+                        <excludes>
+                            <exclude>java3d:vecmath:jar:1.3.1</exclude>
+                            <exclude>org.apache.commons:commons-io:jar:2.0.1</exclude>
+                        </excludes>
+                    </artifactSet -->
                     <filters>
                         <filter>
                             <artifact>*:*</artifact>

@@ -88,6 +88,17 @@
             <version>${commons-math3.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-structure</artifactId>
+            <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>edu.uiowa.jopenmm</groupId>
+            <artifactId>jopenmm-fat</artifactId>
+            <version>${jopenmm.version}</version>
+        </dependency>
+        <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
             <version>${picocli.version}</version>
