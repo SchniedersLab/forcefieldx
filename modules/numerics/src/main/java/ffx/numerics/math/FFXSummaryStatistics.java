@@ -37,6 +37,8 @@
 //******************************************************************************
 package ffx.numerics.math;
 
+import org.apache.commons.math3.distribution.TDistribution;
+
 import java.util.Arrays;
 
 /**
@@ -62,6 +64,8 @@ public class FFXSummaryStatistics {
     public final double max;
     public final int count;
     public final double sum;
+    public final int dof;
+    private final TDistribution tDist;
 
     private final String descString;
 
@@ -117,6 +121,8 @@ public class FFXSummaryStatistics {
             max = mean;
             sum = mean;
             sumWeights = weights[first];
+            dof = 0;
+            tDist = null;
 
             descString = String.format(" Summary of single observation: value is %17.14g", mean);
         } else {
@@ -159,9 +165,10 @@ public class FFXSummaryStatistics {
             assert Math.abs(mean - (sum / count)) < 1.0E-11;
             varPopulation = varAcc / count;
             sdPopulation = Math.sqrt(varPopulation);
-            int dof = count - 1;
+            dof = count - 1;
             var = varAcc / dof;
             sd = Math.sqrt(var);
+            tDist = new TDistribution(dof);
 
             descString = String.format(" Summary of %d observations: sum is %17.14g, mean is %17.14g, min is %17.14g, " +
                     "max is %17.14g, and the sum of weights is %17.14g" +
@@ -169,6 +176,29 @@ public class FFXSummaryStatistics {
                     "\nPopulation standard deviation: %17.14g (dof = %d)",
                     count, sum, mean, min, max, sumWeights, sd, dof, sdPopulation, count);
         }
+    }
+
+    /**
+     * Computes a 95% confidence interval based on a Student's T-distribution.
+     *
+     * @return 95% confidence interval.
+     */
+    public double confidenceInterval() {
+        return confidenceInterval(0.05);
+    }
+
+    /**
+     * Computes a confidence interval based on a Student's T-distribution.
+     *
+     * @param alpha Alpha (e.g. 0.05 for a 95% CI).
+     * @return Confidence interval.
+     */
+    public double confidenceInterval(double alpha) {
+        if (dof == 0) {
+            throw new IllegalArgumentException(" Cannot calculate confidence intervals when there are no degrees of freedom!");
+        }
+        double critVal = tDist.inverseCumulativeProbability(0.5 * (1.0 - alpha));
+        return critVal * sd / Math.sqrt(count);
     }
 
     @Override

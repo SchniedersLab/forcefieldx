@@ -849,7 +849,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             d2F2dL2 = switchFunction.secondDerivative(oneMinusLambda);
         } else {
             String message = format("Lambda value %8.3f is not in the range [0..1].", lambda);
-            logger.severe(message);
+            throw new IllegalArgumentException(message);
         }
     }
 
