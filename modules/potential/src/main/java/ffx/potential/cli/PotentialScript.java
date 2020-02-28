@@ -78,15 +78,17 @@ public abstract class PotentialScript extends BaseScript {
             return false;
         }
 
-        // Turn off log4j
-        Properties properties = new Properties();
-        properties.setProperty("log4j.threshold", "OFF");
-        PropertyConfigurator.configure(properties);
-
         if (context.hasVariable("functions")) {
+            // FFX is running.
             potentialFunctions = (PotentialsFunctions) context.getVariable("functions");
         } else {
+            // Potential package is running.
             potentialFunctions = new PotentialsUtils();
+
+            // Turn off log4j.
+            Properties properties = new Properties();
+            properties.setProperty("log4j.threshold", "OFF");
+            PropertyConfigurator.configure(properties);
         }
 
         activeAssembly = null;
