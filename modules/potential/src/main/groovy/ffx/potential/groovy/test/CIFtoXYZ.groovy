@@ -44,8 +44,6 @@ import java.nio.file.Paths
 import static java.lang.String.format
 
 import org.apache.commons.io.FilenameUtils
-import org.apache.log4j.Level
-import org.apache.log4j.Logger
 import org.openscience.cdk.AtomContainer
 import org.openscience.cdk.config.AtomTypeFactory
 import org.openscience.cdk.graph.rebond.RebondTool
@@ -94,11 +92,6 @@ class CIFtoXYZ extends PotentialScript {
 
     void setBaseDir(File baseDir) {
         this.baseDir = baseDir
-    }
-
-    CIFtoXYZ() {
-        // Turn off CDK Log4j
-        Logger.getRootLogger().setLevel(Level.OFF)
     }
 
     /**
@@ -222,36 +215,29 @@ class CIFtoXYZ extends PotentialScript {
                 // Add known XYZ bonds. A limitation is all are given a Bond order of 1.
                 ArrayList<Bond> bonds = activeAssembly.getBondList()
                 Order order = Order.SINGLE
+                int xyzBonds = bonds.size()
                 for (Bond bond : bonds) {
                     xyzCDKAtoms.addBond(bond.getAtom(0).xyzIndex - 1, bond.getAtom(1).xyzIndex - 1, order)
                 }
 
-                // Compute bonds for CIF molecule.
+                // Assign CDK atom types for the XYZ molecule.
                 AtomTypeFactory factory = AtomTypeFactory.getInstance(
                         "org/openscience/cdk/config/data/jmol_atomtypes.txt",
-                        cifCDKAtoms.getBuilder())
-
-                // Turn off CDK Log4j
-                Logger.getRootLogger().setLevel(Level.OFF)
-
+                        xyzCDKAtoms.getBuilder())
                 for (IAtom atom : xyzCDKAtoms.atoms()) {
                     factory.configure(atom)
-                    logger.info(format(" XYZ %s %4.2f", atom.symbol, atom.covalentRadius))
                 }
 
+                // Compute bonds for CIF molecule.
+                factory = AtomTypeFactory.getInstance(
+                        "org/openscience/cdk/config/data/jmol_atomtypes.txt",
+                        cifCDKAtoms.getBuilder())
                 for (IAtom atom : cifCDKAtoms.atoms()) {
                     factory.configure(atom)
-                    logger.info(format(" CIF %s %4.2f", atom.symbol, atom.covalentRadius))
                 }
-
                 RebondTool rebonder = new RebondTool(2.0, 0.5, 0.5)
-
-                // rebonder.rebond(xyzCDKAtoms)
-                // int xyzBonds = xyzCDKAtoms.bondCount
-                // logger.info(format(" XYZ Bond count: %d", xyzBonds))
-                int xyzBonds = bonds.size()
-
                 rebonder.rebond(cifCDKAtoms)
+
                 int cifBonds = cifCDKAtoms.bondCount
                 logger.info(format(" CIF Bond count: %d", cifBonds))
 
