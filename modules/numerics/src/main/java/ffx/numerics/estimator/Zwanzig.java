@@ -118,7 +118,6 @@ public class Zwanzig extends SequentialEstimator {
             }
 
             FFXSummaryStatistics deltaSummary = new FFXSummaryStatistics(deltas);
-            logger.info(String.format(" Mean dE for window %d: %.5f. SD of dE: %.5f", i, deltaSummary.mean, deltaSummary.sd));
             FFXSummaryStatistics expDeltaSummary = new FFXSummaryStatistics(expDeltas);
             double dG = invBeta * FastMath.log(expDeltaSummary.mean);
             dGs[i] = dG;

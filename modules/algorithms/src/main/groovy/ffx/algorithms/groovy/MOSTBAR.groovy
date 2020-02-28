@@ -41,6 +41,7 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.thermodynamics.HistogramReader
 import ffx.crystal.CrystalPotential
+import ffx.numerics.estimator.BennettAcceptanceRatio
 import ffx.numerics.estimator.StatisticalEstimator
 import ffx.numerics.estimator.Zwanzig
 import ffx.potential.MolecularAssembly
@@ -210,7 +211,6 @@ class MOSTBAR extends AlgorithmsScript {
         double lambda = optLam.getAsDouble();
         int nVar = potential.getNumberOfVariables();
         x = new double[nVar];
-        x = potential.getCoordinates(x);
 
         logger.info(String.format(" Evaluating snapshot     1 of %5d", nSnapshots));
         addEntries(lambda, 0)
@@ -233,16 +233,19 @@ class MOSTBAR extends AlgorithmsScript {
             eHigh[i] = energiesUp.get(i).stream().mapToDouble(Double::doubleValue).toArray();
         }
 
-        StatisticalEstimator forwards = new Zwanzig(lamPoints, eLow, eAt, eHigh, new double[]{temp}, Zwanzig.Directionality.FORWARDS);
-        StatisticalEstimator backwards = new Zwanzig(lamPoints, eLow, eAt, eHigh, new double[]{temp}, Zwanzig.Directionality.BACKWARDS);
+        StatisticalEstimator bar = new BennettAcceptanceRatio(lamPoints, eLow, eAt, eHigh, new double[]{temp});
+        StatisticalEstimator forwards = bar.getInitialForwardsGuess();
+        StatisticalEstimator backwards = bar.getInitialBackwardsGuess();
 
-        logger.info(String.format(" Free energy via forwards FEP: %.5f +/- %.5f kcal/mol.", forwards.freeEnergy, forwards.uncertainty));
-        logger.info(String.format(" Free energy via backwards FEP: %.5f +/- %.5f kcal/mol.", backwards.freeEnergy, backwards.uncertainty));
+        logger.info(String.format(" Free energy via BAR:           %12.6f +/- %.6f kcal/mol.", bar.getFreeEnergy(), bar.getUncertainty()))
+        logger.info(String.format(" Free energy via forwards FEP:  %12.6f +/- %.6f kcal/mol.", forwards.getFreeEnergy(), forwards.getUncertainty()));
+        logger.info(String.format(" Free energy via backwards FEP: %12.6f +/- %.6f kcal/mol.", backwards.getFreeEnergy(), backwards.getUncertainty()));
 
         return this;
     }
 
     private void addEntries(double lambda, int index) {
+        x = potential.getCoordinates(x);
         lastEntries[0] = addLambdaDown(lambda);
         lastEntries[1] = addAtLambda(lambda);
         lastEntries[2] = addLambdaUp(lambda);
