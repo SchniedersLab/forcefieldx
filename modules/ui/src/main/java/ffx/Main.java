@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Handler;
@@ -72,6 +73,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.core.config.Configurator;
 
 import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.Configuration;
@@ -295,6 +298,11 @@ public final class Main extends JFrame {
         } catch (Exception e) {
             System.err.println(e.toString());
         }
+
+        // Turn off log4j
+        Properties properties = new Properties();
+        properties.setProperty("log4j.threshold", "OFF");
+        PropertyConfigurator.configure(properties);
 
         // Retrieve the log level from the ffx.log system property.
         String logLevel = System.getProperty("ffx.log", "info");
@@ -597,8 +605,7 @@ public final class Main extends JFrame {
      * @param logScripts     List Scripts.
      * @param logTestScripts List Test Scripts.
      */
-    private static void listGroovyScripts(
-            boolean logScripts, boolean logTestScripts) {
+    private static void listGroovyScripts(boolean logScripts, boolean logTestScripts) {
 
         // Find the location of ffx-all.jar
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
