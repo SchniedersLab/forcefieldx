@@ -39,6 +39,9 @@ package ffx.potential.cli;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+
+import org.apache.log4j.PropertyConfigurator;
 
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
@@ -74,6 +77,11 @@ public abstract class PotentialScript extends BaseScript {
         if (!super.init()) {
             return false;
         }
+
+        // Turn off log4j
+        Properties properties = new Properties();
+        properties.setProperty("log4j.threshold", "OFF");
+        PropertyConfigurator.configure(properties);
 
         if (context.hasVariable("functions")) {
             potentialFunctions = (PotentialsFunctions) context.getVariable("functions");
