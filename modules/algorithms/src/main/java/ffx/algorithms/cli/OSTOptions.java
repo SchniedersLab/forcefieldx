@@ -396,6 +396,11 @@ public class OSTOptions {
         MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(),
                 orthogonalSpaceTempering, topologies[0], topologies[0].getProperties(), listener, dynamics, verbose, mcMD);
 
+        MolecularDynamics md = monteCarloOST.getMD();
+        for (int i = 1; i < topologies.length; i++) {
+            md.addAssembly(topologies[i], topologies[i].getProperties());
+        }
+
         long nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
             monteCarloOST.setEquilibration(true);
