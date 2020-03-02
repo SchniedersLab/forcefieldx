@@ -392,7 +392,7 @@ public class RepExOST {
             }
 
             double acceptRate = ((double) acceptedSwaps[i]) / ((double) totalSwaps[i]);
-            logger.info(String.format(" Replica exchange acceptance rate for pair %d-%d is %.4f%%", i, (i+1), acceptRate));
+            logger.info(String.format(" Replica exchange acceptance rate for pair %d-%d is %.3f%%", i, (i+1), acceptRate * 100));
         }
     }
 
