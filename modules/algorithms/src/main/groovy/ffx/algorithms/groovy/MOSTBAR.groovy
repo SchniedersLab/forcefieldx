@@ -42,8 +42,7 @@ import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.thermodynamics.HistogramReader
 import ffx.crystal.CrystalPotential
 import ffx.numerics.estimator.BennettAcceptanceRatio
-import ffx.numerics.estimator.StatisticalEstimator
-import ffx.numerics.estimator.Zwanzig
+import ffx.numerics.estimator.SequentialEstimator
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
@@ -82,6 +81,10 @@ class MOSTBAR extends AlgorithmsScript {
             description = "Manually provided path to a histogram file (otherwise, attempts to autodetect from same directory as input files).")
     private String histogramName = "";
 
+    @CommandLine.Option(names = ["--lb", "--lambdaBins"], paramLabel = "autodetected",
+            description = "Manually specified number of lambda bins (else auto-detected from histogram")
+    private int lamBins = -1;
+
     /**
      * The final argument(s) should be filenames for lambda windows in order..
      */
@@ -104,7 +107,6 @@ class MOSTBAR extends AlgorithmsScript {
     private List<List<Double>> energiesDown;
 
     private double[] lamPoints;
-    private int lamBins;
     private double lamSep;
     private double halfLamSep;
     private double[] x;
@@ -171,18 +173,21 @@ class MOSTBAR extends AlgorithmsScript {
             histogramName = FilenameUtils.removeExtension(filenames.get(0)) + ".his";
         }
 
-        File histogramFile = new File(histogramName);
-        if (!histogramFile.exists() || !histogramFile.canRead()) {
-            logger.severe(" Histogram file ${histogramName} does not exist or could not be read!");
-        }
+        if (lamBins < 1) {
+            File histogramFile = new File(histogramName);
+            if (!histogramFile.exists() || !histogramFile.canRead()) {
+                logger.severe(" Histogram file ${histogramName} does not exist or could not be read!");
+            }
 
-        HistogramReader hr = null;
-        try {
-            hr = new HistogramReader(new BufferedReader(new FileReader(histogramFile)));
-            hr.readHistogramFile();
-            lamBins = hr.getLambdaBins();
-        } finally {
-            hr?.close();
+            HistogramReader hr = null;
+            try {
+                hr = new HistogramReader(new BufferedReader(new FileReader(histogramFile)));
+                hr.readHistogramFile();
+                lamBins = hr.getLambdaBins();
+                logger.info(" Autodetected ${lamBins} from histogram file.");
+            } finally {
+                hr?.close();
+            }
         }
 
         energiesL = new ArrayList<>(lamBins);
@@ -233,13 +238,21 @@ class MOSTBAR extends AlgorithmsScript {
             eHigh[i] = energiesUp.get(i).stream().mapToDouble(Double::doubleValue).toArray();
         }
 
-        StatisticalEstimator bar = new BennettAcceptanceRatio(lamPoints, eLow, eAt, eHigh, new double[]{temp});
-        StatisticalEstimator forwards = bar.getInitialForwardsGuess();
-        StatisticalEstimator backwards = bar.getInitialBackwardsGuess();
+        SequentialEstimator bar = new BennettAcceptanceRatio(lamPoints, eLow, eAt, eHigh, new double[]{temp});
+        SequentialEstimator forwards = bar.getInitialForwardsGuess();
+        SequentialEstimator backwards = bar.getInitialBackwardsGuess();
 
         logger.info(String.format(" Free energy via BAR:           %12.6f +/- %.6f kcal/mol.", bar.getFreeEnergy(), bar.getUncertainty()))
         logger.info(String.format(" Free energy via forwards FEP:  %12.6f +/- %.6f kcal/mol.", forwards.getFreeEnergy(), forwards.getUncertainty()));
         logger.info(String.format(" Free energy via backwards FEP: %12.6f +/- %.6f kcal/mol.", backwards.getFreeEnergy(), backwards.getUncertainty()));
+
+        logger.info(String.format(" By-window BAR dGs:     %s\n\n", Arrays.toString(bar.getWindowEnergies())));
+        logger.info(String.format(" Forwards FEP dGs:      %s\n\n", Arrays.toString(forwards.getWindowEnergies())));
+        logger.info(String.format(" Backwards FEP dGs:     %s\n\n", Arrays.toString(backwards.getWindowEnergies())));
+
+        logger.info(String.format(" By-window BAR uncerts: %s\n\n", Arrays.toString(bar.getWindowUncertainties())));
+        logger.info(String.format(" Forwards FEP uncerts:  %s\n\n", Arrays.toString(forwards.getWindowUncertainties())));
+        logger.info(String.format(" Backwards FEP uncerts: %s\n\n", Arrays.toString(backwards.getWindowUncertainties())));
 
         return this;
     }

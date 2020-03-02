@@ -42,6 +42,7 @@ import ffx.numerics.math.ScalarMath;
 import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 /**
  * The Bennett Acceptance Ratio class implements the Bennett Acceptance Ratio (BAR)
@@ -52,14 +53,15 @@ import java.util.Arrays;
  * @since 1.0
  */
 public class BennettAcceptanceRatio extends SequentialEstimator {
+    private static final Logger logger = Logger.getLogger(BennettAcceptanceRatio.class.getName());
 
     private final int nWindows;
     private final double[] dGs;
     private final double[] uncerts;
     private final double totDG;
     private final double totUncert;
-    private final double tolerance;
-    private static final double DEFAULT_TOLERANCE = 1.0E-6;
+    private static final double DEFAULT_TOLERANCE = 1.0E-10;
+    private static final int MAX_ITERS = 100;
 
     // Hang onto these in case the end-user wants them?
     private final SequentialEstimator forwardsFEP;
@@ -71,7 +73,6 @@ public class BennettAcceptanceRatio extends SequentialEstimator {
     
     public BennettAcceptanceRatio(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt, double[][] energiesHigh, double[] temperature, double tolerance) {
         super(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature);
-        this.tolerance = tolerance;
         // Used to seed an initial guess.
         forwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature, Zwanzig.Directionality.FORWARDS);
         backwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature, Zwanzig.Directionality.BACKWARDS);
@@ -87,12 +88,13 @@ public class BennettAcceptanceRatio extends SequentialEstimator {
         double cumUncert = 0;
         for (int i = 0; i < nWindows; i++) {
             boolean converged = false;
-            double c = 0.5 * (estForwards[i] + estBackwards[i]);
-            double lastC;
-            double dG = 0;
+            double lastG = 0.5 * (estBackwards[i] + estForwards[i]);
+            double dG = lastG;
             int len0 = eAt[i].length;
             int len1 = eAt[i+1].length;
             double sampleRatio = ((double) len1) / ((double) len0);
+            double logSampleRatio = FastMath.log(sampleRatio);
+            double c = estimateC(FastMath.exp(dG), sampleRatio);
 
             double[] diffsAbove = new double[len1];
             double[] diffsBelow = new double[len0];
@@ -103,8 +105,10 @@ public class BennettAcceptanceRatio extends SequentialEstimator {
             double meanFermiAbove = 1;
             double meanFermiBelow = 1;
 
+            logger.fine(String.format(" Window %d initial guess: dG=%.8f, c=%.8f from sampleRatio %.4f fore %.6f back %.6f", i, dG, c, sampleRatio, estForwards[i], estBackwards[i]));
+
+            int cycleCounter = 0;
             while (!converged) {
-                lastC = c;
                 getScalarDiffs(eLow[i+1], eAt[i+1], diffsAbove, c);
                 getScalarDiffs(eHigh[i], eAt[i], diffsBelow, -c);
                 fermiDiffs(diffsAbove, fermiAbove, len1);
@@ -115,10 +119,21 @@ public class BennettAcceptanceRatio extends SequentialEstimator {
                 meanFermiAbove = numeratorStats.mean;
                 meanFermiBelow = denominatorStats.mean;
 
-                dG = (meanFermiAbove / meanFermiBelow) * FastMath.exp(c);
-                c = FastMath.log(dG * sampleRatio);
-                converged = Math.abs(c - lastC) < tolerance;
+                double fermiRatio = meanFermiAbove / meanFermiBelow;
+                double partitionRatio = fermiRatio * FastMath.exp(c);
+                c = estimateC(partitionRatio, sampleRatio);
+                dG = estimateDG(fermiRatio, c, logSampleRatio);
+
+                converged = Math.abs(dG - lastG) < tolerance;
+                logger.info(String.format(" Numerator mean: %.6f. Denominator mean: %.6f", numeratorStats.mean, denominatorStats.mean));
+                logger.info(String.format(" Convergence cycle %d: dG is %.6f, c is %.6f, convergence found %b", ++cycleCounter, dG, c, converged));
+                lastG = dG;
+                if (cycleCounter > MAX_ITERS) {
+                    throw new IllegalArgumentException(" BAR did not converge in " + MAX_ITERS + " iterations!");
+                }
             }
+
+            logger.info("\n");
 
             dGs[i] = dG;
 
@@ -146,6 +161,14 @@ public class BennettAcceptanceRatio extends SequentialEstimator {
 
         totDG = cumDG;
         totUncert = cumUncert;
+    }
+
+    private static double estimateC(double partitionRatio, double sampleRatio) {
+        return FastMath.log(partitionRatio, sampleRatio);
+    }
+
+    private static double estimateDG(double fermiRatio, double c, double logSampleRatio) {
+        return FastMath.log(fermiRatio) + c - logSampleRatio;
     }
 
     private static void getScalarDiffs(double[] u0, double[] u1, double[] diffs, double c) {
@@ -191,11 +214,11 @@ public class BennettAcceptanceRatio extends SequentialEstimator {
         return totUncert;
     }
 
-    public StatisticalEstimator getInitialForwardsGuess() {
+    public SequentialEstimator getInitialForwardsGuess() {
         return forwardsFEP;
     }
 
-    public StatisticalEstimator getInitialBackwardsGuess() {
+    public SequentialEstimator getInitialBackwardsGuess() {
         return backwardsFEP;
     }
 }
