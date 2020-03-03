@@ -41,6 +41,7 @@ import javax.vecmath.Point3d
 
 import java.nio.file.Path
 import java.nio.file.Paths
+import static java.lang.Double.parseDouble
 import static java.lang.String.format
 
 import org.apache.commons.io.FilenameUtils
@@ -53,6 +54,8 @@ import org.openscience.cdk.isomorphism.AtomMatcher
 import org.openscience.cdk.isomorphism.BondMatcher
 import org.openscience.cdk.isomorphism.Pattern
 import org.openscience.cdk.isomorphism.VentoFoggia
+import org.openscience.cdk.tools.LoggingTool
+import org.openscience.cdk.tools.LoggingToolFactory
 import org.rcsb.cif.CifIO
 import org.rcsb.cif.model.Block
 import org.rcsb.cif.model.CifFile
@@ -224,6 +227,11 @@ class CIFtoXYZ extends PotentialScript {
                 AtomTypeFactory factory = AtomTypeFactory.getInstance(
                         "org/openscience/cdk/config/data/jmol_atomtypes.txt",
                         xyzCDKAtoms.getBuilder())
+
+                // Turn off AtomTypeFactory logging.
+                LoggingTool tool = LoggingToolFactory.createLoggingTool(AtomTypeFactory)
+                tool.setLevel(tool.FATAL)
+
                 for (IAtom atom : xyzCDKAtoms.atoms()) {
                     factory.configure(atom)
                 }
@@ -329,7 +337,7 @@ class CIFtoXYZ extends PotentialScript {
      */
     private static double toDouble(String string) {
         string = string.replace('(', ' ').replace(')', ' ').trim()
-        return Double.parseDouble(string.split(" +")[0])
+        return parseDouble(string.split(" +")[0])
     }
 
     @Override
