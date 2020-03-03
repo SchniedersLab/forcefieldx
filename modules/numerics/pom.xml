@@ -106,6 +106,16 @@
             <type>jar</type>
             <scope>test</scope>
         </dependency>
+        <!-- dependency>
+            <groupId>tornado</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>${tornado.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>tornado</groupId>
+            <artifactId>tornado-matrices</artifactId>
+            <version>${tornado.version}</version>
+        </dependency -->
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>utilities</artifactId>
