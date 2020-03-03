@@ -212,6 +212,10 @@ public class RepExOST {
                 map(OrthogonalSpaceTempering.Histogram::getSynchronousSend).
                 map(Optional::get).
                 toArray(SynchronousSend[]::new);
+        if (sends.length < 1) {
+            throw new IllegalArgumentException(" No SynchronousSend objects were found!");
+        }
+
         rankToHisto = IntStream.range(0, size).toArray();
         // TODO: Properly back-copy instead of assuming everything is in order at the start.
         histoToRank = Arrays.copyOf(rankToHisto, size);

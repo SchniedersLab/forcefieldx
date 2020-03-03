@@ -242,17 +242,24 @@ class MOSTBAR extends AlgorithmsScript {
         SequentialEstimator forwards = bar.getInitialForwardsGuess();
         SequentialEstimator backwards = bar.getInitialBackwardsGuess();
 
-        logger.info(String.format(" Free energy via BAR:           %12.6f +/- %.6f kcal/mol.", bar.getFreeEnergy(), bar.getUncertainty()))
-        logger.info(String.format(" Free energy via forwards FEP:  %12.6f +/- %.6f kcal/mol.", forwards.getFreeEnergy(), forwards.getUncertainty()));
-        logger.info(String.format(" Free energy via backwards FEP: %12.6f +/- %.6f kcal/mol.", backwards.getFreeEnergy(), backwards.getUncertainty()));
+        logger.info(String.format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", bar.getFreeEnergy(), bar.getUncertainty()))
+        logger.warning(" FEP uncertainties in FFX are currently underestimated and unreliable!");
+        logger.info(String.format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.", forwards.getFreeEnergy(), forwards.getUncertainty()));
+        logger.info(String.format(" Free energy via backwards FEP: %15.9f +/- %.9f kcal/mol.", backwards.getFreeEnergy(), backwards.getUncertainty()));
 
-        logger.info(String.format(" By-window BAR dGs:     %s\n\n", Arrays.toString(bar.getWindowEnergies())));
-        logger.info(String.format(" Forwards FEP dGs:      %s\n\n", Arrays.toString(forwards.getWindowEnergies())));
-        logger.info(String.format(" Backwards FEP dGs:     %s\n\n", Arrays.toString(backwards.getWindowEnergies())));
-
-        logger.info(String.format(" By-window BAR uncerts: %s\n\n", Arrays.toString(bar.getWindowUncertainties())));
-        logger.info(String.format(" Forwards FEP uncerts:  %s\n\n", Arrays.toString(forwards.getWindowUncertainties())));
-        logger.info(String.format(" Backwards FEP uncerts: %s\n\n", Arrays.toString(backwards.getWindowUncertainties())));
+        double[] barFE = bar.getWindowEnergies();
+        double[] barVar = bar.getWindowUncertainties();
+        double[] forwardsFE = forwards.getWindowEnergies();
+        double[] forwardsVar = forwards.getWindowUncertainties();
+        double[] backwardsFE = backwards.getWindowEnergies();
+        double[] backwardsVar = backwards.getWindowUncertainties();
+        
+        sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Max_Lambda          BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n");
+        for (int i = 0; i < (lamBins - 1); i++) {
+            sb.append(String.format(" %-10.8f %-10.8f %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
+                    lamPoints[i], lamPoints[i+1], barFE[i], barVar[i], forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]));
+        }
+        logger.info(sb.toString());
 
         return this;
     }
