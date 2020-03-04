@@ -174,17 +174,43 @@
         <dependency>
             <groupId>org.openscience.cdk</groupId>
             <artifactId>cdk-data</artifactId>
-            <version>2.3</version>
+            <version>${cdk.version}</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.openscience.cdk</groupId>
             <artifactId>cdk-isomorphism</artifactId>
-            <version>2.3</version>
+            <version>${cdk.version}</version>
+            <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
+            <groupId>org.openscience.cdk</groupId>
+            <artifactId>cdk-log4j</artifactId>
+            <version>${cdk.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+            <version>${log4j.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j.version}</version>
         </dependency>
         <!-- dependency>
             <groupId>org.tensorflow</groupId>

@@ -1,7 +1,6 @@
 package ffx.algorithms.thermodynamics;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -141,7 +140,7 @@ public class SynchronousSend {
             currentHistogram.setLastReceivedLambda(recursionWeights[i][0]);
             currentHistogram.setLastReceiveddUdL(recursionWeights[i][1]);
 
-            int walkerLambda = currentHistogram.binForLambda(recursionWeights[i][0]);
+            int walkerLambda = currentHistogram.indexForLambda(recursionWeights[i][0]);
             int walkerFLambda = currentHistogram.binForFLambda(recursionWeights[i][1]);
             double weight = recursionWeights[i][2];
             

@@ -450,7 +450,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
         dUdLambda = lambdaInterface.getdEdL();
         d2UdL2 = lambdaInterface.getd2EdL2();
-        int lambdaBin = histogram.binForLambda(lambda);
+        int lambdaBin = histogram.indexForLambda(lambda);
         dForceFieldEnergydL = dUdLambda;
 
         // Calculate recursion kernel G(L, F_L) and its derivatives with respect to L and F_L.
@@ -549,7 +549,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             // Log the current Lambda state.
             if (energyCount % printFrequency == 0) {
                 double dBdL = dUdLambda - dForceFieldEnergydL;
-                int lambdaBin = histogram.binForLambda(lambda);
+                int lambdaBin = histogram.indexForLambda(lambda);
                 if (histogram.lambdaBins < 1000) {
                     logger.info(format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
                             lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, histogram.halfThetaVelocity));
@@ -1208,13 +1208,17 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         private double[][] recursionKernel;
 
         /**
-         * Width of the lambda bin.
+         * If true, use discrete lambda values instead of continuous lambda values.
+         */
+        boolean discreteLambda = false;
+        /**
+         * Width of a lambda bin, or the distance between discrete lambda values.
          * <p>
          * The default dL = (1.0 / (lambdaBins - 1).
          */
         double dL;
         /**
-         * Half the width of a lambda bin.
+         * Half the width of a lambda bin, or zero for discrete lambda values.
          */
         double dL_2;
         /**
@@ -1230,7 +1234,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * The minimum value of the first lambda bin.
          * <p>
-         * minLambda = -dL_2.
+         * minLambda = -dL_2 for continuous lambda.
+         * <p>
+         * minLambda = 0 for discrete lambda.
          */
         private double minLambda;
         /**
@@ -1246,10 +1252,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         private double maxFLambda;
         /**
+         * For continuous lambda:
          * The first Lambda bin is centered on 0.0 (-0.005 .. 0.005). The final
          * Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
          * <p>
          * With this scheme, the maximum of biasing Gaussians is at the edges.
+         * <p>
+         * For discrete lambda:
+         * The first value of lambda is 0.0 and last value is 1.0.
          * <p>
          * The default lambdaBins = 201.
          */
@@ -1468,6 +1478,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             biasMag = properties.getDouble("bias-gaussian-mag", 0.05);
             dL = properties.getDouble("lambda-bin-width", 0.005);
             dFL = properties.getDouble("flambda-bin-width", 2.0);
+            discreteLambda = properties.getBoolean("discrete-lambda", false);
 
             deltaT = temperingFactor * R * temperature;
 
@@ -1483,7 +1494,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             temperOffset = val;
 
             // Require modest sampling of the lambda path.
-            if (dL > 0.1) {
+            if (dL < 0.0 || dL > 1.0) {
                 dL = 0.1;
             }
 
@@ -1510,6 +1521,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             dL = 1.0 / (lambdaBins - 1);
             dL_2 = dL / 2.0;
             minLambda = -dL_2;
+            if (discreteLambda) {
+                dL_2 = 0.0;
+                minLambda = 0.0;
+            }
+
             dFL_2 = dFL / 2.0;
             maxFLambda = minFLambda + FLambdaBins * dFL;
             FLambda = new double[lambdaBins];
@@ -1555,10 +1571,17 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 asynchronousSend = null;
             }
             lastReceivedLambda = getLambda();
+            if (discreteLambda) {
+                lastReceivedLambda = discretizedLambda(lastReceivedLambda);
+                logger.info(String.format(" Discrete lambda: initializing lambda to nearest bin %.5f", lastReceivedLambda));
+                lambda = lastReceivedLambda;
+                lambdaInterface.setLambda(lastReceivedLambda);
+            }
             lastReceiveddUdL = getdEdL();
 
             // Attempt to load a restart file if one exists.
             readRestart();
+
             hisFileName = FileUtils.relativePathTo(histogramFile).toString();
             if (lambdaFile != null) {
                 lambdaFileName = FileUtils.relativePathTo(lambdaFile).toString();
@@ -1571,6 +1594,18 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             return String.format(" Histogram with tempering rate %.3f, tempering offset/threshold %.3f, " +
                     "bias magnitude %.3g, writing to restart file %s.\n", temperingFactor, temperOffset, biasMag,
                     FileUtils.relativePathTo(histogramFile).toString());
+        }
+
+        /**
+         * Converts a continuous lambda value into its nearest discretized value.
+         *
+         * @param lambda Lambda to discretize.
+         * @return       Discretized lambda.
+         */
+        private double discretizedLambda(double lambda) {
+            assert discreteLambda;
+            int bin = indexForLambda(lambda);
+            return bin * dL;
         }
 
         /**
@@ -1781,6 +1816,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 try {
                     HistogramReader histogramReader = new HistogramReader(this, new FileReader(histogramToRead));
                     histogramReader.readHistogramFile();
+                    // Currently, the restart format does not include info on using discrete lambda values.
+                    if (discreteLambda) {
+                        dL_2 = 0.0;
+                        minLambda = 0.0;
+                    }
                     updateFLambda(true, false);
                     logger.info(format("\n Read OST histogram from %s.", hisFileName));
                 } catch (FileNotFoundException ex) {
@@ -1790,12 +1830,13 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * <p>binForLambda.</p>
+         * For continuous lambda, the returned value is the lambda bin.
+         * For discrete lambda, the returned value is the discrete lambda index.
          *
          * @param lambda a double.
          * @return a int.
          */
-        int binForLambda(double lambda) {
+        int indexForLambda(double lambda) {
             int lambdaBin = (int) floor((lambda - minLambda) / dL);
             if (lambdaBin < 0) {
                 lambdaBin = 0;
@@ -1871,45 +1912,55 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * Integrates dUdL over lambda using more sophisticated techniques than midpoint rectangular integration.
          * <p>
-         * The ends (from 0 to dL and 1-dL to 1) are integrated with trapezoids
+         * The ends (from 0 to dL and 1-dL to 1) are integrated with trapezoids for continuous lambda.
          *
          * @param dUdLs dUdL at the midpoint of each bin.
          * @param type  Integration type to use.
          * @return Current delta-G estimate.
          */
         private double integrateNumeric(double[] dUdLs, IntegrationType type) {
-            // Integrate between the second bin midpoint and the second-to-last bin midpoint.
-            double[] midLams = Integrate1DNumeric.generateXPoints(dL, 1.0 - dL, (lambdaBins - 2), false);
-            double[] midVals = Arrays.copyOfRange(dUdLs, 1, (lambdaBins - 1));
-            DataSet dSet = new DoublesDataSet(midLams, midVals, false);
+            double val;
+            if (discreteLambda) {
+                // Integrate between the first bin and the last bin.
+                double[] lams = Integrate1DNumeric.generateXPoints(0.0, 1.0, lambdaBins, false);
+                DataSet dSet = new DoublesDataSet(lams, dUdLs, false);
+                val = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, type);
+            } else {
+                // Integrate between the second bin midpoint and the second-to-last bin midpoint.
+                double[] midLams = Integrate1DNumeric.generateXPoints(dL, 1.0 - dL, (lambdaBins - 2), false);
+                double[] midVals = Arrays.copyOfRange(dUdLs, 1, (lambdaBins - 1));
+                DataSet dSet = new DoublesDataSet(midLams, midVals, false);
 
-            double val = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, type);
+                val = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, type);
 
-            double dL_4 = dL_2 * 0.5;
+                // Everything after this is just adding in the endpoint contributions.
 
-            // Initially, assume dU/dL is exactly 0 at the endpoints. This is sometimes a true assumption.
-            double val0 = 0;
-            double val1 = 0;
+                double dL_4 = dL_2 * 0.5;
 
-            // If we cannot guarantee that dUdL is exactly 0 at the endpoints, interpolate.
-            if (!lambdaInterface.dEdLZeroAtEnds()) {
-                double recipSlopeLen = 1.0 / (dL * 0.75);
+                // Initially, assume dU/dL is exactly 0 at the endpoints. This is sometimes a true assumption.
+                double val0 = 0;
+                double val1 = 0;
 
-                double slope = dUdLs[0] - dUdLs[1];
-                slope *= recipSlopeLen;
-                val0 = dUdLs[0] + (slope * dL_4);
+                // If we cannot guarantee that dUdL is exactly 0 at the endpoints, interpolate.
+                if (!lambdaInterface.dEdLZeroAtEnds()) {
+                    double recipSlopeLen = 1.0 / (dL * 0.75);
 
-                slope = dUdLs[lambdaBins - 1] - dUdLs[lambdaBins - 2];
-                slope *= recipSlopeLen;
-                val1 = dUdLs[lambdaBins - 1] + (slope * dL_4);
-                logger.fine(format(" Inferred dU/dL values at 0 and 1: %10.5g , %10.5g", val0, val1));
+                    double slope = dUdLs[0] - dUdLs[1];
+                    slope *= recipSlopeLen;
+                    val0 = dUdLs[0] + (slope * dL_4);
+
+                    slope = dUdLs[lambdaBins - 1] - dUdLs[lambdaBins - 2];
+                    slope *= recipSlopeLen;
+                    val1 = dUdLs[lambdaBins - 1] + (slope * dL_4);
+                    logger.fine(format(" Inferred dU/dL values at 0 and 1: %10.5g , %10.5g", val0, val1));
+                }
+
+                // Integrate trapezoids from 0 to the second bin midpoint, and from second-to-last bin midpoint to 1.
+                val += trapezoid(0, dL_4, val0, dUdLs[0]);
+                val += trapezoid(dL_4, dL, dUdLs[0], dUdLs[1]);
+                val += trapezoid(1.0 - dL, 1.0 - dL_4, dUdLs[lambdaBins - 2], dUdLs[lambdaBins - 1]);
+                val += trapezoid(1.0 - dL_4, 1.0, dUdLs[lambdaBins - 1], val1);
             }
-
-            // Integrate trapezoids from 0 to the second bin midpoint, and from second-to-last bin midpoint to 1.
-            val += trapezoid(0, dL_4, val0, dUdLs[0]);
-            val += trapezoid(dL_4, dL, dUdLs[0], dUdLs[1]);
-            val += trapezoid(1.0 - dL, 1.0 - dL_4, dUdLs[lambdaBins - 2], dUdLs[lambdaBins - 1]);
-            val += trapezoid(1.0 - dL_4, 1.0, dUdLs[lambdaBins - 1], val1);
 
             return val;
         }
@@ -2032,7 +2083,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         double computeBiasEnergy(double currentLambda, double currentdUdL) {
 
-            int lambdaBin = binForLambda(currentLambda);
+            int lambdaBin = indexForLambda(currentLambda);
             int FLambdaBin = binForFLambda(currentdUdL);
 
             double bias2D = 0.0;
@@ -2095,7 +2146,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             double dGdLambda = 0.0;
             double dGdFLambda = 0.0;
 
-            int lambdaBin = binForLambda(currentLambda);
+            int lambdaBin = indexForLambda(currentLambda);
             int FLambdaBin = binForFLambda(currentdUdLambda);
 
             double ls2 = (2.0 * dL) * (2.0 * dL);
@@ -2240,7 +2291,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * @return The value of the Histogram.
          */
         double evaluateHistogram(double lambda, double dUdL) {
-            int lambdaBin = binForLambda(lambda);
+            int lambdaBin = indexForLambda(lambda);
             int dUdLBin = binForFLambda(dUdL);
             try {
                 return recursionKernel[lambdaBin][dUdLBin];
@@ -2391,9 +2442,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                     ula = minFLambda + (ulFL + 1) * dFL;
                 }
 
-                // The first and last lambda bins are half size.
                 double delta = dL;
-                if (iL == 0 || iL == lambdaBins - 1) {
+                if (!discreteLambda && (iL == 0 || iL == lambdaBins - 1)) {
+                    // The first and last lambda bins are half size.
                     delta = dL_2;
                 }
                 double deltaFreeEnergy = FLambda[iL] * delta;
@@ -2410,7 +2461,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                         ulL = 1.0;
                     }
 
-                    double midLambda = (llL + ulL) / 2.0;
+                    double midLambda = lambda;
+                    if (!discreteLambda) {
+                        midLambda = (llL + ulL) / 2.0;
+                    }
                     double bias1D = current1DBiasEnergy(midLambda, false);
 
                     double bias2D = 0.0;

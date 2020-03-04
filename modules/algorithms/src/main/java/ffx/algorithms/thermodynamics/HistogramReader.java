@@ -43,6 +43,10 @@ import java.io.Reader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 
 /**
@@ -92,23 +96,23 @@ public class HistogramReader extends BufferedReader {
      */
     public void readHistogramFile() {
         try {
-            temperature = Double.parseDouble(readLine().split(" +")[1]);
-            thetaMass = Double.parseDouble(readLine().split(" +")[1]);
-            thetaFriction = Double.parseDouble(readLine().split(" +")[1]);
-            biasMag = Double.parseDouble(readLine().split(" +")[1]);
-            biasCutoff = Integer.parseInt(readLine().split(" +")[1]);
-            countInterval = Integer.parseInt(readLine().split(" +")[1]);
-            lambdaBins = Integer.parseInt(readLine().split(" +")[1]);
-            FLambdaBins = Integer.parseInt(readLine().split(" +")[1]);
-            minFLambda = Double.parseDouble(readLine().split(" +")[1]);
-            dFL = Double.parseDouble(readLine().split(" +")[1]);
-            temperingFlag = Integer.parseInt(readLine().split(" +")[1]);
+            temperature = parseDouble(readLine().split(" +")[1]);
+            thetaMass = parseDouble(readLine().split(" +")[1]);
+            thetaFriction = parseDouble(readLine().split(" +")[1]);
+            biasMag = parseDouble(readLine().split(" +")[1]);
+            biasCutoff = parseInt(readLine().split(" +")[1]);
+            countInterval = parseInt(readLine().split(" +")[1]);
+            lambdaBins = parseInt(readLine().split(" +")[1]);
+            FLambdaBins = parseInt(readLine().split(" +")[1]);
+            minFLambda = parseDouble(readLine().split(" +")[1]);
+            dFL = parseDouble(readLine().split(" +")[1]);
+            temperingFlag = parseInt(readLine().split(" +")[1]);
 
             counts = new double[lambdaBins][FLambdaBins];
             for (int i = 0; i < lambdaBins; i++) {
                 String[] countToks = readLine().split(" +");
                 for (int j = 0; j < FLambdaBins; j++) {
-                    counts[i][j] = Double.parseDouble(countToks[j]);
+                    counts[i][j] = parseDouble(countToks[j]);
                 }
             }
 
@@ -123,7 +127,7 @@ public class HistogramReader extends BufferedReader {
             close();
         } catch (IOException ioe) {
             String histoName = histogram == null ? "unknown file" : histogram.toString();
-            logger.warning(String.format(" Failed to close histogram reader for %s", histoName));
+            logger.warning(format(" Failed to close histogram reader for %s", histoName));
         }
     }
 

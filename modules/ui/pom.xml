@@ -52,12 +52,22 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>${shade.version}</version>
                 <configuration>
-                    <!-- artifactSet>
+                    <transformers>
+                        <transformer
+                                implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <mainClass>ffx.Main</mainClass>
+                            <manifestEntries>
+                                <Multi-Release>true</Multi-Release>
+                            </manifestEntries>
+                        </transformer>
+                        <transformer
+                                implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                    </transformers>
+                    <artifactSet>
                         <excludes>
-                            <exclude>java3d:vecmath:jar:1.3.1</exclude>
-                            <exclude>org.apache.commons:commons-io:jar:2.0.1</exclude>
+                            <exclude>log4j:log4j</exclude>
                         </excludes>
-                    </artifactSet -->
+                    </artifactSet>
                     <filters>
                         <filter>
                             <artifact>*:*</artifact>

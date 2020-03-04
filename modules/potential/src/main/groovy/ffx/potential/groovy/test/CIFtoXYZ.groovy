@@ -41,11 +41,11 @@ import javax.vecmath.Point3d
 
 import java.nio.file.Path
 import java.nio.file.Paths
+import static java.lang.Double.parseDouble
+import static java.lang.Integer.parseInt
 import static java.lang.String.format
 
 import org.apache.commons.io.FilenameUtils
-import org.apache.log4j.Level
-import org.apache.log4j.Logger
 import org.openscience.cdk.AtomContainer
 import org.openscience.cdk.config.AtomTypeFactory
 import org.openscience.cdk.graph.rebond.RebondTool
@@ -55,10 +55,14 @@ import org.openscience.cdk.isomorphism.AtomMatcher
 import org.openscience.cdk.isomorphism.BondMatcher
 import org.openscience.cdk.isomorphism.Pattern
 import org.openscience.cdk.isomorphism.VentoFoggia
+import org.openscience.cdk.tools.LoggingTool
+import org.openscience.cdk.tools.LoggingToolFactory
 import org.rcsb.cif.CifIO
-import org.rcsb.cif.model.Block
-import org.rcsb.cif.model.CifFile
 import org.rcsb.cif.model.Column
+import org.rcsb.cif.schema.StandardSchemata
+import org.rcsb.cif.schema.mm.MmCifBlock
+import org.rcsb.cif.schema.mm.MmCifFile
+import org.rcsb.cif.schema.mm.Symmetry
 
 import ffx.crystal.Crystal
 import ffx.crystal.SpaceGroup
@@ -96,11 +100,6 @@ class CIFtoXYZ extends PotentialScript {
         this.baseDir = baseDir
     }
 
-    CIFtoXYZ() {
-        // Turn off CDK Log4j
-        Logger.getRootLogger().setLevel(Level.OFF)
-    }
-
     /**
      * Execute the script.
      */
@@ -111,11 +110,11 @@ class CIFtoXYZ extends PotentialScript {
             return null
         }
 
-        CifFile cifFile
+        MmCifFile cifFile
         Path path
         if (filenames != null && filenames.size() > 0) {
             path = Paths.get(filenames.get(0))
-            cifFile = CifIO.readFromPath(path)
+            cifFile = CifIO.readFromPath(path).as(StandardSchemata.MMCIF)
         } else {
             logger.info(helpString())
             return null
@@ -123,7 +122,8 @@ class CIFtoXYZ extends PotentialScript {
 
         String modelFilename = path.toAbsolutePath().toString()
         logger.info("\n Opening CIF file " + path)
-        Block firstBlock = cifFile.firstBlock
+
+        MmCifBlock firstBlock = cifFile.firstBlock
 
         // Space Group Number
         // _symmetry_Int_Tables_number      14
@@ -134,8 +134,7 @@ class CIFtoXYZ extends PotentialScript {
         // _cell_angle_alpha                90
         // _cell_angle_beta                 116.17(1)
         // _cell_angle_gamma                90
-
-        int sgNum = Integer.parseInt(firstBlock.getColumn("symmetry_Int_Tables_number").getStringData(0))
+        int sgNum = parseInt(firstBlock.getColumn("symmetry_Int_Tables_number").getStringData(0))
         SpaceGroup sg = SpaceGroup.spaceGroupFactory(sgNum)
         double a = toDouble(firstBlock.getColumn("cell_length_a").getStringData(0))
         double b = toDouble(firstBlock.getColumn("cell_length_b").getStringData(0))
@@ -222,36 +221,34 @@ class CIFtoXYZ extends PotentialScript {
                 // Add known XYZ bonds. A limitation is all are given a Bond order of 1.
                 ArrayList<Bond> bonds = activeAssembly.getBondList()
                 Order order = Order.SINGLE
+                int xyzBonds = bonds.size()
                 for (Bond bond : bonds) {
                     xyzCDKAtoms.addBond(bond.getAtom(0).xyzIndex - 1, bond.getAtom(1).xyzIndex - 1, order)
                 }
 
-                // Compute bonds for CIF molecule.
+                // Assign CDK atom types for the XYZ molecule.
                 AtomTypeFactory factory = AtomTypeFactory.getInstance(
                         "org/openscience/cdk/config/data/jmol_atomtypes.txt",
-                        cifCDKAtoms.getBuilder())
+                        xyzCDKAtoms.getBuilder())
 
-                // Turn off CDK Log4j
-                Logger.getRootLogger().setLevel(Level.OFF)
+                // Turn off AtomTypeFactory logging.
+                LoggingTool tool = LoggingToolFactory.createLoggingTool(AtomTypeFactory)
+                tool.setLevel(tool.FATAL)
 
                 for (IAtom atom : xyzCDKAtoms.atoms()) {
                     factory.configure(atom)
-                    logger.info(format(" XYZ %s %4.2f", atom.symbol, atom.covalentRadius))
                 }
 
+                // Compute bonds for CIF molecule.
+                factory = AtomTypeFactory.getInstance(
+                        "org/openscience/cdk/config/data/jmol_atomtypes.txt",
+                        cifCDKAtoms.getBuilder())
                 for (IAtom atom : cifCDKAtoms.atoms()) {
                     factory.configure(atom)
-                    logger.info(format(" CIF %s %4.2f", atom.symbol, atom.covalentRadius))
                 }
-
                 RebondTool rebonder = new RebondTool(2.0, 0.5, 0.5)
-
-                // rebonder.rebond(xyzCDKAtoms)
-                // int xyzBonds = xyzCDKAtoms.bondCount
-                // logger.info(format(" XYZ Bond count: %d", xyzBonds))
-                int xyzBonds = bonds.size()
-
                 rebonder.rebond(cifCDKAtoms)
+
                 int cifBonds = cifCDKAtoms.bondCount
                 logger.info(format(" CIF Bond count: %d", cifBonds))
 
@@ -343,7 +340,7 @@ class CIFtoXYZ extends PotentialScript {
      */
     private static double toDouble(String string) {
         string = string.replace('(', ' ').replace(')', ' ').trim()
-        return Double.parseDouble(string.split(" +")[0])
+        return parseDouble(string.split(" +")[0])
     }
 
     @Override
