@@ -54,6 +54,7 @@ import edu.rit.pj.reduction.SharedDouble;
 import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
 
 /**
@@ -105,38 +106,58 @@ public class DispersionRegion extends ParallelRegion {
     private double[] cDisp;
     private final DispersionLoop[] dispersionLoop;
     private final SharedDouble sharedDispersion;
-    private static final double DISP_OVERLAP_SCALE_FACTOR = 0.81;
     /**
-     * This offset is the only "free" parameter in the dispersion integral
-     * model, and was fit to explicit solvent dispersion energy values.
+     * The dispersion integral HCT overlap scale factor.
      */
-    public static final double DEFAULT_DISP_OFFSET = 0.826;
+    private static final double DEFAULT_DISP_OVERLAP_FACTOR = 0.81;
+    /**
+     * The dispersion integral begin for each atom at:
+     * Rmin + DISPERSION_OFFSET
+     */
+    public static final double DEFAULT_DISPERSION_OFFSET = 0.826;
+
     private static final double SLEVY = 1.0;
     private static final double AWATER = 0.033428;
     private static final double EPSO = 0.1100;
     private static final double EPSH = 0.0135;
     private static final double RMINO = 1.7025;
     private static final double RMINH = 1.3275;
-    private double dispersionOffest = DEFAULT_DISP_OFFSET;
 
-    public DispersionRegion(int nt, Atom[] atoms) {
+    private double dispersionOffest = DEFAULT_DISPERSION_OFFSET;
+    private double dispersionOverlapFactor = DEFAULT_DISP_OVERLAP_FACTOR;
+
+
+    public DispersionRegion(int nt, Atom[] atoms, ForceField forceField) {
         dispersionLoop = new DispersionLoop[nt];
         for (int i = 0; i < nt; i++) {
             dispersionLoop[i] = new DispersionLoop();
         }
         sharedDispersion = new SharedDouble();
+
+        dispersionOffest = forceField.getDouble("DISPERSION_OFFSET", DEFAULT_DISPERSION_OFFSET);
+        dispersionOverlapFactor = forceField.getDouble("DISP_OVERLAP_FACTOR", DEFAULT_DISP_OVERLAP_FACTOR);
+
         allocate(atoms);
     }
 
     /**
      * The dispersion integral begins offset from the vdW radius.
      *
-     * @param dispersionOffest the dispersion integral offset.
+     * @param dispersionOffest The dispersion integral offset.
      */
     public void setDispersionOffest(double dispersionOffest) {
         this.dispersionOffest = dispersionOffest;
         // Update the maximum dispersion energy.
         maxDispersionEnergy();
+    }
+
+    /**
+     * Set the dispersion overlap HCT scale factor.
+     *
+     * @param dispersionOverlapFactor The dispersion integral HCT scale factor.
+     */
+    public void setDispersionOverlapFactor(double dispersionOverlapFactor) {
+        this.dispersionOverlapFactor = dispersionOverlapFactor;
     }
 
     /**
@@ -347,7 +368,7 @@ public class DispersionRegion extends ParallelRegion {
             double ri = rDisp[i] + dispersionOffest;
             // Atom k descreens with no offset applied.
             double rk = rDisp[k];
-            double sk = rk * DISP_OVERLAP_SCALE_FACTOR;
+            double sk = rk * dispersionOverlapFactor;
             double sk2 = sk * sk;
             if (ri < r + sk) {
                 double de = 0.0;

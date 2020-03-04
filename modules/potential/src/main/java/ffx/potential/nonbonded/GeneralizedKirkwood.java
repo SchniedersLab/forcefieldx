@@ -71,7 +71,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteRadii;
 import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
-import static ffx.potential.nonbonded.implicit.DispersionRegion.DEFAULT_DISP_OFFSET;
+import static ffx.potential.nonbonded.implicit.DispersionRegion.DEFAULT_DISPERSION_OFFSET;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
@@ -530,7 +530,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 surfaceAreaRegion = new SurfaceAreaRegion(atoms, x, y, z, use, neighborLists,
                         grad, threadCount, probe, tensionDefault);
-                dispersionRegion = new DispersionRegion(threadCount, atoms);
+                dispersionRegion = new DispersionRegion(threadCount, atoms, forceField);
                 chandlerCavitation = null;
                 break;
             case SEV_DISP:
@@ -545,11 +545,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double wiggle = forceField.getDouble("WIGGLE", ConnollyRegion.DEFAULT_WIGGLE);
                 connollyRegion.setWiggle(wiggle);
                 chandlerCavitation = new ChandlerCavitation(atoms, connollyRegion);
-                dispersionRegion = new DispersionRegion(threadCount, atoms);
+                dispersionRegion = new DispersionRegion(threadCount, atoms, forceField);
                 surfaceAreaRegion = null;
                 break;
             case GAUSS_DISP:
-                dispersionRegion = new DispersionRegion(threadCount, atoms);
+                dispersionRegion = new DispersionRegion(threadCount, atoms, forceField);
                 surfaceAreaRegion = null;
                 GaussVol gaussVol = new GaussVol(nAtoms, null);
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
@@ -581,7 +581,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 surfaceAreaRegion = null;
                 chandlerCavitation = null;
-                dispersionRegion = new DispersionRegion(threadCount, atoms);
+                dispersionRegion = new DispersionRegion(threadCount, atoms, forceField);
                 break;
             case HYDROPHOBIC_PMF:
             case BORN_SOLV:
@@ -605,7 +605,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         if (surfaceAreaRegion != null) {
             surfaceAreaRegion.setSurfaceTension(surfaceTension);
         }
-        double dispersionOffset = forceField.getDouble("DISPERSION_OFFSET", DEFAULT_DISP_OFFSET);
+        double dispersionOffset = forceField.getDouble("DISPERSION_OFFSET", DEFAULT_DISPERSION_OFFSET);
         if (dispersionRegion != null) {
             dispersionRegion.setDispersionOffest(dispersionOffset);
         }
