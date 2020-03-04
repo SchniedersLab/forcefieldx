@@ -42,6 +42,7 @@ import javax.vecmath.Point3d
 import java.nio.file.Path
 import java.nio.file.Paths
 import static java.lang.Double.parseDouble
+import static java.lang.Integer.parseInt
 import static java.lang.String.format
 
 import org.apache.commons.io.FilenameUtils
@@ -57,9 +58,11 @@ import org.openscience.cdk.isomorphism.VentoFoggia
 import org.openscience.cdk.tools.LoggingTool
 import org.openscience.cdk.tools.LoggingToolFactory
 import org.rcsb.cif.CifIO
-import org.rcsb.cif.model.Block
-import org.rcsb.cif.model.CifFile
 import org.rcsb.cif.model.Column
+import org.rcsb.cif.schema.StandardSchemata
+import org.rcsb.cif.schema.mm.MmCifBlock
+import org.rcsb.cif.schema.mm.MmCifFile
+import org.rcsb.cif.schema.mm.Symmetry
 
 import ffx.crystal.Crystal
 import ffx.crystal.SpaceGroup
@@ -107,11 +110,11 @@ class CIFtoXYZ extends PotentialScript {
             return null
         }
 
-        CifFile cifFile
+        MmCifFile cifFile
         Path path
         if (filenames != null && filenames.size() > 0) {
             path = Paths.get(filenames.get(0))
-            cifFile = CifIO.readFromPath(path)
+            cifFile = CifIO.readFromPath(path).as(StandardSchemata.MMCIF)
         } else {
             logger.info(helpString())
             return null
@@ -119,8 +122,8 @@ class CIFtoXYZ extends PotentialScript {
 
         String modelFilename = path.toAbsolutePath().toString()
         logger.info("\n Opening CIF file " + path)
-        Block firstBlock = cifFile.firstBlock
 
+        MmCifBlock firstBlock = cifFile.firstBlock
         // Space Group Number
         // _symmetry_Int_Tables_number      14
         // Unit Cell Parameters
@@ -131,7 +134,7 @@ class CIFtoXYZ extends PotentialScript {
         // _cell_angle_beta                 116.17(1)
         // _cell_angle_gamma                90
 
-        int sgNum = Integer.parseInt(firstBlock.getColumn("symmetry_Int_Tables_number").getStringData(0))
+        int sgNum = parseInt(firstBlock.getColumn("symmetry_Int_Tables_number").getStringData(0))
         SpaceGroup sg = SpaceGroup.spaceGroupFactory(sgNum)
         double a = toDouble(firstBlock.getColumn("cell_length_a").getStringData(0))
         double b = toDouble(firstBlock.getColumn("cell_length_b").getStringData(0))
