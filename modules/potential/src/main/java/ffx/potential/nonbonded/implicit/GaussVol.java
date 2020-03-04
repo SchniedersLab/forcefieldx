@@ -102,7 +102,6 @@ public class GaussVol {
      * Set this to either KFC or PFC.
      */
     private static double sphereConversion = KFC;
-
     /**
      * Minimum volume.
      */
@@ -167,12 +166,10 @@ public class GaussVol {
      * Maximum depth that the tree reaches
      */
     private int maximumDepth = 0;
-
     /**
      * Total number of overlaps in overlap tree
      */
     private int totalNumberOfOverlaps = 0;
-
     /**
      * Surface area (Ang^2).
      */

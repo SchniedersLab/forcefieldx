@@ -197,7 +197,6 @@ public class DispersionRegion extends ParallelRegion {
         for (int i = 0; i < nAtoms; i++) {
             VDWType type = atoms[i].getVDWType();
             double epsi = type.wellDepth;
-            // Do not apply DISP_OFFSET here -- we don't want to change the shape of the Buffered-14-7 curve.
             double rmini = type.radius / 2.0;
             if (rDisp[i] > 0.0 && epsi > 0.0) {
                 double sqEpsoEpsi = sqrt(EPSO) + sqrt(epsi);
@@ -212,28 +211,29 @@ public class DispersionRegion extends ParallelRegion {
                 double rmixh3 = pow(rmixh, 3);
                 double rmixh7 = pow(rmixh, 7);
                 double ah = emixh * rmixh7;
-                // Apply the DISP_OFFSET here to start the integral beyond the atomic radius of atom i.
+                // Apply the dispersion offset to start the integral beyond the atomic radius of atom i.
                 double ri = rDisp[i] + dispersionOffest;
                 double ri3 = pow(ri, 3);
                 double ri7 = pow(ri, 7);
                 double ri11 = pow(ri, 11);
+                // Integral with a water hydrogen atom.
                 if (ri < rmixh) {
-                    cDisp[i] = -4.0 * PI * emixh * (rmixh3 - ri3) / 3.0;
-                    cDisp[i] = cDisp[i] - emixh * 18.0 / 11.0 * rmixh3 * PI;
+                    cDisp[i] = -4.0 * PI * emixh * (rmixh3 - ri3) / 3.0
+                            - emixh * 18.0 * PI * rmixh3 / 11.0;
                 } else {
-                    cDisp[i] = 2.0 * PI * (2.0 * rmixh7 - 11.0 * ri7) * ah;
-                    cDisp[i] = cDisp[i] / (11.0 * ri11);
+                    cDisp[i] = 2.0 * PI * ah * (2.0 * rmixh7 - 11.0 * ri7) / (11.0 * ri11);
                 }
+                // There are two hydrogen per water.
                 cDisp[i] = 2.0 * cDisp[i];
+                // Integral with a water oxygen atom.
                 if (ri < rmixo) {
-                    cDisp[i] = cDisp[i] - 4.0 * PI * emixo * (rmixo3 - ri3) / 3.0;
-                    cDisp[i] = cDisp[i] - emixo * 18.0 / 11.0 * rmixo3 * PI;
+                    cDisp[i] += -4.0 * PI * emixo * (rmixo3 - ri3) / 3.0
+                            - emixo * 18.0 * PI * rmixo3 / 11.0;
                 } else {
-                    cDisp[i] = cDisp[i] + 2.0 * PI * (2.0 * rmixo7 - 11.0 * ri7) * ao / (11.0 * ri11);
+                    cDisp[i] += 2.0 * PI * ao * (2.0 * rmixo7 - 11.0 * ri7) / (11.0 * ri11);
                 }
             }
             cDisp[i] = SLEVY * AWATER * cDisp[i];
-            // logger.info(format(" Max dispersion: %d %8.6f", i, cDisp[i]));
         }
     }
 
@@ -315,20 +315,16 @@ public class DispersionRegion extends ParallelRegion {
                         zr = dx_local[2];
                         r = sqrt(r2);
                         r3 = r * r2;
-
                         // Atom i descreened by atom k.
                         sum += descreen(i, k);
-
                         // Flip the sign on {xr, yr, zr};
                         xr = -xr;
                         yr = -yr;
                         zr = -zr;
-
                         // Atom k descreened by atom i.
                         sum += descreen(k, i);
                     }
                 }
-
                 // Subtract descreening.
                 edisp -= SLEVY * AWATER * sum;
             }
@@ -338,7 +334,6 @@ public class DispersionRegion extends ParallelRegion {
             double sum = 0.0;
             VDWType type = atoms[i].getVDWType();
             double epsi = type.wellDepth;
-            // Do not apply DISP_OFFSET to rmini -- we don't want to change the shape of the Buffered-14-7 curve.
             double rmini = type.radius / 2.0;
             double emixo = (4.0 * EPSO * epsi) / (pow(sqrt(EPSO) + sqrt(epsi), 2));
             double rmixo = 2.0 * (pow(RMINO, 3) + pow(rmini, 3)) / (pow(RMINO, 2) + pow(rmini, 2));
@@ -348,7 +343,7 @@ public class DispersionRegion extends ParallelRegion {
             double rmixh = 2.0 * (pow(RMINH, 3) + pow(rmini, 3)) / (pow(RMINH, 2) + pow(rmini, 2));
             double rmixh7 = pow(rmixh, 7);
             double ah = emixh * rmixh7;
-            // Apply the DISP_OFFSET here to start the integral beyond the atomic radius of atom i.
+            // Apply the offset to start the integral beyond the atomic radius of atom i.
             double ri = rDisp[i] + dispersionOffest;
             // Atom k descreens with no offset applied.
             double rk = rDisp[k];
@@ -528,9 +523,7 @@ public class DispersionRegion extends ParallelRegion {
                         du = -du / uik13;
                         de = de + ah * rmixh7 * PI * (dl + du) / (30.0 * r2);
                     }
-
                 }
-
                 // Increment the individual dispersion gradient components.
                 if (gradient) {
                     de = -de / r * SLEVY * AWATER;
