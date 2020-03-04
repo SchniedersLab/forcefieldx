@@ -1571,6 +1571,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 asynchronousSend = null;
             }
             lastReceivedLambda = getLambda();
+            if (discreteLambda) {
+                lastReceivedLambda = discretizedLambda(lastReceivedLambda);
+                logger.info(String.format(" Discrete lambda: initializing lambda to nearest bin %.5f", lastReceivedLambda));
+                lambda = lastReceivedLambda;
+                lambdaInterface.setLambda(lastReceivedLambda);
+            }
             lastReceiveddUdL = getdEdL();
 
             // Attempt to load a restart file if one exists.
@@ -1582,14 +1588,24 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             } else {
                 lambdaFileName = FilenameUtils.removeExtension(hisFileName) + ".lam";
             }
-
-
         }
 
         public String toString() {
             return String.format(" Histogram with tempering rate %.3f, tempering offset/threshold %.3f, " +
                     "bias magnitude %.3g, writing to restart file %s.\n", temperingFactor, temperOffset, biasMag,
                     FileUtils.relativePathTo(histogramFile).toString());
+        }
+
+        /**
+         * Converts a continuous lambda value into its nearest discretized value.
+         *
+         * @param lambda Lambda to discretize.
+         * @return       Discretized lambda.
+         */
+        private double discretizedLambda(double lambda) {
+            assert discreteLambda;
+            int bin = indexForLambda(lambda);
+            return bin * dL;
         }
 
         /**
