@@ -124,6 +124,7 @@ class CIFtoXYZ extends PotentialScript {
         logger.info("\n Opening CIF file " + path)
 
         MmCifBlock firstBlock = cifFile.firstBlock
+
         // Space Group Number
         // _symmetry_Int_Tables_number      14
         // Unit Cell Parameters
@@ -133,7 +134,6 @@ class CIFtoXYZ extends PotentialScript {
         // _cell_angle_alpha                90
         // _cell_angle_beta                 116.17(1)
         // _cell_angle_gamma                90
-
         int sgNum = parseInt(firstBlock.getColumn("symmetry_Int_Tables_number").getStringData(0))
         SpaceGroup sg = SpaceGroup.spaceGroupFactory(sgNum)
         double a = toDouble(firstBlock.getColumn("cell_length_a").getStringData(0))

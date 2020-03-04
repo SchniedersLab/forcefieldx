@@ -1150,7 +1150,6 @@
         <commons-io.version>2.6</commons-io.version>
         <commons-lang3.version>3.9</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
-        <log4j.version>2.13.1</log4j.version>
         <fastutil.version>8.3.0</fastutil.version>
         <groovy-all.version>3.0.0.1</groovy-all.version>
         <guava.version>28.1-jre</guava.version>
@@ -1161,7 +1160,7 @@
         <jogamp-fat.version>2.4.0</jogamp-fat.version>
         <jopenmm.version>7.5.0</jopenmm.version>
         <junit.version>4.13</junit.version>
-        <log4j.version>2.13.0</log4j.version>
+        <log4j.version>2.13.1</log4j.version>
         <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
         <picocli.version>4.1.4</picocli.version>
         <pj.version>1.0.1</pj.version>
