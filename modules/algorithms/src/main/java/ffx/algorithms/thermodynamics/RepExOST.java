@@ -212,6 +212,10 @@ public class RepExOST {
                 map(OrthogonalSpaceTempering.Histogram::getSynchronousSend).
                 map(Optional::get).
                 toArray(SynchronousSend[]::new);
+        if (sends.length < 1) {
+            throw new IllegalArgumentException(" No SynchronousSend objects were found!");
+        }
+
         rankToHisto = IntStream.range(0, size).toArray();
         // TODO: Properly back-copy instead of assuming everything is in order at the start.
         histoToRank = Arrays.copyOf(rankToHisto, size);
@@ -392,7 +396,7 @@ public class RepExOST {
             }
 
             double acceptRate = ((double) acceptedSwaps[i]) / ((double) totalSwaps[i]);
-            logger.info(String.format(" Replica exchange acceptance rate for pair %d-%d is %.4f%%", i, (i+1), acceptRate));
+            logger.info(String.format(" Replica exchange acceptance rate for pair %d-%d is %.3f%%", i, (i+1), acceptRate * 100));
         }
     }
 

@@ -648,7 +648,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                 {
                         "Dual Well 1-Step MC-OST Test",
                         new String[]{"ffx/algorithms/structures/dualWell-cis.xyz", "ffx/algorithms/structures/dualWell-trans.xyz"},
-                        ThermoTestMode.FREE, true, 0, 0.8, null, null, null, null, null, null,
+                        ThermoTestMode.FREE, true, 0, 1.0, null, null, null, null, null, null,
                         new String[]{"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0", "-k", "1000.0",
                                 "-w", "1000.0", "-r", "1.0", "-Q", "1000", "-n", "250000", "-t", "298.15", "--tp", "6.0",
                                 "--mcMD", "10", "--mcL", "0.10"},
@@ -659,7 +659,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                 {
                         "Dual Well 2-Step MC-OST Test",
                         new String[]{"ffx/algorithms/structures/dualWell-cis.xyz", "ffx/algorithms/structures/dualWell-trans.xyz"},
-                        ThermoTestMode.FREE, true, 0, 0.8, null, null, null, null, null, null,
+                        ThermoTestMode.FREE, true, 0, 1.0, null, null, null, null, null, null,
                         new String[]{"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0", "-k", "1000.0",
                                 "-w", "1000.0", "-r", "1.0", "-Q", "1000", "-n", "250000", "-t", "298.15", "--tp", "6.0",
                                 "--mcMD", "10", "--mcL", "0.10"},

@@ -91,7 +91,6 @@ public class Zwanzig extends SequentialEstimator {
         boolean forwards = directionality.equals(Directionality.FORWARDS);
 
         double cumDG = 0;
-        double cumUncert = 0;
         for (int i = 0; i < nWindows; i++) {
             int windowIndex = forwards ? 0 : 1;
             windowIndex += i;
@@ -127,12 +126,11 @@ public class Zwanzig extends SequentialEstimator {
             } else {
                 double ci = deltaSummary.confidenceInterval();
                 uncerts[i] = ci;
-                cumUncert += (ci * ci);
             }
         }
 
         totDG = cumDG;
-        totUncert = Math.sqrt(cumUncert);
+        totUncert = FastMath.sqrt(Arrays.stream(uncerts).map((double d) -> d*d).sum());
     }
 
     @Override

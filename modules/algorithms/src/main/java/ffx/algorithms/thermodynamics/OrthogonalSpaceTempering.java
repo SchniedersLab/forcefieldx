@@ -1917,6 +1917,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
                 val = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, type);
 
+                // Everything after this is just adding in the endpoint contributions.
+
                 double dL_4 = dL_2 * 0.5;
 
                 // Initially, assume dU/dL is exactly 0 at the endpoints. This is sometimes a true assumption.
