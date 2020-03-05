@@ -2446,6 +2446,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 if (!discreteLambda && (iL == 0 || iL == lambdaBins - 1)) {
                     // The first and last lambda bins are half size.
                     delta = dL_2;
+                } else if (discreteLambda && iL == 0) {
+                    // The free energy change to move from L=0 to L=0 is zero.
+                    delta = 0.0;
                 }
                 double deltaFreeEnergy = FLambda[iL] * delta;
                 freeEnergy += deltaFreeEnergy;
