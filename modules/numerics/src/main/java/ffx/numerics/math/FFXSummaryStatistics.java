@@ -62,29 +62,96 @@ public class FFXSummaryStatistics {
     // Weight-insensitive values.
     public final double min;
     public final double max;
-    public final int count;
+    public final long count;
     public final double sum;
-    public final int dof;
+    public final long dof;
     private final TDistribution tDist;
 
     private final String descString;
 
+    /**
+     * Builds a static view of a running statistic.
+     *
+     * @param rs Running statistic.
+     */
+    public FFXSummaryStatistics(FFXRunningStatistics rs) {
+        mean = rs.getMean();
+        var = rs.getVariance();
+        varPopulation = rs.getPopulationVariance();
+        sumWeights = rs.getWeight();
+        min = rs.getMin();
+        max = rs.getMax();
+        count = rs.getCount();
+        sum = rs.getSum();
+        dof = rs.getDOF();
+        tDist = (dof > 0) ? new TDistribution(dof) : null;
+        sd = rs.getStandardDeviation();
+        sdPopulation = rs.getPopulationStandardDeviation();
+        descString = String.format(" Summary of %d observations: sum is %17.14g, mean is %17.14g, min is %17.14g, " +
+                        "max is %17.14g, and the sum of weights is %17.14g" +
+                        "\nSample standard deviation: %17.14g (dof = %d)" +
+                        "\nPopulation standard deviation: %17.14g (dof = %d)",
+                count, sum, mean, min, max, sumWeights, sd, dof, sdPopulation, count);
+    }
+
+    /**
+     * Constructs a static summary of a statistic from provided values.
+     * Assumes weights are all constant (1.0).
+     * Assumes all values will be used.
+     *
+     * @param values  Values to summarize.
+     */
     public FFXSummaryStatistics(double[] values) {
         this(values, null, 0, values.length, 1);
     }
 
+    /**
+     * Constructs a static summary of a statistic from provided values.
+     * Assumes weights are all constant (1.0).
+     * Assumes all values from first to end will be used.
+     *
+     * @param values  Values to summarize.
+     * @param first   First value to use.
+     */
     public FFXSummaryStatistics(double[] values, int first) {
         this(values, null, first, values.length, 1);
     }
 
+    /**
+     * Constructs a static summary of a statistic from provided values.
+     * Assumes weights are all constant (1.0).
+     * Assumes a stride of 1.
+     *
+     * @param values  Values to summarize.
+     * @param first   First value to use.
+     * @param last    Last value to use.
+     */
     public FFXSummaryStatistics(double[] values, int first, int last) {
         this(values, null, first, last, 1);
     }
 
+    /**
+     * Constructs a static summary of a statistic from provided values.
+     * Assumes weights are all constant (1.0).
+     *
+     * @param values  Values to summarize.
+     * @param first   First value to use.
+     * @param last    Last value to use.
+     * @param stride  Stride between values used.
+     */
     public FFXSummaryStatistics(double[] values, int first, int last, int stride) {
         this(values, null, first, last, stride);
     }
 
+    /**
+     * Constructs a static summary of a statistic from provided values.
+     *
+     * @param values  Values to summarize.
+     * @param weights Weights for each value.
+     * @param first   First value to use.
+     * @param last    Last value to use.
+     * @param stride  Stride between values used.
+     */
     public FFXSummaryStatistics(double[] values, double[] weights, int first, int last, int stride) {
         if (values == null) {
             throw new IllegalArgumentException(" Cannot have null values!");
@@ -199,6 +266,18 @@ public class FFXSummaryStatistics {
         }
         double critVal = tDist.inverseCumulativeProbability(0.5 * (1.0 - alpha));
         return critVal * sd / Math.sqrt(count);
+    }
+
+    public double getMean() {
+        return mean;
+    }
+
+    public double getVar() {
+        return var;
+    }
+
+    public double getSd() {
+        return sd;
     }
 
     @Override

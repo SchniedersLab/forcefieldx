@@ -42,12 +42,14 @@ import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.thermodynamics.HistogramReader
 import ffx.crystal.CrystalPotential
 import ffx.numerics.estimator.BennettAcceptanceRatio
+import ffx.numerics.estimator.EstimateBootstrapper
 import ffx.numerics.estimator.SequentialEstimator
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.SystemFilter
+import ffx.utilities.Constants
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
@@ -61,8 +63,8 @@ import picocli.CommandLine
  * <br>
  * ffxc MOSTBAR [options] &lt;structures1&gt
  */
-@CommandLine.Command(description = " Evaluates free energy of an M-OST run using the BAR estimator.", name = "ffxc MOSTBAR")
-class MOSTBAR extends AlgorithmsScript {
+@CommandLine.Command(description = " Evaluates free energy of an M-OST run using the BAR estimator.", name = "ffxc MostBar")
+class MostBar extends AlgorithmsScript {
 
     @CommandLine.Mixin
     private AlchemicalOptions alchemical
@@ -84,6 +86,22 @@ class MOSTBAR extends AlgorithmsScript {
     @CommandLine.Option(names = ["--lb", "--lambdaBins"], paramLabel = "autodetected",
             description = "Manually specified number of lambda bins (else auto-detected from histogram")
     private int lamBins = -1;
+
+    @CommandLine.Option(names = ["-s", "--start"], paramLabel = "1",
+            description = "First snapshot to evaluate (1-indexed, inclusive).")
+    private int startFrame = 1;
+
+    @CommandLine.Option(names = ["--fi", "--final"], paramLabel = "-1",
+            description = "Last snapshot to evaluate (1-indexed, inclusive); leave negative to analyze to end of trajectory.")
+    private int finalFrame = -1;
+
+    @CommandLine.Option(names = ["--st", "--stride"], paramLabel = "1",
+            description = "First snapshot to evaluate (1-indexed).")
+    private int stride = 1;
+
+    @CommandLine.Option(names = ["--bo", "--bootstrap"], paramLabel = "1",
+            description = "Use this many bootstrap trials to estimate dG and uncertainty")
+    private long bootstrap = 0L;
 
     /**
      * The final argument(s) should be filenames for lambda windows in order..
@@ -113,13 +131,17 @@ class MOSTBAR extends AlgorithmsScript {
     private final double[] lastEntries = new double[3];
     private static final String energyFormat = "%11.4f kcal/mol";
     private static final String nanFormat = String.format("%20s", "N/A");
+    // First frame (0-indexed).
+    private int start;
+    // Last frame (0-indexed, exclusive.
+    private int end;
 
     void setProperties(CompositeConfiguration addedProperties) {
         additionalProperties = addedProperties;
     }
 
     @Override
-    MOSTBAR run() {
+    MostBar run() {
         // Begin boilerplate code.
         if (!init()) {
             return null
@@ -209,24 +231,34 @@ class MOSTBAR extends AlgorithmsScript {
         lamPoints[lamBins - 1] = 1.0; // Eliminate machine precision error.
 
         OptionalDouble optLam = openers[0].getLastReadLambda();
-        if (optLam.isEmpty()) {
+        // Note: OptionalDouble.isEmpty() is a JDK 11 feature, so !OptionalDouble.isPresent() preserves JDK 8 compatibility.
+        if (!optLam.isPresent()) {
             throw new IllegalArgumentException(" No lambda records found in the first header of archive file ${filenames[0]}");
+        }
+
+        start = startFrame - 1;
+        if (finalFrame < 1) {
+            end = nSnapshots;
+        } else {
+            end = Math.min(nSnapshots, finalFrame);
         }
 
         double lambda = optLam.getAsDouble();
         int nVar = potential.getNumberOfVariables();
         x = new double[nVar];
 
-        logger.info(String.format(" Evaluating snapshot     1 of %5d", nSnapshots));
         addEntries(lambda, 0)
 
-        for (int i = 1; i < nSnapshots; i++) {
-            logger.info(String.format(" Evaluating snapshot %5d of %5d", (i+1), nSnapshots));
+        for (int i = 1; i < end; i++) {
             for (int j = 0; j < nFiles; j++) {
                 openers[j].readNext();
             }
             lambda = openers[0].getLastReadLambda().getAsDouble();
             addEntries(lambda, i);
+        }
+
+        for (SystemFilter opener : openers) {
+            opener.closeReader();
         }
 
         double[][] eLow = new double[lamBins][];
@@ -238,21 +270,22 @@ class MOSTBAR extends AlgorithmsScript {
             eHigh[i] = energiesUp.get(i).stream().mapToDouble(Double::doubleValue).toArray();
         }
 
+        logger.info(" Initial estimate via the iteration method.");
         SequentialEstimator bar = new BennettAcceptanceRatio(lamPoints, eLow, eAt, eHigh, new double[]{temp});
         SequentialEstimator forwards = bar.getInitialForwardsGuess();
         SequentialEstimator backwards = bar.getInitialBackwardsGuess();
 
         logger.info(String.format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", bar.getFreeEnergy(), bar.getUncertainty()))
-        logger.warning(" FEP uncertainties in FFX are currently underestimated and unreliable!");
+        logger.warning(" Non-bootstrap FEP uncertainties in FFX are currently unreliable!");
         logger.info(String.format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.", forwards.getFreeEnergy(), forwards.getUncertainty()));
         logger.info(String.format(" Free energy via backwards FEP: %15.9f +/- %.9f kcal/mol.", backwards.getFreeEnergy(), backwards.getUncertainty()));
 
-        double[] barFE = bar.getWindowEnergies();
-        double[] barVar = bar.getWindowUncertainties();
-        double[] forwardsFE = forwards.getWindowEnergies();
-        double[] forwardsVar = forwards.getWindowUncertainties();
-        double[] backwardsFE = backwards.getWindowEnergies();
-        double[] backwardsVar = backwards.getWindowUncertainties();
+        double[] barFE = bar.getBinEnergies();
+        double[] barVar = bar.getBinUncertainties();
+        double[] forwardsFE = forwards.getBinEnergies();
+        double[] forwardsVar = forwards.getBinUncertainties();
+        double[] backwardsFE = backwards.getBinEnergies();
+        double[] backwardsVar = backwards.getBinUncertainties();
         
         sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Max_Lambda          BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n");
         for (int i = 0; i < (lamBins - 1); i++) {
@@ -261,19 +294,77 @@ class MOSTBAR extends AlgorithmsScript {
         }
         logger.info(sb.toString());
 
+        if (bootstrap > 0) {
+            logger.info(" Estimates from ${bootstrap} bootstrap trials.");
+
+            EstimateBootstrapper barBS = new EstimateBootstrapper(bar);
+            EstimateBootstrapper forBS = new EstimateBootstrapper(forwards);
+            EstimateBootstrapper backBS = new EstimateBootstrapper(backwards);
+
+            long time = -System.nanoTime();
+            barBS.bootstrap(bootstrap);
+            time += System.nanoTime();
+            logger.info(String.format(" BAR bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
+
+            time = -System.nanoTime();
+            forBS.bootstrap(bootstrap);
+            time += System.nanoTime();
+            logger.info(String.format(" Forwards FEP bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
+
+            time = -System.nanoTime();
+            backBS.bootstrap(bootstrap);
+            time += System.nanoTime();
+            logger.info(String.format(" Reverse FEP bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
+
+            barFE = barBS.getFE();
+            barVar = barBS.getUncertainty();
+            forwardsFE = forBS.getFE();
+            forwardsVar = forBS.getUncertainty();
+            backwardsFE = backBS.getFE();
+            backwardsVar = backBS.getUncertainty();
+
+            double sumFE = Arrays.stream(barFE).sum();
+            double varFE = Math.sqrt(Arrays.stream(barVar).map((double d) -> d*d).sum());
+            logger.info(String.format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
+
+            sumFE = Arrays.stream(forwardsFE).sum();
+            varFE = Math.sqrt(Arrays.stream(forwardsVar).map((double d) -> d*d).sum());
+            logger.info(String.format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE));
+
+            sumFE = Arrays.stream(backwardsFE).sum();
+            varFE = Math.sqrt(Arrays.stream(backwardsVar).map((double d) -> d*d).sum());
+            logger.info(String.format(" Free energy via backwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE));
+
+            sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Max_Lambda          BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n");
+            for (int i = 0; i < (lamBins - 1); i++) {
+                sb.append(String.format(" %-10.8f %-10.8f %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
+                        lamPoints[i], lamPoints[i+1], barFE[i], barVar[i], forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]));
+            }
+            logger.info(sb.toString());
+        }
+
         return this;
     }
 
     private void addEntries(double lambda, int index) {
-        x = potential.getCoordinates(x);
-        lastEntries[0] = addLambdaDown(lambda);
-        lastEntries[1] = addAtLambda(lambda);
-        lastEntries[2] = addLambdaUp(lambda);
+        int offsetIndex = index - start;
+        assert index < end;
+        boolean inRange = offsetIndex >= 0 && index < end;
+        boolean onStride = (offsetIndex % stride == 0);
+        if (inRange && onStride) {
+            x = potential.getCoordinates(x);
+            lastEntries[0] = addLambdaDown(lambda);
+            lastEntries[1] = addAtLambda(lambda);
+            lastEntries[2] = addLambdaUp(lambda);
 
-        String low = Double.isNaN(lastEntries[0]) ? nanFormat : String.format(energyFormat, lastEntries[0]);
-        String high = Double.isNaN(lastEntries[2]) ? nanFormat : String.format(energyFormat, lastEntries[2]);
-        logger.info(String.format(" Energies for snapshot %5d: " +
-                "%s, %s, %s", (index+1), low, String.format(energyFormat, lastEntries[1]), high));
+            String low = Double.isNaN(lastEntries[0]) ? nanFormat : String.format(energyFormat, lastEntries[0]);
+            String high = Double.isNaN(lastEntries[2]) ? nanFormat : String.format(energyFormat, lastEntries[2]);
+            logger.info(String.format(" Energies for snapshot %5d: " +
+                    "%s, %s, %s", (index+1), low, String.format(energyFormat, lastEntries[1]), high));
+        } else {
+            // TODO: Downgrade to logger.fine once it works.
+            logger.info(" Skipping frame " + index);
+        }
     }
 
     private double addAtLambda(double lambda) {
