@@ -169,7 +169,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Volume to surface area cross-over point (A).
      */
-    private final double crossOver;
+    private double crossOver;
     /**
      * GaussVol radii offset.
      */
@@ -603,6 +603,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             // Surface tension and solvent pressure will over-write cross-over if its not appropriate.
             chandlerCavitation.setSurfaceTension(surfaceTension);
             chandlerCavitation.setSolventPressure(solventPressue);
+            crossOver = chandlerCavitation.getCrossOver();
         }
         if (surfaceAreaRegion != null) {
             surfaceAreaRegion.setSurfaceTension(surfaceTension);

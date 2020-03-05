@@ -108,7 +108,7 @@ public class ChandlerCavitation {
      */
     private double crossOver = GeneralizedKirkwood.DEFAULT_CROSSOVER;
     private double switchRange = 3.5;
-    private double saSwitchRangeOff = 3.9;
+    private double saOffset = 0.4;
     /**
      * Begin turning off the Volume term.
      */
@@ -116,15 +116,15 @@ public class ChandlerCavitation {
     /**
      * Volume term is zero at the cut-off.
      */
-    private double endVolumeOff = crossOver + switchRange;
+    private double endVolumeOff = beginVolumeOff + 2.0 * switchRange;
     /**
      * Begin turning off the SA term.
      */
-    private double beginSurfaceAreaOff = crossOver + saSwitchRangeOff;
+    private double beginSurfaceAreaOff = crossOver + saOffset + switchRange;
     /**
      * SA term is zero at the cut-off.
      */
-    private double endSurfaceAreaOff = crossOver - switchRange;
+    private double endSurfaceAreaOff = beginSurfaceAreaOff - 2.0 * switchRange;
     /**
      * Volume multiplicative switch.
      */
@@ -403,6 +403,10 @@ public class ChandlerCavitation {
     }
 
     public void setSurfaceTension(double surfaceTension) {
+        if (surfaceTension < 0.04) {
+            logger.info(format(" The surface tension has been set to 0.04 kcal/mol/A^2 (%8.6f is not supported).", surfaceTension));
+            surfaceTension = 0.04;
+        }
         this.surfaceTension = surfaceTension;
         double newCrossOver = 3.0 * surfaceTension / solventPressure;
         this.setCrossOver(newCrossOver);
@@ -411,9 +415,9 @@ public class ChandlerCavitation {
     public void setCrossOver(double crossOver) {
         this.crossOver = crossOver;
         beginVolumeOff = crossOver - switchRange;
-        endVolumeOff = crossOver + switchRange;
-        beginSurfaceAreaOff = crossOver + saSwitchRangeOff;
-        endSurfaceAreaOff = crossOver - switchRange;
+        endVolumeOff = beginVolumeOff + 2.0 * switchRange;
+        beginSurfaceAreaOff = crossOver + saOffset + switchRange;
+        endSurfaceAreaOff = beginSurfaceAreaOff - 2.0 * switchRange;
         volumeSwitch = new MultiplicativeSwitch(beginVolumeOff, endVolumeOff);
         surfaceAreaSwitch = new MultiplicativeSwitch(beginSurfaceAreaOff, endSurfaceAreaOff);
     }
