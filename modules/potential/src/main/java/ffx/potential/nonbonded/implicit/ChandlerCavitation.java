@@ -397,22 +397,34 @@ public class ChandlerCavitation {
     }
 
     public void setSolventPressure(double solventPressure) {
-        this.solventPressure = solventPressure;
         double newCrossOver = 3.0 * surfaceTension / solventPressure;
+        if (newCrossOver < 3.5) {
+            logger.severe(format(" The solvent pressure (%8.6f kcal/mol/A^3)" +
+                            " and surface tension (%8.6f kcal/mol/A^2) combination is not supported.",
+                    solventPressure, surfaceTension));
+            return;
+        }
+        this.solventPressure = solventPressure;
         this.setCrossOver(newCrossOver);
     }
 
     public void setSurfaceTension(double surfaceTension) {
-        if (surfaceTension < 0.04) {
-            logger.info(format(" The surface tension has been set to 0.04 kcal/mol/A^2 (%8.6f is not supported).", surfaceTension));
-            surfaceTension = 0.04;
+        double newCrossOver = 3.0 * surfaceTension / solventPressure;
+        if (newCrossOver < 3.5) {
+            logger.severe(format(" The solvent pressure (%8.6f kcal/mol/A^3)" +
+                            " and surface tension (%8.6f kcal/mol/A^2) combination is not supported.",
+                    solventPressure, surfaceTension));
+            return;
         }
         this.surfaceTension = surfaceTension;
-        double newCrossOver = 3.0 * surfaceTension / solventPressure;
         this.setCrossOver(newCrossOver);
     }
 
     public void setCrossOver(double crossOver) {
+        if (crossOver < 3.5) {
+            logger.severe(format(" The cross-over point (%8.6f A) must be greater than 3.5 A", crossOver));
+            return;
+        }
         this.crossOver = crossOver;
         beginVolumeOff = crossOver - switchRange;
         endVolumeOff = beginVolumeOff + 2.0 * switchRange;
