@@ -721,10 +721,12 @@ public class XYZFilter extends SystemFilter {
      */
     @Override
     public void closeReader() {
-        try {
-            bufferedReader.close();
-        } catch (IOException ex) {
-            logger.warning(format(" Exception in closing XYZ filter: %s", ex.toString()));
+        if (bufferedReader != null) {
+            try {
+                bufferedReader.close();
+            } catch (IOException ex) {
+                logger.warning(format(" Exception in closing XYZ filter: %s", ex.toString()));
+            }
         }
     }
 
