@@ -55,16 +55,16 @@ import java.util.logging.Logger;
  * C. H. Bennett, "Efficient Estimation of Free Energy Differences
  * from Monte Carlo Data", Journal of Computational Physics, 22,
  * 245-268 (1976)
- * c
- * K. B. Daly, J. B. Benziger, P. G. Debenedetti and
- * A. Z. Panagiotopoulos, "Massively Parallel Chemical Potential
- * Calculation on Graphics Processing Units", Computer Physics
- * Communications, 183, 2054-2062 (2012)  [modification for NPT]
- * c
+ *
  * M. A. Wyczalkowski, A. Vitalis and R. V. Pappu, "New Estimators
  * for Calculating Solvation Entropy and Enthalpy and Comparative
  * Assessments of Their Accuracy and Precision, Journal of Physical
- * Chemistry, 114, 8166-8180 (2010)  [entropy and enthalpy]
+ * Chemistry, 114, 8166-8180 (2010)  [modified BAR algorithm, non-implemented entropy/enthalpy]
+ *
+ * K. B. Daly, J. B. Benziger, P. G. Debenedetti and
+ * A. Z. Panagiotopoulos, "Massively Parallel Chemical Potential
+ * Calculation on Graphics Processing Units", Computer Physics
+ * Communications, 183, 2054-2062 (2012)  [non-implemented NPT modification]
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -150,8 +150,8 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
         Arrays.fill(uncerts, 0);
         for (int i = 0; i < nWindows; i++) {
             boolean converged = false;
-            double c = 0.5 * (estForwards[i] + estBackwards[i]); // Free energy estimate, closely related to the original Bennett shift constant.
-            double cold = 0; // Prior value of c.
+            double c = 0.5 * (estForwards[i] + estBackwards[i]); // Free energy estimate/shift constant.
+            double cold = 0; // Prior value of c. Setting it to zero almost guarantees a second iteration cycle.
             int len0 = eAt[i].length;
             int len1 = eAt[i+1].length;
 
@@ -165,8 +165,8 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
             double sampleRatio = ((double) len0) / ((double) len1);
 
             // Fermi differences.
-            double[] fermi1 = new double[len1];
             double[] fermi0 = new double[len0];
+            double[] fermi1 = new double[len1];
 
             // Ideal gas constant * temperature, or its inverse.
             double rta = Constants.R * temperatures[i];
@@ -183,24 +183,26 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
             int[] bootstrapSamples1 = null;
 
             if (randomSamples) {
-                bootstrapSamples0 = EstimateBootstrapper.getBootstrapIndices(len1, random);
-                bootstrapSamples1 = EstimateBootstrapper.getBootstrapIndices(len0, random);
+                bootstrapSamples0 = EstimateBootstrapper.getBootstrapIndices(len0, random);
+                bootstrapSamples1 = EstimateBootstrapper.getBootstrapIndices(len1, random);
             }
+
+            // Tinker: ub0, ub1; ua1, ua0 = FFX: eLow[i+1], eAt[i+1], eHigh[i], eAt[i]
 
             int cycleCounter = 0;
             while(!converged) {
                 if (randomSamples) {
-                    fermiDiffBootstrap(eLow[i + 1], eAt[i + 1], fermi1, len1, c, invRTB, bootstrapSamples1);
                     fermiDiffBootstrap(eHigh[i], eAt[i], fermi0, len0, -c, invRTA, bootstrapSamples0);
+                    fermiDiffBootstrap(eLow[i + 1], eAt[i + 1], fermi1, len1, c, invRTB, bootstrapSamples1);
                 } else {
-                    fermiDiffIterative(eLow[i + 1], eAt[i + 1], fermi1, len1, c, invRTB);
                     fermiDiffIterative(eHigh[i], eAt[i], fermi0, len0, -c, invRTA);
+                    fermiDiffIterative(eLow[i + 1], eAt[i + 1], fermi1, len1, c, invRTB);
                 }
 
-                s1 = new FFXSummaryStatistics(fermi1);
                 s0 = new FFXSummaryStatistics(fermi0);
+                s1 = new FFXSummaryStatistics(fermi1);
 
-                c = rtMean * log(sampleRatio  * (s1.mean / s0.mean)) + cold;
+                c += rtMean * log(sampleRatio  * (s1.mean / s0.mean));
                 converged = (Math.abs(c - cold) < tolerance);
                 cold = c;
 
@@ -227,8 +229,8 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
      * f(x) = 1 / (1 + exp(x))
      * x = (e1 - e0 + c) * invRT
      *
-     * @param e0         Potential energies to be subtracted.
-     * @param e1         Potential energies to be added.
+     * @param e0         Perturbed energy (to be added; evaluated at L +/- dL).
+     * @param e1         Unperturbed energy (to be subtracted; evaluated at L).
      * @param fermiDiffs Array to be filled with Fermi differences.
      * @param len        Number of energies.
      * @param c          Prior best estimate of the BAR offset/free energy.
@@ -236,7 +238,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
      */
     private static void fermiDiffIterative(double[] e0, double[] e1, double[] fermiDiffs, int len, double c, double invRT) {
         for (int i = 0; i < len; i++) {
-            fermiDiffs[i] = ScalarMath.fermiFunction(invRT * (e1[i] - e0[i] + c));
+            fermiDiffs[i] = ScalarMath.fermiFunction(invRT * (e0[i] - e1[i] + c));
         }
     }
 
@@ -247,8 +249,8 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
      * f(x) = 1 / (1 + exp(x))
      * x = (e1 - e0 + c) * invRT
      *
-     * @param e0         Potential energies to be subtracted.
-     * @param e1         Potential energies to be added.
+     * @param e0         Perturbed energy (to be added; evaluated at L +/- dL).
+     * @param e1         Unperturbed energy (to be subtracted; evaluated at L).
      * @param fermiDiffs Array to be filled with Fermi differences.
      * @param len        Number of energies.
      * @param c          Prior best estimate of the BAR offset/free energy.
@@ -257,7 +259,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
     private void fermiDiffBootstrap(double[] e0, double[] e1, double[] fermiDiffs, int len, double c, double invRT, int[] bootstrapSamples) {
         for (int indexI = 0; indexI < len; indexI++) {
             int i = bootstrapSamples[indexI];
-            fermiDiffs[indexI] = ScalarMath.fermiFunction(invRT * (e1[i] - e0[i] + c));
+            fermiDiffs[indexI] = ScalarMath.fermiFunction(invRT * (e0[i] - e1[i] + c));
         }
     }
 
@@ -272,11 +274,6 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
     private static double uncertCalc(double meanFermi, double meanSqFermi, int len) {
         double sqMeanFermi = meanFermi * meanFermi;
         return ((meanSqFermi - sqMeanFermi) / len) / sqMeanFermi;
-    }
-
-    @Override
-    public boolean isBidirectional() {
-        return true;
     }
 
     @Override
@@ -302,6 +299,11 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
     @Override
     public double getUncertainty() {
         return totUncert;
+    }
+
+    @Override
+    public BennettAcceptanceRatio copyEstimator() {
+        return new BennettAcceptanceRatio(lamVals, eLow, eAt, eHigh, temperatures, tolerance);
     }
 
     /**
