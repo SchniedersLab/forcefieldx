@@ -105,8 +105,6 @@ public class ChandlerCavitation {
     private double surfaceTension = GeneralizedKirkwood.DEFAULT_CAVDISP_SURFACE_TENSION;
     /**
      * Radius where volume dependence crosses over to surface area dependence (approximately at 1 nm).
-     * Originally 3.0*surfaceTension/solventPressure
-     * Reset to 7.339 to match Tinker
      */
     private double crossOver = GeneralizedKirkwood.DEFAULT_CROSSOVER;
     private double switchRange = 3.5;
@@ -400,10 +398,14 @@ public class ChandlerCavitation {
 
     public void setSolventPressure(double solventPressure) {
         this.solventPressure = solventPressure;
+        double newCrossOver = 3.0 * surfaceTension / solventPressure;
+        this.setCrossOver(newCrossOver);
     }
 
     public void setSurfaceTension(double surfaceTension) {
         this.surfaceTension = surfaceTension;
+        double newCrossOver = 3.0 * surfaceTension / solventPressure;
+        this.setCrossOver(newCrossOver);
     }
 
     public void setCrossOver(double crossOver) {
@@ -412,8 +414,8 @@ public class ChandlerCavitation {
         endVolumeOff = crossOver + switchRange;
         beginSurfaceAreaOff = crossOver + saSwitchRangeOff;
         endSurfaceAreaOff = crossOver - switchRange;
-        volumeSwitch = new MultiplicativeSwitch(endVolumeOff, beginVolumeOff);
-        surfaceAreaSwitch = new MultiplicativeSwitch(endSurfaceAreaOff, beginSurfaceAreaOff);
+        volumeSwitch = new MultiplicativeSwitch(beginVolumeOff, endVolumeOff);
+        surfaceAreaSwitch = new MultiplicativeSwitch(beginSurfaceAreaOff, endSurfaceAreaOff);
     }
 
     public double getCrossOver() {
