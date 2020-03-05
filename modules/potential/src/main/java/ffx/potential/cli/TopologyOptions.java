@@ -165,7 +165,7 @@ public class TopologyOptions {
                     sf = new SquaredTrigSwitch(false);
                     break;
                 case "MULT":
-                    sf = new MultiplicativeSwitch(0.0, 1.0);
+                    sf = new MultiplicativeSwitch(1.0, 0.0);
                     break;
                 default:
                     try {
