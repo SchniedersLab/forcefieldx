@@ -104,7 +104,7 @@ public class SoluteRadii {
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             baseRadius[i] = DEFAULT_RADII.get(atom.getAtomicNumber()) * bondiScale;
-            int key = atom.getAtomType().atomClass;
+            int key = atom.getAtomType().type;
             SoluteType soluteType = forceField.getSoluteType(Integer.toString(key));
             if (soluteType != null) {
                 baseRadius[i] = soluteType.diameter * 0.5;

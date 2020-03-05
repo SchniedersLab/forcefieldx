@@ -237,7 +237,10 @@ class RepexThermo extends Thermodynamics {
                 repExOST = RepExOST.repexMD(orthogonalSpaceTempering, md, dynamics, ostOptions, topologies[0].getProperties(), writeout.getFileType(), repex.getRepexFrequency());
             }
 
-            repExOST.mainLoop(thermodynamics.getEquilSteps(), true);
+            long eSteps = thermodynamics.getEquilSteps();
+            if (eSteps > 0) {
+                repExOST.mainLoop(eSteps, true);
+            }
             repExOST.mainLoop(dynamics.getNumSteps(), false);
         } else {
             logger.severe(" RepexThermo currently does not support fixed-lambda alchemy!")

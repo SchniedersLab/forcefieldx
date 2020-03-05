@@ -396,6 +396,11 @@ public class OSTOptions {
         MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(),
                 orthogonalSpaceTempering, topologies[0], topologies[0].getProperties(), listener, dynamics, verbose, mcMD);
 
+        MolecularDynamics md = monteCarloOST.getMD();
+        for (int i = 1; i < topologies.length; i++) {
+            md.addAssembly(topologies[i], topologies[i].getProperties());
+        }
+
         long nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
             monteCarloOST.setEquilibration(true);
@@ -459,12 +464,11 @@ public class OSTOptions {
         Histogram histogram = orthogonalSpaceTempering.getHistogram(index);
         if (!histogramExists) {
             orthogonalSpaceTempering.setCountInterval(countFreq);
-            histogram.setBiasMagnitude(biasMag[index]);
+            histogram.setBiasMagnitude(getBiasMag(index));
         }
         histogram.setIndependentWalkers(independentWalkers);
-        histogram.setTemperingThreshold(temperThreshold[index]);
-        histogram.setTemperingParameter(temperParam[index]);
-        histogram.setBiasMagnitude(biasMag[index]);
+        histogram.setTemperingThreshold(getTemperingThreshold(index));
+        histogram.setTemperingParameter(getTemperingParameter(index));
         histogram.checkRecursionKernelSize();
     }
 
@@ -509,7 +513,7 @@ public class OSTOptions {
      * @return  Its intended initial bias magnitude in kcal/mol.
      */
     public double getBiasMag(int i) {
-        return biasMag[i];
+        return biasMag.length > 1 ? biasMag[i] : biasMag[0];
     }
 
     /**
@@ -519,7 +523,7 @@ public class OSTOptions {
      * @return  Its intended tempering threshold in kcal/mol.
      */
     public double getTemperingThreshold(int i) {
-        return temperThreshold[i];
+        return temperThreshold.length > 1 ? temperThreshold[i] : temperThreshold[0];
     }
 
     /**
@@ -529,6 +533,6 @@ public class OSTOptions {
      * @return  Its intended tempering parameter in kBT.
      */
     public double getTemperingParameter(int i) {
-        return temperParam[i];
+        return temperParam.length > 1 ? temperParam[i] : temperParam[0];
     }
 }

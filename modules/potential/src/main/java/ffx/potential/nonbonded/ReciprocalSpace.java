@@ -220,11 +220,9 @@ public class ReciprocalSpace {
     private SpatialDensityRegion spatialDensityRegion;
     private final SpatialPermanentLoop[] spatialPermanentLoops;
     private final SpatialInducedLoop[] spatialInducedLoops;
-
     private SliceRegion sliceRegion;
     private final SlicePermanentLoop[] slicePermanentLoops;
     private final SliceInducedLoop[] sliceInducedLoops;
-
     private RowRegion rowRegion;
     private final RowPermanentLoop[] rowPermanentLoops;
     private final RowInducedLoop[] rowInducedLoops;
@@ -272,7 +270,7 @@ public class ReciprocalSpace {
     private Complex3DCuda cudaFFT3D;
     private Complex3DOpenCL clFFT3D;
     private Complex3DParallel pjFFT3D;
-    private GridMethod gridMethod = GridMethod.SPATIAL;
+    private GridMethod gridMethod;
 
     public enum FFTMethod {
 
@@ -357,7 +355,8 @@ public class ReciprocalSpace {
             StringBuilder sb = new StringBuilder();
             sb.append(format("    B-Spline Order:                    %8d\n", bSplineOrder));
             sb.append(format("    Mesh Density:                      %8.3f\n", density));
-            sb.append(format("    Mesh Dimensions:              (%3d,%3d,%3d)", fftX, fftY, fftZ));
+            sb.append(format("    Mesh Dimensions:              (%3d,%3d,%3d)\n", fftX, fftY, fftZ));
+            sb.append(format("    Gird Method:                       %8s\n", gridMethod.toString()));
             logger.info(sb.toString());
         }
 
@@ -538,7 +537,6 @@ public class ReciprocalSpace {
         fftY = nY;
         fftZ = nZ;
 
-
         // Populate the matrix that fractionalizes multipoles.
         transformMultipoleMatrix();
 
@@ -623,7 +621,6 @@ public class ReciprocalSpace {
                     rowRegion.setCrystal(crystal, fftX, fftY, fftZ);
                     rowRegion.coordinates = coordinates;
                 }
-
                 break;
             case SLICE:
             default:
@@ -637,6 +634,7 @@ public class ReciprocalSpace {
                     sliceRegion.coordinates = coordinates;
                 }
         }
+
         return density;
     }
 
@@ -833,6 +831,7 @@ public class ReciprocalSpace {
                 break;
 
         }
+
         splinePermanentTotal += System.nanoTime();
     }
 
@@ -1314,6 +1313,7 @@ public class ReciprocalSpace {
                         final double yi = y[i];
                         final double zi = z[i];
                         final int[] grd = initgridi[i];
+                        // X-dimension
                         final double wx = xi * r00 + yi * r10 + zi * r20;
                         final double ux = wx - round(wx) + 0.5;
                         final double frx = fftX * ux;
@@ -1321,6 +1321,7 @@ public class ReciprocalSpace {
                         final double bx = frx - ifrx;
                         grd[0] = ifrx - bSplineOrder;
                         bSplineDerivatives(bx, bSplineOrder, derivOrder, splineXi[i], bSplineWork);
+                        // Y-dimension
                         final double wy = xi * r01 + yi * r11 + zi * r21;
                         final double uy = wy - round(wy) + 0.5;
                         final double fry = fftY * uy;
@@ -1328,6 +1329,7 @@ public class ReciprocalSpace {
                         final double by = fry - ifry;
                         grd[1] = ifry - bSplineOrder;
                         bSplineDerivatives(by, bSplineOrder, derivOrder, splineYi[i], bSplineWork);
+                        // Z-dimension
                         final double wz = xi * r02 + yi * r12 + zi * r22;
                         final double uz = wz - round(wz) + 0.5;
                         final double frz = fftZ * uz;
@@ -1464,8 +1466,6 @@ public class ReciprocalSpace {
                         final double add = splxi[0] * term0 + splxi[1] * term1 + splxi[2] * term2;
                         final double current = splineBuffer.get(ii);
                         splineBuffer.put(ii, current + add);
-                        // if (n == 0) { logger.info(String.format(" %d %16.8f", ii, current + add)); }
-                        // splineGrid[ii] += add;
                     }
                 }
             }
@@ -1696,10 +1696,8 @@ public class ReciprocalSpace {
                 for (int k = 7; k < 10; k++) {
                     fm[j] = fm[j] + transformMultipoleMatrix[j][k] * 2.0 * gm[k];
                 }
-                /**
-                 * Fractional quadrupole components are pre-multiplied by a
-                 * factor of 1/3 that arises in their potential.
-                 */
+                // Fractional quadrupole components are pre-multiplied by a
+                // factor of 1/3 that arises in their potential.
                 fm[j] = fm[j] / 3.0;
             }
 
@@ -1768,8 +1766,6 @@ public class ReciprocalSpace {
                         final double add = splxi[0] * term0 + splxi[1] * term1 + splxi[2] * term2;
                         final double current = splineBuffer.get(ii);
                         splineBuffer.put(ii, current + add);
-                        // if (n == 0) { logger.info(String.format(" %d %16.8f", ii, current + add));  }
-                        // splineGrid[ii] += add;
                     }
                 }
             }
@@ -2353,7 +2349,6 @@ public class ReciprocalSpace {
                             for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                                 final int i = mod(++i0, fftX);
                                 final int ii = iComplex3D(i, j, k, fftX, fftY);
-                                //final double tq = splineGrid[ii];
                                 final double tq = splineBuffer.get(ii);
                                 final double[] splxi = splx[ith1];
                                 t0 += tq * splxi[0];

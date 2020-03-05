@@ -915,6 +915,17 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <name>Tornadovm Repository</name>
+            <id>6.u.manchester.repo</id>
+            <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
         <!-- repository>
             <name>JFrog OpenSource Snapshots</name>
             <id>6.jfrog.repo</id>
@@ -1129,28 +1140,32 @@
         <skipTests>true</skipTests>
         <failIfNoTests>false</failIfNoTests>
         <!-- Specify versions of Dependencies to Use -->
-        <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
+        <biojava.version>5.3.0</biojava.version>
+        <cdk.version>2.3</cdk.version>
+        <ciftools-java.version>0.8.0</ciftools-java.version>
+        <clustering.version>1.2.0</clustering.version>
         <commons-beanutils.version>1.9.3</commons-beanutils.version>
         <commons-collections4.version>4.4</commons-collections4.version>
         <commons-configuration2.version>2.6</commons-configuration2.version>
         <commons-io.version>2.6</commons-io.version>
         <commons-lang3.version>3.9</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
-        <guava.version>28.1-jre</guava.version>
+        <fastutil.version>8.3.0</fastutil.version>
         <groovy-all.version>3.0.0.1</groovy-all.version>
+        <guava.version>28.1-jre</guava.version>
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.7.0-final</java3d.version>
-        <jogamp-fat.version>2.4.0</jogamp-fat.version>
         <jcuda.version>10.1.0</jcuda.version>
-        <junit.version>4.13</junit.version>
-        <jopenmm.version>7.5.0</jopenmm.version>
-        <pj.version>1.0.1</pj.version>
         <jna.version>4.1.0</jna.version>
-        <biojava.version>5.3.0</biojava.version>
-        <cdk.version>2.0</cdk.version>
-        <clustering.version>1.2.0</clustering.version>
-        <fastutil.version>8.3.0</fastutil.version>
+        <jogamp-fat.version>2.4.0</jogamp-fat.version>
+        <jopenmm.version>7.5.0</jopenmm.version>
+        <junit.version>4.13</junit.version>
+        <log4j.version>2.13.1</log4j.version>
+        <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
         <picocli.version>4.1.4</picocli.version>
+        <pj.version>1.0.1</pj.version>
+        <tornado.version>0.6</tornado.version>
+        <quickhull3D.version>1.0.0</quickhull3D.version>
         <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
         <tensorflow.version>1.12.0</tensorflow.version>
         <!-- Maven Core Plugin Versions -->
@@ -1191,7 +1206,6 @@
         <properties.version>1.0.0</properties.version>
         <!-- Clover Plugin -->
         <clover.version>4.3.1</clover.version>
-        <quickhull3D.version>1.0.0</quickhull3D.version>
     </properties>
     <dependencies>
         <dependency>

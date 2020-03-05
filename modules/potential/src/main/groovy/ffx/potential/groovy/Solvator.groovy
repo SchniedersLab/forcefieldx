@@ -460,6 +460,12 @@ class Solvator extends PotentialScript {
             return null
         }
 
+        // Reduce cutoff distances to avoid ill behavior caused by default aperiodic 900-1000A cutoffs.
+        String nlistCuts = Double.toString(2.0 * boundary)
+        logger.info(" Setting vdW and ewald cutoffs to " + nlistCuts + " Angstroms to avoid issues with default aperiodic cutoffs.")
+        System.setProperty("vdw-cutoff", nlistCuts)
+        System.setProperty("ewald-cutoff", nlistCuts)
+
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
             activeAssembly = assemblies[0]

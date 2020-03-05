@@ -43,14 +43,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -86,7 +79,6 @@ import static ffx.potential.bonded.PolymerUtils.locateDisulfideBonds;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_2;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_3;
 import static ffx.utilities.StringUtils.padLeft;
-import static ffx.utilities.StringUtils.padRight;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
@@ -192,6 +184,9 @@ public final class PDBFilter extends SystemFilter {
     private int modelsWritten = -1;
     private File readFile;
 
+    private List<String> remarkLines = Collections.emptyList();
+    private double lastReadLambda = Double.NaN;
+
     private final static Set<String> backboneNames;
 
     static {
@@ -271,6 +266,24 @@ public final class PDBFilter extends SystemFilter {
      */
     public void mutate(List<Mutation> mutations) {
         this.mutations.addAll(mutations);
+    }
+
+    /**
+     * Returns all the remark lines found by the last readFile call.
+     * @return Remark lines from the last readFile call.
+     */
+    @Override
+    public String[] getRemarkLines() {
+        int nRemarks = remarkLines.size();
+        return remarkLines.toArray(new String[nRemarks]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public OptionalDouble getLastReadLambda() {
+        return Double.isNaN(lastReadLambda) ? OptionalDouble.empty() : OptionalDouble.of(lastReadLambda);
     }
 
     /**
@@ -371,6 +384,7 @@ public final class PDBFilter extends SystemFilter {
      */
     @Override
     public boolean readFile() {
+        remarkLines = new ArrayList<>();
         // First atom is #1, to match xyz file format
         int xyzIndex = 1;
         setFileRead(false);
@@ -1116,6 +1130,13 @@ public final class PDBFilter extends SystemFilter {
                             properties.addProperty("MTRIX3", MTRX3);
                             break;
                         case REMARK:
+                            remarkLines.add(line.trim());
+                            if (line.contains("Lambda:")) {
+                                Matcher m = lambdaPattern.matcher(line);
+                                if (m.find()) {
+                                    lastReadLambda = Double.parseDouble(m.group(1));
+                                }
+                            }
 // =================================================================================
 // REMARK 350: presents all transformations, both crystallographic and non-crystallographic, needed to
 // generate the biomolecule. These transformations operate on the coordinates in the entry. Both author
@@ -1259,12 +1280,12 @@ public final class PDBFilter extends SystemFilter {
      * <p>
      * writeFile</p>
      *
-     * @param saveFile    a {@link java.io.File} object to save to.
-     * @param append      Whether to append to saveFile (vs over-write).
-     * @param toExclude   A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
-     * @param writeEnd    True if this is the final model.
-     * @param versioning  True if the file being saved to should be versioned. False if the file being saved to should
-     *                    be overwritten.
+     * @param saveFile   a {@link java.io.File} object to save to.
+     * @param append     Whether to append to saveFile (vs over-write).
+     * @param toExclude  A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
+     * @param writeEnd   True if this is the final model.
+     * @param versioning True if the file being saved to should be versioned. False if the file being saved to should
+     *                   be overwritten.
      * @return Success of writing.
      */
     public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd, boolean versioning) {
@@ -1275,13 +1296,13 @@ public final class PDBFilter extends SystemFilter {
      * <p>
      * writeFile</p>
      *
-     * @param saveFile    a {@link java.io.File} object to save to.
-     * @param append      Whether to append to saveFile (vs over-write).
-     * @param toExclude   A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
-     * @param writeEnd    True if this is the final model.
-     * @param versioning  True if the file being saved to should be versioned. False if the file being saved to should
-     *                    be overwritten.
-     * @param extraLines  Extra comment/header lines to write.
+     * @param saveFile   a {@link java.io.File} object to save to.
+     * @param append     Whether to append to saveFile (vs over-write).
+     * @param toExclude  A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
+     * @param writeEnd   True if this is the final model.
+     * @param versioning True if the file being saved to should be versioned. False if the file being saved to should
+     *                   be overwritten.
+     * @param extraLines Extra comment/header lines to write.
      * @return Success of writing.
      */
     public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd, boolean versioning, String[] extraLines) {
@@ -1365,8 +1386,7 @@ public final class PDBFilter extends SystemFilter {
             Crystal crystal = activeMolecularAssembly.getCrystal();
             if (crystal != null && !crystal.aperiodic()) {
                 Crystal c = crystal.getUnitCell();
-                bw.write(format("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f %10s\n", c.a, c.b, c.c, c.alpha, c.beta,
-                        c.gamma, padRight(c.spaceGroup.pdbName, 10)));
+                bw.write(c.toCRYST1());
             }
 // =============================================================================
 // The SSBOND record identifies each disulfide bond in protein and polypeptide
@@ -1826,6 +1846,83 @@ public final class PDBFilter extends SystemFilter {
         }
     }
 
+    /**
+     * Simple method useful for converting files to PDB format.
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     */
+    public static String toPDBAtomLine(Atom atom) {
+        StringBuilder sb;
+        if (atom.isHetero()) {
+            sb = new StringBuilder("HETATM");
+        } else {
+            sb = new StringBuilder("ATOM  ");
+        }
+        for (int i = 6; i < 80; i++) {
+            sb.append(' ');
+        }
+
+        String name = atom.getName();
+        if (name.length() > 4) {
+            name = name.substring(0, 4);
+        } else if (name.length() == 1) {
+            name = name + "  ";
+        } else if (name.length() == 2) {
+            name = name + " ";
+        }
+        int serial = atom.getXyzIndex();
+        sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
+
+        Character altLoc = atom.getAltLoc();
+        if (altLoc != null) {
+            sb.setCharAt(16, altLoc);
+        } else {
+            char blankChar = ' ';
+            sb.setCharAt(16, blankChar);
+        }
+
+        String resName = atom.getResidueName();
+        sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
+
+        char chain = atom.getChainID();
+        sb.setCharAt(21, chain);
+
+        int resID = atom.getResidueNumber();
+        sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
+
+        double[] xyz = atom.getXYZ(null);
+        StringBuilder decimals = new StringBuilder();
+        for (int i = 0; i < 3; i++) {
+            try {
+                decimals.append(StringUtils.fwFpDec(xyz[i], 8, 3));
+            } catch (IllegalArgumentException ex) {
+                String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
+                logger.info(format(" XYZ coordinate %8.3f for atom %s overflowed PDB format and is truncated to %s.",
+                        xyz[i], atom.toString(), newValue));
+                decimals.append(newValue);
+            }
+        }
+        try {
+            decimals.append(StringUtils.fwFpDec(atom.getOccupancy(), 6, 2));
+        } catch (IllegalArgumentException ex) {
+            logger.severe(format(" Occupancy %6.2f for atom %s must be between 0 and 1.",
+                    atom.getOccupancy(), atom.toString()));
+        }
+        try {
+            decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
+        } catch (IllegalArgumentException ex) {
+            String newValue = StringUtils.fwFpTrunc(atom.getTempFactor(), 6, 2);
+            logger.info(format(" B-factor %6.2f for atom %s overflowed the PDB format and is truncated to %s.",
+                    atom.getTempFactor(), atom.toString(), newValue));
+            decimals.append(newValue);
+        }
+
+        sb.replace(30, 66, decimals.toString());
+        sb.replace(78, 80, format("%2d", 0));
+        sb.append("\n");
+        return sb.toString();
+    }
+
     @Override
     public int getSnapshot() {
         return modelsRead;
@@ -1879,6 +1976,7 @@ public final class PDBFilter extends SystemFilter {
      */
     @Override
     public boolean readNext(boolean resetPosition, boolean print) {
+        remarkLines = new ArrayList<>(remarkLines.size());
         // ^ is beginning of line, \\s+ means "one or more whitespace", (\\d+) means match and capture one or more digits.
         Pattern modelPatt = Pattern.compile("^MODEL\\s+(\\d+)");
         modelsRead = resetPosition ? 1 : modelsRead + 1;
@@ -2021,6 +2119,16 @@ public final class PDBFilter extends SystemFilter {
                             case END: // Technically speaking, END should be at the end of the file, not end of the model.
                                 logger.log(Level.FINE, format(" Model %d successfully read", modelsRead));
                                 modelDone = true;
+                                break;
+                            case REMARK:
+                                remarkLines.add(line.trim());
+                                if (line.contains("Lambda:")) {
+                                    Matcher m = lambdaPattern.matcher(line);
+                                    if (m.find()) {
+                                        lastReadLambda = Double.parseDouble(m.group(1));
+                                    }
+                                }
+                                break;
                             default:
                                 break;
                         }

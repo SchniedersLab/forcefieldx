@@ -731,14 +731,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         if (count > 0 && logger.isLoggable(Level.FINE)) {
             logger.fine(format(" Softcore atom count: %d", count));
-            /**
-             int[] allSoftcore = IntStream.range(0, nAtoms).filter(i -> isSoft[i]).toArray();
-             List<int[]> softcoreRanges = StringUtils.consecutiveInts(allSoftcore);
-             for (int[] range : softcoreRanges) {
-             int min = range[0];
-             int max = range[1];
-             logger.info(format(" Softcore range %d (%s) to %d (%s)", min + 1, atoms[min], max + 1, atoms[max]));
-             } */
             logger.fine(sb.toString());
         }
 
@@ -2676,40 +2668,31 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         logger.warning("Invalid value for perm-lambda-end (<start || >1.0); reverting to 1.0");
                         permLambdaEnd = 1.0;
                     }
-                    double minPolarizationWindow = 0.1;
-                    double defaultMax = 1.0;
-                    double defaultMin = defaultMax - minPolarizationWindow;
 
-                /*
-                  The POLARIZATION_LAMBDA_START defines the point in the lambda
-                  schedule when the condensed phase polarization of the ligand
-                  begins to be turned on. If the condensed phase polarization
-                  is considered near lambda=0, then SCF convergence is slow,
-                  even with Thole damping. In addition, 2 (instead of 1)
-                  condensed phase SCF calculations are necessary from the
-                  beginning of the window to lambda=1.
-                 */
+                    /*
+                      The POLARIZATION_LAMBDA_START defines the point in the lambda
+                      schedule when the condensed phase polarization of the ligand
+                      begins to be turned on. If the condensed phase polarization
+                      is considered near lambda=0, then SCF convergence is slow,
+                      even with Thole damping. In addition, 2 (instead of 1)
+                      condensed phase SCF calculations are necessary from the
+                      beginning of the window to lambda=1.
+                     */
                     polLambdaStart = forceField.getDouble("POLARIZATION_LAMBDA_START", 0.75);
-                    if (polLambdaStart < 0.0 || polLambdaStart > defaultMin) {
-                        logger.warning("Invalid value for polarization-lambda-start (<0.0 || >0.9); reverting to 0.75");
+                    if (polLambdaStart < 0.0 || polLambdaStart > 1.0) {
+                        logger.warning("Invalid value for polarization-lambda-start; reverting to 0.75");
                         polLambdaStart = 0.75;
                     }
 
-                /*
-                  The POLARIZATION_LAMBDA_END defines the point in the lambda
-                  schedule when the condensed phase polarization of ligand has
-                  been completely turned on. Values other than 1.0 have not been tested.
-                 */
+                    /*
+                      The POLARIZATION_LAMBDA_END defines the point in the lambda
+                      schedule when the condensed phase polarization of ligand has
+                      been completely turned on. Values other than 1.0 have not been tested.
+                     */
                     polLambdaEnd = forceField.getDouble("POLARIZATION_LAMBDA_END", 1.0);
                     if (polLambdaEnd < polLambdaStart || polLambdaEnd > 1.0) {
                         logger.warning("Invalid value for polarization-lambda-end (<start || >1.0); reverting to 1.0");
                         polLambdaEnd = 1.0;
-                    }
-                    if (polLambdaEnd - polLambdaStart < minPolarizationWindow) {
-                        logger.warning(format(" Range between polarization lambda start and end %5.3f must be at least "
-                                + "%4.2f; resetting start to %4.2f to %4.2f", (polLambdaEnd - polLambdaStart), minPolarizationWindow, defaultMin, defaultMax));
-                        polLambdaStart = defaultMin;
-                        polLambdaEnd = defaultMax;
                     }
                 }
 

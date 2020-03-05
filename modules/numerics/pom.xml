@@ -85,24 +85,19 @@
             <groupId>org.jcuda</groupId>
             <artifactId>jcuda</artifactId>
             <version>${jcuda.version}</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.jcuda</groupId>
             <artifactId>jcufft</artifactId>
             <version>${jcuda.version}</version>
-        </dependency>
-
-        <!-- dependency>
-            <groupId>jcuda</groupId>
-            <artifactId>jcuda-all</artifactId>
             <type>jar</type>
-            <version>${jcuda.version}</version>
-        </dependency -->
-
+        </dependency>
         <dependency>
             <groupId>org.jogamp</groupId>
             <artifactId>jogamp-fat</artifactId>
             <version>${jogamp-fat.version}</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -110,6 +105,22 @@
             <version>${junit.version}</version>
             <type>jar</type>
             <scope>test</scope>
+        </dependency>
+        <!-- dependency>
+            <groupId>tornado</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>${tornado.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>tornado</groupId>
+            <artifactId>tornado-matrices</artifactId>
+            <version>${tornado.version}</version>
+        </dependency -->
+        <dependency>
+            <groupId>edu.uiowa.eng.ffx</groupId>
+            <artifactId>utilities</artifactId>
+            <version>1.0.0-beta</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

@@ -172,7 +172,7 @@ class AsynchronousSend extends Thread {
             histogram.checkRecursionKernelSize(fLambda);
 
             // Increment the Recursion Kernel based on the input of current walker.
-            int walkerLambda = histogram.binForLambda(lambda);
+            int walkerLambda = histogram.indexForLambda(lambda);
             int walkerFLambda = histogram.binForFLambda(fLambda);
             double weight = recursionCount[3];
 

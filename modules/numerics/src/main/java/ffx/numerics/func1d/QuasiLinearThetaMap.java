@@ -37,8 +37,11 @@
 //******************************************************************************
 package ffx.numerics.func1d;
 
-import ffx.numerics.math.VectorMath;
-import org.apache.commons.math3.util.FastMath;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.sin;
+
+import static ffx.numerics.math.VectorMath.modToRange;
 
 /**
  * A QuasiLinearThetaMap implements a map of theta[-pi, +pi] to lambda[0,1]
@@ -74,24 +77,24 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
      * @param theta0 Defines the width of the trigonometric interpolating regions.
      */
     public QuasiLinearThetaMap(double theta0) {
-        if (theta0 <= 0 || theta0 >= Math.PI) {
+        if (theta0 <= 0 || theta0 >= PI) {
             throw new IllegalArgumentException(String.format(" QuasiLinearThetaMap " +
                     "must receive theta0 from (0 to +pi), received %11.5g", theta0));
         }
 
-        double sinT = StrictMath.sin(theta0);
-        double cosT = StrictMath.cos(theta0);
-        r = 1.0 / (1 - cosT + (0.5 * sinT * (Math.PI - 2*theta0)));
+        double sinT = sin(theta0);
+        double cosT = cos(theta0);
+        r = 1.0 / (1 - cosT + (0.5 * sinT * (PI - 2 * theta0)));
 
         this.theta0 = theta0;
-        piMinusTheta0 = Math.PI - theta0;
-        negPiPlusTheta0 = 0.1 - Math.PI;
+        piMinusTheta0 = PI - theta0;
+        negPiPlusTheta0 = 0.1 - PI;
 
         b = r * 0.5 * (1 - cosT - (theta0 * sinT));
         halfR = 0.5 * r;
         a = r * sinT * 0.5;
-        double temp = StrictMath.sin(piMinusTheta0 * 0.5);
-        c = (r * 0.5 * sinT * piMinusTheta0) + b - (r * (temp*temp));
+        double temp = sin(piMinusTheta0 * 0.5);
+        c = (r * 0.5 * sinT * piMinusTheta0) + b - (r * (temp * temp));
     }
 
     final double[] getConstants() {
@@ -99,7 +102,7 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
     }
 
     Branch getBranch(double x) {
-        assert x >= -1.0 * Math.PI && x <= Math.PI;
+        assert x >= -1.0 * PI && x <= PI;
         if (x < negPiPlusTheta0) {
             return Branch.D;
         } else if (x < -1.0 * theta0) {
@@ -115,7 +118,7 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
 
     @Override
     public double valueAt(double x) throws IllegalArgumentException {
-        return val(VectorMath.modToRange(x, -Math.PI, Math.PI));
+        return val(modToRange(x, -PI, PI));
     }
 
     private double val(double x) throws IllegalArgumentException {
@@ -125,15 +128,15 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
     double val(double x, Branch branch) throws IllegalArgumentException {
         switch (branch) {
             case A: {
-                double sinT = FastMath.sin(x * 0.5);
+                double sinT = sin(x * 0.5);
                 return r * sinT * sinT;
             }
             case B:
-                return b + a*x;
+                return b + a * x;
             case C:
-                return b - a*x;
+                return b - a * x;
             case D: {
-                double sinT = FastMath.sin(x * 0.5);
+                double sinT = sin(x * 0.5);
                 return (r * sinT * sinT) + c;
             }
             default:
@@ -143,7 +146,7 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
 
     @Override
     public double firstDerivative(double x) throws IllegalArgumentException {
-        return fd(VectorMath.modToRange(x, -Math.PI, Math.PI));
+        return fd(modToRange(x, -PI, PI));
     }
 
     private double fd(double x) throws IllegalArgumentException {
@@ -154,7 +157,7 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
         switch (branch) {
             case A:
             case D: {
-                return halfR * FastMath.sin(x);
+                return halfR * sin(x);
             }
             case B: {
                 return a;
@@ -169,7 +172,7 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
 
     @Override
     public double secondDerivative(double x) throws IllegalArgumentException {
-        return sd(VectorMath.modToRange(x, -Math.PI, Math.PI));
+        return sd(modToRange(x, -PI, PI));
     }
 
     private double sd(double x) throws IllegalArgumentException {
@@ -180,7 +183,7 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
         switch (branch) {
             case A:
             case D: {
-                return halfR * FastMath.cos(x);
+                return halfR * cos(x);
             }
             case B:
             case C: {
@@ -193,7 +196,7 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
 
     @Override
     public double nthDerivative(double x, int order) throws IllegalArgumentException {
-        x = VectorMath.modToRange(x, -Math.PI, Math.PI);
+        x = modToRange(x, -PI, PI);
         switch (order) {
             case 0:
                 return val(x);
@@ -219,16 +222,16 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
 
         switch (order % 4) {
             case 0: {
-                return halfR * FastMath.sin(x);
+                return halfR * sin(x);
             }
             case 1: {
-                return halfR * FastMath.cos(x);
+                return halfR * cos(x);
             }
             case 2: {
-                return -1.0 * halfR * FastMath.sin(x);
+                return -1.0 * halfR * sin(x);
             }
             case 3: {
-                return -1.0 * halfR * FastMath.cos(x);
+                return -1.0 * halfR * cos(x);
             }
             default: {
                 throw new ArithmeticException(String.format(" Value %d modulo 4 somehow not 0-3!", order));
@@ -237,6 +240,6 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
     }
 
     enum Branch {
-        A, B, C, D;
+        A, B, C, D
     }
 }

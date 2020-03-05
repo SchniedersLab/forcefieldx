@@ -37,6 +37,11 @@
 //******************************************************************************
 package ffx.numerics.spline;
 
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.String.format;
+
 /**
  * Static methods to generate and differentiate uniform b-Splines.
  *
@@ -60,6 +65,8 @@ package ffx.numerics.spline;
  * @since 1.0
  */
 public class UniformBSpline {
+
+    private static final Logger logger = Logger.getLogger(UniformBSpline.class.getName());
 
     /**
      * Do not allow instantiation of UniformBSpline. All methods are static.
@@ -89,30 +96,6 @@ public class UniformBSpline {
     }
 
     /**
-     * Uniform b-Spline recursion.
-     *
-     * @param x               A double in the range [0.0, 1.0].
-     * @param order           Current b-Spline order.
-     * @param coefficients    Current b-Spline coefficients.
-     * @param newCoefficients New b-Spline coefficients for order + 1.
-     * @since 1.0
-     */
-    private static void bSplineRecursion(final double x, final int order,
-                                         final double[] coefficients, final double[] newCoefficients) {
-
-        final double div = 1.0 / order;
-        final double k1mw = order + 1 - x;
-        final int km1 = order - 1;
-
-        newCoefficients[order] = div * x * coefficients[km1];
-        for (int i = 1; i < order; i++) {
-            int kmi = order - i;
-            newCoefficients[kmi] = div * ((x + i) * coefficients[km1 - i] + (k1mw - i) * coefficients[kmi]);
-        }
-        newCoefficients[0] = div * (1.0 - x) * coefficients[0];
-    }
-
-    /**
      * Generate uniform b-Spline coefficients and their derivatives.
      *
      * @param x            A double in the range [0.0, 1.0].
@@ -137,6 +120,10 @@ public class UniformBSpline {
 
         assert (deriveOrder <= order - 1 && deriveOrder <= 5);
 
+        for (int k = 0; k < order; k++) {
+            Arrays.fill(work[k], 0.0);
+        }
+
         // Initialization to get to 2nd order.
         work[1][0] = 1.0 - x;
         work[1][1] = x;
@@ -150,8 +137,8 @@ public class UniformBSpline {
         for (int k = 3; k < order; k++) {
             bSplineRecursion(x, k, work[k - 1], work[k]);
         }
-        int o1 = order - 1;
 
+        int o1 = order - 1;
         // do derivatives
         try {
             if (deriveOrder > 0) {
@@ -202,6 +189,38 @@ public class UniformBSpline {
                 // Index out of bounds if deriveOrder is too high for order.
             }
         }
+    }
+
+    /**
+     * Uniform b-Spline recursion.
+     *
+     * @param x               A double in the range [0.0, 1.0].
+     * @param order           Current b-Spline order.
+     * @param coefficients    Current b-Spline coefficients.
+     * @param newCoefficients New b-Spline coefficients for order + 1.
+     * @since 1.0
+     */
+    private static void bSplineRecursion(final double x, final int order,
+                                         final double[] coefficients, final double[] newCoefficients) {
+        // The logging statement below prevents a bug in the GraalVM JIT that perhaps
+        // is involved with in-lining or un-rolling this method.
+        final double div = 1.0 / (double) order;
+        final double k1mw = order + (1.0 - x);
+        final int km1 = order - 1;
+        newCoefficients[order] = div * x * coefficients[km1];
+        for (int i = 1; i < order; i++) {
+            final int kmi = order - i;
+            final int km1i = km1 - i;
+            final double x1 = x + (double) i;
+            final double k1mwi = k1mw - (double) i;
+            newCoefficients[kmi] = div * (x1 * coefficients[km1i] + k1mwi * coefficients[kmi]);
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest(format(" BSR %16.8f %16.8f %16.8f %16.8f %16.8f",
+                        div, x1, coefficients[km1i], k1mwi, coefficients[kmi]));
+            }
+        }
+        double oneX = 1.0 - x;
+        newCoefficients[0] = div * oneX * coefficients[0];
     }
 
     /**

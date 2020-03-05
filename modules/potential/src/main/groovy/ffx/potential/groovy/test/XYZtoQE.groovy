@@ -40,7 +40,9 @@ package ffx.potential.groovy.test
 
 import static java.lang.String.format
 
-import org.apache.commons.io.FilenameUtils
+import static org.apache.commons.io.FilenameUtils.getFullPath
+import static org.apache.commons.io.FilenameUtils.getName
+import static org.apache.commons.io.FilenameUtils.removeExtension
 import static org.apache.commons.math3.util.FastMath.cos
 
 import ffx.crystal.Crystal
@@ -49,6 +51,7 @@ import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
@@ -63,6 +66,62 @@ import picocli.CommandLine.Parameters
  */
 @Command(description = "Generate QE input from a XYZ file.", name = "ffxc XYZtoQE")
 class XYZtoQE extends PotentialScript {
+
+    /**
+     * --ns or --numSteps Number of structural optimization steps performed in this run.
+     */
+    @Option(names = ['--ns', '--nstep'], paramLabel = "50", defaultValue = "50",
+            description = 'Number of structural optimization steps performed in this run.')
+    private int nstep = 50
+
+    /**
+     * --ec or --etot_conv_thr Convergence threshold on total energy (a.u) for ionic minimization.
+     */
+    @Option(names = ['--ec', '--etot_conv_thr'], paramLabel = "1.0e-4", defaultValue = "1.0e-4",
+            description = 'Convergence threshold on total energy (a.u) for ionic minimization.')
+    private double etot_conv_thr = 1.0e-4
+
+    /**
+     * --ef or --forc_conv_thr Convergence threshold on forces (a.u) for ionic minimization.
+     */
+    @Option(names = ['--ef', '--forc_conv_thr'], paramLabel = "1.0e-3", defaultValue = "1.0e-3",
+            description = 'Convergence threshold on forces (a.u) for ionic minimization.')
+    private double forc_conv_thr = 1.0e-3
+
+    /**
+     * --ke or --ecutwfc Kinetic energy cutoff (Ry) for wavefunctions.
+     */
+    @Option(names = ['--ke', '--ecutwfc'], paramLabel = "50.0", defaultValue = "50.0",
+            description = 'Kinetic energy cutoff (Ry) for wavefunctions.')
+    private double ecutwfc = 50.0
+
+    /**
+     * --rho or --ecutrho Kinetic energy cutoff (Ry) for charge density and potential.
+     */
+    @Option(names = ['--rho', '--ecutrho'], paramLabel = "200.0", defaultValue = "200.0",
+            description = 'Kinetic energy cutoff (Ry) for charge density and potential.')
+    private double ecutrho = 200.0
+
+    /**
+     * --em or --electron_maxstep Maximum number of iterations in a scf step.
+     */
+    @Option(names = ['--em', '--electron_maxstep'], paramLabel = "100", defaultValue = "100",
+            description = 'Maximum number of iterations in a scf step.')
+    private int electron_maxstep = 100
+
+    /**
+     * --ct or --conv_thr Convergence threshold for self consistency.
+     */
+    @Option(names = ['--ct', '--conv_thr'], paramLabel = "1.0e-6", defaultValue = "1.0e-6",
+            description = 'Convergence threshold for self consistency.')
+    private double conv_thr = 1.0e-6
+
+    /**
+     * --mb or --mixing_beta Mixing factor for self-consistency.
+     */
+    @Option(names = ['--mb', '--mixing_beta'], paramLabel = "0.7", defaultValue = "0.7",
+            description = 'Mixing factor for self-consistency.')
+    private double mixing_beta = 0.7
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -103,11 +162,11 @@ class XYZtoQE extends PotentialScript {
 
         File saveDir = baseDir
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+            saveDir = new File(getFullPath(modelFilename))
         }
         String dirName = saveDir.getAbsolutePath()
-        String fileName = FilenameUtils.getName(modelFilename)
-        fileName = FilenameUtils.removeExtension(fileName) + ".in"
+        String fileName = getName(modelFilename)
+        fileName = removeExtension(fileName) + ".in"
         File modelFile = new File(dirName + File.separator + fileName)
 
         Crystal crystal = activeAssembly.getCrystal().getUnitCell()
@@ -127,37 +186,39 @@ class XYZtoQE extends PotentialScript {
         }
 
         BufferedWriter bwQE = new BufferedWriter(new FileWriter(modelFile))
-        bwQE.write("&CONTROL\n" +
+        bwQE.write(format("&CONTROL\n" +
                 "\tcalculation = 'vc-relax',\n" +
                 "\trestart_mode = 'from_scratch',\n" +
-                "\tprefix = 'odh',\n" +
-                "\tetot_conv_thr = 2.0D-6,\n" +
-                "\tforc_conv_thr = 6.0D-4,\n" +
-                "\tnstep = 500,\n" +
-                "/\n")
-        bwQE.write("&SYSTEM\n" +
+                "\tprefix = '%s',\n" +
+                "\tetot_conv_thr = %6.4E,\n" +
+                "\tforc_conv_thr = %6.4E,\n" +
+                "\tnstep = %d,\n" +
+                "/\n", removeExtension(fileName), etot_conv_thr, forc_conv_thr, nstep))
+        bwQE.write(format("&SYSTEM\n" +
                 "\tspace_group = " + crystal.spaceGroup.number + ",\n" +
-//                "\tibrav = 0,\n" +
-                "\tnat = " + activeAssembly.getAtomList().size() + ",\n" + //Number of atoms
-                "\tntyp = " + atomTypes.size() + ",\n" +  //Number of different types of atoms (i.e. H, C, O = 3)
+                // Number of atoms
+                "\tnat = " + activeAssembly.getAtomList().size() + ",\n" +
+                // Number of different types of atoms (i.e. H, C, O = 3)
+                "\tntyp = " + atomTypes.size() + ",\n" +
                 "\ta = " + format("%16.12f", xtalA) + "\n" +
                 "\tb = " + format("%16.12f", xtalB) + "\n" +
                 "\tc = " + format("%16.12f", xtalC) + "\n" +
                 "\tcosAB = " + format("%16.12f", cos(crystal.gamma)) + "\n" +
                 "\tcosAC = " + format("%16.12f", cos(crystal.beta)) + "\n" +
                 "\tcosBC = " + format("%16.12f", cos(crystal.alpha)) + "\n" +
-                "\tecutwfc = 50.0,\n" +
-                "\tecutrho = 500.0,\n" +
+                "\tecutwfc = %6.4f,\n" +
+                "\tecutrho = %6.4f,\n" +
                 "\tvdw_corr = 'XDM',\n" +
-                "\txdm_a1 = 0.6512,\n" +
-                "\txdm_a2 = 1.4633,\n" +
-                "/\n")
-        bwQE.write("&ELECTRONS\n" +
-                "\telectron_maxstep = 1500,\n" +
-                "\tconv_thr = 1.D-8,\n" +
+                // xdm_a1 and xdm_a2 do not need to be provided for B86bPBE
+                // "\txdm_a1 = 0.6512,\n" +
+                // "\txdm_a2 = 1.4633,\n" +
+                "/\n", ecutwfc, ecutrho))
+        bwQE.write(format("&ELECTRONS\n" +
+                "\telectron_maxstep = %d,\n" +
+                "\tconv_thr = %6.4E,\n" +
                 "\tscf_must_converge = .TRUE.,\n" +
-                "\tmixing_beta = 0.5D0,\n" +
-                "/\n")
+                "\tmixing_beta = %5.3f,\n" +
+                "/\n", electron_maxstep, conv_thr, mixing_beta))
         bwQE.write("&IONS\n" +
                 "\tion_dynamics = 'bfgs',\n" +
                 "/\n")
@@ -172,11 +233,6 @@ class XYZtoQE extends PotentialScript {
             line += " " + pair.getKey() + " " + pair.getValue() + " " + pair.getKey() + ".b86bpbe.UPF\n"
         }
         bwQE.write("ATOMIC_SPECIES\n" + line + "\n")
-
-//        bwQE.write("CELL_PARAMETERS angstrom\n")
-//        bwQE.write(format("\t%16.12f %16.12f %16.12f\n", crystal.Ai[0][0], crystal.Ai[0][1], crystal.Ai[0][2]))
-//        bwQE.write(format("\t%16.12f %16.12f %16.12f\n", crystal.Ai[1][0], crystal.Ai[1][1], crystal.Ai[1][2]))
-//        bwQE.write(format("\t%16.12f %16.12f %16.12f\n", crystal.Ai[2][0], crystal.Ai[2][1], crystal.Ai[2][2]))
 
         bwQE.write("ATOMIC_POSITIONS crystal_sg\n" +
                 atomicPositions + "\n")

@@ -27,5 +27,23 @@ website/
 .settings/
 .idea/
 .netbeans/
+.mvn/
 
 velocity.log
+
+.gradle/
+build.gradle
+gradle/
+gradlew
+gradlew.bat
+modules/algorithms/build.gradle
+modules/crystal/build.gradle
+modules/numerics/build.gradle
+modules/pj/build.gradle
+modules/potential/build.gradle
+modules/ui/build.gradle
+modules/utilities/build.gradle
+modules/xray/build.gradle
+settings.gradle
+
+build/

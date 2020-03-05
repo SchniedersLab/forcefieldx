@@ -38,9 +38,14 @@
 package ffx.algorithms.thermodynamics;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 
@@ -50,22 +55,38 @@ import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-class HistogramReader extends BufferedReader {
+public class HistogramReader extends BufferedReader {
 
     private static final Logger logger = Logger.getLogger(HistogramReader.class.getName());
+    private double temperature;
+    private double thetaMass;
+    private double thetaFriction;
+    private double biasMag;
+    private int biasCutoff;
+    private int countInterval;
+    private int lambdaBins;
+    private int FLambdaBins;
+    private double minFLambda;
+    private double dFL;
+    private int temperingFlag;
+    private double[][] counts;
 
     /**
-     * Private reference to the Histogram instance.
+     * Private reference to the Histogram instance, if any.
      */
-    private Histogram histogram;
+    private final Histogram histogram;
 
+    public HistogramReader(Reader reader) {
+        this(null, reader);
+    }
+    
     /**
      * Constructor.
      *
      * @param histogram The Histogram instance.
      * @param reader    The Reader to use.
      */
-    HistogramReader(Histogram histogram, Reader reader) {
+    public HistogramReader(Histogram histogram, Reader reader) {
         super(reader);
         this.histogram = histogram;
     }
@@ -73,38 +94,75 @@ class HistogramReader extends BufferedReader {
     /**
      * Read the histogram file.
      */
-    void readHistogramFile() {
+    public void readHistogramFile() {
         try {
-            histogram.temperature = Double.parseDouble(readLine().split(" +")[1]);
-            histogram.thetaMass = Double.parseDouble(readLine().split(" +")[1]);
-            histogram.thetaFriction = Double.parseDouble(readLine().split(" +")[1]);
-            histogram.biasMag = Double.parseDouble(readLine().split(" +")[1]);
-            histogram.biasCutoff = Integer.parseInt(readLine().split(" +")[1]);
-            histogram.countInterval = Integer.parseInt(readLine().split(" +")[1]);
-            histogram.lambdaBins = Integer.parseInt(readLine().split(" +")[1]);
-            histogram.FLambda = new double[histogram.lambdaBins];
-            histogram.dL = 1.0 / (histogram.lambdaBins - 1);
-            histogram.dL_2 = histogram.dL / 2.0;
-            histogram.FLambdaBins = Integer.parseInt(readLine().split(" +")[1]);
-            histogram.minFLambda = Double.parseDouble(readLine().split(" +")[1]);
-            histogram.dFL = Double.parseDouble(readLine().split(" +")[1]);
-            histogram.dFL_2 = histogram.dFL / 2.0;
+            temperature = parseDouble(readLine().split(" +")[1]);
+            thetaMass = parseDouble(readLine().split(" +")[1]);
+            thetaFriction = parseDouble(readLine().split(" +")[1]);
+            biasMag = parseDouble(readLine().split(" +")[1]);
+            biasCutoff = parseInt(readLine().split(" +")[1]);
+            countInterval = parseInt(readLine().split(" +")[1]);
+            lambdaBins = parseInt(readLine().split(" +")[1]);
+            FLambdaBins = parseInt(readLine().split(" +")[1]);
+            minFLambda = parseDouble(readLine().split(" +")[1]);
+            dFL = parseDouble(readLine().split(" +")[1]);
+            temperingFlag = parseInt(readLine().split(" +")[1]);
 
-            int flag = Integer.parseInt(readLine().split(" +")[1]);
-            histogram.setTempering(flag != 0);
-
-            // Allocate memory for the recursion kernel.
-            histogram.allocateRecursionKernel();
-
-            for (int i = 0; i < histogram.lambdaBins; i++) {
-                String[] counts = readLine().split(" +");
-                for (int j = 0; j < histogram.FLambdaBins; j++) {
-                    histogram.setRecursionKernelValue(i, j, Double.parseDouble(counts[j]));
+            counts = new double[lambdaBins][FLambdaBins];
+            for (int i = 0; i < lambdaBins; i++) {
+                String[] countToks = readLine().split(" +");
+                for (int j = 0; j < FLambdaBins; j++) {
+                    counts[i][j] = parseDouble(countToks[j]);
                 }
+            }
+
+            if (histogram != null) {
+                applyToHistogram();
             }
         } catch (Exception e) {
             String message = " Invalid OST Histogram file.";
             logger.log(Level.SEVERE, message, e);
+        }
+        try {
+            close();
+        } catch (IOException ioe) {
+            String histoName = histogram == null ? "unknown file" : histogram.toString();
+            logger.warning(format(" Failed to close histogram reader for %s", histoName));
+        }
+    }
+
+    public int getLambdaBins() {
+        return lambdaBins;
+    }
+
+    public int getFLambdaBins() {
+        return FLambdaBins;
+    }
+    
+    private void applyToHistogram() {
+        histogram.temperature = temperature;
+        histogram.thetaMass = thetaMass;
+        histogram.thetaFriction = thetaFriction;
+        histogram.biasMag = biasMag;
+        histogram.biasCutoff = biasCutoff;
+        histogram.countInterval = countInterval;
+        histogram.lambdaBins = lambdaBins;
+        histogram.FLambda = new double[histogram.lambdaBins];
+        histogram.dL = 1.0 / (histogram.lambdaBins - 1);
+        histogram.dL_2 = histogram.dL / 2.0;
+        histogram.FLambdaBins = FLambdaBins;
+        histogram.minFLambda = minFLambda;
+        histogram.dFL = dFL;
+        histogram.dFL_2 = histogram.dFL / 2.0;
+        histogram.setTempering(temperingFlag != 0);
+
+        // Allocate memory for the recursion kernel.
+        histogram.allocateRecursionKernel();
+
+        for (int i = 0; i < histogram.lambdaBins; i++) {
+            for (int j = 0; j < histogram.FLambdaBins; j++) {
+                histogram.setRecursionKernelValue(i, j, counts[i][j]);
+            }
         }
     }
 }
