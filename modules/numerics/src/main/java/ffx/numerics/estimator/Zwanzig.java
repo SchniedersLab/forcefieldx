@@ -153,11 +153,6 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
     }
 
     @Override
-    public boolean isBidirectional() {
-        return false;
-    }
-
-    @Override
     public double getFreeEnergy() {
         return totDG;
     }
@@ -182,6 +177,15 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
         return nWindows;
     }
 
+    @Override
+    public Zwanzig copyEstimator() {
+        return new Zwanzig(lamVals, eLow, eAt, eHigh, temperatures, directionality);
+    }
+
+    /**
+     * Directionality of the Zwanzig estimation (forwards perturbation or backwards perturbation).
+     * TODO: Implement bidirectional Zwanzig with simple estimation (i.e. 0.5*(forwards + backward)).
+     */
     public enum Directionality {
         FORWARDS, BACKWARDS;
     }

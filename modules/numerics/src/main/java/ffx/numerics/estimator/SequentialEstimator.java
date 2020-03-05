@@ -86,16 +86,14 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
             System.arraycopy(temperature, 0, temperatures, 0, nTrajectories);
         }
 
-        eLow = energiesLow;
-        eAt = energiesAt;
-        eHigh = energiesHigh;
+        // Just in case, copy the arrays rather than storing them as provided.
+        eLow = new double[nTrajectories][];
+        eAt = new double[nTrajectories][];
+        eHigh = new double[nTrajectories][];
+        for (int i = 0; i < nTrajectories; i++) {
+            eLow[i] = Arrays.copyOf(energiesLow[i], energiesLow[i].length);
+            eAt[i] = Arrays.copyOf(energiesAt[i], energiesAt[i].length);
+            eHigh[i] = Arrays.copyOf(energiesHigh[i], energiesHigh[i].length);
+        }
     }
-
-    /**
-     * Indicates if this estimator is bidirectional (e.g. BAR) vs. unidirectional (forwards or backwards
-     * FEP).
-     *
-     * @return If the estimator is bidirectional.
-     */
-    public abstract boolean isBidirectional();
 }

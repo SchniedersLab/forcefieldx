@@ -6,6 +6,7 @@ import ffx.numerics.math.FFXSummaryStatistics;
 import java.util.Arrays;
 
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 public class EstimateBootstrapper {
@@ -56,6 +57,38 @@ public class EstimateBootstrapper {
 
     public double[] getUncertainty() {
         return Arrays.stream(bootstrapResults).mapToDouble(FFXSummaryStatistics::getSd).toArray();
+    }
+
+    public double[] getVariance() {
+        return Arrays.stream(bootstrapResults).mapToDouble(FFXSummaryStatistics::getVar).toArray();
+    }
+
+    // The following four methods are included primarily in case of non-sequential estimators (e.g. MBAR) which aren't a simple summation.
+
+    public double getTotalFE() {
+        return getTotalFE(getFE());
+    }
+
+    public double getTotalFE(double[] fe) {
+        return estimate.sumBootstrapResults(fe);
+    }
+
+    public double getTotalUncertainty() {
+        return getTotalUncertainty(getVariance());
+    }
+
+    public double getTotalUncertainty(double[] var) {
+        return estimate.sumBootstrapUncertainty(var);
+    }
+
+    /**
+     * Gets randomized bootstrap indices; ensures there are at least two distinct indices.
+     *
+     * @param length Number of random indices to generate in range [0,length)
+     * @return Randomized indices.
+     */
+    public static int[] getBootstrapIndices(int length) {
+        return getBootstrapIndices(length, ThreadLocalRandom.current());
     }
 
     /**
