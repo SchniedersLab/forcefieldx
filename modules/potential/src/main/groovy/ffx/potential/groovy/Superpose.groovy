@@ -80,11 +80,7 @@ class Superpose extends PotentialScript {
     /**
      * --store or --storeMatrix Store the distance matrix from all versus all RMSD calculation on multiple models.
      */
-<<<<<<< HEAD
-    @Option(names = ['--store', '--storeMatrix'], paramLabel = "false",
-=======
     @Option(names = ['--store', '--storeMatrix'], paramLabel = "false", defaultValue = "false",
->>>>>>> f8dd9f6cec1fbea6a137ba3be48b58d21592b8e9
             description = 'Store the distance matrix of all versus all RMSD calculation.')
     private boolean storeMatrix = false
 
@@ -112,11 +108,7 @@ class Superpose extends PotentialScript {
     /**
      * -v or --verbose Print out RMSD information.
      */
-<<<<<<< HEAD
-    @Option(names = ['-v', '--verbose'], paramLabel = "true",
-=======
     @Option(names = ['-v', '--verbose'], paramLabel = "true", defaultValue = "true",
->>>>>>> f8dd9f6cec1fbea6a137ba3be48b58d21592b8e9
             description = 'Write out RMSD information.')
     private boolean verbose = true
 
@@ -198,13 +190,8 @@ class Superpose extends PotentialScript {
             }
 
             // Note that atoms are indexed from 0 to nAtoms - 1.
-<<<<<<< HEAD
-            if(verbose) {
-                logger.info(format(" Atoms from %d to %d will be considered.", start + 1, finish + 1))
-=======
             if (verbose) {
                 logger.info(format(" Atoms from %d to %d will be considered.", start, finish))
->>>>>>> f8dd9f6cec1fbea6a137ba3be48b58d21592b8e9
             }
 
             // Begin streaming the possible atom indices, filtering out inactive atoms.
@@ -243,11 +230,7 @@ class Superpose extends PotentialScript {
                     break
             }
 
-<<<<<<< HEAD
-            if(verbose) {
-=======
             if (verbose) {
->>>>>>> f8dd9f6cec1fbea6a137ba3be48b58d21592b8e9
                 logger.info(" Superpose selection criteria: " + selectionType)
             }
 
@@ -280,11 +263,7 @@ class Superpose extends PotentialScript {
                     rmsd(assembly2, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed)
                 }
             } else {
-<<<<<<< HEAD
-                if(storeMatrix) {
-=======
                 if (storeMatrix) {
->>>>>>> f8dd9f6cec1fbea6a137ba3be48b58d21592b8e9
                     fillDiagonals(distMatrixSize)
                 }
                 rmsd(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 1)
@@ -361,29 +340,17 @@ class Superpose extends PotentialScript {
                 copyCoordinates(nUsed, usedIndices, x2, x2Used)
                 double rotatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
 
-<<<<<<< HEAD
-                if(verbose) {
-=======
                 if (verbose) {
->>>>>>> f8dd9f6cec1fbea6a137ba3be48b58d21592b8e9
                     logger.info(format(
                             " Coordinate RMSD for %d and %d: Original %7.3f, After Translation %7.3f, After Rotation %7.3f",
                             snapshot1, snapshot2, origRMSD, translatedRMSD, rotatedRMSD))
                 }
 
-<<<<<<< HEAD
-                if(storeMatrix){
-                    int snapshot1Index = snapshot1 -1
-                    int snapshot2Index = snapshot2 -1
-                    distMatrix[snapshot1Index][snapshot2Index]=rotatedRMSD
-                    distMatrix[snapshot2Index][snapshot1Index]=rotatedRMSD
-=======
                 if (storeMatrix) {
                     int snapshot1Index = snapshot1 - 1
                     int snapshot2Index = snapshot2 - 1
                     distMatrix[snapshot1Index][snapshot2Index] = rotatedRMSD
                     distMatrix[snapshot2Index][snapshot1Index] = rotatedRMSD
->>>>>>> f8dd9f6cec1fbea6a137ba3be48b58d21592b8e9
                 }
 
                 if (writeSnapshots) {
@@ -396,10 +363,6 @@ class Superpose extends PotentialScript {
         }
     }
 
-<<<<<<< HEAD
-    void fillDiagonals(int size) {
-        for(int i = 0; i < size; i++){
-=======
     void rmsd(MolecularAssembly assembly2, int nUsed, int[] usedIndices, double[] x, double[] x2, double[] xUsed, double[] x2Used, double[] massUsed) {
         double[] xBak = Arrays.copyOf(x, x.length)
 
@@ -445,16 +408,11 @@ class Superpose extends PotentialScript {
 
     void fillDiagonals(int size) {
         for (int i = 0; i < size; i++) {
->>>>>>> f8dd9f6cec1fbea6a137ba3be48b58d21592b8e9
             distMatrix[i][i] = 0.0
         }
     }
 
-<<<<<<< HEAD
-    double[][] getDistanceMatrix(){
-=======
     double[][] getDistanceMatrix() {
->>>>>>> f8dd9f6cec1fbea6a137ba3be48b58d21592b8e9
         return distMatrix
     }
 }
