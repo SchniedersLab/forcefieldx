@@ -2461,7 +2461,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                         ulL = 1.0;
                     }
 
-                    double midLambda = lambda;
+                    double midLambda = llL;
                     if (!discreteLambda) {
                         midLambda = (llL + ulL) / 2.0;
                     }
