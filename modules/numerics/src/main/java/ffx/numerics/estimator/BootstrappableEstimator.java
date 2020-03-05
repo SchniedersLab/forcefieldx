@@ -37,6 +37,8 @@
 //******************************************************************************
 package ffx.numerics.estimator;
 
+import java.util.Arrays;
+
 /**
  * The BootstrappableEstimator interface describes a StatisticalEstimator
  * which can use bootstrap sampling as an additional method of calculating
@@ -61,4 +63,36 @@ public interface BootstrappableEstimator extends StatisticalEstimator {
      * @param randomSamples Whether to draw random samples w/ replacement (one bootstrap trial).
      */
     void estimateDG(final boolean randomSamples);
+
+    /**
+     * Obtains bootstrap free energy. Default implementation sums by-bin free energies.
+     *
+     * May be over-ridden by non-sequential estimators like MBAR.
+     *
+     * @param fe By-bin bootstrap results.
+     * @return   Overall free energy change.
+     */
+    default double sumBootstrapResults(double[] fe) {
+        return Arrays.stream(fe).sum();
+    }
+
+    /**
+     * Obtains bootstrap uncertainty. Default implementation is square root of summed variances.
+     *
+     * May be over-ridden by non-sequential estimators like MBAR.
+     *
+     * @param var Variance (not uncertainty) in by-bin bootstrap results.
+     * @return    Overall uncertainty.
+     */
+    default double sumBootstrapUncertainty(double[] var) {
+        return Math.sqrt(Arrays.stream(var).sum());
+    }
+
+    /**
+     * Return a copy of this Estimator. Each implementation should specify its own type as the
+     * return type. Intended to make parallelization of bootstrapping easy.
+     *
+     * @return A copy of this Estimator.
+     */
+    BootstrappableEstimator copyEstimator();
 }
