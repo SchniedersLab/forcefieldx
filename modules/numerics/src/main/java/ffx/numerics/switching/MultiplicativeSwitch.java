@@ -41,25 +41,23 @@ import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.pow;
 
-import ffx.numerics.switching.UnivariateSwitchingFunction;
-
 /**
  * The 6 coefficients of the multiplicative polynomial switch are unique given
- * the distances "off" and "cut". They are found by solving a system of 6
+ * the distances "a" and "b". They are found by solving a system of 6
  * equations, which define the boundary conditions of the switch.
  * <br>
- * f(cut) = 1
+ * f(a) = 1
  * <br>
- * f'(cut) = f"(cut) = 0
+ * f'(a) = f"(a) = 0
  * <br>
- * f(off) = f'(off) = f"(off) = 0
+ * f(b) = f'(b) = f"(b) = 0
  *
  * @author Michael J. Schnieders
  */
 public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
 
-    private final double off;
-    private final double cut;
+    private final double b;
+    private final double a;
     private final double c0;
     private final double c1;
     private final double c2;
@@ -72,36 +70,38 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
     private final double fiveC5;
 
     /**
-     * Constructs a MultiplicativeSwitch that starts at 0.0, ends at 1.0,
-     * and smoothly interpolates between them via a sinusoid with zero first and
-     * second derivatives at 0 and 1.
+     * Constructs a MultiplicativeSwitch that starts at f(0)=1 and ends at f(1)=0.
+     * Over this range, the switch smoothly interpolates between 1 and 0,
+     * with zero first and second derivatives at 0 and 1.
      */
     public MultiplicativeSwitch() {
         this(0.0, 1.0);
     }
 
     /**
-     * Constructs a multiplicative switch which starts at off and ends at cut,
-     * which smoothly interpolates between 0-1 across that range, with
-     * zero first and second derivatives at off and cut.
+     * Constructs a multiplicative switch which starts at f(a) = 1 and
+     * ends at f(b) = 0. The switch smoothly interpolates from 1 to 0 across that range,
+     * with zero first and second derivatives at off and cut.
      *
-     * @param off Zero point of the switch
-     * @param cut End point of the switch
+     * @param a f(a)=1
+     * @param b f(b)=0
      */
-    public MultiplicativeSwitch(double off, double cut) {
+    public MultiplicativeSwitch(double a, double b) {
 
-        this.off = off;
-        this.cut = cut;
+        // f(a) = 1.0
+        this.a = a;
+        // f(b) = 0.0
+        this.b = b;
 
-        double off2 = off * off;
-        double cut2 = cut * cut;
+        double a2 = a * a;
+        double b2 = b * b;
 
-        double denom = pow(off - cut, 5.0);
-        c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
-        c1 = -30.0 * off2 * cut2 / denom;
-        c2 = 30.0 * (off2 * cut + off * cut2) / denom;
-        c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
-        c4 = 15.0 * (off + cut) / denom;
+        double denom = pow(b - a, 5.0);
+        c0 = b * b2 * (b2 - 5.0 * a * b + 10.0 * a2) / denom;
+        c1 = -30.0 * a2 * b2 / denom;
+        c2 = 30.0 * b * a * (b + a) / denom;
+        c3 = -10.0 * (a2 + 4.0 * a * b + b2) / denom;
+        c4 = 15.0 * (a + b) / denom;
         c5 = -6.0 / denom;
         twoC2 = 2.0 * c2;
         threeC3 = 3.0 * c3;
@@ -166,7 +166,7 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public double getZeroBound() {
-        return off < cut ? off : cut;
+        return b < a ? b : a;
     }
 
     /**
@@ -174,7 +174,7 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public double getOneBound() {
-        return cut > off ? cut : off;
+        return a > b ? a : b;
     }
 
     /**
@@ -252,16 +252,16 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
             case 2:
                 return secondDerivative(x);
             case 3:
-                double val = 60 * c5 * x * x;
-                val += 24 * c4 * x;
-                val += 6 * c3;
+                double val = 60.0 * c5 * x * x;
+                val += 24.0 * c4 * x;
+                val += 6.0 * c3;
                 return val;
             case 4:
-                val = 120 * c5 * x;
-                val += 24 * c4;
+                val = 120.0 * c5 * x;
+                val += 24.0 * c4;
                 return val;
             case 5:
-                return 120 * c5;
+                return 120.0 * c5;
             default:
                 return 0;
         }

@@ -358,7 +358,7 @@ public class VanDerWaals implements MaskingInterface,
         double vdwTaper = 0.9 * vdwCutoff;
         double buff = 2.0;
         nonbondedCutoff = new NonbondedCutoff(vdwCutoff, vdwTaper, buff);
-        multiplicativeSwitch = new MultiplicativeSwitch(vdwCutoff, vdwTaper);
+        multiplicativeSwitch = new MultiplicativeSwitch(vdwTaper, vdwCutoff);
         neighborList = new NeighborList(null, this.crystal, atoms, neighborListCutoff, buff, parallelTeam);
         pairwiseSchedule = neighborList.getPairwiseSchedule();
         neighborLists = new int[nSymm][][];

@@ -105,36 +105,34 @@ public class ChandlerCavitation {
     private double surfaceTension = GeneralizedKirkwood.DEFAULT_CAVDISP_SURFACE_TENSION;
     /**
      * Radius where volume dependence crosses over to surface area dependence (approximately at 1 nm).
-     * Originally 3.0*surfaceTension/solventPressure
-     * Reset to 7.339 to match Tinker
      */
     private double crossOver = GeneralizedKirkwood.DEFAULT_CROSSOVER;
     private double switchRange = 3.5;
-    private double saSwitchRangeOff = 3.9;
+    private double saOffset = 0.4;
     /**
      * Begin turning off the Volume term.
      */
-    private double volumeOff = crossOver - switchRange;
+    private double beginVolumeOff = crossOver - switchRange;
     /**
      * Volume term is zero at the cut-off.
      */
-    private double volumeCut = crossOver + switchRange;
+    private double endVolumeOff = beginVolumeOff + 2.0 * switchRange;
     /**
      * Begin turning off the SA term.
      */
-    private double surfaceAreaOff = crossOver + saSwitchRangeOff;
+    private double beginSurfaceAreaOff = crossOver + saOffset + switchRange;
     /**
      * SA term is zero at the cut-off.
      */
-    private double surfaceAreaCut = crossOver - switchRange;
+    private double endSurfaceAreaOff = beginSurfaceAreaOff - 2.0 * switchRange;
     /**
      * Volume multiplicative switch.
      */
-    private MultiplicativeSwitch volumeSwitch = new MultiplicativeSwitch(volumeCut, volumeOff);
+    private MultiplicativeSwitch volumeSwitch = new MultiplicativeSwitch(beginVolumeOff, endVolumeOff);
     /**
      * Surface area multiplicative switch.
      */
-    private MultiplicativeSwitch surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
+    private MultiplicativeSwitch surfaceAreaSwitch = new MultiplicativeSwitch(beginSurfaceAreaOff, endSurfaceAreaOff);
 
     private int nAtoms;
     private Atom[] atoms;
@@ -213,7 +211,7 @@ public class ChandlerCavitation {
         double dReffdvdW = 1.0 / (pow(6.0, 2.0 / 3.0) * PI * vdWVolPI23);
 
         // Find the cavitation energy using a combination of volume and surface area dependence.
-        if (reff < volumeOff) {
+        if (reff < beginVolumeOff) {
             // Find cavity energy from only the molecular volume.
             cavitationEnergy = volumeEnergy;
             double[][] volumeGradient = connollyRegion.getVolumeGradient();
@@ -223,7 +221,7 @@ public class ChandlerCavitation {
                 double dz = solventPressure * volumeGradient[2][i];
                 gradient.add(0, i, dx, dy, dz);
             }
-        } else if (reff <= volumeCut) {
+        } else if (reff <= endVolumeOff) {
             // Include a tapered molecular volume.
             double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
             cavitationEnergy = taper * volumeEnergy;
@@ -240,11 +238,11 @@ public class ChandlerCavitation {
         }
 
         // TODO: We need to include the surface area contribution to the gradient.
-        if (reff > surfaceAreaOff) {
+        if (reff > beginSurfaceAreaOff) {
             // Find cavity energy from only SA.
             cavitationEnergy = surfaceAreaEnergy;
             // addSurfaceAreaGradient(0.0, surfaceTension, gradient);
-        } else if (reff >= surfaceAreaCut) {
+        } else if (reff >= endSurfaceAreaOff) {
             // Include a tapered surface area term.
             double taperSA = surfaceAreaSwitch.taper(reff, reff2, reff3, reff4, reff5);
             cavitationEnergy += taperSA * surfaceAreaEnergy;
@@ -309,11 +307,11 @@ public class ChandlerCavitation {
 //        double dReffdvdW = 1.0 / (pow(6.0, 2.0 / 3.0) * PI * volPI23);
 
         // Find the cavitation energy using a combination of volume and surface area dependence.
-        if (reff < volumeOff) {
+        if (reff < beginVolumeOff) {
             // Find cavity energy from only the molecular volume.
             cavitationEnergy = volumeEnergy;
             addVolumeGradient(0.0, solventPressure, surfaceAreaGradient, volumeGradient, gradient);
-        } else if (reff <= volumeCut) {
+        } else if (reff <= endVolumeOff) {
             // Include a tapered molecular volume.
             double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
             double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dRdSA;
@@ -323,11 +321,11 @@ public class ChandlerCavitation {
             addVolumeGradient(factorSA, factorVol, surfaceAreaGradient, volumeGradient, gradient);
         }
 
-        if (reff > surfaceAreaOff) {
+        if (reff > beginSurfaceAreaOff) {
             // Find cavity energy from only SA.
             cavitationEnergy = surfaceAreaEnergy;
             addSurfaceAreaGradient(surfaceTension, surfaceAreaGradient, gradient);
-        } else if (reff >= surfaceAreaCut) {
+        } else if (reff >= endSurfaceAreaOff) {
             // Include a tapered surface area term.
             double taperSA = surfaceAreaSwitch.taper(reff, reff2, reff3, reff4, reff5);
             double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dRdSA;
@@ -399,21 +397,41 @@ public class ChandlerCavitation {
     }
 
     public void setSolventPressure(double solventPressure) {
+        double newCrossOver = 3.0 * surfaceTension / solventPressure;
+        if (newCrossOver < 3.5) {
+            logger.severe(format(" The solvent pressure (%8.6f kcal/mol/A^3)" +
+                            " and surface tension (%8.6f kcal/mol/A^2) combination is not supported.",
+                    solventPressure, surfaceTension));
+            return;
+        }
         this.solventPressure = solventPressure;
+        this.setCrossOver(newCrossOver);
     }
 
     public void setSurfaceTension(double surfaceTension) {
+        double newCrossOver = 3.0 * surfaceTension / solventPressure;
+        if (newCrossOver < 3.5) {
+            logger.severe(format(" The solvent pressure (%8.6f kcal/mol/A^3)" +
+                            " and surface tension (%8.6f kcal/mol/A^2) combination is not supported.",
+                    solventPressure, surfaceTension));
+            return;
+        }
         this.surfaceTension = surfaceTension;
+        this.setCrossOver(newCrossOver);
     }
 
     public void setCrossOver(double crossOver) {
+        if (crossOver < 3.5) {
+            logger.severe(format(" The cross-over point (%8.6f A) must be greater than 3.5 A", crossOver));
+            return;
+        }
         this.crossOver = crossOver;
-        volumeOff = crossOver - switchRange;
-        volumeCut = crossOver + switchRange;
-        surfaceAreaOff = crossOver + saSwitchRangeOff;
-        surfaceAreaCut = crossOver - switchRange;
-        volumeSwitch = new MultiplicativeSwitch(volumeCut, volumeOff);
-        surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
+        beginVolumeOff = crossOver - switchRange;
+        endVolumeOff = beginVolumeOff + 2.0 * switchRange;
+        beginSurfaceAreaOff = crossOver + saOffset + switchRange;
+        endSurfaceAreaOff = beginSurfaceAreaOff - 2.0 * switchRange;
+        volumeSwitch = new MultiplicativeSwitch(beginVolumeOff, endVolumeOff);
+        surfaceAreaSwitch = new MultiplicativeSwitch(beginSurfaceAreaOff, endSurfaceAreaOff);
     }
 
     public double getCrossOver() {
