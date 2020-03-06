@@ -605,7 +605,7 @@ public class SwitchFunctionTest {
      * default tolerances, approximately 100*ulp(0) and 100*ulp(1).
      *
      * @param sf              Switching function to test.
-     * @param looseTolerances Use looser tolerances for test acceptance
+     * @param tolerance Use looser tolerances for test acceptance
      */
     private void standardTest(UnivariateSwitchingFunction sf, double tolerance) {
         double oneBound = sf.getOneBound();

@@ -86,41 +86,14 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
             System.arraycopy(temperature, 0, temperatures, 0, nTrajectories);
         }
 
-        /*eLow = new double[nTrajectories][];
+        // Just in case, copy the arrays rather than storing them as provided.
+        eLow = new double[nTrajectories][];
         eAt = new double[nTrajectories][];
         eHigh = new double[nTrajectories][];
-
         for (int i = 0; i < nTrajectories; i++) {
-            int len = energiesLow[i].length;
-            assert len == energiesAt[i].length && len == energiesHigh[i].length;
-            eLow[i] = Arrays.copyOf(energiesLow[i], len);
-            eAt[i] = Arrays.copyOf(energiesAt[i], len);
-            eHigh[i] = Arrays.copyOf(energiesHigh[i], len);
-        }*/
-        eLow = energiesLow;
-        eAt = energiesAt;
-        eHigh = energiesHigh;
+            eLow[i] = Arrays.copyOf(energiesLow[i], energiesLow[i].length);
+            eAt[i] = Arrays.copyOf(energiesAt[i], energiesAt[i].length);
+            eHigh[i] = Arrays.copyOf(energiesHigh[i], energiesHigh[i].length);
+        }
     }
-
-    /**
-     * Indicates if this estimator is bidirection (e.g. BAR) vs. unidirectional (forwards or backwards
-     * FEP).
-     *
-     * @return If the estimator is bidirectional.
-     */
-    public abstract boolean isBidirectional();
-
-    /**
-     * Gets the free energy change per window.
-     *
-     * @return Individual window free energy changes.
-     */
-    public abstract double[] getWindowEnergies();
-
-    /**
-     * Gets the uncertainty in free energy associated with each window.
-     *
-     * @return Individual window uncertainties.
-     */
-    public abstract double[] getWindowUncertainties();
 }

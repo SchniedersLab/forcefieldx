@@ -115,18 +115,58 @@ public class DispersionRegion extends ParallelRegion {
      * Rmin + DISPERSION_OFFSET
      */
     public static final double DEFAULT_DISPERSION_OFFSET = 0.826;
-
+    /**
+     * Each solute atom blocks dispersion interactions with solvent:
+     * Rmin + SOLUTE_OFFSET
+     */
+    public static final double DEFAULT_SOLUTE_OFFSET = 0.0;
+    /**
+     * Conversion between solute-solvent dispersion enthalpy and solute-solvent dispersion free energy.
+     */
     private static final double SLEVY = 1.0;
+    /**
+     * Number density of water (water per A^3).
+     */
     private static final double AWATER = 0.033428;
+    /**
+     * AMOEBA '03 Water oxygen epsilon.
+     */
     private static final double EPSO = 0.1100;
+    /**
+     * AMOEBA '03 Water hydrogen epsilon.
+     */
     private static final double EPSH = 0.0135;
+    /**
+     * AMOEBA '03 Water oxygen Rmin (A).
+     */
     private static final double RMINO = 1.7025;
+    /**
+     * AMOEBA '03 Water hydrogen Rmin (A).
+     */
     private static final double RMINH = 1.3275;
 
-    private double dispersionOffest = DEFAULT_DISPERSION_OFFSET;
-    private double dispersionOverlapFactor = DEFAULT_DISP_OVERLAP_FACTOR;
+    /**
+     * Where the dispersion integral begins for each atom (A):
+     * Rmin + dispersionOffset
+     */
+    private double dispersionOffest;
+    /**
+     * Each solute atom blocks dispersion interactions with solvent with this radius (A):
+     * Rmin + soluteOffset
+     */
+    private double soluteOffset;
+    /**
+     * The dispersion integral HCT overlap scale factor (unitless).
+     */
+    private double dispersionOverlapFactor;
 
-
+    /**
+     * DispersionRegion constructor.
+     *
+     * @param nt         Number of threads.
+     * @param atoms      Atom array.
+     * @param forceField ForceField in use.
+     */
     public DispersionRegion(int nt, Atom[] atoms, ForceField forceField) {
         dispersionLoop = new DispersionLoop[nt];
         for (int i = 0; i < nt; i++) {
@@ -135,9 +175,14 @@ public class DispersionRegion extends ParallelRegion {
         sharedDispersion = new SharedDouble();
 
         dispersionOffest = forceField.getDouble("DISPERSION_OFFSET", DEFAULT_DISPERSION_OFFSET);
+        soluteOffset = forceField.getDouble("SOLUTE_OFFSET", DEFAULT_SOLUTE_OFFSET);
         dispersionOverlapFactor = forceField.getDouble("DISP_OVERLAP_FACTOR", DEFAULT_DISP_OVERLAP_FACTOR);
 
         allocate(atoms);
+    }
+
+    public double getDispersionOffest() {
+        return dispersionOffest;
     }
 
     /**
@@ -151,6 +196,10 @@ public class DispersionRegion extends ParallelRegion {
         maxDispersionEnergy();
     }
 
+    public double getDispersionOverlapFactor() {
+        return dispersionOverlapFactor;
+    }
+
     /**
      * Set the dispersion overlap HCT scale factor.
      *
@@ -158,6 +207,14 @@ public class DispersionRegion extends ParallelRegion {
      */
     public void setDispersionOverlapFactor(double dispersionOverlapFactor) {
         this.dispersionOverlapFactor = dispersionOverlapFactor;
+    }
+
+    public double getSoluteOffset() {
+        return soluteOffset;
+    }
+
+    public void setSoluteOffset(double soluteOffset) {
+        this.soluteOffset = soluteOffset;
     }
 
     /**
@@ -169,6 +226,11 @@ public class DispersionRegion extends ParallelRegion {
         return dispersionOffest;
     }
 
+    /**
+     * Allocate storage given the Atom array.
+     *
+     * @param atoms Atom array in use.
+     */
     public void allocate(Atom[] atoms) {
         this.atoms = atoms;
         int nAtoms = atoms.length;
@@ -189,6 +251,20 @@ public class DispersionRegion extends ParallelRegion {
         maxDispersionEnergy();
     }
 
+    /**
+     * Initialize the DispersionRegion for energy calculation.
+     *
+     * @param atoms         Atom array.
+     * @param crystal       Crystal for periodic boundary conditions.
+     * @param use           Flag to indicate an atom is to be used.
+     * @param neighborLists Neighbor-list for each atom.
+     * @param x             X-coordinate array.
+     * @param y             Y-coordinate array.
+     * @param z             Z-coordinate array.
+     * @param cut2          The cut-off distance squared.
+     * @param gradient      If true, compute the gradient.
+     * @param grad
+     */
     public void init(Atom[] atoms, Crystal crystal, boolean[] use, int[][][] neighborLists,
                      double[] x, double[] y, double[] z, double cut2,
                      boolean gradient, AtomicDoubleArray3D grad) {
@@ -232,12 +308,12 @@ public class DispersionRegion extends ParallelRegion {
                 double rmixh3 = pow(rmixh, 3);
                 double rmixh7 = pow(rmixh, 7);
                 double ah = emixh * rmixh7;
+                // Integral with a water hydrogen atom.
                 // Apply the dispersion offset to start the integral beyond the atomic radius of atom i.
                 double ri = rDisp[i] + dispersionOffest;
                 double ri3 = pow(ri, 3);
                 double ri7 = pow(ri, 7);
                 double ri11 = pow(ri, 11);
-                // Integral with a water hydrogen atom.
                 if (ri < rmixh) {
                     cDisp[i] = -4.0 * PI * emixh * (rmixh3 - ri3) / 3.0
                             - emixh * 18.0 * PI * rmixh3 / 11.0;
@@ -337,13 +413,13 @@ public class DispersionRegion extends ParallelRegion {
                         r = sqrt(r2);
                         r3 = r * r2;
                         // Atom i descreened by atom k.
-                        sum += descreen(i, k);
+                        sum += removeSoluteDispersion(i, k);
                         // Flip the sign on {xr, yr, zr};
                         xr = -xr;
                         yr = -yr;
                         zr = -zr;
                         // Atom k descreened by atom i.
-                        sum += descreen(k, i);
+                        sum += removeSoluteDispersion(k, i);
                     }
                 }
                 // Subtract descreening.
@@ -351,7 +427,7 @@ public class DispersionRegion extends ParallelRegion {
             }
         }
 
-        private double descreen(int i, int k) {
+        private double removeSoluteDispersion(int i, int k) {
             double sum = 0.0;
             VDWType type = atoms[i].getVDWType();
             double epsi = type.wellDepth;
@@ -366,8 +442,8 @@ public class DispersionRegion extends ParallelRegion {
             double ah = emixh * rmixh7;
             // Apply the offset to start the integral beyond the atomic radius of atom i.
             double ri = rDisp[i] + dispersionOffest;
-            // Atom k descreens with no offset applied.
-            double rk = rDisp[k];
+            // Atom k blocks interaction of atom i with solvent.
+            double rk = rDisp[k] + soluteOffset;
             double sk = rk * dispersionOverlapFactor;
             double sk2 = sk * sk;
             if (ri < r + sk) {

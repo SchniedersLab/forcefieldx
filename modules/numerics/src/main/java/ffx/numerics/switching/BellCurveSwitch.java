@@ -80,8 +80,8 @@ public class BellCurveSwitch implements UnivariateSwitchingFunction {
         invWidth = 1.0 / width;
 
         halfWidth = 0.5 * width;
-        switchingFunction = new MultiplicativeSwitch(midpoint - halfWidth, midpoint);
-        secondSwitchingFunction = new MultiplicativeSwitch(midpoint + halfWidth, midpoint);
+        switchingFunction = new MultiplicativeSwitch(midpoint, midpoint - halfWidth);
+        secondSwitchingFunction = new MultiplicativeSwitch(midpoint, midpoint + halfWidth);
     }
 
     /**

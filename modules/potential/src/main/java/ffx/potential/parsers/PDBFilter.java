@@ -2157,10 +2157,12 @@ public final class PDBFilter extends SystemFilter {
     public void closeReader() {
         for (MolecularAssembly system : systems) {
             BufferedReader br = readers.get(system);
-            try {
-                br.close();
-            } catch (IOException ex) {
-                logger.warning(format(" Exception in closing system %s: %s", system.toString(), ex.toString()));
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException ex) {
+                    logger.warning(format(" Exception in closing system %s: %s", system.toString(), ex.toString()));
+                }
             }
         }
     }

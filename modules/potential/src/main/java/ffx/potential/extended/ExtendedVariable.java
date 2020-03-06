@@ -139,7 +139,7 @@ public abstract class ExtendedVariable {
         this.esvIndex = esvSystem.requestIndexing();
         this.config = esvSystem.config;
         this.discrBiasMag = config.discrBias;
-        this.switchingFunction = new MultiplicativeSwitch(0.0, 1.0);
+        this.switchingFunction = new MultiplicativeSwitch(1.0, 0.0);
         setInitialLambda(lambda);
 
         residueForeground = multiRes.getActive();

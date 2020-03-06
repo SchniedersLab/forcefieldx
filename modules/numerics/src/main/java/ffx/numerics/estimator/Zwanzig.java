@@ -42,7 +42,9 @@ import ffx.utilities.Constants;
 import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
+import java.util.Random;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 
@@ -55,14 +57,16 @@ import static org.apache.commons.math3.util.FastMath.exp;
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class Zwanzig extends SequentialEstimator {
+public class Zwanzig extends SequentialEstimator implements BootstrappableEstimator {
     private static final Logger logger = Logger.getLogger(SequentialEstimator.class.getName());
     private final int nWindows;
     private final double[] dGs;
     private final double[] uncerts;
-    private final double totDG;
-    private final double totUncert;
+    private double totDG;
+    private double totUncert;
     public final Directionality directionality;
+    private final boolean forwards;
+    private final Random random = new Random();
 
     /**
      * Estimates a free energy using the Zwanzig relationship. The temperature array can be of length 1
@@ -88,14 +92,24 @@ public class Zwanzig extends SequentialEstimator {
         dGs = new double[nWindows];
         uncerts = new double[nWindows];
 
-        boolean forwards = directionality.equals(Directionality.FORWARDS);
+        forwards = directionality.equals(Directionality.FORWARDS);
+        estimateDG();
+    }
 
+    @Override
+    public void estimateDG() {
+        estimateDG(false);
+    }
+
+    @Override
+    public void estimateDG(final boolean randomSamples) {
         double cumDG = 0;
         for (int i = 0; i < nWindows; i++) {
+
             int windowIndex = forwards ? 0 : 1;
             windowIndex += i;
-            double[] e1 = forwards ? energiesAt[windowIndex] : energiesLow[windowIndex];
-            double[] e2 = forwards ? energiesHigh[windowIndex] : energiesAt[windowIndex];
+            double[] e1 = forwards ? eAt[windowIndex] : eLow[windowIndex];
+            double[] e2 = forwards ? eHigh[windowIndex] : eAt[windowIndex];
             int len = e1.length;
 
             if (len == 0) {
@@ -111,9 +125,13 @@ public class Zwanzig extends SequentialEstimator {
             double[] deltas = new double[len];
             double[] expDeltas = new double[len];
 
-            for (int j = 0; j < len; j++) {
-                deltas[j] = e2[j] - e1[j];
-                expDeltas[j] = exp(beta * deltas[j]);
+            int[] samples = randomSamples ? EstimateBootstrapper.getBootstrapIndices(len, random) : IntStream.range(0, len).toArray();
+
+            for (int indJ = 0; indJ < len; indJ++) {
+                // With no iteration-to-convergence, generating a fresh random index is OK.
+                int j = samples[indJ];
+                deltas[indJ] = e2[j] - e1[j];
+                expDeltas[indJ] = exp(beta * deltas[j]);
             }
 
             FFXSummaryStatistics deltaSummary = new FFXSummaryStatistics(deltas);
@@ -124,18 +142,14 @@ public class Zwanzig extends SequentialEstimator {
             if (len == 1) {
                 uncerts[i] = 0.0;
             } else {
-                double ci = deltaSummary.confidenceInterval();
-                uncerts[i] = ci;
+                /*double ci = deltaSummary.confidenceInterval();
+                uncerts[i] = ci;*/
+                uncerts[i] = expDeltaSummary.sd;
             }
         }
 
         totDG = cumDG;
         totUncert = FastMath.sqrt(Arrays.stream(uncerts).map((double d) -> d*d).sum());
-    }
-
-    @Override
-    public boolean isBidirectional() {
-        return false;
     }
 
     @Override
@@ -149,15 +163,29 @@ public class Zwanzig extends SequentialEstimator {
     }
 
     @Override
-    public double[] getWindowEnergies() {
+    public double[] getBinEnergies() {
         return Arrays.copyOf(dGs, nWindows);
     }
 
     @Override
-    public double[] getWindowUncertainties() {
+    public double[] getBinUncertainties() {
         return Arrays.copyOf(uncerts, nWindows);
     }
 
+    @Override
+    public int numberOfBins() {
+        return nWindows;
+    }
+
+    @Override
+    public Zwanzig copyEstimator() {
+        return new Zwanzig(lamVals, eLow, eAt, eHigh, temperatures, directionality);
+    }
+
+    /**
+     * Directionality of the Zwanzig estimation (forwards perturbation or backwards perturbation).
+     * TODO: Implement bidirectional Zwanzig with simple estimation (i.e. 0.5*(forwards + backward)).
+     */
     public enum Directionality {
         FORWARDS, BACKWARDS;
     }

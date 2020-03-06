@@ -288,6 +288,12 @@
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <type>jar</type>
+            <version>${commons-math3.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-configuration2</artifactId>
             <type>jar</type>
             <version>${commons-configuration2.version}</version>
@@ -308,6 +314,12 @@
             <groupId>mrj</groupId>
             <artifactId>MRJToolkitStubs</artifactId>
             <version>${MRJToolkitStubs.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
             <type>jar</type>
         </dependency>
         <!-- dependency>
