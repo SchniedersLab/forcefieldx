@@ -42,7 +42,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
-//import java.util.logging.Logger;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -53,9 +52,9 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
+import ffx.algorithms.groovy.Anneal;
 import ffx.algorithms.misc.PJDependentTest;
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing;
-import ffx.algorithms.groovy.Anneal;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
@@ -65,8 +64,6 @@ import groovy.lang.Binding;
  */
 @RunWith(Parameterized.class)
 public class SimulatedAnnealingTest extends PJDependentTest {
-
-    //private static final Logger logger = Logger.getLogger(SimulatedAnnealingTest.class.getName());
 
     private String info;
     private String filename;
