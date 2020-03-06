@@ -55,6 +55,8 @@ import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine
 
+import java.util.logging.Level
+
 /**
  * The MOSTBAR script uses a single set of archive file(s) from a Metropolized
  * Orthogonal Space Tempering run to evaluate free energy via the Bennett Acceptance Ratio
@@ -120,9 +122,9 @@ class MostBar extends AlgorithmsScript {
     /**
      * --bo or --bootstrap sets the number of bootstrap cycles to run.
      */
-    @CommandLine.Option(names = ["--bo", "--bootstrap"], paramLabel = "1",
-            description = "Use this many bootstrap trials to estimate dG and uncertainty")
-    private long bootstrap = 0L;
+    @CommandLine.Option(names = ["--bo", "--bootstrap"], paramLabel = "AUTO",
+            description = "Use this many bootstrap trials to estimate dG and uncertainty; default is 200-100000 (depending on number of frames).")
+    private long bootstrap = -1L;
 
     /**
      * --lambdaSorted indicates that this is not a standard M-OST archive, but rather a concatenation of fixed-lambda sampling (affects -s and --fi).
@@ -130,6 +132,13 @@ class MostBar extends AlgorithmsScript {
     @CommandLine.Option(names = ["--lambdaSorted"], paramLabel = "false",
             description = "Input is sorted by lambda rather than simulation progress (sets -s to skip N-1 frames at each lambda value rather than N-1 of all frames).")
     private boolean lambdaSorted = false;
+
+    /**
+     * -v or --verbose enables extra logging (e.g. energies collected, more frequent bootstrap progress updates, etc).
+     */
+    @CommandLine.Option(names = ["-v", "--verbose"], paramLabel = "false",
+            description = "Print out extra information (e.g. collection of potential energies).")
+    private boolean verbose = false;
 
     /**
      * The final argument(s) should be filenames for lambda windows in order..
@@ -164,9 +173,14 @@ class MostBar extends AlgorithmsScript {
     private int start;
     // Last frame (0-indexed, exclusive.
     private int end;
+    private Level standardLogging = Level.FINE;
 
     // Interval between logging which bootstrap cycle it is.
-    private static final long BOOTSTRAP_PRINT = 100L;
+    private static final long BOOTSTRAP_PRINT = 50L;
+    // Lower/upper bounds for autodetected bootstrap length.
+    private static final long MIN_BOOTSTRAP_TRIALS = 200L;
+    private static final long MAX_BOOTSTRAP_TRIALS = 50000L;
+    private static final long AUTO_BOOTSTRAP_NUMERATOR = 10000000L;
     // Analytic energy adjustment used to debug the script (e.g. take a known dG and add 3.0 kcal/mol to it).
     // NOT TO BE USED IN PRODUCTION.
     private static final int DEBUG_OFFSET = 0.0;
@@ -198,6 +212,8 @@ class MostBar extends AlgorithmsScript {
         The Minimize script, for example, may be running on a single, unscaled physical topology. */
         boolean lambdaTerm = (nFiles == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
 
+        standardLogging = verbose ? Level.INFO : Level.FINE;
+
         if (lambdaTerm) {
             System.setProperty("lambdaterm", "true")
         }
@@ -218,7 +234,7 @@ class MostBar extends AlgorithmsScript {
             openers[i] = algorithmFunctions.getFilter()
         }
 
-        StringBuilder sb = new StringBuilder("\n Using BAR to analyze an M-OST free energy change between for systems ")
+        StringBuilder sb = new StringBuilder("\n Using BAR to analyze an M-OST free energy change for systems ")
         potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
         potential = barostat.checkNPT(topologies[0], potential)
         linter = (LambdaInterface) potential;
@@ -336,6 +352,23 @@ class MostBar extends AlgorithmsScript {
         }
         logger.info(sb.toString());
 
+        if (bootstrap == -1) {
+            int totalRead = Arrays.stream(observations).min().getAsInt();
+            if (totalRead >= MIN_BOOTSTRAP_TRIALS) {
+                bootstrap = AUTO_BOOTSTRAP_NUMERATOR.intdiv(totalRead); // Weird Groovy syntax because Groovy defaults to BigDecimal/BigInteger.
+                bootstrap = Math.max(MIN_BOOTSTRAP_TRIALS, Math.min(MAX_BOOTSTRAP_TRIALS, bootstrap));
+            } else {
+                logger.info(String.format(" At least one lambda window had only %d snapshots read; defaulting to %d bootstrap cycles!", totalRead, MIN_BOOTSTRAP_TRIALS));
+                bootstrap = MIN_BOOTSTRAP_TRIALS;
+            }
+        }
+
+        long bootPrint = BOOTSTRAP_PRINT;
+        if (!verbose) {
+            bootPrint *= 10L;
+        }
+            
+        // If bootstrap <= 0, skip this section.
         if (bootstrap > 0) {
             logger.info(" Re-estimate free energy and uncertainty from ${bootstrap} bootstrap trials.");
 
@@ -344,17 +377,17 @@ class MostBar extends AlgorithmsScript {
             EstimateBootstrapper backBS = new EstimateBootstrapper(backwards);
 
             long time = -System.nanoTime();
-            barBS.bootstrap(bootstrap, BOOTSTRAP_PRINT);
+            barBS.bootstrap(bootstrap, bootPrint);
             time += System.nanoTime();
             logger.info(String.format(" BAR bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
 
             time = -System.nanoTime();
-            forBS.bootstrap(bootstrap, BOOTSTRAP_PRINT);
+            forBS.bootstrap(bootstrap, bootPrint);
             time += System.nanoTime();
             logger.info(String.format(" Forwards FEP bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
 
             time = -System.nanoTime();
-            backBS.bootstrap(bootstrap, BOOTSTRAP_PRINT);
+            backBS.bootstrap(bootstrap, bootPrint);
             time += System.nanoTime();
             logger.info(String.format(" Reverse FEP bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
 
@@ -383,6 +416,8 @@ class MostBar extends AlgorithmsScript {
                         lamPoints[i], lamPoints[i+1], barFE[i], barVar[i], forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]));
             }
             logger.info(sb.toString());
+        } else {
+            logger.info(" Bootstrap resampling disabled.");
         }
 
         return this;
@@ -413,14 +448,14 @@ class MostBar extends AlgorithmsScript {
             String low = Double.isNaN(lastEntries[0]) ? nanFormat : String.format(energyFormat, lastEntries[0]);
             String high = Double.isNaN(lastEntries[2]) ? nanFormat : String.format(energyFormat, lastEntries[2]);
             if (lambdaSorted) {
-                logger.info(String.format(" Energies for snapshot %5d at lambda %.4f: " +
+                logger.log(standardLogging, String.format(" Energies for snapshot %5d at lambda %.4f: " +
                         "%s, %s, %s", (index+1), lambda, low, String.format(energyFormat, lastEntries[1]), high));
             } else {
-                logger.info(String.format(" Energies for snapshot %5d: " +
+                logger.log(standardLogging, String.format(" Energies for snapshot %5d: " +
                         "%s, %s, %s", (index+1), low, String.format(energyFormat, lastEntries[1]), high));
             }
         } else {
-            logger.fine(" Skipping frame " + index);
+            logger.log(standardLogging, " Skipping frame " + index);
         }
     }
 
