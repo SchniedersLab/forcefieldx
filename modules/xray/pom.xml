@@ -175,6 +175,18 @@
             <version>${clustering.version}</version>
         </dependency>
         <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>${picocli.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.jogamp.java3d</groupId>
+            <artifactId>j3dcore</artifactId>
+            <type>jar</type>
+            <version>${java3d.version}</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>

@@ -114,7 +114,7 @@ public class UnivariateFunctionFactory {
 
     private static MultiplicativeSwitch parseMultiplicative(String[] toks) {
         if (toks.length > 3) {
-            return new MultiplicativeSwitch(Double.parseDouble(toks[1]), Double.parseDouble(toks[2]));
+            return new MultiplicativeSwitch(Double.parseDouble(toks[2]), Double.parseDouble(toks[1]));
         } else {
             return new MultiplicativeSwitch();
         }

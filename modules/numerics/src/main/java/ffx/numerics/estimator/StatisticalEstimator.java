@@ -59,4 +59,26 @@ public interface StatisticalEstimator {
      * @return Uncertainty in the free energy estimate.
      */
     double getUncertainty();
+
+    /**
+     * Returns the number of windows (BAR, etc), bins (WHAM, etc), or other
+     * subvalues used to compute free energy.
+     *
+     * @return Total number of subvalues used to compute free energy.
+     */
+    int numberOfBins();
+
+    /**
+     * Gets the free energy change per bin/window.
+     *
+     * @return Individual bin/window free energy changes.
+     */
+    double[] getBinEnergies();
+
+    /**
+     * Gets the uncertainty in free energy associated with each bin/window.
+     *
+     * @return Individual bin/window uncertainties.
+     */
+     double[] getBinUncertainties();
 }
