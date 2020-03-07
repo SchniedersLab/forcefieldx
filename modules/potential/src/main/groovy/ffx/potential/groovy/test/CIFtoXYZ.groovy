@@ -41,8 +41,6 @@ import javax.vecmath.Point3d
 
 import java.nio.file.Path
 import java.nio.file.Paths
-import static java.lang.Double.parseDouble
-import static java.lang.Integer.parseInt
 import static java.lang.String.format
 
 import org.apache.commons.io.FilenameUtils
@@ -58,9 +56,11 @@ import org.openscience.cdk.isomorphism.VentoFoggia
 import org.rcsb.cif.CifIO
 import org.rcsb.cif.model.Column
 import org.rcsb.cif.schema.StandardSchemata
+import org.rcsb.cif.schema.core.AtomSite
+import org.rcsb.cif.schema.core.Cell
+import org.rcsb.cif.schema.core.Chemical
 import org.rcsb.cif.schema.core.CifCoreBlock
 import org.rcsb.cif.schema.core.CifCoreFile
-import org.rcsb.cif.schema.core.Cell
 import org.rcsb.cif.schema.core.Symmetry
 
 import ffx.crystal.Crystal
@@ -127,18 +127,21 @@ class CIFtoXYZ extends PotentialScript {
 
         CifCoreBlock firstBlock = cifFile.firstBlock
 
-        // Space Group Number
-        // _symmetry_Int_Tables_number      14
-        // Unit Cell Parameters
-        // _cell_length_a                   7.529(1)
-        // _cell_length_b                   11.148(2)
-        // _cell_length_c                   15.470(2)
-        // _cell_angle_alpha                90
-        // _cell_angle_beta                 116.17(1)
-        // _cell_angle_gamma                90
+        Chemical chemical = firstBlock.chemical
+        Column nameCommon = chemical.nameCommon
+        Column nameSystematic = chemical.nameSystematic
+        int rowCount = nameCommon.rowCount
+        if (rowCount > 1) {
+            logger.info(" Chemical components")
+            for (int i = 0; i < rowCount; i++) {
+                logger.info(format("  %s %s", nameCommon.get(i), nameSystematic.get(i)))
+            }
+        } else {
+            logger.info(format(" Chemical component: %s %s", nameCommon.get(0), nameSystematic.get(0)))
+        }
+
         Symmetry symmetry = firstBlock.symmetry
         int sgNum = symmetry.intTablesNumber.get(0)
-        //int sgNum = parseInt(firstBlock.getColumn("symmetry_Int_Tables_number").getStringData(0))
         SpaceGroup sg = SpaceGroup.spaceGroupFactory(sgNum)
 
         Cell cell = firstBlock.cell
@@ -148,34 +151,20 @@ class CIFtoXYZ extends PotentialScript {
         double alpha = cell.angleAlpha.get(0)
         double beta = cell.angleBeta.get(0)
         double gamma = cell.angleGamma.get(0)
-        // double a = toDouble(firstBlock.getColumn("cell_length_a").getStringData(0))
-        // double b = toDouble(firstBlock.getColumn("cell_length_b").getStringData(0))
-        // double c = toDouble(firstBlock.getColumn("cell_length_c").getStringData(0))
-        // double alpha = toDouble(firstBlock.getColumn("cell_angle_alpha").getStringData(0))
-        // double beta = toDouble(firstBlock.getColumn("cell_angle_beta").getStringData(0))
-        // double gamma = toDouble(firstBlock.getColumn("cell_angle_gamma").getStringData(0))
+
         Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName)
         logger.info(crystal.toString())
 
-        int nAtoms = firstBlock.getColumn("atom_site_label").getRowCount()
-        logger.info(format("\n Number of atoms: %d", nAtoms))
+        AtomSite atomSite = firstBlock.atomSite
+        Column label = atomSite.label
+        Column typeSymbol = atomSite.typeSymbol
+        Column fractX = atomSite.fractX
+        Column fractY = atomSite.fractY
+        Column fractZ = atomSite.fractZ
 
-        // CIF file atom site columns.
-        //
-        // loop_
-        // _atom_site_label
-        // _atom_site_type_symbol
-        // _atom_site_fract_x
-        // _atom_site_fract_y
-        // _atom_site_fract_z
-        // C1 C 0.17860 0.88590 0.16870
-        // ...
+        int nAtoms = label.getRowCount()
+        logger.info(format("\n Number of atoms: %d", nAtoms))
         Atom[] atoms = new Atom[nAtoms]
-        Column labels = firstBlock.getColumn("atom_site_label")
-        Column types = firstBlock.getColumn("atom_site_type_symbol")
-        Column xFract = firstBlock.getColumn("atom_site_fract_x")
-        Column yFract = firstBlock.getColumn("atom_site_fract_y")
-        Column zFract = firstBlock.getColumn("atom_site_fract_z")
 
         // Define per atom information for the PDB file.
         String resName = "CIF"
@@ -189,14 +178,13 @@ class CIFtoXYZ extends PotentialScript {
 
         // Loop over atoms.
         for (int i = 0; i < nAtoms; i++) {
-            String label = labels.getStringData(i)
-            symbols[i] = types.getStringData(i)
-            double x = toDouble(xFract.getStringData(i))
-            double y = toDouble(yFract.getStringData(i))
-            double z = toDouble(zFract.getStringData(i))
+            symbols[i] = typeSymbol.get(i)
+            double x = fractX.get(i)
+            double y = fractY.get(i)
+            double z = fractZ.get(i)
             double[] xyz = [x, y, z]
             crystal.toCartesianCoordinates(xyz, xyz)
-            atoms[i] = new Atom(i + 1, label, altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
+            atoms[i] = new Atom(i + 1, label.get(i), altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
             atoms[i].setHetero(true)
         }
 
@@ -337,18 +325,6 @@ class CIFtoXYZ extends PotentialScript {
         }
 
         return this
-    }
-
-    /**
-     * Remove uncertainty information from "XXX.XXX(X)", which is the part in parentheses "(X)". Then
-     * convert the String to a double.
-     *
-     * @param string The input String, possibly with uncertainty.
-     * @return A double value.
-     */
-    private static double toDouble(String string) {
-        string = string.replace('(', ' ').replace(')', ' ').trim()
-        return parseDouble(string.split(" +")[0])
     }
 
     @Override
