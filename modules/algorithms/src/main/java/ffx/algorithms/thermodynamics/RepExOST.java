@@ -180,7 +180,8 @@ public class RepExOST {
         }
         
         allHistograms = ost.getAllHistograms();
-        Arrays.stream(allHistograms).forEach((OrthogonalSpaceTempering.Histogram h) -> h.setIndependentWrites(true));
+        // TODO: Possibly de-comment this... though HistogramSettings makes it obsolete.
+        //Arrays.stream(allHistograms).forEach((OrthogonalSpaceTempering.Histogram h) -> h.setIndependentWrites(true));
 
         this.numPairs = size - 1;
         this.invKT = -1.0 / (Constants.R * dynamics.getTemp());

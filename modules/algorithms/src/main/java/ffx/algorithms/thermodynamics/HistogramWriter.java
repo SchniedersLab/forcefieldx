@@ -73,7 +73,7 @@ class HistogramWriter extends PrintWriter {
         printf("Temperature     %15.3f\n", histogram.temperature);
         printf("Lambda-Mass     %15.8e\n", histogram.thetaMass);
         printf("Lambda-Friction %15.8e\n", histogram.thetaFriction);
-        printf("Bias-Mag        %15.8e\n", histogram.biasMag);
+        printf("Bias-Mag        %15.8e\n", histogram.getBiasMagnitude());
         printf("Bias-Cutoff     %15d\n", histogram.biasCutoff);
         printf("Count-Interval  %15d\n", histogram.countInterval);
         printf("Lambda-Bins     %15d\n", histogram.lambdaBins);

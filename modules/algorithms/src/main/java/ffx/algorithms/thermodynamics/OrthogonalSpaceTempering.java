@@ -1571,6 +1571,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             return independentWalkers;
         }
 
+        public double getBiasMagnitude() {
+            return realBiasMagnitude;
+        }
+
         public boolean getResetStatistics() {
             return resetStatistics;
         }
