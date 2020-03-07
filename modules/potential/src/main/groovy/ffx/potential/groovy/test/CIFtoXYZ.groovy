@@ -55,14 +55,13 @@ import org.openscience.cdk.isomorphism.AtomMatcher
 import org.openscience.cdk.isomorphism.BondMatcher
 import org.openscience.cdk.isomorphism.Pattern
 import org.openscience.cdk.isomorphism.VentoFoggia
-import org.openscience.cdk.tools.LoggingTool
-import org.openscience.cdk.tools.LoggingToolFactory
 import org.rcsb.cif.CifIO
 import org.rcsb.cif.model.Column
 import org.rcsb.cif.schema.StandardSchemata
-import org.rcsb.cif.schema.mm.MmCifBlock
-import org.rcsb.cif.schema.mm.MmCifFile
-import org.rcsb.cif.schema.mm.Symmetry
+import org.rcsb.cif.schema.core.CifCoreBlock
+import org.rcsb.cif.schema.core.CifCoreFile
+import org.rcsb.cif.schema.core.Cell
+import org.rcsb.cif.schema.core.Symmetry
 
 import ffx.crystal.Crystal
 import ffx.crystal.SpaceGroup
@@ -106,15 +105,18 @@ class CIFtoXYZ extends PotentialScript {
     @Override
     CIFtoXYZ run() {
 
+        // Turn off CDK logging.
+        System.setProperty("cdk.logging.level", "fatal")
+
         if (!init()) {
             return null
         }
 
-        MmCifFile cifFile
+        CifCoreFile cifFile
         Path path
         if (filenames != null && filenames.size() > 0) {
             path = Paths.get(filenames.get(0))
-            cifFile = CifIO.readFromPath(path).as(StandardSchemata.MMCIF)
+            cifFile = CifIO.readFromPath(path).as(StandardSchemata.CIF_CORE)
         } else {
             logger.info(helpString())
             return null
@@ -123,7 +125,7 @@ class CIFtoXYZ extends PotentialScript {
         String modelFilename = path.toAbsolutePath().toString()
         logger.info("\n Opening CIF file " + path)
 
-        MmCifBlock firstBlock = cifFile.firstBlock
+        CifCoreBlock firstBlock = cifFile.firstBlock
 
         // Space Group Number
         // _symmetry_Int_Tables_number      14
@@ -134,14 +136,24 @@ class CIFtoXYZ extends PotentialScript {
         // _cell_angle_alpha                90
         // _cell_angle_beta                 116.17(1)
         // _cell_angle_gamma                90
-        int sgNum = parseInt(firstBlock.getColumn("symmetry_Int_Tables_number").getStringData(0))
+        Symmetry symmetry = firstBlock.symmetry
+        int sgNum = symmetry.intTablesNumber.get(0)
+        //int sgNum = parseInt(firstBlock.getColumn("symmetry_Int_Tables_number").getStringData(0))
         SpaceGroup sg = SpaceGroup.spaceGroupFactory(sgNum)
-        double a = toDouble(firstBlock.getColumn("cell_length_a").getStringData(0))
-        double b = toDouble(firstBlock.getColumn("cell_length_b").getStringData(0))
-        double c = toDouble(firstBlock.getColumn("cell_length_c").getStringData(0))
-        double alpha = toDouble(firstBlock.getColumn("cell_angle_alpha").getStringData(0))
-        double beta = toDouble(firstBlock.getColumn("cell_angle_beta").getStringData(0))
-        double gamma = toDouble(firstBlock.getColumn("cell_angle_gamma").getStringData(0))
+
+        Cell cell = firstBlock.cell
+        double a = cell.lengthA.get(0)
+        double b = cell.lengthB.get(0)
+        double c = cell.lengthC.get(0)
+        double alpha = cell.angleAlpha.get(0)
+        double beta = cell.angleBeta.get(0)
+        double gamma = cell.angleGamma.get(0)
+        // double a = toDouble(firstBlock.getColumn("cell_length_a").getStringData(0))
+        // double b = toDouble(firstBlock.getColumn("cell_length_b").getStringData(0))
+        // double c = toDouble(firstBlock.getColumn("cell_length_c").getStringData(0))
+        // double alpha = toDouble(firstBlock.getColumn("cell_angle_alpha").getStringData(0))
+        // double beta = toDouble(firstBlock.getColumn("cell_angle_beta").getStringData(0))
+        // double gamma = toDouble(firstBlock.getColumn("cell_angle_gamma").getStringData(0))
         Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName)
         logger.info(crystal.toString())
 
@@ -230,10 +242,6 @@ class CIFtoXYZ extends PotentialScript {
                 AtomTypeFactory factory = AtomTypeFactory.getInstance(
                         "org/openscience/cdk/config/data/jmol_atomtypes.txt",
                         xyzCDKAtoms.getBuilder())
-
-                // Turn off AtomTypeFactory logging.
-                LoggingTool tool = LoggingToolFactory.createLoggingTool(AtomTypeFactory)
-                tool.setLevel(tool.FATAL)
 
                 for (IAtom atom : xyzCDKAtoms.atoms()) {
                     factory.configure(atom)
