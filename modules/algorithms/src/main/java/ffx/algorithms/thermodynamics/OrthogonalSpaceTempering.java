@@ -251,36 +251,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @param lambdaInterface   defines Lambda and dU/dL.
      * @param potential         defines the Potential energy.
      * @param lambdaFile        contains the current Lambda particle position and velocity.
-     * @param histogramFile     contains the Lambda and dU/dL histogram.
+     * @param histoSettings     contains histogram-centric options.
      * @param properties        defines System properties.
      * @param temperature       the simulation temperature.
-     * @param dt                the time step.
-     * @param printInterval     number of steps between logging updates.
-     * @param saveInterval      number of steps between restart file updates.
-     * @param asynchronous      set to true if walkers run asynchronously.
-     * @param algorithmListener the AlgorithmListener to be notified of
-     *                          progress.
-     */
-    public OrthogonalSpaceTempering(LambdaInterface lambdaInterface, CrystalPotential potential,
-                                    File lambdaFile, File histogramFile, CompositeConfiguration properties,
-                                    double temperature, double dt, double printInterval,
-                                    double saveInterval, boolean asynchronous,
-                                    AlgorithmListener algorithmListener) {
-        this(lambdaInterface, potential, lambdaFile, histogramFile, properties,
-                temperature, dt, printInterval, saveInterval, asynchronous,
-                true, algorithmListener);
-    }
-
-    /**
-     * OST Constructor.
-     *
-     * @param lambdaInterface   defines Lambda and dU/dL.
-     * @param potential         defines the Potential energy.
-     * @param lambdaFile        contains the current Lambda particle position and velocity.
-     * @param histogramFile     contains the Lambda and dU/dL histogram.
-     * @param properties        defines System properties.
-     * @param temperature       the simulation temperature.
-     * @param dt                the time step.
+     * @param dt                the time step in femtoseconds.
      * @param printInterval     number of steps between logging updates.
      * @param saveInterval      number of steps between restart file updates.
      * @param asynchronous      set to true if walkers run asynchronously.
@@ -289,7 +263,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      *                          progress.
      */
     public OrthogonalSpaceTempering(LambdaInterface lambdaInterface, CrystalPotential potential,
-                                    File lambdaFile, File histogramFile, CompositeConfiguration properties,
+                                    File lambdaFile, HistogramSettings histoSettings, CompositeConfiguration properties,
                                     double temperature, double dt, double printInterval,
                                     double saveInterval, boolean asynchronous, boolean resetNumSteps,
                                     AlgorithmListener algorithmListener) {
@@ -306,7 +280,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         // Convert the time step to picoseconds.
-        dt *= 0.001;
+        dt *= Constants.FSEC_TO_PSEC;
 
         // Convert the print interval to a print frequency.
         printFrequency = 100;
@@ -328,7 +302,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         this.temperature = temperature;
         this.dt = dt;
         this.asynchronous = asynchronous;
-        histogram = new Histogram(properties, temperature, dt, histogramFile, asynchronous);
+        histoSettings.temperature = temperature;
+        histoSettings.dt = dt;
+        histoSettings.asynchronous = asynchronous;
+        histogram = new Histogram(properties, histoSettings);
         histogramIndex = 0;
         allHistograms.add(histogram);
 
@@ -366,10 +343,13 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     /**
      * Add an alternate Histogram this OST can use.
      *
-     * @param histogramFile Restart file for the new Histogram.
+     * @param settings Settings to use for the new Histogram.
      */
-    public void addHistogram(File histogramFile) {
-        Histogram newHisto = new Histogram(properties, temperature, dt, histogramFile, asynchronous);
+    public void addHistogram(HistogramSettings settings) {
+        Histogram newHisto = new Histogram(properties, settings);
+        settings.temperature = temperature;
+        settings.dt = dt;
+        settings.asynchronous = asynchronous;
         allHistograms.add(newHisto);
     }
 
@@ -719,40 +699,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      */
     public LambdaInterface getLambdaInterface() {
         return lambdaInterface;
-    }
-
-    /**
-     * <p>Setter for the field <code>thetaMass</code>.</p>
-     *
-     * @param thetaMass a double.
-     */
-    public void setThetaMass(double thetaMass) {
-        histogram.thetaMass = thetaMass;
-    }
-
-    /**
-     * <p>setThetaFrication.</p>
-     *
-     * @param thetaFriction a double.
-     */
-    public void setThetaFrication(double thetaFriction) {
-        histogram.thetaFriction = thetaFriction;
-    }
-
-    /**
-     * Set the OST count interval. Every 'countInterval' steps the
-     * recursionKernel will be incremented based on the current value of the
-     * lambda state variable and the derivative of the energy with respect to
-     * lambda (dU/dL).
-     *
-     * @param countInterval Molecular dynamics steps between counts.
-     */
-    public void setCountInterval(int countInterval) {
-        if (countInterval > 0) {
-            histogram.countInterval = countInterval;
-        } else {
-            logger.info(" OST count interval must be greater than 0.");
-        }
     }
 
     /**
@@ -1210,27 +1156,28 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * If true, use discrete lambda values instead of continuous lambda values.
          */
-        boolean discreteLambda = false;
+        final boolean discreteLambda;
+        
         /**
          * Width of a lambda bin, or the distance between discrete lambda values.
          * <p>
          * The default dL = (1.0 / (lambdaBins - 1).
          */
-        double dL;
+        final double dL;
         /**
          * Half the width of a lambda bin, or zero for discrete lambda values.
          */
-        double dL_2;
+        final double dL_2;
         /**
          * The width of the FLambda bin.
          * <p>
          * The default dFL = 2.0 (kcal/mol).
          */
-        double dFL;
+        final double dFL;
         /**
          * Half the width of the F_lambda bin.
          */
-        double dFL_2;
+        final double dFL_2;
         /**
          * The minimum value of the first lambda bin.
          * <p>
@@ -1238,7 +1185,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * <p>
          * minLambda = 0 for discrete lambda.
          */
-        private double minLambda;
+        private final double minLambda;
         /**
          * The minimum value of the first F_lambda bin.
          * <p>
@@ -1263,7 +1210,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * <p>
          * The default lambdaBins = 201.
          */
-        int lambdaBins;
+        final int lambdaBins;
         /**
          * It is useful to have an odd number of bins, so that there is a bin from
          * FL=-dFL/2 to dFL/2 so that as FL approaches zero its contribution to
@@ -1281,20 +1228,31 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * <p>
          * The default biasCutoff = 5.
          */
-        int biasCutoff;
+        final int biasCutoff;
 
+        /**
+         * Magnitude of each hill (not including tempering). Can be temporarily set to a dummy value if set to 0.
+         * <p>
+         * The default biasMag = 0.05 (kcal/mol).
+         */
+        private double biasMag;
         /**
          * Magnitude of each hill (not including tempering).
          * <p>
          * The default biasMag = 0.05 (kcal/mol).
          */
-        double biasMag;
+        final double realBiasMagnitude;
+        /**
+         * If realBiasMagnitude is 0, temporarily set biasMag to this for some calculations.
+         */
+        private static final double PSEUDO_BIAS_MAGNITUDE = 0.01;
+
         /**
          * Temperature in Kelvin.
          * <p>
          * The default is 298.15.
          */
-        protected double temperature;
+        protected final double temperature;
         /**
          * A flag to indicate if the transition has been crossed and Dama et al.
          * transition-tempering should begin.
@@ -1309,13 +1267,13 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * <p>
          * The default temperingFactor = 2.0.
          */
-        private double temperingFactor = 2.0;
+        private final double temperingFactor;
         /**
          * This deltaT is used to determine the tempering weight as described below for the temperingWeight variable.
          * <p>
          * deltaT = temperingFactor * kB * T.
          */
-        private double deltaT;
+        private final double deltaT;
         /**
          * The Dama et al. transition-tempering weight.
          * <p>
@@ -1337,18 +1295,18 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * <p>
          * The default temperOffset = 1.0 kcal/mol.
          */
-        private double temperOffset;
+        private final double temperOffset;
         /**
          * 1D PMF with respect to lambda F(L).
          */
-        double[] FLambda;
+        final double[] FLambda;
         /**
          * Interval between how often the 1D histogram is printed to screen versus
          * silently updated in background.
          * <p>
          * The fLambdaPrintInterval is 25.
          */
-        private final int fLambdaPrintInterval = 25;
+        private final int fLambdaPrintInterval;
         /**
          * A count of FLambdaUpdates.
          */
@@ -1374,11 +1332,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
          */
-        double thetaFriction = 1.0e-19;
+        final double thetaFriction;
         /**
          * Reasonable thetaMass is ~100 a.m.u. (100 a.m.u is 1.6605e-22 grams).
          */
-        double thetaMass = 1.0e-18;
+        final double thetaMass;
         double halfThetaVelocity = 0.0;
         /**
          * Map lambda to a periodic variable theta.
@@ -1407,16 +1365,16 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * <p>
          * The default countInterval = 10.
          */
-        int countInterval = 10;
+        final int countInterval;
 
         /**
          * Once the lambda reset value is reached, OST statistics are reset.
          */
-        final double lambdaResetValue = 0.99;
+        final double lambdaResetValue;
         /**
          * Flag set to false once OST statistics are reset at lambdaResetValue.
          */
-        boolean resetStatistics = false;
+        boolean resetStatistics;
 
         /**
          * Parallel Java world communicator.
@@ -1426,8 +1384,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * Rank of this process.
          */
         protected final int rank;
-        private boolean writeIndependent = false;
-        private boolean independentWalkers = false;
+        private final boolean writeIndependent;
+        private final boolean independentWalkers;
 
         /**
          * Flag to indicate if OST should send and receive counts between processes
@@ -1462,53 +1420,26 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * Histogram constructor.
          *
-         * @param properties    a CompositeConfiguration used to configure the Histogram.
-         * @param temperature   the Temperature to use for MD-OST and for tempering.
-         * @param histogramFile a Histogram restart file.
-         * @param asynchronous  a flag to indicate (a)synchronous communication of counts between walkers.
+         * @param properties a CompositeConfiguration used to configure the Histogram.
+         * @param settings   An object containing the values this Histogram will be set to.
          */
-        Histogram(CompositeConfiguration properties, double temperature, double dt,
-                  File histogramFile, boolean asynchronous) {
-            this.temperature = temperature;
-            this.dt = dt;
-            this.histogramFile = histogramFile;
-            this.asynchronous = asynchronous;
-
-            biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
-            biasMag = properties.getDouble("bias-gaussian-mag", 0.05);
-            dL = properties.getDouble("lambda-bin-width", 0.005);
-            dFL = properties.getDouble("flambda-bin-width", 2.0);
-            discreteLambda = properties.getBoolean("discrete-lambda", false);
+        Histogram(CompositeConfiguration properties, HistogramSettings settings) {
+            this.temperature = settings.temperature;
+            this.dt = settings.dt;
+            this.histogramFile = settings.getHistogramFile();
+            this.asynchronous = settings.asynchronous;
+            
+            biasCutoff = settings.biasCutoff;
+            biasMag = settings.getBiasMag();
+            realBiasMagnitude = biasMag;
+            dFL = settings.dFL;
+            discreteLambda = settings.discreteLambda;
+            temperingFactor = settings.temperingFactor;
+            temperOffset = settings.getTemperOffset();
 
             deltaT = temperingFactor * R * temperature;
 
-            double defaultOffset = 20.0 * biasMag;
-            double val = properties.getDouble("ost-temperOffset", properties.getDouble("ttosrw-temperoffset", defaultOffset));
-            if (properties.containsKey("ttosrw-temperoffset")) {
-                logger.warning(" The property ttosrw-temperoffset has been deprecated; use ost-temperOffset instead!");
-            }
-            if (val < 0) {
-                logger.warning(String.format(" ost-temperOffset was set to invalid value of less than zero; reset to %.4f", defaultOffset));
-                val = defaultOffset;
-            }
-            temperOffset = val;
-
-            // Require modest sampling of the lambda path.
-            if (dL < 0.0 || dL > 1.0) {
-                dL = 0.1;
-            }
-
-            /*
-             Many lambda bin widths do not evenly divide into 1.0; here we correct
-             for this by computing an integer number of bins, then re-setting the
-             lambda variable appropriately. Note that we also choose to have an
-             odd number of lambda bins, so that the centers of the first and last
-             bin are at 0 and 1.
-            */
-            lambdaBins = (int) (1.0 / dL);
-            if (lambdaBins % 2 == 0) {
-                lambdaBins++;
-            }
+            dL = settings.getDL();
 
             /*
              The initial number of FLambda bins does not really matter, since a
@@ -1518,17 +1449,31 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             FLambdaBins = 101;
             minFLambda = -(dFL * FLambdaBins) / 2.0;
 
-            dL = 1.0 / (lambdaBins - 1);
-            dL_2 = dL / 2.0;
-            minLambda = -dL_2;
             if (discreteLambda) {
                 dL_2 = 0.0;
                 minLambda = 0.0;
+                lambdaBins = (int) Math.round(1.0 / dL);
+            } else {
+                dL_2 = dL / 2.0;
+                minLambda = dL_2;
+                lambdaBins = 1 + (int) Math.round(1.0 / dL);
             }
 
             dFL_2 = dFL / 2.0;
-            maxFLambda = minFLambda + FLambdaBins * dFL;
+            maxFLambda = minFLambda + (FLambdaBins * dFL);
             FLambda = new double[lambdaBins];
+            
+            writeIndependent = settings.writeIndependent();
+            independentWalkers = settings.independentWalkers();
+            assert !(independentWalkers && !writeIndependent);
+            
+            lambdaResetValue = settings.getLambdaResetValue();
+            resetStatistics = settings.resetStatistics();
+            countInterval = settings.countInterval;
+            thetaFriction = settings.thetaFriction;
+            thetaMass = settings.thetaMass;
+            fLambdaPrintInterval = settings.fLambdaPrintInterval;
+            setTempering(settings.tempering);
 
             // Allocate space for the recursion kernel that stores weights.
             recursionKernel = new double[lambdaBins][FLambdaBins];
@@ -1618,41 +1563,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * Sets the tempering threshold/offset in kcal/mol; is ignored if given a negative value.
-         *
-         * @param threshold Threshold to set: ignored if < 0.
-         */
-        public void setTemperingThreshold(double threshold) {
-            if (threshold >= 0) {
-                temperOffset = threshold;
-            } // Else, silently keep the default value set by property.
-        }
-
-        /**
-         * For MPI parallel jobs, set if the walkers are independent (i.e. contribute to only their own histogram).
-         *
-         * @param independentWalkers If true, the walkers will be independent.
-         */
-        public void setIndependentWalkers(boolean independentWalkers) {
-            this.independentWalkers = independentWalkers;
-            if (this.independentWalkers) {
-                setIndependentWrites(true);
-            } // True implies independent writes true, but false does not imply independent writes false.
-            if (synchronousSend != null) {
-                synchronousSend.setIndependentWalkers(independentWalkers);
-            }
-        }
-
-        /**
-         * Sets whether every process (not just rank 0) writes its own histogram.
-         *
-         * @param writeIndependent If all processes should write histogram restarts.
-         */
-        public void setIndependentWrites(boolean writeIndependent) {
-            this.writeIndependent = writeIndependent;
-        }
-
-        /**
          * For MPI parallel jobs, returns true if the walkers are independent (i.e. contribute to only their own histogram).
          *
          * @return True if the walkers are independent.
@@ -1695,73 +1605,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * Set the OST Gaussian biasing potential magnitude (kcal/mol).
-         *
-         * @param biasMag Gaussian biasing potential magnitude (kcal/mol)
-         */
-        public void setBiasMagnitude(double biasMag) {
-            setBiasMagnitude(biasMag, Level.INFO);
-        }
-
-        /**
-         * Set the OST Gaussian biasing potential magnitude (kcal/mol).
-         *
-         * @param biasMag      Gaussian biasing potential magnitude (kcal/mol).
-         * @param loggingLevel Logging level (default INFO).
-         */
-        public void setBiasMagnitude(double biasMag, Level loggingLevel) {
-            // TODO: Delete this method and make as much as possible final.
-            histogram.biasMag = biasMag;
-            logger.log(loggingLevel, format("  Gaussian Bias Magnitude:        %6.4f (kcal/mol)", biasMag));
-
-            double defaultOffset = 20.0 * biasMag;
-            String propString = System.getProperty("ost-temperOffset", Double.toString(defaultOffset));
-            temperOffset = defaultOffset;
-            try {
-                temperOffset = Double.parseDouble(propString);
-            } catch (NumberFormatException ex) {
-                logger.log(loggingLevel, format(" Exception in parsing ost-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
-                temperOffset = defaultOffset;
-            }
-            if (temperOffset < 0.0) {
-                temperOffset = 0.0;
-            }
-            logger.log(loggingLevel, format("  Coverage before tempering:      %6.4f (kcal/mol)", temperOffset));
-        }
-
-        /**
          * Check if tempering has started.
          *
          * @return True if tempering has begun.
          */
         boolean isTempering() {
             return tempering;
-        }
-
-        /**
-         * Sets the Dama et al tempering parameter, as a multiple of kBT.
-         *
-         * @param temper a double.
-         */
-        public void setTemperingParameter(double temper) {
-            setTemperingParameter(temper, Level.INFO);
-        }
-
-        /**
-         * Sets the Dama et al tempering parameter, as a multiple of kBT.
-         *
-         * @param temper   a double.
-         * @param logLevel Level to log at.
-         */
-        public void setTemperingParameter(double temper, Level logLevel) {
-            // TODO: Delete this method and make as much as possible final.
-            temperingFactor = temper;
-            if (temperingFactor > 0.0) {
-                deltaT = temperingFactor * R * histogram.temperature;
-            } else {
-                deltaT = Double.MAX_VALUE;
-            }
-            logger.log(logLevel, String.format(" Tempering parameter: %.5f kBT, %.5f kcal/mol", temperingFactor, deltaT));
         }
 
         /**
@@ -1817,10 +1666,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                     HistogramReader histogramReader = new HistogramReader(this, new FileReader(histogramToRead));
                     histogramReader.readHistogramFile();
                     // Currently, the restart format does not include info on using discrete lambda values.
-                    if (discreteLambda) {
-                        dL_2 = 0.0;
-                        minLambda = 0.0;
-                    }
                     updateFLambda(true, false);
                     logger.info(format("\n Read OST histogram from %s.", hisFileName));
                 } catch (FileNotFoundException ex) {
@@ -2372,9 +2217,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             // If the bias magnitude is zero, computing <dU/dL> from
             // counts will not be correct. Assign a temporary non-zero bias magnitude.
             boolean biasMagZero = false;
-            if (biasMag == 0) {
+            if (realBiasMagnitude == 0) {
                 biasMagZero = true;
-                biasMag = 0.01;
+                biasMag = PSEUDO_BIAS_MAGNITUDE;
             }
 
             // Total histogram weight.

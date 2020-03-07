@@ -54,8 +54,6 @@ import java.util.stream.IntStream;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
-import edu.rit.mp.BooleanBuf;
-import edu.rit.mp.DoubleBuf;
 import edu.rit.mp.LongBuf;
 import edu.rit.pj.Comm;
 
@@ -274,6 +272,8 @@ public class RepExOST {
      * @throws IOException Possible from Parallel Java.
      */
     public void mainLoop(long numTimesteps, boolean equilibrate) throws IOException {
+        Arrays.stream(allHistograms).map(OrthogonalSpaceTempering.Histogram::toString).forEach(logger::info);
+
         if (isMC) {
             mcOST.setEquilibration(equilibrate);
         }

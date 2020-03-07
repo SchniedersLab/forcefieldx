@@ -285,13 +285,13 @@ class Thermodynamics extends AlgorithmsScript {
 
         if (thermodynamics.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
             orthogonalSpaceTempering = ostOptions.constructOST(potential, lambdaRestart, histogramRestart, topologies[0],
-                    additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener)
+                    additionalProperties, dynamics, thermodynamics, lambdaParticle, algorithmListener, !multidynamics.isSynchronous())
             if (!lamExists) {
                 orthogonalSpaceTempering.setLambda(initLambda)
             }
             // Can be either the OST or a Barostat on top of it.
             CrystalPotential ostPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
-                    dynamics, lambdaParticle, barostat, hisExists)
+                    dynamics, barostat)
             if (ostOptions.mc) {
                 MonteCarloOST mcOST = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose, algorithmListener)
                 ostOptions.beginMCOST(mcOST, dynamics, thermodynamics)

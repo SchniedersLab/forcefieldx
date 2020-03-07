@@ -76,7 +76,7 @@ class RepexThermo extends Thermodynamics {
 
         // Begin boilerplate "make a topology" code.
         if (!init()) {
-            return
+            return null
         }
 
         boolean fromActive;
@@ -88,7 +88,8 @@ class RepexThermo extends Thermodynamics {
             logger.warning(" Untested: use of active assembly instead of provided filenames!");
             MolecularAssembly mola = algorithmFunctions.getActiveAssembly();
             if (mola == null) {
-                return helpString()
+                logger.info(helpString())
+                return null;
             }
             arguments = Collections.singletonList(mola.getFile().getName())
             fromActive = true;
@@ -207,7 +208,7 @@ class RepexThermo extends Thermodynamics {
 
             orthogonalSpaceTempering = ostOptions.constructOST(potential, lambdaRestart, firstHisto, topologies[0],
                     additionalProperties, dynamics, thermodynamics, algorithmListener, false, 0);
-            ostOptions.applyHistogramOptions(orthogonalSpaceTempering, hisExists, 0);
+            ostOptions.applyHistogramOptions(orthogonalSpaceTempering,0);
             finalPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
                     dynamics, lambdaParticle, barostat, hisExists);
 
@@ -228,7 +229,7 @@ class RepexThermo extends Thermodynamics {
             for (int i = 1; i < size; i++) {
                 File rankIHisto = new File("${filepath}${i}${File.separator}${fileBase}.his");
                 orthogonalSpaceTempering.addHistogram(rankIHisto);
-                ostOptions.applyHistogramOptions(orthogonalSpaceTempering, rankIHisto.exists(), i);
+                ostOptions.applyHistogramOptions(orthogonalSpaceTempering, i);
             }
 
             if (isMC) {
