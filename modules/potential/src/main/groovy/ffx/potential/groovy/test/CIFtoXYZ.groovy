@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import picocli.CommandLine
-
 import javax.vecmath.Point3d
 
 import java.nio.file.Path
@@ -76,6 +74,7 @@ import ffx.potential.parameters.ForceField
 import static ffx.potential.parsers.PDBFilter.toPDBAtomLine
 
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
@@ -89,17 +88,17 @@ import picocli.CommandLine.Parameters
 class CIFtoXYZ extends PotentialScript {
 
     /**
-     * --sgNum or --space_group_number Predesignated space group for the output XYZ file.
+     * --sg or --spaceGroupNumber Override the CIF space group.
      */
-    @CommandLine.Option(names = ['--sgNum', '--pace_group_number'], paramLabel = "-1", defaultValue = "-1",
-            description = 'Space group number for the output XYZ file.')
+    @Option(names = ['--sg', '--spaceGroupNumber'], paramLabel = "-1", defaultValue = "-1",
+            description = 'Override the CIF space group.')
     private int sgNum = -1
 
     /**
-     * --sgName or --space_group_name Predesignated space group for the output XYZ file (PDB format).
+     * --name or --spaceGroupName Override the CIF space group.
      */
-    @CommandLine.Option(names = ['--sgName', '--pace_group_name'], paramLabel = "", defaultValue = "",
-            description = 'Space group name (PDB format) for the output XYZ file.')
+    @Option(names = ['--name', '--spaceGroupName'], paramLabel = "", defaultValue = "",
+            description = 'Override the CIF space group.')
     private String sgName = ""
 
     /**
@@ -150,41 +149,42 @@ class CIFtoXYZ extends PotentialScript {
         if (rowCount > 1) {
             logger.info(" Chemical components")
             for (int i = 0; i < rowCount; i++) {
-                logger.info(format("  %s %s", nameCommon.get(i), nameSystematic.get(i)))
+                logger.info(format("  %s", nameCommon.get(i)))
+            }
+        } else if (rowCount > 0) {
+            logger.info(format(" Chemical component: %s", nameCommon.get(0)))
+        }
+
+        // Determine the sapce group.
+        Symmetry symmetry = firstBlock.symmetry
+        if (sgNum == -1 && sgName == "") {
+            if (symmetry.intTablesNumber.rowCount > 0) {
+                sgNum = symmetry.intTablesNumber.get(0)
+                logger.info(format(" CIF International Tables Number: %d", sgNum))
+            }
+            if (symmetry.spaceGroupNameH_M.rowCount > 0) {
+                sgName = symmetry.spaceGroupNameH_M.get(0)
+                logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName))
             }
         } else {
-            try {
-                logger.info(format(" Chemical component: %s %s", nameCommon.get(0), nameSystematic.get(0)))
-            }catch (IllegalArgumentException iae){
-                //iae.printStackTrace()
+            if (sgNum != -1) {
+                logger.info(format(" Command line International Tables Number: %d", sgNum))
+            } else {
+                logger.info(format(" Command line space group name: %s", sgName))
             }
         }
-
-        Symmetry symmetry = firstBlock.symmetry
-        // Try to read in space group. Uses user parameters if specified.
-        try {
-            if(sgNum==-1) {
-                sgNum = symmetry.intTablesNumber.get(0)
-            }
-        }catch(IllegalArgumentException iae){
-            //iae.printStackTrace()
-            try{
-                if(sgName=="") {
-                    sgName = symmetry.spaceGroupNameH_M.get(0)
-                }
-            }catch(IllegalArgumentException iae1){
-                //iae1.printStackTrace()
-                sgNum = 1
-            }
-        }
-
         SpaceGroup sg
-        if(sgNum != -1){
+        if (sgNum != -1) {
             sg = SpaceGroup.spaceGroupFactory(sgNum)
-        }else{
+        } else {
             sg = SpaceGroup.spaceGroupFactory(sgName)
         }
-        logger.info(sg.pdbName)
+
+        // Fall to back to P1
+        if (sg == null) {
+            logger.info(" The space group could not be determined from the CIF file (using P1).")
+            sg = SpaceGroup.spaceGroupFactory(1)
+        }
 
         Cell cell = firstBlock.cell
         double a = cell.lengthA.get(0)
