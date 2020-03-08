@@ -213,7 +213,7 @@
             <version>${log4j.version}</version>
         </dependency>
         <!-- dependency>
-                         <groupId>org.tensorflow</groupId>
+            <groupId>org.tensorflow</groupId>
             <artifactId>libtensorflow</artifactId>
             <version>${tensorflow.version}</version>
         </dependency>

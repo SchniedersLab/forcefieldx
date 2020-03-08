@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import picocli.CommandLine
-
 import javax.vecmath.Point3d
 
 import java.nio.file.Path
@@ -87,20 +85,6 @@ import picocli.CommandLine.Parameters
  */
 @Command(description = " Convert a single molecule CIF file to XYZ format.", name = "ffxc test.CIFtoXYZ")
 class CIFtoXYZ extends PotentialScript {
-
-    /**
-     * --sgNum or --space_group_number Predesignated space group for the output XYZ file.
-     */
-    @CommandLine.Option(names = ['--sgNum', '--pace_group_number'], paramLabel = "-1", defaultValue = "-1",
-            description = 'Space group number for the output XYZ file.')
-    private int sgNum = -1
-
-    /**
-     * --sgName or --space_group_name Predesignated space group for the output XYZ file (PDB format).
-     */
-    @CommandLine.Option(names = ['--sgName', '--pace_group_name'], paramLabel = "", defaultValue = "",
-            description = 'Space group name (PDB format) for the output XYZ file.')
-    private String sgName = ""
 
     /**
      * The final argument(s) should be a CIF file and an XYZ file with atom types.
@@ -153,38 +137,12 @@ class CIFtoXYZ extends PotentialScript {
                 logger.info(format("  %s %s", nameCommon.get(i), nameSystematic.get(i)))
             }
         } else {
-            try {
-                logger.info(format(" Chemical component: %s %s", nameCommon.get(0), nameSystematic.get(0)))
-            }catch (IllegalArgumentException iae){
-                //iae.printStackTrace()
-            }
+            logger.info(format(" Chemical component: %s %s", nameCommon.get(0), nameSystematic.get(0)))
         }
 
         Symmetry symmetry = firstBlock.symmetry
-        // Try to read in space group. Uses user parameters if specified.
-        try {
-            if(sgNum==-1) {
-                sgNum = symmetry.intTablesNumber.get(0)
-            }
-        }catch(IllegalArgumentException iae){
-            //iae.printStackTrace()
-            try{
-                if(sgName=="") {
-                    sgName = symmetry.spaceGroupNameH_M.get(0)
-                }
-            }catch(IllegalArgumentException iae1){
-                //iae1.printStackTrace()
-                sgNum = 1
-            }
-        }
-
-        SpaceGroup sg
-        if(sgNum != -1){
-            sg = SpaceGroup.spaceGroupFactory(sgNum)
-        }else{
-            sg = SpaceGroup.spaceGroupFactory(sgName)
-        }
-        logger.info(sg.pdbName)
+        int sgNum = symmetry.intTablesNumber.get(0)
+        SpaceGroup sg = SpaceGroup.spaceGroupFactory(sgNum)
 
         Cell cell = firstBlock.cell
         double a = cell.lengthA.get(0)

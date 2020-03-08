@@ -563,6 +563,7 @@ class Cluster extends PotentialScript {
                       distMatrix.get(i)[j] = (distMatrix.get(i)[j] - minimumDist) / (maximumDist - minimumDist);
                   }
               }
+
               if (logger.isLoggable(Level.FINEST)) {
                   logger.finest(String.format("\nNormalized Matrix:\n"));
                   String tempString2 = "";

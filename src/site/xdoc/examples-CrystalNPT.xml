@@ -99,7 +99,7 @@
                     the lambda path are physical states, with 0 defining a molecule in vacuum and 1 defining the crystalline
                     state, while intermediate lambda values are alchemical.
                 </p>
-                <source>ffxc Thermodynamics --minD=1.1 -Dpolarization=direct -d 2.0 -r 0.1 -l 0.0 -n 10000000 -Q 0 -i stochastic --rsym 2.0 --ruc 1.25 -t 298 --s1 1 --f1 30 -p 1.0 --bM=0.005 -o CBZ.xyz</source>
+                <source>ffxc Thermodynamics -d 2 -r 0.01 -l 0.0 -n 50000000 -Q 0 -i stochastic --rsym 2.0 --ruc 1.0 -t 298 --s1 1 --f1 30 -p 1.0 --bM=0.002 -o CBZ.xyz</source>
                 <table>
                     <thead>
                         <tr>
@@ -109,19 +109,11 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>--minD=1.1</td>
-                            <td>Minimum density required for a move to be accepted by the Monte Carlo Barostat.</td>
-                        </tr>
-                        <tr>
-                            <td>-Dpolarization=direct</td>
-                            <td>Avoid computing the self-consistent field (SCF). Faster and accurate enough for the polymorph search.</td>
-                        </tr>
-                        <tr>
-                            <td>-d 2.0</td>
+                            <td>-d 2</td>
                             <td>Time step in femtoseconds (2 assumes use of the heavy-hydrogen property).</td>
                         </tr>
                         <tr>
-                            <td>-r 0.1</td>
+                            <td>-r 0.01</td>
                             <td>Interval to report thermodynamics (psec).</td>
                         </tr>
                         <tr>
@@ -129,7 +121,7 @@
                             <td>Initial lambda value (L=0 specifies vacuum).</td>
                         </tr>
                         <tr>
-                            <td>-n 10000000</td>
+                            <td>-n 50000000</td>
                             <td>Number of MD steps.</td>
                         </tr>
                         <tr>
@@ -145,7 +137,7 @@
                             <td>Apply a random Cartesian symmetry operator with a random translation in the range -X .. X; less than 0 disables.</td>
                         </tr>
                         <tr>
-                            <td>--ruc 1.25</td>
+                            <td>--ruc 1.0</td>
                             <td>Apply random unit cell axes to achieve the specified density (g/cc).</td>
                         </tr>
                         <tr>
@@ -166,7 +158,7 @@
                                 search unit cell parameters (only atomic coordinates).</td>
                         </tr>
                         <tr>
-                            <td>--bM=0.005</td>
+                            <td>--bM 0.002</td>
                             <td>OST Gaussian bias magnitude (kcal/mol).</td>
                         </tr>
                         <tr>
