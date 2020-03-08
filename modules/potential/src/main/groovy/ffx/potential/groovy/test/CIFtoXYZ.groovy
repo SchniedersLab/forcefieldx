@@ -98,7 +98,7 @@ class CIFtoXYZ extends PotentialScript {
     /**
      * --sgName or --space_group_name Predesignated space group for the output XYZ file (PDB format).
      */
-    @CommandLine.Option(names = ['--sgNum', '--pace_group_number'], paramLabel = "", defaultValue = "",
+    @CommandLine.Option(names = ['--sgName', '--pace_group_name'], paramLabel = "", defaultValue = "",
             description = 'Space group name (PDB format) for the output XYZ file.')
     private String sgName = ""
 
