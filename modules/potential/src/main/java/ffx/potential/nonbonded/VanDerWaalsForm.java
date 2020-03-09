@@ -154,7 +154,7 @@ public class VanDerWaalsForm {
      *
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      */
-    VanDerWaalsForm(ForceField forceField) {
+    public VanDerWaalsForm(ForceField forceField) {
 
         // Set-up default rules.
         vdwType = VDW_TYPE.BUFFERED_14_7;
@@ -292,71 +292,39 @@ public class VanDerWaalsForm {
             case R_MIN:
             default:
                 break;
-
         }
 
         // Atom Class numbering starts at 1.
         for (VDWType vdwi : vdwTypes.values()) {
             int i = vdwi.atomClass;
             double ri = radScale * vdwi.radius;
-            double ri2 = ri * ri;
-            double ri3 = ri * ri2;
             double e1 = vdwi.wellDepth;
-            double se1 = sqrt(e1);
             for (VDWType vdwj : vdwTypes.tailMap(vdwi.getKey()).values()) {
                 int j = vdwj.atomClass;
                 double rj = radScale * vdwj.radius;
-                double rj2 = rj * rj;
-                double rj3 = rj * rj2;
                 double e2 = vdwj.wellDepth;
-                double se2 = sqrt(e2);
-                double radmin;
-                double eps;
-                switch (radiusRule) {
-                    case ARITHMETIC:
-                        radmin = ri + rj;
-                        break;
-                    case GEOMETRIC:
-                        radmin = 2.0 * sqrt(ri) * sqrt(rj);
-                        break;
-                    default:
-                    case CUBIC_MEAN:
-                        radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
-                }
-                switch (epsilonRule) {
-                    case GEOMETRIC:
-                        eps = se1 * se2;
-                        break;
-                    default:
-                    case HHG:
-                        eps = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
-                        break;
-                }
+                double radmin = getCombinedRadius(ri, rj, radiusRule);
+                double eps = getCombinedEps(e1, e2, epsilonRule);
                 if (radmin > 0) {
                     radEps[i][j * 2 + RADMIN] = 1.0 / radmin;
                     radEps[j][i * 2 + RADMIN] = 1.0 / radmin;
-
                     radEps14[i][j * 2 + RADMIN] = 1.0 / radmin;
                     radEps14[j][i * 2 + RADMIN] = 1.0 / radmin;
-
                 } else {
                     radEps[i][j * 2 + RADMIN] = 0.0;
                     radEps[j][i * 2 + RADMIN] = 0.0;
-
                     radEps14[i][j * 2 + RADMIN] = 0.0;
                     radEps14[j][i * 2 + RADMIN] = 0.0;
 
                 }
                 radEps[i][j * 2 + EPS] = eps;
                 radEps[j][i * 2 + EPS] = eps;
-
                 radEps14[i][j * 2 + EPS] = eps;
                 radEps14[j][i * 2 + EPS] = eps;
-
             }
         }
 
-        // Loop over VDW types.
+        // Handle vdw14 types -- loop over VDW types.
         for (VDWType vdwi : vdwTypes.values()) {
             // Replace a normal VDW type with a VDW14 type if available.
             VDWType vdw14 = forceField.getVDW14Type(vdwi.getKey());
@@ -365,47 +333,20 @@ public class VanDerWaalsForm {
             }
             int i = vdwi.atomClass;
             double ri = radScale * vdwi.radius;
-            double ri2 = ri * ri;
-            double ri3 = ri * ri2;
             double e1 = vdwi.wellDepth;
-            double se1 = sqrt(e1);
             // Loop over VDW14 types.
             for (VDWType vdwj : vdw14Types.values()) {
                 int j = vdwj.atomClass;
                 double rj = radScale * vdwj.radius;
-                double rj2 = rj * rj;
-                double rj3 = rj * rj2;
                 double e2 = vdwj.wellDepth;
-                double se2 = sqrt(e2);
-                double radmin;
-                double eps;
-                switch (radiusRule) {
-                    case ARITHMETIC:
-                        radmin = ri + rj;
-                        break;
-                    case GEOMETRIC:
-                        radmin = 2.0 * sqrt(ri) * sqrt(rj);
-                        break;
-                    default:
-                    case CUBIC_MEAN:
-                        radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
-                }
-                switch (epsilonRule) {
-                    case GEOMETRIC:
-                        eps = se1 * se2;
-                        break;
-                    default:
-                    case HHG:
-                        eps = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
-                        break;
-                }
+                double radmin = getCombinedRadius(ri, rj, radiusRule);
+                double eps = getCombinedEps(e1, e2, epsilonRule);
                 if (radmin > 0) {
                     radEps14[i][j * 2 + RADMIN] = 1.0 / radmin;
                     radEps14[j][i * 2 + RADMIN] = 1.0 / radmin;
                 } else {
                     radEps14[i][j * 2 + RADMIN] = 0.0;
                     radEps14[j][i * 2 + RADMIN] = 0.0;
-
                 }
                 radEps14[i][j * 2 + EPS] = eps;
                 radEps14[j][i * 2 + EPS] = eps;
@@ -413,6 +354,49 @@ public class VanDerWaalsForm {
         }
     }
 
+    /**
+     * Get the combined EPS value.
+     *
+     * @param ei          The eps value of the first atom.
+     * @param ej          The eps value of the second atom.
+     * @param epsilonRule The epsilon rule to use.
+     * @return The combined eps value.
+     */
+    public static double getCombinedEps(double ei, double ej, EPSILON_RULE epsilonRule) {
+        double sei = sqrt(ei);
+        double sej = sqrt(ej);
+        switch (epsilonRule) {
+            case GEOMETRIC:
+                return sei * sej;
+            default:
+            case HHG:
+                return 4.0 * (ei * ej) / ((sei + sej) * (sei + sej));
+        }
+    }
+
+    /**
+     * Get the combined radius value.
+     *
+     * @param ri         The radius of the first atom.
+     * @param rj         The radius of the second atom.
+     * @param radiusRule The radius combining rule to use.
+     * @return The combined radius value.
+     */
+    public static double getCombinedRadius(double ri, double rj, RADIUS_RULE radiusRule) {
+        switch (radiusRule) {
+            case ARITHMETIC:
+                return ri + rj;
+            case GEOMETRIC:
+                return 2.0 * sqrt(ri) * sqrt(rj);
+            default:
+            case CUBIC_MEAN:
+                double ri2 = ri * ri;
+                double ri3 = ri * ri2;
+                double rj2 = rj * rj;
+                double rj3 = rj * rj2;
+                return 2.0 * (ri3 + rj3) / (ri2 + rj2);
+        }
+    }
 
     /**
      * <p>rhoDisp1.</p>
