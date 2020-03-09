@@ -132,13 +132,13 @@ public class VanDerWaalsForm {
     /**
      * Store combined radius and epsilon values.
      */
-    double[][] radEps;
+    private double[][] radEps;
     /**
      * Store combined radius and epsilon values for 1-4 interactions.
      * <p>
      * Currently this is specific to the CHARMM force fields.
      */
-    double[][] radEps14;
+    private double[][] radEps14;
 
     /**
      * Constant <code>RADMIN=0</code>
@@ -352,6 +352,50 @@ public class VanDerWaalsForm {
                 radEps14[j][i * 2 + EPS] = eps;
             }
         }
+    }
+
+    /**
+     * Return the combined well depth (kcal/mol)
+     *
+     * @param class1 Class for atom 1.
+     * @param class2 Class for atom 2.
+     * @return Combined Eps.
+     */
+    public double getCombinedEps(int class1, int class2) {
+        return radEps[class1][class2 * 2 + EPS];
+    }
+
+    /**
+     * Return the combined inverse Rmin value (1/Rmin).
+     *
+     * @param class1 Class for atom 1.
+     * @param class2 Class for atom 2.
+     * @return Combined inverse Rmin.
+     */
+    public double getCombinedInverseRmin(int class1, int class2) {
+        return radEps[class1][class2 * 2 + RADMIN];
+    }
+
+    /**
+     * Return the combined well depth (kcal/mol) for special 1-4 interactions
+     *
+     * @param class1 Class for atom 1.
+     * @param class2 Class for atom 2.
+     * @return Combined Eps.
+     */
+    public double getCombinedEps14(int class1, int class2) {
+        return radEps14[class1][class2 * 2 + EPS];
+    }
+
+    /**
+     * Return the combined inverse Rmin value (1/Rmin) for special 1-4 interactions.
+     *
+     * @param class1 Class for atom 1.
+     * @param class2 Class for atom 2.
+     * @return Combined inverse Rmin.
+     */
+    public double getCombinedInverseRmin14(int class1, int class2) {
+        return radEps14[class1][class2 * 2 + RADMIN];
     }
 
     /**
