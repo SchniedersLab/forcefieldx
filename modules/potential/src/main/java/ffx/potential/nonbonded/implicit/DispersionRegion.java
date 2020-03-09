@@ -335,7 +335,7 @@ public class DispersionRegion extends ParallelRegion {
         if (ri < rmin) {
             double r3 = ri * ri * ri;
             double rmin3 = rmin * rmin * rmin;
-            return -4.0 * PI * eps * (rmin3 - r3) / 3.0 - eps * 18.0 * PI * rmin3 / 11.0;
+            return -eps * 4.0 * PI * (rmin3 - r3) / 3.0 - eps * PI * 18.0 * rmin3 / 11.0;
         } else {
             double ri2 = ri * ri;
             double ri4 = ri2 * ri2;
@@ -471,15 +471,20 @@ public class DispersionRegion extends ParallelRegion {
             double rk = rDisp[k] + soluteOffset;
             double sk = rk * dispersionOverlapFactor;
             double sk2 = sk * sk;
+            // Nothing to do if the integral begins beyond r + sk (i.e. atom k does not exclude solvent)
             if (ri < r + sk) {
+                // Zero out the derivative contribution of atom k.
                 double de = 0.0;
-                double rmax = max(ri, r - sk);
-                double lik = rmax;
+                // Compute the maximum of 1) the beginning of the integral and 2) closest edge of atom K.
+                double iStart = max(ri, r - sk);
+                // Use this as the lower limit for integrating the constant eps value below Rmin.
+                double lik = iStart;
                 double lik2 = lik * lik;
                 double lik3 = lik2 * lik;
                 double lik4 = lik3 * lik;
-                // Interaction with water oxygen from lik to Rmin.
+                // Interaction with water oxygen from lik to Rmin; nothing to do if the lower limit is greater than Rmin.
                 if (lik < rmixo) {
+                    // Upper limit is the minimum of Rmin and the farthest edge of atom K.
                     double uik = min(r + sk, rmixo);
                     double uik2 = uik * uik;
                     double uik3 = uik2 * uik;
@@ -490,8 +495,9 @@ public class DispersionRegion extends ParallelRegion {
                                 lik, lik2, lik3, uik, uik2, uik3);
                     }
                 }
-                // Interaction with water hydrogen from lik to Rmin.
+                // Interaction with water hydrogen from lik to Rmin; nothing to do if the lower limit is greater than Rmin.
                 if (lik < rmixh) {
+                    // Upper limit is the minimum of Rmin and the farthest edge of atom K.
                     double uik = min(r + sk, rmixh);
                     double uik2 = uik * uik;
                     double uik3 = uik2 * uik;
@@ -502,6 +508,7 @@ public class DispersionRegion extends ParallelRegion {
                                 lik, lik2, lik3, uik, uik2, uik3);
                     }
                 }
+                // Upper limit the variable part of Uwca always the farthest edge of atom K.
                 double uik = r + sk;
                 double uik2 = uik * uik;
                 double uik3 = uik2 * uik;
@@ -514,7 +521,8 @@ public class DispersionRegion extends ParallelRegion {
                 double uik13 = uik12 * uik;
                 // Interaction with water oxygen beyond Rmin, from lik to uik = r + sk.
                 if (uik > rmixo) {
-                    lik = max(rmax, rmixo);
+                    // Start the integral at the max of 1) iStart and 2) Rmin.
+                    lik = max(iStart, rmixo);
                     lik2 = lik * lik;
                     lik3 = lik2 * lik;
                     lik4 = lik3 * lik;
@@ -528,14 +536,15 @@ public class DispersionRegion extends ParallelRegion {
                             uik, uik2, uik3, uik4, uik5, uik10, uik11, uik12);
                     if (gradient) {
                         double lik13 = lik12 * lik;
-                        de += integratlAfterRminDerivative(ri, emixo, rmixo, rmixo7, rmax, r, r2, r3, sk, sk2,
+                        de += integratlAfterRminDerivative(ri, emixo, rmixo, rmixo7, iStart, r, r2, r3, sk, sk2,
                                 lik, lik2, lik3, lik5, lik6, lik12, lik13, uik, uik2, uik3, uik6, uik13);
                     }
 
                 }
                 // Interaction with water hydrogen beyond Rmin, from lik to uik = r + sk.
                 if (uik > rmixh) {
-                    lik = max(rmax, rmixh);
+                    // Start the integral at the max of 1) iStart and 2) Rmin.
+                    lik = max(iStart, rmixh);
                     lik2 = lik * lik;
                     lik3 = lik2 * lik;
                     lik4 = lik3 * lik;
@@ -549,7 +558,7 @@ public class DispersionRegion extends ParallelRegion {
                             uik, uik2, uik3, uik4, uik5, uik10, uik11, uik12);
                     if (gradient) {
                         double lik13 = lik12 * lik;
-                        de += 2.0 * integratlAfterRminDerivative(ri, emixh, rmixh, rmixh7, rmax, r, r2, r3, sk, sk2,
+                        de += 2.0 * integratlAfterRminDerivative(ri, emixh, rmixh, rmixh7, iStart, r, r2, r3, sk, sk2,
                                 lik, lik2, lik3, lik5, lik6, lik12, lik13, uik, uik2, uik3, uik6, uik13);
                     }
                 }
