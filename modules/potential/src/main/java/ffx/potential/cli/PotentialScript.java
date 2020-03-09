@@ -84,10 +84,11 @@ public abstract class PotentialScript extends BaseScript {
         } else {
             // Potential package is running.
             potentialFunctions = new PotentialsUtils();
-
             // Turn off log4j.
             Properties properties = new Properties();
             properties.setProperty("log4j.threshold", "OFF");
+            properties.setProperty("log4j2.level", "OFF");
+            properties.setProperty("org.apache.logging.log4j.level", "OFF");
             PropertyConfigurator.configure(properties);
         }
 
