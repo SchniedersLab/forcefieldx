@@ -551,7 +551,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
             case GAUSS_DISP:
                 dispersionRegion = new DispersionRegion(threadCount, atoms, forceField);
                 surfaceAreaRegion = null;
-                GaussVol gaussVol = new GaussVol(nAtoms, null);
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 boolean[] isHydrogen = new boolean[nAtoms];
                 radii = new double[nAtoms];
@@ -568,13 +567,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     gamma[index] = 1.0;
                     index++;
                 }
-                try {
-                    gaussVol.setGammas(gamma);
-                    gaussVol.setRadiiAndVolumes(radii, volume);
-                    gaussVol.setIsHydrogen(isHydrogen);
-                } catch (Exception e) {
-                    logger.severe(" Exception creating GaussVol: " + e.toString());
-                }
+                GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen, parallelTeam);
                 chandlerCavitation = new ChandlerCavitation(atoms, gaussVol);
                 break;
             case BORN_CAV_DISP:

@@ -93,6 +93,7 @@ public class AdderDoubleArray implements AtomicDoubleArray {
     public void reset(int threadID, int lb, int ub) {
         for (int i = lb; i <= ub; i++) {
             array[i].reset();
+            array[i].add(0.0);
         }
     }
 

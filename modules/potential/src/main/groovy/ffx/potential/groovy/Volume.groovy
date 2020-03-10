@@ -195,7 +195,8 @@ class Volume extends PotentialScript {
             }
 
             // Run Volume calculation to get vdw volume of molecule
-            GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen)
+            ParallelTeam parallelTeam = new ParallelTeam()
+            GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen, parallelTeam)
             gaussVol.computeVolumeAndSA(positions)
 
             if (verbose) {
