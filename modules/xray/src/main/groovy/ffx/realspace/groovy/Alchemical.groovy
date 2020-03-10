@@ -37,6 +37,9 @@
 //******************************************************************************
 package ffx.realspace.groovy
 
+import ffx.algorithms.thermodynamics.HistogramSettings
+import org.apache.commons.configuration2.CompositeConfiguration
+
 import java.util.logging.Logger
 
 import org.apache.commons.io.FilenameUtils
@@ -297,12 +300,13 @@ class Alchemical extends AlgorithmsScript {
 
         boolean asynchronous = true
 
-        orthogonalSpaceTempering = new OrthogonalSpaceTempering(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart,
-                assemblies[0].getProperties(), dynamicsOptions.temp, dynamicsOptions.dt, dynamicsOptions.report,
-                dynamicsOptions.write, true, algorithmFunctions.getDefaultListener())
+        CompositeConfiguration props = assemblies[0].getProperties()
+        HistogramSettings hOps = new HistogramSettings(histogramRestart, lambdaRestart.toString(), props)
+        OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(refinementEnergy, refinementEnergy, lambdaRestart,
+                hOps, props, dynamicsOptions.getTemp(), dynamicsOptions.getDt(), dynamicsOptions.getReport(),
+                dynamicsOptions.getCheckpoint(), asynchronous, true, algorithmListener);
 
         orthogonalSpaceTempering.setLambda(lambda);
-        orthogonalSpaceTempering.setThetaMass(5.0e-19);
 
         orthogonalSpaceTempering.getOptimizationParameters().setOptimization(true, activeAssembly);
         // Create the MolecularDynamics instance.

@@ -38,9 +38,11 @@
 package ffx.algorithms.cli;
 
 import java.io.File;
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.logging.Logger;
 
+import ffx.algorithms.thermodynamics.HistogramSettings;
+import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
 
@@ -48,7 +50,6 @@ import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.thermodynamics.MonteCarloOST;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
-import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.OptimizationParameters;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
@@ -149,84 +150,33 @@ public class OSTOptions {
             description = "Only write out snapshots if lambda is greater than the value specified.")
     private double lambdaWriteOut = 0.0;
 
-    /**
-     * <p>
-     * Getter for the field <code>temperParam</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getTemperParam() {
-        return temperParam[0];
+    private boolean thresholdsSet() {
+        return temperThreshold.length != 1 || temperThreshold[0] >= 0;
     }
 
-    /**
-     * Returns an array of all tempering parameters.
-     *
-     * @return All tempering parameters to be used.
-     */
-    public double[] getAllTemperingParameters() {
-        return Arrays.copyOf(temperParam, temperParam.length);
-    }
+    public HistogramSettings generateHistogramSettings(File histogramRestart, String lambdaFileName,
+                                                        CompositeConfiguration allProperties, int index,
+                                                        DynamicsOptions dynamics, LambdaParticleOptions lpo,
+                                                        boolean writeIndependent, boolean async) throws IOException {
+        HistogramSettings hOps = new HistogramSettings(histogramRestart, lambdaFileName, allProperties);
 
-    /**
-     * Returns an array of all tempering thresholds.
-     * @return All tempering thresholds to be used.
-     */
-    public double[] getTemperThreshold() {
-        return Arrays.copyOf(temperThreshold, temperThreshold.length);
-    }
+        hOps.setBiasMag(getBiasMag(index));
+        // TODO: Let temperature be an array thing too.
+        hOps.temperature = dynamics.getTemp();
+        hOps.temperingFactor = getTemperingParameter(index);
+        if (thresholdsSet()) {
+            hOps.setTemperOffset(getTemperingThreshold(index));
+        }
+        hOps.dt = dynamics.getDt() * Constants.FSEC_TO_PSEC;
+        hOps.thetaFriction = lpo.getLambdaFriction();
+        hOps.thetaMass = lpo.getLambdaMass();
+        hOps.countInterval = countFreq;
+        hOps.setLambdaResetValue(lambdaWriteOut);
+        hOps.setWriteIndependent(writeIndependent);
+        hOps.setIndependentWalkers(independentWalkers);
+        hOps.asynchronous = async;
 
-    /**
-     * <p>
-     * Getter for the field <code>lambdaWriteOut</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getLambdaWriteOut() {
-        return lambdaWriteOut;
-    }
-
-    /**
-     * <p>
-     * constructOST.</p>
-     *
-     * @param potential        a {@link ffx.crystal.CrystalPotential} object.
-     * @param lambdaRestart    a {@link java.io.File} object.
-     * @param histogramRestart a {@link java.io.File} object.
-     * @param firstAssembly    a {@link ffx.potential.MolecularAssembly} object.
-     * @param dynamics         a {@link ffx.algorithms.cli.DynamicsOptions} object.
-     * @param mdo              a {@link ffx.algorithms.cli.MultiDynamicsOptions} object.
-     * @param thermo           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
-     * @param aListener        a {@link ffx.algorithms.AlgorithmListener} object.
-     * @return a {@link OrthogonalSpaceTempering} object.
-     */
-    public OrthogonalSpaceTempering constructOST(CrystalPotential potential, File lambdaRestart, File histogramRestart,
-                                                 MolecularAssembly firstAssembly, DynamicsOptions dynamics,
-                                                 MultiDynamicsOptions mdo, ThermodynamicsOptions thermo, AlgorithmListener aListener) {
-        return constructOST(potential, lambdaRestart, histogramRestart,
-                firstAssembly, null, dynamics, mdo, thermo, aListener);
-    }
-
-    /**
-     * <p>
-     * constructOST.</p>
-     *
-     * @param potential        a {@link ffx.crystal.CrystalPotential} object.
-     * @param lambdaRestart    a {@link java.io.File} object.
-     * @param histogramRestart a {@link java.io.File} object.
-     * @param firstAssembly    a {@link ffx.potential.MolecularAssembly} object.
-     * @param addedProperties  a {@link org.apache.commons.configuration2.Configuration} object.
-     * @param dynamics         a {@link ffx.algorithms.cli.DynamicsOptions} object.
-     * @param mdo              a {@link ffx.algorithms.cli.MultiDynamicsOptions} object.
-     * @param thermo           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
-     * @param aListener        a {@link ffx.algorithms.AlgorithmListener} object.
-     * @return a {@link OrthogonalSpaceTempering} object.
-     */
-    public OrthogonalSpaceTempering constructOST(CrystalPotential potential, File lambdaRestart, File histogramRestart,
-                                                 MolecularAssembly firstAssembly, Configuration addedProperties,
-                                                 DynamicsOptions dynamics, MultiDynamicsOptions mdo, ThermodynamicsOptions thermo,
-                                                 AlgorithmListener aListener) {
-        return constructOST(potential, lambdaRestart, histogramRestart, firstAssembly, addedProperties, dynamics, thermo, aListener, !mdo.isSynchronous(), 0);
+        return hOps;
     }
 
     /**
@@ -242,13 +192,12 @@ public class OSTOptions {
      * @param thermo           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
      * @param aListener        a {@link ffx.algorithms.AlgorithmListener} object.
      * @param async            If OST should use asynchronous communications.
-     * @param replicateNum     Index of the replicate (0 for non-repex OST).
      * @return a {@link OrthogonalSpaceTempering} object.
      */
     public OrthogonalSpaceTempering constructOST(CrystalPotential potential, File lambdaRestart, File histogramRestart,
                                                  MolecularAssembly firstAssembly, Configuration addedProperties,
-                                                 DynamicsOptions dynamics, ThermodynamicsOptions thermo,
-                                                 AlgorithmListener aListener, boolean async, int replicateNum) {
+                                                 DynamicsOptions dynamics, ThermodynamicsOptions thermo, LambdaParticleOptions lpo,
+                                                 AlgorithmListener aListener, boolean async) throws IOException {
 
         LambdaInterface linter = (LambdaInterface) potential;
         CompositeConfiguration allProperties = new CompositeConfiguration(firstAssembly.getProperties());
@@ -260,8 +209,11 @@ public class OSTOptions {
         double report = dynamics.getReport();
         double ckpt = dynamics.getCheckpoint();
         boolean resetNSteps = thermo.getResetNumSteps();
+
+        HistogramSettings hOps = generateHistogramSettings(histogramRestart, lambdaRestart.toString(), allProperties, 0, dynamics, lpo, independentWalkers, async);
+        
         OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(linter, potential, lambdaRestart,
-                histogramRestart, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
+                hOps, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
         orthogonalSpaceTempering.setHardWallConstraint(mcHW);
 
         // Do NOT run applyOSTOptions here, because that can mutate the OST to a Barostat.
@@ -276,21 +228,12 @@ public class OSTOptions {
      * @param orthogonalSpaceTempering Orthogonal Space Tempering.
      * @param firstAssembly            Primary assembly in OST.
      * @param dynamics                 MD options.
-     * @param lpo                      Lambda particle options.
      * @param barostat                 NPT options.
-     * @param histogramExists          If the histogram file exists already.
      * @return a {@link ffx.crystal.CrystalPotential} object.
      */
     public CrystalPotential applyAllOSTOptions(OrthogonalSpaceTempering orthogonalSpaceTempering,
                                                MolecularAssembly firstAssembly,
-                                               DynamicsOptions dynamics, LambdaParticleOptions lpo,
-                                               BarostatOptions barostat, boolean histogramExists) {
-
-        applyHistogramOptions(orthogonalSpaceTempering, histogramExists);
-        if (!histogramExists) {
-            orthogonalSpaceTempering.setThetaFrication(lpo.getLambdaFriction());
-            orthogonalSpaceTempering.setThetaMass(lpo.getLambdaMass());
-        }
+                                               DynamicsOptions dynamics, BarostatOptions barostat) {
         if (dynamics.getOptimize()) {
             OptimizationParameters opt = orthogonalSpaceTempering.getOptimizationParameters();
             opt.setOptimization(true, firstAssembly);
@@ -341,9 +284,6 @@ public class OSTOptions {
                            MolecularAssembly[] topologies, CrystalPotential potential,
                            DynamicsOptions dynamics, WriteoutOptions writeOut, ThermodynamicsOptions thermo,
                            File dyn, AlgorithmListener aListener) {
-        // Create the MolecularDynamics instance.
-        MolecularAssembly firstTop = topologies[0];
-
         dynamics.init();
 
         MolecularDynamics molDyn = assembleMolecularDynamics(topologies, potential, dynamics, aListener);
@@ -442,36 +382,6 @@ public class OSTOptions {
         }
     }
 
-    /**
-     * <p>
-     * applyHistogramOptions.</p>
-     *
-     * @param orthogonalSpaceTempering a {@link OrthogonalSpaceTempering} object.
-     * @param histogramExists          a boolean.
-     */
-    public void applyHistogramOptions(OrthogonalSpaceTempering orthogonalSpaceTempering, boolean histogramExists) {
-        applyHistogramOptions(orthogonalSpaceTempering, histogramExists, 0);
-    }
-
-    /**
-     * Applies histogram-related options to a histogram.
-     * @param orthogonalSpaceTempering OST containing the histogram.
-     * @param histogramExists          Whether the .his restart file exists.
-     * @param index                    Index of the histogram.
-     */
-    public void applyHistogramOptions(OrthogonalSpaceTempering orthogonalSpaceTempering, boolean histogramExists, int index) {
-        assert index >= 0;
-        Histogram histogram = orthogonalSpaceTempering.getHistogram(index);
-        if (!histogramExists) {
-            orthogonalSpaceTempering.setCountInterval(countFreq);
-            histogram.setBiasMagnitude(getBiasMag(index));
-        }
-        histogram.setIndependentWalkers(independentWalkers);
-        histogram.setTemperingThreshold(getTemperingThreshold(index));
-        histogram.setTemperingParameter(getTemperingParameter(index));
-        histogram.checkRecursionKernelSize();
-    }
-
     private void runDynamics(MolecularDynamics molDyn, long numSteps, DynamicsOptions dynamics,
                              WriteoutOptions writeout, boolean initVelocities, File dyn) {
         molDyn.dynamic(numSteps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp,
@@ -512,7 +422,7 @@ public class OSTOptions {
      * @param i Index of a walker
      * @return  Its intended initial bias magnitude in kcal/mol.
      */
-    public double getBiasMag(int i) {
+    private double getBiasMag(int i) {
         return biasMag.length > 1 ? biasMag[i] : biasMag[0];
     }
 
@@ -522,7 +432,7 @@ public class OSTOptions {
      * @param i Index of a walker
      * @return  Its intended tempering threshold in kcal/mol.
      */
-    public double getTemperingThreshold(int i) {
+    private double getTemperingThreshold(int i) {
         return temperThreshold.length > 1 ? temperThreshold[i] : temperThreshold[0];
     }
 
@@ -532,7 +442,7 @@ public class OSTOptions {
      * @param i Index of a walker
      * @return  Its intended tempering parameter in kBT.
      */
-    public double getTemperingParameter(int i) {
+    private double getTemperingParameter(int i) {
         return temperParam.length > 1 ? temperParam[i] : temperParam[0];
     }
 }

@@ -135,26 +135,40 @@ public class HistogramReader extends BufferedReader {
         return lambdaBins;
     }
 
-    public int getFLambdaBins() {
-        return FLambdaBins;
+    public double getTemperature() {
+        return temperature;
     }
-    
+
+    public double getThetaMass() {
+        return thetaMass;
+    }
+
+    public double getThetaFriction() {
+        return thetaFriction;
+    }
+
+    public double getBiasMag() {
+        return biasMag;
+    }
+
+    public int getBiasCutoff() {
+        return biasCutoff;
+    }
+
+    public int getCountInterval() {
+        return countInterval;
+    }
+
+    public double getDFLambda() {
+        return dFL;
+    }
+
+    /**
+     * Applies values to mutable histogram fields.
+     */
     private void applyToHistogram() {
-        histogram.temperature = temperature;
-        histogram.thetaMass = thetaMass;
-        histogram.thetaFriction = thetaFriction;
-        histogram.biasMag = biasMag;
-        histogram.biasCutoff = biasCutoff;
-        histogram.countInterval = countInterval;
-        histogram.lambdaBins = lambdaBins;
-        histogram.FLambda = new double[histogram.lambdaBins];
-        histogram.dL = 1.0 / (histogram.lambdaBins - 1);
-        histogram.dL_2 = histogram.dL / 2.0;
         histogram.FLambdaBins = FLambdaBins;
         histogram.minFLambda = minFLambda;
-        histogram.dFL = dFL;
-        histogram.dFL_2 = histogram.dFL / 2.0;
-        histogram.setTempering(temperingFlag != 0);
 
         // Allocate memory for the recursion kernel.
         histogram.allocateRecursionKernel();

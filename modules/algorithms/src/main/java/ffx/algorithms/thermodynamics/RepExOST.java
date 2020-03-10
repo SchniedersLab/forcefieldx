@@ -54,8 +54,6 @@ import java.util.stream.IntStream;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
-import edu.rit.mp.BooleanBuf;
-import edu.rit.mp.DoubleBuf;
 import edu.rit.mp.LongBuf;
 import edu.rit.pj.Comm;
 
@@ -182,7 +180,8 @@ public class RepExOST {
         }
         
         allHistograms = ost.getAllHistograms();
-        Arrays.stream(allHistograms).forEach((OrthogonalSpaceTempering.Histogram h) -> h.setIndependentWrites(true));
+        // TODO: Possibly de-comment this... though HistogramSettings makes it obsolete.
+        //Arrays.stream(allHistograms).forEach((OrthogonalSpaceTempering.Histogram h) -> h.setIndependentWrites(true));
 
         this.numPairs = size - 1;
         this.invKT = -1.0 / (Constants.R * dynamics.getTemp());
@@ -274,6 +273,8 @@ public class RepExOST {
      * @throws IOException Possible from Parallel Java.
      */
     public void mainLoop(long numTimesteps, boolean equilibrate) throws IOException {
+        Arrays.stream(allHistograms).map(OrthogonalSpaceTempering.Histogram::toString).forEach(logger::info);
+
         if (isMC) {
             mcOST.setEquilibration(equilibrate);
         }
