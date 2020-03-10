@@ -231,6 +231,10 @@ public class HistogramSettings {
         this.discreteLambda = discreteLambda;
         // TODO: Strongly consider just eliminating the tempering flag, a relic of our earlier tempering scheme.
         tempering = properties.getBoolean("ost-alwaysTemper", DEFAULT_TEMPERING);
+        if (properties.containsKey("ost-temperOffset")) {
+            temperOffsetSet = true;
+            temperOffset = properties.getDouble("ost-temperOffset");
+        }
 
         if (histogramFile.exists()) {
             try (HistogramReader hr = new HistogramReader(null, new BufferedReader(new FileReader(histogramFile)))) {

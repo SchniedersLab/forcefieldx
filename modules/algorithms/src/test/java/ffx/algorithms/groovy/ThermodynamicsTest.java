@@ -1106,7 +1106,7 @@ public class ThermodynamicsTest extends PJDependentTest {
         thermo.run();
         OrthogonalSpaceTempering orthogonalSpaceTempering = thermo.getOST();
         Histogram histogram = orthogonalSpaceTempering.getHistogram();
-        double delG = histogram.updateFLambda(false, false);
+        double delG = histogram.updateFLambda(true, false);
         assertEquals(String.format(" Test %s: not within tolerance %12.5g", info, feTol), freeEnergy, delG, feTol);
     }
 

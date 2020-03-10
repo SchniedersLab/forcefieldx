@@ -169,7 +169,6 @@ public class HistogramReader extends BufferedReader {
     private void applyToHistogram() {
         histogram.FLambdaBins = FLambdaBins;
         histogram.minFLambda = minFLambda;
-        histogram.setTempering(temperingFlag != 0);
 
         // Allocate memory for the recursion kernel.
         histogram.allocateRecursionKernel();

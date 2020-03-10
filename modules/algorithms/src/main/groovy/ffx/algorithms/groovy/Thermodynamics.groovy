@@ -266,7 +266,6 @@ class Thermodynamics extends AlgorithmsScript {
         logger.info(sb.toString())
 
         boolean lamExists = lambdaRestart.exists()
-        boolean hisExists = histogramRestart.exists()
 
         boolean updatesDisabled = topologies[0].getForceField().getBoolean("DISABLE_NEIGHBOR_UPDATES", false)
         if (updatesDisabled) {

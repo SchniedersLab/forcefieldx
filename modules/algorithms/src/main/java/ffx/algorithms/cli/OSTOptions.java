@@ -39,11 +39,9 @@ package ffx.algorithms.cli;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
 import ffx.algorithms.thermodynamics.HistogramSettings;
-import ffx.numerics.integrate.Integrate1DNumeric;
 import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
@@ -52,7 +50,6 @@ import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.thermodynamics.MonteCarloOST;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
-import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.OptimizationParameters;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
@@ -152,14 +149,9 @@ public class OSTOptions {
     @CommandLine.Option(names = {"--lw", "--lambdaWritOut"}, paramLabel = "0.0",
             description = "Only write out snapshots if lambda is greater than the value specified.")
     private double lambdaWriteOut = 0.0;
-/*
-CrystalPotential potential, File lambdaRestart, File histogramRestart,
-                                                 MolecularAssembly firstAssembly, Configuration addedProperties,
-                                                 DynamicsOptions dynamics, ThermodynamicsOptions thermo, LambdaParticleOptions lpo,
-                                                 AlgorithmListener aListener, boolean async, boolean writeIndependent
- */
+
     private boolean thresholdsSet() {
-        return temperThreshold.length == 1 && temperThreshold[0] < 0;
+        return temperThreshold.length != 1 || temperThreshold[0] >= 0;
     }
 
     private HistogramSettings generateHistogramSettings(File histogramRestart, String lambdaFileName,

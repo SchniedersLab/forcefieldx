@@ -1254,14 +1254,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         protected final double temperature;
         /**
-         * A flag to indicate if the transition has been crossed and Dama et al.
-         * transition-tempering should begin.
-         * <p>
-         * Currently "tempering" is always true, but a temperOffset (default 1.0 kcal/mol) prevents tempering
-         * prior to there being a bias everywhere along the lambda path of at least temperOffset.
-         */
-        private boolean tempering = true;
-        /**
          * The Dama et al. transition-tempering rate parameter. A reasonable value
          * is about 2 to 8 kT, with larger values being resulting in slower decay.
          * <p>
@@ -1454,8 +1446,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 minLambda = 0.0;
                 lambdaBins = (int) Math.round(1.0 / dL);
             } else {
-                dL_2 = dL / 2.0;
-                minLambda = dL_2;
+                dL_2 = dL * 0.5;
+                minLambda = -dL_2;
                 lambdaBins = 1 + (int) Math.round(1.0 / dL);
             }
 
@@ -1473,7 +1465,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             thetaFriction = settings.thetaFriction;
             thetaMass = settings.thetaMass;
             fLambdaPrintInterval = settings.fLambdaPrintInterval;
-            setTempering(settings.tempering);
 
             // Allocate space for the recursion kernel that stores weights.
             recursionKernel = new double[lambdaBins][FLambdaBins];
@@ -1537,8 +1528,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
         public String toString() {
             return String.format(" Histogram with tempering rate %.3f, tempering offset/threshold %.3f, " +
-                    "bias magnitude %.3g, writing to restart file %s.\n", temperingFactor, temperOffset, biasMag,
-                    FileUtils.relativePathTo(histogramFile).toString());
+                    "bias magnitude %.3g, writing to restart file %s.\n Lambda bins: %d. dU/dL bins: %d. dL: %.5f. dL_2: %.5f, dFL: %.5f, dFL_2: %.5f", temperingFactor, temperOffset, biasMag,
+                    FileUtils.relativePathTo(histogramFile).toString(), lambdaBins, FLambdaBins, dL, dL_2, dFL, dFL_2);
         }
 
         /**
@@ -1606,24 +1597,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         public int getRank() {
             return rank;
-        }
-
-        /**
-         * Check if tempering has started.
-         *
-         * @return True if tempering has begun.
-         */
-        boolean isTempering() {
-            return tempering;
-        }
-
-        /**
-         * Set the tempering flag.
-         *
-         * @param tempering True to indicate tempering.
-         */
-        void setTempering(boolean tempering) {
-            this.tempering = tempering;
         }
 
         /**
@@ -2213,6 +2186,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
         /**
          * Eqs. 7 and 8 from the 2012 Crystal Thermodynamics paper.
+         *
+         * @param print Whether to write the histogram to screen.
+         * @param save  Whether to write the histogram to disk.
+         * @return Free energy (via integration of ensemble-average dU/dL)
          */
         public double updateFLambda(boolean print, boolean save) {
             double freeEnergy = 0.0;
@@ -2333,9 +2310,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             // Revert the bias magnitude.
             if (biasMagZero) {
                 biasMag = 0.0;
-            }
-
-            if (tempering && biasMag > 0.0) {
+            } else {
                 double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
                 temperingWeight = exp(temperEnergy / deltaT);
             }

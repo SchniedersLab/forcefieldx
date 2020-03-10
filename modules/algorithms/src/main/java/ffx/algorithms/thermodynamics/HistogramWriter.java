@@ -80,10 +80,7 @@ class HistogramWriter extends PrintWriter {
         printf("FLambda-Bins    %15d\n", histogram.FLambdaBins);
         printf("Flambda-Min     %15.8e\n", histogram.minFLambda);
         printf("Flambda-Width   %15.8e\n", histogram.dFL);
-        int flag = 0;
-        if (histogram.isTempering()) {
-            flag = 1;
-        }
+        int flag = 1; // Legacy of the old tempering scheme.
         printf("Tempering       %15d\n", flag);
         for (int i = 0; i < histogram.lambdaBins; i++) {
             printf("%g", histogram.getRecursionKernelValue(i, 0));
