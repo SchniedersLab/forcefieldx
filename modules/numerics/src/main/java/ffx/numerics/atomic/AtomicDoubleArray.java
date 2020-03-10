@@ -94,6 +94,15 @@ public interface AtomicDoubleArray {
     void reset(ParallelTeam parallelTeam, int lb, int ub);
 
     /**
+     * Set the double array at the specified index to the given value.
+     *
+     * @param threadID a int.
+     * @param index    a int.
+     * @param value    a double.
+     */
+    void set(int threadID, int index, double value);
+
+    /**
      * Add value to the double array at the specified index.
      *
      * @param threadID a int.

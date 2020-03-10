@@ -130,6 +130,15 @@ public class AdderDoubleArray implements AtomicDoubleArray {
      * {@inheritDoc}
      */
     @Override
+    public void set(int threadID, int index, double value) {
+        array[index].reset();
+        array[index].add(value);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void sub(int threadID, int index, double value) {
         array[index].add(-value);
     }

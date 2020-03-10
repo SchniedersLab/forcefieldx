@@ -170,6 +170,21 @@ public class AtomicDoubleArray3D {
      * @param y        a double.
      * @param z        a double.
      */
+    public void set(int threadID, int index, double x, double y, double z) {
+        atomicDoubleArray[0].set(threadID, index, x);
+        atomicDoubleArray[1].set(threadID, index, y);
+        atomicDoubleArray[2].set(threadID, index, z);
+    }
+
+    /**
+     * Add value to the double array at the specified index.
+     *
+     * @param threadID a int.
+     * @param index    a int.
+     * @param x        a double.
+     * @param y        a double.
+     * @param z        a double.
+     */
     public void sub(int threadID, int index, double x, double y, double z) {
         atomicDoubleArray[0].sub(threadID, index, x);
         atomicDoubleArray[1].sub(threadID, index, y);
