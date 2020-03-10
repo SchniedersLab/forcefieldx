@@ -154,7 +154,7 @@ public class OSTOptions {
         return temperThreshold.length != 1 || temperThreshold[0] >= 0;
     }
 
-    private HistogramSettings generateHistogramSettings(File histogramRestart, String lambdaFileName,
+    public HistogramSettings generateHistogramSettings(File histogramRestart, String lambdaFileName,
                                                         CompositeConfiguration allProperties, int index,
                                                         DynamicsOptions dynamics, LambdaParticleOptions lpo,
                                                         boolean writeIndependent, boolean async) throws IOException {
