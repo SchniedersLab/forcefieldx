@@ -66,15 +66,16 @@
                     <artifactSet>
                         <excludes>
                             <exclude>log4j:log4j</exclude>
-                            <exclude>org.slf4j:slf4j-api</exclude>
+                            <!-- exclude>org.slf4j:slf4j-api</exclude>
                             <exclude>org.apache.logging.log4j:log4j-api</exclude>
-                            <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
+                            <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude -->
                         </excludes>
                     </artifactSet>
                     <filters>
                         <filter>
                             <artifact>*:*</artifact>
                             <excludes>
+                                <exclude>**/Log4j2Plugins.dat</exclude>
                                 <exclude>META-INF/*.SF</exclude>
                                 <exclude>META-INF/*.DSA</exclude>
                                 <exclude>META-INF/*.RSA</exclude>

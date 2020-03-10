@@ -678,7 +678,7 @@ public class ConnollyRegion extends ParallelRegion {
         /**
          * 3D grid for numeric volume derivatives.
          */
-        private final static int MXCUBE = 15;
+        private final static int MXCUBE = 30;
         /**
          * Maximum arcs for volume derivatives.
          */

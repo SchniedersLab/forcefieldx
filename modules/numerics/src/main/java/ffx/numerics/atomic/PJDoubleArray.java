@@ -128,6 +128,12 @@ public class PJDoubleArray implements AtomicDoubleArray {
      * {@inheritDoc}
      */
     @Override
+    public void set(int threadID, int index, double value) { array.getAndSet(index, value); }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void sub(int threadID, int index, double value) {
         array.getAndAdd(index, -value);
     }

@@ -93,6 +93,7 @@ public class AdderDoubleArray implements AtomicDoubleArray {
     public void reset(int threadID, int lb, int ub) {
         for (int i = lb; i <= ub; i++) {
             array[i].reset();
+            array[i].add(0.0);
         }
     }
 
@@ -123,6 +124,15 @@ public class AdderDoubleArray implements AtomicDoubleArray {
      */
     @Override
     public void add(int threadID, int index, double value) {
+        array[index].add(value);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void set(int threadID, int index, double value) {
+        array[index].reset();
         array[index].add(value);
     }
 

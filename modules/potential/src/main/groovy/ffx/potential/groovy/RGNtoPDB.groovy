@@ -142,7 +142,7 @@ class RGNtoPDB extends PotentialScript {
         FileWriter fw = new FileWriter(saveFile, false)
         BufferedWriter bw = new BufferedWriter(fw)
 
-        int atomNumber = 1
+        int atomNumber = 0
         double[] xyz = new double[3]
         double occupancy = 1.0
         double bfactor = 1.0
@@ -159,21 +159,21 @@ class RGNtoPDB extends PotentialScript {
             xyz[0] = Double.parseDouble(tokenizedLines[2][atomNumber]) / 100.0
             xyz[1] = Double.parseDouble(tokenizedLines[3][atomNumber]) / 100.0
             xyz[2] = Double.parseDouble(tokenizedLines[4][atomNumber]) / 100.0
-            Atom atom = new Atom(atomNumber++, "N", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
+            Atom atom = new Atom(++atomNumber, "N", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
             bw.write(toPDBAtomLine(atom))
 
             // Write CA
             xyz[0] = Double.parseDouble(tokenizedLines[2][atomNumber]) / 100.0
             xyz[1] = Double.parseDouble(tokenizedLines[3][atomNumber]) / 100.0
             xyz[2] = Double.parseDouble(tokenizedLines[4][atomNumber]) / 100.0
-            atom = new Atom(atomNumber++, "CA", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
+            atom = new Atom(++atomNumber, "CA", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
             bw.write(toPDBAtomLine(atom))
 
             // Write C
             xyz[0] = Double.parseDouble(tokenizedLines[2][atomNumber]) / 100.0
             xyz[1] = Double.parseDouble(tokenizedLines[3][atomNumber]) / 100.0
             xyz[2] = Double.parseDouble(tokenizedLines[4][atomNumber]) / 100.0
-            atom = new Atom(atomNumber++, "C", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
+            atom = new Atom(++atomNumber, "C", altLoc, xyz, resName, resID, chain, occupancy, bfactor, segID)
             bw.write(toPDBAtomLine(atom))
         }
 

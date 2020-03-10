@@ -17,7 +17,8 @@ public class VolumeTest {
 
     private Volume volume;
     private Binding binding;
-
+    private double tolerance = 0.001;
+    
     @Before
     public void before() {
         binding = new Binding();
@@ -41,8 +42,8 @@ public class VolumeTest {
 
         // Evaluate the script.
         volume.run();
-        assertEquals(125.5120767378517, volume.totalVolume, 0.01);
-        assertEquals(134.25693852184395, volume.totalSurfaceArea, 0.01);
+        assertEquals(125.5120767378517, volume.totalVolume, tolerance);
+        assertEquals(134.25693852184395, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -55,8 +56,8 @@ public class VolumeTest {
 
         // Evaluate the script
         volume.run();
-        assertEquals(194.44960348422916, volume.totalVolume, 0.001);
-        assertEquals(193.15447011592823, volume.totalSurfaceArea, 0.001);
+        assertEquals(194.44960348422916, volume.totalVolume, tolerance);
+        assertEquals(193.15447011592823, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -68,8 +69,8 @@ public class VolumeTest {
         binding.setVariable("args", args);
         // Evaluate the script.
         volume.run();
-        assertEquals(79.85081214917432, volume.totalVolume, 0.01);
-        assertEquals(98.14422780202705, volume.totalSurfaceArea, 0.01);
+        assertEquals(79.85081214917432, volume.totalVolume, tolerance);
+        assertEquals(98.14422780202705, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -81,8 +82,8 @@ public class VolumeTest {
         binding.setVariable("args", args);
         // Evaluate the script.
         volume.run();
-        assertEquals(119.0512090546068, volume.totalVolume, 0.01);
-        assertEquals(132.598010667639, volume.totalSurfaceArea, 0.01);
+        assertEquals(119.0512090546068, volume.totalVolume, tolerance);
+        assertEquals(132.598010667639, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -94,8 +95,8 @@ public class VolumeTest {
         binding.setVariable("args", args);
         // Evaluate the script.
         volume.run();
-        assertEquals(302.0524178356785, volume.totalVolume, 0.01);
-        assertEquals(227.49657650050898, volume.totalSurfaceArea, 0.01);
+        assertEquals(302.0524178356785, volume.totalVolume, tolerance);
+        assertEquals(227.49657650050898, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -107,8 +108,8 @@ public class VolumeTest {
         binding.setVariable("args", args);
         // Evaluate the script.
         volume.run();
-        assertEquals(402.708673112844, volume.totalVolume, 0.01);
-        assertEquals(280.836964340470, volume.totalSurfaceArea, 0.01);
+        assertEquals(402.708673112844, volume.totalVolume, tolerance);
+        assertEquals(280.836964340470, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -121,8 +122,8 @@ public class VolumeTest {
 
         // Evaluate the script
         volume.run();
-        assertEquals(126.96932864947797, volume.totalVolume, 0.001);
-        assertEquals(137.7753894764906, volume.totalSurfaceArea, 0.001);
+        assertEquals(126.96932864947797, volume.totalVolume, tolerance);
+        assertEquals(137.7753894764906, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -135,8 +136,8 @@ public class VolumeTest {
 
         // Evaluate the script
         volume.run();
-        assertEquals(165.83018235892447, volume.totalVolume, 0.001);
-        assertEquals(171.91980284282084, volume.totalSurfaceArea, 0.001);
+        assertEquals(165.83018235892447, volume.totalVolume, tolerance);
+        assertEquals(171.91980284282084, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -149,8 +150,8 @@ public class VolumeTest {
 
         // Evaluate the script
         volume.run();
-        assertEquals(418.96380636214514, volume.totalVolume, 0.001);
-        assertEquals(287.56961427851286, volume.totalSurfaceArea, 0.001);
+        assertEquals(418.96380636214514, volume.totalVolume, tolerance);
+        assertEquals(287.56961427851286, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -163,8 +164,8 @@ public class VolumeTest {
 
         // Evaluate the script
         volume.run();
-        assertEquals(518.612603965319, volume.totalVolume, 0.001);
-        assertEquals(340.264998320387, volume.totalSurfaceArea, 0.001);
+        assertEquals(518.612603965319, volume.totalVolume, tolerance);
+        assertEquals(340.264998320387, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -220,15 +221,15 @@ public class VolumeTest {
 
         // Evaluate the script
         volume.run();
-        assertEquals(4371.667466648112, volume.totalVolume, 0.001);
-        assertEquals(3977.079123178555, volume.totalSurfaceArea, 0.001);
+        assertEquals(4371.667466648112, volume.totalVolume, tolerance);
+        assertEquals(3977.079123178555, volume.totalSurfaceArea, tolerance);
     }
 
     /**
      * Test GaussVol derivatives.
      */
     @Test
-    public void testGaussCrambinDerivatives() {
+    public void testGaussVolCrambinDerivatives() {
         Gradient gradient = new Gradient();
         binding = new Binding();
         gradient.setBinding(binding);
@@ -259,8 +260,8 @@ public class VolumeTest {
 
         // Evaluate the script
         volume.run();
-        assertEquals(4418.303482563956, volume.totalVolume, 0.001);
-        assertEquals(4168.547763834282, volume.totalSurfaceArea, 0.001);
+        assertEquals(4418.303482563956, volume.totalVolume, tolerance);
+        assertEquals(4168.547763834282, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -273,8 +274,8 @@ public class VolumeTest {
 
         // Evaluate the script
         volume.run();
-        assertEquals(5222.628196815338, volume.totalVolume, 0.001);
-        assertEquals(2326.375086471378, volume.totalSurfaceArea, 0.001);
+        assertEquals(5222.628196815338, volume.totalVolume, tolerance);
+        assertEquals(2326.375086471378, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -287,8 +288,8 @@ public class VolumeTest {
 
         // Evaluate the script
         volume.run();
-        assertEquals(5890.028072142157, volume.totalVolume, 0.001);
-        assertEquals(2456.835858765312, volume.totalSurfaceArea, 0.001);
+        assertEquals(5890.028072142157, volume.totalVolume, tolerance);
+        assertEquals(2456.835858765312, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -301,8 +302,8 @@ public class VolumeTest {
 
         // Evaluate the script
         volume.run();
-        assertEquals(8956.620463626994, volume.totalVolume, 0.001);
-        assertEquals(3015.7687533888334, volume.totalSurfaceArea, 0.001);
+        assertEquals(8956.620463626994, volume.totalVolume, tolerance);
+        assertEquals(3015.7687533888334, volume.totalSurfaceArea, tolerance);
     }
 
     /**
@@ -315,8 +316,8 @@ public class VolumeTest {
 
         // Evaluate the script
         volume.run();
-        assertEquals(9804.262055253388, volume.totalVolume, 0.001);
-        assertEquals(3142.106787870207, volume.totalSurfaceArea, 0.001);
+        assertEquals(9804.262055253388, volume.totalVolume, tolerance);
+        assertEquals(3142.106787870207, volume.totalSurfaceArea, tolerance);
     }
 
 }

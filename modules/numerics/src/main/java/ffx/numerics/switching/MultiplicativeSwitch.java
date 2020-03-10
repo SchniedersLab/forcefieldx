@@ -71,16 +71,16 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
 
     /**
      * Constructs a MultiplicativeSwitch that starts at f(0)=1 and ends at f(1)=0.
-     * Over this range, the switch smoothly interpolates between 1 and 0,
-     * with zero first and second derivatives at 0 and 1.
+     * The switch smoothly interpolates from 1 to 0 across that range,
+     * with zero first and second derivatives at off and cut.
      */
     public MultiplicativeSwitch() {
         this(0.0, 1.0);
     }
 
     /**
-     * Constructs a multiplicative switch which starts at f(a) = 1 and
-     * ends at f(b) = 0. The switch smoothly interpolates from 1 to 0 across that range,
+     * Constructs a MultiplicativeSwitch that starts at f(a)=1 and ends at f(b)=0.
+     * The switch smoothly interpolates from 1 to 0 across that range,
      * with zero first and second derivatives at off and cut.
      *
      * @param a f(a)=1
@@ -107,6 +107,24 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
         threeC3 = 3.0 * c3;
         fourC4 = 4.0 * c4;
         fiveC5 = 5.0 * c5;
+    }
+
+    /**
+     * Get the value where the switch starts.
+     *
+     * @return Switch start.
+     */
+    public double getSwitchStart() {
+        return a;
+    }
+
+    /**
+     * Get the value where the switch starts.
+     *
+     * @return Switch start.
+     */
+    public double getSwitchEnd() {
+        return b;
     }
 
     /**

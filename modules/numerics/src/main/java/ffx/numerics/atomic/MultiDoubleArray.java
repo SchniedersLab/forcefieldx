@@ -132,6 +132,14 @@ public class MultiDoubleArray implements AtomicDoubleArray {
      * {@inheritDoc}
      */
     @Override
+    public void set(int threadID, int index, double value) {
+        array[threadID][index] = value;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void sub(int threadID, int index, double value) {
         array[threadID][index] -= value;
     }
