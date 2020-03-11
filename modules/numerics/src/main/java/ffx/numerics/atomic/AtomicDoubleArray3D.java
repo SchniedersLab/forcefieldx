@@ -147,7 +147,7 @@ public class AtomicDoubleArray3D {
     }
 
     /**
-     * Add value to the double array at the specified index.
+     * Add to the double arrays at the specified index the given values.
      *
      * @param threadID a int.
      * @param index    a int.
@@ -162,7 +162,7 @@ public class AtomicDoubleArray3D {
     }
 
     /**
-     * Add value to the double array at the specified index.
+     * Set the double arrays at the specified index to the given values.
      *
      * @param threadID a int.
      * @param index    a int.
@@ -177,7 +177,7 @@ public class AtomicDoubleArray3D {
     }
 
     /**
-     * Add value to the double array at the specified index.
+     * Subtracts from the double arrays at the specified index the given values.
      *
      * @param threadID a int.
      * @param index    a int.
