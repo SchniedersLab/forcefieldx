@@ -37,6 +37,9 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
+import ffx.algorithms.cli.OSTOptions
+import ffx.crystal.CrystalPotential
+import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -108,21 +111,12 @@ class Histogram extends AlgorithmsScript {
         // Print the current energy
         energy.energy(true, true)
 
-        // These fields are needed for the OST constructor, but otherwise are not used.
-        boolean asynchronous = false
-        double timeStep = 1.0
-        double printInterval = 1.0
-        double saveInterval = 100.0
-        double temperature = 298.15
-
         modelFilename = activeAssembly.getFile().getAbsolutePath()
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
 
-        orthogonalSpaceTempering = new OrthogonalSpaceTempering(energy, energy, lambdaRestart, histogramRestart,
-                activeAssembly.getProperties(), temperature, timeStep, printInterval,
-                saveInterval, asynchronous, algorithmListener)
+        orthogonalSpaceTempering = OSTOptions.constructOST(energy, lambdaRestart, histogramRestart, activeAssembly, null, algorithmListener)
 
         if (pmf) {
             orthogonalSpaceTempering.setMolecularAssembly(activeAssembly)
