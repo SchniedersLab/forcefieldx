@@ -49,6 +49,7 @@ import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
+import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine
 
@@ -204,13 +205,11 @@ class RepexThermo extends Thermodynamics {
 
         if (thermodynamics.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
             File firstHisto = new File("${filepath}0${File.separator}${fileBase}.his");
-            boolean hisExists = firstHisto.exists();
 
             orthogonalSpaceTempering = ostOptions.constructOST(potential, lambdaRestart, firstHisto, topologies[0],
-                    additionalProperties, dynamics, thermodynamics, algorithmListener, false, 0);
-            ostOptions.applyHistogramOptions(orthogonalSpaceTempering,0);
+                    additionalProperties, dynamics, thermodynamics, lambdaParticle, algorithmListener, false)
             finalPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
-                    dynamics, lambdaParticle, barostat, hisExists);
+                    dynamics, barostat)
 
             if (isMC) {
                 mcOST = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose, algorithmListener);
@@ -226,10 +225,15 @@ class RepexThermo extends Thermodynamics {
                 }
             }
 
+
+            CompositeConfiguration allProperties = new CompositeConfiguration(topologies[0].getProperties());
+            if (additionalProperties != null) {
+                allProperties.addConfiguration(additionalProperties);
+            }
+
             for (int i = 1; i < size; i++) {
                 File rankIHisto = new File("${filepath}${i}${File.separator}${fileBase}.his");
-                orthogonalSpaceTempering.addHistogram(rankIHisto);
-                ostOptions.applyHistogramOptions(orthogonalSpaceTempering, i);
+                orthogonalSpaceTempering.addHistogram(ostOptions.generateHistogramSettings(rankIHisto, lambdaRestart.toString(), allProperties, i, dynamics, lambdaParticle, true, false));
             }
 
             if (isMC) {

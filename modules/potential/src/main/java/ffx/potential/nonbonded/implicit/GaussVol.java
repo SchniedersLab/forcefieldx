@@ -136,8 +136,8 @@ public class GaussVol {
     /**
      * Minimum volume. TODO: Should this be set closer to VOLMINA?
      */
-    // private static double MIN_GVOL = Double.MIN_VALUE;
-    private static double MIN_GVOL = 1.0e-12;
+    private static double MIN_GVOL = Double.MIN_VALUE;
+    // private static double MIN_GVOL = 1.0e-12;
 
     /**
      * Number of atoms.
@@ -199,6 +199,7 @@ public class GaussVol {
     private double[] surfaceAreaGradient;
 
     // Output Variables
+    private final GaussVolRegion gaussVolRegion;
     private final AtomicDoubleArray3D grad;
     private final SharedDouble totalVolume;
     private final SharedDouble energy;
@@ -240,15 +241,22 @@ public class GaussVol {
         }
 
         this.parallelTeam = parallelTeam;
-        int nThreads = parallelTeam.getThreadCount();
+        int nThreads = 1;
+        if (parallelTeam != null) {
+            nThreads = parallelTeam.getThreadCount();
+            gaussVolRegion = new GaussVolRegion(nThreads);
+        } else {
+            gaussVolRegion = null;
+        }
 
         totalVolume = new SharedDouble();
         energy = new SharedDouble();
-        grad = new AtomicDoubleArray3D(AtomicDoubleArrayImpl.MULTI, nAtoms, nThreads);
-
-        gradV = atomicDoubleArrayFactory(AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
-        freeVolume = atomicDoubleArrayFactory(AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
-        selfVolume = atomicDoubleArrayFactory(AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
+        // Note -- the AtomicDoubleArrayImpl.MULTI does not work yet (use PJ).
+        AtomicDoubleArrayImpl atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
+        grad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, nThreads);
+        gradV = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
+        freeVolume = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
+        selfVolume = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
     }
 
     /**
@@ -351,11 +359,21 @@ public class GaussVol {
      */
     public double computeVolumeAndSA(double[][] positions) {
 
-        // Update the overlap tree.
-        computeTree(positions);
+        if (parallelTeam == null || parallelTeam.getThreadCount() == 1) {
+            // Update the overlap tree.
+            computeTree(positions);
 
-        // Compute the volume.
-        computeVolume(totalVolume, energy, grad, gradV, freeVolume, selfVolume);
+            // Compute the volume.
+            computeVolume(totalVolume, energy, grad, gradV, freeVolume, selfVolume);
+        } else {
+            // Execute in parallel.
+            try {
+                gaussVolRegion.init(0, positions);
+                parallelTeam.execute(gaussVolRegion);
+            } catch (Exception e) {
+                logger.severe(" Exception evaluating GaussVol " + e.toString());
+            }
+        }
 
         if (volumeGradient == null || volumeGradient.length != nAtoms * 3) {
             volumeGradient = new double[nAtoms * 3];
@@ -398,10 +416,20 @@ public class GaussVol {
         this.volumes = volumeOffset;
 
         // Run Volume calculation on radii that are slightly offset in order to do finite difference to get back surface area
-        // Rescan the overlap tree.
-        rescanTreeVolumes(positions);
-        // Compute the volume.
-        computeVolume(totalVolume, energy, grad, gradV, freeVolume, selfVolume);
+        if (parallelTeam == null || parallelTeam.getThreadCount() == 1) {
+            // Rescan the overlap tree.
+            rescanTreeVolumes(positions);
+            // Compute the volume.
+            computeVolume(totalVolume, energy, grad, gradV, freeVolume, selfVolume);
+        } else {
+            // Execute in parallel.
+            try {
+                gaussVolRegion.init(2, positions);
+                parallelTeam.execute(gaussVolRegion);
+            } catch (Exception e) {
+                logger.severe(" Exception evaluating GaussVol " + e.toString());
+            }
+        }
 
         // Set the radii and volumes to their non-offset values.
         this.radii = radiiBak;
@@ -410,7 +438,6 @@ public class GaussVol {
         double selfVolumeOffsetSum = 0;
         for (int i = 0; i < nAtoms; i++) {
             selfVolumeOffsetSum += selfVolume.get(i);
-
             double x = grad.getX(i);
             double y = grad.getY(i);
             double z = grad.getZ(i);
@@ -419,7 +446,6 @@ public class GaussVol {
                 y = 0.0;
                 z = 0.0;
             }
-
             // Surface Area based gradient
             int index = i * 3;
             surfaceAreaGradient[index] = (x - surfaceAreaGradient[index++]) / offset;
@@ -463,23 +489,22 @@ public class GaussVol {
      */
     private void computeVolume(SharedDouble totalVolume, SharedDouble totalEnergy, AtomicDoubleArray3D grad,
                                AtomicDoubleArray gradV, AtomicDoubleArray freeVolume, AtomicDoubleArray selfVolume) {
-
         // Initialize output variables.
         totalVolume.set(0.0);
         totalEnergy.set(0.0);
-        grad.reset(parallelTeam, 0, nAtoms - 1);
-        gradV.reset(parallelTeam, 0, nAtoms - 1);
-        freeVolume.reset(parallelTeam, 0, nAtoms - 1);
-        selfVolume.reset(parallelTeam, 0, nAtoms - 1);
+        grad.reset(0, 0, nAtoms - 1);
+        gradV.reset(0, 0, nAtoms - 1);
+        freeVolume.reset(0, 0, nAtoms - 1);
+        selfVolume.reset(0, 0, nAtoms - 1);
 
         // Compute the volume.
         tree.computeVolume2R(totalVolume, totalEnergy, grad, gradV, freeVolume, selfVolume);
 
         // Reduce output variables.
-        grad.reduce(parallelTeam, 0, nAtoms - 1);
-        gradV.reduce(parallelTeam, 0, nAtoms - 1);
-        freeVolume.reduce(parallelTeam, 0, nAtoms - 1);
-        selfVolume.reduce(parallelTeam, 0, nAtoms - 1);
+        grad.reduce(0, nAtoms - 1);
+        gradV.reduce(0, nAtoms - 1);
+        freeVolume.reduce(0, nAtoms - 1);
+        selfVolume.reduce(0, nAtoms - 1);
 
         for (int i = 0; i < nAtoms; ++i) {
             if (volumes[i] > 0) {
@@ -765,8 +790,8 @@ public class GaussVol {
         }
 
         /**
-         * Scans the siblings of overlap identified by "root_index" to create children overlaps,
-         * returns them into the "children_overlaps" buffer: (root) + (atom) -> (root, atom)
+         * Scans the siblings of overlap identified by "rootIndex" to create children overlaps,
+         * returns them into the "childrenOverlaps" buffer: (root) + (atom) -> (root, atom)
          *
          * @param rootIndex        Root index.
          * @param childrenOverlaps Children overlaps.
@@ -784,7 +809,7 @@ public class GaussVol {
             // Retrieves parent overlap.
             parentIndex = root.parentIndex;
 
-            //master root? can't do computeChildren() on master root
+            // Master root? can't do computeChildren() on master root
             if (parentIndex < 0) {
                 throw new IllegalArgumentException(" Cannot compute children of master node!");
             }
@@ -801,12 +826,12 @@ public class GaussVol {
 
             // Parent is not initialized?
             if (siblingStart < 0 || siblingCount < 0) {
-                throw new IllegalArgumentException(String.format(" Parent %s of overlap %s has no sibilings.", parent, root));
+                throw new IllegalArgumentException(format(" Parent %s of overlap %s has no sibilings.", parent, root));
             }
 
             // This overlap somehow is not the child of registered parent.
             if (rootIndex < siblingStart && rootIndex > siblingStart + siblingCount - 1) {
-                throw new IllegalArgumentException(String.format(" Node %s is somehow not the child of its parent %s", root, parent));
+                throw new IllegalArgumentException(format(" Node %s is somehow not the child of its parent %s", root, parent));
             }
 
             // Now loops over "younger" siblings (i<j loop) to compute new overlaps.
@@ -899,6 +924,7 @@ public class GaussVol {
          * @param energy1i   Subtree accumulator for volume-based energy.
          * @param fenergy1i  Subtree accumulator for volume-based energy.
          * @param penergy1i  subtree accumulator for volume-based energy.
+         * @param threadID   Thread for accumulation.
          * @param dr         Gradient of volume-based energy wrt to atomic positions.
          * @param dv         Gradient of volume-based energy wrt to atomic volumes.
          * @param freeVolume Atomic free volumes.
@@ -908,7 +934,7 @@ public class GaussVol {
                 int slot, double[] psi1i, double[] f1i, double[] p1i,
                 double[] psip1i, double[] fp1i, double[] pp1i,
                 double[] energy1i, double[] fenergy1i, double[] penergy1i,
-                AtomicDoubleArray3D dr, AtomicDoubleArray dv,
+                int threadID, AtomicDoubleArray3D dr, AtomicDoubleArray dv,
                 AtomicDoubleArray freeVolume, AtomicDoubleArray selfVolume) {
 
             GaussianOverlap ov = overlaps.get(slot);
@@ -942,6 +968,7 @@ public class GaussVol {
             energy1i[0] = volcoeffp * ov.gamma1i * ov.volume;
             fenergy1i[0] = volcoeffp * ov.sfp * ov.gamma1i;
 
+            // Loop over children.
             if (ov.childrenStartIndex >= 0) {
                 for (int sloti = ov.childrenStartIndex; sloti < ov.childrenStartIndex + ov.childrenCount; sloti++) {
                     double[] psi1it = new double[1];
@@ -957,7 +984,7 @@ public class GaussVol {
                             psi1it, f1it, p1it,
                             psip1it, fp1it, pp1it,
                             energy1it, fenergy1it, penergy1it,
-                            dr, dv, freeVolume, selfVolume);
+                            threadID, dr, dv, freeVolume, selfVolume);
                     psi1i[0] += psi1it[0];
                     f1i[0] += f1it[0];
                     sum(p1i, p1it, p1i);
@@ -972,12 +999,11 @@ public class GaussVol {
                 }
             }
 
+            // Skip this for the Root Level.
             if (ov.level > 0) {
                 // Contributions to free and self volume of last atom
-                // free_volume[atom] += psi1i[0];
-                freeVolume.add(0, atom, psi1i[0]);
-                // self_volume[atom] += psip1i[0];
-                selfVolume.add(0, atom, psip1i[0]);
+                freeVolume.add(threadID, atom, psi1i[0]);
+                selfVolume.add(threadID, atom, psip1i[0]);
 
                 // Contributions to energy gradients
                 double c2 = ai / a1i;
@@ -989,13 +1015,10 @@ public class GaussVol {
                 scalar(penergy1i, c2, work1);
                 scalar(ov.dv1, -fenergy1i[0], work2);
                 sum(work1, work2, work3);
-
-                // sum(dr[atom], work3, dr[atom]);
-                dr.add(0, atom, work3[0], work3[1], work3[2]);
+                dr.add(threadID, atom, work3[0], work3[1], work3[2]);
 
                 // ov.g.v is the unswitched volume
-                // dv[atom] += ov.g.v * fenergy1i;
-                dv.add(0, atom, ov.g.v * fenergy1i[0]);
+                dv.add(threadID, atom, ov.g.v * fenergy1i[0]);
 
                 // Update subtree P1..i's for parent
                 c2 = a1 / a1i;
@@ -1046,15 +1069,17 @@ public class GaussVol {
             double[] energy1i = new double[1];
             double[] fenergy1i = new double[1];
             double[] penergy1i = new double[3];
+            // Only one thread for serial computation.
+            int threadID = 0;
 
             computeVolumeUnderSlot2R(0,
                     psi1i, f1i, p1i,
                     psip1i, fp1i, pp1i,
                     energy1i, fenergy1i, penergy1i,
-                    dr, dv, freeVolume, selfvolume);
+                    threadID, dr, dv, freeVolume, selfvolume);
 
-            volume.set(psi1i[0]);
-            energy.set(energy1i[0]);
+            volume.addAndGet(psi1i[0]);
+            energy.addAndGet(energy1i[0]);
         }
 
         /**
@@ -1219,7 +1244,7 @@ public class GaussVol {
          */
         void printTreeR(int slot) {
             GaussianOverlap ov = overlaps.get(slot);
-            logger.info(String.format("tg:      %d ", slot));
+            logger.info(format("tg:      %d ", slot));
             ov.printOverlap();
             for (int i = ov.childrenStartIndex; i < ov.childrenStartIndex + ov.childrenCount; i++) {
                 printTreeR(i);
@@ -1339,57 +1364,64 @@ public class GaussVol {
         return s * gvol;
     }
 
-
+    /**
+     * Use instances of the GaussianOverlapTree to compute the GaussVol volume in parallel.
+     */
     private class GaussVolRegion extends ParallelRegion {
 
+        private GaussianOverlapTree[] localTree;
         private ComputeTreeLoop[] computeTreeLoops;
         private ComputeVolumeLoop[] computeVolumeLoops;
         private RescanTreeLoop[] rescanTreeLoops;
+        private ReductionLoop[] reductionLoops;
         private int mode = 0;
         private double[][] coordinates = null;
 
+        /**
+         * GaussVolRegion constructor.
+         *
+         * @param nThreads Number of threads.
+         */
         public GaussVolRegion(int nThreads) {
+            localTree = new GaussianOverlapTree[nThreads];
             computeTreeLoops = new ComputeTreeLoop[nThreads];
             computeVolumeLoops = new ComputeVolumeLoop[nThreads];
             rescanTreeLoops = new RescanTreeLoop[nThreads];
+            reductionLoops = new ReductionLoop[nThreads];
         }
 
         public void init(int mode, double[][] coordinates) {
             this.mode = mode;
             this.coordinates = coordinates;
-        }
 
-        @Override
-        public void start() {
-            tree.initOverlapTree(coordinates, radii, volumes, gammas, ishydrogen);
-        }
-
-        @Override
-        public void finish() {
-            for (int i = 0; i < nAtoms; ++i) {
-                if (volumes[i] > 0) {
-                    gradV.set(0, i, gradV.get(i) / volumes[i]);
-                }
-            }
+            // Initialize output variables.
+            totalVolume.set(0.0);
+            energy.set(0.0);
+            grad.reset(parallelTeam, 0, nAtoms - 1);
+            gradV.reset(parallelTeam, 0, nAtoms - 1);
+            freeVolume.reset(parallelTeam, 0, nAtoms - 1);
+            selfVolume.reset(parallelTeam, 0, nAtoms - 1);
         }
 
         @Override
         public void run() throws Exception {
             int threadIndex = getThreadIndex();
-
             if (computeTreeLoops[threadIndex] == null) {
+                localTree[threadIndex] = new GaussianOverlapTree(nAtoms);
                 computeTreeLoops[threadIndex] = new ComputeTreeLoop();
                 computeVolumeLoops[threadIndex] = new ComputeVolumeLoop();
                 rescanTreeLoops[threadIndex] = new RescanTreeLoop();
+                reductionLoops[threadIndex] = new ReductionLoop();
             }
-
             try {
                 if (mode == 0) {
-                    // execute(1, nAtoms, computeTreeLoops[threadIndex]);
+                    execute(1, nAtoms, computeTreeLoops[threadIndex]);
                     execute(1, nAtoms, computeVolumeLoops[threadIndex]);
+                    execute(0, nAtoms - 1, reductionLoops[threadIndex]);
                 } else {
-                    // execute(1, nAtoms, rescanTreeLoops[threadIndex]);
+                    execute(1, nAtoms, rescanTreeLoops[threadIndex]);
                     execute(1, nAtoms, computeVolumeLoops[threadIndex]);
+                    execute(0, nAtoms - 1, reductionLoops[threadIndex]);
                 }
             } catch (RuntimeException ex) {
                 logger.warning("Runtime exception computing tree in thread: " + threadIndex);
@@ -1398,30 +1430,96 @@ public class GaussVol {
                 String message = "Fatal exception computing tree in thread: " + threadIndex + "\n";
                 logger.log(Level.SEVERE, message, e);
             }
-
         }
 
+        /**
+         * Initialize the Overlap tree for a subset of the system.
+         */
         private class ComputeTreeLoop extends IntegerForLoop {
+            @Override
+            public void start() {
+                localTree[getThreadIndex()].initOverlapTree(coordinates, radii, volumes, gammas, ishydrogen);
+            }
 
             @Override
             public void run(int first, int last) throws Exception {
+                // Compute the overlaps for a subset of atoms.
+                int threadIndex = getThreadIndex();
                 for (int slot = first; slot <= last; slot++) {
-                    tree.computeAndAddChildrenR(slot);
+                    localTree[threadIndex].computeAndAddChildrenR(slot);
                 }
             }
         }
 
+        /**
+         * Compute the volume and derivatives for a subset of the system.
+         */
         private class ComputeVolumeLoop extends IntegerForLoop {
             @Override
             public void run(int first, int last) throws Exception {
-
+                int threadIndex = getThreadIndex();
+                for (int slot = first; slot <= last; slot++) {
+                    double[] psi1i = new double[1];
+                    double[] f1i = new double[1];
+                    double[] p1i = new double[3];
+                    double[] psip1i = new double[1];
+                    double[] fp1i = new double[1];
+                    double[] pp1i = new double[3];
+                    double[] energy1i = new double[1];
+                    double[] fenergy1i = new double[1];
+                    double[] penergy1i = new double[3];
+                    localTree[threadIndex].computeVolumeUnderSlot2R(slot,
+                            psi1i, f1i, p1i,
+                            psip1i, fp1i, pp1i,
+                            energy1i, fenergy1i, penergy1i,
+                            threadIndex, grad, gradV, freeVolume, selfVolume);
+                    totalVolume.addAndGet(psi1i[0]);
+                    energy.addAndGet(energy1i[0]);
+                }
             }
         }
 
+        /**
+         * Rescan the tree based on updated radii and volumes for a subset of the system.
+         */
         private class RescanTreeLoop extends IntegerForLoop {
             @Override
-            public void run(int first, int last) throws Exception {
+            public void start() {
+                localTree[getThreadIndex()].initRescanTreeV(coordinates, radii, volumes, gammas, ishydrogen);
+            }
 
+            @Override
+            public void run(int first, int last) throws Exception {
+                // Compute the overlaps for a subset of atoms.
+                int threadIndex = getThreadIndex();
+                for (int slot = first; slot <= last; slot++) {
+                    localTree[threadIndex].rescanR(slot);
+                }
+            }
+        }
+
+        /**
+         * Reduce GaussVol gradient.
+         */
+        private class ReductionLoop extends IntegerForLoop {
+            int threadID;
+
+            @Override
+            public void start() {
+                threadID = getThreadIndex();
+            }
+
+            @Override
+            public void run(int lb, int ub) {
+                grad.reduce(lb, ub);
+                gradV.reduce(lb, ub);
+                freeVolume.reduce(lb, ub);
+                selfVolume.reduce(lb, ub);
+                for (int i = lb; i <= ub; i++) {
+                    if (volumes[i] > 0) {
+                        gradV.set(0, i, gradV.get(i) / volumes[i]);
+                    }
+                }
             }
         }
     }

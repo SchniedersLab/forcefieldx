@@ -37,6 +37,8 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
+import ffx.algorithms.cli.OSTOptions
+import ffx.numerics.switching.PowerSwitch
 import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.Option
@@ -235,8 +237,7 @@ class OSTBias extends Script {
         topology1 = active;
 
         if (arguments.size() == 1) {
-            orthogonalSpaceTempering = new OrthogonalSpaceTempering(energy, energy, lambdaRestart, histogramRestart,
-                    active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
+            orthogonalSpaceTempering = OSTOptions.constructOST(energy, lambdaRestart, histogramRestart, active, null, sh);
         } else {
             // Open the 2nd topology.
             filename = arguments.get(1);
@@ -268,9 +269,8 @@ class OSTBias extends Script {
             // Turn off checks for overlapping atoms, which is expected for lambda=0.
             energy.getCrystal().setSpecialPositionCutoff(0.0);
             // Create the DualTopology potential energy.
-            DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
-            orthogonalSpaceTempering = new OrthogonalSpaceTempering(energy, energy, lambdaRestart, histogramRestart,
-                    active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
+            DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active, new PowerSwitch());
+            orthogonalSpaceTempering = OSTOptions.constructOST(energy, lambdaRestart, histogramRestart, active, null, sh);
         }
 
         /**
