@@ -273,24 +273,23 @@ public class HistogramSettings {
      * @param lambdaBins Number of lambda bins.
      */
     public void setDL(int lambdaBins) {
-        if (!discreteLambda) {
-            --lambdaBins;
-        }
         assert lambdaBins > 2;
-        dL = 1.0 / lambdaBins;
+        dL = 1.0 / (lambdaBins - 1);
     }
 
     /**
-     * If continuous lambda bins are in use, rectify dL to match the right number of bins.
+     * If continuous lambda bins are in use, rectify dL to have an odd number of bins.
+     * If (1.0 / dL) would produce an odd number, dL is increased to make (1.0 / dL)
+     * the next even number.
      */
     private void continuousLambdaBins() {
         if (!discreteLambda) {
-            int lambdaBins = (int) Math.round(1.0 / dL);
-            if (lambdaBins % 2 == 0) {
-                // TODO: Logger.
-                ++lambdaBins;
+            // This is not really "lambda bins" so much as it's just 1.0 / dL.
+            int fullWidthBins = (int) Math.round(1.0 / dL);
+            if (fullWidthBins % 2 == 0) {
+                ++fullWidthBins;
             }
-            dL = 1.0 / (lambdaBins - 1);
+            dL = 1.0 / (fullWidthBins - 1);
         }
     }
 

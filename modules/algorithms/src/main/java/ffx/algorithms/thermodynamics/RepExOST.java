@@ -273,8 +273,6 @@ public class RepExOST {
      * @throws IOException Possible from Parallel Java.
      */
     public void mainLoop(long numTimesteps, boolean equilibrate) throws IOException {
-        Arrays.stream(allHistograms).map(OrthogonalSpaceTempering.Histogram::toString).forEach(logger::info);
-
         if (isMC) {
             mcOST.setEquilibration(equilibrate);
         }
@@ -290,7 +288,7 @@ public class RepExOST {
         } else {
             long numExchanges = numTimesteps / stepsBetweenExchanges;
             for (int i = 0; i < numExchanges; i++) {
-                logger.info(String.format(" Beginning of repex loop %d, operating on histogram %d", (i + 1), currentHistoIndex));
+                logger.info(String.format(" Beginning of repex loop %d of %d, operating on histogram %d", (i + 1), numExchanges, currentHistoIndex));
                 world.barrier(mainLoopTag);
                 algoRun.accept(stepsBetweenExchanges);
                 ost.logOutputFiles(currentHistoIndex);
@@ -313,6 +311,50 @@ public class RepExOST {
         }
 
         logger.info(" Final rank-to-histogram mapping: " + Arrays.toString(rankToHisto));
+    }
+
+    // Below logIf methods are intended to reduce redundant logging
+
+    /**
+     * Logs a message if this is the master (rank 0) process.
+     *
+     * @param message Message to log (at INFO)
+     */
+    private void logIfMaster(String message) {
+        logIfMaster(Level.INFO, message);
+    }
+
+    /**
+     * Logs a message if this is the master (rank 0) process.
+     *
+     * @param message Message to log
+     * @param level   Logging level to log at
+     */
+    private void logIfMaster(Level level, String message) {
+        if (rank == 0) {
+            logger.log(level, message);
+        }
+    }
+
+    /**
+     * Logs a message if it is the lowest-ranked process computing a given swap.
+     * Currently, this just wraps logIfMaster, as all processes compute all swaps.
+     *
+     * @param message Message to log (at INFO)
+     */
+    private void logIfSwapping(String message) {
+        logIfMaster(message);
+    }
+    /**
+     *
+     * Logs a message if it is the lowest-ranked process computing a given swap.
+     * Currently, this just wraps logIfMaster, as all processes compute all swaps.
+     *
+     * @param message Message to log
+     * @param level   Logging level to log at
+     */
+    private void logIfSwapping(Level level, String message) {
+        logIfMaster(level, message);
     }
 
     private void setFiles() {
@@ -348,7 +390,7 @@ public class RepExOST {
             double eji = histoHigh.computeBiasEnergy(lamLow, dUdLLow);
             double ejj = histoHigh.computeBiasEnergy(lamHigh, dUdLHigh);
 
-            logger.info(String.format("\n Proposing exchange between histograms %d (rank %d) and %d (rank %d).\n" +
+            logIfSwapping(String.format("\n Proposing exchange between histograms %d (rank %d) and %d (rank %d).\n" +
                             " Li: %.6f dU/dLi: %.6f Lj: %.6f dU/dLj: %.6f",
                     i, rankLow, i + 1, rankHigh,
                     lamLow, dUdLLow, lamHigh, dUdLHigh));
@@ -359,7 +401,7 @@ public class RepExOST {
             double acceptChance = BoltzmannMC.acceptChance(invKT, e1, e2);
 
             String desc = accept ? "Accepted" : "Rejected";
-            logger.info(String.format(" %s exchange with probability %.5f based on Eii %.6f, Ejj %.6f, Eij %.6f, Eji %.6f kcal/mol",
+            logIfSwapping(String.format(" %s exchange with probability %.5f based on Eii %.6f, Ejj %.6f, Eij %.6f, Eji %.6f kcal/mol",
                     desc, acceptChance, eii, ejj, eij, eji));
 
             ++totalSwaps[i];
@@ -369,7 +411,7 @@ public class RepExOST {
             }
 
             double acceptRate = ((double) acceptedSwaps[i]) / ((double) totalSwaps[i]);
-            logger.info(String.format(" Replica exchange acceptance rate for pair %d-%d is %.3f%%", i, (i+1), acceptRate * 100));
+            logIfSwapping(String.format(" Replica exchange acceptance rate for pair %d-%d is %.3f%%", i, (i+1), acceptRate * 100));
         }
     }
 
@@ -384,11 +426,6 @@ public class RepExOST {
         ost.setLambda(currentLambda);
         /* TODO: If there is ever a case where an algorithm will not update coordinates itself at the start, we have to
          * update coordinates here (from the OST we used to be running on to the new OST). */
-
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format(" Rank %d accepting swap: new rankToHisto map %s, targeting histogram %d",
-                    rank, Arrays.toString(rankToHisto), currentHistoIndex));
-        }
 
         for (SynchronousSend send : sends) {
             send.updateRanks(rankToHisto);

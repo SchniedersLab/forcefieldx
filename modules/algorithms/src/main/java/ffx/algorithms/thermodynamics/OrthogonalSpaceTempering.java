@@ -1444,12 +1444,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             if (discreteLambda) {
                 dL_2 = 0.0;
                 minLambda = 0.0;
-                lambdaBins = (int) Math.round(1.0 / dL);
             } else {
                 dL_2 = dL * 0.5;
                 minLambda = -dL_2;
-                lambdaBins = 1 + (int) Math.round(1.0 / dL);
             }
+            lambdaBins = 1 + (int) Math.round(1.0 / dL);
 
             dFL_2 = dFL / 2.0;
             maxFLambda = minFLambda + (FLambdaBins * dFL);
