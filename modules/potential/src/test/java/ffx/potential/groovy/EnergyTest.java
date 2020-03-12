@@ -182,7 +182,7 @@ public class EnergyTest extends BaseFFXTest {
                         20.39805900, 748,
                         -78.53945229, 861,
                         -8.62910979, 861,
-                        -53.37877240, 903, false},
+                        -54.752038264, 903, false},
                 {
                         "Amber99sb Peptide",
                         "ffx/potential/structures/peptide-amber99sb.xyz",

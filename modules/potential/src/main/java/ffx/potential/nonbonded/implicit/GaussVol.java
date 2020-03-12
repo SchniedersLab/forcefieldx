@@ -64,7 +64,7 @@ import static ffx.numerics.math.VectorMath.scalar;
 import static ffx.numerics.math.VectorMath.sum;
 
 /**
- * A class that implements the Gaussian description of an object (molecule) made of a overlapping spheres.
+ * GaussVol implements a description molecular volume and surface area described by overlapping Gaussian spheres.
  * <p>
  * Ported from C++ code by Emilio Gallicchio.
  * GaussVol is part of the AGBNP/OpenMM implicit solvent model.

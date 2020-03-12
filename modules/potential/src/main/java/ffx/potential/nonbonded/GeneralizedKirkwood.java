@@ -145,7 +145,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Default offset applied to radii for use with Gaussian Volumes to
      * correct for not including hydrogen atoms.
      */
-    public static final double DEFAULT_GAUSSVOL_RADII_OFFSET = 0.3;
+    public static final double DEFAULT_GAUSSVOL_RADII_OFFSET = 0.0;
     /**
      * Default dielectric offset
      **/
@@ -557,7 +557,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double[] volume = new double[nAtoms];
                 double[] gamma = new double[nAtoms];
                 double fourThirdsPI = 4.0 / 3.0 * PI;
-                offset = forceField.getDouble("GAUSSVOL_OFFSET", DEFAULT_GAUSSVOL_RADII_OFFSET);
+                offset = forceField.getDouble("GAUSSVOL_RADII_OFFSET", DEFAULT_GAUSSVOL_RADII_OFFSET);
                 index = 0;
                 for (Atom atom : atoms) {
                     isHydrogen[index] = atom.isHydrogen();

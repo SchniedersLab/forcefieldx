@@ -103,10 +103,6 @@ public class DispersionRegion extends ParallelRegion {
      * Gradient array for each thread.
      */
     private AtomicDoubleArray3D grad;
-    /**
-     * Radius of each atom for calculation of dispersion energy.
-     */
-    private double[] rDisp;
     private double[] cDisp;
     private final DispersionLoop[] dispersionLoop;
     private final SharedDouble sharedDispersion;
@@ -247,19 +243,6 @@ public class DispersionRegion extends ParallelRegion {
         this.atoms = atoms;
         int nAtoms = atoms.length;
         cDisp = new double[nAtoms];
-        rDisp = new double[nAtoms];
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.finest(" Dispersion radii:");
-        }
-
-        for (int i = 0; i < nAtoms; i++) {
-            VDWType type = atoms[i].getVDWType();
-            double rmini = type.radius;
-            rDisp[i] = rmini / 2.0;
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.finest(format(" %d %s %8.6f", i, atoms[i].toString(), rDisp[i]));
-            }
-        }
         maxDispersionEnergy();
     }
 
@@ -307,17 +290,17 @@ public class DispersionRegion extends ParallelRegion {
             VDWType type = atoms[i].getVDWType();
             double epsi = type.wellDepth;
             double rmini = type.radius / 2.0;
-            if (rDisp[i] > 0.0 && epsi > 0.0) {
+            if (rmini > 0.0 && epsi > 0.0) {
                 double emixo = getCombinedEps(EPSO, epsi, epsilonRule);
-                double emixh = getCombinedEps(EPSH, epsi, epsilonRule);
                 double rmixo = getCombinedRadius(RMINO, rmini, radiusRule);
+                // Start of integration of dispersion for atom i with water oxygen.
+                double riO = rmixo / 2.0 + dispersionOffest;
+                cDisp[i] = tailCorrection(riO, emixo, rmixo);
+                double emixh = getCombinedEps(EPSH, epsi, epsilonRule);
                 double rmixh = getCombinedRadius(RMINH, rmini, radiusRule);
-                // Apply the dispersion offset to start the integral beyond the atomic radius of atom i.
-                double ri = rDisp[i] + dispersionOffest;
-                // Integral with two water hydrogen atoms.
-                cDisp[i] = 2.0 * tailCorrection(ri, emixh, rmixh);
-                // Integral with a water oxygen atom.
-                cDisp[i] += tailCorrection(ri, emixo, rmixo);
+                // Start of integration of dispersion for atom i with water hydrogen.
+                double riH = rmixh / 2.0 + dispersionOffest;
+                cDisp[i] += 2.0 * tailCorrection(riH, emixh, rmixh);
             }
             cDisp[i] = SLEVY * AWATER * cDisp[i];
         }
@@ -418,8 +401,10 @@ public class DispersionRegion extends ParallelRegion {
                 final double zi = z[i];
                 int[] list = neighborLists[0][i];
                 for (int k : list) {
-                    final double rk = rDisp[k];
-                    if (i != k && rk > 0.0 && use[k]) {
+                    if (!use[k] || i == k) {
+                        continue;
+                    }
+                    if (atoms[k].getVDWType().radius > 0.0) {
                         dx_local[0] = xi - x[k];
                         dx_local[1] = yi - y[k];
                         dx_local[2] = zi - z[k];
@@ -455,112 +440,104 @@ public class DispersionRegion extends ParallelRegion {
          * @return Reduction of dispersion.
          */
         private double removeSoluteDispersion(int i, int k) {
-            double sum = 0.0;
+
+            // Van der Waals parameters for atom i.
             VDWType type = atoms[i].getVDWType();
             double epsi = type.wellDepth;
-            double emixo = getCombinedEps(EPSO, epsi, epsilonRule);
-            double emixh = getCombinedEps(EPSH, epsi, epsilonRule);
             double rmini = type.radius / 2.0;
+
+            // Parameters for atom i with water oxygen.
+            double emixo = getCombinedEps(EPSO, epsi, epsilonRule);
             double rmixo = getCombinedRadius(RMINO, rmini, radiusRule);
+            // Start of integration of dispersion for atom i with water oxygen.
+            double riO = rmixo / 2.0 + dispersionOffest;
+            double nO = 1.0;
+
+            // Parameters for atom i with water hydrogen.
+            double emixh = getCombinedEps(EPSH, epsi, epsilonRule);
             double rmixh = getCombinedRadius(RMINH, rmini, radiusRule);
-            double rmixo7 = pow(rmixo, 7);
-            double rmixh7 = pow(rmixh, 7);
-            // Apply the offset to start the integral beyond the atomic radius of atom i.
-            double ri = rDisp[i] + dispersionOffest;
-            // Atom k blocks interaction of atom i with solvent.
-            double rk = rDisp[k] + soluteOffset;
-            double sk = rk * dispersionOverlapFactor;
-            double sk2 = sk * sk;
+            // Start of integration of dispersion for atom i with water oxygen.
+            double riH = rmixh / 2.0 + dispersionOffest;
+            double nH = 2.0;
+
+            // Atom k blocks the interaction of atom i with solvent.
+            double sk = (rmini + soluteOffset) * dispersionOverlapFactor;
+            return interact(i, k, nO, riO, sk, rmixo, emixo)
+                    + interact(i, k, nH, riH, sk, rmixh, emixh);
+        }
+
+        /**
+         * Solvent dispersion blocking of atom i by atom k.
+         *
+         * @param i      Index of atom i.
+         * @param k      Index of atom k.
+         * @param factor Apply this factor to the interaction.
+         * @param ri     Start of the dispersion integral.
+         * @param sk     Size of the solvent blocking atom.
+         * @param rmix   Combined Rmin for atom i and solvent atom.
+         * @param emix   Combined Eps for atom i and solvent atom.
+         * @return Contribution of atom k to removing dispersion.
+         */
+        private double interact(int i, int k, double factor, double ri, double sk, double rmix, double emix) {
+            double sum = 0.0;
             // Nothing to do if the integral begins beyond r + sk (i.e. atom k does not exclude solvent)
             if (ri < r + sk) {
+                double sk2 = sk * sk;
                 // Zero out the derivative contribution of atom k.
                 double de = 0.0;
                 // Compute the maximum of 1) the beginning of the integral and 2) closest edge of atom K.
                 double iStart = max(ri, r - sk);
                 // Use this as the lower limit for integrating the constant eps value below Rmin.
                 double lik = iStart;
-                double lik2 = lik * lik;
-                double lik3 = lik2 * lik;
-                double lik4 = lik3 * lik;
-                // Interaction with water oxygen from lik to Rmin; nothing to do if the lower limit is greater than Rmin.
-                if (lik < rmixo) {
+                // Interaction with water from lik to Rmin; nothing to do if the lower limit is greater than Rmin.
+                if (lik < rmix) {
+                    double lik2 = lik * lik;
+                    double lik3 = lik2 * lik;
+                    double lik4 = lik3 * lik;
                     // Upper limit is the minimum of Rmin and the farthest edge of atom K.
-                    double uik = min(r + sk, rmixo);
+                    double uik = min(r + sk, rmix);
                     double uik2 = uik * uik;
                     double uik3 = uik2 * uik;
                     double uik4 = uik3 * uik;
-                    sum += integralBeforeRMin(emixo, r, r2, sk2, lik2, lik3, lik4, uik2, uik3, uik4);
+                    sum += factor * integralBeforeRMin(emix, r, r2, sk2, lik2, lik3, lik4, uik2, uik3, uik4);
                     if (gradient) {
-                        de += integralBeforeRminDerivative(ri, emixo, rmixo, r, r2, r3, sk, sk2,
-                                lik, lik2, lik3, uik, uik2, uik3);
-                    }
-                }
-                // Interaction with water hydrogen from lik to Rmin; nothing to do if the lower limit is greater than Rmin.
-                if (lik < rmixh) {
-                    // Upper limit is the minimum of Rmin and the farthest edge of atom K.
-                    double uik = min(r + sk, rmixh);
-                    double uik2 = uik * uik;
-                    double uik3 = uik2 * uik;
-                    double uik4 = uik3 * uik;
-                    sum += 2.0 * integralBeforeRMin(emixh, r, r2, sk2, lik2, lik3, lik4, uik2, uik3, uik4);
-                    if (gradient) {
-                        de += 2.0 * integralBeforeRminDerivative(ri, emixh, rmixh, r, r2, r3, sk, sk2,
+                        de += factor * integralBeforeRminDerivative(ri, emix, rmix, r, r2, r3, sk, sk2,
                                 lik, lik2, lik3, uik, uik2, uik3);
                     }
                 }
                 // Upper limit the variable part of Uwca always the farthest edge of atom K.
                 double uik = r + sk;
-                double uik2 = uik * uik;
-                double uik3 = uik2 * uik;
-                double uik4 = uik3 * uik;
-                double uik5 = uik4 * uik;
-                double uik6 = uik5 * uik;
-                double uik10 = uik5 * uik5;
-                double uik11 = uik10 * uik;
-                double uik12 = uik11 * uik;
-                double uik13 = uik12 * uik;
-                // Interaction with water oxygen beyond Rmin, from lik to uik = r + sk.
-                if (uik > rmixo) {
+                // Interaction with water beyond Rmin, from lik to uik = r + sk.
+                if (uik > rmix) {
                     // Start the integral at the max of 1) iStart and 2) Rmin.
-                    lik = max(iStart, rmixo);
-                    lik2 = lik * lik;
-                    lik3 = lik2 * lik;
-                    lik4 = lik3 * lik;
+                    lik = max(iStart, rmix);
+                    double lik2 = lik * lik;
+                    double lik3 = lik2 * lik;
+                    double lik4 = lik3 * lik;
                     double lik5 = lik4 * lik;
                     double lik6 = lik5 * lik;
                     double lik10 = lik5 * lik5;
                     double lik11 = lik10 * lik;
                     double lik12 = lik11 * lik;
-                    sum += integratlAfterRmin(emixo, rmixo7, r, r2, sk2,
+                    double uik2 = uik * uik;
+                    double uik3 = uik2 * uik;
+                    double uik4 = uik3 * uik;
+                    double uik5 = uik4 * uik;
+                    double uik10 = uik5 * uik5;
+                    double uik11 = uik10 * uik;
+                    double uik12 = uik11 * uik;
+                    double rmix7 = pow(rmix, 7);
+                    sum += factor * integratlAfterRmin(emix, rmix7, r, r2, sk2,
                             lik, lik2, lik3, lik4, lik5, lik10, lik11, lik12,
                             uik, uik2, uik3, uik4, uik5, uik10, uik11, uik12);
                     if (gradient) {
                         double lik13 = lik12 * lik;
-                        de += integratlAfterRminDerivative(ri, emixo, rmixo, rmixo7, iStart, r, r2, r3, sk, sk2,
+                        double uik6 = uik5 * uik;
+                        double uik13 = uik12 * uik;
+                        de += factor * integratlAfterRminDerivative(ri, emix, rmix, rmix7, iStart, r, r2, r3, sk, sk2,
                                 lik, lik2, lik3, lik5, lik6, lik12, lik13, uik, uik2, uik3, uik6, uik13);
                     }
 
-                }
-                // Interaction with water hydrogen beyond Rmin, from lik to uik = r + sk.
-                if (uik > rmixh) {
-                    // Start the integral at the max of 1) iStart and 2) Rmin.
-                    lik = max(iStart, rmixh);
-                    lik2 = lik * lik;
-                    lik3 = lik2 * lik;
-                    lik4 = lik3 * lik;
-                    double lik5 = lik4 * lik;
-                    double lik6 = lik5 * lik;
-                    double lik10 = lik5 * lik5;
-                    double lik11 = lik10 * lik;
-                    double lik12 = lik11 * lik;
-                    sum += 2.0 * integratlAfterRmin(emixh, rmixh7, r, r2, sk2,
-                            lik, lik2, lik3, lik4, lik5, lik10, lik11, lik12,
-                            uik, uik2, uik3, uik4, uik5, uik10, uik11, uik12);
-                    if (gradient) {
-                        double lik13 = lik12 * lik;
-                        de += 2.0 * integratlAfterRminDerivative(ri, emixh, rmixh, rmixh7, iStart, r, r2, r3, sk, sk2,
-                                lik, lik2, lik3, lik5, lik6, lik12, lik13, uik, uik2, uik3, uik6, uik13);
-                    }
                 }
                 // Increment the individual dispersion gradient components.
                 if (gradient) {
@@ -725,6 +702,5 @@ public class DispersionRegion extends ParallelRegion {
 
             return de;
         }
-
     }
 }

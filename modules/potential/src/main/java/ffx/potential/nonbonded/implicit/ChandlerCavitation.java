@@ -107,24 +107,32 @@ public class ChandlerCavitation {
      * Radius where volume dependence crosses over to surface area dependence (approximately at 1 nm).
      */
     private double crossOver = GeneralizedKirkwood.DEFAULT_CROSSOVER;
-    private double switchRange = 3.5;
-    private double saOffset = 0.4;
+    /**
+     * Volume / Surface Area are switched on / off over 7.0 Angstroms; half is 3.5 A.
+     */
+    private final double HALF_SWITCH_RANGE = 3.5;
+    /**
+     * A value of 0.2 A smoothly moves from Volume dependence to Surface Area dependence.
+     *
+     * However, a smaller offset of 0.0 to ~0.1 A overshoots the limiting surface tension.
+     */
+    private final double SA_SWITCH_OFFSET = 0.2;
     /**
      * Begin turning off the Volume term.
      */
-    private double beginVolumeOff = crossOver - switchRange;
+    private double beginVolumeOff = crossOver - HALF_SWITCH_RANGE;
     /**
      * Volume term is zero at the cut-off.
      */
-    private double endVolumeOff = beginVolumeOff + 2.0 * switchRange;
+    private double endVolumeOff = beginVolumeOff + 2.0 * HALF_SWITCH_RANGE;
     /**
      * Begin turning off the SA term.
      */
-    private double beginSurfaceAreaOff = crossOver + saOffset + switchRange;
+    private double beginSurfaceAreaOff = crossOver + SA_SWITCH_OFFSET + HALF_SWITCH_RANGE;
     /**
      * SA term is zero at the cut-off.
      */
-    private double endSurfaceAreaOff = beginSurfaceAreaOff - 2.0 * switchRange;
+    private double endSurfaceAreaOff = beginSurfaceAreaOff - 2.0 * HALF_SWITCH_RANGE;
     /**
      * Volume multiplicative switch.
      */
@@ -426,10 +434,10 @@ public class ChandlerCavitation {
             return;
         }
         this.crossOver = crossOver;
-        beginVolumeOff = crossOver - switchRange;
-        endVolumeOff = beginVolumeOff + 2.0 * switchRange;
-        beginSurfaceAreaOff = crossOver + saOffset + switchRange;
-        endSurfaceAreaOff = beginSurfaceAreaOff - 2.0 * switchRange;
+        beginVolumeOff = crossOver - HALF_SWITCH_RANGE;
+        endVolumeOff = beginVolumeOff + 2.0 * HALF_SWITCH_RANGE;
+        beginSurfaceAreaOff = crossOver + SA_SWITCH_OFFSET + HALF_SWITCH_RANGE;
+        endSurfaceAreaOff = beginSurfaceAreaOff - 2.0 * HALF_SWITCH_RANGE;
         volumeSwitch = new MultiplicativeSwitch(beginVolumeOff, endVolumeOff);
         surfaceAreaSwitch = new MultiplicativeSwitch(beginSurfaceAreaOff, endSurfaceAreaOff);
     }

@@ -41,8 +41,6 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.String.format;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
@@ -59,6 +57,13 @@ public class MultiDoubleArray implements AtomicDoubleArray {
     private static final Logger logger = Logger.getLogger(MultiDoubleArray.class.getName());
 
     private final int threadCount;
+
+    /**
+     * Storage of the array.
+     * <p>
+     * First dimension is the thread.
+     * Second dimension is the value.
+     */
     private final double[][] array;
 
     /**
