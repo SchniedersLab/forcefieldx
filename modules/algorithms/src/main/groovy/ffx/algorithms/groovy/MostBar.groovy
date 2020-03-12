@@ -63,7 +63,7 @@ import java.util.logging.Level
  * <br>
  * Usage:
  * <br>
- * ffxc MOSTBAR [options] &lt;structures1&gt
+ * ffxc MostBar [options] &lt;structures1&gt
  */
 @CommandLine.Command(description = " Evaluates free energy of an M-OST run using the BAR estimator.", name = "ffxc MostBar")
 class MostBar extends AlgorithmsScript {
