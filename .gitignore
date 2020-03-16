@@ -9,6 +9,8 @@ bin/ffx-all.jar
 bin/scheduler.log
 conf/*.jar
 
+modules/algorithms/temp-*
+
 *.iml
 *.tmp
 nb-configuration.xml
