@@ -261,6 +261,31 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @param resetNumSteps     whether to reset energy counts to 0
      * @param algorithmListener the AlgorithmListener to be notified of
      *                          progress.
+     */
+    public OrthogonalSpaceTempering(LambdaInterface lambdaInterface, CrystalPotential potential,
+                                    File lambdaFile, HistogramSettings histoSettings, CompositeConfiguration properties,
+                                    double temperature, double dt, double printInterval,
+                                    double saveInterval, boolean asynchronous, boolean resetNumSteps,
+                                    AlgorithmListener algorithmListener) {
+        this(lambdaInterface, potential, lambdaFile, histoSettings, properties, temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener, 0.0);
+    }
+
+    /**
+     * OST Constructor.
+     *
+     * @param lambdaInterface   defines Lambda and dU/dL.
+     * @param potential         defines the Potential energy.
+     * @param lambdaFile        contains the current Lambda particle position and velocity.
+     * @param histoSettings     contains histogram-centric options.
+     * @param properties        defines System properties.
+     * @param temperature       the simulation temperature.
+     * @param dt                the time step in femtoseconds.
+     * @param printInterval     number of steps between logging updates.
+     * @param saveInterval      number of steps between restart file updates.
+     * @param asynchronous      set to true if walkers run asynchronously.
+     * @param resetNumSteps     whether to reset energy counts to 0
+     * @param algorithmListener the AlgorithmListener to be notified of
+     *                          progress.
      * @param lambdaWriteOut    Minimum lambda value to print out snapshots.
      */
     public OrthogonalSpaceTempering(LambdaInterface lambdaInterface, CrystalPotential potential,
