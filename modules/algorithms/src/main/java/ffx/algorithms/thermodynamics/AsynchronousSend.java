@@ -176,9 +176,9 @@ class AsynchronousSend extends Thread {
             int walkerFLambda = histogram.binForFLambda(fLambda);
             double weight = recursionCount[3];
 
-            if (histogram.resetStatistics && lambda > histogram.lambdaResetValue) {
+            if (histogram.getResetStatistics() && lambda > histogram.getLambdaResetValue()) {
                 histogram.allocateRecursionKernel();
-                histogram.resetStatistics = false;
+                histogram.disableResetStatistics();
                 logger.info(format(" Cleared OST histogram (Lambda = %6.4f).", lambda));
             }
 

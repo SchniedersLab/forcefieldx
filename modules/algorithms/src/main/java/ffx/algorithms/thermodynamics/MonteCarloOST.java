@@ -286,10 +286,6 @@ public class MonteCarloOST extends BoltzmannMC {
         return lambda;
     }
 
-    public void setLambdaWriteOut(double lambdaWriteOut) {
-        orthogonalSpaceTempering.setLambdaWriteOut(lambdaWriteOut);
-    }
-
     /**
      * The goal is to sample lambda and coordinates (X) separately to converge
      * the ensemble average dU/dL for every state (lambda) along the
@@ -485,8 +481,8 @@ public class MonteCarloOST extends BoltzmannMC {
 
                 if (automaticWriteouts) {
                     long mdMoveNum = imove * stepsPerMove;
-                    boolean snapShot = lambda >= orthogonalSpaceTempering.lambdaWriteOut;
-                    EnumSet<MolecularDynamics.WriteActions> written = mdMove.writeFilesForStep(mdMoveNum, snapShot, true);
+                    boolean trySnapshot = lambda >= orthogonalSpaceTempering.getLambdaWriteOut();
+                    EnumSet<MolecularDynamics.WriteActions> written = mdMove.writeFilesForStep(mdMoveNum, trySnapshot, true);
                     if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
                         orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
                     }
@@ -708,7 +704,7 @@ public class MonteCarloOST extends BoltzmannMC {
                 // Update the current OST Energy to be the sum of the current Force Field Energy and updated OST Bias.
                 currentOSTEnergy = currentForceFieldEnergy + currentBiasEnergy;
 
-                boolean snapShot = lambda >= orthogonalSpaceTempering.lambdaWriteOut;
+                boolean snapShot = lambda >= orthogonalSpaceTempering.getLambdaWriteOut();
                 long mdMoveNum = imove * stepsPerMove;
                 EnumSet<MolecularDynamics.WriteActions> written = mdMove.writeFilesForStep(mdMoveNum, snapShot, true);
                 if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
