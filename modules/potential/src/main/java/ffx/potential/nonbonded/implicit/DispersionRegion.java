@@ -109,12 +109,12 @@ public class DispersionRegion extends ParallelRegion {
     /**
      * The dispersion integral HCT overlap scale factor.
      */
-    private static final double DEFAULT_DISP_OVERLAP_FACTOR = 0.81;
+    private static final double DEFAULT_DISP_OVERLAP_FACTOR = 0.75;
     /**
-     * The dispersion integral begin for each atom at:
-     * Rmin + DISPERSION_OFFSET
+     * The dispersion integral begins for each atom at:
+     * Rmin_ij + DISPERSION_OFFSET
      */
-    public static final double DEFAULT_DISPERSION_OFFSET = 0.826;
+    public static final double DEFAULT_DISPERSION_OFFSET = 1.2;
     /**
      * Each solute atom blocks dispersion interactions with solvent:
      * Rmin + SOLUTE_OFFSET
