@@ -144,9 +144,9 @@ public class OSTOptions {
     private boolean ts = false;
 
     /**
-     * --lw or --lambdaWritOut Only write out snapshots if lambda is greater than the value specified.
+     * --lw or --lambdaWriteOut Only write out snapshots if lambda is greater than the value specified.
      */
-    @CommandLine.Option(names = {"--lw", "--lambdaWritOut"}, paramLabel = "0.0",
+    @CommandLine.Option(names = {"--lw", "--lambdaWriteOut"}, paramLabel = "0.0",
             description = "Only write out snapshots if lambda is greater than the value specified.")
     private double lambdaWriteOut = 0.0;
 
