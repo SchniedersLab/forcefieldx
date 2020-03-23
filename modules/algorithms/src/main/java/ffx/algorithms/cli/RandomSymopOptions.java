@@ -37,17 +37,9 @@
 //******************************************************************************
 package ffx.algorithms.cli;
 
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
-import ffx.crystal.Crystal;
-import ffx.crystal.CrystalPotential;
-import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MSNode;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 /**
  * Represents command line options for scripts that create randomized unit cells.
@@ -58,86 +50,31 @@ import picocli.CommandLine;
  */
 public class RandomSymopOptions {
 
-    private static final Logger logger = Logger.getLogger(RandomSymopOptions.class.getName());
-
     /**
-     * --rsym or --randomSymOp to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
+     * --rsym or --randomSymOp Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp).
      */
-    @CommandLine.Option(names = {"--rsym", "--randomSymOp"}, paramLabel = "-1.0",
-            description = "Apply a random Cartesian symmetry operator with a random translation in the range -X .. X; < 0 disables.")
+    @Option(names = {"--rsym", "--randomSymOp"}, paramLabel = "-1.0",
+            description = "Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp)")
     double symScalar = -1.0;
 
     /**
      * --ruc or --randomUnitCell random unit cell axes will be used achieve the specified density (g/cc) (no default density).
      */
-    @CommandLine.Option(names = {"--ruc", "--randomUnitCell"}, paramLabel = "-1.0",
+    @Option(names = {"--ruc", "--randomUnitCell"}, paramLabel = "-1.0",
             description = "Apply random unit cell axes to achieve the specified density (g/cc).")
     double ucDensity = -1.0;
 
     /**
      * <p>randomize.</p>
      *
-     * @param assembly  a {@link ffx.potential.MolecularAssembly} object.
-     * @param potential a {@link ffx.crystal.CrystalPotential} object.
+     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
      */
-    public void randomize(MolecularAssembly assembly, CrystalPotential potential) {
-        applyRandomSymop(assembly);
-        applyRandomDensity(assembly, potential);
-    }
-
-    /**
-     * Randomizes position in the unit cell by applying a Cartesian symop with a random translation.
-     *
-     * @param assembly Assembly to randomize position of.
-     */
-    public void applyRandomSymop(MolecularAssembly assembly) {
-        if (symScalar > 0) {
-            Crystal crystal = assembly.getCrystal();
-            double[] xyz = new double[3];
-            ArrayList<MSNode> molecules = assembly.getMolecules();
-            int moleculeNum = 1;
-            for (MSNode msNode : molecules) {
-                ArrayList<Atom> atoms = msNode.getAtomList();
-                SymOp symOp = SymOp.randomSymOpFactory(symScalar);
-                logger.info(String.format("\n Applying random Cartesian SymOp to molecule %d:\n%s", moleculeNum, symOp.toString()));
-                for (Atom atom : atoms) {
-                    atom.getXYZ(xyz);
-                    crystal.applyCartesianSymOp(xyz, xyz, symOp);
-                    atom.setXYZ(xyz);
-                }
-                moleculeNum++;
-            }
+    public void randomize(MolecularAssembly assembly) {
+        if (symScalar >= 0) {
+            assembly.applyRandomSymOp(symScalar);
         }
-    }
-
-    /**
-     * Applies a randomly drawn density to a molecular system's crystal.
-     *
-     * @param assembly Assembly to randomize the density of.
-     * @throws java.lang.IllegalArgumentException if any.
-     */
-    public void applyRandomDensity(MolecularAssembly assembly) throws IllegalArgumentException {
-        applyRandomDensity(assembly, assembly.getPotentialEnergy());
-    }
-
-    /**
-     * Applies a randomly drawn density to a molecular system's crystal.
-     *
-     * @param assembly  Assembly to randomize the density of.
-     * @param potential CrystalPotential to apply the new Crystal parameters to.
-     */
-    public void applyRandomDensity(MolecularAssembly assembly, CrystalPotential potential) {
         if (ucDensity > 0) {
-            logger.info(String.format("\n Applying random unit cell axes with target density of %6.3f\n",
-                    ucDensity));
-            Crystal crystal = assembly.getCrystal();
-            if (!crystal.aperiodic()) {
-                double mass = assembly.getMass();
-                crystal.randomParameters(ucDensity, mass);
-                potential.setCrystal(crystal);
-            } else {
-                logger.fine(String.format(" Potential %s is an aperiodic system!", potential));
-            }
+            assembly.applyRandomDensity(ucDensity);
         }
     }
 }

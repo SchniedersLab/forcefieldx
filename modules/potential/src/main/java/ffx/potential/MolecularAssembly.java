@@ -80,6 +80,8 @@ import org.jogamp.vecmath.Vector3d;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
+import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Indexing;
 import ffx.potential.bonded.Bond;
@@ -2282,7 +2284,6 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
-
     private void moveIntoUnitCell(MSNode[] groups) {
         if (groups != null && groups.length > 0) {
             moveIntoUnitCell(Arrays.asList(groups));
@@ -2292,7 +2293,7 @@ public class MolecularAssembly extends MSGroup {
     /**
      * Move the center of each listed chemical entity into the primary unit cell.
      *
-     * @param groups
+     * @param groups Move each MSNode into the primary unit cell.
      */
     private void moveIntoUnitCell(List<MSNode> groups) {
         Crystal cryst = getCrystal().getUnitCell();
@@ -2327,6 +2328,59 @@ public class MolecularAssembly extends MSGroup {
 
             for (Atom atom : atoms) {
                 atom.move(translate);
+            }
+        }
+    }
+
+    /**
+     * Randomizes position in the unit cell of each molecule by applying a Cartesian SymOp with a random translation.
+     *
+     * @param x SymOp with translation range -x/2 .. x/2 (0 for random placement in the unit cell, negative for no SymOp)
+     */
+    public void applyRandomSymOp(double x) {
+        // The Unit Cell is needed here (not the ReplicatesCrystal).
+        Crystal crystal = getCrystal().getUnitCell();
+        if (crystal.aperiodic() || x < 0) {
+            return;
+        }
+        double[] xyz = new double[3];
+        ArrayList<MSNode> molecules = getMolecules();
+        int moleculeNum = 1;
+        for (MSNode msNode : molecules) {
+            ArrayList<Atom> atoms = msNode.getAtomList();
+            SymOp symOp;
+            if (x == 0) {
+                double[] translation = crystal.getRandomCartTranslation();
+                symOp = SymOp.randomSymOpFactory(translation);
+            } else {
+                symOp = SymOp.randomSymOpFactory(x);
+            }
+            logger.info(format("\n Applying random Cartesian SymOp to molecule %d:\n%s", moleculeNum, symOp.toString()));
+            for (Atom atom : atoms) {
+                atom.getXYZ(xyz);
+                crystal.applyCartesianSymOp(xyz, xyz, symOp);
+                atom.setXYZ(xyz);
+            }
+            moleculeNum++;
+        }
+    }
+
+    /**
+     * Applies a randomly drawn density to a molecular system's crystal.
+     *
+     * @param ucDensity Target density.
+     */
+    public void applyRandomDensity(double ucDensity) {
+        if (ucDensity > 0) {
+            logger.info(format("\n Applying random unit cell axes with target density of %6.3f\n", ucDensity));
+            // The replicates crystal is needed here (not the unit cell).
+            Crystal crystal = getCrystal();
+            if (!crystal.aperiodic()) {
+                double mass = getMass();
+                crystal.randomParameters(ucDensity, mass);
+                potentialEnergy.setCrystal(crystal);
+            } else {
+                logger.fine(String.format(" Potential %s is an aperiodic system!", potentialEnergy));
             }
         }
     }
