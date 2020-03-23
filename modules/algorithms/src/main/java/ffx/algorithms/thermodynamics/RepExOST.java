@@ -298,9 +298,9 @@ public class RepExOST {
 
                 long mdMoveNum = i * stepsBetweenExchanges;
                 currentLambda = ost.getLambda();
-                boolean forceSnapshot = currentLambda >= ost.lambdaWriteOut;
+                boolean trySnapshot = currentLambda >= ost.getLambdaWriteOut();
                 if (automaticWriteouts) {
-                    EnumSet<MolecularDynamics.WriteActions> written = molDyn.writeFilesForStep(mdMoveNum, forceSnapshot, true);
+                    EnumSet<MolecularDynamics.WriteActions> written = molDyn.writeFilesForStep(mdMoveNum, trySnapshot, true);
                     if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
                         ost.writeAdditionalRestartInfo(false);
                     }

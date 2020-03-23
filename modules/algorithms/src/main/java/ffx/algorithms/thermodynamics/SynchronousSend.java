@@ -148,7 +148,6 @@ public class SynchronousSend {
             double lambdaResetValue = currentHistogram.getLambdaResetValue();
             if (resetStatistics && recursionWeights[i][0] > lambdaResetValue) {
                 currentHistogram.allocateRecursionKernel();
-                currentHistogram.setResetStatistics(false);
                 logger.info(format(" Cleared OST histogram (Lambda = %6.4f).", recursionWeights[i][0]));
             }
 

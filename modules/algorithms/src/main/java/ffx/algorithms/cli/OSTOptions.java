@@ -201,7 +201,6 @@ public class OSTOptions {
             hOps.setTemperOffset(getTemperingThreshold(index));
         }
         hOps.dt = dynamics.getDt() * Constants.FSEC_TO_PSEC;
-        hOps.setLambdaResetValue(lambdaWriteOut);
         hOps.setWriteIndependent(writeIndependent);
         hOps.setIndependentWalkers(independentWalkers);
         hOps.asynchronous = async;
@@ -254,7 +253,7 @@ public class OSTOptions {
         HistogramSettings hOps = generateHistogramSettings(histogramRestart, lamRestartName, allProperties, 0, dynamics, lpo, independentWalkers, async);
         
         OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(linter, potential, lambdaRestart,
-                hOps, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
+                hOps, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener, lambdaWriteOut);
         orthogonalSpaceTempering.setHardWallConstraint(mcHW);
 
         // Do NOT run applyOSTOptions here, because that can mutate the OST to a Barostat.
@@ -295,7 +294,8 @@ public class OSTOptions {
         double temperature = 298.15;
 
         return new OrthogonalSpaceTempering(linter, potential, lambdaRestart,
-                hOps, allProperties, temperature, timeStep, printInterval, saveInterval, asynchronous, false, aListener);
+                hOps, allProperties, temperature, timeStep, printInterval,
+                saveInterval, asynchronous, false, aListener, 0.0);
     }
 
     /**
@@ -449,9 +449,6 @@ public class OSTOptions {
         logger.info("\n Beginning MC-OST sampling.");
         monteCarloOST.setLambdaStdDev(mcL);
         monteCarloOST.setMDMoveParameters(dynamics.steps);
-        if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
-            monteCarloOST.setLambdaWriteOut(lambdaWriteOut);
-        }
 
         if (ts) {
             monteCarloOST.sampleTwoStep();

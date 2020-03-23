@@ -1446,18 +1446,29 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Write restart and trajectory files if the provided step matches the frequency.
+     * Write restart and trajectory files if the provided step matches the frequency and that file
+     * type is requested.
      *
-     * @param step     Step to write files (if any) for.
-     * @param snapShot Write archive files.
-     * @param restart  Write restart files.
+     * @param step        Step to write files (if any) for.
+     * @param trySnapshot If false, do not write snapshot even if the timestep is correct.
+     * @param tryRestart  If false, do not write a restart file even if the timestep is correct.
      * @return EnumSet of actions taken by this method.
      */
-    public EnumSet<WriteActions> writeFilesForStep(long step, boolean snapShot, boolean restart) {
-        return writeFilesForStep(step, snapShot, restart, null);
+    public EnumSet<WriteActions> writeFilesForStep(long step, boolean trySnapshot, boolean tryRestart) {
+        return writeFilesForStep(step, trySnapshot, tryRestart, null);
     }
 
-    public EnumSet<WriteActions> writeFilesForStep(long step, boolean snapShot, boolean restart, String[] extraLines) {
+    /**
+     * Write restart and trajectory files if the provided step matches the frequency and that file
+     * type is requested.
+     *
+     * @param step        Step to write files (if any) for.
+     * @param trySnapshot If false, do not write snapshot even if the timestep is correct.
+     * @param tryRestart  If false, do not write a restart file even if the timestep is correct.
+     * @param extraLines  Additional lines to append into the comments section of the snapshot (or null).
+     * @return EnumSet of actions taken by this method.
+     */
+    public EnumSet<WriteActions> writeFilesForStep(long step, boolean trySnapshot, boolean tryRestart, String[] extraLines) {
         List<String> linesList = (extraLines == null) ? new ArrayList<>() : new ArrayList<>(Arrays.asList(extraLines));
 
         if (potential instanceof LambdaInterface) {
@@ -1476,13 +1487,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
         EnumSet<WriteActions> written = EnumSet.noneOf(WriteActions.class);
         if (step != 0) {
             // Write out snapshots in selected format every saveSnapshotFrequency steps.
-            if (snapShot && trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
+            if (trySnapshot && trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
                 appendSnapshot(allLines);
                 written.add(WriteActions.SNAPSHOT);
             }
 
             // Write out restart files every saveRestartFileFrequency steps.
-            if (restart && restartFrequency > 0 && step % restartFrequency == 0) {
+            if (tryRestart && restartFrequency > 0 && step % restartFrequency == 0) {
                 writeRestart();
                 written.add(WriteActions.RESTART);
             }

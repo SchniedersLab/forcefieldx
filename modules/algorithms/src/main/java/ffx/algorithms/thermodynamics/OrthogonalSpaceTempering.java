@@ -163,7 +163,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     /**
      * Write out structures only for lambda values greater than or equal to this threshold.
      */
-    double lambdaWriteOut = 0.0;
+    private final double lambdaWriteOut;
     /**
      * Interval between printing information on the lambda particle in steps.
      * <p>
@@ -267,6 +267,32 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                                     double temperature, double dt, double printInterval,
                                     double saveInterval, boolean asynchronous, boolean resetNumSteps,
                                     AlgorithmListener algorithmListener) {
+        this(lambdaInterface, potential, lambdaFile, histoSettings, properties, temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener, 0.0);
+    }
+
+    /**
+     * OST Constructor.
+     *
+     * @param lambdaInterface   defines Lambda and dU/dL.
+     * @param potential         defines the Potential energy.
+     * @param lambdaFile        contains the current Lambda particle position and velocity.
+     * @param histoSettings     contains histogram-centric options.
+     * @param properties        defines System properties.
+     * @param temperature       the simulation temperature.
+     * @param dt                the time step in femtoseconds.
+     * @param printInterval     number of steps between logging updates.
+     * @param saveInterval      number of steps between restart file updates.
+     * @param asynchronous      set to true if walkers run asynchronously.
+     * @param resetNumSteps     whether to reset energy counts to 0
+     * @param algorithmListener the AlgorithmListener to be notified of
+     *                          progress.
+     * @param lambdaWriteOut    Minimum lambda value to print out snapshots.
+     */
+    public OrthogonalSpaceTempering(LambdaInterface lambdaInterface, CrystalPotential potential,
+                                    File lambdaFile, HistogramSettings histoSettings, CompositeConfiguration properties,
+                                    double temperature, double dt, double printInterval,
+                                    double saveInterval, boolean asynchronous, boolean resetNumSteps,
+                                    AlgorithmListener algorithmListener, double lambdaWriteOut) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
         this.lambdaFile = lambdaFile;
@@ -278,6 +304,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         } else {
             barostat = null;
         }
+
+        this.lambdaWriteOut = lambdaWriteOut;
 
         // Convert the time step to picoseconds.
         dt *= Constants.FSEC_TO_PSEC;
@@ -586,16 +614,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
     }
 
-    /**
-     * Set a threshold to control writing of coordinate snapshots.
-     *
-     * @param lambdaWriteOut
-     */
-    void setLambdaWriteOut(double lambdaWriteOut) {
-        this.lambdaWriteOut = lambdaWriteOut;
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(format(" Set lambda write out threshold to %6.3f lambda", lambdaWriteOut));
-        }
+    double getLambdaWriteOut() {
+        return lambdaWriteOut;
     }
 
     /**
@@ -1374,11 +1394,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * Once the lambda reset value is reached, OST statistics are reset.
          */
-        final double lambdaResetValue;
+        private final double lambdaResetValue;
         /**
          * Flag set to false once OST statistics are reset at lambdaResetValue.
          */
-        boolean resetStatistics;
+        private boolean resetStatistics;
 
         /**
          * Parallel Java world communicator.
@@ -1581,8 +1601,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             return resetStatistics;
         }
 
-        public void setResetStatistics(boolean resetStatistics) {
-            this.resetStatistics = resetStatistics;
+        public void disableResetStatistics() {
+            resetStatistics = false;
         }
 
         public void setHalfThetaVelocity(double halfThetaV) {
