@@ -106,12 +106,12 @@
             <type>jar</type>
             <scope>test</scope>
         </dependency>
-        <!-- dependency>
+        <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-api</artifactId>
             <version>${tornado.version}</version>
         </dependency>
-        <dependency>
+        <!-- dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-matrices</artifactId>
             <version>${tornado.version}</version>

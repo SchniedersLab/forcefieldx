@@ -243,10 +243,11 @@ class CIFtoXYZ extends PotentialScript {
         boolean savePDB = true
         if (filenames.size() > 1) {
             savePDB = false
-            // Open the XYZ file.
+            // Open the XYZ file (with electrostatics turned off).
             System.setProperty("mpoleterm", "false")
             MolecularAssembly[] assemblies = potentialFunctions.openAll(filenames.get(1))
             System.clearProperty("mpoleterm")
+
             activeAssembly = assemblies[0]
             Atom[] xyzAtoms = activeAssembly.getAtomArray()
             int nXYZAtoms = xyzAtoms.length

@@ -74,7 +74,6 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.PropertyConfigurator;
-import org.apache.logging.log4j.core.config.Configurator;
 
 import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.Configuration;
