@@ -36,7 +36,16 @@
 //
 //******************************************************************************
 
+package ffx.algorithms.groovy
+
+import java.util.logging.Level
+
+import org.apache.commons.configuration2.CompositeConfiguration
+import org.apache.commons.configuration2.Configuration
+import org.apache.commons.io.FilenameUtils
+
 import edu.rit.pj.ParallelTeam
+
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.thermodynamics.HistogramReader
@@ -50,100 +59,99 @@ import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.utilities.Constants
-import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.configuration2.Configuration
-import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine
 
-import java.util.logging.Level
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
- * The MOSTBAR script uses a single set of archive file(s) from a Metropolized
+ * The MostBar script uses a single set of archive file(s) from a Metropolized
  * Orthogonal Space Tempering run to evaluate free energy via the Bennett Acceptance Ratio
  * <br>
  * Usage:
  * <br>
  * ffxc MostBar [options] &lt;structures1&gt
  */
-@CommandLine.Command(description = " Evaluates free energy of an M-OST run using the BAR estimator.", name = "ffxc MostBar")
+@Command(description = " Evaluates free energy of an M-OST run using the BAR estimator.", name = "ffxc MostBar")
 class MostBar extends AlgorithmsScript {
 
-    @CommandLine.Mixin
+    @Mixin
     private AlchemicalOptions alchemical
 
-    @CommandLine.Mixin
+    @Mixin
     private TopologyOptions topology
 
-    @CommandLine.Mixin
+    @Mixin
     private BarostatOptions barostat
 
     /**
      * -t or --temperature sets the temperature in Kelvins.
      */
-    @CommandLine.Option(names = ["-t", "--temperature"], paramLabel = "298.15",
+    @Option(names = ["-t", "--temperature"], paramLabel = "298.15",
             description = "Temperature in Kelvins")
     private double temp = 298.15
 
     /**
      * --his or --histogram manually sets the histogram file to read.
      */
-    @CommandLine.Option(names = ["--his", "--histogram"], paramLabel = "file.his",
+    @Option(names = ["--his", "--histogram"], paramLabel = "file.his",
             description = "Manually provided path to a histogram file (otherwise, attempts to autodetect from same directory as input files).")
-    private String histogramName = "";
+    private String histogramName = ""
 
     /**
      * --lb or --lambdaBins manually specifies a number of evenly spaced lambda bins rather than reading a histogram file.
      */
-    @CommandLine.Option(names = ["--lb", "--lambdaBins"], paramLabel = "autodetected",
+    @Option(names = ["--lb", "--lambdaBins"], paramLabel = "autodetected",
             description = "Manually specified number of lambda bins (else auto-detected from histogram")
-    private int lamBins = -1;
+    private int lamBins = -1
 
     /**
      * -s or --start sets the first frame to be read (usually of the entire archive: first frame of lambda X if --lambdaSorted is set).
      */
-    @CommandLine.Option(names = ["-s", "--start"], paramLabel = "1",
+    @Option(names = ["-s", "--start"], paramLabel = "1",
             description = "First snapshot to evaluate (1-indexed, inclusive).")
-    private int startFrame = 1;
+    private int startFrame = 1
 
     /**
      * -s or --start sets the last frame to be read (usually of the entire archive: last frame of lambda X if --lambdaSorted is set).
      */
-    @CommandLine.Option(names = ["--fi", "--final"], paramLabel = "-1",
+    @Option(names = ["--fi", "--final"], paramLabel = "-1",
             description = "Last snapshot to evaluate (1-indexed, inclusive); leave negative to analyze to end of trajectory.")
-    private int finalFrame = -1;
+    private int finalFrame = -1
 
     /**
      * --st or --stride sets the frequency with which snapshots should be evaluated.
      */
-    @CommandLine.Option(names = ["--st", "--stride"], paramLabel = "1",
+    @Option(names = ["--st", "--stride"], paramLabel = "1",
             description = "First snapshot to evaluate (1-indexed).")
-    private int stride = 1;
+    private int stride = 1
 
     /**
      * --bo or --bootstrap sets the number of bootstrap cycles to run.
      */
-    @CommandLine.Option(names = ["--bo", "--bootstrap"], paramLabel = "AUTO",
+    @Option(names = ["--bo", "--bootstrap"], paramLabel = "AUTO",
             description = "Use this many bootstrap trials to estimate dG and uncertainty; default is 200-100000 (depending on number of frames).")
-    private long bootstrap = -1L;
+    private long bootstrap = -1L
 
     /**
      * --lambdaSorted indicates that this is not a standard M-OST archive, but rather a concatenation of fixed-lambda sampling (affects -s and --fi).
      */
-    @CommandLine.Option(names = ["--lambdaSorted"], paramLabel = "false",
+    @Option(names = ["--lambdaSorted"], paramLabel = "false",
             description = "Input is sorted by lambda rather than simulation progress (sets -s to skip N-1 frames at each lambda value rather than N-1 of all frames).")
-    private boolean lambdaSorted = false;
+    private boolean lambdaSorted = false
 
     /**
      * -v or --verbose enables extra logging (e.g. energies collected, more frequent bootstrap progress updates, etc).
      */
-    @CommandLine.Option(names = ["-v", "--verbose"], paramLabel = "false",
+    @Option(names = ["-v", "--verbose"], paramLabel = "false",
             description = "Print out extra information (e.g. collection of potential energies).")
-    private boolean verbose = false;
+    private boolean verbose = false
 
     /**
      * The final argument(s) should be filenames for lambda windows in order..
      */
-    @CommandLine.Parameters(arity = "1..*", paramLabel = "files",
+    @Parameters(arity = "1..*", paramLabel = "files",
             description = 'Trajectory files for the first end of the window, followed by trajectories for the other end')
     List<String> filenames = null
 
@@ -153,40 +161,40 @@ class MostBar extends AlgorithmsScript {
     private SystemFilter[] openers
 
     private CrystalPotential potential
-    private LambdaInterface linter;
+    private LambdaInterface linter
 
     private Configuration additionalProperties
 
-    private List<List<Double>> energiesL;
-    private List<List<Double>> energiesUp;
-    private List<List<Double>> energiesDown;
+    private List<List<Double>> energiesL
+    private List<List<Double>> energiesUp
+    private List<List<Double>> energiesDown
 
-    private double[] lamPoints;
-    private int[] observations;
-    private double lamSep;
-    private double halfLamSep;
-    private double[] x;
-    private final double[] lastEntries = new double[3];
-    private static final String energyFormat = "%11.4f kcal/mol";
-    private static final String nanFormat = String.format("%20s", "N/A");
+    private double[] lamPoints
+    private int[] observations
+    private double lamSep
+    private double halfLamSep
+    private double[] x
+    private final double[] lastEntries = new double[3]
+    private static final String energyFormat = "%11.4f kcal/mol"
+    private static final String nanFormat = String.format("%20s", "N/A")
     // First frame (0-indexed).
-    private int start;
+    private int start
     // Last frame (0-indexed, exclusive.
-    private int end;
-    private Level standardLogging = Level.FINE;
+    private int end
+    private Level standardLogging = Level.FINE
 
     // Interval between logging which bootstrap cycle it is.
-    private static final long BOOTSTRAP_PRINT = 50L;
+    private static final long BOOTSTRAP_PRINT = 50L
     // Lower/upper bounds for autodetected bootstrap length.
-    private static final long MIN_BOOTSTRAP_TRIALS = 200L;
-    private static final long MAX_BOOTSTRAP_TRIALS = 50000L;
-    private static final long AUTO_BOOTSTRAP_NUMERATOR = 10000000L;
+    private static final long MIN_BOOTSTRAP_TRIALS = 200L
+    private static final long MAX_BOOTSTRAP_TRIALS = 50000L
+    private static final long AUTO_BOOTSTRAP_NUMERATOR = 10000000L
     // Analytic energy adjustment used to debug the script (e.g. take a known dG and add 3.0 kcal/mol to it).
     // NOT TO BE USED IN PRODUCTION.
-    private static final int DEBUG_OFFSET = 0.0;
+    private static final double DEBUG_OFFSET = 0.0
 
     void setProperties(CompositeConfiguration addedProperties) {
-        additionalProperties = addedProperties;
+        additionalProperties = addedProperties
     }
 
     @Override
@@ -212,7 +220,7 @@ class MostBar extends AlgorithmsScript {
         The Minimize script, for example, may be running on a single, unscaled physical topology. */
         boolean lambdaTerm = (nFiles == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
 
-        standardLogging = verbose ? Level.INFO : Level.FINE;
+        standardLogging = verbose ? Level.INFO : Level.FINE
 
         if (lambdaTerm) {
             System.setProperty("lambdaterm", "true")
@@ -237,190 +245,191 @@ class MostBar extends AlgorithmsScript {
         StringBuilder sb = new StringBuilder("\n Using BAR to analyze an M-OST free energy change for systems ")
         potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
         potential = barostat.checkNPT(topologies[0], potential)
-        linter = (LambdaInterface) potential;
+        linter = (LambdaInterface) potential
         logger.info(sb.toString())
 
-        int nSnapshots = openers[0].countNumModels();
+        int nSnapshots = openers[0].countNumModels()
 
         if (histogramName.isEmpty()) {
-            histogramName = FilenameUtils.removeExtension(filenames.get(0)) + ".his";
+            histogramName = FilenameUtils.removeExtension(filenames.get(0)) + ".his"
         }
 
         if (lamBins < 1) {
-            File histogramFile = new File(histogramName);
+            File histogramFile = new File(histogramName)
             if (!histogramFile.exists() || !histogramFile.canRead()) {
-                logger.severe(" Histogram file ${histogramName} does not exist or could not be read!");
+                logger.severe(" Histogram file ${histogramName} does not exist or could not be read!")
             }
 
-            HistogramReader hr = null;
+            HistogramReader hr = null
             try {
-                hr = new HistogramReader(new BufferedReader(new FileReader(histogramFile)));
-                hr.readHistogramFile();
-                lamBins = hr.getLambdaBins();
-                logger.info(" Autodetected ${lamBins} from histogram file.");
+                hr = new HistogramReader(new BufferedReader(new FileReader(histogramFile)))
+                hr.readHistogramFile()
+                lamBins = hr.getLambdaBins()
+                logger.info(" Autodetected ${lamBins} from histogram file.")
             } finally {
-                hr?.close();
+                hr?.close()
             }
         }
 
-        energiesL = new ArrayList<>(lamBins);
-        energiesUp = new ArrayList<>(lamBins);
-        energiesDown = new ArrayList<>(lamBins);
+        energiesL = new ArrayList<>(lamBins)
+        energiesUp = new ArrayList<>(lamBins)
+        energiesDown = new ArrayList<>(lamBins)
         for (int i = 0; i < lamBins; i++) {
-            energiesL.add(new ArrayList<Double>());
-            energiesUp.add(new ArrayList<Double>());
-            energiesDown.add(new ArrayList<Double>());
+            energiesL.add(new ArrayList<Double>())
+            energiesUp.add(new ArrayList<Double>())
+            energiesDown.add(new ArrayList<Double>())
         }
 
-        lamSep = 1.0 / (lamBins - 1);
-        halfLamSep = 0.5 * lamSep;
-        lamPoints = new double[lamBins];
+        lamSep = 1.0 / (lamBins - 1)
+        halfLamSep = 0.5 * lamSep
+        lamPoints = new double[lamBins]
         // TODO: Remove assumption that it's using discrete lambda bins.
         for (int i = 0; i < (lamBins - 1); i++) {
-            lamPoints[i] = i * lamSep;
+            lamPoints[i] = i * lamSep
         }
-        lamPoints[lamBins - 1] = 1.0; // Eliminate machine precision error.
+        lamPoints[lamBins - 1] = 1.0 // Eliminate machine precision error.
 
-        OptionalDouble optLam = openers[0].getLastReadLambda();
+        OptionalDouble optLam = openers[0].getLastReadLambda()
         // Note: OptionalDouble.isEmpty() is a JDK 11 feature, so !OptionalDouble.isPresent() preserves JDK 8 compatibility.
         if (!optLam.isPresent()) {
-            throw new IllegalArgumentException(" No lambda records found in the first header of archive file ${filenames[0]}");
+            throw new IllegalArgumentException(" No lambda records found in the first header of archive file ${filenames[0]}")
         }
 
-        start = startFrame - 1;
+        start = startFrame - 1
         if (finalFrame < 1) {
-            end = nSnapshots;
+            end = nSnapshots
         } else {
-            end = Math.min(nSnapshots, finalFrame);
+            end = Math.min(nSnapshots, finalFrame)
         }
-        end -= startFrame; // Will always be compared to an index offset by start.
+        end -= startFrame // Will always be compared to an index offset by start.
 
-        double lambda = optLam.getAsDouble();
-        int nVar = potential.getNumberOfVariables();
-        x = new double[nVar];
+        double lambda = optLam.getAsDouble()
+        int nVar = potential.getNumberOfVariables()
+        x = new double[nVar]
 
         // --lambdaSorted and the observations array are there largely to deal with a test case that was just regular BAR with concatenated .arc files.
-        observations = new int[lamBins];
-        Arrays.fill(observations, -startFrame);
+        observations = new int[lamBins]
+        Arrays.fill(observations, -startFrame)
 
-        logger.info(" Reading snapshots.");
+        logger.info(" Reading snapshots.")
 
         addEntries(lambda, 0)
 
         for (int i = 1; i < end; i++) {
             for (int j = 0; j < nFiles; j++) {
-                openers[j].readNext(false, false);
+                openers[j].readNext(false, false)
             }
-            lambda = openers[0].getLastReadLambda().getAsDouble();
-            addEntries(lambda, i);
+            lambda = openers[0].getLastReadLambda().getAsDouble()
+            addEntries(lambda, i)
         }
 
         for (SystemFilter opener : openers) {
-            opener.closeReader();
+            opener.closeReader()
         }
 
-        double[][] eLow = new double[lamBins][];
-        double[][] eAt = new double[lamBins][];
-        double[][] eHigh = new double[lamBins][];
+        double[][] eLow = new double[lamBins][]
+        double[][] eAt = new double[lamBins][]
+        double[][] eHigh = new double[lamBins][]
         for (int i = 0; i < lamBins; i++) {
-            eLow[i] = energiesDown.get(i).stream().mapToDouble(Double::doubleValue).toArray();
-            eAt[i] = energiesL.get(i).stream().mapToDouble(Double::doubleValue).toArray();
-            eHigh[i] = energiesUp.get(i).stream().mapToDouble(Double::doubleValue).toArray();
+            eLow[i] = energiesDown.get(i).stream().mapToDouble(Double::doubleValue).toArray()
+            eAt[i] = energiesL.get(i).stream().mapToDouble(Double::doubleValue).toArray()
+            eHigh[i] = energiesUp.get(i).stream().mapToDouble(Double::doubleValue).toArray()
         }
 
-        logger.info(" Initial estimate via the iteration method.");
-        SequentialEstimator bar = new BennettAcceptanceRatio(lamPoints, eLow, eAt, eHigh, new double[]{temp});
-        SequentialEstimator forwards = bar.getInitialForwardsGuess();
-        SequentialEstimator backwards = bar.getInitialBackwardsGuess();
+        logger.info(" Initial estimate via the iteration method.")
+        SequentialEstimator bar = new BennettAcceptanceRatio(lamPoints, eLow, eAt, eHigh, new double[]{temp})
+        SequentialEstimator forwards = bar.getInitialForwardsGuess()
+        SequentialEstimator backwards = bar.getInitialBackwardsGuess()
 
         logger.info(String.format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", bar.getFreeEnergy(), bar.getUncertainty()))
-        logger.warning(" Non-bootstrap FEP uncertainties in FFX are currently unreliable!");
-        logger.info(String.format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.", forwards.getFreeEnergy(), forwards.getUncertainty()));
-        logger.info(String.format(" Free energy via backwards FEP: %15.9f +/- %.9f kcal/mol.", backwards.getFreeEnergy(), backwards.getUncertainty()));
+        logger.warning(" Non-bootstrap FEP uncertainties in FFX are currently unreliable!")
+        logger.info(String.format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.", forwards.getFreeEnergy(), forwards.getUncertainty()))
+        logger.info(String.format(" Free energy via backwards FEP: %15.9f +/- %.9f kcal/mol.", backwards.getFreeEnergy(), backwards.getUncertainty()))
 
-        double[] barFE = bar.getBinEnergies();
-        double[] barVar = bar.getBinUncertainties();
-        double[] forwardsFE = forwards.getBinEnergies();
-        double[] forwardsVar = forwards.getBinUncertainties();
-        double[] backwardsFE = backwards.getBinEnergies();
-        double[] backwardsVar = backwards.getBinUncertainties();
-        
-        sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Max_Lambda          BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n");
+        double[] barFE = bar.getBinEnergies()
+        double[] barVar = bar.getBinUncertainties()
+        double[] forwardsFE = forwards.getBinEnergies()
+        double[] forwardsVar = forwards.getBinUncertainties()
+        double[] backwardsFE = backwards.getBinEnergies()
+        double[] backwardsVar = backwards.getBinUncertainties()
+
+        sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Max_Lambda          BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
         for (int i = 0; i < (lamBins - 1); i++) {
             sb.append(String.format(" %-10.8f %-10.8f %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
-                    lamPoints[i], lamPoints[i+1], barFE[i], barVar[i], forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]));
+                    lamPoints[i], lamPoints[i + 1], barFE[i], barVar[i], forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
         }
-        logger.info(sb.toString());
+        logger.info(sb.toString())
 
         if (bootstrap == -1) {
-            int totalRead = Arrays.stream(observations).min().getAsInt();
+            int totalRead = Arrays.stream(observations).min().getAsInt()
             if (totalRead >= MIN_BOOTSTRAP_TRIALS) {
-                bootstrap = AUTO_BOOTSTRAP_NUMERATOR.intdiv(totalRead); // Weird Groovy syntax because Groovy defaults to BigDecimal/BigInteger.
-                bootstrap = Math.max(MIN_BOOTSTRAP_TRIALS, Math.min(MAX_BOOTSTRAP_TRIALS, bootstrap));
+                bootstrap = AUTO_BOOTSTRAP_NUMERATOR.intdiv(totalRead)
+                // Weird Groovy syntax because Groovy defaults to BigDecimal/BigInteger.
+                bootstrap = Math.max(MIN_BOOTSTRAP_TRIALS, Math.min(MAX_BOOTSTRAP_TRIALS, bootstrap))
             } else {
-                logger.info(String.format(" At least one lambda window had only %d snapshots read; defaulting to %d bootstrap cycles!", totalRead, MIN_BOOTSTRAP_TRIALS));
-                bootstrap = MIN_BOOTSTRAP_TRIALS;
+                logger.info(String.format(" At least one lambda window had only %d snapshots read; defaulting to %d bootstrap cycles!", totalRead, MIN_BOOTSTRAP_TRIALS))
+                bootstrap = MIN_BOOTSTRAP_TRIALS
             }
         }
 
-        long bootPrint = BOOTSTRAP_PRINT;
+        long bootPrint = BOOTSTRAP_PRINT
         if (!verbose) {
-            bootPrint *= 10L;
+            bootPrint *= 10L
         }
-            
+
         // If bootstrap <= 0, skip this section.
         if (bootstrap > 0) {
-            logger.info(" Re-estimate free energy and uncertainty from ${bootstrap} bootstrap trials.");
+            logger.info(" Re-estimate free energy and uncertainty from ${bootstrap} bootstrap trials.")
 
-            EstimateBootstrapper barBS = new EstimateBootstrapper(bar);
-            EstimateBootstrapper forBS = new EstimateBootstrapper(forwards);
-            EstimateBootstrapper backBS = new EstimateBootstrapper(backwards);
+            EstimateBootstrapper barBS = new EstimateBootstrapper(bar)
+            EstimateBootstrapper forBS = new EstimateBootstrapper(forwards)
+            EstimateBootstrapper backBS = new EstimateBootstrapper(backwards)
 
-            long time = -System.nanoTime();
-            barBS.bootstrap(bootstrap, bootPrint);
-            time += System.nanoTime();
+            long time = -System.nanoTime()
+            barBS.bootstrap(bootstrap, bootPrint)
+            time += System.nanoTime()
             logger.info(String.format(" BAR bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
 
-            time = -System.nanoTime();
-            forBS.bootstrap(bootstrap, bootPrint);
-            time += System.nanoTime();
+            time = -System.nanoTime()
+            forBS.bootstrap(bootstrap, bootPrint)
+            time += System.nanoTime()
             logger.info(String.format(" Forwards FEP bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
 
-            time = -System.nanoTime();
-            backBS.bootstrap(bootstrap, bootPrint);
-            time += System.nanoTime();
+            time = -System.nanoTime()
+            backBS.bootstrap(bootstrap, bootPrint)
+            time += System.nanoTime()
             logger.info(String.format(" Reverse FEP bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
 
-            barFE = barBS.getFE();
-            barVar = barBS.getUncertainty();
-            forwardsFE = forBS.getFE();
-            forwardsVar = forBS.getUncertainty();
-            backwardsFE = backBS.getFE();
-            backwardsVar = backBS.getUncertainty();
+            barFE = barBS.getFE()
+            barVar = barBS.getUncertainty()
+            forwardsFE = forBS.getFE()
+            forwardsVar = forBS.getUncertainty()
+            backwardsFE = backBS.getFE()
+            backwardsVar = backBS.getUncertainty()
 
-            double sumFE = barBS.getTotalFE(barFE);
-            double varFE = barBS.getTotalUncertainty();
+            double sumFE = barBS.getTotalFE(barFE)
+            double varFE = barBS.getTotalUncertainty()
             logger.info(String.format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
 
-            sumFE = forBS.getTotalFE(forwardsFE);
-            varFE = forBS.getTotalUncertainty();
-            logger.info(String.format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE));
+            sumFE = forBS.getTotalFE(forwardsFE)
+            varFE = forBS.getTotalUncertainty()
+            logger.info(String.format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
 
-            sumFE = backBS.getTotalFE(backwardsFE);
-            varFE = backBS.getTotalUncertainty();
-            logger.info(String.format(" Free energy via backwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE));
+            sumFE = backBS.getTotalFE(backwardsFE)
+            varFE = backBS.getTotalUncertainty()
+            logger.info(String.format(" Free energy via backwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
 
-            sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Max_Lambda          BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n");
+            sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Max_Lambda          BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
             for (int i = 0; i < (lamBins - 1); i++) {
                 sb.append(String.format(" %-10.8f %-10.8f %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
-                        lamPoints[i], lamPoints[i+1], barFE[i], barVar[i], forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]));
+                        lamPoints[i], lamPoints[i + 1], barFE[i], barVar[i], forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
             }
-            logger.info(sb.toString());
+            logger.info(sb.toString())
         } else {
-            logger.info(" Bootstrap resampling disabled.");
+            logger.info(" Bootstrap resampling disabled.")
         }
 
-        return this;
+        return this
     }
 
     /**
@@ -428,34 +437,34 @@ class MostBar extends AlgorithmsScript {
      * --st and --lambdaSorted are applied.
      *
      * @param lambda Lambda of the snapshot just read.
-     * @param index  Index of this snapshot in the entire archive.
+     * @param index Index of this snapshot in the entire archive.
      */
     private void addEntries(double lambda, int index) {
-        int bin = binForLambda(lambda);
-        ++observations[bin];
+        int bin = binForLambda(lambda)
+        ++observations[bin]
         // The observation count is pre-offset by -start.
-        int offsetIndex = lambdaSorted ? observations[bin] : index - start;
-        assert offsetIndex <= end;
+        int offsetIndex = lambdaSorted ? observations[bin] : index - start
+        assert offsetIndex <= end
 
-        boolean inRange = offsetIndex >= 0 && offsetIndex <= end;
-        boolean onStride = (offsetIndex % stride == 0);
+        boolean inRange = offsetIndex >= 0 && offsetIndex <= end
+        boolean onStride = (offsetIndex % stride == 0)
         if (inRange && onStride) {
-            x = potential.getCoordinates(x);
-            lastEntries[0] = addLambdaDown(lambda, bin);
-            lastEntries[1] = addAtLambda(lambda, bin);
-            lastEntries[2] = addLambdaUp(lambda, bin);
+            x = potential.getCoordinates(x)
+            lastEntries[0] = addLambdaDown(lambda, bin)
+            lastEntries[1] = addAtLambda(lambda, bin)
+            lastEntries[2] = addLambdaUp(lambda, bin)
 
-            String low = Double.isNaN(lastEntries[0]) ? nanFormat : String.format(energyFormat, lastEntries[0]);
-            String high = Double.isNaN(lastEntries[2]) ? nanFormat : String.format(energyFormat, lastEntries[2]);
+            String low = Double.isNaN(lastEntries[0]) ? nanFormat : String.format(energyFormat, lastEntries[0])
+            String high = Double.isNaN(lastEntries[2]) ? nanFormat : String.format(energyFormat, lastEntries[2])
             if (lambdaSorted) {
                 logger.log(standardLogging, String.format(" Energies for snapshot %5d at lambda %.4f: " +
-                        "%s, %s, %s", (index+1), lambda, low, String.format(energyFormat, lastEntries[1]), high));
+                        "%s, %s, %s", (index + 1), lambda, low, String.format(energyFormat, lastEntries[1]), high))
             } else {
                 logger.log(standardLogging, String.format(" Energies for snapshot %5d: " +
-                        "%s, %s, %s", (index+1), low, String.format(energyFormat, lastEntries[1]), high));
+                        "%s, %s, %s", (index + 1), low, String.format(energyFormat, lastEntries[1]), high))
             }
         } else {
-            logger.log(standardLogging, " Skipping frame " + index);
+            logger.log(standardLogging, " Skipping frame " + index)
         }
     }
 
@@ -463,41 +472,41 @@ class MostBar extends AlgorithmsScript {
      * Adds an entry to the energiesL list.
      *
      * @param lambda Lambda of the last read snapshot.
-     * @param bin    Lambda bin of this snapshot.
-     * @return       Energy at lambda = lambda.
+     * @param bin Lambda bin of this snapshot.
+     * @return Energy at lambda = lambda.
      */
     private double addAtLambda(double lambda, int bin) {
-        assert lambda >= 0.0 && lambda <= 1.0;
-        linter.setLambda(lambda);
-        double e = potential.energy(x, false);
+        assert lambda >= 0.0 && lambda <= 1.0
+        linter.setLambda(lambda)
+        double e = potential.energy(x, false)
         // Following line is only for debugging purposes!
         //e += DEBUG_OFFSET * lambda;
-        energiesL.get(bin).add(e);
-        return e;
+        energiesL.get(bin).add(e)
+        return e
     }
 
     /**
      * Adds an entry to the energiesUp list.
      *
      * @param lambda Lambda of the last read snapshot.
-     * @param bin    Lambda bin of this snapshot.
-     * @return       Energy at lambda = lambda+dL.
+     * @param bin Lambda bin of this snapshot.
+     * @return Energy at lambda = lambda+dL.
      */
     private double addLambdaUp(double lambda, int bin) {
-        double modLambda = lambda + lamSep;
+        double modLambda = lambda + lamSep
         // DISCRETE ONLY: assert lambda == 1.0d || modLambda < (1.0 + 1.0E-6);
-        modLambda = Math.min(1.0d, modLambda);
+        modLambda = Math.min(1.0d, modLambda)
         if (bin == (lamBins - 1)) {
-            energiesUp.get(bin).add(Double.NaN);
-            return Double.NaN;
+            energiesUp.get(bin).add(Double.NaN)
+            return Double.NaN
         } else {
-            linter.setLambda(modLambda);
-            double e = potential.energy(x, false);
+            linter.setLambda(modLambda)
+            double e = potential.energy(x, false)
             // Following line is only for debugging purposes!
             //e += DEBUG_OFFSET * modLambda;
-            energiesUp.get(bin).add(e);
-            linter.setLambda(lambda);
-            return e;
+            energiesUp.get(bin).add(e)
+            linter.setLambda(lambda)
+            return e
         }
     }
 
@@ -505,25 +514,25 @@ class MostBar extends AlgorithmsScript {
      * Adds an entry to the energiesDown list.
      *
      * @param lambda Lambda of the last read snapshot.
-     * @param bin    Lambda bin of this snapshot.
-     * @return       Energy at lambda = lambda-dL.
+     * @param bin Lambda bin of this snapshot.
+     * @return Energy at lambda = lambda-dL.
      */
     private double addLambdaDown(double lambda, int bin) {
-        double modLambda = lambda - lamSep;
+        double modLambda = lambda - lamSep
         // DISCRETE ONLY: assert lambda == 0.0d || modLambda > -1.0E-6;
-        modLambda = Math.max(0.0d, modLambda);
+        modLambda = Math.max(0.0d, modLambda)
 
         if (bin == 0) {
-            energiesDown.get(0).add(Double.NaN);
-            return Double.NaN;
+            energiesDown.get(0).add(Double.NaN)
+            return Double.NaN
         } else {
-            linter.setLambda(modLambda);
-            double e = potential.energy(x, false);
+            linter.setLambda(modLambda)
+            double e = potential.energy(x, false)
             // Following line is only for debugging purposes!
             //e += DEBUG_OFFSET * modLambda;
-            energiesDown.get(bin).add(e);
-            linter.setLambda(lambda);
-            return e;
+            energiesDown.get(bin).add(e)
+            linter.setLambda(lambda)
+            return e
         }
     }
 
@@ -535,6 +544,6 @@ class MostBar extends AlgorithmsScript {
      */
     private int binForLambda(double lambda) {
         // TODO: Robust to existence of half-bins.
-        return (int) Math.round(lambda / lamSep);
+        return (int) Math.round(lambda / lamSep)
     }
 }
