@@ -55,6 +55,7 @@ import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.random;
 import static org.apache.commons.math3.util.FastMath.rint;
 import static org.apache.commons.math3.util.FastMath.signum;
 import static org.apache.commons.math3.util.FastMath.sin;
@@ -1352,6 +1353,20 @@ public class Crystal {
             mateY[i] = xc * rotmat[0][1] + yc * rotmat[1][1] + zc * rotmat[2][1];
             mateZ[i] = xc * rotmat[0][2] + yc * rotmat[1][2] + zc * rotmat[2][2];
         }
+    }
+
+    /**
+     * Create a random Cartesian translation vector.
+     * <p>
+     * First, a random fractional translation is created.
+     * Second, the random fractional operator is converted to Cartesian coordinates.
+     *
+     * @return A random Cartesian translation vector.
+     */
+    public double[] getRandomCartTranslation() {
+        double[] coords = {random(), random(), random()};
+        toCartesianCoordinates(coords, coords);
+        return coords;
     }
 
     /**

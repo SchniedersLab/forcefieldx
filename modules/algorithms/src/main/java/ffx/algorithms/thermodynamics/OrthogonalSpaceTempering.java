@@ -960,8 +960,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         private boolean doOptimization = false;
         /**
-         * Holds the lowest potential-energy parameters for loopBuilder runs from
-         * all visits to lambda &gt; lambdaCutoff.
+         * Reset unit cell parameters, molecular orientation and translation.
+         */
+        private boolean doUnitCellReset = false;
+        /**
+         * Holds the lowest potential energy coordinates.
          */
         private double[] optimumCoords;
         /**
@@ -1018,6 +1021,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             tolerance = properties.getDouble("ost-opt-tolerance", 1.0e-8);
             frequency = properties.getInt("ost-opt-frequency", 10000);
             lambdaCutoff = properties.getDouble("ost-opt-lambda-cutoff", 0.8);
+            doUnitCellReset = properties.getBoolean("ost-opt-unitcell-reset", false);
         }
 
         /**
@@ -1054,8 +1058,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         public void optimize(double e, double[] x, double[] gradient) {
 
             // Return if the optimization flag is not set, or if lambda is not beyond the cutoff.
-            if (doOptimization && lambda > lambdaCutoff
-                    && energyCount % frequency == 0) {
+            if (doOptimization && lambda > lambdaCutoff && energyCount % frequency == 0) {
                 if (gradient == null) {
                     gradient = new double[x.length];
                 }
@@ -1118,12 +1121,21 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 barostat.setActive(origBaroActive);
             }
 
-            // Revert to the coordinates and gradient prior to optimization.
-            double eCheck = potential.energyAndGradient(x, gradient);
+            if (doUnitCellReset) {
+                logger.info("\n Resetting Unit Cell");
+                double mass = molecularAssembly.getMass();
+                double density = molecularAssembly.getCrystal().getDensity(mass);
+                molecularAssembly.applyRandomDensity(density);
+                molecularAssembly.applyRandomSymOp(0.0);
+                lambdaInterface.setLambda(0.0);
+            } else {
+                // Revert to the coordinates and gradient prior to optimization.
+                double eCheck = potential.energyAndGradient(x, gradient);
 
-            if (abs(eCheck - e) > tolerance) {
-                logger.warning(format(
-                        " Optimization could not revert coordinates %16.8f vs. %16.8f.", e, eCheck));
+                if (abs(eCheck - e) > tolerance) {
+                    logger.warning(format(
+                            " Optimization could not revert coordinates %16.8f vs. %16.8f.", e, eCheck));
+                }
             }
         }
 

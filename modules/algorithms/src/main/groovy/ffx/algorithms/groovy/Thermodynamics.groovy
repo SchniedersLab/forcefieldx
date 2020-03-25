@@ -110,8 +110,7 @@ class Thermodynamics extends AlgorithmsScript {
     ThermodynamicsOptions thermodynamics
 
     /**
-     * -r or --rectangular uses a rectangular prism as the output rather than a cube;
-     * this reduces overall box size, but is not recommended for simulations long enough to see solute rotation.
+     * -v or --verbose  Log additional information (primarily for MC-OST).
      */
     @Option(names = ['-v', '--verbose'],
             description = "Log additional information (primarily for MC-OST).")
@@ -277,7 +276,7 @@ class Thermodynamics extends AlgorithmsScript {
         potential.energy(x, true)
 
         if (nArgs == 1) {
-            randomSymop.randomize(topologies[0], potential)
+            randomSymop.randomize(topologies[0])
         }
 
         multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size)

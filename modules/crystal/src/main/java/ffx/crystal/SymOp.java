@@ -87,11 +87,24 @@ public class SymOp {
      * @return A Cartesian SymOp with a random rotation and translation.
      */
     public static SymOp randomSymOpFactory(double scalar) {
-        double[][] rot = new double[3][3];
         double[] tr = {scalar * (random() - 0.5),
                 scalar * (random() - 0.5),
                 scalar * (random() - 0.5)};
+        return randomSymOpFactory(tr);
+    }
 
+    /**
+     * Generate a random Cartesian Symmetry Operator.
+     * <p>
+     * The random rotation matrix is derived from: Arvo, James (1992), "Fast
+     * random rotation matrices", in David Kirk, Graphics Gems III, San Diego:
+     * Academic Press Professional, pp. 117–120, ISBN 978-0-12-409671-4
+     *
+     * @param tr The translations to apply.
+     * @return A Cartesian SymOp with a random rotation and translation.
+     */
+    public static SymOp randomSymOpFactory(double[] tr) {
+        double[][] rot = new double[3][3];
         double PI2 = 2.0 * PI;
         double[] x = new double[3];
         x[0] = random();
@@ -138,6 +151,7 @@ public class SymOp {
 
         return new SymOp(rot, tr);
     }
+
 
     /**
      * {@inheritDoc}
