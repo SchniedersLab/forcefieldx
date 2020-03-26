@@ -210,26 +210,25 @@ EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS}"
 # EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -agentlib:native-image-agent=config-merge-dir=modules/ui/src/META-INF/native-image"
 
 # TornadoVM Flags
-
-# Include tornado modules and module exports
-# source tornadoExportList.sh
-
-# PROVIDERS=" \
-# -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule \
-# -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
-# -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
-# -Dtornado.load.device.implementation=uk.ac.manchester.tornado.drivers.opencl.runtime.TornadoDeviceFactory \
-# -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
-# -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel "
-
-# TORNADO_HOME="/Users/mjschnie/Data/ffx-project/tornadovm"
-# TORNADO_SDK="$TORNADO_HOME/bin/sdk"
-# TORNADO_FLAGS="--module-path .:${TORNADO_SDK}/share/java/tornado:."
-# JLP="${TORNADO_SDK}/lib:$JLP"
-
 JAVA_FLAGS=""
-# JAVA_FLAGS="-server -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} "
-# JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking ${PACKAGE_LIST[*]} "
+if [ ! -z "$TORNADO_HOME" ] ; then
+  source tornadoExportList.sh
+
+  PROVIDERS=" \
+   -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule \
+   -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
+   -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
+   -Dtornado.load.device.implementation=uk.ac.manchester.tornado.drivers.opencl.runtime.TornadoDeviceFactory \
+   -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
+   -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel "
+
+   TORNADO_SDK="$TORNADO_HOME/bin/sdk"
+   TORNADO_FLAGS="--module-path .:${TORNADO_SDK}/share/java/tornado:."
+   JLP="${TORNADO_SDK}/lib:$JLP"
+
+   JAVA_FLAGS="-server -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} "
+   JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking ${PACKAGE_LIST[*]} "
+fi 
 
 exec "$JAVACMD" $JAVA_OPTS $JAVA_FLAGS \
   $EXTRA_JVM_ARGUMENTS \

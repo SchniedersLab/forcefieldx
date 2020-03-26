@@ -76,7 +76,6 @@ import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -98,7 +97,6 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.biojava.nbio.structure.Structure;
 import org.jogamp.java3d.GraphicsConfigTemplate3D;
 import org.jogamp.java3d.Transform3D;
 import org.jogamp.java3d.TransformGroup;
@@ -115,9 +113,6 @@ import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ARCFileFilter;
-import ffx.potential.parsers.BiojavaDataFilter;
-import ffx.potential.parsers.BioJavaFilter;
-import ffx.potential.parsers.ConversionFilter;
 import ffx.potential.parsers.DYNFileFilter;
 import ffx.potential.parsers.FFXFileFilter;
 import ffx.potential.parsers.ForceFieldFileFilter;
@@ -134,7 +129,6 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
-import ffx.potential.utils.PotentialsDataConverter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
 import ffx.utilities.Resources;
@@ -195,10 +189,6 @@ public final class MainPanel extends JPanel implements ActionListener,
      * Constant <code>dynFileFilter</code>
      */
     public static final DYNFileFilter dynFileFilter = new DYNFileFilter();
-    /**
-     * Constant <code>biojavaDataFilter</code>
-     */
-    private static final BiojavaDataFilter biojavaDataFilter = new BiojavaDataFilter();
     /**
      * Constant <code>indFileFilter</code>
      */
@@ -308,10 +298,6 @@ public final class MainPanel extends JPanel implements ActionListener,
      * The active system filter.
      */
     private SystemFilter activeFilter = null;
-    /**
-     * Filter to for system conversion.
-     */
-    private ConversionFilter activeConvFilter = null;
     /**
      * Flag to indicate oscillation.
      */
@@ -1447,14 +1433,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         return openThread;
     }
 
-    public Thread convert(Object data, File file, String commandDescription) {
-        UIDataConverter converter = convertInit(data, file, commandDescription);
-        openThread = new Thread(converter);
-        openThread.start();
-        setPanel(GRAPHICS);
-        return openThread;
-    }
-
     /**
      * Attempts to load the supplied file
      *
@@ -1529,54 +1507,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         return fileOpener;
         //return new UIFileOpener(systemFilter, this);
-    }
-
-    /**
-     * Attempts to load from the supplied data structure
-     *
-     * @param data               Data structure to load from
-     * @param file               Source file
-     * @param commandDescription Description of the command that created this
-     *                           file.
-     * @return A thread-based UIDataConverter
-     */
-    private UIDataConverter convertInit(Object data, File file, String commandDescription) {
-        if (data == null) {
-            return null;
-        }
-
-        // Create the CompositeConfiguration properties.
-        CompositeConfiguration properties = Keyword.loadProperties(file);
-        // Create an FFXSystem for this file.
-        FFXSystem newSystem = new FFXSystem(file, commandDescription, properties);
-        // Create a Force Field.
-        forceFieldFilter = new ForceFieldFilter(properties);
-        ForceField forceField = forceFieldFilter.parse();
-        String[] patches = properties.getStringArray("patch");
-        for (String patch : patches) {
-            logger.info(" Attempting to read force field patch from " + patch + ".");
-            CompositeConfiguration patchConfiguration = new CompositeConfiguration();
-            patchConfiguration.addProperty("parameters", patch);
-            forceFieldFilter = new ForceFieldFilter(patchConfiguration);
-            ForceField patchForceField = forceFieldFilter.parse();
-            forceField.append(patchForceField);
-            if (RotamerLibrary.addRotPatch(patch)) {
-                logger.info(String.format(" Loaded rotamer definitions from patch %s.", patch));
-            }
-        }
-        newSystem.setForceField(forceField);
-        ConversionFilter convFilter;
-
-        // Decide what parser to use.
-        if (biojavaDataFilter.accept(data)) {
-            convFilter = new BioJavaFilter((Structure) data, newSystem, forceField, properties);
-        } else {
-            throw new IllegalArgumentException("Not a recognized data structure.");
-        }
-
-        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        activeConvFilter = convFilter;
-        return new UIDataConverter(data, file, convFilter, this);
     }
 
     private UIFileOpener openFromUtils(List<File> files, String commandDescription) {
@@ -1776,50 +1706,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         FFXSystem[] systs = openWait(files);
         fileOpenerThreads = -1;
         return systs;
-    }
-
-    /**
-     * Converts a non-Force Field X data structure into an array of FFXSystem[].
-     * Presently does not yet have support for array- or list-based data
-     * structures, only singular objects.
-     *
-     * @param data Outside data structure
-     * @param file Source file
-     * @return An array of FFXSystem
-     */
-    synchronized FFXSystem[] convertWait(Object data, File file) {
-        if (file == null) {
-            try {
-                file = PotentialsDataConverter.getDefaultFile(data);
-            } catch (FileNotFoundException | IllegalArgumentException ex) {
-                logger.warning(String.format(" Exception in finding file for data structure: %s", ex.toString()));
-                return null;
-            }
-        }
-        String name = file.getName();
-
-        Thread thread = convert(data, file, null);
-        while (thread != null && thread.isAlive()) {
-            try {
-                wait(1);
-            } catch (InterruptedException e) {
-                String message = "Exception waiting for " + name + " to open.";
-                logger.log(Level.WARNING, message, e);
-                return null;
-            }
-        }
-
-        MolecularAssembly[] systems = activeConvFilter.getMolecularAssemblys();
-        if (systems != null) {
-            int n = systems.length;
-            FFXSystem[] ffxSystems = new FFXSystem[n];
-            FFXSystem[] allSystems = getHierarchy().getSystems();
-            int total = allSystems.length;
-            System.arraycopy(allSystems, total - n, ffxSystems, 0, n);
-            return ffxSystems;
-        } else {
-            return null;
-        }
     }
 
     /**

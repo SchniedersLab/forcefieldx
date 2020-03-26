@@ -140,35 +140,6 @@ public interface PotentialsFunctions {
     }
 
     /**
-     * Converts a data structure (such as a Biojava Structure) into one or more
-     * MolecularAssembly objects.
-     *
-     * @param data Structure to convert
-     * @return Array of MolecularAssembly
-     */
-    MolecularAssembly[] convertDataStructure(Object data);
-
-    /**
-     * Converts a data structure (such as a Biojava Structure) into one or more
-     * MolecularAssembly objects.
-     *
-     * @param data Structure to convert
-     * @param file Source file
-     * @return Array of MolecularAssembly
-     */
-    MolecularAssembly[] convertDataStructure(Object data, File file);
-
-    /**
-     * Converts a data structure (such as a Biojava Structure) into one or more
-     * MolecularAssembly objects.
-     *
-     * @param data     Structure to convert
-     * @param filename Source file
-     * @return Array of MolecularAssembly
-     */
-    MolecularAssembly[] convertDataStructure(Object data, String filename);
-
-    /**
      * Performs any necessary shutdown operations on a MolecularAssembly,
      * primarily shutting down Parallel Java threads and closing any other open
      * resources.

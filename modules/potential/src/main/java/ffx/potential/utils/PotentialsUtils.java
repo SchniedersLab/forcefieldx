@@ -252,58 +252,6 @@ public class PotentialsUtils implements PotentialsFunctions {
     /**
      * {@inheritDoc}
      * <p>
-     * Converts a data structure (such as a Biojava Structure) into one or more
-     * MolecularAssembly objects.
-     */
-    @Override
-    public MolecularAssembly[] convertDataStructure(Object data) {
-        try {
-            PotentialsDataConverter converter = new PotentialsDataConverter(data);
-            converter.run();
-            return converter.getAllAssemblies();
-        } catch (FileNotFoundException | IllegalArgumentException ex) {
-            logger.warning(format(" Exception in data structure conversion: %s", ex.toString()));
-            return null;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Converts a data structure (such as a Biojava Structure) into one or more
-     * MolecularAssembly objects.
-     */
-    @Override
-    public MolecularAssembly[] convertDataStructure(Object data, File file) {
-        try {
-            PotentialsDataConverter converter = new PotentialsDataConverter(data, file);
-            converter.run();
-            return converter.getAllAssemblies();
-        } catch (FileNotFoundException | IllegalArgumentException ex) {
-            logger.warning(format(" Exception in data structure conversion: %s", ex.toString()));
-            return null;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Converts a data structure (such as a Biojava Structure) into one or more
-     * MolecularAssembly objects.
-     */
-    @Override
-    public MolecularAssembly[] convertDataStructure(Object data, String filename) {
-        File file = new File(filename);
-        if (!file.exists() || file.isDirectory() || !file.canRead()) {
-            logger.warning(format("%s not a valid file name: file name discarded.", filename));
-            return convertDataStructure(data);
-        }
-        return convertDataStructure(data, file);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Shuts down parallel teams in the force field of the provided
      * MolecularAssembly. Kaminsky's ParallelTeamThreads' run() methods are
      * infinite loops, and because running threads are always GC roots, it is
