@@ -80,7 +80,6 @@ import org.jogamp.vecmath.Vector3d;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
-import ffx.crystal.CrystalPotential;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Indexing;
@@ -670,6 +669,17 @@ public class MolecularAssembly extends MSGroup {
             return null;
         }
         return potentialEnergy.getCrystal();
+    }
+
+    /**
+     * Set the Crystal for the Potential of this MolecularAssembly.
+     *
+     * @param crystal Crystal instance.
+     */
+    public void setCrystal(Crystal crystal) {
+        if (potentialEnergy != null) {
+            potentialEnergy.setCrystal(crystal);
+        }
     }
 
     /**

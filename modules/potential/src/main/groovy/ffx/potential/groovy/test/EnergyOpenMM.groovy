@@ -130,7 +130,9 @@ class EnergyOpenMM extends PotentialScript {
         double[] gOMM = new double[nVars]
 
         ForceFieldEnergyOpenMM feOMM = (ForceFieldEnergyOpenMM) forceFieldEnergy
-        double dE = feOMM.energyAndGradientVsFFX(x, gOMM, gFFX, true)
+
+        double dE = feOMM.energyAndGradientFFX(x, gFFX, true);
+        dE = dE - feOMM.energyAndGradient(x, gOMM, true);
         logger.info(format(" Difference in energy: %14.8g kcal/mol", dE))
         int nActAts = (int) (nVars / 3)
 

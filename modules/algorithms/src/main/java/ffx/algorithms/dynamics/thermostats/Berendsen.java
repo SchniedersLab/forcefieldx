@@ -126,11 +126,12 @@ public class Berendsen extends Thermostat {
     }
 
     /**
-     * {@inheritDoc}
+     * Add Thermostat details to the kinetic energy and temperature details.
+     *
+     * @return Description of the thermostat, kinetic energy and temperature.
      */
-    @Override
-    public String toString() {
-        return format(" Berendsen Thermostat (tau = %8.3f psec)", tau);
+    public String toThermostatString() {
+        return format("\n Berendsen Thermostat (tau = %8.3f psec)\n  %s", tau, super.toString());
     }
 
     /**

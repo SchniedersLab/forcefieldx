@@ -142,10 +142,6 @@ class Dynamics extends AlgorithmsScript {
         potential.energy(x, true)
 
         if (barostatOpt.pressure > 0) {
-            if (potential instanceof ForceFieldEnergyOpenMM) {
-                logger.warning(" NPT with OpenMM acceleration is still experimental and may not function correctly.")
-            }
-            logger.info(String.format(" Running NPT dynamics at pressure %7.4g", barostatOpt.pressure))
             CrystalPotential crystalPotential = (CrystalPotential) potential
             Barostat barostat = barostatOpt.createBarostat(activeAssembly, crystalPotential)
             potential = barostat

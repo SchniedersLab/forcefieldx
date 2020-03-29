@@ -42,36 +42,23 @@ import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 
-import com.sun.jna.ptr.PointerByReference;
-
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import edu.uiowa.jopenmm.OpenMM_Vec3;
-import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
-import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_NmPerAngstrom;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LocalEnergyMinimizer_minimize;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getForces;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPositions;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_get;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LineSearch;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.ForceFieldEnergyOpenMM;
+import ffx.potential.ForceFieldEnergyOpenMM.Context;
+import ffx.potential.ForceFieldEnergyOpenMM.State;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 
 /**
  * OpenMM accelerated L-BFGS minimization.
  *
- * @author Hernan Bernabe
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class MinimizeOpenMM extends Minimize {
 
@@ -89,7 +76,6 @@ public class MinimizeOpenMM extends Minimize {
                           AlgorithmListener algorithmListener) {
         super(molecularAssembly, forceFieldEnergyOpenMM, algorithmListener);
     }
-
 
     /**
      * Note the OpenMM L-BFGS minimizer does not accept the parameter "m"
@@ -120,79 +106,49 @@ public class MinimizeOpenMM extends Minimize {
 
         if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
             time = -System.nanoTime();
-            ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) forceFieldEnergy;
-
-            // Get the OpenMM Context.
-            PointerByReference context = forceFieldEnergyOpenMM.getContext();
+            ForceFieldEnergyOpenMM openMM = (ForceFieldEnergyOpenMM) forceFieldEnergy;
 
             // Respect the use flag, and lambda state.
             Atom[] atoms = molecularAssembly.getAtomArray();
-            forceFieldEnergyOpenMM.updateParameters(atoms);
+            openMM.updateParameters(atoms);
 
             // Respect (in)active atoms.
-            forceFieldEnergyOpenMM.setActiveAtoms();
+            openMM.setActiveAtoms();
 
-            double[] x2 = x;
-            int nAtoms = atoms.length;
-            if (x.length != nAtoms * 3) {
-                // In FFX, the x coordinate array only includes active atoms, but OpenMM operates on all atoms.
-                x2 = new double[nAtoms * 3];
-                int index = 0;
-                for (Atom atom : atoms) {
-                    x2[index++] = atom.getX();
-                    x2[index++] = atom.getY();
-                    x2[index++] = atom.getZ();
-                }
-            } else {
-                forceFieldEnergyOpenMM.getCoordinates(x);
-            }
-
-            forceFieldEnergyOpenMM.setOpenMMPositions(x2, x2.length);
+            // Get the coordinates to start from.
+            openMM.getCoordinates(x);
 
             // Calculate the starting energy before optimization.
-            double e = forceFieldEnergyOpenMM.energy(x2);
-            logger.info(format(" Initial energy:                 %12.6f (kcal/mol)", e));
+            double e = openMM.energy(x);
+            logger.info(format("\n Initial energy:                 %12.6f (kcal/mol)", e));
 
-            // Run the minimization.
-            OpenMM_LocalEnergyMinimizer_minimize(context, eps / (OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ), maxIterations);
+            // Run the minimization in the current OpenMM Context.
+            Context context = openMM.getContext();
+            context.optimize(eps, maxIterations);
 
             // Get the minimized coordinates, forces and potential energy back from OpenMM.
-            int infoMask = OpenMM_State_Positions + OpenMM_State_Energy + OpenMM_State_Forces;
-            PointerByReference state = OpenMM_Context_getState(context, infoMask, forceFieldEnergyOpenMM.enforcePBC);
-            energy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
-            PointerByReference positions = OpenMM_State_getPositions(state);
-            PointerByReference forces = OpenMM_State_getForces(state);
-
-            // Load updated coordinate position.
-            forceFieldEnergyOpenMM.getOpenMMPositions(positions, nAtoms, x2);
+            State state = openMM.createState(true, true, true, false);
+            energy = state.potentialEnergy;
+            state.getPositions(x);
+            state.getGradient(grad);
+            state.free();
 
             // Compute the RMS gradient.
             int index = 0;
-            double totalForce = 0;
-            for (int i = 0; i < nAtoms; i++) {
-                OpenMM_Vec3 forceOpenMM = OpenMM_Vec3Array_get(forces, i);
-                double fx = forceOpenMM.x * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-                double fy = forceOpenMM.y * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-                double fz = forceOpenMM.z * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-                if (atoms[i].isActive()) {
-                    grad[index++] = -fx;
-                    grad[index++] = -fy;
-                    grad[index++] = -fz;
-                    totalForce += fx * fx + fy * fy + fz * fz;
-                    if (isNaN(totalForce) || isInfinite(totalForce)) {
-                        String message = format(" The gradient of variable %d is %8.3f.", i, totalForce);
-                        logger.warning(message);
-                    }
+            double grad2 = 0;
+            for (Atom atom : atoms) {
+                if (atom.isActive()) {
+                    double fx = grad[index++];
+                    double fy = grad[index++];
+                    double fz = grad[index++];
+                    grad2 += fx * fx + fy * fy + fz * fz;
                 }
             }
-            rmsGradient = sqrt(totalForce / n);
-
-            // Clean up.
-            OpenMM_State_destroy(state);
+            rmsGradient = sqrt(grad2 / n);
 
             double[] ffxGrad = new double[n];
-            forceFieldEnergy.getCoordinates(x);
-            double ffxEnergy = forceFieldEnergyOpenMM.energyAndGradientFFX(x, ffxGrad);
+            openMM.getCoordinates(x);
+            double ffxEnergy = openMM.energyAndGradientFFX(x, ffxGrad);
             double grmsFFX = 0.0;
             for (int i = 0; i < n; i++) {
                 double gi = ffxGrad[i];
@@ -218,7 +174,7 @@ public class MinimizeOpenMM extends Minimize {
     }
 
     /**
-     * MinimizeOpenMM does not currently support the OptimizationListener interface.
+     * MinimizeOpenMM does not support the OptimizationListener interface.
      *
      * @since 1.0
      */

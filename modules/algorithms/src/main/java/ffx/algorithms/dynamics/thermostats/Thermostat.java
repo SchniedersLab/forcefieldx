@@ -109,7 +109,7 @@ public abstract class Thermostat {
      * variables. For example, removing translational motion removes 3 degrees
      * of freedom.
      */
-    int dof;
+    protected int degreesOfFreedom;
     /**
      * Current values of variables.
      */
@@ -194,16 +194,15 @@ public abstract class Thermostat {
         this.constraints = new ArrayList<>(constraints);
         // Not every type of constraint constrains just one DoF.
         // SETTLE constraints, for example, constrain three.
-        constrainedDoF = constraints.stream().
-                mapToInt(Constraint::getNumDegreesFrozen).
-                sum();
+        constrainedDoF = constraints.stream().mapToInt(Constraint::getNumDegreesFrozen).sum();
 
         // Set the degrees of freedom to nVariables - 3 because we will remove center of mass motion.
         removeCenterOfMassMotion = true;
-        dof = nVariables - 3 - constrainedDoF;
+
+        degreesOfFreedom = nVariables - 3 - constrainedDoF;
 
         // Update the kinetic energy.
-        kineticEnergy();
+        computeKineticEnergy();
     }
 
     /**
@@ -241,9 +240,9 @@ public abstract class Thermostat {
     public void setRemoveCenterOfMassMotion(boolean remove) {
         removeCenterOfMassMotion = remove;
         if (removeCenterOfMassMotion) {
-            dof = nVariables - 3 - constrainedDoF;
+            degreesOfFreedom = nVariables - 3 - constrainedDoF;
         } else {
-            dof = nVariables - constrainedDoF;
+            degreesOfFreedom = nVariables - constrainedDoF;
         }
     }
 
@@ -279,53 +278,54 @@ public abstract class Thermostat {
 
     /**
      * <p>
-     * Log the target temperature and current number of kT per degree of freedom
-     * (should be 0.5 kT at equilibrium).</p>
+     * Log the target temperature and current number of kT per degree of freedom (should be 0.5 kT at equilibrium).</p>
      *
      * @param level a {@link java.util.logging.Level} object.
      */
     protected void log(Level level) {
         if (logger.isLoggable(level) && !quiet) {
-            StringBuilder sb = new StringBuilder("\n");
-            sb.append(toString()).append("\n");
-            sb.append(format(" Target temperature:           %7.2f Kelvin\n", targetTemperature));
-            sb.append(format(" Current temperature:          %7.2f Kelvin\n", currentTemperature));
-            sb.append(format(" Number of variables:          %7d\n", nVariables));
-            sb.append(format(" Number of degrees of freedom: %7d\n", dof));
-            sb.append(format(" Kinetic Energy:               %7.2f\n", currentKineticEnergy));
-            sb.append(format(" kT per degree of freedom:     %7.2f\n", KCAL_TO_GRAM_ANG2_PER_PS2 * currentKineticEnergy / (dof * kT)));
-            logger.log(level, sb.toString());
+            logger.log(level, toString());
         }
     }
 
     /**
+     * Get the current temperature.
      * <p>
-     * getCurrentTemperature</p>
+     * This depends on a previous call to the computeKineticEnergy.
      *
-     * @return a double.
+     * @return Current temperature.
      */
     public double getCurrentTemperature() {
         return currentTemperature;
     }
 
     /**
+     * Get the current kinetic energy.
      * <p>
-     * Getter for the field <code>kineticEnergy</code>.</p>
+     * This depends on a previous call to the computeKineticEnergy.
      *
-     * @return a double.
+     * @return Kinetic energy.
      */
     public double getKineticEnergy() {
         return currentKineticEnergy;
     }
 
     /**
-     * <p>
-     * Getter for the field <code>targetTemperature</code>.</p>
+     * Get the target temperature.
      *
-     * @return a double.
+     * @return Target temperature.
      */
     public double getTargetTemperature() {
         return targetTemperature;
+    }
+
+    /**
+     * Return the number of degrees of freedom.
+     *
+     * @return Degrees of freedom.
+     */
+    public int getDegreesOfFreedom() {
+        return degreesOfFreedom;
     }
 
     /**
@@ -365,6 +365,7 @@ public abstract class Thermostat {
      *                          distribution.
      */
     public void maxwell(double targetTemperature) {
+        logger.info("\n Initializing velocities to target temperature");
 
         setTargetTemperature(targetTemperature);
 
@@ -379,7 +380,7 @@ public abstract class Thermostat {
         }
 
         // Find the current kinetic energy and temperature.
-        kineticEnergy();
+        computeKineticEnergy();
 
         /*
           The current temperature will deviate slightly from the target
@@ -394,7 +395,7 @@ public abstract class Thermostat {
         }
 
         // Update the kinetic energy and current temperature.
-        kineticEnergy();
+        computeKineticEnergy();
 
         log(Level.INFO);
     }
@@ -460,11 +461,11 @@ public abstract class Thermostat {
         linearMomentum[2] /= totalMass;
 
         if (print) {
-            StringBuilder sb = new StringBuilder(format(" Center of Mass   (%12.3f,%12.3f,%12.3f)\n",
+            StringBuilder sb = new StringBuilder(format("  Center of Mass   (%12.3f,%12.3f,%12.3f)\n",
                     centerOfMass[0], centerOfMass[1], centerOfMass[2]));
-            sb.append(format(" Linear Momentum  (%12.3f,%12.3f,%12.3f)\n",
+            sb.append(format("  Linear Momentum  (%12.3f,%12.3f,%12.3f)\n",
                     linearMomentum[0], linearMomentum[1], linearMomentum[2]));
-            sb.append(format(" Angular Momentum (%12.3f,%12.3f,%12.3f)",
+            sb.append(format("  Angular Momentum (%12.3f,%12.3f,%12.3f)",
                     angularMomentum[0], angularMomentum[1], angularMomentum[2]));
             logger.info(sb.toString());
         }
@@ -473,6 +474,20 @@ public abstract class Thermostat {
             removeCenterOfMassMotion(print);
             centerOfMassMotion(false, print);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(format("  Target temperature:           %7.2f Kelvin\n", targetTemperature));
+        sb.append(format("  Current temperature:          %7.2f Kelvin\n", currentTemperature));
+        sb.append(format("  Number of variables:          %7d\n", nVariables));
+        sb.append(format("  Number of degrees of freedom: %7d\n", degreesOfFreedom));
+        sb.append(format("  Kinetic Energy:               %7.2f\n", currentKineticEnergy));
+        sb.append(format("  kT per degree of freedom:     %7.2f", KCAL_TO_GRAM_ANG2_PER_PS2 * currentKineticEnergy / (degreesOfFreedom * kT)));
+        return sb.toString();
     }
 
     /**
@@ -509,23 +524,26 @@ public abstract class Thermostat {
             yz += yi * zi * m;
         }
 
-        /*
-         * RealMatrix inertia = new Array2DRowRealMatrix(3, 3);
-         * inertia.setEntry(0, 0, yy + zz); inertia.setEntry(1, 0, -xy);
-         * inertia.setEntry(2, 0, -xz); inertia.setEntry(0, 1, -xy);
-         * inertia.setEntry(1, 1, xx + zz); inertia.setEntry(2, 1, -yz);
-         * inertia.setEntry(0, 2, -xz); inertia.setEntry(1, 2, -yz);
-         * inertia.setEntry(2, 2, xx + yy); inertia = new
-         * LUDecomposition(inertia).getSolver().getInverse(); xx =
-         * inertia.getEntry(0, 0); yy = inertia.getEntry(1, 1); zz =
-         * inertia.getEntry(2, 2); xy = inertia.getEntry(0, 1); xz =
-         * inertia.getEntry(0, 2); yz = inertia.getEntry(1, 2); double ox =
-         * angularMomentum[0] * xx + angularMomentum[1] * xy +
-         * angularMomentum[2] * xz; double oy = angularMomentum[0] * xy +
-         * angularMomentum[1] * yy + angularMomentum[2] * yz; double oz =
-         * angularMomentum[0] * xz + angularMomentum[1] * yz +
-         * angularMomentum[2] * zz;
-         */
+//        RealMatrix inertia = new Array2DRowRealMatrix(3, 3);
+//        inertia.setEntry(0, 0, yy + zz);
+//        inertia.setEntry(1, 0, -xy);
+//        inertia.setEntry(2, 0, -xz);
+//        inertia.setEntry(0, 1, -xy);
+//        inertia.setEntry(1, 1, xx + zz);
+//        inertia.setEntry(2, 1, -yz);
+//        inertia.setEntry(0, 2, -xz);
+//        inertia.setEntry(1, 2, -yz);
+//        inertia.setEntry(2, 2, xx + yy);
+//        inertia = new LUDecomposition(inertia).getSolver().getInverse();
+//        xx = inertia.getEntry(0, 0);
+//        yy = inertia.getEntry(1, 1);
+//        zz = inertia.getEntry(2, 2);
+//        xy = inertia.getEntry(0, 1);
+//        xz = inertia.getEntry(0, 2);
+//        yz = inertia.getEntry(1, 2);
+//        double ox = angularMomentum[0] * xx + angularMomentum[1] * xy + angularMomentum[2] * xz;
+//        double oy = angularMomentum[0] * xy + angularMomentum[1] * yy + angularMomentum[2] * yz;
+//        double oz = angularMomentum[0] * xz + angularMomentum[1] * yz + angularMomentum[2] * zz;
 
         // Remove center of mass translational momentum.
         index = 0;
@@ -539,34 +557,40 @@ public abstract class Thermostat {
             v[index++] -= linearMomentum[2];
         }
 
-        /*
-         * Only remove center of mass rotational momentum for non-periodic
-         * systems.
-         */
-        /*
-         * if (false) { index = 0; while (index < nVariables) { if (type[index]
-         * == VARIABLE_TYPE.OTHER) { index++; continue; } double xi = x[index++]
-         * - centerOfMass[0]; double yi = x[index++] - centerOfMass[1]; double
-         * zi = x[index] - centerOfMass[2]; index -= 2; v[index++] += (-oy * zi
-         * + oz * yi); v[index++] += (-oz * xi + ox * zi); v[index++] += (-ox *
-         * yi + oy * xi); } }
-         */
+        // Only remove center of mass rotational momentum for non-periodic systems.
+//        if (false) {
+//            index = 0;
+//            while (index < nVariables) {
+//                if (type[index] == VARIABLE_TYPE.OTHER) {
+//                    index++;
+//                    continue;
+//                }
+//                double xi = x[index++] - centerOfMass[0];
+//                double yi = x[index++] - centerOfMass[1];
+//                double zi = x[index] - centerOfMass[2];
+//                index -= 2;
+//                v[index++] += (-oy * zi + oz * yi);
+//                v[index++] += (-oz * xi + ox * zi);
+//                v[index++] += (-ox * yi + oy * xi);
+//            }
+//        }
+
         if (print) {
-            logger.info(" Center of mass motion removed.");
+            logger.info("  Center of mass motion removed.");
         }
     }
 
     /**
      * Compute the current temperature and kinetic energy of the system.
      */
-    public final void kineticEnergy() {
+    public final void computeKineticEnergy() {
         double e = 0.0;
         for (int i = 0; i < nVariables; i++) {
             double velocity = v[i];
             double v2 = velocity * velocity;
             e += mass[i] * v2;
         }
-        currentTemperature = e / (kB * dof);
+        currentTemperature = e / (kB * degreesOfFreedom);
         e *= 0.5 / KCAL_TO_GRAM_ANG2_PER_PS2;
         currentKineticEnergy = e;
     }

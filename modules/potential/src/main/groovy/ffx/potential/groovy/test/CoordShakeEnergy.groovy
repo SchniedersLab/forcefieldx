@@ -134,7 +134,7 @@ class CoordShakeEnergy extends PotentialScript {
         def eFunct
         if (thePotential instanceof ForceFieldEnergyOpenMM) {
             ForceFieldEnergyOpenMM ommE = (ForceFieldEnergyOpenMM) thePotential
-            eFunct = { double[] coords -> return ommE.energyVsFFX(coords, true) }
+            eFunct = { double[] coords -> return (ommE.energyFFX(coords, true) - ommE.energy(coords, true)) }
         } else {
             eFunct = { double[] coords -> return thePotential.energy(coords, true) }
         }

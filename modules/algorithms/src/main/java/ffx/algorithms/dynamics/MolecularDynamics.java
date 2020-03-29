@@ -49,17 +49,15 @@ import java.util.function.DoubleConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
-import edu.rit.pj.Comm;
-import ffx.potential.bonded.LambdaInterface;
-import ffx.utilities.FileUtils;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
+
+import edu.rit.pj.Comm;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
@@ -82,6 +80,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
@@ -89,6 +88,7 @@ import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
+import ffx.utilities.FileUtils;
 import static ffx.utilities.Constants.FSEC_TO_PSEC;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.NS2SEC;
@@ -238,7 +238,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Timesteps between writing out restart/checkpoint files. Set by the init method.
      */
     protected int restartFrequency;
-    private static final String RESTART_FREQ_STRING = "Restart";
     /**
      * Time between appending to the trajectory file in picoseconds.
      */
@@ -247,7 +246,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Timesteps between adding a frame to the trajectory file. Set by the init method.
      */
     protected int trajectoryFrequency;
-    private static final String TRAJ_FREQ_STRING = "Trajectory writeout";
     /**
      * Time between logging information to the screen in picoseconds.
      */
@@ -256,7 +254,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * TImesteps between logging information to the screen. Set by the init method.
      */
     protected int logFrequency;
-    private static final String LOG_FREQ_STRING = "Reporting (logging)";
     /**
      * Target temperature. ToDo: use the Thermostat instance.
      */
@@ -313,22 +310,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * MC notification flag.
      */
     private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
-
-    /**
-     * Describes actions taken by writeFilesForStep
-     */
-    public enum WriteActions {
-        // TODO: Flesh this out if more functionality is needed.
-        RESTART, SNAPSHOT
-    }
-
-    /**
-     * Monte Carlo notification enumeration.
-     */
-    public enum MonteCarloNotification {
-        NEVER, EACH_STEP, AFTER_DYNAMICS
-    }
-
     /**
      * ESV System.
      */
@@ -341,17 +322,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Verbose logging of dynamics state.
      */
     private final boolean verboseDynamicsState;
-
     /**
      * By default, wait 25000 ns (25 us) in between polling the dynamics thread.
      */
     private static final int DEFAULT_DYNAMICS_SLEEP_TIME = 25000;
-
     /**
      * Wait this many nanoseconds in between polling the dynamics thread.
      */
     private final int dynSleepTime;
-
     /**
      * If asked to perform dynamics with a null dynamics file, write here.
      */
@@ -533,7 +511,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 break;
             case STOCHASTIC:
                 double friction = properties.getDouble("friction", 91.0);
-                logger.log(Level.INFO, format(" Friction set at %.3f collisions/picosecond", friction));
+                logger.log(Level.FINE, format(" Friction set at %.3f collisions/picosecond", friction));
 
                 Stochastic stochastic = new Stochastic(friction, numberOfVariables, x, v, a, mass);
                 if (properties.containsKey("randomseed")) {
@@ -600,8 +578,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         done = true;
 
         fallbackDynFile = fallbackDyn;
-
-        logger.info(" Molecular Dynamics instance created.");
     }
 
     /**
@@ -770,46 +746,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Perform a sanity check on a frequency to ensure it's not longer than total runtime.
-     * Currently, the setter parameter is ignored due to issues with our test suite.
-     *
-     * @param describe  Description of the frequency.
-     * @param frequency Frequency in timesteps.
-     * @param setter    Currently ignored.
-     */
-    private void sanityCheckFrequency(String describe, int frequency, DoubleConsumer setter) {
-        if (frequency > nSteps) {
-            logger.info(format(" Specified %s frequency of %d (timesteps) > " +
-                    "run length %d!", describe, frequency, nSteps));
-            //setter.accept(nSteps * dt);
-        }
-    }
-
-    /**
-     * Sets the timestep and resets frequencies based on stored intervals.
-     *
-     * @param step Timestep in femtoseconds.
-     */
-    private void setTimestep(double step) {
-        dt = step * FSEC_TO_PSEC;
-        // Reset frequencies to be consistent with new timestep.
-        setRestartFrequency(restartInterval);
-        setLoggingFrequency(logInterval);
-        setTrajectoryFrequency(trajectoryInterval);
-    }
-
-    /**
-     * Creates the "default" fallback dynamics file object (does not create actual file!)
-     *
-     * @param assembly First assembly.
-     * @return         Default fallback file.
-     */
-    private static File defaultFallbackDyn(MolecularAssembly assembly) {
-        String firstFileName = FilenameUtils.removeExtension(assembly.getFile().getAbsolutePath());
-        return new File(firstFileName + ".dyn");
-    }
-
-    /**
      * Sets the "fallback" .dyn file to write to if none is passed to the dynamic method.
      *
      * @param fallback Fallback dynamics restart file.
@@ -866,18 +802,18 @@ public class MolecularDynamics implements Runnable, Terminatable {
         totalSimTime = 0.0;
 
         // Convert the time step from femtoseconds to picoseconds.
-        setTimestep(timeStep);
+        setTimeStep(timeStep);
 
         // Convert intervals in ps to frequencies in timesteps.
         setLoggingFrequency(loggingInterval);
         setTrajectoryFrequency(trajectoryInterval);
         setRestartFrequency(restartInterval);
 
-        sanityCheckFrequency(LOG_FREQ_STRING, logFrequency, this::setLoggingFrequency);
+        sanityCheckFrequency("Reporting (logging)", logFrequency, this::setLoggingFrequency);
         if (automaticWriteouts) {
             // Only sanity check these values if MD is doing this itself.
-            sanityCheckFrequency(TRAJ_FREQ_STRING, trajectoryFrequency, this::setTrajectoryFrequency);
-            sanityCheckFrequency(RESTART_FREQ_STRING, restartFrequency, this::setRestartFrequency);
+            sanityCheckFrequency("Trajectory writeout", trajectoryFrequency, this::setTrajectoryFrequency);
+            sanityCheckFrequency("Restart", restartFrequency, this::setRestartFrequency);
         }
 
         // Set snapshot file type.
@@ -902,20 +838,23 @@ public class MolecularDynamics implements Runnable, Terminatable {
         done = false;
 
         if (loadRestart) {
-            logger.info(" Continuing from " + restartFile.getAbsolutePath());
+            logger.info("  Continuing from " + restartFile.getAbsolutePath());
         }
 
         if (!verbosityLevel.isQuiet) {
-            logger.info(format(" Number of steps:     %8d", nSteps));
-            logger.info(format(" Time step:           %8.3f (fsec)", timeStep));
-            logger.info(format(" Print interval:      %8.3f (psec)", loggingInterval));
-            logger.info(format(" Save interval:       %8.3f (psec)", trajectoryInterval));
-            //logger.info(format(" Archive file: %s", archiveFile.getName()));
-            for (int i = 0; i < assemblies.size(); i++) {
-                AssemblyInfo ai = assemblies.get(i);
-                logger.info(format(" Archive file %3d: %s", (i+1), ai.archiveFile.getName()));
+            logger.info(format("  Number of steps:     %8d", nSteps));
+            logger.info(format("  Time step:           %8.3f (fsec)", timeStep));
+            logger.info(format("  Print interval:      %8.3f (psec)", loggingInterval));
+            logger.info(format("  Save interval:       %8.3f (psec)", trajectoryInterval));
+            if (assemblies.size() > 1) {
+                for (int i = 0; i < assemblies.size(); i++) {
+                    AssemblyInfo ai = assemblies.get(i);
+                    logger.info(format("  Archive file %3d: %s", (i + 1), ai.archiveFile.getName()));
+                }
+            } else {
+                logger.info(format("  Archive file:     %s", assemblies.get(0).archiveFile.getName()));
             }
-            logger.info(format(" Restart file:     %s", restartFile.getName()));
+            logger.info(format("  Restart file:     %s", restartFile.getName()));
         }
     }
 
@@ -1121,7 +1060,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      *                                            positive number
      */
     public void setRestartFrequency(double restartInterval) throws IllegalArgumentException {
-        restartFrequency = intervalToFreq(restartInterval, RESTART_FREQ_STRING + " interval");
+        restartFrequency = intervalToFreq(restartInterval, "Restart interval");
         this.restartInterval = restartInterval;
     }
 
@@ -1131,7 +1070,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param logInterval Time in ps between logging information to the screen.
      */
     private void setLoggingFrequency(double logInterval) {
-        logFrequency = intervalToFreq(logInterval, LOG_FREQ_STRING + " interval");
+        logFrequency = intervalToFreq(logInterval, "Reporting (logging) interval");
         this.logInterval = logInterval;
     }
 
@@ -1141,7 +1080,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param snapshotInterval Time in ps between appending snapshots to the trajectory file.
      */
     private void setTrajectoryFrequency(double snapshotInterval) {
-        trajectoryFrequency = intervalToFreq(snapshotInterval, TRAJ_FREQ_STRING + " interval");
+        trajectoryFrequency = intervalToFreq(snapshotInterval, "Trajectory writeout interval");
         this.trajectoryInterval = snapshotInterval;
     }
 
@@ -1174,10 +1113,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     done = true;
                     throw new IllegalStateException(message);
                 } else {
-                    molecularAssembly.getPotentialEnergy().setCrystal(crystal);
+                    molecularAssembly.setCrystal(crystal);
                 }
             } else {
-                // Initialize from using current atomic coordinates.
+                // Initialize using current atomic coordinates.
                 potential.getCoordinates(x);
                 // Initialize atomic velocities from a Maxwell-Boltzmann distribution or set to 0.
                 if (initVelocities) {
@@ -1225,7 +1164,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         // Compute the current kinetic energy.
-        thermostat.kineticEnergy();
+        thermostat.computeKineticEnergy();
         currentKineticEnergy = thermostat.getKineticEnergy();
         initialKinetic = currentKineticEnergy;
         currentTemperature = thermostat.getCurrentTemperature();
@@ -1239,6 +1178,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     void postInitEnergies() {
         initialized = true;
+
         logger.log(basicLogging, format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
         logger.log(basicLogging, format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
         logger.log(basicLogging, format("  %8s %12.4f %12.4f %12.4f %8.2f",
@@ -1388,13 +1328,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
             integrator.postForce(gradient);
 
             // Compute the full-step kinetic energy.
-            thermostat.kineticEnergy();
+            thermostat.computeKineticEnergy();
 
             // Do the full-step thermostat operation.
             thermostat.fullStep(dt);
 
             // Recompute the kinetic energy after the full-step thermostat operation.
-            thermostat.kineticEnergy();
+            thermostat.computeKineticEnergy();
 
             // Remove center of mass motion ever ~100 steps.
             int removeCOMMotionFrequency = 100;
@@ -1875,6 +1815,64 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * No-op; FFX does not need to occasionally return information from FFX.
+     *
+     * @param intervalSteps Ignored.
+     */
+    public void setIntervalSteps(int intervalSteps) {
+        // Not meaningful for FFX MD.
+    }
+
+    /**
+     * <p>
+     * getTimeStep.</p>
+     *
+     * @return Timestep in picoseconds.
+     */
+    public double getTimeStep() {
+        return dt;
+    }
+
+    /**
+     * <p>
+     * getIntervalSteps.</p>
+     *
+     * @return Always 1 for this implementation.
+     */
+    public int getIntervalSteps() {
+        return 1;
+    }
+
+    public enum VerbosityLevel {
+        VERBOSE(false), QUIET(true), SILENT(true);
+
+        private boolean isQuiet;
+
+        VerbosityLevel(boolean isQuiet) {
+            this.isQuiet = isQuiet;
+        }
+
+        public boolean isQuiet() {
+            return isQuiet;
+        }
+    }
+
+    /**
+     * Describes actions taken by writeFilesForStep
+     */
+    public enum WriteActions {
+        // TODO: Flesh this out if more functionality is needed.
+        RESTART, SNAPSHOT
+    }
+
+    /**
+     * Monte Carlo notification enumeration.
+     */
+    public enum MonteCarloNotification {
+        NEVER, EACH_STEP, AFTER_DYNAMICS
+    }
+
+    /**
      * Enumerates available molecular dynamics engines; presently limited to the
      * FFX reference engine and the OpenMM engine.
      * <p>
@@ -1929,45 +1927,40 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * No-op; FFX does not need to occasionally return information from FFX.
+     * Perform a sanity check on a frequency to ensure it's not longer than total runtime.
+     * Currently, the setter parameter is ignored due to issues with our test suite.
      *
-     * @param intervalSteps Ignored.
+     * @param describe  Description of the frequency.
+     * @param frequency Frequency in timesteps.
+     * @param setter    Currently ignored.
      */
-    public void setIntervalSteps(int intervalSteps) {
-        // Not meaningful for FFX MD.
+    private void sanityCheckFrequency(String describe, int frequency, DoubleConsumer setter) {
+        if (frequency > nSteps) {
+            logger.fine(format(" Specified %s frequency of %d is greater than the number of steps %d", describe, frequency, nSteps));
+        }
     }
 
     /**
-     * <p>
-     * getTimeStep.</p>
+     * Sets the timestep and resets frequencies based on stored intervals.
      *
-     * @return Timestep in picoseconds.
+     * @param step Timestep in femtoseconds.
      */
-    public double getTimeStep() {
-        return dt;
+    private void setTimeStep(double step) {
+        dt = step * FSEC_TO_PSEC;
+        // Reset frequencies to be consistent with new timestep.
+        setRestartFrequency(restartInterval);
+        setLoggingFrequency(logInterval);
+        setTrajectoryFrequency(trajectoryInterval);
     }
 
     /**
-     * <p>
-     * getIntervalSteps.</p>
+     * Creates the "default" fallback dynamics file object (does not create actual file!)
      *
-     * @return Always 1 for this implementation.
+     * @param assembly First assembly.
+     * @return Default fallback file.
      */
-    public int getIntervalSteps() {
-        return 1;
-    }
-
-    public enum VerbosityLevel {
-        VERBOSE(false), QUIET(true), SILENT(true);
-
-        private boolean isQuiet;
-
-        VerbosityLevel(boolean isQuiet) {
-            this.isQuiet = isQuiet;
-        }
-
-        public boolean isQuiet() {
-            return isQuiet;
-        }
+    private static File defaultFallbackDyn(MolecularAssembly assembly) {
+        String firstFileName = FilenameUtils.removeExtension(assembly.getFile().getAbsolutePath());
+        return new File(firstFileName + ".dyn");
     }
 }
