@@ -59,7 +59,7 @@ public class Resources {
      */
     public static void logResources() {
         if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder("\n System Resources\n");
 
             Runtime runtime = Runtime.getRuntime();
             runtime.runFinalization();
@@ -73,15 +73,15 @@ public class Resources {
 
                 // CPU Time and Average System Load.
                 long time = unixOS.getProcessCpuTime();
-                sb.append(format("\n Total CPU time:         %6.2f (sec)", time * 1.0e-9));
+                sb.append(format("  Total CPU time:         %6.2f (sec)\n", time * 1.0e-9));
                 double systemLoadAve = unixOS.getSystemLoadAverage();
                 if (systemLoadAve >= 0) {
-                    sb.append(format("\n System load average:    %6.2f", systemLoadAve));
+                    sb.append(format("  System load average:    %6.2f\n", systemLoadAve));
                 }
                 // File handle use.
                 long open = unixOS.getOpenFileDescriptorCount();
                 long allowed = unixOS.getMaxFileDescriptorCount();
-                sb.append(format("\n Open file handles:      %6d of %6d allowed",
+                sb.append(format("  Open file handles:      %6d of %6d allowed\n",
                         open, allowed));
 
                 // System Memory.
@@ -89,14 +89,14 @@ public class Resources {
                 long totalPhysical = unixOS.getTotalPhysicalMemorySize() / MB;
                 long freeSwap = unixOS.getFreeSwapSpaceSize() / MB;
                 long totalSwap = unixOS.getTotalSwapSpaceSize() / MB;
-                sb.append(format("\n System memory:          %6d MB free out of %6d MB",
+                sb.append(format("  System memory:          %6d MB free out of %6d MB\n",
                         freePhysical, totalPhysical));
-                sb.append(format("\n System swap space:      %6d MB free out of %6d MB",
+                sb.append(format("  System swap space:      %6d MB free out of %6d MB\n",
                         freeSwap, totalSwap));
             }
 
             // JVM Memory.
-            sb.append(format("\n JVM memory:             %6d MB free out of %6d MB\n",
+            sb.append(format("  JVM memory:             %6d MB free out of %6d MB",
                     runtime.freeMemory() / MB, runtime.totalMemory() / MB));
 
             logger.info(sb.toString());

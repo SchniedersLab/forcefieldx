@@ -48,7 +48,6 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
-import ffx.potential.parameters.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jogamp.java3d.Appearance;
 import org.jogamp.java3d.BranchGroup;
@@ -69,6 +68,11 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.extended.ExtendedVariable;
+import ffx.potential.parameters.AtomType;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parameters.PolarizeType;
+import ffx.potential.parameters.VDWType;
 
 /**
  * The Atom class represents a single atom and defines its alternate
@@ -944,7 +948,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Gets the partial atomic charge.
      *
      * @param ff If multipole type has not yet been assigned, search this force field.
-     * @return   partial atomic charge
+     * @return partial atomic charge
      * @throws IllegalStateException If a multipole type could not be found and ff is null.
      */
     public double getCharge(ForceField ff) {
@@ -1627,6 +1631,21 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
+     * <p>Setter for the field <code>velocity</code>.</p>
+     *
+     * @param x X-velocity
+     * @param y Y-velocity
+     * @param z Z-velocity
+     */
+    public void setVelocity(double x, double y, double z) {
+        if (active) {
+            velocity[0] = x;
+            velocity[1] = y;
+            velocity[2] = z;
+        }
+    }
+
+    /**
      * <p>Setter for the field <code>acceleration</code>.</p>
      *
      * @param acceleration an array of double.
@@ -1634,6 +1653,21 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public void setAcceleration(double[] acceleration) {
         if (active && acceleration != null) {
             arraycopy(acceleration, 0, this.acceleration, 0, 3);
+        }
+    }
+
+    /**
+     * <p>Setter for the field <code>acceleration</code>.</p>
+     *
+     * @param x X-acceleration
+     * @param y Y-acceleration
+     * @param z Z-acceleration
+     */
+    public void setAcceleration(double x, double y, double z) {
+        if (active) {
+            acceleration[0] = x;
+            acceleration[1] = y;
+            acceleration[2] = z;
         }
     }
 

@@ -146,11 +146,12 @@ public class Bussi extends Thermostat {
     }
 
     /**
-     * {@inheritDoc}
+     * Add Thermostat details to the kinetic energy and temperature details.
+     *
+     * @return Description of the thermostat, kinetic energy and temperature.
      */
-    @Override
-    public String toString() {
-        return format(" Bussi Thermostat (tau = %8.3f psec)", tau);
+    public String toThermostatString() {
+        return format("\n Bussi Thermostat (tau = %8.3f psec)\n%s", tau, super.toString());
     }
 
     /**
@@ -171,10 +172,10 @@ public class Bussi extends Thermostat {
     public void fullStep(double dt) {
         double expTau = exp(-dt / tau);
         double tempRatio = targetTemperature / currentTemperature;
-        double rate = (1.0 - expTau) * tempRatio / dof;
+        double rate = (1.0 - expTau) * tempRatio / degreesOfFreedom;
         double r = bussiRandom.nextGaussian();
         double s = 0.0;
-        for (int i = 0; i < dof - 1; i++) {
+        for (int i = 0; i < degreesOfFreedom - 1; i++) {
             double si = bussiRandom.nextGaussian();
             s += si * si;
         }

@@ -49,10 +49,18 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static java.lang.String.format;
+
 import org.apache.commons.math3.util.FastMath;
+
+import static ffx.utilities.TinkerUtils.parseTinkerAtomList;
 
 /**
  * <p>StringUtils class.</p>
@@ -60,6 +68,9 @@ import org.apache.commons.math3.util.FastMath;
  * @author Michael Schnieders
  */
 public class StringUtils {
+
+    private static final Logger logger = Logger.getLogger(StringUtils.class.getName());
+
     private static final Set<String> waterNames =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList("HOH", "DOD", "WAT", "TIP", "TIP3", "TIP4", "MOL")));
     public static final String STANDARD_WATER_NAME = "HOH";
@@ -98,6 +109,60 @@ public class StringUtils {
         }
 
         ionNames = Collections.unmodifiableMap(ions);
+    }
+
+    private static final Pattern intRangePattern = Pattern.compile("(\\d+)-(\\d+)");
+
+    /**
+     * Parses a numerical argument for an atom-specific flag. Intended to reduce
+     * the amount of repetitive code in applyAtomProperties by parsing and
+     * checking for validity, and then returning the appropriate range. Input
+     * should be 1-indexed (user end), output 0-indexed.
+     *
+     * @param keyType Type of key
+     * @param st      Input string
+     * @param nAtoms  Number of atoms in the MolecularAssembly
+     * @return A List of selected atoms.
+     * @throws java.lang.IllegalArgumentException if an invalid argument
+     */
+    public static List<Integer> parseAtNumArg(String keyType, String st, int nAtoms) throws IllegalArgumentException {
+        Matcher m = intRangePattern.matcher(st);
+        if (m.matches()) {
+            int start = Integer.parseInt(m.group(1)) - 1;
+            int end = Integer.parseInt(m.group(2)) - 1;
+            if (start > end) {
+                throw new IllegalArgumentException(format(" %s input %s not valid: start > end.", keyType, st));
+            } else if (start < 0) {
+                throw new IllegalArgumentException(format(" %s input %s not valid: atoms should be indexed starting from 1.", keyType, st));
+            } else if (start >= nAtoms) {
+                throw new IllegalArgumentException(format(" %s input %s not valid: atom range is out of bounds for assembly of length %d.", keyType, st, nAtoms));
+            } else {
+                if (end >= nAtoms) {
+                    logger.log(Level.INFO, format(" Truncating range %s to end of valid range %d.", st, nAtoms));
+                    end = nAtoms - 1;
+                }
+                List<Integer> selectedAtoms = new ArrayList<>();
+                for (int i=start; i<=end; i++) {
+                    selectedAtoms.add(i);
+                }
+                return selectedAtoms;
+            }
+        } else {
+            try {
+                int atNum = Integer.parseUnsignedInt(st) - 1;
+                if (atNum < 0 || atNum >= nAtoms) {
+                    throw new IllegalArgumentException(format(" %s numerical argument %s out-of-bounds for range 1 to %d", keyType, st, nAtoms));
+                }
+                List<Integer> selectedAtoms = new ArrayList<>();
+                selectedAtoms.add(atNum);
+                return selectedAtoms;
+            } catch (NumberFormatException ex) {
+                // Try to parse as a Tinker style range.
+                List<String> tokens = Arrays.asList(st.split("\\s+"));
+                List<Integer> range = parseTinkerAtomList(tokens, -1, -1);
+                return range;
+            }
+        }
     }
 
     /**

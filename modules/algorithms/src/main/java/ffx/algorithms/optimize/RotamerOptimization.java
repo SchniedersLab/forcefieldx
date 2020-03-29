@@ -3217,7 +3217,7 @@ public class RotamerOptimization implements Terminatable {
      */
     public double currentFFXPE() {
         potential.getCoordinates(x);
-        return ((ForceFieldEnergyOpenMM) potential).ffxEnergy(x, false);
+        return ((ForceFieldEnergyOpenMM) potential).energyFFX(x, false);
     }
 
     /**

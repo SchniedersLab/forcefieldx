@@ -37,12 +37,13 @@
 //******************************************************************************
 package ffx.algorithms.dynamics.thermostats;
 
+import java.util.Collections;
+import java.util.List;
+import static java.lang.String.format;
+
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
 import ffx.utilities.Constants;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * The Adiabatic thermostat is for NVE simulations and does not alter particle
@@ -73,11 +74,12 @@ public class Adiabatic extends Thermostat {
     }
 
     /**
-     * {@inheritDoc}
+     * Add Thermostat details to the kinetic energy and temperature details.
+     *
+     * @return Description of the thermostat, kinetic energy and temperature.
      */
-    @Override
-    public String toString() {
-        return " Adiabatic thermostat";
+    public String toThermostatString() {
+        return format("\n Adiabatic Thermostat\n%s", super.toString());
     }
 
     /**

@@ -290,25 +290,6 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     }
 
     @Override
-    public MolecularAssembly[] convertDataStructure(Object data) {
-        return mainPanel.convertWait(data, null);
-    }
-
-    @Override
-    public MolecularAssembly[] convertDataStructure(Object data, File file) {
-        return mainPanel.convertWait(data, file);
-    }
-
-    @Override
-    public MolecularAssembly[] convertDataStructure(Object data, String filename) {
-        File file = new File(filename);
-        if (!file.exists() || file.isDirectory() || !file.canRead()) {
-            throw new IllegalArgumentException(String.format("%s not a valid file name.", filename));
-        }
-        return mainPanel.convertWait(data, file);
-    }
-
-    @Override
     public SystemFilter getFilter() {
         return lastFilter;
     }

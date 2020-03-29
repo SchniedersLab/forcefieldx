@@ -38,26 +38,31 @@
 package ffx.potential.parsers;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.OptionalDouble;
+import java.util.Set;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
 import static java.lang.String.format;
 
-import ffx.potential.bonded.Polymer;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.Polymer;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.parameters.ForceField;
+import static ffx.utilities.StringUtils.parseAtNumArg;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.
@@ -74,7 +79,6 @@ public abstract class SystemFilter {
     private static Versioning vers = Versioning.TINKER;
     private static int absoluteCounter = 0;
 
-    private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
     protected static final Pattern lambdaPattern = Pattern.compile("Lambda: +([01]\\.\\d+)");
 
     private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
@@ -451,7 +455,9 @@ public abstract class SystemFilter {
      */
     public abstract void closeReader();
 
-    public int countNumModels(){return -1;}
+    public int countNumModels() {
+        return -1;
+    }
 
     /**
      * <p>
@@ -628,7 +634,7 @@ public abstract class SystemFilter {
                 flatMap((String tok) -> {
                     if (tok.equalsIgnoreCase("HEAVY")) {
                         return Arrays.stream(mola.getChains()).
-                                flatMap((Polymer poly) ->  poly.getAtomList().stream().filter(Atom::isHeavy));
+                                flatMap((Polymer poly) -> poly.getAtomList().stream().filter(Atom::isHeavy));
                     } else if (tok.matches("^[0-9]+$")) {
                         return Stream.of(atoms[Integer.parseInt(tok) - 1]);
                     } else if (tok.matches("^[0-9]+-[0-9]+")) {
@@ -660,10 +666,8 @@ public abstract class SystemFilter {
             String[] toks = nouseKey.split("\\s+");
             for (String tok : toks) {
                 try {
-                    int[] nouseRange = parseAtNumArg("restraint", tok, nmolaAtoms);
-                    logger.info(format(" Setting atoms %d-%d (%s-%s) to not be used",
-                            nouseRange[0] + 1, nouseRange[1] + 1, molaAtoms[nouseRange[0]], molaAtoms[nouseRange[1]]));
-                    for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
+                    List<Integer> nouseRange = parseAtNumArg("nouse", tok, nmolaAtoms);
+                    for (int j : nouseRange) {
                         molaAtoms[j].setUse(false);
                     }
                 } catch (IllegalArgumentException ex) {
@@ -686,10 +690,8 @@ public abstract class SystemFilter {
         String[] inactiveKeys = properties.getStringArray("inactive");
         for (String inactiveKey : inactiveKeys) {
             try {
-                int[] inactiveRange = parseAtNumArg("inactive", inactiveKey, nmolaAtoms);
-                logger.log(Level.INFO, format(" Atoms %d-%d (%s-%s) set to be not "
-                        + "active", inactiveRange[0] + 1, inactiveRange[1] + 1, molaAtoms[inactiveRange[0]], molaAtoms[inactiveRange[1]]));
-                for (int i = inactiveRange[0]; i <= inactiveRange[1]; i++) {
+                List<Integer> inactiveRange = parseAtNumArg("inactive", inactiveKey, nmolaAtoms);
+                for (int i : inactiveRange) {
                     molaAtoms[i].setActive(false);
                 }
             } catch (IllegalArgumentException ex) {
@@ -716,7 +718,7 @@ public abstract class SystemFilter {
                     + "with force constant %10.4f kcal/mol/A", forceconst));
             Set<Atom> restraintAtoms = parseAtomicRanges(activeMolecularAssembly, toks, 1);
             if (!(restraintAtoms == null || restraintAtoms.isEmpty())) {
-                Atom[] ats = restraintAtoms.toArray(new Atom[restraintAtoms.size()]);
+                Atom[] ats = restraintAtoms.toArray(new Atom[0]);
                 coordRestraints.add(new CoordRestraint(ats, forceField, false, forceconst));
             } else {
                 logger.warning(format(" Empty or unparseable restraint argument %s", coordRestraint));
@@ -733,10 +735,8 @@ public abstract class SystemFilter {
 
             for (int i = 1; i < toks.length; i++) {
                 try {
-                    int[] restrRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
-                    logger.info(format(" Adding atoms %d-%d (%s-%s) to restraint",
-                            restrRange[0] + 1, restrRange[1] + 1, molaAtoms[restrRange[0]], molaAtoms[restrRange[1]]));
-                    for (int j = restrRange[0]; j <= restrRange[1]; j++) {
+                    List<Integer> restrRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
+                    for (int j : restrRange) {
                         restraintAtoms.add(molaAtoms[j]);
                     }
                 } catch (IllegalArgumentException ex) {
@@ -838,12 +838,10 @@ public abstract class SystemFilter {
             String[] toks = noE.split("\\s+");
             for (String tok : toks) {
                 try {
-                    int[] noERange = parseAtNumArg("noElectro", tok, nmolaAtoms);
-                    for (int i = noERange[0]; i <= noERange[1]; i++) {
+                    List<Integer> noERange = parseAtNumArg("noElectro", tok, nmolaAtoms);
+                    for (int i : noERange) {
                         molaAtoms[i].setElectrostatics(false);
                     }
-                    logger.log(Level.INFO, format(" Disabled electrostatics "
-                            + "for atoms %d-%d (%s-%s)", noERange[0] + 1, noERange[1] + 1, molaAtoms[noERange[0]], molaAtoms[noERange[1]]));
                 } catch (IllegalArgumentException ex) {
                     boolean atomFound = false;
                     for (Atom atom : molaAtoms) {
@@ -855,8 +853,7 @@ public abstract class SystemFilter {
                     if (atomFound) {
                         logger.info(format(" Disabled electrostatics for atoms with name %s", tok));
                     } else {
-                        logger.log(Level.INFO, format(" No electrostatics "
-                                + "input %s could not be parsed as a numerical "
+                        logger.log(Level.INFO, format(" No electrostatics input %s could not be parsed as a numerical "
                                 + "range or atom type present in assembly", tok));
                     }
                 }
@@ -874,60 +871,6 @@ public abstract class SystemFilter {
             return new ArrayList<>(coordRestraints);
         } else {
             return null;
-        }
-    }
-
-    /**
-     * Parses a numerical argument for an atom-specific flag. Intended to reduce
-     * the amount of repetitive code in applyAtomProperties by parsing and
-     * checking for validity, and then returning the appropriate range. Input
-     * should be 1-indexed (user end), output 0-indexed.
-     *
-     * @param keyType Type of key
-     * @param st      Input string
-     * @param nAtoms  Number of atoms in the MolecularAssembly
-     * @return An int[2] with start, end indices (inclusive).
-     * @throws java.lang.IllegalArgumentException if an invalid argument
-     */
-    public static int[] parseAtNumArg(String keyType, String st, int nAtoms) throws IllegalArgumentException {
-        Matcher m = intrangePattern.matcher(st);
-        if (m.matches()) {
-            int start = Integer.parseInt(m.group(1)) - 1;
-            int end = Integer.parseInt(m.group(2)) - 1;
-            if (start > end) {
-                throw new IllegalArgumentException(format(" %s input %s not "
-                        + "valid; start > end", keyType, st));
-            } else if (start < 0) {
-                throw new IllegalArgumentException(format(" %s input %s not "
-                        + "valid; atoms should be indexed starting from 1", keyType, st));
-            } else if (start >= nAtoms) {
-                throw new IllegalArgumentException(format(" %s input %s not "
-                        + "valid; atom range is out of bounds for assembly of "
-                        + "length %d", keyType, st, nAtoms));
-            } else {
-                if (end >= nAtoms) {
-                    logger.log(Level.INFO, format(" Truncating range %s "
-                            + "to end of valid range %d", st, nAtoms));
-                    end = nAtoms - 1;
-                }
-                int[] indices = {start, end};
-                return indices;
-            }
-        } else {
-            try {
-                int atNum = Integer.parseUnsignedInt(st) - 1;
-                if (atNum < 0 || atNum >= nAtoms) {
-                    throw new IllegalArgumentException(format(" %s numerical "
-                                    + "argument %s out-of-bounds for range 1 to %d", keyType,
-                            st, nAtoms));
-                }
-                int[] indices = {atNum, atNum};
-                return indices;
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException(format(" %s input %s "
-                        + "could not be parsed as a positive number or range of "
-                        + "positive integers", keyType, st));
-            }
         }
     }
 

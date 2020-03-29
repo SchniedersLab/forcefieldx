@@ -247,7 +247,6 @@ public class Barostat implements CrystalPotential {
         mass = molecularAssembly.getMass();
         x = new double[3 * nAtoms];
         nMolecules = molecularAssembly.fractionalCount();
-        logger.info(String.format(" There are %d molecules.", nMolecules));
     }
 
     /**
@@ -680,7 +679,6 @@ public class Barostat implements CrystalPotential {
      * Attempt an MC move on a lattice parameter.
      *
      * @param currentE The current potential energy.
-     *
      * @return The potential energy after attempting the MC move.
      */
     private double applyBarostat(double currentE) {

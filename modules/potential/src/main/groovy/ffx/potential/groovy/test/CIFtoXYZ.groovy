@@ -330,6 +330,7 @@ class CIFtoXYZ extends PotentialScript {
                                 bw.write(format("patch %s\n", patch))
                             }
                             bw.write(format("spacegroup %s\n", crystal.spaceGroup.shortName))
+
                             bw.close()
                             logger.info("\n Saved properties file: " + propertyFile.getAbsolutePath())
                         } else {
