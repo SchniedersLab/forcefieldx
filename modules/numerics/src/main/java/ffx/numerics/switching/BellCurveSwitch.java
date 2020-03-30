@@ -37,7 +37,9 @@
 //******************************************************************************
 package ffx.numerics.switching;
 
-import org.apache.commons.math3.util.FastMath;
+import static java.lang.String.format;
+
+import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
  * Implements a bell-shaped switching function by stitching together
@@ -72,8 +74,9 @@ public class BellCurveSwitch implements UnivariateSwitchingFunction {
 
     /**
      * Construct a bell curve (spliced 5-'th order Hermite splines).
+     *
      * @param midpoint Midpoint of the curve.
-     * @param width Width of the curve, between the two zero points.
+     * @param width    Width of the curve, between the two zero points.
      */
     public BellCurveSwitch(double midpoint, double width) {
         this.midpoint = midpoint;
@@ -88,32 +91,8 @@ public class BellCurveSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double getZeroBound() {
-        return midpoint - halfWidth;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getOneBound() {
-        return midpoint + halfWidth;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public boolean constantOutsideBounds() {
         return switchingFunction.constantOutsideBounds() && secondSwitchingFunction.constantOutsideBounds();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return switchingFunction.validOutsideBounds() && secondSwitchingFunction.validOutsideBounds();
     }
 
     /**
@@ -128,6 +107,22 @@ public class BellCurveSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
+    public double getOneBound() {
+        return midpoint + halfWidth;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getZeroBound() {
+        return midpoint - halfWidth;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean symmetricToUnity() {
         return switchingFunction.symmetricToUnity() && secondSwitchingFunction.symmetricToUnity();
     }
@@ -136,12 +131,8 @@ public class BellCurveSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        if (x > midpoint) {
-            return secondSwitchingFunction.valueAt(x);
-        } else {
-            return switchingFunction.valueAt(x);
-        }
+    public boolean validOutsideBounds() {
+        return switchingFunction.validOutsideBounds() && secondSwitchingFunction.validOutsideBounds();
     }
 
     /**
@@ -153,6 +144,19 @@ public class BellCurveSwitch implements UnivariateSwitchingFunction {
             return invWidth * secondSwitchingFunction.firstDerivative(x);
         } else {
             return invWidth * switchingFunction.firstDerivative(x);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double nthDerivative(double x, int order) throws IllegalArgumentException {
+        double mult = pow(invWidth, order);
+        if (x > midpoint) {
+            return mult * secondSwitchingFunction.nthDerivative(x, order);
+        } else {
+            return mult * switchingFunction.nthDerivative(x, order);
         }
     }
 
@@ -172,18 +176,17 @@ public class BellCurveSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double nthDerivative(double x, int order) throws IllegalArgumentException {
-        double mult = FastMath.pow(invWidth, order);
+    public double valueAt(double x) throws IllegalArgumentException {
         if (x > midpoint) {
-            return mult * secondSwitchingFunction.nthDerivative(x, order);
+            return secondSwitchingFunction.valueAt(x);
         } else {
-            return mult * switchingFunction.nthDerivative(x, order);
+            return switchingFunction.valueAt(x);
         }
     }
 
     @Override
     public String toString() {
-        return String.format(" Spliced 5'th order Hermite splines with midpoint " +
+        return format(" Spliced 5'th order Hermite splines with midpoint " +
                 "%11.5g, width %11.5g", midpoint, 2.0 * halfWidth);
     }
 }

@@ -37,21 +37,28 @@
 //******************************************************************************
 package ffx.numerics.math;
 
-import org.apache.commons.math3.distribution.TDistribution;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
-import java.util.Arrays;
+import org.apache.commons.math3.distribution.TDistribution;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
- * The FFXSummaryStatistics class uses online, stable algorithms to calculate summary
- * statistics from double arrays/lists, primarily mean, variance, standard deviation,
- * max, min, sum, and count. This is intended for accuracy and numerical stability,
+ * The SummaryStatistics class uses online, stable algorithms to calculate summary
+ * statistics from double arrays/lists, including mean, variance, standard deviation,
+ * max, min, sum, and count.
+ * <p>
+ * This is intended for accuracy and numerical stability,
  * not necessarily for performance (e.g. using Kahan summation).
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class FFXSummaryStatistics {
+public class SummaryStatistics {
     // Weight-sensitive values.
     public final double mean;
     public final double var;
@@ -66,7 +73,6 @@ public class FFXSummaryStatistics {
     public final double sum;
     public final long dof;
     private final TDistribution tDist;
-
     private final String descString;
 
     /**
@@ -74,7 +80,7 @@ public class FFXSummaryStatistics {
      *
      * @param rs Running statistic.
      */
-    public FFXSummaryStatistics(FFXRunningStatistics rs) {
+    public SummaryStatistics(RunningStatistics rs) {
         mean = rs.getMean();
         var = rs.getVariance();
         varPopulation = rs.getPopulationVariance();
@@ -87,7 +93,7 @@ public class FFXSummaryStatistics {
         tDist = (dof > 0) ? new TDistribution(dof) : null;
         sd = rs.getStandardDeviation();
         sdPopulation = rs.getPopulationStandardDeviation();
-        descString = String.format(" Summary of %d observations: sum is %17.14g, mean is %17.14g, min is %17.14g, " +
+        descString = format(" Summary of %d observations: sum is %17.14g, mean is %17.14g, min is %17.14g, " +
                         "max is %17.14g, and the sum of weights is %17.14g" +
                         "\nSample standard deviation: %17.14g (dof = %d)" +
                         "\nPopulation standard deviation: %17.14g (dof = %d)",
@@ -99,9 +105,9 @@ public class FFXSummaryStatistics {
      * Assumes weights are all constant (1.0).
      * Assumes all values will be used.
      *
-     * @param values  Values to summarize.
+     * @param values Values to summarize.
      */
-    public FFXSummaryStatistics(double[] values) {
+    public SummaryStatistics(double[] values) {
         this(values, null, 0, values.length, 1);
     }
 
@@ -110,10 +116,10 @@ public class FFXSummaryStatistics {
      * Assumes weights are all constant (1.0).
      * Assumes all values from first to end will be used.
      *
-     * @param values  Values to summarize.
-     * @param first   First value to use.
+     * @param values Values to summarize.
+     * @param first  First value to use.
      */
-    public FFXSummaryStatistics(double[] values, int first) {
+    public SummaryStatistics(double[] values, int first) {
         this(values, null, first, values.length, 1);
     }
 
@@ -122,11 +128,11 @@ public class FFXSummaryStatistics {
      * Assumes weights are all constant (1.0).
      * Assumes a stride of 1.
      *
-     * @param values  Values to summarize.
-     * @param first   First value to use.
-     * @param last    Last value to use.
+     * @param values Values to summarize.
+     * @param first  First value to use.
+     * @param last   Last value to use.
      */
-    public FFXSummaryStatistics(double[] values, int first, int last) {
+    public SummaryStatistics(double[] values, int first, int last) {
         this(values, null, first, last, 1);
     }
 
@@ -134,12 +140,12 @@ public class FFXSummaryStatistics {
      * Constructs a static summary of a statistic from provided values.
      * Assumes weights are all constant (1.0).
      *
-     * @param values  Values to summarize.
-     * @param first   First value to use.
-     * @param last    Last value to use.
-     * @param stride  Stride between values used.
+     * @param values Values to summarize.
+     * @param first  First value to use.
+     * @param last   Last value to use.
+     * @param stride Stride between values used.
      */
-    public FFXSummaryStatistics(double[] values, int first, int last, int stride) {
+    public SummaryStatistics(double[] values, int first, int last, int stride) {
         this(values, null, first, last, stride);
     }
 
@@ -152,22 +158,22 @@ public class FFXSummaryStatistics {
      * @param last    Last value to use.
      * @param stride  Stride between values used.
      */
-    public FFXSummaryStatistics(double[] values, double[] weights, int first, int last, int stride) {
+    public SummaryStatistics(double[] values, double[] weights, int first, int last, int stride) {
         if (values == null) {
             throw new IllegalArgumentException(" Cannot have null values!");
         }
         int nVals = values.length;
 
         if (first < 0 || first > (nVals - 1)) {
-            throw new IllegalArgumentException(String.format(" First entry %d was not in valid range 0-%d (0 to length of values - 1)", first, nVals - 1));
+            throw new IllegalArgumentException(format(" First entry %d was not in valid range 0-%d (0 to length of values - 1)", first, nVals - 1));
         }
         if (last <= first || last > nVals) {
-            throw new IllegalArgumentException(String.format(" Last entry %d was not in valid range %d-%d (first+1 to length of values", last, (first + 1), nVals));
+            throw new IllegalArgumentException(format(" Last entry %d was not in valid range %d-%d (first+1 to length of values", last, (first + 1), nVals));
         }
 
         if (weights == null) {
             weights = new double[nVals];
-            Arrays.fill(weights, 1.0);
+            fill(weights, 1.0);
         }
 
         int tempCount = (last - first);
@@ -191,7 +197,7 @@ public class FFXSummaryStatistics {
             dof = 0;
             tDist = null;
 
-            descString = String.format(" Summary of single observation: value is %17.14g", mean);
+            descString = format(" Summary of single observation: value is %17.14g", mean);
         } else {
             double meanAcc = 0;
             double varAcc = 0;
@@ -214,8 +220,8 @@ public class FFXSummaryStatistics {
                 comp = (t - sumAcc) - y;
                 sumAcc = t;
 
-                minAcc = Math.min(minAcc, val);
-                maxAcc = Math.max(maxAcc, val);
+                minAcc = min(minAcc, val);
+                maxAcc = max(maxAcc, val);
 
                 double invCount = weight / weightAcc;
                 meanAcc += ((val - meanAcc) * invCount);
@@ -229,18 +235,18 @@ public class FFXSummaryStatistics {
             sum = sumAcc;
             sumWeights = weightAcc;
             // Mean via Kahan summation and online mean estimation should be pretty close to each other.
-            assert Math.abs(mean - (sum / count)) < 1.0E-11;
+            assert abs(mean - (sum / count)) < 1.0E-11;
             varPopulation = varAcc / count;
-            sdPopulation = Math.sqrt(varPopulation);
+            sdPopulation = sqrt(varPopulation);
             dof = count - 1;
             var = varAcc / dof;
-            sd = Math.sqrt(var);
+            sd = sqrt(var);
             tDist = new TDistribution(dof);
 
-            descString = String.format(" Summary of %d observations: sum is %17.14g, mean is %17.14g, min is %17.14g, " +
-                    "max is %17.14g, and the sum of weights is %17.14g" +
-                    "\nSample standard deviation: %17.14g (dof = %d)" +
-                    "\nPopulation standard deviation: %17.14g (dof = %d)",
+            descString = format(" Summary of %d observations: sum is %17.14g, mean is %17.14g, min is %17.14g, " +
+                            "max is %17.14g, and the sum of weights is %17.14g" +
+                            "\nSample standard deviation: %17.14g (dof = %d)" +
+                            "\nPopulation standard deviation: %17.14g (dof = %d)",
                     count, sum, mean, min, max, sumWeights, sd, dof, sdPopulation, count);
         }
     }
@@ -265,19 +271,19 @@ public class FFXSummaryStatistics {
             throw new IllegalArgumentException(" Cannot calculate confidence intervals when there are no degrees of freedom!");
         }
         double critVal = tDist.inverseCumulativeProbability(0.5 * (1.0 - alpha));
-        return critVal * sd / Math.sqrt(count);
+        return critVal * sd / sqrt(count);
     }
 
     public double getMean() {
         return mean;
     }
 
-    public double getVar() {
-        return var;
-    }
-
     public double getSd() {
         return sd;
+    }
+
+    public double getVar() {
+        return var;
     }
 
     @Override

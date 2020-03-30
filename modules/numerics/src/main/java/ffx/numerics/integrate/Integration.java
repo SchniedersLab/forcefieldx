@@ -39,6 +39,10 @@ package ffx.numerics.integrate;
 
 import java.text.DecimalFormat;
 
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.sin;
+
 /**
  * This program integrates using three methods: the trapezoidal method,
  * Simpson's Three Point Integration, and Boole's Five Point Integration
@@ -55,57 +59,6 @@ public class Integration {
             x[i] = .0025 + .005 * (i - 1);
         }
         x[201] = 1;
-    }
-
-    /**
-     * <p>main.</p>
-     *
-     * @param args an array of {@link java.lang.String} objects.
-     */
-    public static void main(String[] args) {
-        double testAnswer;
-        double testTrap, testTrapRight, avgTrap, avgTrapError;
-        double testSimp, testSimpRight, avgSimp, avgSimpError;
-        double testBoole, testBooleRight, avgBoole, avgBooleError;
-        double testRect, testRectRight, avgRect, avgRectError;
-        DecimalFormat decimalFormat = new DecimalFormat("#.00");
-
-        testAnswer = 2.98393938659796;
-        System.out.print(" The test case answer is " + testAnswer + "\n\n");
-
-        testRect = rectangularMethodLeft(generateTestData_v1());
-        testRectRight = rectangularMethodRight(generateTestData_v1());
-        avgRect = (testRect + testRectRight) / 2.0;
-        avgRectError = Math.abs(testAnswer - avgRect) / testAnswer * 100;
-
-        testTrap = trapInputLeft(generateTestData_v1());
-        testTrapRight = trapInputRight(generateTestData_v1());
-        avgTrap = (testTrap + testTrapRight) / 2.0;
-        avgTrapError = Math.abs(avgTrap - testAnswer) / testAnswer * 100;
-
-        testSimp = SimpsonsLeft(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), 1, "left");
-        testSimpRight = SimpsonsRight(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), 1, "right");
-        avgSimp = (testSimp + testSimpRight) / 2.0;
-        avgSimpError = Math.abs(testAnswer - avgSimp) / testAnswer * 100;
-
-        testBoole = BooleLeft(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), 2, "left");
-        testBooleRight = BooleRight(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), 2, "right");
-        avgBoole = (testBoole + testBooleRight) / 2.0;
-        avgBooleError = Math.abs(testAnswer - avgBoole) / testAnswer * 100;
-
-        // Average integrals
-        System.out.print(" Average integrals \n\n");
-        System.out.print(" Average rectangular " + avgRect + "\n");
-        System.out.print(" Average trap " + avgTrap + "\n");
-        System.out.print(" Average Simpsons " + avgSimp + "\n");
-        System.out.print(" Average Boole " + avgBoole + "\n");
-
-        // Average integral errors
-        System.out.print("\n Average integral error \n\n");
-        System.out.print(" Average rectangular error " + decimalFormat.format(avgRectError) + "%\n");
-        System.out.print(" Average Trapezoidal error  " + decimalFormat.format(avgTrapError) + "%\n");
-        System.out.print(" Average Simpsons error " + decimalFormat.format(avgSimpError) + "%\n");
-        System.out.print(" Average Boole error " + decimalFormat.format(avgBooleError) + "%\n");
     }
 
     /**
@@ -128,21 +81,21 @@ public class Integration {
         double[] y = new double[202];
 
         for (int i = 0; i < 202; i++) {
-            y[i] = 10 * Math.sin(6 * x[i]) - 7 * Math.cos(5 * x[i]) + 11 * Math.sin(8 * x[i]);
+            y[i] = 10 * sin(6 * x[i]) - 7 * cos(5 * x[i]) + 11 * sin(8 * x[i]);
         }
 
         return y;
     }
 
     /**
-     * <p>HalfBinComposite.</p>
+     * <p>halfBinComposite.</p>
      *
      * @param inputData an array of {@link double} objects.
      * @param mode      a int.
      * @param side      a {@link java.lang.String} object.
      * @return a double.
      */
-    public static double HalfBinComposite(double[] inputData, int mode, String side) {
+    public static double halfBinComposite(double[] inputData, int mode, String side) {
         int n = inputData.length;
         double halfBinComposite = 0;
         // Split by side first, then integration type
@@ -187,12 +140,62 @@ public class Integration {
     }
 
     /**
-     * <p>trapInputLeft.</p>
+     * <p>leftBoole.</p>
      *
      * @param inputData an array of {@link double} objects.
      * @return a double.
      */
-    public static double trapInputLeft(double[] inputData) {
+    public static double leftBoole(double[] inputData) {
+        int n = inputData.length;
+        double normalBoole = 0;
+        for (int a = 1; a < n - 5; a += 4) {
+            double area = (2.0 / 45.0) * (x[a + 1] - x[a]) * (7 * inputData[a] + 32 * inputData[a + 1] + 12 * inputData[a + 2] + 32 * inputData[a + 3] + 7 * inputData[a + 4]);
+            normalBoole += area;
+        }
+
+        return normalBoole;
+    }
+
+    /**
+     * <p>leftRectangularMethod.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
+    public static double leftRectangularMethod(double[] inputData) {
+        int n = inputData.length;
+        double[] y = generateTestData_v1();
+        double rectangularIntegral = 0;
+        for (int a = 0; a < n - 2; a++) {
+            double area = (x[a + 1] - x[a]) * y[a];
+            rectangularIntegral += area;
+        }
+        return rectangularIntegral;
+    }
+
+    /**
+     * <p>leftSimpsons.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
+    public static double leftSimpsons(double[] inputData) {
+        int n = inputData.length;
+        double normalSimpsons = 0;
+        for (int a = 1; a < n - 4; a += 2) {
+            double area = (1.0 / 3.0) * (x[a + 1] - x[a]) * (inputData[a] + 4 * inputData[a + 1] + inputData[a + 2]);
+            normalSimpsons += area;
+        }
+        return normalSimpsons;
+    }
+
+    /**
+     * <p>leftTrapInput.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
+    public static double leftTrapInput(double[] inputData) {
         int n = x.length;
         double sum = 0;
         double total = 0;
@@ -216,12 +219,115 @@ public class Integration {
     }
 
     /**
-     * <p>trapInputRight.</p>
+     * <p>main.</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
+    public static void main(String[] args) {
+        double testAnswer;
+        double testTrap, testTrapRight, avgTrap, avgTrapError;
+        double testSimp, testSimpRight, avgSimp, avgSimpError;
+        double testBoole, testBooleRight, avgBoole, avgBooleError;
+        double testRect, testRectRight, avgRect, avgRectError;
+        DecimalFormat decimalFormat = new DecimalFormat("#.00");
+
+        testAnswer = 2.98393938659796;
+        System.out.print(" The test case answer is " + testAnswer + "\n\n");
+
+        testRect = leftRectangularMethod(generateTestData_v1());
+        testRectRight = rightRectangularMethod(generateTestData_v1());
+        avgRect = (testRect + testRectRight) / 2.0;
+        avgRectError = abs(testAnswer - avgRect) / testAnswer * 100;
+
+        testTrap = leftTrapInput(generateTestData_v1());
+        testTrapRight = rightTrapInput(generateTestData_v1());
+        avgTrap = (testTrap + testTrapRight) / 2.0;
+        avgTrapError = abs(avgTrap - testAnswer) / testAnswer * 100;
+
+        testSimp = leftSimpsons(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 1, "left");
+        testSimpRight = rightSimpsons(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 1, "right");
+        avgSimp = (testSimp + testSimpRight) / 2.0;
+        avgSimpError = abs(testAnswer - avgSimp) / testAnswer * 100;
+
+        testBoole = leftBoole(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 2, "left");
+        testBooleRight = rightBoole(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 2, "right");
+        avgBoole = (testBoole + testBooleRight) / 2.0;
+        avgBooleError = abs(testAnswer - avgBoole) / testAnswer * 100;
+
+        // Average integrals
+        System.out.print(" Average integrals \n\n");
+        System.out.print(" Average rectangular " + avgRect + "\n");
+        System.out.print(" Average trap " + avgTrap + "\n");
+        System.out.print(" Average Simpsons " + avgSimp + "\n");
+        System.out.print(" Average Boole " + avgBoole + "\n");
+
+        // Average integral errors
+        System.out.print("\n Average integral error \n\n");
+        System.out.print(" Average rectangular error " + decimalFormat.format(avgRectError) + "%\n");
+        System.out.print(" Average Trapezoidal error  " + decimalFormat.format(avgTrapError) + "%\n");
+        System.out.print(" Average Simpsons error " + decimalFormat.format(avgSimpError) + "%\n");
+        System.out.print(" Average Boole error " + decimalFormat.format(avgBooleError) + "%\n");
+    }
+
+    /**
+     * <p>rightBoole.</p>
      *
      * @param inputData an array of {@link double} objects.
      * @return a double.
      */
-    public static double trapInputRight(double[] inputData) {
+    public static double rightBoole(double[] inputData) {
+        int n = inputData.length;
+        double normalBoole = 0;
+        for (int a = 4; a < n - 5; a += 4) {
+            // Simpsons and trapezoid + lower bin on left
+            double area = (2.0 / 45.0) * (x[a + 1] - x[a]) * (7 * inputData[a] + 32 * inputData[a + 1] + 12 * inputData[a + 2] + 32 * inputData[a + 3] + 7 * inputData[a + 4]);
+            normalBoole += area;
+        }
+
+        return normalBoole;
+    }
+
+    /**
+     * <p>rightRectangularMethod.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
+    public static double rightRectangularMethod(double[] inputData) {
+        int n = inputData.length;
+        double rectangularIntegral = 0;
+        double[] y = generateTestData_v1();
+        for (int a = 1; a < n - 1; a++) {
+            double area = (x[a + 1] - x[a]) * y[a];
+            rectangularIntegral += area;
+        }
+        return rectangularIntegral;
+    }
+
+    /**
+     * <p>rightSimpsons.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
+    public static double rightSimpsons(double[] inputData) {
+        int n = inputData.length;
+        double normalSimpsons = 0;
+        for (int a = 2; a < n - 3; a += 2) {
+            // Extra trap on lower edge so right edge of rightmost bin aligns with the upper half bin
+            double area = (1.0 / 3.0) * (x[a + 1] - x[a]) * (inputData[a] + 4 * inputData[a + 1] + inputData[a + 2]);
+            normalSimpsons += area;
+        }
+        return normalSimpsons;
+    }
+
+    /**
+     * <p>rightTrapInput.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
+    public static double rightTrapInput(double[] inputData) {
         int n = x.length;
         double sum = 0;
         double total = 0;
@@ -242,107 +348,5 @@ public class Integration {
         }
 
         return trapIntegral;
-    }
-
-    /**
-     * <p>SimpsonsLeft.</p>
-     *
-     * @param inputData an array of {@link double} objects.
-     * @return a double.
-     */
-    public static double SimpsonsLeft(double[] inputData) {
-        int n = inputData.length;
-        double normalSimpsons = 0;
-        for (int a = 1; a < n - 4; a += 2) {
-            double area = (1.0 / 3.0) * (x[a + 1] - x[a]) * (inputData[a] + 4 * inputData[a + 1] + inputData[a + 2]);
-            normalSimpsons += area;
-        }
-        return normalSimpsons;
-    }
-
-    /**
-     * <p>SimpsonsRight.</p>
-     *
-     * @param inputData an array of {@link double} objects.
-     * @return a double.
-     */
-    public static double SimpsonsRight(double[] inputData) {
-        int n = inputData.length;
-        double normalSimpsons = 0;
-        for (int a = 2; a < n - 3; a += 2) {
-            // Extra trap on lower edge so right edge of rightmost bin aligns with the upper half bin
-            double area = (1.0 / 3.0) * (x[a + 1] - x[a]) * (inputData[a] + 4 * inputData[a + 1] + inputData[a + 2]);
-            normalSimpsons += area;
-        }
-        return normalSimpsons;
-    }
-
-    /**
-     * <p>BooleLeft.</p>
-     *
-     * @param inputData an array of {@link double} objects.
-     * @return a double.
-     */
-    public static double BooleLeft(double[] inputData) {
-        int n = inputData.length;
-        double normalBoole = 0;
-        for (int a = 1; a < n - 5; a += 4) {
-            double area = (2.0 / 45.0) * (x[a + 1] - x[a]) * (7 * inputData[a] + 32 * inputData[a + 1] + 12 * inputData[a + 2] + 32 * inputData[a + 3] + 7 * inputData[a + 4]);
-            normalBoole += area;
-        }
-
-        return normalBoole;
-    }
-
-    /**
-     * <p>BooleRight.</p>
-     *
-     * @param inputData an array of {@link double} objects.
-     * @return a double.
-     */
-    public static double BooleRight(double[] inputData) {
-        int n = inputData.length;
-        double normalBoole = 0;
-        for (int a = 4; a < n - 5; a += 4) {
-            // Simpsons and trapezoid + lower bin on left
-            double area = (2.0 / 45.0) * (x[a + 1] - x[a]) * (7 * inputData[a] + 32 * inputData[a + 1] + 12 * inputData[a + 2] + 32 * inputData[a + 3] + 7 * inputData[a + 4]);
-            normalBoole += area;
-        }
-
-        return normalBoole;
-    }
-
-    /**
-     * <p>rectangularMethodLeft.</p>
-     *
-     * @param inputData an array of {@link double} objects.
-     * @return a double.
-     */
-    public static double rectangularMethodLeft(double[] inputData) {
-        int n = inputData.length;
-        double[] y = generateTestData_v1();
-        double rectangularIntegral = 0;
-        for (int a = 0; a < n - 2; a++) {
-            double area = (x[a + 1] - x[a]) * y[a];
-            rectangularIntegral += area;
-        }
-        return rectangularIntegral;
-    }
-
-    /**
-     * <p>rectangularMethodRight.</p>
-     *
-     * @param inputData an array of {@link double} objects.
-     * @return a double.
-     */
-    public static double rectangularMethodRight(double[] inputData) {
-        int n = inputData.length;
-        double rectangularIntegral = 0;
-        double[] y = generateTestData_v1();
-        for (int a = 1; a < n - 1; a++) {
-            double area = (x[a + 1] - x[a]) * y[a];
-            rectangularIntegral += area;
-        }
-        return rectangularIntegral;
     }
 }

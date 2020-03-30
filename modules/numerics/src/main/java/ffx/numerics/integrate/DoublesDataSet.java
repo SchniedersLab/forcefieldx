@@ -144,40 +144,8 @@ public class DoublesDataSet implements DataSet {
      * {@inheritDoc}
      */
     @Override
-    public double lowerBound() {
-        return lb;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double upperBound() {
-        return ub;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int numPoints() {
-        return x.length;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public double binWidth() {
         return sep;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getFxPoint(int index) {
-        return fX[index];
     }
 
     /**
@@ -194,8 +162,63 @@ public class DoublesDataSet implements DataSet {
      * {@inheritDoc}
      */
     @Override
+    public double getFxPoint(int index) {
+        return fX[index];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getX() {
+        double[] copyX = new double[x.length];
+        arraycopy(x, 0, copyX, 0, x.length);
+        return copyX;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean halfWidthEnds() {
         return halfWidthEnd;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double lowerBound() {
+        return lb;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int numPoints() {
+        return x.length;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double upperBound() {
+        return ub;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(format("Data set with %d points from lower bound %9.3g and upper bound %9.3g", nX, lb, ub));
+        if (halfWidthEnd) {
+            sb.append(" and half-width start/end bins");
+        }
+        sb.append(".");
+        return sb.toString();
     }
 
     /**
@@ -224,28 +247,5 @@ public class DoublesDataSet implements DataSet {
                 assert approxEquals(x[i], x[0] + i * sep);
             }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getX() {
-        double[] copyX = new double[x.length];
-        arraycopy(x, 0, copyX, 0, x.length);
-        return copyX;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder(format("Data set with %d points from lower bound %9.3g and upper bound %9.3g", nX, lb, ub));
-        if (halfWidthEnd) {
-            sb.append(" and half-width start/end bins");
-        }
-        sb.append(".");
-        return sb.toString();
     }
 }

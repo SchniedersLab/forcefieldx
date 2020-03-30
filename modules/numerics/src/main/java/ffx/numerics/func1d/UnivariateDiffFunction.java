@@ -47,15 +47,6 @@ package ffx.numerics.func1d;
 public interface UnivariateDiffFunction {
 
     /**
-     * Value at a point
-     *
-     * @param x a double.
-     * @return f(x)
-     * @throws java.lang.IllegalArgumentException If f(x) is undefined at x.
-     */
-    double valueAt(double x) throws IllegalArgumentException;
-
-    /**
      * First derivative at a point.
      *
      * @param x a double.
@@ -63,15 +54,6 @@ public interface UnivariateDiffFunction {
      * @throws java.lang.IllegalArgumentException If f'(x) is undefined at x.
      */
     double firstDerivative(double x) throws IllegalArgumentException;
-
-    /**
-     * Second derivative at a point.
-     *
-     * @param x a double.
-     * @return f''(x)
-     * @throws java.lang.IllegalArgumentException If f''(x) is undefined at x.
-     */
-    double secondDerivative(double x) throws IllegalArgumentException;
 
     /**
      * N'th order derivative at a point. Should be relatively optional for any
@@ -83,4 +65,22 @@ public interface UnivariateDiffFunction {
      * @throws java.lang.IllegalArgumentException If derivative undefined at x.
      */
     double nthDerivative(double x, int order) throws IllegalArgumentException;
+
+    /**
+     * Second derivative at a point.
+     *
+     * @param x a double.
+     * @return f''(x)
+     * @throws java.lang.IllegalArgumentException If f''(x) is undefined at x.
+     */
+    double secondDerivative(double x) throws IllegalArgumentException;
+
+    /**
+     * Value at a point
+     *
+     * @param x a double.
+     * @return f(x)
+     * @throws java.lang.IllegalArgumentException If f(x) is undefined at x.
+     */
+    double valueAt(double x) throws IllegalArgumentException;
 }

@@ -131,6 +131,23 @@ public class Real3DParallel {
     }
 
     /**
+     * Compute a convolution in parallel.
+     *
+     * @param input The input array must be of size (nX + 2) * nY * nZ.
+     * @since 1.0
+     */
+    public void convolution(final double[] input) {
+        parallelConvolution.input = input;
+        try {
+            parallelTeam.execute(parallelConvolution);
+        } catch (Exception e) {
+            String message = "Fatal exception evaluating a 3D convolution in parallel.\n";
+            logger.log(Level.SEVERE, message, e);
+            System.exit(-1);
+        }
+    }
+
+    /**
      * Compute the 3D FFT.
      *
      * @param input The input array must be of size (nX + 2) * nY * nZ.
@@ -161,386 +178,6 @@ public class Real3DParallel {
             String message = "Fatal exception evaluating real 3D inverse FFT in parallel.\n";
             logger.log(Level.SEVERE, message, e);
             System.exit(-1);
-        }
-    }
-
-    /**
-     * Compute a convolution in parallel.
-     *
-     * @param input The input array must be of size (nX + 2) * nY * nZ.
-     * @since 1.0
-     */
-    public void convolution(final double[] input) {
-        parallelConvolution.input = input;
-        try {
-            parallelTeam.execute(parallelConvolution);
-        } catch (Exception e) {
-            String message = "Fatal exception evaluating a 3D convolution in parallel.\n";
-            logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
-        }
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>recip</code>.</p>
-     *
-     * @param recip The recip array must be of size [(nX/2 + 1) * nY * nZ].
-     */
-    public void setRecip(double[] recip) {
-        // Reorder the reciprocal space data into the order it is needed by the convolution routine.
-        for (int index = 0, offset = 0, y = 0; y < nY; y++) {
-            for (int x = 0; x < nX1; x++, offset += 1) {
-                for (int i = 0, z = offset; i < nZ; i++, z += nX1 * nY) {
-                    this.recip[index++] = recip[z];
-
-                }
-            }
-        }
-    }
-
-    /**
-     * Implement the 3D parallel FFT.
-     *
-     * @author Michael J. Schnieders
-     * @since 1.0
-     */
-    private class ParallelFFT extends ParallelRegion {
-
-        public double[] input;
-        private final int nZm1;
-        private final FFTXYLoop[] fftXYLoop;
-        private final FFTZLoop[] fftZLoop;
-
-        private ParallelFFT() {
-            nZm1 = nZ - 1;
-            fftXYLoop = new FFTXYLoop[threadCount];
-            fftZLoop = new FFTZLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                fftXYLoop[i] = new FFTXYLoop();
-                fftZLoop[i] = new FFTZLoop();
-            }
-        }
-
-        @Override
-        public void run() {
-            int threadIndex = getThreadIndex();
-            fftXYLoop[threadIndex].input = input;
-            fftZLoop[threadIndex].input = input;
-            try {
-                execute(0, nZm1, fftXYLoop[threadIndex]);
-                // There are nX + 1 frequencies.
-                execute(0, nX, fftZLoop[threadIndex]);
-            } catch (Exception e) {
-                logger.severe(e.toString());
-            }
-        }
-
-        private class FFTXYLoop extends IntegerForLoop {
-
-            public double[] input;
-            private final Real fftX;
-            private final Complex fftY;
-
-            private FFTXYLoop() {
-                fftY = new Complex(nY);
-                fftX = new Real(n);
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
-            public void run(final int lb, final int ub) {
-                for (int z = lb; z <= ub; z++) {
-                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-                        fftX.fft(input, offset);
-                    }
-                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                        fftY.fft(input, offset, nextY);
-                    }
-                }
-            }
-        }
-
-        private class FFTZLoop extends IntegerForLoop {
-
-            public double[] input;
-            private final double[] work;
-            private final Complex fft;
-
-            private FFTZLoop() {
-                work = new double[nZ2];
-                fft = new Complex(nZ);
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
-            public void run(final int lb, final int ub) {
-                for (int x = lb; x <= ub; x++) {
-                    for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
-                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
-                            work[i] = input[z];
-                            work[i + 1] = input[z + 1];
-                        }
-                        fft.fft(work, 0, 2);
-                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
-                            input[z] = work[i];
-                            input[z + 1] = work[i + 1];
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Implement the 3D parallel inverse FFT.
-     *
-     * @author Michael J. Schnieders
-     * @since 1.0
-     */
-    private class ParallelIFFT extends ParallelRegion {
-
-        public double[] input;
-        private final int nZm1;
-        private final IFFTXYLoop[] ifftXYLoop;
-        private final IFFTZLoop[] ifftZLoop;
-
-        private ParallelIFFT() {
-            nZm1 = nZ - 1;
-            ifftXYLoop = new IFFTXYLoop[threadCount];
-            ifftZLoop = new IFFTZLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                ifftXYLoop[i] = new IFFTXYLoop();
-                ifftZLoop[i] = new IFFTZLoop();
-            }
-        }
-
-        @Override
-        public void run() {
-            int threadIndex = getThreadIndex();
-            ifftXYLoop[threadIndex].input = input;
-            ifftZLoop[threadIndex].input = input;
-            try {
-                // There are xDim + 1 frequencies.
-                execute(0, nX, ifftZLoop[threadIndex]);
-                execute(0, nZm1, ifftXYLoop[threadIndex]);
-            } catch (Exception e) {
-                logger.severe(e.toString());
-            }
-        }
-
-        private class IFFTZLoop extends IntegerForLoop {
-
-            public double[] input;
-            private final double[] work;
-            private final Complex fft;
-
-            private IFFTZLoop() {
-                fft = new Complex(nZ);
-                work = new double[nZ2];
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
-            public void run(final int lb, final int ub) {
-                for (int x = lb; x <= ub; x++) {
-                    for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
-                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
-                            work[i] = input[z];
-                            work[i + 1] = input[z + 1];
-                        }
-                        fft.ifft(work, 0, 2);
-                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
-                            input[z] = work[i];
-                            input[z + 1] = work[i + 1];
-                        }
-                    }
-                }
-            }
-        }
-
-        private class IFFTXYLoop extends IntegerForLoop {
-
-            public double[] input;
-            private final Real fftX;
-            private final Complex fftY;
-
-            private IFFTXYLoop() {
-                fftX = new Real(n);
-                fftY = new Complex(nY);
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
-            public void run(final int lb, final int ub) {
-                for (int z = lb; z <= ub; z++) {
-                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                        fftY.ifft(input, offset, nextY);
-                    }
-                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-                        fftX.ifft(input, offset);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Implement the 3D parallel convolution.
-     *
-     * @author Michael J. Schnieders
-     * @since 1.0
-     */
-    private class ParallelConvolution extends ParallelRegion {
-
-        public double[] input;
-        private final int nZm1, nYm1, nX1nZ;
-        private final FFTXYLoop[] fftXYLoop;
-        private final FFTZ_Multiply_IFFTZLoop[] fftZ_Multiply_ifftZLoop;
-        private final IFFTXYLoop[] ifftXYLoop;
-
-        private ParallelConvolution() {
-            nZm1 = nZ - 1;
-            nYm1 = nY - 1;
-            nX1nZ = nX1 * nZ;
-            fftXYLoop = new FFTXYLoop[threadCount];
-            fftZ_Multiply_ifftZLoop = new FFTZ_Multiply_IFFTZLoop[threadCount];
-            ifftXYLoop = new IFFTXYLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                fftXYLoop[i] = new FFTXYLoop();
-                fftZ_Multiply_ifftZLoop[i] = new FFTZ_Multiply_IFFTZLoop();
-                ifftXYLoop[i] = new IFFTXYLoop();
-            }
-        }
-
-        @Override
-        public void run() {
-            int threadIndex = getThreadIndex();
-            fftXYLoop[threadIndex].input = input;
-            fftZ_Multiply_ifftZLoop[threadIndex].input = input;
-            ifftXYLoop[threadIndex].input = input;
-            try {
-                execute(0, nZm1, fftXYLoop[threadIndex]);
-                execute(0, nYm1, fftZ_Multiply_ifftZLoop[threadIndex]);
-                execute(0, nZm1, ifftXYLoop[threadIndex]);
-            } catch (Exception e) {
-                logger.severe(e.toString());
-            }
-        }
-
-        private class FFTXYLoop extends IntegerForLoop {
-
-            public double[] input;
-            private final Real fftX;
-            private final Complex fftY;
-
-            private FFTXYLoop() {
-                fftY = new Complex(nY);
-                fftX = new Real(n);
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
-            public void run(final int lb, final int ub) {
-                for (int z = lb; z <= ub; z++) {
-                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-                        fftX.fft(input, offset);
-                    }
-                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                        fftY.fft(input, offset, nextY);
-                    }
-                }
-            }
-        }
-
-        private class FFTZ_Multiply_IFFTZLoop extends IntegerForLoop {
-
-            public double[] input;
-            private final double[] work;
-            private final Complex fft;
-
-            private FFTZ_Multiply_IFFTZLoop() {
-                work = new double[nZ2];
-                fft = new Complex(nZ);
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
-            public void run(final int lb, final int ub) {
-                int index = lb * nX1nZ;
-                for (int offset = lb * nextY, y = lb; y <= ub; y++) {
-                    for (int x = 0; x < nX1; x++, offset += nextX) {
-                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
-                            work[i] = input[z];
-                            work[i + 1] = input[z + 1];
-                        }
-                        fft.fft(work, 0, 2);
-                        for (int i = 0; i < nZ2; i += 2) {
-                            double r = recip[index++];
-                            work[i] *= r;
-                            work[i + 1] *= r;
-                        }
-                        fft.ifft(work, 0, 2);
-                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
-                            input[z] = work[i];
-                            input[z + 1] = work[i + 1];
-                        }
-                    }
-                }
-            }
-        }
-
-        private class IFFTXYLoop extends IntegerForLoop {
-
-            public double[] input;
-            private final Real fftX;
-            private final Complex fftY;
-
-            private IFFTXYLoop() {
-                fftY = new Complex(nY);
-                fftX = new Real(n);
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
-            public void run(final int lb, final int ub) {
-                for (int z = lb; z <= ub; z++) {
-                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                        fftY.ifft(input, offset, nextY);
-                    }
-                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-                        fftX.ifft(input, offset);
-                    }
-                }
-            }
         }
     }
 
@@ -671,5 +308,368 @@ public class Real3DParallel {
                 toSeconds * parTime));
         System.out.println(String.format("Speedup: %15.5f", (double) seqTime
                 / parTime));
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>recip</code>.</p>
+     *
+     * @param recip The recip array must be of size [(nX/2 + 1) * nY * nZ].
+     */
+    public void setRecip(double[] recip) {
+        // Reorder the reciprocal space data into the order it is needed by the convolution routine.
+        for (int index = 0, offset = 0, y = 0; y < nY; y++) {
+            for (int x = 0; x < nX1; x++, offset += 1) {
+                for (int i = 0, z = offset; i < nZ; i++, z += nX1 * nY) {
+                    this.recip[index++] = recip[z];
+
+                }
+            }
+        }
+    }
+
+    /**
+     * Implement the 3D parallel FFT.
+     *
+     * @author Michael J. Schnieders
+     * @since 1.0
+     */
+    private class ParallelFFT extends ParallelRegion {
+
+        private final int nZm1;
+        private final FFTXYLoop[] fftXYLoop;
+        private final FFTZLoop[] fftZLoop;
+        public double[] input;
+
+        private ParallelFFT() {
+            nZm1 = nZ - 1;
+            fftXYLoop = new FFTXYLoop[threadCount];
+            fftZLoop = new FFTZLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                fftXYLoop[i] = new FFTXYLoop();
+                fftZLoop[i] = new FFTZLoop();
+            }
+        }
+
+        @Override
+        public void run() {
+            int threadIndex = getThreadIndex();
+            fftXYLoop[threadIndex].input = input;
+            fftZLoop[threadIndex].input = input;
+            try {
+                execute(0, nZm1, fftXYLoop[threadIndex]);
+                // There are nX + 1 frequencies.
+                execute(0, nX, fftZLoop[threadIndex]);
+            } catch (Exception e) {
+                logger.severe(e.toString());
+            }
+        }
+
+        private class FFTXYLoop extends IntegerForLoop {
+
+            private final Real fftX;
+            private final Complex fftY;
+            public double[] input;
+
+            private FFTXYLoop() {
+                fftY = new Complex(nY);
+                fftX = new Real(n);
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
+            }
+
+            @Override
+            public void run(final int lb, final int ub) {
+                for (int z = lb; z <= ub; z++) {
+                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                        fftX.fft(input, offset);
+                    }
+                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+                        fftY.fft(input, offset, nextY);
+                    }
+                }
+            }
+        }
+
+        private class FFTZLoop extends IntegerForLoop {
+
+            private final double[] work;
+            private final Complex fft;
+            public double[] input;
+
+            private FFTZLoop() {
+                work = new double[nZ2];
+                fft = new Complex(nZ);
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
+            }
+
+            @Override
+            public void run(final int lb, final int ub) {
+                for (int x = lb; x <= ub; x++) {
+                    for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                            work[i] = input[z];
+                            work[i + 1] = input[z + 1];
+                        }
+                        fft.fft(work, 0, 2);
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                            input[z] = work[i];
+                            input[z + 1] = work[i + 1];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Implement the 3D parallel inverse FFT.
+     *
+     * @author Michael J. Schnieders
+     * @since 1.0
+     */
+    private class ParallelIFFT extends ParallelRegion {
+
+        private final int nZm1;
+        private final IFFTXYLoop[] ifftXYLoop;
+        private final IFFTZLoop[] ifftZLoop;
+        public double[] input;
+
+        private ParallelIFFT() {
+            nZm1 = nZ - 1;
+            ifftXYLoop = new IFFTXYLoop[threadCount];
+            ifftZLoop = new IFFTZLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                ifftXYLoop[i] = new IFFTXYLoop();
+                ifftZLoop[i] = new IFFTZLoop();
+            }
+        }
+
+        @Override
+        public void run() {
+            int threadIndex = getThreadIndex();
+            ifftXYLoop[threadIndex].input = input;
+            ifftZLoop[threadIndex].input = input;
+            try {
+                // There are xDim + 1 frequencies.
+                execute(0, nX, ifftZLoop[threadIndex]);
+                execute(0, nZm1, ifftXYLoop[threadIndex]);
+            } catch (Exception e) {
+                logger.severe(e.toString());
+            }
+        }
+
+        private class IFFTZLoop extends IntegerForLoop {
+
+            private final double[] work;
+            private final Complex fft;
+            public double[] input;
+
+            private IFFTZLoop() {
+                fft = new Complex(nZ);
+                work = new double[nZ2];
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
+            }
+
+            @Override
+            public void run(final int lb, final int ub) {
+                for (int x = lb; x <= ub; x++) {
+                    for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                            work[i] = input[z];
+                            work[i + 1] = input[z + 1];
+                        }
+                        fft.ifft(work, 0, 2);
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                            input[z] = work[i];
+                            input[z + 1] = work[i + 1];
+                        }
+                    }
+                }
+            }
+        }
+
+        private class IFFTXYLoop extends IntegerForLoop {
+
+            private final Real fftX;
+            private final Complex fftY;
+            public double[] input;
+
+            private IFFTXYLoop() {
+                fftX = new Real(n);
+                fftY = new Complex(nY);
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
+            }
+
+            @Override
+            public void run(final int lb, final int ub) {
+                for (int z = lb; z <= ub; z++) {
+                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+                        fftY.ifft(input, offset, nextY);
+                    }
+                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                        fftX.ifft(input, offset);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Implement the 3D parallel convolution.
+     *
+     * @author Michael J. Schnieders
+     * @since 1.0
+     */
+    private class ParallelConvolution extends ParallelRegion {
+
+        private final int nZm1, nYm1, nX1nZ;
+        private final FFTXYLoop[] fftXYLoop;
+        private final FFTZ_Multiply_IFFTZLoop[] fftZ_Multiply_ifftZLoop;
+        private final IFFTXYLoop[] ifftXYLoop;
+        public double[] input;
+
+        private ParallelConvolution() {
+            nZm1 = nZ - 1;
+            nYm1 = nY - 1;
+            nX1nZ = nX1 * nZ;
+            fftXYLoop = new FFTXYLoop[threadCount];
+            fftZ_Multiply_ifftZLoop = new FFTZ_Multiply_IFFTZLoop[threadCount];
+            ifftXYLoop = new IFFTXYLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                fftXYLoop[i] = new FFTXYLoop();
+                fftZ_Multiply_ifftZLoop[i] = new FFTZ_Multiply_IFFTZLoop();
+                ifftXYLoop[i] = new IFFTXYLoop();
+            }
+        }
+
+        @Override
+        public void run() {
+            int threadIndex = getThreadIndex();
+            fftXYLoop[threadIndex].input = input;
+            fftZ_Multiply_ifftZLoop[threadIndex].input = input;
+            ifftXYLoop[threadIndex].input = input;
+            try {
+                execute(0, nZm1, fftXYLoop[threadIndex]);
+                execute(0, nYm1, fftZ_Multiply_ifftZLoop[threadIndex]);
+                execute(0, nZm1, ifftXYLoop[threadIndex]);
+            } catch (Exception e) {
+                logger.severe(e.toString());
+            }
+        }
+
+        private class FFTXYLoop extends IntegerForLoop {
+
+            private final Real fftX;
+            private final Complex fftY;
+            public double[] input;
+
+            private FFTXYLoop() {
+                fftY = new Complex(nY);
+                fftX = new Real(n);
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
+            }
+
+            @Override
+            public void run(final int lb, final int ub) {
+                for (int z = lb; z <= ub; z++) {
+                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                        fftX.fft(input, offset);
+                    }
+                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+                        fftY.fft(input, offset, nextY);
+                    }
+                }
+            }
+        }
+
+        private class FFTZ_Multiply_IFFTZLoop extends IntegerForLoop {
+
+            private final double[] work;
+            private final Complex fft;
+            public double[] input;
+
+            private FFTZ_Multiply_IFFTZLoop() {
+                work = new double[nZ2];
+                fft = new Complex(nZ);
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
+            }
+
+            @Override
+            public void run(final int lb, final int ub) {
+                int index = lb * nX1nZ;
+                for (int offset = lb * nextY, y = lb; y <= ub; y++) {
+                    for (int x = 0; x < nX1; x++, offset += nextX) {
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                            work[i] = input[z];
+                            work[i + 1] = input[z + 1];
+                        }
+                        fft.fft(work, 0, 2);
+                        for (int i = 0; i < nZ2; i += 2) {
+                            double r = recip[index++];
+                            work[i] *= r;
+                            work[i + 1] *= r;
+                        }
+                        fft.ifft(work, 0, 2);
+                        for (int z = offset, i = 0; i < nZ2; i += 2, z += nextZ) {
+                            input[z] = work[i];
+                            input[z + 1] = work[i + 1];
+                        }
+                    }
+                }
+            }
+        }
+
+        private class IFFTXYLoop extends IntegerForLoop {
+
+            private final Real fftX;
+            private final Complex fftY;
+            public double[] input;
+
+            private IFFTXYLoop() {
+                fftY = new Complex(nY);
+                fftX = new Real(n);
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
+            }
+
+            @Override
+            public void run(final int lb, final int ub) {
+                for (int z = lb; z <= ub; z++) {
+                    for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+                        fftY.ifft(input, offset, nextY);
+                    }
+                    for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                        fftX.ifft(input, offset);
+                    }
+                }
+            }
+        }
     }
 }

@@ -46,32 +46,18 @@ package ffx.numerics.integrate;
 public interface DataSet {
 
     /**
-     * Lower bound of the points along x.
-     *
-     * @return a double.
-     */
-    double lowerBound();
-
-    /**
-     * Upper bound of the points along x.
-     *
-     * @return a double.
-     */
-    double upperBound();
-
-    /**
-     * Number of points along x.
-     *
-     * @return a int.
-     */
-    int numPoints();
-
-    /**
      * Separation between points along x; should be uniform.
      *
      * @return a double.
      */
     double binWidth();
+
+    /**
+     * Returns copy of the array of points f(x) to integrate (y-axis).
+     *
+     * @return an array of {@link double} objects.
+     */
+    double[] getAllFxPoints();
 
     /**
      * Point f(x) at index.
@@ -80,13 +66,6 @@ public interface DataSet {
      * @return a double.
      */
     double getFxPoint(int index);
-
-    /**
-     * Returns copy of the array of points f(x) to integrate (y-axis).
-     *
-     * @return an array of {@link double} objects.
-     */
-    double[] getAllFxPoints();
 
     /**
      * Returns copy of the array of points x (x-axis).
@@ -102,4 +81,25 @@ public interface DataSet {
      * @return a boolean.
      */
     boolean halfWidthEnds();
+
+    /**
+     * Lower bound of the points along x.
+     *
+     * @return a double.
+     */
+    double lowerBound();
+
+    /**
+     * Number of points along x.
+     *
+     * @return a int.
+     */
+    int numPoints();
+
+    /**
+     * Upper bound of the points along x.
+     *
+     * @return a double.
+     */
+    double upperBound();
 }

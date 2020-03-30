@@ -37,6 +37,8 @@
 //******************************************************************************
 package ffx.numerics.switching;
 
+import static java.lang.String.format;
+
 import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
@@ -90,7 +92,15 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double getZeroBound() {
+    public boolean constantOutsideBounds() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getHighestOrderZeroDerivative() {
         return 0;
     }
 
@@ -106,16 +116,8 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public boolean constantOutsideBounds() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return false;
+    public double getZeroBound() {
+        return 0;
     }
 
     /**
@@ -133,14 +135,6 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public int getHighestOrderZeroDerivative() {
-        return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public boolean symmetricToUnity() {
         return (beta == 1.0);
     }
@@ -149,9 +143,8 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        x *= a;
-        return pow(x, beta);
+    public boolean validOutsideBounds() {
+        return false;
     }
 
     /**
@@ -161,15 +154,6 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
     public double firstDerivative(double x) throws IllegalArgumentException {
         x *= a;
         return beta * a * pow(x, beta - 1);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double secondDerivative(double x) throws IllegalArgumentException {
-        x *= a;
-        return beta == 1.0 ? 0.0 : beta * (beta - 1) * a * a * pow(x, beta - 2);
     }
 
     /**
@@ -201,12 +185,21 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
     }
 
     /**
-     * Gets the value of a in f(x) = (a*x)^beta.
-     *
-     * @return Multiplier of input
+     * {@inheritDoc}
      */
-    public double getMultiplier() {
-        return a;
+    @Override
+    public double secondDerivative(double x) throws IllegalArgumentException {
+        x *= a;
+        return beta == 1.0 ? 0.0 : beta * (beta - 1) * a * a * pow(x, beta - 2);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        x *= a;
+        return pow(x, beta);
     }
 
     /**
@@ -219,10 +212,19 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
     }
 
     /**
+     * Gets the value of a in f(x) = (a*x)^beta.
+     *
+     * @return Multiplier of input
+     */
+    public double getMultiplier() {
+        return a;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return String.format("Power switching function f(x) = (%8.4g * x)^%8.4g", a, beta);
+        return format("Power switching function f(x) = (%8.4g * x)^%8.4g", a, beta);
     }
 }

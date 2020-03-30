@@ -78,10 +78,45 @@ public class PJDoubleArray implements AtomicDoubleArray {
      * {@inheritDoc}
      */
     @Override
+    public void add(int threadID, int index, double value) {
+        array.getAndAdd(index, value);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void alloc(int size) {
         if (array.length() < size) {
             array = new SharedDoubleArray(size);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double get(int index) {
+        return array.get(index);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Reduction is handled atomically by the PJ SharedDoubleArray.
+     */
+    @Override
+    public void reduce(int lb, int ub) {
+        // Nothing to do.
+    }
+
+    /**
+     * {@inheritDoc}
+     * Reduction is handled atomically by the PJ SharedDoubleArray.
+     */
+    @Override
+    public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
+        // Nothing to do.
     }
 
     /**
@@ -120,14 +155,6 @@ public class PJDoubleArray implements AtomicDoubleArray {
      * {@inheritDoc}
      */
     @Override
-    public void add(int threadID, int index, double value) {
-        array.getAndAdd(index, value);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public void set(int threadID, int index, double value) { array.getAndSet(index, value); }
 
     /**
@@ -136,33 +163,6 @@ public class PJDoubleArray implements AtomicDoubleArray {
     @Override
     public void sub(int threadID, int index, double value) {
         array.getAndAdd(index, -value);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Reduction is handled atomically by the PJ SharedDoubleArray.
-     */
-    @Override
-    public void reduce(int lb, int ub) {
-        // Nothing to do.
-    }
-
-    /**
-     * {@inheritDoc}
-     * Reduction is handled atomically by the PJ SharedDoubleArray.
-     */
-    @Override
-    public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
-        // Nothing to do.
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double get(int index) {
-        return array.get(index);
     }
 
 }

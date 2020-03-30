@@ -81,6 +81,14 @@ public class MultiDoubleArray implements AtomicDoubleArray {
      * {@inheritDoc}
      */
     @Override
+    public void add(int threadID, int index, double value) {
+        array[threadID][index] += value;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void alloc(int size) {
         for (int i = 0; i < threadCount; i++) {
             if (array[i].length < size) {
@@ -92,61 +100,11 @@ public class MultiDoubleArray implements AtomicDoubleArray {
     /**
      * {@inheritDoc}
      * <p>
-     * Initialize the storage space for the specified thread.
+     * Return a reduced value at the given index.
      */
     @Override
-    public void reset(int threadID, int lb, int ub) {
-        Arrays.fill(array[threadID], 0.0);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Initialize the storage space for all threads.
-     */
-    @Override
-    public void reset(ParallelTeam parallelTeam, int lb, int ub) {
-        try {
-            parallelTeam.execute(new ParallelRegion() {
-                @Override
-                public void run() throws Exception {
-                    execute(0, threadCount - 1, new IntegerForLoop() {
-                        @Override
-                        public void run(int first, int last) {
-                            for (int i = first; i <= last; i++) {
-                                reset(i, lb, ub);
-                            }
-                        }
-                    });
-                }
-            });
-        } catch (Exception e) {
-            logger.log(Level.WARNING, " Exception resetting an MultiDoubleArray", e);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void add(int threadID, int index, double value) {
-        array[threadID][index] += value;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void set(int threadID, int index, double value) {
-        array[threadID][index] = value;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void sub(int threadID, int index, double value) {
-        array[threadID][index] -= value;
+    public double get(int index) {
+        return array[0][index];
     }
 
     /**
@@ -192,11 +150,53 @@ public class MultiDoubleArray implements AtomicDoubleArray {
     /**
      * {@inheritDoc}
      * <p>
-     * Return a reduced value at the given index.
+     * Initialize the storage space for the specified thread.
      */
     @Override
-    public double get(int index) {
-        return array[0][index];
+    public void reset(int threadID, int lb, int ub) {
+        Arrays.fill(array[threadID], 0.0);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Initialize the storage space for all threads.
+     */
+    @Override
+    public void reset(ParallelTeam parallelTeam, int lb, int ub) {
+        try {
+            parallelTeam.execute(new ParallelRegion() {
+                @Override
+                public void run() throws Exception {
+                    execute(0, threadCount - 1, new IntegerForLoop() {
+                        @Override
+                        public void run(int first, int last) {
+                            for (int i = first; i <= last; i++) {
+                                reset(i, lb, ub);
+                            }
+                        }
+                    });
+                }
+            });
+        } catch (Exception e) {
+            logger.log(Level.WARNING, " Exception resetting an MultiDoubleArray", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void set(int threadID, int index, double value) {
+        array[threadID][index] = value;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void sub(int threadID, int index, double value) {
+        array[threadID][index] -= value;
     }
 
 }

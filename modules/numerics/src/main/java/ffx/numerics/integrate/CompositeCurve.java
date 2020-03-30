@@ -120,6 +120,24 @@ public class CompositeCurve extends FunctionDataCurve {
     }
 
     /**
+     * Gets the component FunctionDataCurves of this CompositeCurve.
+     *
+     * @return List of component FunctionDataCurves.
+     */
+    public List<FunctionDataCurve> getSubCurves() {
+        return asList(curves);
+    }
+
+    /**
+     * Gets the weights to the corresponding component curves.
+     *
+     * @return Constant weights
+     */
+    public double[] getWeights() {
+        return copyOf(coeffs, coeffs.length);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -137,24 +155,6 @@ public class CompositeCurve extends FunctionDataCurve {
     @Override
     public double fX(double x) {
         return valAt(x);
-    }
-
-    /**
-     * Gets the component FunctionDataCurves of this CompositeCurve.
-     *
-     * @return List of component FunctionDataCurves.
-     */
-    public List<FunctionDataCurve> getSubCurves() {
-        return asList(curves);
-    }
-
-    /**
-     * Gets the weights to the corresponding component curves.
-     *
-     * @return Constant weights
-     */
-    public double[] getWeights() {
-        return copyOf(coeffs, coeffs.length);
     }
 
     /**

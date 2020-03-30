@@ -130,16 +130,6 @@ public class Real {
     }
 
     /**
-     * Return the normalization factor. Multiply the elements of the
-     * back-transformed data to get the normalized inverse.
-     *
-     * @return a double.
-     */
-    private double normalization() {
-        return 1.0 / n;
-    }
-
-    /**
      * <p>
      * inverse</p>
      *
@@ -155,6 +145,16 @@ public class Real {
             final int index = offset + i;
             data[index] *= norm;
         }
+    }
+
+    /**
+     * Return the normalization factor. Multiply the elements of the
+     * back-transformed data to get the normalized inverse.
+     *
+     * @return a double.
+     */
+    private double normalization() {
+        return 1.0 / n;
     }
 
     /**

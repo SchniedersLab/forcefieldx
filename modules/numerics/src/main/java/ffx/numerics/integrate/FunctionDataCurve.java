@@ -73,39 +73,6 @@ public abstract class FunctionDataCurve implements DataSet {
     protected boolean halfWidthEnd;
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double lowerBound() {
-        return lb;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double upperBound() {
-        return ub;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int numPoints() {
-        return points.length;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double binWidth() {
-        double divisor = halfWidthEnds() ? (double) (points.length - 2) : (double) (points.length - 1);
-        return (ub - lb) / divisor;
-    }
-
-    /**
      * Evaluates the functions analytical integral over the entire range of points.
      *
      * @return Exact finite integral
@@ -123,71 +90,6 @@ public abstract class FunctionDataCurve implements DataSet {
      */
     public double analyticalIntegral(double lb, double ub) {
         return integralAt(ub) - integralAt(lb);
-    }
-
-    /**
-     * Analytical integral at a point.
-     *
-     * @param x Point
-     * @return Exact finite integral of 0 to this point
-     */
-    public abstract double integralAt(double x);
-
-    /**
-     * Evaluates the function at x.
-     *
-     * @param x x
-     * @return f(x)
-     */
-    public abstract double fX(double x);
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getFxPoint(int index) {
-        return points[index];
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAllFxPoints() {
-        int npoints = points.length;
-        double[] retArray = new double[npoints];
-        arraycopy(points, 0, retArray, 0, npoints);
-        return retArray;
-    }
-
-    /**
-     * Used to check that the passed-in x array is composed of equally-spaced
-     * points from lb to ub.
-     *
-     * @param x an array of {@link double} objects.
-     */
-    protected final void assertXIntegrity(double[] x) {
-        assert ub > lb;
-        int nX = numPoints();
-        double sep = binWidth();
-        if (halfWidthEnd) {
-            assert x.length == nX;
-            assert lb == x[0];
-            assert ub == x[nX - 1];
-
-            assert approxEquals(x[1], lb + 0.5 * sep);
-            assert approxEquals(x[nX - 2], (ub - 0.5 * sep));
-
-            for (int i = 2; i < (nX - 2); i++) {
-                double target = lb + 0.5 * sep;
-                target += ((i - 1) * sep);
-                assert approxEquals(x[i], target);
-            }
-        } else {
-            for (int i = 0; i < x.length; i++) {
-                assert approxEquals(x[i], x[0] + i * sep);
-            }
-        }
     }
 
     /**
@@ -220,6 +122,34 @@ public abstract class FunctionDataCurve implements DataSet {
      * {@inheritDoc}
      */
     @Override
+    public double binWidth() {
+        double divisor = halfWidthEnds() ? (double) (points.length - 2) : (double) (points.length - 1);
+        return (ub - lb) / divisor;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getAllFxPoints() {
+        int npoints = points.length;
+        double[] retArray = new double[npoints];
+        arraycopy(points, 0, retArray, 0, npoints);
+        return retArray;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getFxPoint(int index) {
+        return points[index];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public double[] getX() {
         double[] copyX = new double[x.length];
         arraycopy(x, 0, copyX, 0, x.length);
@@ -238,6 +168,46 @@ public abstract class FunctionDataCurve implements DataSet {
      * {@inheritDoc}
      */
     @Override
+    public double lowerBound() {
+        return lb;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int numPoints() {
+        return points.length;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double upperBound() {
+        return ub;
+    }
+
+    /**
+     * Evaluates the function at x.
+     *
+     * @param x x
+     * @return f(x)
+     */
+    public abstract double fX(double x);
+
+    /**
+     * Analytical integral at a point.
+     *
+     * @param x Point
+     * @return Exact finite integral of 0 to this point
+     */
+    public abstract double integralAt(double x);
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(format("Function f(x) curve with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
         if (halfWidthEnd) {
@@ -245,5 +215,35 @@ public abstract class FunctionDataCurve implements DataSet {
         }
         sb.append(".");
         return sb.toString();
+    }
+
+    /**
+     * Used to check that the passed-in x array is composed of equally-spaced
+     * points from lb to ub.
+     *
+     * @param x an array of {@link double} objects.
+     */
+    protected final void assertXIntegrity(double[] x) {
+        assert ub > lb;
+        int nX = numPoints();
+        double sep = binWidth();
+        if (halfWidthEnd) {
+            assert x.length == nX;
+            assert lb == x[0];
+            assert ub == x[nX - 1];
+
+            assert approxEquals(x[1], lb + 0.5 * sep);
+            assert approxEquals(x[nX - 2], (ub - 0.5 * sep));
+
+            for (int i = 2; i < (nX - 2); i++) {
+                double target = lb + 0.5 * sep;
+                target += ((i - 1) * sep);
+                assert approxEquals(x[i], target);
+            }
+        } else {
+            for (int i = 0; i < x.length; i++) {
+                assert approxEquals(x[i], x[0] + i * sep);
+            }
+        }
     }
 }

@@ -49,11 +49,20 @@ import edu.rit.pj.ParallelTeam;
 public interface AtomicDoubleArray {
 
     /**
-     * AtomicDoubleArray implementations (ADDER, MULTI, PJ).
+     * Add value to the double array at the specified index.
+     *
+     * @param threadID a int.
+     * @param index    a int.
+     * @param value    a double.
      */
-    enum AtomicDoubleArrayImpl {
-        ADDER, MULTI, PJ
-    }
+    void add(int threadID, int index, double value);
+
+    /**
+     * Ensure the AtomicDoubleArray instance is greater than or equal to size.
+     *
+     * @param size a int.
+     */
+    void alloc(int size);
 
     static AtomicDoubleArray atomicDoubleArrayFactory(AtomicDoubleArrayImpl atomicDoubleArrayImpl,
                                                               int threads, int size) {
@@ -69,11 +78,31 @@ public interface AtomicDoubleArray {
     }
 
     /**
-     * Ensure the AtomicDoubleArray instance is greater than or equal to size.
+     * Get the value of the array at the specified index (usually subsequent to
+     * calling the <code>reduce</code> method.
      *
-     * @param size a int.
+     * @param index a int.
+     * @return a double.
      */
-    void alloc(int size);
+    double get(int index);
+
+    /**
+     * Perform reduction between the given lower bound (lb) and upper bound (up)
+     * if necessary.
+     *
+     * @param lb a int.
+     * @param ub a int.
+     */
+    void reduce(int lb, int ub);
+
+    /**
+     * Perform reduction between the given lower bound (lb) and upper bound (up)
+     * usign a ParallelTeam.
+     *
+     * @param lb a int.
+     * @param ub a int.
+     */
+    void reduce(ParallelTeam parallelTeam, int lb, int ub);
 
     /**
      * Reset the double array to Zero.
@@ -103,15 +132,6 @@ public interface AtomicDoubleArray {
     void set(int threadID, int index, double value);
 
     /**
-     * Add value to the double array at the specified index.
-     *
-     * @param threadID a int.
-     * @param index    a int.
-     * @param value    a double.
-     */
-    void add(int threadID, int index, double value);
-
-    /**
      * Subtract value to the double array at the specified index.
      *
      * @param threadID a int.
@@ -121,32 +141,10 @@ public interface AtomicDoubleArray {
     void sub(int threadID, int index, double value);
 
     /**
-     * Perform reduction between the given lower bound (lb) and upper bound (up)
-     * if necessary.
-     *
-     * @param lb a int.
-     * @param ub a int.
+     * AtomicDoubleArray implementations (ADDER, MULTI, PJ).
      */
-    void reduce(int lb, int ub);
-
-    /**
-     * Perform reduction between the given lower bound (lb) and upper bound (up)
-     * usign a ParallelTeam.
-     *
-     * @param lb a int.
-     * @param ub a int.
-     */
-    void reduce(ParallelTeam parallelTeam, int lb, int ub);
-
-    /**
-     * Get the value of the array at the specified index (usually subsequent to
-     * calling the <code>reduce</code> method.
-     *
-     * @param index a int.
-     * @return a double.
-     */
-    double get(int index);
-
-
+    enum AtomicDoubleArrayImpl {
+        ADDER, MULTI, PJ
+    }
 
 }

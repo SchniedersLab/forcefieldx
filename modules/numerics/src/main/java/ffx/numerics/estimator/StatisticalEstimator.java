@@ -47,6 +47,20 @@ package ffx.numerics.estimator;
  */
 public interface StatisticalEstimator {
     /**
+     * Gets the free energy change per bin/window.
+     *
+     * @return Individual bin/window free energy changes.
+     */
+    double[] getBinEnergies();
+
+    /**
+     * Gets the uncertainty in free energy associated with each bin/window.
+     *
+     * @return Individual bin/window uncertainties.
+     */
+     double[] getBinUncertainties();
+
+    /**
      * Returns the estimated free energy (usually in kcal/mol).
      *
      * @return Free energy estimate.
@@ -67,18 +81,4 @@ public interface StatisticalEstimator {
      * @return Total number of subvalues used to compute free energy.
      */
     int numberOfBins();
-
-    /**
-     * Gets the free energy change per bin/window.
-     *
-     * @return Individual bin/window free energy changes.
-     */
-    double[] getBinEnergies();
-
-    /**
-     * Gets the uncertainty in free energy associated with each bin/window.
-     *
-     * @return Individual bin/window uncertainties.
-     */
-     double[] getBinUncertainties();
 }

@@ -104,16 +104,16 @@ public class SinWave extends FunctionDataCurve {
      * {@inheritDoc}
      */
     @Override
-    public double integralAt(double x) {
-        return -1 * a * nInverse * cos(n * x);
+    public double fX(double x) {
+        return sinAt(x);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public double fX(double x) {
-        return sinAt(x);
+    public double integralAt(double x) {
+        return -1 * a * nInverse * cos(n * x);
     }
 
     /**

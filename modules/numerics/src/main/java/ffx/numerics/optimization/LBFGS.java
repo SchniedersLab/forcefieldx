@@ -70,7 +70,6 @@ import ffx.numerics.optimization.LineSearch.LineSearchResult;
  */
 public class LBFGS {
 
-    private static final Logger logger = Logger.getLogger(LBFGS.class.getName());
     /**
      * Controls the accuracy of the line search.
      * <p>
@@ -109,6 +108,7 @@ public class LBFGS {
      * Constant <code>INTMAX=5</code>
      */
     static final int INTMAX = 5;
+    private static final Logger logger = Logger.getLogger(LBFGS.class.getName());
 
     /**
      * Make the constructor private so that the L-BFGS cannot be instantiated.
@@ -406,33 +406,6 @@ public class LBFGS {
     }
 
     /**
-     * Print status messages for <code>LBFGS</code> if there is no listener.
-     *
-     * @param iter  Number of iterations so far.
-     * @param nfun  Number of function evaluations so far.
-     * @param grms  Gradient RMS at current solution.
-     * @param xrms  Coordinate change RMS at current solution.
-     * @param f     Function value at current solution.
-     * @param df    Change in the function value compared to the previous solution.
-     * @param angle Current angle between gradient and search direction.
-     * @since 1.0
-     */
-    private static void log(int iter, int nfun, double grms, double xrms,
-                            double f, double df, double angle, LineSearchResult info) {
-        if (iter == 0) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
-            logger.info(" QN Iter    F Value      G RMS     F Move    X Move    Angle  FG Call  Comment\n");
-        }
-        if (info == null) {
-            logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d",
-                    iter, f, grms, df, xrms, angle, nfun));
-        } else {
-            logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d   %8s",
-                    iter, f, grms, df, xrms, angle, nfun, info.toString()));
-        }
-    }
-
-    /**
      * Compute the sum of a vector times a scalar plus another vector.
      *
      * @param n       The number of points.
@@ -459,6 +432,33 @@ public class LBFGS {
         int stop = v1Start + v1Step * n;
         for (int i = v1Start, j = v2Start; i != stop; i += v1Step, j += v2Step) {
             v2[j] += a * v1[i];
+        }
+    }
+
+    /**
+     * Print status messages for <code>LBFGS</code> if there is no listener.
+     *
+     * @param iter  Number of iterations so far.
+     * @param nfun  Number of function evaluations so far.
+     * @param grms  Gradient RMS at current solution.
+     * @param xrms  Coordinate change RMS at current solution.
+     * @param f     Function value at current solution.
+     * @param df    Change in the function value compared to the previous solution.
+     * @param angle Current angle between gradient and search direction.
+     * @since 1.0
+     */
+    private static void log(int iter, int nfun, double grms, double xrms,
+                            double f, double df, double angle, LineSearchResult info) {
+        if (iter == 0) {
+            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
+            logger.info(" QN Iter    F Value      G RMS     F Move    X Move    Angle  FG Call  Comment\n");
+        }
+        if (info == null) {
+            logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d",
+                    iter, f, grms, df, xrms, angle, nfun));
+        } else {
+            logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d   %8s",
+                    iter, f, grms, df, xrms, angle, nfun, info.toString()));
         }
     }
 

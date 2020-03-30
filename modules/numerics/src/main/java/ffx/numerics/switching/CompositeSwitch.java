@@ -39,19 +39,22 @@ package ffx.numerics.switching;
 
 import java.util.logging.Logger;
 
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.max;
+
 /**
  * The CompositeSwitch uses a primary switch in the middle, and then two secondary
  * switches at the ends of the path to smoothly switch to the primary switch. For
  * example, one can smoothly interpolate from 0/0/0 value/derivative/second derivative
  * to a linear switch by multiplying the linear switch by a MultiplicativeSwitch in the
  * range 0-0.1.
- *
+ * <p>
  * At present, there is an assumption that x gets linearly scaled when passed to the switch;
  * at the ends, s(x) = f(g(x))*h(x), where h(x) is the primary switch, g(x) = x / (switching range),
  * and f(g(x)) is the secondary switch.
  *
- *  @author Jacob M. Litman
- *  @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @author Michael J. Schnieders
  */
 public class CompositeSwitch implements UnivariateSwitchingFunction {
     private static final Logger logger = Logger.getLogger(CompositeSwitch.class.getName());
@@ -108,6 +111,7 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
     /**
      * Builds a switch that uses MultiplicativeSwitches at the ends (0-0.1, 0.9-1.0) to smoothly interpolate a provided
      * switch between 0 and 1 with smooth 2'nd and 3'rd derivatives.
+     *
      * @param primary Primary switch to obey exactly from 0.1-0.9.
      */
     public CompositeSwitch(UnivariateSwitchingFunction primary) {
@@ -135,8 +139,8 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
      * @param end       Switch to interpolate from primary to 1.0 between ubPrimary and 1; assumed to internally function from 0-1.
      * @param lbPrimary Value at which primary should begin to be obeyed exactly.
      * @param ubPrimary Value at which primary should stop being obeyed exactly.
-     * @oaram lb        Overall lower bound of the CompositeSwitch.
      * @param ub        Overall upper bound of the CompositeSwitch.
+     * @oaram lb        Overall lower bound of the CompositeSwitch.
      */
     public CompositeSwitch(UnivariateSwitchingFunction primary, UnivariateSwitchingFunction start, UnivariateSwitchingFunction end, double lbPrimary, double ubPrimary, double lb, double ub) {
         if (lbPrimary > ubPrimary) {
@@ -168,6 +172,93 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
         }
     }
 
+    @Override
+    public boolean constantOutsideBounds() {
+        return startSwitch.constantOutsideBounds() && endSwitch.constantOutsideBounds();
+    }
+
+    @Override
+    public int getHighestOrderZeroDerivative() {
+        return Math.max(Math.max(startSwitch.getHighestOrderZeroDerivative(), endSwitch.getHighestOrderZeroDerivative()), primaryFunction.getHighestOrderZeroDerivative());
+    }
+
+    @Override
+    public double getOneBound() {
+        return ub;
+    }
+
+    @Override
+    public double getZeroBound() {
+        return lb;
+    }
+
+    @Override
+    public boolean symmetricToUnity() {
+        return primaryFunction.symmetricToUnity() && startSwitch.equals(endSwitch) && (lbPrimary - lb == ub - ubPrimary);
+    }
+
+    @Override
+    public boolean validOutsideBounds() {
+        return startSwitch.constantOutsideBounds() && endSwitch.constantOutsideBounds();
+    }
+
+    @Override
+    public double firstDerivative(double x) throws IllegalArgumentException {
+        if (x < lbPrimary) {
+            return fdLower(x);
+        } else if (x > ubPrimary) {
+            return fdUpper(x);
+        } else {
+            return primaryFunction.firstDerivative(x);
+        }
+    }
+
+    @Override
+    public double nthDerivative(double x, int order) throws IllegalArgumentException {
+        switch (order) {
+            case 0:
+                return valueAt(x);
+            case 1:
+                return firstDerivative(x);
+            case 2:
+                return secondDerivative(x);
+            default:
+                throw new IllegalArgumentException(" Composite switches do not yet have support for arbitrary derivatives");
+        }
+    }
+
+    @Override
+    public double secondDerivative(double x) throws IllegalArgumentException {
+        if (x < lbPrimary) {
+            return sdLower(x);
+        } else if (x > ubPrimary) {
+            return sdUpper(x);
+        } else {
+            return primaryFunction.secondDerivative(x);
+        }
+    }
+
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        if (x < lbPrimary) {
+            return valLower(x);
+        } else if (x > ubPrimary) {
+            return valUpper(x);
+        } else {
+            return primaryFunction.valueAt(x);
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(String.format(" Composite switch with overall range %12.5g-%12.5g, " +
+                "with an inner range %12.5g-%12.5g", lb, ub, lbPrimary, ubPrimary));
+        sb.append("\n Primary switch: ").append(primaryFunction.toString());
+        sb.append("\n Start switch:   ").append(startSwitch.toString());
+        sb.append("\n End switch:     ").append(endSwitch.toString());
+        return sb.toString();
+    }
+
     private boolean approxEquals(double x1, double x2) {
         return approxEquals(x1, x2, 1E-11);
     }
@@ -181,16 +272,16 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
      * @return Fuzzy equality.
      */
     private boolean approxEquals(double x1, double x2, double tol) {
-        double largerVal = Math.max(Math.abs(x1), Math.abs(x2));
+        double largerVal = max(abs(x1), abs(x2));
         if (largerVal == 0) {
             // If both are zero, they're both equal.
             return true;
         } else if (largerVal > 1E-6) {
             // Use normalized approximate-equals.
-            return Math.abs((x1 - x2) / largerVal) < tol;
+            return abs((x1 - x2) / largerVal) < tol;
         } else {
             // Use absolute approximate-equals to avoid numerical issues.
-            return Math.abs(x1 - x2) < tol;
+            return abs(x1 - x2) < tol;
         }
     }
 
@@ -221,53 +312,12 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
         return approxEquals(sdUpper(ubPrimary), primaryFunction.secondDerivative(ubPrimary));
     }
 
-    @Override
-    public double getZeroBound() {
-        return lb;
-    }
-
-    @Override
-    public double getOneBound() {
-        return ub;
-    }
-
-    @Override
-    public boolean constantOutsideBounds() {
-        return startSwitch.constantOutsideBounds() && endSwitch.constantOutsideBounds();
-    }
-
-    @Override
-    public boolean validOutsideBounds() {
-        return startSwitch.constantOutsideBounds() && endSwitch.constantOutsideBounds();
-    }
-
-    @Override
-    public int getHighestOrderZeroDerivative() {
-        return Math.max(Math.max(startSwitch.getHighestOrderZeroDerivative(), endSwitch.getHighestOrderZeroDerivative()), primaryFunction.getHighestOrderZeroDerivative());
-    }
-
-    @Override
-    public boolean symmetricToUnity() {
-        return primaryFunction.symmetricToUnity() && startSwitch.equals(endSwitch) && (lbPrimary - lb == ub - ubPrimary);
-    }
-
     private double lbX(double x) {
         return (x - lb) * multLB;
     }
 
     private double ubX(double x) {
         return (ub - x) * multUB;
-    }
-
-    @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        if (x < lbPrimary) {
-            return valLower(x);
-        } else if (x > ubPrimary) {
-            return valUpper(x);
-        } else {
-            return primaryFunction.valueAt(x);
-        }
     }
 
     /**
@@ -290,17 +340,6 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
         return endSwitch.valueAt(ubX(x)) * primaryFunction.valueAt(x);
     }
 
-    @Override
-    public double firstDerivative(double x) throws IllegalArgumentException {
-        if (x < lbPrimary) {
-            return fdLower(x);
-        } else if (x > ubPrimary) {
-            return fdUpper(x);
-        } else {
-            return primaryFunction.firstDerivative(x);
-        }
-    }
-
     private double fdLower(double x) {
         double swX = lbX(x);
         double val = primaryFunction.firstDerivative(x) * startSwitch.valueAt(swX);
@@ -313,17 +352,6 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
         double val = primaryFunction.firstDerivative(x) * endSwitch.valueAt(swX);
         val += primaryFunction.valueAt(x) * endSwitch.firstDerivative(swX) * fdUB;
         return val;
-    }
-
-    @Override
-    public double secondDerivative(double x) throws IllegalArgumentException {
-        if (x < lbPrimary) {
-            return sdLower(x);
-        } else if (x > ubPrimary) {
-            return sdUpper(x);
-        } else {
-            return primaryFunction.secondDerivative(x);
-        }
     }
 
     private double sdLower(double x) {
@@ -340,29 +368,5 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
         val += (2 * primaryFunction.firstDerivative(x) * endSwitch.firstDerivative(swX) * fdUB);
         val += (primaryFunction.valueAt(x) * endSwitch.secondDerivative(swX) * fdUB2);
         return val;
-    }
-    
-    @Override
-    public double nthDerivative(double x, int order) throws IllegalArgumentException {
-        switch (order) {
-            case 0:
-                return valueAt(x);
-            case 1:
-                return firstDerivative(x);
-            case 2:
-                return secondDerivative(x);
-            default:
-                throw new IllegalArgumentException(" Composite switches do not yet have support for arbitrary derivatives");
-        }
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder(String.format(" Composite switch with overall range %12.5g-%12.5g, " +
-                "with an inner range %12.5g-%12.5g", lb, ub, lbPrimary, ubPrimary));
-        sb.append("\n Primary switch: ").append(primaryFunction.toString());
-        sb.append("\n Start switch:   ").append(startSwitch.toString());
-        sb.append("\n End switch:     ").append(endSwitch.toString());
-        return sb.toString();
     }
 }

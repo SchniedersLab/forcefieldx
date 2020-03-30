@@ -306,7 +306,7 @@ class CIFtoXYZ extends PotentialScript {
                     }
                     factory.configure(atom)
                 }
-                
+
                 RebondTool rebonder = new RebondTool(2.0, 0.5, 0.5)
                 rebonder.rebond(cifCDKAtoms)
 

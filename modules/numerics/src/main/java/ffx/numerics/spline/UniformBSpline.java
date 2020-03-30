@@ -192,6 +192,22 @@ public class UniformBSpline {
     }
 
     /**
+     * Differentiate a uniform b-Spline in place.
+     *
+     * @param coefficients B-Spline coefficients.
+     * @param order        B-Spline order.
+     * @since 1.0
+     */
+    private static void bSplineDiff(final double[] coefficients, final int order) {
+        final int order1 = order - 1;
+        coefficients[order] = coefficients[order1];
+        for (int i = order1; i > 0; i--) {
+            coefficients[i] = coefficients[i - 1] - coefficients[i];
+        }
+        coefficients[0] = -coefficients[0];
+    }
+
+    /**
      * Uniform b-Spline recursion.
      *
      * @param x               A double in the range [0.0, 1.0].
@@ -221,21 +237,5 @@ public class UniformBSpline {
         }
         double oneX = 1.0 - x;
         newCoefficients[0] = div * oneX * coefficients[0];
-    }
-
-    /**
-     * Differentiate a uniform b-Spline in place.
-     *
-     * @param coefficients B-Spline coefficients.
-     * @param order        B-Spline order.
-     * @since 1.0
-     */
-    private static void bSplineDiff(final double[] coefficients, final int order) {
-        final int order1 = order - 1;
-        coefficients[order] = coefficients[order1];
-        for (int i = order1; i > 0; i--) {
-            coefficients[i] = coefficients[i - 1] - coefficients[i];
-        }
-        coefficients[0] = -coefficients[0];
     }
 }

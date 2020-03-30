@@ -111,6 +111,26 @@ public class Scalar {
 
     /**
      * <p>
+     * Getter for the field <code>scalar</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getScalar() {
+        return scalar;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>scalar</code>.</p>
+     *
+     * @param scalar a double.
+     */
+    public void setScalar(double scalar) {
+        this.scalar = scalar;
+    }
+
+    /**
+     * <p>
      * getXYZ</p>
      *
      * @return an array of double.
@@ -129,25 +149,5 @@ public class Scalar {
         this.xyz[0] = xyz[0];
         this.xyz[1] = xyz[1];
         this.xyz[2] = xyz[2];
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>scalar</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getScalar() {
-        return scalar;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>scalar</code>.</p>
-     *
-     * @param scalar a double.
-     */
-    public void setScalar(double scalar) {
-        this.scalar = scalar;
     }
 }

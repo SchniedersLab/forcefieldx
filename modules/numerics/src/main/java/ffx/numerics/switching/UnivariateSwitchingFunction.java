@@ -55,11 +55,19 @@ import ffx.numerics.func1d.UnivariateDiffFunction;
 public interface UnivariateSwitchingFunction extends UnivariateDiffFunction {
 
     /**
-     * Gets the zero bound, where f(x) becomes zero.
+     * Remains 0 below the lower bound, and 1 above the upper bound (i.e.
+     * a multiplicative switch).
      *
-     * @return Zero bound
+     * @return df(x)/dx is zero outside range lb-ub.
      */
-    double getZeroBound();
+    boolean constantOutsideBounds();
+
+    /**
+     * The highest-order derivative that is zero at the bounds.
+     *
+     * @return Maximum order zero derivative at bounds.
+     */
+    int getHighestOrderZeroDerivative();
 
     /**
      * Gets the one bound, where f(x) becomes one.
@@ -69,20 +77,11 @@ public interface UnivariateSwitchingFunction extends UnivariateDiffFunction {
     double getOneBound();
 
     /**
-     * Remains 0 below the lower bound, and 1 above the upper bound (i.e.
-     * a multiplicative switch).
+     * Gets the zero bound, where f(x) becomes zero.
      *
-     * @return df(x)/dx is zero outside range lb-ub.
+     * @return Zero bound
      */
-    boolean constantOutsideBounds();
-
-    /**
-     * Remains in the range 0-1 outside the bounds. Implied to be true if
-     * constantOutsideBounds is true.
-     *
-     * @return min(f ( x)) = 0 and max(f(x)) = 1.
-     */
-    boolean validOutsideBounds();
+    double getZeroBound();
 
     /**
      * Returns the highest-order, guaranteed-zero derivative at the zero bound.
@@ -94,13 +93,6 @@ public interface UnivariateSwitchingFunction extends UnivariateDiffFunction {
     }
 
     /**
-     * The highest-order derivative that is zero at the bounds.
-     *
-     * @return Maximum order zero derivative at bounds.
-     */
-    int getHighestOrderZeroDerivative();
-
-    /**
      * True if f(lb + delta) + f(ub - delta) = 1 for all delta between 0 and
      * (ub - lb). For example, a power switch with beta 1 is symmetric to unity,
      * as f(l) + f(1-l) = 1, but beta 2 produces a non-unity result, where
@@ -110,5 +102,12 @@ public interface UnivariateSwitchingFunction extends UnivariateDiffFunction {
      */
     boolean symmetricToUnity();
 
-    // Note: implementations should have a well-defined toString() method!
+    /**
+     * Remains in the range 0-1 outside the bounds. Implied to be true if
+     * constantOutsideBounds is true.
+     *
+     * @return min(f ( x)) = 0 and max(f(x)) = 1.
+     */
+    boolean validOutsideBounds();
+
 }

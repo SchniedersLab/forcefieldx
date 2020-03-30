@@ -98,12 +98,32 @@ public class Real3DCuda implements Runnable {
 
     private static final Logger logger = Logger.getLogger(Real3DCuda.class.getName());
     private final int nX, nY, nZ, len;
+    CUmodule module;
     private float[] data, recip;
     private boolean doConvolution;
     private boolean free;
     private boolean dead = false;
     private CUfunction function;
-    CUmodule module;
+
+    /**
+     * Initialize the 3D FFT for complex 3D matrix.
+     *
+     * @param nX X-dimension.
+     * @param nY Y-dimension.
+     * @param nZ Z-dimension.
+     * @param data an array of float.
+     * @param recip an array of float.
+     */
+    public Real3DCuda(int nX, int nY, int nZ, float[] data, float[] recip) {
+        this.nX = nX;
+        this.nY = nY;
+        this.nZ = nZ;
+        this.len = nX * nY * (nZ + 2);
+        this.data = data;
+        this.recip = recip;
+        doConvolution = false;
+        free = false;
+    }
 
     /**
      * Blocking convolution method.
@@ -159,157 +179,6 @@ public class Real3DCuda implements Runnable {
             }
         }
         return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void run() {
-        JCudaDriver.setExceptionsEnabled(true);
-        JCudaDriver.setLogLevel(LogLevel.LOG_ERROR);
-        JCufft.setExceptionsEnabled(true);
-        JCufft.setLogLevel(LogLevel.LOG_ERROR);
-
-        // Initialize the driver and create a context for the first device.
-        cuInit(0);
-        CUcontext pctx = new CUcontext();
-        CUdevice dev = new CUdevice();
-        CUdevprop prop = new CUdevprop();
-        cuDeviceGetProperties(prop, dev);
-        logger.info(" CUDA " + prop.toFormattedString());
-
-        cuDeviceGet(dev, 0);
-        cuCtxCreate(pctx, 0, dev);
-
-        // Load the CUBIN file and obtain the "recipSummation" function.
-        try {
-            String bit = System.getProperty("sun.arch.data.model").trim();
-            URL source = getClass().getClassLoader().getResource("ffx/numerics/fft/recipSummation.ptx");
-            File cubinFile = File.createTempFile("recipSummation", "ptx");
-            FileUtils.copyURLToFile(source, cubinFile);
-            module = new CUmodule();
-            cuModuleLoad(module, cubinFile.getCanonicalPath());
-            function = new CUfunction();
-            cuModuleGetFunction(function, module, "recipSummation");
-        } catch (Exception e) {
-            String message = "Error loading the reciprocal summation kernel";
-            logger.log(Level.SEVERE, message, e);
-        }
-
-        // Copy the data array to the device.
-        CUdeviceptr dataDevice = new CUdeviceptr();
-        cuMemAlloc(dataDevice, len * Sizeof.FLOAT);
-        Pointer dataPtr = Pointer.to(data);
-        cuMemcpyHtoD(dataDevice, dataPtr, len * Sizeof.FLOAT);
-
-        // Copy the recip array to the device.
-        CUdeviceptr recipDevice = new CUdeviceptr();
-        cuMemAlloc(recipDevice, len * Sizeof.FLOAT);
-        Pointer recipPtr = Pointer.to(recip);
-        cuMemcpyHtoD(recipDevice, recipPtr, len * Sizeof.FLOAT);
-
-        // Create a Real to Complex CUFFT plan
-        cufftHandle planR2C = new cufftHandle();
-        cufftPlan3d(planR2C, nX, nY, nZ, cufftType.CUFFT_R2C);
-        cufftSetCompatibilityMode(planR2C, cufftCompatibility.CUFFT_COMPATIBILITY_FFTW_ALL);
-
-        // Create a Complex to Real CUFFT plan
-        cufftHandle planC2R = new cufftHandle();
-        cufftPlan3d(planC2R, nX, nY, nZ, cufftType.CUFFT_C2R);
-        cufftSetCompatibilityMode(planC2R, cufftCompatibility.CUFFT_COMPATIBILITY_FFTW_ALL);
-
-        Pointer dataDevicePtr = Pointer.to(dataDevice);
-        Pointer recipDevicePtr = Pointer.to(recipDevice);
-
-        int threads = 512;
-        int nBlocks = len / threads + (len % threads == 0 ? 0 : 1);
-        int gridSize = (int) Math.floor(Math.sqrt(nBlocks)) + 1;
-
-        logger.info(format(" CUDA thread initialized with %d threads per block", threads));
-        logger.info(format(" Grid Size: (%d x %d x 1).", gridSize, gridSize));
-
-        assert (gridSize * gridSize * threads >= len);
-
-        synchronized (this) {
-            while (!free) {
-                if (doConvolution) {
-                    cuMemcpyHtoD(dataDevice, dataPtr, len * Sizeof.FLOAT);
-                    int ret = cufftExecR2C(planR2C, dataDevice, dataDevice);
-                    if (ret != cufftResult.CUFFT_SUCCESS) {
-                        logger.warning("R2C Result " + cufftResult.stringFor(ret));
-                    }
-
-                    // Set up the execution parameters for the kernel
-                    cuFuncSetBlockShape(function, threads, 1, 1);
-                    int offset = 0;
-                    offset = align(offset, Sizeof.POINTER);
-                    cuParamSetv(function, offset, dataDevicePtr, Sizeof.POINTER);
-                    offset += Sizeof.POINTER;
-                    offset = align(offset, Sizeof.POINTER);
-                    cuParamSetv(function, offset, recipDevicePtr, Sizeof.POINTER);
-                    offset += Sizeof.POINTER;
-                    offset = align(offset, Sizeof.INT);
-                    cuParamSeti(function, offset, len / 2);
-                    offset += Sizeof.INT;
-                    cuParamSetSize(function, offset);
-                    // Call the kernel function.
-                    cuLaunchGrid(function, gridSize, gridSize);
-
-                    ret = cufftExecC2R(planC2R, dataDevice, dataDevice);
-                    if (ret != cufftResult.CUFFT_SUCCESS) {
-                        logger.warning("C2R Result " + cufftResult.stringFor(ret));
-                    }
-                    ret = cuMemcpyDtoH(dataPtr, dataDevice, len * Sizeof.FLOAT);
-                    doConvolution = false;
-                    notify();
-                }
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    logger.severe(e.toString());
-                }
-            }
-            cufftDestroy(planR2C);
-            cufftDestroy(planC2R);
-            cuMemFree(dataDevice);
-            cuMemFree(recipDevice);
-            dead = true;
-            notify();
-        }
-        logger.info(" CUDA Thread Done!");
-    }
-
-    /**
-     * Initialize the 3D FFT for complex 3D matrix.
-     *
-     * @param nX X-dimension.
-     * @param nY Y-dimension.
-     * @param nZ Z-dimension.
-     * @param data an array of float.
-     * @param recip an array of float.
-     */
-    public Real3DCuda(int nX, int nY, int nZ, float[] data, float[] recip) {
-        this.nX = nX;
-        this.nY = nY;
-        this.nZ = nZ;
-        this.len = nX * nY * (nZ + 2);
-        this.data = data;
-        this.recip = recip;
-        doConvolution = false;
-        free = false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            free();
-        } finally {
-            super.finalize();
-        }
     }
 
     /**
@@ -487,5 +356,136 @@ public class Real3DCuda implements Runnable {
                 / parTime));
         System.out.println(String.format("CUDA Speedup:     %15.5f", (double) seqTime
                 / clTime));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void run() {
+        JCudaDriver.setExceptionsEnabled(true);
+        JCudaDriver.setLogLevel(LogLevel.LOG_ERROR);
+        JCufft.setExceptionsEnabled(true);
+        JCufft.setLogLevel(LogLevel.LOG_ERROR);
+
+        // Initialize the driver and create a context for the first device.
+        cuInit(0);
+        CUcontext pctx = new CUcontext();
+        CUdevice dev = new CUdevice();
+        CUdevprop prop = new CUdevprop();
+        cuDeviceGetProperties(prop, dev);
+        logger.info(" CUDA " + prop.toFormattedString());
+
+        cuDeviceGet(dev, 0);
+        cuCtxCreate(pctx, 0, dev);
+
+        // Load the CUBIN file and obtain the "recipSummation" function.
+        try {
+            String bit = System.getProperty("sun.arch.data.model").trim();
+            URL source = getClass().getClassLoader().getResource("ffx/numerics/fft/recipSummation.ptx");
+            File cubinFile = File.createTempFile("recipSummation", "ptx");
+            FileUtils.copyURLToFile(source, cubinFile);
+            module = new CUmodule();
+            cuModuleLoad(module, cubinFile.getCanonicalPath());
+            function = new CUfunction();
+            cuModuleGetFunction(function, module, "recipSummation");
+        } catch (Exception e) {
+            String message = "Error loading the reciprocal summation kernel";
+            logger.log(Level.SEVERE, message, e);
+        }
+
+        // Copy the data array to the device.
+        CUdeviceptr dataDevice = new CUdeviceptr();
+        cuMemAlloc(dataDevice, len * Sizeof.FLOAT);
+        Pointer dataPtr = Pointer.to(data);
+        cuMemcpyHtoD(dataDevice, dataPtr, len * Sizeof.FLOAT);
+
+        // Copy the recip array to the device.
+        CUdeviceptr recipDevice = new CUdeviceptr();
+        cuMemAlloc(recipDevice, len * Sizeof.FLOAT);
+        Pointer recipPtr = Pointer.to(recip);
+        cuMemcpyHtoD(recipDevice, recipPtr, len * Sizeof.FLOAT);
+
+        // Create a Real to Complex CUFFT plan
+        cufftHandle planR2C = new cufftHandle();
+        cufftPlan3d(planR2C, nX, nY, nZ, cufftType.CUFFT_R2C);
+        cufftSetCompatibilityMode(planR2C, cufftCompatibility.CUFFT_COMPATIBILITY_FFTW_ALL);
+
+        // Create a Complex to Real CUFFT plan
+        cufftHandle planC2R = new cufftHandle();
+        cufftPlan3d(planC2R, nX, nY, nZ, cufftType.CUFFT_C2R);
+        cufftSetCompatibilityMode(planC2R, cufftCompatibility.CUFFT_COMPATIBILITY_FFTW_ALL);
+
+        Pointer dataDevicePtr = Pointer.to(dataDevice);
+        Pointer recipDevicePtr = Pointer.to(recipDevice);
+
+        int threads = 512;
+        int nBlocks = len / threads + (len % threads == 0 ? 0 : 1);
+        int gridSize = (int) Math.floor(Math.sqrt(nBlocks)) + 1;
+
+        logger.info(format(" CUDA thread initialized with %d threads per block", threads));
+        logger.info(format(" Grid Size: (%d x %d x 1).", gridSize, gridSize));
+
+        assert (gridSize * gridSize * threads >= len);
+
+        synchronized (this) {
+            while (!free) {
+                if (doConvolution) {
+                    cuMemcpyHtoD(dataDevice, dataPtr, len * Sizeof.FLOAT);
+                    int ret = cufftExecR2C(planR2C, dataDevice, dataDevice);
+                    if (ret != cufftResult.CUFFT_SUCCESS) {
+                        logger.warning("R2C Result " + cufftResult.stringFor(ret));
+                    }
+
+                    // Set up the execution parameters for the kernel
+                    cuFuncSetBlockShape(function, threads, 1, 1);
+                    int offset = 0;
+                    offset = align(offset, Sizeof.POINTER);
+                    cuParamSetv(function, offset, dataDevicePtr, Sizeof.POINTER);
+                    offset += Sizeof.POINTER;
+                    offset = align(offset, Sizeof.POINTER);
+                    cuParamSetv(function, offset, recipDevicePtr, Sizeof.POINTER);
+                    offset += Sizeof.POINTER;
+                    offset = align(offset, Sizeof.INT);
+                    cuParamSeti(function, offset, len / 2);
+                    offset += Sizeof.INT;
+                    cuParamSetSize(function, offset);
+                    // Call the kernel function.
+                    cuLaunchGrid(function, gridSize, gridSize);
+
+                    ret = cufftExecC2R(planC2R, dataDevice, dataDevice);
+                    if (ret != cufftResult.CUFFT_SUCCESS) {
+                        logger.warning("C2R Result " + cufftResult.stringFor(ret));
+                    }
+                    ret = cuMemcpyDtoH(dataPtr, dataDevice, len * Sizeof.FLOAT);
+                    doConvolution = false;
+                    notify();
+                }
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    logger.severe(e.toString());
+                }
+            }
+            cufftDestroy(planR2C);
+            cufftDestroy(planC2R);
+            cuMemFree(dataDevice);
+            cuMemFree(recipDevice);
+            dead = true;
+            notify();
+        }
+        logger.info(" CUDA Thread Done!");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            free();
+        } finally {
+            super.finalize();
+        }
     }
 }

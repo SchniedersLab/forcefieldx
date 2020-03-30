@@ -68,17 +68,17 @@ import static ffx.numerics.optimization.LBFGS.v1DotV2;
 public class LineSearch {
 
     /**
-     * The six possible line search results (Success, WideAngle, ScaleStep, IntplnErr, ReSearch, BadIntpln).
-     */
-    public enum LineSearchResult {
-
-        Success, WideAngle, ScaleStep, IntplnErr, ReSearch, BadIntpln
-    }
-
-    /**
      * Number of parameters to optimize.
      */
     private final int n;
+    /**
+     * Step direction.
+     */
+    private final double[] s;
+    /**
+     * Storage for a copy of the parameters.
+     */
+    private final double[] x0;
     /**
      * Implementation of the energy and gradient for the system.
      */
@@ -99,14 +99,6 @@ public class LineSearch {
      * The gradient array.
      */
     private double[] g;
-    /**
-     * Step direction.
-     */
-    private final double[] s;
-    /**
-     * Storage for a copy of the parameters.
-     */
-    private final double[] x0;
     /**
      * Double step size.
      */
@@ -138,6 +130,103 @@ public class LineSearch {
         s = new double[n];
         x0 = new double[n];
         this.n = n;
+    }
+
+    /**
+     * Minimize a function along a search direction.
+     * <p>
+     * This is a unidimensional line search based upon parabolic extrapolation
+     * and cubic interpolation using both function and gradient values; if
+     * forced to search in an uphill direction, return is after the initial
+     * step.
+     *
+     * @param n                   Number of variables.
+     * @param x                   Current variable values.
+     * @param f                   Current function value.
+     * @param g                   Current gradient values.
+     * @param p                   Search direction.
+     * @param angle               Angle between the gradient and search direction.
+     * @param fMove               Change in function value due to previous step.
+     * @param info                Line search result.
+     * @param functionEvaluations Number of function evaluations.
+     * @param optimizationSystem  Instance of the {@link ffx.numerics.Potential} interface.
+     * @return The final function value.
+     * @since 1.0
+     */
+    public double search(int n, double[] x, double f, double[] g,
+                         double[] p, double[] angle, double fMove, LineSearchResult[] info,
+                         int[] functionEvaluations, Potential optimizationSystem) {
+
+        assert (n > 0);
+
+        // Initialize the line search.
+        this.x = x;
+        this.g = g;
+        this.optimizationSystem = optimizationSystem;
+        this.functionEvaluations = functionEvaluations;
+        this.info = info;
+        fA = 0.0;
+        fB = 0.0;
+        fC = 0.0;
+        sgA = 0.0;
+        sgB = 0.0;
+        sgC = 0.0;
+
+        // Zero out the status indicator.
+        info[0] = null;
+
+        // Copy the search direction p into a new vector s.
+        arraycopy(p, 0, s, 0, n);
+
+        // Compute the length of the gradient and search direction.
+        double gNorm = sqrt(v1DotV2(n, g, 0, 1, g, 0, 1));
+        double sNorm = sqrt(v1DotV2(n, s, 0, 1, s, 0, 1));
+
+        /*
+          Store the initial function, then normalize the search vector and find
+          the projected gradient.
+         */
+        f0 = f;
+        arraycopy(x, 0, x0, 0, n);
+        for (int i = 0; i < n; i++) {
+            s[i] /= sNorm;
+        }
+        sg0 = v1DotV2(n, s, 0, 1, g, 0, 1);
+
+        /*
+          Check the angle between the search direction and the negative
+          gradient vector.
+         */
+        double cosang = -sg0 / gNorm;
+        cosang = min(1.0, max(-1.0, cosang));
+        angle[0] = toDegrees(acos(cosang));
+        if (angle[0] > ANGLEMAX) {
+            info[0] = LineSearchResult.WideAngle;
+            return f;
+        }
+
+        /*
+          Set the initial stepSize to the length of the passed search vector,
+          or based on previous function decrease.
+         */
+        step = 2.0 * abs(fMove / sg0);
+        step = min(step, sNorm);
+        if (step > STEPMAX) {
+            step = STEPMAX;
+        }
+        if (step < STEPMIN) {
+            step = STEPMIN;
+        }
+
+        return begin();
+    }
+
+    /**
+     * The six possible line search results (Success, WideAngle, ScaleStep, IntplnErr, ReSearch, BadIntpln).
+     */
+    public enum LineSearchResult {
+
+        Success, WideAngle, ScaleStep, IntplnErr, ReSearch, BadIntpln
     }
 
     /**
@@ -339,94 +428,5 @@ public class LineSearch {
             info[0] = LineSearchResult.ReSearch;
             return begin();
         }
-    }
-
-    /**
-     * Minimize a function along a search direction.
-     * <p>
-     * This is a unidimensional line search based upon parabolic extrapolation
-     * and cubic interpolation using both function and gradient values; if
-     * forced to search in an uphill direction, return is after the initial
-     * step.
-     *
-     * @param n                   Number of variables.
-     * @param x                   Current variable values.
-     * @param f                   Current function value.
-     * @param g                   Current gradient values.
-     * @param p                   Search direction.
-     * @param angle               Angle between the gradient and search direction.
-     * @param fMove               Change in function value due to previous step.
-     * @param info                Line search result.
-     * @param functionEvaluations Number of function evaluations.
-     * @param optimizationSystem  Instance of the {@link ffx.numerics.Potential} interface.
-     * @return The final function value.
-     * @since 1.0
-     */
-    public double search(int n, double[] x, double f, double[] g,
-                         double[] p, double[] angle, double fMove, LineSearchResult[] info,
-                         int[] functionEvaluations, Potential optimizationSystem) {
-
-        assert (n > 0);
-
-        // Initialize the line search.
-        this.x = x;
-        this.g = g;
-        this.optimizationSystem = optimizationSystem;
-        this.functionEvaluations = functionEvaluations;
-        this.info = info;
-        fA = 0.0;
-        fB = 0.0;
-        fC = 0.0;
-        sgA = 0.0;
-        sgB = 0.0;
-        sgC = 0.0;
-
-        // Zero out the status indicator.
-        info[0] = null;
-
-        // Copy the search direction p into a new vector s.
-        arraycopy(p, 0, s, 0, n);
-
-        // Compute the length of the gradient and search direction.
-        double gNorm = sqrt(v1DotV2(n, g, 0, 1, g, 0, 1));
-        double sNorm = sqrt(v1DotV2(n, s, 0, 1, s, 0, 1));
-
-        /*
-          Store the initial function, then normalize the search vector and find
-          the projected gradient.
-         */
-        f0 = f;
-        arraycopy(x, 0, x0, 0, n);
-        for (int i = 0; i < n; i++) {
-            s[i] /= sNorm;
-        }
-        sg0 = v1DotV2(n, s, 0, 1, g, 0, 1);
-
-        /*
-          Check the angle between the search direction and the negative
-          gradient vector.
-         */
-        double cosang = -sg0 / gNorm;
-        cosang = min(1.0, max(-1.0, cosang));
-        angle[0] = toDegrees(acos(cosang));
-        if (angle[0] > ANGLEMAX) {
-            info[0] = LineSearchResult.WideAngle;
-            return f;
-        }
-
-        /*
-          Set the initial stepSize to the length of the passed search vector,
-          or based on previous function decrease.
-         */
-        step = 2.0 * abs(fMove / sg0);
-        step = min(step, sNorm);
-        if (step > STEPMAX) {
-            step = STEPMAX;
-        }
-        if (step < STEPMIN) {
-            step = STEPMIN;
-        }
-
-        return begin();
     }
 }

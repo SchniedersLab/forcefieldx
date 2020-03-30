@@ -97,6 +97,40 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
         c = (r * 0.5 * sinT * piMinusTheta0) + b - (r * (temp * temp));
     }
 
+    @Override
+    public double firstDerivative(double x) throws IllegalArgumentException {
+        return fd(modToRange(x, -PI, PI));
+    }
+
+    @Override
+    public double nthDerivative(double x, int order) throws IllegalArgumentException {
+        x = modToRange(x, -PI, PI);
+        switch (order) {
+            case 0:
+                return val(x);
+            case 1:
+                return fd(x);
+            case 2:
+                return sd(x);
+            default:
+                return nd(x, order);
+        }
+    }
+
+    @Override
+    public double secondDerivative(double x) throws IllegalArgumentException {
+        return sd(modToRange(x, -PI, PI));
+    }
+
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        return val(modToRange(x, -PI, PI));
+    }
+
+    enum Branch {
+        A, B, C, D
+    }
+
     final double[] getConstants() {
         return new double[]{r, a, b, c};
     }
@@ -114,11 +148,6 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
         } else {
             return Branch.D;
         }
-    }
-
-    @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        return val(modToRange(x, -PI, PI));
     }
 
     private double val(double x) throws IllegalArgumentException {
@@ -144,11 +173,6 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
         }
     }
 
-    @Override
-    public double firstDerivative(double x) throws IllegalArgumentException {
-        return fd(modToRange(x, -PI, PI));
-    }
-
     private double fd(double x) throws IllegalArgumentException {
         return fd(x, getBranch(x));
     }
@@ -170,11 +194,6 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
         }
     }
 
-    @Override
-    public double secondDerivative(double x) throws IllegalArgumentException {
-        return sd(modToRange(x, -PI, PI));
-    }
-
     private double sd(double x) throws IllegalArgumentException {
         return sd(x, getBranch(x));
     }
@@ -191,21 +210,6 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
             }
             default:
                 throw new IllegalArgumentException("Could not pick a branch! Should be impossible!");
-        }
-    }
-
-    @Override
-    public double nthDerivative(double x, int order) throws IllegalArgumentException {
-        x = modToRange(x, -PI, PI);
-        switch (order) {
-            case 0:
-                return val(x);
-            case 1:
-                return fd(x);
-            case 2:
-                return sd(x);
-            default:
-                return nd(x, order);
         }
     }
 
@@ -237,9 +241,5 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
                 throw new ArithmeticException(String.format(" Value %d modulo 4 somehow not 0-3!", order));
             }
         }
-    }
-
-    enum Branch {
-        A, B, C, D
     }
 }

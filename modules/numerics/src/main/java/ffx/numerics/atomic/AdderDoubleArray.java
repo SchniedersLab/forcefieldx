@@ -77,6 +77,14 @@ public class AdderDoubleArray implements AtomicDoubleArray {
      * {@inheritDoc}
      */
     @Override
+    public void add(int threadID, int index, double value) {
+        array[index].add(value);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void alloc(int size) {
         if (array.length < size) {
             array = new DoubleAdder[size];
@@ -84,6 +92,30 @@ public class AdderDoubleArray implements AtomicDoubleArray {
                 array[i] = new DoubleAdder();
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double get(int index) {
+        return array[index].sum();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void reduce(int lb, int ub) {
+        // Nothing to do.
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
+        // Nothing to do.
     }
 
     /**
@@ -123,14 +155,6 @@ public class AdderDoubleArray implements AtomicDoubleArray {
      * {@inheritDoc}
      */
     @Override
-    public void add(int threadID, int index, double value) {
-        array[index].add(value);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public void set(int threadID, int index, double value) {
         array[index].reset();
         array[index].add(value);
@@ -142,30 +166,6 @@ public class AdderDoubleArray implements AtomicDoubleArray {
     @Override
     public void sub(int threadID, int index, double value) {
         array[index].add(-value);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void reduce(int lb, int ub) {
-        // Nothing to do.
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
-        // Nothing to do.
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double get(int index) {
-        return array[index].sum();
     }
 
 }

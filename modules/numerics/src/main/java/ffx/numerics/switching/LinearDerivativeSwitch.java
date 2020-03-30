@@ -58,31 +58,7 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double getZeroBound() {
-        return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getOneBound() {
-        return 1;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public boolean constantOutsideBounds() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
         return false;
     }
 
@@ -98,6 +74,22 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
+    public double getOneBound() {
+        return 1;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getZeroBound() {
+        return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean symmetricToUnity() {
         return false;
     }
@@ -106,8 +98,8 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        return 2 * x - (x * x);
+    public boolean validOutsideBounds() {
+        return false;
     }
 
     /**
@@ -116,14 +108,6 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
     @Override
     public double firstDerivative(double x) throws IllegalArgumentException {
         return 2.0 - 2.0 * x;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double secondDerivative(double x) throws IllegalArgumentException {
-        return -2.0;
     }
 
     /**
@@ -142,6 +126,22 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
             default:
                 return 0;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double secondDerivative(double x) throws IllegalArgumentException {
+        return -2.0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        return 2 * x - (x * x);
     }
 
     @Override
