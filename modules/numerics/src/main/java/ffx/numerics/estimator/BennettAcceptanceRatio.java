@@ -37,17 +37,17 @@
 //******************************************************************************
 package ffx.numerics.estimator;
 
-import java.util.Random;
-import java.util.logging.Logger;
-import static java.util.Arrays.copyOf;
-import static java.util.Arrays.fill;
-import static java.util.Arrays.stream;
+import ffx.utilities.Constants;
 
 import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.math.SummaryStatistics;
-import ffx.utilities.Constants;
+
+import java.util.Arrays;
+import java.util.Random;
+import java.util.logging.Logger;
+
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
 import static ffx.numerics.math.ScalarMath.fermiFunction;
 
@@ -144,12 +144,12 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
     @Override
     public void estimateDG(final boolean randomSamples) {
         double cumDG = 0;
-        fill(dGs, 0);
-        fill(uncerts, 0);
+        Arrays.fill(dGs, 0);
+        Arrays.fill(uncerts, 0);
         for (int i = 0; i < nWindows; i++) {
             boolean converged = false;
             double c = 0.5 * (estForwards[i] + estBackwards[i]); // Free energy estimate/shift constant.
-            double cold = 0; // Prior value of c. Setting it to zero almost guarantees a second iteration cycle.
+            double cold = c;
             int len0 = eAt[i].length;
             int len1 = eAt[i + 1].length;
 
@@ -199,8 +199,9 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
                 s0 = new SummaryStatistics(fermi0);
                 s1 = new SummaryStatistics(fermi1);
+                double ratio = Arrays.stream(fermi1).sum() / Arrays.stream(fermi0).sum();
 
-                c += rtMean * log(sampleRatio * (s1.mean / s0.mean));
+                c += rtMean * log(sampleRatio  * ratio);
                 converged = (Math.abs(c - cold) < tolerance);
                 cold = c;
 
@@ -211,14 +212,14 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
             dGs[i] = c;
             cumDG += c;
-            double sqFermiMean0 = new SummaryStatistics(stream(fermi0).map((double d) -> d * d).toArray()).mean;
-            double sqFermiMean1 = new SummaryStatistics(stream(fermi1).map((double d) -> d * d).toArray()).mean;
+            double sqFermiMean0 = new SummaryStatistics(Arrays.stream(fermi0).map((double d) -> d * d).toArray()).mean;
+            double sqFermiMean1 = new SummaryStatistics(Arrays.stream(fermi1).map((double d) -> d * d).toArray()).mean;
 
             uncerts[i] = sqrt(uncertCalc(s0.mean, sqFermiMean0, len0) + uncertCalc(s1.mean, sqFermiMean1, len1));
         }
 
         totDG = cumDG;
-        totUncert = sqrt(stream(uncerts).map((double d) -> d * d).sum());
+        totUncert = sqrt(Arrays.stream(uncerts).map((double d) -> d * d).sum());
     }
 
     /**
@@ -232,12 +233,12 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
     @Override
     public double[] getBinEnergies() {
-        return copyOf(dGs, nWindows);
+        return Arrays.copyOf(dGs, nWindows);
     }
 
     @Override
     public double[] getBinUncertainties() {
-        return copyOf(uncerts, nWindows);
+        return Arrays.copyOf(uncerts, nWindows);
     }
 
     @Override

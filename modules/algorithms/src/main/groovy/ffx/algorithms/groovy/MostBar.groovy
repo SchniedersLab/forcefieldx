@@ -309,7 +309,11 @@ class MostBar extends AlgorithmsScript {
 
         // --lambdaSorted and the observations array are there largely to deal with a test case that was just regular BAR with concatenated .arc files.
         observations = new int[lamBins]
-        Arrays.fill(observations, -startFrame)
+        if (lambdaSorted) {
+            Arrays.fill(observations, -startFrame)
+        } else {
+            Arrays.fill(observations, 0);
+        }
 
         logger.info(" Reading snapshots.")
 
@@ -353,10 +357,11 @@ class MostBar extends AlgorithmsScript {
         double[] backwardsFE = backwards.getBinEnergies()
         double[] backwardsVar = backwards.getBinUncertainties()
 
-        sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Max_Lambda          BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
+        sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Counts Max_Lambda Counts         BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
         for (int i = 0; i < (lamBins - 1); i++) {
-            sb.append(String.format(" %-10.8f %-10.8f %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
-                    lamPoints[i], lamPoints[i + 1], barFE[i], barVar[i], forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
+            sb.append(String.format(" %-10.8f %6d %-10.8f %6d %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
+                lamPoints[i], eAt[i].length, lamPoints[i + 1], observations[i+1], barFE[i], barVar[i],
+                forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
         }
         logger.info(sb.toString())
 
@@ -419,10 +424,11 @@ class MostBar extends AlgorithmsScript {
             varFE = backBS.getTotalUncertainty()
             logger.info(String.format(" Free energy via backwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
 
-            sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Max_Lambda          BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
+            sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Counts Max_Lambda Counts         BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
             for (int i = 0; i < (lamBins - 1); i++) {
-                sb.append(String.format(" %-10.8f %-10.8f %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
-                        lamPoints[i], lamPoints[i + 1], barFE[i], barVar[i], forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
+                sb.append(String.format(" %-10.8f %6d %-10.8f %6d %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
+                        lamPoints[i], eAt[i].length, lamPoints[i + 1], observations[i+1], barFE[i], barVar[i],
+                        forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
             }
             logger.info(sb.toString())
         } else {
