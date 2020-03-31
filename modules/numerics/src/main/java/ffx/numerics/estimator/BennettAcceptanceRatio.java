@@ -40,6 +40,7 @@ package ffx.numerics.estimator;
 import ffx.numerics.math.FFXSummaryStatistics;
 import ffx.numerics.math.ScalarMath;
 import ffx.utilities.Constants;
+
 import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -151,7 +152,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
         for (int i = 0; i < nWindows; i++) {
             boolean converged = false;
             double c = 0.5 * (estForwards[i] + estBackwards[i]); // Free energy estimate/shift constant.
-            double cold = 0; // Prior value of c. Setting it to zero almost guarantees a second iteration cycle.
+            double cold = c;
             int len0 = eAt[i].length;
             int len1 = eAt[i+1].length;
 
@@ -201,8 +202,9 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
                 s0 = new FFXSummaryStatistics(fermi0);
                 s1 = new FFXSummaryStatistics(fermi1);
+                double ratio = Arrays.stream(fermi1).sum() / Arrays.stream(fermi0).sum();
 
-                c += rtMean * log(sampleRatio  * (s1.mean / s0.mean));
+                c += rtMean * log(sampleRatio  * ratio);
                 converged = (Math.abs(c - cold) < tolerance);
                 cold = c;
 
