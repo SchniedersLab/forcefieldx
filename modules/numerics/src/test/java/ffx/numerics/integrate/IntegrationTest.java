@@ -41,16 +41,16 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
-import static ffx.numerics.integrate.Integration.BooleLeft;
-import static ffx.numerics.integrate.Integration.BooleRight;
-import static ffx.numerics.integrate.Integration.HalfBinComposite;
-import static ffx.numerics.integrate.Integration.SimpsonsLeft;
-import static ffx.numerics.integrate.Integration.SimpsonsRight;
+import static ffx.numerics.integrate.Integration.leftBoole;
+import static ffx.numerics.integrate.Integration.rightBoole;
+import static ffx.numerics.integrate.Integration.halfBinComposite;
+import static ffx.numerics.integrate.Integration.leftSimpsons;
+import static ffx.numerics.integrate.Integration.rightSimpsons;
 import static ffx.numerics.integrate.Integration.generateTestData_v1;
-import static ffx.numerics.integrate.Integration.rectangularMethodLeft;
-import static ffx.numerics.integrate.Integration.rectangularMethodRight;
-import static ffx.numerics.integrate.Integration.trapInputLeft;
-import static ffx.numerics.integrate.Integration.trapInputRight;
+import static ffx.numerics.integrate.Integration.leftRectangularMethod;
+import static ffx.numerics.integrate.Integration.rightRectangularMethod;
+import static ffx.numerics.integrate.Integration.leftTrapInput;
+import static ffx.numerics.integrate.Integration.rightTrapInput;
 
 /**
  * The IntegrationTest is a JUnit test for the Integration program that ensures
@@ -107,15 +107,15 @@ public class IntegrationTest {
          */
         double[] calculatedIntegral = new double[8];
 
-        calculatedIntegral[0] = trapInputLeft(generateTestData_v1());
-        calculatedIntegral[1] = SimpsonsLeft(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), 1, "left");
-        calculatedIntegral[2] = BooleLeft(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), 2, "left");
-        calculatedIntegral[3] = rectangularMethodLeft(generateTestData_v1());
+        calculatedIntegral[0] = leftTrapInput(generateTestData_v1());
+        calculatedIntegral[1] = leftSimpsons(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 1, "left");
+        calculatedIntegral[2] = leftBoole(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 2, "left");
+        calculatedIntegral[3] = leftRectangularMethod(generateTestData_v1());
 
-        calculatedIntegral[4] = trapInputRight(generateTestData_v1());
-        calculatedIntegral[5] = SimpsonsRight(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), 1, "right");
-        calculatedIntegral[6] = BooleRight(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), 2, "right");
-        calculatedIntegral[7] = rectangularMethodRight(generateTestData_v1());
+        calculatedIntegral[4] = rightTrapInput(generateTestData_v1());
+        calculatedIntegral[5] = rightSimpsons(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 1, "right");
+        calculatedIntegral[6] = rightBoole(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 2, "right");
+        calculatedIntegral[7] = rightRectangularMethod(generateTestData_v1());
 
         // Set the delta value for the assertEquals comparison.
         double DELTA = 1e-8;

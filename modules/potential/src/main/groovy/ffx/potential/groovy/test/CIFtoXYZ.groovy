@@ -48,6 +48,7 @@ import org.openscience.cdk.AtomContainer
 import org.openscience.cdk.config.AtomTypeFactory
 import org.openscience.cdk.graph.rebond.RebondTool
 import org.openscience.cdk.interfaces.IAtom
+import org.openscience.cdk.interfaces.IAtomType
 import org.openscience.cdk.interfaces.IBond.Order
 import org.openscience.cdk.isomorphism.AtomMatcher
 import org.openscience.cdk.isomorphism.BondMatcher
@@ -275,6 +276,16 @@ class CIFtoXYZ extends PotentialScript {
                         xyzCDKAtoms.getBuilder())
 
                 for (IAtom atom : xyzCDKAtoms.atoms()) {
+                    String atomTypeName = atom.getAtomTypeName()
+                    if (atomTypeName == null || atomTypeName.length() == 0) {
+                        IAtomType[] types = factory.getAtomTypes(atom.getSymbol());
+                        if (types.length > 0) {
+                            IAtomType atomType = types[0]
+                            atom.setAtomTypeName(atomType.getAtomTypeName())
+                        } else {
+                            logger.info(" No atom type found for " + atom.toString());
+                        }
+                    }
                     factory.configure(atom)
                 }
 
@@ -283,8 +294,19 @@ class CIFtoXYZ extends PotentialScript {
                         "org/openscience/cdk/config/data/jmol_atomtypes.txt",
                         cifCDKAtoms.getBuilder())
                 for (IAtom atom : cifCDKAtoms.atoms()) {
+                    String atomTypeName = atom.getAtomTypeName()
+                    if (atomTypeName == null || atomTypeName.length() == 0) {
+                        IAtomType[] types = factory.getAtomTypes(atom.getSymbol());
+                        if (types.length > 0) {
+                            IAtomType atomType = types[0]
+                            atom.setAtomTypeName(atomType.getAtomTypeName())
+                        } else {
+                            logger.info(" No atom type found for " + atom.toString());
+                        }
+                    }
                     factory.configure(atom)
                 }
+
                 RebondTool rebonder = new RebondTool(2.0, 0.5, 0.5)
                 rebonder.rebond(cifCDKAtoms)
 

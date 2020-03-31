@@ -190,6 +190,12 @@
             <type>jar</type>
         </dependency>
         <dependency>
+            <groupId>org.openscience.cdk</groupId>
+            <artifactId>cdk-atomtype</artifactId>
+            <version>${cdk.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>${log4j.version}</version>

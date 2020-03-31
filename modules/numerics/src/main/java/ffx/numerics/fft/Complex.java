@@ -81,16 +81,27 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 public class Complex {
 
     private static final Logger logger = Logger.getLogger(Complex.class.getName());
+    // TINKER v. 5.0 factors to achieve exact numerical agreement.
+    private static final int[] availableFactors = {5, 4, 3, 2};
+    private static final int firstUnavailablePrime = 7;
+    //private static final int availableFactors[] = { 7, 6, 5, 4, 3, 2 };
+    //private static final int firstUnavailablePrime = 11;
+    private static final double oneThird = 1.0 / 3.0;
+    private static final double sqrt3_2 = sqrt(3.0) / 2.0;
+    private static final double sqrt5_4 = sqrt(5.0) / 4.0;
+    private static final double sinPI_5 = sin(PI / 5.0);
+
+    private static final double sin2PI_5 = sin(2.0 * PI / 5.0);
+    private static final double sin2PI_7 = sin(2.0 * PI / 7.0);
+    private static final double sin4PI_7 = sin(4.0 * PI / 7.0);
+    private static final double sin6PI_7 = sin(6.0 * PI / 7.0);
+    private static final double cos2PI_7 = cos(2.0 * PI / 7.0);
+    private static final double cos4PI_7 = cos(4.0 * PI / 7.0);
+    private static final double cos6PI_7 = cos(6.0 * PI / 7.0);
     private final int n;
     private final int[] factors;
     private final double[][][] twiddle;
     private final double[] scratch;
-    // TINKER v. 5.0 factors to achieve exact numerical agreement.
-    private static final int[] availableFactors = {5, 4, 3, 2};
-    private static final int firstUnavailablePrime = 7;
-
-    //private static final int availableFactors[] = { 7, 6, 5, 4, 3, 2 };
-    //private static final int firstUnavailablePrime = 11;
 
     /**
      * Construct a Complex instance for data of length n. Factorization of n is
@@ -107,6 +118,76 @@ public class Complex {
         factors = factor();
         twiddle = wavetable();
         scratch = new double[2 * n];
+    }
+
+    /**
+     * Compute the Fast Fourier Transform of data leaving the result in data.
+     * The array data must contain the data points in the following locations:
+     *
+     * <PRE>
+     * Re(d[i]) = data[offset + stride*i]
+     * Im(d[i]) = data[offset + stride*i+1]
+     * </PRE>
+     *
+     * @param data   an array of double.
+     * @param offset the offset to the beginning of the data.
+     * @param stride the stride between data points.
+     */
+    public void fft(double[] data, int offset, int stride) {
+        transformInternal(data, offset, stride, -1);
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>factors</code>.</p>
+     *
+     * @return an array of int.
+     */
+    public int[] getFactors() {
+        return factors;
+    }
+
+    /**
+     * Compute the (unnormalized) inverse FFT of data, leaving it in place. The
+     * frequency domain data must be in wrap-around order, and be stored in the
+     * following locations:
+     *
+     * <PRE>
+     * Re(D[i]) = data[offset + stride*i]
+     * Im(D[i]) = data[offset + stride*i+1]
+     * </PRE>
+     *
+     * @param data   an array of double.
+     * @param offset the offset to the beginning of the data.
+     * @param stride the stride between data points.
+     */
+    public void ifft(double[] data, int offset, int stride) {
+        transformInternal(data, offset, stride, +1);
+    }
+
+    /**
+     * Compute the normalized inverse FFT of data, leaving it in place. The
+     * frequency domain data must be stored in the following locations:
+     *
+     * <PRE>
+     * Re(D[i]) = data[offset + stride*i]
+     * Im(D[i]) = data[offset + stride*i+1]
+     * </PRE>
+     *
+     * @param data   an array of double.
+     * @param offset the offset to the beginning of the data.
+     * @param stride the stride between data points.
+     */
+    public void inverse(double[] data, int offset, int stride) {
+        ifft(data, offset, stride);
+
+        // Normalize inverse FFT with 1/n.
+        double norm = normalization();
+        for (int i = 0; i < n; i++) {
+            final int index = offset + stride * i;
+            data[index] *= norm;
+            data[index + 1] *= norm;
+        }
     }
 
     /**
@@ -196,76 +277,6 @@ public class Complex {
             }
         }
         return ret;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>factors</code>.</p>
-     *
-     * @return an array of int.
-     */
-    public int[] getFactors() {
-        return factors;
-    }
-
-    /**
-     * Compute the Fast Fourier Transform of data leaving the result in data.
-     * The array data must contain the data points in the following locations:
-     *
-     * <PRE>
-     * Re(d[i]) = data[offset + stride*i]
-     * Im(d[i]) = data[offset + stride*i+1]
-     * </PRE>
-     *
-     * @param data   an array of double.
-     * @param offset the offset to the beginning of the data.
-     * @param stride the stride between data points.
-     */
-    public void fft(double[] data, int offset, int stride) {
-        transformInternal(data, offset, stride, -1);
-    }
-
-    /**
-     * Compute the (unnormalized) inverse FFT of data, leaving it in place. The
-     * frequency domain data must be in wrap-around order, and be stored in the
-     * following locations:
-     *
-     * <PRE>
-     * Re(D[i]) = data[offset + stride*i]
-     * Im(D[i]) = data[offset + stride*i+1]
-     * </PRE>
-     *
-     * @param data   an array of double.
-     * @param offset the offset to the beginning of the data.
-     * @param stride the stride between data points.
-     */
-    public void ifft(double[] data, int offset, int stride) {
-        transformInternal(data, offset, stride, +1);
-    }
-
-    /**
-     * Compute the normalized inverse FFT of data, leaving it in place. The
-     * frequency domain data must be stored in the following locations:
-     *
-     * <PRE>
-     * Re(D[i]) = data[offset + stride*i]
-     * Im(D[i]) = data[offset + stride*i+1]
-     * </PRE>
-     *
-     * @param data   an array of double.
-     * @param offset the offset to the beginning of the data.
-     * @param stride the stride between data points.
-     */
-    public void inverse(double[] data, int offset, int stride) {
-        ifft(data, offset, stride);
-
-        // Normalize inverse FFT with 1/n.
-        double norm = normalization();
-        for (int i = 0; i < n; i++) {
-            final int index = offset + stride * i;
-            data[index] *= norm;
-            data[index + 1] *= norm;
-        }
     }
 
     /**
@@ -1125,16 +1136,4 @@ public class Complex {
         }
         return ret;
     }
-
-    private static final double oneThird = 1.0 / 3.0;
-    private static final double sqrt3_2 = sqrt(3.0) / 2.0;
-    private static final double sqrt5_4 = sqrt(5.0) / 4.0;
-    private static final double sinPI_5 = sin(PI / 5.0);
-    private static final double sin2PI_5 = sin(2.0 * PI / 5.0);
-    private static final double sin2PI_7 = sin(2.0 * PI / 7.0);
-    private static final double sin4PI_7 = sin(4.0 * PI / 7.0);
-    private static final double sin6PI_7 = sin(6.0 * PI / 7.0);
-    private static final double cos2PI_7 = cos(2.0 * PI / 7.0);
-    private static final double cos4PI_7 = cos(4.0 * PI / 7.0);
-    private static final double cos6PI_7 = cos(6.0 * PI / 7.0);
 }

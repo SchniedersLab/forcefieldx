@@ -91,6 +91,50 @@ public class Complex3D {
     }
 
     /**
+     * <p>
+     * convolution</p>
+     *
+     * @param input an array of double.
+     */
+    public void convolution(final double[] input) {
+        for (int z = 0; z < nZ; z++) {
+            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                fftX.fft(input, offset, nextX);
+            }
+            for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
+                fftY.fft(input, offset, nextY);
+            }
+        }
+        for (int offset = 0, index = 0, y = 0; y < nY; y++) {
+            for (int x = 0; x < nX; x++, offset += nextX) {
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+                    work[i] = input[z];
+                    work[i + 1] = input[z + 1];
+                }
+                fftZ.fft(work, 0, 2);
+                for (int i = 0; i < nZ2; i += 2) {
+                    double r = recip[index++];
+                    work[i] *= r;
+                    work[i + 1] *= r;
+                }
+                fftZ.ifft(work, 0, 2);
+                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+                    input[z] = work[i];
+                    input[z + 1] = work[i + 1];
+                }
+            }
+        }
+        for (int z = 0; z < nZ; z++) {
+            for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
+                fftY.ifft(input, offset, nextY);
+            }
+            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                fftX.ifft(input, offset, nextX);
+            }
+        }
+    }
+
+    /**
      * Compute the 3D FFT.
      *
      * @param input The input array must be of size 2 * nX * nY * nZ.
@@ -117,6 +161,21 @@ public class Complex3D {
                 }
             }
         }
+    }
+
+    /**
+     * <p>
+     * iComplex3D</p>
+     *
+     * @param i  a int.
+     * @param j  a int.
+     * @param k  a int.
+     * @param nX a int.
+     * @param nY a int.
+     * @return a int.
+     */
+    public static int iComplex3D(int i, int j, int k, int nX, int nY) {
+        return 2 * (i + nX * (j + nY * k));
     }
 
     /**
@@ -163,64 +222,5 @@ public class Complex3D {
                 }
             }
         }
-    }
-
-    /**
-     * <p>
-     * convolution</p>
-     *
-     * @param input an array of double.
-     */
-    public void convolution(final double[] input) {
-        for (int z = 0; z < nZ; z++) {
-            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-                fftX.fft(input, offset, nextX);
-            }
-            for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
-                fftY.fft(input, offset, nextY);
-            }
-        }
-        for (int offset = 0, index = 0, y = 0; y < nY; y++) {
-            for (int x = 0; x < nX; x++, offset += nextX) {
-                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
-                    work[i] = input[z];
-                    work[i + 1] = input[z + 1];
-                }
-                fftZ.fft(work, 0, 2);
-                for (int i = 0; i < nZ2; i += 2) {
-                    double r = recip[index++];
-                    work[i] *= r;
-                    work[i + 1] *= r;
-                }
-                fftZ.ifft(work, 0, 2);
-                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
-                    input[z] = work[i];
-                    input[z + 1] = work[i + 1];
-                }
-            }
-        }
-        for (int z = 0; z < nZ; z++) {
-            for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
-                fftY.ifft(input, offset, nextY);
-            }
-            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-                fftX.ifft(input, offset, nextX);
-            }
-        }
-    }
-
-    /**
-     * <p>
-     * iComplex3D</p>
-     *
-     * @param i  a int.
-     * @param j  a int.
-     * @param k  a int.
-     * @param nX a int.
-     * @param nY a int.
-     * @return a int.
-     */
-    public static int iComplex3D(int i, int j, int k, int nX, int nY) {
-        return 2 * (i + nX * (j + nY * k));
     }
 }

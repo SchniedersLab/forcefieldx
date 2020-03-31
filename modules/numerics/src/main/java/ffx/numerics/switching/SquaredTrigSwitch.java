@@ -38,8 +38,11 @@
 package ffx.numerics.switching;
 
 import java.util.function.DoubleUnaryOperator;
+import static java.lang.String.format;
 
-import org.apache.commons.math3.util.FastMath;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sin;
 
 /**
  * A SquaredTrigSwitch implements a 0-1 switch of form f(x) = sin^2(ax) or
@@ -51,8 +54,8 @@ import org.apache.commons.math3.util.FastMath;
  */
 public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
 
-    private final double multiplier;
     private static final double PI_OVER_TWO = Math.PI * 0.5;
+    private final double multiplier;
     private final double halfPeriod;
     private final DoubleUnaryOperator xTransform;
     private final boolean cosine;
@@ -82,56 +85,11 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     }
 
     /**
-     * Operate on a*x.
-     *
-     * @param x Input
-     * @return Position along sine wave.
-     */
-    private double sineTransform(double x) {
-        return x * multiplier;
-    }
-
-    /**
-     * Operate on (pi/2) + a*x, period-shifting a sine wave into the desired
-     * cosine wave.
-     *
-     * @param x Input
-     * @return Position along cosine wave.
-     */
-    private double cosineTransform(double x) {
-        return PI_OVER_TWO + (x * multiplier);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getZeroBound() {
-        return cosine ? halfPeriod : 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getOneBound() {
-        return cosine ? 0 : halfPeriod;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
     public boolean constantOutsideBounds() {
         return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return true;
     }
 
     /**
@@ -146,6 +104,22 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
+    public double getOneBound() {
+        return cosine ? 0 : halfPeriod;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getZeroBound() {
+        return cosine ? halfPeriod : 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean symmetricToUnity() {
         return true;
     }
@@ -154,11 +128,8 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        x = xTransform.applyAsDouble(x);
-        x = FastMath.sin(x);
-        x *= x;
-        return x;
+    public boolean validOutsideBounds() {
+        return true;
     }
 
     /**
@@ -167,20 +138,7 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     @Override
     public double firstDerivative(double x) throws IllegalArgumentException {
         x = xTransform.applyAsDouble(x);
-        return 2.0 * FastMath.sin(x) * FastMath.cos(x) * multiplier;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double secondDerivative(double x) throws IllegalArgumentException {
-        double val = 2.0 * multiplier * multiplier;
-        x = xTransform.applyAsDouble(x);
-        double cosTerm = FastMath.cos(x);
-        double sinTerm = FastMath.sin(x);
-
-        return val * ((cosTerm * cosTerm) - (sinTerm * sinTerm));
+        return 2.0 * sin(x) * cos(x) * multiplier;
     }
 
     /**
@@ -192,22 +150,46 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
             throw new IllegalArgumentException("Order must be >= 1");
         }
         x = xTransform.applyAsDouble(x);
-        double sinVal = FastMath.sin(x);
-        double cosVal = FastMath.cos(x);
-        double multPow = FastMath.pow(multiplier, order);
+        double sinVal = sin(x);
+        double cosVal = cos(x);
+        double multPow = pow(multiplier, order);
 
         switch (order % 4) {
             case 0:
-                return FastMath.pow(2.0, order - 1) * multPow * ((sinVal * sinVal) - (cosVal * cosVal));
+                return pow(2.0, order - 1) * multPow * ((sinVal * sinVal) - (cosVal * cosVal));
             case 1:
-                return FastMath.pow(2.0, order) * multPow * sinVal * cosVal;
+                return pow(2.0, order) * multPow * sinVal * cosVal;
             case 2:
-                return FastMath.pow(2.0, order - 1) * multPow * ((cosVal * cosVal) - (sinVal * sinVal));
+                return pow(2.0, order - 1) * multPow * ((cosVal * cosVal) - (sinVal * sinVal));
             case 3:
-                return -1.0 * FastMath.pow(2.0, order) * multPow * sinVal * cosVal;
+                return -1.0 * pow(2.0, order) * multPow * sinVal * cosVal;
             default:
                 throw new ArithmeticException("A positive number modulo 4 was not 0-3");
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double secondDerivative(double x) throws IllegalArgumentException {
+        double val = 2.0 * multiplier * multiplier;
+        x = xTransform.applyAsDouble(x);
+        double cosTerm = cos(x);
+        double sinTerm = sin(x);
+
+        return val * ((cosTerm * cosTerm) - (sinTerm * sinTerm));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        x = xTransform.applyAsDouble(x);
+        x = sin(x);
+        x *= x;
+        return x;
     }
 
     /**
@@ -234,9 +216,30 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     @Override
     public String toString() {
         if (cosine) {
-            return String.format("Cosine-squared switching function of form f(x) = cos^2(%8.4g * x)", multiplier);
+            return format("Cosine-squared switching function of form f(x) = cos^2(%8.4g * x)", multiplier);
         } else {
-            return String.format("Sine-squared switching function of form f(x) = sin^2(%8.4g * x)", multiplier);
+            return format("Sine-squared switching function of form f(x) = sin^2(%8.4g * x)", multiplier);
         }
+    }
+
+    /**
+     * Operate on a*x.
+     *
+     * @param x Input
+     * @return Position along sine wave.
+     */
+    private double sineTransform(double x) {
+        return x * multiplier;
+    }
+
+    /**
+     * Operate on (pi/2) + a*x, period-shifting a sine wave into the desired
+     * cosine wave.
+     *
+     * @param x Input
+     * @return Position along cosine wave.
+     */
+    private double cosineTransform(double x) {
+        return PI_OVER_TWO + (x * multiplier);
     }
 }

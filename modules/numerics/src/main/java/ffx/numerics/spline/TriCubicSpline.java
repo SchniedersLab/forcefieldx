@@ -47,18 +47,6 @@ package ffx.numerics.spline;
  */
 public class TriCubicSpline {
 
-    private final double[] p;
-    private final double[] q;
-    private final double[] r;
-    private final double[] u;
-    private final double[] v;
-    private final double[] w;
-    private final double[] dp;
-    private final double[] dq;
-    private final double[] dr;
-    private final double[] du;
-    private final double[] dv;
-    private final double[] dw;
     /**
      * Tau for the smoothing matrix.
      */
@@ -72,6 +60,18 @@ public class TriCubicSpline {
             {2.0 * tau, tau - 3.0, 3.0 - 2.0 * tau, -tau},
             {-tau, 2.0 - tau, tau - 2.0, tau}
     };
+    private final double[] p;
+    private final double[] q;
+    private final double[] r;
+    private final double[] u;
+    private final double[] v;
+    private final double[] w;
+    private final double[] dp;
+    private final double[] dq;
+    private final double[] dr;
+    private final double[] du;
+    private final double[] dv;
+    private final double[] dw;
 
     /**
      * Initialize Spline function.

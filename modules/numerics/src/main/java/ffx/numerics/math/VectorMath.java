@@ -48,9 +48,10 @@ import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
- * The VectorMath class is a simple math library that operates on 3-coordinate
- * double and float arrays. The design objectives are speed and no memory
- * consumption.
+ * The VectorMath class is a simple math library that operates mainly on 3-coordinate
+ * double and float arrays.
+ * <p>
+ * All methods are thread-safe.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -58,57 +59,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 public final class VectorMath {
 
     private static final Logger logger = Logger.getLogger(VectorMath.class.getName());
-    /**
-     * Internal float work arrays.
-     */
-    private static final float[] fa = new float[3];
-    private static final float[] fb = new float[3];
-    private static final float[] fc = new float[3];
-    private static final float[] fd = new float[3];
-    private static final float[] fba = new float[3];
-    private static final float[] fcb = new float[3];
-    private static final float[] fdc = new float[3];
-    private static final float[] ft = new float[3];
-    private static final float[] fu = new float[3];
-    private static final float[] ftu = new float[3];
-    /**
-     * Internal double work arrays.
-     */
-    private static final double[] da = new double[3];
-    private static final double[] db = new double[3];
-    private static final double[] dc = new double[3];
-    private static final double[] dd = new double[3];
-    private static final double[] dba = new double[3];
-    private static final double[] dcb = new double[3];
-    private static final double[] ddc = new double[3];
-    private static final double[] dt = new double[3];
-    private static final double[] du = new double[3];
-    private static final double[] dtu = new double[3];
-    private static final double eightpi2 = 8.0 * PI * PI;
-
-    /**
-     * <p>log.</p>
-     *
-     * @param v     an array of {@link double} objects.
-     * @param label a {@link java.lang.String} object.
-     */
-    public static void log(double[] v, String label) {
-        if (v == null) {
-            return;
-        }
-        StringBuilder sb;
-        if (label != null) {
-            sb = new StringBuilder(format(" %16s = [", label));
-        } else {
-            sb = new StringBuilder(format(" %16s = [", "v"));
-        }
-
-        for (double value : v) {
-            sb.append(format(" %16.8f", value));
-        }
-        sb.append(" ]");
-        logger.info(sb.toString());
-    }
+    private static final double eightPi2 = 8.0 * PI * PI;
 
     /**
      * <p>
@@ -116,13 +67,10 @@ public final class VectorMath {
      *
      * @param i an array of double.
      * @param j an array of double.
-     * @return a double.
+     * @return Returns the angle.
      */
     public static double angle(double[] i, double[] j) {
-        double x;
-        norm(i, da);
-        norm(j, db);
-        x = dot(da, db);
+        var x = dot(norm(i), norm(j));
         if (abs(x) > 1) {
             if (x > 0) {
                 x = 1;
@@ -139,13 +87,10 @@ public final class VectorMath {
      *
      * @param i an array of float.
      * @param j an array of float.
-     * @return a float.
+     * @return Returns the angle.
      */
     public static float angle(float[] i, float[] j) {
-        float x;
-        norm(i, fa);
-        norm(j, fb);
-        x = dot(fa, fb);
+        var x = dot(norm(i), norm(j));
         if (abs(x) > 1) {
             logger.warning(format(" Angle: abs(dot) > 1 %10.6f", x));
             if (x > 0) {
@@ -159,65 +104,60 @@ public final class VectorMath {
 
     /**
      * <p>
+     * b2u</p>
+     *
+     * @param b a double.
+     * @return a double.
+     */
+    public static double b2u(double b) {
+        return b / eightPi2;
+    }
+
+    /**
+     * <p>
      * binomial</p>
      *
      * @param n a long.
      * @param k a long.
-     * @return a long.
+     * @return Returns the binomial of (n,k).
      */
     public static long binomial(long n, long k) {
         return factorial(n) / (factorial(n - k) * factorial(k));
     }
 
     /**
-     * Finds the angle formed by three atoms
+     * Finds the angle formed by three atoms.
      *
-     * @param i Atom position vector
-     * @param j Atom position vector (central atom)
-     * @param k Atom position vector
-     * @return The angle in the range [ -pi, pi ]
+     * @param i Atom position vector.
+     * @param j Atom position vector (central atom).
+     * @param k Atom position vector.
+     * @return Return the angle in the range [ -pi, pi ].
      */
     public static double bondAngle(double[] i, double[] j, double[] k) {
-        double x;
-        diff(i, j, da);
-        diff(k, j, db);
-        norm(da, dc);
-        norm(db, dd);
-        x = dot(dc, dd);
-        if (abs(x) > 1) {
-            if (x > 0) {
-                x = 1;
-            } else {
-                x = -1;
-            }
-        }
-        return acos(x);
+        return angle(diff(i, j), diff(k, j));
     }
 
     /**
      * Finds the angle formed by three atoms
      *
-     * @param i Atom position vector
-     * @param j Atom position vector (central atom)
-     * @param k Atom position vector
-     * @return The angle in the range [ -pi, pi ]
+     * @param i Atom position vector.
+     * @param j Atom position vector (central atom).
+     * @param k Atom position vector.
+     * @return Returns the angle in the range [ -pi, pi ].
      */
     public static float bondAngle(float[] i, float[] j, float[] k) {
-        float x;
-        diff(i, j, fa);
-        diff(k, j, fb);
-        norm(fa, fc);
-        norm(fb, fd);
-        x = dot(fc, fd);
-        if (abs(x) > 1) {
-            logger.warning(format(" Bond Angle: abs(dot) > 1 %10.6f", x));
-            if (x > 0) {
-                x = 1;
-            } else {
-                x = -1;
-            }
-        }
-        return (float) acos((double) x);
+        return angle(diff(i, j), diff(k, j));
+    }
+
+    /**
+     * Finds the cross-product between two vectors
+     *
+     * @param a First vector
+     * @param b Second vector
+     * @return Returns the cross-product.
+     */
+    public static double[] cross(double[] a, double[] b) {
+        return cross(a, b, new double[3]);
     }
 
     /**
@@ -225,40 +165,55 @@ public final class VectorMath {
      *
      * @param a   First vector
      * @param b   Second vector
-     * @param ret The cross-product a x b
+     * @param ret The cross-product a x b.
+     * @return Returns the cross-product ret.
      */
-    public static void cross(double[] a, double[] b, double[] ret) {
+    public static double[] cross(double[] a, double[] b, double[] ret) {
         ret[0] = a[1] * b[2] - a[2] * b[1];
         ret[1] = a[2] * b[0] - a[0] * b[2];
         ret[2] = a[0] * b[1] - a[1] * b[0];
+        return ret;
     }
 
     /**
-     * Finds the cross-product between two vectors
+     * Finds the cross-product between two vectors.
      *
-     * @param a   First vector
-     * @param b   Second vector
-     * @param ret The cross-product a x b
+     * @param a First vector.
+     * @param b Second vector.
+     * @return Returns the cross-product.
      */
-    public static void cross(float[] a, float[] b, float[] ret) {
+    public static float[] cross(float[] a, float[] b) {
+        return cross(a, b, new float[3]);
+    }
+
+    /**
+     * Finds the cross-product between two vectors.
+     *
+     * @param a   First vector.
+     * @param b   Second vector.
+     * @param ret The cross-product a x b.
+     * @return Returns the cross-product ret.
+     */
+    public static float[] cross(float[] a, float[] b, float[] ret) {
         ret[0] = a[1] * b[2] - a[2] * b[1];
         ret[1] = a[2] * b[0] - a[0] * b[2];
         ret[2] = a[0] * b[1] - a[1] * b[0];
+        return ret;
     }
 
     /**
-     * returns the determinant for a 3x3 matrix
+     * Returns the determinant for a 3x3 matrix.
      *
-     * @param m input matrix
-     * @return determinant
+     * @param m input matrix.
+     * @return Returns the determinant.
      */
     public static double determinant3(double[][] m) {
-        return (m[0][0] * m[1][1] * m[2][2]
+        return m[0][0] * m[1][1] * m[2][2]
                 - m[0][0] * m[1][2] * m[2][1]
                 + m[0][1] * m[1][2] * m[2][0]
                 - m[0][1] * m[1][0] * m[2][2]
                 + m[0][2] * m[1][0] * m[2][1]
-                - m[0][2] * m[1][1] * m[2][0]);
+                - m[0][2] * m[1][1] * m[2][0];
     }
 
     /**
@@ -266,15 +221,52 @@ public final class VectorMath {
      * determinant3</p>
      *
      * @param m an array of double.
-     * @return a double.
+     * @return Returns the determinant.
      */
     public static double determinant3(double[] m) {
-        return (m[0] * m[1] * m[2]
+        return m[0] * m[1] * m[2]
                 - m[0] * m[5] * m[5]
                 + m[3] * m[5] * m[4]
                 - m[3] * m[3] * m[2]
                 + m[4] * m[3] * m[5]
-                - m[4] * m[1] * m[4]);
+                - m[4] * m[1] * m[4];
+    }
+
+    /**
+     * Finds the difference between two vectors.
+     *
+     * @param a First vector
+     * @param b Second vector
+     * @return Returns the difference.
+     */
+    public static double[] diff(double[] a, double[] b) {
+        return diff(a, b, new double[3]);
+    }
+
+    /**
+     * Finds the difference between two vectors.
+     *
+     * @param a   First vector
+     * @param b   Second vector
+     * @param ret Return Values
+     * @return Returns the difference ret.
+     */
+    public static double[] diff(double[] a, double[] b, double[] ret) {
+        ret[0] = a[0] - b[0];
+        ret[1] = a[1] - b[1];
+        ret[2] = a[2] - b[2];
+        return ret;
+    }
+
+    /**
+     * Finds the difference between two vectors.
+     *
+     * @param a First vector
+     * @param b Second vector
+     * @return Returns the difference ret.
+     */
+    public static float[] diff(float[] a, float[] b) {
+        return diff(a, b, new float[3]);
     }
 
     /**
@@ -283,51 +275,40 @@ public final class VectorMath {
      * @param a   First vector
      * @param b   Second vector
      * @param ret Return Values
+     * @return Returns the difference ret.
      */
-    public static void diff(double[] a, double[] b, double[] ret) {
+    public static float[] diff(float[] a, float[] b, float[] ret) {
         ret[0] = a[0] - b[0];
         ret[1] = a[1] - b[1];
         ret[2] = a[2] - b[2];
+        return ret;
     }
 
     /**
-     * Finds the difference between two vectors
+     * Finds the dihedral angle formed between 4 atoms.
      *
-     * @param a   First vector
-     * @param b   Second vector
-     * @param ret Return Values
-     */
-    public static void diff(float[] a, float[] b, float[] ret) {
-        ret[0] = a[0] - b[0];
-        ret[1] = a[1] - b[1];
-        ret[2] = a[2] - b[2];
-    }
-
-    /**
-     * Finds the dihedral angle formed between 4 atoms
-     *
-     * @param a Atom position vector
-     * @param b Atom position vector
-     * @param c Atom position vector
-     * @param d Atom position vector
-     * @return The dihedral angle in the range [ -pi, pi ]
+     * @param a Atom position vector.
+     * @param b Atom position vector.
+     * @param c Atom position vector.
+     * @param d Atom position vector.
+     * @return The dihedral angle in the range [ -pi, pi ].
      */
     public static double dihedralAngle(double[] a, double[] b, double[] c, double[] d) {
-        diff(b, a, dba);
-        diff(c, b, dcb);
-        diff(d, c, ddc);
-        cross(dba, dcb, dt);
-        cross(dcb, ddc, du);
-        cross(dt, du, dtu);
-        double rt = dot(dt, dt);
-        double ru = dot(du, du);
-        double rtu = sqrt(rt * ru);
+        var ba = diff(b, a);
+        var cb = diff(c, b);
+        var dc = diff(d, c);
+        var t = cross(ba, cb);
+        var u = cross(cb, dc);
+        var rt = dot(t, t);
+        var ru = dot(u, u);
+        var rtu = sqrt(rt * ru);
         if (rtu != 0.0) {
-            double rcb = r(dcb);
-            double cosine = dot(dt, du) / rtu;
-            double sine = dot(dcb, dtu) / (rcb * rtu);
+            var rcb = r(cb);
+            var cosine = dot(t, u) / rtu;
+            var tu = cross(t, u);
+            var sine = dot(cb, tu) / (rcb * rtu);
             cosine = min(1.0, max(-1.0, cosine));
-            double angle = acos(cosine);
+            var angle = acos(cosine);
             if (sine < 0.0) {
                 angle = -angle;
             }
@@ -339,28 +320,28 @@ public final class VectorMath {
     /**
      * Finds the dihedral angle formed between 4 atoms
      *
-     * @param a Atom position vector
-     * @param b Atom position vector
-     * @param c Atom position vector
-     * @param d Atom position vector
-     * @return The dihedral angle in the range [ -pi, pi ]
+     * @param a Atom position vector.
+     * @param b Atom position vector.
+     * @param c Atom position vector.
+     * @param d Atom position vector.
+     * @return The dihedral angle in the range [ -pi, pi ].
      */
     public static float dihedralAngle(float[] a, float[] b, float[] c, float[] d) {
-        diff(b, a, fba);
-        diff(c, b, fcb);
-        diff(d, c, fdc);
-        cross(fba, fcb, ft);
-        cross(fcb, fdc, fu);
-        cross(ft, fu, ftu);
-        float rt = dot(ft, ft);
-        float ru = dot(fu, fu);
-        float rtu = (float) sqrt(rt * ru);
+        var ba = diff(b, a);
+        var cb = diff(c, b);
+        var dc = diff(d, c);
+        var t = cross(ba, cb);
+        var u = cross(cb, dc);
+        var rt = dot(t, t);
+        var ru = dot(u, u);
+        var rtu = (float) sqrt(rt * ru);
         if (rtu != 0.0) {
-            float rcb = r(fcb);
-            float cosine = dot(ft, fu) / rtu;
-            float sine = dot(fcb, ftu) / (rcb * rtu);
+            var rcb = r(cb);
+            var cosine = dot(t, u) / rtu;
+            var tu = cross(t, u);
+            var sine = dot(cb, tu) / (rcb * rtu);
             cosine = min(1.0f, max(-1.0f, cosine));
-            float angle = (float) acos((double) cosine);
+            var angle = (float) acos(cosine);
             if (sine < 0.0) {
                 angle = -angle;
             }
@@ -370,87 +351,87 @@ public final class VectorMath {
     }
 
     /**
-     * Finds the squared distance between two vectors
+     * Finds the distance between two vectors.
      *
-     * @param a First vector
-     * @param b Second vector
-     * @return The squared distance between vectors a and b.
-     */
-    public static double dist2(double[] a, double[] b) {
-        double dx = a[0] - b[0];
-        double dy = a[1] - b[1];
-        double dz = a[2] - b[2];
-        return dx * dx + dy * dy + dz * dz;
-    }
-
-    /**
-     * Finds the distance between two vectors
-     *
-     * @param a First vector
-     * @param b Second vector
-     * @return The distance between vectors a and b
+     * @param a First vector.
+     * @param b Second vector.
+     * @return Returns the distance between vectors a and b.
      */
     public static double dist(double[] a, double[] b) {
         return sqrt(dist2(a, b));
     }
 
     /**
+     * Finds the distance between two vectors.
+     *
+     * @param a First vector.
+     * @param b Second vector.
+     * @return Returns the distance between vectors a and b.
+     */
+    public static float dist(float[] a, float[] b) {
+        return (float) sqrt(dist2(a, b));
+    }
+
+    /**
      * Finds the squared distance between two vectors
      *
-     * @param a First vector
-     * @param b Second vector
-     * @return The squared distance between vectors a and b
+     * @param a First vector.
+     * @param b Second vector.
+     * @return Returns the squared distance between vectors a and b.
      */
-    public static float dist2(float[] a, float[] b) {
-        float dx = a[0] - b[0];
-        float dy = a[1] - b[1];
-        float dz = a[2] - b[2];
+    public static double dist2(double[] a, double[] b) {
+        var dx = a[0] - b[0];
+        var dy = a[1] - b[1];
+        var dz = a[2] - b[2];
         return dx * dx + dy * dy + dz * dz;
     }
 
     /**
-     * Finds the distance between two vectors
+     * Finds the squared distance between two vectors.
      *
-     * @param a First vector
-     * @param b Second vector
-     * @return The distance between vectors a and b
+     * @param a First vector.
+     * @param b Second vector.
+     * @return Returns the squared distance between vectors a and b.
      */
-    public static float dist(float[] a, float[] b) {
-        return (float) sqrt((double) dist2(a, b));
+    public static float dist2(float[] a, float[] b) {
+        var dx = a[0] - b[0];
+        var dy = a[1] - b[1];
+        var dz = a[2] - b[2];
+        return dx * dx + dy * dy + dz * dz;
     }
 
     /**
-     * Finds the dot product between two vectors
+     * Finds the dot product between two vectors.
      *
-     * @param a First vector
-     * @param b Second vector
-     * @return The dot product of a and b
+     * @param a First vector.
+     * @param b Second vector.
+     * @return Returns the dot product of a and b.
      */
     public static double dot(double[] a, double[] b) {
-        return ((a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]));
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
     }
 
     /**
-     * Finds the dot product between two vectors
+     * Finds the dot product between two vectors.
      *
-     * @param a First vector
-     * @param b Second vector
-     * @return The dot product of a and b
+     * @param a First vector.
+     * @param b Second vector.
+     * @return Returns the dot product of a and b.
      */
     public static float dot(float[] a, float[] b) {
-        return ((a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]));
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
     }
 
     /**
      * Returns n!! Precondition: n .GE. -1 Returning 1 for -1 input is analogous
      * to Maple behavior.
      *
-     * @param n long
-     * @return long
+     * @param n long.
+     * @return Returns the n!!.
      */
     public static long doubleFactorial(long n) {
         if (n < -1) {
-            throw new RuntimeException("Underflow error in doublefactorial");
+            throw new RuntimeException("Underflow error in doubleFactorial");
         } else if (n == 0 || n == 1 || n == -1) {
             return 1;
         } else {
@@ -469,8 +450,8 @@ public final class VectorMath {
      * <br>
      * 21! returns an overflow: -4249290049419214848
      *
-     * @param n long
-     * @return long
+     * @param n long.
+     * @return Returns n!.
      */
     public static long factorial(long n) {
         if (n < 0) {
@@ -485,15 +466,33 @@ public final class VectorMath {
     }
 
     /**
-     * inverse of a 3x3 matrix
+     * <p>
+     * logVector</p>
      *
-     * @param m input matrix
-     * @return matrix inverse
+     * @param v an array of double.
+     */
+    public static void logVector(double[] v) {
+        logger.info(vectorToString(v));
+    }
+
+    /**
+     * <p>logVector.</p>
+     *
+     * @param v     an array of {@link double} objects.
+     * @param label a {@link java.lang.String} object.
+     */
+    public static void logVector(double[] v, String label) {
+        logger.info(vectorToString(v, label));
+    }
+
+    /**
+     * inverse of a 3x3 matrix.
+     *
+     * @param m input matrix.
+     * @return Returns the matrix inverse.
      */
     public static double[][] mat3Inverse(double[][] m) {
-        double[][] res = new double[3][3];
-        mat3Inverse(m, res);
-        return res;
+        return mat3Inverse(m, new double[3][3]);
     }
 
     /**
@@ -502,8 +501,9 @@ public final class VectorMath {
      *
      * @param m   an array of double.
      * @param res an array of double.
+     * @return Returns the matrix res.
      */
-    public static void mat3Inverse(double[][] m, double[][] res) {
+    public static double[][] mat3Inverse(double[][] m, double[][] res) {
         double det = determinant3(m);
         res[0][0] = (m[1][1] * m[2][2] - m[1][2] * m[2][1]) / det;
         res[0][1] = (m[0][2] * m[2][1] - m[0][1] * m[2][2]) / det;
@@ -514,93 +514,40 @@ public final class VectorMath {
         res[2][0] = (m[1][0] * m[2][1] - m[1][1] * m[2][0]) / det;
         res[2][1] = (m[0][1] * m[2][0] - m[0][0] * m[2][1]) / det;
         res[2][2] = (m[0][0] * m[1][1] - m[0][1] * m[1][0]) / det;
-    }
-
-    /**
-     * vector times a matrix
-     *
-     * @param v input vector
-     * @param m input matrix
-     * @return vector product
-     */
-    public static double[] vec3Mat3(double[] v, double[][] m) {
-        double[] res = new double[3];
-        vec3Mat3(v, m, res);
         return res;
     }
 
     /**
-     * <p>
-     * vec3mat3</p>
+     * Matrix times a matrix.
      *
-     * @param v   an array of double.
-     * @param m   an array of double.
-     * @param res an array of double.
+     * @param m1 First input matrix.
+     * @param m2 Second input matrix.
+     * @return Returns the matrix product.
      */
-    public static void vec3Mat3(double[] v, double[][] m, double[] res) {
-        res[0] = v[0] * m[0][0] + v[1] * m[1][0] + v[2] * m[2][0];
-        res[1] = v[0] * m[0][1] + v[1] * m[1][1] + v[2] * m[2][1];
-        res[2] = v[0] * m[0][2] + v[1] * m[1][2] + v[2] * m[2][2];
+    public static double[][] mat3Mat3(double[][] m1, double[][] m2) {
+        return mat3Mat3(m1, m2, new double[3][3]);
     }
 
     /**
-     * matrix times a vector
+     * <p>
+     * mat3mat3</p>
      *
-     * @param m input matrix
-     * @param v input vector
-     * @return vector product
+     * @param m1  an array of double.
+     * @param m2  an array of double.
+     * @param res an array of double.
+     * @return Returns the matrix res.
      */
-    public static double[] mat3Vec3(double[] v, double[][] m) {
-        double[] res = new double[3];
-        mat3Vec3(v, m, res);
+    public static double[][] mat3Mat3(double[][] m1, double[][] m2, double[][] res) {
+        res[0][0] = m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0] + m1[0][2] * m2[2][0];
+        res[0][1] = m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1] + m1[0][2] * m2[2][1];
+        res[0][2] = m1[0][0] * m2[0][2] + m1[0][1] * m2[1][2] + m1[0][2] * m2[2][2];
+        res[1][0] = m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0] + m1[1][2] * m2[2][0];
+        res[1][1] = m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1] + m1[1][2] * m2[2][1];
+        res[1][2] = m1[1][0] * m2[0][2] + m1[1][1] * m2[1][2] + m1[1][2] * m2[2][2];
+        res[2][0] = m1[2][0] * m2[0][0] + m1[2][1] * m2[1][0] + m1[2][2] * m2[2][0];
+        res[2][1] = m1[2][0] * m2[0][1] + m1[2][1] * m2[1][1] + m1[2][2] * m2[2][1];
+        res[2][2] = m1[2][0] * m2[0][2] + m1[2][1] * m2[1][2] + m1[2][2] * m2[2][2];
         return res;
-    }
-
-    /**
-     * <p>
-     * mat3vec3</p>
-     *
-     * @param v   an array of double.
-     * @param m   an array of double.
-     * @param res an array of double.
-     */
-    public static void mat3Vec3(double[] v, double[][] m, double[] res) {
-        res[0] = m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2];
-        res[1] = m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2];
-        res[2] = m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2];
-    }
-
-    /**
-     * vector representation of a symmetric 3x3 matrix times a matrix
-     *
-     * @param v input vector of the form 11, 22, 33, 12, 13, 23
-     * @param m input matrix
-     * @return matrix product
-     */
-    public static double[][] symVec6Mat3(double[] v, double[][] m) {
-        double[][] res = new double[3][3];
-        symVec6Mat3(v, m, res);
-        return res;
-    }
-
-    /**
-     * <p>
-     * symvec6mat3</p>
-     *
-     * @param v   an array of double.
-     * @param m   an array of double.
-     * @param res an array of double.
-     */
-    public static void symVec6Mat3(double[] v, double[][] m, double[][] res) {
-        res[0][0] = v[0] * m[0][0] + v[3] * m[1][0] + v[4] * m[2][0];
-        res[0][1] = v[0] * m[0][1] + v[3] * m[1][1] + v[4] * m[2][1];
-        res[0][2] = v[0] * m[0][2] + v[3] * m[1][2] + v[4] * m[2][2];
-        res[1][0] = v[3] * m[0][0] + v[1] * m[1][0] + v[5] * m[2][0];
-        res[1][1] = v[3] * m[0][1] + v[1] * m[1][1] + v[5] * m[2][1];
-        res[1][2] = v[3] * m[0][2] + v[1] * m[1][2] + v[5] * m[2][2];
-        res[2][0] = v[4] * m[0][0] + v[5] * m[1][0] + v[2] * m[2][0];
-        res[2][1] = v[4] * m[0][1] + v[5] * m[1][1] + v[2] * m[2][1];
-        res[2][2] = v[4] * m[0][2] + v[5] * m[1][2] + v[2] * m[2][2];
     }
 
     /**
@@ -611,20 +558,19 @@ public final class VectorMath {
      * @return matrix product
      */
     public static double[][] mat3SymVec6(double[][] m, double[] v) {
-        double[][] res = new double[3][3];
-        mat3SymVec6(m, v, res);
-        return res;
+        return mat3SymVec6(m, v, new double[3][3]);
     }
 
     /**
      * <p>
-     * mat3symvec6</p>
+     * mat3SymVec6</p>
      *
      * @param m   an array of double.
      * @param v   an array of double.
      * @param res an array of double.
+     * @return Returns the matrix res.
      */
-    public static void mat3SymVec6(double[][] m, double[] v, double[][] res) {
+    public static double[][] mat3SymVec6(double[][] m, double[] v, double[][] res) {
         res[0][0] = m[0][0] * v[0] + m[0][1] * v[3] + m[0][2] * v[4];
         res[0][1] = m[0][0] * v[3] + m[0][1] * v[1] + m[0][2] * v[5];
         res[0][2] = m[0][0] * v[4] + m[0][1] * v[5] + m[0][2] * v[2];
@@ -634,247 +580,34 @@ public final class VectorMath {
         res[2][0] = m[2][0] * v[0] + m[2][1] * v[3] + m[2][2] * v[4];
         res[2][1] = m[2][0] * v[3] + m[2][1] * v[1] + m[2][2] * v[5];
         res[2][2] = m[2][0] * v[4] + m[2][1] * v[5] + m[2][2] * v[2];
-    }
-
-    /**
-     * matrix times a matrix
-     *
-     * @param m1 first input matrix
-     * @param m2 second input matrix
-     * @return matrix product
-     */
-    public static double[][] mat3Mat3(double[][] m1, double[][] m2) {
-        double[][] res = new double[3][3];
-        mat3Mat3(m1, m2, res);
         return res;
     }
 
     /**
-     * <p>
-     * mat3mat3</p>
+     * matrix times a vector
      *
-     * @param m1  an array of double.
-     * @param m2  an array of double.
+     * @param m input matrix.
+     * @param v input vector.
+     * @return Returns the vector product.
+     */
+    public static double[] mat3Vec3(double[] v, double[][] m) {
+        return mat3Vec3(v, m, new double[3]);
+    }
+
+    /**
+     * <p>
+     * mat3vec3</p>
+     *
+     * @param v   an array of double.
+     * @param m   an array of double.
      * @param res an array of double.
+     * @return Returns the matrix res.
      */
-    public static void mat3Mat3(double[][] m1, double[][] m2, double[][] res) {
-        res[0][0] = m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0] + m1[0][2] * m2[2][0];
-        res[0][1] = m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1] + m1[0][2] * m2[2][1];
-        res[0][2] = m1[0][0] * m2[0][2] + m1[0][1] * m2[1][2] + m1[0][2] * m2[2][2];
-        res[1][0] = m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0] + m1[1][2] * m2[2][0];
-        res[1][1] = m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1] + m1[1][2] * m2[2][1];
-        res[1][2] = m1[1][0] * m2[0][2] + m1[1][1] * m2[1][2] + m1[1][2] * m2[2][2];
-        res[2][0] = m1[2][0] * m2[0][0] + m1[2][1] * m2[1][0] + m1[2][2] * m2[2][0];
-        res[2][1] = m1[2][0] * m2[0][1] + m1[2][1] * m2[1][1] + m1[2][2] * m2[2][1];
-        res[2][2] = m1[2][0] * m2[0][2] + m1[2][1] * m2[1][2] + m1[2][2] * m2[2][2];
-    }
-
-    /**
-     * scalar times a matrix times a matrix
-     *
-     * @param scalar input scalar
-     * @param m1     first input matrix
-     * @param m2     second input matrix
-     * @return matrix product
-     */
-    public static double[][] scalarMat3Mat3(double scalar, double[][] m1, double[][] m2) {
-        double[][] res = new double[3][3];
-        scalarMat3Mat3(scalar, m1, m2, res);
+    public static double[] mat3Vec3(double[] v, double[][] m, double[] res) {
+        res[0] = m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2];
+        res[1] = m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2];
+        res[2] = m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2];
         return res;
-    }
-
-    /**
-     * <p>
-     * scalarmat3mat3</p>
-     *
-     * @param scalar a double.
-     * @param m1     an array of double.
-     * @param m2     an array of double.
-     * @param res    an array of double.
-     */
-    public static void scalarMat3Mat3(double scalar, double[][] m1, double[][] m2, double[][] res) {
-        res[0][0] = (scalar * m1[0][0]) * m2[0][0] + (scalar * m1[0][1]) * m2[1][0] + (scalar * m1[0][2]) * m2[2][0];
-        res[0][1] = (scalar * m1[0][0]) * m2[0][1] + (scalar * m1[0][1]) * m2[1][1] + (scalar * m1[0][2]) * m2[2][1];
-        res[0][2] = (scalar * m1[0][0]) * m2[0][2] + (scalar * m1[0][1]) * m2[1][2] + (scalar * m1[0][2]) * m2[2][2];
-        res[1][0] = (scalar * m1[1][0]) * m2[0][0] + (scalar * m1[1][1]) * m2[1][0] + (scalar * m1[1][2]) * m2[2][0];
-        res[1][1] = (scalar * m1[1][0]) * m2[0][1] + (scalar * m1[1][1]) * m2[1][1] + (scalar * m1[1][2]) * m2[2][1];
-        res[1][2] = (scalar * m1[1][0]) * m2[0][2] + (scalar * m1[1][1]) * m2[1][2] + (scalar * m1[1][2]) * m2[2][2];
-        res[2][0] = (scalar * m1[2][0]) * m2[0][0] + (scalar * m1[2][1]) * m2[1][0] + (scalar * m1[2][2]) * m2[2][0];
-        res[2][1] = (scalar * m1[2][0]) * m2[0][1] + (scalar * m1[2][1]) * m2[1][1] + (scalar * m1[2][2]) * m2[2][1];
-        res[2][2] = (scalar * m1[2][0]) * m2[0][2] + (scalar * m1[2][1]) * m2[1][2] + (scalar * m1[2][2]) * m2[2][2];
-    }
-
-    /**
-     * Normalizes a vector
-     *
-     * @param n   A vector to be normalized.
-     * @param ret The normalized vector.
-     */
-    public static void norm(double[] n, double[] ret) {
-        scalar(n, 1.0 / r(n), ret);
-    }
-
-    /**
-     * Normalizes a vector
-     *
-     * @param n   A vector to be normalized.
-     * @param ret The normalized vector.
-     */
-    public static void norm(float[] n, float[] ret) {
-        scalar(n, (float) 1.0 / r(n), ret);
-    }
-
-    /**
-     * <p>
-     * printVector</p>
-     *
-     * @param v an array of double.
-     */
-    public static void printVector(double[] v) {
-        StringBuilder sb = new StringBuilder("Vector ( ");
-        for (double d : v) {
-            sb.append(format("%g ", d));
-        }
-        sb.append(")");
-        logger.info(sb.toString());
-    }
-
-    /**
-     * Finds the length of a vector
-     *
-     * @param d A vector to find the length of.
-     * @return Length of vector d.
-     */
-    public static double r(double[] d) {
-        return sqrt((d[0] * d[0] + d[1] * d[1] + d[2] * d[2]));
-    }
-
-    /**
-     * Finds the length of a vector
-     *
-     * @param d A vector to find the length of.
-     * @return Length of vector d.
-     */
-    public static float r(float[] d) {
-        return (float) sqrt((double) (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]));
-    }
-
-    /**
-     * Finds the length^2 of a vector
-     *
-     * @param d A vector to find the length of.
-     * @return Length^2 of vector d.
-     */
-    public static double rsq(double[] d) {
-        return (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
-    }
-
-    /**
-     * Scales a vector
-     *
-     * @param n   A vector to be scaled
-     * @param a   A scaler value
-     * @param ret The scaled vector
-     */
-    public static void scalar(double[] n, double a, double[] ret) {
-        ret[0] = n[0] * a;
-        ret[1] = n[1] * a;
-        ret[2] = n[2] * a;
-    }
-
-    /**
-     * Scales a vector
-     *
-     * @param n   A vector to be scaled
-     * @param a   A scaler value
-     * @param ret The scaled Vector
-     */
-    public static void scalar(float[] n, float a, float[] ret) {
-        ret[0] = n[0] * a;
-        ret[1] = n[1] * a;
-        ret[2] = n[2] * a;
-    }
-
-    /**
-     * <p>
-     * sum</p>
-     *
-     * @param a   an array of double.
-     * @param b   an array of double.
-     * @param ret an array of double.
-     */
-    public static void sum(double[] a, double[] b, double[] ret) {
-        ret[0] = a[0] + b[0];
-        ret[1] = a[1] + b[1];
-        ret[2] = a[2] + b[2];
-    }
-
-    /**
-     * <p>
-     * sum</p>
-     *
-     * @param a   an array of float.
-     * @param b   an array of float.
-     * @param ret an array of float.
-     */
-    public static void sum(float[] a, float[] b, float[] ret) {
-        ret[0] = a[0] + b[0];
-        ret[1] = a[1] + b[1];
-        ret[2] = a[2] + b[2];
-    }
-
-    /**
-     * <p>
-     * transpose3</p>
-     *
-     * @param m an array of double.
-     * @return an array of double.
-     */
-    public static double[][] transpose3(double[][] m) {
-        double[][] t = new double[3][3];
-        transpose3(m, t);
-        return t;
-    }
-
-    /**
-     * <p>
-     * transpose3</p>
-     *
-     * @param m an array of double.
-     * @param t an array of double.
-     */
-    public static void transpose3(double[][] m, double[][] t) {
-        t[0][0] = m[0][0];
-        t[0][1] = m[1][0];
-        t[0][2] = m[2][0];
-        t[1][0] = m[0][1];
-        t[1][1] = m[1][1];
-        t[1][2] = m[2][1];
-        t[2][0] = m[0][2];
-        t[2][1] = m[1][2];
-        t[2][2] = m[2][2];
-    }
-
-    /**
-     * <p>
-     * b2u</p>
-     *
-     * @param b a double.
-     * @return a double.
-     */
-    public static double b2u(double b) {
-        return b / eightpi2;
-    }
-
-    /**
-     * <p>
-     * u2b</p>
-     *
-     * @param u a double.
-     * @return a double.
-     */
-    public static double u2b(double u) {
-        return u * eightpi2;
     }
 
     /**
@@ -888,7 +621,7 @@ public final class VectorMath {
      * @return Positive a % b.
      */
     public static double mod(double a, double b) {
-        double res = a % b;
+        var res = a % b;
         if (res < 0.0) {
             res += b;
         }
@@ -899,16 +632,378 @@ public final class VectorMath {
      * Atypical mod function used to move a value into the range lb &lt;= value &lt; ub,
      * assuming the domain is periodic with a period of (ub - lb).
      *
-     * @param value      Value to move between bounds.
-     * @param lowerBound lb
-     * @param upperBound ub
-     * @return Periodic copy of value, in range lb &lt;= value &lt; ub.
+     * @param value Value to move between bounds.
+     * @param lb    Lower bound.
+     * @param ub    Upper bound.
+     * @return Returns periodic copy of value, in the range lb &lt;= value &lt; ub.
      */
-    public static double modToRange(double value, double lowerBound, double upperBound) {
-        value -= lowerBound;
-        double range = upperBound - lowerBound;
+    public static double modToRange(double value, double lb, double ub) {
+        value -= lb;
+        var range = ub - lb;
         value = mod(value, range);
-        value += lowerBound;
+        value += lb;
         return value;
     }
+
+    /**
+     * Normalizes a vector.
+     *
+     * @param n A vector to be normalized.
+     * @return Returns the normalized vector.
+     */
+    public static double[] norm(double[] n) {
+        return scalar(n, 1.0 / r(n), new double[3]);
+    }
+
+    /**
+     * Normalizes a vector.
+     *
+     * @param n   A vector to be normalized.
+     * @param ret The normalized vector.
+     * @return Returns the normalized vector.
+     */
+    public static double[] norm(double[] n, double[] ret) {
+        return scalar(n, 1.0 / r(n), ret);
+    }
+
+    /**
+     * Normalizes a vector.
+     *
+     * @param n A vector to be normalized.
+     * @return Returns the normalized vector.
+     */
+    public static float[] norm(float[] n) {
+        return scalar(n, (float) 1.0 / r(n), new float[3]);
+    }
+
+    /**
+     * Normalizes a vector.
+     *
+     * @param n   A vector to be normalized.
+     * @param ret The normalized vector.
+     * @return Returns the normalized vector.
+     */
+    public static float[] norm(float[] n, float[] ret) {
+        return scalar(n, (float) 1.0 / r(n), ret);
+    }
+
+    /**
+     * Finds the length of a vector.
+     *
+     * @param d A vector to find the length of.
+     * @return Length of vector d.
+     */
+    public static double r(double[] d) {
+        return sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+    }
+
+    /**
+     * Finds the length of a vector.
+     *
+     * @param d A vector to find the length of.
+     * @return Returns the length of vector d.
+     */
+    public static float r(float[] d) {
+        return (float) sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+    }
+
+    /**
+     * Finds the length^2 of a vector.
+     *
+     * @param d A vector to find the length of.
+     * @return Returns the length^2 of vector d.
+     */
+    public static double rsq(double[] d) {
+        return d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+    }
+
+    /**
+     * Scales a vector.
+     *
+     * @param n A vector to be scaled.
+     * @param a A scalar value.
+     * @return Returns the scaled vector.
+     */
+    public static double[] scalar(double[] n, double a) {
+        return scalar(n, a, new double[3]);
+    }
+
+    /**
+     * Scales a vector.
+     *
+     * @param n   A vector to be scaled.
+     * @param a   A scalar value.
+     * @param ret The scaled vector.
+     * @return Returns the array ret.
+     */
+    public static double[] scalar(double[] n, double a, double[] ret) {
+        ret[0] = n[0] * a;
+        ret[1] = n[1] * a;
+        ret[2] = n[2] * a;
+        return ret;
+    }
+
+    /**
+     * Scales a vector.
+     *
+     * @param n A vector to be scaled.
+     * @param a A scalar value.
+     * @return Returns the scaled vector.
+     */
+    public static float[] scalar(float[] n, float a) {
+        return scalar(n, a, new float[3]);
+    }
+
+    /**
+     * Scales a vector.
+     *
+     * @param n   A vector to be scaled.
+     * @param a   A scalar value.
+     * @param ret The scaled Vector.
+     * @return Returns the array ret.
+     */
+    public static float[] scalar(float[] n, float a, float[] ret) {
+        ret[0] = n[0] * a;
+        ret[1] = n[1] * a;
+        ret[2] = n[2] * a;
+        return ret;
+    }
+
+    /**
+     * scalar times a matrix times a matrix.
+     *
+     * @param scalar Input scalar.
+     * @param m1     First input matrix.
+     * @param m2     Second input matrix.
+     * @return Returns the matrix product.
+     */
+    public static double[][] scalarMat3Mat3(double scalar, double[][] m1, double[][] m2) {
+        return scalarMat3Mat3(scalar, m1, m2, new double[3][3]);
+    }
+
+    /**
+     * <p>
+     * scalarMat3mat3</p>
+     *
+     * @param scalar a double.
+     * @param m1     an array of double.
+     * @param m2     an array of double.
+     * @param res    an array of double.
+     * @return Returns the matrix res.
+     */
+    public static double[][] scalarMat3Mat3(double scalar, double[][] m1, double[][] m2, double[][] res) {
+        res[0][0] = (scalar * m1[0][0]) * m2[0][0] + (scalar * m1[0][1]) * m2[1][0] + (scalar * m1[0][2]) * m2[2][0];
+        res[0][1] = (scalar * m1[0][0]) * m2[0][1] + (scalar * m1[0][1]) * m2[1][1] + (scalar * m1[0][2]) * m2[2][1];
+        res[0][2] = (scalar * m1[0][0]) * m2[0][2] + (scalar * m1[0][1]) * m2[1][2] + (scalar * m1[0][2]) * m2[2][2];
+        res[1][0] = (scalar * m1[1][0]) * m2[0][0] + (scalar * m1[1][1]) * m2[1][0] + (scalar * m1[1][2]) * m2[2][0];
+        res[1][1] = (scalar * m1[1][0]) * m2[0][1] + (scalar * m1[1][1]) * m2[1][1] + (scalar * m1[1][2]) * m2[2][1];
+        res[1][2] = (scalar * m1[1][0]) * m2[0][2] + (scalar * m1[1][1]) * m2[1][2] + (scalar * m1[1][2]) * m2[2][2];
+        res[2][0] = (scalar * m1[2][0]) * m2[0][0] + (scalar * m1[2][1]) * m2[1][0] + (scalar * m1[2][2]) * m2[2][0];
+        res[2][1] = (scalar * m1[2][0]) * m2[0][1] + (scalar * m1[2][1]) * m2[1][1] + (scalar * m1[2][2]) * m2[2][1];
+        res[2][2] = (scalar * m1[2][0]) * m2[0][2] + (scalar * m1[2][1]) * m2[1][2] + (scalar * m1[2][2]) * m2[2][2];
+        return res;
+    }
+
+    /**
+     * <p>
+     * sum</p>
+     *
+     * @param a an array of double.
+     * @param b an array of double.
+     * @return Returns the sum array.
+     */
+    public static double[] sum(double[] a, double[] b) {
+        return sum(a, b, new double[3]);
+    }
+
+    /**
+     * <p>
+     * sum</p>
+     *
+     * @param a   an array of double.
+     * @param b   an array of double.
+     * @param ret an array of double.
+     * @return Returns the array ret.
+     */
+    public static double[] sum(double[] a, double[] b, double[] ret) {
+        ret[0] = a[0] + b[0];
+        ret[1] = a[1] + b[1];
+        ret[2] = a[2] + b[2];
+        return ret;
+    }
+
+    /**
+     * <p>
+     * sum</p>
+     *
+     * @param a an array of float.
+     * @param b an array of float.
+     * @return Returns the array ret.
+     */
+    public static float[] sum(float[] a, float[] b) {
+        return sum(a, b, new float[3]);
+    }
+
+    /**
+     * <p>
+     * sum</p>
+     *
+     * @param a   an array of float.
+     * @param b   an array of float.
+     * @param ret an array of float.
+     * @return Returns the array ret.
+     */
+    public static float[] sum(float[] a, float[] b, float[] ret) {
+        ret[0] = a[0] + b[0];
+        ret[1] = a[1] + b[1];
+        ret[2] = a[2] + b[2];
+        return ret;
+    }
+
+    /**
+     * vector representation of a symmetric 3x3 matrix times a matrix
+     *
+     * @param v input vector of the form 11, 22, 33, 12, 13, 23.
+     * @param m input matrix.
+     * @return Returns matrix product.
+     */
+    public static double[][] symVec6Mat3(double[] v, double[][] m) {
+        double[][] res = new double[3][3];
+        symVec6Mat3(v, m, res);
+        return res;
+    }
+
+    /**
+     * <p>
+     * symVec6mat3</p>
+     *
+     * @param v   an array of double.
+     * @param m   an array of double.
+     * @param res an array of double.
+     * @return Returns the matrix res.
+     */
+    public static double[][] symVec6Mat3(double[] v, double[][] m, double[][] res) {
+        res[0][0] = v[0] * m[0][0] + v[3] * m[1][0] + v[4] * m[2][0];
+        res[0][1] = v[0] * m[0][1] + v[3] * m[1][1] + v[4] * m[2][1];
+        res[0][2] = v[0] * m[0][2] + v[3] * m[1][2] + v[4] * m[2][2];
+        res[1][0] = v[3] * m[0][0] + v[1] * m[1][0] + v[5] * m[2][0];
+        res[1][1] = v[3] * m[0][1] + v[1] * m[1][1] + v[5] * m[2][1];
+        res[1][2] = v[3] * m[0][2] + v[1] * m[1][2] + v[5] * m[2][2];
+        res[2][0] = v[4] * m[0][0] + v[5] * m[1][0] + v[2] * m[2][0];
+        res[2][1] = v[4] * m[0][1] + v[5] * m[1][1] + v[2] * m[2][1];
+        res[2][2] = v[4] * m[0][2] + v[5] * m[1][2] + v[2] * m[2][2];
+        return res;
+    }
+
+    /**
+     * <p>
+     * transpose3</p>
+     *
+     * @param m Matrix m.
+     * @return Returns the transposed matrix in a new array.
+     */
+    public static double[][] transpose3(double[][] m) {
+        return transpose3(m, new double[3][3]);
+    }
+
+    /**
+     * <p>
+     * transpose3</p>
+     *
+     * @param m Matrix m.
+     * @param t Matrix t.
+     * @return Returns the matrix t.
+     */
+    public static double[][] transpose3(double[][] m, double[][] t) {
+        t[0][0] = m[0][0];
+        t[0][1] = m[1][0];
+        t[0][2] = m[2][0];
+        t[1][0] = m[0][1];
+        t[1][1] = m[1][1];
+        t[1][2] = m[2][1];
+        t[2][0] = m[0][2];
+        t[2][1] = m[1][2];
+        t[2][2] = m[2][2];
+        return t;
+    }
+
+    /**
+     * <p>
+     * u2b</p>
+     *
+     * @param u a double.
+     * @return a double.
+     */
+    public static double u2b(double u) {
+        return u * eightPi2;
+    }
+
+    /**
+     * Vector times a matrix.
+     *
+     * @param v input vector.
+     * @param m input matrix.
+     * @return Returns the vector product.
+     */
+    public static double[] vec3Mat3(double[] v, double[][] m) {
+        return vec3Mat3(v, m, new double[3]);
+    }
+
+    /**
+     * <p>
+     * vec3mat3</p>
+     *
+     * @param v   an array of double.
+     * @param m   an array of double.
+     * @param res an array of double.
+     * @return Returns the array res.
+     */
+    public static double[] vec3Mat3(double[] v, double[][] m, double[] res) {
+        res[0] = v[0] * m[0][0] + v[1] * m[1][0] + v[2] * m[2][0];
+        res[1] = v[0] * m[0][1] + v[1] * m[1][1] + v[2] * m[2][1];
+        res[2] = v[0] * m[0][2] + v[1] * m[1][2] + v[2] * m[2][2];
+        return res;
+    }
+
+    /**
+     * <p>
+     * logVector.</p>
+     *
+     * @param v an array of double.
+     * @return Returns the a String description of the vector.
+     */
+    public static String vectorToString(double[] v) {
+        StringBuilder sb = new StringBuilder("Vector ( ");
+        for (double d : v) {
+            sb.append(format("%g ", d));
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
+    /**
+     * <p>vectorToString.</p>
+     *
+     * @param v     an array of {@link double} objects.
+     * @param label a {@link java.lang.String} object.
+     * @return Returns the a String description of the vector.
+     */
+    public static String vectorToString(double[] v, String label) {
+        if (v == null) {
+            return null;
+        }
+        StringBuilder sb;
+        if (label != null) {
+            sb = new StringBuilder(format(" %16s = [", label));
+        } else {
+            sb = new StringBuilder(format(" %16s = [", "v"));
+        }
+
+        for (double value : v) {
+            sb.append(format(" %16.8f", value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
+
 }

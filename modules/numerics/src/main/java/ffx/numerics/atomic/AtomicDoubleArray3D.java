@@ -95,6 +95,21 @@ public class AtomicDoubleArray3D {
     }
 
     /**
+     * Add to the double arrays at the specified index the given values.
+     *
+     * @param threadID a int.
+     * @param index    a int.
+     * @param x        a double.
+     * @param y        a double.
+     * @param z        a double.
+     */
+    public void add(int threadID, int index, double x, double y, double z) {
+        atomicDoubleArray[0].add(threadID, index, x);
+        atomicDoubleArray[1].add(threadID, index, y);
+        atomicDoubleArray[2].add(threadID, index, z);
+    }
+
+    /**
      * Ensure the AtomicDoubleArray3D instance is greater than or equal to size.
      *
      * @param size a int.
@@ -103,6 +118,90 @@ public class AtomicDoubleArray3D {
         atomicDoubleArray[0].alloc(size);
         atomicDoubleArray[1].alloc(size);
         atomicDoubleArray[2].alloc(size);
+    }
+
+    /**
+     * Get the value of the array at the specified index (usually subsequent to
+     * calling the <code>reduce</code> method.
+     *
+     * @param dim   Dimension [0, 1, 2]
+     * @param index a int.
+     * @return a double.
+     */
+    public double get(int dim, int index) {
+        return atomicDoubleArray[dim].get(index);
+    }
+
+    /**
+     * Get the value of the array at the specified index (usually subsequent to
+     * calling the <code>reduce</code> method.
+     *
+     * @param index a int.
+     * @return a double.
+     */
+    public double getX(int index) {
+        return atomicDoubleArray[0].get(index);
+    }
+
+    /**
+     * Get the value of the array at the specified index (usually subsequent to
+     * calling the <code>reduce</code> method.
+     *
+     * @param index a int.
+     * @return a double.
+     */
+    public double getY(int index) {
+        return atomicDoubleArray[1].get(index);
+    }
+
+    /**
+     * Get the value of the array at the specified index (usually subsequent to
+     * calling the <code>reduce</code> method.
+     *
+     * @param index a int.
+     * @return a double.
+     */
+    public double getZ(int index) {
+        return atomicDoubleArray[2].get(index);
+    }
+
+    /**
+     * Perform reduction between the given lower bound (lb) and upper bound (up)
+     * if necessary.
+     *
+     * @param lb a int.
+     * @param ub a int.
+     */
+    public void reduce(int lb, int ub) {
+        atomicDoubleArray[0].reduce(lb, ub);
+        atomicDoubleArray[1].reduce(lb, ub);
+        atomicDoubleArray[2].reduce(lb, ub);
+    }
+
+    /**
+     * Perform reduction between the given lower bound (lb) and upper bound (up)
+     * if necessary.
+     *
+     * @param lb a int.
+     * @param ub a int.
+     */
+    public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
+
+        try {
+            parallelTeam.execute(new ParallelRegion() {
+                @Override
+                public void run() throws Exception {
+                    execute(lb, ub, new IntegerForLoop() {
+                        @Override
+                        public void run(int first, int last) {
+                            reduce(first, last);
+                        }
+                    });
+                }
+            });
+        } catch (Exception e) {
+            logger.log(Level.WARNING, " Exception reducing an AtomicDoubleArray3D", e);
+        }
     }
 
     /**
@@ -147,21 +246,6 @@ public class AtomicDoubleArray3D {
     }
 
     /**
-     * Add to the double arrays at the specified index the given values.
-     *
-     * @param threadID a int.
-     * @param index    a int.
-     * @param x        a double.
-     * @param y        a double.
-     * @param z        a double.
-     */
-    public void add(int threadID, int index, double x, double y, double z) {
-        atomicDoubleArray[0].add(threadID, index, x);
-        atomicDoubleArray[1].add(threadID, index, y);
-        atomicDoubleArray[2].add(threadID, index, z);
-    }
-
-    /**
      * Set the double arrays at the specified index to the given values.
      *
      * @param threadID a int.
@@ -189,89 +273,5 @@ public class AtomicDoubleArray3D {
         atomicDoubleArray[0].sub(threadID, index, x);
         atomicDoubleArray[1].sub(threadID, index, y);
         atomicDoubleArray[2].sub(threadID, index, z);
-    }
-
-    /**
-     * Perform reduction between the given lower bound (lb) and upper bound (up)
-     * if necessary.
-     *
-     * @param lb a int.
-     * @param ub a int.
-     */
-    public void reduce(int lb, int ub) {
-        atomicDoubleArray[0].reduce(lb, ub);
-        atomicDoubleArray[1].reduce(lb, ub);
-        atomicDoubleArray[2].reduce(lb, ub);
-    }
-
-    /**
-     * Perform reduction between the given lower bound (lb) and upper bound (up)
-     * if necessary.
-     *
-     * @param lb a int.
-     * @param ub a int.
-     */
-    public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
-
-        try {
-            parallelTeam.execute(new ParallelRegion() {
-                @Override
-                public void run() throws Exception {
-                    execute(lb, ub, new IntegerForLoop() {
-                        @Override
-                        public void run(int first, int last) {
-                            reduce(first, last);
-                        }
-                    });
-                }
-            });
-        } catch (Exception e) {
-            logger.log(Level.WARNING, " Exception reducing an AtomicDoubleArray3D", e);
-        }
-    }
-
-    /**
-     * Get the value of the array at the specified index (usually subsequent to
-     * calling the <code>reduce</code> method.
-     *
-     * @param index a int.
-     * @return a double.
-     */
-    public double getX(int index) {
-        return atomicDoubleArray[0].get(index);
-    }
-
-    /**
-     * Get the value of the array at the specified index (usually subsequent to
-     * calling the <code>reduce</code> method.
-     *
-     * @param index a int.
-     * @return a double.
-     */
-    public double getY(int index) {
-        return atomicDoubleArray[1].get(index);
-    }
-
-    /**
-     * Get the value of the array at the specified index (usually subsequent to
-     * calling the <code>reduce</code> method.
-     *
-     * @param index a int.
-     * @return a double.
-     */
-    public double getZ(int index) {
-        return atomicDoubleArray[2].get(index);
-    }
-
-    /**
-     * Get the value of the array at the specified index (usually subsequent to
-     * calling the <code>reduce</code> method.
-     *
-     * @param dim   Dimension [0, 1, 2]
-     * @param index a int.
-     * @return a double.
-     */
-    public double get(int dim, int index) {
-        return atomicDoubleArray[dim].get(index);
     }
 }

@@ -57,9 +57,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public class Erf {
 
-    private Erf() {
-    }
-
     /**
      * Mathematical and machine-dependent constants.
      */
@@ -84,6 +81,9 @@ public class Erf {
      * W(x) = exp(-x*x)/[x*sqrt(pi)]
      */
     private static final double xbig = 26.543;
+
+    private Erf() {
+    }
 
     /**
      * Evaluates erf(x) for a real argument x.

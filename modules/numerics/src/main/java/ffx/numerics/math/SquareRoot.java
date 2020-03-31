@@ -71,22 +71,6 @@ public class SquareRoot {
     }
 
     /**
-     * Compute the square root of the input value x. The method calls
-     * <code>isqrt</code> and then multiples by the input
-     * <code>sqrt(x2) = x2 * isqrt(x2)</code>.
-     *
-     * @param x2 input value to take the square root of.
-     * @return the square root of x2.
-     */
-    public static double sqrt(double x2) {
-
-        assert (x2 > 0);
-
-        double ix = isqrt(x2);
-        return x2 * ix;
-    }
-
-    /**
      * Compute the inverse square root <code>1.0/sqrt(x2)</code> of the of the
      * input value x2 using a look-up table and two iterations of Newton's
      * method for finding roots of an equation.
@@ -118,33 +102,6 @@ public class SquareRoot {
 
     }
 
-    private static final double half = 0.5;
-    private static final double three = 3.0;
-
-    /**
-     * The Mask 0x7f800000 selects the Exponent Bits 30-23, which are then
-     * shifted 23 places to the right.
-     *
-     * @param val input parameter
-     * @return shifted exponent bits
-     */
-    private static int expAddress(int val) {
-        return ((val) & 0x7f800000) >> 23;
-    }
-
-    /**
-     * The Mask 0x00800000 selects the least significant Exponent bit and the
-     * Mask 0x007fffff selects the Mantissa Bits 22-0, which are then shifted 12
-     * places to the right. The shift of 12 comes from the Exponent shift (23)
-     * minus the significant part of the the mantissa (11).
-     *
-     * @param val input parameter
-     * @return shifted mantissa
-     */
-    private static int fractAddress(int val) {
-        return ((val) & (0x007fffff | 0x00800000)) >> 12;
-    }
-
     /**
      * <p>main.</p>
      *
@@ -172,6 +129,46 @@ public class SquareRoot {
         }
     }
 
+    /**
+     * Compute the square root of the input value x. The method calls
+     * <code>isqrt</code> and then multiples by the input
+     * <code>sqrt(x2) = x2 * isqrt(x2)</code>.
+     *
+     * @param x2 input value to take the square root of.
+     * @return the square root of x2.
+     */
+    public static double sqrt(double x2) {
+        assert (x2 > 0);
+        double ix = isqrt(x2);
+        return x2 * ix;
+    }
+
+    /**
+     * The Mask 0x7f800000 selects the Exponent Bits 30-23, which are then
+     * shifted 23 places to the right.
+     *
+     * @param val input parameter
+     * @return shifted exponent bits
+     */
+    private static int expAddress(int val) {
+        return ((val) & 0x7f800000) >> 23;
+    }
+
+    /**
+     * The Mask 0x00800000 selects the least significant Exponent bit and the
+     * Mask 0x007fffff selects the Mantissa Bits 22-0, which are then shifted 12
+     * places to the right. The shift of 12 comes from the Exponent shift (23)
+     * minus the significant part of the the mantissa (11).
+     *
+     * @param val input parameter
+     * @return shifted mantissa
+     */
+    private static int fractAddress(int val) {
+        return ((val) & (0x007fffff | 0x00800000)) >> 12;
+    }
+
+    private static final double half = 0.5;
+    private static final double three = 3.0;
     /**
      * Data for the Exponent table (256 values)
      */
@@ -241,7 +238,6 @@ public class SquareRoot {
             0x21000000, 0x20800000, 0x20800000, 0x20000000,
             0x20000000, 0x1f800000, 0x1f800000, 0x1f000000
     };
-
     /**
      * Data for Mantissa table (4096 values)
      */

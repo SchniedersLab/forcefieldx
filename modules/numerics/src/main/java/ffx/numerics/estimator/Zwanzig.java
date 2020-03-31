@@ -37,16 +37,19 @@
 //******************************************************************************
 package ffx.numerics.estimator;
 
-import ffx.numerics.math.FFXSummaryStatistics;
-import ffx.utilities.Constants;
-import org.apache.commons.math3.util.FastMath;
-
 import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+import static java.util.Arrays.stream;
 
 import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.log;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
+import ffx.numerics.math.SummaryStatistics;
+import ffx.utilities.Constants;
+import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
 
 /**
  * The Zwanzig class implements exponential averaging/free energy
@@ -59,19 +62,19 @@ import static org.apache.commons.math3.util.FastMath.exp;
  */
 public class Zwanzig extends SequentialEstimator implements BootstrappableEstimator {
     private static final Logger logger = Logger.getLogger(SequentialEstimator.class.getName());
+    public final Directionality directionality;
     private final int nWindows;
     private final double[] dGs;
     private final double[] uncerts;
-    private double totDG;
-    private double totUncert;
-    public final Directionality directionality;
     private final boolean forwards;
     private final Random random = new Random();
+    private double totDG;
+    private double totUncert;
 
     /**
      * Estimates a free energy using the Zwanzig relationship. The temperature array can be of length 1
      * if all elements are meant to be the same temperature.
-     *
+     * <p>
      * The first dimension of the energies arrays corresponds to the lambda values/windows. The
      * second dimension (can be of uneven length) corresponds to potential energies of snapshots
      * sampled from that lambda value, calculated either at that lambda value, the lambda value below,
@@ -84,7 +87,8 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
      * @param temperature    Temperature each lambda window was run at (single-element indicates identical temperatures).
      * @param directionality Forwards vs. backwards FEP.
      */
-    public Zwanzig(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt, double[][] energiesHigh, double[] temperature, Directionality directionality) {
+    public Zwanzig(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt,
+                   double[][] energiesHigh, double[] temperature, Directionality directionality) {
         super(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature);
         this.directionality = directionality;
         nWindows = nTrajectories - 1;
@@ -97,8 +101,8 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
     }
 
     @Override
-    public void estimateDG() {
-        estimateDG(false);
+    public Zwanzig copyEstimator() {
+        return new Zwanzig(lamVals, eLow, eAt, eHigh, temperatures, directionality);
     }
 
     @Override
@@ -125,7 +129,7 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
             double[] deltas = new double[len];
             double[] expDeltas = new double[len];
 
-            int[] samples = randomSamples ? EstimateBootstrapper.getBootstrapIndices(len, random) : IntStream.range(0, len).toArray();
+            int[] samples = randomSamples ? getBootstrapIndices(len, random) : IntStream.range(0, len).toArray();
 
             for (int indJ = 0; indJ < len; indJ++) {
                 // With no iteration-to-convergence, generating a fresh random index is OK.
@@ -134,9 +138,9 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
                 expDeltas[indJ] = exp(beta * deltas[j]);
             }
 
-            FFXSummaryStatistics deltaSummary = new FFXSummaryStatistics(deltas);
-            FFXSummaryStatistics expDeltaSummary = new FFXSummaryStatistics(expDeltas);
-            double dG = invBeta * FastMath.log(expDeltaSummary.mean);
+            SummaryStatistics deltaSummary = new SummaryStatistics(deltas);
+            SummaryStatistics expDeltaSummary = new SummaryStatistics(expDeltas);
+            double dG = invBeta * log(expDeltaSummary.mean);
             dGs[i] = dG;
             cumDG += dG;
             if (len == 1) {
@@ -149,17 +153,12 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
         }
 
         totDG = cumDG;
-        totUncert = FastMath.sqrt(Arrays.stream(uncerts).map((double d) -> d*d).sum());
+        totUncert = sqrt(stream(uncerts).map((double d) -> d * d).sum());
     }
 
     @Override
-    public double getFreeEnergy() {
-        return totDG;
-    }
-
-    @Override
-    public double getUncertainty() {
-        return totUncert;
+    public void estimateDG() {
+        estimateDG(false);
     }
 
     @Override
@@ -173,13 +172,18 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
     }
 
     @Override
-    public int numberOfBins() {
-        return nWindows;
+    public double getFreeEnergy() {
+        return totDG;
     }
 
     @Override
-    public Zwanzig copyEstimator() {
-        return new Zwanzig(lamVals, eLow, eAt, eHigh, temperatures, directionality);
+    public double getUncertainty() {
+        return totUncert;
+    }
+
+    @Override
+    public int numberOfBins() {
+        return nWindows;
     }
 
     /**
@@ -187,6 +191,6 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
      * TODO: Implement bidirectional Zwanzig with simple estimation (i.e. 0.5*(forwards + backward)).
      */
     public enum Directionality {
-        FORWARDS, BACKWARDS;
+        FORWARDS, BACKWARDS
     }
 }

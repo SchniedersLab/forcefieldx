@@ -42,7 +42,7 @@ import static java.lang.String.format
 import org.apache.commons.io.FilenameUtils
 
 import ffx.crystal.Crystal
-import ffx.numerics.math.FFXSummaryStatistics
+import ffx.numerics.math.SummaryStatistics
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
@@ -160,7 +160,7 @@ class Density extends PotentialScript {
                         unitCellParams[i] = crystal.getUnitCellParams()
                     }
 
-                    FFXSummaryStatistics densStats = new FFXSummaryStatistics(densities, start - 1, lastFrame, stride)
+                    SummaryStatistics densStats = new SummaryStatistics(densities, start - 1, lastFrame, stride)
                     logger.info(" Summary statistics for density:")
                     logger.info(densStats.toString())
 

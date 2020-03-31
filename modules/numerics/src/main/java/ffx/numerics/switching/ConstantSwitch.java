@@ -37,13 +37,15 @@
 //******************************************************************************
 package ffx.numerics.switching;
 
+import static java.lang.String.format;
+
 /**
  * The ConstantSwitch returns a constant value for all input values x. This is useful for
  * having a single code path that accomodates both "real" switching behavior and no
  * switching behavior. The default value is 1.0.
  *
- *  @author Jacob M. Litman
- *  @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @author Michael J. Schnieders
  */
 public class ConstantSwitch implements UnivariateSwitchingFunction {
 
@@ -69,8 +71,16 @@ public class ConstantSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double getZeroBound() {
-        return Double.NaN;
+    public boolean constantOutsideBounds() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getHighestOrderZeroDerivative() {
+        return 1;
     }
 
     /**
@@ -85,7 +95,15 @@ public class ConstantSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public boolean constantOutsideBounds() {
+    public double getZeroBound() {
+        return Double.NaN;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean symmetricToUnity() {
         return true;
     }
 
@@ -101,31 +119,20 @@ public class ConstantSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public int getHighestOrderZeroDerivative() {
-        return 1;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean symmetricToUnity() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        return val;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public double firstDerivative(double x) {
+        return 0.0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double nthDerivative(double x, int order) throws IllegalArgumentException {
+        if (order < 0) {
+            throw new IllegalArgumentException(format(" Order must be > 0, was %d", order));
+        } else if (order == 0) {
+            return val;
+        }
         return 0.0;
     }
 
@@ -141,17 +148,12 @@ public class ConstantSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double nthDerivative(double x, int order) throws IllegalArgumentException {
-        if (order < 0) {
-            throw new IllegalArgumentException(String.format(" Order must be > 0, was %d", order));
-        } else if (order == 0) {
-            return val;
-        }
-        return 0.0;
+    public double valueAt(double x) throws IllegalArgumentException {
+        return val;
     }
 
     @Override
     public String toString() {
-        return String.format("Constant-value f(x) = %f, with no switching behavior (i.e. a dummy switch)", val);
+        return format("Constant-value f(x) = %f, with no switching behavior (i.e. a dummy switch)", val);
     }
 }

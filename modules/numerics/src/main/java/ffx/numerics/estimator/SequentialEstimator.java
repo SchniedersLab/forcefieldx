@@ -37,7 +37,10 @@
 //******************************************************************************
 package ffx.numerics.estimator;
 
-import java.util.Arrays;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
+import static java.util.Arrays.fill;
+import static java.util.Arrays.stream;
 
 /**
  * The SequentialEstimator abstract class defines a statistical estimator
@@ -61,7 +64,7 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
      * The SequentialEstimator constructor largely just copies its parameters into local variables.
      * Most arrays are deep copied. The temperature array can be of length 1 if all elements are
      * meant to be the same temperature.
-     *
+     * <p>
      * The first dimension of the energies arrays corresponds to the lambda values/windows. The
      * second dimension (can be of uneven length) corresponds to potential energies of snapshots
      * sampled from that lambda value, calculated either at that lambda value, the lambda value below,
@@ -75,15 +78,15 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
      */
     public SequentialEstimator(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt, double[][] energiesHigh, double[] temperature) {
         nTrajectories = lambdaValues.length;
-        assert Arrays.stream(energiesLow[0]).allMatch(Double::isNaN) && Arrays.stream(energiesHigh[nTrajectories - 1]).allMatch(Double::isNaN);
+        assert stream(energiesLow[0]).allMatch(Double::isNaN) && stream(energiesHigh[nTrajectories - 1]).allMatch(Double::isNaN);
         assert nTrajectories == energiesAt.length && nTrajectories == energiesLow.length && nTrajectories == energiesHigh.length : "One of the energies arrays is of incorrect length in the first dimension!";
 
-        this.lamVals = Arrays.copyOf(lambdaValues, nTrajectories);
+        this.lamVals = copyOf(lambdaValues, nTrajectories);
         temperatures = new double[nTrajectories];
         if (temperature.length == 1) {
-            Arrays.fill(temperatures, temperature[0]);
+            fill(temperatures, temperature[0]);
         } else {
-            System.arraycopy(temperature, 0, temperatures, 0, nTrajectories);
+            arraycopy(temperature, 0, temperatures, 0, nTrajectories);
         }
 
         // Just in case, copy the arrays rather than storing them as provided.
@@ -91,9 +94,9 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
         eAt = new double[nTrajectories][];
         eHigh = new double[nTrajectories][];
         for (int i = 0; i < nTrajectories; i++) {
-            eLow[i] = Arrays.copyOf(energiesLow[i], energiesLow[i].length);
-            eAt[i] = Arrays.copyOf(energiesAt[i], energiesAt[i].length);
-            eHigh[i] = Arrays.copyOf(energiesHigh[i], energiesHigh[i].length);
+            eLow[i] = copyOf(energiesLow[i], energiesLow[i].length);
+            eAt[i] = copyOf(energiesAt[i], energiesAt[i].length);
+            eHigh[i] = copyOf(energiesHigh[i], energiesHigh[i].length);
         }
     }
 }

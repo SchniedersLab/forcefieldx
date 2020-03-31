@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.numerics.math;
 
-import org.apache.commons.math3.util.FastMath;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
  * The ScalarMath class is a simple math library that operates on single variables
@@ -47,7 +47,14 @@ import org.apache.commons.math3.util.FastMath;
  * @since 1.0
  */
 public class ScalarMath {
+
+    /**
+     * Compute 1.0 / (1.0 + exp(x)).
+     *
+     * @param x Input.
+     * @return Returns 1.0 / (1.0 + exp(x)).
+     */
     public static double fermiFunction(double x) {
-        return 1.0 / (1.0 + FastMath.exp(x));
+        return 1.0 / (1.0 + exp(x));
     }
 }

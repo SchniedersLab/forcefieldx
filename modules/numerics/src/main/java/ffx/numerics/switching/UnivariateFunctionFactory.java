@@ -38,6 +38,9 @@
 package ffx.numerics.switching;
 
 import java.util.Arrays;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Double.parseDouble;
+import static java.util.Arrays.copyOfRange;
 
 /**
  * Static class responsible for parsing String arrays into univariate switching functions.
@@ -46,30 +49,34 @@ import java.util.Arrays;
  * @author Michael J. Schnieders
  */
 public class UnivariateFunctionFactory {
+
+    /**
+     * Static only class.
+     */
     private UnivariateFunctionFactory() {
-        // Purely static class.
     }
 
     /**
      * Parse an array of Strings terminating in the description of a univariate switching function.
      *
-     * @param toks Array of Strings, terminating with the description of a function.
+     * @param toks   Array of Strings, terminating with the description of a function.
      * @param offset Index of the first relevant token.
      * @return A parsed univariate switching function.
      */
     public static UnivariateSwitchingFunction parseUSF(String[] toks, int offset) {
-        return parseUSF(Arrays.copyOfRange(toks, offset, toks.length));
+        return parseUSF(copyOfRange(toks, offset, toks.length));
     }
 
     /**
      * Parse an array of Strings describing a univariate switching function.
+     *
      * @param toks Descriptive Strings.
      * @return A parsed univariate switching function.
      */
     public static UnivariateSwitchingFunction parseUSF(String[] toks) {
         String selectionString = toks[0].toUpperCase().replaceAll("-", "").
                 replaceAll("_", "").replaceAll(" ", "");
-        switch(selectionString) {
+        switch (selectionString) {
             case "BELL":
             case "BELLCURVE":
             case "BELLCURVESWITCH":
@@ -103,18 +110,18 @@ public class UnivariateFunctionFactory {
     private static BellCurveSwitch parseBell(String[] toks) {
         double midpoint = 0.5;
         if (toks.length > 2) {
-            midpoint = Double.parseDouble(toks[1]);
+            midpoint = parseDouble(toks[1]);
         }
         double width = 1.0;
         if (toks.length > 3) {
-            width = Double.parseDouble(toks[2]);
+            width = parseDouble(toks[2]);
         }
         return new BellCurveSwitch(midpoint, width);
     }
 
     private static MultiplicativeSwitch parseMultiplicative(String[] toks) {
         if (toks.length > 3) {
-            return new MultiplicativeSwitch(Double.parseDouble(toks[2]), Double.parseDouble(toks[1]));
+            return new MultiplicativeSwitch(parseDouble(toks[2]), parseDouble(toks[1]));
         } else {
             return new MultiplicativeSwitch();
         }
@@ -124,21 +131,19 @@ public class UnivariateFunctionFactory {
     private static PowerSwitch parsePower(String[] toks) {
         double pow = 1.0;
         if (toks.length > 1) {
-            pow = Double.parseDouble(toks[1]);
+            pow = parseDouble(toks[1]);
         }
         double alpha = 1.0;
         if (toks.length > 2) {
-            alpha = Double.parseDouble(toks[2]);
+            alpha = parseDouble(toks[2]);
         }
         return new PowerSwitch(alpha, pow);
     }
 
-
-
     private static PowerSwitch parseSpecificPow(double pow, String[] toks) {
         double alpha = 1.0;
         if (toks.length > 1) {
-            alpha = Double.parseDouble(toks[1]);
+            alpha = parseDouble(toks[1]);
         }
         return new PowerSwitch(alpha, pow);
     }
@@ -146,10 +151,10 @@ public class UnivariateFunctionFactory {
     private static SquaredTrigSwitch parseTrig(String[] toks) {
         boolean trig = false;
         if (toks.length > 1) {
-            trig = Boolean.parseBoolean(toks[1]);
+            trig = parseBoolean(toks[1]);
         }
         if (toks.length > 2) {
-            return new SquaredTrigSwitch(Double.parseDouble(toks[2]), trig);
+            return new SquaredTrigSwitch(parseDouble(toks[2]), trig);
         } else {
             return new SquaredTrigSwitch(trig);
         }

@@ -37,7 +37,9 @@
 //******************************************************************************
 package ffx.numerics.estimator;
 
-import java.util.Arrays;
+import static java.util.Arrays.stream;
+
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The BootstrappableEstimator interface describes a StatisticalEstimator
@@ -53,9 +55,12 @@ import java.util.Arrays;
 public interface BootstrappableEstimator extends StatisticalEstimator {
 
     /**
-     * Re-calculates free energy without bootstrapping.
+     * Return a copy of this Estimator. Each implementation should specify its own type as the
+     * return type. Intended to make parallelization of bootstrapping easy.
+     *
+     * @return A copy of this Estimator.
      */
-    void estimateDG();
+    BootstrappableEstimator copyEstimator();
 
     /**
      * Re-calculates free energy.
@@ -65,34 +70,31 @@ public interface BootstrappableEstimator extends StatisticalEstimator {
     void estimateDG(final boolean randomSamples);
 
     /**
+     * Re-calculates free energy without bootstrapping.
+     */
+    void estimateDG();
+
+    /**
      * Obtains bootstrap free energy. Default implementation sums by-bin free energies.
-     *
+     * <p>
      * May be over-ridden by non-sequential estimators like MBAR.
      *
      * @param fe By-bin bootstrap results.
-     * @return   Overall free energy change.
+     * @return Overall free energy change.
      */
     default double sumBootstrapResults(double[] fe) {
-        return Arrays.stream(fe).sum();
+        return stream(fe).sum();
     }
 
     /**
      * Obtains bootstrap uncertainty. Default implementation is square root of summed variances.
-     *
+     * <p>
      * May be over-ridden by non-sequential estimators like MBAR.
      *
      * @param var Variance (not uncertainty) in by-bin bootstrap results.
-     * @return    Overall uncertainty.
+     * @return Overall uncertainty.
      */
     default double sumBootstrapUncertainty(double[] var) {
-        return Math.sqrt(Arrays.stream(var).sum());
+        return sqrt(stream(var).sum());
     }
-
-    /**
-     * Return a copy of this Estimator. Each implementation should specify its own type as the
-     * return type. Intended to make parallelization of bootstrapping easy.
-     *
-     * @return A copy of this Estimator.
-     */
-    BootstrappableEstimator copyEstimator();
 }

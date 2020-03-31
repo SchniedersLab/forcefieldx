@@ -63,7 +63,6 @@ public class PolynomialCurve extends FunctionDataCurve {
         this(x, false, coefficients);
     }
 
-
     /**
      * Default constructor, assumes constant-width bins. Functional form will
      * be a0 + a1x + a2x^2 + a3x^3 + ... + anx^n.
@@ -93,6 +92,14 @@ public class PolynomialCurve extends FunctionDataCurve {
      * {@inheritDoc}
      */
     @Override
+    public double fX(double x) {
+        return polynomialAt(x);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public double integralAt(double x) {
         double total = 0;
         for (int i = 0; i < coeff.length; i++) {
@@ -104,14 +111,6 @@ public class PolynomialCurve extends FunctionDataCurve {
             total += val;
         }
         return total;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double fX(double x) {
-        return polynomialAt(x);
     }
 
     /**

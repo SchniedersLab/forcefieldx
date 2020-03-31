@@ -37,19 +37,23 @@
 //******************************************************************************
 package ffx.numerics.math;
 
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
 /**
- * The FFXRunningStatistics class uses online, stable algorithms to calculate summary
- * statistics from a source of doubles, primarily mean, variance, standard deviation,
- * max, min, sum, and count. This is intended for accuracy and numerical stability,
+ * The RunningStatistics class uses online, stable algorithms to calculate summary
+ * statistics from a source of doubles, including mean, variance, standard deviation,
+ * max, min, sum, and count.
+ * <p>
+ * This is intended for accuracy and numerical stability,
  * not necessarily for performance (e.g. using Kahan summation).
- *
- * This is effectively a dynamic version of FFXSummaryStatistics.
+ * <p>
+ * This is effectively a dynamic version of SummaryStatistics.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class FFXRunningStatistics {
+public class RunningStatistics {
     private double meanAcc = 0;
     private double varAcc = 0;
     private double minAcc = Double.MAX_VALUE;
@@ -63,7 +67,7 @@ public class FFXRunningStatistics {
     /**
      * Constructs new running statistics accumulator.
      */
-    public FFXRunningStatistics() {
+    public RunningStatistics() {
         // Empty constructor; all variables are initialized at definition.
     }
 
@@ -94,17 +98,43 @@ public class FFXRunningStatistics {
         double t = sumAcc + y;
         comp = (t - sumAcc) - y;
         sumAcc = t;
-        
+
         minAcc = Math.min(minAcc, val);
         maxAcc = Math.max(maxAcc, val);
         double invCount = 1.0 / weightAcc;
         meanAcc += ((val - meanAcc) * invCount);
         varAcc += ((val - priorMean) * (val - meanAcc)) * weight;
         if (Double.isNaN(varAcc)) {
-            throw new IllegalArgumentException(String.format(" Val %.5f w/ wt %.3f resulted in NaN varAcc; current state %s", val, weight, new FFXSummaryStatistics(this).toString()));
+            throw new IllegalArgumentException(String.format(" Val %.5f w/ wt %.3f resulted in NaN varAcc; current state %s", val, weight, new SummaryStatistics(this).toString()));
         }
     }
 
+    /**
+     * Get the count.
+     *
+     * @return Returns the count.
+     */
+    public long getCount() {
+        return count;
+    }
+
+    /**
+     * Get the DOF.
+     *
+     * @return Returns DOF.
+     */
+    public long getDOF() {
+        return dof;
+    }
+
+    /**
+     * Get the max.
+     *
+     * @return Returns the max.
+     */
+    public double getMax() {
+        return maxAcc;
+    }
 
     /**
      * Gets the mean as of the last value added.
@@ -115,43 +145,66 @@ public class FFXRunningStatistics {
         return meanAcc;
     }
 
-    public double getVariance() {
-        return varAcc / ((double) dof);
-    }
-
-    public double getPopulationVariance() {
-        return varAcc / ((double) count);
-    }
-
-    public double getStandardDeviation() {
-        return Math.sqrt(getVariance());
-    }
-
-    public double getPopulationStandardDeviation() {
-        return Math.sqrt(getPopulationVariance());
-    }
-
+    /**
+     * Get the min.
+     *
+     * @return Returns the min.
+     */
     public double getMin() {
         return minAcc;
     }
 
-    public double getMax() {
-        return maxAcc;
+    /**
+     * Get the population standard deviations.
+     *
+     * @return The population standard deviation.
+     */
+    public double getPopulationStandardDeviation() {
+        return sqrt(getPopulationVariance());
     }
 
+    /**
+     * Get the population variance.
+     *
+     * @return Returns the population variance.
+     */
+    public double getPopulationVariance() {
+        return varAcc / ((double) count);
+    }
+
+    /**
+     * Get the standard deviation.
+     *
+     * @return Returns the standard deviation.
+     */
+    public double getStandardDeviation() {
+        return sqrt(getVariance());
+    }
+
+    /**
+     * Get the sum.
+     *
+     * @return Returns the sum.
+     */
     public double getSum() {
         return sumAcc;
     }
 
+    /**
+     * Get the variance.
+     *
+     * @return Returns the variance.
+     */
+    public double getVariance() {
+        return varAcc / ((double) dof);
+    }
+
+    /**
+     * Get the weight.
+     *
+     * @return Returns the weight.
+     */
     public double getWeight() {
         return weightAcc;
-    }
-
-    public long getCount() {
-        return count;
-    }
-
-    public long getDOF() {
-        return dof;
     }
 }
