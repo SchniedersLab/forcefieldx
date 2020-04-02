@@ -107,6 +107,10 @@ public class VanDerWaalsTornado extends VanDerWaals {
      */
     private int nAtoms;
     /**
+     * A local reference to the atom class of each atom in the system.
+     */
+    private int[] atomClass;
+    /**
      * A local copy of atomic coordinates, including reductions on the hydrogen
      * atoms.
      */
@@ -117,16 +121,18 @@ public class VanDerWaalsTornado extends VanDerWaals {
      */
     private double[] reductionValue;
     /**
-     * A local reference to the atom class of each atom in the system.
-     */
-    private int[] atomClass;
-    /**
      * Hydrogen atom vdW sites are located toward their heavy atom relative to
      * their nucleus. This is a look-up that gives the heavy atom index for each
      * hydrogen.
      */
     private int[] reductionIndex;
+    /**
+     * 1-2, 1-3, 1-4 interactions are masked.
+     */
     private int[] mask;
+    /**
+     * Pointer into the mask array for each atom.
+     */
     private int[] maskPointer;
 
     /**
@@ -185,6 +191,9 @@ public class VanDerWaalsTornado extends VanDerWaals {
             coordinates[i3 + ZZ] = z;
         }
 
+        double[] eps = vdwForm.getEps();
+        double[] rmin = vdwForm.getRmin();
+
         // Compute reduced hydrogen atom coordinates.
         double[] reducedXYZ = new double[nAtoms * 3];
         final byte XX = 0;
@@ -212,7 +221,13 @@ public class VanDerWaalsTornado extends VanDerWaals {
             }
         }
 
-        // Initialize some things for periodic boundary conditions.
+        // Gradient flag.
+        double doGradient = 0.0;
+        if (gradient) {
+            doGradient = 1.0;
+        }
+
+        // Initialize periodic boundary conditions.
         Crystal c = crystal;
         double[] A = {c.A00, c.A01, c.A02, c.A10, c.A11, c.A12, c.A20, c.A21, c.A22};
         double[] Ai = {c.Ai00, c.Ai01, c.Ai02, c.Ai10, c.Ai11, c.Ai12, c.Ai20, c.Ai21, c.Ai22};
@@ -221,10 +236,8 @@ public class VanDerWaalsTornado extends VanDerWaals {
         if (crystal.aperiodic()) {
             aperiodic = 1.0;
         }
-        double doGradient = 0.0;
-        if (gradient) {
-            doGradient = 1.0;
-        }
+
+        // Periodic boundary information, plus include the gradient flag.
         double[] cutoffs = {aperiodic, vdwTaper, vdwCutoff, doGradient};
 
         // Output
@@ -234,25 +247,35 @@ public class VanDerWaalsTornado extends VanDerWaals {
             fill(grad, 0.0);
         }
 
-        double[] eps = vdwForm.getEps();
-        double[] rmin = vdwForm.getRmin();
+        // Check the method without TornadoVM
+        tornadoEnergy(atomClass, eps, rmin, reducedXYZ, reductionIndex, reductionValue,
+                bondedScaleFactors, maskPointer, mask, A, Ai, cutoffs, energy, interactions, grad);
+
+        logger.info(format(" JVM: %16.8f %d", energy[0], interactions[0]));
+
+        energy[0] = 0.0;
+        interactions[0] = 0;
+        if (gradient) {
+            fill(grad, 0.0);
+        }
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
         FFXTornado.logDevice(device);
-        TaskSchedule graph = new TaskSchedule("FFT")
-                .streamIn(atomClass, eps, rmin, reducedXYZ, reductionIndex, reductionValue, A, Ai, cutoffs, energy)
-                .task("t0", VanDerWaalsTornado::tornadoEnergy,
-                        atomClass, eps, rmin, reducedXYZ, reductionIndex, reductionValue, A, Ai, cutoffs, energy)
-                .streamOut(energy);
+        TaskSchedule graph = new TaskSchedule("vdW")
+                .streamIn(atomClass, eps, rmin, reducedXYZ, reductionIndex, reductionValue,
+                        bondedScaleFactors, maskPointer, mask, A, Ai, cutoffs, energy, interactions, grad)
+                .task("energy", VanDerWaalsTornado::tornadoEnergy,
+                        atomClass, eps, rmin, reducedXYZ, reductionIndex, reductionValue,
+                        bondedScaleFactors, maskPointer, mask, A, Ai, cutoffs, energy, interactions, grad)
+                .streamOut(energy, interactions, grad);
+
         graph.setDevice(device);
         graph.warmup();
         graph.execute();
         graph.dumpProfiles();
         device.reset();
 
-        // Check the method without TornadoVM
-//        tornadoEnergy(atomClass, eps, rmin, reducedXYZ, reductionIndex, reductionValue,
-//                maskPointer, mask, A, Ai, bondedScaleFactors, cutoffs, energy, interactions, grad);
+        logger.info(format(" Tornado OpenCL: %16.8f %d", energy[0], interactions[0]));
 
         // Add gradient to atoms.
         if (gradient) {
@@ -333,7 +356,10 @@ public class VanDerWaalsTornado extends VanDerWaals {
      */
     private static void tornadoEnergy(int[] atomClass, double[] eps, double[] rMin, double[] reducedXYZ,
                                       int[] reductionIndex, double[] reductionValue,
-                                      double[] A, double[] Ai, double[] cutoffs, @Reduce double[] energy) {
+                                      double[] bondedScaleFactors, int[] maskPointers, int[] masks,
+                                      double[] A, double[] Ai, double[] cutoffs,
+                                      @Reduce double[] energy, @Reduce int[] interactions, @Reduce double[] grad) {
+
         // Matrices to apply the minimum image convention.
         // The columns of A are the reciprocal basis vectors
         double A00 = A[0];
@@ -359,23 +385,24 @@ public class VanDerWaalsTornado extends VanDerWaals {
         double Ai22 = Ai[8];
 
         // Scale factors for bonded atoms.
-//        double scale12 = bondedScaleFactors[0];
-//        double scale13 = bondedScaleFactors[1];
-//        double scale14 = bondedScaleFactors[2];
+        double scale12 = bondedScaleFactors[0];
+        double scale13 = bondedScaleFactors[1];
+        double scale14 = bondedScaleFactors[2];
 
         // Periodic Boundary Conditions
         boolean aperiodic = false;
         if (cutoffs[0] > 0) {
             aperiodic = true;
         }
+
         double vdwTaper = cutoffs[1];
         double vdwCutoff = cutoffs[2];
         double vdwTaper2 = vdwTaper * vdwTaper;
         double vdwCutoff2 = vdwCutoff * vdwCutoff;
-//        boolean gradient = false;
-//        if (cutoffs[3] > 0) {
-//            gradient = true;
-//        }
+        boolean gradient = false;
+        if (cutoffs[3] > 0) {
+            gradient = true;
+        }
 
         // Multiplicative Switch
         double a = vdwTaper;
@@ -397,29 +424,27 @@ public class VanDerWaalsTornado extends VanDerWaals {
         double fiveC5 = 5.0 * c5;
 
         // Interactions between 1-2, 1-3, 1-4 atoms are masked.
-//        double[] mask = new double[nAtoms];
-//        for (int i=0; i<nAtoms; i++) {
-//            mask[0] = 1.0;
-//        }
+        final int nAtoms = atomClass.length;
+        double[] mask = new double[nAtoms];
+        for (int i = 0; i < nAtoms; i++) {
+            mask[i] = 1.0;
+        }
 
         // AMOEBA Buffered 14-7 parameters.
         final double delta = 0.07;
         final double gamma = 0.12;
-        double delta1 = 1.0 + delta;
-        double d2 = delta1 * delta1;
-        double d4 = d2 * d2;
-        double t1n = delta1 * d2 * d4;
-        double gamma1 = 1.0 + gamma;
+        final double delta1 = 1.0 + delta;
+        final double d2 = delta1 * delta1;
+        final double d4 = d2 * d2;
+        final double t1n = delta1 * d2 * d4;
+        final double gamma1 = 1.0 + gamma;
 
-        int nAtoms = atomClass.length;
-        final byte XX = 0;
-        final byte YY = 1;
-        final byte ZZ = 2;
+        final int XX = 0;
+        final int YY = 1;
+        final int ZZ = 2;
         // Outer loop over all atoms.
-        double e = 0.0;
-
         for (@Parallel int i = 0; i < nAtoms - 1; i++) {
-            int i3 = i * 3;
+            final int i3 = i * 3;
             final double xi = reducedXYZ[i3 + XX];
             final double yi = reducedXYZ[i3 + YY];
             final double zi = reducedXYZ[i3 + ZZ];
@@ -427,33 +452,37 @@ public class VanDerWaalsTornado extends VanDerWaals {
             final double redv = reductionValue[i];
             final double rediv = 1.0 - redv;
             final int classI = atomClass[i];
-            double ei = eps[classI];
-            double ri = rMin[classI];
-//            double gxi = 0.0;
-//            double gyi = 0.0;
-//            double gzi = 0.0;
-//            double gxredi = 0.0;
-//            double gyredi = 0.0;
-//            double gzredi = 0.0;
+            final double ei = eps[classI];
+            final double sei = sqrt(ei);
+            final double ri = rMin[classI];
+            if (ri <= 0.0) {
+                continue;
+            }
+            double gxi = 0.0;
+            double gyi = 0.0;
+            double gzi = 0.0;
+            double gxredi = 0.0;
+            double gyredi = 0.0;
+            double gzredi = 0.0;
 
             // Apply masks
-//            for (int ii = maskPointers[i3]; ii < maskPointers[i3 + 1]; ii++) {
-//                mask[masks[ii]] = scale14;
-//            }
-//            for (int ii = maskPointers[i3 + 1]; ii < maskPointers[i3 + 2]; ii++) {
-//                mask[masks[ii]] = scale13;
-//            }
-//            for (int ii = maskPointers[i3 + 2]; ii < maskPointers[i3 + 3]; ii++) {
-//                mask[masks[ii]] = scale12;
-//            }
+            for (int ii = maskPointers[i3]; ii < maskPointers[i3 + 1]; ii++) {
+                mask[masks[ii]] = scale14;
+            }
+            for (int ii = maskPointers[i3 + 1]; ii < maskPointers[i3 + 2]; ii++) {
+                mask[masks[ii]] = scale13;
+            }
+            for (int ii = maskPointers[i3 + 2]; ii < maskPointers[i3 + 3]; ii++) {
+                mask[masks[ii]] = scale12;
+            }
 
             // Inner loop over atoms.
             for (int k = i + 1; k < nAtoms; k++) {
-                int k3 = k * 3;
+                final int k3 = k * 3;
                 final double xk = reducedXYZ[k3 + XX];
                 final double yk = reducedXYZ[k3 + YY];
                 final double zk = reducedXYZ[k3 + ZZ];
-                double[] dx = new double[3];
+                final double[] dx = new double[3];
                 dx[0] = xi - xk;
                 dx[1] = yi - yk;
                 dx[2] = zi - zk;
@@ -467,27 +496,26 @@ public class VanDerWaalsTornado extends VanDerWaals {
                     double xf = x * A00 + y * A10 + z * A20;
                     double yf = x * A01 + y * A11 + z * A21;
                     double zf = x * A02 + y * A12 + z * A22;
-                    // double xfsn = signum(-xf);
-                    // double yfsn = signum(-yf);
-                    // double zfsn = signum(-zf);
-
                     // signum:
                     // zero if the argument is zero,
                     // 1.0 if the argument is greater than zero,
                     // -1.0 if the argument is less than zero.
+                    // double xfsn = signum(-xf);
                     double xfsn = 0.0;
-                    double yfsn = 0.0;
-                    double zfsn = 0.0;
                     if (-xf > 0.0) {
                         xfsn = 1.0;
                     } else if (-xf < 0.0) {
                         xfsn = -1.0;
                     }
+                    // double yfsn = signum(-yf);
+                    double yfsn = 0.0;
                     if (-yf > 0.0) {
                         yfsn = 1.0;
                     } else if (-yf < 0.0) {
                         yfsn = -1.0;
                     }
+                    // double zfsn = signum(-zf);
+                    double zfsn = 0.0;
                     if (-zf > 0.0) {
                         zfsn = 1.0;
                     } else if (-zf < 0.0) {
@@ -504,16 +532,14 @@ public class VanDerWaalsTornado extends VanDerWaals {
                     dx[2] = z;
                     r2 = x * x + y * y + z * z;
                 }
-                int classK = atomClass[k];
-                double ek = eps[classK];
-                double rk = rMin[classK];
-                double ri2 = ri * ri;
-                double ri3 = ri * ri2;
-                double rk2 = rk * rk;
-                double rk3 = rk * rk2;
-                double irv = 1.0 / (2.0 * (ri3 + rk3) / (ri2 + rk2));
-//                 if (r2 <= vdwCutoff2 && mask[k] > 0 && irv > 0) {
-                if (r2 <= vdwCutoff2 && irv > 0) {
+                final int classK = atomClass[k];
+                final double rk = rMin[classK];
+                if (r2 <= vdwCutoff2 && mask[k] > 0 && rk > 0) {
+                    double ri2 = ri * ri;
+                    double ri3 = ri * ri2;
+                    double rk2 = rk * rk;
+                    double rk3 = rk * rk2;
+                    double irv = 1.0 / (2.0 * (ri3 + rk3) / (ri2 + rk2));
                     final double r = sqrt(r2);
                     /*
                       Calculate Van der Waals interaction energy.
@@ -522,10 +548,9 @@ public class VanDerWaalsTornado extends VanDerWaals {
                       crystals from simulation with a polarizable force
                       field. J. Chem. Theory Comput. 8, 1721–1736 (2012).
                      */
-                    double sei = sqrt(ei);
+                    double ek = eps[classK];
                     double sek = sqrt(ek);
-//                    double ev = mask[k] * 4.0 * (ei * ek) / ((sei + sek) * (sei + sek));
-                    double ev = 4.0 * (ei * ek) / ((sei + sek) * (sei + sek));
+                    double ev = mask[k] * 4.0 * (ei * ek) / ((sei + sek) * (sei + sek));
                     final double rho = r * irv;
                     final double rho2 = rho * rho;
                     final double rhoDisp1 = rho2 * rho2 * rho2;
@@ -555,68 +580,67 @@ public class VanDerWaalsTornado extends VanDerWaals {
                         dtaper = fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
                     }
                     eik *= taper;
-                    e += eik;
-//                    if (!gradient) {
-//                        continue;
-//                    }
-//                    final int redk = reductionIndex[k];
-//                    final double red = reductionValue[k];
-//                    final double redkv = 1.0 - red;
-//                    final double dt1d_dr = 7.0 * rhoDelta1 * irv;
-//                    final double dt2d_dr = 7.0 * rhoDisp1 * irv;
-//                    final double dt1_dr = t1 * dt1d_dr * t1d;
-//                    final double dt2_dr = t2a * dt2d_dr * t2d;
-//                    final double dedr = -ev * (dt1_dr * t2 + t1 * dt2_dr);
-//                    final double ir = 1.0 / r;
-//                    final double drdx = dx[0] * ir;
-//                    final double drdy = dx[1] * ir;
-//                    final double drdz = dx[2] * ir;
-//                    final double dswitch = (eik * dtaper + dedr * taper);
-//                    final double dedx = dswitch * drdx;
-//                    final double dedy = dswitch * drdy;
-//                    final double dedz = dswitch * drdz;
-//                    gxi += dedx * redv;
-//                    gyi += dedy * redv;
-//                    gzi += dedz * redv;
-//                    gxredi += dedx * rediv;
-//                    gyredi += dedy * rediv;
-//                    gzredi += dedz * rediv;
-//                    // Atom K
-//                    grad[k3 + XX] -= red * dedx;
-//                    grad[k3 + YY] -= red * dedy;
-//                    grad[k3 + ZZ] -= red * dedz;
-//                    // Atom K is reduced by Atom redK;
-//                    int r3 = redk * 3;
-//                    grad[r3 + XX] -= redkv * dedx;
-//                    grad[r3 + YY] -= redkv * dedy;
-//                    grad[r3 + ZZ] -= redkv * dedz;
+                    energy[0] += eik;
+                    interactions[0] += 1;
+                    if (!gradient) {
+                        continue;
+                    }
+                    final int redk = reductionIndex[k];
+                    final double red = reductionValue[k];
+                    final double redkv = 1.0 - red;
+                    final double dt1d_dr = 7.0 * rhoDelta1 * irv;
+                    final double dt2d_dr = 7.0 * rhoDisp1 * irv;
+                    final double dt1_dr = t1 * dt1d_dr * t1d;
+                    final double dt2_dr = t2a * dt2d_dr * t2d;
+                    final double dedr = -ev * (dt1_dr * t2 + t1 * dt2_dr);
+                    final double ir = 1.0 / r;
+                    final double drdx = dx[0] * ir;
+                    final double drdy = dx[1] * ir;
+                    final double drdz = dx[2] * ir;
+                    final double dswitch = (eik * dtaper + dedr * taper);
+                    final double dedx = dswitch * drdx;
+                    final double dedy = dswitch * drdy;
+                    final double dedz = dswitch * drdz;
+                    gxi += dedx * redv;
+                    gyi += dedy * redv;
+                    gzi += dedz * redv;
+                    gxredi += dedx * rediv;
+                    gyredi += dedy * rediv;
+                    gzredi += dedz * rediv;
+                    // Atom K
+                    grad[k3 + XX] -= red * dedx;
+                    grad[k3 + YY] -= red * dedy;
+                    grad[k3 + ZZ] -= red * dedz;
+                    // Atom K is reduced by Atom redK;
+                    int r3 = redk * 3;
+                    grad[r3 + XX] -= redkv * dedx;
+                    grad[r3 + YY] -= redkv * dedy;
+                    grad[r3 + ZZ] -= redkv * dedz;
                 }
             }
-//            if (gradient) {
-//                // Atom I gradient.
-//                grad[i3 + XX] += gxi;
-//                grad[i3 + YY] += gyi;
-//                grad[i3 + ZZ] += gzi;
-//                // Atom I is reduced by Atom redI;
-//                int r3 = redi * 3;
-//                grad[r3 + XX] += gxredi;
-//                grad[r3 + YY] += gyredi;
-//                grad[r3 + ZZ] += gzredi;
-//            }
+            if (gradient) {
+                // Atom I gradient.
+                grad[i3 + XX] += gxi;
+                grad[i3 + YY] += gyi;
+                grad[i3 + ZZ] += gzi;
+                // Atom I is reduced by Atom redI;
+                int r3 = redi * 3;
+                grad[r3 + XX] += gxredi;
+                grad[r3 + YY] += gyredi;
+                grad[r3 + ZZ] += gzredi;
+            }
 
             // Remove masks
-//            for (int ii = maskPointers[i3]; ii < maskPointers[i3 + 1]; ii++) {
-//                mask[masks[ii]] = 1.0;
-//            }
-//            for (int ii = maskPointers[i3 + 1]; ii < maskPointers[i3 + 2]; ii++) {
-//                mask[masks[ii]] = 1.0;
-//            }
-//            for (int ii = maskPointers[i3 + 2]; ii < maskPointers[i3 + 3]; ii++) {
-//                mask[masks[ii]] = 1.0;
-//            }
+            for (int ii = maskPointers[i3]; ii < maskPointers[i3 + 1]; ii++) {
+                mask[masks[ii]] = 1.0;
+            }
+            for (int ii = maskPointers[i3 + 1]; ii < maskPointers[i3 + 2]; ii++) {
+                mask[masks[ii]] = 1.0;
+            }
+            for (int ii = maskPointers[i3 + 2]; ii < maskPointers[i3 + 3]; ii++) {
+                mask[masks[ii]] = 1.0;
+            }
         }
-
-        energy[0] = e;
     }
 
     /**
@@ -721,5 +745,4 @@ public class VanDerWaalsTornado extends VanDerWaals {
                 atoms[k].getIndex(), atoms[k].getAtomType().name,
                 1.0 / minr, r, eij));
     }
-
 }
