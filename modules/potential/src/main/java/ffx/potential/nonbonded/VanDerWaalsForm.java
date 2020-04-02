@@ -130,6 +130,14 @@ public class VanDerWaalsForm {
      */
     int maxClass;
     /**
+     * Store the Rmin for each class.
+     */
+    double[] rMin;
+    /**
+     * Store the Eps for each class
+     */
+    double[] eps;
+    /**
      * Store combined radius and epsilon values.
      */
     private double[][] radEps;
@@ -139,7 +147,6 @@ public class VanDerWaalsForm {
      * Currently this is specific to the CHARMM force fields.
      */
     private double[][] radEps14;
-
     /**
      * Constant <code>RADMIN=0</code>
      */
@@ -294,11 +301,16 @@ public class VanDerWaalsForm {
                 break;
         }
 
+        rMin = new double[maxClass + 1];
+        eps = new double[maxClass + 1];
+
         // Atom Class numbering starts at 1.
         for (VDWType vdwi : vdwTypes.values()) {
             int i = vdwi.atomClass;
             double ri = radScale * vdwi.radius;
             double e1 = vdwi.wellDepth;
+            rMin[i] = ri;
+            eps[i]  = e1;
             for (VDWType vdwj : vdwTypes.tailMap(vdwi.getKey()).values()) {
                 int j = vdwj.atomClass;
                 double rj = radScale * vdwj.radius;
@@ -363,6 +375,22 @@ public class VanDerWaalsForm {
      */
     public double getCombinedEps(int class1, int class2) {
         return radEps[class1][class2 * 2 + EPS];
+    }
+
+    /**
+     * Return the eps value for each class.
+     * @return Returns the eps array.
+     */
+    public double[] getEps() {
+        return eps;
+    }
+
+    /**
+     * Return the Rmin value for each class.
+     * @return Returns the Rmin array.
+     */
+    public double[] getRmin() {
+        return rMin;
     }
 
     /**
