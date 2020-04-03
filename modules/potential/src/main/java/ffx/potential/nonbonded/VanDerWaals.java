@@ -89,7 +89,31 @@ public class VanDerWaals implements MaskingInterface,
         LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
-
+    private static final byte HARD = 0;
+    private static final byte SOFT = 1;
+    private static final byte XX = 0;
+    private static final byte YY = 1;
+    private static final byte ZZ = 2;
+    private final boolean doLongRangeCorrection;
+    // *************************************************************************
+    // Parallel variables.
+    private final ParallelTeam parallelTeam;
+    private final int threadCount;
+    private final IntegerSchedule pairwiseSchedule;
+    private final SharedInteger sharedInteractions;
+    private final SharedDouble sharedEnergy;
+    private final SharedDouble shareddEdL;
+    private final SharedDouble sharedd2EdL2;
+    private final VanDerWaalsRegion vanDerWaalsRegion;
+    /**
+     * Timing variables.
+     */
+    private final long[] initializationTime;
+    private final long[] vdwTime;
+    private final long[] reductionTime;
+    private final VanDerWaalsForm vdwForm;
+    private final NonbondedCutoff nonbondedCutoff;
+    private final MultiplicativeSwitch multiplicativeSwitch;
     /**
      * This field specifies resolution for multi-scale modeling.
      */
@@ -146,12 +170,13 @@ public class VanDerWaals implements MaskingInterface,
      * equals: true for inner loop hard atoms false for inner loop soft atoms
      */
     private boolean[][] softCore;
-    private static final byte HARD = 0;
-    private static final byte SOFT = 1;
     /**
      * Turn on inter-molecular softcore interactions using molecular index.
      */
     private boolean intermolecularSoftcore = false;
+
+    // *************************************************************************
+    // Coordinate arrays.
     /**
      * Turn on intra-molecular softcore interactions using molecular index.
      */
@@ -175,6 +200,9 @@ public class VanDerWaals implements MaskingInterface,
     private LambdaFactors[] lambdaFactors = null;
     private double sc1 = 0.0;       // alpha * (1 - lambdaProduct)^2
     private double sc2 = 1.0;       // lambdaProduct
+
+    // *************************************************************************
+    // Force field parameters and constants for the Buffered-14-7 potential.
     private double dsc1dL = 0.0;
     private double dsc2dL = 0.0;
     private double d2sc1dL2 = 0.0;
@@ -189,9 +217,6 @@ public class VanDerWaals implements MaskingInterface,
     private double[] esvSwitchDeriv;
     private boolean[] esvAtoms;
     private int[] atomEsvID;
-
-    // *************************************************************************
-    // Coordinate arrays.
     /**
      * A local copy of atomic coordinates, including reductions on the hydrogen
      * atoms.
@@ -206,12 +231,6 @@ public class VanDerWaals implements MaskingInterface,
      * Neighbor lists for each atom. Size: [nSymm][nAtoms][nNeighbors]
      */
     private int[][][] neighborLists;
-    private static final byte XX = 0;
-    private static final byte YY = 1;
-    private static final byte ZZ = 2;
-
-    // *************************************************************************
-    // Force field parameters and constants for the Buffered-14-7 potential.
     /**
      * A local reference to the atom class of each atom in the system.
      */
@@ -225,7 +244,6 @@ public class VanDerWaals implements MaskingInterface,
     private int[][] bondMask;
     private int[][] angleMask;
     private int[][] torsionMask;
-
     /**
      * Each hydrogen vdW site is located a fraction of the way from the heavy
      * atom nucleus to the hydrogen nucleus (~0.9).
@@ -233,19 +251,7 @@ public class VanDerWaals implements MaskingInterface,
     private double[] reductionValue;
     private boolean reducedHydrogens;
     private double longRangeCorrection;
-    private final boolean doLongRangeCorrection;
-
-    // *************************************************************************
-    // Parallel variables.
-    private final ParallelTeam parallelTeam;
-    private final int threadCount;
-    private final IntegerSchedule pairwiseSchedule;
-    private final SharedInteger sharedInteractions;
-    private final SharedDouble sharedEnergy;
-    private final SharedDouble shareddEdL;
-    private final SharedDouble sharedd2EdL2;
     private SharedDouble[] esvDeriv;
-
     private AtomicDoubleArrayImpl atomicDoubleArrayImpl;
     /**
      * Cartesian coordinate gradient.
@@ -255,25 +261,34 @@ public class VanDerWaals implements MaskingInterface,
      * Lambda derivative of the Cartesian coordinate gradient.
      */
     private AtomicDoubleArray3D lambdaGrad;
-
     /**
      * The neighbor-list includes 1-2 and 1-3 interactions, which are masked out
      * in the Van der Waals energy code. The AMOEBA force field includes 1-4
      * interactions fully.
      */
     private NeighborList neighborList;
-    private final VanDerWaalsRegion vanDerWaalsRegion;
     private boolean neighborListOnly = true;
-    /**
-     * Timing variables.
-     */
-    private final long[] initializationTime;
-    private final long[] vdwTime;
-    private final long[] reductionTime;
     private long initializationTotal, vdwTotal, reductionTotal;
-    private final VanDerWaalsForm vdwForm;
-    private final NonbondedCutoff nonbondedCutoff;
-    private final MultiplicativeSwitch multiplicativeSwitch;
+
+    public VanDerWaals() {
+        // Empty constructor for use with VanDerWaalsTornado
+        doLongRangeCorrection = false;
+        parallelTeam = null;
+        threadCount = 0;
+        pairwiseSchedule = null;
+        sharedInteractions = null;
+        sharedEnergy = null;
+        shareddEdL = null;
+        sharedd2EdL2 = null;
+        esvDeriv = null;
+        vanDerWaalsRegion = null;
+        initializationTime = null;
+        vdwTime = null;
+        reductionTime = null;
+        vdwForm = null;
+        nonbondedCutoff = null;
+        multiplicativeSwitch = null;
+    }
 
     /**
      * The VanDerWaals class constructor.
@@ -372,471 +387,6 @@ public class VanDerWaals implements MaskingInterface,
 
     /**
      * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        StringBuffer sb = new StringBuffer("\n  Van der Waals\n");
-        sb.append(format("   Switch Start:                         %6.3f (A)\n", multiplicativeSwitch.getSwitchStart()));
-        sb.append(format("   Cut-Off:                              %6.3f (A)\n", multiplicativeSwitch.getSwitchEnd()));
-        sb.append(format("   Long-Range Correction:                %b\n", doLongRangeCorrection));
-        if (!reducedHydrogens) {
-            sb.append(format("   Reduce Hydrogens:                     %b\n", reducedHydrogens));
-        }
-        if (lambdaTerm) {
-            sb.append("   Alchemical Parameters\n");
-            sb.append(format("    Softcore Alpha:                       %5.3f\n", vdwLambdaAlpha));
-            sb.append(format("    Lambda Exponent:                      %5.3f\n", vdwLambdaExponent));
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Return use of the long-range vdW correction.
-     *
-     * @return True if it is on.
-     */
-    public boolean getDoLongRangeCorrection() {
-        return doLongRangeCorrection;
-    }
-
-    /**
-     * <p>getAlpha.</p>
-     *
-     * @return a double.
-     */
-    public double getAlpha() {
-        return vdwLambdaAlpha;
-    }
-
-    /**
-     * <p>getBeta.</p>
-     *
-     * @return a double.
-     */
-    public double getBeta() {
-        return vdwLambdaExponent;
-    }
-
-    /**
-     * <p>Getter for the field <code>bondMask</code>.</p>
-     *
-     * @return an array of {@link int} objects.
-     */
-    public int[][] getBondMask() {
-        return bondMask;
-    }
-
-    /**
-     * <p>Getter for the field <code>angleMask</code>.</p>
-     *
-     * @return an array of {@link int} objects.
-     */
-    public int[][] getAngleMask() {
-        return angleMask;
-    }
-
-    /**
-     * <p>Getter for the field <code>torsionMask</code>.</p>
-     *
-     * @return an array of {@link int} objects.
-     */
-    public int[][] getTorsionMask() {
-        return torsionMask;
-    }
-
-    /**
-     * Allocate coordinate arrays and set up reduction indices and values.
-     */
-    private void initAtomArrays() {
-        if (esvTerm) {
-            atoms = esvSystem.getExtendedAtoms();
-            nAtoms = atoms.length;
-        }
-        if (atomClass == null || nAtoms > atomClass.length || lambdaTerm || esvTerm) {
-            atomClass = new int[nAtoms];
-            coordinates = new double[nAtoms * 3];
-            reduced = new double[nSymm][nAtoms * 3];
-            reducedXYZ = reduced[0];
-            reductionIndex = new int[nAtoms];
-            reductionValue = new double[nAtoms];
-            bondMask = new int[nAtoms][];
-            angleMask = new int[nAtoms][];
-            torsionMask = new int[nAtoms][];
-            use = new boolean[nAtoms];
-            isSoft = new boolean[nAtoms];
-            softCore = new boolean[2][nAtoms];
-            grad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
-            if (lambdaTerm) {
-                lambdaGrad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
-            } else {
-                lambdaGrad = null;
-            }
-        }
-
-        // Initialize all atoms to be used in the energy.
-        fill(use, true);
-        fill(isSoft, false);
-        fill(softCore[HARD], false);
-        fill(softCore[SOFT], false);
-
-        esvAtoms = new boolean[nAtoms]; // Needs initialized regardless of esvTerm.
-        esvLambda = new double[nAtoms];
-        atomEsvID = new int[nAtoms];
-        fill(esvAtoms, false);
-        fill(esvLambda, 1.0);
-        fill(atomEsvID, -1);
-        if (esvTerm) {
-            updateEsvLambda();
-        }
-
-        lambdaFactors = new LambdaFactors[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            if (esvTerm) {
-                lambdaFactors[i] = new LambdaFactorsESV();
-            } else if (lambdaTerm) {
-                lambdaFactors[i] = new LambdaFactorsOST();
-            } else {
-                lambdaFactors[i] = new LambdaFactors();
-            }
-        }
-
-        for (int i = 0; i < nAtoms; i++) {
-            Atom ai = atoms[i];
-            assert (i == ai.getXyzIndex() - 1);
-            double[] xyz = ai.getXYZ(null);
-            int i3 = i * 3;
-            coordinates[i3 + XX] = xyz[XX];
-            coordinates[i3 + YY] = xyz[YY];
-            coordinates[i3 + ZZ] = xyz[ZZ];
-            AtomType atomType = ai.getAtomType();
-            if (atomType == null) {
-                logger.severe(ai.toString());
-                continue;   // Severe no longer guarantees program crash.
-            }
-            String vdwIndex = forceField.getString("VDWINDEX", "Class");
-            if (vdwIndex.equalsIgnoreCase("Type")) {
-                atomClass[i] = atomType.type;
-            } else {
-                atomClass[i] = atomType.atomClass;
-            }
-            VDWType type = forceField.getVDWType(Integer.toString(atomClass[i]));
-            if (type == null) {
-                logger.info(" No VdW type for atom class " + atomClass[i]);
-                logger.severe(" No VdW type for atom " + ai.toString());
-                return;
-            }
-            ai.setVDWType(type);
-            ArrayList<Bond> bonds = ai.getBonds();
-            int numBonds = bonds.size();
-            if (reducedHydrogens && type.reductionFactor > 0.0 && numBonds == 1) {
-                Bond bond = bonds.get(0);
-                Atom heavyAtom = bond.get1_2(ai);
-                // Atom indexes start at 1
-                reductionIndex[i] = heavyAtom.getIndex() - 1;
-                reductionValue[i] = type.reductionFactor;
-            } else {
-                reductionIndex[i] = i;
-                reductionValue[i] = 0.0;
-            }
-            bondMask[i] = new int[numBonds];
-            for (int j = 0; j < numBonds; j++) {
-                Bond bond = bonds.get(j);
-                bondMask[i][j] = bond.get1_2(ai).getIndex() - 1;
-            }
-            ArrayList<Angle> angles = ai.getAngles();
-            int numAngles = 0;
-            for (Angle angle : angles) {
-                Atom ak = angle.get1_3(ai);
-                if (ak != null) {
-                    numAngles++;
-                }
-            }
-            angleMask[i] = new int[numAngles];
-            int j = 0;
-            for (Angle angle : angles) {
-                Atom ak = angle.get1_3(ai);
-                if (ak != null) {
-                    angleMask[i][j++] = ak.getIndex() - 1;
-                }
-            }
-
-            ArrayList<Torsion> torsions = ai.getTorsions();
-            int numTorsions = 0;
-            for (Torsion torsion : torsions) {
-                Atom ak = torsion.get1_4(ai);
-                if (ak != null) {
-                    numTorsions++;
-                }
-            }
-            torsionMask[i] = new int[numTorsions];
-            j = 0;
-            for (Torsion torsion : torsions) {
-                Atom ak = torsion.get1_4(ai);
-                if (ak != null) {
-                    torsionMask[i][j++] = ak.getIndex() - 1;
-                }
-            }
-
-        }
-    }
-
-    /**
-     * <p>Setter for the field <code>resolution</code>.</p>
-     *
-     * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
-     */
-    public void setResolution(Resolution resolution) {
-        this.resolution = resolution;
-    }
-
-    /**
-     * <p>buildNeighborList.</p>
-     *
-     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    private void buildNeighborList(Atom[] atoms) {
-        neighborList.setAtoms(atoms);
-        if (esvTerm) {
-            neighborList.buildList(reduced, neighborLists, null, neighborListOnly, true);
-        } else {
-            neighborListOnly = true;
-            try {
-                parallelTeam.execute(vanDerWaalsRegion);
-            } catch (Exception e) {
-                String message = " Fatal exception expanding coordinates.\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-            neighborListOnly = false;
-        }
-    }
-
-    /**
-     * <p>Setter for the field <code>atoms</code>.</p>
-     *
-     * @param atoms    an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param molecule an array of {@link int} objects.
-     */
-    public void setAtoms(Atom[] atoms, int[] molecule) {
-        this.atoms = atoms;
-        this.nAtoms = atoms.length;
-        this.molecule = molecule;
-
-        if (nAtoms != molecule.length) {
-            logger.warning("Atom and molecule arrays are of different lengths.");
-            throw new IllegalArgumentException();
-        }
-        initAtomArrays();
-        buildNeighborList(atoms);
-    }
-
-    /**
-     * Allow sharing the of the VanDerWaals NeighborList with ParticleMeshEwald.
-     *
-     * @return The NeighborList.
-     */
-    public NeighborList getNeighborList() {
-        return neighborList;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>pairwiseSchedule</code>.</p>
-     *
-     * @return a {@link edu.rit.pj.IntegerSchedule} object.
-     */
-    public IntegerSchedule getPairwiseSchedule() {
-        return pairwiseSchedule;
-    }
-
-    /**
-     * Computes the long range van der Waals correction to the energy via numerical integration
-     *
-     * @return Long range correction (kcal/mol)
-     * @see "M. P. Allen and D. J. Tildesley, "Computer Simulation of Liquids, 2nd Ed.", Oxford University Press, 2017, Section 2.8"
-     */
-    private double getLongRangeCorrection() {
-        // Need to treat esvLambda chain terms below before you can do this.
-        if (esvTerm) {
-            throw new UnsupportedOperationException();
-        }
-
-        // Only applicable under periodic boundary conditions.
-        if (crystal.aperiodic()) {
-            return 0.0;
-        }
-
-        /*
-          Integrate to maxR = 100 Angstroms or ~33 sigma.
-          Integration step size of delR to be 0.01 Angstroms.
-         */
-        int step = 2;
-        double range = 100.0;
-        int nDelta = (int) ((double) step * (range - nonbondedCutoff.cut));
-        double rDelta = (range - nonbondedCutoff.cut) / (double) nDelta;
-        double offset = nonbondedCutoff.cut - 0.5 * rDelta;
-        double oneMinLambda = 1.0 - lambda;
-
-        // Count the number of classes and their frequencies
-        int maxClass = vdwForm.maxClass;
-        int[] radCount = new int[maxClass + 1];
-        int[] softRadCount = new int[maxClass + 1];
-        fill(radCount, 0);
-        fill(softRadCount, 0);
-        for (int i = 0; i < nAtoms; i++) {
-            radCount[atomClass[i]]++;
-            if (isSoft[i]) {
-                softRadCount[atomClass[i]]++;
-            }
-        }
-
-        double total = 0.0;
-        // Loop over vdW classes.
-        for (int i = 1; i < maxClass + 1; i++) {
-            for (int j = i; j < maxClass + 1; j++) {
-                if (radCount[i] == 0 || radCount[j] == 0) {
-                    continue;
-                }
-                double irv = vdwForm.getCombinedInverseRmin(i, j);
-                double ev = vdwForm.getCombinedEps(i, j);
-                if (isNaN(irv) || irv == 0 || isNaN(ev)) {
-                    continue;
-                }
-                double sume = 0.0;
-                for (int k = 1; k <= nDelta; k++) {
-                    double r = offset + (double) k * rDelta;
-                    double r2 = r * r;
-                    final double rho = r * irv;
-                    final double rho3 = rho * rho * rho;
-                    final double rhod = rho + vdwForm.delta;
-                    final double rhod3 = rhod * rhod * rhod;
-                    double t1 = 0, t2 = 0;
-                    switch (vdwForm.vdwType) {
-                        case BUFFERED_14_7:
-                            final double rho7 = rho3 * rho3 * rho;
-                            final double rhod7 = rhod3 * rhod3 * rhod;
-                            t1 = vdwForm.t1n / rhod7;
-                            t2 = vdwForm.gamma1 / (rho7 + vdwForm.gamma) - 2.0;
-                            break;
-                        case LENNARD_JONES:
-                            final double rho6 = rho3 * rho3;
-                            final double rhod6 = rhod3 * rhod3;
-                            t1 = vdwForm.t1n / rhod6;
-                            t2 = vdwForm.gamma1 / (rho6 + vdwForm.gamma) - 2.0;
-                            break;
-                    }
-                    final double eij = ev * t1 * t2;
-                    /*
-                      Apply one minus the multiplicative switch if the
-                      interaction distance is less than the end of the
-                      switching window.
-                     */
-                    double taper = 1.0;
-                    if (r2 < nonbondedCutoff.off2) {
-                        double r3 = r * r2;
-                        double r4 = r2 * r2;
-                        double r5 = r2 * r3;
-                        taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
-                        taper = 1.0 - taper;
-                    }
-
-                    double jacobian = 4.0 * PI * r2;
-                    double e = jacobian * eij * taper;
-                    if (j != i) {
-                        sume += e;
-                    } else {
-                        sume += 0.5 * e;
-                    }
-                }
-                double trapezoid = rDelta * sume;
-
-                // Normal correction
-                total += radCount[i] * radCount[j] * trapezoid;
-                // Correct for softCore vdW that are being turned off.
-                if (lambda < 1.0) {
-                    total -= (softRadCount[i] * radCount[j]
-                            + (radCount[i] - softRadCount[i]) * softRadCount[j])
-                            * oneMinLambda * trapezoid;
-                }
-                // TODO: Accounting for esvLambda softcore
-            }
-        }
-
-        // Divide by the volume of the asymmetric unit.
-        Crystal unitCell = crystal.getUnitCell();
-        total = total / (unitCell.volume / unitCell.spaceGroup.getNumberOfSymOps());
-        return total;
-    }
-
-    /**
-     * Get the total Van der Waals potential energy.
-     *
-     * @return The energy.
-     * @since 1.0
-     */
-    public double getEnergy() {
-        return sharedEnergy.get();
-    }
-
-    /**
-     * Get the number of interacting pairs.
-     *
-     * @return The interaction count.
-     * @since 1.0
-     */
-    public int getInteractions() {
-        return sharedInteractions.get();
-    }
-
-    /**
-     * Get the reduction index.
-     *
-     * @return an array of {@link int} objects.
-     */
-    public int[] getReductionIndex() {
-        return reductionIndex;
-    }
-
-    /**
-     * <p>getVDWForm.</p>
-     *
-     * @return a {@link ffx.potential.nonbonded.VanDerWaalsForm} object.
-     */
-    public VanDerWaalsForm getVDWForm() {
-        return vdwForm;
-    }
-
-    /**
-     * Get the buffer size.
-     *
-     * @return The buffer.
-     * @since 1.0
-     */
-    public double getBuffer() {
-        return nonbondedCutoff.buff;
-    }
-
-    /**
-     * The energy routine may be called repeatedly.
-     *
-     * @param gradient If true, gradients with respect to atomic coordinates are computed.
-     * @param print    If true, there is verbose printing.
-     * @return The energy.
-     * @since 1.0
-     */
-    public double energy(boolean gradient, boolean print) {
-        this.gradient = gradient;
-
-        try {
-            parallelTeam.execute(vanDerWaalsRegion);
-        } catch (Exception e) {
-            String message = " Fatal exception expanding coordinates.\n";
-            logger.log(Level.SEVERE, message, e);
-        }
-        return sharedEnergy.get();
-    }
-
-    /**
-     * {@inheritDoc}
      * <p>
      * Apply masking rules for 1-2, 1-3 and 1-4 interactions.
      */
@@ -882,6 +432,200 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
+     * <p>attachExtendedSystem.</p>
+     *
+     * @param system a {@link ffx.potential.extended.ExtendedSystem} object.
+     */
+    public void attachExtendedSystem(ExtendedSystem system) {
+        if (system == null) {
+            logger.severe("Tried to attach null extended system.");
+        }
+        esvTerm = true;
+        esvSystem = system;
+        numESVs = esvSystem.size();
+
+        // Launch shared lambda/esvLambda initializers if missed (ie. !lambdaTerm) in constructor.
+        vdwLambdaAlpha = forceField.getDouble("VDW_LAMBDA_ALPHA", 0.05);
+        vdwLambdaExponent = forceField.getDouble("VDW_LAMBDA_EXPONENT", 1.0);
+        if (vdwLambdaExponent != 1.0) {
+            logger.warning(format("ESVs are compatible only with a vdwLambdaExponent of unity!"
+                    + " (found %g, resetting to 1.0)", vdwLambdaExponent));
+            vdwLambdaExponent = 1.0;
+        }
+        if (vdwLambdaAlpha < 0.0) {
+            vdwLambdaAlpha = 0.05;
+        }
+        if (vdwLambdaExponent < 1.0) {
+            vdwLambdaExponent = 1.0;
+        }
+        intermolecularSoftcore = forceField.getBoolean(
+                "INTERMOLECULAR_SOFTCORE", false);
+        intramolecularSoftcore = forceField.getBoolean(
+                "INTRAMOLECULAR_SOFTCORE", false);
+
+        previousAtoms = atoms;
+        Atom[] atomsExt = esvSystem.getExtendedAtoms();
+        int[] moleculeExt = esvSystem.getExtendedMolecule();
+        setAtoms(atomsExt, moleculeExt);
+        updateEsvLambda();
+    }
+
+    /**
+     * <p>destroy.</p>
+     *
+     * @throws java.lang.Exception if any.
+     */
+    public void destroy() throws Exception {
+        if (neighborList != null) {
+            neighborList.destroy();
+        }
+    }
+
+    /**
+     * <p>detachExtendedSystem.</p>
+     */
+    public void detachExtendedSystem() {
+        setAtoms(previousAtoms, molecule);
+        fill(esvAtoms, false);
+        fill(esvLambda, 1.0);
+        esvTerm = false;
+        esvSystem = null;
+        esvDeriv = null;
+        numESVs = 0;
+        initSoftCore(); // To remove entries from isSoft[] that were due only to ESVs.
+    }
+
+    /**
+     * The energy routine may be called repeatedly.
+     *
+     * @param gradient If true, gradients with respect to atomic coordinates are computed.
+     * @param print    If true, there is verbose printing.
+     * @return The energy.
+     * @since 1.0
+     */
+    public double energy(boolean gradient, boolean print) {
+        this.gradient = gradient;
+
+        try {
+            parallelTeam.execute(vanDerWaalsRegion);
+        } catch (Exception e) {
+            String message = " Fatal exception expanding coordinates.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+        return sharedEnergy.get();
+    }
+
+    /**
+     * <p>getAlpha.</p>
+     *
+     * @return a double.
+     */
+    public double getAlpha() {
+        return vdwLambdaAlpha;
+    }
+
+    /**
+     * <p>Getter for the field <code>angleMask</code>.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
+    public int[][] getAngleMask() {
+        return angleMask;
+    }
+
+    /**
+     * <p>getBeta.</p>
+     *
+     * @return a double.
+     */
+    public double getBeta() {
+        return vdwLambdaExponent;
+    }
+
+    /**
+     * <p>Getter for the field <code>bondMask</code>.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
+    public int[][] getBondMask() {
+        return bondMask;
+    }
+
+    /**
+     * Get the buffer size.
+     *
+     * @return The buffer.
+     * @since 1.0
+     */
+    public double getBuffer() {
+        return nonbondedCutoff.buff;
+    }
+
+    /**
+     * Return use of the long-range vdW correction.
+     *
+     * @return True if it is on.
+     */
+    public boolean getDoLongRangeCorrection() {
+        return doLongRangeCorrection;
+    }
+
+    /**
+     * Get the total Van der Waals potential energy.
+     *
+     * @return The energy.
+     * @since 1.0
+     */
+    public double getEnergy() {
+        return sharedEnergy.get();
+    }
+
+    /**
+     * <p>getEsvDerivative.</p>
+     *
+     * @param esvID a int.
+     * @return a double.
+     */
+    public double getEsvDerivative(int esvID) {
+        return esvDeriv[esvID].get();
+    }
+
+    /**
+     * <p>getEsvDerivatives.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
+    public double[] getEsvDerivatives() {
+        if (!esvTerm) {
+            throw new IllegalStateException();
+        }
+        double[] dEdEsv = new double[numESVs];
+        for (int i = 0; i < numESVs; i++) {
+            dEdEsv[i] = esvDeriv[i].get();
+        }
+        return dEdEsv;
+    }
+
+    /**
+     * Get the number of interacting pairs.
+     *
+     * @return The interaction count.
+     * @since 1.0
+     */
+    public int getInteractions() {
+        return sharedInteractions.get();
+    }
+
+    /**
+     * Allow sharing the of the VanDerWaals NeighborList with ParticleMeshEwald.
+     *
+     * @return The NeighborList.
+     */
+    public NeighborList getNeighborList() {
+        return neighborList;
+    }
+
+    /**
      * <p>
      * Getter for the field <code>neighborLists</code>.</p>
      *
@@ -901,23 +645,183 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * Log the Van der Waals interaction.
+     * <p>
+     * Getter for the field <code>pairwiseSchedule</code>.</p>
      *
-     * @param i    Atom i.
-     * @param k    Atom j.
-     * @param minr The minimum vdW separation distance.
-     * @param r    The distance rij.
-     * @param eij  The interaction energy.
-     * @since 1.0
+     * @return a {@link edu.rit.pj.IntegerSchedule} object.
      */
-    private void log(int i, int k, double minr, double r, double eij) {
-        logger.info(format("VDW %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
-                atoms[i].getIndex(), atoms[i].getAtomType().name,
-                atoms[k].getIndex(), atoms[k].getAtomType().name,
-                1.0 / minr, r, eij));
+    public IntegerSchedule getPairwiseSchedule() {
+        return pairwiseSchedule;
     }
 
     /**
+     * Get the reduction index.
+     *
+     * @return an array of {@link int} objects.
+     */
+    public int[] getReductionIndex() {
+        return reductionIndex;
+    }
+
+    /**
+     * <p>Getter for the field <code>torsionMask</code>.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
+    public int[][] getTorsionMask() {
+        return torsionMask;
+    }
+
+    /**
+     * <p>getVDWForm.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.VanDerWaalsForm} object.
+     */
+    public VanDerWaalsForm getVDWForm() {
+        return vdwForm;
+    }
+
+    /**
+     * <p>Setter for the field <code>atoms</code>.</p>
+     *
+     * @param atoms    an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param molecule an array of {@link int} objects.
+     */
+    public void setAtoms(Atom[] atoms, int[] molecule) {
+        this.atoms = atoms;
+        this.nAtoms = atoms.length;
+        this.molecule = molecule;
+
+        if (nAtoms != molecule.length) {
+            logger.warning("Atom and molecule arrays are of different lengths.");
+            throw new IllegalArgumentException();
+        }
+        initAtomArrays();
+        buildNeighborList(atoms);
+    }
+
+    /**
+     * If the crystal being passed in is not equal to the current crystal, then
+     * some Van der Waals data structures may need to updated. If
+     * <code>nSymm</code> has changed, update arrays dimensioned by nSymm.
+     * Finally, rebuild the neighbor-lists.
+     *
+     * @param crystal The new crystal instance defining the symmetry and
+     *                boundary conditions.
+     */
+    public void setCrystal(Crystal crystal) {
+        this.crystal = crystal;
+        int newNSymm = crystal.spaceGroup.getNumberOfSymOps();
+        if (nSymm != newNSymm) {
+            nSymm = newNSymm;
+
+            // Allocate memory if necessary.
+            if (reduced == null || reduced.length < nSymm) {
+                reduced = new double[nSymm][nAtoms * 3];
+                reducedXYZ = reduced[0];
+                neighborLists = new int[nSymm][][];
+            }
+        }
+        neighborList.setCrystal(crystal);
+        neighborListOnly = true;
+        try {
+            parallelTeam.execute(vanDerWaalsRegion);
+        } catch (Exception e) {
+            String message = " Fatal exception expanding coordinates.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    /**
+     * <p>Setter for the field <code>intermolecularSoftcore</code>.</p>
+     *
+     * @param intermolecularSoftcore a boolean.
+     */
+    public void setIntermolecularSoftcore(boolean intermolecularSoftcore) {
+        if (!(lambdaTerm || esvTerm)) {
+            logger.warning("Illegal softcoring.");
+            throw new IllegalArgumentException();
+        }
+        this.intermolecularSoftcore = intermolecularSoftcore;
+    }
+
+    /**
+     * <p>Setter for the field <code>intramolecularSoftcore</code>.</p>
+     *
+     * @param intramolecularSoftcore a boolean.
+     */
+    public void setIntramolecularSoftcore(boolean intramolecularSoftcore) {
+        if (!(lambdaTerm || esvTerm)) {
+            logger.warning("Illegal softcoring.");
+            throw new IllegalArgumentException();
+        }
+        this.intramolecularSoftcore = intramolecularSoftcore;
+    }
+
+    /**
+     * <p>Setter for the field <code>resolution</code>.</p>
+     *
+     * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
+     */
+    public void setResolution(Resolution resolution) {
+        this.resolution = resolution;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer("\n  Van der Waals\n");
+        sb.append(format("   Switch Start:                         %6.3f (A)\n", multiplicativeSwitch.getSwitchStart()));
+        sb.append(format("   Cut-Off:                              %6.3f (A)\n", multiplicativeSwitch.getSwitchEnd()));
+        sb.append(format("   Long-Range Correction:                %b\n", doLongRangeCorrection));
+        if (!reducedHydrogens) {
+            sb.append(format("   Reduce Hydrogens:                     %b\n", reducedHydrogens));
+        }
+        if (lambdaTerm) {
+            sb.append("   Alchemical Parameters\n");
+            sb.append(format("    Softcore Alpha:                       %5.3f\n", vdwLambdaAlpha));
+            sb.append(format("    Lambda Exponent:                      %5.3f\n", vdwLambdaExponent));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Only unshared atoms are treated as extended by VdW since heavy atom radii
+     * are assumed constant. Under AMOEBA'13, this assumption is violated only
+     * by Cys-SG, Asp-OD[12], and Glu-OD[12].
+     */
+    public void updateEsvLambda() {
+        if (!esvTerm) {
+            return;     // TODO: figure out when/why this is happening
+        }
+        numESVs = esvSystem.size();
+        if (esvLambdaSwitch == null || esvLambdaSwitch.length < nAtoms) {
+            esvLambdaSwitch = new double[nAtoms];
+            esvSwitchDeriv = new double[nAtoms];
+            atomEsvID = new int[nAtoms];
+            fill(esvLambdaSwitch, 1.0);
+            fill(esvSwitchDeriv, 0.0);
+            fill(atomEsvID, -1);
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            if (esvSystem.isUnshared(i)) {
+                esvAtoms[i] = true;
+                esvLambda[i] = esvSystem.getLambda(i);
+                esvLambdaSwitch[i] = esvSystem.getLambdaSwitch(i);
+                esvSwitchDeriv[i] = esvSystem.getSwitchDeriv(i);
+                atomEsvID[i] = esvSystem.getEsvIndex(i);
+            }
+        }
+        if (esvDeriv == null || esvDeriv.length < numESVs) {
+            esvDeriv = new SharedDouble[numESVs];
+            for (int i = 0; i < numESVs; i++) {
+                esvDeriv[i] = new SharedDouble(0.0);
+            }
+        }
+        initSoftCore();
+    }    /**
      * {@inheritDoc}
      */
     @Override
@@ -956,42 +860,6 @@ public class VanDerWaals implements MaskingInterface,
         } else {
             longRangeCorrection = 0.0;
         }
-    }
-
-    /**
-     * Only unshared atoms are treated as extended by VdW since heavy atom radii
-     * are assumed constant. Under AMOEBA'13, this assumption is violated only
-     * by Cys-SG, Asp-OD[12], and Glu-OD[12].
-     */
-    public void updateEsvLambda() {
-        if (!esvTerm) {
-            return;     // TODO: figure out when/why this is happening
-        }
-        numESVs = esvSystem.size();
-        if (esvLambdaSwitch == null || esvLambdaSwitch.length < nAtoms) {
-            esvLambdaSwitch = new double[nAtoms];
-            esvSwitchDeriv = new double[nAtoms];
-            atomEsvID = new int[nAtoms];
-            fill(esvLambdaSwitch, 1.0);
-            fill(esvSwitchDeriv, 0.0);
-            fill(atomEsvID, -1);
-        }
-        for (int i = 0; i < nAtoms; i++) {
-            if (esvSystem.isUnshared(i)) {
-                esvAtoms[i] = true;
-                esvLambda[i] = esvSystem.getLambda(i);
-                esvLambdaSwitch[i] = esvSystem.getLambdaSwitch(i);
-                esvSwitchDeriv[i] = esvSystem.getSwitchDeriv(i);
-                atomEsvID[i] = esvSystem.getEsvIndex(i);
-            }
-        }
-        if (esvDeriv == null || esvDeriv.length < numESVs) {
-            esvDeriv = new SharedDouble[numESVs];
-            for (int i = 0; i < numESVs; i++) {
-                esvDeriv[i] = new SharedDouble(0.0);
-            }
-        }
-        initSoftCore();
     }
 
     /**
@@ -1053,246 +921,6 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
-    private void initSoftCore() {
-
-        boolean rebuild = false;
-
-        for (int i = 0; i < nAtoms; i++) {
-            boolean soft = atoms[i].applyLambda();
-            if (soft != isSoft[i]) {
-                isSoft[i] = soft;
-                rebuild = true;
-            }
-        }
-
-        if (!rebuild) {
-            return;
-        }
-
-        // Initialize the softcore atom masks.
-        for (int i = 0; i < nAtoms; i++) {
-            if (esvTerm && esvSystem.isUnshared(i)) {
-                isSoft[i] = true;
-            }
-            if (isSoft[i]) {
-                // Outer loop atom hard, inner loop atom soft.
-                softCore[HARD][i] = true;
-                // Both soft: full intramolecular ligand interactions.
-                softCore[SOFT][i] = false;
-            } else {
-                // Both hard: full interaction between atoms.
-                softCore[HARD][i] = false;
-                // Outer loop atom soft, inner loop atom hard.
-                softCore[SOFT][i] = true;
-            }
-        }
-
-    }
-
-    /**
-     * <p>attachExtendedSystem.</p>
-     *
-     * @param system a {@link ffx.potential.extended.ExtendedSystem} object.
-     */
-    public void attachExtendedSystem(ExtendedSystem system) {
-        if (system == null) {
-            logger.severe("Tried to attach null extended system.");
-        }
-        esvTerm = true;
-        esvSystem = system;
-        numESVs = esvSystem.size();
-
-        // Launch shared lambda/esvLambda initializers if missed (ie. !lambdaTerm) in constructor.
-        vdwLambdaAlpha = forceField.getDouble("VDW_LAMBDA_ALPHA", 0.05);
-        vdwLambdaExponent = forceField.getDouble("VDW_LAMBDA_EXPONENT", 1.0);
-        if (vdwLambdaExponent != 1.0) {
-            logger.warning(format("ESVs are compatible only with a vdwLambdaExponent of unity!"
-                    + " (found %g, resetting to 1.0)", vdwLambdaExponent));
-            vdwLambdaExponent = 1.0;
-        }
-        if (vdwLambdaAlpha < 0.0) {
-            vdwLambdaAlpha = 0.05;
-        }
-        if (vdwLambdaExponent < 1.0) {
-            vdwLambdaExponent = 1.0;
-        }
-        intermolecularSoftcore = forceField.getBoolean(
-                "INTERMOLECULAR_SOFTCORE", false);
-        intramolecularSoftcore = forceField.getBoolean(
-                "INTRAMOLECULAR_SOFTCORE", false);
-
-        previousAtoms = atoms;
-        Atom[] atomsExt = esvSystem.getExtendedAtoms();
-        int[] moleculeExt = esvSystem.getExtendedMolecule();
-        setAtoms(atomsExt, moleculeExt);
-        updateEsvLambda();
-    }
-
-    /**
-     * <p>detachExtendedSystem.</p>
-     */
-    public void detachExtendedSystem() {
-        setAtoms(previousAtoms, molecule);
-        fill(esvAtoms, false);
-        fill(esvLambda, 1.0);
-        esvTerm = false;
-        esvSystem = null;
-        esvDeriv = null;
-        numESVs = 0;
-        initSoftCore(); // To remove entries from isSoft[] that were due only to ESVs.
-    }
-
-    /**
-     * <p>Setter for the field <code>intermolecularSoftcore</code>.</p>
-     *
-     * @param intermolecularSoftcore a boolean.
-     */
-    public void setIntermolecularSoftcore(boolean intermolecularSoftcore) {
-        if (!(lambdaTerm || esvTerm)) {
-            logger.warning("Illegal softcoring.");
-            throw new IllegalArgumentException();
-        }
-        this.intermolecularSoftcore = intermolecularSoftcore;
-    }
-
-    /**
-     * <p>Setter for the field <code>intramolecularSoftcore</code>.</p>
-     *
-     * @param intramolecularSoftcore a boolean.
-     */
-    public void setIntramolecularSoftcore(boolean intramolecularSoftcore) {
-        if (!(lambdaTerm || esvTerm)) {
-            logger.warning("Illegal softcoring.");
-            throw new IllegalArgumentException();
-        }
-        this.intramolecularSoftcore = intramolecularSoftcore;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getLambda() {
-        return lambda;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getdEdL() {
-        if (shareddEdL == null || !lambdaTerm) {
-            return 0.0;
-        }
-        return shareddEdL.get();
-    }
-
-    /**
-     * <p>getEsvDerivative.</p>
-     *
-     * @param esvID a int.
-     * @return a double.
-     */
-    public double getEsvDerivative(int esvID) {
-        return esvDeriv[esvID].get();
-    }
-
-    /**
-     * <p>getEsvDerivatives.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    public double[] getEsvDerivatives() {
-        if (!esvTerm) {
-            throw new IllegalStateException();
-        }
-        double[] dEdEsv = new double[numESVs];
-        for (int i = 0; i < numESVs; i++) {
-            dEdEsv[i] = esvDeriv[i].get();
-        }
-        return dEdEsv;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void getdEdXdL(double[] lambdaGradient) {
-        if (lambdaGrad == null || !lambdaTerm) {
-            return;
-        }
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            if (atoms[i].isActive()) {
-                lambdaGradient[index++] += lambdaGrad.getX(i);
-                lambdaGradient[index++] += lambdaGrad.getY(i);
-                lambdaGradient[index++] += lambdaGrad.getZ(i);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdL2() {
-        if (sharedd2EdL2 == null || !lambdaTerm) {
-            return 0.0;
-        }
-        return sharedd2EdL2.get();
-    }
-
-    /**
-     * If the crystal being passed in is not equal to the current crystal, then
-     * some Van der Waals data structures may need to updated. If
-     * <code>nSymm</code> has changed, update arrays dimensioned by nSymm.
-     * Finally, rebuild the neighbor-lists.
-     *
-     * @param crystal The new crystal instance defining the symmetry and
-     *                boundary conditions.
-     */
-    public void setCrystal(Crystal crystal) {
-        this.crystal = crystal;
-        int newNSymm = crystal.spaceGroup.getNumberOfSymOps();
-        if (nSymm != newNSymm) {
-            nSymm = newNSymm;
-
-            // Allocate memory if necessary.
-            if (reduced == null || reduced.length < nSymm) {
-                reduced = new double[nSymm][nAtoms * 3];
-                reducedXYZ = reduced[0];
-                neighborLists = new int[nSymm][][];
-            }
-        }
-        neighborList.setCrystal(crystal);
-        neighborListOnly = true;
-        try {
-            parallelTeam.execute(vanDerWaalsRegion);
-        } catch (Exception e) {
-            String message = " Fatal exception expanding coordinates.\n";
-            logger.log(Level.SEVERE, message, e);
-        }
-    }
-
-    /**
-     * <p>destroy.</p>
-     *
-     * @throws java.lang.Exception if any.
-     */
-    public void destroy() throws Exception {
-        if (neighborList != null) {
-            neighborList.destroy();
-        }
-    }
-
-    /**
-     * Test if both atoms match the set Resolution (or true when unset).
-     */
-    private boolean include(Atom atom1, Atom atom2) {
-        return ((resolution == null)
-                || (atom1.getResolution() == resolution && atom2.getResolution() == resolution));
-    }
-
     private class VanDerWaalsRegion extends ParallelRegion {
 
         private final InitializationLoop[] initializationLoop;
@@ -1343,11 +971,6 @@ public class VanDerWaals implements MaskingInterface,
             if (lambdaTerm) {
                 lambdaGrad.alloc(nAtoms);
             }
-        }
-
-        @Override
-        public void finish() {
-            neighborListOnly = false;
         }
 
         @Override
@@ -1473,6 +1096,11 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
 
+        @Override
+        public void finish() {
+            neighborListOnly = false;
+        }
+
         /**
          * Update the local coordinate array and initialize reduction variables.
          */
@@ -1511,9 +1139,9 @@ public class VanDerWaals implements MaskingInterface,
 
         private class ExpandLoop extends IntegerForLoop {
 
-            private int threadID;
             private final double[] in = new double[3];
             private final double[] out = new double[3];
+            private int threadID;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -1526,11 +1154,6 @@ public class VanDerWaals implements MaskingInterface,
             @Override
             public void start() {
                 threadID = getThreadIndex();
-            }
-
-            @Override
-            public void finish() {
-                initializationTime[threadID] += System.nanoTime();
             }
 
             @Override
@@ -1604,6 +1227,11 @@ public class VanDerWaals implements MaskingInterface,
                     }
                 }
             }
+
+            @Override
+            public void finish() {
+                initializationTime[threadID] += System.nanoTime();
+            }
         }
 
         /**
@@ -1616,6 +1244,8 @@ public class VanDerWaals implements MaskingInterface,
          */
         private class VanDerWaalsLoop extends IntegerForLoop {
 
+            private final double[] dx_local;
+            private final double[][] transOp;
             private int count;
             private double energy;
             private int threadID;
@@ -1623,8 +1253,6 @@ public class VanDerWaals implements MaskingInterface,
             private double d2EdL2;
             private double[] mask;
             private boolean[] vdw14;
-            private final double[] dx_local;
-            private final double[][] transOp;
             private LambdaFactors lambdaFactorsLocal;
 
             // Extra padding to avert cache interference.
@@ -1667,21 +1295,6 @@ public class VanDerWaals implements MaskingInterface,
                     vdw14 = new boolean[nAtoms];
                     fill(vdw14, false);
                 }
-            }
-
-            @Override
-            public void finish() {
-                /*
-                  Reduce the energy, interaction count and gradients from this
-                  thread into the shared variables.
-                 */
-                sharedEnergy.addAndGet(energy);
-                sharedInteractions.addAndGet(count);
-                if (lambdaTerm) {
-                    shareddEdL.addAndGet(dEdL);
-                    sharedd2EdL2.addAndGet(d2EdL2);
-                }
-                vdwTime[threadID] += System.nanoTime();
             }
 
             @Override
@@ -2179,6 +1792,21 @@ public class VanDerWaals implements MaskingInterface,
                     energy += e;
                 }
             }
+
+            @Override
+            public void finish() {
+                /*
+                  Reduce the energy, interaction count and gradients from this
+                  thread into the shared variables.
+                 */
+                sharedEnergy.addAndGet(energy);
+                sharedInteractions.addAndGet(count);
+                if (lambdaTerm) {
+                    shareddEdL.addAndGet(dEdL);
+                    sharedd2EdL2.addAndGet(d2EdL2);
+                }
+                vdwTime[threadID] += System.nanoTime();
+            }
         }
 
         /**
@@ -2195,11 +1823,6 @@ public class VanDerWaals implements MaskingInterface,
             }
 
             @Override
-            public void finish() {
-                reductionTime[threadID] += System.nanoTime();
-            }
-
-            @Override
             public void run(int lb, int ub) {
                 if (gradient) {
                     grad.reduce(lb, ub);
@@ -2212,6 +1835,396 @@ public class VanDerWaals implements MaskingInterface,
                     lambdaGrad.reduce(lb, ub);
                 }
             }
+
+            @Override
+            public void finish() {
+                reductionTime[threadID] += System.nanoTime();
+            }
         }
+    }
+
+    /**
+     * Allocate coordinate arrays and set up reduction indices and values.
+     */
+    private void initAtomArrays() {
+        if (esvTerm) {
+            atoms = esvSystem.getExtendedAtoms();
+            nAtoms = atoms.length;
+        }
+        if (atomClass == null || nAtoms > atomClass.length || lambdaTerm || esvTerm) {
+            atomClass = new int[nAtoms];
+            coordinates = new double[nAtoms * 3];
+            reduced = new double[nSymm][nAtoms * 3];
+            reducedXYZ = reduced[0];
+            reductionIndex = new int[nAtoms];
+            reductionValue = new double[nAtoms];
+            bondMask = new int[nAtoms][];
+            angleMask = new int[nAtoms][];
+            torsionMask = new int[nAtoms][];
+            use = new boolean[nAtoms];
+            isSoft = new boolean[nAtoms];
+            softCore = new boolean[2][nAtoms];
+            grad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
+            if (lambdaTerm) {
+                lambdaGrad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
+            } else {
+                lambdaGrad = null;
+            }
+        }
+
+        // Initialize all atoms to be used in the energy.
+        fill(use, true);
+        fill(isSoft, false);
+        fill(softCore[HARD], false);
+        fill(softCore[SOFT], false);
+
+        esvAtoms = new boolean[nAtoms]; // Needs initialized regardless of esvTerm.
+        esvLambda = new double[nAtoms];
+        atomEsvID = new int[nAtoms];
+        fill(esvAtoms, false);
+        fill(esvLambda, 1.0);
+        fill(atomEsvID, -1);
+        if (esvTerm) {
+            updateEsvLambda();
+        }
+
+        lambdaFactors = new LambdaFactors[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            if (esvTerm) {
+                lambdaFactors[i] = new LambdaFactorsESV();
+            } else if (lambdaTerm) {
+                lambdaFactors[i] = new LambdaFactorsOST();
+            } else {
+                lambdaFactors[i] = new LambdaFactors();
+            }
+        }
+
+        for (int i = 0; i < nAtoms; i++) {
+            Atom ai = atoms[i];
+            assert (i == ai.getXyzIndex() - 1);
+            double[] xyz = ai.getXYZ(null);
+            int i3 = i * 3;
+            coordinates[i3 + XX] = xyz[XX];
+            coordinates[i3 + YY] = xyz[YY];
+            coordinates[i3 + ZZ] = xyz[ZZ];
+            AtomType atomType = ai.getAtomType();
+            if (atomType == null) {
+                logger.severe(ai.toString());
+                continue;   // Severe no longer guarantees program crash.
+            }
+            String vdwIndex = forceField.getString("VDWINDEX", "Class");
+            if (vdwIndex.equalsIgnoreCase("Type")) {
+                atomClass[i] = atomType.type;
+            } else {
+                atomClass[i] = atomType.atomClass;
+            }
+            VDWType type = forceField.getVDWType(Integer.toString(atomClass[i]));
+            if (type == null) {
+                logger.info(" No VdW type for atom class " + atomClass[i]);
+                logger.severe(" No VdW type for atom " + ai.toString());
+                return;
+            }
+            ai.setVDWType(type);
+            ArrayList<Bond> bonds = ai.getBonds();
+            int numBonds = bonds.size();
+            if (reducedHydrogens && type.reductionFactor > 0.0 && numBonds == 1) {
+                Bond bond = bonds.get(0);
+                Atom heavyAtom = bond.get1_2(ai);
+                // Atom indexes start at 1
+                reductionIndex[i] = heavyAtom.getIndex() - 1;
+                reductionValue[i] = type.reductionFactor;
+            } else {
+                reductionIndex[i] = i;
+                reductionValue[i] = 0.0;
+            }
+            bondMask[i] = new int[numBonds];
+            for (int j = 0; j < numBonds; j++) {
+                Bond bond = bonds.get(j);
+                bondMask[i][j] = bond.get1_2(ai).getIndex() - 1;
+            }
+            ArrayList<Angle> angles = ai.getAngles();
+            int numAngles = 0;
+            for (Angle angle : angles) {
+                Atom ak = angle.get1_3(ai);
+                if (ak != null) {
+                    numAngles++;
+                }
+            }
+            angleMask[i] = new int[numAngles];
+            int j = 0;
+            for (Angle angle : angles) {
+                Atom ak = angle.get1_3(ai);
+                if (ak != null) {
+                    angleMask[i][j++] = ak.getIndex() - 1;
+                }
+            }
+
+            ArrayList<Torsion> torsions = ai.getTorsions();
+            int numTorsions = 0;
+            for (Torsion torsion : torsions) {
+                Atom ak = torsion.get1_4(ai);
+                if (ak != null) {
+                    numTorsions++;
+                }
+            }
+            torsionMask[i] = new int[numTorsions];
+            j = 0;
+            for (Torsion torsion : torsions) {
+                Atom ak = torsion.get1_4(ai);
+                if (ak != null) {
+                    torsionMask[i][j++] = ak.getIndex() - 1;
+                }
+            }
+
+        }
+    }
+
+    /**
+     * <p>buildNeighborList.</p>
+     *
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     */
+    private void buildNeighborList(Atom[] atoms) {
+        neighborList.setAtoms(atoms);
+        if (esvTerm) {
+            neighborList.buildList(reduced, neighborLists, null, neighborListOnly, true);
+        } else {
+            neighborListOnly = true;
+            try {
+                parallelTeam.execute(vanDerWaalsRegion);
+            } catch (Exception e) {
+                String message = " Fatal exception expanding coordinates.\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+            neighborListOnly = false;
+        }
+    }
+
+    /**
+     * Computes the long range van der Waals correction to the energy via numerical integration
+     *
+     * @return Long range correction (kcal/mol)
+     * @see "M. P. Allen and D. J. Tildesley, "Computer Simulation of Liquids, 2nd Ed.", Oxford University Press, 2017, Section 2.8"
+     */
+    private double getLongRangeCorrection() {
+        // Need to treat esvLambda chain terms below before you can do this.
+        if (esvTerm) {
+            throw new UnsupportedOperationException();
+        }
+
+        // Only applicable under periodic boundary conditions.
+        if (crystal.aperiodic()) {
+            return 0.0;
+        }
+
+        /*
+          Integrate to maxR = 100 Angstroms or ~33 sigma.
+          Integration step size of delR to be 0.01 Angstroms.
+         */
+        int step = 2;
+        double range = 100.0;
+        int nDelta = (int) ((double) step * (range - nonbondedCutoff.cut));
+        double rDelta = (range - nonbondedCutoff.cut) / (double) nDelta;
+        double offset = nonbondedCutoff.cut - 0.5 * rDelta;
+        double oneMinLambda = 1.0 - lambda;
+
+        // Count the number of classes and their frequencies
+        int maxClass = vdwForm.maxClass;
+        int[] radCount = new int[maxClass + 1];
+        int[] softRadCount = new int[maxClass + 1];
+        fill(radCount, 0);
+        fill(softRadCount, 0);
+        for (int i = 0; i < nAtoms; i++) {
+            radCount[atomClass[i]]++;
+            if (isSoft[i]) {
+                softRadCount[atomClass[i]]++;
+            }
+        }
+
+        double total = 0.0;
+        // Loop over vdW classes.
+        for (int i = 1; i < maxClass + 1; i++) {
+            for (int j = i; j < maxClass + 1; j++) {
+                if (radCount[i] == 0 || radCount[j] == 0) {
+                    continue;
+                }
+                double irv = vdwForm.getCombinedInverseRmin(i, j);
+                double ev = vdwForm.getCombinedEps(i, j);
+                if (isNaN(irv) || irv == 0 || isNaN(ev)) {
+                    continue;
+                }
+                double sume = 0.0;
+                for (int k = 1; k <= nDelta; k++) {
+                    double r = offset + (double) k * rDelta;
+                    double r2 = r * r;
+                    final double rho = r * irv;
+                    final double rho3 = rho * rho * rho;
+                    final double rhod = rho + vdwForm.delta;
+                    final double rhod3 = rhod * rhod * rhod;
+                    double t1 = 0, t2 = 0;
+                    switch (vdwForm.vdwType) {
+                        case BUFFERED_14_7:
+                            final double rho7 = rho3 * rho3 * rho;
+                            final double rhod7 = rhod3 * rhod3 * rhod;
+                            t1 = vdwForm.t1n / rhod7;
+                            t2 = vdwForm.gamma1 / (rho7 + vdwForm.gamma) - 2.0;
+                            break;
+                        case LENNARD_JONES:
+                            final double rho6 = rho3 * rho3;
+                            final double rhod6 = rhod3 * rhod3;
+                            t1 = vdwForm.t1n / rhod6;
+                            t2 = vdwForm.gamma1 / (rho6 + vdwForm.gamma) - 2.0;
+                            break;
+                    }
+                    final double eij = ev * t1 * t2;
+                    /*
+                      Apply one minus the multiplicative switch if the
+                      interaction distance is less than the end of the
+                      switching window.
+                     */
+                    double taper = 1.0;
+                    if (r2 < nonbondedCutoff.off2) {
+                        double r3 = r * r2;
+                        double r4 = r2 * r2;
+                        double r5 = r2 * r3;
+                        taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
+                        taper = 1.0 - taper;
+                    }
+
+                    double jacobian = 4.0 * PI * r2;
+                    double e = jacobian * eij * taper;
+                    if (j != i) {
+                        sume += e;
+                    } else {
+                        sume += 0.5 * e;
+                    }
+                }
+                double trapezoid = rDelta * sume;
+
+                // Normal correction
+                total += radCount[i] * radCount[j] * trapezoid;
+                // Correct for softCore vdW that are being turned off.
+                if (lambda < 1.0) {
+                    total -= (softRadCount[i] * radCount[j]
+                            + (radCount[i] - softRadCount[i]) * softRadCount[j])
+                            * oneMinLambda * trapezoid;
+                }
+                // TODO: Accounting for esvLambda softcore
+            }
+        }
+
+        // Divide by the volume of the asymmetric unit.
+        Crystal unitCell = crystal.getUnitCell();
+        total = total / (unitCell.volume / unitCell.spaceGroup.getNumberOfSymOps());
+        return total;
+    }
+
+    /**
+     * Log the Van der Waals interaction.
+     *
+     * @param i    Atom i.
+     * @param k    Atom j.
+     * @param minr The minimum vdW separation distance.
+     * @param r    The distance rij.
+     * @param eij  The interaction energy.
+     * @since 1.0
+     */
+    private void log(int i, int k, double minr, double r, double eij) {
+        logger.info(format("VDW %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
+                atoms[i].getIndex(), atoms[i].getAtomType().name,
+                atoms[k].getIndex(), atoms[k].getAtomType().name,
+                1.0 / minr, r, eij));
+    }
+
+    private void initSoftCore() {
+
+        boolean rebuild = false;
+
+        for (int i = 0; i < nAtoms; i++) {
+            boolean soft = atoms[i].applyLambda();
+            if (soft != isSoft[i]) {
+                isSoft[i] = soft;
+                rebuild = true;
+            }
+        }
+
+        if (!rebuild) {
+            return;
+        }
+
+        // Initialize the softcore atom masks.
+        for (int i = 0; i < nAtoms; i++) {
+            if (esvTerm && esvSystem.isUnshared(i)) {
+                isSoft[i] = true;
+            }
+            if (isSoft[i]) {
+                // Outer loop atom hard, inner loop atom soft.
+                softCore[HARD][i] = true;
+                // Both soft: full intramolecular ligand interactions.
+                softCore[SOFT][i] = false;
+            } else {
+                // Both hard: full interaction between atoms.
+                softCore[HARD][i] = false;
+                // Outer loop atom soft, inner loop atom hard.
+                softCore[SOFT][i] = true;
+            }
+        }
+
+    }
+
+    /**
+     * Test if both atoms match the set Resolution (or true when unset).
+     */
+    private boolean include(Atom atom1, Atom atom2) {
+        return ((resolution == null)
+                || (atom1.getResolution() == resolution && atom2.getResolution() == resolution));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getdEdL() {
+        if (shareddEdL == null || !lambdaTerm) {
+            return 0.0;
+        }
+        return shareddEdL.get();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getdEdXdL(double[] lambdaGradient) {
+        if (lambdaGrad == null || !lambdaTerm) {
+            return;
+        }
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                lambdaGradient[index++] += lambdaGrad.getX(i);
+                lambdaGradient[index++] += lambdaGrad.getY(i);
+                lambdaGradient[index++] += lambdaGrad.getZ(i);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        if (sharedd2EdL2 == null || !lambdaTerm) {
+            return 0.0;
+        }
+        return sharedd2EdL2.get();
     }
 }

@@ -114,6 +114,7 @@ import ffx.potential.nonbonded.ParticleMeshEwaldCart;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.RestrainGroups;
 import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.nonbonded.VanDerWaalsTornado;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.utils.ConvexHullOps;
@@ -133,6 +134,10 @@ import static ffx.potential.parameters.ForceField.toEnumForm;
 public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     /**
+     * Default tolerance for numerical methods of solving constraints.
+     */
+    public static final double DEFAULT_CONSTRAINT_TOLERANCE = 1E-4;
+    /**
      * A Logger for the ForceFieldEnergy class.
      */
     private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
@@ -141,13 +146,66 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     private static final double toSeconds = 1.0e-9;
     /**
-     * Default tolerance for numerical methods of solving constraints.
-     */
-    public static final double DEFAULT_CONSTRAINT_TOLERANCE = 1E-4;
-    /**
      * The MolecularAssembly associated with this force field energy.
      */
     protected final MolecularAssembly molecularAssembly;
+    /**
+     * If the absolute value of a gradient component is greater than "maxDebugGradient", verbose logging results.
+     */
+    final double maxDebugGradient;
+    /**
+     * The Parallel Java ParallelTeam instance.
+     */
+    private final ParallelTeam parallelTeam;
+    /**
+     * An array of Coordinate Restraint terms.
+     */
+    private final List<CoordRestraint> coordRestraints;
+    /**
+     * An NCS restraint term.
+     */
+    private final NCSRestraint ncsRestraint;
+    /**
+     * A coordinate restraint term.
+     */
+    private final CoordRestraint autoCoordRestraint;
+    /**
+     * A Center-of-Mass restraint term.
+     */
+    private final COMRestraint comRestraint;
+    /**
+     * Restrain groups
+     **/
+    private final RestrainGroups restrainGroups;
+    /**
+     * Non-Bonded van der Waals energy.
+     */
+    private final VanDerWaals vanderWaals;
+    private final List<Constraint> constraints;
+    /**
+     * 2.0 times the neighbor list cutoff.
+     */
+    private final double cutOff2;
+    /**
+     * Current value of the Lambda state variable.
+     */
+    protected double lambda = 1.0;
+    /**
+     * Indicates use of the Lambda state variable.
+     */
+    protected boolean lambdaTerm;
+    /**
+     * Optimization scaling value to use for each degree of freedom.
+     */
+    protected double[] optimizationScaling = null;
+    /**
+     * Indicates only bonded energy terms effected by Lambda should be evaluated.
+     */
+    boolean lambdaBondedTerms = false;
+    /**
+     * Flag to indicate proper shutdown of the ForceFieldEnergy.
+     */
+    boolean destroyed = false;
     /**
      * The array of Atoms being evaluated.
      */
@@ -160,10 +218,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * The non-bonded cut-off plus buffer distance (Angstroms).
      */
     private double cutoffPlusBuffer;
-    /**
-     * The Parallel Java ParallelTeam instance.
-     */
-    private final ParallelTeam parallelTeam;
     /**
      * A Parallel Java Region used to evaluate Bonded energy values.
      */
@@ -220,30 +274,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * An array of Bond Restraint terms.
      */
     private RestraintBond[] restraintBonds;
-    /**
-     * An array of Coordinate Restraint terms.
-     */
-    private final List<CoordRestraint> coordRestraints;
-    /**
-     * An NCS restraint term.
-     */
-    private final NCSRestraint ncsRestraint;
-    /**
-     * A coordinate restraint term.
-     */
-    private final CoordRestraint autoCoordRestraint;
-    /**
-     * A Center-of-Mass restraint term.
-     */
-    private final COMRestraint comRestraint;
-    /**
-     * Restrain groups
-     **/
-    private final RestrainGroups restrainGroups;
-    /**
-     * Non-Bonded van der Waals energy.
-     */
-    private final VanDerWaals vanderWaals;
     /**
      * Particle-Mesh Ewald electrostatic energy.
      */
@@ -669,25 +699,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     private long totalTime;
     /**
-     * Current value of the Lambda state variable.
-     */
-    protected double lambda = 1.0;
-    /**
-     * Indicates use of the Lambda state variable.
-     */
-    protected boolean lambdaTerm;
-    /**
-     * Indicates only bonded energy terms effected by Lambda should be evaluated.
-     */
-    boolean lambdaBondedTerms = false;
-    /**
      * Indicates application of lambda scaling to all Torsion based energy terms.
      */
     private boolean lambdaTorsions;
-    /**
-     * Optimization scaling value to use for each degree of freedom.
-     */
-    protected double[] optimizationScaling = null;
     /**
      * Value of each degree of freedom.
      */
@@ -697,26 +711,15 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     private boolean printOnFailure;
     /**
-     * If the absolute value of a gradient component is greater than "maxDebugGradient", verbose logging results.
-     */
-    final double maxDebugGradient;
-    /**
-     * Flag to indicate proper shutdown of the ForceFieldEnergy.
-     */
-    boolean destroyed = false;
-
-    /**
      * Indicate resolution of this ForceFieldEnergy (TODO: needs further testing).
      */
     private Resolution resolution = Resolution.AMOEBA;
-
     /**
      * Constant pH extended system (TODO: needs further testing).
      */
     private ExtendedSystem esvSystem = null;
     private boolean esvTerm;
     private double esvBias;
-
     /**
      * Relative solvation term (TODO: needs further testing).
      */
@@ -725,12 +728,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private boolean relativeSolvationTerm;
     private double relativeSolvationEnergy;
     private Platform platform = Platform.FFX;
-    private final List<Constraint> constraints;
-
-    /**
-     * 2.0 times the neighbor list cutoff.
-     */
-    private final double cutOff2;
 
     /**
      * <p>
@@ -797,7 +794,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         torsionTorsionTerm = forceField.getBoolean("TORTORTERM", true);
         improperTorsionTerm = forceField.getBoolean("IMPROPERTERM", true);
         vanderWaalsTerm = forceField.getBoolean("VDWTERM", true);
-        if (vanderWaalsTerm) {
+
+        boolean tornadoVM = forceField.getBoolean("tornado", false);
+        if (vanderWaalsTerm && !tornadoVM) {
             multipoleTerm = forceField.getBoolean("MPOLETERM", true);
             if (multipoleTerm) {
                 String polarizeString = forceField.getString("POLARIZATION", "NONE");
@@ -1218,7 +1217,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         int[] molecule = molecularAssembly.getMoleculeNumbers();
         if (vanderWaalsTerm) {
-            vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField, parallelTeam, vdwOff, nlistCutoff);
+            if (!tornadoVM) {
+                vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField, parallelTeam, vdwOff, nlistCutoff);
+            } else {
+                vanderWaals = new VanDerWaalsTornado(atoms, crystal, forceField, vdwOff);
+            }
         } else {
             vanderWaals = null;
         }
@@ -1455,6 +1458,395 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * Applies constraints to positions
+     *
+     * @param xPrior
+     * @param xNew
+     */
+    public void applyAllConstraintPositions(double[] xPrior, double[] xNew) {
+        applyAllConstraintPositions(xPrior, xNew, DEFAULT_CONSTRAINT_TOLERANCE);
+    }
+
+    public void applyAllConstraintPositions(double[] xPrior, double[] xNew, double tol) {
+        if (xPrior == null) {
+            xPrior = Arrays.copyOf(xNew, xNew.length);
+        }
+        for (Constraint constraint : constraints) {
+            constraint.applyConstraintToStep(xPrior, xNew, getMass(), tol);
+        }
+    }
+
+    /**
+     * Overwrites current esvSystem if present. Multiple ExtendedSystems is
+     * possible but unnecessary; add all ESVs to one system (per FFE, at least).
+     *
+     * @param system a {@link ffx.potential.extended.ExtendedSystem} object.
+     */
+    public void attachExtendedSystem(ExtendedSystem system) {
+        if (system == null) {
+            throw new IllegalArgumentException();
+        }
+        esvTerm = true;
+        esvSystem = system;
+        if (vanderWaalsTerm) {
+            if (vanderWaals == null) {
+                logger.warning("Null VdW during ESV setup.");
+            } else {
+                vanderWaals.attachExtendedSystem(system);
+            }
+        }
+        if (multipoleTerm) {
+            if (particleMeshEwald == null) {
+                logger.warning("Null PME during ESV setup.");
+            }
+            if (!(particleMeshEwald instanceof ParticleMeshEwaldQI)) {
+                logger.severe("Extended systems can attach only to Quasi-Internal PME. Try -Dpme-qi=true.");
+            }
+            ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
+        }
+        if (crystal != null) {
+            crystal.setSpecialPositionCutoff(0.0);
+        }
+        reInit();
+    }
+
+    /**
+     * <p>detachExtendedSystem.</p>
+     */
+    public void detachExtendedSystem() {
+        esvTerm = false;
+        esvSystem = null;
+        if (vanderWaalsTerm && vanderWaals != null) {
+            vanderWaals.detachExtendedSystem();
+        }
+        if (multipoleTerm && particleMeshEwald != null) {
+            if (particleMeshEwald instanceof ParticleMeshEwaldQI) {
+                ((ParticleMeshEwaldQI) particleMeshEwald).detachExtendedSystem();
+            }
+        }
+        reInit();
+    }
+
+    /**
+     * <p>energy.</p>
+     *
+     * @return a double.
+     */
+    public double energy() {
+        return energy(false, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * energy</p>
+     */
+    public double energy(boolean gradient, boolean print) {
+
+        try {
+            bondTime = 0;
+            angleTime = 0;
+            stretchBendTime = 0;
+            ureyBradleyTime = 0;
+            outOfPlaneBendTime = 0;
+            torsionTime = 0;
+            stretchTorsionTime = 0;
+            angleTorsionTime = 0;
+            piOrbitalTorsionTime = 0;
+            torsionTorsionTime = 0;
+            improperTorsionTime = 0;
+            vanDerWaalsTime = 0;
+            electrostaticTime = 0;
+            restraintBondTime = 0;
+            ncsTime = 0;
+            coordRestraintTime = 0;
+            totalTime = System.nanoTime();
+
+            // Zero out the potential energy of each bonded term.
+            bondEnergy = 0.0;
+            angleEnergy = 0.0;
+            stretchBendEnergy = 0.0;
+            ureyBradleyEnergy = 0.0;
+            outOfPlaneBendEnergy = 0.0;
+            torsionEnergy = 0.0;
+            angleTorsionEnergy = 0.0;
+            stretchTorsionEnergy = 0.0;
+            piOrbitalTorsionEnergy = 0.0;
+            torsionTorsionEnergy = 0.0;
+            improperTorsionEnergy = 0.0;
+            totalBondedEnergy = 0.0;
+
+            // Zero out potential energy of restraint terms
+            restraintBondEnergy = 0.0;
+            ncsEnergy = 0.0;
+            restrainEnergy = 0.0;
+
+            // Zero out bond and angle RMSDs.
+            bondRMSD = 0.0;
+            angleRMSD = 0.0;
+
+            // Zero out the potential energy of each non-bonded term.
+            vanDerWaalsEnergy = 0.0;
+            permanentMultipoleEnergy = 0.0;
+            permanentRealSpaceEnergy = 0.0;
+            polarizationEnergy = 0.0;
+            totalMultipoleEnergy = 0.0;
+            totalNonBondedEnergy = 0.0;
+
+            // Zero out the solvation energy.
+            solvationEnergy = 0.0;
+
+            // Zero out the relative solvation energy (sequence optimization)
+            relativeSolvationEnergy = 0.0;
+            nRelativeSolvations = 0;
+
+            esvBias = 0.0;
+
+            // Zero out the total potential energy.
+            totalEnergy = 0.0;
+
+            // Zero out the Cartesian coordinate gradient for each atom.
+//            if (gradient) {
+//                for (int i = 0; i < nAtoms; i++) {
+//                    atoms[i].setXYZGradient(0.0, 0.0, 0.0);
+//                    atoms[i].setLambdaXYZGradient(0.0, 0.0, 0.0);
+//                }
+//            }
+
+            // Computed the bonded energy terms in parallel.
+            try {
+                bondedRegion.setGradient(gradient);
+                parallelTeam.execute(bondedRegion);
+            } catch (RuntimeException ex) {
+                logger.warning("Runtime exception during bonded term calculation.");
+                throw ex;
+            } catch (Exception ex) {
+                logger.info(Utilities.stackTraceToString(ex));
+                logger.severe(ex.toString());
+            }
+
+            if (!lambdaBondedTerms) {
+                // Compute restraint terms.
+                if (ncsTerm) {
+                    ncsTime = -System.nanoTime();
+                    ncsEnergy = ncsRestraint.residual(gradient, print);
+                    ncsTime += System.nanoTime();
+                }
+                if (restrainTerm && !coordRestraints.isEmpty()) {
+                    coordRestraintTime = -System.nanoTime();
+                    for (CoordRestraint restraint : coordRestraints) {
+                        restrainEnergy += restraint.residual(gradient, print);
+                    }
+                    coordRestraintTime += System.nanoTime();
+                }
+                if (comTerm) {
+                    comRestraintTime = -System.nanoTime();
+                    comRestraintEnergy = comRestraint.residual(gradient, print);
+                    comRestraintTime += System.nanoTime();
+                }
+                if (restrainGroupTerm) {
+                    restrainGroupTime = -System.nanoTime();
+                    restrainGroupEnergy = restrainGroups.energy(gradient);
+                    restrainGroupTime += System.nanoTime();
+                }
+                // Compute non-bonded terms.
+                if (vanderWaalsTerm) {
+                    vanDerWaalsTime = -System.nanoTime();
+                    vanDerWaalsEnergy = vanderWaals.energy(gradient, print);
+                    nVanDerWaalInteractions = this.vanderWaals.getInteractions();
+                    vanDerWaalsTime += System.nanoTime();
+                }
+                if (multipoleTerm) {
+                    electrostaticTime = -System.nanoTime();
+                    totalMultipoleEnergy = particleMeshEwald.energy(gradient, print);
+                    permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
+                    permanentRealSpaceEnergy = particleMeshEwald.getPermRealEnergy();
+                    polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
+                    nPermanentInteractions = particleMeshEwald.getInteractions();
+                    solvationEnergy = particleMeshEwald.getSolvationEnergy();
+                    nGKInteractions = particleMeshEwald.getGKInteractions();
+                    electrostaticTime += System.nanoTime();
+                }
+            }
+
+            if (relativeSolvationTerm) {
+                List<Residue> residuesList = molecularAssembly.getResidueList();
+                for (Residue residue : residuesList) {
+                    if (residue instanceof MultiResidue) {
+                        Atom refAtom = residue.getSideChainAtoms().get(0);
+                        if (refAtom != null && refAtom.getUse()) {
+                            // Reasonably confident that it should be -=,
+                            // as we are trying to penalize residues with strong solvation energy.
+                            double thisSolvation = relativeSolvation.getSolvationEnergy(residue, false);
+                            relativeSolvationEnergy -= thisSolvation;
+                            if (thisSolvation != 0) {
+                                nRelativeSolvations++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            totalTime = System.nanoTime() - totalTime;
+
+            totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy
+                    + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
+                    + torsionEnergy + angleTorsionEnergy + stretchTorsionEnergy
+                    + piOrbitalTorsionEnergy + improperTorsionEnergy
+                    + torsionTorsionEnergy + ncsEnergy + restrainEnergy + restrainGroupEnergy;
+            totalNonBondedEnergy = vanDerWaalsEnergy + totalMultipoleEnergy + relativeSolvationEnergy;
+            totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
+            if (esvTerm) {
+                esvBias = esvSystem.getBiasEnergy();
+                totalEnergy += esvBias;
+            }
+        } catch (EnergyException ex) {
+            if (printOnFailure) {
+                File origFile = molecularAssembly.getFile();
+                String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                        ofPattern("yyyy_MM_dd-HH_mm_ss"));
+
+                String filename = format("%s-ERROR-%s.pdb",
+                        FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                        timeString);
+
+                PotentialsFunctions ef = new PotentialsUtils();
+                filename = ef.versionFile(filename);
+                logger.info(format(" Writing on-error snapshot to file %s", filename));
+                ef.saveAsPDB(molecularAssembly, new File(filename));
+                molecularAssembly.setFile(origFile);
+            }
+
+            if (ex.doCauseSevere()) {
+                logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+                return 0.0;
+            } else {
+                logger.log(Level.INFO, format(" Exception in energy calculation: %s", ex.toString()));
+                throw ex; // Rethrow exception
+            }
+        }
+
+        if (print) {
+            StringBuilder sb = new StringBuilder();
+            if (gradient) {
+                sb.append("\n Computed Potential Energy and Atomic Coordinate Gradients\n");
+            } else {
+                sb.append("\n Computed Potential Energy\n");
+            }
+            sb.append(this);
+            logger.info(sb.toString());
+        }
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energy(double[] x) {
+        return energy(x, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        return energyAndGradient(x, g, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energy(double[] x, boolean verbose) {
+        assert Arrays.stream(x).allMatch(Double::isFinite);
+
+        // Unscale the coordinates.
+        unscaleCoordinates(x);
+
+        // Set coordinates.
+        setCoordinates(x);
+
+        double e = this.energy(false, verbose);
+
+        // Rescale the coordinates.
+        scaleCoordinates(x);
+
+        return e;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g, boolean verbose) {
+        assert Arrays.stream(x).allMatch(Double::isFinite);
+
+        // Un-scale the coordinates.
+        unscaleCoordinates(x);
+
+        // Set coordinates.
+        setCoordinates(x);
+        double e = energy(true, verbose);
+
+        // Try block already exists inside energy(boolean, boolean), so only
+        // need to try-catch fillGradient.
+        try {
+            fillGradient(g);
+
+            // Scale the coordinates and gradients.
+            scaleCoordinatesAndGradient(x, g);
+
+            if (maxDebugGradient < Double.MAX_VALUE) {
+                boolean extremeGrad = Arrays.stream(g).anyMatch((double gi) ->
+                        (gi > maxDebugGradient || gi < -maxDebugGradient));
+                if (extremeGrad) {
+                    File origFile = molecularAssembly.getFile();
+                    String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                            ofPattern("yyyy_MM_dd-HH_mm_ss"));
+
+                    String filename = format("%s-LARGEGRAD-%s.pdb",
+                            FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                            timeString);
+                    PotentialsFunctions ef = new PotentialsUtils();
+                    filename = ef.versionFile(filename);
+
+                    logger.warning(format(" Excessively large gradient detected; printing snapshot to file %s", filename));
+                    ef.saveAsPDB(molecularAssembly, new File(filename));
+                    molecularAssembly.setFile(origFile);
+                }
+            }
+            return e;
+        } catch (EnergyException ex) {
+            if (printOnFailure) {
+                logger.info(Utilities.stackTraceToString(ex));
+                String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                        ofPattern("yyyy_MM_dd-HH_mm_ss"));
+
+                String filename = format("%s-ERROR-%s.pdb",
+                        FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                        timeString);
+
+                PotentialsFunctions ef = new PotentialsUtils();
+                filename = ef.versionFile(filename);
+                logger.info(format(" Writing on-error snapshot to file %s", filename));
+                ef.saveAsPDB(molecularAssembly, new File(filename));
+            }
+
+            if (ex.doCauseSevere()) {
+                logger.info(Utilities.stackTraceToString(ex));
+                logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+            } else {
+                logger.log(Level.INFO, format(" Exception in energy calculation: %s", ex.toString()));
+            }
+
+            throw ex;
+        }
+    }
+
+    /**
      * Static factory method to create a ForceFieldEnergy, possibly via FFX or
      * OpenMM implementations.
      *
@@ -1529,88 +1921,1151 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
             return ffxEnergy;
         }
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTotalEnergy() {
+        return totalEnergy;
     }
 
     /**
-     * Overwrites current esvSystem if present. Multiple ExtendedSystems is
-     * possible but unnecessary; add all ESVs to one system (per FFE, at least).
+     * <p>Getter for the field <code>angleEnergy</code>.</p>
      *
-     * @param system a {@link ffx.potential.extended.ExtendedSystem} object.
+     * @return a double.
      */
-    public void attachExtendedSystem(ExtendedSystem system) {
-        if (system == null) {
-            throw new IllegalArgumentException();
-        }
-        esvTerm = true;
-        esvSystem = system;
-        if (vanderWaalsTerm) {
-            if (vanderWaals == null) {
-                logger.warning("Null VdW during ESV setup.");
+    public double getAngleEnergy() {
+        return angleEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>angleTorsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getAngleTorsionEnergy() {
+        return angleTorsionEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>angleTorsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.AngleTorsion} objects.
+     */
+    public AngleTorsion[] getAngleTorsions() {
+        return angleTorsions;
+    }
+
+    /**
+     * <p>Getter for the field <code>angles</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Angle} objects.
+     */
+    public Angle[] getAngles() {
+        return angles;
+    }
+
+    /**
+     * <p>Getter for the field <code>bondEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getBondEnergy() {
+        return bondEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>bonds</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Bond} objects.
+     */
+    public Bond[] getBonds() {
+        return bonds;
+    }
+
+    /**
+     * <p>getCavitationEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getCavitationEnergy() {
+        return particleMeshEwald.getCavitationEnergy();
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setLambda(double lambda) {
+        if (lambdaTerm) {
+            if (lambda <= 1.0 && lambda >= 0.0) {
+                this.lambda = lambda;
+                if (vanderWaalsTerm) {
+                    vanderWaals.setLambda(lambda);
+                }
+                if (multipoleTerm) {
+                    particleMeshEwald.setLambda(lambda);
+                }
+                if (restraintBondTerm && restraintBonds != null) {
+                    for (RestraintBond restraintBond : restraintBonds) {
+                        restraintBond.setLambda(lambda);
+                    }
+                }
+                if (ncsTerm && ncsRestraint != null) {
+                    ncsRestraint.setLambda(lambda);
+                }
+                if (restrainTerm && !coordRestraints.isEmpty()) {
+                    for (CoordRestraint restraint : coordRestraints) {
+                        restraint.setLambda(lambda);
+                    }
+                }
+                if (comTerm && comRestraint != null) {
+                    comRestraint.setLambda(lambda);
+                }
+                if (lambdaTorsions) {
+                    for (int i = 0; i < nTorsions; i++) {
+                        torsions[i].setLambda(lambda);
+                    }
+                    for (int i = 0; i < nPiOrbitalTorsions; i++) {
+                        piOrbitalTorsions[i].setLambda(lambda);
+                    }
+                    for (int i = 0; i < nTorsionTorsions; i++) {
+                        torsionTorsions[i].setLambda(lambda);
+                    }
+                }
             } else {
-                vanderWaals.attachExtendedSystem(system);
+                String message = format("Lambda value %8.3f is not in the range [0..1].", lambda);
+                logger.warning(message);
             }
+        } else {
+            logger.fine(" Attempting to set a lambda value on a ForceFieldEnergy with lambdaterm false.");
+        }
+    }
+
+    /**
+     * <p>Getter for the field <code>coordRestraints</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
+    public List<CoordRestraint> getCoordRestraints() {
+        return new ArrayList<>(coordRestraints);
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        optimizationScaling = scaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * Getter for the field <code>crystal</code>.</p>
+     */
+    @Override
+    public Crystal getCrystal() {
+        return crystal;
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return optimizationScaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Set the boundary conditions for this calculation.
+     */
+    @Override
+    public void setCrystal(Crystal crystal) {
+        setCrystal(crystal, false);
+    }    /**
+     * {@inheritDoc}
+     * <p>
+     * Return a reference to each variables type.
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        int n = getNumberOfVariables();
+        VARIABLE_TYPE[] type = new VARIABLE_TYPE[n];
+        int i = 0;
+        for (int j = 0; j < nAtoms; j++) {
+            if (atoms[j].isActive()) {
+                type[i++] = VARIABLE_TYPE.X;
+                type[i++] = VARIABLE_TYPE.Y;
+                type[i++] = VARIABLE_TYPE.Z;
+            }
+        }
+        return type;
+    }
+
+    /**
+     * <p>Getter for the field <code>cutoffPlusBuffer</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getCutoffPlusBuffer() {
+        return cutoffPlusBuffer;
+    }    /**
+     * Returns a copy of the list of constraints this ForceFieldEnergy has.
+     *
+     * @return Copied list of constraints.
+     */
+    @Override
+    public List<Constraint> getConstraints() {
+        return constraints.isEmpty() ? Collections.emptyList() : new ArrayList<>(constraints);
+    }
+
+    /**
+     * <p>getDispersionEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getDispersionEnergy() {
+        return particleMeshEwald.getDispersionEnergy();
+    }
+
+    /**
+     * <p>getElectrostaticEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getElectrostaticEnergy() {
+        return totalMultipoleEnergy;
+    }
+
+    /**
+     * <p>getEnergyComponent.</p>
+     *
+     * @param component a {@link ffx.potential.PotentialComponent} object.
+     * @return a double.
+     */
+    public double getEnergyComponent(PotentialComponent component) {
+        switch (component) {
+            case Topology:
+            case ForceFieldEnergy:
+                return totalEnergy;
+            case VanDerWaals:
+                return vanDerWaalsEnergy;
+            case Multipoles:
+                return particleMeshEwald.getTotalMultipoleEnergy();
+            case Permanent:
+                return particleMeshEwald.getPermanentEnergy();
+            case Induced:
+                return particleMeshEwald.getPolarizationEnergy();
+            case PermanentRealSpace:
+                return particleMeshEwald.getPermRealEnergy();
+            case PermanentSelf:
+                return particleMeshEwald.getPermSelfEnergy();
+            case PermanentReciprocal:
+                return particleMeshEwald.getPermRecipEnergy();
+            case InducedRealSpace:
+                return particleMeshEwald.getIndRealEnergy();
+            case InducedSelf:
+                return particleMeshEwald.getIndSelfEnergy();
+            case InducedReciprocal:
+                return particleMeshEwald.getIndRecipEnergy();
+            case GeneralizedKirkwood:
+                return particleMeshEwald.getSolvationEnergy();
+            case Bonded:
+                return totalBondedEnergy;
+            case Bond:
+                return bondEnergy;
+            case Angle:
+                return angleEnergy;
+            case Torsion:
+                return torsionEnergy;
+            case StretchBend:
+                return stretchBendEnergy;
+            case OutOfPlaneBend:
+                return outOfPlaneBendEnergy;
+            case PiOrbitalTorsion:
+                return piOrbitalTorsionEnergy;
+            case TorsionTorsion:
+                return torsionTorsionEnergy;
+            case UreyBradley:
+                return ureyBradleyEnergy;
+            case RestraintBond:
+                return restraintBondEnergy;
+            case ImproperTorsion:
+                return improperTorsionEnergy;
+            case NCS:
+                return ncsEnergy;
+            case Restrain:
+                return restrainEnergy;
+            case pHMD:
+            case Bias:
+            case Discretizer:
+            case Acidostat:
+                return (esvTerm) ? esvSystem.getEnergyComponent(component) : 0.0;
+            case XRay:
+            default:
+                throw new AssertionError(component.name());
+        }
+    }
+
+    /**
+     * <p>getEsvBiasEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getEsvBiasEnergy() {
+        return esvBias;
+    }
+
+    /**
+     * <p>getExtendedSystem.</p>
+     *
+     * @return a {@link ffx.potential.extended.ExtendedSystem} object.
+     */
+    public ExtendedSystem getExtendedSystem() {
+        return esvSystem;
+    }
+
+    /**
+     * <p>getGK.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.GeneralizedKirkwood} object.
+     */
+    public GeneralizedKirkwood getGK() {
+        if (particleMeshEwald != null) {
+            return particleMeshEwald.getGK();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * <p>getGKEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getGKEnergy() {
+        return particleMeshEwald.getGKEnergy();
+    }
+
+    /**
+     * <p>
+     * getGradient</p>
+     *
+     * @param g an array of double.
+     * @return an array of {@link double} objects.
+     */
+    public double[] getGradient(double[] g) {
+        return fillGradient(g);
+    }
+
+    /**
+     * <p>Getter for the field <code>improperTorsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getImproperTorsionEnergy() {
+        return improperTorsionEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>improperTorsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.ImproperTorsion} objects.
+     */
+    public ImproperTorsion[] getImproperTorsions() {
+        return improperTorsions;
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] x) {
+        int n = getNumberOfVariables();
+        if (x == null || x.length < n) {
+            x = new double[n];
+        }
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive() && !a.isBackground()) {
+                x[index++] = a.getX();
+                x[index++] = a.getY();
+                x[index++] = a.getZ();
+            }
+        }
+        return x;
+    }
+
+    /**
+     * <p>getNumberofAngleTorsions.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberofAngleTorsions() {
+        return nAngleTorsions;
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getMass() {
+        int n = getNumberOfVariables();
+        double[] mass = new double[n];
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                double m = a.getMass();
+                mass[index++] = m;
+                mass[index++] = m;
+                mass[index++] = m;
+            }
+        }
+        return mass;
+    }
+
+    /**
+     * <p>getNumberofAngles.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberofAngles() {
+        return nAngles;
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfVariables() {
+        int nActive = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive() && !atoms[i].isBackground()) {
+                nActive++;
+            }
+        }
+        return nActive * 3;
+    }
+
+    /**
+     * <p>getNumberofBonds.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberofBonds() {
+        return nBonds;
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getdEdL() {
+        double dEdLambda = 0.0;
+        if (!lambdaBondedTerms) {
+            if (vanderWaalsTerm) {
+                dEdLambda = vanderWaals.getdEdL();
+            }
+            if (multipoleTerm) {
+                dEdLambda += particleMeshEwald.getdEdL();
+            }
+            if (restraintBondTerm) {
+                for (int i = 0; i < nRestraintBonds; i++) {
+                    dEdLambda += restraintBonds[i].getdEdL();
+                }
+            }
+            if (ncsTerm && ncsRestraint != null) {
+                dEdLambda += ncsRestraint.getdEdL();
+            }
+            if (restrainTerm && !coordRestraints.isEmpty()) {
+                for (CoordRestraint restraint : coordRestraints) {
+                    dEdLambda += restraint.getdEdL();
+                }
+            }
+            if (comTerm && comRestraint != null) {
+                dEdLambda += comRestraint.getdEdL();
+            }
+            if (lambdaTorsions) {
+                for (int i = 0; i < nTorsions; i++) {
+                    dEdLambda += torsions[i].getdEdL();
+                }
+                for (int i = 0; i < nPiOrbitalTorsions; i++) {
+                    dEdLambda += piOrbitalTorsions[i].getdEdL();
+                }
+                for (int i = 0; i < nTorsionTorsions; i++) {
+                    dEdLambda += torsionTorsions[i].getdEdL();
+                }
+            }
+        }
+        return dEdLambda;
+    }
+
+    /**
+     * <p>getNumberofImproperTorsions.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberofImproperTorsions() {
+        return nImproperTorsions;
+    }    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns true if lambda term is not enabled for this ForceFieldEnergy.
+     */
+    @Override
+    public boolean dEdLZeroAtEnds() {
+        // This may actually be true even with softcored atoms.
+        // For now, serves the purpose of reporting true when nothing is softcored.
+        return !lambdaTerm;
+    }
+
+    /**
+     * <p>getNumberofOutOfPlaneBends.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberofOutOfPlaneBends() {
+        return nOutOfPlaneBends;
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getdEdXdL(double[] gradients) {
+        if (!lambdaBondedTerms) {
+            if (vanderWaalsTerm) {
+                vanderWaals.getdEdXdL(gradients);
+            }
+            if (multipoleTerm) {
+                particleMeshEwald.getdEdXdL(gradients);
+            }
+            if (restraintBondTerm) {
+                for (int i = 0; i < nRestraintBonds; i++) {
+                    restraintBonds[i].getdEdXdL(gradients);
+                }
+            }
+            if (ncsTerm && ncsRestraint != null) {
+                ncsRestraint.getdEdXdL(gradients);
+            }
+            if (restrainTerm && !coordRestraints.isEmpty()) {
+                for (CoordRestraint restraint : coordRestraints) {
+                    restraint.getdEdXdL(gradients);
+                }
+            }
+            if (comTerm && comRestraint != null) {
+                comRestraint.getdEdXdL(gradients);
+            }
+            if (lambdaTorsions) {
+                double[] grad = new double[3];
+                int index = 0;
+                for (int i = 0; i < nAtoms; i++) {
+                    Atom a = atoms[i];
+                    if (a.isActive()) {
+                        a.getLambdaXYZGradient(grad);
+                        gradients[index++] += grad[0];
+                        gradients[index++] += grad[1];
+                        gradients[index++] += grad[2];
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * <p>getNumberofPiOrbitalTorsions.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberofPiOrbitalTorsions() {
+        return nPiOrbitalTorsions;
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * <p>getNumberofStretchBends.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberofStretchBends() {
+        return nStretchBends;
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        double d2EdLambda2 = 0.0;
+        if (!lambdaBondedTerms) {
+            if (vanderWaalsTerm) {
+                d2EdLambda2 = vanderWaals.getd2EdL2();
+            }
+            if (multipoleTerm) {
+                d2EdLambda2 += particleMeshEwald.getd2EdL2();
+            }
+            if (restraintBondTerm) {
+                for (int i = 0; i < nRestraintBonds; i++) {
+                    d2EdLambda2 += restraintBonds[i].getd2EdL2();
+                }
+            }
+            if (ncsTerm && ncsRestraint != null) {
+                d2EdLambda2 += ncsRestraint.getd2EdL2();
+            }
+            if (restrainTerm && !coordRestraints.isEmpty()) {
+                for (CoordRestraint restraint : coordRestraints) {
+                    d2EdLambda2 += restraint.getd2EdL2();
+                }
+            }
+            if (comTerm && comRestraint != null) {
+                d2EdLambda2 += comRestraint.getd2EdL2();
+            }
+            if (lambdaTorsions) {
+                for (int i = 0; i < nTorsions; i++) {
+                    d2EdLambda2 += torsions[i].getd2EdL2();
+                }
+                for (int i = 0; i < nPiOrbitalTorsions; i++) {
+                    d2EdLambda2 += piOrbitalTorsions[i].getd2EdL2();
+                }
+                for (int i = 0; i < nTorsionTorsions; i++) {
+                    d2EdLambda2 += torsionTorsions[i].getd2EdL2();
+                }
+            }
+        }
+        return d2EdLambda2;
+    }
+
+    /**
+     * <p>getNumberofStretchTorsions.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberofStretchTorsions() {
+        return nStretchTorsions;
+    }
+
+    /**
+     * <p>getNumberofTorsionTorsions.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberofTorsionTorsions() {
+        return nTorsionTorsions;
+    }
+
+    /**
+     * <p>getNumberofTorsions.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberofTorsions() {
+        return nTorsions;
+    }
+
+    /**
+     * <p>getNumberofUreyBradleys.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberofUreyBradleys() {
+        return nUreyBradleys;
+    }
+
+    /**
+     * <p>Getter for the field <code>outOfPlaneBendEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getOutOfPlaneBendEnergy() {
+        return outOfPlaneBendEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>outOfPlaneBends</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.OutOfPlaneBend} objects.
+     */
+    public OutOfPlaneBend[] getOutOfPlaneBends() {
+        return outOfPlaneBends;
+    }    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    /**
+     * <p>
+     * getPDBHeaderString</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getPDBHeaderString() {
+        energy(false, false);
+        StringBuilder sb = new StringBuilder();
+        sb.append("REMARK   3  CALCULATED POTENTIAL ENERGY\n");
+        if (bondTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "BOND STRETCHING            : ", bondEnergy, nBonds));
+            sb.append(format("REMARK   3   %s %g\n",
+                    "BOND RMSD                  : ", bondRMSD));
+        }
+        if (angleTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "ANGLE BENDING              : ", angleEnergy, nAngles));
+            sb.append(format("REMARK   3   %s %g\n",
+                    "ANGLE RMSD                 : ", angleRMSD));
+        }
+        if (stretchBendTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "STRETCH-BEND               : ", stretchBendEnergy, nStretchBends));
+        }
+        if (ureyBradleyTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "UREY-BRADLEY               : ", ureyBradleyEnergy, nUreyBradleys));
+        }
+        if (outOfPlaneBendTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "OUT-OF-PLANE BEND          : ", outOfPlaneBendEnergy, nOutOfPlaneBends));
+        }
+        if (torsionTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "TORSIONAL ANGLE            : ", torsionEnergy, nTorsions));
+        }
+        if (piOrbitalTorsionTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "PI-ORBITAL TORSION         : ", piOrbitalTorsionEnergy, nPiOrbitalTorsions));
+        }
+        if (torsionTorsionTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "TORSION-TORSION            : ", torsionTorsionEnergy, nTorsionTorsions));
+        }
+        if (improperTorsionTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "IMPROPER TORSION           : ", improperTorsionEnergy, nImproperTorsions));
+        }
+        if (restraintBondTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "RESTRAINT BOND STRETCHING            : ", restraintBondEnergy, nRestraintBonds));
+        }
+
+        if (ncsTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "NCS RESTRAINT              : ", ncsEnergy, nAtoms));
+        }
+
+        if (restrainTerm && !coordRestraints.isEmpty()) {
+            int nRests = 0;
+            for (CoordRestraint restraint : coordRestraints) {
+                nRests += restraint.getNumAtoms();
+            }
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "COORDINATE RESTRAINTS      : ", restrainEnergy, nRests));
+        }
+
+        if (comTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "COM RESTRAINT              : ", comRestraintEnergy, nAtoms));
+        }
+
+        if (vanderWaalsTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "VAN DER WAALS              : ", vanDerWaalsEnergy, nVanDerWaalInteractions));
         }
         if (multipoleTerm) {
-            if (particleMeshEwald == null) {
-                logger.warning("Null PME during ESV setup.");
-            }
-            if (!(particleMeshEwald instanceof ParticleMeshEwaldQI)) {
-                logger.severe("Extended systems can attach only to Quasi-Internal PME. Try -Dpme-qi=true.");
-            }
-            ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "ATOMIC MULTIPOLES          : ", permanentMultipoleEnergy, nPermanentInteractions));
         }
-        if (crystal != null) {
-            crystal.setSpecialPositionCutoff(0.0);
+        if (polarizationTerm) {
+            sb.append(format("REMARK   3   %s %g (%d)\n",
+                    "POLARIZATION               : ", polarizationEnergy, nPermanentInteractions));
         }
-        reInit();
-    }
+        sb.append(format("REMARK   3   %s %g\n",
+                "TOTAL POTENTIAL (KCAL/MOL) : ", totalEnergy));
+        int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
+        if (nsymm > 1) {
+            sb.append(format("REMARK   3   %s %g\n",
+                    "UNIT CELL POTENTIAL        : ", totalEnergy * nsymm));
+        }
+        if (crystal.getUnitCell() != crystal) {
+            nsymm = crystal.spaceGroup.getNumberOfSymOps();
+            sb.append(format("REMARK   3   %s %g\n",
+                    "REPLICATES CELL POTENTIAL  : ", totalEnergy * nsymm));
+        }
+        sb.append("REMARK   3\n");
 
-    /**
-     * <p>detachExtendedSystem.</p>
+        return sb.toString();
+    }    /**
+     * {@inheritDoc}
+     * <p>
+     * This method is for the RESPA integrator only.
      */
-    public void detachExtendedSystem() {
-        esvTerm = false;
-        esvSystem = null;
-        if (vanderWaalsTerm && vanderWaals != null) {
-            vanderWaals.detachExtendedSystem();
-        }
-        if (multipoleTerm && particleMeshEwald != null) {
-            if (particleMeshEwald instanceof ParticleMeshEwaldQI) {
-                ((ParticleMeshEwaldQI) particleMeshEwald).detachExtendedSystem();
-            }
-        }
-        reInit();
-    }
-
-    /**
-     * <p>Setter for the field <code>resolution</code>.</p>
-     *
-     * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
-     */
-    public void setResolution(Resolution resolution) {
-        this.resolution = resolution;
-
-        if (vanderWaals != null) {
-            vanderWaals.setResolution(resolution);
-        }
-
-        if (resolution == Resolution.FIXEDCHARGE) {
-            multipoleTerm = false;
-            polarizationTerm = false;
-            generalizedKirkwoodTerm = false;
-        }
-
-    }
-
-    private boolean keep(BondedTerm term) {
-        switch (resolution) {
-            case AMOEBA:
-                return term.isResolution(Resolution.AMOEBA);
-            case FIXEDCHARGE:
-                return term.containsResolution(Resolution.FIXEDCHARGE);
+    @Override
+    public void setEnergyTermState(STATE state) {
+        this.state = state;
+        switch (state) {
+            case FAST:
+                bondTerm = bondTermOrig;
+                angleTerm = angleTermOrig;
+                stretchBendTerm = stretchBendTermOrig;
+                ureyBradleyTerm = ureyBradleyTermOrig;
+                outOfPlaneBendTerm = outOfPlaneBendTermOrig;
+                torsionTerm = torsionTermOrig;
+                stretchTorsionTerm = stretchTorsionTermOrig;
+                angleTorsionTerm = angleTorsionTermOrig;
+                piOrbitalTorsionTerm = piOrbitalTorsionTermOrig;
+                torsionTorsionTerm = torsionTorsionTermOrig;
+                improperTorsionTerm = improperTorsionTermOrig;
+                restraintBondTerm = restraintBondTermOrig;
+                ncsTerm = ncsTermOrig;
+                restrainTerm = restrainTermOrig;
+                restrainGroupTerm = restrainGroupTermOrig;
+                comTerm = comTermOrig;
+                vanderWaalsTerm = false;
+                multipoleTerm = false;
+                polarizationTerm = false;
+                generalizedKirkwoodTerm = false;
+                break;
+            case SLOW:
+                vanderWaalsTerm = vanderWaalsTermOrig;
+                multipoleTerm = multipoleTermOrig;
+                polarizationTerm = polarizationTermOrig;
+                generalizedKirkwoodTerm = generalizedKirkwoodTermOrig;
+                bondTerm = false;
+                angleTerm = false;
+                stretchBendTerm = false;
+                ureyBradleyTerm = false;
+                outOfPlaneBendTerm = false;
+                torsionTerm = false;
+                stretchTorsionTerm = false;
+                angleTorsionTerm = false;
+                piOrbitalTorsionTerm = false;
+                torsionTorsionTerm = false;
+                improperTorsionTerm = false;
+                restraintBondTerm = false;
+                ncsTerm = false;
+                restrainTerm = false;
+                comTerm = false;
+                restrainGroupTerm = false;
+                break;
             default:
-                return true;
+                bondTerm = bondTermOrig;
+                angleTerm = angleTermOrig;
+                stretchBendTerm = stretchBendTermOrig;
+                ureyBradleyTerm = ureyBradleyTermOrig;
+                outOfPlaneBendTerm = outOfPlaneBendTermOrig;
+                torsionTerm = torsionTermOrig;
+                stretchTorsionTerm = stretchTorsionTermOrig;
+                angleTorsionTerm = angleTorsionTermOrig;
+                piOrbitalTorsionTerm = piOrbitalTorsionTermOrig;
+                torsionTorsionTerm = torsionTorsionTermOrig;
+                improperTorsionTerm = improperTorsionTermOrig;
+                restraintBondTerm = restraintBondTermOrig;
+                ncsTerm = ncsTermOrig;
+                restrainTermOrig = restrainTerm;
+                comTermOrig = comTerm;
+                restrainGroupTermOrig = restrainGroupTerm;
+                vanderWaalsTerm = vanderWaalsTermOrig;
+                multipoleTerm = multipoleTermOrig;
+                polarizationTerm = polarizationTermOrig;
+                generalizedKirkwoodTerm = generalizedKirkwoodTermOrig;
         }
+    }
+
+    /**
+     * <p>Getter for the field <code>parallelTeam</code>.</p>
+     *
+     * @return a {@link edu.rit.pj.ParallelTeam} object.
+     */
+    public ParallelTeam getParallelTeam() {
+        return parallelTeam;
+    }
+
+    /**
+     * <p>getPermanentInteractions.</p>
+     *
+     * @return a int.
+     */
+    public int getPermanentInteractions() {
+        return nPermanentInteractions;
+    }
+
+    /**
+     * <p>Getter for the field <code>permanentMultipoleEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getPermanentMultipoleEnergy() {
+        return permanentMultipoleEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>permanentRealSpaceEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getPermanentRealSpaceEnergy() {
+        return permanentRealSpaceEnergy;
+    }    /**
+     * Frees up assets associated with this ForceFieldEnergy, such as worker Threads.
+     *
+     * @return If successful in freeing up assets.
+     */
+    public boolean destroy() {
+        if (destroyed) {
+            // This regularly occurs with Repex OST, as multiple OrthogonalSpaceTempering objects wrap a single FFE.
+            logger.fine(format(" This ForceFieldEnergy is already destroyed: %s", this.toString()));
+            return true;
+        } else {
+            try {
+                if (parallelTeam != null) {
+                    parallelTeam.shutdown();
+                }
+                if (vanderWaals != null) {
+                    vanderWaals.destroy();
+                }
+                if (particleMeshEwald != null) {
+                    particleMeshEwald.destroy();
+                }
+                molecularAssembly.finishDestruction();
+                destroyed = true;
+                return true;
+            } catch (Exception ex) {
+                logger.warning(format(" Exception in shutting down a ForceFieldEnergy: %s", ex));
+                logger.info(Utilities.stackTraceToString(ex));
+                return false;
+            }
+        }
+    }
+
+    /**
+     * <p>getPermanentReciprocalMpoleEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getPermanentReciprocalMpoleEnergy() {
+        return particleMeshEwald.getPermRecipEnergy();
+    }
+
+    /**
+     * <p>getPermanentReciprocalSelfEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getPermanentReciprocalSelfEnergy() {
+        return particleMeshEwald.getPermSelfEnergy();
+    }
+
+    /**
+     * <p>Getter for the field <code>piOrbitalTorsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getPiOrbitalTorsionEnergy() {
+        return piOrbitalTorsionEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>piOrbitalTorsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.PiOrbitalTorsion} objects.
+     */
+    public PiOrbitalTorsion[] getPiOrbitalTorsions() {
+        return piOrbitalTorsions;
+    }
+
+    /**
+     * Gets the Platform associated with this force field energy. For the reference platform, always returns FFX.
+     *
+     * @return A Platform.
+     */
+    public Platform getPlatform() {
+        return platform;
+    }
+
+    /**
+     * <p>getPmeCartNode.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwaldCart} object.
+     */
+    public ParticleMeshEwaldCart getPmeCartNode() {
+        return (particleMeshEwald instanceof ParticleMeshEwaldCart)
+                ? (ParticleMeshEwaldCart) particleMeshEwald : null;
+    }
+
+    /**
+     * <p>getPmeNode.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
+     */
+    public ParticleMeshEwald getPmeNode() {
+        return particleMeshEwald;
+    }
+
+    /**
+     * <p>getPmeQiNode.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwaldQI} object.
+     */
+    public ParticleMeshEwaldQI getPmeQiNode() {
+        return (particleMeshEwald instanceof ParticleMeshEwaldQI)
+                ? (ParticleMeshEwaldQI) particleMeshEwald : null;
+    }
+
+    /**
+     * <p>Getter for the field <code>polarizationEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getPolarizationEnergy() {
+        return polarizationEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>relativeSolvationEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getRelativeSolvationEnergy() {
+        return relativeSolvationEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>solvationEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getSolvationEnergy() {
+        return solvationEnergy;
+    }
+
+    /**
+     * <p>getSolvationInteractions.</p>
+     *
+     * @return a int.
+     */
+    public int getSolvationInteractions() {
+        return nGKInteractions;
+    }
+
+    /**
+     * <p>getStrenchBendEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getStrenchBendEnergy() {
+        return stretchBendEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>stretchBends</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.StretchBend} objects.
+     */
+    public StretchBend[] getStretchBends() {
+        return stretchBends;
+    }
+
+    /**
+     * <p>Getter for the field <code>stretchTorsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getStretchTorsionEnergy() {
+        return stretchTorsionEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>stretchTorsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.StretchTorsion} objects.
+     */
+    public StretchTorsion[] getStretchTorsions() {
+        return stretchTorsions;
+    }
+
+    /**
+     * <p>Getter for the field <code>torsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getTorsionEnergy() {
+        return torsionEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>torsionTorsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getTorsionTorsionEnergy() {
+        return torsionTorsionEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>torsionTorsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.TorsionTorsion} objects.
+     */
+    public TorsionTorsion[] getTorsionTorsions() {
+        return torsionTorsions;
+    }
+
+    /**
+     * <p>Getter for the field <code>torsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Torsion} objects.
+     */
+    public Torsion[] getTorsions() {
+        return torsions;
+    }
+
+    /**
+     * <p>getTotalElectrostaticEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getTotalElectrostaticEnergy() {
+        return totalMultipoleEnergy + solvationEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>ureyBradleyEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getUreyBradleyEnergy() {
+        return ureyBradleyEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>ureyBradleys</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.UreyBradley} objects.
+     */
+    public UreyBradley[] getUreyBradleys() {
+        return ureyBradleys;
+    }
+
+    /**
+     * <p>Getter for the field <code>vanDerWaalsEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getVanDerWaalsEnergy() {
+        return vanDerWaalsEnergy;
+    }
+
+    /**
+     * <p>getVanDerWaalsInteractions.</p>
+     *
+     * @return a int.
+     */
+    public int getVanDerWaalsInteractions() {
+        return nVanDerWaalInteractions;
+    }
+
+    /**
+     * <p>getVdwNode.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.VanDerWaals} object.
+     */
+    public VanDerWaals getVdwNode() {
+        return vanderWaals;
     }
 
     /**
@@ -1953,6 +3408,51 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * The coordinate array should only contain active atoms.
+     *
+     * @param coords an array of {@link double} objects.
+     */
+    public void setCoordinates(double[] coords) {
+        if (coords == null) {
+            return;
+        }
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive() && !a.isBackground()) {
+                double x = coords[index++];
+                double y = coords[index++];
+                double z = coords[index++];
+                a.moveTo(x, y, z);
+            }
+        }
+    }
+
+    /**
+     * Set the boundary conditions for this calculation.
+     *
+     * @param crystal             Crystal to set.
+     * @param checkReplicatesCell Check if a replicates cell must be created.
+     */
+    public void setCrystal(Crystal crystal, boolean checkReplicatesCell) {
+        if (checkReplicatesCell) {
+            this.crystal = ReplicatesCrystal.replicatesCrystalFactory(crystal.getUnitCell(), cutOff2);
+        } else {
+            this.crystal = crystal;
+        }
+        /*
+          Update VanDerWaals first, in case the NeighborList needs to be
+          re-allocated to include a larger number of replicated cells.
+         */
+        if (vanderWaalsTerm) {
+            vanderWaals.setCrystal(this.crystal);
+        }
+        if (multipoleTerm) {
+            particleMeshEwald.setCrystal(this.crystal);
+        }
+    }
+
+    /**
      * <p>setFixedCharges.</p>
      *
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
@@ -1964,346 +3464,90 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
-     * <p>Setter for the field <code>lambdaBondedTerms</code>.</p>
+     * <p>setLambdaMultipoleScale.</p>
      *
-     * @param lambdaBondedTerms a boolean.
+     * @param scale a double.
      */
-    void setLambdaBondedTerms(boolean lambdaBondedTerms) {
-        this.lambdaBondedTerms = lambdaBondedTerms;
+    public void setLambdaMultipoleScale(double scale) {
+        if (particleMeshEwald != null) {
+            particleMeshEwald.setLambdaMultipoleScale(scale);
+        }
     }
 
     /**
-     * <p>energy.</p>
+     * Sets the printOnFailure flag; if override is true, over-rides any
+     * existing property. Essentially sets the default value of printOnFailure
+     * for an algorithm. For example, rotamer optimization will generally run
+     * into force field issues in the normal course of execution as it tries
+     * unphysical self and pair configurations, so the algorithm should not
+     * print out a large number of error PDBs.
      *
-     * @return a double.
+     * @param onFail   To set
+     * @param override Override properties
      */
-    public double energy() {
-        return energy(false, false);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>
-     * energy</p>
-     */
-    public double energy(boolean gradient, boolean print) {
-
-        try {
-            bondTime = 0;
-            angleTime = 0;
-            stretchBendTime = 0;
-            ureyBradleyTime = 0;
-            outOfPlaneBendTime = 0;
-            torsionTime = 0;
-            stretchTorsionTime = 0;
-            angleTorsionTime = 0;
-            piOrbitalTorsionTime = 0;
-            torsionTorsionTime = 0;
-            improperTorsionTime = 0;
-            vanDerWaalsTime = 0;
-            electrostaticTime = 0;
-            restraintBondTime = 0;
-            ncsTime = 0;
-            coordRestraintTime = 0;
-            totalTime = System.nanoTime();
-
-            // Zero out the potential energy of each bonded term.
-            bondEnergy = 0.0;
-            angleEnergy = 0.0;
-            stretchBendEnergy = 0.0;
-            ureyBradleyEnergy = 0.0;
-            outOfPlaneBendEnergy = 0.0;
-            torsionEnergy = 0.0;
-            angleTorsionEnergy = 0.0;
-            stretchTorsionEnergy = 0.0;
-            piOrbitalTorsionEnergy = 0.0;
-            torsionTorsionEnergy = 0.0;
-            improperTorsionEnergy = 0.0;
-            totalBondedEnergy = 0.0;
-
-            // Zero out potential energy of restraint terms
-            restraintBondEnergy = 0.0;
-            ncsEnergy = 0.0;
-            restrainEnergy = 0.0;
-
-            // Zero out bond and angle RMSDs.
-            bondRMSD = 0.0;
-            angleRMSD = 0.0;
-
-            // Zero out the potential energy of each non-bonded term.
-            vanDerWaalsEnergy = 0.0;
-            permanentMultipoleEnergy = 0.0;
-            permanentRealSpaceEnergy = 0.0;
-            polarizationEnergy = 0.0;
-            totalMultipoleEnergy = 0.0;
-            totalNonBondedEnergy = 0.0;
-
-            // Zero out the solvation energy.
-            solvationEnergy = 0.0;
-
-            // Zero out the relative solvation energy (sequence optimization)
-            relativeSolvationEnergy = 0.0;
-            nRelativeSolvations = 0;
-
-            esvBias = 0.0;
-
-            // Zero out the total potential energy.
-            totalEnergy = 0.0;
-
-            // Zero out the Cartesian coordinate gradient for each atom.
-//            if (gradient) {
-//                for (int i = 0; i < nAtoms; i++) {
-//                    atoms[i].setXYZGradient(0.0, 0.0, 0.0);
-//                    atoms[i].setLambdaXYZGradient(0.0, 0.0, 0.0);
-//                }
-//            }
-
-            // Computed the bonded energy terms in parallel.
+    public void setPrintOnFailure(boolean onFail, boolean override) {
+        if (override) {
+            // Ignore any pre-existing value
+            printOnFailure = onFail;
+        } else {
             try {
-                bondedRegion.setGradient(gradient);
-                parallelTeam.execute(bondedRegion);
-            } catch (RuntimeException ex) {
-                logger.warning("Runtime exception during bonded term calculation.");
-                throw ex;
+                molecularAssembly.getForceField().getBoolean("PRINT_ON_FAILURE");
+                /*
+                  If the call was successful, the property was explicitly set
+                  somewhere and should be kept. If an exception was thrown, the
+                  property was never set explicitly, so over-write.
+                 */
             } catch (Exception ex) {
-                logger.info(Utilities.stackTraceToString(ex));
-                logger.severe(ex.toString());
-            }
-
-            if (!lambdaBondedTerms) {
-                // Compute restraint terms.
-                if (ncsTerm) {
-                    ncsTime = -System.nanoTime();
-                    ncsEnergy = ncsRestraint.residual(gradient, print);
-                    ncsTime += System.nanoTime();
-                }
-                if (restrainTerm && !coordRestraints.isEmpty()) {
-                    coordRestraintTime = -System.nanoTime();
-                    for (CoordRestraint restraint : coordRestraints) {
-                        restrainEnergy += restraint.residual(gradient, print);
-                    }
-                    coordRestraintTime += System.nanoTime();
-                }
-                if (comTerm) {
-                    comRestraintTime = -System.nanoTime();
-                    comRestraintEnergy = comRestraint.residual(gradient, print);
-                    comRestraintTime += System.nanoTime();
-                }
-                if (restrainGroupTerm) {
-                    restrainGroupTime = -System.nanoTime();
-                    restrainGroupEnergy = restrainGroups.energy(gradient);
-                    restrainGroupTime += System.nanoTime();
-                }
-                // Compute non-bonded terms.
-                if (vanderWaalsTerm) {
-                    vanDerWaalsTime = -System.nanoTime();
-                    vanDerWaalsEnergy = vanderWaals.energy(gradient, print);
-                    nVanDerWaalInteractions = this.vanderWaals.getInteractions();
-                    vanDerWaalsTime += System.nanoTime();
-                }
-                if (multipoleTerm) {
-                    electrostaticTime = -System.nanoTime();
-                    totalMultipoleEnergy = particleMeshEwald.energy(gradient, print);
-                    permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
-                    permanentRealSpaceEnergy = particleMeshEwald.getPermRealEnergy();
-                    polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
-                    nPermanentInteractions = particleMeshEwald.getInteractions();
-                    solvationEnergy = particleMeshEwald.getSolvationEnergy();
-                    nGKInteractions = particleMeshEwald.getGKInteractions();
-                    electrostaticTime += System.nanoTime();
-                }
-            }
-
-            if (relativeSolvationTerm) {
-                List<Residue> residuesList = molecularAssembly.getResidueList();
-                for (Residue residue : residuesList) {
-                    if (residue instanceof MultiResidue) {
-                        Atom refAtom = residue.getSideChainAtoms().get(0);
-                        if (refAtom != null && refAtom.getUse()) {
-                            // Reasonably confident that it should be -=,
-                            // as we are trying to penalize residues with strong solvation energy.
-                            double thisSolvation = relativeSolvation.getSolvationEnergy(residue, false);
-                            relativeSolvationEnergy -= thisSolvation;
-                            if (thisSolvation != 0) {
-                                nRelativeSolvations++;
-                            }
-                        }
-                    }
-                }
-            }
-
-            totalTime = System.nanoTime() - totalTime;
-
-            totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy
-                    + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
-                    + torsionEnergy + angleTorsionEnergy + stretchTorsionEnergy
-                    + piOrbitalTorsionEnergy + improperTorsionEnergy
-                    + torsionTorsionEnergy + ncsEnergy + restrainEnergy + restrainGroupEnergy;
-            totalNonBondedEnergy = vanDerWaalsEnergy + totalMultipoleEnergy + relativeSolvationEnergy;
-            totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
-            if (esvTerm) {
-                esvBias = esvSystem.getBiasEnergy();
-                totalEnergy += esvBias;
-            }
-        } catch (EnergyException ex) {
-            if (printOnFailure) {
-                File origFile = molecularAssembly.getFile();
-                String timeString = LocalDateTime.now().format(DateTimeFormatter.
-                        ofPattern("yyyy_MM_dd-HH_mm_ss"));
-
-                String filename = format("%s-ERROR-%s.pdb",
-                        FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
-                        timeString);
-
-                PotentialsFunctions ef = new PotentialsUtils();
-                filename = ef.versionFile(filename);
-                logger.info(format(" Writing on-error snapshot to file %s", filename));
-                ef.saveAsPDB(molecularAssembly, new File(filename));
-                molecularAssembly.setFile(origFile);
-            }
-
-            if (ex.doCauseSevere()) {
-                logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
-                return 0.0;
-            } else {
-                logger.log(Level.INFO, format(" Exception in energy calculation: %s", ex.toString()));
-                throw ex; // Rethrow exception
+                printOnFailure = onFail;
             }
         }
-
-        if (print) {
-            StringBuilder sb = new StringBuilder();
-            if (gradient) {
-                sb.append("\n Computed Potential Energy and Atomic Coordinate Gradients\n");
-            } else {
-                sb.append("\n Computed Potential Energy\n");
-            }
-            sb.append(this);
-            logger.info(sb.toString());
-        }
-        return totalEnergy;
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getTotalEnergy() {
-        return totalEnergy;
-    }
-
-    /**
-     * Return the non-bonded components of energy (vdW, electrostatics).
+     * <p>Setter for the field <code>resolution</code>.</p>
      *
-     * @param includeSolv Include solvation energy
-     * @return Nonbonded energy
+     * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
      */
-    private double getNonbondedEnergy(boolean includeSolv) {
-        return (includeSolv ? (totalNonBondedEnergy + solvationEnergy) : totalNonBondedEnergy);
+    public void setResolution(Resolution resolution) {
+        this.resolution = resolution;
+
+        if (vanderWaals != null) {
+            vanderWaals.setResolution(resolution);
+        }
+
+        if (resolution == Resolution.FIXEDCHARGE) {
+            multipoleTerm = false;
+            polarizationTerm = false;
+            generalizedKirkwoodTerm = false;
+        }
+
     }
 
     /**
      * <p>
-     * getPDBHeaderString</p>
+     * setRestraintBond</p>
      *
-     * @return a {@link java.lang.String} object.
+     * @param a1            a {@link ffx.potential.bonded.Atom} object.
+     * @param a2            a {@link ffx.potential.bonded.Atom} object.
+     * @param distance      a double.
+     * @param forceConstant the force constant in kcal/mole
      */
-    public String getPDBHeaderString() {
-        energy(false, false);
-        StringBuilder sb = new StringBuilder();
-        sb.append("REMARK   3  CALCULATED POTENTIAL ENERGY\n");
-        if (bondTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "BOND STRETCHING            : ", bondEnergy, nBonds));
-            sb.append(format("REMARK   3   %s %g\n",
-                    "BOND RMSD                  : ", bondRMSD));
-        }
-        if (angleTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "ANGLE BENDING              : ", angleEnergy, nAngles));
-            sb.append(format("REMARK   3   %s %g\n",
-                    "ANGLE RMSD                 : ", angleRMSD));
-        }
-        if (stretchBendTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "STRETCH-BEND               : ", stretchBendEnergy, nStretchBends));
-        }
-        if (ureyBradleyTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "UREY-BRADLEY               : ", ureyBradleyEnergy, nUreyBradleys));
-        }
-        if (outOfPlaneBendTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "OUT-OF-PLANE BEND          : ", outOfPlaneBendEnergy, nOutOfPlaneBends));
-        }
-        if (torsionTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "TORSIONAL ANGLE            : ", torsionEnergy, nTorsions));
-        }
-        if (piOrbitalTorsionTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "PI-ORBITAL TORSION         : ", piOrbitalTorsionEnergy, nPiOrbitalTorsions));
-        }
-        if (torsionTorsionTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "TORSION-TORSION            : ", torsionTorsionEnergy, nTorsionTorsions));
-        }
-        if (improperTorsionTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "IMPROPER TORSION           : ", improperTorsionEnergy, nImproperTorsions));
-        }
-        if (restraintBondTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "RESTRAINT BOND STRETCHING            : ", restraintBondEnergy, nRestraintBonds));
-        }
+    public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant) {
+        setRestraintBond(a1, a2, distance, forceConstant, 0);
+    }
 
-        if (ncsTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "NCS RESTRAINT              : ", ncsEnergy, nAtoms));
-        }
-
-        if (restrainTerm && !coordRestraints.isEmpty()) {
-            int nRests = 0;
-            for (CoordRestraint restraint : coordRestraints) {
-                nRests += restraint.getNumAtoms();
-            }
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "COORDINATE RESTRAINTS      : ", restrainEnergy, nRests));
-        }
-
-        if (comTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "COM RESTRAINT              : ", comRestraintEnergy, nAtoms));
-        }
-
-        if (vanderWaalsTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "VAN DER WAALS              : ", vanDerWaalsEnergy, nVanDerWaalInteractions));
-        }
-        if (multipoleTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "ATOMIC MULTIPOLES          : ", permanentMultipoleEnergy, nPermanentInteractions));
-        }
-        if (polarizationTerm) {
-            sb.append(format("REMARK   3   %s %g (%d)\n",
-                    "POLARIZATION               : ", polarizationEnergy, nPermanentInteractions));
-        }
-        sb.append(format("REMARK   3   %s %g\n",
-                "TOTAL POTENTIAL (KCAL/MOL) : ", totalEnergy));
-        int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
-        if (nsymm > 1) {
-            sb.append(format("REMARK   3   %s %g\n",
-                    "UNIT CELL POTENTIAL        : ", totalEnergy * nsymm));
-        }
-        if (crystal.getUnitCell() != crystal) {
-            nsymm = crystal.spaceGroup.getNumberOfSymOps();
-            sb.append(format("REMARK   3   %s %g\n",
-                    "REPLICATES CELL POTENTIAL  : ", totalEnergy * nsymm));
-        }
-        sb.append("REMARK   3\n");
-
-        return sb.toString();
+    /**
+     * <p>
+     * setRestraintBond</p>
+     *
+     * @param a1            a {@link ffx.potential.bonded.Atom} object.
+     * @param a2            a {@link ffx.potential.bonded.Atom} object.
+     * @param distance      a double.
+     * @param forceConstant the force constant in kcal/mole.
+     * @param flatBottom    Radius of a flat-bottom potential in Angstroms.
+     */
+    public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom) {
+        setRestraintBond(a1, a2, distance, forceConstant, flatBottom, RestraintBond.DEFAULT_RB_LAM_START, RestraintBond.DEFAULT_RB_LAM_END, new ConstantSwitch());
     }
 
     /**
@@ -2450,1603 +3694,30 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
-     * <p>Getter for the field <code>parallelTeam</code>.</p>
-     *
-     * @return a {@link edu.rit.pj.ParallelTeam} object.
-     */
-    public ParallelTeam getParallelTeam() {
-        return parallelTeam;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
+     * Platform describes a set of force field implementations that include a
+     * pure Java reference implementation (FFX), and two OpenMM implementations
+     * (OMM_CUDA and OMM_REF are supported)
      * <p>
-     * Getter for the field <code>crystal</code>.</p>
-     */
-    @Override
-    public Crystal getCrystal() {
-        return crystal;
-    }
-
-    /**
-     * <p>Getter for the field <code>cutoffPlusBuffer</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getCutoffPlusBuffer() {
-        return cutoffPlusBuffer;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setLambda(double lambda) {
-        if (lambdaTerm) {
-            if (lambda <= 1.0 && lambda >= 0.0) {
-                this.lambda = lambda;
-                if (vanderWaalsTerm) {
-                    vanderWaals.setLambda(lambda);
-                }
-                if (multipoleTerm) {
-                    particleMeshEwald.setLambda(lambda);
-                }
-                if (restraintBondTerm && restraintBonds != null) {
-                    for (RestraintBond restraintBond : restraintBonds) {
-                        restraintBond.setLambda(lambda);
-                    }
-                }
-                if (ncsTerm && ncsRestraint != null) {
-                    ncsRestraint.setLambda(lambda);
-                }
-                if (restrainTerm && !coordRestraints.isEmpty()) {
-                    for (CoordRestraint restraint : coordRestraints) {
-                        restraint.setLambda(lambda);
-                    }
-                }
-                if (comTerm && comRestraint != null) {
-                    comRestraint.setLambda(lambda);
-                }
-                if (lambdaTorsions) {
-                    for (int i = 0; i < nTorsions; i++) {
-                        torsions[i].setLambda(lambda);
-                    }
-                    for (int i = 0; i < nPiOrbitalTorsions; i++) {
-                        piOrbitalTorsions[i].setLambda(lambda);
-                    }
-                    for (int i = 0; i < nTorsionTorsions; i++) {
-                        torsionTorsions[i].setLambda(lambda);
-                    }
-                }
-            } else {
-                String message = format("Lambda value %8.3f is not in the range [0..1].", lambda);
-                logger.warning(message);
-            }
-        } else {
-            logger.fine(" Attempting to set a lambda value on a ForceFieldEnergy with lambdaterm false.");
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setScaling(double[] scaling) {
-        optimizationScaling = scaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return optimizationScaling;
-    }
-
-    /**
-     * {@inheritDoc}
+     * FFX: reference FFX implementation
      * <p>
-     * Return a reference to each variables type.
-     */
-    @Override
-    public VARIABLE_TYPE[] getVariableTypes() {
-        int n = getNumberOfVariables();
-        VARIABLE_TYPE[] type = new VARIABLE_TYPE[n];
-        int i = 0;
-        for (int j = 0; j < nAtoms; j++) {
-            if (atoms[j].isActive()) {
-                type[i++] = VARIABLE_TYPE.X;
-                type[i++] = VARIABLE_TYPE.Y;
-                type[i++] = VARIABLE_TYPE.Z;
-            }
-        }
-        return type;
-    }
-
-    /**
-     * Returns a copy of the list of constraints this ForceFieldEnergy has.
-     *
-     * @return Copied list of constraints.
-     */
-    @Override
-    public List<Constraint> getConstraints() {
-        return constraints.isEmpty() ? Collections.emptyList() : new ArrayList<>(constraints);
-    }
-
-    /**
-     * Applies constraints to positions
-     *
-     * @param xPrior
-     * @param xNew
-     */
-    public void applyAllConstraintPositions(double[] xPrior, double[] xNew) {
-        applyAllConstraintPositions(xPrior, xNew, DEFAULT_CONSTRAINT_TOLERANCE);
-    }
-
-    public void applyAllConstraintPositions(double[] xPrior, double[] xNew, double tol) {
-        if (xPrior == null) {
-            xPrior = Arrays.copyOf(xNew, xNew.length);
-        }
-        for (Constraint constraint : constraints) {
-            constraint.applyConstraintToStep(xPrior, xNew, getMass(), tol);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energy(double[] x) {
-        return energy(x, false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energy(double[] x, boolean verbose) {
-        assert Arrays.stream(x).allMatch(Double::isFinite);
-
-        // Unscale the coordinates.
-        unscaleCoordinates(x);
-
-        // Set coordinates.
-        setCoordinates(x);
-
-        double e = this.energy(false, verbose);
-
-        // Rescale the coordinates.
-        scaleCoordinates(x);
-
-        return e;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energyAndGradient(double[] x, double[] g) {
-        return energyAndGradient(x, g, false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energyAndGradient(double[] x, double[] g, boolean verbose) {
-        assert Arrays.stream(x).allMatch(Double::isFinite);
-
-        // Un-scale the coordinates.
-        unscaleCoordinates(x);
-
-        // Set coordinates.
-        setCoordinates(x);
-        double e = energy(true, verbose);
-
-        // Try block already exists inside energy(boolean, boolean), so only
-        // need to try-catch fillGradient.
-        try {
-            fillGradient(g);
-
-            // Scale the coordinates and gradients.
-            scaleCoordinatesAndGradient(x, g);
-
-            if (maxDebugGradient < Double.MAX_VALUE) {
-                boolean extremeGrad = Arrays.stream(g).anyMatch((double gi) ->
-                        (gi > maxDebugGradient || gi < -maxDebugGradient));
-                if (extremeGrad) {
-                    File origFile = molecularAssembly.getFile();
-                    String timeString = LocalDateTime.now().format(DateTimeFormatter.
-                            ofPattern("yyyy_MM_dd-HH_mm_ss"));
-
-                    String filename = format("%s-LARGEGRAD-%s.pdb",
-                            FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
-                            timeString);
-                    PotentialsFunctions ef = new PotentialsUtils();
-                    filename = ef.versionFile(filename);
-
-                    logger.warning(format(" Excessively large gradient detected; printing snapshot to file %s", filename));
-                    ef.saveAsPDB(molecularAssembly, new File(filename));
-                    molecularAssembly.setFile(origFile);
-                }
-            }
-            return e;
-        } catch (EnergyException ex) {
-            if (printOnFailure) {
-                logger.info(Utilities.stackTraceToString(ex));
-                String timeString = LocalDateTime.now().format(DateTimeFormatter.
-                        ofPattern("yyyy_MM_dd-HH_mm_ss"));
-
-                String filename = format("%s-ERROR-%s.pdb",
-                        FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
-                        timeString);
-
-                PotentialsFunctions ef = new PotentialsUtils();
-                filename = ef.versionFile(filename);
-                logger.info(format(" Writing on-error snapshot to file %s", filename));
-                ef.saveAsPDB(molecularAssembly, new File(filename));
-            }
-
-            if (ex.doCauseSevere()) {
-                logger.info(Utilities.stackTraceToString(ex));
-                logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
-            } else {
-                logger.log(Level.INFO, format(" Exception in energy calculation: %s", ex.toString()));
-            }
-
-            throw ex;
-        }
-    }
-
-    /**
+     * OMM: Currently an alias for OMM_CUDA, may eventually become "try to find
+     * best OpenMM implementation" OMM_CUDA:
      * <p>
-     * getGradient</p>
-     *
-     * @param g an array of double.
-     * @return an array of {@link double} objects.
-     */
-    public double[] getGradient(double[] g) {
-        return fillGradient(g);
-    }
-
-    /**
-     * Private method for internal use, so we don't have subclasses calling super.energy, and this class delegating to
-     * the subclass's getGradient method.
-     *
-     * @param g Gradient array to fill.
-     * @return Gradient array.
-     */
-    private double[] fillGradient(double[] g) {
-        assert (g != null);
-        double[] grad = new double[3];
-        int n = getNumberOfVariables();
-        if (g == null || g.length < n) {
-            g = new double[n];
-        }
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atoms[i];
-            if (a.isActive()) {
-                a.getXYZGradient(grad);
-                double gx = grad[0];
-                double gy = grad[1];
-                double gz = grad[2];
-                if (isNaN(gx) || isInfinite(gx) || isNaN(gy) || isInfinite(gy) || isNaN(gz) || isInfinite(gz)) {
-                    StringBuilder sb = new StringBuilder(format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
-                            a.toString(), gx, gy, gz));
-                    double[] vals = new double[3];
-                    a.getVelocity(vals);
-                    sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
-                    a.getAcceleration(vals);
-                    sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
-                    a.getPreviousAcceleration(vals);
-                    sb.append(format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
-
-                    throw new EnergyException(sb.toString());
-                }
-                g[index++] = gx;
-                g[index++] = gy;
-                g[index++] = gz;
-            }
-        }
-        return g;
-    }
-
-    /**
-     * The coordinate array should only contain active atoms.
-     *
-     * @param coords an array of {@link double} objects.
-     */
-    public void setCoordinates(double[] coords) {
-        if (coords == null) {
-            return;
-        }
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atoms[i];
-            if (a.isActive() && !a.isBackground()) {
-                double x = coords[index++];
-                double y = coords[index++];
-                double z = coords[index++];
-                a.moveTo(x, y, z);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] x) {
-        int n = getNumberOfVariables();
-        if (x == null || x.length < n) {
-            x = new double[n];
-        }
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atoms[i];
-            if (a.isActive() && !a.isBackground()) {
-                x[index++] = a.getX();
-                x[index++] = a.getY();
-                x[index++] = a.getZ();
-            }
-        }
-        return x;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getMass() {
-        int n = getNumberOfVariables();
-        double[] mass = new double[n];
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atoms[i];
-            if (a.isActive()) {
-                double m = a.getMass();
-                mass[index++] = m;
-                mass[index++] = m;
-                mass[index++] = m;
-            }
-        }
-        return mass;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNumberOfVariables() {
-        int nActive = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            if (atoms[i].isActive() && !atoms[i].isBackground()) {
-                nActive++;
-            }
-        }
-        return nActive * 3;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getdEdL() {
-        double dEdLambda = 0.0;
-        if (!lambdaBondedTerms) {
-            if (vanderWaalsTerm) {
-                dEdLambda = vanderWaals.getdEdL();
-            }
-            if (multipoleTerm) {
-                dEdLambda += particleMeshEwald.getdEdL();
-            }
-            if (restraintBondTerm) {
-                for (int i = 0; i < nRestraintBonds; i++) {
-                    dEdLambda += restraintBonds[i].getdEdL();
-                }
-            }
-            if (ncsTerm && ncsRestraint != null) {
-                dEdLambda += ncsRestraint.getdEdL();
-            }
-            if (restrainTerm && !coordRestraints.isEmpty()) {
-                for (CoordRestraint restraint : coordRestraints) {
-                    dEdLambda += restraint.getdEdL();
-                }
-            }
-            if (comTerm && comRestraint != null) {
-                dEdLambda += comRestraint.getdEdL();
-            }
-            if (lambdaTorsions) {
-                for (int i = 0; i < nTorsions; i++) {
-                    dEdLambda += torsions[i].getdEdL();
-                }
-                for (int i = 0; i < nPiOrbitalTorsions; i++) {
-                    dEdLambda += piOrbitalTorsions[i].getdEdL();
-                }
-                for (int i = 0; i < nTorsionTorsions; i++) {
-                    dEdLambda += torsionTorsions[i].getdEdL();
-                }
-            }
-        }
-        return dEdLambda;
-    }
-
-    /**
-     * {@inheritDoc}
+     * OpenMM CUDA implementation OMM_REF: OpenMM reference implementation
      * <p>
-     * Returns true if lambda term is not enabled for this ForceFieldEnergy.
-     */
-    @Override
-    public boolean dEdLZeroAtEnds() {
-        // This may actually be true even with softcored atoms.
-        // For now, serves the purpose of reporting true when nothing is softcored.
-        return !lambdaTerm;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void getdEdXdL(double[] gradients) {
-        if (!lambdaBondedTerms) {
-            if (vanderWaalsTerm) {
-                vanderWaals.getdEdXdL(gradients);
-            }
-            if (multipoleTerm) {
-                particleMeshEwald.getdEdXdL(gradients);
-            }
-            if (restraintBondTerm) {
-                for (int i = 0; i < nRestraintBonds; i++) {
-                    restraintBonds[i].getdEdXdL(gradients);
-                }
-            }
-            if (ncsTerm && ncsRestraint != null) {
-                ncsRestraint.getdEdXdL(gradients);
-            }
-            if (restrainTerm && !coordRestraints.isEmpty()) {
-                for (CoordRestraint restraint : coordRestraints) {
-                    restraint.getdEdXdL(gradients);
-                }
-            }
-            if (comTerm && comRestraint != null) {
-                comRestraint.getdEdXdL(gradients);
-            }
-            if (lambdaTorsions) {
-                double[] grad = new double[3];
-                int index = 0;
-                for (int i = 0; i < nAtoms; i++) {
-                    Atom a = atoms[i];
-                    if (a.isActive()) {
-                        a.getLambdaXYZGradient(grad);
-                        gradients[index++] += grad[0];
-                        gradients[index++] += grad[1];
-                        gradients[index++] += grad[2];
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getLambda() {
-        return lambda;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdL2() {
-        double d2EdLambda2 = 0.0;
-        if (!lambdaBondedTerms) {
-            if (vanderWaalsTerm) {
-                d2EdLambda2 = vanderWaals.getd2EdL2();
-            }
-            if (multipoleTerm) {
-                d2EdLambda2 += particleMeshEwald.getd2EdL2();
-            }
-            if (restraintBondTerm) {
-                for (int i = 0; i < nRestraintBonds; i++) {
-                    d2EdLambda2 += restraintBonds[i].getd2EdL2();
-                }
-            }
-            if (ncsTerm && ncsRestraint != null) {
-                d2EdLambda2 += ncsRestraint.getd2EdL2();
-            }
-            if (restrainTerm && !coordRestraints.isEmpty()) {
-                for (CoordRestraint restraint : coordRestraints) {
-                    d2EdLambda2 += restraint.getd2EdL2();
-                }
-            }
-            if (comTerm && comRestraint != null) {
-                d2EdLambda2 += comRestraint.getd2EdL2();
-            }
-            if (lambdaTorsions) {
-                for (int i = 0; i < nTorsions; i++) {
-                    d2EdLambda2 += torsions[i].getd2EdL2();
-                }
-                for (int i = 0; i < nPiOrbitalTorsions; i++) {
-                    d2EdLambda2 += piOrbitalTorsions[i].getd2EdL2();
-                }
-                for (int i = 0; i < nTorsionTorsions; i++) {
-                    d2EdLambda2 += torsionTorsions[i].getd2EdL2();
-                }
-            }
-        }
-        return d2EdLambda2;
-    }
-
-    /**
-     * Sets the printOnFailure flag; if override is true, over-rides any
-     * existing property. Essentially sets the default value of printOnFailure
-     * for an algorithm. For example, rotamer optimization will generally run
-     * into force field issues in the normal course of execution as it tries
-     * unphysical self and pair configurations, so the algorithm should not
-     * print out a large number of error PDBs.
-     *
-     * @param onFail   To set
-     * @param override Override properties
-     */
-    public void setPrintOnFailure(boolean onFail, boolean override) {
-        if (override) {
-            // Ignore any pre-existing value
-            printOnFailure = onFail;
-        } else {
-            try {
-                molecularAssembly.getForceField().getBoolean("PRINT_ON_FAILURE");
-                /*
-                  If the call was successful, the property was explicitly set
-                  somewhere and should be kept. If an exception was thrown, the
-                  property was never set explicitly, so over-write.
-                 */
-            } catch (Exception ex) {
-                printOnFailure = onFail;
-            }
-        }
-    }
-
-    /**
-     * Gets the Platform associated with this force field energy. For the reference platform, always returns FFX.
-     *
-     * @return A Platform.
-     */
-    public Platform getPlatform() {
-        return platform;
-    }
-
-    /**
+     * OMM_OPTCPU: Optimized OpenMM CPU implementation (no AMOEBA)
      * <p>
-     * setRestraintBond</p>
-     *
-     * @param a1            a {@link ffx.potential.bonded.Atom} object.
-     * @param a2            a {@link ffx.potential.bonded.Atom} object.
-     * @param distance      a double.
-     * @param forceConstant the force constant in kcal/mole
+     * OMM_OPENCL: OpenMM OpenCL implementation (no AMOEBA)
      */
-    public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant) {
-        setRestraintBond(a1, a2, distance, forceConstant, 0);
-    }
-
-    /**
-     * <p>
-     * setRestraintBond</p>
-     *
-     * @param a1            a {@link ffx.potential.bonded.Atom} object.
-     * @param a2            a {@link ffx.potential.bonded.Atom} object.
-     * @param distance      a double.
-     * @param forceConstant the force constant in kcal/mole.
-     * @param flatBottom    Radius of a flat-bottom potential in Angstroms.
-     */
-    public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom) {
-        setRestraintBond(a1, a2, distance, forceConstant, flatBottom, RestraintBond.DEFAULT_RB_LAM_START, RestraintBond.DEFAULT_RB_LAM_END, new ConstantSwitch());
-    }
-
-    /**
-     * <p>
-     * setRestraintBond</p>
-     *
-     * @param a1                a {@link ffx.potential.bonded.Atom} object.
-     * @param a2                a {@link ffx.potential.bonded.Atom} object.
-     * @param distance          a double.
-     * @param forceConstant     the force constant in kcal/mole.
-     * @param flatBottom        Radius of a flat-bottom potential in Angstroms.
-     * @param lamStart          At what lambda does the restraint begin to take effect?
-     * @param lamEnd            At what lambda does the restraint hit full strength?
-     * @param switchingFunction Switching function to use as a lambda dependence.
-     */
-    private void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom,
-                                  double lamStart, double lamEnd, UnivariateSwitchingFunction switchingFunction) {
-        restraintBondTerm = true;
-        boolean rbLambda = !(switchingFunction instanceof ConstantSwitch) && lambdaTerm;
-        RestraintBond rb = new RestraintBond(a1, a2, crystal, rbLambda, lamStart, lamEnd, switchingFunction);
-        int[] classes = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
-        if (flatBottom != 0) {
-            rb.setBondType(new BondType(classes, forceConstant, distance, BondType.BondFunction.FLAT_BOTTOM_HARMONIC, flatBottom));
-        } else {
-            rb.setBondType((new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC)));
-        }
-
-        // As long as we continue to add elements one-at-a-time to an array, this code will continue to be ugly.
-        RestraintBond[] newRbs = new RestraintBond[++nRestraintBonds];
-        if (restraintBonds != null && restraintBonds.length != 0) {
-            System.arraycopy(restraintBonds, 0, newRbs, 0, (nRestraintBonds - 1));
-        }
-        newRbs[nRestraintBonds - 1] = rb;
-        restraintBonds = newRbs;
-        rb.energy(false);
-        rb.log();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public STATE getEnergyTermState() {
-        return state;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method is for the RESPA integrator only.
-     */
-    @Override
-    public void setEnergyTermState(STATE state) {
-        this.state = state;
-        switch (state) {
-            case FAST:
-                bondTerm = bondTermOrig;
-                angleTerm = angleTermOrig;
-                stretchBendTerm = stretchBendTermOrig;
-                ureyBradleyTerm = ureyBradleyTermOrig;
-                outOfPlaneBendTerm = outOfPlaneBendTermOrig;
-                torsionTerm = torsionTermOrig;
-                stretchTorsionTerm = stretchTorsionTermOrig;
-                angleTorsionTerm = angleTorsionTermOrig;
-                piOrbitalTorsionTerm = piOrbitalTorsionTermOrig;
-                torsionTorsionTerm = torsionTorsionTermOrig;
-                improperTorsionTerm = improperTorsionTermOrig;
-                restraintBondTerm = restraintBondTermOrig;
-                ncsTerm = ncsTermOrig;
-                restrainTerm = restrainTermOrig;
-                restrainGroupTerm = restrainGroupTermOrig;
-                comTerm = comTermOrig;
-                vanderWaalsTerm = false;
-                multipoleTerm = false;
-                polarizationTerm = false;
-                generalizedKirkwoodTerm = false;
-                break;
-            case SLOW:
-                vanderWaalsTerm = vanderWaalsTermOrig;
-                multipoleTerm = multipoleTermOrig;
-                polarizationTerm = polarizationTermOrig;
-                generalizedKirkwoodTerm = generalizedKirkwoodTermOrig;
-                bondTerm = false;
-                angleTerm = false;
-                stretchBendTerm = false;
-                ureyBradleyTerm = false;
-                outOfPlaneBendTerm = false;
-                torsionTerm = false;
-                stretchTorsionTerm = false;
-                angleTorsionTerm = false;
-                piOrbitalTorsionTerm = false;
-                torsionTorsionTerm = false;
-                improperTorsionTerm = false;
-                restraintBondTerm = false;
-                ncsTerm = false;
-                restrainTerm = false;
-                comTerm = false;
-                restrainGroupTerm = false;
-                break;
-            default:
-                bondTerm = bondTermOrig;
-                angleTerm = angleTermOrig;
-                stretchBendTerm = stretchBendTermOrig;
-                ureyBradleyTerm = ureyBradleyTermOrig;
-                outOfPlaneBendTerm = outOfPlaneBendTermOrig;
-                torsionTerm = torsionTermOrig;
-                stretchTorsionTerm = stretchTorsionTermOrig;
-                angleTorsionTerm = angleTorsionTermOrig;
-                piOrbitalTorsionTerm = piOrbitalTorsionTermOrig;
-                torsionTorsionTerm = torsionTorsionTermOrig;
-                improperTorsionTerm = improperTorsionTermOrig;
-                restraintBondTerm = restraintBondTermOrig;
-                ncsTerm = ncsTermOrig;
-                restrainTermOrig = restrainTerm;
-                comTermOrig = comTerm;
-                restrainGroupTermOrig = restrainGroupTerm;
-                vanderWaalsTerm = vanderWaalsTermOrig;
-                multipoleTerm = multipoleTermOrig;
-                polarizationTerm = polarizationTermOrig;
-                generalizedKirkwoodTerm = generalizedKirkwoodTermOrig;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Set the boundary conditions for this calculation.
-     */
-    @Override
-    public void setCrystal(Crystal crystal) {
-        setCrystal(crystal, false);
-    }
-
-    /**
-     * Set the boundary conditions for this calculation.
-     *
-     * @param crystal             Crystal to set.
-     * @param checkReplicatesCell Check if a replicates cell must be created.
-     */
-    public void setCrystal(Crystal crystal, boolean checkReplicatesCell) {
-        if (checkReplicatesCell) {
-            this.crystal = ReplicatesCrystal.replicatesCrystalFactory(crystal.getUnitCell(), cutOff2);
-        } else {
-            this.crystal = crystal;
-        }
-        /*
-          Update VanDerWaals first, in case the NeighborList needs to be
-          re-allocated to include a larger number of replicated cells.
-         */
-        if (vanderWaalsTerm) {
-            vanderWaals.setCrystal(this.crystal);
-        }
-        if (multipoleTerm) {
-            particleMeshEwald.setCrystal(this.crystal);
-        }
-    }
-
-    private Crystal configureNCS(ForceField forceField, Crystal unitCell) {
-        // MTRIXn to be permuted with standard space group in NCSCrystal.java for experimental refinement.
-        if (forceField.getProperties().containsKey("MTRIX1") && forceField.getProperties().containsKey("MTRIX2") && forceField.getProperties().containsKey("MTRIX3")) {
-            Crystal unitCell2 = new Crystal(unitCell.a, unitCell.b, unitCell.c, unitCell.alpha,
-                    unitCell.beta, unitCell.gamma, unitCell.spaceGroup.pdbName);
-            SpaceGroup spaceGroup = unitCell2.spaceGroup;
-            // Separate string list MTRIXn into Double matricies then pass into symops
-            CompositeConfiguration properties = forceField.getProperties();
-            String[] MTRX1List = properties.getStringArray("MTRIX1");
-            String[] MTRX2List = properties.getStringArray("MTRIX2");
-            String[] MTRX3List = properties.getStringArray("MTRIX3");
-            spaceGroup.symOps.clear();
-            double number1;
-            double number2;
-            double number3;
-            for (int i = 0; i < MTRX1List.length; i++) {
-                double[][] Rot_MTRX = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-                double[] Tr_MTRX = {0, 0, 0};
-                String[] tokens1 = MTRX1List[i].trim().split(" +"); // 4 items: rot [0][1-3] * trans[0]
-                String[] tokens2 = MTRX2List[i].trim().split(" +"); // 4 items: rot [1][1-3] * trans[1]
-                String[] tokens3 = MTRX3List[i].trim().split(" +"); // 4 items: rot [2][1-3] * trans[2]
-                for (int k = 0; k < 4; k++) {
-                    number1 = Double.parseDouble(tokens1[k]);
-                    number2 = Double.parseDouble(tokens2[k]);
-                    number3 = Double.parseDouble(tokens3[k]);
-                    if (k != 3) {
-                        Rot_MTRX[0][k] = number1;
-                        Rot_MTRX[1][k] = number2;
-                        Rot_MTRX[2][k] = number3;
-                    } else {
-                        Tr_MTRX[0] = number1;
-                        Tr_MTRX[1] = number2;
-                        Tr_MTRX[2] = number3;
-                    }
-                }
-                SymOp symOp = new SymOp(Rot_MTRX, Tr_MTRX);
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.info(format(" MTRIXn SymOp: %d of %d\n" + symOp.toString(), i + 1, MTRX1List.length));
-                }
-                spaceGroup.symOps.add(symOp);
-            }
-            unitCell = NCSCrystal.NCSCrystalFactory(unitCell, spaceGroup.symOps);
-            unitCell.updateCrystal();
-        }
-        return unitCell;
-    }
-
-    /**
-     * Frees up assets associated with this ForceFieldEnergy, such as worker Threads.
-     *
-     * @return If successful in freeing up assets.
-     */
-    public boolean destroy() {
-        if (destroyed) {
-            // This regularly occurs with Repex OST, as multiple OrthogonalSpaceTempering objects wrap a single FFE.
-            logger.fine(format(" This ForceFieldEnergy is already destroyed: %s", this.toString()));
-            return true;
-        } else {
-            try {
-                if (parallelTeam != null) {
-                    parallelTeam.shutdown();
-                }
-                if (vanderWaals != null) {
-                    vanderWaals.destroy();
-                }
-                if (particleMeshEwald != null) {
-                    particleMeshEwald.destroy();
-                }
-                molecularAssembly.finishDestruction();
-                destroyed = true;
-                return true;
-            } catch (Exception ex) {
-                logger.warning(format(" Exception in shutting down a ForceFieldEnergy: %s", ex));
-                logger.info(Utilities.stackTraceToString(ex));
-                return false;
-            }
-        }
-    }
-
-    /**
-     * <p>Getter for the field <code>bondEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getBondEnergy() {
-        return bondEnergy;
-    }
-
-    /**
-     * <p>getNumberofBonds.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberofBonds() {
-        return nBonds;
-    }
-
-    /**
-     * <p>Getter for the field <code>angleEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getAngleEnergy() {
-        return angleEnergy;
-    }
-
-    /**
-     * <p>getNumberofAngles.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberofAngles() {
-        return nAngles;
-    }
-
-    /**
-     * <p>getStrenchBendEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getStrenchBendEnergy() {
-        return stretchBendEnergy;
-    }
-
-    /**
-     * <p>getNumberofStretchBends.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberofStretchBends() {
-        return nStretchBends;
-    }
-
-    /**
-     * <p>Getter for the field <code>ureyBradleyEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getUreyBradleyEnergy() {
-        return ureyBradleyEnergy;
-    }
-
-    /**
-     * <p>getNumberofUreyBradleys.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberofUreyBradleys() {
-        return nUreyBradleys;
-    }
-
-    /**
-     * <p>Getter for the field <code>outOfPlaneBendEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getOutOfPlaneBendEnergy() {
-        return outOfPlaneBendEnergy;
-    }
-
-    /**
-     * <p>getNumberofOutOfPlaneBends.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberofOutOfPlaneBends() {
-        return nOutOfPlaneBends;
-    }
-
-    /**
-     * <p>Getter for the field <code>torsionEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getTorsionEnergy() {
-        return torsionEnergy;
-    }
-
-    /**
-     * <p>getNumberofTorsions.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberofTorsions() {
-        return nTorsions;
-    }
-
-    /**
-     * <p>Getter for the field <code>stretchTorsionEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getStretchTorsionEnergy() {
-        return stretchTorsionEnergy;
-    }
-
-    /**
-     * <p>getNumberofStretchTorsions.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberofStretchTorsions() {
-        return nStretchTorsions;
-    }
-
-    /**
-     * <p>Getter for the field <code>angleTorsionEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getAngleTorsionEnergy() {
-        return angleTorsionEnergy;
-    }
-
-    /**
-     * <p>getNumberofAngleTorsions.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberofAngleTorsions() {
-        return nAngleTorsions;
-    }
-
-    /**
-     * <p>Getter for the field <code>improperTorsionEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getImproperTorsionEnergy() {
-        return improperTorsionEnergy;
-    }
-
-    /**
-     * <p>getNumberofImproperTorsions.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberofImproperTorsions() {
-        return nImproperTorsions;
-    }
-
-    /**
-     * <p>Getter for the field <code>piOrbitalTorsionEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getPiOrbitalTorsionEnergy() {
-        return piOrbitalTorsionEnergy;
-    }
-
-    /**
-     * <p>getNumberofPiOrbitalTorsions.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberofPiOrbitalTorsions() {
-        return nPiOrbitalTorsions;
-    }
-
-    /**
-     * <p>Getter for the field <code>torsionTorsionEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getTorsionTorsionEnergy() {
-        return torsionTorsionEnergy;
-    }
-
-    /**
-     * <p>getNumberofTorsionTorsions.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberofTorsionTorsions() {
-        return nTorsionTorsions;
-    }
-
-    /**
-     * <p>Getter for the field <code>vanDerWaalsEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getVanDerWaalsEnergy() {
-        return vanDerWaalsEnergy;
-    }
-
-    /**
-     * <p>getVanDerWaalsInteractions.</p>
-     *
-     * @return a int.
-     */
-    public int getVanDerWaalsInteractions() {
-        return nVanDerWaalInteractions;
-    }
-
-    /**
-     * <p>setLambdaMultipoleScale.</p>
-     *
-     * @param scale a double.
-     */
-    public void setLambdaMultipoleScale(double scale) {
-        if (particleMeshEwald != null) {
-            particleMeshEwald.setLambdaMultipoleScale(scale);
-        }
-    }
-
-    /**
-     * <p>getEnergyComponent.</p>
-     *
-     * @param component a {@link ffx.potential.PotentialComponent} object.
-     * @return a double.
-     */
-    public double getEnergyComponent(PotentialComponent component) {
-        switch (component) {
-            case Topology:
-            case ForceFieldEnergy:
-                return totalEnergy;
-            case VanDerWaals:
-                return vanDerWaalsEnergy;
-            case Multipoles:
-                return particleMeshEwald.getTotalMultipoleEnergy();
-            case Permanent:
-                return particleMeshEwald.getPermanentEnergy();
-            case Induced:
-                return particleMeshEwald.getPolarizationEnergy();
-            case PermanentRealSpace:
-                return particleMeshEwald.getPermRealEnergy();
-            case PermanentSelf:
-                return particleMeshEwald.getPermSelfEnergy();
-            case PermanentReciprocal:
-                return particleMeshEwald.getPermRecipEnergy();
-            case InducedRealSpace:
-                return particleMeshEwald.getIndRealEnergy();
-            case InducedSelf:
-                return particleMeshEwald.getIndSelfEnergy();
-            case InducedReciprocal:
-                return particleMeshEwald.getIndRecipEnergy();
-            case GeneralizedKirkwood:
-                return particleMeshEwald.getSolvationEnergy();
-            case Bonded:
-                return totalBondedEnergy;
-            case Bond:
-                return bondEnergy;
-            case Angle:
-                return angleEnergy;
-            case Torsion:
-                return torsionEnergy;
-            case StretchBend:
-                return stretchBendEnergy;
-            case OutOfPlaneBend:
-                return outOfPlaneBendEnergy;
-            case PiOrbitalTorsion:
-                return piOrbitalTorsionEnergy;
-            case TorsionTorsion:
-                return torsionTorsionEnergy;
-            case UreyBradley:
-                return ureyBradleyEnergy;
-            case RestraintBond:
-                return restraintBondEnergy;
-            case ImproperTorsion:
-                return improperTorsionEnergy;
-            case NCS:
-                return ncsEnergy;
-            case Restrain:
-                return restrainEnergy;
-            case pHMD:
-            case Bias:
-            case Discretizer:
-            case Acidostat:
-                return (esvTerm) ? esvSystem.getEnergyComponent(component) : 0.0;
-            case XRay:
-            default:
-                throw new AssertionError(component.name());
-        }
-    }
-
-    /**
-     * <p>Getter for the field <code>permanentMultipoleEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getPermanentMultipoleEnergy() {
-        return permanentMultipoleEnergy;
-    }
-
-    /**
-     * <p>Getter for the field <code>permanentRealSpaceEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getPermanentRealSpaceEnergy() {
-        return permanentRealSpaceEnergy;
-    }
-
-    /**
-     * <p>getPermanentReciprocalSelfEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getPermanentReciprocalSelfEnergy() {
-        return particleMeshEwald.getPermSelfEnergy();
-    }
-
-    /**
-     * <p>getPermanentReciprocalMpoleEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getPermanentReciprocalMpoleEnergy() {
-        return particleMeshEwald.getPermRecipEnergy();
-    }
-
-    /**
-     * <p>getPermanentInteractions.</p>
-     *
-     * @return a int.
-     */
-    public int getPermanentInteractions() {
-        return nPermanentInteractions;
-    }
-
-    /**
-     * <p>Getter for the field <code>polarizationEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getPolarizationEnergy() {
-        return polarizationEnergy;
-    }
-
-    /**
-     * <p>getTotalElectrostaticEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getTotalElectrostaticEnergy() {
-        return totalMultipoleEnergy + solvationEnergy;
-    }
-
-    /**
-     * <p>getElectrostaticEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getElectrostaticEnergy() {
-        return totalMultipoleEnergy;
-    }
-
-    /**
-     * <p>Getter for the field <code>solvationEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getSolvationEnergy() {
-        return solvationEnergy;
-    }
-
-    /**
-     * <p>getCavitationEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getCavitationEnergy() {
-        return particleMeshEwald.getCavitationEnergy();
-    }
-
-    /**
-     * <p>getDispersionEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getDispersionEnergy() {
-        return particleMeshEwald.getDispersionEnergy();
-    }
-
-    /**
-     * <p>getGKEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getGKEnergy() {
-        return particleMeshEwald.getGKEnergy();
-    }
-
-    /**
-     * <p>getEsvBiasEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getEsvBiasEnergy() {
-        return esvBias;
-    }
-
-    /**
-     * <p>getExtendedSystem.</p>
-     *
-     * @return a {@link ffx.potential.extended.ExtendedSystem} object.
-     */
-    public ExtendedSystem getExtendedSystem() {
-        return esvSystem;
-    }
-
-    /**
-     * <p>getGK.</p>
-     *
-     * @return a {@link ffx.potential.nonbonded.GeneralizedKirkwood} object.
-     */
-    public GeneralizedKirkwood getGK() {
-        if (particleMeshEwald != null) {
-            return particleMeshEwald.getGK();
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * <p>getVdwNode.</p>
-     *
-     * @return a {@link ffx.potential.nonbonded.VanDerWaals} object.
-     */
-    public VanDerWaals getVdwNode() {
-        return vanderWaals;
-    }
-
-    /**
-     * <p>getPmeNode.</p>
-     *
-     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
-     */
-    public ParticleMeshEwald getPmeNode() {
-        return particleMeshEwald;
-    }
-
-    /**
-     * <p>getPmeCartNode.</p>
-     *
-     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwaldCart} object.
-     */
-    public ParticleMeshEwaldCart getPmeCartNode() {
-        return (particleMeshEwald instanceof ParticleMeshEwaldCart)
-                ? (ParticleMeshEwaldCart) particleMeshEwald : null;
-    }
-
-    /**
-     * <p>getPmeQiNode.</p>
-     *
-     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwaldQI} object.
-     */
-    public ParticleMeshEwaldQI getPmeQiNode() {
-        return (particleMeshEwald instanceof ParticleMeshEwaldQI)
-                ? (ParticleMeshEwaldQI) particleMeshEwald : null;
-    }
-
-    /**
-     * <p>Getter for the field <code>coordRestraints</code>.</p>
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<CoordRestraint> getCoordRestraints() {
-        return new ArrayList<>(coordRestraints);
-    }
-
-    /**
-     * <p>Getter for the field <code>restraintBonds</code>.</p>
-     *
-     * @return a {@link java.util.List} object.
-     */
-    protected List<RestraintBond> getRestraintBonds() {
-        if (restraintBonds != null && restraintBonds.length > 0) {
-            return Arrays.asList(restraintBonds);
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * <p>getSolvationInteractions.</p>
-     *
-     * @return a int.
-     */
-    public int getSolvationInteractions() {
-        return nGKInteractions;
-    }
-
-    /**
-     * <p>Getter for the field <code>relativeSolvationEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getRelativeSolvationEnergy() {
-        return relativeSolvationEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The velocity array should only contain velocity data for active atoms.
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        if (velocity == null) {
-            return;
-        }
-        int index = 0;
-        double[] vel = new double[3];
-        for (int i = 0; i < nAtoms; i++) {
-            if (atoms[i].isActive()) {
-                vel[0] = velocity[index++];
-                vel[1] = velocity[index++];
-                vel[2] = velocity[index++];
-                atoms[i].setVelocity(vel);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The acceleration array should only contain acceleration data for active
-     * atoms.
-     */
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        if (acceleration == null) {
-            return;
-        }
-        int index = 0;
-        double[] accel = new double[3];
-        for (int i = 0; i < nAtoms; i++) {
-            if (atoms[i].isActive()) {
-                accel[0] = acceleration[index++];
-                accel[1] = acceleration[index++];
-                accel[2] = acceleration[index++];
-                atoms[i].setAcceleration(accel);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The previousAcceleration array should only contain previous acceleration
-     * data for active atoms.
-     */
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        if (previousAcceleration == null) {
-            return;
-        }
-        int index = 0;
-        double[] prev = new double[3];
-        for (int i = 0; i < nAtoms; i++) {
-            if (atoms[i].isActive()) {
-                prev[0] = previousAcceleration[index++];
-                prev[1] = previousAcceleration[index++];
-                prev[2] = previousAcceleration[index++];
-                atoms[i].setPreviousAcceleration(prev);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns an array of velocity values for active atoms.
-     */
-    @Override
-    public double[] getVelocity(double[] velocity) {
-        int n = getNumberOfVariables();
-        if (velocity == null || velocity.length < n) {
-            velocity = new double[n];
-        }
-        int index = 0;
-        double[] v = new double[3];
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atoms[i];
-            if (a.isActive()) {
-                a.getVelocity(v);
-                velocity[index++] = v[0];
-                velocity[index++] = v[1];
-                velocity[index++] = v[2];
-            }
-        }
-        return velocity;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns an array of acceleration values for active atoms.
-     */
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        int n = getNumberOfVariables();
-        if (acceleration == null || acceleration.length < n) {
-            acceleration = new double[n];
-        }
-        int index = 0;
-        double[] a = new double[3];
-        for (int i = 0; i < nAtoms; i++) {
-            if (atoms[i].isActive()) {
-                atoms[i].getAcceleration(a);
-                acceleration[index++] = a[0];
-                acceleration[index++] = a[1];
-                acceleration[index++] = a[2];
-            }
-        }
-        return acceleration;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns an array of previous acceleration values for active atoms.
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        int n = getNumberOfVariables();
-        if (previousAcceleration == null || previousAcceleration.length < n) {
-            previousAcceleration = new double[n];
-        }
-        int index = 0;
-        double[] a = new double[3];
-        for (int i = 0; i < nAtoms; i++) {
-            if (atoms[i].isActive()) {
-                atoms[i].getPreviousAcceleration(a);
-                previousAcceleration[index++] = a[0];
-                previousAcceleration[index++] = a[1];
-                previousAcceleration[index++] = a[2];
-            }
-        }
-        return previousAcceleration;
-    }
-
-    /**
-     * <p>Getter for the field <code>bonds</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.Bond} objects.
-     */
-    public Bond[] getBonds() {
-        return bonds;
-    }
-
-    /**
-     * <p>Getter for the field <code>angles</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.Angle} objects.
-     */
-    public Angle[] getAngles() {
-        return angles;
-    }
-
-    /**
-     * <p>Getter for the field <code>improperTorsions</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.ImproperTorsion} objects.
-     */
-    public ImproperTorsion[] getImproperTorsions() {
-        return improperTorsions;
-    }
-
-    /**
-     * <p>Getter for the field <code>ureyBradleys</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.UreyBradley} objects.
-     */
-    public UreyBradley[] getUreyBradleys() {
-        return ureyBradleys;
-    }
-
-    /**
-     * <p>Getter for the field <code>outOfPlaneBends</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.OutOfPlaneBend} objects.
-     */
-    public OutOfPlaneBend[] getOutOfPlaneBends() {
-        return outOfPlaneBends;
-    }
-
-    /**
-     * <p>Getter for the field <code>stretchBends</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.StretchBend} objects.
-     */
-    public StretchBend[] getStretchBends() {
-        return stretchBends;
-    }
-
-    /**
-     * <p>Getter for the field <code>torsions</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.Torsion} objects.
-     */
-    public Torsion[] getTorsions() {
-        return torsions;
-    }
-
-    /**
-     * <p>Getter for the field <code>piOrbitalTorsions</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.PiOrbitalTorsion} objects.
-     */
-    public PiOrbitalTorsion[] getPiOrbitalTorsions() {
-        return piOrbitalTorsions;
-    }
-
-    /**
-     * <p>Getter for the field <code>torsionTorsions</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.TorsionTorsion} objects.
-     */
-    public TorsionTorsion[] getTorsionTorsions() {
-        return torsionTorsions;
-    }
-
-    /**
-     * <p>Getter for the field <code>stretchTorsions</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.StretchTorsion} objects.
-     */
-    public StretchTorsion[] getStretchTorsions() {
-        return stretchTorsions;
-    }
-
-    /**
-     * <p>Getter for the field <code>angleTorsions</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.AngleTorsion} objects.
-     */
-    public AngleTorsion[] getAngleTorsions() {
-        return angleTorsions;
+    public enum Platform {
+        FFX, OMM, OMM_CUDA, OMM_REF, OMM_OPTCPU, OMM_OPENCL;
     }
 
     private class BondedRegion extends ParallelRegion {
 
-        // Flag to indicate gradient computation.
-        private boolean gradient = false;
-
-        private AtomicDoubleArrayImpl atomicDoubleArrayImpl;
-        private AtomicDoubleArray3D grad;
-        private AtomicDoubleArray3D lambdaGrad;
-
         // Shared RMSD variables.
         private final SharedDouble sharedBondRMSD;
         private final SharedDouble sharedAngleRMSD;
-
         // Shared force field bonded energy accumulation variables.
         private final SharedDouble sharedBondEnergy;
         private final SharedDouble sharedAngleEnergy;
@@ -4061,14 +3732,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         private final SharedDouble sharedTorsionTorsionEnergy;
         // Shared restraint terms.
         private final SharedDouble sharedRestraintBondEnergy;
-
         // Number of threads.
         private final int nThreads;
-
         // Gradient loops.
         private final GradInitLoop[] gradInitLoops;
         private final GradReduceLoop[] gradReduceLoops;
-
         // Force field bonded energy parallel loops.
         private final BondedTermLoop[] bondLoops;
         private final BondedTermLoop[] angleLoops;
@@ -4081,9 +3749,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         private final BondedTermLoop[] angleTorsionLoops;
         private final BondedTermLoop[] torsionTorsionLoops;
         private final BondedTermLoop[] ureyBradleyLoops;
-
         // Retraint energy parallel loops.
         private final BondedTermLoop[] restraintBondLoops;
+        // Flag to indicate gradient computation.
+        private boolean gradient = false;
+        private AtomicDoubleArrayImpl atomicDoubleArrayImpl;
+        private AtomicDoubleArray3D grad;
+        private AtomicDoubleArray3D lambdaGrad;
 
         BondedRegion() {
 
@@ -4179,97 +3851,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
             if (lambdaTerm) {
                 lambdaGrad.alloc(nAtoms);
-            }
-        }
-
-        @Override
-        public void finish() {
-            // Finalize bond and angle RMSD values.
-            if (bondTerm) {
-                bondRMSD = sqrt(sharedBondRMSD.get() / bonds.length);
-            }
-            if (angleTerm) {
-                angleRMSD = sqrt(sharedAngleRMSD.get() / angles.length);
-            }
-
-            // Load shared energy values into their respective fields.
-            angleEnergy = sharedAngleEnergy.get();
-            bondEnergy = sharedBondEnergy.get();
-            improperTorsionEnergy = sharedImproperTorsionEnergy.get();
-            outOfPlaneBendEnergy = sharedOutOfPlaneBendEnergy.get();
-            piOrbitalTorsionEnergy = sharedPiOrbitalTorsionEnergy.get();
-            stretchBendEnergy = sharedStretchBendEnergy.get();
-            ureyBradleyEnergy = sharedUreyBradleyEnergy.get();
-            torsionEnergy = sharedTorsionEnergy.get();
-            stretchTorsionEnergy = sharedStretchTorsionEnergy.get();
-            angleTorsionEnergy = sharedAngleTorsionEnergy.get();
-            torsionTorsionEnergy = sharedTorsionTorsionEnergy.get();
-            ureyBradleyEnergy = sharedUreyBradleyEnergy.get();
-
-            // Load shared restraint energy values.
-            restraintBondEnergy = sharedRestraintBondEnergy.get();
-
-            if (esvTerm) {
-                if (angleTerm) {
-                    for (BondedTerm term : angles) {
-                        term.reduceEsvDeriv();
-                    }
-                }
-                if (bondTerm) {
-                    for (BondedTerm term : bonds) {
-                        term.reduceEsvDeriv();
-                    }
-                }
-                if (improperTorsionTerm) {
-                    for (BondedTerm term : improperTorsions) {
-                        term.reduceEsvDeriv();
-                    }
-                }
-                if (outOfPlaneBendTerm) {
-                    for (BondedTerm term : outOfPlaneBends) {
-                        term.reduceEsvDeriv();
-                    }
-                }
-                if (piOrbitalTorsionTerm) {
-                    for (BondedTerm term : piOrbitalTorsions) {
-                        term.reduceEsvDeriv();
-                    }
-                }
-                if (stretchBendTerm) {
-                    for (BondedTerm term : stretchBends) {
-                        term.reduceEsvDeriv();
-                    }
-                }
-                if (torsionTerm) {
-                    for (BondedTerm term : torsions) {
-                        term.reduceEsvDeriv();
-                    }
-                }
-                if (stretchTorsionTerm) {
-                    for (BondedTerm term : stretchTorsions) {
-                        term.reduceEsvDeriv();
-                    }
-                }
-                if (angleTorsionTerm) {
-                    for (BondedTerm term : angleTorsions) {
-                        term.reduceEsvDeriv();
-                    }
-                }
-                if (torsionTorsionTerm) {
-                    for (BondedTerm term : torsionTorsions) {
-                        term.reduceEsvDeriv();
-                    }
-                }
-                if (ureyBradleyTerm) {
-                    for (BondedTerm term : ureyBradleys) {
-                        term.reduceEsvDeriv();
-                    }
-                }
-                if (restraintBondTerm) {
-                    for (BondedTerm term : restraintBonds) {
-                        term.reduceEsvDeriv();
-                    }
-                }
             }
         }
 
@@ -4452,6 +4033,97 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
         }
 
+        @Override
+        public void finish() {
+            // Finalize bond and angle RMSD values.
+            if (bondTerm) {
+                bondRMSD = sqrt(sharedBondRMSD.get() / bonds.length);
+            }
+            if (angleTerm) {
+                angleRMSD = sqrt(sharedAngleRMSD.get() / angles.length);
+            }
+
+            // Load shared energy values into their respective fields.
+            angleEnergy = sharedAngleEnergy.get();
+            bondEnergy = sharedBondEnergy.get();
+            improperTorsionEnergy = sharedImproperTorsionEnergy.get();
+            outOfPlaneBendEnergy = sharedOutOfPlaneBendEnergy.get();
+            piOrbitalTorsionEnergy = sharedPiOrbitalTorsionEnergy.get();
+            stretchBendEnergy = sharedStretchBendEnergy.get();
+            ureyBradleyEnergy = sharedUreyBradleyEnergy.get();
+            torsionEnergy = sharedTorsionEnergy.get();
+            stretchTorsionEnergy = sharedStretchTorsionEnergy.get();
+            angleTorsionEnergy = sharedAngleTorsionEnergy.get();
+            torsionTorsionEnergy = sharedTorsionTorsionEnergy.get();
+            ureyBradleyEnergy = sharedUreyBradleyEnergy.get();
+
+            // Load shared restraint energy values.
+            restraintBondEnergy = sharedRestraintBondEnergy.get();
+
+            if (esvTerm) {
+                if (angleTerm) {
+                    for (BondedTerm term : angles) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (bondTerm) {
+                    for (BondedTerm term : bonds) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (improperTorsionTerm) {
+                    for (BondedTerm term : improperTorsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (outOfPlaneBendTerm) {
+                    for (BondedTerm term : outOfPlaneBends) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (piOrbitalTorsionTerm) {
+                    for (BondedTerm term : piOrbitalTorsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (stretchBendTerm) {
+                    for (BondedTerm term : stretchBends) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (torsionTerm) {
+                    for (BondedTerm term : torsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (stretchTorsionTerm) {
+                    for (BondedTerm term : stretchTorsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (angleTorsionTerm) {
+                    for (BondedTerm term : angleTorsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (torsionTorsionTerm) {
+                    for (BondedTerm term : torsionTorsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (ureyBradleyTerm) {
+                    for (BondedTerm term : ureyBradleys) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (restraintBondTerm) {
+                    for (BondedTerm term : restraintBonds) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+            }
+        }
+
         private class GradInitLoop extends IntegerForLoop {
 
             @Override
@@ -4532,14 +4204,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
 
             @Override
-            public void finish() {
-                sharedEnergy.addAndGet(localEnergy);
-                if (computeRMSD) {
-                    sharedRMSD.addAndGet(localRMSD);
-                }
-            }
-
-            @Override
             public void run(int first, int last) throws Exception {
                 for (int i = first; i <= last; i++) {
                     BondedTerm term = terms[i];
@@ -4569,26 +4233,358 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     }
                 }
             }
+
+            @Override
+            public void finish() {
+                sharedEnergy.addAndGet(localEnergy);
+                if (computeRMSD) {
+                    sharedRMSD.addAndGet(localRMSD);
+                }
+            }
+        }
+    }
+
+    private boolean keep(BondedTerm term) {
+        switch (resolution) {
+            case AMOEBA:
+                return term.isResolution(Resolution.AMOEBA);
+            case FIXEDCHARGE:
+                return term.containsResolution(Resolution.FIXEDCHARGE);
+            default:
+                return true;
         }
     }
 
     /**
-     * Platform describes a set of force field implementations that include a
-     * pure Java reference implementation (FFX), and two OpenMM implementations
-     * (OMM_CUDA and OMM_REF are supported)
-     * <p>
-     * FFX: reference FFX implementation
-     * <p>
-     * OMM: Currently an alias for OMM_CUDA, may eventually become "try to find
-     * best OpenMM implementation" OMM_CUDA:
-     * <p>
-     * OpenMM CUDA implementation OMM_REF: OpenMM reference implementation
-     * <p>
-     * OMM_OPTCPU: Optimized OpenMM CPU implementation (no AMOEBA)
-     * <p>
-     * OMM_OPENCL: OpenMM OpenCL implementation (no AMOEBA)
+     * <p>Setter for the field <code>lambdaBondedTerms</code>.</p>
+     *
+     * @param lambdaBondedTerms a boolean.
      */
-    public enum Platform {
-        FFX, OMM, OMM_CUDA, OMM_REF, OMM_OPTCPU, OMM_OPENCL;
+    void setLambdaBondedTerms(boolean lambdaBondedTerms) {
+        this.lambdaBondedTerms = lambdaBondedTerms;
     }
+
+    /**
+     * Return the non-bonded components of energy (vdW, electrostatics).
+     *
+     * @param includeSolv Include solvation energy
+     * @return Nonbonded energy
+     */
+    private double getNonbondedEnergy(boolean includeSolv) {
+        return (includeSolv ? (totalNonBondedEnergy + solvationEnergy) : totalNonBondedEnergy);
+    }
+
+    /**
+     * Private method for internal use, so we don't have subclasses calling super.energy, and this class delegating to
+     * the subclass's getGradient method.
+     *
+     * @param g Gradient array to fill.
+     * @return Gradient array.
+     */
+    private double[] fillGradient(double[] g) {
+        assert (g != null);
+        double[] grad = new double[3];
+        int n = getNumberOfVariables();
+        if (g == null || g.length < n) {
+            g = new double[n];
+        }
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                a.getXYZGradient(grad);
+                double gx = grad[0];
+                double gy = grad[1];
+                double gz = grad[2];
+                if (isNaN(gx) || isInfinite(gx) || isNaN(gy) || isInfinite(gy) || isNaN(gz) || isInfinite(gz)) {
+                    StringBuilder sb = new StringBuilder(format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
+                            a.toString(), gx, gy, gz));
+                    double[] vals = new double[3];
+                    a.getVelocity(vals);
+                    sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+                    a.getAcceleration(vals);
+                    sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+                    a.getPreviousAcceleration(vals);
+                    sb.append(format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+
+                    throw new EnergyException(sb.toString());
+                }
+                g[index++] = gx;
+                g[index++] = gy;
+                g[index++] = gz;
+            }
+        }
+        return g;
+    }
+
+    /**
+     * <p>
+     * setRestraintBond</p>
+     *
+     * @param a1                a {@link ffx.potential.bonded.Atom} object.
+     * @param a2                a {@link ffx.potential.bonded.Atom} object.
+     * @param distance          a double.
+     * @param forceConstant     the force constant in kcal/mole.
+     * @param flatBottom        Radius of a flat-bottom potential in Angstroms.
+     * @param lamStart          At what lambda does the restraint begin to take effect?
+     * @param lamEnd            At what lambda does the restraint hit full strength?
+     * @param switchingFunction Switching function to use as a lambda dependence.
+     */
+    private void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom,
+                                  double lamStart, double lamEnd, UnivariateSwitchingFunction switchingFunction) {
+        restraintBondTerm = true;
+        boolean rbLambda = !(switchingFunction instanceof ConstantSwitch) && lambdaTerm;
+        RestraintBond rb = new RestraintBond(a1, a2, crystal, rbLambda, lamStart, lamEnd, switchingFunction);
+        int[] classes = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
+        if (flatBottom != 0) {
+            rb.setBondType(new BondType(classes, forceConstant, distance, BondType.BondFunction.FLAT_BOTTOM_HARMONIC, flatBottom));
+        } else {
+            rb.setBondType((new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC)));
+        }
+
+        // As long as we continue to add elements one-at-a-time to an array, this code will continue to be ugly.
+        RestraintBond[] newRbs = new RestraintBond[++nRestraintBonds];
+        if (restraintBonds != null && restraintBonds.length != 0) {
+            System.arraycopy(restraintBonds, 0, newRbs, 0, (nRestraintBonds - 1));
+        }
+        newRbs[nRestraintBonds - 1] = rb;
+        restraintBonds = newRbs;
+        rb.energy(false);
+        rb.log();
+    }
+
+    private Crystal configureNCS(ForceField forceField, Crystal unitCell) {
+        // MTRIXn to be permuted with standard space group in NCSCrystal.java for experimental refinement.
+        if (forceField.getProperties().containsKey("MTRIX1") && forceField.getProperties().containsKey("MTRIX2") && forceField.getProperties().containsKey("MTRIX3")) {
+            Crystal unitCell2 = new Crystal(unitCell.a, unitCell.b, unitCell.c, unitCell.alpha,
+                    unitCell.beta, unitCell.gamma, unitCell.spaceGroup.pdbName);
+            SpaceGroup spaceGroup = unitCell2.spaceGroup;
+            // Separate string list MTRIXn into Double matricies then pass into symops
+            CompositeConfiguration properties = forceField.getProperties();
+            String[] MTRX1List = properties.getStringArray("MTRIX1");
+            String[] MTRX2List = properties.getStringArray("MTRIX2");
+            String[] MTRX3List = properties.getStringArray("MTRIX3");
+            spaceGroup.symOps.clear();
+            double number1;
+            double number2;
+            double number3;
+            for (int i = 0; i < MTRX1List.length; i++) {
+                double[][] Rot_MTRX = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+                double[] Tr_MTRX = {0, 0, 0};
+                String[] tokens1 = MTRX1List[i].trim().split(" +"); // 4 items: rot [0][1-3] * trans[0]
+                String[] tokens2 = MTRX2List[i].trim().split(" +"); // 4 items: rot [1][1-3] * trans[1]
+                String[] tokens3 = MTRX3List[i].trim().split(" +"); // 4 items: rot [2][1-3] * trans[2]
+                for (int k = 0; k < 4; k++) {
+                    number1 = Double.parseDouble(tokens1[k]);
+                    number2 = Double.parseDouble(tokens2[k]);
+                    number3 = Double.parseDouble(tokens3[k]);
+                    if (k != 3) {
+                        Rot_MTRX[0][k] = number1;
+                        Rot_MTRX[1][k] = number2;
+                        Rot_MTRX[2][k] = number3;
+                    } else {
+                        Tr_MTRX[0] = number1;
+                        Tr_MTRX[1] = number2;
+                        Tr_MTRX[2] = number3;
+                    }
+                }
+                SymOp symOp = new SymOp(Rot_MTRX, Tr_MTRX);
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.info(format(" MTRIXn SymOp: %d of %d\n" + symOp.toString(), i + 1, MTRX1List.length));
+                }
+                spaceGroup.symOps.add(symOp);
+            }
+            unitCell = NCSCrystal.NCSCrystalFactory(unitCell, spaceGroup.symOps);
+            unitCell.updateCrystal();
+        }
+        return unitCell;
+    }
+
+    /**
+     * <p>Getter for the field <code>restraintBonds</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
+    protected List<RestraintBond> getRestraintBonds() {
+        if (restraintBonds != null && restraintBonds.length > 0) {
+            return Arrays.asList(restraintBonds);
+        } else {
+            return null;
+        }
+    }
+
+
+
+
+
+
+
+
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The velocity array should only contain velocity data for active atoms.
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        if (velocity == null) {
+            return;
+        }
+        int index = 0;
+        double[] vel = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                vel[0] = velocity[index++];
+                vel[1] = velocity[index++];
+                vel[2] = velocity[index++];
+                atoms[i].setVelocity(vel);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The acceleration array should only contain acceleration data for active
+     * atoms.
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        if (acceleration == null) {
+            return;
+        }
+        int index = 0;
+        double[] accel = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                accel[0] = acceleration[index++];
+                accel[1] = acceleration[index++];
+                accel[2] = acceleration[index++];
+                atoms[i].setAcceleration(accel);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The previousAcceleration array should only contain previous acceleration
+     * data for active atoms.
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        if (previousAcceleration == null) {
+            return;
+        }
+        int index = 0;
+        double[] prev = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                prev[0] = previousAcceleration[index++];
+                prev[1] = previousAcceleration[index++];
+                prev[2] = previousAcceleration[index++];
+                atoms[i].setPreviousAcceleration(prev);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns an array of velocity values for active atoms.
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        int n = getNumberOfVariables();
+        if (velocity == null || velocity.length < n) {
+            velocity = new double[n];
+        }
+        int index = 0;
+        double[] v = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                a.getVelocity(v);
+                velocity[index++] = v[0];
+                velocity[index++] = v[1];
+                velocity[index++] = v[2];
+            }
+        }
+        return velocity;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns an array of acceleration values for active atoms.
+     */
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        int n = getNumberOfVariables();
+        if (acceleration == null || acceleration.length < n) {
+            acceleration = new double[n];
+        }
+        int index = 0;
+        double[] a = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                atoms[i].getAcceleration(a);
+                acceleration[index++] = a[0];
+                acceleration[index++] = a[1];
+                acceleration[index++] = a[2];
+            }
+        }
+        return acceleration;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns an array of previous acceleration values for active atoms.
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        int n = getNumberOfVariables();
+        if (previousAcceleration == null || previousAcceleration.length < n) {
+            previousAcceleration = new double[n];
+        }
+        int index = 0;
+        double[] a = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                atoms[i].getPreviousAcceleration(a);
+                previousAcceleration[index++] = a[0];
+                previousAcceleration[index++] = a[1];
+                previousAcceleration[index++] = a[2];
+            }
+        }
+        return previousAcceleration;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
