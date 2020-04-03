@@ -46,6 +46,7 @@ import ffx.numerics.math.SummaryStatistics;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
@@ -146,6 +147,9 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
         double cumDG = 0;
         Arrays.fill(dGs, 0);
         Arrays.fill(uncerts, 0);
+        // Avoid duplicate warnings when bootstrapping.
+        Level warningLevel = randomSamples ? Level.FINE : Level.WARNING;
+
         for (int i = 0; i < nWindows; i++) {
             boolean converged = false;
             double c = 0.5 * (estForwards[i] + estBackwards[i]); // Free energy estimate/shift constant.
@@ -155,7 +159,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
             if (len0 == 0 || len1 == 0) {
                 dGs[i] = c;
-                logger.warning(String.format(" Window %d has no snapshots at one end (%d, %d)!", i, len0, len1));
+                logger.log(warningLevel, String.format(" Window %d has no snapshots at one end (%d, %d)!", i, len0, len1));
                 continue;
             }
 
