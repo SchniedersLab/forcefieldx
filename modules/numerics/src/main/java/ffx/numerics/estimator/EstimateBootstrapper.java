@@ -80,10 +80,26 @@ public class EstimateBootstrapper {
      * @return Randomized indices.
      */
     public static int[] getBootstrapIndices(int length, Random random, int minDistinct) {
+        // Handle extremely short lengths with special-case handling.
+        switch(length) {
+            case 0:
+                return new int[0];
+            case 1:
+                return new int[]{0};
+            case 2:
+                int[] indices = new int[2];
+                indices[0] = random.nextBoolean() ? 0 : 1;
+                indices[1] = random.nextBoolean() ? 0 : 1;
+                return indices;
+            // Default: leave switch and handle general case.
+        }
+
+        // General case.
         int[] indices = random.ints(length, 0, length).toArray();
         long distinctVals = stream(indices).distinct().count();
+        int ctr = 0;
         while (distinctVals <= minDistinct) {
-            logger.info(" Regenerating array: only " + distinctVals + " distinct values found.");
+            logger.info(String.format(" Regenerating array (iteration %d): only %d distinct values found for length %d.", ++ctr, distinctVals, length));
             indices = random.ints(length, 0, length).toArray();
             distinctVals = stream(indices).distinct().count();
         }
