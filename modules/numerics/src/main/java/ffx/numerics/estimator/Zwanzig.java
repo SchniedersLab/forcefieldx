@@ -39,6 +39,7 @@ package ffx.numerics.estimator;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import static java.util.Arrays.stream;
@@ -108,6 +109,8 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
     @Override
     public void estimateDG(final boolean randomSamples) {
         double cumDG = 0;
+        Level warningLevel = randomSamples ? Level.FINE : Level.WARNING;
+
         for (int i = 0; i < nWindows; i++) {
 
             int windowIndex = forwards ? 0 : 1;
@@ -117,7 +120,7 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
             int len = e1.length;
 
             if (len == 0) {
-                logger.info(" Skipping " + i);
+                logger.log(warningLevel, " Skipping frame " + i + " due to lack of snapshots!");
                 continue;
             }
 
