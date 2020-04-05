@@ -39,10 +39,10 @@ package ffx.numerics.multipole;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.norm;
-import static ffx.numerics.math.VectorMath.scalar;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.DoubleMath.normalize;
+import static ffx.numerics.math.DoubleMath.scale;
 
 /**
  * The MultipoleTensor class computes derivatives of 1/|<b>r</b>| via recursion
@@ -90,15 +90,15 @@ public class MultipoleTensorQI extends MultipoleTensor {
             xAxis[1] += 1.0;
         }
 
-        norm(zAxis, zAxis);
+        normalize(zAxis, zAxis);
         ir02 = zAxis[0];
         ir12 = zAxis[1];
         ir22 = zAxis[2];
 
         double dot = dot(xAxis, zAxis);
-        scalar(zAxis, dot, zAxis);
-        diff(xAxis, zAxis, xAxis);
-        norm(xAxis, xAxis);
+        scale(zAxis, dot, zAxis);
+        sub(xAxis, zAxis, xAxis);
+        normalize(xAxis, xAxis);
 
         ir00 = xAxis[0];
         ir10 = xAxis[1];

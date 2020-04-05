@@ -45,6 +45,7 @@ import ffx.potential.parsers.ForceFieldFilter
 import ffx.utilities.Keyword
 
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
@@ -56,6 +57,13 @@ import picocli.CommandLine.Parameters
  */
 @Command(description = "PrmToProperty converts a TINKER *.prm file to Java properties.", name = "ffxc PrmToProperty")
 class PrmToProperty extends PotentialScript {
+
+    /**
+     * -t or --tinker Remove line continuation characters from multi-line force field types (i.e. Tinker prm format).
+     */
+    @Option(names = ['-t', '--tinker'], paramLabel = "false", defaultValue = "false",
+            description = 'Remove line continuation characters from multi-line force field types (i.e. Tinker prm format).')
+    private boolean tinker = false
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -80,26 +88,29 @@ class PrmToProperty extends PotentialScript {
         }
 
         // Read in the command line file.
-        List<String> arguments = filenames
-        String prmName = arguments.get(0)
+        String prmName = filenames.get(0)
         CompositeConfiguration properties = Keyword.loadProperties(null)
         properties.setProperty("parameters", prmName)
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties)
 
         ForceField forceField = forceFieldFilter.parse()
 
-        int prms = arguments.size()
-        for (int i = 1; i < prms; i++) {
-            prmName = arguments.get(i)
+        for (String filename : filenames) {
             properties = Keyword.loadProperties(null)
-            properties.setProperty("parameters", prmName)
+            properties.setProperty("parameters", filename)
             forceFieldFilter = new ForceFieldFilter(properties)
             ForceField forceField2 = forceFieldFilter.parse()
             forceField.append(forceField2)
         }
 
         if (forceField != null) {
-            forceField.print()
+            StringBuffer sb = forceField.toStringBuffer();
+            if (tinker) {
+                String string = sb.toString()
+                logger.info(string.replace('\\', ' '))
+            } else {
+                logger.info(sb.toString())
+            }
         }
 
         return this

@@ -49,6 +49,28 @@ import java.util.List;
 public class ResidueEnumerations {
 
     /**
+     * Constant <code>aminoAcidList</code>
+     */
+    public static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
+    /**
+     * List of values from the AminoAcid1 enum.
+     */
+    public static final List<AminoAcid1> aminoAcid1List = Arrays.asList(AminoAcid1.values());
+    /**
+     * Constant <code>nucleicAcidList</code>
+     */
+    public static final List<NucleicAcid3> nucleicAcidList = Arrays.asList(NucleicAcid3.values());
+    /**
+     * Constant <code>aminoAcidHeavyAtoms</code>
+     */
+    public static final int[] aminoAcidHeavyAtoms = {
+            4, 5, 7, 8, 8, 6, 7, 6, 6, 6,
+            7, 11, 12, 12, 14, 10, 10, 10, 8, 8,
+            8, 9, 9, 9, 8, 9, 9, 11, 8, 6,
+            8, 0, 0, 0, 0, 0, 0, 0
+    };
+
+    /**
      * <p>getAminoAcid.</p>
      *
      * @param residueName a {@link java.lang.String} object.
@@ -147,29 +169,4 @@ public class ResidueEnumerations {
         ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG,
         H2U, M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
     }
-
-    /**
-     * Constant <code>aminoAcidList</code>
-     */
-    public static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
-
-    /**
-     * List of values from the AminoAcid1 enum.
-     */
-    public static final List<AminoAcid1> aminoAcid1List = Arrays.asList(AminoAcid1.values());
-
-    /**
-     * Constant <code>nucleicAcidList</code>
-     */
-    public static final List<NucleicAcid3> nucleicAcidList = Arrays.asList(NucleicAcid3.values());
-
-    /**
-     * Constant <code>aminoAcidHeavyAtoms</code>
-     */
-    public static final int[] aminoAcidHeavyAtoms = {
-            4, 5, 7, 8, 8, 6, 7, 6, 6, 6,
-            7, 11, 12, 12, 14, 10, 10, 10, 8, 8,
-            8, 9, 9, 9, 8, 9, 9, 11, 8, 6,
-            8, 0, 0, 0, 0, 0, 0, 0
-    };
 }

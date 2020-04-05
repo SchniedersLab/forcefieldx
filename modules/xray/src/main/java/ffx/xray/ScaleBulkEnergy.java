@@ -58,11 +58,11 @@ import ffx.numerics.Potential;
 import ffx.numerics.math.ComplexNumber;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import static ffx.crystal.Crystal.invressq;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.mat3Mat3;
-import static ffx.numerics.math.VectorMath.mat3SymVec6;
-import static ffx.numerics.math.VectorMath.transpose3;
-import static ffx.numerics.math.VectorMath.vec3Mat3;
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.MatrixMath.mat3Mat3;
+import static ffx.numerics.math.MatrixMath.mat3SymVec6;
+import static ffx.numerics.math.MatrixMath.transpose3;
+import static ffx.numerics.math.MatrixMath.vec3Mat3;
 
 /**
  * Fit bulk solvent and aniso B scaling terms to correct calculated structure

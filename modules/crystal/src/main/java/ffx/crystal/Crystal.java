@@ -63,13 +63,13 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
-import ffx.numerics.math.VectorMath;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.mat3Mat3;
-import static ffx.numerics.math.VectorMath.mat3SymVec6;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.transpose3;
+import ffx.numerics.math.ScalarMath;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.MatrixMath.mat3Mat3;
+import static ffx.numerics.math.MatrixMath.mat3SymVec6;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.MatrixMath.transpose3;
 import static ffx.utilities.StringUtils.padRight;
 
 /**
@@ -1128,9 +1128,9 @@ public class Crystal {
         for (int i = 1; i < n; i++) {
             SymOp symOp = symOpsCartesian.get(i);
             applyCartesianSymOp(cartesianCoords, newCoords, symOp);
-            diff(cartesianCoords, newCoords, ret);
+            sub(cartesianCoords, newCoords, ret);
             image(ret);
-            double r = r(ret);
+            double r = length(ret);
             if (r < specialPositionCutoff) {
                 return true;
             }
@@ -1199,7 +1199,7 @@ public class Crystal {
      * @return Positive a % b.
      */
     public static double mod(double a, double b) {
-        return VectorMath.mod(a, b);
+        return ScalarMath.mod(a, b);
     }
 
     /**
@@ -1320,9 +1320,9 @@ public class Crystal {
     public boolean setCellVectors(double[][] cellVectors) {
 
         // Update a-, b-, and c-axis lengths.
-        double aa = r(cellVectors[0]);
-        double bb = r(cellVectors[1]);
-        double cc = r(cellVectors[2]);
+        double aa = length(cellVectors[0]);
+        double bb = length(cellVectors[1]);
+        double cc = length(cellVectors[2]);
 
         // Update alpha, beta and gamma angles.
         double aalpha = toDegrees(acos(dot(cellVectors[1], cellVectors[2]) / (bb * cc)));

@@ -48,7 +48,6 @@ import java.util.stream.Collectors;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
-import org.apache.commons.math3.util.FastMath;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -56,16 +55,16 @@ import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
-import ffx.numerics.math.VectorMath;
+import ffx.numerics.math.DoubleMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.norm;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalar;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.normalize;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.scale;
 import static ffx.potential.bonded.Bond.logNoBondType;
 import static ffx.potential.bonded.NamingUtils.nameAcetylCap;
 
@@ -81,232 +80,16 @@ public class BondedUtils {
     private static final double eps = 0.0000001d;
 
     /**
-     * This routine was derived from a similar routine in TINKER.
+     * Checks if atom a1 is bonded to atom a2.
      *
-     * @param atom   a {@link ffx.potential.bonded.Atom} object.
-     * @param ia     a {@link ffx.potential.bonded.Atom} object.
-     * @param bond   a double.
-     * @param ib     a {@link ffx.potential.bonded.Atom} object.
-     * @param angle1 a double.
-     * @param ic     a {@link ffx.potential.bonded.Atom} object.
-     * @param angle2 a double.
-     * @param chiral a int.
+     * @param a1 An Atom.
+     * @param a2 Another Atom.
+     * @return If a1 is bonded to a2.
      */
-    public static void intxyz(Atom atom, Atom ia, double bond, Atom ib, double angle1, Atom ic, double angle2, int chiral) {
-        double[] xa = new double[3];
-        xa = (ia == null) ? null : ia.getXYZ(xa);
-        double[] xb = new double[3];
-        xb = (ib == null) ? null : ib.getXYZ(xb);
-        double[] xc = new double[3];
-        xc = (ic == null) ? null : ic.getXYZ(xc);
-        atom.moveTo(determineIntxyz(xa, bond, xb, angle1, xc, angle2, chiral));
-    }
-
-    /**
-     * This routine was derived from a similar routine in TINKER. It determines
-     * at what coordinates an atom would be placed without moving or calling any
-     * atoms, relying solely upon coordinates. Passed arrays are copied into
-     * local arrays to avoid any over-writing of the passed arrays.
-     * <p>
-     * The chiral argument is 0 if angle2 is a dihedral.
-     * Else, if angle2 is the atom-ia-ic angle:
-     * -1 indicates left-hand-rule placement.
-     * +1 indicates right-hand-rule placement.
-     * +3 indicates trigonal planar placement.
-     * <p>
-     * Chiral +3 replaces the angle1 and angle2 constraints with a planarity
-     * constraint, and minimized, equipartitioned deviation from angle1 and angle2.
-     *
-     * @param ia     a double[] of atomic coordinates.
-     * @param bond   a double.
-     * @param ib     a double[] of atomic coordinates.
-     * @param angle1 a double.
-     * @param ic     a double[] of atomic coordinates.
-     * @param angle2 a double.
-     * @param chiral 0, 1, -1, or 3.
-     * @return A double[] with XYZ coordinates at which an atom would be placed.
-     */
-    static double[] determineIntxyz(double[] ia, double bond, double[] ib, double angle1, double[] ic, double angle2, int chiral) {
-        if (ia != null && !Double.isFinite(bond)) {
-            throw new IllegalArgumentException(String.format(" Passed bond length is non-finite %f", bond));
-        } else if (ib != null && !Double.isFinite(angle1)) {
-            throw new IllegalArgumentException(String.format(" Passed angle is non-finite %f", angle1));
-        } else if (ic != null && !Double.isFinite(angle2)) {
-            throw new IllegalArgumentException(String.format(" Passed dihedral/improper is non-finite %f", angle2));
-        }
-
-        if (chiral == 3) {
-            double[] negChiral = determineIntxyz(ia, bond, ib, angle1, ic, angle2, -1);
-            double[] posChiral = determineIntxyz(ia, bond, ib, angle1, ic, angle2, 1);
-            double[] displacement = new double[3];
-            double dispMag = 0;
-
-            for (int i = 0; i < 3; i++) {
-                // First, draw the midpoint between the positive- and negative- chiral solutions.
-                displacement[i] = 0.5 * (posChiral[i] + negChiral[i]);
-                // Second, take the displacement from a2 to this midpoint.
-                displacement[i] -= ia[i];
-                // Third, accumulate into the vector magnitude.
-                dispMag += (displacement[i] * displacement[i]);
-            }
-
-            dispMag = FastMath.sqrt(dispMag);
-            double extend = bond / dispMag;
-            assert extend > 0.999; // Should be >= 1.0, with slight machine-precision tolerance.
-
-            double[] outXYZ = new double[3];
-            for (int i = 0; i < 3; i++) {
-                displacement[i] *= extend;
-                outXYZ[i] = displacement[i] + ia[i];
-            }
-            return outXYZ;
-        }
-
-        angle1 = toRadians(angle1);
-        angle2 = toRadians(angle2);
-        double zcos0 = cos(angle1);
-        double zcos1 = cos(angle2);
-        double zsin0 = sin(angle1);
-        double zsin1 = sin(angle2);
-        double[] ret = new double[3];
-        double x[] = new double[3];
-
-        // No partners
-        if (ia == null) {
-            x[0] = x[1] = x[2] = 0.0;
-        } else if (ib == null) {
-            double xa[] = new double[3];
-            arraycopy(ia, 0, xa, 0, ia.length);
-            // One partner - place on the z-axis
-            x[0] = xa[0];
-            x[1] = xa[1];
-            x[2] = xa[2] + bond;
-        } else if (ic == null) {
-            double[] xa = new double[3];
-            double[] xb = new double[3];
-            double[] xab = new double[3];
-            for (int i = 0; i < ia.length; i++) {
-                xa[i] = ia[i];
-                xb[i] = ib[i];
-            }
-            // Two partners - place in the xz-plane
-            diff(xa, xb, xab);
-            double rab = r(xab);
-            norm(xab, xab);
-            double cosb = xab[2];
-            double sinb = sqrt(xab[0] * xab[0] + xab[1] * xab[1]);
-            double cosg, sing;
-            if (sinb == 0.0d) {
-                cosg = 1.0d;
-                sing = 0.0d;
-            } else {
-                cosg = xab[1] / sinb;
-                sing = xab[0] / sinb;
-            }
-            double xtmp = bond * zsin0;
-            double ztmp = rab - bond * zcos0;
-            x[0] = xb[0] + xtmp * cosg + ztmp * sing * sinb;
-            x[1] = xb[1] - xtmp * sing + ztmp * cosg * sinb;
-            x[2] = xb[2] + ztmp * cosb;
-        } else if (chiral == 0) {
-            double[] xa = new double[3];
-            double[] xb = new double[3];
-            double[] xc = new double[3];
-            double[] xab = new double[3];
-            double[] xbc = new double[3];
-            double[] xt = new double[3];
-            double[] xu = new double[3];
-            for (int i = 0; i < ia.length; i++) {
-                xa[i] = ia[i];
-                xb[i] = ib[i];
-                xc[i] = ic[i];
-            }
-            // General case - with a dihedral
-            diff(xa, xb, xab);
-            norm(xab, xab);
-            diff(xb, xc, xbc);
-            norm(xbc, xbc);
-            xt[0] = xab[2] * xbc[1] - xab[1] * xbc[2];
-            xt[1] = xab[0] * xbc[2] - xab[2] * xbc[0];
-            xt[2] = xab[1] * xbc[0] - xab[0] * xbc[1];
-            double cosine = xab[0] * xbc[0] + xab[1] * xbc[1] + xab[2] * xbc[2];
-            double sine = sqrt(max(1.0d - cosine * cosine, eps));
-            if (abs(cosine) >= 1.0d) {
-                logger.warning("Undefined Dihedral");
-            }
-            scalar(xt, 1.0d / sine, xt);
-            xu[0] = xt[1] * xab[2] - xt[2] * xab[1];
-            xu[1] = xt[2] * xab[0] - xt[0] * xab[2];
-            xu[2] = xt[0] * xab[1] - xt[1] * xab[0];
-            x[0] = xa[0] + bond * (xu[0] * zsin0 * zcos1 + xt[0] * zsin0 * zsin1 - xab[0] * zcos0);
-            x[1] = xa[1] + bond * (xu[1] * zsin0 * zcos1 + xt[1] * zsin0 * zsin1 - xab[1] * zcos0);
-            x[2] = xa[2] + bond * (xu[2] * zsin0 * zcos1 + xt[2] * zsin0 * zsin1 - xab[2] * zcos0);
-        } else if (abs(chiral) == 1) {
-            double[] xa = new double[3];
-            double[] xb = new double[3];
-            double[] xc = new double[3];
-            double[] xba = new double[3];
-            double[] xac = new double[3];
-            double[] xt = new double[3];
-            for (int i = 0; i < ia.length; i++) {
-                xa[i] = ia[i];
-                xb[i] = ib[i];
-                xc[i] = ic[i];
-            }
-            diff(xb, xa, xba);
-            norm(xba, xba);
-            diff(xa, xc, xac);
-            norm(xac, xac);
-            xt[0] = xba[2] * xac[1] - xba[1] * xac[2];
-            xt[1] = xba[0] * xac[2] - xba[2] * xac[0];
-            xt[2] = xba[1] * xac[0] - xba[0] * xac[1];
-            double cosine = xba[0] * xac[0] + xba[1] * xac[1] + xba[2] * xac[2];
-            double sine2 = max(1.0d - cosine * cosine, eps);
-            if (abs(cosine) >= 1.0d) {
-                logger.warning("Defining Atom Colinear");
-            }
-            double a = (-zcos1 - cosine * zcos0) / sine2;
-            double b = (zcos0 + cosine * zcos1) / sine2;
-            double c = (1.0d + a * zcos1 - b * zcos0) / sine2;
-            if (c > eps) {
-                c = chiral * sqrt(c);
-            } else if (c < -eps) {
-                c = sqrt((a * xac[0] + b * xba[0]) * (a * xac[0] + b * xba[0])
-                        + (a * xac[1] + b * xba[1]) * (a * xac[1] + b * xba[1])
-                        + (a * xac[2] + b * xba[2]) * (a * xac[2] + b * xba[2]));
-                a /= c;
-                b /= c;
-                c = 0.0d;
-            } else {
-                c = 0.0d;
-            }
-            x[0] = xa[0] + bond * (a * xac[0] + b * xba[0] + c * xt[0]);
-            x[1] = xa[1] + bond * (a * xac[1] + b * xba[1] + c * xt[1]);
-            x[2] = xa[2] + bond * (a * xac[2] + b * xba[2] + c * xt[2]);
-        }
-        arraycopy(x, 0, ret, 0, ret.length);
-        return ret;
-    }
-
-    /**
-     * <p>findAtomType.</p>
-     *
-     * @param key        a int.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @return a {@link ffx.potential.parameters.AtomType} object.
-     */
-    public static AtomType findAtomType(int key, ForceField forceField) {
-        BioType bioType = forceField.getBioType(Integer.toString(key));
-        if (bioType != null) {
-            AtomType atomType = forceField.getAtomType(Integer.toString(bioType.atomType));
-            if (atomType != null) {
-                return atomType;
-            } else {
-                logger.severe(format("The atom type %s was not found for biotype %s.", bioType.atomType,
-                        bioType.toString()));
-            }
-        }
-        return null;
+    public static boolean atomAttachedToAtom(Atom a1, Atom a2) {
+        assert a1 != a2;
+        return a1.getBonds().stream().
+                anyMatch((Bond b) -> b.get1_2(a1) == a2);
     }
 
     /**
@@ -363,70 +146,6 @@ public class BondedUtils {
     }
 
     /**
-     * <p>buildHeavyAtom.</p>
-     *
-     * @param residue  a {@link ffx.potential.bonded.MSGroup} object.
-     * @param atomName a {@link java.lang.String} object.
-     * @param ia       a {@link ffx.potential.bonded.Atom} object.
-     * @param bond     a double.
-     * @param ib       a {@link ffx.potential.bonded.Atom} object.
-     * @param angle1   a double.
-     * @param ic       a {@link ffx.potential.bonded.Atom} object.
-     * @param angle2   a double.
-     * @param chiral   a int.
-     * @param atomType a {@link ffx.potential.parameters.AtomType} object.
-     * @return a {@link ffx.potential.bonded.Atom} object.
-     */
-    private static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-                                       Atom ic, double angle2, int chiral, AtomType atomType) {
-        Atom atom = (Atom) residue.getAtomNode(atomName);
-        if (atomType == null) {
-            return null;
-        }
-        if (atom == null) {
-            String resName = ia.getResidueName();
-            int resSeq = ia.getResidueNumber();
-            Character chainID = ia.getChainID();
-            Character altLoc = ia.getAltLoc();
-            String segID = ia.getSegID();
-            double occupancy = ia.getOccupancy();
-            double tempFactor = ia.getTempFactor();
-            atom = new Atom(0, atomName, altLoc, new double[3], resName, resSeq, chainID,
-                    occupancy, tempFactor, segID, true);
-            residue.addMSNode(atom);
-            intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
-        }
-        atom.setAtomType(atomType);
-        return atom;
-    }
-
-
-    /**
-     * <p>buildHeavyAtom.</p>
-     *
-     * @param residue    a {@link ffx.potential.bonded.MSGroup} object.
-     * @param atomName   a {@link java.lang.String} object.
-     * @param ia         a {@link ffx.potential.bonded.Atom} object.
-     * @param bond       a double.
-     * @param ib         a {@link ffx.potential.bonded.Atom} object.
-     * @param angle1     a double.
-     * @param ic         a {@link ffx.potential.bonded.Atom} object.
-     * @param angle2     a double.
-     * @param chiral     a int.
-     * @param atomType   a {@link ffx.potential.parameters.AtomType} object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
-     * @return a {@link ffx.potential.bonded.Atom} object.
-     */
-    private static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-                                       Atom ic, double angle2, int chiral, AtomType atomType,
-                                       ForceField forceField, ArrayList<Bond> bondList) {
-        Atom atom = buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
-        buildBond(ia, atom, forceField, bondList);
-        return atom;
-    }
-
-    /**
      * <p>buildHeavy.</p>
      *
      * @param residue    a {@link ffx.potential.bonded.MSGroup} object.
@@ -447,7 +166,6 @@ public class BondedUtils {
         AtomType atomType = findAtomType(lookUp, forceField);
         return buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
     }
-
 
     /**
      * <p>buildHeavy.</p>
@@ -557,6 +275,40 @@ public class BondedUtils {
     }
 
     /**
+     * <p>findAtomType.</p>
+     *
+     * @param key        a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @return a {@link ffx.potential.parameters.AtomType} object.
+     */
+    public static AtomType findAtomType(int key, ForceField forceField) {
+        BioType bioType = forceField.getBioType(Integer.toString(key));
+        if (bioType != null) {
+            AtomType atomType = forceField.getAtomType(Integer.toString(bioType.atomType));
+            if (atomType != null) {
+                return atomType;
+            } else {
+                logger.severe(format("The atom type %s was not found for biotype %s.", bioType.atomType,
+                        bioType.toString()));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds all Atoms belonging to a Residue of a given atomic number.
+     *
+     * @param residue Residue to search in.
+     * @param element Atomic number to search for.
+     * @return A list of matching Atoms.
+     */
+    public static List<Atom> findAtomsOfElement(Residue residue, int element) {
+        return residue.getAtomList().stream().
+                filter((Atom a) -> a.getAtomType().atomicNumber == element).
+                collect(Collectors.toList());
+    }
+
+    /**
      * Finds Atoms bonded to a given Atom that match a certain atomic number.
      *
      * @param atom    Atom to search from.
@@ -581,104 +333,6 @@ public class BondedUtils {
                 filter((Atom a) -> a != toExclude).
                 filter((Atom a) -> a.getAtomType().atomicNumber == element).
                 collect(Collectors.toList());
-    }
-
-    /**
-     * Checks if there is an Atom of a given atomic number bonded to the provided Atom.
-     *
-     * @param atom    Atom to search from.
-     * @param element Atomic number to search for.
-     * @return If bonded atoms of given element exist.
-     */
-    public static boolean hasAttachedAtom(Atom atom, int element) {
-        return atom.getBonds().stream().
-                map((Bond b) -> b.get1_2(atom)).
-                anyMatch((Atom a) -> a.getAtomType().atomicNumber == element);
-    }
-
-    /**
-     * Checks if atom a1 is bonded to atom a2.
-     *
-     * @param a1 An Atom.
-     * @param a2 Another Atom.
-     * @return If a1 is bonded to a2.
-     */
-    public static boolean atomAttachedToAtom(Atom a1, Atom a2) {
-        assert a1 != a2;
-        return a1.getBonds().stream().
-                anyMatch((Bond b) -> b.get1_2(a1) == a2);
-    }
-
-    /**
-     * Finds all Atoms belonging to a Residue of a given atomic number.
-     *
-     * @param residue Residue to search in.
-     * @param element Atomic number to search for.
-     * @return A list of matching Atoms.
-     */
-    public static List<Atom> findAtomsOfElement(Residue residue, int element) {
-        return residue.getAtomList().stream().
-                filter((Atom a) -> a.getAtomType().atomicNumber == element).
-                collect(Collectors.toList());
-    }
-
-    /**
-     * Finds the alpha carbon of a residue, and handles any C-terminal ACE caps while at it.
-     *
-     * @param residue Find the alpha carbon of.
-     * @param N       The residue's backbone nitrogen.
-     * @return The alpha carbon.
-     */
-    public static Atom getAlphaCarbon(Residue residue, Atom N) {
-        List<Atom> resAtoms = residue.getAtomList();
-        List<Atom> caCandidates = findBondedAtoms(N, 6).stream().
-                filter((Atom carbon) -> resAtoms.contains(carbon)).
-                collect(Collectors.toList());
-
-
-        switch (residue.getAminoAcid3()) {
-            case PRO: {
-                Atom CA = null;
-                Atom CD = null;
-                Atom aceC = null;
-                for (Atom caCand : caCandidates) {
-                    if (hasAttachedAtom(caCand, 8)) {
-                        aceC = caCand;
-                    } else {
-                        List<Atom> attachedH = findBondedAtoms(caCand, 1);
-                        if (attachedH.size() == 1) {
-                            CA = caCand;
-                        } else if (attachedH.size() == 2) {
-                            CD = caCand;
-                        } else {
-                            throw new IllegalArgumentException(format(" Error in parsing proline %s", residue));
-                        }
-                    }
-                }
-                assert CA != null && CD != null;
-                if (aceC != null) {
-                    nameAcetylCap(residue, aceC);
-                }
-                return CA;
-            }
-            default: {
-                if (caCandidates.size() == 1) {
-                    return caCandidates.get(0);
-                } else {
-                    Atom CA = null;
-                    Atom aceC = null;
-                    for (Atom caCand : caCandidates) {
-                        if (hasAttachedAtom(caCand, 8)) {
-                            aceC = caCand;
-                        } else {
-                            CA = caCand;
-                        }
-                    }
-                    nameAcetylCap(residue, aceC);
-                    return CA;
-                }
-            }
-        }
     }
 
     /**
@@ -833,30 +487,97 @@ public class BondedUtils {
     }
 
     /**
-     * Sorts toCompare by distance to the reference Atom, returning a sorted array.
+     * Finds the alpha carbon of a residue, and handles any C-terminal ACE caps while at it.
      *
-     * @param reference Atom to compare distances to.
-     * @param toCompare Atoms to sort by distance (not modified).
-     * @return Sorted array of atoms in toCompare.
+     * @param residue Find the alpha carbon of.
+     * @param N       The residue's backbone nitrogen.
+     * @return The alpha carbon.
      */
-    public static Atom[] sortAtomsByDistance(Atom reference, List<Atom> toCompare) {
-        Atom[] theAtoms = toCompare.toArray(new Atom[0]);
-        sortAtomsByDistance(reference, theAtoms);
-        return theAtoms;
+    public static Atom getAlphaCarbon(Residue residue, Atom N) {
+        List<Atom> resAtoms = residue.getAtomList();
+        List<Atom> caCandidates = findBondedAtoms(N, 6).stream().
+                filter((Atom carbon) -> resAtoms.contains(carbon)).
+                collect(Collectors.toList());
+
+
+        switch (residue.getAminoAcid3()) {
+            case PRO: {
+                Atom CA = null;
+                Atom CD = null;
+                Atom aceC = null;
+                for (Atom caCand : caCandidates) {
+                    if (hasAttachedAtom(caCand, 8)) {
+                        aceC = caCand;
+                    } else {
+                        List<Atom> attachedH = findBondedAtoms(caCand, 1);
+                        if (attachedH.size() == 1) {
+                            CA = caCand;
+                        } else if (attachedH.size() == 2) {
+                            CD = caCand;
+                        } else {
+                            throw new IllegalArgumentException(format(" Error in parsing proline %s", residue));
+                        }
+                    }
+                }
+                assert CA != null && CD != null;
+                if (aceC != null) {
+                    nameAcetylCap(residue, aceC);
+                }
+                return CA;
+            }
+            default: {
+                if (caCandidates.size() == 1) {
+                    return caCandidates.get(0);
+                } else {
+                    Atom CA = null;
+                    Atom aceC = null;
+                    for (Atom caCand : caCandidates) {
+                        if (hasAttachedAtom(caCand, 8)) {
+                            aceC = caCand;
+                        } else {
+                            CA = caCand;
+                        }
+                    }
+                    nameAcetylCap(residue, aceC);
+                    return CA;
+                }
+            }
+        }
     }
 
     /**
-     * In-place sorts toCompare by distance to the reference Atom. Modifies toCompare.
+     * Checks if there is an Atom of a given atomic number bonded to the provided Atom.
      *
-     * @param reference Atom to compare distances to.
-     * @param toCompare Atoms to sort (in-place) by distance.
+     * @param atom    Atom to search from.
+     * @param element Atomic number to search for.
+     * @return If bonded atoms of given element exist.
      */
-    public static void sortAtomsByDistance(Atom reference, Atom[] toCompare) {
-        final double[] refXYZ = reference.getXYZ(new double[3]);
-        Arrays.sort(toCompare, Comparator.comparingDouble(a -> {
-            double[] atXYZ = a.getXYZ(new double[3]);
-            return VectorMath.dist2(refXYZ, atXYZ);
-        }));
+    public static boolean hasAttachedAtom(Atom atom, int element) {
+        return atom.getBonds().stream().
+                map((Bond b) -> b.get1_2(atom)).
+                anyMatch((Atom a) -> a.getAtomType().atomicNumber == element);
+    }
+
+    /**
+     * This routine was derived from a similar routine in TINKER.
+     *
+     * @param atom   a {@link ffx.potential.bonded.Atom} object.
+     * @param ia     a {@link ffx.potential.bonded.Atom} object.
+     * @param bond   a double.
+     * @param ib     a {@link ffx.potential.bonded.Atom} object.
+     * @param angle1 a double.
+     * @param ic     a {@link ffx.potential.bonded.Atom} object.
+     * @param angle2 a double.
+     * @param chiral a int.
+     */
+    public static void intxyz(Atom atom, Atom ia, double bond, Atom ib, double angle1, Atom ic, double angle2, int chiral) {
+        double[] xa = new double[3];
+        xa = (ia == null) ? null : ia.getXYZ(xa);
+        double[] xb = new double[3];
+        xb = (ib == null) ? null : ib.getXYZ(xb);
+        double[] xc = new double[3];
+        xc = (ic == null) ? null : ic.getXYZ(xc);
+        atom.moveTo(determineIntxyz(xa, bond, xb, angle1, xc, angle2, chiral));
     }
 
     /**
@@ -899,6 +620,282 @@ public class BondedUtils {
             m.reOrderAtoms();
         }
 
+    }
+
+    /**
+     * Sorts toCompare by distance to the reference Atom, returning a sorted array.
+     *
+     * @param reference Atom to compare distances to.
+     * @param toCompare Atoms to sort by distance (not modified).
+     * @return Sorted array of atoms in toCompare.
+     */
+    public static Atom[] sortAtomsByDistance(Atom reference, List<Atom> toCompare) {
+        Atom[] theAtoms = toCompare.toArray(new Atom[0]);
+        sortAtomsByDistance(reference, theAtoms);
+        return theAtoms;
+    }
+
+    /**
+     * In-place sorts toCompare by distance to the reference Atom. Modifies toCompare.
+     *
+     * @param reference Atom to compare distances to.
+     * @param toCompare Atoms to sort (in-place) by distance.
+     */
+    public static void sortAtomsByDistance(Atom reference, Atom[] toCompare) {
+        final double[] refXYZ = reference.getXYZ(new double[3]);
+        Arrays.sort(toCompare, Comparator.comparingDouble(a -> {
+            double[] atXYZ = a.getXYZ(new double[3]);
+            return DoubleMath.dist2(refXYZ, atXYZ);
+        }));
+    }
+
+    /**
+     * <p>buildHeavyAtom.</p>
+     *
+     * @param residue  a {@link ffx.potential.bonded.MSGroup} object.
+     * @param atomName a {@link java.lang.String} object.
+     * @param ia       a {@link ffx.potential.bonded.Atom} object.
+     * @param bond     a double.
+     * @param ib       a {@link ffx.potential.bonded.Atom} object.
+     * @param angle1   a double.
+     * @param ic       a {@link ffx.potential.bonded.Atom} object.
+     * @param angle2   a double.
+     * @param chiral   a int.
+     * @param atomType a {@link ffx.potential.parameters.AtomType} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
+    private static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
+                                       Atom ic, double angle2, int chiral, AtomType atomType) {
+        Atom atom = (Atom) residue.getAtomNode(atomName);
+        if (atomType == null) {
+            return null;
+        }
+        if (atom == null) {
+            String resName = ia.getResidueName();
+            int resSeq = ia.getResidueNumber();
+            Character chainID = ia.getChainID();
+            Character altLoc = ia.getAltLoc();
+            String segID = ia.getSegID();
+            double occupancy = ia.getOccupancy();
+            double tempFactor = ia.getTempFactor();
+            atom = new Atom(0, atomName, altLoc, new double[3], resName, resSeq, chainID,
+                    occupancy, tempFactor, segID, true);
+            residue.addMSNode(atom);
+            intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
+        }
+        atom.setAtomType(atomType);
+        return atom;
+    }
+
+    /**
+     * <p>buildHeavyAtom.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.MSGroup} object.
+     * @param atomName   a {@link java.lang.String} object.
+     * @param ia         a {@link ffx.potential.bonded.Atom} object.
+     * @param bond       a double.
+     * @param ib         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle1     a double.
+     * @param ic         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle2     a double.
+     * @param chiral     a int.
+     * @param atomType   a {@link ffx.potential.parameters.AtomType} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
+    private static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
+                                       Atom ic, double angle2, int chiral, AtomType atomType,
+                                       ForceField forceField, ArrayList<Bond> bondList) {
+        Atom atom = buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
+        buildBond(ia, atom, forceField, bondList);
+        return atom;
+    }
+
+    /**
+     * This routine was derived from a similar routine in TINKER. It determines
+     * at what coordinates an atom would be placed without moving or calling any
+     * atoms, relying solely upon coordinates. Passed arrays are copied into
+     * local arrays to avoid any over-writing of the passed arrays.
+     * <p>
+     * The chiral argument is 0 if angle2 is a dihedral.
+     * Else, if angle2 is the atom-ia-ic angle:
+     * -1 indicates left-hand-rule placement.
+     * +1 indicates right-hand-rule placement.
+     * +3 indicates trigonal planar placement.
+     * <p>
+     * Chiral +3 replaces the angle1 and angle2 constraints with a planarity
+     * constraint, and minimized, equipartitioned deviation from angle1 and angle2.
+     *
+     * @param ia     a double[] of atomic coordinates.
+     * @param bond   a double.
+     * @param ib     a double[] of atomic coordinates.
+     * @param angle1 a double.
+     * @param ic     a double[] of atomic coordinates.
+     * @param angle2 a double.
+     * @param chiral 0, 1, -1, or 3.
+     * @return A double[] with XYZ coordinates at which an atom would be placed.
+     */
+    static double[] determineIntxyz(double[] ia, double bond, double[] ib, double angle1, double[] ic, double angle2, int chiral) {
+        if (ia != null && !Double.isFinite(bond)) {
+            throw new IllegalArgumentException(String.format(" Passed bond length is non-finite %f", bond));
+        } else if (ib != null && !Double.isFinite(angle1)) {
+            throw new IllegalArgumentException(String.format(" Passed angle is non-finite %f", angle1));
+        } else if (ic != null && !Double.isFinite(angle2)) {
+            throw new IllegalArgumentException(String.format(" Passed dihedral/improper is non-finite %f", angle2));
+        }
+
+        if (chiral == 3) {
+            double[] negChiral = determineIntxyz(ia, bond, ib, angle1, ic, angle2, -1);
+            double[] posChiral = determineIntxyz(ia, bond, ib, angle1, ic, angle2, 1);
+            double[] displacement = new double[3];
+            double dispMag = 0;
+
+            for (int i = 0; i < 3; i++) {
+                // First, draw the midpoint between the positive- and negative- chiral solutions.
+                displacement[i] = 0.5 * (posChiral[i] + negChiral[i]);
+                // Second, take the displacement from a2 to this midpoint.
+                displacement[i] -= ia[i];
+                // Third, accumulate into the vector magnitude.
+                dispMag += (displacement[i] * displacement[i]);
+            }
+
+            dispMag = sqrt(dispMag);
+            double extend = bond / dispMag;
+            assert extend > 0.999; // Should be >= 1.0, with slight machine-precision tolerance.
+
+            double[] outXYZ = new double[3];
+            for (int i = 0; i < 3; i++) {
+                displacement[i] *= extend;
+                outXYZ[i] = displacement[i] + ia[i];
+            }
+            return outXYZ;
+        }
+
+        angle1 = toRadians(angle1);
+        angle2 = toRadians(angle2);
+        double zcos0 = cos(angle1);
+        double zcos1 = cos(angle2);
+        double zsin0 = sin(angle1);
+        double zsin1 = sin(angle2);
+        double[] ret = new double[3];
+        double x[] = new double[3];
+
+        // No partners
+        if (ia == null) {
+            x[0] = x[1] = x[2] = 0.0;
+        } else if (ib == null) {
+            double xa[] = new double[3];
+            arraycopy(ia, 0, xa, 0, ia.length);
+            // One partner - place on the z-axis
+            x[0] = xa[0];
+            x[1] = xa[1];
+            x[2] = xa[2] + bond;
+        } else if (ic == null) {
+            double[] xa = new double[3];
+            double[] xb = new double[3];
+            double[] xab = new double[3];
+            for (int i = 0; i < ia.length; i++) {
+                xa[i] = ia[i];
+                xb[i] = ib[i];
+            }
+            // Two partners - place in the xz-plane
+            sub(xa, xb, xab);
+            double rab = length(xab);
+            normalize(xab, xab);
+            double cosb = xab[2];
+            double sinb = sqrt(xab[0] * xab[0] + xab[1] * xab[1]);
+            double cosg, sing;
+            if (sinb == 0.0d) {
+                cosg = 1.0d;
+                sing = 0.0d;
+            } else {
+                cosg = xab[1] / sinb;
+                sing = xab[0] / sinb;
+            }
+            double xtmp = bond * zsin0;
+            double ztmp = rab - bond * zcos0;
+            x[0] = xb[0] + xtmp * cosg + ztmp * sing * sinb;
+            x[1] = xb[1] - xtmp * sing + ztmp * cosg * sinb;
+            x[2] = xb[2] + ztmp * cosb;
+        } else if (chiral == 0) {
+            double[] xa = new double[3];
+            double[] xb = new double[3];
+            double[] xc = new double[3];
+            double[] xab = new double[3];
+            double[] xbc = new double[3];
+            double[] xt = new double[3];
+            double[] xu = new double[3];
+            for (int i = 0; i < ia.length; i++) {
+                xa[i] = ia[i];
+                xb[i] = ib[i];
+                xc[i] = ic[i];
+            }
+            // General case - with a dihedral
+            sub(xa, xb, xab);
+            normalize(xab, xab);
+            sub(xb, xc, xbc);
+            normalize(xbc, xbc);
+            xt[0] = xab[2] * xbc[1] - xab[1] * xbc[2];
+            xt[1] = xab[0] * xbc[2] - xab[2] * xbc[0];
+            xt[2] = xab[1] * xbc[0] - xab[0] * xbc[1];
+            double cosine = xab[0] * xbc[0] + xab[1] * xbc[1] + xab[2] * xbc[2];
+            double sine = sqrt(max(1.0d - cosine * cosine, eps));
+            if (abs(cosine) >= 1.0d) {
+                logger.warning("Undefined Dihedral");
+            }
+            scale(xt, 1.0d / sine, xt);
+            xu[0] = xt[1] * xab[2] - xt[2] * xab[1];
+            xu[1] = xt[2] * xab[0] - xt[0] * xab[2];
+            xu[2] = xt[0] * xab[1] - xt[1] * xab[0];
+            x[0] = xa[0] + bond * (xu[0] * zsin0 * zcos1 + xt[0] * zsin0 * zsin1 - xab[0] * zcos0);
+            x[1] = xa[1] + bond * (xu[1] * zsin0 * zcos1 + xt[1] * zsin0 * zsin1 - xab[1] * zcos0);
+            x[2] = xa[2] + bond * (xu[2] * zsin0 * zcos1 + xt[2] * zsin0 * zsin1 - xab[2] * zcos0);
+        } else if (abs(chiral) == 1) {
+            double[] xa = new double[3];
+            double[] xb = new double[3];
+            double[] xc = new double[3];
+            double[] xba = new double[3];
+            double[] xac = new double[3];
+            double[] xt = new double[3];
+            for (int i = 0; i < ia.length; i++) {
+                xa[i] = ia[i];
+                xb[i] = ib[i];
+                xc[i] = ic[i];
+            }
+            sub(xb, xa, xba);
+            normalize(xba, xba);
+            sub(xa, xc, xac);
+            normalize(xac, xac);
+            xt[0] = xba[2] * xac[1] - xba[1] * xac[2];
+            xt[1] = xba[0] * xac[2] - xba[2] * xac[0];
+            xt[2] = xba[1] * xac[0] - xba[0] * xac[1];
+            double cosine = xba[0] * xac[0] + xba[1] * xac[1] + xba[2] * xac[2];
+            double sine2 = max(1.0d - cosine * cosine, eps);
+            if (abs(cosine) >= 1.0d) {
+                logger.warning("Defining Atom Colinear");
+            }
+            double a = (-zcos1 - cosine * zcos0) / sine2;
+            double b = (zcos0 + cosine * zcos1) / sine2;
+            double c = (1.0d + a * zcos1 - b * zcos0) / sine2;
+            if (c > eps) {
+                c = chiral * sqrt(c);
+            } else if (c < -eps) {
+                c = sqrt((a * xac[0] + b * xba[0]) * (a * xac[0] + b * xba[0])
+                        + (a * xac[1] + b * xba[1]) * (a * xac[1] + b * xba[1])
+                        + (a * xac[2] + b * xba[2]) * (a * xac[2] + b * xba[2]));
+                a /= c;
+                b /= c;
+                c = 0.0d;
+            } else {
+                c = 0.0d;
+            }
+            x[0] = xa[0] + bond * (a * xac[0] + b * xba[0] + c * xt[0]);
+            x[1] = xa[1] + bond * (a * xac[1] + b * xba[1] + c * xt[1]);
+            x[2] = xa[2] + bond * (a * xac[2] + b * xba[2] + c * xt[2]);
+        }
+        arraycopy(x, 0, ret, 0, ret.length);
+        return ret;
     }
 
     /**

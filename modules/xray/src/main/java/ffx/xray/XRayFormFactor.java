@@ -51,16 +51,16 @@ import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import static ffx.crystal.Crystal.quad_form;
-import static ffx.numerics.math.VectorMath.b2u;
-import static ffx.numerics.math.VectorMath.determinant3;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.mat3Inverse;
-import static ffx.numerics.math.VectorMath.mat3Mat3;
-import static ffx.numerics.math.VectorMath.rsq;
-import static ffx.numerics.math.VectorMath.scalarMat3Mat3;
-import static ffx.numerics.math.VectorMath.u2b;
-import static ffx.numerics.math.VectorMath.vec3Mat3;
+import static ffx.numerics.math.ScalarMath.b2u;
+import static ffx.numerics.math.MatrixMath.determinant3;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.MatrixMath.mat3Inverse;
+import static ffx.numerics.math.MatrixMath.mat3Mat3;
+import static ffx.numerics.math.DoubleMath.length2;
+import static ffx.numerics.math.MatrixMath.scalarMat3Mat3;
+import static ffx.numerics.math.ScalarMath.u2b;
+import static ffx.numerics.math.MatrixMath.vec3Mat3;
 
 /**
  * This implementation uses the coefficients from Su and Coppens and 3
@@ -316,10 +316,10 @@ public final class XRayFormFactor implements FormFactor {
      */
     private double rhoN(double f, double lambda, double[] xyz, int nGaussians) {
         assert (nGaussians > 0 && nGaussians <= this.nGaussians);
-        diff(this.xyz, xyz, xyz);
+        sub(this.xyz, xyz, xyz);
 
         // Compare r^2 to form factor width^2 to avoid expensive sqrt.
-        if (rsq(xyz) > atom.getFormFactorWidth2()) {
+        if (length2(xyz) > atom.getFormFactorWidth2()) {
             return f;
         }
 
@@ -350,8 +350,8 @@ public final class XRayFormFactor implements FormFactor {
      */
     private void rhoGradN(double[] xyz, int nGaussians, double dfc, RefinementMode refinementMode) {
         assert (nGaussians > 0 && nGaussians <= this.nGaussians);
-        diff(this.xyz, xyz, dxyz);
-        double r2 = rsq(dxyz);
+        sub(this.xyz, xyz, dxyz);
+        double r2 = length2(dxyz);
 
         // Compare r^2 to form factor width^2 to avoid expensive sqrt.
         if (r2 > atom.getFormFactorWidth2()) {

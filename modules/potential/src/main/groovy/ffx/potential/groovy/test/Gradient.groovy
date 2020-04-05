@@ -37,6 +37,10 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
+import static java.lang.String.format
+
+import static org.apache.commons.math3.util.FastMath.sqrt
+
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -124,53 +128,59 @@ class Gradient extends PotentialScript {
         double expGrad = 1000.0
         double gradientTolerance = gradientOptions.tolerance
         double width = 2.0 * step
-        double[] x = new double[nAtoms * 3]
+
+        double n = energy.getNumberOfVariables();
+        double[] x = new double[n]
+        double[] g = new double[n]
+        double[][] allAnalytic = new double[nAtoms][3]
         double[] analytic = new double[3]
         double[] numeric = new double[3]
 
         double avLen = 0.0
         double avGrad = 0.0
         double expGrad2 = expGrad * expGrad
+
+        // Collect analytic gradient.
+        energy.getCoordinates(x)
+        energy.energyAndGradient(x, g)
+        int index = 0
+        for (Atom a : atoms) {
+            a.getXYZGradient(allAnalytic[index++]);
+        }
+
         for (int i = atomID; i <= lastAtomID; i++) {
             Atom a0 = atoms[i]
             int i3 = i * 3
             int i0 = i3 + 0
             int i1 = i3 + 1
             int i2 = i3 + 2
-            energy.energy(true, true)
-            a0.getXYZGradient(analytic)
-            energy.getCoordinates(x)
+
+            analytic = allAnalytic[i]
 
             // Find numeric dX
             double orig = x[i0]
             x[i0] = x[i0] + step
-            energy.setCoordinates(x)
-            double e = energy.energy(false, print)
+            double e = energy.energy(x)
             x[i0] = orig - step
-            energy.setCoordinates(x)
-            e -= energy.energy(false, print)
+            e -= energy.energy(x)
             x[i0] = orig
             numeric[0] = e / width
 
             // Find numeric dY
             orig = x[i1]
             x[i1] = x[i1] + step
-            energy.setCoordinates(x)
-            e = energy.energy(false, print)
+            e = energy.energy(x)
             x[i1] = orig - step
-            energy.setCoordinates(x)
-            e -= energy.energy(false, print)
+            e -= energy.energy(x)
             x[i1] = orig
             numeric[1] = e / width
 
             // Find numeric dZ
             orig = x[i2]
             x[i2] = x[i2] + step
-            energy.setCoordinates(x)
-            e = energy.energy(false, print)
+            e = energy.energy(x)
             x[i2] = orig - step
-            energy.setCoordinates(x)
-            e -= energy.energy(false, print)
+            e -= energy.energy(x)
             x[i2] = orig
             numeric[2] = e / width
 
@@ -179,25 +189,24 @@ class Gradient extends PotentialScript {
             double dz = analytic[2] - numeric[2]
             double len = dx * dx + dy * dy + dz * dz
             avLen += len
-            len = Math.sqrt(len)
+            len = sqrt(len)
 
             double grad2 = analytic[0] * analytic[0] + analytic[1] * analytic[1] + analytic[2] * analytic[2]
             avGrad += grad2
 
             if (len > gradientTolerance) {
-                logger.info(" " + a0.toShortString() + String.format(" failed: %10.6f.", len)
-                        + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2])
-                        + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]))
+                logger.info(format(" %s\n Failed: %10.6f\n", a0.toString(), len)
+                        + format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2])
+                        + format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]))
                 ++nFailures
-                //return
             } else {
-                logger.info(" " + a0.toShortString() + String.format(" passed: %10.6f.", len)
-                        + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2])
-                        + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
+                logger.info(format(" %s\n Passed: %10.6f\n", a0.toString(), len)
+                        + format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2])
+                        + format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
             }
 
             if (grad2 > expGrad2) {
-                logger.info(String.format(" Atom %d has an unusually large gradient: %10.6f", i + 1, Math.sqrt(grad2)))
+                logger.info(format(" Atom %d has an unusually large gradient: %10.6f", i + 1, Math.sqrt(grad2)))
             }
             logger.info("\n")
         }
@@ -205,18 +214,18 @@ class Gradient extends PotentialScript {
         avLen = avLen / nAtoms
         avLen = Math.sqrt(avLen)
         if (avLen > gradientTolerance) {
-            logger.info(String.format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, gradientTolerance))
+            logger.info(format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, gradientTolerance))
         } else {
-            logger.info(String.format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, gradientTolerance))
+            logger.info(format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, gradientTolerance))
         }
-        logger.info(String.format(" Number of atoms failing analytic test: %d", nFailures))
+        logger.info(format(" Number of atoms failing analytic test: %d", nFailures))
 
         avGrad = avGrad / nAtoms
         avGrad = Math.sqrt(avGrad)
         if (avGrad > expGrad) {
-            logger.info(String.format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad))
+            logger.info(format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad))
         } else {
-            logger.info(String.format(" RMS gradient: %10.6f", avGrad))
+            logger.info(format(" RMS gradient: %10.6f", avGrad))
         }
 
         return this

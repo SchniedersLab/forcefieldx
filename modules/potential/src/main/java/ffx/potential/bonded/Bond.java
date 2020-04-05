@@ -40,7 +40,6 @@ package ffx.potential.bonded;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.jogamp.java3d.BranchGroup;
@@ -55,16 +54,16 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.numerics.math.VectorMath;
+import ffx.numerics.math.Double3;
+import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
-import static ffx.numerics.math.VectorMath.angle;
-import static ffx.numerics.math.VectorMath.cross;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.norm;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalar;
-import static ffx.numerics.math.VectorMath.sum;
+import static ffx.numerics.math.DoubleMath.angle;
+import static ffx.numerics.math.DoubleMath.X;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.normalize;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.scale;
 import static ffx.potential.parameters.BondType.cubic;
 import static ffx.potential.parameters.BondType.quartic;
 import static ffx.potential.parameters.BondType.units;
@@ -78,21 +77,34 @@ import static ffx.potential.parameters.BondType.units;
 @SuppressWarnings("CloneableImplementsClone")
 public class Bond extends BondedTerm {
 
-    private static final Logger logger = Logger.getLogger(Bond.class.getName());
-
-    /**
-     * Bonding Character
-     */
-    public enum BondCharacter {
-
-        SINGLEBOND, DOUBLEBOND, TRIPLEBOND;
-    }
-
     /**
      * Length in Angstroms that is added to Atomic Radii when determining if two
      * Atoms are within bonding distance
      */
     static final float BUFF = 0.7f;
+    private static final Logger logger = Logger.getLogger(Bond.class.getName());
+    // Some static variables used for computing cylinder orientations
+    private static final float[] a0col = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    private static final float[] f4a = {0.0f, 0.0f, 0.0f, 0.9f};
+    private static final float[] f4b = {0.0f, 0.0f, 0.0f, 0.9f};
+    private static final float[] f16 = {0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f,
+            0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f};
+    private static final double[] a13d = new double[3];
+    private static final double[] a23d = new double[3];
+    private static final double[] mid = new double[3];
+    private static final double[] diff3d = new double[3];
+    private static final double[] sum3d = new double[3];
+    private static final double[] coord = new double[12];
+    private static final double[] y = {0.0d, 1.0d, 0.0d};
+    private static final AxisAngle4d axisAngle = new AxisAngle4d();
+    private static final double[] bcross = new double[4];
+    private static final double[] cstart = new double[3];
+    private static final Vector3d pos3d = new Vector3d();
+    /**
+     * List of Bonds that this Bond forms angles with
+     */
+    private final ArrayList<Bond> formsAngleWith = new ArrayList<>();
     /**
      * The force field BondType for this bond.
      */
@@ -101,11 +113,6 @@ public class Bond extends BondedTerm {
      * Rigid Scale factor.
      */
     private double rigidScale = 1.0;
-    /**
-     * List of Bonds that this Bond forms angles with
-     */
-    private ArrayList<Bond> formsAngleWith = new ArrayList<>();
-
     // Java3D methods and variables for visualization of this Bond.
     private RendererCache.ViewModel viewModel = RendererCache.ViewModel.INVISIBLE;
     private BranchGroup branchGroup;
@@ -117,24 +124,6 @@ public class Bond extends BondedTerm {
     private LineArray la;
     private int lineIndex;
     private boolean wireVisible = true;
-    // Some static variables used for computing cylinder orientations
-    private static final float[] a0col = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    private static final float[] f4a = {0.0f, 0.0f, 0.0f, 0.9f};
-    private static final float[] f4b = {0.0f, 0.0f, 0.0f, 0.9f};
-    private static float[] f16 = {0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f,
-            0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f};
-    private static double[] a13d = new double[3];
-    private static double[] a23d = new double[3];
-    private static double[] mid = new double[3];
-    private static double[] diff3d = new double[3];
-    private static double[] sum3d = new double[3];
-    private static double[] coord = new double[12];
-    private static double[] y = {0.0d, 1.0d, 0.0d};
-    private static AxisAngle4d axisAngle = new AxisAngle4d();
-    private static double[] bcross = new double[4];
-    private static double[] cstart = new double[3];
-    private static Vector3d pos3d = new Vector3d();
 
     /**
      * Simple Bond constructor that is intended to be used with the equals
@@ -170,106 +159,6 @@ public class Bond extends BondedTerm {
     }
 
     /**
-     * Set a reference to the force field parameters.
-     *
-     * @param bondType a {@link ffx.potential.parameters.BondType} object.
-     */
-    public void setBondType(BondType bondType) {
-        this.bondType = bondType;
-    }
-
-    /**
-     * Log that no BondType exists.
-     * @param a1 Atom 1.
-     * @param a2 Atom 2.
-     * @param key The class key.
-     */
-    public static void logNoBondType(Atom a1, Atom a2, String key) {
-        logger.severe(format("No BondType for key: %s\n %s -> %s\n %s -> %s", key,
-                a1.toString(), a1.getAtomType().toString(),
-                a2.toString(), a2.getAtomType().toString()));
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>rigidScale</code>.</p>
-     *
-     * @param rigidScale a double.
-     */
-    public void setRigidScale(double rigidScale) {
-        this.rigidScale = rigidScale;
-    }
-
-    /**
-     * Find the other Atom in <b>this</b> Bond. These two atoms are said to be
-     * 1-2.
-     *
-     * @param a The known Atom.
-     * @return The other Atom that makes up <b>this</b> Bond, or Null if Atom a
-     * is not part of <b>this</b> Bond.
-     */
-    public Atom get1_2(Atom a) {
-        if (a == atoms[0]) {
-            return atoms[1];
-        }
-        if (a == atoms[1]) {
-            return atoms[0];
-        }
-        return null; // Atom not found in bond
-    }
-
-    /**
-     * Set the color of this Bond's Java3D shapes based on the passed Atom.
-     *
-     * @param a Atom
-     */
-    public void setColor(Atom a) {
-        if (viewModel != ViewModel.INVISIBLE && viewModel != ViewModel.WIREFRAME && branchGroup != null) {
-            if (a == atoms[0]) {
-                cy1.setAppearance(a.getAtomAppearance());
-            } else if (a == atoms[1]) {
-                cy2.setAppearance(a.getAtomAppearance());
-            }
-        }
-        setWireVisible(wireVisible);
-    }
-
-    /**
-     * <p>
-     * setWire</p>
-     *
-     * @param l a {@link org.jogamp.java3d.LineArray} object.
-     * @param i a int.
-     */
-    public void setWire(LineArray l, int i) {
-        la = l;
-        lineIndex = i;
-    }
-
-    /**
-     * Gets the current distance between the two Atoms in this Bond.
-     *
-     * @return Current distance.
-     */
-    public double getCurrentDistance() {
-        double[] x1 = new double[3];
-        x1 = atoms[0].getXYZ(x1);
-        double[] x2 = new double[3];
-        x2 = atoms[1].getXYZ(x2);
-        return VectorMath.dist(x1, x2);
-    }
-
-    /**
-     * Log details for this Bond energy term.
-     */
-    public void log() {
-        logger.info(format(" %-8s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                "Bond", atoms[0].getIndex(), atoms[0].getAtomType().name,
-                atoms[1].getIndex(), atoms[1].getAtomType().name,
-                bondType.distance, value, energy));
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -299,6 +188,116 @@ public class Bond extends BondedTerm {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Evaluate this Bond energy.
+     */
+    @Override
+    public double energy(boolean gradient, int threadID,
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+        var atomA = atoms[0];
+        var atomB = atoms[1];
+        var va = atomA.getXYZ();
+        var vb = atomB.getXYZ();
+        var vab = va.sub(vb);
+        value = vab.length();
+        var prefactor = units * rigidScale * bondType.forceConstant * esvLambda;
+        // dv is deviation from ideal
+        var dv = value - bondType.distance;
+        if (bondType.bondFunction.hasFlatBottom()) {
+            if (dv > 0) {
+                dv = max(0, dv - bondType.flatBottomRadius);
+            } else if (dv < 0) {
+                dv = min(0, dv + bondType.flatBottomRadius);
+            } // Else, no adjustments needed.
+        }
+        var dv2 = dv * dv;
+        switch (bondType.bondFunction) {
+            case QUARTIC:
+            case FLAT_BOTTOM_QUARTIC: {
+                energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2);
+                if (gradient) {
+                    // Compute the magnitude of the gradient.
+                    var dedr = 2.0 * prefactor * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
+                    computeGradient(threadID, grad, atomA, atomB, vab, dedr);
+                }
+                break;
+            }
+            case HARMONIC:
+            case FLAT_BOTTOM_HARMONIC:
+            default: {
+                energy = prefactor * dv2;
+                if (gradient) {
+                    // Compute the magnitude of the gradient.
+                    var dedr = 2.0 * prefactor * dv;
+                    computeGradient(threadID, grad, atomA, atomB, vab, dedr);
+                }
+                break;
+            }
+        }
+        value = dv;
+        if (esvTerm) {
+            final var esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
+            setEsvDeriv(energy * dedesvChain * esvLambdaInv);
+        }
+        return energy;
+    }
+
+    /**
+     * Find the other Atom in <b>this</b> Bond. These two atoms are said to be
+     * 1-2.
+     *
+     * @param a The known Atom.
+     * @return The other Atom that makes up <b>this</b> Bond, or Null if Atom a
+     * is not part of <b>this</b> Bond.
+     */
+    public Atom get1_2(Atom a) {
+        if (a == atoms[0]) {
+            return atoms[1];
+        }
+        if (a == atoms[1]) {
+            return atoms[0];
+        }
+        return null; // Atom not found in bond
+    }
+
+    /**
+     * Gets the current distance between the two Atoms in this Bond.
+     *
+     * @return Current distance.
+     */
+    public double getCurrentDistance() {
+        double[] x1 = new double[3];
+        x1 = atoms[0].getXYZ(x1);
+        double[] x2 = new double[3];
+        x2 = atoms[1].getXYZ(x2);
+        return DoubleMath.dist(x1, x2);
+    }
+
+    /**
+     * Log details for this Bond energy term.
+     */
+    public void log() {
+        logger.info(format(" %-8s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
+                "Bond", atoms[0].getIndex(), atoms[0].getAtomType().name,
+                atoms[1].getIndex(), atoms[1].getAtomType().name,
+                bondType.distance, value, energy));
+    }
+
+    /**
+     * Log that no BondType exists.
+     *
+     * @param a1  Atom 1.
+     * @param a2  Atom 2.
+     * @param key The class key.
+     */
+    public static void logNoBondType(Atom a1, Atom a2, String key) {
+        logger.severe(format("No BondType for key: %s\n %s -> %s\n %s -> %s", key,
+                a1.toString(), a1.getAtomType().toString(),
+                a2.toString(), a2.getAtomType().toString()));
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public void removeFromParent() {
@@ -322,41 +321,38 @@ public class Bond extends BondedTerm {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Update recomputes the bonds length, Wireframe vertices, and Cylinder
-     * Transforms
+     * Set a reference to the force field parameters.
+     *
+     * @param bondType a {@link ffx.potential.parameters.BondType} object.
      */
-    @Override
-    public void update() {
-        // Update the Bond Length
-        atoms[0].getXYZ(a13d);
-        atoms[1].getXYZ(a23d);
-        diff(a13d, a23d, diff3d);
-        double d = r(diff3d);
-        setValue(d);
-        sum(a13d, a23d, sum3d);
-        scalar(sum3d, 0.5d, mid);
-        // Update the Wireframe Model.
-        if (la != null) {
-            for (int i = 0; i < 3; i++) {
-                coord[i] = a13d[i];
-                coord[3 + i] = mid[i];
-                coord[6 + i] = mid[i];
-                coord[9 + i] = a23d[i];
+    public void setBondType(BondType bondType) {
+        this.bondType = bondType;
+    }
+
+    /**
+     * Set the color of this Bond's Java3D shapes based on the passed Atom.
+     *
+     * @param a Atom
+     */
+    public void setColor(Atom a) {
+        if (viewModel != ViewModel.INVISIBLE && viewModel != ViewModel.WIREFRAME && branchGroup != null) {
+            if (a == atoms[0]) {
+                cy1.setAppearance(a.getAtomAppearance());
+            } else if (a == atoms[1]) {
+                cy2.setAppearance(a.getAtomAppearance());
             }
-            la.setCoordinates(lineIndex, coord);
         }
-        // Update the Bond cylinder transforms.
-        if (branchGroup != null) {
-            norm(diff3d, diff3d);
-            scale.y = d / 2.0d;
-            setBondTransform3d(cy1t3d, mid, diff3d, d, true);
-            scalar(diff3d, -1.0d, diff3d);
-            setBondTransform3d(cy2t3d, mid, diff3d, d, false);
-            cy1tg.setTransform(cy1t3d);
-            cy2tg.setTransform(cy2t3d);
-        }
+        setWireVisible(wireVisible);
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>rigidScale</code>.</p>
+     *
+     * @param rigidScale a double.
+     */
+    public void setRigidScale(double rigidScale) {
+        this.rigidScale = rigidScale;
     }
 
     /**
@@ -466,82 +462,66 @@ public class Bond extends BondedTerm {
     }
 
     /**
+     * <p>
+     * setWire</p>
+     *
+     * @param l a {@link org.jogamp.java3d.LineArray} object.
+     * @param i a int.
+     */
+    public void setWire(LineArray l, int i) {
+        la = l;
+        lineIndex = i;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
-     * Evaluate this Bond energy.
+     * Update recomputes the bonds length, Wireframe vertices, and Cylinder
+     * Transforms
      */
     @Override
-    public double energy(boolean gradient, int threadID,
-                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
-
-        // The vector from Atom 1 to Atom 0.
-        double[] a0 = new double[3];
-        double[] a1 = new double[3];
-        double[] v10 = new double[3];
-        Atom atom0 = atoms[0];
-        Atom atom1 = atoms[1];
-        diff(atom0.getXYZ(a0), atom1.getXYZ(a1), v10);
-        value = r(v10);
-        double prefactor = units * rigidScale * bondType.forceConstant * esvLambda;
-
-        // dv is deviation from ideal
-        double dv = value - bondType.distance;
-        if (bondType.bondFunction.hasFlatBottom()) {
-            if (dv > 0) {
-                dv = max(0, dv - bondType.flatBottomRadius);
-            } else if (dv < 0) {
-                dv = min(0, dv + bondType.flatBottomRadius);
-            } // Else, no adjustments needed.
-        }
-        double dv2 = dv * dv;
-
-        switch (bondType.bondFunction) {
-            case QUARTIC:
-            case FLAT_BOTTOM_QUARTIC: {
-                energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2);
-                if (gradient) {
-                    // Compute the magnitude of the gradient.
-                    double deddt = 2.0 * prefactor * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
-                    double de = 0.0;
-                    if (value > 0.0) {
-                        de = deddt / value;
-                    }
-                    // Atom 0 gradient.
-                    double[] g0 = new double[3];
-                    // Give the gradient a vector.
-                    scalar(v10, de, g0);
-                    grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
-                    grad.sub(threadID, atoms[1].getIndex() - 1, g0[0], g0[1], g0[2]);
-                }
-                break;
+    public void update() {
+        // Update the Bond Length
+        atoms[0].getXYZ(a13d);
+        atoms[1].getXYZ(a23d);
+        sub(a13d, a23d, diff3d);
+        double d = length(diff3d);
+        setValue(d);
+        DoubleMath.add(a13d, a23d, sum3d);
+        scale(sum3d, 0.5d, mid);
+        // Update the Wireframe Model.
+        if (la != null) {
+            for (int i = 0; i < 3; i++) {
+                coord[i] = a13d[i];
+                coord[3 + i] = mid[i];
+                coord[6 + i] = mid[i];
+                coord[9 + i] = a23d[i];
             }
-            case HARMONIC:
-            case FLAT_BOTTOM_HARMONIC:
-            default: {
-                energy = prefactor * dv2;
-                if (gradient) {
-                    // Compute the magnitude of the gradient.
-                    double deddt = 2.0 * prefactor * dv;
-                    double de = 0.0;
-                    if (value > 0.0) {
-                        de = deddt / value;
-                    }
-                    // Atom 0 gradient.
-                    double[] g0 = new double[3];
-                    // Give the gradient a vector.
-                    scalar(v10, de, g0);
-                    grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
-                    grad.sub(threadID, atoms[1].getIndex() - 1, g0[0], g0[1], g0[2]);
-                }
-                break;
-            }
+            la.setCoordinates(lineIndex, coord);
         }
-        value = dv;
-        if (esvTerm) {
-            final double esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
-            setEsvDeriv(energy * dedesvChain * esvLambdaInv);
+        // Update the Bond cylinder transforms.
+        if (branchGroup != null) {
+            normalize(diff3d, diff3d);
+            scale.y = d / 2.0d;
+            setBondTransform3d(cy1t3d, mid, diff3d, d, true);
+            scale(diff3d, -1.0d, diff3d);
+            setBondTransform3d(cy2t3d, mid, diff3d, d, false);
+            cy1tg.setTransform(cy1t3d);
+            cy2tg.setTransform(cy2t3d);
         }
-        return energy;
+    }
+
+    private void computeGradient(int threadID, AtomicDoubleArray3D grad,
+                                 Atom atomA, Atom atomB, Double3 vab, double dedr) {
+        var de = 0.0;
+        if (value > 0.0) {
+            de = dedr / value;
+        }
+        var ga = vab.scale(de);
+        var ia = atomA.getIndex() - 1;
+        var ib = atomB.getIndex() - 1;
+        grad.add(threadID, ia, ga);
+        grad.sub(threadID, ib, ga);
     }
 
     /**
@@ -664,14 +644,14 @@ public class Bond extends BondedTerm {
         // Bond Orientation
         if (newRot) {
             double angle = angle(orient, y);
-            cross(y, orient, bcross);
+            X(y, orient, bcross);
             bcross[3] = angle - Math.PI;
             axisAngle.set(bcross);
         }
         // Scale the orientation vector to be a fourth the bond length
         // and add it to the position vector of the of the first atom
-        scalar(orient, len / 4.0d, cstart);
-        sum(cstart, pos, cstart);
+        scale(orient, len / 4.0d, cstart);
+        DoubleMath.add(cstart, pos, cstart);
         pos3d.set(cstart);
         t3d.setTranslation(pos3d);
         t3d.setRotation(axisAngle);

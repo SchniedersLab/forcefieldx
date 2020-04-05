@@ -54,8 +54,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.tan;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
-import static ffx.numerics.math.VectorMath.cross;
-import static ffx.numerics.math.VectorMath.dot;
+import static ffx.numerics.math.DoubleMath.X;
+import static ffx.numerics.math.DoubleMath.dot;
 
 /**
  * <p>LoopClosure class.</p>
@@ -115,8 +115,98 @@ public class LoopClosure {
     }
 
     /**
-     * <p>solve3PepPoly.</p>
+     * Calculate bond angle.
      *
+     * @param r1    an array of {@link double} objects.
+     * @param r2    an array of {@link double} objects.
+     * @param angle an array of {@link double} objects.
+     */
+    public void calcBondAngle(double[] r1, double[] r2, double[] angle) {
+        double arg = dot(r1, r2);
+        arg = sign(min(abs(arg), 1.0), arg);
+        angle[0] = acos(arg);
+    }
+
+    /**
+     * Calculate dihedral angle.
+     *
+     * @param r1    an array of {@link double} objects.
+     * @param r2    an array of {@link double} objects.
+     * @param r3    an array of {@link double} objects.
+     * @param angle an array of {@link double} objects.
+     */
+    public void calcDihedralAngle(double[] r1, double[] r2, double[] r3, double[] angle) {
+        double[] p = new double[3];
+        double[] q = new double[3];
+        double[] s = new double[3];
+
+        X(r1, r2, p);
+        X(r2, r3, q);
+        X(r3, r1, s);
+        double arg = dot(p, q) / sqrt(dot(p, p) * dot(q, q));
+        arg = sign(min(abs(arg), 1.0), arg);
+        angle[0] = sign(acos(arg), dot(s, r2));
+    }
+
+    /**
+     * Calculate T1.
+     *
+     * @param t0 a double.
+     * @param t2 a double.
+     * @return return a double T1.
+     */
+    public double calcT1(double t0, double t2) {
+        double t0_2 = t0 * t0;
+        double t2_2 = t2 * t2;
+        double U11 = C0[0][0] + C0[0][1] * t0 + C0[0][2] * t0_2;
+        double U12 = C1[0][0] + C1[0][1] * t0 + C1[0][2] * t0_2;
+        double U13 = C2[0][0] + C2[0][1] * t0 + C2[0][2] * t0_2;
+        double U31 = C0[1][0] + C0[1][1] * t2 + C0[1][2] * t2_2;
+        double U32 = C1[1][0] + C1[1][1] * t2 + C1[1][2] * t2_2;
+        double U33 = C2[1][0] + C2[1][1] * t2 + C2[1][2] * t2_2;
+        double tmp_value = (U31 * U13 - U11 * U33) / (U12 * U33 - U13 * U32);
+
+        return tmp_value;
+    }
+
+    /**
+     * Calculate T2.
+     *
+     * @param t0 a double.
+     * @return a double T2.
+     */
+    public double calcT2(double t0) {
+        double t0_2 = t0 * t0;
+        double t0_3 = t0_2 * t0;
+        double t0_4 = t0_3 * t0;
+
+        double A0 = Q[0][0] + Q[0][1] * t0 + Q[0][2] * t0_2 + Q[0][3] * t0_3 + Q[0][4] * t0_4;
+        double A1 = Q[1][0] + Q[1][1] * t0 + Q[1][2] * t0_2 + Q[1][3] * t0_3 + Q[1][4] * t0_4;
+        double A2 = Q[2][0] + Q[2][1] * t0 + Q[2][2] * t0_2 + Q[2][3] * t0_3 + Q[2][4] * t0_4;
+        double A3 = Q[3][0] + Q[3][1] * t0 + Q[3][2] * t0_2 + Q[3][3] * t0_3 + Q[3][4] * t0_4;
+        double A4 = Q[4][0] + Q[4][1] * t0 + Q[4][2] * t0_2 + Q[4][3] * t0_3 + Q[4][4] * t0_4;
+
+        double B0 = R[0][0] + R[0][1] * t0 + R[0][2] * t0_2;
+        double B1 = R[1][0] + R[1][1] * t0 + R[1][2] * t0_2;
+        double B2 = R[2][0] + R[2][1] * t0 + R[2][2] * t0_2;
+
+        double B2_2 = B2 * B2;
+        double B2_3 = B2_2 * B2;
+
+        double K0 = A2 * B2 - A4 * B0;
+        double K1 = A3 * B2 - A4 * B1;
+        double K2 = A1 * B2_2 - K1 * B0;
+        double K3 = K0 * B2 - K1 * B1;
+        double tmp_value = (K3 * B0 - A0 * B2_3) / (K2 * B2 - K3 * B1);
+
+        return tmp_value;
+    }
+
+    /**
+     * Get coordinates from polynomial roots.
+     *
+     * @param n_soln   an array of {@link int} objects.
+     * @param roots    an array of {@link double} objects.
      * @param r_n1     an array of {@link double} objects.
      * @param r_a1     an array of {@link double} objects.
      * @param r_a3     an array of {@link double} objects.
@@ -124,159 +214,295 @@ public class LoopClosure {
      * @param r_soln_n an array of {@link double} objects.
      * @param r_soln_a an array of {@link double} objects.
      * @param r_soln_c an array of {@link double} objects.
-     * @param n_soln   an array of {@link int} objects.
      */
-    public void solve3PepPoly(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3, double[][][] r_soln_n,
-                              double[][][] r_soln_a, double[][][] r_soln_c, int[] n_soln) {
-        double[] polyCoeff = new double[deg_pol[0] + 1];
-        double[] roots = new double[max_soln];
-
-        getInputAngles(n_soln, r_n1, r_a1, r_a3, r_c3);
+    public void getCoordsFromPolyRoots(int[] n_soln, double[] roots, double[] r_n1, double[] r_a1,
+                                       double[] r_a3, double[] r_c3, double[][][] r_soln_n, double[][][] r_soln_a, double[][][] r_soln_c) {
+        double[] ex = new double[3];
+        double[] ey = new double[3];
+        double[] ez = new double[3];
+        double[] b_a1a2 = new double[3];
+        double[] b_a3a2 = new double[3];
+        double[] r_tmp = new double[3];
+        double[][] p_s = new double[3][3];
+        double[][] s1 = new double[3][3];
+        double[][] s2 = new double[3][3];
+        double[][] p_t = new double[3][3];
+        double[][] t1 = new double[3][3];
+        double[][] t2 = new double[3][3];
+        double[][] p_s_c = new double[3][3];
+        double[][] s1_s = new double[3][3];
+        double[][] s2_s = new double[3][3];
+        double[][] p_t_c = new double[3][3];
+        double[][] t1_s = new double[3][3];
+        double[][] t2_s = new double[3][3];
+        double[] angle = new double[1];
+        double[] half_tan = new double[3];
+        double[] cos_tau = new double[4];
+        double[] sin_tau = new double[4];
+        double[] cos_sig = new double[3];
+        double[] sin_sig = new double[3];
+        double[] r_s = new double[3];
+        double[] r_t = new double[3];
+        double[] r0 = new double[3];
+        double[][] r_n = new double[3][3];
+        double[][] r_a = new double[3][3];
+        double[][] r_c = new double[3][3];
+        double[] p = new double[4];
+        double[][] Us = new double[3][3];
+        double[] rr_a1c1 = new double[3];
+        double[] rr_c1n2 = new double[3];
+        double[] rr_n2a2 = new double[3];
+        double[] rr_a2c2 = new double[3];
+        double[] rr_c2n3 = new double[3];
+        double[] rr_n3a3 = new double[3];
+        double[] rr_a1a2 = new double[3];
+        double[] rr_a2a3 = new double[3];
+        double[] a3a1a2 = new double[1];
+        double[] a2a3a1 = new double[1];
+        double[] n1a1c1 = new double[1];
+        double[] n2a2c2 = new double[1];
+        double[] n3a3c3 = new double[1];
+        double[] a1c1n2a2 = new double[1];
+        double[] a2c2n3a3 = new double[1];
+        double[] ex_tmp = new double[3];
+        double[] tmp_array = new double[3];
+        double[] tmp_array1 = new double[3];
+        double[] tmp_array2 = new double[3];
+        double[] tmp_array3 = new double[3];
+        double[] mat1 = new double[3];
+        double[] mat2 = new double[3];
+        double[] mat3 = new double[3];
+        double[] mat4 = new double[3];
+        double[] mat5 = new double[3];
+        double[] mat11 = new double[3];
+        double[] mat22 = new double[3];
+        double[] mat33 = new double[3];
+        double[] mat44 = new double[3];
+        double[] mat55 = new double[3];
 
         if (n_soln[0] == 0) {
             return;
         }
 
-        getPolyCoeff(polyCoeff);
-        sturmMethod.solveSturm(deg_pol, n_soln, polyCoeff, roots);
-        if (n_soln[0] == 0) {
-            logger.info("Could not find alternative loop solutions using KIC.");
+        for (int i = 0; i < 3; i++) {
+            ex[i] = b_a1a3[i];
         }
-
-        getCoordsFromPolyRoots(n_soln, roots, r_n1, r_a1, r_a3, r_c3, r_soln_n, r_soln_a, r_soln_c);
-
-    }
-
-    /**
-     * Returns the sign (positive or negative) of a variable.
-     *
-     * @param a a double.
-     * @param b a double.
-     * @return If b is positive or zero, return abs(a), else return -abs(a).
-     */
-    public double sign(double a, double b) {
-        if (b >= 0.0) {
-            return FastMath.abs(a);
-        } else {
-            return -FastMath.abs(a);
+        X(r_a1n1, ex, ez);
+        double tmp_value = sqrt(dot(ez, ez));
+        for (int i = 0; i < 3; i++) {
+            ez[i] = ez[i] / tmp_value;
         }
-    }
-
-    /**
-     * Initialize Loop Closure.
-     */
-    private void initializeLoopClosure() {
-        double[] axis = new double[3];
-        double[] rr_a1 = new double[3];
-        double[] rr_c1 = new double[3];
-        double[] rr_n2 = new double[3];
-        double[] rr_a2 = new double[3];
-        double[] rr_n2a2_ref = new double[3];
-        double[] rr_c1a1 = new double[3];
-        double[] rr_a1a2 = new double[3];
-        double[] dr = new double[3];
-        double[] bb_c1a1 = new double[3];
-        double[] bb_a1a2 = new double[3];
-        double[] bb_a2n2 = new double[3];
-        double[] p = new double[4];
-        double[][] Us = new double[3][3];
-        double[] mulpro = new double[3];
-        double[] tmp_val = new double[3];
-
-        //initializing initial length, angle, and torsion arrays
-        len0[0] = 1.52;
-        len0[1] = 1.33;
-        len0[2] = 1.45;
-        len0[3] = 1.52;
-        len0[4] = 1.33;
-        len0[5] = 1.45;
-
-        b_ang0[0] = Math.toRadians(111.6);
-        b_ang0[1] = Math.toRadians(117.5);
-        b_ang0[2] = Math.toRadians(120.0);
-        b_ang0[3] = Math.toRadians(111.6);
-        b_ang0[4] = Math.toRadians(117.5);
-        b_ang0[5] = Math.toRadians(120.0);
-        b_ang0[6] = Math.toRadians(111.6);
-
-        t_ang0[0] = Math.PI;
-        t_ang0[1] = Math.PI;
+        X(ez, ex, ey);
 
         for (int i = 0; i < 3; i++) {
-            rr_c1[i] = 0.0;
+            b_a1a2[i] = -cos_alpha[0] * ex[i] + sin_alpha[0] * ey[i];
+            b_a3a2[i] = cos_alpha[2] * ex[i] + sin_alpha[2] * ey[i];
         }
-        //initializing axis
-        axis[0] = 1.0;
-        axis[1] = 0.0;
-        axis[2] = 0.0;
-        for (int i = 0; i < 2; i++) {
-            //iniitalizing rr_a1 array
-            rr_a1[0] = cos(b_ang0[3 * i + 1]) * len0[3 * i];
-            rr_a1[1] = sin(b_ang0[3 * i + 1]) * len0[3 * i];
-            rr_a1[2] = 0.0e0;
-            //initializing rr_n2 array
-            rr_n2[0] = len0[3 * i + 1];
-            rr_n2[1] = 0.0e0;
-            rr_n2[2] = 0.0e0;
-            //initializing rr_c1a1 array
+
+        for (int i = 0; i < 3; i++) {
+            p_s[0][i] = -ex[i];
+            s1[0][i] = ez[i];
+            s2[0][i] = ey[i];
+            p_t[0][i] = b_a1a2[i];
+            t1[0][i] = ez[i];
+            t2[0][i] = sin_alpha[0] * ex[i] + cos_alpha[0] * ey[i];
+        }
+
+        for (int i = 0; i < 3; i++) {
+            p_s[1][i] = -b_a1a2[i];
+            s1[1][i] = -ez[i];
+            s2[1][i] = t2[0][i];
+            p_t[1][i] = -b_a3a2[i];
+            t1[1][i] = -ez[i];
+            t2[1][i] = sin_alpha[2] * ex[i] - cos_alpha[2] * ey[i];
+        }
+
+        for (int i = 0; i < 3; i++) {
+            p_s[2][i] = b_a3a2[i];
+            s2[2][i] = t2[1][i];
+            s1[2][i] = ez[i];
+            p_t[2][i] = ex[i];
+            t1[2][i] = ez[i];
+            t2[2][i] = -ey[i];
+        }
+
+        for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                rr_c1a1[j] = rr_a1[j] - rr_c1[j];
+                p_s_c[i][j] = p_s[i][j] * cos_xi[i];
+                s1_s[i][j] = s1[i][j] * sin_xi[i];
+                s2_s[i][j] = s2[i][j] * sin_xi[i];
+                p_t_c[i][j] = p_t[i][j] * cos_eta[i];
+                t1_s[i][j] = t1[i][j] * sin_eta[i];
+                t2_s[i][j] = t2[i][j] * sin_eta[i];
             }
-            //initializing rr_n2a2_ref array
-            rr_n2a2_ref[0] = -cos(b_ang0[3 * i + 2]) * len0[3 * i + 2];
-            rr_n2a2_ref[1] = sin(b_ang0[3 * i + 2]) * len0[3 * i + 2];
-            rr_n2a2_ref[2] = 0.0e0;
-            //quaternion is the quotient of two vectors in 3D space
-            quaternion(axis, t_ang0[i] * 0.25e0, p);
-            //means of representing a rotation of an axis about an origin
-            //      with no angular specification
+        }
+
+        for (int i = 0; i < 3; i++) {
+            r_tmp[i] = (r_a1n1[i] / len_na[0] - p_s_c[0][i]) / sin_xi[0];
+        }
+        calcBondAngle(s1[0], r_tmp, angle);
+        double sig1Init = sign(angle[0], dot(r_tmp, s2[0]));
+
+        for (int i = 0; i < 3; i++) {
+            r_a[0][i] = r_a1[i];
+            r_a[1][i] = r_a1[i] + len_aa[1] * b_a1a2[i];
+            r_a[2][i] = r_a3[i];
+            r0[i] = r_a1[i];
+        }
+
+        for (int i_soln = 0; i_soln < n_soln[0]; i_soln++) {
+            half_tan[2] = roots[i_soln];
+            half_tan[1] = calcT2(half_tan[2]);
+            half_tan[0] = calcT1(half_tan[2], half_tan[1]);
+
+            for (int i = 1; i <= 3; i++) {
+                double ht = half_tan[i - 1];
+                double tmp = 1.0 + ht * ht;
+                cos_tau[i] = (1.0 - ht * ht) / tmp;
+                sin_tau[i] = 2.0 * ht / tmp;
+            }
+
+            cos_tau[0] = cos_tau[3];
+            sin_tau[0] = sin_tau[3];
+
+            for (int i = 0; i < 3; i++) {
+                cos_sig[i] = cos_delta[i] * cos_tau[i] + sin_delta[i] * sin_tau[i];
+                sin_sig[i] = sin_delta[i] * cos_tau[i] - cos_delta[i] * sin_tau[i];
+            }
+
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    r_s[j] = p_s_c[i][j] + cos_sig[i] * s1_s[i][j] + sin_sig[i] * s2_s[i][j];
+                    r_t[j] = p_t_c[i][j] + cos_tau[i + 1] * t1_s[i][j] + sin_tau[i + 1] * t2_s[i][j];
+                    r_n[i][j] = r_s[j] * len_na[i] + r_a[i][j];
+                    r_c[i][j] = r_t[j] * len_ac[i] + r_a[i][j];
+                }
+            }
+
+            double sig1 = atan2(sin_sig[0], cos_sig[0]);
+            ex_tmp[0] = -ex[0];
+            ex_tmp[1] = -ex[1];
+            ex_tmp[2] = -ex[2];
+            tmp_value = -(sig1 - sig1Init) * 0.25;
+            quaternion(ex_tmp, tmp_value, p);
+
             rotationMatrix(p, Us);
-            //basic matrix multiplication
-            matMul(Us, rr_n2a2_ref, mulpro);
-            for (int j = 0; j < 3; j++) {
-                rr_a2[j] = mulpro[j] + rr_n2[j];
-                rr_a1a2[j] = rr_a2[j] - rr_a1[j];
-                dr[j] = rr_a1a2[j];
-            }
-            double len2 = dot(dr, dr);
-            double len1 = sqrt(len2);
-            len_aa[i + 1] = len1;
-            for (int j = 0; j < 3; j++) {
-                bb_c1a1[j] = rr_c1a1[j] / len0[3 * i];
-                bb_a1a2[j] = rr_a1a2[j] / len1;
-                bb_a2n2[j] = (rr_n2[j] - rr_a2[j]) / len0[3 * i + 2];
-            }
-            for (int j = 0; j < 3; j++) {
-                tmp_val[j] = -bb_a1a2[j];
-            }
-            calcBondAngle(tmp_val, bb_a2n2, xi[i + 1]);
-            for (int j = 0; j < 3; j++) {
-                tmp_val[j] = -bb_c1a1[j];
-            }
-            calcBondAngle(bb_a1a2, tmp_val, eta[i]);
-            calcDihedralAngle(bb_c1a1, bb_a1a2, bb_a2n2, delta[i + 1]);
-            delta[i + 1][0] = PI - delta[i + 1][0];
-        }
 
-        double a_min = b_ang0[3] - (xi[1][0] + eta[1][0]);
-        double a_max = min((b_ang0[3] + (xi[1][0] + eta[1][0])), PI);
-        aa13_min_sqr = pow(len_aa[1], 2) + pow(len_aa[2], 2) - 2.0 * len_aa[1] * len_aa[2] * cos(a_min);
-        aa13_max_sqr = pow(len_aa[1], 2) + pow(len_aa[2], 2) - 2.0 * len_aa[1] * len_aa[2] * cos(a_max);
-    }
+            for (int i = 0; i < 3; i++) {
+                mat11[i] = r_c[0][i] - r0[i];
+                mat22[i] = r_n[1][i] - r0[i];
+                mat33[i] = r_a[1][i] - r0[i];
+                mat44[i] = r_c[1][i] - r0[i];
+                mat55[i] = r_n[2][i] - r0[i];
+            }
 
-    /**
-     * A Basic 2D matrix multiplication. This function multiplies matrices ma
-     * and mb, storing the answer in mc.
-     *
-     * @param ma an array of {@link double} objects.
-     * @param mb an array of {@link double} objects.
-     * @param mc an array of {@link double} objects.
-     */
-    public void matMul(double[][] ma, double[] mb, double[] mc) {
-        for (int i = 0; i < 3; i++) {
-            mc[i] = 0.0;
-            for (int j = 0; j < 3; j++) {
-                mc[i] += ma[i][j] * mb[j];
+            matMul(Us, mat11, mat1);
+            matMul(Us, mat22, mat2);
+            matMul(Us, mat33, mat3);
+            matMul(Us, mat44, mat4);
+            matMul(Us, mat55, mat5);
+
+            for (int i = 0; i < 3; i++) {
+                r_soln_n[i_soln][0][i] = r_n1[i];
+                r_soln_a[i_soln][0][i] = r_a1[i];
+                r_soln_c[i_soln][0][i] = mat1[i] + r0[i];
+                r_soln_n[i_soln][1][i] = mat2[i] + r0[i];
+                r_soln_a[i_soln][1][i] = mat3[i] + r0[i];
+                r_soln_c[i_soln][1][i] = mat4[i] + r0[i];
+                r_soln_n[i_soln][2][i] = mat5[i] + r0[i];
+                r_soln_a[i_soln][2][i] = r_a3[i];
+                r_soln_c[i_soln][2][i] = r_c3[i];
+            }
+
+            if (logger.isLoggable(Level.FINE)) {
+                StringBuilder string1 = new StringBuilder();
+                string1.append(String.format("roots: t0\t\t t2\t\t t1\t\t %d\n", i_soln));
+                string1.append(String.format("%15.6f %15.6f %15.6f\n", half_tan[2], half_tan[1], half_tan[0]));
+                logger.fine(string1.toString());
+            }
+
+            for (int i = 0; i < 3; i++) {
+                rr_a1c1[i] = r_soln_c[i_soln][0][i] - r_soln_a[i_soln][0][i];
+                rr_c1n2[i] = r_soln_n[i_soln][1][i] - r_soln_c[i_soln][0][i];
+                rr_n2a2[i] = r_soln_a[i_soln][1][i] - r_soln_n[i_soln][1][i];
+                rr_a2c2[i] = r_soln_c[i_soln][1][i] - r_soln_a[i_soln][1][i];
+                rr_c2n3[i] = r_soln_n[i_soln][2][i] - r_soln_c[i_soln][1][i];
+                rr_n3a3[i] = r_soln_a[i_soln][2][i] - r_soln_n[i_soln][2][i];
+                rr_a1a2[i] = r_soln_a[i_soln][1][i] - r_soln_a[i_soln][0][i];
+                rr_a2a3[i] = r_soln_a[i_soln][2][i] - r_soln_a[i_soln][1][i];
+            }
+
+            double a1c1 = sqrt(dot(rr_a1c1, rr_a1c1));
+            double c1n2 = sqrt(dot(rr_c1n2, rr_c1n2));
+            double n2a2 = sqrt(dot(rr_n2a2, rr_n2a2));
+            double a2c2 = sqrt(dot(rr_a2c2, rr_a2c2));
+            double c2n3 = sqrt(dot(rr_c2n3, rr_c2n3));
+            double n3a3 = sqrt(dot(rr_n3a3, rr_n3a3));
+            double a1a2 = sqrt(dot(rr_a1a2, rr_a1a2));
+            double a2a3 = sqrt(dot(rr_a2a3, rr_a2a3));
+
+            if (logger.isLoggable(Level.FINE)) {
+                StringBuilder string2 = new StringBuilder();
+                string2.append(String.format("na: n2a2, n3a3 = %9.3f%9.3f%9.3f%9.3f\n", len0[2], n2a2, len0[5], n3a3));
+                string2.append(String.format("ac: a1c1, a2c2 = %9.3f%9.3f%9.3f%9.3f\n", len0[0], a1c1, len0[3], a2c2));
+                string2.append(String.format("cn: c1n2, c2n3 = %9.3f%9.3f%9.3f%9.3f\n", len0[1], c1n2, len0[4], c2n3));
+                string2.append(String.format("aa: a1a2, a2a3 = %9.3f%9.3f%9.3f%9.3f\n", len_aa[1], a1a2, len_aa[2], a2a3));
+                logger.info(string2.toString());
+            }
+
+            for (int i = 0; i < 3; i++) {
+                tmp_array[i] = rr_a1a2[i] / a1a2;
+            }
+            calcBondAngle(b_a1a3, tmp_array, a3a1a2);
+
+            for (int i = 0; i < 3; i++) {
+                tmp_array[i] = rr_a2a3[i] / a2a3;
+            }
+            calcBondAngle(tmp_array, b_a1a3, a2a3a1);
+
+            for (int i = 0; i < 3; i++) {
+                tmp_array[i] = rr_a1c1[i] / a1c1;
+            }
+            calcBondAngle(b_a1n1, tmp_array, n1a1c1);
+
+            for (int i = 0; i < 3; i++) {
+                tmp_array[i] = -rr_n3a3[i] / n3a3;
+            }
+            calcBondAngle(b_a3c3, tmp_array, n3a3c3);
+
+            for (int i = 0; i < 3; i++) {
+                tmp_array1[i] = rr_a2c2[i] / a2c2;
+                tmp_array2[i] = -rr_n2a2[i] / n2a2;
+            }
+            calcBondAngle(tmp_array1, tmp_array2, n2a2c2);
+
+            if (logger.isLoggable(Level.FINE)) {
+                StringBuilder string3 = new StringBuilder();
+                string3.append(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[0]), toDegrees(n1a1c1[0])));
+                string3.append(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[3]), toDegrees(n2a2c2[0])));
+                string3.append(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[6]), toDegrees(n3a3c3[0])));
+                logger.fine(string3.toString());
+            }
+
+            for (int i = 0; i < 3; i++) {
+                tmp_array1[i] = rr_a1c1[i] / a1c1;
+                tmp_array2[i] = rr_c1n2[i] / c1n2;
+                tmp_array3[i] = rr_n2a2[i] / n2a2;
+            }
+            calcDihedralAngle(tmp_array1, tmp_array2, tmp_array3, a1c1n2a2);
+
+            for (int i = 0; i < 3; i++) {
+                tmp_array1[i] = rr_a2c2[i] / a2c2;
+                tmp_array2[i] = rr_c2n3[i] / c2n3;
+                tmp_array3[i] = rr_n3a3[i] / n3a3;
+            }
+            calcDihedralAngle(tmp_array1, tmp_array2, tmp_array3, a2c2n3a3);
+
+            if (logger.isLoggable(Level.FINE)) {
+                StringBuilder string4 = new StringBuilder();
+                string4.append(String.format("t_ang1 = %9.3f%9.3f\n", toDegrees(t_ang0[0]), toDegrees(a1c1n2a2[0])));
+                string4.append(String.format("t_ang2 = %9.3f%9.3f\n", toDegrees(t_ang0[1]), toDegrees(a2c2n3a3[0])));
+                logger.fine(string4.toString());
             }
         }
     }
@@ -402,64 +628,6 @@ public class LoopClosure {
             }
         }
 
-    }
-
-    /**
-     * <p>testTwoConeExistenceSoln.</p>
-     *
-     * @param tt        a double.
-     * @param kx        a double.
-     * @param et        a double.
-     * @param ap        a double.
-     * @param n_soln    an array of {@link int} objects.
-     * @param cone_type an array of {@link char} objects.
-     */
-    public void testTwoConeExistenceSoln(double tt, double kx, double et, double ap, int[] n_soln, char[] cone_type) {
-
-        n_soln[0] = max_soln;
-        double ap1 = ap;
-        double kx1 = kx;
-        double et1 = et;
-        double at = ap1 - tt;
-        double ex = kx1 + et1;
-        double abs_at = abs(at);
-        if (abs_at > ex) {
-            n_soln[0] = 0;
-            return;
-        }
-
-        boolean complicated = false;
-        if (complicated) {
-            double cos_tx1 = cos(tt + kx1);
-            double cos_tx2 = cos(tt - kx1);
-            double cos_te1 = cos(tt + et1);
-            double cos_te2 = cos(tt - et1);
-            double cos_ea1 = cos(et1 + ap1);
-            double cos_ea2 = cos(et1 - ap1);
-            double cos_xa1 = cos(kx1 + ap1);
-            double cos_xa2 = cos(kx1 - ap1);
-
-            double s1 = 0;
-            double s2 = 0;
-            double t1 = 0;
-            double t2 = 0;
-
-            if ((cos_te1 - cos_xa2) * (cos_te1 - cos_xa1) <= 0.0e0) {
-                s1 = 0;
-            }
-
-            if ((cos_te2 - cos_xa2) * (cos_te2 - cos_xa1) <= 0.0e0) {
-                s2 = 0;
-            }
-
-            if ((cos_tx1 - cos_ea2) * (cos_tx1 - cos_ea1) <= 0.0e0) {
-                t1 = 0;
-            }
-
-            if ((cos_tx2 - cos_ea2) * (cos_tx2 - cos_ea1) <= 0.0e0) {
-                t2 = 0;
-            }
-        }
     }
 
     /**
@@ -693,29 +861,44 @@ public class LoopClosure {
     }
 
     /**
-     * Polynomial multiplication subtraction 2.
+     * A Basic 2D matrix multiplication. This function multiplies matrices ma
+     * and mb, storing the answer in mc.
+     *
+     * @param ma an array of {@link double} objects.
+     * @param mb an array of {@link double} objects.
+     * @param mc an array of {@link double} objects.
+     */
+    public void matMul(double[][] ma, double[] mb, double[] mc) {
+        for (int i = 0; i < 3; i++) {
+            mc[i] = 0.0;
+            for (int j = 0; j < 3; j++) {
+                mc[i] += ma[i][j] * mb[j];
+            }
+        }
+    }
+
+    /**
+     * Polynomial multiply 1.
      *
      * @param u1 an array of {@link double} objects.
      * @param u2 an array of {@link double} objects.
+     * @param p1 a int.
+     * @param p2 a int.
      * @param u3 an array of {@link double} objects.
-     * @param u4 an array of {@link double} objects.
-     * @param p1 an array of {@link int} objects.
-     * @param p2 an array of {@link int} objects.
      * @param p3 an array of {@link int} objects.
-     * @param p4 an array of {@link int} objects.
-     * @param u5 an array of {@link double} objects.
-     * @param p5 an array of {@link int} objects.
      */
-    public void polyMulSub2(double[][] u1, double[][] u2, double[][] u3, double[][] u4,
-                            int[] p1, int[] p2, int[] p3, int[] p4, double[][] u5, int[] p5) {
-        double[][] d1 = new double[5][5];
-        double[][] d2 = new double[5][5];
-        int[] pd1 = new int[2];
-        int[] pd2 = new int[2];
-
-        polyMul2(u1, u2, p1, p2, d1, pd1);
-        polyMul2(u3, u4, p3, p4, d2, pd2);
-        polySub2(d1, d2, pd1, pd2, u5, p5);
+    public void polyMul1(double[] u1, double[] u2, int p1, int p2, double[] u3, int[] p3) {
+        p3[0] = p1 + p2;
+        for (int i = 0; i < 17; i++) {
+            u3[i] = 0.0;
+        }
+        for (int i1 = 0; i1 <= p1; i1++) {
+            double u1i = u1[i1];
+            for (int i2 = 0; i2 <= p2; i2++) {
+                int i3 = i1 + i2;
+                u3[i3] = u3[i3] + u1i * u2[i2];
+            }
+        }
     }
 
     /**
@@ -756,6 +939,83 @@ public class LoopClosure {
     }
 
     /**
+     * Polynomial multiply subtraction 1.
+     *
+     * @param u1 an array of {@link double} objects.
+     * @param u2 an array of {@link double} objects.
+     * @param u3 an array of {@link double} objects.
+     * @param u4 an array of {@link double} objects.
+     * @param p1 a int.
+     * @param p2 a int.
+     * @param p3 a int.
+     * @param p4 a int.
+     * @param u5 an array of {@link double} objects.
+     * @param p5 an array of {@link int} objects.
+     */
+    public void polyMulSub1(double[] u1, double[] u2, double[] u3, double[] u4,
+                            int p1, int p2, int p3, int p4, double[] u5, int[] p5) {
+
+        double[] d1 = new double[17];
+        double[] d2 = new double[17];
+        int[] pd1 = new int[1];
+        int[] pd2 = new int[1];
+
+        polyMul1(u1, u2, p1, p2, d1, pd1);
+        polyMul1(u3, u4, p3, p4, d2, pd2);
+        polySub1(d1, d2, pd1, pd2, u5, p5);
+
+    }
+
+    /**
+     * Polynomial multiplication subtraction 2.
+     *
+     * @param u1 an array of {@link double} objects.
+     * @param u2 an array of {@link double} objects.
+     * @param u3 an array of {@link double} objects.
+     * @param u4 an array of {@link double} objects.
+     * @param p1 an array of {@link int} objects.
+     * @param p2 an array of {@link int} objects.
+     * @param p3 an array of {@link int} objects.
+     * @param p4 an array of {@link int} objects.
+     * @param u5 an array of {@link double} objects.
+     * @param p5 an array of {@link int} objects.
+     */
+    public void polyMulSub2(double[][] u1, double[][] u2, double[][] u3, double[][] u4,
+                            int[] p1, int[] p2, int[] p3, int[] p4, double[][] u5, int[] p5) {
+        double[][] d1 = new double[5][5];
+        double[][] d2 = new double[5][5];
+        int[] pd1 = new int[2];
+        int[] pd2 = new int[2];
+
+        polyMul2(u1, u2, p1, p2, d1, pd1);
+        polyMul2(u3, u4, p3, p4, d2, pd2);
+        polySub2(d1, d2, pd1, pd2, u5, p5);
+    }
+
+    /**
+     * Polynomial subtraction 1.
+     *
+     * @param u1 an array of {@link double} objects.
+     * @param u2 an array of {@link double} objects.
+     * @param p1 an array of {@link int} objects.
+     * @param p2 an array of {@link int} objects.
+     * @param u3 an array of {@link double} objects.
+     * @param p3 an array of {@link int} objects.
+     */
+    public void polySub1(double[] u1, double[] u2, int[] p1, int[] p2, double[] u3, int[] p3) {
+        p3[0] = max(p1[0], p2[0]);
+        for (int i = 0; i <= p3[0]; i++) {
+            if (i > p2[0]) {
+                u3[i] = u1[i];
+            } else if (i > p1[0]) {
+                u3[i] = -u2[i];
+            } else {
+                u3[i] = u1[i] - u2[i];
+            }
+        }
+    }
+
+    /**
      * Polynomial subtraction 2.
      *
      * @param u1 an array of {@link double} objects.
@@ -786,474 +1046,6 @@ public class LoopClosure {
 
             }
         }
-    }
-
-    /**
-     * Polynomial multiply subtraction 1.
-     *
-     * @param u1 an array of {@link double} objects.
-     * @param u2 an array of {@link double} objects.
-     * @param u3 an array of {@link double} objects.
-     * @param u4 an array of {@link double} objects.
-     * @param p1 a int.
-     * @param p2 a int.
-     * @param p3 a int.
-     * @param p4 a int.
-     * @param u5 an array of {@link double} objects.
-     * @param p5 an array of {@link int} objects.
-     */
-    public void polyMulSub1(double[] u1, double[] u2, double[] u3, double[] u4,
-                            int p1, int p2, int p3, int p4, double[] u5, int[] p5) {
-
-        double[] d1 = new double[17];
-        double[] d2 = new double[17];
-        int[] pd1 = new int[1];
-        int[] pd2 = new int[1];
-
-        polyMul1(u1, u2, p1, p2, d1, pd1);
-        polyMul1(u3, u4, p3, p4, d2, pd2);
-        polySub1(d1, d2, pd1, pd2, u5, p5);
-
-    }
-
-    /**
-     * Polynomial multiply 1.
-     *
-     * @param u1 an array of {@link double} objects.
-     * @param u2 an array of {@link double} objects.
-     * @param p1 a int.
-     * @param p2 a int.
-     * @param u3 an array of {@link double} objects.
-     * @param p3 an array of {@link int} objects.
-     */
-    public void polyMul1(double[] u1, double[] u2, int p1, int p2, double[] u3, int[] p3) {
-        p3[0] = p1 + p2;
-        for (int i = 0; i < 17; i++) {
-            u3[i] = 0.0;
-        }
-        for (int i1 = 0; i1 <= p1; i1++) {
-            double u1i = u1[i1];
-            for (int i2 = 0; i2 <= p2; i2++) {
-                int i3 = i1 + i2;
-                u3[i3] = u3[i3] + u1i * u2[i2];
-            }
-        }
-    }
-
-    /**
-     * Polynomial subtraction 1.
-     *
-     * @param u1 an array of {@link double} objects.
-     * @param u2 an array of {@link double} objects.
-     * @param p1 an array of {@link int} objects.
-     * @param p2 an array of {@link int} objects.
-     * @param u3 an array of {@link double} objects.
-     * @param p3 an array of {@link int} objects.
-     */
-    public void polySub1(double[] u1, double[] u2, int[] p1, int[] p2, double[] u3, int[] p3) {
-        p3[0] = max(p1[0], p2[0]);
-        for (int i = 0; i <= p3[0]; i++) {
-            if (i > p2[0]) {
-                u3[i] = u1[i];
-            } else if (i > p1[0]) {
-                u3[i] = -u2[i];
-            } else {
-                u3[i] = u1[i] - u2[i];
-            }
-        }
-    }
-
-    /**
-     * Get coordinates from polynomial roots.
-     *
-     * @param n_soln   an array of {@link int} objects.
-     * @param roots    an array of {@link double} objects.
-     * @param r_n1     an array of {@link double} objects.
-     * @param r_a1     an array of {@link double} objects.
-     * @param r_a3     an array of {@link double} objects.
-     * @param r_c3     an array of {@link double} objects.
-     * @param r_soln_n an array of {@link double} objects.
-     * @param r_soln_a an array of {@link double} objects.
-     * @param r_soln_c an array of {@link double} objects.
-     */
-    public void getCoordsFromPolyRoots(int[] n_soln, double[] roots, double[] r_n1, double[] r_a1,
-                                       double[] r_a3, double[] r_c3, double[][][] r_soln_n, double[][][] r_soln_a, double[][][] r_soln_c) {
-        double[] ex = new double[3];
-        double[] ey = new double[3];
-        double[] ez = new double[3];
-        double[] b_a1a2 = new double[3];
-        double[] b_a3a2 = new double[3];
-        double[] r_tmp = new double[3];
-        double[][] p_s = new double[3][3];
-        double[][] s1 = new double[3][3];
-        double[][] s2 = new double[3][3];
-        double[][] p_t = new double[3][3];
-        double[][] t1 = new double[3][3];
-        double[][] t2 = new double[3][3];
-        double[][] p_s_c = new double[3][3];
-        double[][] s1_s = new double[3][3];
-        double[][] s2_s = new double[3][3];
-        double[][] p_t_c = new double[3][3];
-        double[][] t1_s = new double[3][3];
-        double[][] t2_s = new double[3][3];
-        double[] angle = new double[1];
-        double[] half_tan = new double[3];
-        double[] cos_tau = new double[4];
-        double[] sin_tau = new double[4];
-        double[] cos_sig = new double[3];
-        double[] sin_sig = new double[3];
-        double[] r_s = new double[3];
-        double[] r_t = new double[3];
-        double[] r0 = new double[3];
-        double[][] r_n = new double[3][3];
-        double[][] r_a = new double[3][3];
-        double[][] r_c = new double[3][3];
-        double[] p = new double[4];
-        double[][] Us = new double[3][3];
-        double[] rr_a1c1 = new double[3];
-        double[] rr_c1n2 = new double[3];
-        double[] rr_n2a2 = new double[3];
-        double[] rr_a2c2 = new double[3];
-        double[] rr_c2n3 = new double[3];
-        double[] rr_n3a3 = new double[3];
-        double[] rr_a1a2 = new double[3];
-        double[] rr_a2a3 = new double[3];
-        double[] a3a1a2 = new double[1];
-        double[] a2a3a1 = new double[1];
-        double[] n1a1c1 = new double[1];
-        double[] n2a2c2 = new double[1];
-        double[] n3a3c3 = new double[1];
-        double[] a1c1n2a2 = new double[1];
-        double[] a2c2n3a3 = new double[1];
-        double[] ex_tmp = new double[3];
-        double[] tmp_array = new double[3];
-        double[] tmp_array1 = new double[3];
-        double[] tmp_array2 = new double[3];
-        double[] tmp_array3 = new double[3];
-        double[] mat1 = new double[3];
-        double[] mat2 = new double[3];
-        double[] mat3 = new double[3];
-        double[] mat4 = new double[3];
-        double[] mat5 = new double[3];
-        double[] mat11 = new double[3];
-        double[] mat22 = new double[3];
-        double[] mat33 = new double[3];
-        double[] mat44 = new double[3];
-        double[] mat55 = new double[3];
-
-        if (n_soln[0] == 0) {
-            return;
-        }
-
-        for (int i = 0; i < 3; i++) {
-            ex[i] = b_a1a3[i];
-        }
-        cross(r_a1n1, ex, ez);
-        double tmp_value = sqrt(dot(ez, ez));
-        for (int i = 0; i < 3; i++) {
-            ez[i] = ez[i] / tmp_value;
-        }
-        cross(ez, ex, ey);
-
-        for (int i = 0; i < 3; i++) {
-            b_a1a2[i] = -cos_alpha[0] * ex[i] + sin_alpha[0] * ey[i];
-            b_a3a2[i] = cos_alpha[2] * ex[i] + sin_alpha[2] * ey[i];
-        }
-
-        for (int i = 0; i < 3; i++) {
-            p_s[0][i] = -ex[i];
-            s1[0][i] = ez[i];
-            s2[0][i] = ey[i];
-            p_t[0][i] = b_a1a2[i];
-            t1[0][i] = ez[i];
-            t2[0][i] = sin_alpha[0] * ex[i] + cos_alpha[0] * ey[i];
-        }
-
-        for (int i = 0; i < 3; i++) {
-            p_s[1][i] = -b_a1a2[i];
-            s1[1][i] = -ez[i];
-            s2[1][i] = t2[0][i];
-            p_t[1][i] = -b_a3a2[i];
-            t1[1][i] = -ez[i];
-            t2[1][i] = sin_alpha[2] * ex[i] - cos_alpha[2] * ey[i];
-        }
-
-        for (int i = 0; i < 3; i++) {
-            p_s[2][i] = b_a3a2[i];
-            s2[2][i] = t2[1][i];
-            s1[2][i] = ez[i];
-            p_t[2][i] = ex[i];
-            t1[2][i] = ez[i];
-            t2[2][i] = -ey[i];
-        }
-
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                p_s_c[i][j] = p_s[i][j] * cos_xi[i];
-                s1_s[i][j] = s1[i][j] * sin_xi[i];
-                s2_s[i][j] = s2[i][j] * sin_xi[i];
-                p_t_c[i][j] = p_t[i][j] * cos_eta[i];
-                t1_s[i][j] = t1[i][j] * sin_eta[i];
-                t2_s[i][j] = t2[i][j] * sin_eta[i];
-            }
-        }
-
-        for (int i = 0; i < 3; i++) {
-            r_tmp[i] = (r_a1n1[i] / len_na[0] - p_s_c[0][i]) / sin_xi[0];
-        }
-        calcBondAngle(s1[0], r_tmp, angle);
-        double sig1Init = sign(angle[0], dot(r_tmp, s2[0]));
-
-        for (int i = 0; i < 3; i++) {
-            r_a[0][i] = r_a1[i];
-            r_a[1][i] = r_a1[i] + len_aa[1] * b_a1a2[i];
-            r_a[2][i] = r_a3[i];
-            r0[i] = r_a1[i];
-        }
-
-        for (int i_soln = 0; i_soln < n_soln[0]; i_soln++) {
-            half_tan[2] = roots[i_soln];
-            half_tan[1] = calcT2(half_tan[2]);
-            half_tan[0] = calcT1(half_tan[2], half_tan[1]);
-
-            for (int i = 1; i <= 3; i++) {
-                double ht = half_tan[i - 1];
-                double tmp = 1.0 + ht * ht;
-                cos_tau[i] = (1.0 - ht * ht) / tmp;
-                sin_tau[i] = 2.0 * ht / tmp;
-            }
-
-            cos_tau[0] = cos_tau[3];
-            sin_tau[0] = sin_tau[3];
-
-            for (int i = 0; i < 3; i++) {
-                cos_sig[i] = cos_delta[i] * cos_tau[i] + sin_delta[i] * sin_tau[i];
-                sin_sig[i] = sin_delta[i] * cos_tau[i] - cos_delta[i] * sin_tau[i];
-            }
-
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    r_s[j] = p_s_c[i][j] + cos_sig[i] * s1_s[i][j] + sin_sig[i] * s2_s[i][j];
-                    r_t[j] = p_t_c[i][j] + cos_tau[i + 1] * t1_s[i][j] + sin_tau[i + 1] * t2_s[i][j];
-                    r_n[i][j] = r_s[j] * len_na[i] + r_a[i][j];
-                    r_c[i][j] = r_t[j] * len_ac[i] + r_a[i][j];
-                }
-            }
-
-            double sig1 = atan2(sin_sig[0], cos_sig[0]);
-            ex_tmp[0] = -ex[0];
-            ex_tmp[1] = -ex[1];
-            ex_tmp[2] = -ex[2];
-            tmp_value = -(sig1 - sig1Init) * 0.25;
-            quaternion(ex_tmp, tmp_value, p);
-
-            rotationMatrix(p, Us);
-
-            for (int i = 0; i < 3; i++) {
-                mat11[i] = r_c[0][i] - r0[i];
-                mat22[i] = r_n[1][i] - r0[i];
-                mat33[i] = r_a[1][i] - r0[i];
-                mat44[i] = r_c[1][i] - r0[i];
-                mat55[i] = r_n[2][i] - r0[i];
-            }
-
-            matMul(Us, mat11, mat1);
-            matMul(Us, mat22, mat2);
-            matMul(Us, mat33, mat3);
-            matMul(Us, mat44, mat4);
-            matMul(Us, mat55, mat5);
-
-            for (int i = 0; i < 3; i++) {
-                r_soln_n[i_soln][0][i] = r_n1[i];
-                r_soln_a[i_soln][0][i] = r_a1[i];
-                r_soln_c[i_soln][0][i] = mat1[i] + r0[i];
-                r_soln_n[i_soln][1][i] = mat2[i] + r0[i];
-                r_soln_a[i_soln][1][i] = mat3[i] + r0[i];
-                r_soln_c[i_soln][1][i] = mat4[i] + r0[i];
-                r_soln_n[i_soln][2][i] = mat5[i] + r0[i];
-                r_soln_a[i_soln][2][i] = r_a3[i];
-                r_soln_c[i_soln][2][i] = r_c3[i];
-            }
-
-            if (logger.isLoggable(Level.FINE)) {
-                StringBuilder string1 = new StringBuilder();
-                string1.append(String.format("roots: t0\t\t t2\t\t t1\t\t %d\n", i_soln));
-                string1.append(String.format("%15.6f %15.6f %15.6f\n", half_tan[2], half_tan[1], half_tan[0]));
-                logger.fine(string1.toString());
-            }
-
-            for (int i = 0; i < 3; i++) {
-                rr_a1c1[i] = r_soln_c[i_soln][0][i] - r_soln_a[i_soln][0][i];
-                rr_c1n2[i] = r_soln_n[i_soln][1][i] - r_soln_c[i_soln][0][i];
-                rr_n2a2[i] = r_soln_a[i_soln][1][i] - r_soln_n[i_soln][1][i];
-                rr_a2c2[i] = r_soln_c[i_soln][1][i] - r_soln_a[i_soln][1][i];
-                rr_c2n3[i] = r_soln_n[i_soln][2][i] - r_soln_c[i_soln][1][i];
-                rr_n3a3[i] = r_soln_a[i_soln][2][i] - r_soln_n[i_soln][2][i];
-                rr_a1a2[i] = r_soln_a[i_soln][1][i] - r_soln_a[i_soln][0][i];
-                rr_a2a3[i] = r_soln_a[i_soln][2][i] - r_soln_a[i_soln][1][i];
-            }
-
-            double a1c1 = sqrt(dot(rr_a1c1, rr_a1c1));
-            double c1n2 = sqrt(dot(rr_c1n2, rr_c1n2));
-            double n2a2 = sqrt(dot(rr_n2a2, rr_n2a2));
-            double a2c2 = sqrt(dot(rr_a2c2, rr_a2c2));
-            double c2n3 = sqrt(dot(rr_c2n3, rr_c2n3));
-            double n3a3 = sqrt(dot(rr_n3a3, rr_n3a3));
-            double a1a2 = sqrt(dot(rr_a1a2, rr_a1a2));
-            double a2a3 = sqrt(dot(rr_a2a3, rr_a2a3));
-
-            if (logger.isLoggable(Level.FINE)) {
-                StringBuilder string2 = new StringBuilder();
-                string2.append(String.format("na: n2a2, n3a3 = %9.3f%9.3f%9.3f%9.3f\n", len0[2], n2a2, len0[5], n3a3));
-                string2.append(String.format("ac: a1c1, a2c2 = %9.3f%9.3f%9.3f%9.3f\n", len0[0], a1c1, len0[3], a2c2));
-                string2.append(String.format("cn: c1n2, c2n3 = %9.3f%9.3f%9.3f%9.3f\n", len0[1], c1n2, len0[4], c2n3));
-                string2.append(String.format("aa: a1a2, a2a3 = %9.3f%9.3f%9.3f%9.3f\n", len_aa[1], a1a2, len_aa[2], a2a3));
-                logger.info(string2.toString());
-            }
-
-            for (int i = 0; i < 3; i++) {
-                tmp_array[i] = rr_a1a2[i] / a1a2;
-            }
-            calcBondAngle(b_a1a3, tmp_array, a3a1a2);
-
-            for (int i = 0; i < 3; i++) {
-                tmp_array[i] = rr_a2a3[i] / a2a3;
-            }
-            calcBondAngle(tmp_array, b_a1a3, a2a3a1);
-
-            for (int i = 0; i < 3; i++) {
-                tmp_array[i] = rr_a1c1[i] / a1c1;
-            }
-            calcBondAngle(b_a1n1, tmp_array, n1a1c1);
-
-            for (int i = 0; i < 3; i++) {
-                tmp_array[i] = -rr_n3a3[i] / n3a3;
-            }
-            calcBondAngle(b_a3c3, tmp_array, n3a3c3);
-
-            for (int i = 0; i < 3; i++) {
-                tmp_array1[i] = rr_a2c2[i] / a2c2;
-                tmp_array2[i] = -rr_n2a2[i] / n2a2;
-            }
-            calcBondAngle(tmp_array1, tmp_array2, n2a2c2);
-
-            if (logger.isLoggable(Level.FINE)) {
-                StringBuilder string3 = new StringBuilder();
-                string3.append(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[0]), toDegrees(n1a1c1[0])));
-                string3.append(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[3]), toDegrees(n2a2c2[0])));
-                string3.append(String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[6]), toDegrees(n3a3c3[0])));
-                logger.fine(string3.toString());
-            }
-
-            for (int i = 0; i < 3; i++) {
-                tmp_array1[i] = rr_a1c1[i] / a1c1;
-                tmp_array2[i] = rr_c1n2[i] / c1n2;
-                tmp_array3[i] = rr_n2a2[i] / n2a2;
-            }
-            calcDihedralAngle(tmp_array1, tmp_array2, tmp_array3, a1c1n2a2);
-
-            for (int i = 0; i < 3; i++) {
-                tmp_array1[i] = rr_a2c2[i] / a2c2;
-                tmp_array2[i] = rr_c2n3[i] / c2n3;
-                tmp_array3[i] = rr_n3a3[i] / n3a3;
-            }
-            calcDihedralAngle(tmp_array1, tmp_array2, tmp_array3, a2c2n3a3);
-
-            if (logger.isLoggable(Level.FINE)) {
-                StringBuilder string4 = new StringBuilder();
-                string4.append(String.format("t_ang1 = %9.3f%9.3f\n", toDegrees(t_ang0[0]), toDegrees(a1c1n2a2[0])));
-                string4.append(String.format("t_ang2 = %9.3f%9.3f\n", toDegrees(t_ang0[1]), toDegrees(a2c2n3a3[0])));
-                logger.fine(string4.toString());
-            }
-        }
-    }
-
-    /**
-     * Calculate T2.
-     *
-     * @param t0 a double.
-     * @return a double T2.
-     */
-    public double calcT2(double t0) {
-        double t0_2 = t0 * t0;
-        double t0_3 = t0_2 * t0;
-        double t0_4 = t0_3 * t0;
-
-        double A0 = Q[0][0] + Q[0][1] * t0 + Q[0][2] * t0_2 + Q[0][3] * t0_3 + Q[0][4] * t0_4;
-        double A1 = Q[1][0] + Q[1][1] * t0 + Q[1][2] * t0_2 + Q[1][3] * t0_3 + Q[1][4] * t0_4;
-        double A2 = Q[2][0] + Q[2][1] * t0 + Q[2][2] * t0_2 + Q[2][3] * t0_3 + Q[2][4] * t0_4;
-        double A3 = Q[3][0] + Q[3][1] * t0 + Q[3][2] * t0_2 + Q[3][3] * t0_3 + Q[3][4] * t0_4;
-        double A4 = Q[4][0] + Q[4][1] * t0 + Q[4][2] * t0_2 + Q[4][3] * t0_3 + Q[4][4] * t0_4;
-
-        double B0 = R[0][0] + R[0][1] * t0 + R[0][2] * t0_2;
-        double B1 = R[1][0] + R[1][1] * t0 + R[1][2] * t0_2;
-        double B2 = R[2][0] + R[2][1] * t0 + R[2][2] * t0_2;
-
-        double B2_2 = B2 * B2;
-        double B2_3 = B2_2 * B2;
-
-        double K0 = A2 * B2 - A4 * B0;
-        double K1 = A3 * B2 - A4 * B1;
-        double K2 = A1 * B2_2 - K1 * B0;
-        double K3 = K0 * B2 - K1 * B1;
-        double tmp_value = (K3 * B0 - A0 * B2_3) / (K2 * B2 - K3 * B1);
-
-        return tmp_value;
-    }
-
-    /**
-     * Calculate T1.
-     *
-     * @param t0 a double.
-     * @param t2 a double.
-     * @return return a double T1.
-     */
-    public double calcT1(double t0, double t2) {
-        double t0_2 = t0 * t0;
-        double t2_2 = t2 * t2;
-        double U11 = C0[0][0] + C0[0][1] * t0 + C0[0][2] * t0_2;
-        double U12 = C1[0][0] + C1[0][1] * t0 + C1[0][2] * t0_2;
-        double U13 = C2[0][0] + C2[0][1] * t0 + C2[0][2] * t0_2;
-        double U31 = C0[1][0] + C0[1][1] * t2 + C0[1][2] * t2_2;
-        double U32 = C1[1][0] + C1[1][1] * t2 + C1[1][2] * t2_2;
-        double U33 = C2[1][0] + C2[1][1] * t2 + C2[1][2] * t2_2;
-        double tmp_value = (U31 * U13 - U11 * U33) / (U12 * U33 - U13 * U32);
-
-        return tmp_value;
-    }
-
-    /**
-     * Calculate dihedral angle.
-     *
-     * @param r1    an array of {@link double} objects.
-     * @param r2    an array of {@link double} objects.
-     * @param r3    an array of {@link double} objects.
-     * @param angle an array of {@link double} objects.
-     */
-    public void calcDihedralAngle(double[] r1, double[] r2, double[] r3, double[] angle) {
-        double[] p = new double[3];
-        double[] q = new double[3];
-        double[] s = new double[3];
-
-        cross(r1, r2, p);
-        cross(r2, r3, q);
-        cross(r3, r1, s);
-        double arg = dot(p, q) / sqrt(dot(p, p) * dot(q, q));
-        arg = sign(min(abs(arg), 1.0), arg);
-        angle[0] = sign(acos(arg), dot(s, r2));
-    }
-
-    /**
-     * Calculate bond angle.
-     *
-     * @param r1    an array of {@link double} objects.
-     * @param r2    an array of {@link double} objects.
-     * @param angle an array of {@link double} objects.
-     */
-    public void calcBondAngle(double[] r1, double[] r2, double[] angle) {
-        double arg = dot(r1, r2);
-        arg = sign(min(abs(arg), 1.0), arg);
-        angle[0] = acos(arg);
     }
 
     /**
@@ -1312,5 +1104,213 @@ public class LoopClosure {
         U[2][0] = q13 - q02;
         U[2][1] = q23 + q01;
         U[2][2] = q00 + q33;
+    }
+
+    /**
+     * Returns the sign (positive or negative) of a variable.
+     *
+     * @param a a double.
+     * @param b a double.
+     * @return If b is positive or zero, return abs(a), else return -abs(a).
+     */
+    public double sign(double a, double b) {
+        if (b >= 0.0) {
+            return FastMath.abs(a);
+        } else {
+            return -FastMath.abs(a);
+        }
+    }
+
+    /**
+     * <p>solve3PepPoly.</p>
+     *
+     * @param r_n1     an array of {@link double} objects.
+     * @param r_a1     an array of {@link double} objects.
+     * @param r_a3     an array of {@link double} objects.
+     * @param r_c3     an array of {@link double} objects.
+     * @param r_soln_n an array of {@link double} objects.
+     * @param r_soln_a an array of {@link double} objects.
+     * @param r_soln_c an array of {@link double} objects.
+     * @param n_soln   an array of {@link int} objects.
+     */
+    public void solve3PepPoly(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3, double[][][] r_soln_n,
+                              double[][][] r_soln_a, double[][][] r_soln_c, int[] n_soln) {
+        double[] polyCoeff = new double[deg_pol[0] + 1];
+        double[] roots = new double[max_soln];
+
+        getInputAngles(n_soln, r_n1, r_a1, r_a3, r_c3);
+
+        if (n_soln[0] == 0) {
+            return;
+        }
+
+        getPolyCoeff(polyCoeff);
+        sturmMethod.solveSturm(deg_pol, n_soln, polyCoeff, roots);
+        if (n_soln[0] == 0) {
+            logger.info("Could not find alternative loop solutions using KIC.");
+        }
+
+        getCoordsFromPolyRoots(n_soln, roots, r_n1, r_a1, r_a3, r_c3, r_soln_n, r_soln_a, r_soln_c);
+
+    }
+
+    /**
+     * <p>testTwoConeExistenceSoln.</p>
+     *
+     * @param tt        a double.
+     * @param kx        a double.
+     * @param et        a double.
+     * @param ap        a double.
+     * @param n_soln    an array of {@link int} objects.
+     * @param cone_type an array of {@link char} objects.
+     */
+    public void testTwoConeExistenceSoln(double tt, double kx, double et, double ap, int[] n_soln, char[] cone_type) {
+
+        n_soln[0] = max_soln;
+        double ap1 = ap;
+        double kx1 = kx;
+        double et1 = et;
+        double at = ap1 - tt;
+        double ex = kx1 + et1;
+        double abs_at = abs(at);
+        if (abs_at > ex) {
+            n_soln[0] = 0;
+            return;
+        }
+
+        boolean complicated = false;
+        if (complicated) {
+            double cos_tx1 = cos(tt + kx1);
+            double cos_tx2 = cos(tt - kx1);
+            double cos_te1 = cos(tt + et1);
+            double cos_te2 = cos(tt - et1);
+            double cos_ea1 = cos(et1 + ap1);
+            double cos_ea2 = cos(et1 - ap1);
+            double cos_xa1 = cos(kx1 + ap1);
+            double cos_xa2 = cos(kx1 - ap1);
+
+            double s1 = 0;
+            double s2 = 0;
+            double t1 = 0;
+            double t2 = 0;
+
+            if ((cos_te1 - cos_xa2) * (cos_te1 - cos_xa1) <= 0.0e0) {
+                s1 = 0;
+            }
+
+            if ((cos_te2 - cos_xa2) * (cos_te2 - cos_xa1) <= 0.0e0) {
+                s2 = 0;
+            }
+
+            if ((cos_tx1 - cos_ea2) * (cos_tx1 - cos_ea1) <= 0.0e0) {
+                t1 = 0;
+            }
+
+            if ((cos_tx2 - cos_ea2) * (cos_tx2 - cos_ea1) <= 0.0e0) {
+                t2 = 0;
+            }
+        }
+    }
+
+    /**
+     * Initialize Loop Closure.
+     */
+    private void initializeLoopClosure() {
+        double[] axis = new double[3];
+        double[] rr_a1 = new double[3];
+        double[] rr_c1 = new double[3];
+        double[] rr_n2 = new double[3];
+        double[] rr_a2 = new double[3];
+        double[] rr_n2a2_ref = new double[3];
+        double[] rr_c1a1 = new double[3];
+        double[] rr_a1a2 = new double[3];
+        double[] dr = new double[3];
+        double[] bb_c1a1 = new double[3];
+        double[] bb_a1a2 = new double[3];
+        double[] bb_a2n2 = new double[3];
+        double[] p = new double[4];
+        double[][] Us = new double[3][3];
+        double[] mulpro = new double[3];
+        double[] tmp_val = new double[3];
+
+        //initializing initial length, angle, and torsion arrays
+        len0[0] = 1.52;
+        len0[1] = 1.33;
+        len0[2] = 1.45;
+        len0[3] = 1.52;
+        len0[4] = 1.33;
+        len0[5] = 1.45;
+
+        b_ang0[0] = Math.toRadians(111.6);
+        b_ang0[1] = Math.toRadians(117.5);
+        b_ang0[2] = Math.toRadians(120.0);
+        b_ang0[3] = Math.toRadians(111.6);
+        b_ang0[4] = Math.toRadians(117.5);
+        b_ang0[5] = Math.toRadians(120.0);
+        b_ang0[6] = Math.toRadians(111.6);
+
+        t_ang0[0] = Math.PI;
+        t_ang0[1] = Math.PI;
+
+        for (int i = 0; i < 3; i++) {
+            rr_c1[i] = 0.0;
+        }
+        //initializing axis
+        axis[0] = 1.0;
+        axis[1] = 0.0;
+        axis[2] = 0.0;
+        for (int i = 0; i < 2; i++) {
+            //iniitalizing rr_a1 array
+            rr_a1[0] = cos(b_ang0[3 * i + 1]) * len0[3 * i];
+            rr_a1[1] = sin(b_ang0[3 * i + 1]) * len0[3 * i];
+            rr_a1[2] = 0.0e0;
+            //initializing rr_n2 array
+            rr_n2[0] = len0[3 * i + 1];
+            rr_n2[1] = 0.0e0;
+            rr_n2[2] = 0.0e0;
+            //initializing rr_c1a1 array
+            for (int j = 0; j < 3; j++) {
+                rr_c1a1[j] = rr_a1[j] - rr_c1[j];
+            }
+            //initializing rr_n2a2_ref array
+            rr_n2a2_ref[0] = -cos(b_ang0[3 * i + 2]) * len0[3 * i + 2];
+            rr_n2a2_ref[1] = sin(b_ang0[3 * i + 2]) * len0[3 * i + 2];
+            rr_n2a2_ref[2] = 0.0e0;
+            //quaternion is the quotient of two vectors in 3D space
+            quaternion(axis, t_ang0[i] * 0.25e0, p);
+            //means of representing a rotation of an axis about an origin
+            //      with no angular specification
+            rotationMatrix(p, Us);
+            //basic matrix multiplication
+            matMul(Us, rr_n2a2_ref, mulpro);
+            for (int j = 0; j < 3; j++) {
+                rr_a2[j] = mulpro[j] + rr_n2[j];
+                rr_a1a2[j] = rr_a2[j] - rr_a1[j];
+                dr[j] = rr_a1a2[j];
+            }
+            double len2 = dot(dr, dr);
+            double len1 = sqrt(len2);
+            len_aa[i + 1] = len1;
+            for (int j = 0; j < 3; j++) {
+                bb_c1a1[j] = rr_c1a1[j] / len0[3 * i];
+                bb_a1a2[j] = rr_a1a2[j] / len1;
+                bb_a2n2[j] = (rr_n2[j] - rr_a2[j]) / len0[3 * i + 2];
+            }
+            for (int j = 0; j < 3; j++) {
+                tmp_val[j] = -bb_a1a2[j];
+            }
+            calcBondAngle(tmp_val, bb_a2n2, xi[i + 1]);
+            for (int j = 0; j < 3; j++) {
+                tmp_val[j] = -bb_c1a1[j];
+            }
+            calcBondAngle(bb_a1a2, tmp_val, eta[i]);
+            calcDihedralAngle(bb_c1a1, bb_a1a2, bb_a2n2, delta[i + 1]);
+            delta[i + 1][0] = PI - delta[i + 1][0];
+        }
+
+        double a_min = b_ang0[3] - (xi[1][0] + eta[1][0]);
+        double a_max = min((b_ang0[3] + (xi[1][0] + eta[1][0])), PI);
+        aa13_min_sqr = pow(len_aa[1], 2) + pow(len_aa[2], 2) - 2.0 * len_aa[1] * len_aa[2] * cos(a_min);
+        aa13_max_sqr = pow(len_aa[1], 2) + pow(len_aa[2], 2) - 2.0 * len_aa[1] * len_aa[2] * cos(a_max);
     }
 }

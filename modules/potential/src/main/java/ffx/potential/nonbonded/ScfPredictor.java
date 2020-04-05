@@ -57,7 +57,7 @@ import org.apache.commons.math3.util.Pair;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
 import ffx.potential.parameters.ForceField;
-import static ffx.numerics.math.VectorMath.binomial;
+import static ffx.numerics.math.ScalarMath.binomial;
 
 /**
  * Predict Mutual Induced Dipoles based on previous steps.

@@ -51,16 +51,16 @@ import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import static ffx.crystal.Crystal.quad_form;
-import static ffx.numerics.math.VectorMath.b2u;
-import static ffx.numerics.math.VectorMath.determinant3;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.mat3Inverse;
-import static ffx.numerics.math.VectorMath.mat3Mat3;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalarMat3Mat3;
-import static ffx.numerics.math.VectorMath.u2b;
-import static ffx.numerics.math.VectorMath.vec3Mat3;
+import static ffx.numerics.math.ScalarMath.b2u;
+import static ffx.numerics.math.MatrixMath.determinant3;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.MatrixMath.mat3Inverse;
+import static ffx.numerics.math.MatrixMath.mat3Mat3;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.MatrixMath.scalarMat3Mat3;
+import static ffx.numerics.math.ScalarMath.u2b;
+import static ffx.numerics.math.MatrixMath.vec3Mat3;
 
 /**
  * This implementation uses the coefficients from International Tables, Vol. C,
@@ -352,8 +352,8 @@ public final class NeutronFormFactor implements FormFactor {
      */
     @Override
     public double rho(double f, double lambda, double[] xyz) {
-        diff(this.xyz, xyz, xyz);
-        double r = r(xyz);
+        sub(this.xyz, xyz, xyz);
+        double r = length(xyz);
         if (r > atom.getFormFactorWidth()) {
             return f;
         }
@@ -366,8 +366,8 @@ public final class NeutronFormFactor implements FormFactor {
      */
     @Override
     public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
-        diff(this.xyz, xyz, dxyz);
-        double r = r(dxyz);
+        sub(this.xyz, xyz, dxyz);
+        double r = length(dxyz);
         double r2 = r * r;
         fill(gradp, 0.0);
         fill(gradu, 0.0);

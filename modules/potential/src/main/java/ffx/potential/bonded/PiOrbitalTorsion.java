@@ -48,12 +48,6 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.PiTorsionType;
-import static ffx.numerics.math.VectorMath.cross;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalar;
-import static ffx.numerics.math.VectorMath.sum;
 import static ffx.potential.parameters.PiTorsionType.units;
 
 /**
@@ -115,6 +109,173 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * Evaluate the Pi-Orbital Torsion energy.
+     */
+    @Override
+    public double energy(boolean gradient, int threadID,
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+        energy = 0.0;
+        value = 0.0;
+        dEdL = 0.0;
+        var atomA = atoms[0];
+        var atomB = atoms[1];
+        var atomC = atoms[2];
+        var atomD = atoms[3];
+        var atomE = atoms[4];
+        var atomF = atoms[5];
+        var va = atomA.getXYZ();
+        var vb = atomB.getXYZ();
+        var vc = atomC.getXYZ();
+        var vd = atomD.getXYZ();
+        var ve = atomE.getXYZ();
+        var vf = atomF.getXYZ();
+        var vad = va.sub(vd);
+        var vbd = vb.sub(vd);
+        var vdc = vd.sub(vc);
+        var vec = ve.sub(vc);
+        var vfc = vf.sub(vc);
+        var vp = vad.X(vbd).addI(vc);
+        var vq = vec.X(vfc).addI(vd);
+        var vpc = vc.sub(vp);
+        var vdq = vq.sub(vd);
+        var vt = vpc.X(vdc);
+        var vu = vdc.X(vdq);
+        var rt2 = vt.length2();
+        var ru2 = vu.length2();
+        var rtru2 = rt2 * ru2;
+        if (rtru2 != 0.0) {
+            var rr = sqrt(rtru2);
+            var rdc = vdc.length();
+            var sine = vdc.dot(vt.X(vu)) / (rdc * rr);
+            var cosine = min(1.0, max(-1.0, vt.dot(vu) / rr));
+            value = toDegrees(acos(cosine));
+            if (sine < 0.0) {
+                value = -value;
+            }
+            if (value > 90.0) {
+                value -= 180.0;
+            }
+            if (value < -90.0) {
+                value += 180.0;
+            }
+            var cosine2 = cosine * cosine - sine * sine;
+            var phi2 = 1.0 - cosine2;
+            energy = units * piTorsionType.forceConstant * phi2 * esvLambda;
+            if (esvTerm) {
+                setEsvDeriv(units * piTorsionType.forceConstant * phi2 * dedesvChain);
+            }
+            dEdL = energy;
+            energy = lambda * energy;
+            if (gradient || lambdaTerm) {
+                var sine2 = 2.0 * cosine * sine;
+                var dphi2 = 2.0 * sine2;
+                var dedphi = units * piTorsionType.forceConstant * dphi2 * esvLambda;
+
+                // Chain rule terms for first derivative components.
+                var vdp = vd.sub(vp);
+                var vqc = vq.sub(vc);
+                var vdt = vt.X(vdc).scaleI(dedphi / (rt2 * rdc));
+                var vdu = vu.X(vdc).scaleI(-dedphi / (ru2 * rdc));
+                var dedp = vdt.X(vdc);
+                var dedc = vdp.X(vdt).addI(vdu.X(vdq));
+                var dedd = vdt.X(vpc).addI(vqc.X(vdu));
+                var dedq = vdu.X(vdc);
+
+                // Atomic gradient.
+                var ga = vbd.X(dedp);
+                var gb = dedp.X(vad);
+                var ge = vfc.X(dedq);
+                var gf = dedq.X(vec);
+                var gc = dedc.add(dedp).subI(ge).subI(gf);
+                var gd = dedd.add(dedq).subI(ga).subI(gb);
+                var iA = atomA.getIndex() - 1;
+                var iB = atomB.getIndex() - 1;
+                var iC = atomC.getIndex() - 1;
+                var iD = atomD.getIndex() - 1;
+                var iE = atomE.getIndex() - 1;
+                var iF = atomF.getIndex() - 1;
+                if (lambdaTerm) {
+                    lambdaGrad.add(threadID, iA, ga);
+                    lambdaGrad.add(threadID, iB, gb);
+                    lambdaGrad.add(threadID, iC, gc);
+                    lambdaGrad.add(threadID, iD, gd);
+                    lambdaGrad.add(threadID, iE, ge);
+                    lambdaGrad.add(threadID, iF, gf);
+                }
+                if (gradient) {
+                    grad.add(threadID, iA, ga.scaleI(lambda));
+                    grad.add(threadID, iB, gb.scaleI(lambda));
+                    grad.add(threadID, iC, gc.scaleI(lambda));
+                    grad.add(threadID, iD, gd.scaleI(lambda));
+                    grad.add(threadID, iE, ge.scaleI(lambda));
+                    grad.add(threadID, iF, gf.scaleI(lambda));
+                }
+            }
+        }
+        return energy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setLambda(double lambda) {
+        if (applyAllLambda()) {
+            this.lambda = lambda;
+            lambdaTerm = true;
+        } else {
+            this.lambda = 1.0;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        return 0.0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getdEdL() {
+        if (lambdaTerm) {
+            return dEdL;
+        } else {
+            return 0.0;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        // The dEdXdL contributions are zero.
+    }
+
+    /**
+     * Log details for this Pi-Orbital Torsion energy term.
+     */
+    public void log() {
+        logger.info(String.format(" %s %6d-%s %6d-%s %10.4f %10.4f",
+                "Pi-Orbital Torsion", atoms[2].getIndex(), atoms[2].getAtomType().name,
+                atoms[3].getIndex(), atoms[3].getAtomType().name, value, energy));
+    }
+
+    /**
      * Attempt to create a new PiOrbitalTorsion based on the supplied bond and
      * forceField.
      *
@@ -136,187 +297,9 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
         if (piTorsionType == null) {
             return null;
         }
-        PiOrbitalTorsion piOrbitalTorsion = new PiOrbitalTorsion(
-                bond);
+        PiOrbitalTorsion piOrbitalTorsion = new PiOrbitalTorsion(bond);
         piOrbitalTorsion.piTorsionType = piTorsionType;
         return piOrbitalTorsion;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Evaluate the Pi-Orbital Torsion energy.
-     */
-    @Override
-    public double energy(boolean gradient, int threadID,
-                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
-        energy = 0.0;
-        value = 0.0;
-        dEdL = 0.0;
-
-        double[] a0 = new double[3];
-        double[] a1 = new double[3];
-        double[] a2 = new double[3];
-        double[] a3 = new double[3];
-        double[] a4 = new double[3];
-        double[] a5 = new double[3];
-        atoms[0].getXYZ(a0);
-        atoms[1].getXYZ(a1);
-        atoms[2].getXYZ(a2);
-        atoms[3].getXYZ(a3);
-        atoms[4].getXYZ(a4);
-        atoms[5].getXYZ(a5);
-
-        // Vector from Atom 3 to Atom 0.
-        double[] v30 = new double[3];
-        // Vector from Atom 3 to Atom 1.
-        double[] v31 = new double[3];
-        // Vector from Atom 2 to Atom 3.
-        double[] v23 = new double[3];
-        // Vector from Atom 2 to Atom 4.
-        double[] v24 = new double[3];
-        // Vector from Atom 2 to Atom 5.
-        double[] v25 = new double[3];
-        // Vector v30 cross v13.
-        double[] vp = new double[3];
-        // Vector v25 cross v52.
-        double[] vq = new double[3];
-        diff(a0, a3, v30);
-        diff(a1, a3, v31);
-        diff(a3, a2, v23);
-        diff(a4, a2, v24);
-        diff(a5, a2, v25);
-        cross(v30, v31, vp);
-        cross(v24, v25, vq);
-        sum(vp, a2, vp);
-        sum(vq, a3, vq);
-
-        // Work vectors.
-        double[] xt = new double[3];
-        double[] xu = new double[3];
-        double[] xtu = new double[3];
-        double[] vpc = new double[3];
-        double[] vdq = new double[3];
-        double[] vpd = new double[3];
-        double[] vcq = new double[3];
-        diff(a2, vp, vpc);
-        diff(vq, a3, vdq);
-        cross(vpc, v23, xt);
-        cross(v23, vdq, xu);
-        cross(xt, xu, xtu);
-        double rt2 = dot(xt, xt);
-        double ru2 = dot(xu, xu);
-        double rr = sqrt(rt2 * ru2);
-        if (rr != 0.0) {
-            double r23 = r(v23);
-            double cosine = dot(xt, xu) / rr;
-            double sine = dot(v23, xtu) / (r23 * rr);
-            cosine = min(1.0, max(-1.0, cosine));
-            value = toDegrees(acos(cosine));
-            if (sine < 0.0) {
-                value = -value;
-            }
-            if (value > 90.0) {
-                value -= 180.0;
-            }
-            if (value < -90.0) {
-                value += 180.0;
-            }
-            double cosine2 = cosine * cosine - sine * sine;
-            double phi2 = 1.0 - cosine2;
-            energy = units * piTorsionType.forceConstant * phi2 * esvLambda;
-            if (esvTerm) {
-                setEsvDeriv(units * piTorsionType.forceConstant * phi2 * dedesvChain);
-            }
-            dEdL = energy;
-            energy = lambda * energy;
-            if (gradient || lambdaTerm) {
-                double sine2 = 2.0 * cosine * sine;
-                double dphi2 = 2.0 * sine2;
-                double dedphi = units * piTorsionType.forceConstant * dphi2 * esvLambda;
-                diff(a3, vp, vpd);
-                diff(vq, a2, vcq);
-
-                // Work vectors.
-                double[] dedt = new double[3];
-                double[] dedu = new double[3];
-                double[] temp = new double[3];
-                double[] dedp = new double[3];
-                double[] dedc = new double[3];
-                double[] dedd = new double[3];
-                double[] dedq = new double[3];
-                cross(xt, v23, dedt);
-                cross(xu, v23, dedu);
-                scalar(dedt, dedphi / (rt2 * r23), dedt);
-                scalar(dedu, -dedphi / (ru2 * r23), dedu);
-                cross(dedt, v23, dedp);
-                cross(vpd, dedt, dedc);
-                cross(dedu, vdq, temp);
-                sum(dedc, temp, dedc);
-                cross(dedt, vpc, dedd);
-                cross(vcq, dedu, temp);
-                sum(dedd, temp, dedd);
-                cross(dedu, v23, dedq);
-
-                // Gradient on atoms 0, 1, 2, 3, & 5.
-                double[] g0 = new double[3];
-                double[] g1 = new double[3];
-                double[] g2 = new double[3];
-                double[] g3 = new double[3];
-                double[] g4 = new double[3];
-                double[] g5 = new double[3];
-
-                cross(v31, dedp, g0);
-                cross(dedp, v30, g1);
-                cross(v25, dedq, g4);
-                cross(dedq, v24, g5);
-                sum(dedc, dedp, g2);
-                sum(g4, g5, temp);
-                diff(g2, temp, g2);
-                sum(dedd, dedq, g3);
-                sum(g0, g1, temp);
-                diff(g3, temp, g3);
-                // Atom indices
-                int i0 = atoms[0].getIndex() - 1;
-                int i1 = atoms[1].getIndex() - 1;
-                int i2 = atoms[2].getIndex() - 1;
-                int i3 = atoms[3].getIndex() - 1;
-                int i4 = atoms[4].getIndex() - 1;
-                int i5 = atoms[5].getIndex() - 1;
-                if (lambdaTerm) {
-                    lambdaGrad.add(threadID, i0, g0[0], g0[1], g0[2]);
-                    lambdaGrad.add(threadID, i1, g1[0], g1[1], g1[2]);
-                    lambdaGrad.add(threadID, i2, g2[0], g2[1], g2[2]);
-                    lambdaGrad.add(threadID, i3, g3[0], g3[1], g3[2]);
-                    lambdaGrad.add(threadID, i4, g4[0], g4[1], g4[2]);
-                    lambdaGrad.add(threadID, i5, g5[0], g5[1], g5[2]);
-                }
-                if (gradient) {
-                    scalar(g0, lambda, g0);
-                    scalar(g1, lambda, g1);
-                    scalar(g2, lambda, g2);
-                    scalar(g3, lambda, g3);
-                    scalar(g4, lambda, g4);
-                    scalar(g5, lambda, g5);
-                    grad.add(threadID, i0, g0[0], g0[1], g0[2]);
-                    grad.add(threadID, i1, g1[0], g1[1], g1[2]);
-                    grad.add(threadID, i2, g2[0], g2[1], g2[2]);
-                    grad.add(threadID, i3, g3[0], g3[1], g3[2]);
-                    grad.add(threadID, i4, g4[0], g4[1], g4[2]);
-                    grad.add(threadID, i5, g5[0], g5[1], g5[2]);
-                }
-            }
-        }
-        return energy;
-    }
-
-    /**
-     * Log details for this Pi-Orbital Torsion energy term.
-     */
-    public void log() {
-        logger.info(String.format(" %s %6d-%s %6d-%s %10.4f %10.4f",
-                "Pi-Orbital Torsion", atoms[2].getIndex(), atoms[2].getAtomType().name,
-                atoms[3].getIndex(), atoms[3].getAtomType().name, value, energy));
     }
 
     /**
@@ -327,54 +310,5 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
     @Override
     public String toString() {
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setLambda(double lambda) {
-        if (applyAllLambda()) {
-            this.lambda = lambda;
-            lambdaTerm = true;
-        } else {
-            this.lambda = 1.0;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getLambda() {
-        return lambda;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getdEdL() {
-        if (lambdaTerm) {
-            return dEdL;
-        } else {
-            return 0.0;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdL2() {
-        return 0.0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void getdEdXdL(double[] gradient) {
-        // The dEdXdL contributions are zero.
     }
 }

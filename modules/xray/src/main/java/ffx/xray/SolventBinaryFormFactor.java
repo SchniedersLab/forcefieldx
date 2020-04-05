@@ -37,10 +37,10 @@
 //******************************************************************************
 package ffx.xray;
 
-import ffx.numerics.math.VectorMath;
+import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.DoubleMath.sub;
 
 /**
  * <p>
@@ -85,8 +85,8 @@ public final class SolventBinaryFormFactor implements FormFactor {
      */
     @Override
     public double rho(double f, double lambda, double[] xyz) {
-        diff(this.xyz, xyz, dxyz);
-        return rho(f, lambda, VectorMath.r(dxyz));
+        sub(this.xyz, xyz, dxyz);
+        return rho(f, lambda, DoubleMath.length(dxyz));
     }
 
     /**

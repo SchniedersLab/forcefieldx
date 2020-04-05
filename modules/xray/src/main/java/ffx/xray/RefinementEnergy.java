@@ -64,7 +64,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.realspace.RealSpaceData;
 import ffx.realspace.RealSpaceEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.numerics.math.VectorMath.b2u;
+import static ffx.numerics.math.ScalarMath.b2u;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.kB;
 

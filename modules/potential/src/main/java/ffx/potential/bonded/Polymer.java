@@ -49,7 +49,7 @@ import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Material;
 import org.jogamp.vecmath.Color3f;
 
-import ffx.numerics.math.VectorMath;
+import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.ForceField;
 
@@ -70,6 +70,10 @@ public class Polymer extends MSGroup {
      * Constant <code>polymerColor</code>
      */
     private final static Map<Integer, Color3f> polymerColor = new HashMap<>();
+    /**
+     * Polymer count.
+     */
+    private static int count = 0;
 
     static {
         polymerColor.put(0, RendererCache.RED);
@@ -84,10 +88,6 @@ public class Polymer extends MSGroup {
         polymerColor.put(9, RendererCache.PINK);
     }
 
-    /**
-     * Polymer count.
-     */
-    private static int count = 0;
     /**
      * Flag to indicate the residues in the polymer should be joined.
      */
@@ -170,6 +170,42 @@ public class Polymer extends MSGroup {
     }
 
     /**
+     * <p>addMultiResidue.</p>
+     *
+     * @param multiResidue a {@link ffx.potential.bonded.MultiResidue} object.
+     */
+    public void addMultiResidue(MultiResidue multiResidue) {
+        Residue residue = multiResidue.getActive();
+        MSNode residueNode = getAtomNode();
+        int index = residueNode.getIndex(residue);
+        if (index < 0) {
+            System.err.println("WARNING!  Polymer::addMultiResidue did not find a corresponding Residue on Polymer.");
+            residueNode.add(multiResidue);
+        } else {
+            residueNode.remove(index);
+            residueNode.insert(multiResidue, index);
+        }
+        multiResidue.add(residue);
+    }
+
+    /**
+     * <p>addMultiTerminus.</p>
+     *
+     * @param residue       a {@link ffx.potential.bonded.Residue} object.
+     * @param multiTerminus a {@link ffx.potential.bonded.MultiTerminus} object.
+     */
+    public void addMultiTerminus(Residue residue, MultiTerminus multiTerminus) {
+        ArrayList<MSNode> children = residue.getChildList();
+        for (MSNode child : children) {
+            multiTerminus.add(child);
+        }
+        MSNode residueNode = getAtomNode();
+        int index = residueNode.getIndex(residue);
+        residueNode.remove(index);
+        residueNode.insert(multiTerminus, index);
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Joiner joins Moieties m1 and m2 and returns the Geometry objects formed
@@ -185,7 +221,7 @@ public class Polymer extends MSGroup {
             for (Enumeration e2 = residue2.getAtomNode().children(); e2.hasMoreElements(); ) {
                 Atom a2 = (Atom) e2.nextElement();
                 a2.getXYZ(db);
-                double d1 = VectorMath.dist(da, db);
+                double d1 = DoubleMath.dist(da, db);
                 double d2 = Bond.BUFF + a1.getVDWR() / 2 + a2.getVDWR() / 2;
                 if (d1 < d2) {
                     Bond b = new Bond(a1, a2);
@@ -212,14 +248,6 @@ public class Polymer extends MSGroup {
         if (o == null || getClass() != o.getClass()) return false;
         Polymer polymer = (Polymer) o;
         return polymerNumber == polymer.polymerNumber && Objects.equals(getName(), polymer.getName());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(polymerNumber, getName());
     }
 
     /**
@@ -289,6 +317,30 @@ public class Polymer extends MSGroup {
 
     /**
      * <p>
+     * Getter for the field <code>chainID</code>.</p>
+     *
+     * @return a {@link java.lang.Character} object.
+     */
+    public Character getChainID() {
+        return chainID;
+    }
+
+    /**
+     * <p>
+     * getFirstResidue</p>
+     *
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
+    public Residue getFirstResidue() {
+        MSNode atomNode = getAtomNode();
+        if (atomNode == null) {
+            return null;
+        }
+        return (Residue) atomNode.getChildAt(0);
+    }
+
+    /**
+     * <p>
      * Getter for the field <code>link</code>.</p>
      *
      * @return a boolean.
@@ -299,48 +351,12 @@ public class Polymer extends MSGroup {
 
     /**
      * <p>
-     * Getter for the field <code>chainID</code>.</p>
+     * Setter for the field <code>link</code>.</p>
      *
-     * @return a {@link java.lang.Character} object.
+     * @param link a boolean.
      */
-    public Character getChainID() {
-        return chainID;
-    }
-
-    /**
-     * <p>addMultiResidue.</p>
-     *
-     * @param multiResidue a {@link ffx.potential.bonded.MultiResidue} object.
-     */
-    public void addMultiResidue(MultiResidue multiResidue) {
-        Residue residue = multiResidue.getActive();
-        MSNode residueNode = getAtomNode();
-        int index = residueNode.getIndex(residue);
-        if (index < 0) {
-            System.err.println("WARNING!  Polymer::addMultiResidue did not find a corresponding Residue on Polymer.");
-            residueNode.add(multiResidue);
-        } else {
-            residueNode.remove(index);
-            residueNode.insert(multiResidue, index);
-        }
-        multiResidue.add(residue);
-    }
-
-    /**
-     * <p>addMultiTerminus.</p>
-     *
-     * @param residue       a {@link ffx.potential.bonded.Residue} object.
-     * @param multiTerminus a {@link ffx.potential.bonded.MultiTerminus} object.
-     */
-    public void addMultiTerminus(Residue residue, MultiTerminus multiTerminus) {
-        ArrayList<MSNode> children = residue.getChildList();
-        for (MSNode child : children) {
-            multiTerminus.add(child);
-        }
-        MSNode residueNode = getAtomNode();
-        int index = residueNode.getIndex(residue);
-        residueNode.remove(index);
-        residueNode.insert(multiTerminus, index);
+    public void setLink(boolean link) {
+        this.link = link;
     }
 
     /**
@@ -374,35 +390,6 @@ public class Polymer extends MSGroup {
             }
         }
         return phipsi;
-    }
-
-    /**
-     * <p>
-     * getFirstResidue</p>
-     *
-     * @return a {@link ffx.potential.bonded.Residue} object.
-     */
-    public Residue getFirstResidue() {
-        MSNode atomNode = getAtomNode();
-        if (atomNode == null) {
-            return null;
-        }
-        return (Residue) atomNode.getChildAt(0);
-    }
-
-    /**
-     * <p>
-     * getResidues</p>
-     *
-     * @return a {@link java.util.ArrayList} object.
-     */
-    public ArrayList<Residue> getResidues() {
-        ArrayList<Residue> residues = new ArrayList<>();
-        for (Enumeration e = getAtomNode().children(); e.hasMoreElements(); ) {
-            Residue r = (Residue) e.nextElement();
-            residues.add(r);
-        }
-        return residues;
     }
 
     /**
@@ -503,12 +490,25 @@ public class Polymer extends MSGroup {
 
     /**
      * <p>
-     * Setter for the field <code>link</code>.</p>
+     * getResidues</p>
      *
-     * @param link a boolean.
+     * @return a {@link java.util.ArrayList} object.
      */
-    public void setLink(boolean link) {
-        this.link = link;
+    public ArrayList<Residue> getResidues() {
+        ArrayList<Residue> residues = new ArrayList<>();
+        for (Enumeration e = getAtomNode().children(); e.hasMoreElements(); ) {
+            Residue r = (Residue) e.nextElement();
+            residues.add(r);
+        }
+        return residues;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(polymerNumber, getName());
     }
 
     /**

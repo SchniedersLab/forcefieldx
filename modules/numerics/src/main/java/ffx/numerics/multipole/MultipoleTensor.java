@@ -46,9 +46,9 @@ import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import static ffx.numerics.math.VectorMath.binomial;
-import static ffx.numerics.math.VectorMath.doubleFactorial;
-import static ffx.numerics.math.VectorMath.r;
+import static ffx.numerics.math.ScalarMath.binomial;
+import static ffx.numerics.math.ScalarMath.doubleFactorial;
+import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.special.Erf.erfc;
 
 /**
@@ -577,7 +577,7 @@ public abstract class MultipoleTensor {
      * @return a boolean.
      */
     public static boolean checkDampingCriterion(double[] dx_local, double pgamma, double aiak) {
-        double R = r(dx_local);
+        double R = length(dx_local);
         return (-pgamma * (R * aiak) * (R * aiak) * (R * aiak) > -50.0);
     }
 

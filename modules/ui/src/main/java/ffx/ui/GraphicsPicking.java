@@ -66,9 +66,9 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.ui.behaviors.PickMouseBehavior;
-import static ffx.numerics.math.VectorMath.bondAngle;
-import static ffx.numerics.math.VectorMath.dihedralAngle;
-import static ffx.numerics.math.VectorMath.dist;
+import static ffx.numerics.math.DoubleMath.bondAngle;
+import static ffx.numerics.math.DoubleMath.dihedralAngle;
+import static ffx.numerics.math.DoubleMath.dist;
 
 /**
  * The GraphicsPicking class is used to make selections and measurements.

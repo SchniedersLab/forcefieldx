@@ -41,8 +41,8 @@ import static org.apache.commons.math3.util.FastMath.exp;
 
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.rsq;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.length2;
 
 /**
  * <p>
@@ -89,8 +89,8 @@ public final class SolventGaussFormFactor implements FormFactor {
      */
     @Override
     public double rho(double f, double lambda, double[] xyz) {
-        diff(this.xyz, xyz, dxyz);
-        return rho(f, lambda, rsq(dxyz));
+        sub(this.xyz, xyz, dxyz);
+        return rho(f, lambda, length2(dxyz));
     }
 
     /**
@@ -116,8 +116,8 @@ public final class SolventGaussFormFactor implements FormFactor {
                 || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES) {
             return;
         }
-        diff(this.xyz, xyz, dxyz);
-        double r2 = rsq(dxyz);
+        sub(this.xyz, xyz, dxyz);
+        double r2 = length2(dxyz);
         double rho = exp(-r2 * isd2);
         double prefactor = -dfc * 2.0 * rho * isd2;
         g[0] = prefactor * dxyz[0];

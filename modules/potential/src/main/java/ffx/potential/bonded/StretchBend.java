@@ -42,17 +42,12 @@ import java.util.logging.Logger;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.StretchBendType;
-import static ffx.numerics.math.VectorMath.cross;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalar;
-import static ffx.numerics.math.VectorMath.sum;
 import static ffx.potential.parameters.StretchBendType.units;
 
 /**
@@ -65,23 +60,6 @@ import static ffx.potential.parameters.StretchBendType.units;
 public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
 
     private static final Logger logger = Logger.getLogger(StretchBend.class.getName());
-
-    /**
-     * Force field parameters to compute the Stretch-Bend energy.
-     */
-    private StretchBendType stretchBendType = null;
-    /**
-     * Rigid scale factor to apply to the force constant.
-     */
-    private double rigidScale = 1.0;
-    /**
-     * Angle this Stretch-Bend is based on.
-     */
-    protected Angle angle;
-    /**
-     * Force constant.
-     */
-    public double force0, force1;
     /**
      * Equilibrium angle.
      */
@@ -94,6 +72,22 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
      * Second equilibrium bond distance.
      */
     final public double bond1Eq;
+    /**
+     * Force constant.
+     */
+    public double force0, force1;
+    /**
+     * Angle this Stretch-Bend is based on.
+     */
+    protected final Angle angle;
+    /**
+     * Force field parameters to compute the Stretch-Bend energy.
+     */
+    private StretchBendType stretchBendType = null;
+    /**
+     * Rigid scale factor to apply to the force constant.
+     */
+    private double rigidScale = 1.0;
 
     /**
      * Constructor for the Stretch-Bend class.
@@ -112,6 +106,92 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compareTo(BondedTerm sb) {
+        if (!sb.getClass().isInstance(this)) {
+            return super.compareTo(sb);
+        }
+        return angle.compareTo(((StretchBend) sb).angle);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Evaluate the Stretch-Bend energy.
+     */
+    @Override
+    public double energy(boolean gradient, int threadID,
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+        energy = 0.0;
+        value = 0.0;
+        var atomA = atoms[0];
+        var atomB = atoms[1];
+        var atomC = atoms[2];
+        var ia = atomA.getIndex() - 1;
+        var ib = atomB.getIndex() - 1;
+        var ic = atomC.getIndex() - 1;
+        var va = atomA.getXYZ();
+        var vb = atomB.getXYZ();
+        var vc = atomC.getXYZ();
+        var vab = va.sub(vb);
+        var vcb = vc.sub(vb);
+        var rab2 = vab.length2();
+        var rcb2 = vcb.length2();
+        if (rab2 != 0.0 && rcb2 != 0.0) {
+            var rab = sqrt(rab2);
+            var rcb = sqrt(rcb2);
+            var vp = vcb.X(vab);
+            var rp = max(vp.length(), 0.000001);
+            value = toDegrees(acos(min(1.0, max(-1.0, vab.dot(vcb) / (rab * rcb)))));
+            var e0 = rab - bond0Eq;
+            var e1 = rcb - bond1Eq;
+            var dt = value - angleEq;
+            var dr = force0 * e0 + force1 * e1;
+            var prefactor = rigidScale * esvLambda;
+            energy = prefactor * dr * dt;
+            if (gradient) {
+                var vdta = vab.X(vp).scaleI(-prefactor * dr * toDegrees(1.0 / (rab2 * rp)));
+                var vdtc = vcb.X(vp).scaleI(prefactor * dr * toDegrees(1.0 / (rcb2 * rp)));
+                var ga = vdta.addI(vab.scaleI(prefactor * force0 * dt / rab));
+                var gc = vdtc.addI(vcb.scaleI(prefactor * force1 * dt / rcb));
+                grad.add(threadID, ia, ga);
+                grad.sub(threadID, ib, ga.add(gc));
+                grad.add(threadID, ic, gc);
+            }
+        }
+        if (esvTerm) {
+            final var esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
+            setEsvDeriv(energy * dedesvChain * esvLambdaInv);
+        }
+        return energy;
+    }
+
+    /**
+     * <p>
+     * log</p>
+     */
+    public void log() {
+        logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s"
+                        + "%7.4f %10.4f",
+                "Stretch-Bend", atoms[0].getIndex(),
+                atoms[0].getAtomType().name, atoms[1].getIndex(),
+                atoms[1].getAtomType().name, atoms[2].getIndex(),
+                atoms[2].getAtomType().name, value, energy));
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>rigidScale</code>.</p>
+     *
+     * @param rigidScale a double.
+     */
+    public void setRigidScale(double rigidScale) {
+        this.rigidScale = rigidScale;
+    }
+
+    /**
      * <p>
      * Setter for the field <code>stretchBendType</code>.</p>
      *
@@ -120,7 +200,6 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
      */
     public void setStretchBendType(StretchBendType stretchBendType) {
         this.stretchBendType = stretchBendType;
-
         // Match the atom class of the angle to the atom class of the stretch-bend type.
         if (atoms[0].getAtomType().atomClass == stretchBendType.atomClasses[0]) {
             force0 = units * stretchBendType.forceConstants[0];
@@ -129,6 +208,17 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
             force0 = units * stretchBendType.forceConstants[1];
             force1 = units * stretchBendType.forceConstants[0];
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Overidden toString Method returns the Term's id.
+     */
+    @Override
+    public String toString() {
+        return String.format("%s  (%7.2f,%7.2f,%7.1f,%7.2f)", id,
+                bonds[0].value, bonds[1].value, angle.value, energy);
     }
 
     /**
@@ -147,129 +237,5 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
         StretchBend stretchBend = new StretchBend(angle);
         stretchBend.setStretchBendType(stretchBendType);
         return stretchBend;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>rigidScale</code>.</p>
-     *
-     * @param rigidScale a double.
-     */
-    public void setRigidScale(double rigidScale) {
-        this.rigidScale = rigidScale;
-    }
-
-    /**
-     * <p>
-     * log</p>
-     */
-    public void log() {
-        logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s"
-                        + "%7.4f %10.4f",
-                "Stretch-Bend", atoms[0].getIndex(),
-                atoms[0].getAtomType().name, atoms[1].getIndex(),
-                atoms[1].getAtomType().name, atoms[2].getIndex(),
-                atoms[2].getAtomType().name, value, energy));
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Evaluate the Stretch-Bend energy.
-     */
-    @Override
-    public double energy(boolean gradient, int threadID,
-                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
-        energy = 0.0;
-        value = 0.0;
-
-        double[] a0 = new double[3];
-        double[] a1 = new double[3];
-        double[] a2 = new double[3];
-        atoms[0].getXYZ(a0);
-        atoms[1].getXYZ(a1);
-        atoms[2].getXYZ(a2);
-
-        // Work vectors.
-        double[] v10 = new double[3];
-        double[] v12 = new double[3];
-        double[] p = new double[3];
-        double[] dta = new double[3];
-        double[] dtc = new double[3];
-        diff(a0, a1, v10);
-        diff(a2, a1, v12);
-        double rab2 = dot(v10, v10);
-        double rcb2 = dot(v12, v12);
-        if (rab2 != 0.0 && rcb2 != 0.0) {
-            double rab = r(v10);
-            double rcb = r(v12);
-            cross(v12, v10, p);
-            double rp = r(p);
-            rp = max(rp, 0.001);
-            double cosine = dot(v10, v12) / (rab * rcb);
-            cosine = min(1.0, max(-1.0, cosine));
-            value = toDegrees(acos(cosine));
-            double e0 = rab - bond0Eq;
-            double e1 = rcb - bond1Eq;
-            double dt = value - angleEq;
-            double dr = force0 * e0 + force1 * e1;
-            double prefactor = rigidScale * esvLambda;
-            energy = prefactor * dr * dt;
-            if (gradient) {
-                // angle chain rule terms
-                double term1 = -prefactor * dr * toDegrees(1.0 / (rab2 * rp));
-                double term2 = prefactor * dr * toDegrees(1.0 / (rcb2 * rp));
-                cross(v10, p, dta);
-                scalar(dta, term1, dta);
-                cross(v12, p, dtc);
-                scalar(dtc, term2, dtc);
-
-                // bond chain rule terms
-                term1 = prefactor * force0 * dt / rab;
-                term2 = prefactor * force1 * dt / rcb;
-                scalar(v10, term1, v10);
-                scalar(v12, term2, v12);
-
-                // Gradient on atoms 0, 1 & 2.
-                double[] g0 = new double[3];
-                double[] g1 = new double[3];
-                double[] g2 = new double[3];
-                sum(dta, v10, g0);
-                sum(dtc, v12, g2);
-                sum(g0, g2, g1);
-                scalar(g1, -1.0, g1);
-                grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
-                grad.add(threadID, atoms[1].getIndex() - 1, g1[0], g1[1], g1[2]);
-                grad.add(threadID, atoms[2].getIndex() - 1, g2[0], g2[1], g2[2]);
-            }
-        }
-        if (esvTerm) {
-            final double esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
-            setEsvDeriv(energy * dedesvChain * esvLambdaInv);
-        }
-        return energy;
-    }
-
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Overidden toString Method returns the Term's id.
-     */
-    @Override
-    public String toString() {
-        return String.format("%s  (%7.2f,%7.2f,%7.1f,%7.2f)", id,
-                bonds[0].value, bonds[1].value, angle.value, energy);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compareTo(BondedTerm sb) {
-        if (!sb.getClass().isInstance(this)) {
-            return super.compareTo(sb);
-        }
-        return angle.compareTo(((StretchBend) sb).angle);
     }
 }

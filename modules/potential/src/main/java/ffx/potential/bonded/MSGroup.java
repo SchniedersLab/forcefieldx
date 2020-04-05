@@ -48,7 +48,7 @@ import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Material;
 import org.jogamp.vecmath.Color3f;
 
-import ffx.numerics.math.VectorMath;
+import ffx.numerics.math.DoubleMath;
 import ffx.potential.parameters.ForceField;
 
 /**
@@ -62,40 +62,6 @@ import ffx.potential.parameters.ForceField;
 public abstract class MSGroup extends MSNode {
 
     private static final Logger logger = Logger.getLogger(MSGroup.class.getName());
-    /**
-     * Constructs the Geometry of this MultiScaleGroup and stores the terms as children in the Term node.
-     */
-    // Atoms Node
-    private MSNode atomNode = new MSNode("Atoms");
-    // Valence Energy Terms
-    private MSNode termNode = new MSNode("Valence Terms");
-    private MSNode bondNode = new MSNode("Bonds");
-    private MSNode angleNode = new MSNode("Angles");
-    private MSNode stretchBendNode = new MSNode("Stretch-Bends");
-    private MSNode ureyBradleyNode = new MSNode("Urey-Bradleys");
-    private MSNode outOfPlaneBendNode = new MSNode("Out-of-Plane Bends");
-    private MSNode torsionNode = new MSNode("Torsions");
-    private MSNode stretchTorsionNode = new MSNode("Stretch-Torsions");
-    private MSNode angleTorsionNode = new MSNode("Angle-Torsions");
-    private MSNode piOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
-    private MSNode torsionTorsionNode = new MSNode("Torsion-Torsions");
-    private MSNode improperTorsionNode = new MSNode("Improper Torsions");
-    /**
-     * List of Joints.
-     */
-    private ArrayList<Joint> joints = new ArrayList<>();
-    /**
-     * Whether the terms are current.
-     */
-    private boolean finalized;
-    /**
-     * Center of the MultiScaleGroup
-     */
-    private double[] center;
-    /**
-     * List of underconstrained Atoms
-     */
-    private ArrayList<Atom> dangelingatoms;
     /**
      * Constant <code>bondTime=0</code>
      */
@@ -140,6 +106,40 @@ public abstract class MSGroup extends MSNode {
      * Constant <code>torsionTorsionTime=0</code>
      */
     protected static long improperTorsionTime = 0;
+    /**
+     * Constructs the Geometry of this MultiScaleGroup and stores the terms as children in the Term node.
+     */
+    // Atoms Node
+    private MSNode atomNode = new MSNode("Atoms");
+    // Valence Energy Terms
+    private MSNode termNode = new MSNode("Valence Terms");
+    private MSNode bondNode = new MSNode("Bonds");
+    private MSNode angleNode = new MSNode("Angles");
+    private MSNode stretchBendNode = new MSNode("Stretch-Bends");
+    private MSNode ureyBradleyNode = new MSNode("Urey-Bradleys");
+    private MSNode outOfPlaneBendNode = new MSNode("Out-of-Plane Bends");
+    private MSNode torsionNode = new MSNode("Torsions");
+    private MSNode stretchTorsionNode = new MSNode("Stretch-Torsions");
+    private MSNode angleTorsionNode = new MSNode("Angle-Torsions");
+    private MSNode piOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
+    private MSNode torsionTorsionNode = new MSNode("Torsion-Torsions");
+    private MSNode improperTorsionNode = new MSNode("Improper Torsions");
+    /**
+     * List of Joints.
+     */
+    private ArrayList<Joint> joints = new ArrayList<>();
+    /**
+     * Whether the terms are current.
+     */
+    private boolean finalized;
+    /**
+     * Center of the MultiScaleGroup
+     */
+    private double[] center;
+    /**
+     * List of underconstrained Atoms
+     */
+    private ArrayList<Atom> dangelingatoms;
 
     /**
      * Default Constructor initializes a MultiScaleGroup and a few of its
@@ -194,75 +194,6 @@ public abstract class MSGroup extends MSNode {
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public abstract MSNode addMSNode(MSNode m);
-
-    /**
-     * <p>
-     * reOrderAtoms</p>
-     */
-    public void reOrderAtoms() {
-        ArrayList<Atom> atomList = getAtomList();
-        int nAtoms = atomList.size();
-        Atom[] atoms = new Atom[nAtoms];
-        atoms = atomList.toArray(atoms);
-
-        boolean sorted;
-        do {
-            sorted = true;
-            for (int i = 1; i < nAtoms; i++) {
-                Atom a1 = atoms[i - 1];
-                Atom a2 = atoms[i];
-                if (a1.getName().compareToIgnoreCase(a2.getName()) > 0) {
-                    int i1 = a1.getIndex();
-                    int i2 = a2.getIndex();
-                    atoms[i - 1] = a2;
-                    atoms[i] = a1;
-                    a1.setXyzIndex(i2);
-                    a2.setXyzIndex(i1);
-                    sorted = false;
-                }
-            }
-        } while (!sorted);
-    }
-
-    /**
-     * Special-case check for if a Bond connects atoms in a hetero-group polymer linkage.
-     *
-     * @param polyLinks polymerlink records from properties
-     * @param bond      Bond to check
-     * @return If bond should be special-cased
-     */
-    private boolean polymerLinked(String[] polyLinks, Bond bond) {
-        Atom a1 = bond.getAtom(0);
-        Atom a2 = bond.get1_2(a1);
-
-        String resName = a1.getResidueName();
-        if (resName == null) {
-            logger.warning(format(" Residue name of atom 1 (%s) is null!", a1));
-            return false;
-        } else {
-            String r2name = a2.getResidueName();
-            if (r2name == null) {
-                logger.warning(format(" Residue name of atom 2 (%s) is null!", a2));
-                return false;
-            } else if (!resName.equals(r2name)) {
-                return false;
-            }
-        }
-        String name1 = a1.getName();
-        String name2 = a2.getName();
-
-        for (String pLink : polyLinks) {
-            String[] toks = pLink.split("\\s+");
-            if (resName.equalsIgnoreCase(toks[0])) {
-                if (name1.equalsIgnoreCase(toks[1]) && name2.equalsIgnoreCase(toks[2])) {
-                    return true;
-                } else if (name1.equalsIgnoreCase(toks[2]) && name2.equalsIgnoreCase(toks[1])) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
     /**
      * <p>
@@ -480,6 +411,13 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
+     * <p>clearJoints.</p>
+     */
+    public void clearJoints() {
+        joints.clear();
+    }
+
+    /**
      * <p>
      * constructValenceTerms</p>
      */
@@ -497,7 +435,7 @@ public abstract class MSGroup extends MSNode {
                 Atom a2 = (Atom) li.next();
                 a1.getXYZ(da);
                 a2.getXYZ(db);
-                double d1 = VectorMath.dist(da, db);
+                double d1 = DoubleMath.dist(da, db);
                 double d2 = Bond.BUFF + a1.getVDWR() / 2 + a2.getVDWR() / 2;
                 if (d1 < d2) {
                     ArrayList<Bond> adjunctBonds = new ArrayList<>();
@@ -687,31 +625,6 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * <p>addJoint.</p>
-     *
-     * @param newJoint a {@link ffx.potential.bonded.Joint} object.
-     */
-    void addJoint(Joint newJoint) {
-        joints.add(newJoint);
-    }
-
-    /**
-     * <p>clearJoints.</p>
-     */
-    public void clearJoints() {
-        joints.clear();
-    }
-
-    /**
-     * <p>Getter for the field <code>joints</code>.</p>
-     *
-     * @return a {@link java.util.ArrayList} object.
-     */
-    ArrayList<Joint> getJoints() {
-        return joints;
-    }
-
-    /**
      * Joiner joins Moieties m1 and m2 and returns the Geometry objects formed
      * in a Joint.
      *
@@ -729,7 +642,7 @@ public abstract class MSGroup extends MSNode {
             a1.getXYZ(da);
             for (Atom a2 : group2.getAtomList()) {
                 a2.getXYZ(db);
-                double d1 = VectorMath.dist(da, db);
+                double d1 = DoubleMath.dist(da, db);
                 double d2 = Bond.BUFF + a1.getVDWR() / 2 + a2.getVDWR() / 2;
                 if (d1 < d2) {
                     Bond b = new Bond(a1, a2);
@@ -778,12 +691,52 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
+     * Sets the Angles node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setAngles(MSNode t) {
+        termNode.removeChild(angleNode);
+        angleNode = t;
+        termNode.add(angleNode);
+    }
+
+    /**
+     * <p>getAtomByName.</p>
+     *
+     * @param n               a {@link java.lang.String} object.
+     * @param caseInsensitive a boolean.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
+    public Atom getAtomByName(String n, boolean caseInsensitive) {
+        ArrayList<MSNode> list = getAtomNodeList();
+        for (MSNode msNode : list) {
+            if (msNode.getName().equals(n)
+                    || (caseInsensitive && msNode.getName().equalsIgnoreCase(n))) {
+                return (Atom) msNode;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Returns the AtomNode.
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSNode getAtomNode() {
         return atomNode;
+    }
+
+    /**
+     * Sets the Moieties node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setAtomNode(MSNode t) {
+        remove(atomNode);
+        atomNode = t;
+        add(atomNode);
     }
 
     /**
@@ -807,24 +760,6 @@ public abstract class MSGroup extends MSNode {
         for (MSNode msNode : list) {
             if (msNode.getName().compareTo(n) == 0) {
                 return msNode;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * <p>getAtomByName.</p>
-     *
-     * @param n               a {@link java.lang.String} object.
-     * @param caseInsensitive a boolean.
-     * @return a {@link ffx.potential.bonded.Atom} object.
-     */
-    public Atom getAtomByName(String n, boolean caseInsensitive) {
-        ArrayList<MSNode> list = getAtomNodeList();
-        for (MSNode msNode : list) {
-            if (msNode.getName().equals(n)
-                    || (caseInsensitive && msNode.getName().equalsIgnoreCase(n))) {
-                return (Atom) msNode;
             }
         }
         return null;
@@ -873,12 +808,33 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
+     * Sets the Bonds node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setBonds(MSNode t) {
+        termNode.removeChild(bondNode);
+        bondNode.removeAllChildren();
+        bondNode = t;
+        termNode.add(bondNode);
+    }
+
+    /**
      * Returns the MultiScaleGroup's center as a double[3].
      *
      * @return an array of double.
      */
     public double[] getCenter() {
         return center;
+    }
+
+    /**
+     * Set the value of Center to d.
+     *
+     * @param d an array of double.
+     */
+    public void setCenter(double[] d) {
+        center = d;
     }
 
     /**
@@ -891,12 +847,12 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * Returns the MultiScaleGroup's Torsion MSNode.
+     * Sets the MultiScaleGroup's dangelingatoms member to a.
      *
-     * @return a {@link ffx.potential.bonded.MSNode} object.
+     * @param a a {@link java.util.ArrayList} object.
      */
-    public MSNode getTorsions() {
-        return torsionNode;
+    public void setDangelingAtoms(ArrayList<Atom> a) {
+        dangelingatoms = a;
     }
 
     /**
@@ -949,12 +905,41 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
+     * Returns the MultiScaleGroup's Torsion MSNode.
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public MSNode getTorsions() {
+        return torsionNode;
+    }
+
+    /**
+     * Sets the MultiScaleGroup's torsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setTorsions(MSNode t) {
+        termNode.removeChild(torsionNode);
+        torsionNode = t;
+        termNode.add(torsionNode);
+    }
+
+    /**
      * Returns true if the MultiScaleGroup is finalized.
      *
      * @return a boolean.
      */
     public boolean isFinalized() {
         return finalized;
+    }
+
+    /**
+     * Specifies whether the MultiScaleGroup has been finalized.
+     *
+     * @param t a boolean.
+     */
+    public void setFinalized(boolean t) {
+        finalized = t;
     }
 
     /**
@@ -972,6 +957,254 @@ public abstract class MSGroup extends MSNode {
             Bond b = (Bond) m;
             b.print();
         }
+    }
+
+    /**
+     * <p>
+     * reOrderAtoms</p>
+     */
+    public void reOrderAtoms() {
+        ArrayList<Atom> atomList = getAtomList();
+        int nAtoms = atomList.size();
+        Atom[] atoms = new Atom[nAtoms];
+        atoms = atomList.toArray(atoms);
+
+        boolean sorted;
+        do {
+            sorted = true;
+            for (int i = 1; i < nAtoms; i++) {
+                Atom a1 = atoms[i - 1];
+                Atom a2 = atoms[i];
+                if (a1.getName().compareToIgnoreCase(a2.getName()) > 0) {
+                    int i1 = a1.getIndex();
+                    int i2 = a2.getIndex();
+                    atoms[i - 1] = a2;
+                    atoms[i] = a1;
+                    a1.setXyzIndex(i2);
+                    a2.setXyzIndex(i1);
+                    sorted = false;
+                }
+            }
+        } while (!sorted);
+    }
+
+    /**
+     * Sets the MultiScaleGroup's angle-torsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setAngleTorsions(MSNode t) {
+        termNode.removeChild(angleTorsionNode);
+        angleTorsionNode = t;
+        termNode.add(angleTorsionNode);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setColor(RendererCache.ColorModel newColorModel, Color3f color, Material mat) {
+        if (newColorModel == RendererCache.ColorModel.MOLECULE && (color == null || mat == null)) {
+            return;
+        }
+        atomNode.setColor(newColorModel, color, mat);
+    }
+
+    /**
+     * Sets the ImproperTorsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setImproperTorsions(MSNode t) {
+        termNode.removeChild(improperTorsionNode);
+        improperTorsionNode = t;
+        termNode.add(improperTorsionNode);
+    }
+
+    /**
+     * Sets the Out-of-Plane Bend node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setOutOfPlaneBends(MSNode t) {
+        termNode.removeChild(outOfPlaneBendNode);
+        outOfPlaneBendNode.removeAllChildren();
+        outOfPlaneBendNode = t;
+        termNode.add(outOfPlaneBendNode);
+    }
+
+    /**
+     * Sets the MultiScaleGroup's Pi-Orbital Torsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setPiOrbitalTorsions(MSNode t) {
+        termNode.removeChild(piOrbitalTorsionNode);
+        piOrbitalTorsionNode = t;
+        termNode.add(piOrbitalTorsionNode);
+    }
+
+    /**
+     * Sets the Stretch-Bends node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setStretchBends(MSNode t) {
+        termNode.removeChild(stretchBendNode);
+        stretchBendNode.removeAllChildren();
+        stretchBendNode = t;
+        termNode.add(stretchBendNode);
+    }
+
+    /**
+     * Sets the MultiScaleGroup's stretch-torsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setStretchTorsions(MSNode t) {
+        termNode.removeChild(stretchTorsionNode);
+        stretchTorsionNode = t;
+        termNode.add(stretchTorsionNode);
+    }
+
+    /**
+     * Sets the MultiScaleGroup's terms node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setTerms(MSNode t) {
+        remove(termNode);
+        termNode = t;
+        add(termNode);
+    }
+
+    /**
+     * Sets the MultiScaleGroup's Torsion-Torsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setTorsionTorsions(MSNode t) {
+        termNode.removeChild(torsionTorsionNode);
+        torsionTorsionNode = t;
+        termNode.add(torsionTorsionNode);
+    }
+
+    /**
+     * Sets the Urey-Bradley node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setUreyBradleys(MSNode t) {
+        termNode.removeChild(ureyBradleyNode);
+        ureyBradleyNode.removeAllChildren();
+        ureyBradleyNode = t;
+        termNode.add(ureyBradleyNode);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setView(RendererCache.ViewModel newViewModel, List<BranchGroup> newShapes) {
+        atomNode.setView(newViewModel, newShapes);
+        bondNode.setView(newViewModel, newShapes);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the MSGroup's name.
+     */
+    @Override
+    public String toString() {
+        return getName();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void update() {
+        updateAtoms();
+        updateBonds();
+    }
+
+    /**
+     * <p>
+     * updateAtoms</p>
+     */
+    public void updateAtoms() {
+        for (Atom a : getAtomList()) {
+            a.update();
+        }
+    }
+
+    /**
+     * <p>
+     * updateBonds</p>
+     */
+    public void updateBonds() {
+        for (ROLS b : getBondList()) {
+            b.update();
+        }
+    }
+
+    /**
+     * Special-case check for if a Bond connects atoms in a hetero-group polymer linkage.
+     *
+     * @param polyLinks polymerlink records from properties
+     * @param bond      Bond to check
+     * @return If bond should be special-cased
+     */
+    private boolean polymerLinked(String[] polyLinks, Bond bond) {
+        Atom a1 = bond.getAtom(0);
+        Atom a2 = bond.get1_2(a1);
+
+        String resName = a1.getResidueName();
+        if (resName == null) {
+            logger.warning(format(" Residue name of atom 1 (%s) is null!", a1));
+            return false;
+        } else {
+            String r2name = a2.getResidueName();
+            if (r2name == null) {
+                logger.warning(format(" Residue name of atom 2 (%s) is null!", a2));
+                return false;
+            } else if (!resName.equals(r2name)) {
+                return false;
+            }
+        }
+        String name1 = a1.getName();
+        String name2 = a2.getName();
+
+        for (String pLink : polyLinks) {
+            String[] toks = pLink.split("\\s+");
+            if (resName.equalsIgnoreCase(toks[0])) {
+                if (name1.equalsIgnoreCase(toks[1]) && name2.equalsIgnoreCase(toks[2])) {
+                    return true;
+                } else if (name1.equalsIgnoreCase(toks[2]) && name2.equalsIgnoreCase(toks[1])) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * <p>addJoint.</p>
+     *
+     * @param newJoint a {@link ffx.potential.bonded.Joint} object.
+     */
+    void addJoint(Joint newJoint) {
+        joints.add(newJoint);
+    }
+
+    /**
+     * <p>Getter for the field <code>joints</code>.</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
+    ArrayList<Joint> getJoints() {
+        return joints;
     }
 
     /**
@@ -1021,239 +1254,6 @@ public abstract class MSGroup extends MSNode {
         if (atomNode.getChildCount() == 0) {
             removeChild(atomNode);
         }
-    }
-
-    /**
-     * Sets the Angles node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setAngles(MSNode t) {
-        termNode.removeChild(angleNode);
-        angleNode = t;
-        termNode.add(angleNode);
-    }
-
-    /**
-     * Sets the ImproperTorsion node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setImproperTorsions(MSNode t) {
-        termNode.removeChild(improperTorsionNode);
-        improperTorsionNode = t;
-        termNode.add(improperTorsionNode);
-    }
-
-    /**
-     * Sets the Moieties node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setAtomNode(MSNode t) {
-        remove(atomNode);
-        atomNode = t;
-        add(atomNode);
-    }
-
-    /**
-     * Sets the Bonds node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setBonds(MSNode t) {
-        termNode.removeChild(bondNode);
-        bondNode.removeAllChildren();
-        bondNode = t;
-        termNode.add(bondNode);
-    }
-
-    /**
-     * Sets the Stretch-Bends node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setStretchBends(MSNode t) {
-        termNode.removeChild(stretchBendNode);
-        stretchBendNode.removeAllChildren();
-        stretchBendNode = t;
-        termNode.add(stretchBendNode);
-    }
-
-    /**
-     * Sets the Urey-Bradley node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setUreyBradleys(MSNode t) {
-        termNode.removeChild(ureyBradleyNode);
-        ureyBradleyNode.removeAllChildren();
-        ureyBradleyNode = t;
-        termNode.add(ureyBradleyNode);
-    }
-
-    /**
-     * Sets the Out-of-Plane Bend node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setOutOfPlaneBends(MSNode t) {
-        termNode.removeChild(outOfPlaneBendNode);
-        outOfPlaneBendNode.removeAllChildren();
-        outOfPlaneBendNode = t;
-        termNode.add(outOfPlaneBendNode);
-    }
-
-    /**
-     * Set the value of Center to d.
-     *
-     * @param d an array of double.
-     */
-    public void setCenter(double[] d) {
-        center = d;
-    }
-
-    /**
-     * Sets the MultiScaleGroup's dangelingatoms member to a.
-     *
-     * @param a a {@link java.util.ArrayList} object.
-     */
-    public void setDangelingAtoms(ArrayList<Atom> a) {
-        dangelingatoms = a;
-    }
-
-    /**
-     * Sets the MultiScaleGroup's torsion node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setTorsions(MSNode t) {
-        termNode.removeChild(torsionNode);
-        torsionNode = t;
-        termNode.add(torsionNode);
-    }
-
-    /**
-     * Sets the MultiScaleGroup's stretch-torsion node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setStretchTorsions(MSNode t) {
-        termNode.removeChild(stretchTorsionNode);
-        stretchTorsionNode = t;
-        termNode.add(stretchTorsionNode);
-    }
-
-    /**
-     * Sets the MultiScaleGroup's angle-torsion node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setAngleTorsions(MSNode t) {
-        termNode.removeChild(angleTorsionNode);
-        angleTorsionNode = t;
-        termNode.add(angleTorsionNode);
-    }
-
-    /**
-     * Sets the MultiScaleGroup's Pi-Orbital Torsion node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setPiOrbitalTorsions(MSNode t) {
-        termNode.removeChild(piOrbitalTorsionNode);
-        piOrbitalTorsionNode = t;
-        termNode.add(piOrbitalTorsionNode);
-    }
-
-    /**
-     * Sets the MultiScaleGroup's Torsion-Torsion node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setTorsionTorsions(MSNode t) {
-        termNode.removeChild(torsionTorsionNode);
-        torsionTorsionNode = t;
-        termNode.add(torsionTorsionNode);
-    }
-
-    /**
-     * Specifies whether the MultiScaleGroup has been finalized.
-     *
-     * @param t a boolean.
-     */
-    public void setFinalized(boolean t) {
-        finalized = t;
-    }
-
-    /**
-     * Sets the MultiScaleGroup's terms node to t.
-     *
-     * @param t a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void setTerms(MSNode t) {
-        remove(termNode);
-        termNode = t;
-        add(termNode);
-    }
-
-    /**
-     * <p>
-     * updateAtoms</p>
-     */
-    public void updateAtoms() {
-        for (Atom a : getAtomList()) {
-            a.update();
-        }
-    }
-
-    /**
-     * <p>
-     * updateBonds</p>
-     */
-    public void updateBonds() {
-        for (ROLS b : getBondList()) {
-            b.update();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setColor(RendererCache.ColorModel newColorModel, Color3f color, Material mat) {
-        if (newColorModel == RendererCache.ColorModel.MOLECULE && (color == null || mat == null)) {
-            return;
-        }
-        atomNode.setColor(newColorModel, color, mat);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setView(RendererCache.ViewModel newViewModel, List<BranchGroup> newShapes) {
-        atomNode.setView(newViewModel, newShapes);
-        bondNode.setView(newViewModel, newShapes);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns the MSGroup's name.
-     */
-    @Override
-    public String toString() {
-        return getName();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void update() {
-        updateAtoms();
-        updateBonds();
     }
 
 }

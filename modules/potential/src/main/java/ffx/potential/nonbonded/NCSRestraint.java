@@ -49,7 +49,7 @@ import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
-import static ffx.numerics.math.VectorMath.rsq;
+import static ffx.numerics.math.DoubleMath.length2;
 
 /**
  * Given unit cell parameters and symmetry operators, NCS copies are restrained
@@ -158,7 +158,7 @@ public class NCSRestraint implements LambdaInterface {
                 dx[1] = a1[1] - a2[1];
                 dx[2] = a1[2] - a2[2];
                 // Apply the minimum image convention.
-                double r2 = rsq(dx);
+                double r2 = length2(dx);
                 // double r2 = ncsCrystal.image(dx);
                 //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
                 residual += r2;

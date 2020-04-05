@@ -103,96 +103,6 @@ public class Molecule extends MSGroup {
         this.segID = segID;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Molecule molecule = (Molecule) o;
-        return residueNum == molecule.residueNum &&
-                Objects.equals(residueName, molecule.residueName) &&
-                Objects.equals(segID, molecule.segID);
-    }
-
-    public String getKey() {
-        return residueNum + residueName + segID;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(residueNum, residueName, segID);
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>residueName</code>.</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String getResidueName() {
-        return residueName;
-    }
-
-    /**
-     * <p>
-     * getResidueNumber</p>
-     *
-     * @return a int.
-     */
-    public int getResidueNumber() {
-        return residueNum;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>chainID</code>.</p>
-     *
-     * @return a {@link java.lang.Character} object.
-     */
-    public Character getChainID() {
-        return chainID;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>segID</code>.</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String getSegID() {
-        return segID;
-    }
-
-    /**
-     * <p>
-     * getAtom</p>
-     *
-     * @param name a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.bonded.Atom} object.
-     */
-    public Atom getAtom(String name) {
-        for (Atom a : getAtomList()) {
-            if (a.getName().equalsIgnoreCase(name)) {
-                return a;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setName(String name) {
-        if (name != null) {
-            if (segID != null) {
-                super.setName(name + "-" + residueNum + " " + segID);
-            } else {
-                super.setName(name);
-            }
-            this.residueName = name;
-        }
-    }
-
     /**
      * {@inheritDoc}
      * <p>
@@ -229,6 +139,16 @@ public class Molecule extends MSGroup {
         return currentAtom;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Molecule molecule = (Molecule) o;
+        return residueNum == molecule.residueNum &&
+                Objects.equals(residueName, molecule.residueName) &&
+                Objects.equals(segID, molecule.segID);
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -242,6 +162,86 @@ public class Molecule extends MSGroup {
         }
         setCenter(getMultiScaleCenter(false));
         setFinalized(true);
+    }
+
+    /**
+     * <p>
+     * getAtom</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
+    public Atom getAtom(String name) {
+        for (Atom a : getAtomList()) {
+            if (a.getName().equalsIgnoreCase(name)) {
+                return a;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>chainID</code>.</p>
+     *
+     * @return a {@link java.lang.Character} object.
+     */
+    public Character getChainID() {
+        return chainID;
+    }
+
+    public String getKey() {
+        return residueNum + residueName + segID;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>residueName</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getResidueName() {
+        return residueName;
+    }
+
+    /**
+     * <p>
+     * getResidueNumber</p>
+     *
+     * @return a int.
+     */
+    public int getResidueNumber() {
+        return residueNum;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>segID</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getSegID() {
+        return segID;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(residueNum, residueName, segID);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setName(String name) {
+        if (name != null) {
+            if (segID != null) {
+                super.setName(name + "-" + residueNum + " " + segID);
+            } else {
+                super.setName(name);
+            }
+            this.residueName = name;
+        }
     }
 
 

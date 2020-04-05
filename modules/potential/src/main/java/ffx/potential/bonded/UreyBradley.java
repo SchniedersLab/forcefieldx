@@ -42,9 +42,6 @@ import java.util.logging.Logger;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.UreyBradleyType;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalar;
 import static ffx.potential.parameters.UreyBradleyType.cubic;
 import static ffx.potential.parameters.UreyBradleyType.quartic;
 import static ffx.potential.parameters.UreyBradleyType.units;
@@ -62,27 +59,96 @@ public class UreyBradley extends BondedTerm {
     /**
      * Force field parameters to compute the Stretch-Bend energy.
      */
-    public UreyBradleyType ureyBradleyType = null;
+    public final UreyBradleyType ureyBradleyType;
+    /**
+     * The Angle this UreyBradley term is based on.
+     */
+    protected final Angle angle;
     /**
      * Scale factor to apply to Urey-Bradley term.
      */
     private double rigidScale = 1.0;
-    /**
-     * The Angle this UreyBradley term is based on.
-     */
-    protected Angle angle;
 
     /**
      * Constructor for the UreyBradley class.
      *
      * @param a a {@link ffx.potential.bonded.Angle} object.
      */
-    public UreyBradley(Angle a) {
+    public UreyBradley(Angle a, UreyBradleyType ureyBradleyType) {
         super();
         angle = a;
         bonds = a.bonds;
         atoms = a.atoms;
+        this.ureyBradleyType = ureyBradleyType;
         setID_Key(false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compareTo(BondedTerm ub) {
+        if (!ub.getClass().isInstance(this)) {
+            return super.compareTo(ub);
+        }
+        return angle.compareTo(((UreyBradley) ub).angle);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Evaluate the Urey-Bradley energy.
+     */
+    @Override
+    public double energy(boolean gradient, int threadID,
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+        var atomA = atoms[0];
+        var atomC = atoms[2];
+        var va = atomA.getXYZ();
+        var vc = atomC.getXYZ();
+        var vac = va.sub(vc);
+        value = vac.length();
+        var dv = value - ureyBradleyType.distance;
+        var dv2 = dv * dv;
+        energy = units * rigidScale * ureyBradleyType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2) * esvLambda;
+        if (gradient) {
+            var deddt = 2.0 * units * rigidScale * ureyBradleyType.forceConstant
+                    * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2) * esvLambda;
+            var de = 0.0;
+            if (value > 0.0) {
+                de = deddt / value;
+            }
+            var ia = atomA.getIndex() - 1;
+            var ic = atomC.getIndex() - 1;
+            grad.add(threadID, ia, vac.scaleI(de));
+            grad.sub(threadID, ic, vac);
+        }
+        if (esvTerm) {
+            var esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
+            setEsvDeriv(energy * dedesvChain * esvLambdaInv);
+        }
+        return energy;
+    }
+
+    /**
+     * <p>
+     * log</p>
+     */
+    public void log() {
+        logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
+                "Urey-Bradley", atoms[0].getIndex(), atoms[0].getAtomType().name,
+                atoms[2].getIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
+                energy));
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>rigidScale</code>.</p>
+     *
+     * @param rigidScale a double.
+     */
+    public void setRigidScale(double rigidScale) {
+        this.rigidScale = rigidScale;
     }
 
     /**
@@ -100,93 +166,6 @@ public class UreyBradley extends BondedTerm {
         if (ureyBradleyType == null) {
             return null;
         }
-        UreyBradley newUreyBradley = new UreyBradley(angle);
-        newUreyBradley.ureyBradleyType = ureyBradleyType;
-        return newUreyBradley;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>ureyBradleyType</code>.</p>
-     *
-     * @param a a {@link ffx.potential.parameters.UreyBradleyType} object.
-     */
-    public void setUreyBradleyType(UreyBradleyType a) {
-        ureyBradleyType = a;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>rigidScale</code>.</p>
-     *
-     * @param rigidScale a double.
-     */
-    public void setRigidScale(double rigidScale) {
-        this.rigidScale = rigidScale;
-    }
-
-    /**
-     * <p>
-     * log</p>
-     */
-    public void log() {
-        logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                "Urey-Bradley", atoms[0].getIndex(), atoms[0].getAtomType().name,
-                atoms[2].getIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
-                energy));
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Evaluate the Urey-Bradley energy.
-     */
-    @Override
-    public double energy(boolean gradient, int threadID,
-                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
-
-        double[] a0 = new double[3];
-        double[] a2 = new double[3];
-        atoms[0].getXYZ(a0);
-        atoms[2].getXYZ(a2);
-
-        // The vector from Atom 2 to Atom 0.
-        double[] v20 = new double[3];
-        diff(a0, a2, v20);
-        value = r(v20);
-        double dv = value - ureyBradleyType.distance;
-        double dv2 = dv * dv;
-        energy = units * rigidScale * ureyBradleyType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2) * esvLambda;
-        if (gradient) {
-            double deddt = 2.0 * units * rigidScale * ureyBradleyType.forceConstant * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2) * esvLambda;
-            double de = 0.0;
-            if (value > 0.0) {
-                de = deddt / value;
-            }
-
-            // Gradient on Atoms 0 & 2.
-            double[] g0 = new double[3];
-            double[] g2 = new double[3];
-            scalar(v20, de, g0);
-            scalar(v20, -de, g2);
-            grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
-            grad.add(threadID, atoms[2].getIndex() - 1, g2[0], g2[1], g2[2]);
-        }
-        if (esvTerm) {
-            final double esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
-            setEsvDeriv(energy * dedesvChain * esvLambdaInv);
-        }
-        return energy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compareTo(BondedTerm ub) {
-        if (!ub.getClass().isInstance(this)) {
-            return super.compareTo(ub);
-        }
-        return angle.compareTo(((UreyBradley) ub).angle);
+        return new UreyBradley(angle, ureyBradleyType);
     }
 }

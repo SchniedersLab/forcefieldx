@@ -49,14 +49,9 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.numerics.Constraint;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.math.Double3;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.ForceField;
-import static ffx.numerics.math.VectorMath.cross;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalar;
-import static ffx.numerics.math.VectorMath.sum;
 import static ffx.potential.parameters.AngleType.cubic;
 import static ffx.potential.parameters.AngleType.quartic;
 import static ffx.potential.parameters.AngleType.quintic;
@@ -119,66 +114,228 @@ public class Angle extends BondedTerm {
     }
 
     /**
-     * <p>angleFactory.</p>
-     *
-     * @param b1         a {@link ffx.potential.bonded.Bond} object.
-     * @param b2         a {@link ffx.potential.bonded.Bond} object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @return a {@link ffx.potential.bonded.Angle} object.
+     * {@inheritDoc}
      */
-    static Angle angleFactory(Bond b1, Bond b2, ForceField forceField) {
-        Angle newAngle = new Angle(b1, b2);
-        Atom ac = b1.getCommonAtom(b2);
-        Atom a1 = b1.get1_2(ac);
-        Atom a3 = b2.get1_2(ac);
-        int[] c = new int[3];
-        c[0] = a1.getAtomType().atomClass;
-        c[1] = ac.getAtomType().atomClass;
-        c[2] = a3.getAtomType().atomClass;
-        String key = AngleType.sortKey(c);
-        AngleType angleType = forceField.getAngleType(key);
-        if (angleType == null) {
-            logNoAngleType(a1, ac, a3, key);
-            return null;
+    @Override
+    public int compareTo(BondedTerm a) {
+        if (a == null) {
+            throw new NullPointerException();
         }
-        newAngle.setAngleType(angleType);
-        return newAngle;
+        if (a == this) {
+            return 0;
+        }
+        if (!a.getClass().isInstance(this)) {
+            return super.compareTo(a);
+        }
+        int this1 = atoms[1].getIndex();
+        int a1 = a.atoms[1].getIndex();
+        if (this1 < a1) {
+            return -1;
+        }
+        if (this1 > a1) {
+            return 1;
+        }
+
+        int this0 = atoms[0].getIndex();
+        int a0 = a.atoms[0].getIndex();
+        if (this0 < a0) {
+            return -1;
+        }
+        if (this0 > a0) {
+            return 1;
+        }
+        int this2 = atoms[2].getIndex();
+        int a2 = a.atoms[2].getIndex();
+
+        return Integer.compare(this2, a2);
     }
 
     /**
-     * Log that no AngleType exists.
-     * @param a1 Atom 1.
-     * @param ac Atom 2.
-     * @param a3 Atom 3.
-     * @param key The class key.
-     */
-    public static void logNoAngleType(Atom a1, Atom ac, Atom a3, String key) {
-        logger.severe(format("No AngleType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s", key,
-                a1.toString(), a1.getAtomType().toString(),
-                ac.toString(), ac.getAtomType().toString(),
-                a3.toString(), a3.getAtomType().toString()));
-    }
-
-    /**
+     * {@inheritDoc}
      * <p>
-     * Setter for the field <code>InPlaneAtom</code>.</p>
-     *
-     * @param a4 a {@link ffx.potential.bonded.Atom} object.
+     * Evaluate this Angle energy.
      */
-    void setInPlaneAtom(Atom a4) {
-        if (angleType.angleMode != AngleType.AngleMode.IN_PLANE) {
-            logger.severe(" Attempted to set fourth atom for a normal angle.");
+    @Override
+    public double energy(boolean gradient, int threadID,
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+        var atomA = atoms[0];
+        var atomB = atoms[1];
+        var atomC = atoms[2];
+        var ia = atomA.getIndex() - 1;
+        var ib = atomB.getIndex() - 1;
+        var ic = atomC.getIndex() - 1;
+        var va = atomA.getXYZ();
+        var vb = atomB.getXYZ();
+        var vc = atomC.getXYZ();
+        energy = 0.0;
+        value = 0.0;
+        var prefactor = units * rigidScale * angleType.forceConstant * esvLambda;
+        switch (angleType.angleFunction) {
+            case SEXTIC:
+                switch (angleType.angleMode) {
+                    case NORMAL:
+                        var vab = va.sub(vb);
+                        var vcb = vc.sub(vb);
+                        var rab2 = vab.length2();
+                        var rcb2 = vcb.length2();
+                        if (rab2 != 0.0 && rcb2 != 0.0) {
+                            var p = vcb.X(vab);
+                            var cosine = min(1.0, max(-1.0, vab.dot(vcb) / sqrt(rab2 * rcb2)));
+                            value = toDegrees(acos(cosine));
+                            var dv = value - angleType.angle[nh];
+                            var dv2 = dv * dv;
+                            var dv3 = dv2 * dv;
+                            var dv4 = dv2 * dv2;
+                            energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
+                            if (gradient) {
+                                var deddt = prefactor * dv * toDegrees(2.0 + 3.0 * cubic * dv + 4.0 * quartic * dv2
+                                        + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
+                                var rp = max(p.length(), 0.000001);
+                                var terma = -deddt / (rab2 * rp);
+                                var termc = deddt / (rcb2 * rp);
+                                var ga = vab.X(p).scale(terma);
+                                var gc = vcb.X(p).scale(termc);
+                                grad.add(threadID, ia, ga);
+                                grad.sub(threadID, ib, ga.add(gc));
+                                grad.add(threadID, ic, gc);
+                            }
+                            value = dv;
+                        }
+                        break;
+                    case IN_PLANE:
+                        var vd = getAtom4XYZ();
+                        int id = atom4.getIndex() - 1;
+                        var vad = va.sub(vd);
+                        var vbd = vb.sub(vd);
+                        var vcd = vc.sub(vd);
+                        var vp = vad.X(vcd);
+                        var rp2 = vp.length2();
+                        var delta = -vp.dot(vbd) / rp2;
+                        var vip = vp.scale(delta).addI(vbd);
+                        var vjp = vad.sub(vip);
+                        var vkp = vcd.sub(vip);
+                        var jp2 = vjp.length2();
+                        var kp2 = vkp.length2();
+                        if (jp2 != 0.0 && kp2 != 0.0) {
+                            var cosine = min(1.0, max(-1.0, vjp.dot(vkp) / sqrt(jp2 * kp2)));
+                            value = toDegrees(acos(cosine));
+                            var dv = value - angleType.angle[nh];
+                            var dv2 = dv * dv;
+                            var dv3 = dv2 * dv;
+                            var dv4 = dv2 * dv2;
+                            energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
+                            if (gradient) {
+                                var deddt = prefactor * dv * toDegrees(2.0 + 3.0 * cubic * dv + 4.0 * quartic * dv2
+                                        + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
+                                inPlaneGrad(threadID, grad, ia, ib, ic, id, vad, vbd, vcd,
+                                        vp, rp2, vjp, jp2, vkp, kp2, delta, deddt);
+                            }
+                            value = dv;
+                        }
+                        break;
+                }
+                break;
+            case HARMONIC:
+            default:
+                switch (angleType.angleMode) {
+                    case NORMAL:
+                        var vab = va.sub(vb);
+                        var vcb = vc.sub(vb);
+                        var rab2 = vab.length2();
+                        var rcb2 = vcb.length2();
+                        if (rab2 != 0.0 && rcb2 != 0.0) {
+                            var p = vcb.X(vab);
+                            var cosine = min(1.0, max(-1.0, vab.dot(vcb) / sqrt(rab2 * rcb2)));
+                            value = toDegrees(acos(cosine));
+                            var dv = value - angleType.angle[nh];
+                            var dv2 = dv * dv;
+                            energy = prefactor * dv2;
+                            if (gradient) {
+                                var deddt = prefactor * dv * toDegrees(2.0);
+                                var rp = max(p.length(), 0.000001);
+                                var terma = -deddt / (rab2 * rp);
+                                var termc = deddt / (rcb2 * rp);
+                                var ga = vab.X(p).scaleI(terma);
+                                var gc = vcb.X(p).scaleI(termc);
+                                grad.add(threadID, ia, ga);
+                                grad.sub(threadID, ib, ga.add(gc));
+                                grad.add(threadID, ic, gc);
+                            }
+                            value = dv;
+                        }
+                        break;
+                    case IN_PLANE:
+                        var vd = getAtom4XYZ();
+                        var id = atom4.getIndex() - 1;
+                        var vad = va.sub(vd);
+                        var vbd = vb.sub(vd);
+                        var vcd = vc.sub(vd);
+                        var vp = vad.X(vcd);
+                        var rp2 = vp.length2();
+                        var delta = -vp.dot(vbd) / rp2;
+                        var vip = vp.scale(delta).addI(vbd);
+                        var vjp = vad.sub(vip);
+                        var vkp = vcd.sub(vip);
+                        var rjp2 = vjp.length2();
+                        var rkp2 = vkp.length2();
+                        if (rjp2 != 0.0 && rkp2 != 0.0) {
+                            var cosine = min(1.0, max(-1.0, vjp.dot(vkp) / sqrt(rjp2 * rkp2)));
+                            value = toDegrees(acos(cosine));
+                            var dv = value - angleType.angle[nh];
+                            var dv2 = dv * dv;
+                            energy = prefactor * dv2;
+                            if (gradient) {
+                                var deddt = prefactor * dv * toDegrees(2.0);
+                                inPlaneGrad(threadID, grad, ia, ib, ic, id, vad, vbd, vcd,
+                                        vp, rp2, vjp, rjp2, vkp, rkp2, delta, deddt);
+                            }
+                            value = dv;
+                        }
+                        break;
+                }
+                break;
         }
-        atom4 = a4;
+        if (esvTerm) {
+            final var esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
+            setEsvDeriv(energy * dedesvChain * esvLambdaInv);
+        }
+        return energy;
     }
 
     /**
-     * <p>Getter for the field <code>atom4</code>.</p>
+     * If the specified atom is not the central atom of <b>this</b> angle, the
+     * atom of the opposite leg is returned. These atoms are said to be 1-3 to
+     * each other.
      *
-     * @return a {@link ffx.potential.bonded.Atom} object.
+     * @param a Atom
+     * @return Atom
      */
-    public Atom getAtom4() {
-        return atom4;
+    public Atom get1_3(Atom a) {
+        if (a == atoms[0]) {
+            return atoms[2];
+        }
+        if (a == atoms[2]) {
+            return atoms[0];
+        }
+        return null;
+    }
+
+    /**
+     * <p>Getter for the field <code>angleMode</code>.</p>
+     *
+     * @return a {@link ffx.potential.parameters.AngleType.AngleMode} object.
+     */
+    public AngleType.AngleMode getAngleMode() {
+        return angleType.angleMode;
+    }
+
+    /**
+     * Get the AngleType for this angle.
+     *
+     * @return This angle's AngleType.
+     */
+    public AngleType getAngleType() {
+        return angleType;
     }
 
     /**
@@ -208,40 +365,12 @@ public class Angle extends BondedTerm {
     }
 
     /**
-     * <p>
-     * Setter for the field <code>rigidScale</code>.</p>
+     * <p>Getter for the field <code>atom4</code>.</p>
      *
-     * @param rigidScale a double.
+     * @return a {@link ffx.potential.bonded.Atom} object.
      */
-    public void setRigidScale(double rigidScale) {
-        this.rigidScale = rigidScale;
-    }
-
-    /**
-     * Get the AngleType for this angle.
-     *
-     * @return This angle's AngleType.
-     */
-    public AngleType getAngleType() {
-        return angleType;
-    }
-
-    /**
-     * If the specified atom is not the central atom of <b>this</b> angle, the
-     * atom of the opposite leg is returned. These atoms are said to be 1-3 to
-     * each other.
-     *
-     * @param a Atom
-     * @return Atom
-     */
-    public Atom get1_3(Atom a) {
-        if (a == atoms[0]) {
-            return atoms[2];
-        }
-        if (a == atoms[2]) {
-            return atoms[0];
-        }
-        return null;
+    public Atom getAtom4() {
+        return atom4;
     }
 
     /**
@@ -254,12 +383,42 @@ public class Angle extends BondedTerm {
     }
 
     /**
-     * <p>Getter for the field <code>angleMode</code>.</p>
-     *
-     * @return a {@link ffx.potential.parameters.AngleType.AngleMode} object.
+     * Log details for this Angle energy term.
      */
-    public AngleType.AngleMode getAngleMode() {
-        return angleType.angleMode;
+    public void log() {
+        switch (angleType.angleMode) {
+            case NORMAL:
+                logger.info(format(
+                        " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle",
+                        atoms[0].getIndex(), atoms[0].getAtomType().name,
+                        atoms[1].getIndex(), atoms[1].getAtomType().name,
+                        atoms[2].getIndex(), atoms[2].getAtomType().name,
+                        angleType.angle[nh], value, energy));
+                break;
+            case IN_PLANE:
+                logger.info(format(
+                        " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle-IP",
+                        atoms[0].getIndex(), atoms[0].getAtomType().name,
+                        atoms[1].getIndex(), atoms[1].getAtomType().name,
+                        atoms[2].getIndex(), atoms[2].getAtomType().name,
+                        angleType.angle[nh], value, energy));
+                break;
+        }
+    }
+
+    /**
+     * Log that no AngleType exists.
+     *
+     * @param a1  Atom 1.
+     * @param ac  Atom 2.
+     * @param a3  Atom 3.
+     * @param key The class key.
+     */
+    public static void logNoAngleType(Atom a1, Atom ac, Atom a3, String key) {
+        logger.severe(format("No AngleType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s", key,
+                a1.toString(), a1.getAtomType().toString(),
+                ac.toString(), ac.getAtomType().toString(),
+                a3.toString(), a3.getAtomType().toString()));
     }
 
     @Override
@@ -268,6 +427,114 @@ public class Angle extends BondedTerm {
         for (Bond b : bonds) {
             b.setConstraint(c);
         }
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>rigidScale</code>.</p>
+     *
+     * @param rigidScale a double.
+     */
+    public void setRigidScale(double rigidScale) {
+        this.rigidScale = rigidScale;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Overidden toString Method returns the Term's id.
+     */
+    @Override
+    public String toString() {
+        return format("%s  (%7.1f,%7.2f)", id, value, energy);
+    }
+
+    /**
+     * <p>angleFactory.</p>
+     *
+     * @param b1         a {@link ffx.potential.bonded.Bond} object.
+     * @param b2         a {@link ffx.potential.bonded.Bond} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @return a {@link ffx.potential.bonded.Angle} object.
+     */
+    static Angle angleFactory(Bond b1, Bond b2, ForceField forceField) {
+        Angle newAngle = new Angle(b1, b2);
+        Atom ac = b1.getCommonAtom(b2);
+        Atom a1 = b1.get1_2(ac);
+        Atom a3 = b2.get1_2(ac);
+        int[] c = new int[3];
+        c[0] = a1.getAtomType().atomClass;
+        c[1] = ac.getAtomType().atomClass;
+        c[2] = a3.getAtomType().atomClass;
+        String key = AngleType.sortKey(c);
+        AngleType angleType = forceField.getAngleType(key);
+        if (angleType == null) {
+            logNoAngleType(a1, ac, a3, key);
+            return null;
+        }
+        newAngle.setAngleType(angleType);
+        return newAngle;
+    }
+
+    private static void inPlaneGrad(int threadID, AtomicDoubleArray3D grad,
+                                    int ia, int ib, int ic, int id, Double3 vad, Double3 vbd, Double3 vcd,
+                                    Double3 vp, double rp2, Double3 vjp, double rjp2, Double3 vkp, double rkp2,
+                                    double delta, double deddt) {
+        // Chain rule terms for first derivative components.
+        var lp = vkp.X(vjp);
+        var lpr = max(lp.length(), 0.000001);
+        var ded0 = vjp.X(lp).scaleI(-deddt / (rjp2 * lpr));
+        var ded2 = vkp.X(lp).scaleI(deddt / (rkp2 * lpr));
+        var dedp = ded0.add(ded2);
+        var gb = dedp.scale(-1.0);
+        var delta2 = 2.0 * delta;
+        var pt2 = dedp.dot(vp) / rp2;
+        var xd2 = vcd.X(gb).scaleI(delta);
+        var xp2 = vp.X(vcd).scaleI(delta2);
+        var x21 = vbd.X(vcd).addI(xp2).scaleI(pt2);
+        var dpd0 = xd2.add(x21);
+        xd2 = gb.X(vad).scaleI(delta);
+        xp2 = vp.X(vad).scaleI(delta2);
+        x21.addI(xp2).scaleI(pt2);
+        var dpd2 = xd2.addI(x21);
+        var ga = ded0.addI(dpd0);
+        var gc = ded2.addI(dpd2);
+        // Accumulate derivatives.
+        grad.add(threadID, ia, ga);
+        grad.add(threadID, ib, gb);
+        grad.add(threadID, ic, gc);
+        grad.sub(threadID, id, ga.addI(gb).addI(gc));
+    }
+
+    /**
+     * Get the position of the 4th atom.
+     *
+     * @return Returns the position of the 4th atom, or throws an exception.
+     */
+    private Double3 getAtom4XYZ() {
+        try {
+            return atom4.getXYZ();
+        } catch (Exception e) {
+            logger.info(" Atom 4 not found for angle: " + toString());
+            for (var atom : atoms) {
+                logger.info(" Atom: " + atom.toString());
+                logger.info(" Type: " + atom.getAtomType().toString());
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>InPlaneAtom</code>.</p>
+     *
+     * @param a4 a {@link ffx.potential.bonded.Atom} object.
+     */
+    void setInPlaneAtom(Atom a4) {
+        if (angleType.angleMode != AngleType.AngleMode.IN_PLANE) {
+            logger.severe(" Attempted to set fourth atom for a normal angle.");
+        }
+        atom4 = a4;
     }
 
     /**
@@ -330,400 +597,5 @@ public class Angle extends BondedTerm {
             }
         }
         return null;
-    }
-
-    /**
-     * Log details for this Angle energy term.
-     */
-    public void log() {
-        switch (angleType.angleMode) {
-            case NORMAL:
-                logger.info(format(
-                        " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle",
-                        atoms[0].getIndex(), atoms[0].getAtomType().name,
-                        atoms[1].getIndex(), atoms[1].getAtomType().name,
-                        atoms[2].getIndex(), atoms[2].getAtomType().name,
-                        angleType.angle[nh], value, energy));
-                break;
-            case IN_PLANE:
-                logger.info(format(
-                        " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle-IP",
-                        atoms[0].getIndex(), atoms[0].getAtomType().name,
-                        atoms[1].getIndex(), atoms[1].getAtomType().name,
-                        atoms[2].getIndex(), atoms[2].getAtomType().name,
-                        angleType.angle[nh], value, energy));
-                break;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Evaluate this Angle energy.
-     */
-    @Override
-    public double energy(boolean gradient, int threadID,
-                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
-
-        // Vector from Atom 1 to Atom 0.
-        double[] v10 = new double[3];
-        // Vector from Atom 1 to Atom 2.
-        double[] v12 = new double[3];
-        // Vector from Atom 3 to Atom 0.
-        double[] v30 = new double[3];
-        // Vector from Atom 2 to Atom 0.
-        double[] v20 = new double[3];
-
-        energy = 0.0;
-        value = 0.0;
-        double prefactor = units * rigidScale * angleType.forceConstant * esvLambda;
-
-        double[] a0 = new double[3];
-        double[] a1 = new double[3];
-        double[] a2 = new double[3];
-        atoms[0].getXYZ(a0);
-        atoms[1].getXYZ(a1);
-        atoms[2].getXYZ(a2);
-
-        switch (angleType.angleFunction) {
-            case SEXTIC:
-                switch (angleType.angleMode) {
-                    case NORMAL:
-                        diff(a0, a1, v10);
-                        diff(a2, a1, v12);
-                        double rab2 = dot(v10, v10);
-                        double rcb2 = dot(v12, v12);
-                        if (rab2 != 0.0 && rcb2 != 0.0) {
-                            // Vector v10 cross v30.
-                            double[] p = new double[3];
-                            cross(v12, v10, p);
-                            double cosine = dot(v10, v12) / sqrt(rab2 * rcb2);
-                            cosine = min(1.0, max(-1.0, cosine));
-                            value = toDegrees(acos(cosine));
-                            double dv = value - angleType.angle[nh];
-                            double dv2 = dv * dv;
-                            double dv3 = dv2 * dv;
-                            double dv4 = dv2 * dv2;
-                            energy = prefactor * dv2 * (1.0
-                                    + cubic * dv + quartic * dv2
-                                    + quintic * dv3 + sextic * dv4);
-                            if (gradient) {
-                                double deddt = prefactor * dv * toDegrees(2.0
-                                        + 3.0 * cubic * dv + 4.0 * quartic * dv2
-                                        + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
-                                double rp = r(p);
-                                rp = max(rp, 0.000001);
-                                double terma = -deddt / (rab2 * rp);
-                                double termc = deddt / (rcb2 * rp);
-                                // Gradient on atoms 0, 1, 2 & 3.
-                                double[] g0 = new double[3];
-                                double[] g1 = new double[3];
-                                double[] g2 = new double[3];
-                                cross(v10, p, g0);
-                                cross(v12, p, g2);
-                                scalar(g0, terma, g0);
-                                scalar(g2, termc, g2);
-                                sum(g0, g2, g1);
-                                scalar(g1, -1.0, g1);
-                                grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
-                                grad.add(threadID, atoms[1].getIndex() - 1, g1[0], g1[1], g1[2]);
-                                grad.add(threadID, atoms[2].getIndex() - 1, g2[0], g2[1], g2[2]);
-                            }
-                            value = dv;
-                        }
-                        break;
-                    case IN_PLANE:
-                        double[] a4 = new double[3];
-                        try {
-                            atom4.getXYZ(a4);
-                        } catch (Exception e) {
-                            logger.info(" Atom 4 not found for angle: " + this.toString());
-                            for (Atom atom : atoms) {
-                                logger.info(" Atom: " + atom.toString());
-                                logger.info(" Type: " + atom.getAtomType().toString());
-                            }
-                            throw e;
-                        }
-                        diff(a0, a4, v10);
-                        diff(a1, a4, v20);
-                        diff(a2, a4, v30);
-                        // Vector v10 cross v30.
-                        double[] p = new double[3];
-                        cross(v10, v30, p);
-                        double rp2 = dot(p, p);
-                        double delta = -dot(p, v20) / rp2;
-                        // Work vectors for in-plane angles.
-                        double[] ip = new double[3];
-                        double[] jp = new double[3];
-                        double[] kp = new double[3];
-                        double[] lp = new double[3];
-                        scalar(p, delta, ip);
-                        sum(ip, v20, ip);
-                        diff(v10, ip, jp);
-                        diff(v30, ip, kp);
-                        double jp2 = dot(jp, jp);
-                        double kp2 = dot(kp, kp);
-                        if (jp2 != 0.0 && kp2 != 0.0) {
-                            cross(kp, jp, lp);
-                            double lpr = r(lp);
-                            lpr = max(lpr, 0.000001);
-                            double jk2 = dot(jp, kp);
-                            double cosine = jk2 / Math.sqrt(jp2 * kp2);
-                            cosine = min(1.0, max(-1.0, cosine));
-                            value = toDegrees(acos(cosine));
-                            double dv = value - angleType.angle[nh];
-                            double dv2 = dv * dv;
-                            double dv3 = dv2 * dv;
-                            double dv4 = dv2 * dv2;
-                            energy = prefactor * dv2 * (1.0
-                                    + cubic * dv + quartic * dv2
-                                    + quintic * dv3 + sextic * dv4);
-                            if (gradient) {
-                                double deddt = prefactor * dv * toDegrees(2.0
-                                        + 3.0 * cubic * dv + 4.0 * quartic * dv2
-                                        + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
-                                double term0 = -deddt / (jp2 * lpr);
-                                double term2 = deddt / (kp2 * lpr);
-                                double[] ded0 = new double[3];
-                                double[] ded2 = new double[3];
-                                double[] dedp = new double[3];
-                                double[] x21 = new double[3];
-                                double[] x01 = new double[3];
-                                double[] xp2 = new double[3];
-                                double[] xd2 = new double[3];
-                                double[] dpd0 = new double[3];
-                                double[] dpd2 = new double[3];
-                                cross(jp, lp, ded0);
-                                scalar(ded0, term0, ded0);
-                                cross(kp, lp, ded2);
-                                scalar(ded2, term2, ded2);
-                                sum(ded0, ded2, dedp);
-                                // Gradient on atoms 0, 1, 2 & 3.
-                                double[] g0 = new double[3];
-                                double[] g1 = new double[3];
-                                double[] g2 = new double[3];
-                                double[] g3 = new double[3];
-                                scalar(dedp, -1.0, g1);
-                                double delta2 = 2.0 * delta;
-                                double pt2 = dot(dedp, p) / rp2;
-                                cross(v20, v30, x21);
-                                cross(p, v30, xp2);
-                                cross(v30, g1, xd2);
-                                scalar(xd2, delta, xd2);
-                                scalar(xp2, delta2, xp2);
-                                sum(x21, xp2, x21);
-                                scalar(x21, pt2, x21);
-                                sum(xd2, x21, dpd0);
-                                cross(v10, v20, x01);
-                                cross(p, v10, xp2);
-                                cross(g1, v10, xd2);
-                                scalar(xd2, delta, xd2);
-                                scalar(xp2, delta2, xp2);
-                                sum(x21, xp2, x21);
-                                scalar(x21, pt2, x21);
-                                sum(xd2, x21, dpd2);
-                                sum(ded0, dpd0, g0);
-                                sum(ded2, dpd2, g2);
-                                sum(g0, g1, g3);
-                                sum(g2, g3, g3);
-                                scalar(g3, -1.0, g3);
-                                grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
-                                grad.add(threadID, atoms[1].getIndex() - 1, g1[0], g1[1], g1[2]);
-                                grad.add(threadID, atoms[2].getIndex() - 1, g2[0], g2[1], g2[2]);
-                                grad.add(threadID, atom4.getIndex() - 1, g3[0], g3[1], g3[2]);
-                            }
-                            value = dv;
-                        }
-                        break;
-                }
-                break;
-            case HARMONIC:
-            default:
-                switch (angleType.angleMode) {
-                    case NORMAL:
-                        diff(a0, a1, v10);
-                        diff(a2, a1, v12);
-                        double rab2 = dot(v10, v10);
-                        double rcb2 = dot(v12, v12);
-                        if (rab2 != 0.0 && rcb2 != 0.0) {
-                            // Vector v10 cross v30.
-                            double[] p = new double[3];
-                            cross(v12, v10, p);
-                            double cosine = dot(v10, v12) / sqrt(rab2 * rcb2);
-                            cosine = min(1.0, max(-1.0, cosine));
-                            value = toDegrees(acos(cosine));
-                            double dv = value - angleType.angle[nh];
-                            double dv2 = dv * dv;
-                            energy = prefactor * dv2;
-                            if (gradient) {
-                                double deddt = prefactor * dv * toDegrees(2.0);
-                                double rp = r(p);
-                                rp = max(rp, 0.000001);
-                                double terma = -deddt / (rab2 * rp);
-                                double termc = deddt / (rcb2 * rp);
-                                // Gradient on atoms 0, 1, 2 & 3.
-                                double[] g0 = new double[3];
-                                double[] g1 = new double[3];
-                                double[] g2 = new double[3];
-                                cross(v10, p, g0);
-                                cross(v12, p, g2);
-                                scalar(g0, terma, g0);
-                                scalar(g2, termc, g2);
-                                sum(g0, g2, g1);
-                                scalar(g1, -1.0, g1);
-                                grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
-                                grad.add(threadID, atoms[1].getIndex() - 1, g1[0], g1[1], g1[2]);
-                                grad.add(threadID, atoms[2].getIndex() - 1, g2[0], g2[1], g2[2]);
-                            }
-                            value = dv;
-                        }
-                        break;
-                    case IN_PLANE:
-                        double[] a4 = new double[3];
-                        atom4.getXYZ(a4);
-                        diff(a0, a4, v10);
-                        diff(a1, a4, v20);
-                        diff(a2, a4, v30);
-                        // Vector v10 cross v30.
-                        double[] p = new double[3];
-                        cross(v10, v30, p);
-                        double rp2 = dot(p, p);
-                        double delta = -dot(p, v20) / rp2;
-
-                        // Work vectors for in-plane angles.
-                        double[] ip = new double[3];
-                        double[] jp = new double[3];
-                        double[] kp = new double[3];
-                        double[] lp = new double[3];
-
-                        scalar(p, delta, ip);
-                        sum(ip, v20, ip);
-                        diff(v10, ip, jp);
-                        diff(v30, ip, kp);
-                        double jp2 = dot(jp, jp);
-                        double kp2 = dot(kp, kp);
-                        if (jp2 != 0.0 && kp2 != 0.0) {
-                            cross(kp, jp, lp);
-                            double lpr = r(lp);
-                            lpr = max(lpr, 0.000001);
-                            double jk2 = dot(jp, kp);
-                            double cosine = jk2 / Math.sqrt(jp2 * kp2);
-                            cosine = min(1.0, max(-1.0, cosine));
-                            value = toDegrees(acos(cosine));
-                            double dv = value - angleType.angle[nh];
-                            double dv2 = dv * dv;
-                            energy = prefactor * dv2;
-                            if (gradient) {
-                                double deddt = prefactor * dv * toDegrees(2.0);
-                                double term0 = -deddt / (jp2 * lpr);
-                                double term2 = deddt / (kp2 * lpr);
-                                double[] ded0 = new double[3];
-                                double[] ded2 = new double[3];
-                                double[] dedp = new double[3];
-                                double[] x21 = new double[3];
-                                double[] x01 = new double[3];
-                                double[] xp2 = new double[3];
-                                double[] xd2 = new double[3];
-                                double[] dpd0 = new double[3];
-                                double[] dpd2 = new double[3];
-                                cross(jp, lp, ded0);
-                                scalar(ded0, term0, ded0);
-                                cross(kp, lp, ded2);
-                                scalar(ded2, term2, ded2);
-                                sum(ded0, ded2, dedp);
-
-                                // Gradient on atoms 0, 1, 2 & 3.
-                                double[] g0 = new double[3];
-                                double[] g1 = new double[3];
-                                double[] g2 = new double[3];
-                                double[] g3 = new double[3];
-
-                                scalar(dedp, -1.0, g1);
-                                double delta2 = 2.0 * delta;
-                                double pt2 = dot(dedp, p) / rp2;
-                                cross(v20, v30, x21);
-                                cross(p, v30, xp2);
-                                cross(v30, g1, xd2);
-                                scalar(xd2, delta, xd2);
-                                scalar(xp2, delta2, xp2);
-                                sum(x21, xp2, x21);
-                                scalar(x21, pt2, x21);
-                                sum(xd2, x21, dpd0);
-                                cross(v10, v20, x01);
-                                cross(p, v10, xp2);
-                                cross(g1, v10, xd2);
-                                scalar(xd2, delta, xd2);
-                                scalar(xp2, delta2, xp2);
-                                sum(x21, xp2, x21);
-                                scalar(x21, pt2, x21);
-                                sum(xd2, x21, dpd2);
-                                sum(ded0, dpd0, g0);
-                                sum(ded2, dpd2, g2);
-                                sum(g0, g1, g3);
-                                sum(g2, g3, g3);
-                                scalar(g3, -1.0, g3);
-                                grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
-                                grad.add(threadID, atoms[1].getIndex() - 1, g1[0], g1[1], g1[2]);
-                                grad.add(threadID, atoms[2].getIndex() - 1, g2[0], g2[1], g2[2]);
-                                grad.add(threadID, atom4.getIndex() - 1, g3[0], g3[1], g3[2]);
-                            }
-                            value = dv;
-                        }
-                        break;
-                }
-                break;
-        }
-        if (esvTerm) {
-            final double esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
-            setEsvDeriv(energy * dedesvChain * esvLambdaInv);
-        }
-        return energy;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Overidden toString Method returns the Term's id.
-     */
-    @Override
-    public String toString() {
-        return format("%s  (%7.1f,%7.2f)", id, value, energy);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compareTo(BondedTerm a) {
-        if (a == null) {
-            throw new NullPointerException();
-        }
-        if (a == this) {
-            return 0;
-        }
-        if (!a.getClass().isInstance(this)) {
-            return super.compareTo(a);
-        }
-        int this1 = atoms[1].getIndex();
-        int a1 = a.atoms[1].getIndex();
-        if (this1 < a1) {
-            return -1;
-        }
-        if (this1 > a1) {
-            return 1;
-        }
-
-        int this0 = atoms[0].getIndex();
-        int a0 = a.atoms[0].getIndex();
-        if (this0 < a0) {
-            return -1;
-        }
-        if (this0 > a0) {
-            return 1;
-        }
-        int this2 = atoms[2].getIndex();
-        int a2 = a.atoms[2].getIndex();
-
-        return Integer.compare(this2, a2);
     }
 }

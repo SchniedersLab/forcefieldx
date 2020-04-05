@@ -52,14 +52,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import org.apache.commons.math3.util.FastMath;
+
 import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.AngleType;
-import org.apache.commons.math3.util.FastMath;
-
 import static ffx.potential.bonded.BondedUtils.determineIntxyz;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 
@@ -75,108 +75,113 @@ import static ffx.potential.bonded.BondedUtils.intxyz;
 public class RotamerLibrary {
 
     private static final Logger logger = Logger.getLogger(RotamerLibrary.class.getName());
+    /**
+     * Number of amino acid residues types currently recognized, although there
+     * are not rotamer libraries for each yet.
+     */
+    private static final int numberOfAminoAcids = AminoAcid3.values().length;
+    /**
+     * Number of nucleic acid residues types currently recognized, although
+     * there are not rotamer libraries for each yet.
+     */
+    private static final int numberOfNucleicAcids = NucleicAcid3.values().length;
+    private static final ProteinLibrary DEFAULT_PROTEIN_LIB = ProteinLibrary.Richardson;
+    private static final NucleicAcidLibrary DEFAULT_NA_LIB = NucleicAcidLibrary.RICHARDSON;
+    private static final Map<String, NonstandardRotLibrary> nonstdRotCache = new HashMap<>();
+    private static final RotamerLibrary defaultRotamerLibrary = new RotamerLibrary(ProteinLibrary.PonderAndRichards, false);
+    private static final boolean useIdealRingGeometries = Boolean.parseBoolean(System.getProperty("useIdealRingGeo", "true"));
+    private static final Map<AminoAcid3, Map<String, Double>> idealAngleGeometries;
 
-    public enum ProteinLibrary {
+    static {
+        Map<AminoAcid3, Map<String, Double>> angleGeos = new HashMap<>();
 
-        PonderAndRichards(1), Richardson(2), None(-1);
+        Map<String, Double> pheMap = new HashMap<>();
+        pheMap.put("CD1-CG-CB", 120.3);
+        pheMap.put("CD2-CG-CB", 120.3);
+        pheMap.put("CE1-CD1-CG", 120.3);
+        pheMap.put("CE2-CD2-CG", 120.3);
+        pheMap.put("CZ-CE1-CD1", 120.0);
+        pheMap.put("CZ-CE2-CD2", 120.0);
+        angleGeos.put(AminoAcid3.PHE, Collections.unmodifiableMap(pheMap));
 
-        private final int oldIntegerConstant;
+        Map<String, Double> tyrMap = new HashMap<>();
+        tyrMap.put("CD1-CG-CB", 120.3);
+        tyrMap.put("CD2-CG-CB", 120.3);
+        tyrMap.put("CE1-CD1-CG", 120.3);
+        tyrMap.put("CE2-CD2-CG", 120.3);
+        tyrMap.put("CZ-CE1-CD1", 120.0);
+        tyrMap.put("CZ-CE2-CD2", 120.0);
+        angleGeos.put(AminoAcid3.TYR, Collections.unmodifiableMap(tyrMap));
 
-        ProteinLibrary(int oldConst) {
-            this.oldIntegerConstant = oldConst;
-        }
+        Map<String, Double> tydMap = new HashMap<>();
+        tydMap.put("CD1-CG-CB", 120.5);
+        tydMap.put("CD2-CG-CB", 120.5);
+        tydMap.put("CE1-CD1-CG", 120.4);
+        tydMap.put("CE2-CD2-CG", 120.4);
+        tydMap.put("CZ-CE1-CD1", 120.8);
+        tydMap.put("CZ-CE2-CD2", 120.8);
+        angleGeos.put(AminoAcid3.TYD, Collections.unmodifiableMap(tydMap));
 
-        /**
-         * Parses a String input to a ProteinLibrary. Can be either a name, or an integer constant.
-         * <p>
-         * The name is preferred, but the integer constant is allowed for legacy reasons.
-         *
-         * @param input Input to parse.
-         * @return A ProteinLibrary.
-         * @throws IllegalArgumentException If no matching ProteinLibrary found.
-         */
-        public static ProteinLibrary getProteinLibrary(String input) throws IllegalArgumentException {
-            if (input.matches("^\\d+$")) {
-                return int2Library(Integer.parseInt(input));
-            } else {
-                return Arrays.stream(ProteinLibrary.values()).
-                        filter((ProteinLibrary pl) -> pl.toString().equalsIgnoreCase(input)).
-                        findAny().
-                        orElseThrow(() -> new IllegalArgumentException(" No protein library found that corresponds to " + input));
-            }
-        }
+        Map<String, Double> hisMap = new HashMap<>();
+        hisMap.put("ND1-CG-CB", 122.1);
+        hisMap.put("CD2-CG-CB", 131.0);
+        hisMap.put("CD2-CG-ND1", 106.8);
+        hisMap.put("CE1-ND1-CG", 109.5);
+        hisMap.put("NE2-CD2-CG", 107.1);
+        angleGeos.put(AminoAcid3.HIS, Collections.unmodifiableMap(hisMap));
 
-        /**
-         * Converts an integer to a corresponding ProteinLibrary. Deprecated in favor of using the actual name.
-         *
-         * @param library Index of the library.
-         * @return A ProteinLibrary.
-         * @throws IllegalArgumentException If no matching ProteinLibrary found.
-         */
-        @Deprecated
-        public static ProteinLibrary intToProteinLibrary(int library) throws IllegalArgumentException {
-            return int2Library(library);
-        }
+        Map<String, Double> hidMap = new HashMap<>();
+        hidMap.put("ND1-CG-CB", 123.5);
+        hidMap.put("CD2-CG-CB", 132.3);
+        hidMap.put("CD2-CG-ND1", 104.2);
+        hidMap.put("CE1-ND1-CG", 108.8);
+        hidMap.put("NE2-CD2-CG", 111.2);
+        angleGeos.put(AminoAcid3.HID, Collections.unmodifiableMap(hidMap));
 
-        /**
-         * Converts an integer to a corresponding ProteinLibrary. Wrapped by deprecated intToProteinLibrary.
-         *
-         * @param library Index of the library.
-         * @return A ProteinLibrary.
-         * @throws IllegalArgumentException If no matching ProteinLibrary found.
-         */
-        @Deprecated
-        private static ProteinLibrary int2Library(int library) throws IllegalArgumentException {
-            for (ProteinLibrary lib : ProteinLibrary.values()) {
-                if (library == lib.oldIntegerConstant) {
-                    return lib;
-                }
-            }
-            throw new IllegalArgumentException(format(" Could not find a " +
-                    "protein rotamer library to correspond with %d!", library));
-        }
+        Map<String, Double> hieMap = new HashMap<>();
+        hieMap.put("ND1-CG-CB", 120.2);
+        hieMap.put("CD2-CG-CB", 129.1);
+        hieMap.put("CD2-CG-ND1", 110.7);
+        hieMap.put("CE1-ND1-CG", 105.1);
+        hieMap.put("NE2-CD2-CG", 104.6);
+        angleGeos.put(AminoAcid3.HIE, Collections.unmodifiableMap(hieMap));
+
+        Map<String, Double> trpMap = new HashMap<>();
+        trpMap.put("CD1-CG-CB", 126.4);
+        trpMap.put("CD2-CG-CB", 126.5);
+        trpMap.put("CD2-CG-CD1", 107.1);
+        trpMap.put("NE1-CD1-CG", 106.9);
+        trpMap.put("CE2-NE1-CD1", 109.4);
+        trpMap.put("CE3-CD2-CE2", 121.6);
+        trpMap.put("CZ2-CE2-CD2", 123.5);
+        trpMap.put("CZ3-CE3-CD2", 116.7);
+        trpMap.put("CH2-CZ2-CE2", 116.2);
+        angleGeos.put(AminoAcid3.TRP, Collections.unmodifiableMap(trpMap));
+
+        idealAngleGeometries = Collections.unmodifiableMap(angleGeos);
     }
 
-    public enum NucleicAcidLibrary {
-        RICHARDSON
-    }
-
-    public enum NucleicSugarPucker {
-        // Used to be 2, 1, and 3 respectively.
-        C2_ENDO("south"), C3_ENDO("north"), C3_EXO();
-        private final List<String> alternateNames;
-
-        NucleicSugarPucker() {
-            alternateNames = Collections.emptyList();
-        }
-
-        NucleicSugarPucker(String aName) {
-            alternateNames = Collections.singletonList(aName);
-        }
-
-        /**
-         * Returns the sugar pucker associated with a delta torsion. Currently does
-         * not support the C3'-exo DNA-only pucker.
-         *
-         * @param delta   Delta torsion to check
-         * @param isDeoxy If DNA (vs. RNA). Presently ignored.
-         * @return Pucker
-         */
-        public static NucleicSugarPucker checkPucker(double delta, boolean isDeoxy) {
-            /*
-             * Midpoint between North, South is 115 degrees.
-             *
-             * 0-360: North is 0-115 or 295-360.
-             * -180 to 180: North is -65 to 115.
-             */
-            delta = Crystal.mod(delta, 360.0);
-            if (delta <= 115 || delta > 295) {
-                return C3_ENDO;
-            } else {
-                return C2_ENDO;
-            } // TODO: Add else-if to handle C3'-exo pucker.
-        }
-    }
+    /**
+     * The first time rotamers are requested for an amino acid type, they are
+     * instantiated into an array, which is stored in the cache. Subsequently
+     * the reference is simply returned.
+     */
+    private final Rotamer[][] aminoAcidRotamerCache = new Rotamer[numberOfAminoAcids][];
+    /**
+     * The first time rotamers are requested for a nucleic acid type, they are
+     * instantiated into an array, which is stored in the cache. Subsequently
+     * the reference is simply returned.
+     */
+    private final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
+    /**
+     * The idealized amino acid rotamer library in use. Defaults to the Richardson library.
+     */
+    private final ProteinLibrary proteinLibrary;
+    /**
+     * The idealized nucleic acid rotamer library in use. Defaults to the Richardson library... partially because there's no other library.
+     */
+    private final NucleicAcidLibrary nucleicAcidLibrary;
+    private boolean useOrigCoordsRotamer;
 
     /**
      * <p>Constructor for RotamerLibrary.</p>
@@ -221,6 +226,187 @@ public class RotamerLibrary {
     }
 
     /**
+     * <p>addRotPatch.</p>
+     *
+     * @param rotFileName a {@link java.lang.String} object.
+     * @return a boolean.
+     */
+    public static boolean addRotPatch(String rotFileName) {
+        File rotPatchFile = new File(rotFileName);
+        if (rotPatchFile.exists() && rotPatchFile.canRead()) {
+            return addRotPatch(new File(rotFileName));
+        }
+        return false;
+    }
+
+    /**
+     * Applies a Rotamer to a Residue by calling applyAARotamer or
+     * applyNARotamer.
+     *
+     * @param residue the Residue whose side-chain will be moved.
+     * @param rotamer the Rotamer defining the move.
+     */
+    public static void applyRotamer(Residue residue, Rotamer rotamer) {
+        applyRotamer(residue, rotamer, false);
+    }
+
+    /**
+     * Version of applyRotamer which allows for chain context-independent
+     * drawing of nucleic acid Rotamers. Solely used in saveRotamers at this
+     * point, although it may be useful for debugging.
+     *
+     * @param residue     the Residue to be moved.
+     * @param rotamer     Rotamer to be applied.
+     * @param independent Whether to draw Rotamer independent of chain context.
+     */
+    public static void applyRotamer(Residue residue, Rotamer rotamer, boolean independent) {
+        residue.setRotamer(rotamer);
+        if (rotamer.isState) {
+            applyState(residue, rotamer);
+        } else {
+            switch (residue.getResidueType()) {
+                case AA:
+                    applyAARotamer(residue, rotamer);
+                    break;
+                case NA:
+                    applyNARotamer(residue, rotamer, independent);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+    }
+
+    /**
+     * If place is true, builds C2', C3', and O3' based on delta(i) and returns
+     * an empty double[]; if place is false, returns a double[] filled with the
+     * coordinates at which O3' would be placed by the specified pucker.
+     * <p>
+     * Presently uses default locations for C1', O4', and C4' to build these
+     * atoms.
+     *
+     * @param residue Nucleic acid Residue to which the pucker is to bea applied
+     * @param pucker  An int specifying pucker (1=North, 2=South).
+     * @param isDeoxy Boolean
+     * @param place   Flag for usage case.
+     * @return A double[] with O3' coordinates (place=false), or null
+     * (place=true).
+     */
+    public static double[] applySugarPucker(Residue residue, NucleicSugarPucker pucker, boolean isDeoxy, boolean place) {
+        // Torsions from http://ndb-mirror-2.rutgers.edu/ndbmodule/archives/proj/valence/table6.html
+        // SP is short for Sugar Pucker (torsion).
+        final double C2_SP_SOUTH_RNA = 24.2;
+        final double C3_SP_SOUTH_RNA = 357.7;
+        final double O3_SP_SOUTH_RNA = 268.1;
+        final double C2_SP_NORTH_RNA = 324.7;
+        final double C3_SP_NORTH_RNA = 20.4;
+        final double O3_SP_NORTH_RNA = 201.8;
+
+        final double C2_SP_SOUTH_DNA = 22.6;
+        final double C3_SP_SOUTH_DNA = 357.7;
+        final double O3_SP_SOUTH_DNA = 265.8;
+        final double C2_SP_NORTH_DNA = 327.7;
+        final double C3_SP_NORTH_DNA = 16.4;
+        final double O3_SP_NORTH_DNA = 205.4;
+
+        // Ret will only be filled if place is false.
+        double[] ret = new double[3];
+
+        // Constituents of the sugar
+        Atom C1s = (Atom) residue.getAtomNode("C1\'");
+        // C2' will only be used if place is true.
+        Atom C3s = (Atom) residue.getAtomNode("C3\'");
+        Atom O4s = (Atom) residue.getAtomNode("O4\'");
+        Atom C4s = (Atom) residue.getAtomNode("C4\'");
+        Atom O3s = (Atom) residue.getAtomNode("O3\'");
+
+        // Bonds and angles necessary to draw C3' and O3'.
+        Bond C3s_C4s = C4s.getBond(C3s);
+        double dC3s_C4s = C3s_C4s.bondType.distance;
+        Angle C3s_C4s_O4s = O4s.getAngle(C4s, C3s);
+        double dC3s_C4s_O4s = C3s_C4s_O4s.angleType.angle[C3s_C4s_O4s.nh];
+
+        Bond C3s_O3s = C3s.getBond(O3s);
+        double dC3s_O3s = C3s_O3s.bondType.distance;
+        Angle C4s_C3s_O3s = C4s.getAngle(C3s, O3s);
+        double dC4s_C3s_O3s = C4s_C3s_O3s.angleType.angle[C4s_C3s_O3s.nh];
+
+        /*
+         * If place is true, place C3', C2', and O3'. Else, determine the
+         * coordinates of O3' based on the invariant atoms.
+         *
+         * If deoxy, a different set of sugar pucker torsions is
+         * applied.
+         *
+         * Then, if a North pucker (delta (i) is in the range of 78-90),
+         * apply Cx_SP_NORTH torsion to place C3 and C2.  Else,
+         * assume a South pucker (delta is between 140 and 152).
+         *
+         * Then, use O3_SP_NORTH or SOUTH to place O3.
+         */
+        if (place) {
+            Atom C2s = (Atom) residue.getAtomNode("C2\'");
+            Bond C3s_C2s = C3s.getBond(C2s);
+            double dC3s_C2s = C3s_C2s.bondType.distance;
+            Angle C4s_C3s_C2s = C4s.getAngle(C3s, C2s);
+            double dC4s_C3s_C2s = C4s_C3s_C2s.angleType.angle[C4s_C3s_C2s.nh];
+
+            if (isDeoxy) {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
+                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_NORTH_DNA, 0);
+                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_NORTH_DNA, 0);
+                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_NORTH_DNA, 0);
+                } // TODO: else-if for 3'-exo configuration (DNA only)
+                else {
+                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_SOUTH_DNA, 0);
+                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_SOUTH_DNA, 0);
+                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_SOUTH_DNA, 0);
+                }
+            } else {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
+                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_NORTH_RNA, 0);
+                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_NORTH_RNA, 0);
+                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_NORTH_RNA, 0);
+                } else {
+                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_SOUTH_RNA, 0);
+                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_SOUTH_RNA, 0);
+                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_SOUTH_RNA, 0);
+                }
+            }
+        } else {
+            double[] C1sXYZ = new double[3];
+            double[] C3sXYZ;
+            double[] O4sXYZ = new double[3];
+            double[] C4sXYZ = new double[3];
+            C1s.getXYZ(C1sXYZ);
+            O4s.getXYZ(O4sXYZ);
+            C4s.getXYZ(C4sXYZ);
+
+            // O3s coordinates will be filled into ret.
+            if (isDeoxy) {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_DNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_DNA, 0);
+                } // TODO: else-if for 3'-exo configuration (DNA only)
+                else {
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_DNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_DNA, 0);
+                }
+            } else {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_RNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_RNA, 0);
+                } else {
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_RNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_RNA, 0);
+                }
+            }
+        }
+        return ret;
+    }
+
+    /**
      * <p>getDefaultLibrary.</p>
      *
      * @return a {@link ffx.potential.bonded.RotamerLibrary} object.
@@ -230,92 +416,12 @@ public class RotamerLibrary {
     }
 
     /**
-     * <p>getUsingOrigCoordsRotamer.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean getUsingOrigCoordsRotamer() {
-        return useOrigCoordsRotamer;
-    }
-
-    /**
-     * <p>Setter for the field <code>useOrigCoordsRotamer</code>.</p>
-     *
-     * @param set a boolean.
-     */
-    public void setUseOrigCoordsRotamer(boolean set) {
-        useOrigCoordsRotamer = set;
-    }
-
-    /**
      * Get the protein rotamer library.
      *
      * @return the ProteinLibrary in use.
      */
     public ProteinLibrary getLibrary() {
         return proteinLibrary;
-    }
-
-    /**
-     * Return rotamer array for the given AA or NA residue.
-     *
-     * @param residue the Residue to examine.
-     * @return Array of Rotamers for Residue's type.
-     */
-    Rotamer[] getRotamers(Residue residue) {
-        // Package-private; intended to be accessed only by Residue and extensions
-        // thereof. Otherwise, use Residue.getRotamers(RotamerLibrary library).
-        if (residue == null) {
-            return null;
-        }
-        if (isModRes(residue)) {
-            if (nonstdRotCache.containsKey(residue.getName().toUpperCase())) {
-                return nonstdRotCache.get(residue.getName().toUpperCase()).getRotamers();
-            }
-            return null;
-        }
-        switch (residue.getResidueType()) {
-            case AA:
-                AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
-                // Now check for cysteines in a disulfide bond.
-                switch (aa) {
-                    case CYS:
-                    case CYX:
-                    case CYD: {
-                        List<Atom> cysAtoms = residue.getAtomList();
-                        // First find the sulfur on atomic number, then on starting with S.
-                        Optional<Atom> s = cysAtoms.stream().
-                                filter(a -> a.getAtomType().atomicNumber == 16).
-                                findAny();
-                        if (!s.isPresent()) {
-                            s = cysAtoms.stream().filter(a -> a.getName().startsWith("S")).findAny();
-                        }
-                        if (s.isPresent()) {
-                            Atom theS = s.get();
-                            boolean attachedS = theS.getBonds().stream().
-                                    map(b -> b.get1_2(theS)).
-                                    anyMatch(a -> a.getAtomType().atomicNumber == 16 || a.getName().startsWith("S"));
-                            if (attachedS) {
-                                // Return a null rotamer array if it's disulfide-bonded.
-                                return null;
-                            }
-                        } else {
-                            logger.warning(format(" No sulfur atom found attached to %s residue %s!", aa, residue));
-                        }
-                    }
-                    break;
-                    // Default: no-op (we are checking for cysteine disulfide bonds).
-                }
-                return getRotamers(aa);
-            case NA:
-                NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
-                return getRotamers(na);
-            default:
-                if (nonstdRotCache.containsKey(residue.getName().toUpperCase())) {
-                    return nonstdRotCache.get(residue.getName().toUpperCase()).getRotamers();
-                }
-                return null;
-        }
     }
 
     /**
@@ -347,177 +453,12 @@ public class RotamerLibrary {
     }
 
     /**
-     * Initializes default coordinates (presently PDB coordinates) for key atoms
-     * in all nucleic acid Residues. This is necessary to preserve rotamer
-     * independence while still adjusting rotamers to correctly meet prior
-     * residues; C4', O4', and C1' are used to build the rest of the nucleic
-     * acid base, but are moved with each Rotamer to take part of the strain of
-     * correctly meeting O3' of residue i-1.
-     * <p>
-     * It also initializes the location of O3' in both North and South puckers;
-     * while in theory this could be recalculated each time based off of C4',
-     * O4', and C1', it is easier to just store these two locations and call
-     * them when needed.
-     * <p>
-     * This MUST be called before any applyRotamer calls are made, else invalid
-     * coordinates will be stored.
+     * <p>getUsingOrigCoordsRotamer.</p>
      *
-     * @param polymers the Polymer array to examine.
+     * @return a boolean.
      */
-    public static void initializeDefaultAtomicCoordinates(Polymer[] polymers) {
-        for (Polymer polymer : polymers) {
-            ArrayList<Residue> current = polymer.getResidues();
-            for (Residue residuej : current) {
-                switch (residuej.getResidueType()) {
-                    case NA:
-                        residuej.initializeDefaultAtomicCoordinates();
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-
-    /**
-     * Measures the torsions in a list of Residues.
-     *
-     * @param residueList Residues to be measured.
-     * @param print       Verbosity flag.
-     */
-    public static void measureRotamers(List<Residue> residueList, boolean print) {
-        double[] chi = new double[7];
-        for (Residue residue : residueList) {
-            chi[0] = chi[1] = chi[2] = chi[3] = chi[4] = chi[5] = chi[6] = 0.0;
-            measureRotamer(residue, chi, print);
-            switch (residue.getResidueType()) {
-                case AA:
-                    logger.info(format(" %c %s %8.3f %8.3f %8.3f %8.3f", residue.getChainID(), residue,
-                            chi[0], chi[1], chi[2], chi[3]));
-                    break;
-                case NA:
-                    logger.info(format(" %c %s %8.3f %8.3f %8.3f %8.3f %8.3f"
-                                    + " %8.3f %8.3f", residue.getChainID(), residue, chi[0],
-                            chi[1], chi[2], chi[3], chi[4], chi[5], chi[6]));
-                    break;
-                default:
-                    logger.info(" Not recognized as a nucleic or amino acid residue");
-                    break;
-            }
-        }
-    }
-
-    /**
-     * Measures the torsional angles of a residue's side chain.
-     *
-     * @param residue a {@link ffx.potential.bonded.Residue} object.
-     * @param print   a boolean.
-     * @return an array of {@link double} objects.
-     */
-    public static double[] measureRotamer(Residue residue, boolean print) {
-        if (residue != null) {
-            switch (residue.getResidueType()) {
-                case AA:
-                    double[] chi = new double[4];
-                    try {
-                        measureRotamer(residue, chi, print);
-                    } catch (ArrayIndexOutOfBoundsException e) {
-                        String message = " Array passed to measureRotamer was not of sufficient size.";
-                        logger.log(Level.WARNING, message, e);
-                    }
-                    return chi;
-                case NA:
-                    chi = new double[7];
-                    try {
-                        measureRotamer(residue, chi, print);
-                    } catch (ArrayIndexOutOfBoundsException e) {
-                        String message = " Array passed to measureRotamer was not of sufficient size.";
-                        logger.log(Level.WARNING, message, e);
-                    }
-                    return chi;
-                default:
-                    return null;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Measures the torsion angles of a Residue.
-     *
-     * @param residue To be measured
-     * @param chi     Array to be filled with torsion values
-     * @param print   Verbosity flag
-     * @return        The number of rotamers this Residue has.
-     */
-    public static int measureRotamer(Residue residue, double[] chi, boolean print) {
-        if (residue == null) {
-            return -1;
-        }
-        int nRot = -1;
-        switch (residue.getResidueType()) {
-            case AA:
-                try {
-                    nRot = measureAARotamer(residue, chi, print);
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    String message = " Array passed to measureRotamer was not of sufficient size.";
-                    logger.log(Level.WARNING, message, e);
-                }
-                break;
-
-            case NA:
-                try {
-                    nRot = measureNARotamer(residue, chi, print);
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    String message = "Array passed to measureRotamer was not of sufficient size.";
-                    logger.log(Level.WARNING, message, e);
-                }
-                break;
-            default:
-                try {
-                    nRot = -1;
-                    measureUNKRotamer(residue, chi, print);
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    String message = "Array passed to measureRotamer was not of sufficient size.";
-                    logger.log(Level.WARNING, message, e);
-                }
-                break;
-        }
-        return nRot;
-    }
-
-    public static class RotamerGuess {
-        private final Residue residue;
-        private final Rotamer rotamer;
-        private final int rotIndex;
-        private final double rmsd;
-
-        RotamerGuess(Residue res, Rotamer rot, int index, double rmsDev) {
-            residue = res;
-            rotamer = rot;
-            rotIndex = index;
-            rmsd = rmsDev;
-        }
-
-        public Residue getResidue() {
-            return residue;
-        }
-
-        public Rotamer getRotamer() {
-            return rotamer;
-        }
-
-        public int getRotamerIndex() {
-            return rotIndex;
-        }
-
-        public double getRMSD() {
-            return rmsd;
-        }
-
-        public String toString() {
-            return format(" Residue %7s is most likely in rotamer %2d (%s), with an RMSD of %9.5f degrees.", residue, rotIndex, rotamer, rmsd);
-        }
+    public boolean getUsingOrigCoordsRotamer() {
+        return useOrigCoordsRotamer;
     }
 
     /**
@@ -577,18 +518,36 @@ public class RotamerLibrary {
     }
 
     /**
-     * Measures the delta torsion (sugar pucker) of a nucleic acid Residue.
+     * Initializes default coordinates (presently PDB coordinates) for key atoms
+     * in all nucleic acid Residues. This is necessary to preserve rotamer
+     * independence while still adjusting rotamers to correctly meet prior
+     * residues; C4', O4', and C1' are used to build the rest of the nucleic
+     * acid base, but are moved with each Rotamer to take part of the strain of
+     * correctly meeting O3' of residue i-1.
+     * <p>
+     * It also initializes the location of O3' in both North and South puckers;
+     * while in theory this could be recalculated each time based off of C4',
+     * O4', and C1', it is easier to just store these two locations and call
+     * them when needed.
+     * <p>
+     * This MUST be called before any applyRotamer calls are made, else invalid
+     * coordinates will be stored.
      *
-     * @param residue To be measured
-     * @return Delta torsion (sugar pucker angle).
+     * @param polymers the Polymer array to examine.
      */
-    public static double measureDelta(Residue residue) {
-        Atom C5s = (Atom) residue.getAtomNode("C5\'");
-        Atom C4s = (Atom) residue.getAtomNode("C4\'");
-        Atom C3s = (Atom) residue.getAtomNode("C3\'");
-        Atom O3s = (Atom) residue.getAtomNode("O3\'");
-        Torsion torsion = O3s.getTorsion(C3s, C4s, C5s);
-        return torsion.getValue();
+    public static void initializeDefaultAtomicCoordinates(Polymer[] polymers) {
+        for (Polymer polymer : polymers) {
+            ArrayList<Residue> current = polymer.getResidues();
+            for (Residue residuej : current) {
+                switch (residuej.getResidueType()) {
+                    case NA:
+                        residuej.initializeDefaultAtomicCoordinates();
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
     }
 
     /**
@@ -597,7 +556,7 @@ public class RotamerLibrary {
      * @param residue To be measured.
      * @param chi     Array to be filled with torsion values.
      * @param print   Verbosity flag.
-     * @return        The number of rotamers this Residue has.
+     * @return The number of rotamers this Residue has.
      */
     public static int measureAARotamer(Residue residue, double[] chi, boolean print) {
         if (residue instanceof MultiResidue) {
@@ -1049,184 +1008,125 @@ public class RotamerLibrary {
     }
 
     /**
-     * Applies a Rotamer to a Residue by calling applyAARotamer or
-     * applyNARotamer.
+     * Measures the delta torsion (sugar pucker) of a nucleic acid Residue.
      *
-     * @param residue the Residue whose side-chain will be moved.
-     * @param rotamer the Rotamer defining the move.
+     * @param residue To be measured
+     * @return Delta torsion (sugar pucker angle).
      */
-    public static void applyRotamer(Residue residue, Rotamer rotamer) {
-        applyRotamer(residue, rotamer, false);
+    public static double measureDelta(Residue residue) {
+        Atom C5s = (Atom) residue.getAtomNode("C5\'");
+        Atom C4s = (Atom) residue.getAtomNode("C4\'");
+        Atom C3s = (Atom) residue.getAtomNode("C3\'");
+        Atom O3s = (Atom) residue.getAtomNode("O3\'");
+        Torsion torsion = O3s.getTorsion(C3s, C4s, C5s);
+        return torsion.getValue();
     }
 
     /**
-     * Version of applyRotamer which allows for chain context-independent
-     * drawing of nucleic acid Rotamers. Solely used in saveRotamers at this
-     * point, although it may be useful for debugging.
+     * Measures the torsional angles of a residue's side chain.
      *
-     * @param residue     the Residue to be moved.
-     * @param rotamer     Rotamer to be applied.
-     * @param independent Whether to draw Rotamer independent of chain context.
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
+     * @param print   a boolean.
+     * @return an array of {@link double} objects.
      */
-    public static void applyRotamer(Residue residue, Rotamer rotamer, boolean independent) {
-        residue.setRotamer(rotamer);
-        if (rotamer.isState) {
-            applyState(residue, rotamer);
-        } else {
+    public static double[] measureRotamer(Residue residue, boolean print) {
+        if (residue != null) {
             switch (residue.getResidueType()) {
                 case AA:
-                    applyAARotamer(residue, rotamer);
+                    double[] chi = new double[4];
+                    try {
+                        measureRotamer(residue, chi, print);
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        String message = " Array passed to measureRotamer was not of sufficient size.";
+                        logger.log(Level.WARNING, message, e);
+                    }
+                    return chi;
+                case NA:
+                    chi = new double[7];
+                    try {
+                        measureRotamer(residue, chi, print);
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        String message = " Array passed to measureRotamer was not of sufficient size.";
+                        logger.log(Level.WARNING, message, e);
+                    }
+                    return chi;
+                default:
+                    return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Measures the torsion angles of a Residue.
+     *
+     * @param residue To be measured
+     * @param chi     Array to be filled with torsion values
+     * @param print   Verbosity flag
+     * @return The number of rotamers this Residue has.
+     */
+    public static int measureRotamer(Residue residue, double[] chi, boolean print) {
+        if (residue == null) {
+            return -1;
+        }
+        int nRot = -1;
+        switch (residue.getResidueType()) {
+            case AA:
+                try {
+                    nRot = measureAARotamer(residue, chi, print);
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    String message = " Array passed to measureRotamer was not of sufficient size.";
+                    logger.log(Level.WARNING, message, e);
+                }
+                break;
+
+            case NA:
+                try {
+                    nRot = measureNARotamer(residue, chi, print);
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    String message = "Array passed to measureRotamer was not of sufficient size.";
+                    logger.log(Level.WARNING, message, e);
+                }
+                break;
+            default:
+                try {
+                    nRot = -1;
+                    measureUNKRotamer(residue, chi, print);
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    String message = "Array passed to measureRotamer was not of sufficient size.";
+                    logger.log(Level.WARNING, message, e);
+                }
+                break;
+        }
+        return nRot;
+    }
+
+    /**
+     * Measures the torsions in a list of Residues.
+     *
+     * @param residueList Residues to be measured.
+     * @param print       Verbosity flag.
+     */
+    public static void measureRotamers(List<Residue> residueList, boolean print) {
+        double[] chi = new double[7];
+        for (Residue residue : residueList) {
+            chi[0] = chi[1] = chi[2] = chi[3] = chi[4] = chi[5] = chi[6] = 0.0;
+            measureRotamer(residue, chi, print);
+            switch (residue.getResidueType()) {
+                case AA:
+                    logger.info(format(" %c %s %8.3f %8.3f %8.3f %8.3f", residue.getChainID(), residue,
+                            chi[0], chi[1], chi[2], chi[3]));
                     break;
                 case NA:
-                    applyNARotamer(residue, rotamer, independent);
+                    logger.info(format(" %c %s %8.3f %8.3f %8.3f %8.3f %8.3f"
+                                    + " %8.3f %8.3f", residue.getChainID(), residue, chi[0],
+                            chi[1], chi[2], chi[3], chi[4], chi[5], chi[6]));
                     break;
                 default:
+                    logger.info(" Not recognized as a nucleic or amino acid residue");
                     break;
             }
         }
-
-    }
-
-    /**
-     * If place is true, builds C2', C3', and O3' based on delta(i) and returns
-     * an empty double[]; if place is false, returns a double[] filled with the
-     * coordinates at which O3' would be placed by the specified pucker.
-     * <p>
-     * Presently uses default locations for C1', O4', and C4' to build these
-     * atoms.
-     *
-     * @param residue Nucleic acid Residue to which the pucker is to bea applied
-     * @param pucker  An int specifying pucker (1=North, 2=South).
-     * @param isDeoxy Boolean
-     * @param place   Flag for usage case.
-     * @return A double[] with O3' coordinates (place=false), or null
-     * (place=true).
-     */
-    public static double[] applySugarPucker(Residue residue, NucleicSugarPucker pucker, boolean isDeoxy, boolean place) {
-        // Torsions from http://ndb-mirror-2.rutgers.edu/ndbmodule/archives/proj/valence/table6.html
-        // SP is short for Sugar Pucker (torsion).
-        final double C2_SP_SOUTH_RNA = 24.2;
-        final double C3_SP_SOUTH_RNA = 357.7;
-        final double O3_SP_SOUTH_RNA = 268.1;
-        final double C2_SP_NORTH_RNA = 324.7;
-        final double C3_SP_NORTH_RNA = 20.4;
-        final double O3_SP_NORTH_RNA = 201.8;
-
-        final double C2_SP_SOUTH_DNA = 22.6;
-        final double C3_SP_SOUTH_DNA = 357.7;
-        final double O3_SP_SOUTH_DNA = 265.8;
-        final double C2_SP_NORTH_DNA = 327.7;
-        final double C3_SP_NORTH_DNA = 16.4;
-        final double O3_SP_NORTH_DNA = 205.4;
-
-        // Ret will only be filled if place is false.
-        double[] ret = new double[3];
-
-        // Constituents of the sugar
-        Atom C1s = (Atom) residue.getAtomNode("C1\'");
-        // C2' will only be used if place is true.
-        Atom C3s = (Atom) residue.getAtomNode("C3\'");
-        Atom O4s = (Atom) residue.getAtomNode("O4\'");
-        Atom C4s = (Atom) residue.getAtomNode("C4\'");
-        Atom O3s = (Atom) residue.getAtomNode("O3\'");
-
-        // Bonds and angles necessary to draw C3' and O3'.
-        Bond C3s_C4s = C4s.getBond(C3s);
-        double dC3s_C4s = C3s_C4s.bondType.distance;
-        Angle C3s_C4s_O4s = O4s.getAngle(C4s, C3s);
-        double dC3s_C4s_O4s = C3s_C4s_O4s.angleType.angle[C3s_C4s_O4s.nh];
-
-        Bond C3s_O3s = C3s.getBond(O3s);
-        double dC3s_O3s = C3s_O3s.bondType.distance;
-        Angle C4s_C3s_O3s = C4s.getAngle(C3s, O3s);
-        double dC4s_C3s_O3s = C4s_C3s_O3s.angleType.angle[C4s_C3s_O3s.nh];
-
-        /*
-         * If place is true, place C3', C2', and O3'. Else, determine the
-         * coordinates of O3' based on the invariant atoms.
-         *
-         * If deoxy, a different set of sugar pucker torsions is
-         * applied.
-         *
-         * Then, if a North pucker (delta (i) is in the range of 78-90),
-         * apply Cx_SP_NORTH torsion to place C3 and C2.  Else,
-         * assume a South pucker (delta is between 140 and 152).
-         *
-         * Then, use O3_SP_NORTH or SOUTH to place O3.
-         */
-        if (place) {
-            Atom C2s = (Atom) residue.getAtomNode("C2\'");
-            Bond C3s_C2s = C3s.getBond(C2s);
-            double dC3s_C2s = C3s_C2s.bondType.distance;
-            Angle C4s_C3s_C2s = C4s.getAngle(C3s, C2s);
-            double dC4s_C3s_C2s = C4s_C3s_C2s.angleType.angle[C4s_C3s_C2s.nh];
-
-            if (isDeoxy) {
-                if (pucker == NucleicSugarPucker.C3_ENDO) {
-                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_NORTH_DNA, 0);
-                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_NORTH_DNA, 0);
-                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_NORTH_DNA, 0);
-                } // TODO: else-if for 3'-exo configuration (DNA only)
-                else {
-                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_SOUTH_DNA, 0);
-                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_SOUTH_DNA, 0);
-                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_SOUTH_DNA, 0);
-                }
-            } else {
-                if (pucker == NucleicSugarPucker.C3_ENDO) {
-                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_NORTH_RNA, 0);
-                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_NORTH_RNA, 0);
-                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_NORTH_RNA, 0);
-                } else {
-                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_SOUTH_RNA, 0);
-                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_SOUTH_RNA, 0);
-                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_SOUTH_RNA, 0);
-                }
-            }
-        } else {
-            double[] C1sXYZ = new double[3];
-            double[] C3sXYZ;
-            double[] O4sXYZ = new double[3];
-            double[] C4sXYZ = new double[3];
-            C1s.getXYZ(C1sXYZ);
-            O4s.getXYZ(O4sXYZ);
-            C4s.getXYZ(C4sXYZ);
-
-            // O3s coordinates will be filled into ret.
-            if (isDeoxy) {
-                if (pucker == NucleicSugarPucker.C3_ENDO) {
-                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_DNA, 0);
-                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_DNA, 0);
-                } // TODO: else-if for 3'-exo configuration (DNA only)
-                else {
-                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_DNA, 0);
-                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_DNA, 0);
-                }
-            } else {
-                if (pucker == NucleicSugarPucker.C3_ENDO) {
-                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_RNA, 0);
-                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_RNA, 0);
-                } else {
-                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_RNA, 0);
-                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_RNA, 0);
-                }
-            }
-        }
-        return ret;
-    }
-
-    /**
-     * <p>addRotPatch.</p>
-     *
-     * @param rotFileName a {@link java.lang.String} object.
-     * @return a boolean.
-     */
-    public static boolean addRotPatch(String rotFileName) {
-        File rotPatchFile = new File(rotFileName);
-        if (rotPatchFile.exists() && rotPatchFile.canRead()) {
-            return addRotPatch(new File(rotFileName));
-        }
-        return false;
     }
 
     public static void readRotFile(File rotamerFile, MolecularAssembly assembly) throws IOException {
@@ -1234,190 +1134,88 @@ public class RotamerLibrary {
     }
 
     /**
-     * <p>measureUNKRotamer.</p>
+     * <p>Setter for the field <code>useOrigCoordsRotamer</code>.</p>
      *
-     * @param residue a {@link ffx.potential.bonded.Residue} object.
-     * @param chi     an array of {@link double} objects.
-     * @param print   a boolean.
+     * @param set a boolean.
      */
-    private static void measureUNKRotamer(Residue residue, double[] chi, boolean print) {
-        String resName = residue.getName().toUpperCase();
-        if (nonstdRotCache.containsKey(resName)) {
-            nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
-        } else {
-            logger.warning(format(" Could not measure chi angles "
-                    + "for residue %s", residue.toString()));
-        }
+    public void setUseOrigCoordsRotamer(boolean set) {
+        useOrigCoordsRotamer = set;
     }
 
-    /**
-     * Measure the current torsions of a nucleic acid Residue, starting from the
-     * 5'-most torsion.
-     * <p>
-     * Chi[0]-chi[6] in order are: delta (i-1), epsilon (i-1), zeta (i-1), alpha
-     * (i), beta (i), gamma (i) and delta (i) for residue i.
-     *
-     * @param residue Residue to be measured.
-     * @param chi     Array to be filled with torsion values.
-     * @param print   Verbosity flag.
-     * @return        The number of rotamers this Residue has.
-     */
-    private static int measureNARotamer(Residue residue, double[] chi, boolean print) {
-        NucleicAcid3 name = NucleicAcid3.valueOf(residue.getName());
-        Residue prevResidue = residue.getPreviousResidue();
-        Torsion torsion;
-
-        Atom C5s = (Atom) residue.getAtomNode("C5\'");
-        Atom C4s = (Atom) residue.getAtomNode("C4\'");
-        Atom C3s = (Atom) residue.getAtomNode("C3\'");
-        Atom O3s = (Atom) residue.getAtomNode("O3\'");
-        Atom O5s = (Atom) residue.getAtomNode("O5\'");
-        Atom P = (Atom) residue.getAtomNode("P");
-
-        int nRot = 7;
-
-        /*
-         * Start by measuring delta (i-1) if available, working up to delta.  If
-         * there is no prior residue, start measuring from the 5'-most torsion.
-         */
-        if (prevResidue == null) {
-            switch (name) {
-                case GUA:
-                case ADE:
-                case DGU:
-                case DAD:
-                case CYT:
-                case URI:
-                case THY:
-                case DCY:
-                case DTY:
-                    /*
-                     * If there is an HO5s, measure alpha based on HO5s.  Else,
-                     * measure zeta (i-1) based on OP3 and alpha on P.
-                     */
-                    Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
-                    if (HO5s != null) {
-                        torsion = HO5s.getTorsion(O5s, C5s, C4s);
-                        chi[4] = torsion.getValue();
-                        if (print) {
-                            logger.info(torsion.toString());
-                        }
-                        nRot = 3;
-                    } else {
-                        Atom OP3 = (Atom) residue.getAtomNode("OP3");
-                        nRot = 3;
-                        if (OP3 != null) {
-                            torsion = OP3.getTorsion(P, O5s, C5s);
-                            chi[3] = torsion.getValue();
-                            if (print) {
-                                logger.info(torsion.toString());
-                            }
-                            nRot = 4;
-                        }
-
-                        torsion = P.getTorsion(O5s, C5s, C4s);
-                        chi[4] = torsion.getValue();
-                        if (print) {
-                            logger.info(torsion.toString());
-                        }
+    private static boolean addRotPatch(File rpatchFile) {
+        try (BufferedReader br = new BufferedReader(new FileReader(rpatchFile))) {
+            String resName = null;
+            List<String> applyLines = new ArrayList<>();
+            //List<Rotamer> rotamers = new ArrayList<>();
+            List<String> rotLines = new ArrayList<>();
+            ResidueType rType = ResidueType.AA;
+            String line = br.readLine();
+            while (line != null) {
+                line = line.trim();
+                if (line.startsWith("PLACE")) {
+                    applyLines.add(line);
+                } else if (line.startsWith("RESNAME")) {
+                    String[] toks = line.split("\\s+");
+                    resName = toks[1];
+                } else if (line.startsWith("RESTYPE")) {
+                    String[] toks = line.split("\\s+");
+                    switch (toks[1]) {
+                        case "AA":
+                            rType = ResidueType.AA;
+                            break;
+                        case "NA":
+                            rType = ResidueType.NA;
+                            break;
+                        case "UNK":
+                        default:
+                            rType = ResidueType.UNK;
+                            break;
                     }
-                    break;
-                default:
-                    break;
+                } else if (line.startsWith("ROTAMER")) {
+                    rotLines.add(line);
+                }
+                line = br.readLine();
             }
-        } else {
-            switch (name) {
-                case GUA:
-                case ADE:
-                case DGU:
-                case DAD:
-                case CYT:
-                case URI:
-                case THY:
-                case DCY:
-                case DTY:
-                    Atom O3sPrev = (Atom) prevResidue.getAtomNode("O3\'");
-                    Atom C3sPrev = (Atom) prevResidue.getAtomNode("C3\'");
-                    Atom C4sPrev = (Atom) prevResidue.getAtomNode("C4\'");
-                    Atom C5sPrev = (Atom) prevResidue.getAtomNode("C5\'");
-
-                    torsion = C5sPrev.getTorsion(C4sPrev, C3sPrev, O3sPrev);
-                    chi[0] = torsion.getValue();
-                    if (print) {
-                        logger.info(torsion.toString());
+            if (resName != null) {
+                List<Rotamer> rotamers = new ArrayList<>();
+                for (String string : rotLines) {
+                    String[] toks = string.split("\\s+");
+                    int nVals = toks.length - 1;
+                    double[] values = new double[nVals];
+                    for (int i = 0; i < nVals; i++) {
+                        values[i] = Double.parseDouble(toks[i + 1]);
                     }
-
-                    torsion = C4sPrev.getTorsion(C3sPrev, O3sPrev, P);
-                    chi[1] = torsion.getValue();
-                    if (print) {
-                        logger.info(torsion.toString());
+                    switch (rType) {
+                        case AA:
+                            rotamers.add(new Rotamer(AminoAcid3.UNK, values));
+                            break;
+                        case NA:
+                            rotamers.add(new Rotamer(NucleicAcid3.UNK, values));
+                            break;
+                        case UNK:
+                        default:
+                            rotamers.add(new Rotamer(values));
+                            break;
                     }
+                }
 
-                    torsion = C3sPrev.getTorsion(O3sPrev, P, O5s);
-                    chi[2] = torsion.getValue();
-                    if (print) {
-                        logger.info(torsion.toString());
-                    }
-
-                    torsion = O3sPrev.getTorsion(P, O5s, C5s);
-                    chi[3] = torsion.getValue();
-                    if (print) {
-                        logger.info(torsion.toString());
-                    }
-
-                    torsion = P.getTorsion(O5s, C5s, C4s);
-                    chi[4] = torsion.getValue();
-                    if (print) {
-                        logger.info(torsion.toString());
-                    }
-                    break;
-                default:
-                    break;
+                if (nonstdRotCache.containsKey(resName)) {
+                    logger.warning(format(" Rotamer library already contains "
+                            + "rotamer definition for residue %s!", resName));
+                } else {
+                    NonstandardRotLibrary nrlib = new NonstandardRotLibrary(resName,
+                            applyLines.toArray(new String[applyLines.size()]),
+                            rotamers.toArray(new Rotamer[rotamers.size()]));
+                    nonstdRotCache.put(resName, nrlib);
+                }
+                return true;
+            } else {
+                return false;
             }
-
-        }
-        /*
-         * Measure torsions common to all nucleic acids (gamma, delta).
-         */
-        torsion = O5s.getTorsion(C5s, C4s, C3s);
-        chi[5] = torsion.getValue();
-        if (print) {
-            logger.info(torsion.toString());
-        }
-
-        torsion = C5s.getTorsion(C4s, C3s, O3s);
-        chi[6] = torsion.getValue();
-        if (print) {
-            logger.info(torsion.toString());
-        }
-        return nRot;
-    }
-
-    /**
-     * Checks if a Residue has a PTM.
-     *
-     * @param residue The Residue to check.
-     * @return True if this is a modified residue.
-     */
-    private static boolean isModRes(Residue residue) {
-        List<Atom> resatoms = residue.getAtomList();
-        return (resatoms != null && !resatoms.isEmpty() && resatoms.get(0).isModRes());
-    }
-
-    /**
-     * Applies a coordinates-based Rotamer (defined by Cartesian coordinates
-     * instead of by a set of torsion angles); intended for use with original
-     * coordinates Rotamers and possibly other future cases.
-     *
-     * @param residue Residue to apply Rotamer for
-     * @param rotamer Coordinates-based Rotamer
-     */
-    private static void applyState(Residue residue, Rotamer rotamer) {
-        if (rotamer.isState) {
-            residue.revertState(rotamer.originalState);
-        } else {
-            logger.warning(format(" Attempting to apply a ResidueState for "
-                    + "a torsion-based rotamer %s for residue %s", rotamer, residue));
+        } catch (IOException ex) {
+            logger.warning(format(" Exception in parsing rotamer patch "
+                    + "file %s: %s", rpatchFile.getName(), ex.toString()));
+            return false;
         }
     }
 
@@ -1437,110 +1235,6 @@ public class RotamerLibrary {
         Angle a = a1.getAngle(a2, a3);
         AngleType at = a.getAngleType();
         return at.angle[a.nh];
-    }
-
-    /**
-     * Obtains an idealized angle using a lookup map of stored, idealized geometries,
-     * with a fallback to using the force field. This is intended for use with ring
-     * systems, where ring constraints mean that optimum-energy rings may not have
-     * the values defined by the force field.
-     * <p>
-     * Current lookup map is only for PHE, TYR, TYD, HIS, HID, HIE, and TRP, using
-     * values obtained from a tight bonded-terms-only optimization under AMOEBA BIO 2018.
-     *
-     * @param resName Name of the Residue containing a1-a3.
-     * @param a1      An atom.
-     * @param a2      Another Atom.
-     * @param a3      Another Atom.
-     * @return Stored idealized a1-a2-a3 angle in degrees.
-     */
-    private static double idealGeometryAngle(AminoAcid3 resName, Atom a1, Atom a2, Atom a3) {
-        StringBuilder sb = new StringBuilder(a1.getName());
-        sb.append("-").append(a2.getName()).append("-").append(a3.getName());
-        Map<String, Double> resMap = idealAngleGeometries.get(resName);
-        String atomString = sb.toString();
-
-        if (resMap.containsKey(atomString)) {
-            return resMap.get(atomString);
-        } else {
-            sb = new StringBuilder(a3.getName());
-            sb.append("-").append(a2.getName()).append("-").append(a1.getName());
-            atomString = sb.toString();
-            if (resMap.containsKey(atomString)) {
-                return resMap.get(atomString);
-            } else {
-                logger.fine(format(" Could not find an ideal-geometry angle for %s %s-%s-%s", resName, a1, a2, a3));
-                return angleFromForceField(a1, a2, a3);
-            }
-        }
-    }
-
-    /**
-     * Gets an Angle, using the default as set by property for whether to use idealized ring
-     * geometry (default), or based on force field.
-     *
-     * @param resName AminoAcid3 for a1-a3.
-     * @param a1      An Atom.
-     * @param a2      Another Atom.
-     * @param a3      A third Atom.
-     * @return a1-a2-a3 angle for internal geometry.
-     */
-    private static double getAngle(AminoAcid3 resName, Atom a1, Atom a2, Atom a3) {
-        if (useIdealRingGeometries) {
-            return idealGeometryAngle(resName, a1, a2, a3);
-        } else {
-            return angleFromForceField(a1, a2, a3);
-        }
-    }
-
-    /**
-     * Draws CZ of Phe/Tyr/Tyd twice (from each branch of the ring), the cuts it down the middle.
-     *
-     * @param resName Residue containing CZ.
-     * @param CZ      CZ to be placed.
-     * @param CG
-     * @param CE1
-     * @param CD1
-     * @param CE2
-     * @param CD2
-     * @return Mean coordinates for CZ based on internal geometry.
-     */
-    private static double[] drawCZ(AminoAcid3 resName, Atom CZ, Atom CG, Atom CE1, Atom CD1, Atom CE2, Atom CD2) {
-        double bondLen = CZ.getBond(CE1).bondType.distance;
-        double ang = getAngle(resName, CZ, CE1, CD1);
-        double[] xCG = new double[3];
-        xCG = CG.getXYZ(xCG);
-
-        double[] xCE = new double[3];
-        xCE = CE1.getXYZ(xCE);
-        double[] xCD = new double[3];
-        xCD = CD1.getXYZ(xCD);
-        double[] xyz1 = determineIntxyz(xCE, bondLen, xCD, ang, xCG, 0.0, 0);
-
-        xCE = CE2.getXYZ(xCE);
-        xCD = CD2.getXYZ(xCD);
-        double[] xyz2 = determineIntxyz(xCE, bondLen, xCD, ang, xCG, 0, 0);
-
-        for (int i = 0; i < 3; i++) {
-            xyz1[i] += xyz2[i];
-            xyz1[i] *= 0.5;
-        }
-        return xyz1;
-    }
-
-    /**
-     * Moves CZ of Phe/Tyr/Tyd to a mean position determined by both branches of the ring.
-     *
-     * @param resName Residue containing CZ.
-     * @param CZ      CZ to be placed.
-     * @param CG
-     * @param CE1
-     * @param CD1
-     * @param CE2
-     * @param CD2
-     */
-    private static void applyCZ(AminoAcid3 resName, Atom CZ, Atom CG, Atom CE1, Atom CD1, Atom CE2, Atom CD2) {
-        CZ.moveTo(drawCZ(resName, CZ, CG, CE1, CD1, CE2, CD2));
     }
 
     /**
@@ -2878,6 +2572,224 @@ public class RotamerLibrary {
     }
 
     /**
+     * Moves CZ of Phe/Tyr/Tyd to a mean position determined by both branches of the ring.
+     *
+     * @param resName Residue containing CZ.
+     * @param CZ      CZ to be placed.
+     * @param CG
+     * @param CE1
+     * @param CD1
+     * @param CE2
+     * @param CD2
+     */
+    private static void applyCZ(AminoAcid3 resName, Atom CZ, Atom CG, Atom CE1, Atom CD1, Atom CE2, Atom CD2) {
+        CZ.moveTo(drawCZ(resName, CZ, CG, CE1, CD1, CE2, CD2));
+    }
+
+    /**
+     * Draws the backbone of a nucleic acid Residue.
+     *
+     * @param residue     Residue.
+     * @param rotamer     Rotamer being applied to Residue.
+     * @param prevResidue Residue 5' of residue.
+     */
+    private static void applyNABackbone(Residue residue, Rotamer rotamer, Residue prevResidue) {
+        Atom O3s = (Atom) residue.getAtomNode("O3\'");
+        Atom C3s = (Atom) residue.getAtomNode("C3\'");
+        Atom C4s = (Atom) residue.getAtomNode("C4\'");
+        Atom C5s = (Atom) residue.getAtomNode("C5\'");
+        Atom O5s = (Atom) residue.getAtomNode("O5\'");
+        /*
+         * Two of the following atoms will be null, depending on whether
+         * there is a previous residue, whether it is a 5' PO4 cap, or whether
+         * it is a 5' OH cap.
+         */
+        Atom P = (Atom) residue.getAtomNode("P");
+        Atom OP3 = (Atom) residue.getAtomNode("OP3");
+        Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
+
+        Bond C4s_C5s = C4s.getBond(C5s);
+        double dC4s_C5s = C4s_C5s.bondType.distance;
+        Angle C3s_C4s_C5s = C3s.getAngle(C4s, C5s);
+        double dC3s_C4s_C5s = C3s_C4s_C5s.angleType.angle[C3s_C4s_C5s.nh];
+        intxyz(C5s, C4s, dC4s_C5s, C3s, dC3s_C4s_C5s, O3s, rotamer.chi7, 0);
+
+        Bond C5s_O5s = C5s.getBond(O5s);
+        double dC5s_O5s = C5s_O5s.bondType.distance;
+        Angle C4s_C5s_O5s = C4s.getAngle(C5s, O5s);
+        double dC4s_C5s_O5s = C4s_C5s_O5s.angleType.angle[C4s_C5s_O5s.nh];
+        intxyz(O5s, C5s, dC5s_O5s, C4s, dC4s_C5s_O5s, C3s, rotamer.chi6, 0);
+
+        if (prevResidue == null) {
+            // If capped by HO5s, draw HO5s and return. Else, assume OP3 capped.
+            if (HO5s != null) {
+                Bond O5s_HO5s = O5s.getBond(HO5s);
+                double dO5s_HO5s = O5s_HO5s.bondType.distance;
+                Angle C5s_O5s_HO5s = C5s.getAngle(O5s, HO5s);
+                double dC5s_O5s_HO5s = C5s_O5s_HO5s.angleType.angle[C5s_O5s_HO5s.nh];
+                intxyz(HO5s, O5s, dO5s_HO5s, C5s, dC5s_O5s_HO5s, C4s, rotamer.chi5, 0);
+            } else {
+                Bond O5s_P = O5s.getBond(P);
+                double dO5s_P = O5s_P.bondType.distance;
+                Angle C5s_O5s_P = C5s.getAngle(O5s, P);
+                double dC5s_O5s_P = C5s_O5s_P.angleType.angle[C5s_O5s_P.nh];
+                intxyz(P, O5s, dO5s_P, C5s, dC5s_O5s_P, C4s, rotamer.chi5, 0);
+
+                Bond P_OP3 = P.getBond(OP3);
+                double dP_OP3 = P_OP3.bondType.distance;
+                Angle O5s_P_OP3 = C5s.getAngle(O5s, P);
+                double dO5s_P_OP3 = O5s_P_OP3.angleType.angle[O5s_P_OP3.nh];
+                intxyz(OP3, P, dP_OP3, O5s, dO5s_P_OP3, C5s, rotamer.chi4, 0);
+            }
+        } else {
+            Bond O5s_P = O5s.getBond(P);
+            double dO5s_P = O5s_P.bondType.distance;
+            Angle C5s_O5s_P = C5s.getAngle(O5s, P);
+            double dC5s_O5s_P = C5s_O5s_P.angleType.angle[C5s_O5s_P.nh];
+            intxyz(P, O5s, dO5s_P, C5s, dC5s_O5s_P, C4s, rotamer.chi5, 0);
+        }
+    }
+
+    /**
+     * Applies Cartesian translations to nucleic acid backbone atoms to allow P
+     * to correctly join up with O3' of the prior Residue.
+     *
+     * @param residue         Residue.
+     * @param prevResidue     Residue 5' of residue.
+     * @param rotamer         Rotamer being applied to residue.
+     * @param prevSugarPucker Expected sugar pucker of prevResidue.
+     * @return The magnitude of any applied correction.
+     */
+    private static double applyNACorrections(Residue residue, Residue prevResidue, Rotamer rotamer,
+                                             NucleicSugarPucker prevSugarPucker, boolean isDeoxy, boolean is3sTerminal) {
+        // Backbone atoms of this residue to be adjusted
+        Atom C3s = (Atom) residue.getAtomNode("C3\'");
+        Atom O4s = (Atom) residue.getAtomNode("O4\'");
+        Atom C4s = (Atom) residue.getAtomNode("C4\'");
+        Atom C5s = (Atom) residue.getAtomNode("C5\'");
+        Atom O5s = (Atom) residue.getAtomNode("O5\'");
+        Atom P = (Atom) residue.getAtomNode("P");
+        Atom C1s = (Atom) residue.getAtomNode("C1\'");
+        Atom C2s = (Atom) residue.getAtomNode("C2\'");
+
+        // This reference being used solely to get ideal bond lengths & angles.
+        Atom O3sPrev = (Atom) prevResidue.getAtomNode("O3\'");
+        double[] O3sPriorCoords;
+
+        // Original position of O3' (i-1). Will be used to draw the correction
+        // vector.
+        if (prevSugarPucker == NucleicSugarPucker.C3_ENDO) {
+            O3sPriorCoords = prevResidue.getO3sNorth();
+        } else {
+            O3sPriorCoords = prevResidue.getO3sSouth();
+        } // TODO: Else-if block for the C3'-exo configuration of DNA sugars.
+
+        Bond P_O3sPrev = P.getBond(O3sPrev);
+        double dP_O3sPrev = P_O3sPrev.bondType.distance;
+        Angle O5s_P_O3sPrev = O5s.getAngle(P, O3sPrev);
+        double dO5s_P_O3sPrev = O5s_P_O3sPrev.angleType.angle[O5s_P_O3sPrev.nh];
+        double[] O3sHypCoords = determineIntxyz(P.getXYZ(null), dP_O3sPrev, O5s.getXYZ(null), dO5s_P_O3sPrev,
+                C5s.getXYZ(null), rotamer.chi4, 0);
+
+        // Index 5 will be full correction, and indices 0-4 will be 1/6 to 5/6
+        // of the full correction in increasing order.  Index 6 is a 1/12
+        // correction applied to other atoms in the sugar.
+        double[][] corrections = new double[7][3];
+        for (int i = 0; i < 3; i++) {
+            corrections[5][i] = O3sPriorCoords[i] - O3sHypCoords[i];
+            corrections[0][i] = (1.0 / 6.0) * corrections[5][i];
+            corrections[1][i] = (1.0 / 3.0) * corrections[5][i];
+            corrections[2][i] = (1.0 / 2.0) * corrections[5][i];
+            corrections[3][i] = (2.0 / 3.0) * corrections[5][i];
+            corrections[4][i] = (5.0 / 6.0) * corrections[5][i];
+            corrections[6][i] = (1.0 / 12.0) * corrections[5][i];
+        }
+
+        /*
+         * Move backbone atoms by an appropriate fraction of the correction
+         * vector. Do this before checking the threshold, so that atoms are moved
+         * in case that is needed before the exception gets thrown.
+         */
+        O4s.move(corrections[0]);
+        C3s.move(corrections[0]);
+        C4s.move(corrections[1]);
+        C5s.move(corrections[2]);
+        O5s.move(corrections[3]);
+        P.move(corrections[4]);
+        C1s.move(corrections[6]);
+        C2s.move(corrections[6]);
+
+        return ((corrections[5][0] * corrections[5][0])
+                + (corrections[5][1] * corrections[5][1])
+                + (corrections[5][2] * corrections[5][2]));
+    }
+
+    /**
+     * Applies a nucleic acid Rotamer, returning the magnitude of the correction applied to make residue i join i-1.
+     * <p>
+     * Note that the independent flag is separate from DEE independence: DEE
+     * independence is preserved by applying corrections based on a non-variable
+     * set of coordinates, and is wholly independent of what is happening to
+     * residue i-1.
+     * <p>
+     * Cannot presently handle 3' phosphate caps: I do not know what they would
+     * be labeled as in PDB files. A template for how to handle 3' phosphate
+     * caps is written but commented out.
+     *
+     * @param residue     Residue.
+     * @param rotamer     Rotamer to be applied to Residue.
+     * @param independent Whether to draw NA rotamer independent of chain
+     *                    context.
+     * @return Magnitude of the correction vector.
+     */
+    private static double applyNARotamer(Residue residue, Rotamer rotamer, boolean independent) {
+        if (rotamer.isState) {
+            applyState(residue, rotamer);
+            return 0;
+        }
+        NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
+        Residue prevResidue = residue.getPreviousResidue();
+        boolean is3sTerminal = false;  // 3' terminal
+        if (residue.getNextResidue() == null) {
+            is3sTerminal = true;
+        }
+
+        // Check if this is a 3' phosphate being listed as its own residue.
+        /* if (residue.getAtomList().size() == 1) {
+         return;
+         } */
+        boolean isDeoxy = residue.getAtomNode("O2\'") == null;
+
+        // Note: chi values will generally be applied from chi7 to chi1.
+        // Will have to add an else-if to handle DNA C3'-exo configurations.
+        NucleicSugarPucker sugarPucker = NucleicSugarPucker.checkPucker(rotamer.chi7, isDeoxy);
+        NucleicSugarPucker prevSugarPucker = NucleicSugarPucker.checkPucker(rotamer.chi1, isDeoxy);
+
+        // Revert C1', O4', and C4' coordinates to PDB defaults.
+        Atom C1s = (Atom) residue.getAtomNode("C1\'");
+        C1s.moveTo(residue.getC1sCoords());
+        Atom O4s = (Atom) residue.getAtomNode("O4\'");
+        O4s.moveTo(residue.getO4sCoords());
+        Atom C4s = (Atom) residue.getAtomNode("C4\'");
+        C4s.moveTo(residue.getC4sCoords());
+
+        // Presently, the exterior method loadPriorAtomicCoordinates() directly
+        // calls applySugarPucker instead of going through applyRotamer().
+        applySugarPucker(residue, sugarPucker, isDeoxy, true);
+        applyNABackbone(residue, rotamer, prevResidue);
+
+        double naCorrection = 0;
+        if (prevResidue != null && !independent) {
+            naCorrection = applyNACorrections(residue, prevResidue, rotamer, prevSugarPucker, isDeoxy, is3sTerminal);
+        } /* else if (!independent) {
+         startingResidueConsistencyCheck(residue, rotamer, correctionThreshold);
+         } */
+
+        applyNASideAtoms(residue, rotamer, prevResidue, isDeoxy, is3sTerminal, prevSugarPucker);
+        return naCorrection;
+    }
+
+    /**
      * Draws nucleic acid Atoms outside the backbone. Called after corrections
      * have been applied, so that these Atoms are drawn with ideal bond lengths
      * and angles.
@@ -3055,141 +2967,654 @@ public class RotamerLibrary {
     }
 
     /**
-     * Draws the backbone of a nucleic acid Residue.
+     * Applies a coordinates-based Rotamer (defined by Cartesian coordinates
+     * instead of by a set of torsion angles); intended for use with original
+     * coordinates Rotamers and possibly other future cases.
      *
-     * @param residue     Residue.
-     * @param rotamer     Rotamer being applied to Residue.
-     * @param prevResidue Residue 5' of residue.
+     * @param residue Residue to apply Rotamer for
+     * @param rotamer Coordinates-based Rotamer
      */
-    private static void applyNABackbone(Residue residue, Rotamer rotamer, Residue prevResidue) {
-        Atom O3s = (Atom) residue.getAtomNode("O3\'");
-        Atom C3s = (Atom) residue.getAtomNode("C3\'");
-        Atom C4s = (Atom) residue.getAtomNode("C4\'");
-        Atom C5s = (Atom) residue.getAtomNode("C5\'");
-        Atom O5s = (Atom) residue.getAtomNode("O5\'");
-        /*
-         * Two of the following atoms will be null, depending on whether
-         * there is a previous residue, whether it is a 5' PO4 cap, or whether
-         * it is a 5' OH cap.
-         */
-        Atom P = (Atom) residue.getAtomNode("P");
-        Atom OP3 = (Atom) residue.getAtomNode("OP3");
-        Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
-
-        Bond C4s_C5s = C4s.getBond(C5s);
-        double dC4s_C5s = C4s_C5s.bondType.distance;
-        Angle C3s_C4s_C5s = C3s.getAngle(C4s, C5s);
-        double dC3s_C4s_C5s = C3s_C4s_C5s.angleType.angle[C3s_C4s_C5s.nh];
-        intxyz(C5s, C4s, dC4s_C5s, C3s, dC3s_C4s_C5s, O3s, rotamer.chi7, 0);
-
-        Bond C5s_O5s = C5s.getBond(O5s);
-        double dC5s_O5s = C5s_O5s.bondType.distance;
-        Angle C4s_C5s_O5s = C4s.getAngle(C5s, O5s);
-        double dC4s_C5s_O5s = C4s_C5s_O5s.angleType.angle[C4s_C5s_O5s.nh];
-        intxyz(O5s, C5s, dC5s_O5s, C4s, dC4s_C5s_O5s, C3s, rotamer.chi6, 0);
-
-        if (prevResidue == null) {
-            // If capped by HO5s, draw HO5s and return. Else, assume OP3 capped.
-            if (HO5s != null) {
-                Bond O5s_HO5s = O5s.getBond(HO5s);
-                double dO5s_HO5s = O5s_HO5s.bondType.distance;
-                Angle C5s_O5s_HO5s = C5s.getAngle(O5s, HO5s);
-                double dC5s_O5s_HO5s = C5s_O5s_HO5s.angleType.angle[C5s_O5s_HO5s.nh];
-                intxyz(HO5s, O5s, dO5s_HO5s, C5s, dC5s_O5s_HO5s, C4s, rotamer.chi5, 0);
-            } else {
-                Bond O5s_P = O5s.getBond(P);
-                double dO5s_P = O5s_P.bondType.distance;
-                Angle C5s_O5s_P = C5s.getAngle(O5s, P);
-                double dC5s_O5s_P = C5s_O5s_P.angleType.angle[C5s_O5s_P.nh];
-                intxyz(P, O5s, dO5s_P, C5s, dC5s_O5s_P, C4s, rotamer.chi5, 0);
-
-                Bond P_OP3 = P.getBond(OP3);
-                double dP_OP3 = P_OP3.bondType.distance;
-                Angle O5s_P_OP3 = C5s.getAngle(O5s, P);
-                double dO5s_P_OP3 = O5s_P_OP3.angleType.angle[O5s_P_OP3.nh];
-                intxyz(OP3, P, dP_OP3, O5s, dO5s_P_OP3, C5s, rotamer.chi4, 0);
-            }
+    private static void applyState(Residue residue, Rotamer rotamer) {
+        if (rotamer.isState) {
+            residue.revertState(rotamer.originalState);
         } else {
-            Bond O5s_P = O5s.getBond(P);
-            double dO5s_P = O5s_P.bondType.distance;
-            Angle C5s_O5s_P = C5s.getAngle(O5s, P);
-            double dC5s_O5s_P = C5s_O5s_P.angleType.angle[C5s_O5s_P.nh];
-            intxyz(P, O5s, dO5s_P, C5s, dC5s_O5s_P, C4s, rotamer.chi5, 0);
+            logger.warning(format(" Attempting to apply a ResidueState for "
+                    + "a torsion-based rotamer %s for residue %s", rotamer, residue));
         }
     }
 
     /**
-     * Applies Cartesian translations to nucleic acid backbone atoms to allow P
-     * to correctly join up with O3' of the prior Residue.
+     * Draws CZ of Phe/Tyr/Tyd twice (from each branch of the ring), the cuts it down the middle.
      *
-     * @param residue         Residue.
-     * @param prevResidue     Residue 5' of residue.
-     * @param rotamer         Rotamer being applied to residue.
-     * @param prevSugarPucker Expected sugar pucker of prevResidue.
-     * @return The magnitude of any applied correction.
+     * @param resName Residue containing CZ.
+     * @param CZ      CZ to be placed.
+     * @param CG
+     * @param CE1
+     * @param CD1
+     * @param CE2
+     * @param CD2
+     * @return Mean coordinates for CZ based on internal geometry.
      */
-    private static double applyNACorrections(Residue residue, Residue prevResidue, Rotamer rotamer,
-                                             NucleicSugarPucker prevSugarPucker, boolean isDeoxy, boolean is3sTerminal) {
-        // Backbone atoms of this residue to be adjusted
-        Atom C3s = (Atom) residue.getAtomNode("C3\'");
-        Atom O4s = (Atom) residue.getAtomNode("O4\'");
-        Atom C4s = (Atom) residue.getAtomNode("C4\'");
+    private static double[] drawCZ(AminoAcid3 resName, Atom CZ, Atom CG, Atom CE1, Atom CD1, Atom CE2, Atom CD2) {
+        double bondLen = CZ.getBond(CE1).bondType.distance;
+        double ang = getAngle(resName, CZ, CE1, CD1);
+        double[] xCG = new double[3];
+        xCG = CG.getXYZ(xCG);
+
+        double[] xCE = new double[3];
+        xCE = CE1.getXYZ(xCE);
+        double[] xCD = new double[3];
+        xCD = CD1.getXYZ(xCD);
+        double[] xyz1 = determineIntxyz(xCE, bondLen, xCD, ang, xCG, 0.0, 0);
+
+        xCE = CE2.getXYZ(xCE);
+        xCD = CD2.getXYZ(xCD);
+        double[] xyz2 = determineIntxyz(xCE, bondLen, xCD, ang, xCG, 0, 0);
+
+        for (int i = 0; i < 3; i++) {
+            xyz1[i] += xyz2[i];
+            xyz1[i] *= 0.5;
+        }
+        return xyz1;
+    }
+
+    /**
+     * Gets an Angle, using the default as set by property for whether to use idealized ring
+     * geometry (default), or based on force field.
+     *
+     * @param resName AminoAcid3 for a1-a3.
+     * @param a1      An Atom.
+     * @param a2      Another Atom.
+     * @param a3      A third Atom.
+     * @return a1-a2-a3 angle for internal geometry.
+     */
+    private static double getAngle(AminoAcid3 resName, Atom a1, Atom a2, Atom a3) {
+        if (useIdealRingGeometries) {
+            return idealGeometryAngle(resName, a1, a2, a3);
+        } else {
+            return angleFromForceField(a1, a2, a3);
+        }
+    }
+
+    /**
+     * Obtains an idealized angle using a lookup map of stored, idealized geometries,
+     * with a fallback to using the force field. This is intended for use with ring
+     * systems, where ring constraints mean that optimum-energy rings may not have
+     * the values defined by the force field.
+     * <p>
+     * Current lookup map is only for PHE, TYR, TYD, HIS, HID, HIE, and TRP, using
+     * values obtained from a tight bonded-terms-only optimization under AMOEBA BIO 2018.
+     *
+     * @param resName Name of the Residue containing a1-a3.
+     * @param a1      An atom.
+     * @param a2      Another Atom.
+     * @param a3      Another Atom.
+     * @return Stored idealized a1-a2-a3 angle in degrees.
+     */
+    private static double idealGeometryAngle(AminoAcid3 resName, Atom a1, Atom a2, Atom a3) {
+        StringBuilder sb = new StringBuilder(a1.getName());
+        sb.append("-").append(a2.getName()).append("-").append(a3.getName());
+        Map<String, Double> resMap = idealAngleGeometries.get(resName);
+        String atomString = sb.toString();
+
+        if (resMap.containsKey(atomString)) {
+            return resMap.get(atomString);
+        } else {
+            sb = new StringBuilder(a3.getName());
+            sb.append("-").append(a2.getName()).append("-").append(a1.getName());
+            atomString = sb.toString();
+            if (resMap.containsKey(atomString)) {
+                return resMap.get(atomString);
+            } else {
+                logger.fine(format(" Could not find an ideal-geometry angle for %s %s-%s-%s", resName, a1, a2, a3));
+                return angleFromForceField(a1, a2, a3);
+            }
+        }
+    }
+
+    /**
+     * Checks if a Residue has a PTM.
+     *
+     * @param residue The Residue to check.
+     * @return True if this is a modified residue.
+     */
+    private static boolean isModRes(Residue residue) {
+        List<Atom> resatoms = residue.getAtomList();
+        return (resatoms != null && !resatoms.isEmpty() && resatoms.get(0).isModRes());
+    }
+
+    /**
+     * Measure the current torsions of a nucleic acid Residue, starting from the
+     * 5'-most torsion.
+     * <p>
+     * Chi[0]-chi[6] in order are: delta (i-1), epsilon (i-1), zeta (i-1), alpha
+     * (i), beta (i), gamma (i) and delta (i) for residue i.
+     *
+     * @param residue Residue to be measured.
+     * @param chi     Array to be filled with torsion values.
+     * @param print   Verbosity flag.
+     * @return The number of rotamers this Residue has.
+     */
+    private static int measureNARotamer(Residue residue, double[] chi, boolean print) {
+        NucleicAcid3 name = NucleicAcid3.valueOf(residue.getName());
+        Residue prevResidue = residue.getPreviousResidue();
+        Torsion torsion;
+
         Atom C5s = (Atom) residue.getAtomNode("C5\'");
+        Atom C4s = (Atom) residue.getAtomNode("C4\'");
+        Atom C3s = (Atom) residue.getAtomNode("C3\'");
+        Atom O3s = (Atom) residue.getAtomNode("O3\'");
         Atom O5s = (Atom) residue.getAtomNode("O5\'");
         Atom P = (Atom) residue.getAtomNode("P");
-        Atom C1s = (Atom) residue.getAtomNode("C1\'");
-        Atom C2s = (Atom) residue.getAtomNode("C2\'");
 
-        // This reference being used solely to get ideal bond lengths & angles.
-        Atom O3sPrev = (Atom) prevResidue.getAtomNode("O3\'");
-        double[] O3sPriorCoords;
-
-        // Original position of O3' (i-1). Will be used to draw the correction
-        // vector.
-        if (prevSugarPucker == NucleicSugarPucker.C3_ENDO) {
-            O3sPriorCoords = prevResidue.getO3sNorth();
-        } else {
-            O3sPriorCoords = prevResidue.getO3sSouth();
-        } // TODO: Else-if block for the C3'-exo configuration of DNA sugars.
-
-        Bond P_O3sPrev = P.getBond(O3sPrev);
-        double dP_O3sPrev = P_O3sPrev.bondType.distance;
-        Angle O5s_P_O3sPrev = O5s.getAngle(P, O3sPrev);
-        double dO5s_P_O3sPrev = O5s_P_O3sPrev.angleType.angle[O5s_P_O3sPrev.nh];
-        double[] O3sHypCoords = determineIntxyz(P.getXYZ(null), dP_O3sPrev, O5s.getXYZ(null), dO5s_P_O3sPrev,
-                C5s.getXYZ(null), rotamer.chi4, 0);
-
-        // Index 5 will be full correction, and indices 0-4 will be 1/6 to 5/6
-        // of the full correction in increasing order.  Index 6 is a 1/12
-        // correction applied to other atoms in the sugar.
-        double[][] corrections = new double[7][3];
-        for (int i = 0; i < 3; i++) {
-            corrections[5][i] = O3sPriorCoords[i] - O3sHypCoords[i];
-            corrections[0][i] = (1.0 / 6.0) * corrections[5][i];
-            corrections[1][i] = (1.0 / 3.0) * corrections[5][i];
-            corrections[2][i] = (1.0 / 2.0) * corrections[5][i];
-            corrections[3][i] = (2.0 / 3.0) * corrections[5][i];
-            corrections[4][i] = (5.0 / 6.0) * corrections[5][i];
-            corrections[6][i] = (1.0 / 12.0) * corrections[5][i];
-        }
+        int nRot = 7;
 
         /*
-         * Move backbone atoms by an appropriate fraction of the correction
-         * vector. Do this before checking the threshold, so that atoms are moved
-         * in case that is needed before the exception gets thrown.
+         * Start by measuring delta (i-1) if available, working up to delta.  If
+         * there is no prior residue, start measuring from the 5'-most torsion.
          */
-        O4s.move(corrections[0]);
-        C3s.move(corrections[0]);
-        C4s.move(corrections[1]);
-        C5s.move(corrections[2]);
-        O5s.move(corrections[3]);
-        P.move(corrections[4]);
-        C1s.move(corrections[6]);
-        C2s.move(corrections[6]);
+        if (prevResidue == null) {
+            switch (name) {
+                case GUA:
+                case ADE:
+                case DGU:
+                case DAD:
+                case CYT:
+                case URI:
+                case THY:
+                case DCY:
+                case DTY:
+                    /*
+                     * If there is an HO5s, measure alpha based on HO5s.  Else,
+                     * measure zeta (i-1) based on OP3 and alpha on P.
+                     */
+                    Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
+                    if (HO5s != null) {
+                        torsion = HO5s.getTorsion(O5s, C5s, C4s);
+                        chi[4] = torsion.getValue();
+                        if (print) {
+                            logger.info(torsion.toString());
+                        }
+                        nRot = 3;
+                    } else {
+                        Atom OP3 = (Atom) residue.getAtomNode("OP3");
+                        nRot = 3;
+                        if (OP3 != null) {
+                            torsion = OP3.getTorsion(P, O5s, C5s);
+                            chi[3] = torsion.getValue();
+                            if (print) {
+                                logger.info(torsion.toString());
+                            }
+                            nRot = 4;
+                        }
 
-        return ((corrections[5][0] * corrections[5][0])
-                + (corrections[5][1] * corrections[5][1])
-                + (corrections[5][2] * corrections[5][2]));
+                        torsion = P.getTorsion(O5s, C5s, C4s);
+                        chi[4] = torsion.getValue();
+                        if (print) {
+                            logger.info(torsion.toString());
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            switch (name) {
+                case GUA:
+                case ADE:
+                case DGU:
+                case DAD:
+                case CYT:
+                case URI:
+                case THY:
+                case DCY:
+                case DTY:
+                    Atom O3sPrev = (Atom) prevResidue.getAtomNode("O3\'");
+                    Atom C3sPrev = (Atom) prevResidue.getAtomNode("C3\'");
+                    Atom C4sPrev = (Atom) prevResidue.getAtomNode("C4\'");
+                    Atom C5sPrev = (Atom) prevResidue.getAtomNode("C5\'");
+
+                    torsion = C5sPrev.getTorsion(C4sPrev, C3sPrev, O3sPrev);
+                    chi[0] = torsion.getValue();
+                    if (print) {
+                        logger.info(torsion.toString());
+                    }
+
+                    torsion = C4sPrev.getTorsion(C3sPrev, O3sPrev, P);
+                    chi[1] = torsion.getValue();
+                    if (print) {
+                        logger.info(torsion.toString());
+                    }
+
+                    torsion = C3sPrev.getTorsion(O3sPrev, P, O5s);
+                    chi[2] = torsion.getValue();
+                    if (print) {
+                        logger.info(torsion.toString());
+                    }
+
+                    torsion = O3sPrev.getTorsion(P, O5s, C5s);
+                    chi[3] = torsion.getValue();
+                    if (print) {
+                        logger.info(torsion.toString());
+                    }
+
+                    torsion = P.getTorsion(O5s, C5s, C4s);
+                    chi[4] = torsion.getValue();
+                    if (print) {
+                        logger.info(torsion.toString());
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+        }
+        /*
+         * Measure torsions common to all nucleic acids (gamma, delta).
+         */
+        torsion = O5s.getTorsion(C5s, C4s, C3s);
+        chi[5] = torsion.getValue();
+        if (print) {
+            logger.info(torsion.toString());
+        }
+
+        torsion = C5s.getTorsion(C4s, C3s, O3s);
+        chi[6] = torsion.getValue();
+        if (print) {
+            logger.info(torsion.toString());
+        }
+        return nRot;
+    }
+
+    /**
+     * <p>measureUNKRotamer.</p>
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
+     * @param chi     an array of {@link double} objects.
+     * @param print   a boolean.
+     */
+    private static void measureUNKRotamer(Residue residue, double[] chi, boolean print) {
+        String resName = residue.getName().toUpperCase();
+        if (nonstdRotCache.containsKey(resName)) {
+            nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
+        } else {
+            logger.warning(format(" Could not measure chi angles "
+                    + "for residue %s", residue.toString()));
+        }
+    }
+
+    private static void readRotFile(File rotamerFile, MolecularAssembly assembly, int boxWindowIndex) throws IOException {
+        try (BufferedReader br = new BufferedReader(new FileReader(rotamerFile))) {
+            Polymer[] polys = assembly.getChains();
+            Residue currentRes = null;
+            ResidueState origState = null;
+
+            String line = br.readLine();
+            boolean doRead = false;
+            while (line != null) {
+                String[] toks = line.trim().split(":");
+                if (toks[0].equals("ALGORITHM")) {
+                    doRead = Integer.parseInt(toks[2]) == boxWindowIndex;
+                    logger.info(format(" Readabilifications %b with %s", doRead, line));
+                } else if (doRead && !toks[0].startsWith("#")) {
+                    switch (toks[0]) {
+                        case "RES": {
+                            String segID = toks[2];
+                            int resnum = Integer.parseInt(toks[4]);
+                            for (Polymer poly : polys) {
+                                if (poly.getName().equals(segID)) {
+                                    currentRes = poly.getResidue(resnum);
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                        case "ENDROT": {
+                            // TODO: Publish rotamer & revert coordinates.
+                            ResidueState rotamerState = currentRes.storeState();
+                            currentRes.addRotamer(Rotamer.stateToRotamer(rotamerState));
+                            currentRes.revertState(origState);
+                            logger.info(format(" Adding a rotamer to %s", currentRes));
+                        }
+                        break;
+                        case "ROT": {
+                            origState = currentRes.storeState();
+                        }
+                        break;
+                        case "ATOM": {
+                            String name = toks[1];
+                            Atom atom = (Atom) currentRes.getAtomNode(name);
+                            double[] xyz = new double[3];
+                            for (int i = 0; i < 3; i++) {
+                                xyz[i] = Double.parseDouble(toks[i + 2]);
+                            }
+                            atom.setXYZ(xyz);
+                        }
+                        break;
+                        default: {
+                            logger.warning(" Unrecognized line! " + line);
+                        }
+                    }
+                }
+                line = br.readLine();
+            }
+        }
+    }
+
+    public enum ProteinLibrary {
+
+        PonderAndRichards(1), Richardson(2), None(-1);
+
+        private final int oldIntegerConstant;
+
+        ProteinLibrary(int oldConst) {
+            this.oldIntegerConstant = oldConst;
+        }
+
+        /**
+         * Parses a String input to a ProteinLibrary. Can be either a name, or an integer constant.
+         * <p>
+         * The name is preferred, but the integer constant is allowed for legacy reasons.
+         *
+         * @param input Input to parse.
+         * @return A ProteinLibrary.
+         * @throws IllegalArgumentException If no matching ProteinLibrary found.
+         */
+        public static ProteinLibrary getProteinLibrary(String input) throws IllegalArgumentException {
+            if (input.matches("^\\d+$")) {
+                return int2Library(Integer.parseInt(input));
+            } else {
+                return Arrays.stream(ProteinLibrary.values()).
+                        filter((ProteinLibrary pl) -> pl.toString().equalsIgnoreCase(input)).
+                        findAny().
+                        orElseThrow(() -> new IllegalArgumentException(" No protein library found that corresponds to " + input));
+            }
+        }
+
+        /**
+         * Converts an integer to a corresponding ProteinLibrary. Deprecated in favor of using the actual name.
+         *
+         * @param library Index of the library.
+         * @return A ProteinLibrary.
+         * @throws IllegalArgumentException If no matching ProteinLibrary found.
+         */
+        @Deprecated
+        public static ProteinLibrary intToProteinLibrary(int library) throws IllegalArgumentException {
+            return int2Library(library);
+        }
+
+        /**
+         * Converts an integer to a corresponding ProteinLibrary. Wrapped by deprecated intToProteinLibrary.
+         *
+         * @param library Index of the library.
+         * @return A ProteinLibrary.
+         * @throws IllegalArgumentException If no matching ProteinLibrary found.
+         */
+        @Deprecated
+        private static ProteinLibrary int2Library(int library) throws IllegalArgumentException {
+            for (ProteinLibrary lib : ProteinLibrary.values()) {
+                if (library == lib.oldIntegerConstant) {
+                    return lib;
+                }
+            }
+            throw new IllegalArgumentException(format(" Could not find a " +
+                    "protein rotamer library to correspond with %d!", library));
+        }
+    }
+
+    public enum NucleicAcidLibrary {
+        RICHARDSON
+    }
+
+    public enum NucleicSugarPucker {
+        // Used to be 2, 1, and 3 respectively.
+        C2_ENDO("south"), C3_ENDO("north"), C3_EXO();
+        private final List<String> alternateNames;
+
+        NucleicSugarPucker() {
+            alternateNames = Collections.emptyList();
+        }
+
+        NucleicSugarPucker(String aName) {
+            alternateNames = Collections.singletonList(aName);
+        }
+
+        /**
+         * Returns the sugar pucker associated with a delta torsion. Currently does
+         * not support the C3'-exo DNA-only pucker.
+         *
+         * @param delta   Delta torsion to check
+         * @param isDeoxy If DNA (vs. RNA). Presently ignored.
+         * @return Pucker
+         */
+        public static NucleicSugarPucker checkPucker(double delta, boolean isDeoxy) {
+            /*
+             * Midpoint between North, South is 115 degrees.
+             *
+             * 0-360: North is 0-115 or 295-360.
+             * -180 to 180: North is -65 to 115.
+             */
+            delta = Crystal.mod(delta, 360.0);
+            if (delta <= 115 || delta > 295) {
+                return C3_ENDO;
+            } else {
+                return C2_ENDO;
+            } // TODO: Add else-if to handle C3'-exo pucker.
+        }
+    }
+
+    public static class RotamerGuess {
+        private final Residue residue;
+        private final Rotamer rotamer;
+        private final int rotIndex;
+        private final double rmsd;
+
+        RotamerGuess(Residue res, Rotamer rot, int index, double rmsDev) {
+            residue = res;
+            rotamer = rot;
+            rotIndex = index;
+            rmsd = rmsDev;
+        }
+
+        public double getRMSD() {
+            return rmsd;
+        }
+
+        public Residue getResidue() {
+            return residue;
+        }
+
+        public Rotamer getRotamer() {
+            return rotamer;
+        }
+
+        public int getRotamerIndex() {
+            return rotIndex;
+        }
+
+        public String toString() {
+            return format(" Residue %7s is most likely in rotamer %2d (%s), with an RMSD of %9.5f degrees.", residue, rotIndex, rotamer, rmsd);
+        }
+    }
+
+    /**
+     * Class contains rotamer information for a nonstandard amino acid.
+     */
+    private static class NonstandardRotLibrary {
+        private final String resName;
+        private final String[] placeRecords; // Must be ordered correctly!
+        private final List<Rotamer> stdRotamers; // "Library" rotamers for this residue.
+
+        NonstandardRotLibrary(String resname, String[] placeRecords, Rotamer[] stdRotamers) {
+            this.resName = resname.toUpperCase();
+            this.placeRecords = Arrays.copyOf(placeRecords, placeRecords.length);
+            this.stdRotamers = new ArrayList<>(Arrays.asList(stdRotamers));
+        }
+
+        String getResName() {
+            return resName;
+        }
+
+        Rotamer[] getRotamers() {
+            return stdRotamers.toArray(new Rotamer[stdRotamers.size()]);
+        }
+
+        /**
+         * Intended for use when rotamers added separately from the initial
+         * definition file.
+         *
+         * @param newRots
+         */
+        void addRotamers(Rotamer[] newRots) {
+            stdRotamers.addAll(Arrays.asList(newRots));
+        }
+
+        /**
+         * Checks the angles for a nonstandard residue.
+         *
+         * @param residue Residue to measure.
+         * @param chi     Array to be filled up with chi values.
+         * @param print   Verbosity flag.
+         * @return Number of dihedral angles.
+         */
+        int measureNonstdRot(Residue residue, double[] chi, boolean print) {
+            for (String placeRec : placeRecords) {
+                String[] toks = placeRec.split("\\s+");
+                if (toks[0].equalsIgnoreCase("PLACECHI")) {
+                    int chiNum = Integer.parseInt(toks[5]) - 1;
+                    Atom at1 = (Atom) residue.getAtomNode(toks[1]);
+                    Atom at2 = (Atom) residue.getAtomNode(toks[2]);
+                    Atom at3 = (Atom) residue.getAtomNode(toks[3]);
+                    Atom at4 = (Atom) residue.getAtomNode(toks[4]);
+                    Torsion tors = at1.getTorsion(at2, at3, at4);
+                    chi[chiNum] = tors.getValue();
+                    if (print) {
+                        logger.info(tors.toString());
+                    }
+                }
+            }
+            return placeRecords.length;
+        }
+
+        /**
+         * Applies a nonstandard rotamer to an amino acid.
+         *
+         * @param residue
+         * @param rotamer
+         */
+        void applyNonstdRotamer(Residue residue, Rotamer rotamer) {
+            if (!residue.getName().equalsIgnoreCase(resName)) {
+                throw new IllegalArgumentException(format(" Residue %s is "
+                        + "not of type %s", residue.toString(), resName));
+            }
+            for (String record : placeRecords) {
+                String[] toks = record.split("\\s+");
+                Atom at1 = (Atom) residue.getAtomNode(toks[1]);
+                Atom at2 = (Atom) residue.getAtomNode(toks[2]);
+                Atom at3 = (Atom) residue.getAtomNode(toks[3]);
+                Atom at4 = (Atom) residue.getAtomNode(toks[4]);
+                Bond b12 = at1.getBond(at2);
+                double dbond = b12.bondType.distance;
+                Angle a123 = at1.getAngle(at2, at3);
+                double dang = a123.angleType.angle[a123.nh];
+                double dtors;
+                if (toks[0].equalsIgnoreCase("PLACECHI")) {
+                    int chiNum = Integer.parseInt(toks[5]);
+                    dtors = rotamer.angles[chiNum - 1];
+                    /*switch (chiNum) {
+                        case 1:
+                            dtors = rotamer.chi1;
+                            break;
+                        case 2:
+                            dtors = rotamer.chi2;
+                            break;
+                        case 3:
+                            dtors = rotamer.chi3;
+                            break;
+                        case 4:
+                            dtors = rotamer.chi4;
+                            break;
+                        case 5:
+                            dtors = rotamer.chi5;
+                            break;
+                        case 6:
+                            dtors = rotamer.chi6;
+                            break;
+                        case 7:
+                            dtors = rotamer.chi7;
+                            break;
+                        default:
+                            throw new IllegalArgumentException(" Must be chi 1-7");
+                    }*/
+                } else {
+                    dtors = Double.parseDouble(toks[5]);
+                }
+                int chirality = Integer.parseInt(toks[6]);
+                intxyz(at1, at2, dbond, at3, dang, at4, dtors, chirality);
+            }
+        }
+    }
+
+    /**
+     * Return rotamer array for the given AA or NA residue.
+     *
+     * @param residue the Residue to examine.
+     * @return Array of Rotamers for Residue's type.
+     */
+    Rotamer[] getRotamers(Residue residue) {
+        // Package-private; intended to be accessed only by Residue and extensions
+        // thereof. Otherwise, use Residue.getRotamers(RotamerLibrary library).
+        if (residue == null) {
+            return null;
+        }
+        if (isModRes(residue)) {
+            if (nonstdRotCache.containsKey(residue.getName().toUpperCase())) {
+                return nonstdRotCache.get(residue.getName().toUpperCase()).getRotamers();
+            }
+            return null;
+        }
+        switch (residue.getResidueType()) {
+            case AA:
+                AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
+                // Now check for cysteines in a disulfide bond.
+                switch (aa) {
+                    case CYS:
+                    case CYX:
+                    case CYD: {
+                        List<Atom> cysAtoms = residue.getAtomList();
+                        // First find the sulfur on atomic number, then on starting with S.
+                        Optional<Atom> s = cysAtoms.stream().
+                                filter(a -> a.getAtomType().atomicNumber == 16).
+                                findAny();
+                        if (!s.isPresent()) {
+                            s = cysAtoms.stream().filter(a -> a.getName().startsWith("S")).findAny();
+                        }
+                        if (s.isPresent()) {
+                            Atom theS = s.get();
+                            boolean attachedS = theS.getBonds().stream().
+                                    map(b -> b.get1_2(theS)).
+                                    anyMatch(a -> a.getAtomType().atomicNumber == 16 || a.getName().startsWith("S"));
+                            if (attachedS) {
+                                // Return a null rotamer array if it's disulfide-bonded.
+                                return null;
+                            }
+                        } else {
+                            logger.warning(format(" No sulfur atom found attached to %s residue %s!", aa, residue));
+                        }
+                    }
+                    break;
+                    // Default: no-op (we are checking for cysteine disulfide bonds).
+                }
+                return getRotamers(aa);
+            case NA:
+                NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
+                return getRotamers(na);
+            default:
+                if (nonstdRotCache.containsKey(residue.getName().toUpperCase())) {
+                    return nonstdRotCache.get(residue.getName().toUpperCase()).getRotamers();
+                }
+                return null;
+        }
     }
 
     /**
@@ -3844,436 +4269,5 @@ public class RotamerLibrary {
                 break;
         }
         return nucleicAcidRotamerCache[n];
-    }
-
-    /**
-     * Applies a nucleic acid Rotamer, returning the magnitude of the correction applied to make residue i join i-1.
-     * <p>
-     * Note that the independent flag is separate from DEE independence: DEE
-     * independence is preserved by applying corrections based on a non-variable
-     * set of coordinates, and is wholly independent of what is happening to
-     * residue i-1.
-     * <p>
-     * Cannot presently handle 3' phosphate caps: I do not know what they would
-     * be labeled as in PDB files. A template for how to handle 3' phosphate
-     * caps is written but commented out.
-     *
-     * @param residue     Residue.
-     * @param rotamer     Rotamer to be applied to Residue.
-     * @param independent Whether to draw NA rotamer independent of chain
-     *                    context.
-     * @return Magnitude of the correction vector.
-     */
-    private static double applyNARotamer(Residue residue, Rotamer rotamer, boolean independent) {
-        if (rotamer.isState) {
-            applyState(residue, rotamer);
-            return 0;
-        }
-        NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
-        Residue prevResidue = residue.getPreviousResidue();
-        boolean is3sTerminal = false;  // 3' terminal
-        if (residue.getNextResidue() == null) {
-            is3sTerminal = true;
-        }
-
-        // Check if this is a 3' phosphate being listed as its own residue.
-        /* if (residue.getAtomList().size() == 1) {
-         return;
-         } */
-        boolean isDeoxy = residue.getAtomNode("O2\'") == null;
-
-        // Note: chi values will generally be applied from chi7 to chi1.
-        // Will have to add an else-if to handle DNA C3'-exo configurations.
-        NucleicSugarPucker sugarPucker = NucleicSugarPucker.checkPucker(rotamer.chi7, isDeoxy);
-        NucleicSugarPucker prevSugarPucker = NucleicSugarPucker.checkPucker(rotamer.chi1, isDeoxy);
-
-        // Revert C1', O4', and C4' coordinates to PDB defaults.
-        Atom C1s = (Atom) residue.getAtomNode("C1\'");
-        C1s.moveTo(residue.getC1sCoords());
-        Atom O4s = (Atom) residue.getAtomNode("O4\'");
-        O4s.moveTo(residue.getO4sCoords());
-        Atom C4s = (Atom) residue.getAtomNode("C4\'");
-        C4s.moveTo(residue.getC4sCoords());
-
-        // Presently, the exterior method loadPriorAtomicCoordinates() directly
-        // calls applySugarPucker instead of going through applyRotamer().
-        applySugarPucker(residue, sugarPucker, isDeoxy, true);
-        applyNABackbone(residue, rotamer, prevResidue);
-
-        double naCorrection = 0;
-        if (prevResidue != null && !independent) {
-            naCorrection = applyNACorrections(residue, prevResidue, rotamer, prevSugarPucker, isDeoxy, is3sTerminal);
-        } /* else if (!independent) {
-         startingResidueConsistencyCheck(residue, rotamer, correctionThreshold);
-         } */
-
-        applyNASideAtoms(residue, rotamer, prevResidue, isDeoxy, is3sTerminal, prevSugarPucker);
-        return naCorrection;
-    }
-
-    private static boolean addRotPatch(File rpatchFile) {
-        try (BufferedReader br = new BufferedReader(new FileReader(rpatchFile))) {
-            String resName = null;
-            List<String> applyLines = new ArrayList<>();
-            //List<Rotamer> rotamers = new ArrayList<>();
-            List<String> rotLines = new ArrayList<>();
-            ResidueType rType = ResidueType.AA;
-            String line = br.readLine();
-            while (line != null) {
-                line = line.trim();
-                if (line.startsWith("PLACE")) {
-                    applyLines.add(line);
-                } else if (line.startsWith("RESNAME")) {
-                    String[] toks = line.split("\\s+");
-                    resName = toks[1];
-                } else if (line.startsWith("RESTYPE")) {
-                    String[] toks = line.split("\\s+");
-                    switch (toks[1]) {
-                        case "AA":
-                            rType = ResidueType.AA;
-                            break;
-                        case "NA":
-                            rType = ResidueType.NA;
-                            break;
-                        case "UNK":
-                        default:
-                            rType = ResidueType.UNK;
-                            break;
-                    }
-                } else if (line.startsWith("ROTAMER")) {
-                    rotLines.add(line);
-                }
-                line = br.readLine();
-            }
-            if (resName != null) {
-                List<Rotamer> rotamers = new ArrayList<>();
-                for (String string : rotLines) {
-                    String[] toks = string.split("\\s+");
-                    int nVals = toks.length - 1;
-                    double[] values = new double[nVals];
-                    for (int i = 0; i < nVals; i++) {
-                        values[i] = Double.parseDouble(toks[i + 1]);
-                    }
-                    switch (rType) {
-                        case AA:
-                            rotamers.add(new Rotamer(AminoAcid3.UNK, values));
-                            break;
-                        case NA:
-                            rotamers.add(new Rotamer(NucleicAcid3.UNK, values));
-                            break;
-                        case UNK:
-                        default:
-                            rotamers.add(new Rotamer(values));
-                            break;
-                    }
-                }
-
-                if (nonstdRotCache.containsKey(resName)) {
-                    logger.warning(format(" Rotamer library already contains "
-                            + "rotamer definition for residue %s!", resName));
-                } else {
-                    NonstandardRotLibrary nrlib = new NonstandardRotLibrary(resName,
-                            applyLines.toArray(new String[applyLines.size()]),
-                            rotamers.toArray(new Rotamer[rotamers.size()]));
-                    nonstdRotCache.put(resName, nrlib);
-                }
-                return true;
-            } else {
-                return false;
-            }
-        } catch (IOException ex) {
-            logger.warning(format(" Exception in parsing rotamer patch "
-                    + "file %s: %s", rpatchFile.getName(), ex.toString()));
-            return false;
-        }
-    }
-
-    private static void readRotFile(File rotamerFile, MolecularAssembly assembly, int boxWindowIndex) throws IOException {
-        try (BufferedReader br = new BufferedReader(new FileReader(rotamerFile))) {
-            Polymer[] polys = assembly.getChains();
-            Residue currentRes = null;
-            ResidueState origState = null;
-
-            String line = br.readLine();
-            boolean doRead = false;
-            while (line != null) {
-                String[] toks = line.trim().split(":");
-                if (toks[0].equals("ALGORITHM")) {
-                    doRead = Integer.parseInt(toks[2]) == boxWindowIndex;
-                    logger.info(format(" Readabilifications %b with %s", doRead, line));
-                } else if (doRead && !toks[0].startsWith("#")) {
-                    switch (toks[0]) {
-                        case "RES": {
-                            String segID = toks[2];
-                            int resnum = Integer.parseInt(toks[4]);
-                            for (Polymer poly : polys) {
-                                if (poly.getName().equals(segID)) {
-                                    currentRes = poly.getResidue(resnum);
-                                    break;
-                                }
-                            }
-                        }
-                        break;
-                        case "ENDROT": {
-                            // TODO: Publish rotamer & revert coordinates.
-                            ResidueState rotamerState = currentRes.storeState();
-                            currentRes.addRotamer(Rotamer.stateToRotamer(rotamerState));
-                            currentRes.revertState(origState);
-                            logger.info(format(" Adding a rotamer to %s", currentRes));
-                        }
-                        break;
-                        case "ROT": {
-                            origState = currentRes.storeState();
-                        }
-                        break;
-                        case "ATOM": {
-                            String name = toks[1];
-                            Atom atom = (Atom) currentRes.getAtomNode(name);
-                            double[] xyz = new double[3];
-                            for (int i = 0; i < 3; i++) {
-                                xyz[i] = Double.parseDouble(toks[i + 2]);
-                            }
-                            atom.setXYZ(xyz);
-                        }
-                        break;
-                        default: {
-                            logger.warning(" Unrecognized line! " + line);
-                        }
-                    }
-                }
-                line = br.readLine();
-            }
-        }
-    }
-
-    /**
-     * Number of amino acid residues types currently recognized, although there
-     * are not rotamer libraries for each yet.
-     */
-    private static final int numberOfAminoAcids = AminoAcid3.values().length;
-    /**
-     * Number of nucleic acid residues types currently recognized, although
-     * there are not rotamer libraries for each yet.
-     */
-    private static final int numberOfNucleicAcids = NucleicAcid3.values().length;
-    /**
-     * The first time rotamers are requested for an amino acid type, they are
-     * instantiated into an array, which is stored in the cache. Subsequently
-     * the reference is simply returned.
-     */
-    private final Rotamer[][] aminoAcidRotamerCache = new Rotamer[numberOfAminoAcids][];
-    /**
-     * The first time rotamers are requested for a nucleic acid type, they are
-     * instantiated into an array, which is stored in the cache. Subsequently
-     * the reference is simply returned.
-     */
-    private final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
-
-    /**
-     * The idealized amino acid rotamer library in use. Defaults to the Richardson library.
-     */
-    private final ProteinLibrary proteinLibrary;
-    private static final ProteinLibrary DEFAULT_PROTEIN_LIB = ProteinLibrary.Richardson;
-
-    /**
-     * The idealized nucleic acid rotamer library in use. Defaults to the Richardson library... partially because there's no other library.
-     */
-    private final NucleicAcidLibrary nucleicAcidLibrary;
-    private static final NucleicAcidLibrary DEFAULT_NA_LIB = NucleicAcidLibrary.RICHARDSON;
-
-    private boolean useOrigCoordsRotamer;
-
-    private static final Map<String, NonstandardRotLibrary> nonstdRotCache = new HashMap<>();
-
-    private static final RotamerLibrary defaultRotamerLibrary = new RotamerLibrary(ProteinLibrary.PonderAndRichards, false);
-
-    private static final boolean useIdealRingGeometries = Boolean.parseBoolean(System.getProperty("useIdealRingGeo", "true"));
-
-    private static final Map<AminoAcid3, Map<String, Double>> idealAngleGeometries;
-
-    static {
-        Map<AminoAcid3, Map<String, Double>> angleGeos = new HashMap<>();
-
-        Map<String, Double> pheMap = new HashMap<>();
-        pheMap.put("CD1-CG-CB", 120.3);
-        pheMap.put("CD2-CG-CB", 120.3);
-        pheMap.put("CE1-CD1-CG", 120.3);
-        pheMap.put("CE2-CD2-CG", 120.3);
-        pheMap.put("CZ-CE1-CD1", 120.0);
-        pheMap.put("CZ-CE2-CD2", 120.0);
-        angleGeos.put(AminoAcid3.PHE, Collections.unmodifiableMap(pheMap));
-
-        Map<String, Double> tyrMap = new HashMap<>();
-        tyrMap.put("CD1-CG-CB", 120.3);
-        tyrMap.put("CD2-CG-CB", 120.3);
-        tyrMap.put("CE1-CD1-CG", 120.3);
-        tyrMap.put("CE2-CD2-CG", 120.3);
-        tyrMap.put("CZ-CE1-CD1", 120.0);
-        tyrMap.put("CZ-CE2-CD2", 120.0);
-        angleGeos.put(AminoAcid3.TYR, Collections.unmodifiableMap(tyrMap));
-
-        Map<String, Double> tydMap = new HashMap<>();
-        tydMap.put("CD1-CG-CB", 120.5);
-        tydMap.put("CD2-CG-CB", 120.5);
-        tydMap.put("CE1-CD1-CG", 120.4);
-        tydMap.put("CE2-CD2-CG", 120.4);
-        tydMap.put("CZ-CE1-CD1", 120.8);
-        tydMap.put("CZ-CE2-CD2", 120.8);
-        angleGeos.put(AminoAcid3.TYD, Collections.unmodifiableMap(tydMap));
-
-        Map<String, Double> hisMap = new HashMap<>();
-        hisMap.put("ND1-CG-CB", 122.1);
-        hisMap.put("CD2-CG-CB", 131.0);
-        hisMap.put("CD2-CG-ND1", 106.8);
-        hisMap.put("CE1-ND1-CG", 109.5);
-        hisMap.put("NE2-CD2-CG", 107.1);
-        angleGeos.put(AminoAcid3.HIS, Collections.unmodifiableMap(hisMap));
-
-        Map<String, Double> hidMap = new HashMap<>();
-        hidMap.put("ND1-CG-CB", 123.5);
-        hidMap.put("CD2-CG-CB", 132.3);
-        hidMap.put("CD2-CG-ND1", 104.2);
-        hidMap.put("CE1-ND1-CG", 108.8);
-        hidMap.put("NE2-CD2-CG", 111.2);
-        angleGeos.put(AminoAcid3.HID, Collections.unmodifiableMap(hidMap));
-
-        Map<String, Double> hieMap = new HashMap<>();
-        hieMap.put("ND1-CG-CB", 120.2);
-        hieMap.put("CD2-CG-CB", 129.1);
-        hieMap.put("CD2-CG-ND1", 110.7);
-        hieMap.put("CE1-ND1-CG", 105.1);
-        hieMap.put("NE2-CD2-CG", 104.6);
-        angleGeos.put(AminoAcid3.HIE, Collections.unmodifiableMap(hieMap));
-
-        Map<String, Double> trpMap = new HashMap<>();
-        trpMap.put("CD1-CG-CB", 126.4);
-        trpMap.put("CD2-CG-CB", 126.5);
-        trpMap.put("CD2-CG-CD1", 107.1);
-        trpMap.put("NE1-CD1-CG", 106.9);
-        trpMap.put("CE2-NE1-CD1", 109.4);
-        trpMap.put("CE3-CD2-CE2", 121.6);
-        trpMap.put("CZ2-CE2-CD2", 123.5);
-        trpMap.put("CZ3-CE3-CD2", 116.7);
-        trpMap.put("CH2-CZ2-CE2", 116.2);
-        angleGeos.put(AminoAcid3.TRP, Collections.unmodifiableMap(trpMap));
-
-        idealAngleGeometries = Collections.unmodifiableMap(angleGeos);
-    }
-
-    /**
-     * Class contains rotamer information for a nonstandard amino acid.
-     */
-    private static class NonstandardRotLibrary {
-        private final String resName;
-        private final String[] placeRecords; // Must be ordered correctly!
-        private final List<Rotamer> stdRotamers; // "Library" rotamers for this residue.
-
-        NonstandardRotLibrary(String resname, String[] placeRecords, Rotamer[] stdRotamers) {
-            this.resName = resname.toUpperCase();
-            this.placeRecords = Arrays.copyOf(placeRecords, placeRecords.length);
-            this.stdRotamers = new ArrayList<>(Arrays.asList(stdRotamers));
-        }
-
-        String getResName() {
-            return resName;
-        }
-
-        Rotamer[] getRotamers() {
-            return stdRotamers.toArray(new Rotamer[stdRotamers.size()]);
-        }
-
-        /**
-         * Intended for use when rotamers added separately from the initial
-         * definition file.
-         *
-         * @param newRots
-         */
-        void addRotamers(Rotamer[] newRots) {
-            stdRotamers.addAll(Arrays.asList(newRots));
-        }
-
-        /**
-         * Checks the angles for a nonstandard residue.
-         * @param residue Residue to measure.
-         * @param chi     Array to be filled up with chi values.
-         * @param print   Verbosity flag.
-         * @return        Number of dihedral angles.
-         */
-        int measureNonstdRot(Residue residue, double[] chi, boolean print) {
-            for (String placeRec : placeRecords) {
-                String[] toks = placeRec.split("\\s+");
-                if (toks[0].equalsIgnoreCase("PLACECHI")) {
-                    int chiNum = Integer.parseInt(toks[5]) - 1;
-                    Atom at1 = (Atom) residue.getAtomNode(toks[1]);
-                    Atom at2 = (Atom) residue.getAtomNode(toks[2]);
-                    Atom at3 = (Atom) residue.getAtomNode(toks[3]);
-                    Atom at4 = (Atom) residue.getAtomNode(toks[4]);
-                    Torsion tors = at1.getTorsion(at2, at3, at4);
-                    chi[chiNum] = tors.getValue();
-                    if (print) {
-                        logger.info(tors.toString());
-                    }
-                }
-            }
-            return placeRecords.length;
-        }
-
-        /**
-         * Applies a nonstandard rotamer to an amino acid.
-         *
-         * @param residue
-         * @param rotamer
-         */
-        void applyNonstdRotamer(Residue residue, Rotamer rotamer) {
-            if (!residue.getName().equalsIgnoreCase(resName)) {
-                throw new IllegalArgumentException(format(" Residue %s is "
-                        + "not of type %s", residue.toString(), resName));
-            }
-            for (String record : placeRecords) {
-                String[] toks = record.split("\\s+");
-                Atom at1 = (Atom) residue.getAtomNode(toks[1]);
-                Atom at2 = (Atom) residue.getAtomNode(toks[2]);
-                Atom at3 = (Atom) residue.getAtomNode(toks[3]);
-                Atom at4 = (Atom) residue.getAtomNode(toks[4]);
-                Bond b12 = at1.getBond(at2);
-                double dbond = b12.bondType.distance;
-                Angle a123 = at1.getAngle(at2, at3);
-                double dang = a123.angleType.angle[a123.nh];
-                double dtors;
-                if (toks[0].equalsIgnoreCase("PLACECHI")) {
-                    int chiNum = Integer.parseInt(toks[5]);
-                    dtors = rotamer.angles[chiNum - 1];
-                    /*switch (chiNum) {
-                        case 1:
-                            dtors = rotamer.chi1;
-                            break;
-                        case 2:
-                            dtors = rotamer.chi2;
-                            break;
-                        case 3:
-                            dtors = rotamer.chi3;
-                            break;
-                        case 4:
-                            dtors = rotamer.chi4;
-                            break;
-                        case 5:
-                            dtors = rotamer.chi5;
-                            break;
-                        case 6:
-                            dtors = rotamer.chi6;
-                            break;
-                        case 7:
-                            dtors = rotamer.chi7;
-                            break;
-                        default:
-                            throw new IllegalArgumentException(" Must be chi 1-7");
-                    }*/
-                } else {
-                    dtors = Double.parseDouble(toks[5]);
-                }
-                int chirality = Integer.parseInt(toks[6]);
-                intxyz(at1, at2, dbond, at3, dang, at4, dtors, chirality);
-            }
-        }
     }
 }

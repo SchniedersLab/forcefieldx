@@ -48,12 +48,14 @@ package ffx.potential.bonded;
 public interface LambdaInterface {
 
     /**
-     * Set the current value of the state variable. May be ignored if lambda is not being applied.
+     * Returns true if dUdL is guaranteed to be zero at 0 and 1. Default
+     * implementation is to return false.
      *
-     * @param lambda a double.
-     * @since 1.0
+     * @return True if dUdL is guaranteed 0 at endpoints.
      */
-    void setLambda(double lambda);
+    default boolean dEdLZeroAtEnds() {
+        return false;
+    }
 
     /**
      * Get the current value of the state variable.
@@ -64,12 +66,12 @@ public interface LambdaInterface {
     double getLambda();
 
     /**
-     * Get the partial derivative of the energy with respect to lambda.
+     * Set the current value of the state variable. May be ignored if lambda is not being applied.
      *
-     * @return dEdL
+     * @param lambda a double.
      * @since 1.0
      */
-    double getdEdL();
+    void setLambda(double lambda);
 
     /**
      * Get the 2nd partial derivative of the energy with respect to lambda.
@@ -80,6 +82,14 @@ public interface LambdaInterface {
     double getd2EdL2();
 
     /**
+     * Get the partial derivative of the energy with respect to lambda.
+     *
+     * @return dEdL
+     * @since 1.0
+     */
+    double getdEdL();
+
+    /**
      * Get the gradient of dEdL with respect to each parameter.
      *
      * @param gradient - A double array of length the number of parameters in
@@ -87,14 +97,4 @@ public interface LambdaInterface {
      * @since 1.0
      */
     void getdEdXdL(double[] gradient);
-
-    /**
-     * Returns true if dUdL is guaranteed to be zero at 0 and 1. Default
-     * implementation is to return false.
-     *
-     * @return True if dUdL is guaranteed 0 at endpoints.
-     */
-    default boolean dEdLZeroAtEnds() {
-        return false;
-    }
 }

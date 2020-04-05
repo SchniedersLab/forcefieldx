@@ -56,9 +56,9 @@ import ffx.potential.parameters.ForceField;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.kB;
-import static ffx.numerics.math.VectorMath.b2u;
-import static ffx.numerics.math.VectorMath.determinant3;
-import static ffx.numerics.math.VectorMath.u2b;
+import static ffx.numerics.math.ScalarMath.b2u;
+import static ffx.numerics.math.MatrixMath.determinant3;
+import static ffx.numerics.math.ScalarMath.u2b;
 
 /**
  * Combine the X-ray target and chemical potential energy.

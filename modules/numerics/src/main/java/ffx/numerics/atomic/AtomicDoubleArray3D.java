@@ -45,6 +45,7 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
+import ffx.numerics.math.Double3;
 import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
 
 /**
@@ -110,6 +111,19 @@ public class AtomicDoubleArray3D {
     }
 
     /**
+     * Add to the double arrays at the specified index the given Double3.
+     *
+     * @param threadID a int.
+     * @param index    a int.
+     * @param d3       a Double3.
+     */
+    public void add(int threadID, int index, Double3 d3) {
+        atomicDoubleArray[0].add(threadID, index, d3.x());
+        atomicDoubleArray[1].add(threadID, index, d3.y());
+        atomicDoubleArray[2].add(threadID, index, d3.z());
+    }
+
+    /**
      * Ensure the AtomicDoubleArray3D instance is greater than or equal to size.
      *
      * @param size a int.
@@ -130,6 +144,19 @@ public class AtomicDoubleArray3D {
      */
     public double get(int dim, int index) {
         return atomicDoubleArray[dim].get(index);
+    }
+
+    /**
+     * Get the Double3 at the specified index.
+     * This is usually subsequent to calling the <code>reduce</code> method.
+     *
+     * @param index a int.
+     * @return a new Double3.
+     */
+    public Double3 get(int index) {
+        return new Double3(atomicDoubleArray[0].get(index),
+                atomicDoubleArray[1].get(index),
+                atomicDoubleArray[2].get(index));
     }
 
     /**
@@ -261,6 +288,19 @@ public class AtomicDoubleArray3D {
     }
 
     /**
+     * Set the double arrays at the specified index to the given Double3.
+     *
+     * @param threadID a int.
+     * @param index    a int.
+     * @param d3       a Double3.
+     */
+    public void set(int threadID, int index, Double3 d3) {
+        atomicDoubleArray[0].set(threadID, index, d3.x());
+        atomicDoubleArray[1].set(threadID, index, d3.y());
+        atomicDoubleArray[2].set(threadID, index, d3.z());
+    }
+
+    /**
      * Subtracts from the double arrays at the specified index the given values.
      *
      * @param threadID a int.
@@ -274,4 +314,18 @@ public class AtomicDoubleArray3D {
         atomicDoubleArray[1].sub(threadID, index, y);
         atomicDoubleArray[2].sub(threadID, index, z);
     }
+
+    /**
+     * Subtracts from the double arrays at the specified index the given Double3.
+     *
+     * @param threadID a int.
+     * @param index    a int.
+     * @param d3       a Double3.
+     */
+    public void sub(int threadID, int index, Double3 d3) {
+        atomicDoubleArray[0].sub(threadID, index, d3.x());
+        atomicDoubleArray[1].sub(threadID, index, d3.y());
+        atomicDoubleArray[2].sub(threadID, index, d3.z());
+    }
+
 }

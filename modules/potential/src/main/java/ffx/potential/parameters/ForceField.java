@@ -61,61 +61,6 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 public class ForceField {
 
     private static final Logger logger = Logger.getLogger(ForceField.class.getName());
-
-    /**
-     * Available force fields.
-     */
-    public enum ForceFieldName {
-        AMBER_1994,
-        AMBER_1996,
-        AMBER_1998,
-        AMBER_1999,
-        AMBER_1999_SB,
-        AMBER_1999_SB_AMOEBA,
-        AMBER_1999_SB_TIP3F,
-        AMOEBA_2004,
-        AMOEBA_2009,
-        AMOEBA_BIO_2009,
-        AMOEBA_BIO_2018,
-        AMOEBA_NUC_2017,
-        AMOEBA_PROTEIN_2004,
-        AMOEBA_PROTEIN_2013,
-        AMOEBA_WATER_2003,
-        AMOEBA_WATER_2014,
-        CHARMM_22,
-        CHARMM_22_CMAP,
-        IAMOEBA_WATER,
-        OPLS_AA,
-        OPLS_AAL
-    }
-
-    public enum ForceFieldType {
-
-        KEYWORD,
-        ANGLE,
-        ANGLEP,
-        ANGTORS,
-        ATOM,
-        BIOTYPE,
-        BOND,
-        CHARGE,
-        IMPROPER,
-        IMPTORS,
-        MULTIPOLE,
-        OPBEND,
-        PITORS,
-        POLARIZE,
-        SOLUTE,
-        STRBND,
-        STRTORS,
-        TORSION,
-        TORTORS,
-        UREYBRAD,
-        VDW,
-        VDW14,
-        RELATIVESOLV
-    }
-
     /**
      * A map between a force field name and its internal parameter file.
      */
@@ -133,12 +78,6 @@ public class ForceField {
      * Flag to prevent patch renumbering.
      */
     private final boolean noRenumbering;
-
-    /**
-     * URL to the force field parameter file.
-     */
-    public URL forceFieldURL;
-
     /**
      * The CompositeConfiguration that contains key=value property pairs from a
      * number of sources.
@@ -167,7 +106,10 @@ public class ForceField {
     private final Map<String, VDWType> vanderWaals14Types;
     private final Map<String, RelativeSolvationType> relativeSolvationTypes;
     private final Map<ForceFieldType, Map<String, ? extends BaseType>> forceFieldTypes;
-
+    /**
+     * URL to the force field parameter file.
+     */
+    public URL forceFieldURL;
     /**
      * ForceField Constructor.
      *
@@ -236,109 +178,62 @@ public class ForceField {
     }
 
     /**
-     * <p>
-     * Get for the URL for the named force field.</p>
+     * Add an instance of a force field type. Force Field types are more
+     * complicated than simple Strings or doubles, in that they have multiple
+     * fields and may occur multiple times.
      *
-     * @param forceField a {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
-     * @return a {@link java.net.URL} object.
+     * @param type BaseType
      */
-    public static URL getForceFieldURL(ForceFieldName forceField) {
-        if (forceField == null) {
-            return null;
+    @SuppressWarnings("unchecked")
+    public <T extends BaseType> void addForceFieldType(T type) {
+        if (type == null) {
+            logger.info(" Null force field type ignored.");
+            return;
         }
-        return forceFields.get(forceField);
+
+        Map<String, T> treeMap = (Map<String, T>) forceFieldTypes.get(type.forceFieldType);
+        if (treeMap == null) {
+            logger.log(Level.INFO, " Unrecognized force field type ignored {0}", type.forceFieldType);
+            type.print();
+            return;
+        }
+        if (treeMap.containsKey(type.key)) {
+            if (treeMap.get(type.key).toString().equalsIgnoreCase(type.toString())) {
+                // Ignore this type if its identical to an existing type.
+                return;
+            }
+            logger.log(Level.WARNING,
+                    " A force field entry of type {0} already exists with the key: {1}\n The (discarded) old entry: {2}\n The new entry            : {3}",
+                    new Object[]{type.forceFieldType, type.key,
+                            treeMap.get(type.key).toString(), type.toString()});
+        }
+        treeMap.put(type.key, type);
     }
 
     /**
-     * Renumber ForceField class, type and biotype values.
+     * Add a property from a external parameter file.
      *
-     * @param classOffset   a int.
-     * @param typeOffset    a int.
-     * @param bioTypeOffset a int.
+     * @param property Property string.
+     * @param value    double
      */
-    public void renumberForceField(int classOffset, int typeOffset, int bioTypeOffset) {
-        if (noRenumbering) {
+    public void addProperty(String property, String value) {
+        if (property == null) {
             return;
         }
-        for (AngleType angleType : angleTypes.values()) {
-            angleType.incrementClasses(classOffset);
-        }
-
-        for (AngleType angleType : anglepTypes.values()) {
-            angleType.incrementClasses(classOffset);
-        }
-
-        for (AtomType atomType : atomTypes.values()) {
-            atomType.incrementClassAndType(classOffset, typeOffset);
-        }
-
-        for (BioType bioType : bioTypes.values()) {
-            bioType.incrementIndexAndType(bioTypeOffset, typeOffset);
-        }
-
-        for (BondType bondType : bondTypes.values()) {
-            bondType.incrementClasses(classOffset);
-        }
-
-        for (MultipoleType multipoleType : multipoleTypes.values()) {
-            multipoleType.incrementType(typeOffset);
-        }
-
-        for (OutOfPlaneBendType outOfPlaneBendType : outOfPlaneBendTypes.values()) {
-            outOfPlaneBendType.incrementClasses(classOffset);
-        }
-
-        for (PiTorsionType piTorsionType : piTorsionTypes.values()) {
-            piTorsionType.incrementClasses(classOffset);
-        }
-
-        for (PolarizeType polarizeType : polarizeTypes.values()) {
-            polarizeType.incrementType(typeOffset);
-        }
-
-        for (StretchBendType stretchBendType : stretchBendTypes.values()) {
-            stretchBendType.incrementClasses(classOffset);
-        }
-
-        for (StretchTorsionType stretchTorsionType : stretchTorsionTypes.values()) {
-            stretchTorsionType.incrementClasses(classOffset);
-        }
-
-        for (AngleTorsionType angleTorsionType : angleTorsionTypes.values()) {
-            angleTorsionType.incrementClasses(classOffset);
-        }
-
-        for (TorsionTorsionType torsionTorsionType : torsionTorsionTypes.values()) {
-            torsionTorsionType.incrementClasses(classOffset);
-        }
-
-        for (TorsionType torsionType : torsionTypes.values()) {
-            torsionType.incrementClasses(classOffset);
-        }
-
-        for (TorsionType torsionType : improperTypes.values()) {
-            torsionType.incrementClasses(classOffset);
-        }
-
-        for (ImproperTorsionType improperTorsionType : imptorsTypes.values()) {
-            improperTorsionType.incrementClasses(classOffset);
-        }
-
-        for (UreyBradleyType ureyBradleyType : ureyBradleyTypes.values()) {
-            ureyBradleyType.incrementClasses(classOffset);
-        }
-
-        for (VDWType vanderWaalsType : vanderWaalsTypes.values()) {
-            vanderWaalsType.incrementClass(classOffset);
-        }
-
-        for (VDWType vanderWaals14Type : vanderWaals14Types.values()) {
-            vanderWaals14Type.incrementClass(classOffset);
-        }
-
-        for (SoluteType soluteType : soluteTypes.values()) {
-            soluteType.incrementType(typeOffset);
-        }
+        String key = toPropertyForm(property);
+//        try {
+//            String old = getString(key);
+//            if (old.equalsIgnoreCase(value)) {
+//                return;
+//            }
+//            logger.info(format("  Existing %s  %s", key, old));
+//        } catch (Exception e) {
+//            // Property does not exist yet.
+//        } finally {
+//            properties.addProperty(key, value);
+//            logger.info(format("  Added    %s  %s", key, value));
+//        }
+        properties.addProperty(key, value);
     }
 
     /**
@@ -457,271 +352,14 @@ public class ForceField {
     }
 
     /**
-     * Enums are uppercase with underscores, but property files use lower case
-     * with dashes.
-     *
-     * @param s an input Enum string
-     * @return the normalized keyword
-     */
-    public static String toPropertyForm(String s) {
-        if (s == null) {
-            return null;
-        }
-        return s.toLowerCase().replace("_", "-");
-    }
-
-    /**
-     * Enums are uppercase with underscores, but property files use lower case
-     * with dashes.
-     *
-     * @param key an input keyword
-     * @return the keyword in Enum form.
-     */
-    public static String toEnumForm(String key) {
-        if (key == null) {
-            return null;
-        }
-        return key.toUpperCase().replace("-", "_");
-    }
-
-    /**
-     * <p>Getter for the field <code>properties</code>.</p>
-     *
-     * @return a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     */
-    public CompositeConfiguration getProperties() {
-        return properties;
-    }
-
-    /**
-     * Checks if a property was specified.
-     *
-     * @param property String to check.
-     * @return Ever specified.
-     * @throws java.lang.NullPointerException If forceFieldDouble is null.
-     */
-    public boolean hasProperty(String property) throws NullPointerException {
-        if (property == null) {
-            throw new NullPointerException("NULL keyword");
-        }
-        String key = toPropertyForm(property);
-        return properties.containsKey(key);
-    }
-
-    /**
-     * Add a property from a external parameter file.
-     *
-     * @param property Property string.
-     * @param value    double
-     */
-    public void addProperty(String property, String value) {
-        if (property == null) {
-            return;
-        }
-        String key = toPropertyForm(property);
-//        try {
-//            String old = getString(key);
-//            if (old.equalsIgnoreCase(value)) {
-//                return;
-//            }
-//            logger.info(format("  Existing %s  %s", key, old));
-//        } catch (Exception e) {
-//            // Property does not exist yet.
-//        } finally {
-//            properties.addProperty(key, value);
-//            logger.info(format("  Added    %s  %s", key, value));
-//        }
-        properties.addProperty(key, value);
-    }
-
-    /**
      * <p>
-     * getDouble</p>
+     * getAngleTorsionType</p>
      *
-     * @param property The property to return.
-     * @return an double.
-     * @throws java.lang.Exception if any.
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.AngleTorsionType} object.
      */
-    public double getDouble(String property) throws Exception {
-        if (property == null) {
-            throw new Exception("NULL property");
-        }
-        String key = toPropertyForm(property);
-        if (!properties.containsKey(key)) {
-            throw new Exception("Undefined property: " + key);
-        }
-        return properties.getDouble(key);
-    }
-
-    /**
-     * <p>
-     * getDouble</p>
-     *
-     * @param property      The property to return.
-     * @param defaultDouble The default to return.
-     * @return an double.
-     */
-    public double getDouble(String property, Double defaultDouble) {
-        try {
-            return getDouble(property);
-        } catch (Exception e) {
-            return defaultDouble;
-        }
-    }
-
-    /**
-     * <p>
-     * getInteger</p>
-     *
-     * @param property The property to return.
-     * @return an int.
-     * @throws java.lang.Exception if any.
-     */
-    public int getInteger(String property) throws Exception {
-        if (property == null) {
-            throw new Exception("NULL property");
-        }
-        String key = toPropertyForm(property);
-        if (!properties.containsKey(key)) {
-            throw new Exception("Undefined property: " + key);
-        }
-        return properties.getInt(key);
-    }
-
-    /**
-     * <p>
-     * getInteger</p>
-     *
-     * @param property       The property to return.
-     * @param defaultInteger The default to return.
-     * @return an int.
-     */
-    public int getInteger(String property, Integer defaultInteger) {
-        try {
-            return getInteger(property);
-        } catch (Exception e) {
-            return defaultInteger;
-        }
-    }
-
-    /**
-     * <p>
-     * getBoolean</p>
-     *
-     * @param property The property to return.
-     * @return a String.
-     * @throws java.lang.Exception if any.
-     */
-    public String getString(String property) throws Exception {
-        if (property == null) {
-            throw new Exception("NULL property");
-        }
-        String key = toPropertyForm(property);
-        if (!properties.containsKey(key)) {
-            throw new Exception("Undefined property: " + key);
-        }
-        return properties.getString(key);
-    }
-
-    /**
-     * <p>
-     * getBoolean</p>
-     *
-     * @param property      The property to return.
-     * @param defaultString The default to return.
-     * @return a boolean.
-     */
-    public String getString(String property, String defaultString) {
-        try {
-            return getString(property);
-        } catch (Exception e) {
-            return defaultString;
-        }
-    }
-
-    /**
-     * <p>
-     * getBoolean</p>
-     *
-     * @param property The property to return.
-     * @return a boolean.
-     * @throws java.lang.Exception if any.
-     */
-    public boolean getBoolean(String property) throws Exception {
-        if (property == null) {
-            throw new Exception("NULL property");
-        }
-        String key = toPropertyForm(property);
-        if (!properties.containsKey(key)) {
-            throw new Exception("Undefined property: " + key);
-        }
-        return properties.getBoolean(key);
-    }
-
-    /**
-     * <p>
-     * getBoolean</p>
-     *
-     * @param property       The property to return.
-     * @param defaultBoolean The default to return.
-     * @return a boolean.
-     */
-    public boolean getBoolean(String property, boolean defaultBoolean) {
-        try {
-            return getBoolean(property);
-        } catch (Exception e) {
-            return defaultBoolean;
-        }
-    }
-
-    /**
-     * <p>isForceFieldKeyword.</p>
-     *
-     * @param keyword a {@link java.lang.String} object.
-     * @return a boolean.
-     */
-    public static boolean isForceFieldKeyword(String keyword) {
-        keyword = toEnumForm(keyword);
-        try {
-            ForceFieldType.valueOf(keyword);
-            return true;
-        } catch (Exception e) {
-            // Ignore.
-        }
-        return false;
-    }
-
-    /**
-     * Add an instance of a force field type. Force Field types are more
-     * complicated than simple Strings or doubles, in that they have multiple
-     * fields and may occur multiple times.
-     *
-     * @param type BaseType
-     */
-    @SuppressWarnings("unchecked")
-    public <T extends BaseType> void addForceFieldType(T type) {
-        if (type == null) {
-            logger.info(" Null force field type ignored.");
-            return;
-        }
-
-        Map<String, T> treeMap = (Map<String, T>) forceFieldTypes.get(type.forceFieldType);
-        if (treeMap == null) {
-            logger.log(Level.INFO, " Unrecognized force field type ignored {0}", type.forceFieldType);
-            type.print();
-            return;
-        }
-        if (treeMap.containsKey(type.key)) {
-            if (treeMap.get(type.key).toString().equalsIgnoreCase(type.toString())) {
-                // Ignore this type if its identical to an existing type.
-                return;
-            }
-            logger.log(Level.WARNING,
-                    " A force field entry of type {0} already exists with the key: {1}\n The (discarded) old entry: {2}\n The new entry            : {3}",
-                    new Object[]{type.forceFieldType, type.key,
-                            treeMap.get(type.key).toString(), type.toString()});
-        }
-        treeMap.put(type.key, type);
+    public AngleTorsionType getAngleTorsionType(String key) {
+        return angleTorsionTypes.get(key);
     }
 
     /**
@@ -770,32 +408,6 @@ public class ForceField {
     }
 
     /**
-     * <p>getBioType.</p>
-     *
-     * @param moleculeName a {@link java.lang.String} object.
-     * @param atomName     a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.parameters.BioType} object.
-     */
-    public BioType getBioType(String moleculeName, String atomName) {
-        for (BioType bioType : bioTypes.values()) {
-            if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
-                    && bioType.atomName.equalsIgnoreCase(atomName)) {
-                return bioType;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * <p>getBioTypeMap.</p>
-     *
-     * @return a {@link java.util.Map} object.
-     */
-    public Map<String, BioType> getBioTypeMap() {
-        return bioTypes;
-    }
-
-    /**
      * <p>
      * Getter for the field <code>atomTypes</code>.</p>
      *
@@ -815,30 +427,51 @@ public class ForceField {
     }
 
     /**
-     * Get a SoluteType.
+     * <p>getBioType.</p>
      *
-     * @param key The class of the atom.
-     * @return The SoluteType if its present.
+     * @param moleculeName a {@link java.lang.String} object.
+     * @param atomName     a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.BioType} object.
      */
-    public SoluteType getSoluteType(String key) {
-        return soluteTypes.get(key);
-    }
-
-    public Map<String, SoluteType> getSoluteTypes() {
-        return soluteTypes;
+    public BioType getBioType(String moleculeName, String atomName) {
+        for (BioType bioType : bioTypes.values()) {
+            if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
+                    && bioType.atomName.equalsIgnoreCase(atomName)) {
+                return bioType;
+            }
+        }
+        return null;
     }
 
     /**
-     * <p>Getter for the field <code>relativeSolvationTypes</code>.</p>
+     * <p>
+     * getBioType</p>
      *
-     * @return a {@link java.util.HashMap} object.
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.BioType} object.
      */
-    public HashMap<String, RelativeSolvationType> getRelativeSolvationTypes() {
-        HashMap<String, RelativeSolvationType> types = new HashMap<>();
-        for (String key : relativeSolvationTypes.keySet()) {
-            types.put(key, relativeSolvationTypes.get(key));
-        }
-        return types;
+    public BioType getBioType(String key) {
+        return bioTypes.get(key);
+    }
+
+    /**
+     * <p>getBioTypeMap.</p>
+     *
+     * @return a {@link java.util.Map} object.
+     */
+    public Map<String, BioType> getBioTypeMap() {
+        return bioTypes;
+    }
+
+    /**
+     * <p>
+     * getBondType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.BondType} object.
+     */
+    public BondType getBondType(String key) {
+        return bondTypes.get(key);
     }
 
     /**
@@ -861,24 +494,161 @@ public class ForceField {
 
     /**
      * <p>
-     * getBondType</p>
+     * getBoolean</p>
      *
-     * @param key a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.parameters.BondType} object.
+     * @param property The property to return.
+     * @return a boolean.
+     * @throws java.lang.Exception if any.
      */
-    public BondType getBondType(String key) {
-        return bondTypes.get(key);
+    public boolean getBoolean(String property) throws Exception {
+        if (property == null) {
+            throw new Exception("NULL property");
+        }
+        String key = toPropertyForm(property);
+        if (!properties.containsKey(key)) {
+            throw new Exception("Undefined property: " + key);
+        }
+        return properties.getBoolean(key);
     }
 
     /**
      * <p>
-     * getBioType</p>
+     * getBoolean</p>
+     *
+     * @param property       The property to return.
+     * @param defaultBoolean The default to return.
+     * @return a boolean.
+     */
+    public boolean getBoolean(String property, boolean defaultBoolean) {
+        try {
+            return getBoolean(property);
+        } catch (Exception e) {
+            return defaultBoolean;
+        }
+    }
+
+    /**
+     * <p>
+     * getDouble</p>
+     *
+     * @param property The property to return.
+     * @return an double.
+     * @throws java.lang.Exception if any.
+     */
+    public double getDouble(String property) throws Exception {
+        if (property == null) {
+            throw new Exception("NULL property");
+        }
+        String key = toPropertyForm(property);
+        if (!properties.containsKey(key)) {
+            throw new Exception("Undefined property: " + key);
+        }
+        return properties.getDouble(key);
+    }
+
+    /**
+     * <p>
+     * getDouble</p>
+     *
+     * @param property      The property to return.
+     * @param defaultDouble The default to return.
+     * @return an double.
+     */
+    public double getDouble(String property, Double defaultDouble) {
+        try {
+            return getDouble(property);
+        } catch (Exception e) {
+            return defaultDouble;
+        }
+    }
+
+    /**
+     * <p>
+     * getForceFieldTypeCount</p>
+     *
+     * @param type a {@link ffx.potential.parameters.ForceField.ForceFieldType}
+     *             object.
+     * @return a int.
+     */
+    @SuppressWarnings("unchecked")
+    public int getForceFieldTypeCount(ForceFieldType type) {
+        TreeMap<String, BaseType> treeMap
+                = (TreeMap<String, BaseType>) forceFieldTypes.get(type);
+        if (treeMap == null) {
+            logger.log(Level.WARNING, "Unrecognized Force Field Type: {0}", type);
+            return 0;
+        }
+        return treeMap.size();
+    }
+
+    /**
+     * <p>
+     * Get for the URL for the named force field.</p>
+     *
+     * @param forceField a {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
+     * @return a {@link java.net.URL} object.
+     */
+    public static URL getForceFieldURL(ForceFieldName forceField) {
+        if (forceField == null) {
+            return null;
+        }
+        return forceFields.get(forceField);
+    }
+
+    /**
+     * <p>
+     * getImproperType</p>
      *
      * @param key a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.parameters.BioType} object.
+     * @return a {@link ffx.potential.parameters.TorsionType} object.
      */
-    public BioType getBioType(String key) {
-        return bioTypes.get(key);
+    public ImproperTorsionType getImproperType(String key) {
+        return imptorsTypes.get(key);
+    }
+
+    /**
+     * <p>
+     * getImproperType</p>
+     *
+     * @return a {@link ffx.potential.parameters.TorsionType} object.
+     */
+    public Collection<ImproperTorsionType> getImproperTypes() {
+        return imptorsTypes.values();
+    }
+
+    /**
+     * <p>
+     * getInteger</p>
+     *
+     * @param property The property to return.
+     * @return an int.
+     * @throws java.lang.Exception if any.
+     */
+    public int getInteger(String property) throws Exception {
+        if (property == null) {
+            throw new Exception("NULL property");
+        }
+        String key = toPropertyForm(property);
+        if (!properties.containsKey(key)) {
+            throw new Exception("Undefined property: " + key);
+        }
+        return properties.getInt(key);
+    }
+
+    /**
+     * <p>
+     * getInteger</p>
+     *
+     * @param property       The property to return.
+     * @param defaultInteger The default to return.
+     * @return an int.
+     */
+    public int getInteger(String property, Integer defaultInteger) {
+        try {
+            return getInteger(property);
+        } catch (Exception e) {
+            return defaultInteger;
+        }
     }
 
     /**
@@ -905,6 +675,17 @@ public class ForceField {
 
     /**
      * <p>
+     * getPiTorsionType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.PiTorsionType} object.
+     */
+    public PiTorsionType getPiTorsionType(String key) {
+        return piTorsionTypes.get(key);
+    }
+
+    /**
+     * <p>
      * getPolarizeType</p>
      *
      * @param key a {@link java.lang.String} object.
@@ -912,6 +693,42 @@ public class ForceField {
      */
     public PolarizeType getPolarizeType(String key) {
         return polarizeTypes.get(key);
+    }
+
+    /**
+     * <p>Getter for the field <code>properties</code>.</p>
+     *
+     * @return a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
+    public CompositeConfiguration getProperties() {
+        return properties;
+    }
+
+    /**
+     * <p>Getter for the field <code>relativeSolvationTypes</code>.</p>
+     *
+     * @return a {@link java.util.HashMap} object.
+     */
+    public HashMap<String, RelativeSolvationType> getRelativeSolvationTypes() {
+        HashMap<String, RelativeSolvationType> types = new HashMap<>();
+        for (String key : relativeSolvationTypes.keySet()) {
+            types.put(key, relativeSolvationTypes.get(key));
+        }
+        return types;
+    }
+
+    /**
+     * Get a SoluteType.
+     *
+     * @param key The class of the atom.
+     * @return The SoluteType if its present.
+     */
+    public SoluteType getSoluteType(String key) {
+        return soluteTypes.get(key);
+    }
+
+    public Map<String, SoluteType> getSoluteTypes() {
+        return soluteTypes;
     }
 
     /**
@@ -927,28 +744,6 @@ public class ForceField {
 
     /**
      * <p>
-     * getPiTorsionType</p>
-     *
-     * @param key a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.parameters.PiTorsionType} object.
-     */
-    public PiTorsionType getPiTorsionType(String key) {
-        return piTorsionTypes.get(key);
-    }
-
-    /**
-     * <p>
-     * getTorsionType</p>
-     *
-     * @param key a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.parameters.TorsionType} object.
-     */
-    public TorsionType getTorsionType(String key) {
-        return torsionTypes.get(key);
-    }
-
-    /**
-     * <p>
      * getStretchTorsionType</p>
      *
      * @param key a {@link java.lang.String} object.
@@ -960,34 +755,37 @@ public class ForceField {
 
     /**
      * <p>
-     * getAngleTorsionType</p>
+     * getBoolean</p>
      *
-     * @param key a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.parameters.AngleTorsionType} object.
+     * @param property The property to return.
+     * @return a String.
+     * @throws java.lang.Exception if any.
      */
-    public AngleTorsionType getAngleTorsionType(String key) {
-        return angleTorsionTypes.get(key);
+    public String getString(String property) throws Exception {
+        if (property == null) {
+            throw new Exception("NULL property");
+        }
+        String key = toPropertyForm(property);
+        if (!properties.containsKey(key)) {
+            throw new Exception("Undefined property: " + key);
+        }
+        return properties.getString(key);
     }
 
     /**
      * <p>
-     * getImproperType</p>
+     * getBoolean</p>
      *
-     * @return a {@link ffx.potential.parameters.TorsionType} object.
+     * @param property      The property to return.
+     * @param defaultString The default to return.
+     * @return a boolean.
      */
-    public Collection<ImproperTorsionType> getImproperTypes() {
-        return imptorsTypes.values();
-    }
-
-    /**
-     * <p>
-     * getImproperType</p>
-     *
-     * @param key a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.parameters.TorsionType} object.
-     */
-    public ImproperTorsionType getImproperType(String key) {
-        return imptorsTypes.get(key);
+    public String getString(String property, String defaultString) {
+        try {
+            return getString(property);
+        } catch (Exception e) {
+            return defaultString;
+        }
     }
 
     /**
@@ -1003,6 +801,17 @@ public class ForceField {
 
     /**
      * <p>
+     * getTorsionType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.TorsionType} object.
+     */
+    public TorsionType getTorsionType(String key) {
+        return torsionTypes.get(key);
+    }
+
+    /**
+     * <p>
      * getUreyBradleyType</p>
      *
      * @param key a {@link java.lang.String} object.
@@ -1010,17 +819,6 @@ public class ForceField {
      */
     public UreyBradleyType getUreyBradleyType(String key) {
         return ureyBradleyTypes.get(key);
-    }
-
-    /**
-     * <p>
-     * getVDWType</p>
-     *
-     * @param key a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.parameters.VDWType} object.
-     */
-    public VDWType getVDWType(String key) {
-        return vanderWaalsTypes.get(key);
     }
 
     /**
@@ -1036,16 +834,6 @@ public class ForceField {
 
     /**
      * <p>
-     * getVDWTypes</p>
-     *
-     * @return a {@link java.util.Map} object.
-     */
-    public Map<String, VDWType> getVDWTypes() {
-        return vanderWaalsTypes;
-    }
-
-    /**
-     * <p>
      * getVDW14Types</p>
      *
      * @return a {@link java.util.Map} object.
@@ -1055,16 +843,201 @@ public class ForceField {
     }
 
     /**
-     * <p>setTorsionScale.</p>
+     * <p>
+     * getVDWType</p>
      *
-     * @param scaleFactor a double.
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.VDWType} object.
      */
-    public void setTorsionScale(double scaleFactor) {
-        for (TorsionType type : torsionTypes.values()) {
-            type.setScaleFactor(scaleFactor);
+    public VDWType getVDWType(String key) {
+        return vanderWaalsTypes.get(key);
+    }
+
+    /**
+     * <p>
+     * getVDWTypes</p>
+     *
+     * @return a {@link java.util.Map} object.
+     */
+    public Map<String, VDWType> getVDWTypes() {
+        return vanderWaalsTypes;
+    }
+
+    /**
+     * Checks if a property was specified.
+     *
+     * @param property String to check.
+     * @return Ever specified.
+     * @throws java.lang.NullPointerException If forceFieldDouble is null.
+     */
+    public boolean hasProperty(String property) throws NullPointerException {
+        if (property == null) {
+            throw new NullPointerException("NULL keyword");
         }
-        for (PiTorsionType type : piTorsionTypes.values()) {
-            type.setScaleFactor(scaleFactor);
+        String key = toPropertyForm(property);
+        return properties.containsKey(key);
+    }
+
+    /**
+     * <p>isForceFieldKeyword.</p>
+     *
+     * @param keyword a {@link java.lang.String} object.
+     * @return a boolean.
+     */
+    public static boolean isForceFieldKeyword(String keyword) {
+        keyword = toEnumForm(keyword);
+        try {
+            ForceFieldType.valueOf(keyword);
+            return true;
+        } catch (Exception e) {
+            // Ignore.
+        }
+        return false;
+    }
+
+    /**
+     * <p>
+     * log</p>
+     */
+    public void log() {
+        for (ForceFieldType s : forceFieldTypes.keySet()) {
+            log(s.toString());
+        }
+    }
+
+    /**
+     * Prints any force field keyword to Standard.out.
+     *
+     * @param key String
+     */
+    public void log(String key) {
+        ForceFieldType type = ForceFieldType.valueOf(key);
+        logger.info(toString(type));
+    }
+
+    /**
+     * <p>
+     * toStringBuffer</p>
+     */
+    public StringBuffer toStringBuffer() {
+        StringBuffer sb = new StringBuffer();
+        for (ForceFieldType s : forceFieldTypes.keySet()) {
+            ForceFieldType type = ForceFieldType.valueOf(s.toString());
+            sb.append(toString(type));
+        }
+        return sb;
+    }
+
+    /**
+     * <p>
+     * print</p>
+     */
+    public void print() {
+        for (ForceFieldType s : forceFieldTypes.keySet()) {
+            print(s.toString());
+        }
+    }
+
+    /**
+     * <p>
+     * print</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     */
+    public void print(String key) {
+        ForceFieldType type = ForceFieldType.valueOf(key);
+        logger.info(toString(type));
+    }
+
+    /**
+     * Renumber ForceField class, type and biotype values.
+     *
+     * @param classOffset   a int.
+     * @param typeOffset    a int.
+     * @param bioTypeOffset a int.
+     */
+    public void renumberForceField(int classOffset, int typeOffset, int bioTypeOffset) {
+        if (noRenumbering) {
+            return;
+        }
+        for (AngleType angleType : angleTypes.values()) {
+            angleType.incrementClasses(classOffset);
+        }
+
+        for (AngleType angleType : anglepTypes.values()) {
+            angleType.incrementClasses(classOffset);
+        }
+
+        for (AtomType atomType : atomTypes.values()) {
+            atomType.incrementClassAndType(classOffset, typeOffset);
+        }
+
+        for (BioType bioType : bioTypes.values()) {
+            bioType.incrementIndexAndType(bioTypeOffset, typeOffset);
+        }
+
+        for (BondType bondType : bondTypes.values()) {
+            bondType.incrementClasses(classOffset);
+        }
+
+        for (MultipoleType multipoleType : multipoleTypes.values()) {
+            multipoleType.incrementType(typeOffset);
+        }
+
+        for (OutOfPlaneBendType outOfPlaneBendType : outOfPlaneBendTypes.values()) {
+            outOfPlaneBendType.incrementClasses(classOffset);
+        }
+
+        for (PiTorsionType piTorsionType : piTorsionTypes.values()) {
+            piTorsionType.incrementClasses(classOffset);
+        }
+
+        for (PolarizeType polarizeType : polarizeTypes.values()) {
+            polarizeType.incrementType(typeOffset);
+        }
+
+        for (StretchBendType stretchBendType : stretchBendTypes.values()) {
+            stretchBendType.incrementClasses(classOffset);
+        }
+
+        for (StretchTorsionType stretchTorsionType : stretchTorsionTypes.values()) {
+            stretchTorsionType.incrementClasses(classOffset);
+        }
+
+        for (AngleTorsionType angleTorsionType : angleTorsionTypes.values()) {
+            angleTorsionType.incrementClasses(classOffset);
+        }
+
+        for (TorsionTorsionType torsionTorsionType : torsionTorsionTypes.values()) {
+            torsionTorsionType.incrementClasses(classOffset);
+        }
+
+        for (TorsionType torsionType : torsionTypes.values()) {
+            torsionType.incrementClasses(classOffset);
+        }
+
+        for (TorsionType torsionType : improperTypes.values()) {
+            torsionType.incrementClasses(classOffset);
+        }
+
+        for (ImproperTorsionType improperTorsionType : imptorsTypes.values()) {
+            improperTorsionType.incrementClasses(classOffset);
+        }
+
+        for (UreyBradleyType ureyBradleyType : ureyBradleyTypes.values()) {
+            ureyBradleyType.incrementClasses(classOffset);
+        }
+
+        for (VDWType vanderWaalsType : vanderWaalsTypes.values()) {
+            vanderWaalsType.incrementClass(classOffset);
+        }
+
+        for (VDWType vanderWaals14Type : vanderWaals14Types.values()) {
+            vanderWaals14Type.incrementClass(classOffset);
+        }
+
+        for (SoluteType soluteType : soluteTypes.values()) {
+            soluteType.incrementType(typeOffset);
         }
     }
 
@@ -1094,63 +1067,45 @@ public class ForceField {
     }
 
     /**
-     * <p>
-     * getForceFieldTypeCount</p>
+     * <p>setTorsionScale.</p>
      *
-     * @param type a {@link ffx.potential.parameters.ForceField.ForceFieldType}
-     *             object.
-     * @return a int.
+     * @param scaleFactor a double.
      */
-    @SuppressWarnings("unchecked")
-    public int getForceFieldTypeCount(ForceFieldType type) {
-        TreeMap<String, BaseType> treeMap
-                = (TreeMap<String, BaseType>) forceFieldTypes.get(type);
-        if (treeMap == null) {
-            logger.log(Level.WARNING, "Unrecognized Force Field Type: {0}", type);
-            return 0;
+    public void setTorsionScale(double scaleFactor) {
+        for (TorsionType type : torsionTypes.values()) {
+            type.setScaleFactor(scaleFactor);
         }
-        return treeMap.size();
-    }
-
-    /**
-     * <p>
-     * log</p>
-     */
-    public void log() {
-        for (ForceFieldType s : forceFieldTypes.keySet()) {
-            log(s.toString());
+        for (PiTorsionType type : piTorsionTypes.values()) {
+            type.setScaleFactor(scaleFactor);
         }
     }
 
     /**
-     * Prints any force field keyword to Standard.out.
+     * Enums are uppercase with underscores, but property files use lower case
+     * with dashes.
      *
-     * @param key String
+     * @param key an input keyword
+     * @return the keyword in Enum form.
      */
-    public void log(String key) {
-        ForceFieldType type = ForceFieldType.valueOf(key);
-        logger.info(toString(type));
-    }
-
-    /**
-     * <p>
-     * print</p>
-     */
-    public void print() {
-        for (ForceFieldType s : forceFieldTypes.keySet()) {
-            print(s.toString());
+    public static String toEnumForm(String key) {
+        if (key == null) {
+            return null;
         }
+        return key.toUpperCase().replace("-", "_");
     }
 
     /**
-     * <p>
-     * print</p>
+     * Enums are uppercase with underscores, but property files use lower case
+     * with dashes.
      *
-     * @param key a {@link java.lang.String} object.
+     * @param s an input Enum string
+     * @return the normalized keyword
      */
-    public void print(String key) {
-        ForceFieldType type = ForceFieldType.valueOf(key);
-        logger.info(toString(type));
+    public static String toPropertyForm(String s) {
+        if (s == null) {
+            return null;
+        }
+        return s.toLowerCase().replace("_", "-");
     }
 
     /**
@@ -1207,6 +1162,69 @@ public class ForceField {
         } else {
             return key + " is not defined.";
         }
+    }
+
+    /**
+     * Available force fields.
+     */
+    public enum ForceFieldName {
+        AMBER_1994,
+        AMBER_1996,
+        AMBER_1998,
+        AMBER_1999,
+        AMBER_1999_SB,
+        AMBER_1999_SB_AMOEBA,
+        AMBER_1999_SB_TIP3F,
+        AMOEBA_2004,
+        AMOEBA_2009,
+        AMOEBA_BIO_2009,
+        AMOEBA_BIO_2018,
+        AMOEBA_NUC_2017,
+        AMOEBA_PROTEIN_2004,
+        AMOEBA_PROTEIN_2013,
+        AMOEBA_WATER_2003,
+        AMOEBA_WATER_2014,
+        CHARMM_22,
+        CHARMM_22_CMAP,
+        IAMOEBA_WATER,
+        OPLS_AA,
+        OPLS_AAL
+    }
+
+    public enum ForceFieldType {
+
+        KEYWORD,
+        ANGLE,
+        ANGLEP,
+        ANGTORS,
+        ATOM,
+        BIOTYPE,
+        BOND,
+        CHARGE,
+        IMPROPER,
+        IMPTORS,
+        MULTIPOLE,
+        OPBEND,
+        PITORS,
+        POLARIZE,
+        SOLUTE,
+        STRBND,
+        STRTORS,
+        TORSION,
+        TORTORS,
+        UREYBRAD,
+        VDW,
+        VDW14,
+        RELATIVESOLV
+    }
+
+    /**
+     * Enumerates the types of constraints that can be applied.
+     */
+    public enum ConstraintTypes {
+        BOND, // Constrain a Bond.
+        ANGLEBONDS; // Constrain a 3-atom Angle and its two component Bonds.
+        // TODO: Support dihedral constraints, lone angle constraints, etc.
     }
 
     /**
@@ -1476,8 +1494,10 @@ public class ForceField {
     }
 
     /**
-     * If some set of other ForceFieldBooleans implies another ForceFieldBoolean is true, set that implied
-     * ForceFieldBoolean to true. First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM,
+     * If some set of other boolean values imply another boolean is true, set that implied
+     * boolean to true.
+     * <p>
+     * First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM,
      * ELEC_LAMBDATERM, or GK_LAMBDATERM.
      *
      * @param toSet         Property to set true if otherBooleans true.
@@ -1541,14 +1561,5 @@ public class ForceField {
         if (change) {
             checkPolarizationTypes();
         }
-    }
-
-    /**
-     * Enumerates the types of constraints that can be applied.
-     */
-    public enum ConstraintTypes {
-        BOND, // Constrain a Bond.
-        ANGLEBONDS; // Constrain a 3-atom Angle and its two component Bonds.
-        // TODO: Support dihedral constraints, lone angle constraints, etc.
     }
 }

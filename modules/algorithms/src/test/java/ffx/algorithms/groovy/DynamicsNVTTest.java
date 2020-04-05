@@ -39,7 +39,6 @@ package ffx.algorithms.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.logging.Logger;
 
 import org.junit.After;
 import org.junit.Before;
@@ -55,38 +54,34 @@ import ffx.algorithms.misc.PJDependentTest;
 import groovy.lang.Binding;
 
 /**
- * @author Hernan V Bernabe
+ * Test NVT dynamics on a waterbox.
+ *
+ * @author Hernan V. Bernabe
  */
 @RunWith(Parameterized.class)
 public class DynamicsNVTTest extends PJDependentTest {
 
     private String info;
     private String filename;
-    private double startingTemp;
-    private double tempTolerance = 3.0;
+    private double finalTemp;
+    private double tempTolerance = 0.01;
     private double endTotalEnergy;
-    private double energyTolerance = 0.5;
+    private double energyTolerance = 0.01;
 
     private Binding binding;
     private Dynamics dynamics;
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {
-                        "Water Box NVT", // info
-                        "ffx/algorithms/structures/waterbox_eq.xyz", // filename
-                        296.19,             // Starting temperature.
-                        -24951.7426         // Final total energy.
-                }
-        });
-    }
-
-    public DynamicsNVTTest(String info, String filename, double startingTemp, double endTotalEnergy) {
+    public DynamicsNVTTest(String info, String filename, double finalTemp, double endTotalEnergy) {
         this.info = info;
         this.filename = filename;
-        this.startingTemp = startingTemp;
+        this.finalTemp = finalTemp;
         this.endTotalEnergy = endTotalEnergy;
+    }
+
+    @After
+    public void after() {
+        dynamics.destroyPotentials();
+        System.gc();
     }
 
     @Before
@@ -96,10 +91,16 @@ public class DynamicsNVTTest extends PJDependentTest {
         dynamics.setBinding(binding);
     }
 
-    @After
-    public void after() {
-        dynamics.destroyPotentials();
-        System.gc();
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {
+                        "Water Box NVT", // info
+                        "ffx/algorithms/structures/waterbox_eq.xyz", // filename
+                        296.18798,             // Final temperature.
+                        -24952.0595         // Final total energy
+                }
+        });
     }
 
     @Test
@@ -115,7 +116,7 @@ public class DynamicsNVTTest extends PJDependentTest {
         MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
         // Assert that temperature is within tolerance at the end of the dynamics trajectory.
-        assertEquals(info + " End temperature for NVT test", startingTemp, molDyn.getTemperature(), tempTolerance);
+        assertEquals(info + " End temperature for NVT test", finalTemp, molDyn.getTemperature(), tempTolerance);
 
         // Assert that the end total energy is withing the tolerance at the end of the dynamics trajectory.
         assertEquals(info + " End total energy for NVT test and set random seed", endTotalEnergy, molDyn.getTotalEnergy(), energyTolerance);

@@ -58,7 +58,7 @@ import edu.rit.util.Range;
 import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.numerics.math.VectorMath;
+import ffx.numerics.math.ScalarMath;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.ForceFieldEnergy.Platform;
 import ffx.potential.bonded.Angle;
@@ -3197,7 +3197,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
                 // Set the current predictor sign and coefficient.
                 sign *= -1.0;
-                double c = sign * VectorMath.binomial(n, k);
+                double c = sign * ScalarMath.binomial(n, k);
                 for (int i = 0; i < nAtoms; i++) {
                     for (int j = 0; j < 3; j++) {
                         inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];

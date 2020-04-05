@@ -44,13 +44,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import ffx.numerics.Constraint;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Material;
 import org.jogamp.vecmath.Color3f;
 
 import edu.rit.pj.reduction.SharedDouble;
 
+import ffx.numerics.Constraint;
 import ffx.potential.bonded.Atom.Resolution;
 
 /**
@@ -69,7 +69,10 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * reversed for help in assigning force field parameters for the Term.
      */
     private static StringBuilder idtemp = new StringBuilder();
-
+    /**
+     * Constant <code>bondedComparator</code>
+     */
+    private static BondedComparator bondedComparator = new BondedComparator();
     protected String id;
     /**
      * Atoms that are used to form this term.
@@ -147,18 +150,79 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     /**
-     * Checks if all atoms in this BondedTerm are of the given resolution.
+     * Check if any atom of this BondedTerm has the Lambda flag set.
      *
-     * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
-     * @return true if all atoms in this term are at the same resolution.
+     * @return True if Lambda is applied to one of the BondedTerm atoms.
      */
-    public boolean isResolution(Resolution resolution) {
+    public boolean applyLambda() {
         for (Atom atom : atoms) {
-            if (atom.getResolution() != resolution) {
-                return false;
+            if (atom.applyLambda()) {
+                return true;
             }
         }
-        return true;
+        return false;
+    }
+
+    /**
+     * Under a linear switching function, E=L*E1+(1-L)*E0, chainRule is +1 or -1
+     * for lambda and (1-lambda) terms, respectively. Other switches should
+     * set this to d(switch)/d(lambda) as well.
+     *
+     * @param lambda         a double.
+     * @param chainRule      a double.
+     * @param esvBondedDeriv a {@link edu.rit.pj.reduction.SharedDouble} object.
+     * @param decomposition  a {@link java.util.HashMap} object.
+     */
+    public void attachExtendedVariable(double lambda, double chainRule,
+                                       SharedDouble esvBondedDeriv,
+                                       HashMap<Class<? extends BondedTerm>, SharedDouble> decomposition) {
+        esvTerm = true;
+        esvLambda = lambda;
+        dedesvChain = chainRule;
+        esvDerivShared = esvBondedDeriv;
+        esvDerivLocal = 0.0;
+        if (decomposition != null) {
+            decompositionMap = decomposition;
+            decomposeEsvDeriv = true;
+        } else {
+            decompositionMap = null;
+            decomposeEsvDeriv = false;
+        }
+    }
+
+    /**
+     * <p>attachExtendedVariable.</p>
+     *
+     * @param lambda         a double.
+     * @param chainRule      a double.
+     * @param esvBondedDeriv a {@link edu.rit.pj.reduction.SharedDouble} object.
+     */
+    public void attachExtendedVariable(double lambda, double chainRule,
+                                       SharedDouble esvBondedDeriv) {
+        attachExtendedVariable(lambda, chainRule, esvBondedDeriv, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compareTo(BondedTerm t) {
+        return Objects.compare(this, t, bondedComparator);
+    }
+
+    /**
+     * <p>
+     * containsHydrogen</p>
+     *
+     * @return a boolean.
+     */
+    public boolean containsHydrogen() {
+        for (Atom atom : atoms) {
+            if (atom.isHydrogen()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -179,85 +243,44 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     /**
-     * <p>
-     * containsHydrogen</p>
-     *
-     * @return a boolean.
+     * {@inheritDoc}
      */
-    public boolean containsHydrogen() {
-        for (Atom atom : atoms) {
-            if (atom.isHydrogen()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Check if any atom of this BondedTerm has the Lambda flag set.
-     *
-     * @return True if Lambda is applied to one of the BondedTerm atoms.
-     */
-    public boolean applyLambda() {
-        for (Atom atom : atoms) {
-            if (atom.applyLambda()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Check if all atoms of this BondedTerm have the Lambda flag set.
-     *
-     * @return True if Lambda is applied to all of the BondedTerm atoms.
-     */
-    boolean applyAllLambda() {
-        for (Atom atom : atoms) {
-            if (!atom.applyLambda()) {
-                return false;
-            }
-        }
+    @Override
+    public boolean destroy() {
+        super.destroy();
+        id = null;
+        value = 0;
         return true;
     }
 
     /**
-     * Check if this BondedTerm is lambda-sensitive (e.g. a softcored dihedral).
-     *
-     * @return True if Lambda affects the energy of this term.
+     * <p>detachExtendedVariable.</p>
      */
-    public boolean isLambdaScaled() {
-        return false;
+    public void detachExtendedVariable() {
+        esvTerm = false;
+        esvLambda = 1.0;
+        dedesvChain = 0.0;
+        esvDerivLocal = 0.0;
+        esvDerivShared = null;
+        decompositionMap = null;
+        decomposeEsvDeriv = false;
     }
 
     /**
-     * Check if this BondedTerm is constrained.
-     *
-     * @return If constrained.
+     * {@inheritDoc}
+     * <p>
+     * Overridden method that returns true if object is equals to this, is of
+     * the same Class and has the same id.
      */
-    public boolean isConstrained() {
-        return isConstrained;
-    }
-
-    /**
-     * Sets the Constraint on this bond (clearing it if null). May recursively
-     * set the Constraint on component terms (i.e. an Angle will call setConstraint
-     * on its component Bonds).
-     *
-     * @param c Constraint or null to clear.
-     */
-    public void setConstraint(Constraint c) {
-        this.constraint = c;
-        isConstrained = c != null;
-    }
-
-    /**
-     * <p>isExtendedSystemMember.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isExtendedSystemMember() {
-        return esvTerm;
+    @Override
+    public final boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        } else if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        BondedTerm other = (BondedTerm) object;
+        return getID().equals(other.getID());
     }
 
     /**
@@ -303,22 +326,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     /**
-     * <p>
-     * containsAtom</p>
-     *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @return a boolean.
-     */
-    boolean containsAtom(Atom atom) {
-        for (Atom a : atoms) {
-            if (a.equals(atom)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * Get the constituent Bond specified by index.
      *
      * @param index a int.
@@ -332,12 +339,119 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     /**
+     * Get the Term's id.
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getID() {
+        return id;
+    }
+
+    /**
+     * Sets the Term's id.
+     *
+     * @param i a {@link java.lang.String} object.
+     */
+    public void setID(String i) {
+        id = i;
+    }
+
+    /**
      * Get the Term's value.
      *
      * @return a double.
      */
     public double getValue() {
         return value;
+    }
+
+    /**
+     * Sets the Term's value.
+     *
+     * @param v a double.
+     */
+    public void setValue(double v) {
+        value = v;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(getID());
+    }
+
+    /**
+     * Check if this BondedTerm is constrained.
+     *
+     * @return If constrained.
+     */
+    public boolean isConstrained() {
+        return isConstrained;
+    }
+
+    /**
+     * <p>isExtendedSystemMember.</p>
+     *
+     * @return a boolean.
+     */
+    public boolean isExtendedSystemMember() {
+        return esvTerm;
+    }
+
+    /**
+     * Check if this BondedTerm is lambda-sensitive (e.g. a softcored dihedral).
+     *
+     * @return True if Lambda affects the energy of this term.
+     */
+    public boolean isLambdaScaled() {
+        return false;
+    }
+
+    /**
+     * Checks if all atoms in this BondedTerm are of the given resolution.
+     *
+     * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
+     * @return true if all atoms in this term are at the same resolution.
+     */
+    public boolean isResolution(Resolution resolution) {
+        for (Atom atom : atoms) {
+            if (atom.getResolution() != resolution) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Prints the toString method to stdout
+     */
+    @Override
+    public void print() {
+        logger.info(toString());
+    }
+
+    /**
+     * <p>reduceEsvDeriv.</p>
+     */
+    public void reduceEsvDeriv() {
+        if (esvTerm) {
+//            logf(" :: %.6f from %s", esvDerivLocal, this.toString());
+            esvDerivShared.addAndGet(esvDerivLocal);
+            if (decomposeEsvDeriv) {
+                Class<? extends BondedTerm> source = this.getClass();
+                SharedDouble dub = decompositionMap.get(source);
+                if (dub == null) {
+                    decompositionMap.put(source, new SharedDouble(esvDerivLocal));
+                } else {
+                    dub.addAndGet(esvDerivLocal);
+                }
+            }
+            esvDerivLocal = 0.0;
+        }
     }
 
     /**
@@ -359,21 +473,29 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     /**
-     * Get the Term's id.
-     *
-     * @return a {@link java.lang.String} object.
+     * {@inheritDoc}
      */
-    public String getID() {
-        return id;
+    @Override
+    public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
+                         Material mat) {
+        if (atoms == null) {
+            return;
+        }
+        for (Atom atom : atoms) {
+            atom.setColor(newColorModel, color, mat);
+        }
     }
 
     /**
-     * Sets the Term's id.
+     * Sets the Constraint on this bond (clearing it if null). May recursively
+     * set the Constraint on component terms (i.e. an Angle will call setConstraint
+     * on its component Bonds).
      *
-     * @param i a {@link java.lang.String} object.
+     * @param c Constraint or null to clear.
      */
-    public void setID(String i) {
-        id = i;
+    public void setConstraint(Constraint c) {
+        this.constraint = c;
+        isConstrained = c != null;
     }
 
     /**
@@ -396,99 +518,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
             idtemp.append(a.describe(Atom.Descriptions.XyzIndex_Name));
         }
         id = idtemp.toString().intern();
-    }
-
-    /**
-     * Sets the Term's value.
-     *
-     * @param v a double.
-     */
-    public void setValue(double v) {
-        value = v;
-    }
-
-    /**
-     * Under a linear switching function, E=L*E1+(1-L)*E0, chainRule is +1 or -1
-     * for lambda and (1-lambda) terms, respectively. Other switches should
-     * set this to d(switch)/d(lambda) as well.
-     *
-     * @param lambda         a double.
-     * @param chainRule      a double.
-     * @param esvBondedDeriv a {@link edu.rit.pj.reduction.SharedDouble} object.
-     * @param decomposition  a {@link java.util.HashMap} object.
-     */
-    public void attachExtendedVariable(double lambda, double chainRule,
-                                       SharedDouble esvBondedDeriv,
-                                       HashMap<Class<? extends BondedTerm>, SharedDouble> decomposition) {
-        esvTerm = true;
-        esvLambda = lambda;
-        dedesvChain = chainRule;
-        esvDerivShared = esvBondedDeriv;
-        esvDerivLocal = 0.0;
-        if (decomposition != null) {
-            decompositionMap = decomposition;
-            decomposeEsvDeriv = true;
-        } else {
-            decompositionMap = null;
-            decomposeEsvDeriv = false;
-        }
-    }
-
-    /**
-     * <p>attachExtendedVariable.</p>
-     *
-     * @param lambda         a double.
-     * @param chainRule      a double.
-     * @param esvBondedDeriv a {@link edu.rit.pj.reduction.SharedDouble} object.
-     */
-    public void attachExtendedVariable(double lambda, double chainRule,
-                                       SharedDouble esvBondedDeriv) {
-        attachExtendedVariable(lambda, chainRule, esvBondedDeriv, null);
-    }
-
-    /**
-     * <p>detachExtendedVariable.</p>
-     */
-    public void detachExtendedVariable() {
-        esvTerm = false;
-        esvLambda = 1.0;
-        dedesvChain = 0.0;
-        esvDerivLocal = 0.0;
-        esvDerivShared = null;
-        decompositionMap = null;
-        decomposeEsvDeriv = false;
-    }
-
-    /**
-     * Derivative with respect to attached ExtendedVariable lambda, if any.
-     * Double.isFinite() check protects against dEdEsv=(energy*chain/lambda) for lambda=0.0
-     *
-     * @param dEdEsv a double.
-     */
-    protected final void setEsvDeriv(double dEdEsv) {
-        if (esvTerm) {
-            esvDerivLocal = dEdEsv;
-        }
-    }
-
-    /**
-     * <p>reduceEsvDeriv.</p>
-     */
-    public void reduceEsvDeriv() {
-        if (esvTerm) {
-//            logf(" :: %.6f from %s", esvDerivLocal, this.toString());
-            esvDerivShared.addAndGet(esvDerivLocal);
-            if (decomposeEsvDeriv) {
-                Class<? extends BondedTerm> source = this.getClass();
-                SharedDouble dub = decompositionMap.get(source);
-                if (dub == null) {
-                    decompositionMap.put(source, new SharedDouble(esvDerivLocal));
-                } else {
-                    dub.addAndGet(esvDerivLocal);
-                }
-            }
-            esvDerivLocal = 0.0;
-        }
     }
 
     /**
@@ -517,20 +546,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * {@inheritDoc}
      */
     @Override
-    public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-                         Material mat) {
-        if (atoms == null) {
-            return;
-        }
-        for (Atom atom : atoms) {
-            atom.setColor(newColorModel, color, mat);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public void setView(RendererCache.ViewModel newViewModel,
                         List<BranchGroup> newShapes) {
         if (atoms == null) {
@@ -550,60 +565,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     /**
      * {@inheritDoc}
      * <p>
-     * Prints the toString method to stdout
-     */
-    @Override
-    public void print() {
-        logger.info(toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        super.destroy();
-        id = null;
-        value = 0;
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compareTo(BondedTerm t) {
-        return Objects.compare(this, t, bondedComparator);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Overridden method that returns true if object is equals to this, is of
-     * the same Class and has the same id.
-     */
-    @Override
-    public final boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        BondedTerm other = (BondedTerm) object;
-        return getID().equals(other.getID());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(getID());
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Overidden toString Method returns the Term's id.
      */
     @Override
@@ -611,15 +572,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         return String.format("%s  (%7.2f,%7.2f)", id, value, energy);
     }
 
-    /**
-     * Constant <code>bondedComparator</code>
-     */
-    private static BondedComparator bondedComparator = new BondedComparator();
-
     public static class BondedComparator implements Comparator<BondedTerm> {
-        private BondedComparator() {
-        }   // singleton
-
         private static final List<Class<? extends BondedTerm>> naturalOrder =
                 new ArrayList<Class<? extends BondedTerm>>() {{
                     add(Bond.class);
@@ -629,6 +582,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
                     add(Torsion.class);
                     add(PiOrbitalTorsion.class);
                 }};
+
+        private BondedComparator() {
+        }   // singleton
 
         /**
          * Sort using position in the naturalOrder list; fallback to alphabetical.
@@ -644,6 +600,48 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
             } else {
                 return String.CASE_INSENSITIVE_ORDER.compare(myc.toString(), oc.toString());
             }
+        }
+    }
+
+    /**
+     * Check if all atoms of this BondedTerm have the Lambda flag set.
+     *
+     * @return True if Lambda is applied to all of the BondedTerm atoms.
+     */
+    boolean applyAllLambda() {
+        for (Atom atom : atoms) {
+            if (!atom.applyLambda()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * <p>
+     * containsAtom</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @return a boolean.
+     */
+    boolean containsAtom(Atom atom) {
+        for (Atom a : atoms) {
+            if (a.equals(atom)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Derivative with respect to attached ExtendedVariable lambda, if any.
+     * Double.isFinite() check protects against dEdEsv=(energy*chain/lambda) for lambda=0.0
+     *
+     * @param dEdEsv a double.
+     */
+    protected final void setEsvDeriv(double dEdEsv) {
+        if (esvTerm) {
+            esvDerivLocal = dEdEsv;
         }
     }
 

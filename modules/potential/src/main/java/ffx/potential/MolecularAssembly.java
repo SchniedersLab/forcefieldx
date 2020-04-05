@@ -93,8 +93,8 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.StringUtils;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.r;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.length;
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
@@ -495,7 +495,7 @@ public class MolecularAssembly extends MSGroup {
                     // Convert the fractional translation vector to Cartesian coordinates.
                     unitCell.toCartesianCoordinates(com, com);
 
-                    double r = r(com);
+                    double r = length(com);
                     /**
                      * Warn if an atom is moved more than 1 Angstrom.
                      */
@@ -825,7 +825,7 @@ public class MolecularAssembly extends MSGroup {
         for (i = 0; i < 3; i++) {
             Rc[i] /= num;
         }
-        diff(d, Rc, c);
+        sub(d, Rc, c);
         for (li = getAtomList().listIterator(); li.hasNext(); ) {
             (li.next()).move(c);
         }
@@ -1426,8 +1426,8 @@ public class MolecularAssembly extends MSGroup {
         double[] xyz = new double[3];
         for (Atom atom : getAtomList()) {
             atom.getXYZ(xyz);
-            diff(xyz, Rc, xyz);
-            r = r(xyz);
+            sub(xyz, Rc, xyz);
+            r = length(xyz);
             if (d < r) {
                 d = r;
             }

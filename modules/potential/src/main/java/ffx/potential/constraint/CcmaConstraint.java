@@ -1,14 +1,12 @@
 package ffx.potential.constraint;
 
 import ffx.numerics.Constraint;
-import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import org.apache.commons.math3.linear.OpenMapRealMatrix;
 import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.RealVectorPreservingVisitor;
 import org.apache.commons.math3.util.FastMath;
 

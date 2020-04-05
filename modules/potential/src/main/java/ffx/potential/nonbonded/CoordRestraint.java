@@ -51,7 +51,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-import static ffx.numerics.math.VectorMath.rsq;
+import static ffx.numerics.math.DoubleMath.length2;
 
 /**
  * Restrain atoms to their initial coordinates.
@@ -272,7 +272,7 @@ public class CoordRestraint implements LambdaInterface {
                 } else {
                     continue;
                 }
-                double r2 = rsq(dx);
+                double r2 = length2(dx);
                 residual += r2;
                 if (gradient || lambdaTerm) {
                     final double dedx = dx[0] * fx2;
@@ -304,7 +304,7 @@ public class CoordRestraint implements LambdaInterface {
                 } else {
                     continue;
                 }
-                double r2 = rsq(dx);
+                double r2 = length2(dx);
                 residual += r2;
                 if (gradient || lambdaTerm) {
                     final double dedx = dx[0] * fx2;
@@ -331,7 +331,7 @@ public class CoordRestraint implements LambdaInterface {
                 dx[0] = a1[0] - initialCoordinates[0][i];
                 dx[1] = a1[1] - initialCoordinates[1][i];
                 dx[2] = a1[2] - initialCoordinates[2][i];
-                double r2 = rsq(dx);
+                double r2 = length2(dx);
                 residual += r2;
                 if (gradient || lambdaTerm) {
                     final double dedx = dx[0] * fx2;

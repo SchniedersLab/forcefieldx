@@ -64,111 +64,153 @@ import ffx.potential.parameters.ForceField;
  */
 public class Residue extends MSGroup implements Comparable<Residue> {
 
+    /**
+     * Constant <code>origAtEnd=</code>
+     */
+    static final boolean origAtEnd;
     private static final Logger logger = Logger.getLogger(Residue.class.getName());
+    /**
+     * Compare residues first on seg ID, then residue number, then residue type, then name.
+     */
+    private static final Comparator<Residue> resComparator =
+            Comparator.comparing(Residue::getSegID).
+            thenComparingInt(Residue::getResidueNumber).
+            thenComparing(Residue::getResidueType).
+            thenComparing(Residue::getName);
+    /**
+     * Constant <code>NA1toNA3</code>
+     */
+    private static final HashMap<NA1, NA3> NA1toNA3 = new HashMap<>();
+    /**
+     * Constant <code>NA3Color</code>
+     */
+    private static final HashMap<NA3, Color3f> NA3Color = new HashMap<>();
+    /**
+     * Constant <code>AA1toAA3</code>
+     */
+    private static final HashMap<AA1, AA3> AA1toAA3 = new HashMap<>();
+    /**
+     * Constant <code>AA3toAA1</code>
+     */
+    private static final HashMap<AA3, AA1> AA3toAA1 = new HashMap<>();
+    /**
+     * Constant <code>AA3Color</code>
+     */
+    private static final HashMap<AA3, Color3f> AA3Color = new HashMap<>();
+    /**
+     * Constant <code>SSTypeColor</code>
+     */
+    private static final HashMap<SSType, Color3f> SSTypeColor = new HashMap<>();
+    /**
+     * Flag to indicate use of original coordinates as a rotamer.
+     */
+    private static final boolean addOrigRot;
+    /**
+     * Constant <code>Ramachandran="new String[17]"</code>
+     */
+    public static String[] Ramachandran = new String[17];
+    private static Point3d point3d = new Point3d();
+    private static Point2d point2d = new Point2d();
+
+    static {
+        String origAtEndStr = System.getProperty("ro-origAtEnd");
+        if (origAtEndStr != null) {
+            origAtEnd = Boolean.parseBoolean(origAtEndStr);
+        } else {
+            origAtEnd = false;
+        }
+        String origRotStr = System.getProperty("ro-addOrigRot");
+        if (origRotStr != null) {
+            addOrigRot = Boolean.parseBoolean(origRotStr);
+        } else {
+            addOrigRot = false;
+        }
+
+        AA1[] aa1 = AA1.values();
+        AA3[] aa3 = AA3.values();
+        for (int i = 0; i < AA1.values().length; i++) {
+            AA1toAA3.put(aa1[i], aa3[i]);
+            AA3toAA1.put(aa3[i], aa1[i]);
+        }
+
+        NA1[] na1 = NA1.values();
+        NA3[] na3 = NA3.values();
+        for (int i = 0; i < NA1.values().length; i++) {
+            NA1toNA3.put(na1[i], na3[i]);
+        }
+
+        NA3Color.put(NA3.A, RendererCache.RED);
+        NA3Color.put(NA3.C, RendererCache.MAGENTA);
+        NA3Color.put(NA3.G, RendererCache.BLUE);
+        NA3Color.put(NA3.U, RendererCache.YELLOW);
+        NA3Color.put(NA3.DA, RendererCache.RED);
+        NA3Color.put(NA3.DC, RendererCache.MAGENTA);
+        NA3Color.put(NA3.DG, RendererCache.BLUE);
+        NA3Color.put(NA3.DT, RendererCache.ORANGE);
+        NA3Color.put(NA3.MPO, RendererCache.GREEN);
+        NA3Color.put(NA3.DPO, RendererCache.GREEN);
+        NA3Color.put(NA3.TPO, RendererCache.GREEN);
+        NA3Color.put(NA3.UNK, RendererCache.CYAN);
+
+        AA3Color.put(AA3.ALA, RendererCache.GRAY);
+        AA3Color.put(AA3.ARG, RendererCache.BLUE);
+        AA3Color.put(AA3.ASN, RendererCache.BLUE);
+        AA3Color.put(AA3.ASP, RendererCache.RED);
+        AA3Color.put(AA3.CYS, RendererCache.YELLOW);
+        AA3Color.put(AA3.GLN, RendererCache.BLUE);
+        AA3Color.put(AA3.GLU, RendererCache.RED);
+        AA3Color.put(AA3.GLY, RendererCache.GRAY);
+        AA3Color.put(AA3.ILE, RendererCache.GRAY);
+        AA3Color.put(AA3.LEU, RendererCache.GRAY);
+        AA3Color.put(AA3.LYS, RendererCache.BLUE);
+        AA3Color.put(AA3.MET, RendererCache.YELLOW);
+        AA3Color.put(AA3.PHE, RendererCache.GREEN);
+        AA3Color.put(AA3.PRO, RendererCache.ORANGE);
+        AA3Color.put(AA3.SER, RendererCache.BLUE);
+        AA3Color.put(AA3.THR, RendererCache.BLUE);
+        AA3Color.put(AA3.TRP, RendererCache.GREEN);
+        AA3Color.put(AA3.TYR, RendererCache.GREEN);
+        AA3Color.put(AA3.VAL, RendererCache.GRAY);
+        AA3Color.put(AA3.HIS, RendererCache.BLUE);
+        AA3Color.put(AA3.HIE, RendererCache.BLUE);
+        AA3Color.put(AA3.HID, RendererCache.BLUE);
+        AA3Color.put(AA3.ORN, RendererCache.ORANGE);
+        AA3Color.put(AA3.AIB, RendererCache.ORANGE);
+        AA3Color.put(AA3.PCA, RendererCache.ORANGE);
+        AA3Color.put(AA3.FOR, RendererCache.RED);
+        AA3Color.put(AA3.ACE, RendererCache.RED);
+        AA3Color.put(AA3.NH2, RendererCache.BLUE);
+        AA3Color.put(AA3.NME, RendererCache.BLUE);
+        AA3Color.put(AA3.UNK, RendererCache.MAGENTA);
+
+        SSTypeColor.put(SSType.NONE, RendererCache.WHITE);
+        SSTypeColor.put(SSType.SHEET, RendererCache.PINK);
+        SSTypeColor.put(SSType.HELIX, RendererCache.BLUE);
+        SSTypeColor.put(SSType.TURN, RendererCache.YELLOW);
+
+        Ramachandran[0] = "Default (Extended)       [-135.0  135.0]";
+        Ramachandran[1] = "Alpha Helix (R)          [ -57.0  -47.0]";
+        Ramachandran[2] = "Alpha Helix (L)          [  57.0   47.0]";
+        Ramachandran[3] = "3-10 Helix               [ -49.0  -26.0]";
+        Ramachandran[4] = "Pi Helix                 [ -57.0  -70.0]";
+        Ramachandran[5] = "Polyproline II Helix     [ -79.0  149.0]";
+        Ramachandran[6] = "Parallel Beta Strand     [-119.0  113.0]";
+        Ramachandran[7] = "Antiparallel Beta Strand [-139.0  135.0]";
+        Ramachandran[8] = "Beta-Hairpin 2' (i+1)    [  90.0 -170.0]";
+        Ramachandran[9] = "Beta-Hairpin 2' (i+2)    [ -80.0  -10.0]";
+        Ramachandran[10] = "Beta-Hairpin 1' (i+1)    [  57.0   47.0]";
+        Ramachandran[11] = "Beta-Hairpin 1' (i+2)    [  57.0   47.0]";
+        Ramachandran[12] = "Beta-Hairpin 1  (i+1)    [ -57.0  -47.0]";
+        Ramachandran[13] = "Beta-Hairpin 1  (i+2)    [ -57.0  -47.0]";
+        Ramachandran[14] = "Beta-Hairpin 1  (i+3)    [  90.0 -170.0]";
+        Ramachandran[15] = "Beta-Hairpin 3' (i+1)    [  57.0   47.0]";
+        Ramachandran[16] = "Beta-Hairpin 3' (i+2)    [ -80.0  -10.0]";
+    }
 
     /**
-     * The location of a residue within a chain.
+     * Residue type.
      */
-    public enum ResiduePosition {
-
-        FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
-    }
-
-    public enum AA {
-
-        GLYCINE, ALANINE, VALINE, LEUCINE, ISOLEUCINE, SERINE, THREONINE,
-        CYSTEINE, PROLINE, PHENYLALANINE, TYROSINE, TRYPTOPHAN, ASPARTATE,
-        ASPARAGINE, GLUTAMATE, GLUTAMINE, METHIONINE, LYSINE, ARGININE,
-        HISTIDINE
-    }
-
-    public enum AA1 {
-
-        G, A, V, L, I, S, T, C, P, F, Y, W, D, N, E, Q, M, K, R, H, U, Z, O, B,
-        J, f, a, n, m, X
-    }
-
-    public enum AA3 {
-
-        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, PRO, PHE, TYR, TRP, ASP, ASN,
-        GLU, GLN, MET, LYS, ARG, HIS, HID, HIE, ORN, AIB, PCA, FOR, ACE, NH2,
-        NME, UNK, ASH, GLH, LYD, CYD, TYD
-    }
-
-    public enum NA {
-
-        ADENINE, CYTOSINE, GUANINE, URACIL, DEOXYADENINE, DEOXYCYTOSINE,
-        DEOXYGUANINE, THYMINE, MONOPHOSPHATE, DIPHOSPHATE, TRIPHOSPHATE
-    }
-
-    public enum NA1 {
-
-        A, C, G, U, D, I, B, T, P, Q, R, X
-    }
-
-    public enum NA3 {
-
-        A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
-
-        /**
-         * Best-guess parse of a String to an NA3.
-         *
-         * @param name Parse to NA3.
-         * @return Corresponding NA3.
-         * @throws IllegalArgumentException For 'DU', which has no implemented NA3.
-         */
-        public static NA3 parse(String name) throws IllegalArgumentException {
-            // Only semi-abnormal cases: THY parses to DT instead of T, and DU throws an exception.
-            switch (name.toUpperCase()) {
-                case "ADE":
-                case "A":
-                    return A;
-                case "CYT":
-                case "C":
-                    return C;
-                case "GUA":
-                case "G":
-                    return G;
-                case "URI":
-                case "U":
-                    return U;
-                case "DAD":
-                case "DA":
-                    return DA;
-                case "DCY":
-                case "DC":
-                    return DC;
-                case "DGU":
-                case "DG":
-                    return DG;
-                case "DTY":
-                case "THY":
-                case "DT":
-                    return DT;
-                case "DU":
-                    throw new IllegalArgumentException(" No NA3 value exists for deoxy-uracil!");
-                case "MPO":
-                    return MPO;
-                case "DPO":
-                    return DPO;
-                case "TPO":
-                    return TPO;
-                default:
-                    return UNK;
-            }
-        }
-    }
-
-    public enum ResidueType {
-
-        NA, AA, UNK
-    }
-
-    public enum SSType {
-
-        NONE, HELIX, SHEET, TURN
-    }
-
+    ResidueType residueType;
     /**
      * The residue number of this residue in a chain.
      */
@@ -185,10 +227,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
      * Secondary structure type.
      */
     private SSType ssType = SSType.NONE;
-    /**
-     * Residue type.
-     */
-    ResidueType residueType;
     /**
      * The rotamers for this residue.
      */
@@ -224,15 +262,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
      * TODO: Add O3' coordinates for the DNA C3'-exo configuration.
      */
     private double[] O3sNorthCoords, O3sSouthCoords, C1sCoords, O4sCoords, C4sCoords;
-
-    /**
-     * Compare residues first on seg ID, then residue number, then residue type, then name.
-     */
-    private static final Comparator<Residue> resComparator =
-            Comparator.comparing(Residue::getSegID).
-            thenComparingInt(Residue::getResidueNumber).
-            thenComparing(Residue::getResidueType).
-            thenComparing(Residue::getName);
 
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
@@ -306,6 +335,401 @@ public class Residue extends MSGroup implements Comparable<Residue> {
         residueType = rt;
         assignResidueType();
         finalize(true, forceField);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Allows adding Atoms to the Residue.
+     */
+    @Override
+    public MSNode addMSNode(MSNode o) {
+        Atom currentAtom = null;
+        if (o instanceof Atom) {
+            Atom newAtom = (Atom) o;
+            Character newAlt = newAtom.getAltLoc();
+            MSNode atoms = getAtomNode();
+            currentAtom = (Atom) atoms.contains(newAtom);
+            if (currentAtom == null) {
+                currentAtom = newAtom;
+
+                currentAtom.setResName(getName());
+                currentAtom.setResidueNumber(resNumber);
+
+                atoms.add(newAtom);
+                setFinalized(false);
+            } else {
+                // Allow overwriting of the root alternate conformer (' ' or 'A').
+                Character currentAlt = currentAtom.getAltLoc();
+                if (currentAlt.equals(' ') || currentAlt.equals('A')) {
+                    if (!newAlt.equals(' ') && !newAlt.equals('A')) {
+                        newAtom.setXyzIndex(currentAtom.getXyzIndex());
+                        atoms.remove(currentAtom);
+                        currentAtom = newAtom;
+
+                        currentAtom.setResName(getName());
+                        currentAtom.setResidueNumber(resNumber);
+
+                        atoms.add(currentAtom);
+                        setFinalized(false);
+                    }
+                }
+            }
+        } else {
+            logger.warning("Only an Atom can be added to a Residue.");
+        }
+        return currentAtom;
+    }
+
+    @Override
+    public int compareTo(Residue o) {
+        if (this.equals(o)) {
+            return 0;
+        }
+        return resComparator.compare(this, o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void drawLabel(Canvas3D canvas, J3DGraphics2D g2d, Node node) {
+        if (RendererCache.labelResidues) {
+            double[] d = getCenter();
+            point3d.x = d[0];
+            point3d.y = d[1];
+            point3d.z = d[2];
+            RendererCache.getScreenCoordinate(canvas, node, point3d, point2d);
+            g2d.drawString(getName(), (float) point2d.x, (float) point2d.y);
+        }
+        if (RendererCache.labelAtoms) {
+            super.drawLabel(canvas, g2d, node);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Residue residue = (Residue) o;
+        return Objects.equals(segID, residue.segID) &&
+                Objects.equals(getResidueNumber(), residue.getResidueNumber()) &&
+                residueType == residue.residueType &&
+                Objects.equals(getName(), residue.getName());
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The Finalize method should be called once all atoms have been added to
+     * the Residue. Geometry objects (Bonds, Angles, etc) are then formed,
+     * followed by a determination of under-constrained (Dangeling) atoms.
+     */
+    @Override
+    public void finalize(boolean finalizeGeometry, ForceField forceField) {
+        setFinalized(false);
+        getAtomNode().setName("Atoms (" + getAtomList().size() + ")");
+        if (finalizeGeometry) {
+            assignBondedTerms(forceField);
+            removeLeaves();
+        }
+        setCenter(getMultiScaleCenter(false));
+        setFinalized(true);
+    }
+
+    /**
+     * <p>getAminoAcid3.</p>
+     *
+     * @return a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+     */
+    public AminoAcid3 getAminoAcid3() {
+        if (this.residueType != ResidueType.AA) {
+            throw new IllegalArgumentException(String.format(" This residue is "
+                    + "not an amino acid: %s", this.toString()));
+        } else if (aa == AA3.UNK) {
+            logger.fine(String.format("UNK stored for residue with name: %s", getName()));
+            return AminoAcid3.UNK;
+        }
+        return AminoAcid3.valueOf(getName());
+    }
+
+    /**
+     * Returns a list of backbone atoms; for our purposes, nucleic acid backbone
+     * atoms are those of the nucleobase.
+     *
+     * @return ArrayList of backbone (or nucleobase) atoms.
+     */
+    public ArrayList<Atom> getBackboneAtoms() {
+        ArrayList<Atom> atoms = getAtomList();
+        ArrayList<Atom> ret;
+        switch (residueType) {
+            case NA:
+                ret = new ArrayList<>(atoms);
+                for (Atom atom : atoms) {
+                    String name = atom.getName().toUpperCase();
+                    if (name.contains("\'") || name.equals("P") || name.startsWith("OP") || name.equals("H5T")
+                            || name.equals("H3T")) {
+                        ret.remove(atom);
+                    }
+                }
+                return ret;
+            case AA:
+                ret = new ArrayList<>();
+                tryAddAtom(ret, "N");
+                tryAddAtom(ret, "CA");
+                tryAddAtom(ret, "C");
+                tryAddAtom(ret, "O");
+                tryAddAtom(ret, "OXT"); // C-terminal residues
+                tryAddAtom(ret, "OT2"); // Probably alternate name for OXT.
+                tryAddAtom(ret, "H1"); // N-terminal residues
+                tryAddAtom(ret, "H2");
+                tryAddAtom(ret, "H3");
+                tryAddAtom(ret, "H");
+                tryAddAtom(ret, "HA");
+                tryAddAtom(ret, "HA2"); // Glycines
+                tryAddAtom(ret, "HA3");
+                return ret;
+            default:
+                return new ArrayList<>(1); // Return empty list.
+        }
+    }
+
+    /**
+     * Returns this Residues Parent Polymer name.
+     *
+     * @return a {@link java.lang.Character} object.
+     */
+    public Character getChainID() {
+        return chainID;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>chainID</code>.</p>
+     *
+     * @param c a {@link java.lang.Character} object.
+     */
+    public void setChainID(Character c) {
+        chainID = c;
+
+        for (Atom atom : getAtomList()) {
+            atom.setChainID(c);
+        }
+    }
+
+    /**
+     * Returns the Residue bonded to this Residue at this Residue's 3' or
+     * C-terminal end. Any use of this method to add Residues to a sliding
+     * window or similar MUST not add that residue if that residue has no
+     * Rotamers, as several algorithms (such as the distance matrix) assume that
+     * all Residues being optimized have Rotamers.
+     *
+     * @return The next Residue.
+     */
+    public Residue getNextResidue() {
+        switch (residueType) {
+            case AA: {
+                Atom carbon = (Atom) getAtomNode("C");
+                if (carbon == null) {
+                    return null;
+                }
+                ArrayList<Bond> bonds = carbon.getBonds();
+                for (Bond b : bonds) {
+                    Atom other = b.get1_2(carbon);
+                    if (other.getName().equalsIgnoreCase("N")) {
+                        return (Residue) other.getParent().getParent();
+                    }
+                }
+                break;
+            }
+            case NA:
+                Atom oxygen = (Atom) getAtomNode("O3\'");
+                if (oxygen == null) {
+                    return null;
+                }
+                ArrayList<Bond> bonds = oxygen.getBonds();
+                for (Bond b : bonds) {
+                    Atom other = b.get1_2(oxygen);
+                    if (other.getName().equalsIgnoreCase("P")) {
+                        return (Residue) other.getParent().getParent();
+                    }
+                }
+                break;
+            default:
+                return null;
+        }
+        return null;
+        // Will generally indicate that you passed in a chain-terminal residue.
+    }
+
+    /**
+     * <p>getNucleicAcid3.</p>
+     *
+     * @return a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
+     */
+    public NucleicAcid3 getNucleicAcid3() {
+        if (this.residueType != ResidueType.NA) {
+            throw new IllegalArgumentException(String.format(" This residue is "
+                    + "not a nucleic acid: %s", this.toString()));
+        } else if (na == NA3.UNK) {
+            return NucleicAcid3.UNK;
+        }
+
+        try {
+            return NucleicAcid3.valueOf(getName());
+        } catch (Exception e) {
+            return NucleicAcid3.UNK;
+        }
+    }
+
+    /**
+     * <p>Returns the NucleicAcid3 corresponding to this Residue, with additional robust checking for 1- or 2-letter names.
+     * </p>
+     *
+     * @param matchShortName Try to match 1- or 2-letter names (e.g. A to ADE).
+     * @return a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
+     */
+    public NucleicAcid3 getNucleicAcid3(boolean matchShortName) {
+        NucleicAcid3 na3 = getNucleicAcid3();
+        if (na3 == NucleicAcid3.UNK && matchShortName) {
+            switch (getName()) {
+                case "A":
+                    return NucleicAcid3.ADE;
+                case "C":
+                    return NucleicAcid3.CYT;
+                case "G":
+                    return NucleicAcid3.GUA;
+                case "T":
+                    return NucleicAcid3.THY;
+                case "U":
+                    return NucleicAcid3.URI;
+                case "DA":
+                    return NucleicAcid3.DAD;
+                case "DC":
+                    return NucleicAcid3.DCY;
+                case "DG":
+                    return NucleicAcid3.DGU;
+                case "DT":
+                    return NucleicAcid3.DTY;
+                case "DU":
+                    throw new IllegalArgumentException(" No NucleicAcid3 enum exists for DU (presumed to be deoxy-uracil)!");
+            }
+        }
+        return na3;
+    }
+
+    /**
+     * Returns the Residue bonded to this Residue at this Residue's 5' or
+     * N-terminal end. Any use of this method to add Residues to a sliding
+     * window or similar MUST not add that residue if that residue has no
+     * Rotamers, as several algorithms (such as the distance matrix) assume that
+     * all Residues being optimized have Rotamers.
+     *
+     * @return The previous Residue.
+     */
+    public Residue getPreviousResidue() {
+        switch (residueType) {
+            case AA: {
+                Atom nitrogen = (Atom) getAtomNode("N");
+                if (nitrogen == null) {
+                    return null;
+                }
+                ArrayList<Bond> bonds = nitrogen.getBonds();
+                for (Bond b : bonds) {
+                    Atom other = b.get1_2(nitrogen);
+                    if (other.getName().equalsIgnoreCase("C")) {
+                        return (Residue) other.getParent().getParent();
+                    }
+                }
+                break;
+            }
+            case NA:
+                Atom phosphate = (Atom) getAtomNode("P");
+                if (phosphate == null) {
+                    return null;
+                }
+                ArrayList<Bond> bonds = phosphate.getBonds();
+                for (Bond b : bonds) {
+                    Atom other = b.get1_2(phosphate);
+                    if (other.getName().equalsIgnoreCase("O3\'")) {
+                        return (Residue) other.getParent().getParent();
+                    }
+                }
+                break;
+            default:
+                return null;
+        }
+        return null;
+        // Will generally indicate that you passed in a chain-starting residue.
+    }
+
+    /**
+     * Returns a reference Atom for a Residue, primarily intended for rough
+     * distance calculations. This atom should be roughly centrally located
+     * within the residue, and be invariant.
+     *
+     * @return A reference Atom.
+     */
+    public Atom getReferenceAtom() {
+        Atom atom = null;
+        switch (this.getResidueType()) {
+            case AA:
+                atom = (Atom) this.getAtomNode("CA");
+                break;
+            case NA:
+                // If pyrimidine, atom will be N1.  Else, if purine,
+                // N1 will return null, so grab N9.
+                atom = (Atom) this.getAtomNode("N1");
+                if (atom == null) {
+                    atom = (Atom) this.getAtomNode("N9");
+                }
+                break;
+            default:
+                break;
+        }
+        if (atom == null) {
+            atom = (Atom) this.getAtomNode(0);
+        }
+        return atom;
+    }
+
+    /**
+     * Returns this Residue's sequence number.
+     *
+     * @return a int.
+     */
+    public int getResidueNumber() {
+        return resNumber;
+    }
+
+    /**
+     * <p>Getter for the field <code>residueType</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.Residue.ResidueType} object.
+     */
+    public ResidueType getResidueType() {
+        return residueType;
+    }
+
+    /**
+     * <p>getRotamer.</p>
+     *
+     * @return a {@link ffx.potential.bonded.Rotamer} object.
+     */
+    public Rotamer getRotamer() {
+        return currentRotamer;
+    }
+
+    /**
+     * <p>setRotamer.</p>
+     *
+     * @param rotamer a {@link ffx.potential.bonded.Rotamer} object.
+     */
+    public void setRotamer(Rotamer rotamer) {
+        this.currentRotamer = rotamer;
     }
 
     /**
@@ -410,187 +834,13 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
 
     /**
-     * <p>Getter for the field <code>residueType</code>.</p>
+     * <p>
+     * Getter for the field <code>segID</code>.</p>
      *
-     * @return a {@link ffx.potential.bonded.Residue.ResidueType} object.
+     * @return a {@link java.lang.String} object.
      */
-    public ResidueType getResidueType() {
-        return residueType;
-    }
-
-    /**
-     * Returns the Residue bonded to this Residue at this Residue's 3' or
-     * C-terminal end. Any use of this method to add Residues to a sliding
-     * window or similar MUST not add that residue if that residue has no
-     * Rotamers, as several algorithms (such as the distance matrix) assume that
-     * all Residues being optimized have Rotamers.
-     *
-     * @return The next Residue.
-     */
-    public Residue getNextResidue() {
-        switch (residueType) {
-            case AA: {
-                Atom carbon = (Atom) getAtomNode("C");
-                if (carbon == null) {
-                    return null;
-                }
-                ArrayList<Bond> bonds = carbon.getBonds();
-                for (Bond b : bonds) {
-                    Atom other = b.get1_2(carbon);
-                    if (other.getName().equalsIgnoreCase("N")) {
-                        return (Residue) other.getParent().getParent();
-                    }
-                }
-                break;
-            }
-            case NA:
-                Atom oxygen = (Atom) getAtomNode("O3\'");
-                if (oxygen == null) {
-                    return null;
-                }
-                ArrayList<Bond> bonds = oxygen.getBonds();
-                for (Bond b : bonds) {
-                    Atom other = b.get1_2(oxygen);
-                    if (other.getName().equalsIgnoreCase("P")) {
-                        return (Residue) other.getParent().getParent();
-                    }
-                }
-                break;
-            default:
-                return null;
-        }
-        return null;
-        // Will generally indicate that you passed in a chain-terminal residue.
-    }
-
-    /**
-     * Returns the Residue bonded to this Residue at this Residue's 5' or
-     * N-terminal end. Any use of this method to add Residues to a sliding
-     * window or similar MUST not add that residue if that residue has no
-     * Rotamers, as several algorithms (such as the distance matrix) assume that
-     * all Residues being optimized have Rotamers.
-     *
-     * @return The previous Residue.
-     */
-    public Residue getPreviousResidue() {
-        switch (residueType) {
-            case AA: {
-                Atom nitrogen = (Atom) getAtomNode("N");
-                if (nitrogen == null) {
-                    return null;
-                }
-                ArrayList<Bond> bonds = nitrogen.getBonds();
-                for (Bond b : bonds) {
-                    Atom other = b.get1_2(nitrogen);
-                    if (other.getName().equalsIgnoreCase("C")) {
-                        return (Residue) other.getParent().getParent();
-                    }
-                }
-                break;
-            }
-            case NA:
-                Atom phosphate = (Atom) getAtomNode("P");
-                if (phosphate == null) {
-                    return null;
-                }
-                ArrayList<Bond> bonds = phosphate.getBonds();
-                for (Bond b : bonds) {
-                    Atom other = b.get1_2(phosphate);
-                    if (other.getName().equalsIgnoreCase("O3\'")) {
-                        return (Residue) other.getParent().getParent();
-                    }
-                }
-                break;
-            default:
-                return null;
-        }
-        return null;
-        // Will generally indicate that you passed in a chain-starting residue.
-    }
-
-    /**
-     * Returns a reference Atom for a Residue, primarily intended for rough
-     * distance calculations. This atom should be roughly centrally located
-     * within the residue, and be invariant.
-     *
-     * @return A reference Atom.
-     */
-    public Atom getReferenceAtom() {
-        Atom atom = null;
-        switch (this.getResidueType()) {
-            case AA:
-                atom = (Atom) this.getAtomNode("CA");
-                break;
-            case NA:
-                // If pyrimidine, atom will be N1.  Else, if purine,
-                // N1 will return null, so grab N9.
-                atom = (Atom) this.getAtomNode("N1");
-                if (atom == null) {
-                    atom = (Atom) this.getAtomNode("N9");
-                }
-                break;
-            default:
-                break;
-        }
-        if (atom == null) {
-            atom = (Atom) this.getAtomNode(0);
-        }
-        return atom;
-    }
-
-    /**
-     * <p>storeState.</p>
-     *
-     * @return a {@link ffx.potential.bonded.ResidueState} object.
-     */
-    public ResidueState storeState() {
-        return new ResidueState(this, this);
-    }
-
-    /**
-     * <p>revertState.</p>
-     *
-     * @param state a {@link ffx.potential.bonded.ResidueState} object.
-     */
-    public void revertState(ResidueState state) {
-        List<Atom> atomList = getAtomList();
-        for (Atom atom : atomList) {
-            atom.moveTo(state.getAtomCoords(atom));
-        }
-    }
-
-    /**
-     * <p>storeCoordinateArray.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    public double[][] storeCoordinateArray() {
-        List<Atom> atomList = getAtomList();
-        int nAtoms = atomList.size();
-        double[][] coords = new double[nAtoms][3];
-        int i = 0;
-        for (Atom atom : atomList) {
-            atom.getXYZ(coords[i++]);
-        }
-        return coords;
-    }
-
-    /**
-     * <p>setRotamer.</p>
-     *
-     * @param rotamer a {@link ffx.potential.bonded.Rotamer} object.
-     */
-    public void setRotamer(Rotamer rotamer) {
-        this.currentRotamer = rotamer;
-    }
-
-    /**
-     * <p>getRotamer.</p>
-     *
-     * @return a {@link ffx.potential.bonded.Rotamer} object.
-     */
-    public Rotamer getRotamer() {
-        return currentRotamer;
+    public String getSegID() {
+        return segID;
     }
 
     /**
@@ -634,78 +884,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
 
     /**
-     * <p>getAminoAcid3.</p>
-     *
-     * @return a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
-     */
-    public AminoAcid3 getAminoAcid3() {
-        if (this.residueType != ResidueType.AA) {
-            throw new IllegalArgumentException(String.format(" This residue is "
-                    + "not an amino acid: %s", this.toString()));
-        } else if (aa == AA3.UNK) {
-            logger.fine(String.format("UNK stored for residue with name: %s", getName()));
-            return AminoAcid3.UNK;
-        }
-        return AminoAcid3.valueOf(getName());
-    }
-
-    /**
-     * <p>getNucleicAcid3.</p>
-     *
-     * @return a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
-     */
-    public NucleicAcid3 getNucleicAcid3() {
-        if (this.residueType != ResidueType.NA) {
-            throw new IllegalArgumentException(String.format(" This residue is "
-                    + "not a nucleic acid: %s", this.toString()));
-        } else if (na == NA3.UNK) {
-            return NucleicAcid3.UNK;
-        }
-
-        try {
-            return NucleicAcid3.valueOf(getName());
-        } catch (Exception e) {
-            return NucleicAcid3.UNK;
-        }
-    }
-
-    /**
-     * <p>Returns the NucleicAcid3 corresponding to this Residue, with additional robust checking for 1- or 2-letter names.
-     * </p>
-     *
-     * @param matchShortName Try to match 1- or 2-letter names (e.g. A to ADE).
-     * @return a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
-     */
-    public NucleicAcid3 getNucleicAcid3(boolean matchShortName) {
-        NucleicAcid3 na3 = getNucleicAcid3();
-        if (na3 == NucleicAcid3.UNK && matchShortName) {
-            switch (getName()) {
-                case "A":
-                    return NucleicAcid3.ADE;
-                case "C":
-                    return NucleicAcid3.CYT;
-                case "G":
-                    return NucleicAcid3.GUA;
-                case "T":
-                    return NucleicAcid3.THY;
-                case "U":
-                    return NucleicAcid3.URI;
-                case "DA":
-                    return NucleicAcid3.DAD;
-                case "DC":
-                    return NucleicAcid3.DCY;
-                case "DG":
-                    return NucleicAcid3.DGU;
-                case "DT":
-                    return NucleicAcid3.DTY;
-                case "DU":
-                    throw new IllegalArgumentException(" No NucleicAcid3 enum exists for DU (presumed to be deoxy-uracil)!");
-            }
-        }
-        return na3;
-    }
-
-    /**
      * Returns a list of atoms liable to change during dead-end elimination
      * repacking. For ordinary amino acids: side chain atoms. For ordinary
      * nucleic acids: sugar/phosphate backbone atoms. MultiResidue over-rides
@@ -718,44 +896,11 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
 
     /**
-     * Returns a list of backbone atoms; for our purposes, nucleic acid backbone
-     * atoms are those of the nucleobase.
-     *
-     * @return ArrayList of backbone (or nucleobase) atoms.
+     * {@inheritDoc}
      */
-    public ArrayList<Atom> getBackboneAtoms() {
-        ArrayList<Atom> atoms = getAtomList();
-        ArrayList<Atom> ret;
-        switch (residueType) {
-            case NA:
-                ret = new ArrayList<>(atoms);
-                for (Atom atom : atoms) {
-                    String name = atom.getName().toUpperCase();
-                    if (name.contains("\'") || name.equals("P") || name.startsWith("OP") || name.equals("H5T")
-                            || name.equals("H3T")) {
-                        ret.remove(atom);
-                    }
-                }
-                return ret;
-            case AA:
-                ret = new ArrayList<>();
-                tryAddAtom(ret, "N");
-                tryAddAtom(ret, "CA");
-                tryAddAtom(ret, "C");
-                tryAddAtom(ret, "O");
-                tryAddAtom(ret, "OXT"); // C-terminal residues
-                tryAddAtom(ret, "OT2"); // Probably alternate name for OXT.
-                tryAddAtom(ret, "H1"); // N-terminal residues
-                tryAddAtom(ret, "H2");
-                tryAddAtom(ret, "H3");
-                tryAddAtom(ret, "H");
-                tryAddAtom(ret, "HA");
-                tryAddAtom(ret, "HA2"); // Glycines
-                tryAddAtom(ret, "HA3");
-                return ret;
-            default:
-                return new ArrayList<>(1); // Return empty list.
-        }
+    @Override
+    public int hashCode() {
+        return Objects.hash(segID, getResidueNumber(), residueType, getName());
     }
 
     /**
@@ -806,30 +951,66 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
 
     /**
-     * Returns this Residues Parent Polymer name.
-     *
-     * @return a {@link java.lang.Character} object.
-     */
-    public Character getChainID() {
-        return chainID;
-    }
-
-    /**
-     * Returns this Residue's sequence number.
-     *
-     * @return a int.
-     */
-    public int getResidueNumber() {
-        return resNumber;
-    }
-
-    /**
      * <p>
      * printSideChainCOM</p>
      */
     public void logSideChainCOM() {
         double[] com = this.getSideChainCOM();
         logger.info(String.format(" %s %8.3f %8.3f %8.3f ", getName(), com[0], com[1], com[2]));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Prints "Residue Number: x" to stdout.
+     */
+    @Override
+    public void print() {
+        logger.info(" " + toString());
+        for (Atom a : getAtomNode().getAtomList()) {
+            a.print();
+        }
+
+    }
+
+    /**
+     * <p>revertState.</p>
+     *
+     * @param state a {@link ffx.potential.bonded.ResidueState} object.
+     */
+    public void revertState(ResidueState state) {
+        List<Atom> atomList = getAtomList();
+        for (Atom atom : atomList) {
+            atom.moveTo(state.getAtomCoords(atom));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setColor(RendererCache.ColorModel newColorModel, Color3f color, Material mat) {
+// If Color by Residue, pass this Residue's Color
+        if (newColorModel == RendererCache.ColorModel.RESIDUE) {
+            switch (residueType) {
+                case AA:
+                    color = AA3Color.get(aa);
+                    break;
+                case NA:
+                    color = NA3Color.get(na);
+                    break;
+                default:
+                    color = null;
+            }
+            if (color == null) {
+                return;
+            }
+            mat = RendererCache.materialFactory(color);
+        } else if (newColorModel == RendererCache.ColorModel.STRUCTURE) {
+            color = SSTypeColor.get(ssType);
+            mat = RendererCache.materialFactory(color);
+        }
+        super.setColor(newColorModel, color, mat);
     }
 
     /**
@@ -846,27 +1027,28 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
 
     /**
-     * <p>
-     * Setter for the field <code>chainID</code>.</p>
+     * <p>storeCoordinateArray.</p>
      *
-     * @param c a {@link java.lang.Character} object.
+     * @return an array of {@link double} objects.
      */
-    public void setChainID(Character c) {
-        chainID = c;
-
-        for (Atom atom : getAtomList()) {
-            atom.setChainID(c);
+    public double[][] storeCoordinateArray() {
+        List<Atom> atomList = getAtomList();
+        int nAtoms = atomList.size();
+        double[][] coords = new double[nAtoms][3];
+        int i = 0;
+        for (Atom atom : atomList) {
+            atom.getXYZ(coords[i++]);
         }
+        return coords;
     }
 
     /**
-     * <p>
-     * Getter for the field <code>segID</code>.</p>
+     * <p>storeState.</p>
      *
-     * @return a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.bonded.ResidueState} object.
      */
-    public String getSegID() {
-        return segID;
+    public ResidueState storeState() {
+        return new ResidueState(this, this);
     }
 
     /**
@@ -888,6 +1070,119 @@ public class Residue extends MSGroup implements Comparable<Residue> {
         }
         sb.append(toString());
         return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        if (shortString == null) {
+            shortString = "" + resNumber + "-" + getName();
+        }
+        return shortString;
+    }
+
+    /**
+     * The location of a residue within a chain.
+     */
+    public enum ResiduePosition {
+
+        FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
+    }
+
+    public enum AA {
+
+        GLYCINE, ALANINE, VALINE, LEUCINE, ISOLEUCINE, SERINE, THREONINE,
+        CYSTEINE, PROLINE, PHENYLALANINE, TYROSINE, TRYPTOPHAN, ASPARTATE,
+        ASPARAGINE, GLUTAMATE, GLUTAMINE, METHIONINE, LYSINE, ARGININE,
+        HISTIDINE
+    }
+
+    public enum AA1 {
+
+        G, A, V, L, I, S, T, C, P, F, Y, W, D, N, E, Q, M, K, R, H, U, Z, O, B,
+        J, f, a, n, m, X
+    }
+
+    public enum AA3 {
+
+        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, PRO, PHE, TYR, TRP, ASP, ASN,
+        GLU, GLN, MET, LYS, ARG, HIS, HID, HIE, ORN, AIB, PCA, FOR, ACE, NH2,
+        NME, UNK, ASH, GLH, LYD, CYD, TYD
+    }
+
+    public enum NA {
+
+        ADENINE, CYTOSINE, GUANINE, URACIL, DEOXYADENINE, DEOXYCYTOSINE,
+        DEOXYGUANINE, THYMINE, MONOPHOSPHATE, DIPHOSPHATE, TRIPHOSPHATE
+    }
+
+    public enum NA1 {
+
+        A, C, G, U, D, I, B, T, P, Q, R, X
+    }
+
+    public enum NA3 {
+
+        A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
+
+        /**
+         * Best-guess parse of a String to an NA3.
+         *
+         * @param name Parse to NA3.
+         * @return Corresponding NA3.
+         * @throws IllegalArgumentException For 'DU', which has no implemented NA3.
+         */
+        public static NA3 parse(String name) throws IllegalArgumentException {
+            // Only semi-abnormal cases: THY parses to DT instead of T, and DU throws an exception.
+            switch (name.toUpperCase()) {
+                case "ADE":
+                case "A":
+                    return A;
+                case "CYT":
+                case "C":
+                    return C;
+                case "GUA":
+                case "G":
+                    return G;
+                case "URI":
+                case "U":
+                    return U;
+                case "DAD":
+                case "DA":
+                    return DA;
+                case "DCY":
+                case "DC":
+                    return DC;
+                case "DGU":
+                case "DG":
+                    return DG;
+                case "DTY":
+                case "THY":
+                case "DT":
+                    return DT;
+                case "DU":
+                    throw new IllegalArgumentException(" No NA3 value exists for deoxy-uracil!");
+                case "MPO":
+                    return MPO;
+                case "DPO":
+                    return DPO;
+                case "TPO":
+                    return TPO;
+                default:
+                    return UNK;
+            }
+        }
+    }
+
+    public enum ResidueType {
+
+        NA, AA, UNK
+    }
+    public enum SSType {
+
+        NONE, HELIX, SHEET, TURN
     }
 
     /**
@@ -986,170 +1281,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Allows adding Atoms to the Residue.
-     */
-    @Override
-    public MSNode addMSNode(MSNode o) {
-        Atom currentAtom = null;
-        if (o instanceof Atom) {
-            Atom newAtom = (Atom) o;
-            Character newAlt = newAtom.getAltLoc();
-            MSNode atoms = getAtomNode();
-            currentAtom = (Atom) atoms.contains(newAtom);
-            if (currentAtom == null) {
-                currentAtom = newAtom;
-
-                currentAtom.setResName(getName());
-                currentAtom.setResidueNumber(resNumber);
-
-                atoms.add(newAtom);
-                setFinalized(false);
-            } else {
-                // Allow overwriting of the root alternate conformer (' ' or 'A').
-                Character currentAlt = currentAtom.getAltLoc();
-                if (currentAlt.equals(' ') || currentAlt.equals('A')) {
-                    if (!newAlt.equals(' ') && !newAlt.equals('A')) {
-                        newAtom.setXyzIndex(currentAtom.getXyzIndex());
-                        atoms.remove(currentAtom);
-                        currentAtom = newAtom;
-
-                        currentAtom.setResName(getName());
-                        currentAtom.setResidueNumber(resNumber);
-
-                        atoms.add(currentAtom);
-                        setFinalized(false);
-                    }
-                }
-            }
-        } else {
-            logger.warning("Only an Atom can be added to a Residue.");
-        }
-        return currentAtom;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void drawLabel(Canvas3D canvas, J3DGraphics2D g2d, Node node) {
-        if (RendererCache.labelResidues) {
-            double[] d = getCenter();
-            point3d.x = d[0];
-            point3d.y = d[1];
-            point3d.z = d[2];
-            RendererCache.getScreenCoordinate(canvas, node, point3d, point2d);
-            g2d.drawString(getName(), (float) point2d.x, (float) point2d.y);
-        }
-        if (RendererCache.labelAtoms) {
-            super.drawLabel(canvas, g2d, node);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Residue residue = (Residue) o;
-        return Objects.equals(segID, residue.segID) &&
-                Objects.equals(getResidueNumber(), residue.getResidueNumber()) &&
-                residueType == residue.residueType &&
-                Objects.equals(getName(), residue.getName());
-    }
-
-    @Override
-    public int compareTo(Residue o) {
-        if (this.equals(o)) {
-            return 0;
-        }
-        return resComparator.compare(this, o);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(segID, getResidueNumber(), residueType, getName());
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The Finalize method should be called once all atoms have been added to
-     * the Residue. Geometry objects (Bonds, Angles, etc) are then formed,
-     * followed by a determination of under-constrained (Dangeling) atoms.
-     */
-    @Override
-    public void finalize(boolean finalizeGeometry, ForceField forceField) {
-        setFinalized(false);
-        getAtomNode().setName("Atoms (" + getAtomList().size() + ")");
-        if (finalizeGeometry) {
-            assignBondedTerms(forceField);
-            removeLeaves();
-        }
-        setCenter(getMultiScaleCenter(false));
-        setFinalized(true);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Prints "Residue Number: x" to stdout.
-     */
-    @Override
-    public void print() {
-        logger.info(" " + toString());
-        for (Atom a : getAtomNode().getAtomList()) {
-            a.print();
-        }
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setColor(RendererCache.ColorModel newColorModel, Color3f color, Material mat) {
-// If Color by Residue, pass this Residue's Color
-        if (newColorModel == RendererCache.ColorModel.RESIDUE) {
-            switch (residueType) {
-                case AA:
-                    color = AA3Color.get(aa);
-                    break;
-                case NA:
-                    color = NA3Color.get(na);
-                    break;
-                default:
-                    color = null;
-            }
-            if (color == null) {
-                return;
-            }
-            mat = RendererCache.materialFactory(color);
-        } else if (newColorModel == RendererCache.ColorModel.STRUCTURE) {
-            color = SSTypeColor.get(ssType);
-            mat = RendererCache.materialFactory(color);
-        }
-        super.setColor(newColorModel, color, mat);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        if (shortString == null) {
-            shortString = "" + resNumber + "-" + getName();
-        }
-        return shortString;
-    }
-
-    /**
      * <p>getSideChainCOM.</p>
      *
      * @return an array of {@link double} objects.
@@ -1228,140 +1359,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
                 }
                 break;
         }
-    }
-
-    /**
-     * Constant <code>NA1toNA3</code>
-     */
-    private static final HashMap<NA1, NA3> NA1toNA3 = new HashMap<>();
-    /**
-     * Constant <code>NA3Color</code>
-     */
-    private static final HashMap<NA3, Color3f> NA3Color = new HashMap<>();
-    /**
-     * Constant <code>AA1toAA3</code>
-     */
-    private static final HashMap<AA1, AA3> AA1toAA3 = new HashMap<>();
-    /**
-     * Constant <code>AA3toAA1</code>
-     */
-    private static final HashMap<AA3, AA1> AA3toAA1 = new HashMap<>();
-    /**
-     * Constant <code>AA3Color</code>
-     */
-    private static final HashMap<AA3, Color3f> AA3Color = new HashMap<>();
-    /**
-     * Constant <code>SSTypeColor</code>
-     */
-    private static final HashMap<SSType, Color3f> SSTypeColor = new HashMap<>();
-    /**
-     * Constant <code>Ramachandran="new String[17]"</code>
-     */
-    public static String[] Ramachandran = new String[17];
-    /**
-     * Constant <code>origAtEnd=</code>
-     */
-    static final boolean origAtEnd;
-    /**
-     * Flag to indicate use of original coordinates as a rotamer.
-     */
-    private static final boolean addOrigRot;
-    private static Point3d point3d = new Point3d();
-    private static Point2d point2d = new Point2d();
-
-    static {
-        String origAtEndStr = System.getProperty("ro-origAtEnd");
-        if (origAtEndStr != null) {
-            origAtEnd = Boolean.parseBoolean(origAtEndStr);
-        } else {
-            origAtEnd = false;
-        }
-        String origRotStr = System.getProperty("ro-addOrigRot");
-        if (origRotStr != null) {
-            addOrigRot = Boolean.parseBoolean(origRotStr);
-        } else {
-            addOrigRot = false;
-        }
-
-        AA1[] aa1 = AA1.values();
-        AA3[] aa3 = AA3.values();
-        for (int i = 0; i < AA1.values().length; i++) {
-            AA1toAA3.put(aa1[i], aa3[i]);
-            AA3toAA1.put(aa3[i], aa1[i]);
-        }
-
-        NA1[] na1 = NA1.values();
-        NA3[] na3 = NA3.values();
-        for (int i = 0; i < NA1.values().length; i++) {
-            NA1toNA3.put(na1[i], na3[i]);
-        }
-
-        NA3Color.put(NA3.A, RendererCache.RED);
-        NA3Color.put(NA3.C, RendererCache.MAGENTA);
-        NA3Color.put(NA3.G, RendererCache.BLUE);
-        NA3Color.put(NA3.U, RendererCache.YELLOW);
-        NA3Color.put(NA3.DA, RendererCache.RED);
-        NA3Color.put(NA3.DC, RendererCache.MAGENTA);
-        NA3Color.put(NA3.DG, RendererCache.BLUE);
-        NA3Color.put(NA3.DT, RendererCache.ORANGE);
-        NA3Color.put(NA3.MPO, RendererCache.GREEN);
-        NA3Color.put(NA3.DPO, RendererCache.GREEN);
-        NA3Color.put(NA3.TPO, RendererCache.GREEN);
-        NA3Color.put(NA3.UNK, RendererCache.CYAN);
-
-        AA3Color.put(AA3.ALA, RendererCache.GRAY);
-        AA3Color.put(AA3.ARG, RendererCache.BLUE);
-        AA3Color.put(AA3.ASN, RendererCache.BLUE);
-        AA3Color.put(AA3.ASP, RendererCache.RED);
-        AA3Color.put(AA3.CYS, RendererCache.YELLOW);
-        AA3Color.put(AA3.GLN, RendererCache.BLUE);
-        AA3Color.put(AA3.GLU, RendererCache.RED);
-        AA3Color.put(AA3.GLY, RendererCache.GRAY);
-        AA3Color.put(AA3.ILE, RendererCache.GRAY);
-        AA3Color.put(AA3.LEU, RendererCache.GRAY);
-        AA3Color.put(AA3.LYS, RendererCache.BLUE);
-        AA3Color.put(AA3.MET, RendererCache.YELLOW);
-        AA3Color.put(AA3.PHE, RendererCache.GREEN);
-        AA3Color.put(AA3.PRO, RendererCache.ORANGE);
-        AA3Color.put(AA3.SER, RendererCache.BLUE);
-        AA3Color.put(AA3.THR, RendererCache.BLUE);
-        AA3Color.put(AA3.TRP, RendererCache.GREEN);
-        AA3Color.put(AA3.TYR, RendererCache.GREEN);
-        AA3Color.put(AA3.VAL, RendererCache.GRAY);
-        AA3Color.put(AA3.HIS, RendererCache.BLUE);
-        AA3Color.put(AA3.HIE, RendererCache.BLUE);
-        AA3Color.put(AA3.HID, RendererCache.BLUE);
-        AA3Color.put(AA3.ORN, RendererCache.ORANGE);
-        AA3Color.put(AA3.AIB, RendererCache.ORANGE);
-        AA3Color.put(AA3.PCA, RendererCache.ORANGE);
-        AA3Color.put(AA3.FOR, RendererCache.RED);
-        AA3Color.put(AA3.ACE, RendererCache.RED);
-        AA3Color.put(AA3.NH2, RendererCache.BLUE);
-        AA3Color.put(AA3.NME, RendererCache.BLUE);
-        AA3Color.put(AA3.UNK, RendererCache.MAGENTA);
-
-        SSTypeColor.put(SSType.NONE, RendererCache.WHITE);
-        SSTypeColor.put(SSType.SHEET, RendererCache.PINK);
-        SSTypeColor.put(SSType.HELIX, RendererCache.BLUE);
-        SSTypeColor.put(SSType.TURN, RendererCache.YELLOW);
-
-        Ramachandran[0] = "Default (Extended)       [-135.0  135.0]";
-        Ramachandran[1] = "Alpha Helix (R)          [ -57.0  -47.0]";
-        Ramachandran[2] = "Alpha Helix (L)          [  57.0   47.0]";
-        Ramachandran[3] = "3-10 Helix               [ -49.0  -26.0]";
-        Ramachandran[4] = "Pi Helix                 [ -57.0  -70.0]";
-        Ramachandran[5] = "Polyproline II Helix     [ -79.0  149.0]";
-        Ramachandran[6] = "Parallel Beta Strand     [-119.0  113.0]";
-        Ramachandran[7] = "Antiparallel Beta Strand [-139.0  135.0]";
-        Ramachandran[8] = "Beta-Hairpin 2' (i+1)    [  90.0 -170.0]";
-        Ramachandran[9] = "Beta-Hairpin 2' (i+2)    [ -80.0  -10.0]";
-        Ramachandran[10] = "Beta-Hairpin 1' (i+1)    [  57.0   47.0]";
-        Ramachandran[11] = "Beta-Hairpin 1' (i+2)    [  57.0   47.0]";
-        Ramachandran[12] = "Beta-Hairpin 1  (i+1)    [ -57.0  -47.0]";
-        Ramachandran[13] = "Beta-Hairpin 1  (i+2)    [ -57.0  -47.0]";
-        Ramachandran[14] = "Beta-Hairpin 1  (i+3)    [  90.0 -170.0]";
-        Ramachandran[15] = "Beta-Hairpin 3' (i+1)    [  57.0   47.0]";
-        Ramachandran[16] = "Beta-Hairpin 3' (i+2)    [ -80.0  -10.0]";
     }
 
 }

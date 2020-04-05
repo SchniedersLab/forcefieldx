@@ -61,14 +61,6 @@ public class MSRoot extends MSNode {
      * {@inheritDoc}
      */
     @Override
-    public String toString() {
-        return "Structural Heirarchy";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public boolean equals(Object o) {
         return this == o;
     }
@@ -79,5 +71,13 @@ public class MSRoot extends MSNode {
     @Override
     public int hashCode() {
         return 7;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return "Structural Heirarchy";
     }
 }

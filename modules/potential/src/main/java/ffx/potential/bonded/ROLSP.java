@@ -58,12 +58,6 @@ import org.jogamp.java3d.BranchGroup;
 public class ROLSP extends MSNode implements ROLS, Runnable {
 
     private static final Logger logger = Logger.getLogger(ROLSP.class.getName());
-
-    public enum PARALLELMETHOD {
-
-        SETVIEW, NONE
-    }
-
     /**
      * Constant <code>GO_PARALLEL=false</code>
      */
@@ -86,7 +80,6 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
     private long threadTime = 0;
     private RendererCache.ViewModel viewModel = null;
     private List<BranchGroup> newShapes = null;
-
     /**
      * <p>
      * Constructor for ROLSP.</p>
@@ -173,5 +166,10 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
             return "Parallel Node " + threadTime + " (msec)";
         }
         return "Parallel Node";
+    }
+
+    public enum PARALLELMETHOD {
+
+        SETVIEW, NONE
     }
 }

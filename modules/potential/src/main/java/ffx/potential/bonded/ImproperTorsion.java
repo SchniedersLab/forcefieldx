@@ -48,12 +48,6 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ImproperTorsionType;
-import static ffx.numerics.math.VectorMath.cross;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalar;
-import static ffx.numerics.math.VectorMath.sum;
 
 /**
  * The ImproperTorsion class represents an Improper Torsion.
@@ -96,6 +90,168 @@ public class ImproperTorsion extends BondedTerm {
         atoms[2] = atom3;
         atoms[3] = atom4;
         setID_Key(false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compareTo(BondedTerm o) {
+        if (o == null) {
+            throw new NullPointerException();
+        }
+        if (o == this) {
+            return 0;
+        }
+        if (!o.getClass().isInstance(this)) {
+            return super.compareTo(o);
+        }
+        int this1 = atoms[1].getIndex();
+        int a1 = o.atoms[1].getIndex();
+        if (this1 < a1) {
+            return -1;
+        }
+        if (this1 > a1) {
+            return 1;
+        }
+        int this3 = atoms[3].getIndex();
+        int a3 = o.atoms[3].getIndex();
+        return Integer.compare(this3, a3);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Evaluate this Improper Torsion energy.
+     */
+    @Override
+    public double energy(boolean gradient, int threadID,
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+        energy = 0.0;
+        value = 0.0;
+        var atomA = atoms[0];
+        var atomB = atoms[1];
+        var atomC = atoms[2];
+        var atomD = atoms[3];
+        var va = atomA.getXYZ();
+        var vb = atomB.getXYZ();
+        var vc = atomC.getXYZ();
+        var vd = atomD.getXYZ();
+        var vba = vb.sub(va);
+        var vcb = vc.sub(vb);
+        var vdc = vd.sub(vc);
+        var vt = vba.X(vcb);
+        var vu = vcb.X(vdc);
+        var vtu = vt.X(vu);
+        var rt2 = vt.length2();
+        var ru2 = vu.length2();
+        var rtru = sqrt(rt2 * ru2);
+        if (rtru != 0.0) {
+            // Set the improper torsional parameters for this angle
+            var v2 = improperType.k;
+            var c2 = improperType.cos;
+            var s2 = improperType.sin;
+            // Compute the multiple angle trigonometry and the phase terms
+            var rcb = vcb.length();
+            var cosine = vt.dot(vu) / rtru;
+            var sine = vcb.dot(vtu) / (rcb * rtru);
+            var cosine2 = cosine * cosine - sine * sine;
+            var sine2 = 2.0 * cosine * sine;
+            var phi2 = 1.0 + (cosine2 * c2 + sine2 * s2);
+            var dphi2 = 2.0 * (cosine2 * s2 - sine2 * c2);
+            // Calculate improper torsion energy and master chain rule term
+            value = toDegrees(acos(cosine));
+            var desvPrefactor = units * scaleFactor;
+            var prefactor = units * scaleFactor * esvLambda;
+            energy = prefactor * (v2 * phi2);
+            var dedphi = prefactor * (v2 * dphi2);
+            if (esvTerm) {
+                setEsvDeriv(desvPrefactor * (v2 * phi2) * dedesvChain);
+            }
+            if (gradient) {
+                // Chain rule terms for first derivative components.
+                var vca = vc.sub(va);
+                var vdb = vd.sub(vb);
+                var dedt = vt.X(vcb).scaleI(dedphi / (rt2 * rcb));
+                var dedu = vu.X(vcb).scaleI(-dedphi / (ru2 * rcb));
+                // Accumulate derivatives.
+                var ia = atomA.getIndex() - 1;
+                var ib = atomB.getIndex() - 1;
+                var ic = atomC.getIndex() - 1;
+                var id = atomD.getIndex() - 1;
+                grad.add(threadID, ia, dedt.X(vcb));
+                grad.add(threadID, ib, dedu.X(vdc).addI(dedt.X(vca).scaleI(-1.0)));
+                grad.add(threadID, ic, dedu.X(vdb).scaleI(-1.0).addI(dedt.X(vba)));
+                grad.add(threadID, id, dedu.X(vcb));
+            }
+        }
+
+        return energy;
+    }
+
+    /**
+     * Log details for this Improper Torsion energy term.
+     */
+    public void log() {
+        logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s %6d-%s %6.4f %10.4f",
+                "Improper Torsion", atoms[0].getIndex(), atoms[0].getAtomType().name, atoms[1].getIndex(), atoms[1].getAtomType().name, atoms[2].getIndex(), atoms[2].getAtomType().name, atoms[3].getIndex(), atoms[3].getAtomType().name,
+                value, energy));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Overridden toString Method returns the Term's id.
+     */
+    @Override
+    public String toString() {
+        return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
+    }
+
+    private static void createWildCardImproperTorsion(Atom[] atoms, int[] classes, ImproperTorsionType type,
+                                                      double units, ArrayList<ImproperTorsion> improperTorsions) {
+        // Finalize atom ordering.
+        if (classes[3] == atoms[3].getAtomType().atomClass || type.atomClasses[3] == 0) {
+            // do nothing.
+        } else if (classes[3] == atoms[1].getAtomType().atomClass) {
+            Atom temp = atoms[3];
+            atoms[3] = atoms[1];
+            atoms[1] = temp;
+        } else {
+            Atom temp = atoms[0];
+            atoms[0] = atoms[3];
+            atoms[3] = temp;
+        }
+
+        if (classes[1] == atoms[1].getAtomType().atomClass || type.atomClasses[1] == 0) {
+            // do nothing.
+        } else if (classes[1] == atoms[0].getAtomType().atomClass) {
+            Atom temp = atoms[1];
+            atoms[1] = atoms[0];
+            atoms[0] = temp;
+        }
+
+        // One or more zero classes in the improper torsion type
+        ImproperTorsion improperTorsion = new ImproperTorsion(atoms[0], atoms[1], atoms[2], atoms[3]);
+        improperTorsion.setImproperType(type);
+        improperTorsion.units = units;
+        improperTorsions.add(improperTorsion);
+        improperTorsion.scaleFactor = 1.0 / 3.0;
+        improperTorsions.add(improperTorsion);
+
+        improperTorsion = new ImproperTorsion(atoms[1], atoms[3], atoms[2], atoms[0]);
+        improperTorsion.setImproperType(type);
+        improperTorsion.units = units;
+        improperTorsions.add(improperTorsion);
+        improperTorsion.scaleFactor = 1.0 / 3.0;
+        improperTorsions.add(improperTorsion);
+
+        improperTorsion = new ImproperTorsion(atoms[3], atoms[0], atoms[2], atoms[1]);
+        improperTorsion.setImproperType(type);
+        improperTorsion.units = units;
+        improperTorsions.add(improperTorsion);
+        improperTorsion.scaleFactor = 1.0 / 3.0;
+        improperTorsions.add(improperTorsion);
     }
 
     /**
@@ -269,52 +425,6 @@ public class ImproperTorsion extends BondedTerm {
         return improperTorsions;
     }
 
-    private static void createWildCardImproperTorsion(Atom[] atoms, int[] classes, ImproperTorsionType type,
-                                                      double units, ArrayList<ImproperTorsion> improperTorsions) {
-        // Finalize atom ordering.
-        if (classes[3] == atoms[3].getAtomType().atomClass || type.atomClasses[3] == 0) {
-            // do nothing.
-        } else if (classes[3] == atoms[1].getAtomType().atomClass) {
-            Atom temp = atoms[3];
-            atoms[3] = atoms[1];
-            atoms[1] = temp;
-        } else {
-            Atom temp = atoms[0];
-            atoms[0] = atoms[3];
-            atoms[3] = temp;
-        }
-
-        if (classes[1] == atoms[1].getAtomType().atomClass || type.atomClasses[1] == 0) {
-            // do nothing.
-        } else if (classes[1] == atoms[0].getAtomType().atomClass) {
-            Atom temp = atoms[1];
-            atoms[1] = atoms[0];
-            atoms[0] = temp;
-        }
-
-        // One or more zero classes in the improper torsion type
-        ImproperTorsion improperTorsion = new ImproperTorsion(atoms[0], atoms[1], atoms[2], atoms[3]);
-        improperTorsion.setImproperType(type);
-        improperTorsion.units = units;
-        improperTorsions.add(improperTorsion);
-        improperTorsion.scaleFactor = 1.0 / 3.0;
-        improperTorsions.add(improperTorsion);
-
-        improperTorsion = new ImproperTorsion(atoms[1], atoms[3], atoms[2], atoms[0]);
-        improperTorsion.setImproperType(type);
-        improperTorsion.units = units;
-        improperTorsions.add(improperTorsion);
-        improperTorsion.scaleFactor = 1.0 / 3.0;
-        improperTorsions.add(improperTorsion);
-
-        improperTorsion = new ImproperTorsion(atoms[3], atoms[0], atoms[2], atoms[1]);
-        improperTorsion.setImproperType(type);
-        improperTorsion.units = units;
-        improperTorsions.add(improperTorsion);
-        improperTorsion.scaleFactor = 1.0 / 3.0;
-        improperTorsions.add(improperTorsion);
-    }
-
     /**
      * Set a reference to the force field parameters for <b>this</b> Angle.
      *
@@ -322,166 +432,6 @@ public class ImproperTorsion extends BondedTerm {
      */
     private void setImproperType(ImproperTorsionType a) {
         improperType = a;
-    }
-
-    /**
-     * Log details for this Improper Torsion energy term.
-     */
-    public void log() {
-        logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s %6d-%s %6.4f %10.4f",
-                "Improper Torsion", atoms[0].getIndex(), atoms[0].getAtomType().name, atoms[1].getIndex(), atoms[1].getAtomType().name, atoms[2].getIndex(), atoms[2].getAtomType().name, atoms[3].getIndex(), atoms[3].getAtomType().name,
-                value, energy));
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Evaluate this Improper Torsion energy.
-     */
-    @Override
-    public double energy(boolean gradient, int threadID,
-                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
-        energy = 0.0;
-        value = 0.0;
-        double[] a0 = new double[3];
-        double[] a1 = new double[3];
-        double[] a2 = new double[3];
-        double[] a3 = new double[3];
-        atoms[0].getXYZ(a0);
-        atoms[1].getXYZ(a1);
-        atoms[2].getXYZ(a2);
-        atoms[3].getXYZ(a3);
-
-        // Vector from Atom 1 to Atom 0.
-        double[] v10 = new double[3];
-        // Vector from Atom 2 to Atom 1.
-        double[] v21 = new double[3];
-        // Vector from Atom 3 to Atom 2.
-        double[] v32 = new double[3];
-        diff(a1, a0, v10);
-        diff(a2, a1, v21);
-        diff(a3, a2, v32);
-
-        double[] t = new double[3];
-        double[] u = new double[3];
-        double[] tu = new double[3];
-        double[] dedu = new double[3];
-        double[] dedt = new double[3];
-        cross(v10, v21, t);
-        cross(v21, v32, u);
-        cross(t, u, tu);
-        double rt2 = dot(t, t);
-        double ru2 = dot(u, u);
-        double rtru = sqrt(rt2 * ru2);
-        if (rtru != 0.0) {
-
-            // Set the improper torsional parameters for this angle
-            double v2 = improperType.k;
-            double c2 = improperType.cos;
-            double s2 = improperType.sin;
-
-            // Compute the multiple angle trigonometry and the phase terms
-            double rcb = r(v21);
-            double cosine = dot(t, u) / rtru;
-            double sine = dot(v21, tu) / (rcb * rtru);
-            double cosine2 = cosine * cosine - sine * sine;
-            double sine2 = 2.0 * cosine * sine;
-            double phi2 = 1.0 + (cosine2 * c2 + sine2 * s2);
-            double dphi2 = 2.0 * (cosine2 * s2 - sine2 * c2);
-
-            // Calculate improper torsion energy and master chain rule term
-            value = toDegrees(acos(cosine));
-            final double desvPrefactor = units * scaleFactor;
-            final double prefactor = units * scaleFactor * esvLambda;
-            energy = prefactor * (v2 * phi2);
-            double dedphi = prefactor * (v2 * dphi2);
-            if (esvTerm) {
-                setEsvDeriv(desvPrefactor * (v2 * phi2) * dedesvChain);
-            }
-
-            if (gradient) {
-                // Vector from Atom 3 to Atom 1.
-                double[] v31 = new double[3];
-                // Vector from Atom 2 to Atom 0.
-                double[] v20 = new double[3];
-                // Chain rule terms for first derivative components.
-                diff(a2, a0, v20);
-                diff(a3, a1, v31);
-                cross(t, v21, dedt);
-                cross(u, v21, dedu);
-                scalar(dedt, dedphi / (rt2 * rcb), dedt);
-                scalar(dedu, -dedphi / (ru2 * rcb), dedu);
-                // Compute first derivative components for this angle.
-                // Gradient on atoms 0, 1, 2 & 3.
-                double[] g0 = new double[3];
-                double[] g1 = new double[3];
-                double[] g2 = new double[3];
-                double[] g3 = new double[3];
-                // Work arrays.
-                double[] g1a = new double[3];
-                double[] g2a = new double[3];
-                cross(dedt, v21, g0);
-                cross(dedt, v20, g1a);
-                cross(dedu, v32, g1);
-                scalar(g1a, -1.0, g1a);
-                sum(g1a, g1, g1);
-                cross(dedt, v10, g2a);
-                cross(dedu, v31, g2);
-                scalar(g2, -1.0, g2);
-                sum(g2a, g2, g2);
-                cross(dedu, v21, g3);
-                // Atom indices
-                int i0 = atoms[0].getIndex() - 1;
-                int i1 = atoms[1].getIndex() - 1;
-                int i2 = atoms[2].getIndex() - 1;
-                int i3 = atoms[3].getIndex() - 1;
-                // Accumulate derivatives.
-                grad.add(threadID, i0, g0[0], g0[1], g0[2]);
-                grad.add(threadID, i1, g1[0], g1[1], g1[2]);
-                grad.add(threadID, i2, g2[0], g2[1], g2[2]);
-                grad.add(threadID, i3, g3[0], g3[1], g3[2]);
-            }
-        }
-
-        return energy;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Overridden toString Method returns the Term's id.
-     */
-    @Override
-    public String toString() {
-        return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compareTo(BondedTerm o) {
-        if (o == null) {
-            throw new NullPointerException();
-        }
-        if (o == this) {
-            return 0;
-        }
-        if (!o.getClass().isInstance(this)) {
-            return super.compareTo(o);
-        }
-        int this1 = atoms[1].getIndex();
-        int a1 = o.atoms[1].getIndex();
-        if (this1 < a1) {
-            return -1;
-        }
-        if (this1 > a1) {
-            return 1;
-        }
-
-        int this3 = atoms[3].getIndex();
-        int a3 = o.atoms[3].getIndex();
-        return Integer.compare(this3, a3);
     }
 
 }

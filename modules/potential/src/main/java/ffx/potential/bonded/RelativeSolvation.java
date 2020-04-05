@@ -56,32 +56,14 @@ import ffx.potential.parameters.RelativeSolvationType;
 public class RelativeSolvation {
 
     private static final Logger logger = Logger.getLogger(RelativeSolvation.class.getName());
-
-    public enum SolvationLibrary {
-        WOLFENDEN, CABANI, EXPLICIT, GK, MACCALLUM_SPC, MACCALLUM_TIP4P, OPLS_EXPLICIT,
-        OPLS_GK, AUTO, NONE
-        /**
-         * Citations:
-         * Wolfenden et al:
-         * Wolfenden, R., Andersson, L., Cullis, P. M. and Southgate, C. C. B. (1981) AFFINITIES OF AMINO-ACID SIDE-CHAINS FOR SOLVENT WATER. Biochemistry. 20, 849-855
-         *
-         * Cabani et al:
-         * Cabani, S., Gianni, P., Mollica, V. and Lepori, L. (1981) GROUP CONTRIBUTIONS TO THE THERMODYNAMIC PROPERTIES OF NON-IONIC ORGANIC SOLUTES IN DILUTE AQUEOUS-SOLUTION. Journal of Solution Chemistry. 10, 563-595
-         *
-         * MacCallum OPLS libraries:
-         * Maccallum, J. L. and Tieleman, D. P. (2003) Calculation of the water-cyclohexane transfer free energies of neutral amino acid side-chain analogs using the OPLS all-atom force field. Journal of Computational Chemistry. 24, 1930-1935
-         */
-    }
-
-    /**
-     * Solvation library in use.
-     */
-    private SolvationLibrary solvationLibrary;
     /**
      * Look-up of non-standard energies.
      */
     private final Map<String, Double> nonStdEnergies;
-
+    /**
+     * Solvation library in use.
+     */
+    private SolvationLibrary solvationLibrary;
     /**
      * <p>Constructor for RelativeSolvation.</p>
      *
@@ -107,24 +89,6 @@ public class RelativeSolvation {
                 logger.warning(format(" Repeat relative solvation for %s", resName));
             }
         }
-    }
-
-    /**
-     * <p>Setter for the field <code>solvationLibrary</code>.</p>
-     *
-     * @param solvationLibrary a {@link ffx.potential.bonded.RelativeSolvation.SolvationLibrary} object.
-     */
-    public void setSolvationLibrary(SolvationLibrary solvationLibrary) {
-        this.solvationLibrary = solvationLibrary;
-    }
-
-    /**
-     * <p>Getter for the field <code>solvationLibrary</code>.</p>
-     *
-     * @return a {@link ffx.potential.bonded.RelativeSolvation.SolvationLibrary} object.
-     */
-    public SolvationLibrary getSolvationLibrary() {
-        return solvationLibrary;
     }
 
     /**
@@ -167,6 +131,48 @@ public class RelativeSolvation {
                     " Zero desolvation energy for residue %s: likely not in solvation library.", resName));
         }
         return energy;
+    }
+
+    /**
+     * <p>Getter for the field <code>solvationLibrary</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.RelativeSolvation.SolvationLibrary} object.
+     */
+    public SolvationLibrary getSolvationLibrary() {
+        return solvationLibrary;
+    }
+
+    /**
+     * <p>Setter for the field <code>solvationLibrary</code>.</p>
+     *
+     * @param solvationLibrary a {@link ffx.potential.bonded.RelativeSolvation.SolvationLibrary} object.
+     */
+    public void setSolvationLibrary(SolvationLibrary solvationLibrary) {
+        this.solvationLibrary = solvationLibrary;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return "Relative solvation library: " + solvationLibrary.toString();
+    }
+
+    public enum SolvationLibrary {
+        WOLFENDEN, CABANI, EXPLICIT, GK, MACCALLUM_SPC, MACCALLUM_TIP4P, OPLS_EXPLICIT,
+        OPLS_GK, AUTO, NONE
+        /**
+         * Citations:
+         * Wolfenden et al:
+         * Wolfenden, R., Andersson, L., Cullis, P. M. and Southgate, C. C. B. (1981) AFFINITIES OF AMINO-ACID SIDE-CHAINS FOR SOLVENT WATER. Biochemistry. 20, 849-855
+         *
+         * Cabani et al:
+         * Cabani, S., Gianni, P., Mollica, V. and Lepori, L. (1981) GROUP CONTRIBUTIONS TO THE THERMODYNAMIC PROPERTIES OF NON-IONIC ORGANIC SOLUTES IN DILUTE AQUEOUS-SOLUTION. Journal of Solution Chemistry. 10, 563-595
+         *
+         * MacCallum OPLS libraries:
+         * Maccallum, J. L. and Tieleman, D. P. (2003) Calculation of the water-cyclohexane transfer free energies of neutral amino acid side-chain analogs using the OPLS all-atom force field. Journal of Computational Chemistry. 24, 1930-1935
+         */
     }
 
     /**
@@ -504,14 +510,6 @@ public class RelativeSolvation {
             default:
                 return 0; // Not listed.
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "Relative solvation library: " + solvationLibrary.toString();
     }
 
 }

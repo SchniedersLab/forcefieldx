@@ -72,48 +72,47 @@ import picocli.CommandLine.Parameters
 class Solvator extends PotentialScript {
 
     /**
-     * --sFi or --solventFile specifies the file to read for the solvent.
+     * --sFi or --solventFile specifies the file to read for the solvent. There is currently no default.
      */
     @Option(names = ['--sFi', '--solventFile'], paramLabel = "water",
-            description = 'A file containing the solvent box to be used. A default will eventually be added.')
+            description = 'A file containing the solvent box to be used. There is currently no default.')
     private String solventFileName = null
 
     /**
-     * --iFi or --ionFile specifies a [optional] file to read for ion replacement. Must have a complementary
-     * .ions file, with format ReferenceAtomStart ReferenceAtomEnd Concentration [Charge]. See forcefieldx/examples/nacl.ions.
+     * --iFi or --ionFile specifies an optional file to read for ion replacement. It must have a complementary .ions file,
+     * with format ReferenceAtomStart ReferenceAtomEnd Concentration [Charge]. See forcefieldx/examples/nacl.ions.
      */
-    @Option(names = ['--iFi', '--ionFile'], paramLabel = "[ions]",
+    @Option(names = ['--iFi', '--ionFile'], paramLabel = "ions",
             description = "Name of the file containing ions. Must also have a .ions file (e.g. nacl.pdb must also have nacl.ions). Default: no ions.")
     private String ionFileName = null
 
     /**
-     * -r or --rectangular uses a rectangular prism as the output rather than a cube;
-     * this reduces overall box size, but is not recommended for simulations long enough to see solute rotation.
+     * -r or --rectangular Uses a rectangular prism as the output rather than a cube. This reduces overall box size,
+     * but is not recommended for simulations long enough to see solute rotation.
      */
-    @Option(names = ['-r', '--rectangular'], paramLabel = "false",
-            description = "Use a rectangular prism rather than a cube for solvation. Not recommended due to chance of solute rotations.")
+    @Option(names = ['-r', '--rectangular'], paramLabel = "false", defaultValue = "false",
+            description = "Use a rectangular prism rather than a cube for solvation.")
     private boolean rectangular = false
 
     /**
-     * -p or --padding sets the minimum amount of solvent padding around the solute.
+     * -p or --padding Sets the minimum amount of solvent padding around the solute.
      */
-    @Option(names = ['-p', '--padding'], paramLabel = "9.0",
-            description = "Include at least this many Angstroms of solvent around the solute in each direction.")
+    @Option(names = ['-p', '--padding'], paramLabel = "9.0", defaultValue = "9.0",
+            description = "Sets the minimum amount of solvent padding around the solute.")
     private double padding = 9.0
 
     /**
-     * -b or --boundary sets the minimum distance at which to keep solvent molecules around the solute.
+     * -b or --boundary Delete solvent molecules that infringe closer than this to the solute.
      */
-    @Option(names = ['-b', '--boundary'], paramLabel = "2.5",
+    @Option(names = ['-b', '--boundary'], paramLabel = "2.5", defaultValue = "2.5",
             description = "Delete solvent molecules that infringe closer than this to the solute.")
     private double boundary = 2.5
 
     /**
-     * --abc or --boxLengths lets you use specified unit cell vectors instead of manual calculation from solute size
-     * and boundary. This is useful when attempting to match unit cell size with a larger system.
+     * --abc or --boxLengths Specify unit cell box lengths, instead of calculating them.
      */
-    @Option(names = ['--abc', '--boxLengths'], paramLabel = "byBoundary",
-            description = "Supply comma-separated box lengths (a-axis,b-axis,c-axis) rather than calculating them.")
+    @Option(names = ['--abc', '--boxLengths'], paramLabel = "a,b,c",
+            description = "Specify a comma-separated set of unit cell box lengths, instead of calculating them (a,b,c)")
     private String manualBox = null
 
     @Option(names = ['-s', '--randomSeed'], paramLabel = "auto",
@@ -671,10 +670,8 @@ class Solvator extends PotentialScript {
 
         for (int ai = 0; ai < solventReplicas[0]; ai++) {
             xyzOffset[0] = ai * solventBoxVectors[0]
-
             for (int bi = 0; bi < solventReplicas[1]; bi++) {
                 xyzOffset[1] = bi * solventBoxVectors[1]
-
                 for (int ci = 0; ci < solventReplicas[2]; ci++) {
                     xyzOffset[2] = ci * solventBoxVectors[2]
 
@@ -700,7 +697,6 @@ class Solvator extends PotentialScript {
                         List<Atom> parentAtoms = moli.getAtomList()
                         int nMolAtoms = parentAtoms.size()
                         Atom[] newAtomArray = new Atom[nMolAtoms]
-
                         for (int atI = 0; atI < nMolAtoms; atI++) {
                             Atom parentAtom = parentAtoms.get(atI)
                             double[] newXYZ = new double[3]
@@ -710,7 +706,6 @@ class Solvator extends PotentialScript {
                             }
                             Atom newAtom = new Atom(++currXYZIndex, parentAtom, newXYZ, currResSeq, solventChain, Character.toString(solventChain))
                             logger.fine(format(" New atom %s at chain %c on residue %s-%d", newAtom, newAtom.getChainID(), newAtom.getResidueName(), newAtom.getResidueNumber()))
-
                             newAtom.setHetero(!moli instanceof Polymer)
                             newAtom.setResName(moli.getName())
                             if (newAtom.getAltLoc() == null) {

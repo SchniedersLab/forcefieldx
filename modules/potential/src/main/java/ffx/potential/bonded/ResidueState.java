@@ -110,268 +110,6 @@ public class ResidueState {
         }
     }
 
-    /**
-     * <p>Getter for the field <code>parent</code>.</p>
-     *
-     * @return a {@link ffx.potential.bonded.Residue} object.
-     */
-    public Residue getParent() {
-        return parent;
-    }
-
-    /**
-     * <p>getStateResidue.</p>
-     *
-     * @return a {@link ffx.potential.bonded.Residue} object.
-     */
-    Residue getStateResidue() {
-        return res;
-    }
-
-    /**
-     * <p>Getter for the field <code>isNeutralTerminus</code>.</p>
-     *
-     * @return a boolean.
-     */
-    boolean getIsNeutralTerminus() {
-        return isNeutralTerminus;
-    }
-
-    /**
-     * <p>Getter for the field <code>atoms</code>.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    public Atom[] getAtoms() {
-        return atoms;
-    }
-
-    /**
-     * If parameter true, returns atomic coordinates indexed by the atom list as
-     * this ResidueState was constructed; else, uses the residue's current atom
-     * list. Use with care.
-     *
-     * @param useOriginalOrder Use the original atom ordering.
-     * @return An array of coordinate arrays.
-     */
-    public double[][] getAllAtomCoords(boolean useOriginalOrder) {
-        int nAtoms = atoms.length;
-        double[][] xyz = new double[nAtoms][3];
-
-        if (useOriginalOrder) {
-            for (int i = 0; i < nAtoms; i++) {
-                double[] atXYZ = atomMap.get(atoms[i]);
-                System.arraycopy(atXYZ, 0, xyz[i], 0, 3);
-            }
-        } else {
-            List<Atom> atomList = res.getAtomList();
-            int i = 0;
-            for (Atom atom : atomList) {
-                double[] atXYZ = atomMap.get(atom);
-                System.arraycopy(atXYZ, 0, xyz[i++], 0, 3);
-            }
-        }
-
-        return xyz;
-    }
-
-    /**
-     * Returns the coordinates of the selected atom; or null if atom not contained.
-     *
-     * @param atom An Atom.
-     * @return xyz coordinates.
-     */
-    double[] getAtomCoords(Atom atom) {
-        double[] xyz = new double[3];
-        if (!atomMap.containsKey(atom)) {
-            logger.info(String.format(" Illegal call to ResidueState.getAtomCoords: atom %s not found: hashcode %d", atom, atom.hashCode()));
-            for (Atom ratom : res.getAtomList()) {
-                logger.info(String.format(" Atoms in residue: %s hashcode: %d", ratom, ratom.hashCode()));
-            }
-            for (Atom matom : atomMap.keySet()) {
-                logger.info(String.format(" Atoms in ResidueState atom cache: %s hashcode: %d", matom, matom.hashCode()));
-            }
-            logger.log(Level.SEVERE, " Error in ResidueState.getAtomCoords.", new IllegalStateException());
-        }
-        System.arraycopy(atomMap.get(atom), 0, xyz, 0, 3);
-        return xyz;
-    }
-
-    /**
-     * Resets stored coordinates to current coordinates of residue.
-     */
-    public void resetAtomicCoordinates() {
-        for (Atom atom : atoms) {
-            atom.getXYZ(atomMap.get(atom));
-        }
-    }
-
-    /**
-     * <p>storeAllCoordinates.</p>
-     *
-     * @param residueList a {@link java.util.List} object.
-     * @return an array of {@link ffx.potential.bonded.ResidueState} objects.
-     */
-    public static ResidueState[] storeAllCoordinates(List<Residue> residueList) {
-        return storeAllCoordinates(residueList.toArray(new Residue[residueList.size()]));
-    }
-
-    /**
-     * <p>storeAllCoordinates.</p>
-     *
-     * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
-     * @return an array of {@link ffx.potential.bonded.ResidueState} objects.
-     */
-    public static ResidueState[] storeAllCoordinates(Residue[] residues) {
-        int nResidues = residues.length;
-        ResidueState[] states = new ResidueState[nResidues];
-        for (int i = 0; i < nResidues; i++) {
-            states[i] = residues[i].storeState();
-        }
-        return states;
-    }
-
-    /**
-     * <p>storeAllCoordinates.</p>
-     *
-     * @param res a {@link ffx.potential.bonded.Residue} object.
-     * @return a {@link ffx.potential.bonded.ResidueState} object.
-     */
-    public static ResidueState storeAllCoordinates(Residue res) {
-        Residue[] residues = new Residue[1];
-        residues[0] = res;
-        return storeAllCoordinates(residues)[0];
-    }
-
-    /**
-     * <p>revertAllCoordinates.</p>
-     *
-     * @param res   a {@link ffx.potential.bonded.Residue} object.
-     * @param state a {@link ffx.potential.bonded.ResidueState} object.
-     */
-    public static void revertAllCoordinates(Residue res, ResidueState state) {
-        Residue residues[] = new Residue[1];
-        ResidueState states[] = new ResidueState[1];
-        residues[0] = res;
-        states[0] = state;
-        revertAllCoordinates(residues, states);
-    }
-
-    /**
-     * <p>storeAllCoordinateArrays.</p>
-     *
-     * @param residueList a {@link java.util.List} object.
-     * @return an array of {@link double} objects.
-     */
-    public static double[][][] storeAllCoordinateArrays(List<Residue> residueList) {
-        return storeAllCoordinateArrays(residueList.toArray(new Residue[residueList.size()]));
-    }
-
-    /**
-     * <p>revertAllCoordinates.</p>
-     *
-     * @param residueList a {@link java.util.List} object.
-     * @param states      an array of {@link ffx.potential.bonded.ResidueState} objects.
-     */
-    public static void revertAllCoordinates(List<Residue> residueList, ResidueState[] states) {
-        revertAllCoordinates(residueList.toArray(new Residue[residueList.size()]), states);
-    }
-
-    /**
-     * Returns a new double[nAtoms][3] with the coordinates of an array of atoms.
-     *
-     * @param atoms To store coordinates of
-     * @return Coordinates
-     */
-    public static double[][] storeAtomicCoordinates(Atom[] atoms) {
-        int nAtoms = atoms.length;
-        double[][] coords = new double[nAtoms][3];
-        for (int i = 0; i < nAtoms; i++) {
-            atoms[i].getXYZ(coords[i]);
-        }
-        return coords;
-    }
-
-    /**
-     * Uses a double[nAtoms][3] to revert the coordinates of an array of atoms.
-     * Does not check to see if the arrays are properly ordered; make sure you are
-     * using the correct arrays.
-     *
-     * @param atoms  To revert coordinates of
-     * @param coords Coordinates
-     */
-    public static void revertAtomicCoordinates(Atom[] atoms, double[][] coords) {
-        int nAtoms = atoms.length;
-        if (coords.length != nAtoms) {
-            throw new IllegalArgumentException(String.format(" Length %d of atoms "
-                    + "array does not match length %d of coordinates array", nAtoms, coords.length));
-        }
-        for (int i = 0; i < nAtoms; i++) {
-            atoms[i].setXYZ(coords[i]);
-        }
-    }
-
-    /**
-     * <p>storeAllCoordinateArrays.</p>
-     *
-     * @param residueArray an array of {@link ffx.potential.bonded.Residue} objects.
-     * @return an array of {@link double} objects.
-     */
-    private static double[][][] storeAllCoordinateArrays(Residue[] residueArray) {
-        int nResidues = residueArray.length;
-        double[][][] xyz = new double[nResidues][][];
-        for (int i = 0; i < nResidues; i++) {
-            xyz[i] = residueArray[i].storeCoordinateArray();
-        }
-        return xyz;
-    }
-
-    /**
-     * <p>revertAllCoordinates.</p>
-     *
-     * @param residueArray an array of {@link ffx.potential.bonded.Residue} objects.
-     * @param states       an array of {@link ffx.potential.bonded.ResidueState} objects.
-     */
-    private static void revertAllCoordinates(Residue[] residueArray, ResidueState[] states) {
-        int nResidues = residueArray.length;
-        if (nResidues != states.length) {
-            throw new IllegalArgumentException(String.format("Length of residue "
-                    + "array %d and residue state array %d do not match.", nResidues, states.length));
-        }
-
-        for (int i = 0; i < nResidues; i++) {
-            Residue resi = residueArray[i];
-            // If indexing did not get thrown off:
-            if (resi.equals(states[i].getParent())) {
-                resi.revertState(states[i]);
-            } else {
-                // Else must search states[]
-                boolean matchFound = false;
-                for (int j = 0; j < nResidues; j++) {
-                    if (resi.equals(states[j].getParent())) {
-                        matchFound = true;
-                        resi.revertState(states[j]);
-                        break;
-                    }
-                }
-
-                if (!matchFound) {
-                    throw new IllegalArgumentException(String.format("Could not "
-                            + "find match for residue %s among residue states array.", resi.toString()));
-                }
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return String.format(" ResidueState with parent residue %s, state residue "
-                + "%s, number of atoms %d", parent, res, atoms.length);
-    }
-
     public double compareTo(ResidueState residueState) {
         logger.info("Comparing rotamers using the compareTo method in ResidueState");
         double[][] tempx1 = new double[this.atoms.length][3];
@@ -424,5 +162,267 @@ public class ResidueState {
         double rmsd = ffx.potential.utils.Superpose.rmsd(x1, x2, mass);
 
         return rmsd;
+    }
+
+    /**
+     * If parameter true, returns atomic coordinates indexed by the atom list as
+     * this ResidueState was constructed; else, uses the residue's current atom
+     * list. Use with care.
+     *
+     * @param useOriginalOrder Use the original atom ordering.
+     * @return An array of coordinate arrays.
+     */
+    public double[][] getAllAtomCoords(boolean useOriginalOrder) {
+        int nAtoms = atoms.length;
+        double[][] xyz = new double[nAtoms][3];
+
+        if (useOriginalOrder) {
+            for (int i = 0; i < nAtoms; i++) {
+                double[] atXYZ = atomMap.get(atoms[i]);
+                System.arraycopy(atXYZ, 0, xyz[i], 0, 3);
+            }
+        } else {
+            List<Atom> atomList = res.getAtomList();
+            int i = 0;
+            for (Atom atom : atomList) {
+                double[] atXYZ = atomMap.get(atom);
+                System.arraycopy(atXYZ, 0, xyz[i++], 0, 3);
+            }
+        }
+
+        return xyz;
+    }
+
+    /**
+     * <p>Getter for the field <code>atoms</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Atom} objects.
+     */
+    public Atom[] getAtoms() {
+        return atoms;
+    }
+
+    /**
+     * <p>Getter for the field <code>parent</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
+    public Residue getParent() {
+        return parent;
+    }
+
+    /**
+     * Resets stored coordinates to current coordinates of residue.
+     */
+    public void resetAtomicCoordinates() {
+        for (Atom atom : atoms) {
+            atom.getXYZ(atomMap.get(atom));
+        }
+    }
+
+    /**
+     * <p>revertAllCoordinates.</p>
+     *
+     * @param res   a {@link ffx.potential.bonded.Residue} object.
+     * @param state a {@link ffx.potential.bonded.ResidueState} object.
+     */
+    public static void revertAllCoordinates(Residue res, ResidueState state) {
+        Residue residues[] = new Residue[1];
+        ResidueState states[] = new ResidueState[1];
+        residues[0] = res;
+        states[0] = state;
+        revertAllCoordinates(residues, states);
+    }
+
+    /**
+     * <p>revertAllCoordinates.</p>
+     *
+     * @param residueList a {@link java.util.List} object.
+     * @param states      an array of {@link ffx.potential.bonded.ResidueState} objects.
+     */
+    public static void revertAllCoordinates(List<Residue> residueList, ResidueState[] states) {
+        revertAllCoordinates(residueList.toArray(new Residue[residueList.size()]), states);
+    }
+
+    /**
+     * Uses a double[nAtoms][3] to revert the coordinates of an array of atoms.
+     * Does not check to see if the arrays are properly ordered; make sure you are
+     * using the correct arrays.
+     *
+     * @param atoms  To revert coordinates of
+     * @param coords Coordinates
+     */
+    public static void revertAtomicCoordinates(Atom[] atoms, double[][] coords) {
+        int nAtoms = atoms.length;
+        if (coords.length != nAtoms) {
+            throw new IllegalArgumentException(String.format(" Length %d of atoms "
+                    + "array does not match length %d of coordinates array", nAtoms, coords.length));
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            atoms[i].setXYZ(coords[i]);
+        }
+    }
+
+    /**
+     * <p>storeAllCoordinateArrays.</p>
+     *
+     * @param residueList a {@link java.util.List} object.
+     * @return an array of {@link double} objects.
+     */
+    public static double[][][] storeAllCoordinateArrays(List<Residue> residueList) {
+        return storeAllCoordinateArrays(residueList.toArray(new Residue[residueList.size()]));
+    }
+
+    /**
+     * <p>storeAllCoordinates.</p>
+     *
+     * @param residueList a {@link java.util.List} object.
+     * @return an array of {@link ffx.potential.bonded.ResidueState} objects.
+     */
+    public static ResidueState[] storeAllCoordinates(List<Residue> residueList) {
+        return storeAllCoordinates(residueList.toArray(new Residue[residueList.size()]));
+    }
+
+    /**
+     * <p>storeAllCoordinates.</p>
+     *
+     * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
+     * @return an array of {@link ffx.potential.bonded.ResidueState} objects.
+     */
+    public static ResidueState[] storeAllCoordinates(Residue[] residues) {
+        int nResidues = residues.length;
+        ResidueState[] states = new ResidueState[nResidues];
+        for (int i = 0; i < nResidues; i++) {
+            states[i] = residues[i].storeState();
+        }
+        return states;
+    }
+
+    /**
+     * <p>storeAllCoordinates.</p>
+     *
+     * @param res a {@link ffx.potential.bonded.Residue} object.
+     * @return a {@link ffx.potential.bonded.ResidueState} object.
+     */
+    public static ResidueState storeAllCoordinates(Residue res) {
+        Residue[] residues = new Residue[1];
+        residues[0] = res;
+        return storeAllCoordinates(residues)[0];
+    }
+
+    /**
+     * Returns a new double[nAtoms][3] with the coordinates of an array of atoms.
+     *
+     * @param atoms To store coordinates of
+     * @return Coordinates
+     */
+    public static double[][] storeAtomicCoordinates(Atom[] atoms) {
+        int nAtoms = atoms.length;
+        double[][] coords = new double[nAtoms][3];
+        for (int i = 0; i < nAtoms; i++) {
+            atoms[i].getXYZ(coords[i]);
+        }
+        return coords;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return String.format(" ResidueState with parent residue %s, state residue "
+                + "%s, number of atoms %d", parent, res, atoms.length);
+    }
+
+    /**
+     * <p>revertAllCoordinates.</p>
+     *
+     * @param residueArray an array of {@link ffx.potential.bonded.Residue} objects.
+     * @param states       an array of {@link ffx.potential.bonded.ResidueState} objects.
+     */
+    private static void revertAllCoordinates(Residue[] residueArray, ResidueState[] states) {
+        int nResidues = residueArray.length;
+        if (nResidues != states.length) {
+            throw new IllegalArgumentException(String.format("Length of residue "
+                    + "array %d and residue state array %d do not match.", nResidues, states.length));
+        }
+
+        for (int i = 0; i < nResidues; i++) {
+            Residue resi = residueArray[i];
+            // If indexing did not get thrown off:
+            if (resi.equals(states[i].getParent())) {
+                resi.revertState(states[i]);
+            } else {
+                // Else must search states[]
+                boolean matchFound = false;
+                for (int j = 0; j < nResidues; j++) {
+                    if (resi.equals(states[j].getParent())) {
+                        matchFound = true;
+                        resi.revertState(states[j]);
+                        break;
+                    }
+                }
+
+                if (!matchFound) {
+                    throw new IllegalArgumentException(String.format("Could not "
+                            + "find match for residue %s among residue states array.", resi.toString()));
+                }
+            }
+        }
+    }
+
+    /**
+     * <p>storeAllCoordinateArrays.</p>
+     *
+     * @param residueArray an array of {@link ffx.potential.bonded.Residue} objects.
+     * @return an array of {@link double} objects.
+     */
+    private static double[][][] storeAllCoordinateArrays(Residue[] residueArray) {
+        int nResidues = residueArray.length;
+        double[][][] xyz = new double[nResidues][][];
+        for (int i = 0; i < nResidues; i++) {
+            xyz[i] = residueArray[i].storeCoordinateArray();
+        }
+        return xyz;
+    }
+
+    /**
+     * <p>getStateResidue.</p>
+     *
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
+    Residue getStateResidue() {
+        return res;
+    }
+
+    /**
+     * <p>Getter for the field <code>isNeutralTerminus</code>.</p>
+     *
+     * @return a boolean.
+     */
+    boolean getIsNeutralTerminus() {
+        return isNeutralTerminus;
+    }
+
+    /**
+     * Returns the coordinates of the selected atom; or null if atom not contained.
+     *
+     * @param atom An Atom.
+     * @return xyz coordinates.
+     */
+    double[] getAtomCoords(Atom atom) {
+        double[] xyz = new double[3];
+        if (!atomMap.containsKey(atom)) {
+            logger.info(String.format(" Illegal call to ResidueState.getAtomCoords: atom %s not found: hashcode %d", atom, atom.hashCode()));
+            for (Atom ratom : res.getAtomList()) {
+                logger.info(String.format(" Atoms in residue: %s hashcode: %d", ratom, ratom.hashCode()));
+            }
+            for (Atom matom : atomMap.keySet()) {
+                logger.info(String.format(" Atoms in ResidueState atom cache: %s hashcode: %d", matom, matom.hashCode()));
+            }
+            logger.log(Level.SEVERE, " Error in ResidueState.getAtomCoords.", new IllegalStateException());
+        }
+        System.arraycopy(atomMap.get(atom), 0, xyz, 0, 3);
+        return xyz;
     }
 }

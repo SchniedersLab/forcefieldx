@@ -39,7 +39,7 @@ package ffx.potential.utils;
 
 import com.github.quickhull3d.QuickHull3D;
 
-import ffx.numerics.math.VectorMath;
+import ffx.numerics.math.DoubleMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.utilities.Constants;
@@ -123,7 +123,7 @@ public class ConvexHullOps {
                     Atom atJ = atoms[j];
                     double[] xyzJ = new double[3];
                     xyzJ = atJ.getXYZ(xyzJ);
-                    double dist = VectorMath.dist2(xyzI, xyzJ);
+                    double dist = DoubleMath.dist2(xyzI, xyzJ);
                     maxDist = (dist > maxDist) ? dist : maxDist;
                 }
             }
@@ -153,7 +153,7 @@ public class ConvexHullOps {
                     for (int j = i + 1; j < nVerts; j++) {
                         double[] xyzJ = new double[3];
                         System.arraycopy(vertPoints, 3*j, xyzJ, 0, 3);
-                        double distIJ = VectorMath.dist2(xyz, xyzJ);
+                        double distIJ = DoubleMath.dist2(xyz, xyzJ);
                         mij = Math.max(mij, distIJ);
                     }
                     return mij;

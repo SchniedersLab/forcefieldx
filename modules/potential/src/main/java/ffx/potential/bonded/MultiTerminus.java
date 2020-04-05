@@ -70,11 +70,7 @@ import static ffx.utilities.Constants.kB;
 public class MultiTerminus extends Residue {
 
     private static final Logger logger = Logger.getLogger(MultiResidue.class.getName());
-
-    public enum END {
-        NTERM, CTERM;
-    }
-
+    public final END end;
     /**
      * The force field in use.
      */
@@ -87,19 +83,16 @@ public class MultiTerminus extends Residue {
      * The MolecularAssembly in use.
      */
     private final MolecularAssembly molecularAssembly;
-    public final END end;
     /**
      * Charge state of the termini.
      */
     public boolean isCharged;
-
     private Atom uberH3;
     private Atom uberHO;
     private Bond bondH3;
     private Bond bondHO;
     private List<ROLS> rolsH3 = new ArrayList<>();
     private List<ROLS> rolsHO = new ArrayList<>();
-
     /**
      * <p>Constructor for MultiTerminus.</p>
      *
@@ -140,268 +133,47 @@ public class MultiTerminus extends Residue {
      * {@inheritDoc}
      */
     @Override
-    public void revertState(ResidueState state) {
-        if (state.getIsNeutralTerminus() && this.isCharged == true) {
-            titrateTerminus_v1(298.15);     // TODO generalize
-        }
-        super.revertState(state);
-    }
-
-    /**
-     * Useful for locating backbone atom nodes that share a name with side-chain atoms.
-     */
-    private Atom getBBAtom(String name) {
-        ArrayList<Atom> list = this.getAtomList();
-        for (Atom atom : list) {
-            if (atom.getName().equals(name)) {
-//                logger.info(" Found: " + atom.getName());
-                return atom;
-//                try {
-//                    BB_TYPE bbType = BB_TYPE.valueOf(name);
-//                    AtomType type = atom.getAtomType();
-//                    if ((type.type == bbType.chrgType && type.atomClass == bbType.chrgClass)
-//                            || (type.type == bbType.neutType && type.atomClass == bbType.neutClass)) {
-//                        return atom;
-//                    }
-//                } catch (Exception ex) {}
-            }
-        }
-        return null;
-    }
-
-    private void updateBondedTerms() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Updating bonded terms: \n");
-        for (Bond bond : getBondList()) {
-            BondType oldType = bond.bondType;
-            int c[] = new int[2];
-            c[0] = bond.atoms[0].getAtomType().atomClass;
-            c[1] = bond.atoms[1].getAtomType().atomClass;
-            String key = BondType.sortKey(c);
-            BondType newType = forceField.getBondType(key);
-            if (oldType != newType) {
-                sb.append(format(" Bond: %s --> %s \n", bond.bondType, newType));
-                bond.setBondType(newType);
-                if (newType.distance < 0.9 * oldType.distance || newType.distance > 1.1 * oldType.distance) {
-                    logger.info(format(" Large bond distance change: %s %s,  %.2f --> %.2f ",
-                            bond.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), bond.atoms[1].describe(Atom.Descriptions.XyzIndex_Name),
-                            oldType.distance, newType.distance));
-                }
-            }
-        }
-        for (Angle angle : getAngleList()) {
-            AngleType oldType = angle.angleType;
-            Angle dummy = Angle.angleFactory(angle.bonds[0], angle.bonds[1], forceField);
-            AngleType newType = dummy.angleType;
-            if (oldType != newType) {
-                sb.append(format(" Angle: %s --> %s \n", angle.angleType, dummy.angleType));
-                angle.setAngleType(dummy.angleType);
-                if (newType.angle[0] < 0.9 * oldType.angle[0] || newType.angle[0] > 1.1 * oldType.angle[0]) {
-                    logger.info(format(" Large angle change: %s %s %s,  %.2f --> %.2f ",
-                            angle.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[1].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[2].describe(Atom.Descriptions.XyzIndex_Name),
-                            oldType.angle[0], newType.angle[0]));
-                }
-            }
-        }
-        for (Torsion tors : getTorsionList()) {
-            TorsionType oldType = tors.torsionType;
-            Torsion dummy = Torsion.torsionFactory(tors.bonds[0], tors.bonds[1], tors.bonds[2], forceField);
-            TorsionType newType = dummy.torsionType;
-            if (oldType != newType) {
-                sb.append(format(" Torsion: %s --> %s \n", tors.torsionType, dummy.torsionType));
-                tors.torsionType = dummy.torsionType;
-            }
-        }
-    }
-
-    /**
-     * Changes the charge state of this MultiTerminus.
-     * Keep existing Atom objects but updates types, bonded terms, and builds new proton if necessary.
-     *
-     * @param temperature a double.
-     * @return a {@link ffx.potential.extended.TitrationUtils.TitrationType} object.
-     */
-    public TitrationType titrateTerminus_v1(double temperature) {
-        logger.info(format(" Titrating residue %s (currently %d).", this.toString(), (isCharged ? 1 : 0)));
-        // Get references to the backbone atoms.
-        TitrationType titrationType = (isCharged) ? TitrationType.DEPROT : TitrationType.PROT;
-        Atom N = getBBAtom("N");
-        Atom CA = getBBAtom("CA");
-        Atom C = getBBAtom("C");
-        Atom O = getBBAtom("O");
-        Atom OXT = getBBAtom("OXT");
-        Atom H1 = getBBAtom("H1");
-        Atom H2 = getBBAtom("H2");
-        Atom H3 = getBBAtom("H3");
-        Atom HA = getBBAtom("HA");
-        Atom OH = getBBAtom("OH");
-        Atom HO = getBBAtom("HO");
-        String resName = C.getResidueName();
-        int resSeq = C.getResidueNumber();
-        Character chainID = C.getChainID();
-        List<Atom> typeChanged = new ArrayList<>();
-
-        if (end == END.NTERM) {
-            if (isCharged) {
-                if (rolsH3.isEmpty()) {
-                    for (Angle a : H3.getAngles()) {
-                        rolsH3.add(a);
-                    }
-                    for (Torsion t : H3.getTorsions()) {
-                        rolsH3.add(t);
-                    }
-                }
-                N.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.N.neutType)));
-                H1.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H1.neutType)));
-                H2.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H2.neutType)));
-//                intxyz(H1, N, 1.02, CA, 109.5, C, 180.0, 0);
-//                intxyz(H2, N, 1.02, CA, 109.5, C, 0.0, 0);
-                bondH3 = N.getBond(H3);
-                bondH3.removeFromParent();
-                for (Angle a : H3.getAngles()) {
-                    a.removeFromParent();
-                }
-                for (Torsion t : H3.getTorsions()) {
-                    t.removeFromParent();
-                }
-                H3.removeFromParent();
-                H3.setParent(null);
-                H3.setUse(false);
-                uberH3 = H3;
-                typeChanged.add(N);
-                typeChanged.add(H1);
-                typeChanged.add(H2);
-//                logger.info(String.format(" Finished titration. H3 status: %b %b %b",
-//                        N.getBond(H3) == null, this.getAtomNode().contains(H3) == null, H3.getParent() == null));
-            } else {
-                if (H3 != null) {
-                    logger.severe("N-terminal found in incorrect charge state.");
-                }
-                if (uberH3 == null || bondH3 == null) {
-                    logger.severe("Please start with (N-)termini in the charged state.");
-                }
-                H3 = uberH3;
-                N.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.N.chrgType)));
-                H1.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H1.chrgType)));
-                H2.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H2.chrgType)));
-                intxyz(H1, N, 1.02, CA, 109.5, C, 180.0, 0);
-                intxyz(H2, N, 1.02, CA, 109.5, C, 60.0, 0);
-                intxyz(H3, N, 1.02, CA, 109.5, C, -60.0, 0);
-                maxwellMe(H3, temperature);
-                this.getAtomNode().add(H3);
-                this.add(bondH3);
-//                logger.info("Number of rolsH3 terms: " + rolsH3.size());
-                for (ROLS rols : rolsH3) {
-                    if (rols instanceof Angle) {
-                        this.add((Angle) rols);
-                    } else if (rols instanceof Torsion) {
-                        this.add((Torsion) rols);
-                    }
-                }
-                H3.setParent(this.getAtomNode());
-                H3.setUse(true);
-                typeChanged.add(N);
-                typeChanged.add(H1);
-                typeChanged.add(H2);
-                typeChanged.add(H3);
-//                logger.info(String.format(" Finished titration. H3 statuses: "
-//                        + "(They have each other: %b %b) (I have them: %b %b) (I have bond: %b)", 
-//                        N.getBond(H3) != null, H3.getBond(N) != null, 
-//                        this.getAtomNode().contains(H3) != null, H3.getParent() == this.getAtomNode(),
-//                        this.getBondList().contains(bondH3)));
-//                logger.info(String.format(" Bonds from H3: %s %s",
-//                        H3.getBonds().get(0).get1_2(H3).describe(Atom.Descriptions.INDEX_NAME), 
-//                        H3.getBonds().get(0).get1_2(H3).getBonds().get(0).get1_2(H3.getBonds().get(0).get1_2(H3)).describe(Atom.Descriptions.INDEX_NAME)));
-            }
-        } else if (end == END.CTERM) {
-            if (isCharged) {
-                OXT.setName("OH");
-                OH = OXT;
-                if (HO != null) {
-                    logger.warning("C-terminal in unusual charge state.");
-                }
-                C.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.C.neutType)));
-                O.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.O.neutType)));
-                OH.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.OH.neutType)));
-                if (uberHO == null) {
-                    // Gotta build the HO and all its bonded terms.
-                    uberHO = new Atom(molecularAssembly.getAtomArray().length, "HO", OH.getAltLoc(), new double[3],
-                            resName, resSeq, chainID, OH.getOccupancy(), OH.getTempFactor(), OH.getSegID(), true);
-                    uberHO.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.HO.neutType)));
-                    bondHO = new Bond(OH, uberHO);
-                    bondHO.setBondType(forceField.getBondType(
-                            format("%d %d", OH.getAtomType().atomClass, uberHO.getAtomType().atomClass)));
-                    Angle a1 = Angle.angleFactory(bondHO, OH.getBond(C), forceField);
-                    Torsion t1 = Torsion.torsionFactory(O.getBond(C), C.getBond(OH), bondHO, forceField);
-                    Torsion t2 = Torsion.torsionFactory(CA.getBond(C), C.getBond(OH), bondHO, forceField);
-                    this.add(a1);
-                    this.add(t1);
-                    this.add(t2);
-                }
-                HO = uberHO;
-                intxyz(HO, OXT, 1.02, C, 109.5, CA, -1.7, 0);
-                maxwellMe(HO, temperature);
-                this.getAtomNode().add(HO);
-                this.add(bondHO);
-                HO.setParent(this.getAtomNode());
-                HO.setUse(true);
-//                logger.info("Number of rolsHO terms: " + rolsHO.size());
-                for (ROLS rols : rolsHO) {
-                    if (rols instanceof Angle) {
-                        this.add((Angle) rols);
-                    } else if (rols instanceof Torsion) {
-                        this.add((Torsion) rols);
-                    }
-                }
-                typeChanged.add(C);
-                typeChanged.add(O);
-                typeChanged.add(OH);
-                typeChanged.add(HO);
-            } else {
-                if (rolsHO.isEmpty()) {
-                    rolsHO = new ArrayList<>();
-                    for (Angle a : HO.getAngles()) {
-                        rolsHO.add(a);
-                    }
-                    for (Torsion t : HO.getTorsions()) {
-                        rolsHO.add(t);
-                    }
-                }
-                C.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.C.chrgType)));
-                O.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.O.chrgType)));
-                OH.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.OH.chrgType)));
-                OH.setName("OXT");
-                OXT = OH;
-                bondHO = OH.getBond(HO);
-                bondHO.removeFromParent();
-                for (Angle a : HO.getAngles()) {
-                    a.removeFromParent();
-                }
-                for (Torsion t : HO.getTorsions()) {
-                    t.removeFromParent();
-                }
-                HO.removeFromParent();
-                HO.setParent(null);
-                HO.setUse(false);
-                uberHO = HO;
-                typeChanged.add(C);
-                typeChanged.add(O);
-                typeChanged.add(OH);
-            }
-        }
-        updateGeometry();
-        updateBondedTerms();
-        isCharged = !isCharged;
-        forceFieldEnergy.reInit();
-        return titrationType;
+    public void add(MutableTreeNode mtn) {
+        super.add(mtn);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void add(MutableTreeNode mtn) {
-        super.add(mtn);
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        } else if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        MultiTerminus other = (MultiTerminus) object;
+        if (this.getResidueNumber() == other.getResidueNumber()
+                && this.isCharged == other.isCharged()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * <p>isCharged.</p>
+     *
+     * @return a boolean.
+     */
+    public boolean isCharged() {
+        return isCharged;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void revertState(ResidueState state) {
+        if (state.getIsNeutralTerminus() && this.isCharged == true) {
+            titrateTerminus_v1(298.15);     // TODO generalize
+        }
+        super.revertState(state);
     }
 
     /**
@@ -416,9 +188,7 @@ public class MultiTerminus extends Residue {
             sb.append(format("%s, ", atom.getName()));
         }
         logger.info(sb.toString());
-        /**
-         * Get references to the backbone atoms.
-         */
+        // Get references to the backbone atoms.
         Atom N = getBBAtom("N");
         Atom CA = getBBAtom("CA");
         Atom C = getBBAtom("C");
@@ -523,6 +293,294 @@ public class MultiTerminus extends Residue {
     }
 
     /**
+     * Changes the charge state of this MultiTerminus.
+     * Keep existing Atom objects but updates types, bonded terms, and builds new proton if necessary.
+     *
+     * @param temperature a double.
+     * @return a {@link ffx.potential.extended.TitrationUtils.TitrationType} object.
+     */
+    public TitrationType titrateTerminus_v1(double temperature) {
+        logger.info(format(" Titrating residue %s (currently %d).", this.toString(), (isCharged ? 1 : 0)));
+        // Get references to the backbone atoms.
+        TitrationType titrationType = (isCharged) ? TitrationType.DEPROT : TitrationType.PROT;
+        Atom N = getBBAtom("N");
+        Atom CA = getBBAtom("CA");
+        Atom C = getBBAtom("C");
+        Atom O = getBBAtom("O");
+        Atom OXT = getBBAtom("OXT");
+        Atom H1 = getBBAtom("H1");
+        Atom H2 = getBBAtom("H2");
+        Atom H3 = getBBAtom("H3");
+        Atom HA = getBBAtom("HA");
+        Atom OH = getBBAtom("OH");
+        Atom HO = getBBAtom("HO");
+        String resName = C.getResidueName();
+        int resSeq = C.getResidueNumber();
+        Character chainID = C.getChainID();
+        List<Atom> typeChanged = new ArrayList<>();
+
+        if (end == END.NTERM) {
+            if (isCharged) {
+                if (rolsH3.isEmpty()) {
+                    for (Angle a : H3.getAngles()) {
+                        rolsH3.add(a);
+                    }
+                    for (Torsion t : H3.getTorsions()) {
+                        rolsH3.add(t);
+                    }
+                }
+                N.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.N.neutType)));
+                H1.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H1.neutType)));
+                H2.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H2.neutType)));
+//                intxyz(H1, N, 1.02, CA, 109.5, C, 180.0, 0);
+//                intxyz(H2, N, 1.02, CA, 109.5, C, 0.0, 0);
+                bondH3 = N.getBond(H3);
+                bondH3.removeFromParent();
+                for (Angle a : H3.getAngles()) {
+                    a.removeFromParent();
+                }
+                for (Torsion t : H3.getTorsions()) {
+                    t.removeFromParent();
+                }
+                H3.removeFromParent();
+                H3.setParent(null);
+                H3.setUse(false);
+                uberH3 = H3;
+                typeChanged.add(N);
+                typeChanged.add(H1);
+                typeChanged.add(H2);
+//                logger.info(String.format(" Finished titration. H3 status: %b %b %b",
+//                        N.getBond(H3) == null, this.getAtomNode().contains(H3) == null, H3.getParent() == null));
+            } else {
+                if (H3 != null) {
+                    logger.severe("N-terminal found in incorrect charge state.");
+                }
+                if (uberH3 == null || bondH3 == null) {
+                    logger.severe("Please start with (N-)termini in the charged state.");
+                }
+                H3 = uberH3;
+                N.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.N.chrgType)));
+                H1.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H1.chrgType)));
+                H2.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H2.chrgType)));
+                intxyz(H1, N, 1.02, CA, 109.5, C, 180.0, 0);
+                intxyz(H2, N, 1.02, CA, 109.5, C, 60.0, 0);
+                intxyz(H3, N, 1.02, CA, 109.5, C, -60.0, 0);
+                maxwellMe(H3, temperature);
+                this.getAtomNode().add(H3);
+                this.add(bondH3);
+//                logger.info("Number of rolsH3 terms: " + rolsH3.size());
+                for (ROLS rols : rolsH3) {
+                    if (rols instanceof Angle) {
+                        this.add((Angle) rols);
+                    } else if (rols instanceof Torsion) {
+                        this.add((Torsion) rols);
+                    }
+                }
+                H3.setParent(this.getAtomNode());
+                H3.setUse(true);
+                typeChanged.add(N);
+                typeChanged.add(H1);
+                typeChanged.add(H2);
+                typeChanged.add(H3);
+//                logger.info(String.format(" Finished titration. H3 statuses: "
+//                        + "(They have each other: %b %b) (I have them: %b %b) (I have bond: %b)",
+//                        N.getBond(H3) != null, H3.getBond(N) != null,
+//                        this.getAtomNode().contains(H3) != null, H3.getParent() == this.getAtomNode(),
+//                        this.getBondList().contains(bondH3)));
+//                logger.info(String.format(" Bonds from H3: %s %s",
+//                        H3.getBonds().get(0).get1_2(H3).describe(Atom.Descriptions.INDEX_NAME),
+//                        H3.getBonds().get(0).get1_2(H3).getBonds().get(0).get1_2(H3.getBonds().get(0).get1_2(H3)).describe(Atom.Descriptions.INDEX_NAME)));
+            }
+        } else if (end == END.CTERM) {
+            if (isCharged) {
+                OXT.setName("OH");
+                OH = OXT;
+                if (HO != null) {
+                    logger.warning("C-terminal in unusual charge state.");
+                }
+                C.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.C.neutType)));
+                O.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.O.neutType)));
+                OH.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.OH.neutType)));
+                if (uberHO == null) {
+                    // Gotta build the HO and all its bonded terms.
+                    uberHO = new Atom(molecularAssembly.getAtomArray().length, "HO", OH.getAltLoc(), new double[3],
+                            resName, resSeq, chainID, OH.getOccupancy(), OH.getTempFactor(), OH.getSegID(), true);
+                    uberHO.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.HO.neutType)));
+                    bondHO = new Bond(OH, uberHO);
+                    bondHO.setBondType(forceField.getBondType(
+                            format("%d %d", OH.getAtomType().atomClass, uberHO.getAtomType().atomClass)));
+                    Angle a1 = Angle.angleFactory(bondHO, OH.getBond(C), forceField);
+                    Torsion t1 = Torsion.torsionFactory(O.getBond(C), C.getBond(OH), bondHO, forceField);
+                    Torsion t2 = Torsion.torsionFactory(CA.getBond(C), C.getBond(OH), bondHO, forceField);
+                    this.add(a1);
+                    this.add(t1);
+                    this.add(t2);
+                }
+                HO = uberHO;
+                intxyz(HO, OXT, 1.02, C, 109.5, CA, -1.7, 0);
+                maxwellMe(HO, temperature);
+                this.getAtomNode().add(HO);
+                this.add(bondHO);
+                HO.setParent(this.getAtomNode());
+                HO.setUse(true);
+//                logger.info("Number of rolsHO terms: " + rolsHO.size());
+                for (ROLS rols : rolsHO) {
+                    if (rols instanceof Angle) {
+                        this.add((Angle) rols);
+                    } else if (rols instanceof Torsion) {
+                        this.add((Torsion) rols);
+                    }
+                }
+                typeChanged.add(C);
+                typeChanged.add(O);
+                typeChanged.add(OH);
+                typeChanged.add(HO);
+            } else {
+                if (rolsHO.isEmpty()) {
+                    rolsHO = new ArrayList<>();
+                    for (Angle a : HO.getAngles()) {
+                        rolsHO.add(a);
+                    }
+                    for (Torsion t : HO.getTorsions()) {
+                        rolsHO.add(t);
+                    }
+                }
+                C.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.C.chrgType)));
+                O.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.O.chrgType)));
+                OH.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.OH.chrgType)));
+                OH.setName("OXT");
+                OXT = OH;
+                bondHO = OH.getBond(HO);
+                bondHO.removeFromParent();
+                for (Angle a : HO.getAngles()) {
+                    a.removeFromParent();
+                }
+                for (Torsion t : HO.getTorsions()) {
+                    t.removeFromParent();
+                }
+                HO.removeFromParent();
+                HO.setParent(null);
+                HO.setUse(false);
+                uberHO = HO;
+                typeChanged.add(C);
+                typeChanged.add(O);
+                typeChanged.add(OH);
+            }
+        }
+        updateGeometry();
+        updateBondedTerms();
+        isCharged = !isCharged;
+        forceFieldEnergy.reInit();
+        return titrationType;
+    }
+
+    public enum END {
+        NTERM, CTERM;
+    }
+
+    public enum BB_TYPE {
+        /**
+         * [name from Biotype record appended]
+         * atom    233     30  C     "C-Terminal COO-"            6   12.0110  3   C
+         * atom    234     31  O     "C-Terminal COO-"            8   15.9990  1   OXT
+         * atom    235     32  C     "C-Terminal COOH C=O"        6   12.0110  3   C
+         * atom    236     33  O     "C-Terminal COOH O=C"        8   15.9990  1   O
+         * atom    237     34  OH    "C-Terminal COOH OH"         8   15.9990  2   OH
+         * atom    238     35  HO    "C-Terminal COOH HO"         1    1.0080  1   HO
+         * atom    225      1  N     "Amide Cap NH2"              7   14.0070  3   N
+         * atom    226      4  HN    "Amide Cap H2N"              1    1.0080  1   HN
+         * atom    231     41  N     "N-Terminal NH3+"            7   14.0070  4   N
+         * atom    232     42  H     "N-Terminal H3N+"            1    1.0080  1   HN
+         **/
+        N(231, 41, 225, 1),
+        C(233, 30, 235, 32),
+        O(234, 31, 236, 33),
+        OXT(234, 31, 236, 33),     // On titration, this'll need renamed.
+        OH(234, 31, 237, 34),      // ^
+        HO(-1, -1, 238, 35),
+        H1(232, 41, 226, 4),       // On titration, these'll need removed and rebuilt.
+        H2(232, 41, 226, 4),
+        H3(232, 41, 226, 4);
+
+        public int chrgType, chrgClass;
+        public int neutType, neutClass;
+
+        BB_TYPE(int chrgType, int chrgClass, int neutType, int neutClass) {
+            this.chrgType = chrgType;
+            this.chrgClass = chrgClass;
+            this.neutType = neutType;
+            this.neutClass = neutClass;
+        }
+    }
+
+    /**
+     * Useful for locating backbone atom nodes that share a name with side-chain atoms.
+     */
+    private Atom getBBAtom(String name) {
+        ArrayList<Atom> list = this.getAtomList();
+        for (Atom atom : list) {
+            if (atom.getName().equals(name)) {
+//                logger.info(" Found: " + atom.getName());
+                return atom;
+//                try {
+//                    BB_TYPE bbType = BB_TYPE.valueOf(name);
+//                    AtomType type = atom.getAtomType();
+//                    if ((type.type == bbType.chrgType && type.atomClass == bbType.chrgClass)
+//                            || (type.type == bbType.neutType && type.atomClass == bbType.neutClass)) {
+//                        return atom;
+//                    }
+//                } catch (Exception ex) {}
+            }
+        }
+        return null;
+    }
+
+    private void updateBondedTerms() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Updating bonded terms: \n");
+        for (Bond bond : getBondList()) {
+            BondType oldType = bond.bondType;
+            int c[] = new int[2];
+            c[0] = bond.atoms[0].getAtomType().atomClass;
+            c[1] = bond.atoms[1].getAtomType().atomClass;
+            String key = BondType.sortKey(c);
+            BondType newType = forceField.getBondType(key);
+            if (oldType != newType) {
+                sb.append(format(" Bond: %s --> %s \n", bond.bondType, newType));
+                bond.setBondType(newType);
+                if (newType.distance < 0.9 * oldType.distance || newType.distance > 1.1 * oldType.distance) {
+                    logger.info(format(" Large bond distance change: %s %s,  %.2f --> %.2f ",
+                            bond.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), bond.atoms[1].describe(Atom.Descriptions.XyzIndex_Name),
+                            oldType.distance, newType.distance));
+                }
+            }
+        }
+        for (Angle angle : getAngleList()) {
+            AngleType oldType = angle.angleType;
+            Angle dummy = Angle.angleFactory(angle.bonds[0], angle.bonds[1], forceField);
+            AngleType newType = dummy.angleType;
+            if (oldType != newType) {
+                sb.append(format(" Angle: %s --> %s \n", angle.angleType, dummy.angleType));
+                angle.setAngleType(dummy.angleType);
+                if (newType.angle[0] < 0.9 * oldType.angle[0] || newType.angle[0] > 1.1 * oldType.angle[0]) {
+                    logger.info(format(" Large angle change: %s %s %s,  %.2f --> %.2f ",
+                            angle.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[1].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[2].describe(Atom.Descriptions.XyzIndex_Name),
+                            oldType.angle[0], newType.angle[0]));
+                }
+            }
+        }
+        for (Torsion tors : getTorsionList()) {
+            TorsionType oldType = tors.torsionType;
+            Torsion dummy = Torsion.torsionFactory(tors.bonds[0], tors.bonds[1], tors.bonds[2], forceField);
+            TorsionType newType = dummy.torsionType;
+            if (oldType != newType) {
+                sb.append(format(" Torsion: %s --> %s \n", tors.torsionType, dummy.torsionType));
+                tors.torsionType = dummy.torsionType;
+            }
+        }
+    }
+
+    /**
      * For testing.
      */
     private void titrateTerminusByRebuilding() {
@@ -614,75 +672,12 @@ public class MultiTerminus extends Residue {
         }
     }
 
-    /**
-     * <p>isCharged.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isCharged() {
-        return isCharged;
-    }
-
-    public enum BB_TYPE {
-        /**
-         * [name from Biotype record appended]
-         * atom    233     30  C     "C-Terminal COO-"            6   12.0110  3   C
-         * atom    234     31  O     "C-Terminal COO-"            8   15.9990  1   OXT
-         * atom    235     32  C     "C-Terminal COOH C=O"        6   12.0110  3   C
-         * atom    236     33  O     "C-Terminal COOH O=C"        8   15.9990  1   O
-         * atom    237     34  OH    "C-Terminal COOH OH"         8   15.9990  2   OH
-         * atom    238     35  HO    "C-Terminal COOH HO"         1    1.0080  1   HO
-         * atom    225      1  N     "Amide Cap NH2"              7   14.0070  3   N
-         * atom    226      4  HN    "Amide Cap H2N"              1    1.0080  1   HN
-         * atom    231     41  N     "N-Terminal NH3+"            7   14.0070  4   N
-         * atom    232     42  H     "N-Terminal H3N+"            1    1.0080  1   HN
-         **/
-        N(231, 41, 225, 1),
-        C(233, 30, 235, 32),
-        O(234, 31, 236, 33),
-        OXT(234, 31, 236, 33),     // On titration, this'll need renamed.
-        OH(234, 31, 237, 34),      // ^
-        HO(-1, -1, 238, 35),
-        H1(232, 41, 226, 4),       // On titration, these'll need removed and rebuilt.
-        H2(232, 41, 226, 4),
-        H3(232, 41, 226, 4);
-
-        public int chrgType, chrgClass;
-        public int neutType, neutClass;
-
-        BB_TYPE(int chrgType, int chrgClass, int neutType, int neutClass) {
-            this.chrgType = chrgType;
-            this.chrgClass = chrgClass;
-            this.neutType = neutType;
-            this.neutClass = neutClass;
-        }
-    }
-
     private void maxwellMe(Atom atom, double temperature) {
         double[] vv = new double[3];
         for (int i = 0; i < 3; i++) {
             vv[i] = ThreadLocalRandom.current().nextGaussian() * sqrt(kB * temperature / atom.getMass());
         }
         atom.setVelocity(vv);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        MultiTerminus other = (MultiTerminus) object;
-        if (this.getResidueNumber() == other.getResidueNumber()
-                && this.isCharged == other.isCharged()) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
 }

@@ -81,12 +81,12 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
-import static ffx.numerics.math.VectorMath.cross;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalar;
-import static ffx.numerics.math.VectorMath.sum;
+import static ffx.numerics.math.DoubleMath.X;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.scale;
+import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.multipole.MultipoleTensor.checkDampingCriterion;
 import static ffx.numerics.special.Erf.erfc;
 import static ffx.potential.nonbonded.ParticleMeshEwald.Polarization.MUTUAL;
@@ -5623,13 +5623,13 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                 v[1] = y[ic];
                 v[2] = z[ic];
                 // Construct the three rotation axes for the local frame
-                diff(u, localOrigin, u);
-                diff(v, localOrigin, v);
+                sub(u, localOrigin, u);
+                sub(v, localOrigin, v);
                 switch (frame[i]) {
                     default:
                     case ZTHENX:
                     case BISECTOR:
-                        cross(u, v, w);
+                        X(u, v, w);
                         break;
                     case THREEFOLD:
                     case ZTHENBISECTOR:
@@ -5637,25 +5637,25 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                         w[0] = x[id];
                         w[1] = y[id];
                         w[2] = z[id];
-                        diff(w, localOrigin, w);
+                        sub(w, localOrigin, w);
                 }
 
-                double ru = r(u);
-                double rv = r(v);
-                double rw = r(w);
-                scalar(u, 1.0 / ru, u);
-                scalar(v, 1.0 / rv, v);
-                scalar(w, 1.0 / rw, w);
+                double ru = length(u);
+                double rv = length(v);
+                double rw = length(w);
+                scale(u, 1.0 / ru, u);
+                scale(v, 1.0 / rv, v);
+                scale(w, 1.0 / rw, w);
                 // Find the perpendicular and angle for each pair of axes.
-                cross(v, u, uv);
-                cross(w, u, uw);
-                cross(w, v, vw);
-                double ruv = r(uv);
-                double ruw = r(uw);
-                double rvw = r(vw);
-                scalar(uv, 1.0 / ruv, uv);
-                scalar(uw, 1.0 / ruw, uw);
-                scalar(vw, 1.0 / rvw, vw);
+                X(v, u, uv);
+                X(w, u, uw);
+                X(w, v, vw);
+                double ruv = length(uv);
+                double ruw = length(uw);
+                double rvw = length(vw);
+                scale(uv, 1.0 / ruv, uv);
+                scale(uw, 1.0 / ruw, uw);
+                scale(vw, 1.0 / rvw, vw);
                 // Compute the sine of the angle between the rotation axes.
                 double uvcos = dot(u, v);
                 double uvsin = sqrt(1.0 - uvcos * uvcos);
@@ -5673,25 +5673,25 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                 switch (frame[i]) {
                     case ZTHENBISECTOR:
                         // Build some additional axes needed for the Z-then-Bisector method
-                        sum(v, w, r);
-                        cross(u, r, s);
-                        double rr = r(r);
-                        double rs = r(s);
-                        scalar(r, 1.0 / rr, r);
-                        scalar(s, 1.0 / rs, s);
+                        add(v, w, r);
+                        X(u, r, s);
+                        double rr = length(r);
+                        double rs = length(s);
+                        scale(r, 1.0 / rr, r);
+                        scale(s, 1.0 / rs, s);
                         // Find the perpendicular and angle for each pair of axes.
-                        cross(r, u, ur);
-                        cross(s, u, us);
-                        cross(s, v, vs);
-                        cross(s, w, ws);
-                        double rur = r(ur);
-                        double rus = r(us);
-                        double rvs = r(vs);
-                        double rws = r(ws);
-                        scalar(ur, 1.0 / rur, ur);
-                        scalar(us, 1.0 / rus, us);
-                        scalar(vs, 1.0 / rvs, vs);
-                        scalar(ws, 1.0 / rws, ws);
+                        X(r, u, ur);
+                        X(s, u, us);
+                        X(s, v, vs);
+                        X(s, w, ws);
+                        double rur = length(ur);
+                        double rus = length(us);
+                        double rvs = length(vs);
+                        double rws = length(ws);
+                        scale(ur, 1.0 / rur, ur);
+                        scale(us, 1.0 / rus, us);
+                        scale(vs, 1.0 / rvs, vs);
+                        scale(ws, 1.0 / rws, ws);
                         // Compute the sine of the angle between the rotation axes
                         double urcos = dot(u, r);
                         double ursin = sqrt(1.0 - urcos * urcos);
@@ -5702,14 +5702,14 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                         double wscos = dot(w, s);
                         double wssin = sqrt(1.0 - wscos * wscos);
                         // Compute the projection of v and w onto the ru-plane
-                        scalar(s, -vscos, t1);
-                        scalar(s, -wscos, t2);
-                        sum(v, t1, t1);
-                        sum(w, t2, t2);
-                        double rt1 = r(t1);
-                        double rt2 = r(t2);
-                        scalar(t1, 1.0 / rt1, t1);
-                        scalar(t2, 1.0 / rt2, t2);
+                        scale(s, -vscos, t1);
+                        scale(s, -wscos, t2);
+                        add(v, t1, t1);
+                        add(w, t2, t2);
+                        double rt1 = length(t1);
+                        double rt2 = length(t2);
+                        scale(t1, 1.0 / rt1, t1);
+                        scale(t2, 1.0 / rt2, t2);
                         double ut1cos = dot(u, t1);
                         double ut1sin = sqrt(1.0 - ut1cos * ut1cos);
                         double ut2cos = dot(u, t2);
@@ -5953,13 +5953,13 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             v[1] = y[ic];
             v[2] = z[ic];
             // Construct the three rotation axes for the local frame
-            diff(u, origin, u);
-            diff(v, origin, v);
+            sub(u, origin, u);
+            sub(v, origin, v);
             switch (frame[i]) {
                 default:
                 case ZTHENX:
                 case BISECTOR:
-                    cross(u, v, w);
+                    X(u, v, w);
                     break;
                 case THREEFOLD:
                 case ZTHENBISECTOR:
@@ -5967,25 +5967,25 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     w[0] = x[id];
                     w[1] = y[id];
                     w[2] = z[id];
-                    diff(w, origin, w);
+                    sub(w, origin, w);
             }
 
-            double ru = r(u);
-            double rv = r(v);
-            double rw = r(w);
-            scalar(u, 1.0 / ru, u);
-            scalar(v, 1.0 / rv, v);
-            scalar(w, 1.0 / rw, w);
+            double ru = length(u);
+            double rv = length(v);
+            double rw = length(w);
+            scale(u, 1.0 / ru, u);
+            scale(v, 1.0 / rv, v);
+            scale(w, 1.0 / rw, w);
             // Find the perpendicular and angle for each pair of axes.
-            cross(v, u, uv);
-            cross(w, u, uw);
-            cross(w, v, vw);
-            double ruv = r(uv);
-            double ruw = r(uw);
-            double rvw = r(vw);
-            scalar(uv, 1.0 / ruv, uv);
-            scalar(uw, 1.0 / ruw, uw);
-            scalar(vw, 1.0 / rvw, vw);
+            X(v, u, uv);
+            X(w, u, uw);
+            X(w, v, vw);
+            double ruv = length(uv);
+            double ruw = length(uw);
+            double rvw = length(vw);
+            scale(uv, 1.0 / ruv, uv);
+            scale(uw, 1.0 / ruw, uw);
+            scale(vw, 1.0 / rvw, vw);
             // Compute the sine of the angle between the rotation axes.
             double uvcos = dot(u, v);
             double uvsin = sqrt(1.0 - uvcos * uvcos);
@@ -6003,25 +6003,25 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             switch (frame[i]) {
                 case ZTHENBISECTOR:
                     // Build some additional axes needed for the Z-then-Bisector method
-                    sum(v, w, r);
-                    cross(u, r, s);
-                    double rr = r(r);
-                    double rs = r(s);
-                    scalar(r, 1.0 / rr, r);
-                    scalar(s, 1.0 / rs, s);
+                    add(v, w, r);
+                    X(u, r, s);
+                    double rr = length(r);
+                    double rs = length(s);
+                    scale(r, 1.0 / rr, r);
+                    scale(s, 1.0 / rs, s);
                     // Find the perpendicular and angle for each pair of axes.
-                    cross(r, u, ur);
-                    cross(s, u, us);
-                    cross(s, v, vs);
-                    cross(s, w, ws);
-                    double rur = r(ur);
-                    double rus = r(us);
-                    double rvs = r(vs);
-                    double rws = r(ws);
-                    scalar(ur, 1.0 / rur, ur);
-                    scalar(us, 1.0 / rus, us);
-                    scalar(vs, 1.0 / rvs, vs);
-                    scalar(ws, 1.0 / rws, ws);
+                    X(r, u, ur);
+                    X(s, u, us);
+                    X(s, v, vs);
+                    X(s, w, ws);
+                    double rur = length(ur);
+                    double rus = length(us);
+                    double rvs = length(vs);
+                    double rws = length(ws);
+                    scale(ur, 1.0 / rur, ur);
+                    scale(us, 1.0 / rus, us);
+                    scale(vs, 1.0 / rvs, vs);
+                    scale(ws, 1.0 / rws, ws);
                     // Compute the sine of the angle between the rotation axes
                     double urcos = dot(u, r);
                     double ursin = sqrt(1.0 - urcos * urcos);
@@ -6032,14 +6032,14 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     double wscos = dot(w, s);
                     double wssin = sqrt(1.0 - wscos * wscos);
                     // Compute the projection of v and w onto the ru-plane
-                    scalar(s, -vscos, t1);
-                    scalar(s, -wscos, t2);
-                    sum(v, t1, t1);
-                    sum(w, t2, t2);
-                    double rt1 = r(t1);
-                    double rt2 = r(t2);
-                    scalar(t1, 1.0 / rt1, t1);
-                    scalar(t2, 1.0 / rt2, t2);
+                    scale(s, -vscos, t1);
+                    scale(s, -wscos, t2);
+                    add(v, t1, t1);
+                    add(w, t2, t2);
+                    double rt1 = length(t1);
+                    double rt2 = length(t2);
+                    scale(t1, 1.0 / rt1, t1);
+                    scale(t2, 1.0 / rt2, t2);
                     double ut1cos = dot(u, t1);
                     double ut1sin = sqrt(1.0 - ut1cos * ut1cos);
                     double ut2cos = dot(u, t2);

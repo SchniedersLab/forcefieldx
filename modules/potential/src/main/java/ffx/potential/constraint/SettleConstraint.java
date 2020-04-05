@@ -72,7 +72,7 @@
 package ffx.potential.constraint;
 
 import ffx.numerics.Constraint;
-import ffx.numerics.math.VectorMath;
+import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -374,9 +374,9 @@ public class SettleConstraint implements Constraint {
             eBC[i] = apos2[i] - apos1[i];
             eCA[i] = apos0[i] - apos2[i];
         }
-        VectorMath.norm(eAB, eAB);
-        VectorMath.norm(eBC, eBC);
-        VectorMath.norm(eCA, eCA);
+        DoubleMath.normalize(eAB, eAB);
+        DoubleMath.normalize(eBC, eBC);
+        DoubleMath.normalize(eCA, eCA);
         /*eAB /= sqrt(eAB[0]*eAB[0] + eAB[1]*eAB[1] + eAB[2]*eAB[2]);
         eBC /= sqrt(eBC[0]*eBC[0] + eBC[1]*eBC[1] + eBC[2]*eBC[2]);
         eCA /= sqrt(eCA[0]*eCA[0] + eCA[1]*eCA[1] + eCA[2]*eCA[2]);*/
@@ -498,21 +498,21 @@ public class SettleConstraint implements Constraint {
             double[] v01 = new double[3];
             double[] v02 = new double[3];
             double[] v12 = new double[3];
-            VectorMath.diff(v1, v0, v01);
-            VectorMath.diff(v2, v0, v02);
-            VectorMath.diff(v2, v1, v12);
+            DoubleMath.sub(v1, v0, v01);
+            DoubleMath.sub(v2, v0, v02);
+            DoubleMath.sub(v2, v1, v12);
 
             // Obtain bond vectors.
             double[] x01 = new double[3];
             double[] x02 = new double[3];
             double[] x12 = new double[3];
-            VectorMath.diff(x1, x0, x01);
-            VectorMath.diff(x2, x0, x02);
-            VectorMath.diff(x2, x1, x12);
+            DoubleMath.sub(x1, x0, x01);
+            DoubleMath.sub(x2, x0, x02);
+            DoubleMath.sub(x2, x1, x12);
 
-            double xv01 = VectorMath.dot(v01, x01);
-            double xv02 = VectorMath.dot(v02, x02);
-            double xv12 = VectorMath.dot(v12, x12);
+            double xv01 = DoubleMath.dot(v01, x01);
+            double xv02 = DoubleMath.dot(v02, x02);
+            double xv12 = DoubleMath.dot(v12, x12);
 
             if (Math.abs(xv01) > vTol) {
                 return false;

@@ -41,8 +41,8 @@ import static java.lang.Math.sqrt;
 
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.rsq;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.length2;
 
 /**
  * <p>
@@ -99,8 +99,8 @@ public final class SolventPolyFormFactor implements FormFactor {
      */
     @Override
     public double rho(double f, double lambda, double[] xyz) {
-        diff(this.xyz, xyz, dxyz);
-        double ri2 = rsq(dxyz);
+        sub(this.xyz, xyz, dxyz);
+        double ri2 = length2(dxyz);
         if (ri2 <= aradMinusW2) {
             return 0.0;
         }
@@ -142,8 +142,8 @@ public final class SolventPolyFormFactor implements FormFactor {
                 || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES) {
             return;
         }
-        diff(this.xyz, xyz, dxyz);
-        double ri2 = rsq(dxyz);
+        sub(this.xyz, xyz, dxyz);
+        double ri2 = length2(dxyz);
         if (ri2 <= aradMinusW2 || ri2 >= aradPlusW2) {
             return;
         }

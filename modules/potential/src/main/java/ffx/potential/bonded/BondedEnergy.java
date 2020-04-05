@@ -42,17 +42,10 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 /**
  * The BondedEnergy interface.
  *
- * @author Stephen D. LuCore
+ * @author Michael J. Schnieders
  * @since 1.0
  */
 public interface BondedEnergy {
-
-    /**
-     * <p>update.</p>
-     */
-    default void update() {
-        energy(false);
-    }
 
     /**
      * <p>energy.</p>
@@ -86,5 +79,12 @@ public interface BondedEnergy {
      * @return a double.
      */
     double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad);
+
+    /**
+     * <p>update.</p>
+     */
+    default void update() {
+        energy(false);
+    }
 
 }

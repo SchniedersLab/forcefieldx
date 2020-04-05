@@ -55,7 +55,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.DoubleMath.sub;
 
 /**
  * The Utilities class provides methods to locate functional units of an organic
@@ -1319,7 +1319,7 @@ public final class Utilities {
             a2 = (Atom) lj.next();
             a1.getXYZ(da);
             a2.getXYZ(db);
-            diff(da, db, d);
+            sub(da, db, d);
             rms += d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
         }
         return sqrt(rms / n1);

@@ -58,10 +58,10 @@ import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.rsq;
-import static ffx.numerics.math.VectorMath.scalar;
-import static ffx.numerics.math.VectorMath.sum;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.length2;
+import static ffx.numerics.math.DoubleMath.scale;
+import static ffx.numerics.math.DoubleMath.add;
 
 /**
  * GaussVol implements a description molecular volume and surface area described by overlapping Gaussian spheres.
@@ -862,8 +862,8 @@ public class GaussVol {
                     GaussianOverlap ov = new GaussianOverlap(g12, gvol, 0.0, atom2);
                     // dv1 is the gradient of V(123..)n with respect to the position of 1
                     // ov.dv1 = ( g2.c - g1.c ) * (-dVdr);
-                    diff(g2.c, g1.c, ov.dv1);
-                    scalar(ov.dv1, -dVdr[0], ov.dv1);
+                    sub(g2.c, g1.c, ov.dv1);
+                    scale(ov.dv1, -dVdr[0], ov.dv1);
 
                     // dvv1 is the derivative of V(123...)n with respect to V(123...)
                     ov.dvv1 = dVdV[0];
@@ -987,15 +987,15 @@ public class GaussVol {
                             threadID, dr, dv, freeVolume, selfVolume);
                     psi1i[0] += psi1it[0];
                     f1i[0] += f1it[0];
-                    sum(p1i, p1it, p1i);
+                    add(p1i, p1it, p1i);
 
                     psip1i[0] += psip1it[0];
                     fp1i[0] += fp1it[0];
-                    sum(pp1i, pp1it, pp1i);
+                    add(pp1i, pp1it, pp1i);
 
                     energy1i[0] += energy1it[0];
                     fenergy1i[0] += fenergy1it[0];
-                    sum(penergy1i, penergy1it, penergy1i);
+                    add(penergy1i, penergy1it, penergy1i);
                 }
             }
 
@@ -1012,9 +1012,9 @@ public class GaussVol {
                 double[] work1 = new double[3];
                 double[] work2 = new double[3];
                 double[] work3 = new double[3];
-                scalar(penergy1i, c2, work1);
-                scalar(ov.dv1, -fenergy1i[0], work2);
-                sum(work1, work2, work3);
+                scale(penergy1i, c2, work1);
+                scale(ov.dv1, -fenergy1i[0], work2);
+                add(work1, work2, work3);
                 dr.add(threadID, atom, work3[0], work3[1], work3[2]);
 
                 // ov.g.v is the unswitched volume
@@ -1024,19 +1024,19 @@ public class GaussVol {
                 c2 = a1 / a1i;
 
                 // p1i = (ov.dv1) * f1i + p1i * c2;
-                scalar(ov.dv1, f1i[0], work1);
-                scalar(pp1i, c2, work2);
-                sum(work1, work2, p1i);
+                scale(ov.dv1, f1i[0], work1);
+                scale(pp1i, c2, work2);
+                add(work1, work2, p1i);
 
                 // pp1i = (ov.dv1) * fp1i + pp1i * c2;
-                scalar(ov.dv1, fp1i[0], work1);
-                scalar(pp1i, c2, work2);
-                sum(work1, work2, pp1i);
+                scale(ov.dv1, fp1i[0], work1);
+                scale(pp1i, c2, work2);
+                add(work1, work2, pp1i);
 
                 // penergy1i = (ov.dv1) * fenergy1i + penergy1i * c2;
-                scalar(ov.dv1, fenergy1i[0], work1);
-                scalar(penergy1i, c2, work2);
-                sum(work1, work2, penergy1i);
+                scale(ov.dv1, fenergy1i[0], work1);
+                scale(penergy1i, c2, work2);
+                add(work1, work2, penergy1i);
 
                 // Update subtree F1..i's for parent
                 f1i[0] = ov.dvv1 * f1i[0];
@@ -1128,8 +1128,8 @@ public class GaussVol {
 
                 // dv1 is the gradient of V(123..)n with respect to the position of 1
                 // ov.dv1 = ( g2.c - g1.c ) * (-dVdr);
-                diff(g2.c, g1.c, ov.dv1);
-                scalar(ov.dv1, -dVdr[0], ov.dv1);
+                sub(g2.c, g1.c, ov.dv1);
+                scale(ov.dv1, -dVdr[0], ov.dv1);
 
                 // dvv1 is the derivative of V(123...)n with respect to V(123...)
                 ov.dvv1 = dVdV[0];
@@ -1327,8 +1327,8 @@ public class GaussVol {
         double[] c2 = g2.c;
         double[] dist = new double[3];
 
-        diff(c2, c1, dist);
-        double d2 = rsq(dist);
+        sub(c2, c1, dist);
+        double d2 = length2(dist);
         double a12 = g1.a + g2.a;
         double deltai = 1.0 / a12;
 
@@ -1351,9 +1351,9 @@ public class GaussVol {
         // g12.c = ((c1 * g1.a) + (c2 * g2.a)) * deltai;
         double[] c1a = new double[3];
         double[] c2a = new double[3];
-        scalar(c1, g1.a * deltai, c1a);
-        scalar(c2, g2.a * deltai, c2a);
-        sum(c1a, c2a, g12.c);
+        scale(c1, g1.a * deltai, c1a);
+        scale(c2, g2.a * deltai, c2a);
+        add(c1a, c2a, g12.c);
         g12.a = a12;
         g12.v = gvol;
 

@@ -42,10 +42,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.PDBFilter;
@@ -59,78 +62,12 @@ import ffx.potential.parsers.PDBFilter;
 public class SturmMethod {
 
     private static final Logger logger = Logger.getLogger(SturmMethod.class.getName());
-
-    /**
-     * Calculates the modulus of u(x)/v(x) leaving it in r, it returns 0 if r(x)
-     * is constant. This function assumes the leading coefficient of v is 1 or
-     * -1.
-     * <p>
-     * Modp was originally a static int and returned r.ord as an int. The
-     * buildSturm function requires that a boolean is returned from the modp
-     * function, so modp is set to return a boolean. This new boolean return
-     * could be problematic elsewhere in the code if modp is used to return a
-     * value. This should be checked.
-     *
-     * @param u
-     * @param v
-     * @param r
-     * @return true if r.ord > 0.
-     */
-    private static boolean modp(Polynomial u, Polynomial v, Polynomial r) {
-        double nr[] = r.coefficients;
-        int end = u.order;
-        double uc[] = u.coefficients;
-
-        for (int i = 0; i <= end; i++) {
-            nr[i] = uc[i];
-        }
-
-        if (v.coefficients[v.order] < 0.0) {
-            for (int k = u.order - v.order - 1; k >= 0; k -= 2) {
-                r.coefficients[k] = -r.coefficients[k];
-            }
-
-            for (int k = u.order - v.order; k >= 0; k--) {
-                for (int j = v.order + k - 1; j >= k; j--) {
-                    r.coefficients[j] = -r.coefficients[j] - r.coefficients[v.order + k] * v.coefficients[j - k];
-                }
-            }
-        } else {
-            for (int k = u.order - v.order; k >= 0; k--) {
-                for (int j = v.order + k - 1; j >= k; j--) {
-                    r.coefficients[j] -= r.coefficients[v.order + k] * v.coefficients[j - k];
-                }
-            }
-        }
-
-        int k = v.order - 1;
-        while (k >= 0 && abs(r.coefficients[k]) < 1.0e-18) {
-            r.coefficients[k] = 0.0;
-            k--;
-        }
-
-        if (k < 0) {
-            r.order = 0;
-        } else {
-            r.order = k;
-        }
-
-        if (r.order > 0) {
-            return true;
-        } else if (r.order == 0) {
-            return false;
-        } else {
-            return false;
-        }
-    }
-
     final int MAXPOW = 32;
-    final double SMALL_ENOUGH = 1.0e-18;
     private final double RELERROR;
     private final int MAXIT;
     private final int MAX_ITER_SECANT;
-    private double[] roots;
     private final double[][] xyz_o = new double[5][3];
+    private double[] roots;
 
     /**
      * SturmMethod constructor with termination criteria for polynomial solver.
@@ -139,6 +76,15 @@ public class SturmMethod {
         RELERROR = 1.0e-15;
         MAXIT = 100;
         MAX_ITER_SECANT = 20;
+    }
+
+    /**
+     * Used only in JUnit testing.
+     *
+     * @return oxygen coordinates.
+     */
+    public double[][] getr_o() {
+        return xyz_o;
     }
 
     /**
@@ -164,15 +110,13 @@ public class SturmMethod {
 
         order = p_order[0];
 
-        for (int i = order; i >= 0; i--) {
-            sseq[0].coefficients[i] = poly_coeffs[i];
-        }
+        if (order + 1 >= 0) arraycopy(poly_coeffs, 0, sseq[0].coefficients, 0, order + 1);
 
         if (logger.isLoggable(Level.FINE)) {
             StringBuilder string = new StringBuilder();
             for (int i = order; i >= 0; i--) {
-                string.append(String.format(" Coefficients in Sturm solver\n"));
-                string.append(String.format("%d %f\n", i, sseq[0].coefficients[i]));
+                string.append(format(" Coefficients in Sturm solver\n"));
+                string.append(format("%d %f\n", i, sseq[0].coefficients[i]));
             }
             logger.fine(string.toString());
         }
@@ -181,14 +125,14 @@ public class SturmMethod {
 
         if (logger.isLoggable(Level.FINE)) {
             StringBuilder string1 = new StringBuilder();
-            string1.append(String.format(" Sturm sequence for:\n"));
+            string1.append(format(" Sturm sequence for:\n"));
             for (int i = order; i >= 0; i--) {
-                string1.append(String.format("%f ", sseq[0].coefficients[i]));
+                string1.append(format("%f ", sseq[0].coefficients[i]));
                 string1.append("\n");
             }
             for (int i = 0; i <= np; i++) {
                 for (int j = sseq[i].order; j >= 0; j--) {
-                    string1.append(String.format("%f ", sseq[i].coefficients[j]));
+                    string1.append(format("%f ", sseq[i].coefficients[j]));
                     string1.append("\n");
                 }
             }
@@ -203,7 +147,7 @@ public class SturmMethod {
         }
 
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format(" Number of real roots: %d\n", nroots));
+            logger.fine(format(" Number of real roots: %d\n", nroots));
         }
 
         //calculate the bracket that the roots live in
@@ -216,7 +160,7 @@ public class SturmMethod {
         }
 
         if (nchanges != atmin[0]) {
-            logger.fine(String.format(" Solve: unable to bracket all negative roots\n"));
+            logger.fine(format(" Solve: unable to bracket all negative roots\n"));
             atmin[0] = nchanges;
         }
 
@@ -228,7 +172,7 @@ public class SturmMethod {
             nchanges = numChanges(np, sseq, max);
         }
         if (nchanges != atmax[0]) {
-            logger.fine(String.format(" Solve: unable to bracket all positive roots\n"));
+            logger.fine(format(" Solve: unable to bracket all positive roots\n"));
             atmax[0] = nchanges;
         }
 
@@ -240,15 +184,219 @@ public class SturmMethod {
         //write out the roots
         if (logger.isLoggable(Level.FINE)) {
             if (nroots == 1) {
-                logger.fine(String.format("\n One distinct real root at x = %f\n", this.roots[0]));
+                logger.fine(format("\n One distinct real root at x = %f\n", this.roots[0]));
             } else {
                 StringBuilder string2 = new StringBuilder();
-                string2.append(String.format("\n %d distinct real roots for x: \n", nroots));
+                string2.append(format("\n %d distinct real roots for x: \n", nroots));
                 for (int i = 0; i != nroots; i++) {
-                    string2.append(String.format("%f\n", this.roots[i]));
+                    string2.append(format("%f\n", this.roots[i]));
                 }
                 logger.fine(string2.toString());
             }
+        }
+    }
+
+    /**
+     * Write out loop coordinates and determine oxygen placement.
+     *
+     * @param r_n       an array of {@link double} objects.
+     * @param r_a       an array of {@link double} objects.
+     * @param r_c       an array of {@link double} objects.
+     * @param stt_res   a int.
+     * @param end_res   a int.
+     * @param molAss    a {@link ffx.potential.MolecularAssembly} object.
+     * @param counter   a int.
+     * @param writeFile a boolean.
+     * @return the File.
+     */
+    public File writePDBBackbone(double[][] r_n, double[][] r_a, double[][] r_c, int stt_res, int end_res, MolecularAssembly molAss, int counter, boolean writeFile) {
+
+        Polymer[] newChain = molAss.getChains();
+        ArrayList<Atom> backBoneAtoms;
+        double[] xyz_n = new double[3];
+        double[] xyz_a = new double[3];
+        double[] xyz_c = new double[3];
+
+        xyz_o[0][0] = 0.0;
+        xyz_o[0][1] = 0.0;
+        xyz_o[0][2] = 0.0;
+        xyz_o[4][0] = 0.0;
+        xyz_o[4][1] = 0.0;
+        xyz_o[4][2] = 0.0;
+
+        ArrayList<Atom> OAtoms = new ArrayList<>();
+
+        for (int i = stt_res + 1; i < end_res; i++) {
+            Residue newResidue = newChain[0].getResidue(i);
+            backBoneAtoms = newResidue.getBackboneAtoms();
+            for (Atom backBoneAtom : backBoneAtoms) {
+                switch (backBoneAtom.getAtomType().name) {
+                    case "C":
+                        xyz_c[0] = r_c[i - stt_res][0];
+                        xyz_c[1] = r_c[i - stt_res][1];
+                        xyz_c[2] = r_c[i - stt_res][2];
+                        backBoneAtom.moveTo(xyz_c);
+                        break;
+                    case "N":
+                        xyz_n[0] = r_n[i - stt_res][0];
+                        xyz_n[1] = r_n[i - stt_res][1];
+                        xyz_n[2] = r_n[i - stt_res][2];
+                        backBoneAtom.moveTo(xyz_n);
+                        break;
+                    case "CA":
+                        xyz_a[0] = r_a[i - stt_res][0];
+                        xyz_a[1] = r_a[i - stt_res][1];
+                        xyz_a[2] = r_a[i - stt_res][2];
+                        backBoneAtom.moveTo(xyz_a);
+                        break;
+                    case "HA":
+                        newResidue.deleteAtom(backBoneAtom);
+                        break;
+                    case "H":
+                        newResidue.deleteAtom(backBoneAtom);
+                        break;
+                    case "O":
+                        OAtoms.add(backBoneAtom);
+                        break;
+                    default:
+                        newResidue.deleteAtom(backBoneAtom);
+                        break;
+                }
+            }
+
+            ArrayList<Atom> sideChainAtoms = newResidue.getSideChainAtoms();
+            for (Atom sideChainAtom : sideChainAtoms) {
+                newResidue.deleteAtom(sideChainAtom);
+            }
+        }
+
+        int oCount = 0;
+        for (int i = stt_res + 1; i < end_res; i++) {
+            Residue newResidue = newChain[0].getResidue(i);
+            backBoneAtoms = newResidue.getBackboneAtoms();
+            Atom CA = new Atom("CA");
+            Atom N = new Atom("N");
+            Atom C = new Atom("C");
+            Atom O = OAtoms.get(oCount);
+
+            for (Atom backBoneAtom : backBoneAtoms) {
+                switch (backBoneAtom.getAtomType().name) {
+                    case "C":
+                        C = backBoneAtom;
+                        break;
+                    case "N":
+                        N = backBoneAtom;
+                        break;
+                    case "CA":
+                        CA = backBoneAtom;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            BondedUtils.intxyz(O, C, 1.2255, CA, 122.4, N, 180, 0);
+            xyz_o[i - stt_res][0] = O.getX();
+            xyz_o[i - stt_res][1] = O.getY();
+            xyz_o[i - stt_res][2] = O.getZ();
+
+            oCount++;
+        }
+
+        File file = molAss.getFile();
+
+        String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
+        if (!filename.contains("_loop")) {
+            filename = filename + "_loop";
+        }
+
+        File modifiedFile = new File(filename + ".pdb_" + counter);
+        PDBFilter modFilter = new PDBFilter(modifiedFile, molAss, null, null);
+
+        if (writeFile) {
+            modFilter.writeFile(modifiedFile, true);
+        }
+
+        return (modifiedFile);
+    }
+
+    /**
+     * Calculates the modulus of u(x)/v(x) leaving it in r, it returns 0 if r(x)
+     * is constant. This function assumes the leading coefficient of v is 1 or
+     * -1.
+     * <p>
+     * Modp was originally a static int and returned r.ord as an int. The
+     * buildSturm function requires that a boolean is returned from the modp
+     * function, so modp is set to return a boolean. This new boolean return
+     * could be problematic elsewhere in the code if modp is used to return a
+     * value. This should be checked.
+     *
+     * @param u
+     * @param v
+     * @param r
+     * @return true if r.ord > 0.
+     */
+    private static boolean modp(Polynomial u, Polynomial v, Polynomial r) {
+        double[] nr = r.coefficients;
+        int end = u.order;
+        double[] uc = u.coefficients;
+
+        if (end + 1 >= 0) arraycopy(uc, 0, nr, 0, end + 1);
+
+        if (v.coefficients[v.order] < 0.0) {
+            for (int k = u.order - v.order - 1; k >= 0; k -= 2) {
+                r.coefficients[k] = -r.coefficients[k];
+            }
+
+            for (int k = u.order - v.order; k >= 0; k--) {
+                for (int j = v.order + k - 1; j >= k; j--) {
+                    r.coefficients[j] = -r.coefficients[j] - r.coefficients[v.order + k] * v.coefficients[j - k];
+                }
+            }
+        } else {
+            for (int k = u.order - v.order; k >= 0; k--) {
+                for (int j = v.order + k - 1; j >= k; j--) {
+                    r.coefficients[j] -= r.coefficients[v.order + k] * v.coefficients[j - k];
+                }
+            }
+        }
+
+        int k = v.order - 1;
+        while (k >= 0 && abs(r.coefficients[k]) < 1.0e-18) {
+            r.coefficients[k] = 0.0;
+            k--;
+        }
+
+        r.order = max(k, 0);
+
+        if (r.order > 0) {
+            return true;
+        } else if (r.order == 0) {
+            return false;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * The Polynomial class describes a single polynomial of up to 16th degree.
+     */
+    private static class Polynomial {
+
+        final static int MAX_ORDER = 16;
+        /**
+         * The coefficients of the polynomial.
+         */
+        public final double[] coefficients;
+        /**
+         * The order of the polynomial.
+         */
+        public int order;
+
+        /**
+         * Private constructor.
+         */
+        private Polynomial() {
+            coefficients = new double[MAX_ORDER + 1];
         }
     }
 
@@ -443,7 +591,7 @@ public class SturmMethod {
                 }
             }
             if (its == MAXIT) {
-                logger.info(String.format(" sbisect: overflow min %f max %f diff %f nroot %d n1 %d n2 %d\n",
+                logger.info(format(" sbisect: overflow min %f max %f diff %f nroot %d n1 %d n2 %d\n",
                         min, max, max - min, nroot, n1, n2));
                 roots[0] = mid;
             }
@@ -524,7 +672,7 @@ public class SturmMethod {
      */
     private double evalPoly(int ord, double[] coef, double x) {
 
-        double fp[] = coef;
+        double[] fp = coef;
         double f = fp[ord];
 
         int i = ord;
@@ -595,165 +743,5 @@ public class SturmMethod {
         }
 
         return false;
-    }
-
-    /**
-     * Write out loop coordinates and determine oxygen placement.
-     *
-     * @param r_n       an array of {@link double} objects.
-     * @param r_a       an array of {@link double} objects.
-     * @param r_c       an array of {@link double} objects.
-     * @param stt_res   a int.
-     * @param end_res   a int.
-     * @param molAss    a {@link ffx.potential.MolecularAssembly} object.
-     * @param counter   a int.
-     * @param writeFile a boolean.
-     * @return the File.
-     */
-    public File writePDBBackbone(double[][] r_n, double[][] r_a, double[][] r_c, int stt_res, int end_res, MolecularAssembly molAss, int counter, boolean writeFile) {
-
-        Polymer[] newChain = molAss.getChains();
-        ArrayList<Atom> backBoneAtoms;
-        double[] xyz_n = new double[3];
-        double[] xyz_a = new double[3];
-        double[] xyz_c = new double[3];
-
-        xyz_o[0][0] = 0.0;
-        xyz_o[0][1] = 0.0;
-        xyz_o[0][2] = 0.0;
-        xyz_o[4][0] = 0.0;
-        xyz_o[4][1] = 0.0;
-        xyz_o[4][2] = 0.0;
-
-        ArrayList<Atom> OAtoms = new ArrayList<>();
-
-        for (int i = stt_res + 1; i < end_res; i++) {
-            Residue newResidue = newChain[0].getResidue(i);
-            backBoneAtoms = newResidue.getBackboneAtoms();
-            for (Atom backBoneAtom : backBoneAtoms) {
-                switch (backBoneAtom.getAtomType().name) {
-                    case "C":
-                        xyz_c[0] = r_c[i - stt_res][0];
-                        xyz_c[1] = r_c[i - stt_res][1];
-                        xyz_c[2] = r_c[i - stt_res][2];
-                        backBoneAtom.moveTo(xyz_c);
-                        break;
-                    case "N":
-                        xyz_n[0] = r_n[i - stt_res][0];
-                        xyz_n[1] = r_n[i - stt_res][1];
-                        xyz_n[2] = r_n[i - stt_res][2];
-                        backBoneAtom.moveTo(xyz_n);
-                        break;
-                    case "CA":
-                        xyz_a[0] = r_a[i - stt_res][0];
-                        xyz_a[1] = r_a[i - stt_res][1];
-                        xyz_a[2] = r_a[i - stt_res][2];
-                        backBoneAtom.moveTo(xyz_a);
-                        break;
-                    case "HA":
-                        newResidue.deleteAtom(backBoneAtom);
-                        break;
-                    case "H":
-                        newResidue.deleteAtom(backBoneAtom);
-                        break;
-                    case "O":
-                        OAtoms.add(backBoneAtom);
-                        break;
-                    default:
-                        newResidue.deleteAtom(backBoneAtom);
-                        break;
-                }
-            }
-
-            ArrayList<Atom> sideChainAtoms = newResidue.getSideChainAtoms();
-            for (Atom sideChainAtom : sideChainAtoms) {
-                newResidue.deleteAtom(sideChainAtom);
-            }
-        }
-
-        int oCount = 0;
-        for (int i = stt_res + 1; i < end_res; i++) {
-            Residue newResidue = newChain[0].getResidue(i);
-            backBoneAtoms = newResidue.getBackboneAtoms();
-            Atom CA = new Atom("CA");
-            Atom N = new Atom("N");
-            Atom C = new Atom("C");
-            Atom O = OAtoms.get(oCount);
-
-            for (Atom backBoneAtom : backBoneAtoms) {
-                switch (backBoneAtom.getAtomType().name) {
-                    case "C":
-                        C = backBoneAtom;
-                        break;
-                    case "N":
-                        N = backBoneAtom;
-                        break;
-                    case "CA":
-                        CA = backBoneAtom;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            BondedUtils.intxyz(O, C, 1.2255, CA, 122.4, N, 180, 0);
-            xyz_o[i - stt_res][0] = O.getX();
-            xyz_o[i - stt_res][1] = O.getY();
-            xyz_o[i - stt_res][2] = O.getZ();
-
-            oCount++;
-        }
-
-        File file = molAss.getFile();
-
-        /**
-         * for (int i = stt_res; i <= end_res; i++) { double[] xyz =
-         * molAss.getBackBoneAtoms().get(i).getXYZ(); }
-         */
-        String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
-        if (!filename.contains("_loop")) {
-            filename = filename + "_loop";
-        }
-
-        File modifiedFile = new File(filename + ".pdb_" + counter);
-        PDBFilter modFilter = new PDBFilter(modifiedFile, molAss, null, null);
-
-        if (writeFile) {
-            modFilter.writeFile(modifiedFile, true);
-        }
-
-        return (modifiedFile);
-    }
-
-    /**
-     * Used only in JUnit testing.
-     *
-     * @return oxygen coordinates.
-     */
-    public double[][] getr_o() {
-        return xyz_o;
-    }
-
-    /**
-     * The Polynomial class describes a single polynomial of up to 16th degree.
-     */
-    private class Polynomial {
-
-        final static int MAX_ORDER = 16;
-
-        /**
-         * The order of the polynomial.
-         */
-        public int order;
-        /**
-         * The coefficients of the polynomial.
-         */
-        public final double coefficients[];
-
-        /**
-         * Private constructor.
-         */
-        private Polynomial() {
-            coefficients = new double[MAX_ORDER + 1];
-        }
     }
 }

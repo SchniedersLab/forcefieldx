@@ -55,11 +55,11 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter.PDBFileStandard;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dist;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalar;
-import static ffx.numerics.math.VectorMath.sum;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.dist;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.scale;
+import static ffx.numerics.math.DoubleMath.add;
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
 import static ffx.potential.bonded.Bond.logNoBondType;
 import static ffx.potential.bonded.BondedUtils.buildBond;
@@ -419,14 +419,14 @@ public class PolymerUtils {
                                     double[] e1 = new double[3];
                                     hydrogen.getXYZ(e1);
                                     double[] ret = new double[3];
-                                    diff(a, e1, ret);
-                                    double l1 = r(ret);
+                                    sub(a, e1, ret);
+                                    double l1 = length(ret);
                                     // Place the hydrogen at chiral position #2.
                                     intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, -1);
                                     double[] e2 = new double[3];
                                     hydrogen.getXYZ(e2);
-                                    diff(a, e2, ret);
-                                    double l2 = r(ret);
+                                    sub(a, e2, ret);
+                                    double l2 = length(ret);
                                     // Revert to #1 if it is farther from the average.
                                     if (l1 > l2) {
                                         hydrogen.setXYZ(e1);
@@ -503,128 +503,6 @@ public class PolymerUtils {
         }
         resolvePolymerLinks(molecules, molecularAssembly, bondList);
         return bondList;
-    }
-
-    /**
-     * Locate disulfide bonds based on SSBOND records.
-     *
-     * @param ssbonds           List of SSBOND records.
-     * @param molecularAssembly The MolecularAssembly to operate on.
-     * @param pdbToNewResMap    Maps chainIDResNumInsCode to renumbered chainIDResNum. For example,
-     *                          residue 52A in chain C might be renumbered to residue 53, and mapped as
-     *                          "C52A" to "C53".
-     * @return An ArrayList of Bond instances for SS-Bonds.
-     */
-    public static List<Bond> locateDisulfideBonds(List<String> ssbonds, MolecularAssembly molecularAssembly, Map<String, String> pdbToNewResMap) {
-        List<Bond> ssBondList = new ArrayList<>();
-        for (String ssbond : ssbonds) {
-            // =============================================================================
-            // The SSBOND record identifies each disulfide bond in protein and polypeptide
-            // structures by identifying the two residues involved in the bond.
-            // The disulfide bond distance is included after the symmetry operations at
-            // the end of the SSBOND record.
-            //
-            //  8 - 10        Integer         serNum       Serial number.
-            // 12 - 14        LString(3)      "CYS"        Residue name.
-            // 16             Character       chainID1     Chain identifier.
-            // 18 - 21        Integer         seqNum1      Residue sequence number.
-            // 22             AChar           icode1       Insertion code.
-            // 26 - 28        LString(3)      "CYS"        Residue name.
-            // 30             Character       chainID2     Chain identifier.
-            // 32 - 35        Integer         seqNum2      Residue sequence number.
-            // 36             AChar           icode2       Insertion code.
-            // 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
-            // 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
-            // 74 – 78        Real(5.2)      Length        Disulfide bond distance
-            //
-            // If SG of cysteine is disordered then there are possible alternate linkages.
-            // wwPDB practice is to put together all possible SSBOND records. This is
-            // problematic because the alternate location identifier is not specified in
-            // the SSBOND record.
-            // =============================================================================
-            try {
-                char c1ch = ssbond.charAt(15);
-                char c2ch = ssbond.charAt(29);
-                Polymer c1 = molecularAssembly.getChain(format("%c", c1ch));
-                Polymer c2 = molecularAssembly.getChain(format("%c", c2ch));
-
-                Polymer[] chains = molecularAssembly.getChains();
-                if (c1 == null) {
-                    c1 = chains[0];
-                }
-                if (c2 == null) {
-                    c2 = chains[0];
-                }
-
-                String origResNum1 = ssbond.substring(17, 21).trim();
-                char insChar1 = ssbond.charAt(21);
-                String origResNum2 = ssbond.substring(31, 35).trim();
-                char insChar2 = ssbond.charAt(35);
-
-                String pdbResNum1 = format("%c%s%c", c1ch, origResNum1, insChar1);
-                String pdbResNum2 = format("%c%s%c", c2ch, origResNum2, insChar2);
-                String resnum1 = pdbToNewResMap.get(pdbResNum1);
-                String resnum2 = pdbToNewResMap.get(pdbResNum2);
-                if (resnum1 == null) {
-                    logger.warning(format(" Could not find residue %s for SS-bond %s", pdbResNum1, ssbond));
-                    continue;
-                }
-                if (resnum2 == null) {
-                    logger.warning(format(" Could not find residue %s for SS-bond %s", pdbResNum2, ssbond));
-                    continue;
-                }
-
-                Residue r1 = c1.getResidue(parseInt(resnum1.substring(1)));
-                Residue r2 = c2.getResidue(parseInt(resnum2.substring(1)));
-                /*Residue r1 = c1.getResidue(Hybrid36.decode(4, ssbond.substring(17, 21)));
-                Residue r2 = c2.getResidue(Hybrid36.decode(4, ssbond.substring(31, 35)));*/
-                List<Atom> atoms1 = r1.getAtomList();
-                List<Atom> atoms2 = r2.getAtomList();
-                Atom SG1 = null;
-                Atom SG2 = null;
-                for (Atom atom : atoms1) {
-                    if (atom.getName().equalsIgnoreCase("SG")) {
-                        SG1 = atom;
-                        break;
-                    }
-                }
-                for (Atom atom : atoms2) {
-                    if (atom.getName().equalsIgnoreCase("SG")) {
-                        SG2 = atom;
-                        break;
-                    }
-                }
-                if (SG1 == null) {
-                    logger.warning(format(" SG atom 1 of SS-bond %s is null", ssbond));
-                }
-                if (SG2 == null) {
-                    logger.warning(format(" SG atom 2 of SS-bond %s is null", ssbond));
-                }
-                if (SG1 == null || SG2 == null) {
-                    continue;
-                }
-                double d = dist(SG1.getXYZ(null), SG2.getXYZ(null));
-                if (d < 5.0) {
-                    r1.setName("CYX");
-                    r2.setName("CYX");
-                    for (Atom atom : atoms1) {
-                        atom.setResName("CYX");
-                    }
-                    for (Atom atom : atoms2) {
-                        atom.setResName("CYX");
-                    }
-                    Bond bond = new Bond(SG1, SG2);
-                    ssBondList.add(bond);
-                } else {
-                    String message = format("Ignoring [%s]\n due to distance %8.3f A.", ssbond, d);
-                    logger.log(Level.WARNING, message);
-                }
-            } catch (Exception e) {
-                String message = format("Ignoring [%s]", ssbond);
-                logger.log(Level.WARNING, message, e);
-            }
-        }
-        return ssBondList;
     }
 
     /**
@@ -750,11 +628,11 @@ public class PolymerUtils {
 
                 double[] vector = new double[3];
                 int count = 3 * (nextResidue.getResidueNumber() - previousResidue.getResidueNumber());
-                diff(N.getXYZ(null), C.getXYZ(null), vector);
-                scalar(vector, 1.0 / count, vector);
+                sub(N.getXYZ(null), C.getXYZ(null), vector);
+                scale(vector, 1.0 / count, vector);
 
                 double[] nXYZ = new double[3];
-                sum(C.getXYZ(null), vector, nXYZ);
+                add(C.getXYZ(null), vector, nXYZ);
                 nXYZ[0] += random() - 0.5;
                 nXYZ[1] += random() - 0.5;
                 nXYZ[2] += random() - 0.5;
@@ -763,8 +641,8 @@ public class PolymerUtils {
                 currentResidue.addMSNode(newN);
 
                 double[] caXYZ = new double[3];
-                scalar(vector, 2.0, vector);
-                sum(C.getXYZ(null), vector, caXYZ);
+                scale(vector, 2.0, vector);
+                add(C.getXYZ(null), vector, caXYZ);
                 caXYZ[0] += Math.random() - 0.5;
                 caXYZ[1] += Math.random() - 0.5;
                 caXYZ[2] += Math.random() - 0.5;
@@ -773,8 +651,8 @@ public class PolymerUtils {
                 currentResidue.addMSNode(newCA);
 
                 double[] cXYZ = new double[3];
-                scalar(vector, 1.5, vector);
-                sum(C.getXYZ(null), vector, cXYZ);
+                scale(vector, 1.5, vector);
+                add(C.getXYZ(null), vector, cXYZ);
                 cXYZ[0] += Math.random() - 0.5;
                 cXYZ[1] += Math.random() - 0.5;
                 cXYZ[2] += Math.random() - 0.5;
@@ -786,7 +664,7 @@ public class PolymerUtils {
                 vector[0] = Math.random() - 0.5;
                 vector[1] = Math.random() - 0.5;
                 vector[2] = Math.random() - 0.5;
-                sum(cXYZ, vector, oXYZ);
+                add(cXYZ, vector, oXYZ);
                 Atom newO = new Atom(xyzIndex++, "O", C.getAltLoc(), oXYZ, resNames[i], currentID,
                         chainID, 1.0, C.getTempFactor(), C.getSegID(), true);
                 currentResidue.addMSNode(newO);
@@ -794,64 +672,6 @@ public class PolymerUtils {
             }
         }
         return xyzIndex;
-    }
-
-    /**
-     * Resolves links between polymeric hetero groups; presently only functional
-     * for cyclic molecules.
-     *
-     * @param molecules         List of Molecules in the molecular assembly.
-     * @param molecularAssembly MolecularAssembly to operate on.
-     * @param bondList          Add created bonds to this list.
-     */
-    public static void resolvePolymerLinks(List<MSNode> molecules, MolecularAssembly molecularAssembly,
-                                           ArrayList<Bond> bondList) {
-
-        ForceField forceField = molecularAssembly.getForceField();
-        CompositeConfiguration properties = molecularAssembly.getProperties();
-
-        for (String polyLink : properties.getStringArray("polymerlink")) {
-            logger.info(" Experimental: linking a cyclic hetero group: " + polyLink);
-
-            // Format: polymerlink resname atom1 atom2 [cyclize]
-            String[] toks = polyLink.split("\\s+");
-            String resName = toks[0];
-            String name1 = toks[1];
-            String name2 = toks[2];
-            int cyclicLen = 0;
-            if (toks.length > 3) {
-                cyclicLen = parseInt(toks[3]);
-            }
-
-            ArrayList<Molecule> matches = new ArrayList<>();
-            for (MSNode node : molecules) {
-                Molecule m = (Molecule) node;
-                if (m.getResidueName().equalsIgnoreCase(resName)) {
-                    matches.add(m);
-                }
-            }
-
-            for (int i = 0; i < matches.size(); i++) {
-                Molecule mi = matches.get(i);
-                int ii = i + 1;
-                if (cyclicLen < 1) {
-                    logger.severe(" No current support for polymeric, non-cyclic hetero groups");
-                    // Would probably split by chain.
-                } else {
-                    Molecule next;
-                    if (ii % cyclicLen == 0) {
-                        next = matches.get(ii - cyclicLen);
-                        logger.info(format(" Cyclizing molecule %s to %s", mi, next));
-                    } else {
-                        next = matches.get(ii);
-                        logger.info(format(" Extending chain from %s to %s.", mi, next));
-                    }
-                    Atom from = mi.getAtomByName(name1, true);
-                    Atom to = next.getAtomByName(name2, true);
-                    buildBond(from, to, forceField, bondList);
-                }
-            }
-        }
     }
 
     public static List<List<Residue>> findChainBreaks(List<Residue> residues, double cutoff) {
@@ -944,6 +764,186 @@ public class PolymerUtils {
         }
 
         return subChains;
+    }
+
+    /**
+     * Locate disulfide bonds based on SSBOND records.
+     *
+     * @param ssbonds           List of SSBOND records.
+     * @param molecularAssembly The MolecularAssembly to operate on.
+     * @param pdbToNewResMap    Maps chainIDResNumInsCode to renumbered chainIDResNum. For example,
+     *                          residue 52A in chain C might be renumbered to residue 53, and mapped as
+     *                          "C52A" to "C53".
+     * @return An ArrayList of Bond instances for SS-Bonds.
+     */
+    public static List<Bond> locateDisulfideBonds(List<String> ssbonds, MolecularAssembly molecularAssembly, Map<String, String> pdbToNewResMap) {
+        List<Bond> ssBondList = new ArrayList<>();
+        for (String ssbond : ssbonds) {
+            // =============================================================================
+            // The SSBOND record identifies each disulfide bond in protein and polypeptide
+            // structures by identifying the two residues involved in the bond.
+            // The disulfide bond distance is included after the symmetry operations at
+            // the end of the SSBOND record.
+            //
+            //  8 - 10        Integer         serNum       Serial number.
+            // 12 - 14        LString(3)      "CYS"        Residue name.
+            // 16             Character       chainID1     Chain identifier.
+            // 18 - 21        Integer         seqNum1      Residue sequence number.
+            // 22             AChar           icode1       Insertion code.
+            // 26 - 28        LString(3)      "CYS"        Residue name.
+            // 30             Character       chainID2     Chain identifier.
+            // 32 - 35        Integer         seqNum2      Residue sequence number.
+            // 36             AChar           icode2       Insertion code.
+            // 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
+            // 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
+            // 74 – 78        Real(5.2)      Length        Disulfide bond distance
+            //
+            // If SG of cysteine is disordered then there are possible alternate linkages.
+            // wwPDB practice is to put together all possible SSBOND records. This is
+            // problematic because the alternate location identifier is not specified in
+            // the SSBOND record.
+            // =============================================================================
+            try {
+                char c1ch = ssbond.charAt(15);
+                char c2ch = ssbond.charAt(29);
+                Polymer c1 = molecularAssembly.getChain(format("%c", c1ch));
+                Polymer c2 = molecularAssembly.getChain(format("%c", c2ch));
+
+                Polymer[] chains = molecularAssembly.getChains();
+                if (c1 == null) {
+                    c1 = chains[0];
+                }
+                if (c2 == null) {
+                    c2 = chains[0];
+                }
+
+                String origResNum1 = ssbond.substring(17, 21).trim();
+                char insChar1 = ssbond.charAt(21);
+                String origResNum2 = ssbond.substring(31, 35).trim();
+                char insChar2 = ssbond.charAt(35);
+
+                String pdbResNum1 = format("%c%s%c", c1ch, origResNum1, insChar1);
+                String pdbResNum2 = format("%c%s%c", c2ch, origResNum2, insChar2);
+                String resnum1 = pdbToNewResMap.get(pdbResNum1);
+                String resnum2 = pdbToNewResMap.get(pdbResNum2);
+                if (resnum1 == null) {
+                    logger.warning(format(" Could not find residue %s for SS-bond %s", pdbResNum1, ssbond));
+                    continue;
+                }
+                if (resnum2 == null) {
+                    logger.warning(format(" Could not find residue %s for SS-bond %s", pdbResNum2, ssbond));
+                    continue;
+                }
+
+                Residue r1 = c1.getResidue(parseInt(resnum1.substring(1)));
+                Residue r2 = c2.getResidue(parseInt(resnum2.substring(1)));
+                /*Residue r1 = c1.getResidue(Hybrid36.decode(4, ssbond.substring(17, 21)));
+                Residue r2 = c2.getResidue(Hybrid36.decode(4, ssbond.substring(31, 35)));*/
+                List<Atom> atoms1 = r1.getAtomList();
+                List<Atom> atoms2 = r2.getAtomList();
+                Atom SG1 = null;
+                Atom SG2 = null;
+                for (Atom atom : atoms1) {
+                    if (atom.getName().equalsIgnoreCase("SG")) {
+                        SG1 = atom;
+                        break;
+                    }
+                }
+                for (Atom atom : atoms2) {
+                    if (atom.getName().equalsIgnoreCase("SG")) {
+                        SG2 = atom;
+                        break;
+                    }
+                }
+                if (SG1 == null) {
+                    logger.warning(format(" SG atom 1 of SS-bond %s is null", ssbond));
+                }
+                if (SG2 == null) {
+                    logger.warning(format(" SG atom 2 of SS-bond %s is null", ssbond));
+                }
+                if (SG1 == null || SG2 == null) {
+                    continue;
+                }
+                double d = dist(SG1.getXYZ(null), SG2.getXYZ(null));
+                if (d < 5.0) {
+                    r1.setName("CYX");
+                    r2.setName("CYX");
+                    for (Atom atom : atoms1) {
+                        atom.setResName("CYX");
+                    }
+                    for (Atom atom : atoms2) {
+                        atom.setResName("CYX");
+                    }
+                    Bond bond = new Bond(SG1, SG2);
+                    ssBondList.add(bond);
+                } else {
+                    String message = format("Ignoring [%s]\n due to distance %8.3f A.", ssbond, d);
+                    logger.log(Level.WARNING, message);
+                }
+            } catch (Exception e) {
+                String message = format("Ignoring [%s]", ssbond);
+                logger.log(Level.WARNING, message, e);
+            }
+        }
+        return ssBondList;
+    }
+
+    /**
+     * Resolves links between polymeric hetero groups; presently only functional
+     * for cyclic molecules.
+     *
+     * @param molecules         List of Molecules in the molecular assembly.
+     * @param molecularAssembly MolecularAssembly to operate on.
+     * @param bondList          Add created bonds to this list.
+     */
+    public static void resolvePolymerLinks(List<MSNode> molecules, MolecularAssembly molecularAssembly,
+                                           ArrayList<Bond> bondList) {
+
+        ForceField forceField = molecularAssembly.getForceField();
+        CompositeConfiguration properties = molecularAssembly.getProperties();
+
+        for (String polyLink : properties.getStringArray("polymerlink")) {
+            logger.info(" Experimental: linking a cyclic hetero group: " + polyLink);
+
+            // Format: polymerlink resname atom1 atom2 [cyclize]
+            String[] toks = polyLink.split("\\s+");
+            String resName = toks[0];
+            String name1 = toks[1];
+            String name2 = toks[2];
+            int cyclicLen = 0;
+            if (toks.length > 3) {
+                cyclicLen = parseInt(toks[3]);
+            }
+
+            ArrayList<Molecule> matches = new ArrayList<>();
+            for (MSNode node : molecules) {
+                Molecule m = (Molecule) node;
+                if (m.getResidueName().equalsIgnoreCase(resName)) {
+                    matches.add(m);
+                }
+            }
+
+            for (int i = 0; i < matches.size(); i++) {
+                Molecule mi = matches.get(i);
+                int ii = i + 1;
+                if (cyclicLen < 1) {
+                    logger.severe(" No current support for polymeric, non-cyclic hetero groups");
+                    // Would probably split by chain.
+                } else {
+                    Molecule next;
+                    if (ii % cyclicLen == 0) {
+                        next = matches.get(ii - cyclicLen);
+                        logger.info(format(" Cyclizing molecule %s to %s", mi, next));
+                    } else {
+                        next = matches.get(ii);
+                        logger.info(format(" Extending chain from %s to %s.", mi, next));
+                    }
+                    Atom from = mi.getAtomByName(name1, true);
+                    Atom to = next.getAtomByName(name2, true);
+                    buildBond(from, to, forceField, bondList);
+                }
+            }
+        }
     }
 
 }

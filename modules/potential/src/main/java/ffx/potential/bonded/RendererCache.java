@@ -78,16 +78,18 @@ import org.jogamp.vecmath.Vector3d;
  */
 public class RendererCache {
 
-    public enum ColorModel {
-
-        CPK, GROUP, RESIDUE, POLYMER, MOLECULE, MONOCHROME, USERCOLOR, PARTIALCHARGE, PICK, SELECT, REVERT, STRUCTURE, APPLYUSERCOLOR
-    }
-
-    public enum ViewModel {
-
-        WIREFRAME, BALLANDSTICK, SPACEFILL, RMIN, TUBE, INVISIBLE, RESTRICT, SHOWHYDROGENS, HIDEHYDROGENS, DETAIL, RIBBON, SHOWVRML, HIDEVRML, INDUCEDDIPOLE, FORCE, VELOCITY, ACCELERATION, HIDEVECTORS, UNIT, RELATIVE, ABSOLUTE, POINTS, LINES, FILL, DESTROY
-    }
-
+    /**
+     * Constant <code>BLACK</code>
+     */
+    public static final Color3f BLACK = new Color3f(Color.black.getRGBColorComponents(new float[3]));
+    /**
+     * Constant <code>viewModelHash</code>
+     */
+    public static final Hashtable<String, ViewModel> viewModelHash = new Hashtable<>();
+    /**
+     * Constant <code>colorModelHash</code>
+     */
+    public static final Hashtable<String, ColorModel> colorModelHash = new Hashtable<>();
     /**
      * Constant <code>ORANGE</code>
      */
@@ -132,10 +134,53 @@ public class RendererCache {
      * Constant <code>nullAp</code>
      */
     static final Appearance nullAp;
+    private static final Transform3D localToVworld = new Transform3D();
+    private static final Transform3D worldToImagePlate = new Transform3D();
+    private static final Hashtable<Color3f, Material> materials = new Hashtable<>();
+    private static final Geometry[] sphereGeom = new Geometry[11];
+    private static final Geometry[][] cylgeom = new Geometry[3][11];
+    private static final Geometry[][] conegeom = new Geometry[2][4];
+    private static final Hashtable<Color3f, Appearance> pointAppearances = new Hashtable<>();
+    private static final Hashtable<Color3f, Appearance> lineAppearances = new Hashtable<>();
+    private static final Hashtable<Color3f, Appearance> fillAppearances = new Hashtable<>();
+    private static final Color3f[] negCharge = new Color3f[1000];
+    private static final Color3f[] posCharge = new Color3f[1000];
     /**
-     * Constant <code>BLACK</code>
+     * Constant <code>NULLColor</code>
      */
-    public static final Color3f BLACK = new Color3f(Color.black.getRGBColorComponents(new float[3]));
+    private static final Color3f NULLColor = new Color3f(Color.darkGray.getRGBColorComponents(new float[3]));
+    /**
+     * Constant <code>lineAttributes</code>
+     */
+    private static final LineAttributes lineAttributes = new LineAttributes();
+    /**
+     * Constant <code>pointAttributes</code>
+     */
+    private static final PointAttributes pointAttributes = new PointAttributes();
+    /**
+     * Constant <code>coloringAttributes</code>
+     */
+    private static final ColoringAttributes coloringAttributes = new ColoringAttributes();
+    /**
+     * Constant <code>renderingAttributes</code>
+     */
+    private static final RenderingAttributes renderingAttributes = new RenderingAttributes();
+    /**
+     * Constant <code>transparencyAttributes</code>
+     */
+    private static final TransparencyAttributes transparencyAttributes = new TransparencyAttributes();
+    /**
+     * Constant <code>fillPolygonAttributes</code>
+     */
+    private static final PolygonAttributes fillPolygonAttributes = new PolygonAttributes();
+    /**
+     * Constant <code>pointPolygonAttributes</code>
+     */
+    private static final PolygonAttributes pointPolygonAttributes = new PolygonAttributes();
+    /**
+     * Constant <code>linePolygonAttributes</code>
+     */
+    private static final PolygonAttributes linePolygonAttributes = new PolygonAttributes();
     /**
      * Constant <code>detail=3</code>
      */
@@ -172,14 +217,44 @@ public class RendererCache {
      * Constant <code>userColor</code>
      */
     public static Color3f userColor = WHITE;
-    /**
-     * Constant <code>viewModelHash</code>
-     */
-    public static final Hashtable<String, ViewModel> viewModelHash = new Hashtable<>();
-    /**
-     * Constant <code>colorModelHash</code>
-     */
-    public static final Hashtable<String, ColorModel> colorModelHash = new Hashtable<>();
+    private static List<Transform3D> transform3DPool = Collections.synchronizedList(new ArrayList<>());
+    private static List<BranchGroup> spherePool = Collections.synchronizedList(new ArrayList<>());
+    private static List<BranchGroup> doubleCylinderPool = Collections.synchronizedList(new ArrayList<>());
+    private static ShaderProgram shaderProgram = null;
+
+    static {
+        coloringAttributes.setShadeModel(ColoringAttributes.NICEST);
+        coloringAttributes.setColor(new Color3f(0, 0, 0));
+        lineAttributes.setLineAntialiasingEnable(true);
+        lineAttributes.setLinePattern(LineAttributes.PATTERN_SOLID);
+        lineAttributes.setLineWidth(1.0f);
+        pointAttributes.setPointAntialiasingEnable(true);
+        pointAttributes.setPointSize(1.0f);
+        fillPolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_FILL);
+        fillPolygonAttributes.setCullFace(PolygonAttributes.CULL_BACK);
+        linePolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_LINE);
+        pointPolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_POINT);
+        renderingAttributes.setVisible(true);
+        renderingAttributes.setDepthBufferEnable(true);
+        renderingAttributes.setDepthBufferWriteEnable(true);
+        renderingAttributes.setIgnoreVertexColors(true);
+        transparencyAttributes.setTransparencyMode(TransparencyAttributes.NONE);
+
+        ViewModel[] values = ViewModel.values();
+        for (ViewModel value : values) {
+            viewModelHash.put(value.toString(), value);
+        }
+
+        ColorModel[] colorModelValues = ColorModel.values();
+        for (ColorModel value : colorModelValues) {
+            colorModelHash.put(value.toString(), value);
+        }
+
+        nullAp = new Appearance();
+        RenderingAttributes ra = new RenderingAttributes();
+        ra.setVisible(false);
+        nullAp.setRenderingAttributes(ra);
+    }
 
     /**
      * <p>
@@ -238,15 +313,90 @@ public class RendererCache {
         return cone;
     }
 
+    private static Appearance createAppearance(Color3f col, ViewModel polygonType) {
+        Appearance ap = null;
+        if (shaderProgram != null) {
+            ShaderAppearance sap = new ShaderAppearance();
+            sap.setShaderProgram(shaderProgram);
+            ap = sap;
+        }
+        if (ap == null) {
+            ap = new Appearance();
+        }
+        Material mat = materialFactory(col);
+        ap.setMaterial(mat);
+        ap.setRenderingAttributes(renderingAttributes);
+        ap.setColoringAttributes(coloringAttributes);
+        ap.setLineAttributes(lineAttributes);
+        ap.setPointAttributes(pointAttributes);
+        if (polygonType == RendererCache.ViewModel.FILL) {
+            ap.setPolygonAttributes(fillPolygonAttributes);
+            fillAppearances.put(col, ap);
+        } else if (polygonType == RendererCache.ViewModel.POINTS) {
+            ap.setPolygonAttributes(pointPolygonAttributes);
+            pointAppearances.put(col, ap);
+        } else {
+            ap.setPolygonAttributes(linePolygonAttributes);
+            lineAppearances.put(col, ap);
+        }
+        return ap;
+    }
+
     /**
-     * <p>
-     * getPolarGeom</p>
+     * This method creates a Cylinder
      *
+     * @param ap  a {@link org.jogamp.java3d.Appearance} object.
      * @param res a int.
-     * @return a {@link org.jogamp.java3d.Geometry} object.
+     * @return a {@link org.jogamp.java3d.Shape3D} object.
      */
-    protected static Geometry getPolarGeom(int res) {
-        return getSphereGeom(res);
+    private static Shape3D createCylinder(Appearance ap, int res) {
+        if (res < 0) {
+            res = 0;
+        }
+        if (res > 10) {
+            res = 10;
+        }
+        final Shape3D cyl = new Shape3D();
+        cyl.setAppearance(ap);
+        cyl.addGeometry(getCylinderGeom(0, res));
+        cyl.addGeometry(getCylinderGeom(1, res));
+        cyl.addGeometry(getCylinderGeom(2, res));
+        cyl.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
+        cyl.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
+        cyl.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
+        cyl.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
+        cyl.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+        cyl.setCapability(Shape3D.ALLOW_PICKABLE_WRITE);
+        return cyl;
+    }
+
+    /**
+     * This method creates a single Sphere from the given appearance
+     */
+    private static Shape3D createSphere(Appearance ap, int div) {
+        Shape3D shape3d = new Shape3D();
+        shape3d.setAppearance(ap);
+        shape3d.addGeometry(getSphereGeom(div));
+        shape3d.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
+        shape3d.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
+        shape3d.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
+        shape3d.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
+        shape3d.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+        shape3d.setCapability(Shape3D.ALLOW_PICKABLE_WRITE);
+        return shape3d;
+    }
+
+    private static TransformGroup createTransformGroup(Transform3D transform3D) {
+        TransformGroup transformGroup;
+        if (transform3D == null) {
+            transformGroup = new TransformGroup();
+        } else {
+            transformGroup = new TransformGroup(transform3D);
+        }
+        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        transformGroup.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
+        return transformGroup;
     }
 
     /**
@@ -346,6 +496,24 @@ public class RendererCache {
 
     /**
      * <p>
+     * getConeGeom</p>
+     *
+     * @param num a int.
+     * @param res a int.
+     * @return a {@link org.jogamp.java3d.Geometry} object.
+     */
+    private static Geometry getConeGeom(int num, int res) {
+        if (res > 3) {
+            res = 3;
+        }
+        if (conegeom[num][res] == null) {
+            initConeGeom(res);
+        }
+        return conegeom[num][res];
+    }
+
+    /**
+     * <p>
      * getCylinderGeom</p>
      *
      * @param num a int.
@@ -363,6 +531,17 @@ public class RendererCache {
             initCylinderGeom(res);
         }
         return cylgeom[num][res];
+    }
+
+    /**
+     * <p>
+     * getPolarGeom</p>
+     *
+     * @param res a int.
+     * @return a {@link org.jogamp.java3d.Geometry} object.
+     */
+    protected static Geometry getPolarGeom(int res) {
+        return getSphereGeom(res);
     }
 
     /**
@@ -414,6 +593,55 @@ public class RendererCache {
             initSphereGeom(res);
         }
         return sphereGeom[res];
+    }
+
+    private static void initConeGeom(int res) {
+        Cone cone = new Cone(1.0f, 1.0f, Cone.GENERATE_NORMALS
+                | Cone.ENABLE_GEOMETRY_PICKING | Cone.ENABLE_APPEARANCE_MODIFY,
+                (res + 1) * 4, 1, nullAp);
+        for (int i = 0; i < 2; i++) {
+            conegeom[i][res] = cone.getShape(i).getGeometry();
+            /*
+             * conegeom[i][res].setCapability(Geometry.ALLOW_INTERSECT);
+             * conegeom[i][res].setCapability(GeometryArray.ALLOW_FORMAT_READ);
+             * conegeom[i][res].setCapability(GeometryArray.ALLOW_COUNT_READ);
+             * conegeom
+             * [i][res].setCapability(GeometryArray.ALLOW_COORDINATE_READ);
+             */
+        }
+    }
+
+    private static void initCylinderGeom(int res) {
+        Appearance ap = new Appearance();
+        Cylinder cyl = new Cylinder(1.0f, 1.0f, Cylinder.GENERATE_NORMALS
+                | Cylinder.ENABLE_APPEARANCE_MODIFY
+                | Cylinder.ENABLE_GEOMETRY_PICKING, 2 + res, 1, ap);
+        for (int i = 0; i < 3; i++) {
+            cylgeom[i][res] = cyl.getShape(i).getGeometry();
+            try {
+                cylgeom[i][res].setCapability(Geometry.ALLOW_INTERSECT);
+                cylgeom[i][res].setCapability(GeometryArray.ALLOW_FORMAT_READ);
+                cylgeom[i][res].setCapability(GeometryArray.ALLOW_COUNT_READ);
+                cylgeom[i][res].setCapability(GeometryArray.ALLOW_COORDINATE_READ);
+            } catch (Exception e) {
+                return;
+            }
+        }
+    }
+
+    private static void initSphereGeom(int res) {
+        Appearance ap = new Appearance();
+        Sphere sphere;
+        sphere = new Sphere(1.0f, Sphere.GENERATE_NORMALS
+                | Sphere.ENABLE_APPEARANCE_MODIFY
+                | Sphere.ENABLE_GEOMETRY_PICKING, 4 + 3 * res, ap);
+        sphereGeom[res] = sphere.getShape().getGeometry();
+        // GeometryArray g = (GeometryArray) sphereGeom[res];
+        /*
+         * if (!g.isLive()) { g.setCapability(g.ALLOW_FORMAT_READ);
+         * g.setCapability(g.ALLOW_COUNT_READ);
+         * g.setCapability(g.ALLOW_COORDINATE_READ); }
+         */
     }
 
     /**
@@ -576,243 +804,13 @@ public class RendererCache {
         transform3D.setScale(scale);
         return transform3D;
     }
+    public enum ColorModel {
 
-    /**
-     * <p>
-     * getConeGeom</p>
-     *
-     * @param num a int.
-     * @param res a int.
-     * @return a {@link org.jogamp.java3d.Geometry} object.
-     */
-    private static Geometry getConeGeom(int num, int res) {
-        if (res > 3) {
-            res = 3;
-        }
-        if (conegeom[num][res] == null) {
-            initConeGeom(res);
-        }
-        return conegeom[num][res];
+        CPK, GROUP, RESIDUE, POLYMER, MOLECULE, MONOCHROME, USERCOLOR, PARTIALCHARGE, PICK, SELECT, REVERT, STRUCTURE, APPLYUSERCOLOR
     }
 
-    private static void initConeGeom(int res) {
-        Cone cone = new Cone(1.0f, 1.0f, Cone.GENERATE_NORMALS
-                | Cone.ENABLE_GEOMETRY_PICKING | Cone.ENABLE_APPEARANCE_MODIFY,
-                (res + 1) * 4, 1, nullAp);
-        for (int i = 0; i < 2; i++) {
-            conegeom[i][res] = cone.getShape(i).getGeometry();
-            /*
-             * conegeom[i][res].setCapability(Geometry.ALLOW_INTERSECT);
-             * conegeom[i][res].setCapability(GeometryArray.ALLOW_FORMAT_READ);
-             * conegeom[i][res].setCapability(GeometryArray.ALLOW_COUNT_READ);
-             * conegeom
-             * [i][res].setCapability(GeometryArray.ALLOW_COORDINATE_READ);
-             */
-        }
-    }
+    public enum ViewModel {
 
-    private static void initCylinderGeom(int res) {
-        Appearance ap = new Appearance();
-        Cylinder cyl = new Cylinder(1.0f, 1.0f, Cylinder.GENERATE_NORMALS
-                | Cylinder.ENABLE_APPEARANCE_MODIFY
-                | Cylinder.ENABLE_GEOMETRY_PICKING, 2 + res, 1, ap);
-        for (int i = 0; i < 3; i++) {
-            cylgeom[i][res] = cyl.getShape(i).getGeometry();
-            try {
-                cylgeom[i][res].setCapability(Geometry.ALLOW_INTERSECT);
-                cylgeom[i][res].setCapability(GeometryArray.ALLOW_FORMAT_READ);
-                cylgeom[i][res].setCapability(GeometryArray.ALLOW_COUNT_READ);
-                cylgeom[i][res].setCapability(GeometryArray.ALLOW_COORDINATE_READ);
-            } catch (Exception e) {
-                return;
-            }
-        }
-    }
-
-    private static void initSphereGeom(int res) {
-        Appearance ap = new Appearance();
-        Sphere sphere;
-        sphere = new Sphere(1.0f, Sphere.GENERATE_NORMALS
-                | Sphere.ENABLE_APPEARANCE_MODIFY
-                | Sphere.ENABLE_GEOMETRY_PICKING, 4 + 3 * res, ap);
-        sphereGeom[res] = sphere.getShape().getGeometry();
-        // GeometryArray g = (GeometryArray) sphereGeom[res];
-        /*
-         * if (!g.isLive()) { g.setCapability(g.ALLOW_FORMAT_READ);
-         * g.setCapability(g.ALLOW_COUNT_READ);
-         * g.setCapability(g.ALLOW_COORDINATE_READ); }
-         */
-    }
-
-    /**
-     * This method creates a Cylinder
-     *
-     * @param ap  a {@link org.jogamp.java3d.Appearance} object.
-     * @param res a int.
-     * @return a {@link org.jogamp.java3d.Shape3D} object.
-     */
-    private static Shape3D createCylinder(Appearance ap, int res) {
-        if (res < 0) {
-            res = 0;
-        }
-        if (res > 10) {
-            res = 10;
-        }
-        final Shape3D cyl = new Shape3D();
-        cyl.setAppearance(ap);
-        cyl.addGeometry(getCylinderGeom(0, res));
-        cyl.addGeometry(getCylinderGeom(1, res));
-        cyl.addGeometry(getCylinderGeom(2, res));
-        cyl.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
-        cyl.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
-        cyl.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
-        cyl.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
-        cyl.setCapability(Shape3D.ENABLE_PICK_REPORTING);
-        cyl.setCapability(Shape3D.ALLOW_PICKABLE_WRITE);
-        return cyl;
-    }
-
-    /**
-     * This method creates a single Sphere from the given appearance
-     */
-    private static Shape3D createSphere(Appearance ap, int div) {
-        Shape3D shape3d = new Shape3D();
-        shape3d.setAppearance(ap);
-        shape3d.addGeometry(getSphereGeom(div));
-        shape3d.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
-        shape3d.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
-        shape3d.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
-        shape3d.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
-        shape3d.setCapability(Shape3D.ENABLE_PICK_REPORTING);
-        shape3d.setCapability(Shape3D.ALLOW_PICKABLE_WRITE);
-        return shape3d;
-    }
-
-    private static TransformGroup createTransformGroup(Transform3D transform3D) {
-        TransformGroup transformGroup;
-        if (transform3D == null) {
-            transformGroup = new TransformGroup();
-        } else {
-            transformGroup = new TransformGroup(transform3D);
-        }
-        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        transformGroup.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
-        return transformGroup;
-    }
-
-    private static Appearance createAppearance(Color3f col, ViewModel polygonType) {
-        Appearance ap = null;
-        if (shaderProgram != null) {
-            ShaderAppearance sap = new ShaderAppearance();
-            sap.setShaderProgram(shaderProgram);
-            ap = sap;
-        }
-        if (ap == null) {
-            ap = new Appearance();
-        }
-        Material mat = materialFactory(col);
-        ap.setMaterial(mat);
-        ap.setRenderingAttributes(renderingAttributes);
-        ap.setColoringAttributes(coloringAttributes);
-        ap.setLineAttributes(lineAttributes);
-        ap.setPointAttributes(pointAttributes);
-        if (polygonType == RendererCache.ViewModel.FILL) {
-            ap.setPolygonAttributes(fillPolygonAttributes);
-            fillAppearances.put(col, ap);
-        } else if (polygonType == RendererCache.ViewModel.POINTS) {
-            ap.setPolygonAttributes(pointPolygonAttributes);
-            pointAppearances.put(col, ap);
-        } else {
-            ap.setPolygonAttributes(linePolygonAttributes);
-            lineAppearances.put(col, ap);
-        }
-        return ap;
-    }
-
-    private static final Transform3D localToVworld = new Transform3D();
-    private static final Transform3D worldToImagePlate = new Transform3D();
-    private static final Hashtable<Color3f, Material> materials = new Hashtable<>();
-    private static List<Transform3D> transform3DPool = Collections.synchronizedList(new ArrayList<>());
-    private static List<BranchGroup> spherePool = Collections.synchronizedList(new ArrayList<>());
-    private static List<BranchGroup> doubleCylinderPool = Collections.synchronizedList(new ArrayList<>());
-    private static final Geometry[] sphereGeom = new Geometry[11];
-    private static final Geometry[][] cylgeom = new Geometry[3][11];
-    private static final Geometry[][] conegeom = new Geometry[2][4];
-    private static final Hashtable<Color3f, Appearance> pointAppearances = new Hashtable<>();
-    private static final Hashtable<Color3f, Appearance> lineAppearances = new Hashtable<>();
-    private static final Hashtable<Color3f, Appearance> fillAppearances = new Hashtable<>();
-    private static ShaderProgram shaderProgram = null;
-    private static final Color3f[] negCharge = new Color3f[1000];
-    private static final Color3f[] posCharge = new Color3f[1000];
-    /**
-     * Constant <code>NULLColor</code>
-     */
-    private static final Color3f NULLColor = new Color3f(Color.darkGray.getRGBColorComponents(new float[3]));
-    /**
-     * Constant <code>lineAttributes</code>
-     */
-    private static final LineAttributes lineAttributes = new LineAttributes();
-    /**
-     * Constant <code>pointAttributes</code>
-     */
-    private static final PointAttributes pointAttributes = new PointAttributes();
-    /**
-     * Constant <code>coloringAttributes</code>
-     */
-    private static final ColoringAttributes coloringAttributes = new ColoringAttributes();
-    /**
-     * Constant <code>renderingAttributes</code>
-     */
-    private static final RenderingAttributes renderingAttributes = new RenderingAttributes();
-    /**
-     * Constant <code>transparencyAttributes</code>
-     */
-    private static final TransparencyAttributes transparencyAttributes = new TransparencyAttributes();
-    /**
-     * Constant <code>fillPolygonAttributes</code>
-     */
-    private static final PolygonAttributes fillPolygonAttributes = new PolygonAttributes();
-    /**
-     * Constant <code>pointPolygonAttributes</code>
-     */
-    private static final PolygonAttributes pointPolygonAttributes = new PolygonAttributes();
-    /**
-     * Constant <code>linePolygonAttributes</code>
-     */
-    private static final PolygonAttributes linePolygonAttributes = new PolygonAttributes();
-
-    static {
-        coloringAttributes.setShadeModel(ColoringAttributes.NICEST);
-        coloringAttributes.setColor(new Color3f(0, 0, 0));
-        lineAttributes.setLineAntialiasingEnable(true);
-        lineAttributes.setLinePattern(LineAttributes.PATTERN_SOLID);
-        lineAttributes.setLineWidth(1.0f);
-        pointAttributes.setPointAntialiasingEnable(true);
-        pointAttributes.setPointSize(1.0f);
-        fillPolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_FILL);
-        fillPolygonAttributes.setCullFace(PolygonAttributes.CULL_BACK);
-        linePolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_LINE);
-        pointPolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_POINT);
-        renderingAttributes.setVisible(true);
-        renderingAttributes.setDepthBufferEnable(true);
-        renderingAttributes.setDepthBufferWriteEnable(true);
-        renderingAttributes.setIgnoreVertexColors(true);
-        transparencyAttributes.setTransparencyMode(TransparencyAttributes.NONE);
-
-        ViewModel[] values = ViewModel.values();
-        for (ViewModel value : values) {
-            viewModelHash.put(value.toString(), value);
-        }
-
-        ColorModel[] colorModelValues = ColorModel.values();
-        for (ColorModel value : colorModelValues) {
-            colorModelHash.put(value.toString(), value);
-        }
-
-        nullAp = new Appearance();
-        RenderingAttributes ra = new RenderingAttributes();
-        ra.setVisible(false);
-        nullAp.setRenderingAttributes(ra);
+        WIREFRAME, BALLANDSTICK, SPACEFILL, RMIN, TUBE, INVISIBLE, RESTRICT, SHOWHYDROGENS, HIDEHYDROGENS, DETAIL, RIBBON, SHOWVRML, HIDEVRML, INDUCEDDIPOLE, FORCE, VELOCITY, ACCELERATION, HIDEVECTORS, UNIT, RELATIVE, ABSOLUTE, POINTS, LINES, FILL, DESTROY
     }
 }

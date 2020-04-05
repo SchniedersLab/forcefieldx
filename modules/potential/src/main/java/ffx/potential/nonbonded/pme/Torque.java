@@ -8,13 +8,13 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
-import static ffx.numerics.math.VectorMath.cross;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.norm;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalar;
-import static ffx.numerics.math.VectorMath.sum;
+import static ffx.numerics.math.DoubleMath.X;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.DoubleMath.normalize;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.scale;
+import static ffx.numerics.math.DoubleMath.add;
 
 
 public class Torque {
@@ -82,13 +82,13 @@ public class Torque {
         vecZ[0] = x[iz];
         vecZ[1] = y[iz];
         vecZ[2] = z[iz];
-        diff(vecZ, localOrigin, vecZ);
-        double rZ = r(vecZ);
+        sub(vecZ, localOrigin, vecZ);
+        double rZ = length(vecZ);
         if (frame[i] != MultipoleType.MultipoleFrameDefinition.ZONLY) {
             vecX[0] = x[ix];
             vecX[1] = y[ix];
             vecX[2] = z[ix];
-            diff(vecX, localOrigin, vecX);
+            sub(vecX, localOrigin, vecX);
         } else {
             vecX[0] = 1.0;
             vecX[1] = 0.0;
@@ -99,27 +99,27 @@ public class Torque {
                 vecX[1] = 1.0;
             }
         }
-        double rX = r(vecX);
+        double rX = length(vecX);
         if (frame[i] == MultipoleType.MultipoleFrameDefinition.ZTHENBISECTOR ||
                 frame[i] == MultipoleType.MultipoleFrameDefinition.THREEFOLD) {
             vecY[0] = x[iy];
             vecY[1] = y[iy];
             vecY[2] = z[iy];
-            diff(vecY, localOrigin, vecY);
+            sub(vecY, localOrigin, vecY);
         } else {
-            cross(vecZ, vecX, vecY);
+            X(vecZ, vecX, vecY);
         }
-        double rY = r(vecY);
-        scalar(vecZ, 1.0 / rZ, vecZ);
-        scalar(vecX, 1.0 / rX, vecX);
-        scalar(vecY, 1.0 / rY, vecY);
+        double rY = length(vecY);
+        scale(vecZ, 1.0 / rZ, vecZ);
+        scale(vecX, 1.0 / rX, vecX);
+        scale(vecY, 1.0 / rY, vecY);
         // Find the perpendicular and angle for each pair of axes.
-        cross(vecX, vecZ, xXZ);
-        cross(vecY, vecZ, xYZ);
-        cross(vecY, vecX, xYX);
-        norm(xXZ, xXZ);
-        norm(xYZ, xYZ);
-        norm(xYX, xYX);
+        X(vecX, vecZ, xXZ);
+        X(vecY, vecZ, xYZ);
+        X(vecY, vecX, xYX);
+        normalize(xXZ, xXZ);
+        normalize(xYZ, xYZ);
+        normalize(xYX, xYX);
         // Compute the sine of the angle between the rotation axes.
         double cosZX = dot(vecZ, vecX);
         double sinZX = sqrt(1.0 - cosZX * cosZX);
@@ -158,19 +158,19 @@ public class Torque {
                 break;
             case ZTHENBISECTOR:
                 // Build some additional axes needed for the Z-then-Bisector method
-                sum(vecX, vecY, sumXY);
-                cross(vecZ, sumXY, xZXY);
-                norm(sumXY, sumXY);
-                norm(xZXY, xZXY);
+                add(vecX, vecY, sumXY);
+                X(vecZ, sumXY, xZXY);
+                normalize(sumXY, sumXY);
+                normalize(xZXY, xZXY);
                 // Find the perpendicular and angle for each pair of axes.
-                cross(sumXY, vecZ, xXYZ);
-                cross(xZXY, vecZ, xxZXYZ);
-                cross(xZXY, vecX, xxZXYX);
-                cross(xZXY, vecY, xxZXYY);
-                norm(xXYZ, xXYZ);
-                norm(xxZXYZ, xxZXYZ);
-                norm(xxZXYX, xxZXYX);
-                norm(xxZXYY, xxZXYY);
+                X(sumXY, vecZ, xXYZ);
+                X(xZXY, vecZ, xxZXYZ);
+                X(xZXY, vecX, xxZXYX);
+                X(xZXY, vecY, xxZXYY);
+                normalize(xXYZ, xXYZ);
+                normalize(xxZXYZ, xxZXYZ);
+                normalize(xxZXYX, xxZXYX);
+                normalize(xxZXYY, xxZXYY);
                 // Compute the sine of the angle between the rotation axes
                 double cosZXY = dot(vecZ, sumXY);
                 double sinZXY = sqrt(1.0 - cosZXY * cosZXY);
@@ -179,12 +179,12 @@ public class Torque {
                 double cosYZXY = dot(vecY, xZXY);
                 double sinYZXY = sqrt(1.0 - cosYZXY * cosYZXY);
                 // Compute the projection of v and w onto the ru-plane
-                scalar(xZXY, -cosXZXY, t1);
-                scalar(xZXY, -cosYZXY, t2);
-                sum(vecX, t1, t1);
-                sum(vecY, t2, t2);
-                norm(t1, t1);
-                norm(t2, t2);
+                scale(xZXY, -cosXZXY, t1);
+                scale(xZXY, -cosYZXY, t2);
+                add(vecX, t1, t1);
+                add(vecY, t2, t2);
+                normalize(t1, t1);
+                normalize(t2, t2);
                 double ut1cos = dot(vecZ, t1);
                 double ut1sin = sqrt(1.0 - ut1cos * ut1cos);
                 double ut2cos = dot(vecZ, t2);
@@ -202,50 +202,50 @@ public class Torque {
                 }
                 break;
             case THREEFOLD:
-                sum(vecZ, vecX, sumZXY);
-                sum(vecY, sumZXY, sumZXY);
-                double rZXY = r(sumZXY);
-                scalar(sumZXY, 1.0 / rZXY, sumZXY);
+                add(vecZ, vecX, sumZXY);
+                add(vecY, sumZXY, sumZXY);
+                double rZXY = length(sumZXY);
+                scale(sumZXY, 1.0 / rZXY, sumZXY);
                 double cosYSum = dot(vecY, sumZXY);
                 double cosZSum = dot(vecZ, sumZXY);
                 double cosXSum = dot(vecX, sumZXY);
-                sum(vecX, vecY, r);
-                norm(r, r);
+                add(vecX, vecY, r);
+                normalize(r, r);
                 double cosRZ = dot(r, vecZ);
                 double sinRZ = sqrt(1.0 - cosRZ * cosRZ);
                 dPhidR = -trq[0] * r[0] - trq[1] * r[1] - trq[2] * r[2];
-                cross(r, vecZ, del);
-                norm(del, del);
+                X(r, vecZ, del);
+                normalize(del, del);
                 double dPhidDel = -trq[0] * del[0] - trq[1] * del[1] - trq[2] * del[2];
-                cross(del, vecZ, eps);
+                X(del, vecZ, eps);
                 for (int j = 0; j < 3; j++) {
                     double dZ = del[j] * dPhidR / (rZ * sinRZ) + eps[j] * dPhidDel * cosZSum / (rZ * rZXY);
                     g[0][j] = dZ;  // Atom Z
                     g[3][j] -= dZ; // Atom I
                 }
-                sum(vecZ, vecY, r);
-                norm(r, r);
+                add(vecZ, vecY, r);
+                normalize(r, r);
                 double cosRX = dot(r, vecX);
                 double sinRX = sqrt(1.0 - cosRX * cosRX);
                 dPhidR = -trq[0] * r[0] - trq[1] * r[1] - trq[2] * r[2];
-                cross(r, vecX, del);
-                norm(del, del);
+                X(r, vecX, del);
+                normalize(del, del);
                 dPhidDel = -trq[0] * del[0] - trq[1] * del[1] - trq[2] * del[2];
-                cross(del, vecX, eps);
+                X(del, vecX, eps);
                 for (int j = 0; j < 3; j++) {
                     double dX = del[j] * dPhidR / (rX * sinRX) + eps[j] * dPhidDel * cosXSum / (rX * rZXY);
                     g[1][j] = dX;  // Atom X
                     g[3][j] -= dX; // Atom I
                 }
-                sum(vecZ, vecX, r);
-                norm(r, r);
+                add(vecZ, vecX, r);
+                normalize(r, r);
                 double cosRY = dot(r, vecY);
                 double sinRY = sqrt(1.0 - cosRY * cosRY);
                 dPhidR = -trq[0] * r[0] - trq[1] * r[1] - trq[2] * r[2];
-                cross(r, vecY, del);
-                norm(del, del);
+                X(r, vecY, del);
+                normalize(del, del);
                 dPhidDel = -trq[0] * del[0] - trq[1] * del[1] - trq[2] * del[2];
-                cross(del, vecY, eps);
+                X(del, vecY, eps);
                 for (int j = 0; j < 3; j++) {
                     double dY = del[j] * dPhidR / (rY * sinRY) + eps[j] * dPhidDel * cosYSum / (rY * rZXY);
                     g[2][j] = dY;  // Atom Y

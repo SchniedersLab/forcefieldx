@@ -61,12 +61,12 @@ import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.EnergyException;
-import static ffx.numerics.math.VectorMath.cross;
-import static ffx.numerics.math.VectorMath.dist;
-import static ffx.numerics.math.VectorMath.dist2;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.norm;
-import static ffx.numerics.math.VectorMath.r;
+import static ffx.numerics.math.DoubleMath.X;
+import static ffx.numerics.math.DoubleMath.dist;
+import static ffx.numerics.math.DoubleMath.dist2;
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.DoubleMath.normalize;
+import static ffx.numerics.math.DoubleMath.length;
 
 /**
  * ConnollyRegion uses the algorithms from the AMS/VAM programs of
@@ -1337,11 +1337,11 @@ public class ConnollyRegion extends ParallelRegion {
                                 tb = (rad2 > 0.0 && dat2 <= rad2);
                                 continue;
                             }
-                            cross(uij, uik, uijk);
+                            X(uij, uik, uijk);
                             for (int k = 0; k < 3; k++) {
                                 uijk[k] = uijk[k] / swijk;
                             }
-                            cross(uijk, uij, utb);
+                            X(uijk, uij, utb);
                             for (int k = 0; k < 3; k++) {
                                 tijik[k] = tik[k] - tij[k];
                             }
@@ -2123,7 +2123,7 @@ public class ConnollyRegion extends ParallelRegion {
                             ai[0] = aavect[0][iepa];
                             ai[1] = aavect[1][iepa];
                             ai[2] = aavect[2][iepa];
-                            double anaa = r(ai);
+                            double anaa = length(ai);
                             double factor = radius[ia] / anaa;
                             // North pole and unit vector pointer south.
                             for (int k = 0; k < 3; k++) {
@@ -2421,16 +2421,16 @@ public class ConnollyRegion extends ParallelRegion {
                     // cut out the geodesic triangle.
                     getVector(ai, vects, 0);
                     getVector(aj, vects, 1);
-                    cross(ai, aj, ak);
-                    norm(ak, ak);
+                    X(ai, aj, ak);
+                    normalize(ak, ak);
                     putVector(ak, fnvect, 0, ifn);
                     getVector(ak, vects, 2);
-                    cross(aj, ak, ai);
-                    norm(ai, ai);
+                    X(aj, ak, ai);
+                    normalize(ai, ai);
                     putVector(ai, fnvect, 1, ifn);
                     getVector(ai, vects, 0);
-                    cross(ak, ai, aj);
-                    norm(aj, aj);
+                    X(ak, ai, aj);
+                    normalize(aj, aj);
                     putVector(aj, fnvect, 2, ifn);
                 }
                 for (int ifn = 0; ifn <= nConcaveFaces - 1; ifn++) {
@@ -2522,14 +2522,14 @@ public class ConnollyRegion extends ParallelRegion {
                                 umq[k] = (qij[k] - ppm[k]) / rm;
                                 upq[k] = (qij[k] - fncen[k][ifn]) / probe;
                             }
-                            cross(uij, upp, vect1);
+                            X(uij, upp, vect1);
                             double dt = check(dot(umq, vect1));
                             sigmaq[ke] = acos(dt);
                             getVector(ai, fnvect, ke, ifn);
-                            cross(upq, ai, vect1);
-                            norm(vect1, uc);
-                            cross(upp, upq, vect1);
-                            norm(vect1, uq);
+                            X(upq, ai, vect1);
+                            normalize(vect1, uc);
+                            X(upp, upq, vect1);
+                            normalize(vect1, uq);
                             dt = check(dot(uc, uq));
                             tau[ke] = PI - acos(dt);
                         }
@@ -2691,7 +2691,7 @@ public class ConnollyRegion extends ParallelRegion {
                             for (int k = 0; k < 3; k++) {
                                 vect1[k] = vertexCoords[k][iv] - fncen[k][ifn];
                             }
-                            norm(vect1, vect1);
+                            normalize(vect1, vect1);
                             for (int ke = 0; ke < 3; ke++) {
                                 getVector(ai, fnvect, ke, ifn);
                                 getVector(aj, vertexCoords, iv);
@@ -2868,7 +2868,7 @@ public class ConnollyRegion extends ParallelRegion {
          */
         private double tripleProduct(double[] x, double[] y, double[] z) {
             double[] xy = new double[3];
-            cross(x, y, xy);
+            X(x, y, xy);
             return dot(xy, z);
         }
 
@@ -3003,13 +3003,13 @@ public class ConnollyRegion extends ParallelRegion {
                     getVector(ai, unitVectorsAlongEdges, ke);
                     getVector(aj, unitVectorsAlongEdges, ke + 1);
                     dt = dot(ai, aj);
-                    cross(ai, aj, crs);
+                    X(ai, aj, crs);
                 } else {
                     // Closing edge of cycle.
                     getVector(ai, unitVectorsAlongEdges, ke);
                     getVector(aj, unitVectorsAlongEdges, 0);
                     dt = dot(ai, aj);
-                    cross(ai, aj, crs);
+                    X(ai, aj, crs);
                 }
                 dt = check(dt);
                 double ang = acos(dt);
@@ -3045,7 +3045,7 @@ public class ConnollyRegion extends ParallelRegion {
                     unitVectorsAlongEdges[k][ke] = projectedVertsForConvexEdges[k][ke2] - projectedVertsForConvexEdges[k][ke];
                 }
                 getVector(ai, unitVectorsAlongEdges, ke);
-                double epun = r(ai);
+                double epun = length(ai);
                 if (epun <= 0.0) {
                     throw new EnergyException(" Null Edge in Cycle", true);
                 }
@@ -3063,7 +3063,7 @@ public class ConnollyRegion extends ParallelRegion {
             // Vectors for null edges come from following or preceding edges.
             for (int ke = 0; ke <= nEdges; ke++) {
                 getVector(ai, unitVectorsAlongEdges, ke);
-                if (r(ai) <= 0.0) {
+                if (length(ai) <= 0.0) {
                     int le = ke - 1;
                     if (le < 0) {
                         le = nEdges;
@@ -3100,7 +3100,7 @@ public class ConnollyRegion extends ParallelRegion {
                 vect1[k] = pav[k][1] - pav[k][0];
                 vect2[k] = pav[k][2] - pav[k][0];
             }
-            cross(vect1, vect2, vect3);
+            X(vect1, vect2, vect3);
             return height * vect3[2] / 2.0;
         }
 
@@ -3148,7 +3148,7 @@ public class ConnollyRegion extends ParallelRegion {
                         acvect[k] = circleCenter[k][ic] - atomCoords[k][ia];
                         aavect[k] = atomCoords[k][ia2] - atomCoords[k][ia];
                     }
-                    norm(aavect, aavect);
+                    normalize(aavect, aavect);
                     double dt = dot(acvect, aavect);
                     double geo = -dt / (radius[ia] * circleRadius[ic]);
                     int iv1 = convexEdgeVertexNumber[0][iep];
@@ -3162,19 +3162,19 @@ public class ConnollyRegion extends ParallelRegion {
                             radial[k][ke] = vertexCoords[k][iv1] - atomCoords[k][ia];
                         }
                         getVector(ai, radial, ke);
-                        norm(ai, ai);
+                        normalize(ai, ai);
                         radial[0][ke] = ai[0];
                         radial[1][ke] = ai[1];
                         radial[2][ke] = ai[2];
                         getVector(ai, tanv, 0, ke);
-                        cross(vect1, aavect, aj);
-                        norm(aj, aj);
+                        X(vect1, aavect, aj);
+                        normalize(aj, aj);
                         tanv[0][0][ke] = aj[0];
                         tanv[1][0][ke] = aj[1];
                         tanv[2][0][ke] = aj[2];
                         getVector(ak, tanv, 1, ke);
-                        cross(vect2, aavect, ak);
-                        norm(ak, ak);
+                        X(vect2, aavect, ak);
+                        normalize(ak, ak);
                         tanv[0][1][ke] = ak[0];
                         tanv[1][1][ke] = ak[1];
                         tanv[2][1][ke] = ak[2];
@@ -3232,7 +3232,7 @@ public class ConnollyRegion extends ParallelRegion {
             for (int k = 0; k < 3; k++) {
                 aavect[k] = atomCoords[k][ia2] - atomCoords[k][ia1];
             }
-            norm(aavect, aavect);
+            normalize(aavect, aavect);
             int iv1 = convexEdgeVertexNumber[0][iep];
             int iv2 = convexEdgeVertexNumber[1][iep];
             double phi;
@@ -3347,7 +3347,7 @@ public class ConnollyRegion extends ParallelRegion {
                 }
                 if (probe > 0.0) {
                     getVector(ai, pvv, ke);
-                    norm(ai, ai);
+                    normalize(ai, ai);
                     putVector(ai, pvv, ke);
                 }
             }
@@ -3361,8 +3361,8 @@ public class ConnollyRegion extends ParallelRegion {
                     }
                     getVector(ai, pvv, ke);
                     getVector(aj, pvv, je);
-                    cross(ai, aj, ak);
-                    norm(ak, ak);
+                    X(ai, aj, ak);
+                    normalize(ak, ak);
                     putVector(ak, planev, ke);
                 }
                 for (int ke = 0; ke < 3; ke++) {
@@ -3448,12 +3448,12 @@ public class ConnollyRegion extends ParallelRegion {
             }
             double dcp = dot(cpvect, plnvec);
             cinsp[0] = (dcp > 0.0);
-            cross(plnvec, cirvec, vect1);
-            if (r(vect1) > 0.0) {
-                norm(vect1, uvect1);
-                cross(cirvec, uvect1, vect2);
-                if (r(vect2) > 0.0) {
-                    norm(vect2, uvect2);
+            X(plnvec, cirvec, vect1);
+            if (length(vect1) > 0.0) {
+                normalize(vect1, uvect1);
+                X(cirvec, uvect1, vect2);
+                if (length(vect2) > 0.0) {
+                    normalize(vect2, uvect2);
                     double dir = dot(uvect2, plnvec);
                     if (dir != 0.0) {
                         double ratio = dcp / dir;
@@ -3489,8 +3489,8 @@ public class ConnollyRegion extends ParallelRegion {
          * @return An angle in the range [0, 2*PI].
          */
         private double vectorAngle(double[] v1, double[] v2, double[] axis, double hand) {
-            double a1 = r(v1);
-            double a2 = r(v2);
+            double a1 = length(v1);
+            double a2 = length(v2);
             double dt = dot(v1, v2);
             double a12 = a1 * a2;
             if (abs(a12) != 0.0) {
@@ -3525,8 +3525,8 @@ public class ConnollyRegion extends ParallelRegion {
                 vect2[k] = atomCoords[k][ia2] - atomCoords[k][ia3];
                 vect3[k] = probeCoords[k][ip] - atomCoords[k][ia3];
             }
-            cross(vect1, vect2, vect4);
-            norm(vect4, vect4);
+            X(vect1, vect2, vect4);
+            normalize(vect4, vect4);
             double dot = dot(vect4, vect3);
             arraycopy(vect4, 0, alt, 0, 3);
             return dot;

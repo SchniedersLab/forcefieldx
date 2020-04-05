@@ -66,13 +66,12 @@ public class Rotamer {
      * Torsions chi 5-7 are only currently used for nucleic acids.
      */
     public final double chi5;
-    final double chi6;
-    final double chi7;
-
     public final double[] angles;
     public final double[] sigmas;
     public final int length;
     public final AminoAcid3 name;
+    final double chi6;
+    final double chi7;
     final ResidueState originalState;
     final boolean isState;
     private final NucleicAcid3 nucleicName;
@@ -299,21 +298,17 @@ public class Rotamer {
     }
 
     /**
-     * {@inheritDoc}
+     * Factory method to construct an original-coordinates Rotamer from a residue.
+     * Intended to address a bug in decompose-original.
+     *
+     * @param res Residue to construct default rotamer for.
+     * @return Original-coordinates rotamer.
      */
-    @Override
-    public String toString() {
-        StringBuilder sb;
-        if (name != null) {
-            sb = new StringBuilder(name.toString());
-        } else {
-            sb = new StringBuilder(nucleicName.toString());
-        }
-        int n = angles.length;
-        for (int i = 0; i < n; i++) {
-            sb.append(String.format(" %6.1f %4.1f", angles[i], sigmas[i]));
-        }
-        return sb.toString();
+    public static Rotamer defaultRotamerFactory(Residue res) {
+        ResidueState origState = res.storeState();
+        double[] chi = RotamerLibrary.measureRotamer(res, false);
+        double[] sigmas = new double[chi.length];
+        return new Rotamer(res, chi, sigmas);
     }
 
     /**
@@ -331,17 +326,21 @@ public class Rotamer {
     }
 
     /**
-     * Factory method to construct an original-coordinates Rotamer from a residue.
-     * Intended to address a bug in decompose-original.
-     *
-     * @param res Residue to construct default rotamer for.
-     * @return Original-coordinates rotamer.
+     * {@inheritDoc}
      */
-    public static Rotamer defaultRotamerFactory(Residue res) {
-        ResidueState origState = res.storeState();
-        double[] chi = RotamerLibrary.measureRotamer(res, false);
-        double[] sigmas = new double[chi.length];
-        return new Rotamer(res, chi, sigmas);
+    @Override
+    public String toString() {
+        StringBuilder sb;
+        if (name != null) {
+            sb = new StringBuilder(name.toString());
+        } else {
+            sb = new StringBuilder(nucleicName.toString());
+        }
+        int n = angles.length;
+        for (int i = 0; i < n; i++) {
+            sb.append(String.format(" %6.1f %4.1f", angles[i], sigmas[i]));
+        }
+        return sb.toString();
     }
 
     /**

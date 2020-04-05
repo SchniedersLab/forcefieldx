@@ -49,7 +49,7 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.parameters.ForceField;
-import static ffx.numerics.math.VectorMath.rsq;
+import static ffx.numerics.math.DoubleMath.length2;
 
 /**
  * Restrain molecules to their center of mass.
@@ -145,7 +145,7 @@ public class COMRestraint implements LambdaInterface {
             dx[1] = currentCOM[1][i] - initialCOM[1][i];
             dx[2] = currentCOM[2][i] - initialCOM[2][i];
 
-            double r2 = rsq(dx);
+            double r2 = length2(dx);
             residual += r2;
             for (int j = 0; j < nAtoms; j++) {
                 if (gradient || lambdaTerm) {

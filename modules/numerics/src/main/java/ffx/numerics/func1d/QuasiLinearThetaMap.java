@@ -41,7 +41,7 @@ import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 
-import static ffx.numerics.math.VectorMath.modToRange;
+import static ffx.numerics.math.ScalarMath.modToRange;
 
 /**
  * A QuasiLinearThetaMap implements a map of theta[-pi, +pi] to lambda[0,1]

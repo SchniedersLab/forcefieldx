@@ -99,7 +99,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     /**
      * Periodicity of the Fourier series.
      */
-    private final int[] periodicity;
+    public final int[] periodicity;
     /**
      * The torsion mode in use.
      */

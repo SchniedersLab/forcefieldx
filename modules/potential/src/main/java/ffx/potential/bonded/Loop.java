@@ -56,16 +56,15 @@ import static ffx.potential.bonded.BondedUtils.determineIntxyz;
 public class Loop {
 
     private static final Logger logger = Logger.getLogger(Loop.class.getName());
+    public final LoopClosure loopClosure;
     private final MolecularAssembly molecularAssembly;
-
+    private final Random random = new Random();
     int maxSolution = 16;
     double[][] rN = new double[3][3];
     double[][] rA = new double[3][3];
     double[][] rC = new double[3][3];
-    public final LoopClosure loopClosure;
     private double[][] altCoords;
     private boolean useAltCoords = false;
-    private final Random random = new Random();
 
     /**
      * <p>Constructor for Loop.</p>
@@ -190,15 +189,6 @@ public class Loop {
     }
 
     /**
-     * <p>getRN.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    public double[][] getRN() {
-        return rN;
-    }
-
-    /**
      * <p>getRA.</p>
      *
      * @return an array of {@link double} objects.
@@ -214,6 +204,24 @@ public class Loop {
      */
     public double[][] getRC() {
         return rC;
+    }
+
+    /**
+     * <p>getRN.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
+    public double[][] getRN() {
+        return rN;
+    }
+
+    /**
+     * <p>useAltCoordinates.</p>
+     *
+     * @param bool a boolean.
+     */
+    public void useAltCoordinates(boolean bool) {
+        this.useAltCoords = bool;
     }
 
     private double[] getSolutionCoordinates(int k, double[][][] rSolnN, double[][][] rSolnA, double[][][] rSolnC, int startResidue, int endResidue) {
@@ -240,7 +248,7 @@ public class Loop {
                 coordsArray[i][2] = a.getZ();
             }
         }
-        
+
         //Loop through residues to build backbone C,N,CA
         for (int i = startResidue; i <= endResidue; i++) {
             Residue newResidue = newChain[0].getResidue(i);
@@ -314,20 +322,20 @@ public class Loop {
             //    backBoneAtom.setBuilt(true);
                 logger.info(String.format("getAtomType().name "+backBoneAtom.getAtomType().name));
                 switch (backBoneAtom.getAtomType().name) {
-                        case "H": 
+                        case "H":
                                             logger.info(String.format("H getAtomType().name "+backBoneAtom.getAtomType().name));
                             determinedXYZ = determineIntxyz(ca, 1.0, n, 109.5, c, 109.5, -1);
-                            coordsArray = fillCoordsArray(backBoneAtom,coordsArray, determinedXYZ); 
+                            coordsArray = fillCoordsArray(backBoneAtom,coordsArray, determinedXYZ);
                             break;
                         case "HA":
                                             logger.info(String.format("HA getAtomType().name "+backBoneAtom.getAtomType().name));
                             determinedXYZ = determineIntxyz(n, 1.0, bc, 119.0, ca, 119.0, 1);
-                            coordsArray = fillCoordsArray(backBoneAtom,coordsArray, determinedXYZ); 
+                            coordsArray = fillCoordsArray(backBoneAtom,coordsArray, determinedXYZ);
                             break;
                         case "O":
                                             logger.info(String.format("O getAtomType().name "+backBoneAtom.getAtomType().name));
                             determinedXYZ = determineIntxyz(c, 1.2255, ca, 122.4, n, 180, 0);
-                            coordsArray = fillCoordsArray(backBoneAtom,coordsArray, determinedXYZ); 
+                            coordsArray = fillCoordsArray(backBoneAtom,coordsArray, determinedXYZ);
                             break;
                         default:
                             break;
@@ -2505,15 +2513,6 @@ public class Loop {
             }
         }
         return coordsArray1D;
-    }
-
-    /**
-     * <p>useAltCoordinates.</p>
-     *
-     * @param bool a boolean.
-     */
-    public void useAltCoordinates(boolean bool) {
-        this.useAltCoords = bool;
     }
 
     private void setAltCoordinates(double[] coordinates) {
