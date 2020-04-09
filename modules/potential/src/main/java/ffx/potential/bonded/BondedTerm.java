@@ -73,6 +73,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * Constant <code>bondedComparator</code>
      */
     private static BondedComparator bondedComparator = new BondedComparator();
+    /**
+     * ID of this BondedTerm.
+     */
     protected String id;
     /**
      * Atoms that are used to form this term.
@@ -251,19 +254,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         id = null;
         value = 0;
         return true;
-    }
-
-    /**
-     * <p>detachExtendedVariable.</p>
-     */
-    public void detachExtendedVariable() {
-        esvTerm = false;
-        esvLambda = 1.0;
-        dedesvChain = 0.0;
-        esvDerivLocal = 0.0;
-        esvDerivShared = null;
-        decompositionMap = null;
-        decomposeEsvDeriv = false;
     }
 
     /**
@@ -511,7 +501,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         // Reuse the string buffers
         idtemp.delete(0, idtemp.length());
         for (int i = 0; i < atoms.length; i++) {
-            Atom a = (reverse) ? atoms[atoms.length - i] : atoms[i];
+            Atom a = (reverse) ? atoms[atoms.length - 1 - i] : atoms[i];
             if (i != 0) {
                 idtemp.append("  ");
             }
@@ -573,15 +563,19 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     public static class BondedComparator implements Comparator<BondedTerm> {
-        private static final List<Class<? extends BondedTerm>> naturalOrder =
-                new ArrayList<Class<? extends BondedTerm>>() {{
-                    add(Bond.class);
-                    add(Angle.class);
-                    add(StretchBend.class);
-                    add(OutOfPlaneBend.class);
-                    add(Torsion.class);
-                    add(PiOrbitalTorsion.class);
-                }};
+        private static final List<Class<? extends BondedTerm>> naturalOrder = new ArrayList<>() {{
+            add(Bond.class);
+            add(Angle.class);
+            add(StretchBend.class);
+            add(UreyBradley.class);
+            add(OutOfPlaneBend.class);
+            add(Torsion.class);
+            add(ImproperTorsion.class);
+            add(PiOrbitalTorsion.class);
+            add(StretchTorsion.class);
+            add(AngleTorsion.class);
+            add(TorsionTorsion.class);
+        }};
 
         private BondedComparator() {
         }   // singleton
@@ -590,15 +584,15 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
          * Sort using position in the naturalOrder list; fallback to alphabetical.
          */
         @Override
-        public int compare(BondedTerm me, BondedTerm other) {
-            final Class<? extends BondedTerm> oc = other.getClass();
-            final Class<? extends BondedTerm> myc = me.getClass();
-            int myidx = naturalOrder.indexOf(me.getClass());
-            int uridx = naturalOrder.indexOf(other.getClass());
-            if (myidx >= 0 && uridx >= 0) {
-                return Integer.compare(myidx, uridx);
+        public int compare(BondedTerm bondedTerm1, BondedTerm bondedTerm2) {
+            final Class<? extends BondedTerm> class1 = bondedTerm2.getClass();
+            final Class<? extends BondedTerm> class2 = bondedTerm1.getClass();
+            int order1 = naturalOrder.indexOf(bondedTerm1.getClass());
+            int order2 = naturalOrder.indexOf(bondedTerm2.getClass());
+            if (order1 >= 0 && order2 >= 0) {
+                return Integer.compare(order1, order2);
             } else {
-                return String.CASE_INSENSITIVE_ORDER.compare(myc.toString(), oc.toString());
+                return String.CASE_INSENSITIVE_ORDER.compare(class2.toString(), class1.toString());
             }
         }
     }
