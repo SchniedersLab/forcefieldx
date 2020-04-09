@@ -76,10 +76,6 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
-import static ffx.numerics.math.DoubleMath.X;
-import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.numerics.math.DoubleMath.scale;
-import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.special.Erf.erfc;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
@@ -101,7 +97,31 @@ import static ffx.potential.parameters.MultipoleType.t200;
 public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInterface {
 
     private static final Logger logger = Logger.getLogger(RealSpaceEnergyRegion.class.getName());
-
+    /**
+     * Constant applied to multipole interactions.
+     */
+    private static final double oneThird = 1.0 / 3.0;
+    private final int maxThreads;
+    private final double electric;
+    private final SharedInteger sharedInteractions;
+    private final RealSpaceEnergyLoop[] realSpaceEnergyLoop;
+    /**
+     * Specify inter-molecular softcore.
+     */
+    private final boolean intermolecularSoftcore;
+    /**
+     * Specify intra-molecular softcore.
+     */
+    private final boolean intramolecularSoftcore;
+    /**
+     * Dimensions of [nsymm][nAtoms][3]
+     */
+    public double[][][] inducedDipole;
+    public double[][][] inducedDipoleCR;
+    /**
+     * Polarization groups.
+     */
+    protected int[][] ip11;
     /**
      * An ordered array of atoms in the system.
      */
@@ -127,11 +147,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
      */
     private double[][][] globalMultipole;
     /**
-     * Dimensions of [nsymm][nAtoms][3]
-     */
-    public double[][][] inducedDipole;
-    public double[][][] inducedDipoleCR;
-    /**
      * When computing the polarization energy at Lambda there are 3 pieces.
      * <p>
      * 1.) Upol(1) = The polarization energy computed normally (ie. system with
@@ -156,16 +171,11 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
      */
     private int[] molecule;
     /**
-     * Polarization groups.
-     */
-    protected int[][] ip11;
-    /**
      * Flag for ligand atoms.
      */
     private boolean[] isSoft;
     private double[] ipdamp;
     private double[] thole;
-
     /**
      * Neighbor lists, without atoms beyond the real space cutoff.
      * [nSymm][nAtoms][nIncludedNeighbors]
@@ -180,7 +190,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
      */
     private IntegerSchedule realSpaceSchedule;
     private long[] realSpaceEnergyTime;
-
     /**
      * Atomic Gradient array.
      */
@@ -214,7 +223,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
      * are being turned on/off.
      */
     private boolean lambdaTerm;
-
     /**
      * The current LambdaMode of this PME instance (or OFF for no lambda dependence).
      */
@@ -257,7 +265,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
      * parts 2 & 3.
      */
     private double polarizationScale = 1.0;
-
     // *************************************************************************
     // Mutable Particle Mesh Ewald constants.
     private double aewald;
@@ -267,28 +274,9 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
     private double an3;
     private double an4;
     private double an5;
-
-    private final int maxThreads;
-    private final double electric;
-    /**
-     * Constant applied to multipole interactions.
-     */
-    private static final double oneThird = 1.0 / 3.0;
     private double permanentEnergy;
     private double polarizationEnergy;
-    private final SharedInteger sharedInteractions;
-    private final RealSpaceEnergyLoop[] realSpaceEnergyLoop;
-
     private ScaleParameters scaleParameters;
-
-    /**
-     * Specify inter-molecular softcore.
-     */
-    private final boolean intermolecularSoftcore;
-    /**
-     * Specify intra-molecular softcore.
-     */
-    private final boolean intramolecularSoftcore;
 
     public RealSpaceEnergyRegion(int nt, ForceField forceField, ELEC_FORM elecForm, boolean lambdaTerm) {
         maxThreads = nt;
@@ -306,6 +294,97 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             intermolecularSoftcore = false;
             intramolecularSoftcore = false;
         }
+    }
+
+    @Override
+    public void applyMask(int i, boolean[] is14, double[]... masks) {
+        Atom ai = atoms[i];
+        double[] masking_local = masks[0];
+        double[] maskingp_local = masks[1];
+        double[] maskingd_local = masks[2];
+        for (Atom ak : ai.get1_5s()) {
+            masking_local[ak.getIndex() - 1] = scaleParameters.m15scale;
+        }
+        for (Torsion torsion : ai.getTorsions()) {
+            Atom ak = torsion.get1_4(ai);
+            if (ak != null) {
+                int index = ak.getIndex() - 1;
+                masking_local[index] = scaleParameters.m14scale;
+                maskingp_local[index] = scaleParameters.p14scale;
+                for (int j : ip11[i]) {
+                    if (j == index) {
+                        maskingp_local[index] = scaleParameters.intra14Scale * scaleParameters.p14scale;
+                        break;
+                    }
+                }
+            }
+        }
+        for (Angle angle : ai.getAngles()) {
+            Atom ak = angle.get1_3(ai);
+            if (ak != null) {
+                int index = ak.getIndex() - 1;
+                maskingp_local[index] = scaleParameters.p13scale;
+                masking_local[index] = scaleParameters.m13scale;
+            }
+        }
+        for (Bond bond : ai.getBonds()) {
+            int index = bond.get1_2(ai).getIndex() - 1;
+            maskingp_local[index] = scaleParameters.p12scale;
+            masking_local[index] = scaleParameters.m12scale;
+        }
+        for (int j : ip11[i]) {
+            maskingd_local[j] = scaleParameters.d11scale;
+        }
+    }
+
+    /**
+     * Execute the RealSpaceEnergyRegion with the passed ParallelTeam.
+     *
+     * @param parallelTeam The ParallelTeam instance to execute with.
+     */
+    public void executeWith(ParallelTeam parallelTeam) {
+        try {
+            parallelTeam.execute(this);
+        } catch (Exception e) {
+            String message = " Exception computing the electrostatic energy.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    @Override
+    public void finish() {
+        permanentEnergy = 0.0;
+        polarizationEnergy = 0.0;
+        for (int i = 0; i < maxThreads; i++) {
+            double e = realSpaceEnergyLoop[i].permanentEnergy;
+            if (isNaN(e)) {
+                throw new EnergyException(format(" The permanent multipole energy of thread %d is %16.8f", i, e), false);
+            }
+            permanentEnergy += e;
+            double ei = realSpaceEnergyLoop[i].inducedEnergy;
+            if (isNaN(ei)) {
+                throw new EnergyException(format(" The polarization energyof thread %d is %16.8f", i, ei), false);
+            }
+            polarizationEnergy += ei;
+        }
+        permanentEnergy *= electric;
+        polarizationEnergy *= electric;
+    }
+
+    public int getCount(int i) {
+        return realSpaceEnergyLoop[i].getCount();
+    }
+
+    public int getInteractions() {
+        return sharedInteractions.get();
+    }
+
+    public double getPermanentEnergy() {
+        return permanentEnergy;
+    }
+
+    public double getPolarizationEnergy() {
+        return polarizationEnergy;
     }
 
     public void init(Atom[] atoms, Crystal crystal, double[][][] coordinates, MultipoleFrameDefinition[] frame,
@@ -371,117 +450,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         this.sharedd2EdLambda2 = sharedd2EdLambda2;
     }
 
-    public double getPermanentEnergy() {
-        return permanentEnergy;
-    }
-
-    public double getPolarizationEnergy() {
-        return polarizationEnergy;
-    }
-
-    public int getInteractions() {
-        return sharedInteractions.get();
-    }
-
-    /**
-     * Execute the RealSpaceEnergyRegion with the passed ParallelTeam.
-     *
-     * @param parallelTeam The ParallelTeam instance to execute with.
-     */
-    public void executeWith(ParallelTeam parallelTeam) {
-        try {
-            parallelTeam.execute(this);
-        } catch (Exception e) {
-            String message = " Exception computing the electrostatic energy.\n";
-            logger.log(Level.SEVERE, message, e);
-        }
-    }
-
-    @Override
-    public void start() {
-        sharedInteractions.set(0);
-    }
-
-    @Override
-    public void run() {
-        int threadIndex = getThreadIndex();
-        if (realSpaceEnergyLoop[threadIndex] == null) {
-            realSpaceEnergyLoop[threadIndex] = new RealSpaceEnergyLoop();
-        }
-        try {
-            int nAtoms = atoms.length;
-            execute(0, nAtoms - 1, realSpaceEnergyLoop[threadIndex]);
-        } catch (Exception e) {
-            String message = "Fatal exception computing the real space energy in thread " + getThreadIndex() + "\n";
-            logger.log(Level.SEVERE, message, e);
-        }
-    }
-
-    @Override
-    public void finish() {
-        permanentEnergy = 0.0;
-        polarizationEnergy = 0.0;
-        for (int i = 0; i < maxThreads; i++) {
-            double e = realSpaceEnergyLoop[i].permanentEnergy;
-            if (isNaN(e)) {
-                throw new EnergyException(format(" The permanent multipole energy of thread %d is %16.8f", i, e), false);
-            }
-            permanentEnergy += e;
-            double ei = realSpaceEnergyLoop[i].inducedEnergy;
-            if (isNaN(ei)) {
-                throw new EnergyException(format(" The polarization energyof thread %d is %16.8f", i, ei), false);
-            }
-            polarizationEnergy += ei;
-        }
-        permanentEnergy *= electric;
-        polarizationEnergy *= electric;
-    }
-
-    public int getCount(int i) {
-        return realSpaceEnergyLoop[i].getCount();
-    }
-
-    @Override
-    public void applyMask(int i, boolean[] is14, double[]... masks) {
-        Atom ai = atoms[i];
-        double[] masking_local = masks[0];
-        double[] maskingp_local = masks[1];
-        double[] maskingd_local = masks[2];
-        for (Atom ak : ai.get1_5s()) {
-            masking_local[ak.getIndex() - 1] = scaleParameters.m15scale;
-        }
-        for (Torsion torsion : ai.getTorsions()) {
-            Atom ak = torsion.get1_4(ai);
-            if (ak != null) {
-                int index = ak.getIndex() - 1;
-                masking_local[index] = scaleParameters.m14scale;
-                maskingp_local[index] = scaleParameters.p14scale;
-                for (int j : ip11[i]) {
-                    if (j == index) {
-                        maskingp_local[index] = scaleParameters.intra14Scale * scaleParameters.p14scale;
-                        break;
-                    }
-                }
-            }
-        }
-        for (Angle angle : ai.getAngles()) {
-            Atom ak = angle.get1_3(ai);
-            if (ak != null) {
-                int index = ak.getIndex() - 1;
-                maskingp_local[index] = scaleParameters.p13scale;
-                masking_local[index] = scaleParameters.m13scale;
-            }
-        }
-        for (Bond bond : ai.getBonds()) {
-            int index = bond.get1_2(ai).getIndex() - 1;
-            maskingp_local[index] = scaleParameters.p12scale;
-            masking_local[index] = scaleParameters.m12scale;
-        }
-        for (int j : ip11[i]) {
-            maskingd_local[j] = scaleParameters.d11scale;
-        }
-    }
-
     @Override
     public void removeMask(int i, boolean[] is14, double[]... masks) {
         Atom ai = atoms[i];
@@ -524,6 +492,26 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         }
     }
 
+    @Override
+    public void run() {
+        int threadIndex = getThreadIndex();
+        if (realSpaceEnergyLoop[threadIndex] == null) {
+            realSpaceEnergyLoop[threadIndex] = new RealSpaceEnergyLoop();
+        }
+        try {
+            int nAtoms = atoms.length;
+            execute(0, nAtoms - 1, realSpaceEnergyLoop[threadIndex]);
+        } catch (Exception e) {
+            String message = "Fatal exception computing the real space energy in thread " + getThreadIndex() + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    @Override
+    public void start() {
+        sharedInteractions.set(0);
+    }
+
     /**
      * The Real Space Gradient Loop class contains methods and thread local
      * variables to parallelize the evaluation of the real space permanent
@@ -531,6 +519,9 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
      */
     private class RealSpaceEnergyLoop extends IntegerForLoop {
 
+        private final double[] dx_local;
+        private final double[][] rot_local;
+        private final Torque torques;
         private double ci;
         private double dix, diy, diz;
         private double qixx, qiyy, qizz, qixy, qixz, qiyz;
@@ -563,9 +554,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         private double[] masking_local;
         private double[] maskingp_local;
         private double[] maskingd_local;
-        private final double[] dx_local;
-        private final double[][] rot_local;
-        private final Torque torques;
         private int threadID;
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -578,48 +566,18 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             torques = new Torque();
         }
 
-        private void init() {
-            int nAtoms = atoms.length;
-            if (masking_local == null || masking_local.length < nAtoms) {
-                txk_local = new double[nAtoms];
-                tyk_local = new double[nAtoms];
-                tzk_local = new double[nAtoms];
-                gxk_local = new double[nAtoms];
-                gyk_local = new double[nAtoms];
-                gzk_local = new double[nAtoms];
-                lxk_local = new double[nAtoms];
-                lyk_local = new double[nAtoms];
-                lzk_local = new double[nAtoms];
-                ltxk_local = new double[nAtoms];
-                ltyk_local = new double[nAtoms];
-                ltzk_local = new double[nAtoms];
-                masking_local = new double[nAtoms];
-                maskingp_local = new double[nAtoms];
-                maskingd_local = new double[nAtoms];
-                fill(masking_local, 1.0);
-                fill(maskingp_local, 1.0);
-                fill(maskingd_local, 1.0);
-            }
-        }
-
         @Override
-        public IntegerSchedule schedule() {
-            return realSpaceSchedule;
-        }
-
-        @Override
-        public void start() {
-            init();
-            threadID = getThreadIndex();
-            realSpaceEnergyTime[threadID] -= System.nanoTime();
-            permanentEnergy = 0.0;
-            inducedEnergy = 0.0;
-            count = 0;
+        public void finish() {
+            sharedInteractions.addAndGet(count);
             if (lambdaTerm) {
-                dUdL = 0.0;
-                d2UdL2 = 0.0;
+                shareddEdLambda.addAndGet(dUdL * electric);
+                sharedd2EdLambda2.addAndGet(d2UdL2 * electric);
             }
-            torques.init(axisAtom, frame, coordinates);
+            realSpaceEnergyTime[getThreadIndex()] += System.nanoTime();
+        }
+
+        public int getCount() {
+            return count;
         }
 
         @Override
@@ -651,12 +609,12 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                     double[] trq = new double[3];
                     for (int i = 0; i < nAtoms; i++) {
                         double[][] g = new double[4][3];
-                        int[] frameIndex = {-1,-1,-1,-1};
+                        int[] frameIndex = {-1, -1, -1, -1};
                         trq[0] = txk_local[i];
                         trq[1] = tyk_local[i];
                         trq[2] = tzk_local[i];
                         torques.torque(i, iSymm, trq, frameIndex, g);
-                        for (int j = 0; j<4; j++) {
+                        for (int j = 0; j < 4; j++) {
                             int index = frameIndex[j];
                             if (index >= 0) {
                                 double[] gj = g[j];
@@ -683,12 +641,12 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                     double[] trq = new double[3];
                     for (int i = 0; i < nAtoms; i++) {
                         double[][] g = new double[4][3];
-                        int[] frameIndex = {-1,-1,-1,-1};
+                        int[] frameIndex = {-1, -1, -1, -1};
                         trq[0] = ltxk_local[i];
                         trq[1] = ltyk_local[i];
                         trq[2] = ltzk_local[i];
                         torques.torque(i, iSymm, trq, frameIndex, g);
-                        for (int j = 0; j<4; j++) {
+                        for (int j = 0; j < 4; j++) {
                             int index = frameIndex[j];
                             if (index >= 0) {
                                 double[] gj = g[j];
@@ -711,18 +669,48 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             }
         }
 
-        public int getCount() {
-            return count;
+        @Override
+        public IntegerSchedule schedule() {
+            return realSpaceSchedule;
         }
 
         @Override
-        public void finish() {
-            sharedInteractions.addAndGet(count);
+        public void start() {
+            init();
+            threadID = getThreadIndex();
+            realSpaceEnergyTime[threadID] -= System.nanoTime();
+            permanentEnergy = 0.0;
+            inducedEnergy = 0.0;
+            count = 0;
             if (lambdaTerm) {
-                shareddEdLambda.addAndGet(dUdL * electric);
-                sharedd2EdLambda2.addAndGet(d2UdL2 * electric);
+                dUdL = 0.0;
+                d2UdL2 = 0.0;
             }
-            realSpaceEnergyTime[getThreadIndex()] += System.nanoTime();
+            torques.init(axisAtom, frame, coordinates);
+        }
+
+        private void init() {
+            int nAtoms = atoms.length;
+            if (masking_local == null || masking_local.length < nAtoms) {
+                txk_local = new double[nAtoms];
+                tyk_local = new double[nAtoms];
+                tzk_local = new double[nAtoms];
+                gxk_local = new double[nAtoms];
+                gyk_local = new double[nAtoms];
+                gzk_local = new double[nAtoms];
+                lxk_local = new double[nAtoms];
+                lyk_local = new double[nAtoms];
+                lzk_local = new double[nAtoms];
+                ltxk_local = new double[nAtoms];
+                ltyk_local = new double[nAtoms];
+                ltzk_local = new double[nAtoms];
+                masking_local = new double[nAtoms];
+                maskingp_local = new double[nAtoms];
+                maskingd_local = new double[nAtoms];
+                fill(masking_local, 1.0);
+                fill(maskingp_local, 1.0);
+                fill(maskingd_local, 1.0);
+            }
         }
 
         /**
@@ -750,7 +738,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 if (!use[i]) {
                     continue;
                 }
-                final Atom ai = atoms[i];
                 final int moleculei = molecule[i];
                 if (iSymm == 0) {
                     applyMask(i, null, masking_local, maskingp_local, maskingd_local);
@@ -784,8 +771,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 final int npair = realSpaceCounts[iSymm][i];
                 for (int j = 0; j < npair; j++) {
                     k = list[j];
-                    // for (int k : list) {
-
                     if (!use[k]) {
                         continue;
                     }
@@ -895,15 +880,25 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                     }
                     if (doPermanentRealSpace) {
                         double ei = permanentPair();
-                        //log(i,k,r,ei);
                         if (isNaN(ei) || isInfinite(ei)) {
                             String message = format(" %s\n %s\n %s\n The permanent multipole energy between "
                                             + "atoms %d and %d (%d) is %16.8f at %16.8f A.",
                                     crystal.getUnitCell().toString(), atoms[i].toString(), atoms[k].toString(), i, k, iSymm, ei, r);
                             throw new EnergyException(message, false);
                         }
-                        permanentEnergy += ei;
-                        count++;
+                        if (ei != 0.0) {
+                            permanentEnergy += ei;
+                            count++;
+//                            if (i == 0 && k > 1159 && k < 1180) {
+//                                log(i, k, r, ei * electric, count, permanentEnergy * electric);
+//                                if (k == 1175) {
+//                                    logger.info(atoms[k].toString());
+//                                    logger.info(format("Axis %d %d", axisAtom[k][0] + 1, axisAtom[k][1] + 1));
+//                                    logger.info(format("Scale %6.3f D: %6.3f P: %6.3f", scale, scaled, scalep));
+//                                    logger.info(" " + atoms[k].getMultipoleType().toString());
+//                                }
+//                            }
+                        }
                     }
                     if (polarization != ParticleMeshEwald.Polarization.NONE && doPolarization) {
                         // Polarization does not use the softcore tensors.
@@ -1257,6 +1252,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 ltyk_local[k] += prefactor * ttm3y;
                 ltzk_local[k] += prefactor * ttm3z;
             }
+
             return e;
         }
 
@@ -1590,6 +1586,20 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             }
             return polarizationScale * e;
         }
+    }
+
+    /**
+     * Log the real space electrostatics interaction.
+     *
+     * @param i   Atom i.
+     * @param k   Atom j.
+     * @param r   The distance rij.
+     * @param eij The interaction energy.
+     * @since 1.0
+     */
+    private void log(int i, int k, double r, double eij, int count, double total) {
+        logger.info(format("%s  %6d  %6d  %10.4f  %10.4f %8d %16.8f",
+                "ELEC", atoms[i].getIndex(), atoms[k].getIndex(), r, eij, count, total));
     }
 
 }

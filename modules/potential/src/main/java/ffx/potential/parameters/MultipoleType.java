@@ -38,11 +38,14 @@
 package ffx.potential.parameters;
 
 import java.io.BufferedReader;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Double.parseDouble;
@@ -51,6 +54,9 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
+import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.random;
 
@@ -58,11 +64,10 @@ import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.normalize;
-import static ffx.numerics.math.DoubleMath.scale;
-import static ffx.numerics.math.DoubleMath.add;
+import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.potential.parameters.ForceField.ForceFieldType.MULTIPOLE;
 import static ffx.utilities.Constants.BOHR;
 import static ffx.utilities.Constants.BOHR2;
@@ -563,7 +568,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             atom.setPolarizeType(polarizeType);
         } else {
             String message = " No polarization type was found for " + atom.toString();
-            logger.fine(message);
+            logger.info(message);
             double polarizability = 0.0;
             double thole = 0.0;
             int[] polarizationGroup = null;
@@ -573,10 +578,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             atom.setPolarizeType(polarizeType);
         }
 
-        String key;
         // No reference atoms.
-        key = atomType.getKey();
-        MultipoleType multipoleType = forceField.getMultipoleType(key);
+        String key1 = atomType.getKey();
+        MultipoleType multipoleType = forceField.getMultipoleType(key1);
         if (multipoleType != null) {
             atom.setMultipoleType(multipoleType);
             atom.setAxisAtoms(null);
@@ -591,10 +595,22 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             return null;
         }
 
-        // 1 reference atom.
+        // Create a list that will be sorted using Atom.compare method.
+        List<Atom> n12 = new ArrayList<>();
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
-            key = atomType.getKey() + " " + atom2.getAtomType().getKey();
+            n12.add(atom2);
+        }
+        n12.sort(Atom.atomicNumberXYZComparator);
+
+//        logger.info(atom.toString());
+//        for (Atom atom2 : n12) {
+//            logger.info(" N12 " + atom2.toString());
+//        }
+
+        // Only 1-2 connected atoms: 1 reference atom.
+        for (Atom atom2 : n12) {
+            String key = key1 + " " + atom2.getAtomType().getKey();
             multipoleType = forceField.getMultipoleType(key);
             if (multipoleType != null) {
                 atom.setMultipoleType(multipoleType);
@@ -603,17 +619,15 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             }
         }
 
-        // 2 reference atoms.
-        for (Bond b : bonds) {
-            Atom atom2 = b.get1_2(atom);
+        // Only 1-2 connected atoms: 2 reference atoms.
+        for (Atom atom2 : n12) {
             String key2 = atom2.getAtomType().getKey();
-            for (Bond b2 : bonds) {
-                if (b == b2) {
+            for (Atom atom3 : n12) {
+                if (atom2 == atom3) {
                     continue;
                 }
-                Atom atom3 = b2.get1_2(atom);
                 String key3 = atom3.getAtomType().getKey();
-                key = atomType.getKey() + " " + key2 + " " + key3;
+                String key = key1 + " " + key2 + " " + key3;
                 multipoleType = forceField.getMultipoleType(key);
                 if (multipoleType != null) {
                     atom.setMultipoleType(multipoleType);
@@ -623,23 +637,20 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             }
         }
 
-        // 3 reference atoms.
-        for (Bond b : bonds) {
-            Atom atom2 = b.get1_2(atom);
+        // Only 1-2 connected atoms: 3 reference atoms.
+        for (Atom atom2 : n12) {
             String key2 = atom2.getAtomType().getKey();
-            for (Bond b2 : bonds) {
-                if (b == b2) {
+            for (Atom atom3 : n12) {
+                if (atom2 == atom3) {
                     continue;
                 }
-                Atom atom3 = b2.get1_2(atom);
                 String key3 = atom3.getAtomType().getKey();
-                for (Bond b3 : bonds) {
-                    if (b == b3 || b2 == b3) {
+                for (Atom atom4 : n12) {
+                    if (atom2 == atom4 || atom3 == atom4) {
                         continue;
                     }
-                    Atom atom4 = b3.get1_2(atom);
                     String key4 = atom4.getAtomType().getKey();
-                    key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
+                    String key = key1 + " " + key2 + " " + key3 + " " + key4;
                     multipoleType = forceField.getMultipoleType(key);
                     if (multipoleType != null) {
                         atom.setMultipoleType(multipoleType);
@@ -647,12 +658,35 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
                         return multipoleType;
                     }
                 }
-                List<Angle> angles = atom.getAngles();
-                for (Angle angle : angles) {
-                    Atom atom4 = angle.get1_3(atom);
-                    if (atom4 != null) {
+            }
+        }
+
+        List<Atom> n13 = new ArrayList<>();
+        List<Angle> angles = atom.getAngles();
+        for (Angle angle : angles) {
+            Atom atom2 = angle.get1_3(atom);
+            if (atom2 != null) {
+                n13.add(atom2);
+            }
+        }
+        n13.sort(Atom.atomicNumberXYZComparator);
+
+        // Revert to a reference atom definition that may include a 1-3 site. For example a hydrogen on water.
+        for (Atom atom2 : n12) {
+            String key2 = atom2.getAtomType().getKey();
+            for (Atom atom3 : n13) {
+                String key3 = atom3.getAtomType().getKey();
+                String key = key1 + " " + key2 + " " + key3;
+                multipoleType = forceField.getMultipoleType(key);
+                if (multipoleType != null) {
+                    atom.setMultipoleType(multipoleType);
+                    atom.setAxisAtoms(atom2, atom3);
+                    return multipoleType;
+                }
+                for (Atom atom4 : n13) {
+                    if (atom4 != null && atom4 != atom3) {
                         String key4 = atom4.getAtomType().getKey();
-                        key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
+                        key = key1 + " " + key2 + " " + key3 + " " + key4;
                         multipoleType = forceField.getMultipoleType(key);
                         if (multipoleType != null) {
                             atom.setMultipoleType(multipoleType);
@@ -664,38 +698,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             }
         }
 
-        // Revert to a 2 reference atom definition that may include a 1-3 site. For example a hydrogen on water.
-        for (Bond b : bonds) {
-            Atom atom2 = b.get1_2(atom);
-            String key2 = atom2.getAtomType().getKey();
-            List<Angle> angles = atom.getAngles();
-            for (Angle angle : angles) {
-                Atom atom3 = angle.get1_3(atom);
-                if (atom3 != null) {
-                    String key3 = atom3.getAtomType().getKey();
-                    key = atomType.getKey() + " " + key2 + " " + key3;
-                    multipoleType = forceField.getMultipoleType(key);
-                    if (multipoleType != null) {
-                        atom.setMultipoleType(multipoleType);
-                        atom.setAxisAtoms(atom2, atom3);
-                        return multipoleType;
-                    }
-                    for (Angle angle2 : angles) {
-                        Atom atom4 = angle2.get1_3(atom);
-                        if (atom4 != null && atom4 != atom3) {
-                            String key4 = atom4.getAtomType().getKey();
-                            key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
-                            multipoleType = forceField.getMultipoleType(key);
-                            if (multipoleType != null) {
-                                atom.setMultipoleType(multipoleType);
-                                atom.setAxisAtoms(atom2, atom3, atom4);
-                                return multipoleType;
-                            }
-                        }
-                    }
-                }
-            }
-        }
         return null;
     }
 
@@ -1154,6 +1156,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         }
         return weightedMultipole;
     }
+
     /**
      * The local multipole frame is defined by the Z-then-X or Bisector
      * convention.
@@ -1219,22 +1222,22 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     private void checkMultipole() {
         double[][] quadrupole = unpackQuad(multipole);
         // Check symmetry.
-        if (Math.abs(quadrupole[0][1] - quadrupole[1][0]) > 1.0e-6) {
+        if (abs(quadrupole[0][1] - quadrupole[1][0]) > 1.0e-6) {
             logger.warning("Multipole component Qxy != Qyx");
             logger.info(this.toString());
         }
-        if (Math.abs(quadrupole[0][2] - quadrupole[2][0]) > 1.0e-6) {
+        if (abs(quadrupole[0][2] - quadrupole[2][0]) > 1.0e-6) {
             logger.warning("Multipole component Qxz != Qzx");
             logger.info(this.toString());
         }
-        if (Math.abs(quadrupole[1][2] - quadrupole[2][1]) > 1.0e-6) {
+        if (abs(quadrupole[1][2] - quadrupole[2][1]) > 1.0e-6) {
             logger.warning("Multipole component Qyz != Qzy");
             logger.info(this.toString());
         }
         // Warn if the multipole is not traceless.
-        if (Math.abs(quadrupole[0][0] + quadrupole[1][1] + quadrupole[2][2]) > 1.0e-5) {
+        if (abs(quadrupole[0][0] + quadrupole[1][1] + quadrupole[2][2]) > 1.0e-5) {
             logger.log(Level.WARNING, format("Multipole is not traceless: %12.8f",
-                    Math.abs(quadrupole[0][0] + quadrupole[1][1] + quadrupole[2][2])));
+                    abs(quadrupole[0][0] + quadrupole[1][1] + quadrupole[2][2])));
             logger.info(this.toString());
         }
     }

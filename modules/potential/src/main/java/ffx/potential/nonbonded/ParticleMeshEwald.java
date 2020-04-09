@@ -576,7 +576,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
         }
         for (Atom ai : atoms) {
             group.clear();
-            Integer index = ai.getIndex() - 1;
+            int index = ai.getIndex() - 1;
             group.add(index);
             PolarizeType polarizeType = ai.getPolarizeType();
             if (polarizeType != null) {

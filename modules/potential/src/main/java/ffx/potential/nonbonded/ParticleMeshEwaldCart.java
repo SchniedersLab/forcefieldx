@@ -61,7 +61,6 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.math.ScalarMath;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.ForceFieldEnergy.Platform;
-import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
@@ -83,13 +82,13 @@ import ffx.potential.nonbonded.pme.SORRegion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldType;
-import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
 import static ffx.numerics.special.Erf.erfc;
 import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.potential.parameters.MultipoleType.assignMultipole;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t002;
@@ -134,19 +133,14 @@ import static ffx.utilities.Constants.NS2SEC;
 public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ParticleMeshEwald.class.getName());
-
     /**
-     * The electrostatics functional form in use.
+     * Number of unique tensors for given order.
      */
-    private ELEC_FORM elecForm;
+    private static final int tensorCount = MultipoleTensor.tensorCount(3);
     /**
-     * Unit cell and spacegroup information.
+     * The sqrt of PI.
      */
-    private Crystal crystal;
-    /**
-     * Number of symmetry operators.
-     */
-    private int nSymm;
+    private static final double SQRT_PI = sqrt(Math.PI);
     /**
      * If lambdaTerm is true, some ligand atom interactions with the environment
      * are being turned on/off.
@@ -154,83 +148,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private final boolean lambdaTerm;
     private final boolean reciprocalSpaceTerm;
     /**
-     * Flag to indicate use of generalized Kirkwood.
-     */
-    private boolean generalizedKirkwoodTerm;
-    /**
-     * If true, compute coordinate gradient.
-     */
-    private boolean gradient = false;
-    /**
-     * If less than 1.0, all atoms with their lambda flags set will have their
-     * multipoles and polarizabilities scaled.
-     */
-    private double lambdaScaleMultipoles = 1.0;
-    /**
-     * Number of PME multipole interactions.
-     */
-    private int interactions;
-    /**
-     * Number of generalized Kirkwood interactions.
-     */
-    private int gkInteractions;
-    /**
-     * Generalized Kirkwood energy.
-     */
-    private double solvationEnergy;
-    /**
      * Reference to the force field being used.
      */
     private final ForceField forceField;
-
-    /**
-     * The current LambdaMode of this PME instance (or OFF for no lambda dependence).
-     */
-    private LambdaMode lambdaMode = LambdaMode.OFF;
-    /**
-     * Current state.
-     */
-    private double lambda = 1.0;
-
-    /**
-     * Permanent multipoles in their local frame.
-     */
-    private double[][] localMultipole;
-    private MultipoleFrameDefinition[] frame;
-    private int[][] axisAtom;
-    private double[] ipdamp;
-    private double[] thole;
-    private double[] polarizability;
     private final double poleps;
-    /**
-     * Flag for ligand atoms.
-     */
-    private boolean[] isSoft;
-    /**
-     * Molecule number for each atom.
-     */
-    private int[] molecule;
-    /**
-     * When computing the polarization energy at Lambda there are 3 pieces.
-     * <p>
-     * 1.) Upol(1) = The polarization energy computed normally (ie. system with
-     * ligand).
-     * <p>
-     * 2.) Uenv = The polarization energy of the system without the ligand.
-     * <p>
-     * 3.) Uligand = The polarization energy of the ligand by itself.
-     * <p>
-     * Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
-     * <p>
-     * Set the "use" array to true for all atoms for part 1. Set the "use" array
-     * to true for all atoms except the ligand for part 2. Set the "use" array
-     * to true only for the ligand atoms for part 3.
-     * <p>
-     * The "use" array can also be employed to turn off atoms for computing the
-     * electrostatic energy of sub-structures.
-     */
-    private boolean[] use;
-
     /**
      * Specify an SCF predictor algorithm.
      */
@@ -241,7 +162,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private final AlchemicalParameters alchemicalParameters;
     private final RealSpaceNeighborParameters realSpaceNeighborParameters;
     private final PMETimings pmeTimings;
-
     /**
      * By default, maxThreads is set to the number of available SMP cores.
      */
@@ -279,7 +199,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private final ParallelTeam fftTeam;
     private final NeighborList neighborList;
-    private IntegerSchedule permanentSchedule;
     private final InitializationRegion initializationRegion;
     private final PermanentFieldRegion permanentFieldRegion;
     private final InducedDipoleFieldRegion inducedDipoleFieldRegion;
@@ -295,13 +214,102 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private final RealSpaceEnergyRegion realSpaceEnergyRegion;
     private final ReduceRegion reduceRegion;
     private final GeneralizedKirkwood generalizedKirkwood;
-
+    /**
+     * Partial derivative with respect to Lambda.
+     */
+    private final SharedDouble shareddEdLambda;
+    /**
+     * Second partial derivative with respect to Lambda.
+     */
+    private final SharedDouble sharedd2EdLambda2;
+    /**
+     * The electrostatics functional form in use.
+     */
+    private ELEC_FORM elecForm;
+    /**
+     * Unit cell and spacegroup information.
+     */
+    private Crystal crystal;
+    /**
+     * Number of symmetry operators.
+     */
+    private int nSymm;
+    /**
+     * Flag to indicate use of generalized Kirkwood.
+     */
+    private boolean generalizedKirkwoodTerm;
+    /**
+     * If true, compute coordinate gradient.
+     */
+    private boolean gradient = false;
+    /**
+     * If less than 1.0, all atoms with their lambda flags set will have their
+     * multipoles and polarizabilities scaled.
+     */
+    private double lambdaScaleMultipoles = 1.0;
+    /**
+     * Number of PME multipole interactions.
+     */
+    private int interactions;
+    /**
+     * Number of generalized Kirkwood interactions.
+     */
+    private int gkInteractions;
+    /**
+     * Generalized Kirkwood energy.
+     */
+    private double solvationEnergy;
+    /**
+     * The current LambdaMode of this PME instance (or OFF for no lambda dependence).
+     */
+    private LambdaMode lambdaMode = LambdaMode.OFF;
+    /**
+     * Current state.
+     */
+    private double lambda = 1.0;
+    /**
+     * Permanent multipoles in their local frame.
+     */
+    private double[][] localMultipole;
+    private MultipoleFrameDefinition[] frame;
+    private int[][] axisAtom;
+    private double[] ipdamp;
+    private double[] thole;
+    private double[] polarizability;
+    /**
+     * Flag for ligand atoms.
+     */
+    private boolean[] isSoft;
+    /**
+     * Molecule number for each atom.
+     */
+    private int[] molecule;
+    /**
+     * When computing the polarization energy at Lambda there are 3 pieces.
+     * <p>
+     * 1.) Upol(1) = The polarization energy computed normally (ie. system with
+     * ligand).
+     * <p>
+     * 2.) Uenv = The polarization energy of the system without the ligand.
+     * <p>
+     * 3.) Uligand = The polarization energy of the ligand by itself.
+     * <p>
+     * Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
+     * <p>
+     * Set the "use" array to true for all atoms for part 1. Set the "use" array
+     * to true for all atoms except the ligand for part 2. Set the "use" array
+     * to true only for the ligand atoms for part 3.
+     * <p>
+     * The "use" array can also be employed to turn off atoms for computing the
+     * electrostatic energy of sub-structures.
+     */
+    private boolean[] use;
+    private IntegerSchedule permanentSchedule;
     private double[][] cartesianMultipolePhi;
     private double[][] cartesianDipolePhi;
     private double[][] cartesianDipolePhiCR;
     private double[][] vacuumDipolePhi;
     private double[][] vacuumDipolePhiCR;
-
     /**
      * AtomicDoubleArray implementation to use.
      */
@@ -332,14 +340,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * [threadID][X/Y/Z][atomID]
      */
     private AtomicDoubleArray3D lambdaTorque;
-    /**
-     * Partial derivative with respect to Lambda.
-     */
-    private final SharedDouble shareddEdLambda;
-    /**
-     * Second partial derivative with respect to Lambda.
-     */
-    private final SharedDouble sharedd2EdLambda2;
 
     /**
      * ParticleMeshEwald constructor.
@@ -579,252 +579,60 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
     }
 
-    private void initAtomArrays() {
-        if (localMultipole == null || localMultipole.length < nAtoms) {
-            localMultipole = new double[nAtoms][10];
-            frame = new MultipoleFrameDefinition[nAtoms];
-            axisAtom = new int[nAtoms][];
-            cartesianMultipolePhi = new double[nAtoms][tensorCount];
-            directDipole = new double[nAtoms][3];
-            directDipoleCR = new double[nAtoms][3];
-            vacuumDirectDipole = new double[nAtoms][3];
-            vacuumDirectDipoleCR = new double[nAtoms][3];
-            if (optRegion != null) {
-                int optOrder = optRegion.optOrder;
-                optRegion.optDipole = new double[optOrder + 1][nAtoms][3];
-                optRegion.optDipoleCR = new double[optOrder + 1][nAtoms][3];
-            }
-            cartesianDipolePhi = new double[nAtoms][tensorCount];
-            cartesianDipolePhiCR = new double[nAtoms][tensorCount];
-            vacuumDipolePhi = new double[nAtoms][tensorCount];
-            vacuumDipolePhiCR = new double[nAtoms][tensorCount];
-            ip11 = new int[nAtoms][];
-            ip12 = new int[nAtoms][];
-            ip13 = new int[nAtoms][];
-            thole = new double[nAtoms];
-            ipdamp = new double[nAtoms];
-            polarizability = new double[nAtoms];
+    public void computeInduceDipoleField() {
+        expandInducedDipoles();
 
-            if (scfAlgorithm == SCFAlgorithm.CG) {
-                pcgSolver.allocateVectors(nAtoms);
-            }
-            pcgSolver.allocateLists(nSymm, nAtoms);
+        if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
+            reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
+        }
+        field.reset(parallelTeam, 0, nAtoms - 1);
+        fieldCR.reset(parallelTeam, 0, nAtoms - 1);
+        inducedDipoleFieldRegion.init(atoms, crystal, use, molecule,
+                ipdamp, thole, coordinates, realSpaceNeighborParameters,
+                inducedDipole, inducedDipoleCR, reciprocalSpaceTerm, reciprocalSpace,
+                lambdaMode, ewaldParameters, field, fieldCR, pmeTimings);
+        inducedDipoleFieldRegion.executeWith(sectionTeam);
+        pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
 
-            if (scfPredictor != SCFPredictor.NONE) {
-                int predictorOrder = scfPredictorParameters.predictorOrder;
-                if (lambdaTerm) {
-                    scfPredictorParameters.predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
-                    scfPredictorParameters.predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
-                } else {
-                    scfPredictorParameters.predictorInducedDipole = new double[1][predictorOrder][nAtoms][3];
-                    scfPredictorParameters.predictorInducedDipoleCR = new double[1][predictorOrder][nAtoms][3];
-                }
-            }
-
-            // Initialize per-thread memory for collecting the gradient, torque, field and chain-rule field.
-            grad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
-            torque = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
-            field = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
-            fieldCR = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
-            lambdaGrad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
-            lambdaTorque = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
-            isSoft = new boolean[nAtoms];
-            use = new boolean[nAtoms];
-
-            coordinates = new double[nSymm][3][nAtoms];
-            globalMultipole = new double[nSymm][nAtoms][10];
-            inducedDipole = new double[nSymm][nAtoms][3];
-            inducedDipoleCR = new double[nSymm][nAtoms][3];
-            vacuumInducedDipole = new double[nSymm][nAtoms][3];
-            vacuumInducedDipoleCR = new double[nSymm][nAtoms][3];
-
-            // The size of reduced neighbor list depends on the size of the real space cutoff.
-            realSpaceNeighborParameters.allocate(nAtoms, nSymm);
+        if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
+            reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
         }
 
-        // Initialize the soft core lambda mask to false for all atoms.
-        fill(isSoft, false);
-
-        // Initialize the use mask to true for all atoms.
-        fill(use, true);
-
-        // Assign multipole parameters.
-        assignMultipoles();
-
-        // Assign polarization groups.
-        assignPolarizationGroups();
-
-        // Fill the thole, inverse polarization damping and polarizability arrays.
-        for (Atom ai : atoms) {
-            PolarizeType polarizeType = ai.getPolarizeType();
-            int index = ai.getIndex() - 1;
-            thole[index] = polarizeType.thole;
-            ipdamp[index] = polarizeType.pdamp;
-            if (!(ipdamp[index] > 0.0)) {
-                ipdamp[index] = Double.POSITIVE_INFINITY;
-            } else {
-                ipdamp[index] = 1.0 / ipdamp[index];
-            }
-            polarizability[index] = polarizeType.polarizability;
-        }
-    }
-
-    /**
-     * Pass in atoms that have been assigned electrostatics from a fixed charge
-     * force field.
-     *
-     * @param atoms An array of atoms.
-     */
-    @Override
-    public void setFixedCharges(Atom[] atoms) {
-        for (Atom ai : atoms) {
-            if (ai.getResolution() == Resolution.FIXEDCHARGE) {
-                int index = ai.getIndex() - 1;
-                polarizability[index] = 0.0;
-                localMultipole[index][t000] = ai.getMultipoleType().getCharge();
-                localMultipole[index][t100] = 0.0;
-                localMultipole[index][t010] = 0.0;
-                localMultipole[index][t001] = 0.0;
-                localMultipole[index][t200] = 0.0;
-                localMultipole[index][t020] = 0.0;
-                localMultipole[index][t002] = 0.0;
-                localMultipole[index][t110] = 0.0;
-                localMultipole[index][t011] = 0.0;
-                localMultipole[index][t101] = 0.0;
-            }
-        }
-    }
-
-    /**
-     * Initialize a boolean array of soft atoms and, if requested, ligand vapor
-     * electrostatics.
-     */
-    private void initSoftCoreInit() {
-
-        boolean rebuild = false;
-
-        // Initialize a boolean array that marks soft atoms.
-        StringBuilder sb = new StringBuilder("\n Softcore Atoms:\n");
-        int count = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom ai = atoms[i];
-            boolean soft = ai.applyLambda();
-            if (soft != isSoft[i]) {
-                rebuild = true;
-            }
-            isSoft[i] = soft;
-            if (soft) {
-                count++;
-                sb.append(ai.toString()).append("\n");
-            }
-
+        if (generalizedKirkwoodTerm) {
+            pmeTimings.gkEnergyTotal = -System.nanoTime();
+            generalizedKirkwood.computeInducedGKField();
+            pmeTimings.gkEnergyTotal += System.nanoTime();
+            logger.fine(format(" Computed GK induced field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
         }
 
-        // Force rebuild ligand vapor electrostatics are being computed and vaporCrystal is null.
-        if (alchemicalParameters.doLigandVaporElec && alchemicalParameters.vaporCrystal == null) {
-            rebuild = true;
-        }
-
-        if (!rebuild) {
-            return;
-        }
-
-        if (count > 0 && logger.isLoggable(Level.FINE)) {
-            logger.fine(format(" Softcore atom count: %d", count));
-            logger.fine(sb.toString());
-        }
-
-        // Initialize boundary conditions,
-        // an n^2 neighbor list and parallel scheduling for ligand vapor electrostatics.
-        if (alchemicalParameters.doLigandVaporElec) {
-            double maxr = 10.0;
-            for (int i = 0; i < nAtoms; i++) {
-                Atom ai = atoms[i];
-                if (ai.applyLambda()) {
-
-                    // Determine ligand size.
-                    for (int j = i + 1; j < nAtoms; j++) {
-                        Atom aj = atoms[j];
-                        if (aj.applyLambda()) {
-                            double dx = ai.getX() - aj.getX();
-                            double dy = ai.getY() - aj.getY();
-                            double dz = ai.getZ() - aj.getZ();
-                            double r = sqrt(dx * dx + dy * dy + dz * dz);
-                            maxr = max(r, maxr);
-                        }
-                    }
-                }
-            }
-
-            double vacuumOff = 2 * maxr;
-            alchemicalParameters.vaporCrystal = new Crystal(3 * vacuumOff, 3 * vacuumOff, 3 * vacuumOff, 90.0, 90.0, 90.0, "P1");
-            alchemicalParameters.vaporCrystal.setAperiodic(true);
-            NeighborList vacuumNeighborList = new NeighborList(null,
-                    alchemicalParameters.vaporCrystal, atoms, vacuumOff, 2.0, parallelTeam);
-            vacuumNeighborList.setIntermolecular(false, molecule);
-
-            alchemicalParameters.vaporLists = new int[1][nAtoms][];
-            double[][] coords = new double[1][nAtoms * 3];
-            for (int i = 0; i < nAtoms; i++) {
-                coords[0][i * 3] = atoms[i].getX();
-                coords[0][i * 3 + 1] = atoms[i].getY();
-                coords[0][i * 3 + 2] = atoms[i].getZ();
-            }
-            boolean print = logger.isLoggable(Level.FINE);
-            vacuumNeighborList.buildList(coords, alchemicalParameters.vaporLists, isSoft, true, print);
-            alchemicalParameters.vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
-            alchemicalParameters.vaporEwaldSchedule = alchemicalParameters.vaporPermanentSchedule;
-            alchemicalParameters.vacuumRanges = new Range[maxThreads];
-            vacuumNeighborList.setDisableUpdates(forceField.getBoolean("DISABLE_NEIGHBOR_UPDATES", false));
-        } else {
-            alchemicalParameters.vaporCrystal = null;
-            alchemicalParameters.vaporLists = null;
-            alchemicalParameters.vaporPermanentSchedule = null;
-            alchemicalParameters.vaporEwaldSchedule = null;
-            alchemicalParameters.vacuumRanges = null;
-        }
-
+        inducedDipoleFieldReduceRegion.init(atoms, inducedDipole, inducedDipoleCR,
+                generalizedKirkwoodTerm, generalizedKirkwood, ewaldParameters,
+                cartesianDipolePhi, cartesianDipolePhiCR, field, fieldCR);
+        inducedDipoleFieldReduceRegion.executeWith(parallelTeam);
     }
 
     @Override
-    public void setAtoms(Atom[] atoms, int[] molecule) {
-        if (lambdaTerm && atoms.length != nAtoms) {
-            logger.severe(" Changing the number of atoms is not compatible with use of Lambda.");
-        }
-        this.atoms = atoms;
-        this.molecule = molecule;
-        nAtoms = atoms.length;
-        initAtomArrays();
-
-        if (reciprocalSpace != null) {
-            reciprocalSpace.setAtoms(atoms);
-        }
-
-        if (generalizedKirkwood != null) {
-            generalizedKirkwood.setAtoms(atoms);
-        }
-    }
-
-    @Override
-    public void setCrystal(Crystal crystal) {
-        // Check if memory allocation is required.
-        int nSymmNew = crystal.spaceGroup.getNumberOfSymOps();
-        if (nSymm < nSymmNew) {
-            coordinates = new double[nSymmNew][3][nAtoms];
-            globalMultipole = new double[nSymmNew][nAtoms][10];
-            inducedDipole = new double[nSymmNew][nAtoms][3];
-            inducedDipoleCR = new double[nSymmNew][nAtoms][3];
-            if (generalizedKirkwood != null) {
-                generalizedKirkwood.setAtoms(atoms);
+    public void destroy() throws Exception {
+        if (fftTeam != null) {
+            try {
+                fftTeam.shutdown();
+            } catch (Exception ex) {
+                logger.warning(" Exception in shutting down fftTeam");
             }
-            realSpaceNeighborParameters.allocate(nAtoms, nSymmNew);
-            pcgSolver.allocateLists(nSymmNew, nAtoms);
         }
-        nSymm = nSymmNew;
-        neighborLists = neighborList.getNeighborList();
-        this.crystal = crystal;
-        if (reciprocalSpace != null) {
-            reciprocalSpace.setCrystal(crystal.getUnitCell());
+        if (sectionTeam != null) {
+            try {
+                sectionTeam.shutdown();
+            } catch (Exception ex) {
+                logger.warning(" Exception in shutting down sectionTeam");
+            }
+        }
+        if (realSpaceTeam != null) {
+            try {
+                realSpaceTeam.shutdown();
+            } catch (Exception ex) {
+                logger.warning(" Exception in shutting down realSpaceTeam");
+            }
         }
     }
 
@@ -937,6 +745,1478 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         return permanentMultipoleEnergy + polarizationEnergy;
+    }
+
+    /**
+     * <p>
+     * ewaldCutoff</p>
+     *
+     * @param coeff     a double.
+     * @param maxCutoff a double.
+     * @param eps       a double.
+     * @return a double.
+     */
+    public static double ewaldCutoff(double coeff, double maxCutoff, double eps) {
+        // Set the tolerance value; use of 1.0d-8 requires strict convergence of the real Space sum.
+        double ratio = erfc(coeff * maxCutoff) / maxCutoff;
+
+        if (ratio > eps) {
+            return maxCutoff;
+        }
+
+        // Use a binary search to refine the coefficient.
+        double xlo = 0.0;
+        double xhi = maxCutoff;
+        double cutoff = 0.0;
+        for (int j = 0; j < 100; j++) {
+            cutoff = (xlo + xhi) / 2.0;
+            ratio = erfc(coeff * cutoff) / cutoff;
+            if (ratio >= eps) {
+                xlo = cutoff;
+            } else {
+                xhi = cutoff;
+            }
+        }
+        return cutoff;
+    }
+
+    public void expandInducedDipoles() {
+        if (nSymm > 1) {
+            expandInducedDipolesRegion.init(atoms, crystal, inducedDipole, inducedDipoleCR);
+            expandInducedDipolesRegion.executeWith(parallelTeam);
+        }
+    }
+
+    @Override
+    public int[][] getAxisAtoms() {
+        return axisAtom;
+    }
+
+    @Override
+    public double getCavitationEnergy() {
+        return generalizedKirkwood.getCavitationEnergy();
+    }
+
+    @Override
+    public double[][][] getCoordinates() {
+        return coordinates;
+    }
+
+    @Override
+    public double getDispersionEnergy() {
+        return generalizedKirkwood.getDispersionEnergy();
+    }
+
+    @Override
+    public ELEC_FORM getElecForm() {
+        return elecForm;
+    }
+
+    @Override
+    public double getEwaldCoefficient() {
+        return ewaldParameters.aewald;
+    }
+
+    @Override
+    public double getEwaldCutoff() {
+        return ewaldParameters.off;
+    }
+
+    @Override
+    public GeneralizedKirkwood getGK() {
+        return generalizedKirkwood;
+    }
+
+    /**
+     * <p>getGeneralizedKirkwoodEnergy.</p>
+     *
+     * @return a double.
+     */
+    @Override
+    public double getGKEnergy() {
+        return generalizedKirkwood.getGeneralizedKirkwoordEnergy();
+    }
+
+    /**
+     * <p>
+     * getGKInteractions</p>
+     *
+     * @return a int.
+     */
+    @Override
+    public int getGKInteractions() {
+        return gkInteractions;
+    }
+
+    /**
+     * <p>
+     * getGradient</p>
+     *
+     * @param grad an array of double.
+     */
+    public void getGradients(double[][] grad) {
+        double[] x = grad[0];
+        double[] y = grad[1];
+        double[] z = grad[2];
+        for (int i = 0; i < nAtoms; i++) {
+            x[i] = this.grad.getX(i);
+            y[i] = this.grad.getY(i);
+            z[i] = this.grad.getZ(i);
+        }
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>interactions</code>.</p>
+     *
+     * @return a int.
+     */
+    @Override
+    public int getInteractions() {
+        return interactions;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Get the current lambda scale value.
+     */
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Set the electrostatic lambda scaling factor.
+     */
+    @Override
+    public void setLambda(double lambda) {
+        assert (lambda >= 0.0 && lambda <= 1.0);
+        if (!lambdaTerm) {
+            return;
+        }
+        this.lambda = lambda;
+
+        initSoftCoreInit();
+        alchemicalParameters.update(lambda);
+        if (generalizedKirkwoodTerm) {
+            generalizedKirkwood.setLambda(alchemicalParameters.polLambda);
+            generalizedKirkwood.setLambdaFunction(alchemicalParameters.lPowPol,
+                    alchemicalParameters.dlPowPol, alchemicalParameters.d2lPowPol);
+        }
+    }
+
+    @Override
+    public String getName() {
+        return "Cartesian";
+    }
+
+    public double getPermanentEnergy() {
+        return permanentMultipoleEnergy;
+    }
+
+    public double getPermanentRealSpaceEnergy() {
+        return permanentRealSpaceEnergy;
+    }
+
+    public double getPermanentReciprocalEnergy() {
+        return permanentReciprocalEnergy;
+    }
+
+    @Override
+    public double getPolarEps() {
+        return poleps;
+    }
+
+    @Override
+    public int[][] getPolarization11() {
+        return ip11;
+    }
+
+    @Override
+    public int[][] getPolarization12() {
+        return ip12;
+    }
+
+    @Override
+    public int[][] getPolarization13() {
+        return ip13;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>polarizationEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    @Override
+    public double getPolarizationEnergy() {
+        return polarizationEnergy;
+    }
+
+    @Override
+    public Polarization getPolarizationType() {
+        return polarization;
+    }
+
+    @Override
+    public ReciprocalSpace getReciprocalSpace() {
+        return reciprocalSpace;
+    }
+
+    @Override
+    public double getScale14() {
+        return scaleParameters.m14scale;
+    }
+
+    /**
+     * <p>
+     * getGKEnergy</p>
+     *
+     * @return a double.
+     */
+    @Override
+    public double getSolvationEnergy() {
+        return solvationEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        if (sharedd2EdLambda2 == null || !lambdaTerm) {
+            return 0.0;
+        }
+        double d2EdL2 = sharedd2EdLambda2.get();
+        if (generalizedKirkwoodTerm || alchemicalParameters.doLigandGKElec) {
+            d2EdL2 += generalizedKirkwood.getd2EdL2();
+        }
+        return d2EdL2;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getdEdL() {
+        if (shareddEdLambda == null || !lambdaTerm) {
+            return 0.0;
+        }
+        double dEdL = shareddEdLambda.get();
+        if (generalizedKirkwoodTerm || alchemicalParameters.doLigandGKElec) {
+            dEdL += generalizedKirkwood.getdEdL();
+        }
+        return dEdL;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        if (lambdaGrad == null || !lambdaTerm) {
+            return;
+        }
+        // Note that the Generalized Kirkwood contributions are already in the lambdaGrad array.
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                gradient[index++] += lambdaGrad.getX(i);
+                gradient[index++] += lambdaGrad.getY(i);
+                gradient[index++] += lambdaGrad.getZ(i);
+            }
+        }
+    }
+
+    @Override
+    public void setAtoms(Atom[] atoms, int[] molecule) {
+        if (lambdaTerm && atoms.length != nAtoms) {
+            logger.severe(" Changing the number of atoms is not compatible with use of Lambda.");
+        }
+        this.atoms = atoms;
+        this.molecule = molecule;
+        nAtoms = atoms.length;
+        initAtomArrays();
+
+        if (reciprocalSpace != null) {
+            reciprocalSpace.setAtoms(atoms);
+        }
+
+        if (generalizedKirkwood != null) {
+            generalizedKirkwood.setAtoms(atoms);
+        }
+    }
+
+    @Override
+    public void setCrystal(Crystal crystal) {
+        // Check if memory allocation is required.
+        int nSymmNew = crystal.spaceGroup.getNumberOfSymOps();
+        if (nSymm < nSymmNew) {
+            coordinates = new double[nSymmNew][3][nAtoms];
+            globalMultipole = new double[nSymmNew][nAtoms][10];
+            inducedDipole = new double[nSymmNew][nAtoms][3];
+            inducedDipoleCR = new double[nSymmNew][nAtoms][3];
+            if (generalizedKirkwood != null) {
+                generalizedKirkwood.setAtoms(atoms);
+            }
+            realSpaceNeighborParameters.allocate(nAtoms, nSymmNew);
+            pcgSolver.allocateLists(nSymmNew, nAtoms);
+        }
+        nSymm = nSymmNew;
+        neighborLists = neighborList.getNeighborList();
+        this.crystal = crystal;
+        if (reciprocalSpace != null) {
+            reciprocalSpace.setCrystal(crystal.getUnitCell());
+        }
+    }
+
+    /**
+     * Pass in atoms that have been assigned electrostatics from a fixed charge
+     * force field.
+     *
+     * @param atoms An array of atoms.
+     */
+    @Override
+    public void setFixedCharges(Atom[] atoms) {
+        for (Atom ai : atoms) {
+            if (ai.getResolution() == Resolution.FIXEDCHARGE) {
+                int index = ai.getIndex() - 1;
+                polarizability[index] = 0.0;
+                localMultipole[index][t000] = ai.getMultipoleType().getCharge();
+                localMultipole[index][t100] = 0.0;
+                localMultipole[index][t010] = 0.0;
+                localMultipole[index][t001] = 0.0;
+                localMultipole[index][t200] = 0.0;
+                localMultipole[index][t020] = 0.0;
+                localMultipole[index][t002] = 0.0;
+                localMultipole[index][t110] = 0.0;
+                localMultipole[index][t011] = 0.0;
+                localMultipole[index][t101] = 0.0;
+            }
+        }
+    }
+
+    @Override
+    public void setLambdaMultipoleScale(double multipoleScale) {
+        lambdaScaleMultipoles = multipoleScale;
+    }
+
+    /**
+     * Mutable Particle Mesh Ewald constants.
+     */
+    public class EwaldParameters {
+
+        public double aewald;
+        public double aewald3;
+        public double an0;
+        public double an1;
+        public double an2;
+        public double an3;
+        public double an4;
+        public double an5;
+        public double off;
+        public double off2;
+
+        public EwaldParameters() {
+            double off;
+            if (!crystal.aperiodic()) {
+                off = forceField.getDouble("EWALD_CUTOFF", PERIODIC_DEFAULT_EWALD_CUTOFF);
+            } else {
+                off = forceField.getDouble("EWALD_CUTOFF", APERIODIC_DEFAULT_EWALD_CUTOFF);
+            }
+            double aewald = forceField.getDouble("EWALD_ALPHA", 0.545);
+            setEwaldParameters(off, aewald);
+        }
+
+        /**
+         * Determine the real space Ewald parameters and permanent multipole self
+         * energy.
+         *
+         * @param off    Real space cutoff.
+         * @param aewald Ewald convergence parameter (0.0 turns off reciprocal
+         *               space).
+         */
+        public void setEwaldParameters(double off, double aewald) {
+            this.off = off;
+            this.aewald = aewald;
+            off2 = off * off;
+            double alsq2 = 2.0 * aewald * aewald;
+            double piEwald = Double.POSITIVE_INFINITY;
+            if (aewald > 0.0) {
+                piEwald = 1.0 / (SQRT_PI * aewald);
+            }
+            aewald3 = 4.0 / 3.0 * pow(aewald, 3.0) / SQRT_PI;
+            if (aewald > 0.0) {
+                an0 = alsq2 * piEwald;
+                an1 = alsq2 * an0;
+                an2 = alsq2 * an1;
+                an3 = alsq2 * an2;
+                an4 = alsq2 * an3;
+                an5 = alsq2 * an4;
+            } else {
+                an0 = 0.0;
+                an1 = 0.0;
+                an2 = 0.0;
+                an3 = 0.0;
+                an4 = 0.0;
+                an5 = 0.0;
+            }
+        }
+    }
+
+    /**
+     * Scale factors for group based polarization rules and energy masking rules.
+     */
+    public class ScaleParameters {
+        /**
+         * The interaction energy between 1-2 multipoles is scaled by m12scale.
+         */
+        public final double m12scale;
+        /**
+         * The interaction energy between 1-3 multipoles is scaled by m13scale.
+         */
+        public final double m13scale;
+        /**
+         * The interaction energy between 1-4 multipoles is scaled by m14scale.
+         */
+        public final double m14scale;
+        /**
+         * The interaction energy between 1-5 multipoles is scaled by m15scale.
+         */
+        public final double m15scale;
+
+        /**
+         * Direct polarization field due to permanent multipoles at polarizable
+         * sites within their group are scaled. The scaling is 0.0 in AMOEBA.
+         */
+        public final double d11scale;
+        /**
+         * The interaction energy between a permanent multipole and polarizable site
+         * that are 1-2 is scaled by p12scale.
+         */
+        public final double p12scale;
+        /**
+         * The interaction energy between a permanent multipole and polarizable site
+         * that are 1-3 is scaled by p13scale.
+         */
+        public final double p13scale;
+        public final double p14scale;
+        public final double p15scale;
+        public final double intra14Scale;
+
+        public ScaleParameters(ForceField forceField) {
+            if (elecForm == ELEC_FORM.PAM) {
+                m12scale = forceField.getDouble("MPOLE_12_SCALE", 0.0);
+                m13scale = forceField.getDouble("MPOLE_13_SCALE", 0.0);
+                m14scale = forceField.getDouble("MPOLE_14_SCALE", 0.4);
+                m15scale = forceField.getDouble("MPOLE_15_SCALE", 0.8);
+            } else {
+                double mpole14 = forceField.getDouble("CHG_14_SCALE", 2.0);
+                mpole14 = 1.0 / mpole14;
+                m12scale = forceField.getDouble("MPOLE_12_SCALE", 0.0);
+                m13scale = forceField.getDouble("MPOLE_13_SCALE", 0.0);
+                m14scale = forceField.getDouble("MPOLE_14_SCALE", mpole14);
+                m15scale = forceField.getDouble("MPOLE_15_SCALE", 1.0);
+            }
+            intra14Scale = forceField.getDouble("POLAR_14_INTRA", 0.5);
+            d11scale = forceField.getDouble("DIRECT_11_SCALE", 0.0);
+            p12scale = forceField.getDouble("POLAR_12_SCALE", 0.0);
+            p13scale = forceField.getDouble("POLAR_13_SCALE", 0.0);
+            p14scale = forceField.getDouble("POLAR_14_SCALE", 1.0);
+            p15scale = forceField.getDouble("POLAR_15_SCALE", 1.0);
+        }
+    }
+
+    public class AlchemicalParameters {
+
+        /**
+         * Constant α in: r' = sqrt(r^2 + α*(1 - L)^2)
+         */
+        public double permLambdaAlpha = 1.0;
+        /**
+         * Power on L in front of the pairwise multipole potential.
+         */
+        public double permLambdaExponent = 3.0;
+        /**
+         * Begin turning on permanent multipoles at Lambda = 0.4;
+         */
+        public double permLambdaStart = 0.4;
+        /**
+         * Finish turning on permanent multipoles at Lambda = 1.0;
+         */
+        public double permLambdaEnd = 1.0;
+        /**
+         * Start turning on polarization later in the Lambda path to prevent SCF
+         * convergence problems when atoms nearly overlap.
+         */
+        public double polLambdaStart = 0.75;
+        public double polLambdaEnd = 1.0;
+        /**
+         * Power on L in front of the polarization energy.
+         */
+        public double polLambdaExponent = 3.0;
+        /**
+         * Intramolecular electrostatics for the ligand in vapor is included by
+         * default.
+         */
+        public boolean doLigandVaporElec = true;
+        /**
+         * Intramolecular electrostatics for the ligand in done in GK implicit
+         * solvent.
+         */
+        public boolean doLigandGKElec = false;
+        /**
+         * Condensed phase SCF without the ligand present is included by default.
+         * For DualTopologyEnergy calculations it can be turned off.
+         */
+        public boolean doNoLigandCondensedSCF = true;
+        /**
+         * lAlpha = α*(1 - L)^2
+         */
+        public double lAlpha = 0.0;
+        public double dlAlpha = 0.0;
+        public double d2lAlpha = 0.0;
+        public double dEdLSign = 1.0;
+        /**
+         * lPowPerm = L^permanentLambdaExponent
+         */
+        public double lPowPerm = 1.0;
+        public double dlPowPerm = 0.0;
+        public double d2lPowPerm = 0.0;
+        public boolean doPermanentRealSpace = true;
+        public double permanentScale = 1.0;
+        /**
+         * lPowPol = L^polarizationLambdaExponent
+         */
+        public double lPowPol = 1.0;
+        public double dlPowPol = 0.0;
+        public double d2lPowPol = 0.0;
+        public boolean doPolarization = true;
+        /**
+         * When computing the polarization energy at L there are 3 pieces.
+         * <p>
+         * 1.) Upol(1) = The polarization energy computed normally (ie. system with
+         * ligand).
+         * <p>
+         * 2.) Uenv = The polarization energy of the system without the ligand.
+         * <p>
+         * 3.) Uligand = The polarization energy of the ligand by itself.
+         * <p>
+         * Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
+         * <p>
+         * Set polarizationScale to L for part 1. Set polarizationScale to (1-L) for
+         * parts 2 & 3.
+         */
+        public double polarizationScale = 1.0;
+        /**
+         * The polarization Lambda value goes from 0.0 .. 1.0 as the global lambda
+         * value varies between polLambdaStart .. polLambadEnd.
+         */
+        private double polLambda = 1.0;
+        /**
+         * The permanent Lambda value goes from 0.0 .. 1.0 as the global lambda
+         * value varies between permLambdaStart .. permLambdaEnd.
+         */
+        private double permLambda = 1.0;
+        /**
+         * Boundary conditions for the vapor end of the alchemical path.
+         */
+        private Crystal vaporCrystal = null;
+        private int[][][] vaporLists = null;
+        private Range[] vacuumRanges = null;
+        private IntegerSchedule vaporPermanentSchedule = null;
+        private IntegerSchedule vaporEwaldSchedule = null;
+
+        public AlchemicalParameters(ForceField forceField, boolean lambdaTerm) {
+            if (lambdaTerm) {
+                // Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable  trajectories.
+                permLambdaAlpha = forceField.getDouble("PERMANENT_LAMBDA_ALPHA", 2.0);
+                if (permLambdaAlpha < 0.0 || permLambdaAlpha > 3.0) {
+                    logger.warning("Invalid value for permanent-lambda-alpha (<0.0 || >3.0); reverting to 2.0");
+                    permLambdaAlpha = 2.0;
+                }
+
+                /*
+                 A PERMANENT_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at the
+                 beginning of the permanent schedule. Choosing a power of 3 or
+                 greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
+
+                 A value of 0.0 is also admissible for when ExtendedSystem is
+                 scaling multipoles rather than softcoring them.
+                */
+                permLambdaExponent = forceField.getDouble("PERMANENT_LAMBDA_EXPONENT", 3.0);
+                if (permLambdaExponent < 0.0) {
+                    logger.warning("Invalid value for permanent-lambda-exponent (<0.0); reverting to 3.0");
+                    permLambdaExponent = 3.0;
+                }
+
+                /*
+                 A POLARIZATION_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at
+                 the beginning of the polarization schedule. Choosing a power of 3
+                 or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
+
+                 A value of 0.0 is also admissible: when polarization is not being
+                 softcored but instead scaled, as by ExtendedSystem.
+                */
+                polLambdaExponent = forceField.getDouble("POLARIZATION_LAMBDA_EXPONENT", 3.0);
+                if (polLambdaExponent < 0.0) {
+                    logger.warning("Invalid value for polarization-lambda-exponent (<0.0); reverting to 3.0");
+                    polLambdaExponent = 3.0;
+                }
+
+                if (noWindowing) {
+                    permLambdaStart = 0.0;
+                    polLambdaStart = 0.0;
+                    permLambdaEnd = 1.0;
+                    polLambdaEnd = 1.0;
+                    logger.info("PME-Cart lambda windowing disabled. Permanent and polarization lambda affect entire [0,1].");
+                } else {
+                    // Values of PERMANENT_LAMBDA_START below 0.5 can lead to unstable trajectories.
+                    permLambdaStart = forceField.getDouble("PERMANENT_LAMBDA_START", 0.4);
+                    if (permLambdaStart < 0.0 || permLambdaStart > 1.0) {
+                        logger.warning("Invalid value for perm-lambda-start (<0.0 || >1.0); reverting to 0.4");
+                        permLambdaStart = 0.4;
+                    }
+
+                    // Values of PERMANENT_LAMBDA_END must be greater than permLambdaStart and <= 1.0.
+                    permLambdaEnd = forceField.getDouble("PERMANENT_LAMBDA_END", 1.0);
+                    if (permLambdaEnd < permLambdaStart || permLambdaEnd > 1.0) {
+                        logger.warning("Invalid value for perm-lambda-end (<start || >1.0); reverting to 1.0");
+                        permLambdaEnd = 1.0;
+                    }
+
+                    /*
+                      The POLARIZATION_LAMBDA_START defines the point in the lambda
+                      schedule when the condensed phase polarization of the ligand
+                      begins to be turned on. If the condensed phase polarization
+                      is considered near lambda=0, then SCF convergence is slow,
+                      even with Thole damping. In addition, 2 (instead of 1)
+                      condensed phase SCF calculations are necessary from the
+                      beginning of the window to lambda=1.
+                     */
+                    polLambdaStart = forceField.getDouble("POLARIZATION_LAMBDA_START", 0.75);
+                    if (polLambdaStart < 0.0 || polLambdaStart > 1.0) {
+                        logger.warning("Invalid value for polarization-lambda-start; reverting to 0.75");
+                        polLambdaStart = 0.75;
+                    }
+
+                    /*
+                      The POLARIZATION_LAMBDA_END defines the point in the lambda
+                      schedule when the condensed phase polarization of ligand has
+                      been completely turned on. Values other than 1.0 have not been tested.
+                     */
+                    polLambdaEnd = forceField.getDouble("POLARIZATION_LAMBDA_END", 1.0);
+                    if (polLambdaEnd < polLambdaStart || polLambdaEnd > 1.0) {
+                        logger.warning("Invalid value for polarization-lambda-end (<start || >1.0); reverting to 1.0");
+                        polLambdaEnd = 1.0;
+                    }
+                }
+
+                // The LAMBDA_VAPOR_ELEC defines if intramolecular electrostatics of the ligand in vapor will be considered.
+                doLigandVaporElec = forceField.getBoolean("LIGAND_VAPOR_ELEC", true);
+                doLigandGKElec = forceField.getBoolean("LIGAND_GK_ELEC", false);
+                doNoLigandCondensedSCF = forceField.getBoolean("NO_LIGAND_CONDENSED_SCF", true);
+            }
+        }
+
+        public void printLambdaFactors() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(format("  (%4s)  mode:%-20s lambda:%.2f  permScale:%.2f  polScale:%.2f  dEdLSign:%s  doPol:%-5b  doPermRS:%-5b",
+                    "CART", lambdaMode.toString(), lambda, permanentScale, polarizationScale,
+                    format("%+f", dEdLSign).substring(0, 1), doPolarization, doPermanentRealSpace));
+            sb.append(format("\n    lAlpha:%.2f,%.2f,%.2f  lPowPerm:%.2f,%.2f,%.2f  lPowPol:%.2f,%.2f,%.2f",
+                    lAlpha, dlAlpha, d2lAlpha, lPowPerm, dlPowPerm, d2lPowPerm, lPowPol, dlPowPol, d2lPowPol));
+            sb.append(format("\n    permExp:%.2f  permAlpha:%.2f  permWindow:%.2f,%.2f  polExp:%.2f  polWindow:%.2f,%.2f",
+                    permLambdaExponent, permLambdaAlpha, permLambdaStart, permLambdaEnd,
+                    polLambdaExponent, polLambdaStart, polLambdaEnd));
+            logger.info(sb.toString());
+        }
+
+        public String toString() {
+            StringBuilder sb = new StringBuilder("   Alchemical Parameters\n");
+            sb.append(format("    Permanent Multipole Range:      %5.3f-%5.3f\n", permLambdaStart, permLambdaEnd));
+            sb.append(format("    Permanent Multipole Softcore Alpha:   %5.3f\n", permLambdaAlpha));
+            sb.append(format("    Permanent Multipole Lambda Exponent:  %5.3f\n", permLambdaExponent));
+            if (polarization != Polarization.NONE) {
+                sb.append(format("    Polarization Lambda Exponent:         %5.3f\n", polLambdaExponent));
+                sb.append(format("    Polarization Range:             %5.3f-%5.3f\n", polLambdaStart, polLambdaEnd));
+                sb.append(format("    Condensed SCF Without Ligand:         %B\n", doNoLigandCondensedSCF));
+            }
+            if (!doLigandGKElec) {
+                sb.append(format("    Vapor Electrostatics:                 %B\n", doLigandVaporElec));
+            } else {
+                sb.append(format("    GK Electrostatics at L=0:             %B\n", doLigandGKElec));
+            }
+            return sb.toString();
+        }
+
+        /*
+         * f = sqrt(r^2 + lAlpha)
+         *
+         * df/dL = -alpha * (1.0 - lambda) / f
+         *
+         * g = 1 / sqrt(r^2 + lAlpha)
+         *
+         * dg/dL = alpha * (1.0 - lambda) / (r^2 + lAlpha)^(3/2)
+         *
+         * define dlAlpha = alpha * 1.0 - lambda)
+         *
+         * then df/dL = -dlAlpha / f and dg/dL = dlAlpha * g^3
+         *
+         * Multipoles are turned on from permLambdaStart .. permLambdaEnd.
+         *
+         * @param lambda
+         */
+        public void update(double lambda) {
+
+            lPowPerm = 1.0;
+            dlPowPerm = 0.0;
+            d2lPowPerm = 0.0;
+            lAlpha = 0.0;
+            dlAlpha = 0.0;
+            d2lAlpha = 0.0;
+            if (lambda < permLambdaStart) {
+                lPowPerm = 0.0;
+            } else if (lambda <= permLambdaEnd) {
+                double permWindow = permLambdaEnd - permLambdaStart;
+                double permLambdaScale = 1.0 / permWindow;
+                permLambda = permLambdaScale * (lambda - permLambdaStart);
+
+                lAlpha = permLambdaAlpha * (1.0 - permLambda) * (1.0 - permLambda);
+                dlAlpha = permLambdaAlpha * (1.0 - permLambda);
+                d2lAlpha = -permLambdaAlpha;
+
+                lPowPerm = pow(permLambda, permLambdaExponent);
+                dlPowPerm = permLambdaExponent * pow(permLambda, permLambdaExponent - 1.0);
+                d2lPowPerm = 0.0;
+                if (permLambdaExponent >= 2.0) {
+                    d2lPowPerm = permLambdaExponent * (permLambdaExponent - 1.0) * pow(permLambda, permLambdaExponent - 2.0);
+                }
+
+                dlAlpha *= permLambdaScale;
+                d2lAlpha *= (permLambdaScale * permLambdaScale);
+                dlPowPerm *= permLambdaScale;
+                d2lPowPerm *= (permLambdaScale * permLambdaScale);
+            }
+
+            // Polarization is turned on from polarizationLambdaStart .. polarizationLambdaEnd.
+            lPowPol = 1.0;
+            dlPowPol = 0.0;
+            d2lPowPol = 0.0;
+            if (lambda < polLambdaStart) {
+                lPowPol = 0.0;
+            } else if (lambda <= polLambdaEnd) {
+                double polWindow = polLambdaEnd - polLambdaStart;
+                double polLambdaScale = 1.0 / polWindow;
+                polLambda = polLambdaScale * (lambda - polLambdaStart);
+                if (polLambdaExponent > 0.0) {
+                    lPowPol = pow(polLambda, polLambdaExponent);
+                    if (polLambdaExponent >= 1.0) {
+                        dlPowPol = polLambdaExponent * pow(polLambda, polLambdaExponent - 1.0);
+                        if (polLambdaExponent >= 2.0) {
+                            d2lPowPol = polLambdaExponent * (polLambdaExponent - 1.0)
+                                    * pow(polLambda, polLambdaExponent - 2.0);
+                        }
+                    }
+                }
+                // Add the chain rule term due to shrinking the lambda range for the polarization energy.
+                dlPowPol *= polLambdaScale;
+                d2lPowPol *= (polLambdaScale * polLambdaScale);
+            }
+        }
+    }
+
+    public class SCFPredictorParameters {
+        /**
+         * Induced dipole predictor order.
+         */
+        public int predictorOrder;
+        /**
+         * Induced dipole predictor index.
+         */
+        public int predictorStartIndex;
+        /**
+         * Induced dipole predictor count.
+         */
+        public int predictorCount;
+        /**
+         * Dimensions of [mode][predictorOrder][nAtoms][3]
+         */
+        public double[][][][] predictorInducedDipole;
+        /**
+         * Dimensions of [mode][predictorOrder][nAtoms][3]
+         */
+        public double[][][][] predictorInducedDipoleCR;
+        public LeastSquaresPredictor leastSquaresPredictor;
+        public LevenbergMarquardtOptimizer leastSquaresOptimizer;
+
+        /**
+         * Always-stable predictor-corrector for the mutual induced dipoles.
+         */
+        public void aspcPredictor() {
+
+            if (predictorCount < 6) {
+                return;
+            }
+
+            int mode;
+            switch (lambdaMode) {
+                case OFF:
+                case CONDENSED:
+                    mode = 0;
+                    break;
+                case CONDENSED_NO_LIGAND:
+                    mode = 1;
+                    break;
+                case VAPOR:
+                    mode = 2;
+                    break;
+                default:
+                    mode = 0;
+            }
+
+            final double[] aspc = {22.0 / 7.0, -55.0 / 14.0, 55.0 / 21.0, -22.0 / 21.0, 5.0 / 21.0, -1.0 / 42.0};
+
+            // Initialize a pointer into predictor induced dipole array.
+            int index = predictorStartIndex;
+
+            // Expansion loop.
+            for (int k = 0; k < 6; k++) {
+
+                // Set the current predictor coefficient.
+                double c = aspc[k];
+                for (int i = 0; i < nAtoms; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
+                        inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
+                    }
+                }
+                index++;
+                if (index >= predictorOrder) {
+                    index = 0;
+
+                }
+            }
+        }
+
+        public void init() {
+            predictorCount = 0;
+            int defaultOrder = 6;
+            predictorOrder =
+                    forceField.getInteger("SCF_PREDICTOR_ORDER", defaultOrder);
+            if (scfPredictor == SCFPredictor.LS) {
+                leastSquaresPredictor = new LeastSquaresPredictor();
+                double eps = 1.0e-4;
+                leastSquaresOptimizer = new org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer(
+                        new org.apache.commons.math3.optimization.SimpleVectorValueChecker(eps, eps));
+            } else if (scfPredictor == SCFPredictor.ASPC) {
+                predictorOrder = 6;
+            }
+            predictorStartIndex = 0;
+        }
+
+        /**
+         * The least-squares predictor with induced dipole information from 8-10
+         * previous steps reduces the number SCF iterations by ~50%.
+         */
+        public void leastSquaresPredictor() {
+            if (predictorCount < 2) {
+                return;
+            }
+            try {
+            /*
+              The Jacobian and target do not change during the LS optimization,
+              so it's most efficient to update them once before the
+              Least-Squares optimizer starts.
+             */
+                leastSquaresPredictor.updateJacobianAndTarget();
+                int maxEvals = 100;
+                fill(leastSquaresPredictor.initialSolution, 0.0);
+                leastSquaresPredictor.initialSolution[0] = 1.0;
+                org.apache.commons.math3.optimization.PointVectorValuePair optimum
+                        = leastSquaresOptimizer.optimize(maxEvals,
+                        leastSquaresPredictor,
+                        leastSquaresPredictor.calculateTarget(),
+                        leastSquaresPredictor.weights,
+                        leastSquaresPredictor.initialSolution);
+                double[] optimalValues = optimum.getPoint();
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.finest(format("\n LS RMS:            %10.6f", leastSquaresOptimizer.getRMS()));
+                    logger.finest(format(" LS Iterations:     %10d", leastSquaresOptimizer.getEvaluations()));
+                    logger.finest(format(" Jacobian Evals:    %10d", leastSquaresOptimizer.getJacobianEvaluations()));
+                    logger.finest(format(" Chi Square:        %10.6f", leastSquaresOptimizer.getChiSquare()));
+                    logger.finest(" LS Coefficients");
+                    for (int i = 0; i < predictorOrder - 1; i++) {
+                        logger.finest(format(" %2d  %10.6f", i + 1, optimalValues[i]));
+                    }
+                }
+
+                int mode;
+                switch (lambdaMode) {
+                    case OFF:
+                    case CONDENSED:
+                        mode = 0;
+                        break;
+                    case CONDENSED_NO_LIGAND:
+                        mode = 1;
+                        break;
+                    case VAPOR:
+                        mode = 2;
+                        break;
+                    default:
+                        mode = 0;
+                }
+
+                // Initialize a pointer into predictor induced dipole array.
+                int index = predictorStartIndex;
+
+                // Apply the LS coefficients in order to provide an initial guess at the converged induced dipoles.
+                for (int k = 0; k < predictorOrder - 1; k++) {
+
+                    // Set the current coefficient.
+                    double c = optimalValues[k];
+                    for (int i = 0; i < nAtoms; i++) {
+                        for (int j = 0; j < 3; j++) {
+                            inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
+                            inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
+                        }
+                    }
+                    index++;
+                    if (index >= predictorOrder) {
+                        index = 0;
+                    }
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, " Exception computing predictor coefficients", e);
+
+            }
+        }
+
+        /**
+         * Polynomial predictor for the mutual induced dipoles.
+         */
+        public void polynomialPredictor() {
+
+            if (predictorCount == 0) {
+                return;
+            }
+
+            int mode;
+            switch (lambdaMode) {
+                case OFF:
+                case CONDENSED:
+                    mode = 0;
+                    break;
+                case CONDENSED_NO_LIGAND:
+                    mode = 1;
+                    break;
+                case VAPOR:
+                    mode = 2;
+                    break;
+                default:
+                    mode = 0;
+            }
+
+            // Check the number of previous induced dipole vectors available.
+            int n = predictorOrder;
+            if (predictorCount < predictorOrder) {
+                n = predictorCount;
+            }
+
+            // Initialize a pointer into predictor induced dipole array.
+            int index = predictorStartIndex;
+
+            // Initialize the sign of the polynomial expansion.
+            double sign = -1.0;
+
+            // Expansion loop.
+            for (int k = 0; k < n; k++) {
+
+                // Set the current predictor sign and coefficient.
+                sign *= -1.0;
+                double c = sign * ScalarMath.binomial(n, k);
+                for (int i = 0; i < nAtoms; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
+                        inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
+                    }
+                }
+                index++;
+                if (index >= predictorOrder) {
+                    index = 0;
+                }
+            }
+        }
+
+        /**
+         * Save the current converged mutual induced dipoles.
+         */
+        public void saveMutualInducedDipoles() {
+
+            int mode;
+            switch (lambdaMode) {
+                case OFF:
+                case CONDENSED:
+                    mode = 0;
+                    break;
+                case CONDENSED_NO_LIGAND:
+                    mode = 1;
+                    break;
+                case VAPOR:
+                    mode = 2;
+                    break;
+                default:
+                    mode = 0;
+            }
+
+            // Current induced dipoles are saved before those from the previous step.
+            predictorStartIndex--;
+            if (predictorStartIndex < 0) {
+                predictorStartIndex = predictorOrder - 1;
+            }
+
+            if (predictorCount < predictorOrder) {
+                predictorCount++;
+            }
+
+            for (int i = 0; i < nAtoms; i++) {
+                for (int j = 0; j < 3; j++) {
+                    predictorInducedDipole[mode][predictorStartIndex][i][j]
+                            = inducedDipole[0][i][j] - directDipole[i][j];
+                    predictorInducedDipoleCR[mode][predictorStartIndex][i][j]
+                            = inducedDipoleCR[0][i][j] - directDipoleCR[i][j];
+                }
+            }
+        }
+
+        private class LeastSquaresPredictor
+                implements org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction {
+
+            double[] weights;
+            double[] target;
+            double[] values;
+            double[][] jacobian;
+            double[] initialSolution;
+            private org.apache.commons.math3.analysis.MultivariateMatrixFunction multivariateMatrixFunction
+                    = new org.apache.commons.math3.analysis.MultivariateMatrixFunction() {
+                @Override
+                public double[][] value(double[] point) {
+                    return jacobian(point);
+                }
+            };
+
+            LeastSquaresPredictor() {
+                weights = new double[2 * nAtoms * 3];
+                target = new double[2 * nAtoms * 3];
+                values = new double[2 * nAtoms * 3];
+                jacobian = new double[2 * nAtoms * 3][predictorOrder - 1];
+                initialSolution = new double[predictorOrder - 1];
+                fill(weights, 1.0);
+                initialSolution[0] = 1.0;
+            }
+
+            @Override
+            public org.apache.commons.math3.analysis.MultivariateMatrixFunction
+            jacobian() {
+                return multivariateMatrixFunction;
+            }
+
+            @Override
+            public double[] value(double[] variables) {
+                int mode;
+                switch (lambdaMode) {
+                    case OFF:
+                    case CONDENSED:
+                        mode = 0;
+                        break;
+                    case CONDENSED_NO_LIGAND:
+                        mode = 1;
+                        break;
+                    case VAPOR:
+                        mode = 2;
+                        break;
+                    default:
+                        mode = 0;
+                }
+
+                for (int i = 0; i < nAtoms; i++) {
+                    int index = 6 * i;
+                    values[index] = 0;
+                    values[index + 1] = 0;
+                    values[index + 2] = 0;
+                    values[index + 3] = 0;
+                    values[index + 4] = 0;
+                    values[index + 5] = 0;
+                    int pi = predictorStartIndex + 1;
+                    if (pi >= predictorOrder) {
+                        pi = 0;
+                    }
+                    for (int j = 0; j < predictorOrder - 1; j++) {
+                        values[index] += variables[j] * predictorInducedDipole[mode][pi][i][0];
+                        values[index + 1] += variables[j] * predictorInducedDipole[mode][pi][i][1];
+                        values[index + 2] += variables[j] * predictorInducedDipole[mode][pi][i][2];
+                        values[index + 3] += variables[j] * predictorInducedDipoleCR[mode][pi][i][0];
+                        values[index + 4] += variables[j] * predictorInducedDipoleCR[mode][pi][i][1];
+                        values[index + 5] += variables[j] * predictorInducedDipoleCR[mode][pi][i][2];
+                        pi++;
+                        if (pi >= predictorOrder) {
+                            pi = 0;
+                        }
+                    }
+                }
+                return values;
+            }
+
+            double[] calculateTarget() {
+                return target;
+            }
+
+            void updateJacobianAndTarget() {
+                int mode;
+                switch (lambdaMode) {
+                    case OFF:
+                    case CONDENSED:
+                        mode = 0;
+                        break;
+                    case CONDENSED_NO_LIGAND:
+                        mode = 1;
+                        break;
+                    case VAPOR:
+                        mode = 2;
+                        break;
+                    default:
+                        mode = 0;
+                }
+
+                // Update the target.
+                int index = 0;
+                for (int i = 0; i < nAtoms; i++) {
+                    target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][0];
+                    target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][1];
+                    target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][2];
+                    target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][0];
+                    target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][1];
+                    target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][2];
+                }
+
+                // Update the Jacobian.
+                index = predictorStartIndex + 1;
+                if (index >= predictorOrder) {
+                    index = 0;
+                }
+                for (int j = 0; j < predictorOrder - 1; j++) {
+                    int ji = 0;
+                    for (int i = 0; i < nAtoms; i++) {
+                        jacobian[ji++][j] = predictorInducedDipole[mode][index][i][0];
+                        jacobian[ji++][j] = predictorInducedDipole[mode][index][i][1];
+                        jacobian[ji++][j] = predictorInducedDipole[mode][index][i][2];
+                        jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][0];
+                        jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][1];
+                        jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][2];
+                    }
+                    index++;
+                    if (index >= predictorOrder) {
+                        index = 0;
+                    }
+                }
+            }
+
+            private double[][] jacobian(double[] variables) {
+                return jacobian;
+            }
+        }
+    }
+
+    public class RealSpaceNeighborParameters {
+
+        final int numThreads;
+        /**
+         * Neighbor lists, without atoms beyond the real space cutoff.
+         * [nSymm][nAtoms][nIncludedNeighbors]
+         */
+        public int[][][] realSpaceLists;
+        /**
+         * Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms]
+         */
+        public int[][] realSpaceCounts;
+        /**
+         * Optimal pairwise ranges.
+         */
+        public Range[] realSpaceRanges;
+        /**
+         * Pairwise schedule for load balancing.
+         */
+        public IntegerSchedule realSpaceSchedule;
+
+        public RealSpaceNeighborParameters(int maxThreads) {
+            numThreads = maxThreads;
+            realSpaceRanges = new Range[maxThreads];
+        }
+
+        public void allocate(int nAtoms, int nSymm) {
+            realSpaceSchedule = new PairwiseSchedule(numThreads, nAtoms, realSpaceRanges);
+            realSpaceLists = new int[nSymm][nAtoms][];
+            realSpaceCounts = new int[nSymm][nAtoms];
+        }
+
+    }
+
+    public class PMETimings {
+        public final long[] realSpacePermTime;
+        public final long[] realSpaceEnergyTime;
+        public final long[] realSpaceSCFTime;
+        /**
+         * Timing variables.
+         */
+        private final int numThreads;
+        public long realSpacePermTotal, realSpaceEnergyTotal, realSpaceSCFTotal;
+        public long bornRadiiTotal, gkEnergyTotal;
+
+        public PMETimings(int numThreads) {
+            this.numThreads = numThreads;
+            realSpacePermTime = new long[numThreads];
+            realSpaceEnergyTime = new long[numThreads];
+            realSpaceSCFTime = new long[numThreads];
+        }
+
+        public void init() {
+            for (int i = 0; i < numThreads; i++) {
+                realSpacePermTime[i] = 0;
+                realSpaceEnergyTime[i] = 0;
+                realSpaceSCFTime[i] = 0;
+            }
+            realSpacePermTotal = 0;
+            realSpaceEnergyTotal = 0;
+            realSpaceSCFTotal = 0;
+            bornRadiiTotal = 0;
+            gkEnergyTotal = 0;
+        }
+
+        public void printRealSpaceTimings() {
+            double total = (realSpacePermTotal + realSpaceSCFTotal + realSpaceEnergyTotal) * NS2SEC;
+            logger.info(format("\n Real Space: %7.4f (sec)", total));
+            logger.info("           Electric Field");
+            logger.info(" Thread    Direct  SCF     Energy     Counts");
+            long minPerm = Long.MAX_VALUE;
+            long maxPerm = 0;
+            long minSCF = Long.MAX_VALUE;
+            long maxSCF = 0;
+            long minEnergy = Long.MAX_VALUE;
+            long maxEnergy = 0;
+            int minCount = Integer.MAX_VALUE;
+            int maxCount = Integer.MIN_VALUE;
+
+            for (int i = 0; i < maxThreads; i++) {
+                int count = realSpaceEnergyRegion.getCount(i);
+                logger.info(format("    %3d   %7.4f %7.4f %7.4f %10d", i,
+                        realSpacePermTime[i] * NS2SEC, realSpaceSCFTime[i] * NS2SEC,
+                        realSpaceEnergyTime[i] * NS2SEC, count));
+                minPerm = min(realSpacePermTime[i], minPerm);
+                maxPerm = max(realSpacePermTime[i], maxPerm);
+                minSCF = min(realSpaceSCFTime[i], minSCF);
+                maxSCF = max(realSpaceSCFTime[i], maxSCF);
+                minEnergy = min(realSpaceEnergyTime[i], minEnergy);
+                maxEnergy = max(realSpaceEnergyTime[i], maxEnergy);
+                minCount = min(count, minCount);
+                maxCount = max(count, maxCount);
+            }
+            logger.info(format(" Min      %7.4f %7.4f %7.4f %10d",
+                    minPerm * NS2SEC, minSCF * NS2SEC,
+                    minEnergy * NS2SEC, minCount));
+            logger.info(format(" Max      %7.4f %7.4f %7.4f %10d",
+                    maxPerm * NS2SEC, maxSCF * NS2SEC,
+                    maxEnergy * NS2SEC, maxCount));
+            logger.info(format(" Delta    %7.4f %7.4f %7.4f %10d",
+                    (maxPerm - minPerm) * NS2SEC, (maxSCF - minSCF) * NS2SEC,
+                    (maxEnergy - minEnergy) * NS2SEC, (maxCount - minCount)));
+            logger.info(format(" Actual   %7.4f %7.4f %7.4f %10d",
+                    realSpacePermTotal * NS2SEC, realSpaceSCFTotal * NS2SEC,
+                    realSpaceEnergyTotal * NS2SEC, realSpaceEnergyRegion.getInteractions()));
+        }
+    }
+
+    private void initAtomArrays() {
+        if (localMultipole == null || localMultipole.length < nAtoms) {
+            localMultipole = new double[nAtoms][10];
+            frame = new MultipoleFrameDefinition[nAtoms];
+            axisAtom = new int[nAtoms][];
+            cartesianMultipolePhi = new double[nAtoms][tensorCount];
+            directDipole = new double[nAtoms][3];
+            directDipoleCR = new double[nAtoms][3];
+            vacuumDirectDipole = new double[nAtoms][3];
+            vacuumDirectDipoleCR = new double[nAtoms][3];
+            if (optRegion != null) {
+                int optOrder = optRegion.optOrder;
+                optRegion.optDipole = new double[optOrder + 1][nAtoms][3];
+                optRegion.optDipoleCR = new double[optOrder + 1][nAtoms][3];
+            }
+            cartesianDipolePhi = new double[nAtoms][tensorCount];
+            cartesianDipolePhiCR = new double[nAtoms][tensorCount];
+            vacuumDipolePhi = new double[nAtoms][tensorCount];
+            vacuumDipolePhiCR = new double[nAtoms][tensorCount];
+            ip11 = new int[nAtoms][];
+            ip12 = new int[nAtoms][];
+            ip13 = new int[nAtoms][];
+            thole = new double[nAtoms];
+            ipdamp = new double[nAtoms];
+            polarizability = new double[nAtoms];
+
+            if (scfAlgorithm == SCFAlgorithm.CG) {
+                pcgSolver.allocateVectors(nAtoms);
+            }
+            pcgSolver.allocateLists(nSymm, nAtoms);
+
+            if (scfPredictor != SCFPredictor.NONE) {
+                int predictorOrder = scfPredictorParameters.predictorOrder;
+                if (lambdaTerm) {
+                    scfPredictorParameters.predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
+                    scfPredictorParameters.predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
+                } else {
+                    scfPredictorParameters.predictorInducedDipole = new double[1][predictorOrder][nAtoms][3];
+                    scfPredictorParameters.predictorInducedDipoleCR = new double[1][predictorOrder][nAtoms][3];
+                }
+            }
+
+            // Initialize per-thread memory for collecting the gradient, torque, field and chain-rule field.
+            grad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
+            torque = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
+            field = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
+            fieldCR = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
+            lambdaGrad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
+            lambdaTorque = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, maxThreads);
+            isSoft = new boolean[nAtoms];
+            use = new boolean[nAtoms];
+
+            coordinates = new double[nSymm][3][nAtoms];
+            globalMultipole = new double[nSymm][nAtoms][10];
+            inducedDipole = new double[nSymm][nAtoms][3];
+            inducedDipoleCR = new double[nSymm][nAtoms][3];
+            vacuumInducedDipole = new double[nSymm][nAtoms][3];
+            vacuumInducedDipoleCR = new double[nSymm][nAtoms][3];
+
+            // The size of reduced neighbor list depends on the size of the real space cutoff.
+            realSpaceNeighborParameters.allocate(nAtoms, nSymm);
+        }
+
+        // Initialize the soft core lambda mask to false for all atoms.
+        fill(isSoft, false);
+
+        // Initialize the use mask to true for all atoms.
+        fill(use, true);
+
+        // Assign multipole parameters.
+        assignMultipoles();
+
+        // Assign polarization groups.
+        assignPolarizationGroups();
+
+        // Fill the thole, inverse polarization damping and polarizability arrays.
+        for (Atom ai : atoms) {
+            PolarizeType polarizeType = ai.getPolarizeType();
+            int index = ai.getIndex() - 1;
+            thole[index] = polarizeType.thole;
+            ipdamp[index] = polarizeType.pdamp;
+            if (!(ipdamp[index] > 0.0)) {
+                ipdamp[index] = Double.POSITIVE_INFINITY;
+            } else {
+                ipdamp[index] = 1.0 / ipdamp[index];
+            }
+            polarizability[index] = polarizeType.polarizability;
+        }
+    }
+
+    /**
+     * Initialize a boolean array of soft atoms and, if requested, ligand vapor
+     * electrostatics.
+     */
+    private void initSoftCoreInit() {
+
+        boolean rebuild = false;
+
+        // Initialize a boolean array that marks soft atoms.
+        StringBuilder sb = new StringBuilder("\n Softcore Atoms:\n");
+        int count = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom ai = atoms[i];
+            boolean soft = ai.applyLambda();
+            if (soft != isSoft[i]) {
+                rebuild = true;
+            }
+            isSoft[i] = soft;
+            if (soft) {
+                count++;
+                sb.append(ai.toString()).append("\n");
+            }
+
+        }
+
+        // Force rebuild ligand vapor electrostatics are being computed and vaporCrystal is null.
+        if (alchemicalParameters.doLigandVaporElec && alchemicalParameters.vaporCrystal == null) {
+            rebuild = true;
+        }
+
+        if (!rebuild) {
+            return;
+        }
+
+        if (count > 0 && logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Softcore atom count: %d", count));
+            logger.fine(sb.toString());
+        }
+
+        // Initialize boundary conditions,
+        // an n^2 neighbor list and parallel scheduling for ligand vapor electrostatics.
+        if (alchemicalParameters.doLigandVaporElec) {
+            double maxr = 10.0;
+            for (int i = 0; i < nAtoms; i++) {
+                Atom ai = atoms[i];
+                if (ai.applyLambda()) {
+
+                    // Determine ligand size.
+                    for (int j = i + 1; j < nAtoms; j++) {
+                        Atom aj = atoms[j];
+                        if (aj.applyLambda()) {
+                            double dx = ai.getX() - aj.getX();
+                            double dy = ai.getY() - aj.getY();
+                            double dz = ai.getZ() - aj.getZ();
+                            double r = sqrt(dx * dx + dy * dy + dz * dz);
+                            maxr = max(r, maxr);
+                        }
+                    }
+                }
+            }
+
+            double vacuumOff = 2 * maxr;
+            alchemicalParameters.vaporCrystal = new Crystal(3 * vacuumOff, 3 * vacuumOff, 3 * vacuumOff, 90.0, 90.0, 90.0, "P1");
+            alchemicalParameters.vaporCrystal.setAperiodic(true);
+            NeighborList vacuumNeighborList = new NeighborList(null,
+                    alchemicalParameters.vaporCrystal, atoms, vacuumOff, 2.0, parallelTeam);
+            vacuumNeighborList.setIntermolecular(false, molecule);
+
+            alchemicalParameters.vaporLists = new int[1][nAtoms][];
+            double[][] coords = new double[1][nAtoms * 3];
+            for (int i = 0; i < nAtoms; i++) {
+                coords[0][i * 3] = atoms[i].getX();
+                coords[0][i * 3 + 1] = atoms[i].getY();
+                coords[0][i * 3 + 2] = atoms[i].getZ();
+            }
+            boolean print = logger.isLoggable(Level.FINE);
+            vacuumNeighborList.buildList(coords, alchemicalParameters.vaporLists, isSoft, true, print);
+            alchemicalParameters.vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
+            alchemicalParameters.vaporEwaldSchedule = alchemicalParameters.vaporPermanentSchedule;
+            alchemicalParameters.vacuumRanges = new Range[maxThreads];
+            vacuumNeighborList.setDisableUpdates(forceField.getBoolean("DISABLE_NEIGHBOR_UPDATES", false));
+        } else {
+            alchemicalParameters.vaporCrystal = null;
+            alchemicalParameters.vaporLists = null;
+            alchemicalParameters.vaporPermanentSchedule = null;
+            alchemicalParameters.vaporEwaldSchedule = null;
+            alchemicalParameters.vacuumRanges = null;
+        }
+
     }
 
     /**
@@ -1410,138 +2690,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
     }
 
-    public void computeInduceDipoleField() {
-        expandInducedDipoles();
-
-        if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-            reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
-        }
-        field.reset(parallelTeam, 0, nAtoms - 1);
-        fieldCR.reset(parallelTeam, 0, nAtoms - 1);
-        inducedDipoleFieldRegion.init(atoms, crystal, use, molecule,
-                ipdamp, thole, coordinates, realSpaceNeighborParameters,
-                inducedDipole, inducedDipoleCR, reciprocalSpaceTerm, reciprocalSpace,
-                lambdaMode, ewaldParameters, field, fieldCR, pmeTimings);
-        inducedDipoleFieldRegion.executeWith(sectionTeam);
-        pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
-
-        if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-            reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
-        }
-
-        if (generalizedKirkwoodTerm) {
-            pmeTimings.gkEnergyTotal = -System.nanoTime();
-            generalizedKirkwood.computeInducedGKField();
-            pmeTimings.gkEnergyTotal += System.nanoTime();
-            logger.fine(format(" Computed GK induced field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
-        }
-
-        inducedDipoleFieldReduceRegion.init(atoms, inducedDipole, inducedDipoleCR,
-                generalizedKirkwoodTerm, generalizedKirkwood, ewaldParameters,
-                cartesianDipolePhi, cartesianDipolePhiCR, field, fieldCR);
-        inducedDipoleFieldReduceRegion.executeWith(parallelTeam);
-    }
-
-    public void expandInducedDipoles() {
-        if (nSymm > 1) {
-            expandInducedDipolesRegion.init(atoms, crystal, inducedDipole, inducedDipoleCR);
-            expandInducedDipolesRegion.executeWith(parallelTeam);
-        }
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>interactions</code>.</p>
-     *
-     * @return a int.
-     */
-    @Override
-    public int getInteractions() {
-        return interactions;
-    }
-
-    public double getPermanentEnergy() {
-        return permanentMultipoleEnergy;
-    }
-
-    public double getPermanentRealSpaceEnergy() {
-        return permanentRealSpaceEnergy;
-    }
-
-    public double getPermanentReciprocalEnergy() {
-        return permanentReciprocalEnergy;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>polarizationEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    @Override
-    public double getPolarizationEnergy() {
-        return polarizationEnergy;
-    }
-
-    /**
-     * <p>
-     * getGKEnergy</p>
-     *
-     * @return a double.
-     */
-    @Override
-    public double getSolvationEnergy() {
-        return solvationEnergy;
-    }
-
-    @Override
-    public double getCavitationEnergy() {
-        return generalizedKirkwood.getCavitationEnergy();
-    }
-
-    @Override
-    public double getDispersionEnergy() {
-        return generalizedKirkwood.getDispersionEnergy();
-    }
-
-    /**
-     * <p>getGeneralizedKirkwoodEnergy.</p>
-     *
-     * @return a double.
-     */
-    @Override
-    public double getGKEnergy() {
-        return generalizedKirkwood.getGeneralizedKirkwoordEnergy();
-    }
-
-    /**
-     * <p>
-     * getGKInteractions</p>
-     *
-     * @return a int.
-     */
-    @Override
-    public int getGKInteractions() {
-        return gkInteractions;
-    }
-
-    /**
-     * <p>
-     * getGradient</p>
-     *
-     * @param grad an array of double.
-     */
-    public void getGradients(double[][] grad) {
-        double[] x = grad[0];
-        double[] y = grad[1];
-        double[] z = grad[2];
-        for (int i = 0; i < nAtoms; i++) {
-            x[i] = this.grad.getX(i);
-            y[i] = this.grad.getY(i);
-            z[i] = this.grad.getZ(i);
-        }
-    }
-
     /**
      * Apply the selected polarization model (NONE, Direct or Mutual).
      */
@@ -1789,36 +2937,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return optOrder;
     }
 
-    @Override
-    public void destroy() throws Exception {
-        if (fftTeam != null) {
-            try {
-                fftTeam.shutdown();
-            } catch (Exception ex) {
-                logger.warning(" Exception in shutting down fftTeam");
-            }
-        }
-        if (sectionTeam != null) {
-            try {
-                sectionTeam.shutdown();
-            } catch (Exception ex) {
-                logger.warning(" Exception in shutting down sectionTeam");
-            }
-        }
-        if (realSpaceTeam != null) {
-            try {
-                realSpaceTeam.shutdown();
-            } catch (Exception ex) {
-                logger.warning(" Exception in shutting down realSpaceTeam");
-            }
-        }
-    }
-
-    @Override
-    public void setLambdaMultipoleScale(double multipoleScale) {
-        lambdaScaleMultipoles = multipoleScale;
-    }
-
     /**
      * A precision of 1.0e-8 results in an Ewald coefficient that ensures
      * continuity in the real space gradient, but at the cost of increased
@@ -1863,44 +2981,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
 
     /**
-     * <p>
-     * ewaldCutoff</p>
-     *
-     * @param coeff     a double.
-     * @param maxCutoff a double.
-     * @param eps       a double.
-     * @return a double.
-     */
-    public static double ewaldCutoff(double coeff, double maxCutoff, double eps) {
-        // Set the tolerance value; use of 1.0d-8 requires strict convergence of the real Space sum.
-        double ratio = erfc(coeff * maxCutoff) / maxCutoff;
-
-        if (ratio > eps) {
-            return maxCutoff;
-        }
-
-        // Use a binary search to refine the coefficient.
-        double xlo = 0.0;
-        double xhi = maxCutoff;
-        double cutoff = 0.0;
-        for (int j = 0; j < 100; j++) {
-            cutoff = (xlo + xhi) / 2.0;
-            ratio = erfc(coeff * cutoff) / cutoff;
-            if (ratio >= eps) {
-                xlo = cutoff;
-            } else {
-                xhi = cutoff;
-            }
-        }
-        return cutoff;
-    }
-
-    @Override
-    public double getEwaldCutoff() {
-        return ewaldParameters.off;
-    }
-
-    /**
      * Given an array of atoms (with atom types), assign multipole types and
      * reference sites.
      */
@@ -1910,6 +2990,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             logger.log(Level.SEVERE, message);
             return;
         }
+
+        // logger.info(" PME Assign Multipoles");
 
         if (forceField.getForceFieldTypeCount(ForceFieldType.MULTIPOLE) < 1
                 && forceField.getForceFieldTypeCount(ForceFieldType.CHARGE) < 1) {
@@ -1923,8 +3005,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             return;
         }
         for (int i = 0; i < nAtoms; i++) {
-            if (!assignMultipole(i)) {
-                Atom atom = atoms[i];
+            Atom atom = atoms[i];
+            if (!assignMultipole(atom, forceField, localMultipole[i], i, axisAtom, frame)) {
                 logger.info(format("No MultipoleType could be assigned:\n %s --> %s", atom, atom.getAtomType()));
                 StringBuilder sb = new StringBuilder();
                 List<Bond> bonds = atom.getBonds();
@@ -1944,6 +3026,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 }
                 logger.log(Level.SEVERE, sb.toString());
             }
+//            else {
+//                // logger.info(" Atom: " + atom.toString());
+//                logger.info(format(" %d  %s", i, atom.getMultipoleType().toString()));
+//                List<Bond> bonds = atom.getBonds();
+//                for (Bond b : bonds) {
+//                    Atom a2 = b.get1_2(atom);
+//                    AtomType aType2 = a2.getAtomType();
+//                    logger.info(format("\n  %s --> %s", a2, aType2));
+//                }
+//            }
         }
 
         // Check for multipoles that were not assigned correctly.
@@ -1968,405 +3060,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         if (sb.length() > 0) {
             String message = "Fatal exception: Error assigning multipoles. " + sb.toString();
             logger.log(Level.SEVERE, message);
-            System.exit(-1);
         }
-    }
-
-    private boolean assignMultipole(int i) {
-        Atom atom = atoms[i];
-        AtomType atomType = atoms[i].getAtomType();
-        if (atomType == null) {
-            String message = " Multipoles can only be assigned to atoms that have been typed.";
-            logger.severe(message);
-            return false;
-        }
-
-        PolarizeType polarizeType = forceField.getPolarizeType(atomType.getKey());
-        if (polarizeType != null) {
-            atom.setPolarizeType(polarizeType);
-        } else {
-            String message = " No polarization type was found for " + atom.toString();
-            logger.fine(message);
-            double polarizability = 0.0;
-            double thole = 0.0;
-            int[] polarizationGroup = null;
-            polarizeType = new PolarizeType(atomType.type,
-                    polarizability, thole, polarizationGroup);
-            forceField.addForceFieldType(polarizeType);
-            atom.setPolarizeType(polarizeType);
-        }
-
-        String key;
-        // No reference atoms.
-        key = atomType.getKey();
-        MultipoleType multipoleType = forceField.getMultipoleType(key);
-        if (multipoleType != null) {
-            atom.setMultipoleType(multipoleType);
-            localMultipole[i][t000] = multipoleType.getCharge();
-            localMultipole[i][t100] = multipoleType.getDipole()[0];
-            localMultipole[i][t010] = multipoleType.getDipole()[1];
-            localMultipole[i][t001] = multipoleType.getDipole()[2];
-            localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
-            localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
-            localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
-            localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
-            localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
-            localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
-            axisAtom[i] = null;
-            frame[i] = multipoleType.frameDefinition;
-            return true;
-        }
-
-        // No bonds.
-        List<Bond> bonds = atom.getBonds();
-        if (bonds == null || bonds.size() < 1) {
-            String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
-            logger.severe(message);
-            return false;
-        }
-
-        // 1 reference atom (Z-Only)
-        for (Bond b : bonds) {
-            Atom atom2 = b.get1_2(atom);
-            key = atomType.getKey() + " " + atom2.getAtomType().getKey();
-            multipoleType = forceField.getMultipoleType(key);
-            if (multipoleType != null) {
-                int[] multipoleReferenceAtoms = new int[1];
-                multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
-                atom.setMultipoleType(multipoleType);
-                localMultipole[i][t000] = multipoleType.getCharge();
-                localMultipole[i][t100] = multipoleType.getDipole()[0];
-                localMultipole[i][t010] = multipoleType.getDipole()[1];
-                localMultipole[i][t001] = multipoleType.getDipole()[2];
-                localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
-                localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
-                localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
-                localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
-                localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
-                localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
-                axisAtom[i] = multipoleReferenceAtoms;
-                frame[i] = multipoleType.frameDefinition;
-                return true;
-            }
-        }
-
-        // 2 reference atoms.
-        for (Bond b : bonds) {
-            Atom atom2 = b.get1_2(atom);
-            String key2 = atom2.getAtomType().getKey();
-            for (Bond b2 : bonds) {
-                if (b == b2) {
-                    continue;
-                }
-                Atom atom3 = b2.get1_2(atom);
-                String key3 = atom3.getAtomType().getKey();
-                key = atomType.getKey() + " " + key2 + " " + key3;
-                multipoleType = forceField.getMultipoleType(key);
-                if (multipoleType != null) {
-                    int[] multipoleReferenceAtoms = new int[2];
-                    multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
-                    multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
-                    atom.setMultipoleType(multipoleType);
-                    atom.setMultipoleType(multipoleType);
-                    localMultipole[i][t000] = multipoleType.getCharge();
-                    localMultipole[i][t100] = multipoleType.getDipole()[0];
-                    localMultipole[i][t010] = multipoleType.getDipole()[1];
-                    localMultipole[i][t001] = multipoleType.getDipole()[2];
-                    localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
-                    localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
-                    localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
-                    localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
-                    localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
-                    localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
-                    axisAtom[i] = multipoleReferenceAtoms;
-                    frame[i] = multipoleType.frameDefinition;
-                    return true;
-                }
-            }
-        }
-
-        // 3 reference atoms.
-        for (Bond b : bonds) {
-            Atom atom2 = b.get1_2(atom);
-            String key2 = atom2.getAtomType().getKey();
-            for (Bond b2 : bonds) {
-                if (b == b2) {
-                    continue;
-                }
-                Atom atom3 = b2.get1_2(atom);
-                String key3 = atom3.getAtomType().getKey();
-                for (Bond b3 : bonds) {
-                    if (b == b3 || b2 == b3) {
-                        continue;
-                    }
-                    Atom atom4 = b3.get1_2(atom);
-                    String key4 = atom4.getAtomType().getKey();
-                    key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
-                    multipoleType = forceField.getMultipoleType(key);
-                    if (multipoleType != null) {
-                        int[] multipoleReferenceAtoms = new int[3];
-                        multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
-                        multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
-                        multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
-                        atom.setMultipoleType(multipoleType);
-                        localMultipole[i][t000] = multipoleType.getCharge();
-                        localMultipole[i][t100] = multipoleType.getDipole()[0];
-                        localMultipole[i][t010] = multipoleType.getDipole()[1];
-                        localMultipole[i][t001] = multipoleType.getDipole()[2];
-                        localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
-                        localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
-                        localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
-                        localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
-                        localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
-                        localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
-                        axisAtom[i] = multipoleReferenceAtoms;
-                        frame[i] = multipoleType.frameDefinition;
-                        return true;
-                    }
-                }
-                List<Angle> angles = atom.getAngles();
-                for (Angle angle : angles) {
-                    Atom atom4 = angle.get1_3(atom);
-                    if (atom4 != null) {
-                        String key4 = atom4.getAtomType().getKey();
-                        key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
-                        multipoleType = forceField.getMultipoleType(key);
-                        if (multipoleType != null) {
-                            int[] multipoleReferenceAtoms = new int[3];
-                            multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
-                            multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
-                            multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
-                            atom.setMultipoleType(multipoleType);
-                            localMultipole[i][t000] = multipoleType.getCharge();
-                            localMultipole[i][t100] = multipoleType.getDipole()[0];
-                            localMultipole[i][t010] = multipoleType.getDipole()[1];
-                            localMultipole[i][t001] = multipoleType.getDipole()[2];
-                            localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
-                            localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
-                            localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
-                            localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
-                            localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
-                            localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
-                            axisAtom[i] = multipoleReferenceAtoms;
-                            frame[i] = multipoleType.frameDefinition;
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-
-        /*
-          Revert to a 2 reference atom definition that may include a 1-3 site.
-          For example a hydrogen on water.
-         */
-        for (Bond b : bonds) {
-            Atom atom2 = b.get1_2(atom);
-            String key2 = atom2.getAtomType().getKey();
-            List<Angle> angles = atom.getAngles();
-            for (Angle angle : angles) {
-                Atom atom3 = angle.get1_3(atom);
-                if (atom3 != null) {
-                    String key3 = atom3.getAtomType().getKey();
-                    key = atomType.getKey() + " " + key2 + " " + key3;
-                    multipoleType = forceField.getMultipoleType(key);
-                    if (multipoleType != null) {
-                        int[] multipoleReferenceAtoms = new int[2];
-                        multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
-                        multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
-                        atom.setMultipoleType(multipoleType);
-                        localMultipole[i][t000] = multipoleType.getCharge();
-                        localMultipole[i][t100] = multipoleType.getDipole()[0];
-                        localMultipole[i][t010] = multipoleType.getDipole()[1];
-                        localMultipole[i][t001] = multipoleType.getDipole()[2];
-                        localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
-                        localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
-                        localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
-                        localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
-                        localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
-                        localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
-                        axisAtom[i] = multipoleReferenceAtoms;
-                        frame[i] = multipoleType.frameDefinition;
-                        return true;
-                    }
-                    for (Angle angle2 : angles) {
-                        Atom atom4 = angle2.get1_3(atom);
-                        if (atom4 != null && atom4 != atom3) {
-                            String key4 = atom4.getAtomType().getKey();
-                            key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
-                            multipoleType = forceField.getMultipoleType(key);
-                            if (multipoleType != null) {
-                                int[] multipoleReferenceAtoms = new int[3];
-                                multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
-                                multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
-                                multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
-                                atom.setMultipoleType(multipoleType);
-                                localMultipole[i][t000] = multipoleType.getCharge();
-                                localMultipole[i][t100] = multipoleType.getDipole()[0];
-                                localMultipole[i][t010] = multipoleType.getDipole()[1];
-                                localMultipole[i][t001] = multipoleType.getDipole()[2];
-                                localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
-                                localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
-                                localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
-                                localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
-                                localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
-                                localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
-                                axisAtom[i] = multipoleReferenceAtoms;
-                                frame[i] = multipoleType.frameDefinition;
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Set the electrostatic lambda scaling factor.
-     */
-    @Override
-    public void setLambda(double lambda) {
-        assert (lambda >= 0.0 && lambda <= 1.0);
-        if (!lambdaTerm) {
-            return;
-        }
-        this.lambda = lambda;
-
-        initSoftCoreInit();
-        alchemicalParameters.update(lambda);
-        if (generalizedKirkwoodTerm) {
-            generalizedKirkwood.setLambda(alchemicalParameters.polLambda);
-            generalizedKirkwood.setLambdaFunction(alchemicalParameters.lPowPol,
-                    alchemicalParameters.dlPowPol, alchemicalParameters.d2lPowPol);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Get the current lambda scale value.
-     */
-    @Override
-    public double getLambda() {
-        return lambda;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getdEdL() {
-        if (shareddEdLambda == null || !lambdaTerm) {
-            return 0.0;
-        }
-        double dEdL = shareddEdLambda.get();
-        if (generalizedKirkwoodTerm || alchemicalParameters.doLigandGKElec) {
-            dEdL += generalizedKirkwood.getdEdL();
-        }
-        return dEdL;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdL2() {
-        if (sharedd2EdLambda2 == null || !lambdaTerm) {
-            return 0.0;
-        }
-        double d2EdL2 = sharedd2EdLambda2.get();
-        if (generalizedKirkwoodTerm || alchemicalParameters.doLigandGKElec) {
-            d2EdL2 += generalizedKirkwood.getd2EdL2();
-        }
-        return d2EdL2;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void getdEdXdL(double[] gradient) {
-        if (lambdaGrad == null || !lambdaTerm) {
-            return;
-        }
-        // Note that the Generalized Kirkwood contributions are already in the lambdaGrad array.
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            if (atoms[i].isActive()) {
-                gradient[index++] += lambdaGrad.getX(i);
-                gradient[index++] += lambdaGrad.getY(i);
-                gradient[index++] += lambdaGrad.getZ(i);
-            }
-        }
-    }
-
-    @Override
-    public GeneralizedKirkwood getGK() {
-        return generalizedKirkwood;
-    }
-
-    @Override
-    public double[][][] getCoordinates() {
-        return coordinates;
-    }
-
-    @Override
-    public double getPolarEps() {
-        return poleps;
-    }
-
-    @Override
-    public int[][] getPolarization11() {
-        return ip11;
-    }
-
-    @Override
-    public int[][] getPolarization12() {
-        return ip12;
-    }
-
-    @Override
-    public int[][] getPolarization13() {
-        return ip13;
-    }
-
-    @Override
-    public Polarization getPolarizationType() {
-        return polarization;
-    }
-
-    @Override
-    public int[][] getAxisAtoms() {
-        return axisAtom;
-    }
-
-    @Override
-    public double getScale14() {
-        return scaleParameters.m14scale;
-    }
-
-    @Override
-    public double getEwaldCoefficient() {
-        return ewaldParameters.aewald;
-    }
-
-    @Override
-    public ReciprocalSpace getReciprocalSpace() {
-        return reciprocalSpace;
-    }
-
-    @Override
-    public ELEC_FORM getElecForm() {
-        return elecForm;
-    }
-
-    @Override
-    public String getName() {
-        return "Cartesian";
     }
 
     /**
@@ -2383,949 +3077,4 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 "ELEC", atoms[i].getIndex(), atoms[i].getAtomType().name,
                 atoms[k].getIndex(), atoms[k].getAtomType().name, r, eij));
     }
-
-    /**
-     * Mutable Particle Mesh Ewald constants.
-     */
-    public class EwaldParameters {
-
-        public double aewald;
-        public double aewald3;
-        public double an0;
-        public double an1;
-        public double an2;
-        public double an3;
-        public double an4;
-        public double an5;
-        public double off;
-        public double off2;
-
-        public EwaldParameters() {
-            double off;
-            if (!crystal.aperiodic()) {
-                off = forceField.getDouble("EWALD_CUTOFF", PERIODIC_DEFAULT_EWALD_CUTOFF);
-            } else {
-                off = forceField.getDouble("EWALD_CUTOFF", APERIODIC_DEFAULT_EWALD_CUTOFF);
-            }
-            double aewald = forceField.getDouble("EWALD_ALPHA", 0.545);
-            setEwaldParameters(off, aewald);
-        }
-
-        /**
-         * Determine the real space Ewald parameters and permanent multipole self
-         * energy.
-         *
-         * @param off    Real space cutoff.
-         * @param aewald Ewald convergence parameter (0.0 turns off reciprocal
-         *               space).
-         */
-        public void setEwaldParameters(double off, double aewald) {
-            this.off = off;
-            this.aewald = aewald;
-            off2 = off * off;
-            double alsq2 = 2.0 * aewald * aewald;
-            double piEwald = Double.POSITIVE_INFINITY;
-            if (aewald > 0.0) {
-                piEwald = 1.0 / (SQRT_PI * aewald);
-            }
-            aewald3 = 4.0 / 3.0 * pow(aewald, 3.0) / SQRT_PI;
-            if (aewald > 0.0) {
-                an0 = alsq2 * piEwald;
-                an1 = alsq2 * an0;
-                an2 = alsq2 * an1;
-                an3 = alsq2 * an2;
-                an4 = alsq2 * an3;
-                an5 = alsq2 * an4;
-            } else {
-                an0 = 0.0;
-                an1 = 0.0;
-                an2 = 0.0;
-                an3 = 0.0;
-                an4 = 0.0;
-                an5 = 0.0;
-            }
-        }
-    }
-
-    /**
-     * Scale factors for group based polarization rules and energy masking rules.
-     */
-    public class ScaleParameters {
-        /**
-         * The interaction energy between 1-2 multipoles is scaled by m12scale.
-         */
-        public final double m12scale;
-        /**
-         * The interaction energy between 1-3 multipoles is scaled by m13scale.
-         */
-        public final double m13scale;
-        /**
-         * The interaction energy between 1-4 multipoles is scaled by m14scale.
-         */
-        public final double m14scale;
-        /**
-         * The interaction energy between 1-5 multipoles is scaled by m15scale.
-         */
-        public final double m15scale;
-
-        /**
-         * Direct polarization field due to permanent multipoles at polarizable
-         * sites within their group are scaled. The scaling is 0.0 in AMOEBA.
-         */
-        public final double d11scale;
-        /**
-         * The interaction energy between a permanent multipole and polarizable site
-         * that are 1-2 is scaled by p12scale.
-         */
-        public final double p12scale;
-        /**
-         * The interaction energy between a permanent multipole and polarizable site
-         * that are 1-3 is scaled by p13scale.
-         */
-        public final double p13scale;
-        public final double p14scale;
-        public final double p15scale;
-        public final double intra14Scale;
-
-        public ScaleParameters(ForceField forceField) {
-            if (elecForm == ELEC_FORM.PAM) {
-                m12scale = forceField.getDouble("MPOLE_12_SCALE", 0.0);
-                m13scale = forceField.getDouble("MPOLE_13_SCALE", 0.0);
-                m14scale = forceField.getDouble("MPOLE_14_SCALE", 0.4);
-                m15scale = forceField.getDouble("MPOLE_15_SCALE", 0.8);
-            } else {
-                double mpole14 = forceField.getDouble("CHG_14_SCALE", 2.0);
-                mpole14 = 1.0 / mpole14;
-                m12scale = forceField.getDouble("MPOLE_12_SCALE", 0.0);
-                m13scale = forceField.getDouble("MPOLE_13_SCALE", 0.0);
-                m14scale = forceField.getDouble("MPOLE_14_SCALE", mpole14);
-                m15scale = forceField.getDouble("MPOLE_15_SCALE", 1.0);
-            }
-            intra14Scale = forceField.getDouble("POLAR_14_INTRA", 0.5);
-            d11scale = forceField.getDouble("DIRECT_11_SCALE", 0.0);
-            p12scale = forceField.getDouble("POLAR_12_SCALE", 0.0);
-            p13scale = forceField.getDouble("POLAR_13_SCALE", 0.0);
-            p14scale = forceField.getDouble("POLAR_14_SCALE", 1.0);
-            p15scale = forceField.getDouble("POLAR_15_SCALE", 1.0);
-        }
-    }
-
-    public class AlchemicalParameters {
-
-        /**
-         * The polarization Lambda value goes from 0.0 .. 1.0 as the global lambda
-         * value varies between polLambdaStart .. polLambadEnd.
-         */
-        private double polLambda = 1.0;
-        /**
-         * The permanent Lambda value goes from 0.0 .. 1.0 as the global lambda
-         * value varies between permLambdaStart .. permLambdaEnd.
-         */
-        private double permLambda = 1.0;
-        /**
-         * Constant α in: r' = sqrt(r^2 + α*(1 - L)^2)
-         */
-        public double permLambdaAlpha = 1.0;
-        /**
-         * Power on L in front of the pairwise multipole potential.
-         */
-        public double permLambdaExponent = 3.0;
-        /**
-         * Begin turning on permanent multipoles at Lambda = 0.4;
-         */
-        public double permLambdaStart = 0.4;
-        /**
-         * Finish turning on permanent multipoles at Lambda = 1.0;
-         */
-        public double permLambdaEnd = 1.0;
-        /**
-         * Start turning on polarization later in the Lambda path to prevent SCF
-         * convergence problems when atoms nearly overlap.
-         */
-        public double polLambdaStart = 0.75;
-        public double polLambdaEnd = 1.0;
-        /**
-         * Power on L in front of the polarization energy.
-         */
-        public double polLambdaExponent = 3.0;
-        /**
-         * Intramolecular electrostatics for the ligand in vapor is included by
-         * default.
-         */
-        public boolean doLigandVaporElec = true;
-        /**
-         * Intramolecular electrostatics for the ligand in done in GK implicit
-         * solvent.
-         */
-        public boolean doLigandGKElec = false;
-        /**
-         * Condensed phase SCF without the ligand present is included by default.
-         * For DualTopologyEnergy calculations it can be turned off.
-         */
-        public boolean doNoLigandCondensedSCF = true;
-        /**
-         * lAlpha = α*(1 - L)^2
-         */
-        public double lAlpha = 0.0;
-        public double dlAlpha = 0.0;
-        public double d2lAlpha = 0.0;
-        public double dEdLSign = 1.0;
-        /**
-         * lPowPerm = L^permanentLambdaExponent
-         */
-        public double lPowPerm = 1.0;
-        public double dlPowPerm = 0.0;
-        public double d2lPowPerm = 0.0;
-        public boolean doPermanentRealSpace = true;
-        public double permanentScale = 1.0;
-        /**
-         * lPowPol = L^polarizationLambdaExponent
-         */
-        public double lPowPol = 1.0;
-        public double dlPowPol = 0.0;
-        public double d2lPowPol = 0.0;
-        public boolean doPolarization = true;
-        /**
-         * When computing the polarization energy at L there are 3 pieces.
-         * <p>
-         * 1.) Upol(1) = The polarization energy computed normally (ie. system with
-         * ligand).
-         * <p>
-         * 2.) Uenv = The polarization energy of the system without the ligand.
-         * <p>
-         * 3.) Uligand = The polarization energy of the ligand by itself.
-         * <p>
-         * Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
-         * <p>
-         * Set polarizationScale to L for part 1. Set polarizationScale to (1-L) for
-         * parts 2 & 3.
-         */
-        public double polarizationScale = 1.0;
-
-        /**
-         * Boundary conditions for the vapor end of the alchemical path.
-         */
-        private Crystal vaporCrystal = null;
-        private int[][][] vaporLists = null;
-        private Range[] vacuumRanges = null;
-        private IntegerSchedule vaporPermanentSchedule = null;
-        private IntegerSchedule vaporEwaldSchedule = null;
-
-        public AlchemicalParameters(ForceField forceField, boolean lambdaTerm) {
-            if (lambdaTerm) {
-                // Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable  trajectories.
-                permLambdaAlpha = forceField.getDouble("PERMANENT_LAMBDA_ALPHA", 2.0);
-                if (permLambdaAlpha < 0.0 || permLambdaAlpha > 3.0) {
-                    logger.warning("Invalid value for permanent-lambda-alpha (<0.0 || >3.0); reverting to 2.0");
-                    permLambdaAlpha = 2.0;
-                }
-
-                /*
-                 A PERMANENT_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at the
-                 beginning of the permanent schedule. Choosing a power of 3 or
-                 greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
-
-                 A value of 0.0 is also admissible for when ExtendedSystem is
-                 scaling multipoles rather than softcoring them.
-                */
-                permLambdaExponent = forceField.getDouble("PERMANENT_LAMBDA_EXPONENT", 3.0);
-                if (permLambdaExponent < 0.0) {
-                    logger.warning("Invalid value for permanent-lambda-exponent (<0.0); reverting to 3.0");
-                    permLambdaExponent = 3.0;
-                }
-
-                /*
-                 A POLARIZATION_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at
-                 the beginning of the polarization schedule. Choosing a power of 3
-                 or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
-
-                 A value of 0.0 is also admissible: when polarization is not being
-                 softcored but instead scaled, as by ExtendedSystem.
-                */
-                polLambdaExponent = forceField.getDouble("POLARIZATION_LAMBDA_EXPONENT", 3.0);
-                if (polLambdaExponent < 0.0) {
-                    logger.warning("Invalid value for polarization-lambda-exponent (<0.0); reverting to 3.0");
-                    polLambdaExponent = 3.0;
-                }
-
-                if (noWindowing) {
-                    permLambdaStart = 0.0;
-                    polLambdaStart = 0.0;
-                    permLambdaEnd = 1.0;
-                    polLambdaEnd = 1.0;
-                    logger.info("PME-Cart lambda windowing disabled. Permanent and polarization lambda affect entire [0,1].");
-                } else {
-                    // Values of PERMANENT_LAMBDA_START below 0.5 can lead to unstable trajectories.
-                    permLambdaStart = forceField.getDouble("PERMANENT_LAMBDA_START", 0.4);
-                    if (permLambdaStart < 0.0 || permLambdaStart > 1.0) {
-                        logger.warning("Invalid value for perm-lambda-start (<0.0 || >1.0); reverting to 0.4");
-                        permLambdaStart = 0.4;
-                    }
-
-                    // Values of PERMANENT_LAMBDA_END must be greater than permLambdaStart and <= 1.0.
-                    permLambdaEnd = forceField.getDouble("PERMANENT_LAMBDA_END", 1.0);
-                    if (permLambdaEnd < permLambdaStart || permLambdaEnd > 1.0) {
-                        logger.warning("Invalid value for perm-lambda-end (<start || >1.0); reverting to 1.0");
-                        permLambdaEnd = 1.0;
-                    }
-
-                    /*
-                      The POLARIZATION_LAMBDA_START defines the point in the lambda
-                      schedule when the condensed phase polarization of the ligand
-                      begins to be turned on. If the condensed phase polarization
-                      is considered near lambda=0, then SCF convergence is slow,
-                      even with Thole damping. In addition, 2 (instead of 1)
-                      condensed phase SCF calculations are necessary from the
-                      beginning of the window to lambda=1.
-                     */
-                    polLambdaStart = forceField.getDouble("POLARIZATION_LAMBDA_START", 0.75);
-                    if (polLambdaStart < 0.0 || polLambdaStart > 1.0) {
-                        logger.warning("Invalid value for polarization-lambda-start; reverting to 0.75");
-                        polLambdaStart = 0.75;
-                    }
-
-                    /*
-                      The POLARIZATION_LAMBDA_END defines the point in the lambda
-                      schedule when the condensed phase polarization of ligand has
-                      been completely turned on. Values other than 1.0 have not been tested.
-                     */
-                    polLambdaEnd = forceField.getDouble("POLARIZATION_LAMBDA_END", 1.0);
-                    if (polLambdaEnd < polLambdaStart || polLambdaEnd > 1.0) {
-                        logger.warning("Invalid value for polarization-lambda-end (<start || >1.0); reverting to 1.0");
-                        polLambdaEnd = 1.0;
-                    }
-                }
-
-                // The LAMBDA_VAPOR_ELEC defines if intramolecular electrostatics of the ligand in vapor will be considered.
-                doLigandVaporElec = forceField.getBoolean("LIGAND_VAPOR_ELEC", true);
-                doLigandGKElec = forceField.getBoolean("LIGAND_GK_ELEC", false);
-                doNoLigandCondensedSCF = forceField.getBoolean("NO_LIGAND_CONDENSED_SCF", true);
-            }
-        }
-
-        /*
-         * f = sqrt(r^2 + lAlpha)
-         *
-         * df/dL = -alpha * (1.0 - lambda) / f
-         *
-         * g = 1 / sqrt(r^2 + lAlpha)
-         *
-         * dg/dL = alpha * (1.0 - lambda) / (r^2 + lAlpha)^(3/2)
-         *
-         * define dlAlpha = alpha * 1.0 - lambda)
-         *
-         * then df/dL = -dlAlpha / f and dg/dL = dlAlpha * g^3
-         *
-         * Multipoles are turned on from permLambdaStart .. permLambdaEnd.
-         *
-         * @param lambda
-         */
-        public void update(double lambda) {
-
-            lPowPerm = 1.0;
-            dlPowPerm = 0.0;
-            d2lPowPerm = 0.0;
-            lAlpha = 0.0;
-            dlAlpha = 0.0;
-            d2lAlpha = 0.0;
-            if (lambda < permLambdaStart) {
-                lPowPerm = 0.0;
-            } else if (lambda <= permLambdaEnd) {
-                double permWindow = permLambdaEnd - permLambdaStart;
-                double permLambdaScale = 1.0 / permWindow;
-                permLambda = permLambdaScale * (lambda - permLambdaStart);
-
-                lAlpha = permLambdaAlpha * (1.0 - permLambda) * (1.0 - permLambda);
-                dlAlpha = permLambdaAlpha * (1.0 - permLambda);
-                d2lAlpha = -permLambdaAlpha;
-
-                lPowPerm = pow(permLambda, permLambdaExponent);
-                dlPowPerm = permLambdaExponent * pow(permLambda, permLambdaExponent - 1.0);
-                d2lPowPerm = 0.0;
-                if (permLambdaExponent >= 2.0) {
-                    d2lPowPerm = permLambdaExponent * (permLambdaExponent - 1.0) * pow(permLambda, permLambdaExponent - 2.0);
-                }
-
-                dlAlpha *= permLambdaScale;
-                d2lAlpha *= (permLambdaScale * permLambdaScale);
-                dlPowPerm *= permLambdaScale;
-                d2lPowPerm *= (permLambdaScale * permLambdaScale);
-            }
-
-            // Polarization is turned on from polarizationLambdaStart .. polarizationLambdaEnd.
-            lPowPol = 1.0;
-            dlPowPol = 0.0;
-            d2lPowPol = 0.0;
-            if (lambda < polLambdaStart) {
-                lPowPol = 0.0;
-            } else if (lambda <= polLambdaEnd) {
-                double polWindow = polLambdaEnd - polLambdaStart;
-                double polLambdaScale = 1.0 / polWindow;
-                polLambda = polLambdaScale * (lambda - polLambdaStart);
-                if (polLambdaExponent > 0.0) {
-                    lPowPol = pow(polLambda, polLambdaExponent);
-                    if (polLambdaExponent >= 1.0) {
-                        dlPowPol = polLambdaExponent * pow(polLambda, polLambdaExponent - 1.0);
-                        if (polLambdaExponent >= 2.0) {
-                            d2lPowPol = polLambdaExponent * (polLambdaExponent - 1.0)
-                                    * pow(polLambda, polLambdaExponent - 2.0);
-                        }
-                    }
-                }
-                // Add the chain rule term due to shrinking the lambda range for the polarization energy.
-                dlPowPol *= polLambdaScale;
-                d2lPowPol *= (polLambdaScale * polLambdaScale);
-            }
-        }
-
-        public String toString() {
-            StringBuilder sb = new StringBuilder("   Alchemical Parameters\n");
-            sb.append(format("    Permanent Multipole Range:      %5.3f-%5.3f\n", permLambdaStart, permLambdaEnd));
-            sb.append(format("    Permanent Multipole Softcore Alpha:   %5.3f\n", permLambdaAlpha));
-            sb.append(format("    Permanent Multipole Lambda Exponent:  %5.3f\n", permLambdaExponent));
-            if (polarization != Polarization.NONE) {
-                sb.append(format("    Polarization Lambda Exponent:         %5.3f\n", polLambdaExponent));
-                sb.append(format("    Polarization Range:             %5.3f-%5.3f\n", polLambdaStart, polLambdaEnd));
-                sb.append(format("    Condensed SCF Without Ligand:         %B\n", doNoLigandCondensedSCF));
-            }
-            if (!doLigandGKElec) {
-                sb.append(format("    Vapor Electrostatics:                 %B\n", doLigandVaporElec));
-            } else {
-                sb.append(format("    GK Electrostatics at L=0:             %B\n", doLigandGKElec));
-            }
-            return sb.toString();
-        }
-
-        public void printLambdaFactors() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(format("  (%4s)  mode:%-20s lambda:%.2f  permScale:%.2f  polScale:%.2f  dEdLSign:%s  doPol:%-5b  doPermRS:%-5b",
-                    "CART", lambdaMode.toString(), lambda, permanentScale, polarizationScale,
-                    format("%+f", dEdLSign).substring(0, 1), doPolarization, doPermanentRealSpace));
-            sb.append(format("\n    lAlpha:%.2f,%.2f,%.2f  lPowPerm:%.2f,%.2f,%.2f  lPowPol:%.2f,%.2f,%.2f",
-                    lAlpha, dlAlpha, d2lAlpha, lPowPerm, dlPowPerm, d2lPowPerm, lPowPol, dlPowPol, d2lPowPol));
-            sb.append(format("\n    permExp:%.2f  permAlpha:%.2f  permWindow:%.2f,%.2f  polExp:%.2f  polWindow:%.2f,%.2f",
-                    permLambdaExponent, permLambdaAlpha, permLambdaStart, permLambdaEnd,
-                    polLambdaExponent, polLambdaStart, polLambdaEnd));
-            logger.info(sb.toString());
-        }
-    }
-
-    public class SCFPredictorParameters {
-        /**
-         * Induced dipole predictor order.
-         */
-        public int predictorOrder;
-        /**
-         * Induced dipole predictor index.
-         */
-        public int predictorStartIndex;
-        /**
-         * Induced dipole predictor count.
-         */
-        public int predictorCount;
-        /**
-         * Dimensions of [mode][predictorOrder][nAtoms][3]
-         */
-        public double[][][][] predictorInducedDipole;
-        /**
-         * Dimensions of [mode][predictorOrder][nAtoms][3]
-         */
-        public double[][][][] predictorInducedDipoleCR;
-        public LeastSquaresPredictor leastSquaresPredictor;
-        public LevenbergMarquardtOptimizer leastSquaresOptimizer;
-
-        public void init() {
-            predictorCount = 0;
-            int defaultOrder = 6;
-            predictorOrder =
-                    forceField.getInteger("SCF_PREDICTOR_ORDER", defaultOrder);
-            if (scfPredictor == SCFPredictor.LS) {
-                leastSquaresPredictor = new LeastSquaresPredictor();
-                double eps = 1.0e-4;
-                leastSquaresOptimizer = new org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer(
-                        new org.apache.commons.math3.optimization.SimpleVectorValueChecker(eps, eps));
-            } else if (scfPredictor == SCFPredictor.ASPC) {
-                predictorOrder = 6;
-            }
-            predictorStartIndex = 0;
-        }
-
-        /**
-         * The least-squares predictor with induced dipole information from 8-10
-         * previous steps reduces the number SCF iterations by ~50%.
-         */
-        public void leastSquaresPredictor() {
-            if (predictorCount < 2) {
-                return;
-            }
-            try {
-            /*
-              The Jacobian and target do not change during the LS optimization,
-              so it's most efficient to update them once before the
-              Least-Squares optimizer starts.
-             */
-                leastSquaresPredictor.updateJacobianAndTarget();
-                int maxEvals = 100;
-                fill(leastSquaresPredictor.initialSolution, 0.0);
-                leastSquaresPredictor.initialSolution[0] = 1.0;
-                org.apache.commons.math3.optimization.PointVectorValuePair optimum
-                        = leastSquaresOptimizer.optimize(maxEvals,
-                        leastSquaresPredictor,
-                        leastSquaresPredictor.calculateTarget(),
-                        leastSquaresPredictor.weights,
-                        leastSquaresPredictor.initialSolution);
-                double[] optimalValues = optimum.getPoint();
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.finest(format("\n LS RMS:            %10.6f", leastSquaresOptimizer.getRMS()));
-                    logger.finest(format(" LS Iterations:     %10d", leastSquaresOptimizer.getEvaluations()));
-                    logger.finest(format(" Jacobian Evals:    %10d", leastSquaresOptimizer.getJacobianEvaluations()));
-                    logger.finest(format(" Chi Square:        %10.6f", leastSquaresOptimizer.getChiSquare()));
-                    logger.finest(" LS Coefficients");
-                    for (int i = 0; i < predictorOrder - 1; i++) {
-                        logger.finest(format(" %2d  %10.6f", i + 1, optimalValues[i]));
-                    }
-                }
-
-                int mode;
-                switch (lambdaMode) {
-                    case OFF:
-                    case CONDENSED:
-                        mode = 0;
-                        break;
-                    case CONDENSED_NO_LIGAND:
-                        mode = 1;
-                        break;
-                    case VAPOR:
-                        mode = 2;
-                        break;
-                    default:
-                        mode = 0;
-                }
-
-                // Initialize a pointer into predictor induced dipole array.
-                int index = predictorStartIndex;
-
-                // Apply the LS coefficients in order to provide an initial guess at the converged induced dipoles.
-                for (int k = 0; k < predictorOrder - 1; k++) {
-
-                    // Set the current coefficient.
-                    double c = optimalValues[k];
-                    for (int i = 0; i < nAtoms; i++) {
-                        for (int j = 0; j < 3; j++) {
-                            inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
-                            inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
-                        }
-                    }
-                    index++;
-                    if (index >= predictorOrder) {
-                        index = 0;
-                    }
-                }
-            } catch (Exception e) {
-                logger.log(Level.WARNING, " Exception computing predictor coefficients", e);
-
-            }
-        }
-
-        /**
-         * Save the current converged mutual induced dipoles.
-         */
-        public void saveMutualInducedDipoles() {
-
-            int mode;
-            switch (lambdaMode) {
-                case OFF:
-                case CONDENSED:
-                    mode = 0;
-                    break;
-                case CONDENSED_NO_LIGAND:
-                    mode = 1;
-                    break;
-                case VAPOR:
-                    mode = 2;
-                    break;
-                default:
-                    mode = 0;
-            }
-
-            // Current induced dipoles are saved before those from the previous step.
-            predictorStartIndex--;
-            if (predictorStartIndex < 0) {
-                predictorStartIndex = predictorOrder - 1;
-            }
-
-            if (predictorCount < predictorOrder) {
-                predictorCount++;
-            }
-
-            for (int i = 0; i < nAtoms; i++) {
-                for (int j = 0; j < 3; j++) {
-                    predictorInducedDipole[mode][predictorStartIndex][i][j]
-                            = inducedDipole[0][i][j] - directDipole[i][j];
-                    predictorInducedDipoleCR[mode][predictorStartIndex][i][j]
-                            = inducedDipoleCR[0][i][j] - directDipoleCR[i][j];
-                }
-            }
-        }
-
-        private class LeastSquaresPredictor
-                implements org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction {
-
-            double[] weights;
-            double[] target;
-            double[] values;
-            double[][] jacobian;
-            double[] initialSolution;
-
-            LeastSquaresPredictor() {
-                weights = new double[2 * nAtoms * 3];
-                target = new double[2 * nAtoms * 3];
-                values = new double[2 * nAtoms * 3];
-                jacobian = new double[2 * nAtoms * 3][predictorOrder - 1];
-                initialSolution = new double[predictorOrder - 1];
-                fill(weights, 1.0);
-                initialSolution[0] = 1.0;
-            }
-
-            double[] calculateTarget() {
-                return target;
-            }
-
-            void updateJacobianAndTarget() {
-                int mode;
-                switch (lambdaMode) {
-                    case OFF:
-                    case CONDENSED:
-                        mode = 0;
-                        break;
-                    case CONDENSED_NO_LIGAND:
-                        mode = 1;
-                        break;
-                    case VAPOR:
-                        mode = 2;
-                        break;
-                    default:
-                        mode = 0;
-                }
-
-                // Update the target.
-                int index = 0;
-                for (int i = 0; i < nAtoms; i++) {
-                    target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][0];
-                    target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][1];
-                    target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][2];
-                    target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][0];
-                    target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][1];
-                    target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][2];
-                }
-
-                // Update the Jacobian.
-                index = predictorStartIndex + 1;
-                if (index >= predictorOrder) {
-                    index = 0;
-                }
-                for (int j = 0; j < predictorOrder - 1; j++) {
-                    int ji = 0;
-                    for (int i = 0; i < nAtoms; i++) {
-                        jacobian[ji++][j] = predictorInducedDipole[mode][index][i][0];
-                        jacobian[ji++][j] = predictorInducedDipole[mode][index][i][1];
-                        jacobian[ji++][j] = predictorInducedDipole[mode][index][i][2];
-                        jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][0];
-                        jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][1];
-                        jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][2];
-                    }
-                    index++;
-                    if (index >= predictorOrder) {
-                        index = 0;
-                    }
-                }
-            }
-
-            private double[][] jacobian(double[] variables) {
-                return jacobian;
-            }
-
-            @Override
-            public double[] value(double[] variables) {
-                int mode;
-                switch (lambdaMode) {
-                    case OFF:
-                    case CONDENSED:
-                        mode = 0;
-                        break;
-                    case CONDENSED_NO_LIGAND:
-                        mode = 1;
-                        break;
-                    case VAPOR:
-                        mode = 2;
-                        break;
-                    default:
-                        mode = 0;
-                }
-
-                for (int i = 0; i < nAtoms; i++) {
-                    int index = 6 * i;
-                    values[index] = 0;
-                    values[index + 1] = 0;
-                    values[index + 2] = 0;
-                    values[index + 3] = 0;
-                    values[index + 4] = 0;
-                    values[index + 5] = 0;
-                    int pi = predictorStartIndex + 1;
-                    if (pi >= predictorOrder) {
-                        pi = 0;
-                    }
-                    for (int j = 0; j < predictorOrder - 1; j++) {
-                        values[index] += variables[j] * predictorInducedDipole[mode][pi][i][0];
-                        values[index + 1] += variables[j] * predictorInducedDipole[mode][pi][i][1];
-                        values[index + 2] += variables[j] * predictorInducedDipole[mode][pi][i][2];
-                        values[index + 3] += variables[j] * predictorInducedDipoleCR[mode][pi][i][0];
-                        values[index + 4] += variables[j] * predictorInducedDipoleCR[mode][pi][i][1];
-                        values[index + 5] += variables[j] * predictorInducedDipoleCR[mode][pi][i][2];
-                        pi++;
-                        if (pi >= predictorOrder) {
-                            pi = 0;
-                        }
-                    }
-                }
-                return values;
-            }
-
-            @Override
-            public org.apache.commons.math3.analysis.MultivariateMatrixFunction
-            jacobian() {
-                return multivariateMatrixFunction;
-            }
-
-            private org.apache.commons.math3.analysis.MultivariateMatrixFunction multivariateMatrixFunction
-                    = new org.apache.commons.math3.analysis.MultivariateMatrixFunction() {
-                @Override
-                public double[][] value(double[] point) {
-                    return jacobian(point);
-                }
-            };
-        }
-
-        /**
-         * Always-stable predictor-corrector for the mutual induced dipoles.
-         */
-        public void aspcPredictor() {
-
-            if (predictorCount < 6) {
-                return;
-            }
-
-            int mode;
-            switch (lambdaMode) {
-                case OFF:
-                case CONDENSED:
-                    mode = 0;
-                    break;
-                case CONDENSED_NO_LIGAND:
-                    mode = 1;
-                    break;
-                case VAPOR:
-                    mode = 2;
-                    break;
-                default:
-                    mode = 0;
-            }
-
-            final double[] aspc = {22.0 / 7.0, -55.0 / 14.0, 55.0 / 21.0, -22.0 / 21.0, 5.0 / 21.0, -1.0 / 42.0};
-
-            // Initialize a pointer into predictor induced dipole array.
-            int index = predictorStartIndex;
-
-            // Expansion loop.
-            for (int k = 0; k < 6; k++) {
-
-                // Set the current predictor coefficient.
-                double c = aspc[k];
-                for (int i = 0; i < nAtoms; i++) {
-                    for (int j = 0; j < 3; j++) {
-                        inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
-                        inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
-                    }
-                }
-                index++;
-                if (index >= predictorOrder) {
-                    index = 0;
-
-                }
-            }
-        }
-
-        /**
-         * Polynomial predictor for the mutual induced dipoles.
-         */
-        public void polynomialPredictor() {
-
-            if (predictorCount == 0) {
-                return;
-            }
-
-            int mode;
-            switch (lambdaMode) {
-                case OFF:
-                case CONDENSED:
-                    mode = 0;
-                    break;
-                case CONDENSED_NO_LIGAND:
-                    mode = 1;
-                    break;
-                case VAPOR:
-                    mode = 2;
-                    break;
-                default:
-                    mode = 0;
-            }
-
-            // Check the number of previous induced dipole vectors available.
-            int n = predictorOrder;
-            if (predictorCount < predictorOrder) {
-                n = predictorCount;
-            }
-
-            // Initialize a pointer into predictor induced dipole array.
-            int index = predictorStartIndex;
-
-            // Initialize the sign of the polynomial expansion.
-            double sign = -1.0;
-
-            // Expansion loop.
-            for (int k = 0; k < n; k++) {
-
-                // Set the current predictor sign and coefficient.
-                sign *= -1.0;
-                double c = sign * ScalarMath.binomial(n, k);
-                for (int i = 0; i < nAtoms; i++) {
-                    for (int j = 0; j < 3; j++) {
-                        inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
-                        inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
-                    }
-                }
-                index++;
-                if (index >= predictorOrder) {
-                    index = 0;
-                }
-            }
-        }
-    }
-
-    public class RealSpaceNeighborParameters {
-
-        final int numThreads;
-        /**
-         * Neighbor lists, without atoms beyond the real space cutoff.
-         * [nSymm][nAtoms][nIncludedNeighbors]
-         */
-        public int[][][] realSpaceLists;
-        /**
-         * Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms]
-         */
-        public int[][] realSpaceCounts;
-        /**
-         * Optimal pairwise ranges.
-         */
-        public Range[] realSpaceRanges;
-        /**
-         * Pairwise schedule for load balancing.
-         */
-        public IntegerSchedule realSpaceSchedule;
-
-        public RealSpaceNeighborParameters(int maxThreads) {
-            numThreads = maxThreads;
-            realSpaceRanges = new Range[maxThreads];
-        }
-
-        public void allocate(int nAtoms, int nSymm) {
-            realSpaceSchedule = new PairwiseSchedule(numThreads, nAtoms, realSpaceRanges);
-            realSpaceLists = new int[nSymm][nAtoms][];
-            realSpaceCounts = new int[nSymm][nAtoms];
-        }
-
-    }
-
-    public class PMETimings {
-        /**
-         * Timing variables.
-         */
-        private final int numThreads;
-        public final long[] realSpacePermTime;
-        public final long[] realSpaceEnergyTime;
-        public final long[] realSpaceSCFTime;
-        public long realSpacePermTotal, realSpaceEnergyTotal, realSpaceSCFTotal;
-        public long bornRadiiTotal, gkEnergyTotal;
-
-        public PMETimings(int numThreads) {
-            this.numThreads = numThreads;
-            realSpacePermTime = new long[numThreads];
-            realSpaceEnergyTime = new long[numThreads];
-            realSpaceSCFTime = new long[numThreads];
-        }
-
-        public void init() {
-            for (int i = 0; i < numThreads; i++) {
-                realSpacePermTime[i] = 0;
-                realSpaceEnergyTime[i] = 0;
-                realSpaceSCFTime[i] = 0;
-            }
-            realSpacePermTotal = 0;
-            realSpaceEnergyTotal = 0;
-            realSpaceSCFTotal = 0;
-            bornRadiiTotal = 0;
-            gkEnergyTotal = 0;
-        }
-
-        public void printRealSpaceTimings() {
-            double total = (realSpacePermTotal + realSpaceSCFTotal + realSpaceEnergyTotal) * NS2SEC;
-            logger.info(format("\n Real Space: %7.4f (sec)", total));
-            logger.info("           Electric Field");
-            logger.info(" Thread    Direct  SCF     Energy     Counts");
-            long minPerm = Long.MAX_VALUE;
-            long maxPerm = 0;
-            long minSCF = Long.MAX_VALUE;
-            long maxSCF = 0;
-            long minEnergy = Long.MAX_VALUE;
-            long maxEnergy = 0;
-            int minCount = Integer.MAX_VALUE;
-            int maxCount = Integer.MIN_VALUE;
-
-            for (int i = 0; i < maxThreads; i++) {
-                int count = realSpaceEnergyRegion.getCount(i);
-                logger.info(format("    %3d   %7.4f %7.4f %7.4f %10d", i,
-                        realSpacePermTime[i] * NS2SEC, realSpaceSCFTime[i] * NS2SEC,
-                        realSpaceEnergyTime[i] * NS2SEC, count));
-                minPerm = min(realSpacePermTime[i], minPerm);
-                maxPerm = max(realSpacePermTime[i], maxPerm);
-                minSCF = min(realSpaceSCFTime[i], minSCF);
-                maxSCF = max(realSpaceSCFTime[i], maxSCF);
-                minEnergy = min(realSpaceEnergyTime[i], minEnergy);
-                maxEnergy = max(realSpaceEnergyTime[i], maxEnergy);
-                minCount = min(count, minCount);
-                maxCount = max(count, maxCount);
-            }
-            logger.info(format(" Min      %7.4f %7.4f %7.4f %10d",
-                    minPerm * NS2SEC, minSCF * NS2SEC,
-                    minEnergy * NS2SEC, minCount));
-            logger.info(format(" Max      %7.4f %7.4f %7.4f %10d",
-                    maxPerm * NS2SEC, maxSCF * NS2SEC,
-                    maxEnergy * NS2SEC, maxCount));
-            logger.info(format(" Delta    %7.4f %7.4f %7.4f %10d",
-                    (maxPerm - minPerm) * NS2SEC, (maxSCF - minSCF) * NS2SEC,
-                    (maxEnergy - minEnergy) * NS2SEC, (maxCount - minCount)));
-            logger.info(format(" Actual   %7.4f %7.4f %7.4f %10d",
-                    realSpacePermTotal * NS2SEC, realSpaceSCFTotal * NS2SEC,
-                    realSpaceEnergyTotal * NS2SEC, realSpaceEnergyRegion.getInteractions()));
-        }
-    }
-
-    /**
-     * Number of unique tensors for given order.
-     */
-    private static final int tensorCount = MultipoleTensor.tensorCount(3);
-    /**
-     * The sqrt of PI.
-     */
-    private static final double SQRT_PI = sqrt(Math.PI);
 }
