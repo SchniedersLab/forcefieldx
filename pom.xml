@@ -1157,6 +1157,13 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>${groovy-all.version}</version>
+            <type>pom</type>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
