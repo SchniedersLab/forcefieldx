@@ -40,6 +40,8 @@ package ffx.xray;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
+import static org.apache.commons.math3.util.FastMath.min;
+
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.util.Range;
 
@@ -52,10 +54,10 @@ import edu.rit.util.Range;
 public class SliceSchedule extends IntegerSchedule {
 
     private int nThreads;
+    private final int fftZ;
     private boolean[] threadDone;
     private Range[] ranges;
     private final int[] lowerBounds;
-    private final int fftZ;
     private int[] weights;
 
     /**
@@ -66,10 +68,12 @@ public class SliceSchedule extends IntegerSchedule {
      */
     protected SliceSchedule(int nThreads, int fftZ) {
         this.nThreads = nThreads;
-        threadDone = new boolean[nThreads];
-        ranges = new Range[nThreads];
-        lowerBounds = new int[nThreads + 1];
         this.fftZ = fftZ;
+        int length = min(nThreads, fftZ);
+        threadDone = new boolean[length];
+        ranges = new Range[length];
+        lowerBounds = new int[length + 1];
+
     }
 
     /**
@@ -95,14 +99,15 @@ public class SliceSchedule extends IntegerSchedule {
     @Override
     public void start(int nThreads, Range chunkRange) {
         this.nThreads = nThreads;
+        int length = min(nThreads, fftZ);
 
-        if (nThreads != threadDone.length) {
-            threadDone = new boolean[nThreads];
+        if (length != threadDone.length) {
+            threadDone = new boolean[length];
         }
         fill(threadDone, false);
 
-        if (nThreads != ranges.length) {
-            ranges = new Range[nThreads];
+        if (length != ranges.length) {
+            ranges = new Range[length];
         }
         fill(lowerBounds, 0);
         defineRanges();
@@ -113,6 +118,9 @@ public class SliceSchedule extends IntegerSchedule {
      */
     @Override
     public Range next(int threadID) {
+        if (threadID >= min(fftZ, nThreads)) {
+            return null;
+        }
         if (!threadDone[threadID]) {
             threadDone[threadID] = true;
             return ranges[threadID];
@@ -131,10 +139,12 @@ public class SliceSchedule extends IntegerSchedule {
     private void defineRanges() {
         double totalWeight = totalWeight();
 
+        int length = min(nThreads, fftZ);
+
         // Infrequent edge case where the total weight is less than or equal to the number of threads.
-        if (totalWeight <= nThreads) {
+        if (totalWeight <= length) {
             Range temp = new Range(0, fftZ - 1);
-            ranges = temp.subranges(nThreads);
+            ranges = temp.subranges(length);
             return;
         }
 
@@ -144,13 +154,14 @@ public class SliceSchedule extends IntegerSchedule {
             return;
         }
 
+
         double targetWeight = (totalWeight / nThreads) * .96;
         int lastSlice = fftZ - 1;
 
         int currentSlice = 0;
         lowerBounds[0] = 0;
         int currentThread = 0;
-        while (currentThread < nThreads) {
+        while (currentThread < length) {
             int threadWeight = 0;
             while (threadWeight < targetWeight && currentSlice < lastSlice) {
                 threadWeight += weights[currentSlice];
@@ -176,7 +187,7 @@ public class SliceSchedule extends IntegerSchedule {
         ranges[lastThread - 1] = new Range(lowerBounds[lastThread - 1], lastSlice);
 
         // Left-over threads with null ranges.
-        for (int it = lastThread; it < nThreads; it++) {
+        for (int it = lastThread; it < length; it++) {
             ranges[it] = null;
         }
     }
@@ -187,8 +198,9 @@ public class SliceSchedule extends IntegerSchedule {
      * @return an array of {@link int} objects.
      */
     int[] getThreadWeights() {
-        int[] weightsToReturn = new int[nThreads];
-        arraycopy(weights, 0, weightsToReturn, 0, nThreads);
+        int length = min(fftZ, nThreads);
+        int[] weightsToReturn = new int[length];
+        arraycopy(weights, 0, weightsToReturn, 0, length);
         return weightsToReturn;
     }
 
@@ -198,8 +210,9 @@ public class SliceSchedule extends IntegerSchedule {
      * @return an array of {@link int} objects.
      */
     int[] getLowerBounds() {
-        int[] boundsToReturn = new int[nThreads];
-        arraycopy(lowerBounds, 1, boundsToReturn, 0, nThreads);
+        int length = min(fftZ, nThreads);
+        int[] boundsToReturn = new int[length];
+        arraycopy(lowerBounds, 1, boundsToReturn, 0, length);
         return boundsToReturn;
     }
 }

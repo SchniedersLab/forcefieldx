@@ -325,6 +325,7 @@ public class CrystalReciprocalSpace {
         previousOptSliceWeightAtomic = new int[fftZ];
         previousOptSliceWeightSolvent = new int[fftZ];
         previousOptSliceWeightBulkSolvent = new int[fftZ];
+
         atomicSliceSchedule = new SliceSchedule(threadCount, fftZ);
         solventSliceSchedule = new SliceSchedule(threadCount, fftZ);
         bulkSolventSliceSchedule = new SliceSchedule(threadCount, fftZ);
@@ -2897,7 +2898,7 @@ public class CrystalReciprocalSpace {
             }
             threadBounds = bulkSolventSliceSchedule.getLowerBounds().clone();
             threadWeights = bulkSolventSliceSchedule.getThreadWeights().clone();
-            for (int i = threadCount - 1; i > 0; i--) {
+            for (int i = threadBounds.length - 1; i > 0; i--) {
                 threadBounds[i] -= threadBounds[i - 1];
             }
         }
