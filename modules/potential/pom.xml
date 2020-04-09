@@ -37,6 +37,38 @@
         </developer>
     </developers>
     <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>${antrun.version}</version>
+                <inherited>true</inherited>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <configuration>
+                            <target>
+                                <taskdef name="groovyc"
+                                         classname="org.codehaus.groovy.ant.Groovyc">
+                                    <classpath refid="maven.compile.classpath"/>
+                                </taskdef>
+                                <mkdir dir="${project.build.outputDirectory}"/>
+                                <groovyc destdir="${project.build.outputDirectory}"
+                                         srcdir="${basedir}/src/main/groovy/"
+                                         listfiles="false" verbose="true"
+                                         targetBytecode="${targetVersion}"
+                                         stacktrace="true" parameters="true">
+                                    <classpath refid="maven.compile.classpath"/>
+                                </groovyc>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
         <resources>
             <resource>
                 <directory>${basedir}/src/main/java/ffx/potential/parameters/ff
@@ -114,6 +146,12 @@
             <artifactId>commons-math3</artifactId>
             <type>jar</type>
             <version>${commons-math3.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <type>jar</type>
+            <version>${commons-collections4.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jogamp.java3d</groupId>

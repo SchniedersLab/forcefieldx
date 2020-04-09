@@ -485,59 +485,6 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <artifactId>maven-antrun-plugin</artifactId>
-                    <version>${antrun.version}</version>
-                    <inherited>true</inherited>
-                    <executions>
-                        <execution>
-                            <id>compile</id>
-                            <phase>compile</phase>
-                            <configuration>
-                                <target>
-                                    <mkdir dir="${basedir}/src/main/groovy"/>
-                                    <taskdef name="groovyc"
-                                             classname="org.codehaus.groovy.ant.Groovyc">
-                                        <classpath refid="maven.compile.classpath"/>
-                                    </taskdef>
-                                    <mkdir dir="${project.build.outputDirectory}"/>
-                                    <groovyc destdir="${project.build.outputDirectory}"
-                                             srcdir="${basedir}/src/main/groovy/"
-                                             listfiles="false" verbose="true"
-                                             stacktrace="true" parameters="true">
-                                        <classpath refid="maven.compile.classpath"/>
-                                    </groovyc>
-                                </target>
-                            </configuration>
-                            <goals>
-                                <goal>run</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>test-compile</id>
-                            <phase>test-compile</phase>
-                            <configuration>
-                                <target>
-                                    <mkdir dir="${basedir}/src/test/groovy"/>
-                                    <taskdef name="groovyc"
-                                             classname="org.codehaus.groovy.ant.Groovyc">
-                                        <classpath refid="maven.test.classpath"/>
-                                    </taskdef>
-                                    <mkdir dir="${project.build.testOutputDirectory}"/>
-                                    <groovyc destdir="${project.build.testOutputDirectory}"
-                                             srcdir="${basedir}/src/test/groovy/"
-                                             listfiles="false" verbose="true"
-                                             stacktrace="true" parameters="true">
-                                        <classpath refid="maven.test.classpath"/>
-                                    </groovyc>
-                                </target>
-                            </configuration>
-                            <goals>
-                                <goal>run</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>${exec.version}</version>
@@ -652,6 +599,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler.version}</version>
                 <configuration>
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
                     <optimize>true</optimize>
                     <debug>true</debug>
                     <source>${compileVersion}</source>
@@ -1208,13 +1156,6 @@
         <clover.version>4.3.1</clover.version>
     </properties>
     <dependencies>
-        <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
-            <version>${groovy-all.version}</version>
-            <type>pom</type>
-            <scope>compile</scope>
-        </dependency>
         <dependency>
             <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
             <groupId>javax.xml.bind</groupId>

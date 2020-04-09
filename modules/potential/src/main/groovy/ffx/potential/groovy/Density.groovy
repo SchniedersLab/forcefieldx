@@ -36,6 +36,7 @@
 //
 //******************************************************************************
 
+package ffx.potential.groovy
 
 import static java.lang.String.format
 

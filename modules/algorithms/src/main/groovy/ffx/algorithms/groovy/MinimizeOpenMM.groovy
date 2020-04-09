@@ -41,7 +41,6 @@ import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
-import ffx.algorithms.optimize.MinimizeOpenMM
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.ForceFieldEnergyOpenMM
@@ -62,7 +61,7 @@ import picocli.CommandLine.Parameters
  * ffxc MinimizeOpenMM [options] &lt;filename&gt;
  */
 @Command(description = " Run OpenMM Accelerated L-BFGS minimization on a system.", name = "ffxc MinimizeOpenMM")
-class MinimizerOpenMM extends AlgorithmsScript {
+class MinimizeOpenMM extends AlgorithmsScript {
 
     @Mixin
     MinimizeOptions minimizeOptions
@@ -82,7 +81,7 @@ class MinimizerOpenMM extends AlgorithmsScript {
     }
 
     @Override
-    MinimizerOpenMM run() {
+    MinimizeOpenMM run() {
 
         if (!init()) {
             return null
@@ -121,7 +120,7 @@ class MinimizerOpenMM extends AlgorithmsScript {
         }
 
         if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
-            MinimizeOpenMM minimizeOpenMM = new MinimizeOpenMM(activeAssembly)
+            ffx.algorithms.optimize.MinimizeOpenMM minimizeOpenMM = new ffx.algorithms.optimize.MinimizeOpenMM(activeAssembly)
             minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)
 
             if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {

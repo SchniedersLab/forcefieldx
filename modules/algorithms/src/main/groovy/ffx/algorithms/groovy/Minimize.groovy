@@ -43,7 +43,6 @@ import edu.rit.pj.ParallelTeam
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
-import ffx.algorithms.optimize.Minimize
 import ffx.crystal.Crystal
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
@@ -67,7 +66,7 @@ import picocli.CommandLine.Parameters
  * ffxc Minimize [options] &lt;filename [file2...]&gt;
  */
 @Command(description = " Run L-BFGS minimization on a system.", name = "ffxc Minimize")
-class Minimizer extends AlgorithmsScript {
+class Minimize extends AlgorithmsScript {
 
     @Mixin
     MinimizeOptions minimizeOptions
@@ -95,7 +94,7 @@ class Minimizer extends AlgorithmsScript {
     }
 
     @Override
-    Minimizer run() {
+    Minimize run() {
 
         if (!init()) {
             return null
@@ -170,7 +169,7 @@ class Minimizer extends AlgorithmsScript {
         potential.getCoordinates(x)
         potential.energy(x, true)
 
-        Minimize minimize = new Minimize(topologies[0], potential, algorithmListener)
+        ffx.algorithms.optimize.Minimize minimize = new ffx.algorithms.optimize.Minimize(topologies[0], potential, algorithmListener)
         minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
 
         potential.getCoordinates(x)
