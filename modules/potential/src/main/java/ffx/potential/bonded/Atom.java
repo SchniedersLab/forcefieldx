@@ -39,6 +39,7 @@ package ffx.potential.bonded;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +112,62 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Constant <code>hybridTable</code>
      */
     private static final Map<String, Integer> hybridTable;
+    /**
+     * Compare two atoms (implementation of the Comparator interface).
+     * * <p>
+     * * First, if atom1.equals(atom2), then 0 is returned.
+     * * <p>
+     * * Next, atoms are compared based on their atomic number. A heavier atom is greater than (comes after) a lighter atom.
+     * * <p>
+     * * Finally, atoms are compared based on their XYZ index. A lower XYZ index is less than (comes before) a higher index.
+     */
+    public static Comparator<Atom> atomicNumberXYZComparator = new Comparator<>() {
+
+        /**
+         * Compare two atoms (implementation of the Comparator interface).
+         * <p>
+         * First, if atom1.equals(atom2), then 0 is returned.
+         * <p>
+         * Next, atoms are compared based on their atomic number. A heavier atom is less than (comes before) a lighter atom.
+         * <p>
+         * Finally, atoms are compared based on their XYZ index. A lower XYZ index is less than (comes before) a higher index.
+         *
+         * @param atom1 First atom to compare.
+         * @param atom2 Second atom to compare.
+         * @return Returns a negative integer, zero, or a positive integer as the first argument is less than, equal to, or greater than the second.
+         */
+        @Override
+        public int compare(Atom atom1, Atom atom2) {
+
+            // logger.info("  Compare: " + atom1.toString() + " " + atom2.toString());
+            boolean equal = atom1.equals(atom2);
+            if (equal) {
+                return 0;
+            }
+
+            int atomic1 = atom1.getAtomicNumber();
+            int atomic2 = atom2.getAtomicNumber();
+            if (atomic1 != atomic2) {
+                if (atomic1 > atomic2) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            }
+
+            int index1 = atom1.getXyzIndex();
+            int index2 = atom2.getXyzIndex();
+            if (index1 != index2) {
+                if (index1 < index2) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            }
+
+            return 0;
+        }
+    };
     // *************************************************************************
     // Java3D methods and variables for visualization of this Atom.
     // The current ViewModel
