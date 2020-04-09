@@ -47,7 +47,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import ffx.algorithms.misc.PJDependentTest;
-import ffx.algorithms.groovy.Minimizer;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
@@ -61,12 +60,12 @@ import groovy.lang.Binding;
 public class MinimizeTest extends PJDependentTest {
 
     Binding binding;
-    Minimizer minimize;
+    Minimize minimize;
 
     @Before
     public void before() {
         binding = new Binding();
-        minimize = new Minimizer();
+        minimize = new Minimize();
         minimize.setBinding(binding);
     }
 
