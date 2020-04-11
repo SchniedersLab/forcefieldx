@@ -39,6 +39,7 @@ package ffx.potential.bonded;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.acos;
@@ -269,7 +270,7 @@ public class ImproperTorsion extends BondedTerm {
 
         Atom[] atoms = new Atom[4];
         atoms[2] = atom;
-        ArrayList<Bond> bonds = atom.getBonds();
+        List<Bond> bonds = atom.getBonds();
         if (bonds == null || bonds.size() != 3) {
             return null;
         }

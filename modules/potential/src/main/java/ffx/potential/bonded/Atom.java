@@ -112,14 +112,60 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Constant <code>hybridTable</code>
      */
     private static final Map<String, Integer> hybridTable;
+
+
     /**
      * Compare two atoms (implementation of the Comparator interface).
-     * * <p>
-     * * First, if atom1.equals(atom2), then 0 is returned.
-     * * <p>
-     * * Next, atoms are compared based on their atomic number. A heavier atom is greater than (comes after) a lighter atom.
-     * * <p>
-     * * Finally, atoms are compared based on their XYZ index. A lower XYZ index is less than (comes before) a higher index.
+     * <p>
+     * First, if atom1.equals(atom2), then 0 is returned.
+     * <p>
+     * Next, atoms are compared based on their atomic number. A heavier atom is greater than (comes after) a lighter atom.
+     * <p>
+     * Finally, atoms are compared based on their XYZ index. A lower XYZ index is less than (comes before) a higher index.
+     */
+    public static Comparator<Atom> XYZIndexComparator = new Comparator<>() {
+
+        /**
+         * Compare two atoms (implementation of the Comparator interface).
+         * <p>
+         * First, if atom1.equals(atom2), then 0 is returned.
+         * <p>
+         * Then, atoms are compared based on their XYZ index. A lower XYZ index is less than (comes before) a higher index.
+         *
+         * @param atom1 First atom to compare.
+         * @param atom2 Second atom to compare.
+         * @return Returns a negative integer, zero, or a positive integer as the first argument is less than, equal to, or greater than the second.
+         */
+        @Override
+        public int compare(Atom atom1, Atom atom2) {
+
+            boolean equal = atom1.equals(atom2);
+            if (equal) {
+                return 0;
+            }
+
+            int index1 = atom1.getXyzIndex();
+            int index2 = atom2.getXyzIndex();
+            if (index1 != index2) {
+                if (index1 < index2) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            }
+
+            return 0;
+        }
+    };
+
+    /**
+     * Compare two atoms (implementation of the Comparator interface).
+     * <p>
+     * First, if atom1.equals(atom2), then 0 is returned.
+     * <p>
+     * Next, atoms are compared based on their atomic number. A heavier atom is greater than (comes after) a lighter atom.
+     * <p>
+     * Finally, atoms are compared based on their XYZ index. A lower XYZ index is less than (comes before) a higher index.
      */
     public static Comparator<Atom> atomicNumberXYZComparator = new Comparator<>() {
 
@@ -138,8 +184,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
          */
         @Override
         public int compare(Atom atom1, Atom atom2) {
-
-            // logger.info("  Compare: " + atom1.toString() + " " + atom2.toString());
             boolean equal = atom1.equals(atom2);
             if (equal) {
                 return 0;
@@ -168,6 +212,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             return 0;
         }
     };
+
     // *************************************************************************
     // Java3D methods and variables for visualization of this Atom.
     // The current ViewModel
@@ -288,7 +333,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private final ArrayList<Bond> bonds = new ArrayList<>();
     private final ArrayList<Angle> angles = new ArrayList<>();
     private final ArrayList<Torsion> torsions = new ArrayList<>();
-    private final ArrayList<Atom> one_5s = new ArrayList<>();
     private final Vector3d vector3d = new Vector3d();
     /**
      * Contiguous atom index ranging from 1..nAtoms.
@@ -728,13 +772,91 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>
-     * get1_5s</p>
+     * Get the list of 1-2 atoms ordered by XYZ index.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return Returns the 1-2 list.
      */
-    public ArrayList<Atom> get1_5s() {
-        return one_5s;
+    public List<Atom> get12List() {
+        List<Atom> n12 = new ArrayList<>();
+        for (Bond b : bonds) {
+            Atom atom = b.get1_2(this);
+            n12.add(atom);
+        }
+        n12.sort(Atom.XYZIndexComparator);
+        return n12;
+    }
+
+    /**
+     * Get the list of 1-3 atoms ordered by XYZ index.
+     *
+     * @return Returns the 1-3 list.
+     */
+    public List<Atom> get13List() {
+        List<Atom> n12 = get12List();
+        List<Atom> n13 = new ArrayList<>();
+        // Loop over 1-2 atoms.
+        for (Atom a12 : n12) {
+            // 1-3 atoms are bonded to 1-2 atoms.
+            List<Atom> bond12 = a12.get12List();
+            for (Atom a13 : bond12) {
+                // Check that this atom is not in the 1-2 list.
+                if (a13 != this && !n12.contains(a13)) {
+                    n13.add(a13);
+                }
+            }
+        }
+        n13.sort(Atom.XYZIndexComparator);
+        return n13;
+    }
+
+    /**
+     * Get the list of 1-4 atoms ordered by XYZ index.
+     *
+     * @return Returns the 1-4 list.
+     */
+    public List<Atom> get14List() {
+        List<Atom> n12 = get12List();
+        List<Atom> n13 = get13List();
+        List<Atom> n14 = new ArrayList<>();
+        // Loop over 1-3 atoms.
+        for (Atom a13 : n13) {
+            // 1-4 atoms are bonded to 1-3 atoms.
+            List<Atom> bond13 = a13.get12List();
+            for (Atom a14 : bond13) {
+                // Check that this atom is not in the 1-2 or 1-3 list.
+                if (a14 != this && !n12.contains(a14) && !n13.contains(a14)) {
+                    n14.add(a14);
+                }
+            }
+        }
+        n14.sort(Atom.XYZIndexComparator);
+        return n14;
+    }
+
+    /**
+     * Get the list of 1-5 atoms ordered by XYZ index.
+     *
+     * @return Returns the 1-5 list.
+     */
+    public List<Atom> get15List() {
+        List<Atom> n12 = get12List();
+        List<Atom> n13 = get13List();
+        List<Atom> n14 = get14List();
+        List<Atom> n15 = new ArrayList<>();
+        // Loop over 1-4 atoms.
+        for (Atom a14 : n14) {
+            // The 1-5 atoms will be bonded to a 1-4 atom.
+            List<Atom> bond12 = a14.get12List();
+            for (Atom a15 : bond12) {
+                // The 1-5 atom cannot be in higher precedence list.
+                if (a15 != this && !n12.contains(a15) && !n13.contains(a15)
+                        && !n14.contains(a15)) {
+                    n15.add(a15);
+                }
+            }
+        }
+        n15.sort(Atom.XYZIndexComparator);
+        return n15;
     }
 
     /**
@@ -968,7 +1090,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return A list of the bonds this atom helps to form
      */
-    public ArrayList<Bond> getBonds() {
+    public List<Bond> getBonds() {
         return bonds;
     }
 
@@ -1302,7 +1424,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public int getNumberOfBondedHydrogen() {
         // Count the number of hydrogen attached to this atom.
-        ArrayList<Bond> bonds = getBonds();
+        List<Bond> bonds = getBonds();
         int n = 0;
         for (Bond b1 : bonds) {
             Atom atom = b1.get1_2(this);
@@ -2699,19 +2821,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
 
         torsions.add(torsion);
-        Atom a14 = torsion.get1_4(this);
-        if (a14 != null) {
-            // 1-5 atoms will be bonded to the 1-4 atom.
-            if (a14.getBonds() != null) {
-                for (Bond b : a14.getBonds()) {
-                    Atom a15 = b.get1_2(a14);
-                    // Do not include the 1-3 atom
-                    if (!torsion.containsAtom(a15)) {
-                        set1_5(a15);
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -3014,25 +3123,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>
-     * set1_5</p>
-     *
-     * @param a a {@link ffx.potential.bonded.Atom} object.
-     */
-    private void set1_5(Atom a) {
-        if (a != null && !one_5s.contains(a)) {
-            one_5s.add(a);
-        }
-    }
-
-    /**
      * Clear out the geometry lists for this atom.
      */
     void clearGeometry() {
         bonds.clear();
         angles.clear();
         torsions.clear();
-        one_5s.clear();
     }
 
     /**

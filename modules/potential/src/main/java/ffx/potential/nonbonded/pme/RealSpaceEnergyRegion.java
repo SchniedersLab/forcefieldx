@@ -59,10 +59,7 @@ import edu.rit.pj.reduction.SharedInteger;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.MaskingInterface;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
@@ -176,6 +173,13 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
     private boolean[] isSoft;
     private double[] ipdamp;
     private double[] thole;
+    /**
+     * Masking of 1-2, 1-3, 1-4 and 1-5 interactions.
+     */
+    private int[][] mask12;
+    private int[][] mask13;
+    private int[][] mask14;
+    private int[][] mask15;
     /**
      * Neighbor lists, without atoms beyond the real space cutoff.
      * [nSymm][nAtoms][nIncludedNeighbors]
@@ -298,42 +302,33 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
 
     @Override
     public void applyMask(int i, boolean[] is14, double[]... masks) {
-        Atom ai = atoms[i];
-        double[] masking_local = masks[0];
-        double[] maskingp_local = masks[1];
-        double[] maskingd_local = masks[2];
-        for (Atom ak : ai.get1_5s()) {
-            masking_local[ak.getIndex() - 1] = scaleParameters.m15scale;
+        double[] permanentEnergyMask = masks[0];
+        double[] permanentFieldMask = masks[1];
+        for (int value : mask12[i]) {
+            permanentFieldMask[value] = scaleParameters.p12scale;
+            permanentEnergyMask[value] = scaleParameters.m12scale;
         }
-        for (Torsion torsion : ai.getTorsions()) {
-            Atom ak = torsion.get1_4(ai);
-            if (ak != null) {
-                int index = ak.getIndex() - 1;
-                masking_local[index] = scaleParameters.m14scale;
-                maskingp_local[index] = scaleParameters.p14scale;
-                for (int j : ip11[i]) {
-                    if (j == index) {
-                        maskingp_local[index] = scaleParameters.intra14Scale * scaleParameters.p14scale;
-                        break;
-                    }
+        for (int value : mask13[i]) {
+            permanentFieldMask[value] = scaleParameters.p13scale;
+            permanentEnergyMask[value] = scaleParameters.m13scale;
+        }
+        for (int value : mask14[i]) {
+            permanentFieldMask[value] = scaleParameters.p14scale;
+            permanentEnergyMask[value] = scaleParameters.m14scale;
+            for (int k : ip11[i]) {
+                if (k == value) {
+                    permanentFieldMask[value] = scaleParameters.intra14Scale * scaleParameters.p14scale;
+                    break;
                 }
             }
         }
-        for (Angle angle : ai.getAngles()) {
-            Atom ak = angle.get1_3(ai);
-            if (ak != null) {
-                int index = ak.getIndex() - 1;
-                maskingp_local[index] = scaleParameters.p13scale;
-                masking_local[index] = scaleParameters.m13scale;
-            }
+        for (int value : mask15[i]) {
+            permanentEnergyMask[value] = scaleParameters.m15scale;
         }
-        for (Bond bond : ai.getBonds()) {
-            int index = bond.get1_2(ai).getIndex() - 1;
-            maskingp_local[index] = scaleParameters.p12scale;
-            masking_local[index] = scaleParameters.m12scale;
-        }
+        // Apply group based polarization masking rule.
+        double[] polarizationGroupMask = masks[2];
         for (int j : ip11[i]) {
-            maskingd_local[j] = scaleParameters.d11scale;
+            polarizationGroupMask[j] = scaleParameters.d11scale;
         }
     }
 
@@ -389,7 +384,8 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
 
     public void init(Atom[] atoms, Crystal crystal, double[][][] coordinates, MultipoleFrameDefinition[] frame,
                      int[][] axisAtom, double[][][] globalMultipole, double[][][] inducedDipole, double[][][] inducedDipoleCR,
-                     boolean[] use, int[] molecule, int[][] ip11, boolean[] isSoft, double[] ipdamp, double[] thole,
+                     boolean[] use, int[] molecule, int[][] ip11, int[][] mask12, int[][] mask13, int[][] mask14, int[][] mask15,
+                     boolean[] isSoft, double[] ipdamp, double[] thole,
                      RealSpaceNeighborParameters realSpaceNeighborParameters,
                      boolean gradient, boolean lambdaTerm, LambdaMode lambdaMode, Polarization polarization,
                      EwaldParameters ewaldParameters, ScaleParameters scaleParameters, AlchemicalParameters alchemicalParameters,
@@ -409,6 +405,10 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         this.use = use;
         this.molecule = molecule;
         this.ip11 = ip11;
+        this.mask12 = mask12;
+        this.mask13 = mask13;
+        this.mask14 = mask14;
+        this.mask15 = mask15;
         this.isSoft = isSoft;
         this.ipdamp = ipdamp;
         this.thole = thole;
@@ -452,43 +452,33 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
 
     @Override
     public void removeMask(int i, boolean[] is14, double[]... masks) {
-        Atom ai = atoms[i];
-        double[] masking_local = masks[0];
-        double[] maskingp_local = masks[1];
-        double[] maskingd_local = masks[2];
-        for (Atom ak : ai.get1_5s()) {
-            int index = ak.getIndex() - 1;
-            masking_local[index] = 1.0;
-            maskingp_local[index] = 1.0;
+        double[] permanentEnergyMask = masks[0];
+        double[] permanentFieldMask = masks[1];
+        for (int value : mask12[i]) {
+            permanentFieldMask[value] = 1.0;
+            permanentEnergyMask[value] = 1.0;
         }
-        for (Torsion torsion : ai.getTorsions()) {
-            Atom ak = torsion.get1_4(ai);
-            if (ak != null) {
-                int index = ak.getIndex() - 1;
-                masking_local[index] = 1.0;
-                maskingp_local[index] = 1.0;
-                for (int j : ip11[i]) {
-                    if (j == index) {
-                        maskingp_local[index] = 1.0;
-                    }
+        for (int value : mask13[i]) {
+            permanentFieldMask[value] = 1.0;
+            permanentEnergyMask[value] = 1.0;
+        }
+        for (int value : mask14[i]) {
+            permanentFieldMask[value] = 1.0;
+            permanentEnergyMask[value] = 1.0;
+            for (int k : ip11[i]) {
+                if (k == value) {
+                    permanentFieldMask[value] = 1.0;
+                    break;
                 }
             }
         }
-        for (Angle angle : ai.getAngles()) {
-            Atom ak = angle.get1_3(ai);
-            if (ak != null) {
-                int index = ak.getIndex() - 1;
-                masking_local[index] = 1.0;
-                maskingp_local[index] = 1.0;
-            }
+        for (int value : mask15[i]) {
+            permanentEnergyMask[value] = 1.0;
         }
-        for (Bond bond : ai.getBonds()) {
-            int index = bond.get1_2(ai).getIndex() - 1;
-            masking_local[index] = 1.0;
-            maskingp_local[index] = 1.0;
-        }
+        // Apply group based polarization masking rule.
+        double[] polarizationGroupMask = masks[2];
         for (int j : ip11[i]) {
-            maskingd_local[j] = 1.0;
+            polarizationGroupMask[j] = 1.0;
         }
     }
 

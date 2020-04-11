@@ -277,6 +277,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private double[] thole;
     private double[] polarizability;
     /**
+     * 1-2, 1-3, 1-4 and 1-5 connectivity lists.
+     */
+    private int[][] mask12;
+    private int[][] mask13;
+    private int[][] mask14;
+    private int[][] mask15;
+    /**
      * Flag for ligand atoms.
      */
     private boolean[] isSoft;
@@ -2057,6 +2064,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             cartesianDipolePhiCR = new double[nAtoms][tensorCount];
             vacuumDipolePhi = new double[nAtoms][tensorCount];
             vacuumDipolePhiCR = new double[nAtoms][tensorCount];
+            mask12 = new int[nAtoms][];
+            mask13 = new int[nAtoms][];
+            mask14 = new int[nAtoms][];
+            mask15 = new int[nAtoms][];
             ip11 = new int[nAtoms][];
             ip12 = new int[nAtoms][];
             ip13 = new int[nAtoms][];
@@ -2114,7 +2125,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         assignPolarizationGroups();
 
         // Fill the thole, inverse polarization damping and polarizability arrays.
-        for (Atom ai : atoms) {
+        for (int i = 0; i < nAtoms; i++) {
+            Atom ai = atoms[i];
             PolarizeType polarizeType = ai.getPolarizeType();
             int index = ai.getIndex() - 1;
             thole[index] = polarizeType.thole;
@@ -2125,6 +2137,38 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 ipdamp[index] = 1.0 / ipdamp[index];
             }
             polarizability[index] = polarizeType.polarizability;
+
+            // Collect 1-2 interactions.
+            List<Atom> n12 = ai.get12List();
+            mask12[i] = new int[n12.size()];
+            int j = 0;
+            for (Atom a12 : n12) {
+                mask12[i][j++] = a12.getIndex() - 1;
+            }
+
+            // Collect 1-3 interactions.
+            List<Atom> n13 = ai.get13List();
+            mask13[i] = new int[n13.size()];
+            j = 0;
+            for (Atom a13 : n13) {
+                mask13[i][j++] = a13.getIndex() - 1;
+            }
+
+            // Collect 1-4 interactions.
+            List<Atom> n14 = ai.get14List();
+            mask14[i] = new int[n14.size()];
+            j = 0;
+            for (Atom a14 : n14) {
+                mask14[i][j++] = a14.getIndex() - 1;
+            }
+
+            // Collect 1-5 interactions.
+            List<Atom> n15 = ai.get15List();
+            mask15[i] = new int[n15.size()];
+            j = 0;
+            for (Atom a15 : n15) {
+                mask15[i][j++] = a15.getIndex() - 1;
+            }
         }
     }
 
@@ -2510,7 +2554,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         pmeTimings.realSpaceEnergyTotal -= System.nanoTime();
         realSpaceEnergyRegion.init(atoms, crystal, coordinates, frame, axisAtom,
                 globalMultipole, inputDipole, inputDipoleCR,
-                use, molecule, ip11, isSoft, ipdamp, thole,
+                use, molecule, ip11, mask12, mask13, mask14, mask15,
+                isSoft, ipdamp, thole,
                 realSpaceNeighborParameters, gradient, lambdaTerm, lambdaMode,
                 polarization, ewaldParameters, scaleParameters, alchemicalParameters,
                 pmeTimings.realSpaceEnergyTime,
@@ -2555,7 +2600,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             pmeTimings.gkEnergyTotal -= System.nanoTime();
             realSpaceEnergyRegion.init(atoms, crystal, coordinates, frame, axisAtom,
                     globalMultipole, vacuumInducedDipole, vacuumInducedDipoleCR,
-                    use, molecule, ip11, isSoft, ipdamp, thole,
+                    use, molecule, ip11, mask12, mask13, mask14, mask15,
+                    isSoft, ipdamp, thole,
                     realSpaceNeighborParameters, gradient, false, lambdaMode,
                     polarization, ewaldParameters, scaleParameters, alchemicalParametersGK,
                     pmeTimings.realSpaceEnergyTime,
@@ -2582,7 +2628,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             pmeTimings.gkEnergyTotal -= System.nanoTime();
             realSpaceEnergyRegion.init(atoms, crystal, coordinates, frame, axisAtom,
                     globalMultipole, inducedDipole, inducedDipoleCR,
-                    use, molecule, ip11, isSoft, ipdamp, thole,
+                    use, molecule, ip11, mask12, mask13, mask14, mask15,
+                    isSoft, ipdamp, thole,
                     realSpaceNeighborParameters, gradient, false, lambdaMode,
                     polarization, ewaldParameters, scaleParameters, alchemicalParametersGK,
                     pmeTimings.realSpaceEnergyTime,
@@ -2650,7 +2697,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             fieldCR.reset(parallelTeam, 0, nAtoms - 1);
             permanentFieldRegion.init(atoms, crystal, coordinates, globalMultipole,
                     inducedDipole, inducedDipoleCR, neighborLists,
-                    scaleParameters, use, molecule, ipdamp, thole, ip11, lambdaMode,
+                    scaleParameters, use, molecule, ipdamp, thole,
+                    ip11, mask12, mask13, mask14, lambdaMode,
                     reciprocalSpaceTerm, reciprocalSpace, ewaldParameters, pcgSolver,
                     permanentSchedule, realSpaceNeighborParameters, field, fieldCR, pmeTimings);
             // The real space contribution can be calculated at the same time

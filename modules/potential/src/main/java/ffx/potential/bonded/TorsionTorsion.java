@@ -38,6 +38,7 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.acos;
@@ -344,7 +345,7 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
      */
     public Atom getChiralAtom() {
         Atom atom = null;
-        ArrayList<Bond> bnds = atoms[2].getBonds();
+        List<Bond> bnds = atoms[2].getBonds();
 
         // To be chiral, the central atom must have 4 bonds.
         if (bnds.size() == 4) {
@@ -537,13 +538,13 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
         // Vector from the central atom to site 2.
         var vc2 = new double[3];
 
-        ArrayList<Bond> bnds = atoms[2].getBonds();
+        List<Bond> bonds = atoms[2].getBonds();
         // To be chiral, the central atom must have 4 bonds.
-        if (bnds.size() == 4) {
+        if (bonds.size() == 4) {
             // Find the two atoms that are not part of the dihedral.
             Atom atom1 = null;
             Atom atom2 = null;
-            for (Bond b : bnds) {
+            for (Bond b : bonds) {
                 Atom a = b.get1_2(atoms[2]);
                 if (a != atoms[1] && a != atoms[3]) {
                     if (atom1 == null) {

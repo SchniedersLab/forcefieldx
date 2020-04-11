@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.nonbonded;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,12 +62,10 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.MultiplicativeSwitch;
-import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.bonded.Torsion;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
@@ -241,9 +238,9 @@ public class VanDerWaals implements MaskingInterface,
      * hydrogen.
      */
     private int[] reductionIndex;
-    private int[][] bondMask;
-    private int[][] angleMask;
-    private int[][] torsionMask;
+    private int[][] mask12;
+    private int[][] mask13;
+    private int[][] mask14;
     /**
      * Each hydrogen vdW site is located a fraction of the way from the heavy
      * atom nucleus to the hydrogen nucleus (~0.9).
@@ -393,41 +390,18 @@ public class VanDerWaals implements MaskingInterface,
     @Override
     public void applyMask(final int i, final boolean[] is14, final double[]... masks) {
         double[] mask = masks[0];
-        final int[] torsionMaski = torsionMask[i];
-        for (int value : torsionMaski) {
-            mask[value] = vdwForm.scale14;
-            is14[value] = true;
-        }
-        final int[] angleMaski = angleMask[i];
-        for (int value : angleMaski) {
-            mask[value] = vdwForm.scale13;
-        }
-        final int[] bondMaski = bondMask[i];
-        for (int value : bondMaski) {
+        var m12 = mask12[i];
+        for (int value : m12) {
             mask[value] = vdwForm.scale12;
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Remove the masking rules for 1-2, 1-3 and 1-4 interactions.
-     */
-    @Override
-    public void removeMask(final int i, final boolean[] is14, final double[]... masks) {
-        double[] mask = masks[0];
-        final int[] torsionMaski = torsionMask[i];
-        for (int value : torsionMaski) {
-            mask[value] = 1.0;
-            is14[value] = false;
+        var m13 = mask13[i];
+        for (int value : m13) {
+            mask[value] = vdwForm.scale13;
         }
-        final int[] angleMaski = angleMask[i];
-        for (int value : angleMaski) {
-            mask[value] = 1.0;
-        }
-        final int[] bondMaski = bondMask[i];
-        for (int value : bondMaski) {
-            mask[value] = 1.0;
+        var m14 = mask14[i];
+        for (int value : m14) {
+            mask[value] = vdwForm.scale14;
+            is14[value] = true;
         }
     }
 
@@ -525,30 +499,12 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * <p>Getter for the field <code>angleMask</code>.</p>
-     *
-     * @return an array of {@link int} objects.
-     */
-    public int[][] getAngleMask() {
-        return angleMask;
-    }
-
-    /**
      * <p>getBeta.</p>
      *
      * @return a double.
      */
     public double getBeta() {
         return vdwLambdaExponent;
-    }
-
-    /**
-     * <p>Getter for the field <code>bondMask</code>.</p>
-     *
-     * @return an array of {@link int} objects.
-     */
-    public int[][] getBondMask() {
-        return bondMask;
     }
 
     /**
@@ -617,6 +573,82 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setLambda(double lambda) {
+        assert (lambda >= 0.0 && lambda <= 1.0);
+        if (!lambdaTerm) {
+            return;
+        }
+
+        this.lambda = lambda;
+        sc1 = vdwLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
+        dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - lambda);
+        d2sc1dL2 = 2.0 * vdwLambdaAlpha;
+        sc2 = pow(lambda, vdwLambdaExponent);
+        dsc2dL = vdwLambdaExponent * pow(lambda, vdwLambdaExponent - 1.0);
+        if (vdwLambdaExponent >= 2.0) {
+            d2sc2dL2 = vdwLambdaExponent * (vdwLambdaExponent - 1.0) * pow(lambda, vdwLambdaExponent - 2.0);
+        } else {
+            d2sc2dL2 = 0.0;
+        }
+
+        // If LambdaFactors are in OST mode, update them now.
+        if (!esvTerm) {
+            for (LambdaFactors lf : lambdaFactors) {
+                lf.setFactors();
+            }
+        }
+
+        initSoftCore();
+
+        // Redo the long range correction.
+        if (doLongRangeCorrection) {
+            longRangeCorrection = getLongRangeCorrection();
+            logger.info(format(" Long-range VdW correction %12.8f (kcal/mole).",
+                    longRangeCorrection));
+        } else {
+            longRangeCorrection = 0.0;
+        }
+    }
+
+    /**
+     * <p>Getter for the field <code>bondMask</code>.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
+    public int[][] getMask12() {
+        return mask12;
+    }
+
+    /**
+     * <p>Getter for the field <code>angleMask</code>.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
+    public int[][] getMask13() {
+        return mask13;
+    }
+
+    /**
+     * <p>Getter for the field <code>torsionMask</code>.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
+    public int[][] getMask14() {
+        return mask14;
+    }
+
+    /**
      * Allow sharing the of the VanDerWaals NeighborList with ParticleMeshEwald.
      *
      * @return The NeighborList.
@@ -664,21 +696,75 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * <p>Getter for the field <code>torsionMask</code>.</p>
-     *
-     * @return an array of {@link int} objects.
-     */
-    public int[][] getTorsionMask() {
-        return torsionMask;
-    }
-
-    /**
      * <p>getVDWForm.</p>
      *
      * @return a {@link ffx.potential.nonbonded.VanDerWaalsForm} object.
      */
     public VanDerWaalsForm getVDWForm() {
         return vdwForm;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        if (sharedd2EdL2 == null || !lambdaTerm) {
+            return 0.0;
+        }
+        return sharedd2EdL2.get();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getdEdL() {
+        if (shareddEdL == null || !lambdaTerm) {
+            return 0.0;
+        }
+        return shareddEdL.get();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getdEdXdL(double[] lambdaGradient) {
+        if (lambdaGrad == null || !lambdaTerm) {
+            return;
+        }
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].isActive()) {
+                lambdaGradient[index++] += lambdaGrad.getX(i);
+                lambdaGradient[index++] += lambdaGrad.getY(i);
+                lambdaGradient[index++] += lambdaGrad.getZ(i);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Remove the masking rules for 1-2, 1-3 and 1-4 interactions.
+     */
+    @Override
+    public void removeMask(final int i, final boolean[] is14, final double[]... masks) {
+        double[] mask = masks[0];
+        var m12 = mask12[i];
+        for (int value : m12) {
+            mask[value] = 1.0;
+        }
+        var m13 = mask13[i];
+        for (int value : m13) {
+            mask[value] = 1.0;
+        }
+        var m14 = mask14[i];
+        for (int value : m14) {
+            mask[value] = 1.0;
+            is14[value] = false;
+        }
     }
 
     /**
@@ -821,45 +907,6 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
         initSoftCore();
-    }    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setLambda(double lambda) {
-        assert (lambda >= 0.0 && lambda <= 1.0);
-        if (!lambdaTerm) {
-            return;
-        }
-
-        this.lambda = lambda;
-        sc1 = vdwLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-        dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - lambda);
-        d2sc1dL2 = 2.0 * vdwLambdaAlpha;
-        sc2 = pow(lambda, vdwLambdaExponent);
-        dsc2dL = vdwLambdaExponent * pow(lambda, vdwLambdaExponent - 1.0);
-        if (vdwLambdaExponent >= 2.0) {
-            d2sc2dL2 = vdwLambdaExponent * (vdwLambdaExponent - 1.0) * pow(lambda, vdwLambdaExponent - 2.0);
-        } else {
-            d2sc2dL2 = 0.0;
-        }
-
-        // If LambdaFactors are in OST mode, update them now.
-        if (!esvTerm) {
-            for (LambdaFactors lf : lambdaFactors) {
-                lf.setFactors();
-            }
-        }
-
-        initSoftCore();
-
-        // Redo the long range correction.
-        if (doLongRangeCorrection) {
-            longRangeCorrection = getLongRangeCorrection();
-            logger.info(format(" Long-range VdW correction %12.8f (kcal/mole).",
-                    longRangeCorrection));
-        } else {
-            longRangeCorrection = 0.0;
-        }
     }
 
     /**
@@ -935,42 +982,9 @@ public class VanDerWaals implements MaskingInterface,
             reductionLoop = new ReductionLoop[threadCount];
         }
 
-        /**
-         * {@inheritDoc}
-         * <p>
-         * This is method should not be called; it is invoked by Parallel Java.
-         *
-         * @since 1.0
-         */
         @Override
-        public void start() {
-
-            // Initialize the shared variables.
-            if (doLongRangeCorrection) {
-                longRangeCorrection = getLongRangeCorrection();
-                sharedEnergy.set(longRangeCorrection);
-            } else {
-                sharedEnergy.set(0.0);
-            }
-            sharedInteractions.set(0);
-            if (lambdaTerm) {
-                shareddEdL.set(0.0);
-                sharedd2EdL2.set(0.0);
-            }
-            if (esvTerm) {
-                for (int i = 0; i < numESVs; i++) {
-                    esvDeriv[i].set(0.0);
-                }
-                lambdaFactors = new LambdaFactorsESV[threadCount];
-                for (int i = 0; i < threadCount; i++) {
-                    lambdaFactors[i] = new LambdaFactorsESV();
-                }
-            }
-
-            grad.alloc(nAtoms);
-            if (lambdaTerm) {
-                lambdaGrad.alloc(nAtoms);
-            }
+        public void finish() {
+            neighborListOnly = false;
         }
 
         @Override
@@ -1096,9 +1110,42 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
 
+        /**
+         * {@inheritDoc}
+         * <p>
+         * This is method should not be called; it is invoked by Parallel Java.
+         *
+         * @since 1.0
+         */
         @Override
-        public void finish() {
-            neighborListOnly = false;
+        public void start() {
+
+            // Initialize the shared variables.
+            if (doLongRangeCorrection) {
+                longRangeCorrection = getLongRangeCorrection();
+                sharedEnergy.set(longRangeCorrection);
+            } else {
+                sharedEnergy.set(0.0);
+            }
+            sharedInteractions.set(0);
+            if (lambdaTerm) {
+                shareddEdL.set(0.0);
+                sharedd2EdL2.set(0.0);
+            }
+            if (esvTerm) {
+                for (int i = 0; i < numESVs; i++) {
+                    esvDeriv[i].set(0.0);
+                }
+                lambdaFactors = new LambdaFactorsESV[threadCount];
+                for (int i = 0; i < threadCount; i++) {
+                    lambdaFactors[i] = new LambdaFactorsESV();
+                }
+            }
+
+            grad.alloc(nAtoms);
+            if (lambdaTerm) {
+                lambdaGrad.alloc(nAtoms);
+            }
         }
 
         /**
@@ -1107,17 +1154,6 @@ public class VanDerWaals implements MaskingInterface,
         private class InitializationLoop extends IntegerForLoop {
 
             private int threadID;
-
-            @Override
-            public IntegerSchedule schedule() {
-                return IntegerSchedule.fixed();
-            }
-
-            @Override
-            public void start() {
-                threadID = getThreadIndex();
-                initializationTime[threadID] = -System.nanoTime();
-            }
 
             @Override
             public void run(int lb, int ub) {
@@ -1135,6 +1171,17 @@ public class VanDerWaals implements MaskingInterface,
                     lambdaGrad.reset(threadID, lb, ub);
                 }
             }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
+
+            @Override
+            public void start() {
+                threadID = getThreadIndex();
+                initializationTime[threadID] = -System.nanoTime();
+            }
         }
 
         private class ExpandLoop extends IntegerForLoop {
@@ -1147,13 +1194,8 @@ public class VanDerWaals implements MaskingInterface,
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             @Override
-            public IntegerSchedule schedule() {
-                return IntegerSchedule.fixed();
-            }
-
-            @Override
-            public void start() {
-                threadID = getThreadIndex();
+            public void finish() {
+                initializationTime[threadID] += System.nanoTime();
             }
 
             @Override
@@ -1229,8 +1271,13 @@ public class VanDerWaals implements MaskingInterface,
             }
 
             @Override
-            public void finish() {
-                initializationTime[threadID] += System.nanoTime();
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
+
+            @Override
+            public void start() {
+                threadID = getThreadIndex();
             }
         }
 
@@ -1265,36 +1312,23 @@ public class VanDerWaals implements MaskingInterface,
                 transOp = new double[3][3];
             }
 
+            @Override
+            public void finish() {
+                /*
+                  Reduce the energy, interaction count and gradients from this
+                  thread into the shared variables.
+                 */
+                sharedEnergy.addAndGet(energy);
+                sharedInteractions.addAndGet(count);
+                if (lambdaTerm) {
+                    shareddEdL.addAndGet(dEdL);
+                    sharedd2EdL2.addAndGet(d2EdL2);
+                }
+                vdwTime[threadID] += System.nanoTime();
+            }
+
             public int getCount() {
                 return count;
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return pairwiseSchedule;
-            }
-
-            @Override
-            public void start() {
-                threadID = getThreadIndex();
-                vdwTime[threadID] = -System.nanoTime();
-                energy = 0.0;
-                count = 0;
-                if (lambdaTerm) {
-                    dEdL = 0.0;
-                    d2EdL2 = 0.0;
-                }
-                lambdaFactorsLocal = lambdaFactors[threadID];
-                if (lambdaFactorsLocal == null) {
-                    System.exit(1);
-                }
-
-                if (mask == null || mask.length < nAtoms) {
-                    mask = new double[nAtoms];
-                    fill(mask, 1.0);
-                    vdw14 = new boolean[nAtoms];
-                    fill(vdw14, false);
-                }
             }
 
             @Override
@@ -1794,18 +1828,31 @@ public class VanDerWaals implements MaskingInterface,
             }
 
             @Override
-            public void finish() {
-                /*
-                  Reduce the energy, interaction count and gradients from this
-                  thread into the shared variables.
-                 */
-                sharedEnergy.addAndGet(energy);
-                sharedInteractions.addAndGet(count);
+            public IntegerSchedule schedule() {
+                return pairwiseSchedule;
+            }
+
+            @Override
+            public void start() {
+                threadID = getThreadIndex();
+                vdwTime[threadID] = -System.nanoTime();
+                energy = 0.0;
+                count = 0;
                 if (lambdaTerm) {
-                    shareddEdL.addAndGet(dEdL);
-                    sharedd2EdL2.addAndGet(d2EdL2);
+                    dEdL = 0.0;
+                    d2EdL2 = 0.0;
                 }
-                vdwTime[threadID] += System.nanoTime();
+                lambdaFactorsLocal = lambdaFactors[threadID];
+                if (lambdaFactorsLocal == null) {
+                    System.exit(1);
+                }
+
+                if (mask == null || mask.length < nAtoms) {
+                    mask = new double[nAtoms];
+                    fill(mask, 1.0);
+                    vdw14 = new boolean[nAtoms];
+                    fill(vdw14, false);
+                }
             }
         }
 
@@ -1817,9 +1864,8 @@ public class VanDerWaals implements MaskingInterface,
             int threadID;
 
             @Override
-            public void start() {
-                threadID = getThreadIndex();
-                reductionTime[threadID] = -System.nanoTime();
+            public void finish() {
+                reductionTime[threadID] += System.nanoTime();
             }
 
             @Override
@@ -1837,8 +1883,9 @@ public class VanDerWaals implements MaskingInterface,
             }
 
             @Override
-            public void finish() {
-                reductionTime[threadID] += System.nanoTime();
+            public void start() {
+                threadID = getThreadIndex();
+                reductionTime[threadID] = -System.nanoTime();
             }
         }
     }
@@ -1858,9 +1905,9 @@ public class VanDerWaals implements MaskingInterface,
             reducedXYZ = reduced[0];
             reductionIndex = new int[nAtoms];
             reductionValue = new double[nAtoms];
-            bondMask = new int[nAtoms][];
-            angleMask = new int[nAtoms][];
-            torsionMask = new int[nAtoms][];
+            mask12 = new int[nAtoms][];
+            mask13 = new int[nAtoms][];
+            mask14 = new int[nAtoms][];
             use = new boolean[nAtoms];
             isSoft = new boolean[nAtoms];
             softCore = new boolean[2][nAtoms];
@@ -1925,7 +1972,7 @@ public class VanDerWaals implements MaskingInterface,
                 return;
             }
             ai.setVDWType(type);
-            ArrayList<Bond> bonds = ai.getBonds();
+            List<Bond> bonds = ai.getBonds();
             int numBonds = bonds.size();
             if (reducedHydrogens && type.reductionFactor > 0.0 && numBonds == 1) {
                 Bond bond = bonds.get(0);
@@ -1937,45 +1984,30 @@ public class VanDerWaals implements MaskingInterface,
                 reductionIndex[i] = i;
                 reductionValue[i] = 0.0;
             }
-            bondMask[i] = new int[numBonds];
-            for (int j = 0; j < numBonds; j++) {
-                Bond bond = bonds.get(j);
-                bondMask[i][j] = bond.get1_2(ai).getIndex() - 1;
-            }
-            ArrayList<Angle> angles = ai.getAngles();
-            int numAngles = 0;
-            for (Angle angle : angles) {
-                Atom ak = angle.get1_3(ai);
-                if (ak != null) {
-                    numAngles++;
-                }
-            }
-            angleMask[i] = new int[numAngles];
+
+            // Collect 1-2 interactions.
+            List<Atom> n12 = ai.get12List();
+            mask12[i] = new int[n12.size()];
             int j = 0;
-            for (Angle angle : angles) {
-                Atom ak = angle.get1_3(ai);
-                if (ak != null) {
-                    angleMask[i][j++] = ak.getIndex() - 1;
-                }
+            for (Atom a12 : n12) {
+                mask12[i][j++] = a12.getIndex() - 1;
             }
 
-            ArrayList<Torsion> torsions = ai.getTorsions();
-            int numTorsions = 0;
-            for (Torsion torsion : torsions) {
-                Atom ak = torsion.get1_4(ai);
-                if (ak != null) {
-                    numTorsions++;
-                }
-            }
-            torsionMask[i] = new int[numTorsions];
+            // Collect 1-3 interactions.
+            List<Atom> n13 = ai.get13List();
+            mask13[i] = new int[n13.size()];
             j = 0;
-            for (Torsion torsion : torsions) {
-                Atom ak = torsion.get1_4(ai);
-                if (ak != null) {
-                    torsionMask[i][j++] = ak.getIndex() - 1;
-                }
+            for (Atom a13 : n13) {
+                mask13[i][j++] = a13.getIndex() - 1;
             }
 
+            // Collect 1-4 interactions.
+            List<Atom> n14 = ai.get14List();
+            mask14[i] = new int[n14.size()];
+            j = 0;
+            for (Atom a14 : n14) {
+                mask14[i][j++] = a14.getIndex() - 1;
+            }
         }
     }
 
@@ -2178,53 +2210,5 @@ public class VanDerWaals implements MaskingInterface,
     private boolean include(Atom atom1, Atom atom2) {
         return ((resolution == null)
                 || (atom1.getResolution() == resolution && atom2.getResolution() == resolution));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getLambda() {
-        return lambda;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getdEdL() {
-        if (shareddEdL == null || !lambdaTerm) {
-            return 0.0;
-        }
-        return shareddEdL.get();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void getdEdXdL(double[] lambdaGradient) {
-        if (lambdaGrad == null || !lambdaTerm) {
-            return;
-        }
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            if (atoms[i].isActive()) {
-                lambdaGradient[index++] += lambdaGrad.getX(i);
-                lambdaGradient[index++] += lambdaGrad.getY(i);
-                lambdaGradient[index++] += lambdaGrad.getZ(i);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdL2() {
-        if (sharedd2EdL2 == null || !lambdaTerm) {
-            return 0.0;
-        }
-        return sharedd2EdL2.get();
     }
 }

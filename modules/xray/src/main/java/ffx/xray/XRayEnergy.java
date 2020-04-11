@@ -38,6 +38,7 @@
 package ffx.xray;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
@@ -848,8 +849,8 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 gradb = -3.0 * kTbNonzero / biso;
                 a.addToTempFactorGradient(gradb);
 
-                // similarity harmonic restraint
-                ArrayList<Bond> bonds = a.getBonds();
+                // Similarity harmonic restraint
+                List<Bond> bonds = a.getBonds();
                 for (Bond b : bonds) {
                     if (a.compareTo(b.getAtom(0)) == 0) {
                         a1 = b.getAtom(0);
@@ -895,7 +896,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 a.addToAnisouGradient(gradu);
 
                 // Similarity harmonic restraint based on determinants
-                ArrayList<Bond> bonds = a.getBonds();
+                List<Bond> bonds = a.getBonds();
                 for (Bond b : bonds) {
                     if (a.compareTo(b.getAtom(0)) == 0) {
                         a1 = b.getAtom(0);

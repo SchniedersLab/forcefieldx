@@ -58,10 +58,7 @@ import edu.rit.util.Range;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.MaskingInterface;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
@@ -97,10 +94,29 @@ import static ffx.potential.parameters.MultipoleType.t200;
 public class PermanentFieldRegion extends ParallelRegion implements MaskingInterface {
 
     private static final Logger logger = Logger.getLogger(PermanentFieldRegion.class.getName());
-
+    /**
+     * Constant applied to multipole interactions.
+     */
+    private static final double oneThird = 1.0 / 3.0;
+    /**
+     * Specify inter-molecular softcore.
+     */
+    private final boolean intermolecularSoftcore;
+    /**
+     * Specify intra-molecular softcore.
+     */
+    private final boolean intramolecularSoftcore;
+    /**
+     * Dimensions of [nsymm][nAtoms][3]
+     */
+    public double[][][] inducedDipole;
+    public double[][][] inducedDipoleCR;
+    /**
+     * Polarization groups.
+     */
+    protected int[][] ip11;
     private PermanentRealSpaceFieldSection permanentRealSpaceFieldSection;
     private PermanentReciprocalSection permanentReciprocalSection;
-
     /**
      * An ordered array of atoms in the system.
      */
@@ -117,11 +133,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
      * Dimensions of [nsymm][nAtoms][10]
      */
     private double[][][] globalMultipole;
-    /**
-     * Dimensions of [nsymm][nAtoms][3]
-     */
-    public double[][][] inducedDipole;
-    public double[][][] inducedDipoleCR;
     /**
      * Neighbor lists, including atoms beyond the real space cutoff.
      * [nsymm][nAtoms][nAllNeighbors]
@@ -164,14 +175,15 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     private double[] ipdamp;
     private double[] thole;
     /**
-     * Polarization groups.
+     * Masking of 1-2, 1-3 and 1-4 interactions.
      */
-    protected int[][] ip11;
+    private int[][] mask12;
+    private int[][] mask13;
+    private int[][] mask14;
     /**
      * The current LambdaMode of this PME instance (or OFF for no lambda dependence).
      */
     private LambdaMode lambdaMode = LambdaMode.OFF;
-
     /**
      * Reciprocal space instance.
      */
@@ -181,7 +193,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     private double preconditionerCutoff;
     private double an0, an1, an2;
     private double aewald;
-
     /**
      * Neighbor lists, without atoms beyond the real space cutoff.
      * [nSymm][nAtoms][nIncludedNeighbors]
@@ -193,7 +204,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     private int[][] realSpaceCounts;
     private Range[] realSpaceRanges;
     private IntegerSchedule permanentSchedule;
-
     /**
      * Field array.
      */
@@ -207,21 +217,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
      */
     private long realSpacePermTotal;
     private long[] realSpacePermTime;
-
     private ScaleParameters scaleParameters;
-
-    /**
-     * Specify inter-molecular softcore.
-     */
-    private final boolean intermolecularSoftcore;
-    /**
-     * Specify intra-molecular softcore.
-     */
-    private final boolean intramolecularSoftcore;
-    /**
-     * Constant applied to multipole interactions.
-     */
-    private static final double oneThird = 1.0 / 3.0;
 
     public PermanentFieldRegion(ParallelTeam pt, ForceField forceField, boolean lambdaTerm) {
         permanentRealSpaceFieldSection = new PermanentRealSpaceFieldSection(pt);
@@ -240,9 +236,50 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
 
     }
 
+    /**
+     * Apply permanent field masking rules.
+     *
+     * @param i     The atom whose masking rules should be applied.
+     * @param is14  True if atom i and the current atom are 1-4 to each other.
+     * @param masks One or more masking arrays.
+     */
+    @Override
+    public void applyMask(int i, boolean[] is14, double[]... masks) {
+        double[] permanentFieldMask = masks[0];
+        var m12 = mask12[i];
+        for (int value : m12) {
+            permanentFieldMask[value] = scaleParameters.p12scale;
+        }
+        var m13 = mask13[i];
+        for (int value : m13) {
+            permanentFieldMask[value] = scaleParameters.p13scale;
+        }
+        var m14 = mask14[i];
+        for (int value : m14) {
+            permanentFieldMask[value] = scaleParameters.p14scale;
+            for (int k : ip11[i]) {
+                if (k == value) {
+                    permanentFieldMask[value] = scaleParameters.intra14Scale * scaleParameters.p14scale;
+                    break;
+                }
+            }
+        }
+
+        // Apply group based polarization masking rule.
+        double[] polarizationGroupMask = masks[1];
+        for (int index : ip11[i]) {
+            polarizationGroupMask[index] = scaleParameters.d11scale;
+        }
+    }
+
+    public long getRealSpacePermTotal() {
+        return realSpacePermTotal;
+    }
+
     public void init(Atom[] atoms, Crystal crystal, double[][][] coordinates, double[][][] globalMultipole,
                      double[][][] inducedDipole, double[][][] inducedDipoleCR, int[][][] neighborLists,
-                     ScaleParameters scaleParameters, boolean[] use, int[] molecule, double[] ipdamp, double[] thole, int[][] ip11,
+                     ScaleParameters scaleParameters, boolean[] use, int[] molecule, double[] ipdamp, double[] thole,
+                     int[][] ip11, int[][] mask12, int[][] mask13, int[][] mask14,
                      LambdaMode lambdaMode, boolean reciprocalSpaceTerm, ReciprocalSpace reciprocalSpace,
                      EwaldParameters ewaldParameters, PCGSolver pcgSolver,
                      IntegerSchedule permanentSchedule, RealSpaceNeighborParameters realSpaceNeighborParameters,
@@ -260,6 +297,9 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
         this.ipdamp = ipdamp;
         this.thole = thole;
         this.ip11 = ip11;
+        this.mask12 = mask12;
+        this.mask13 = mask13;
+        this.mask14 = mask14;
         this.lambdaMode = lambdaMode;
         this.reciprocalSpaceTerm = reciprocalSpaceTerm;
         this.reciprocalSpace = reciprocalSpace;
@@ -283,8 +323,39 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
         this.realSpacePermTime = pmeTimings.realSpacePermTime;
     }
 
-    public long getRealSpacePermTotal() {
-        return realSpacePermTotal;
+    /**
+     * Remove permanent field masking rules.
+     *
+     * @param i     The atom whose masking rules should be removed.
+     * @param is14  True if atom i and the current atom are 1-4 to each other.
+     * @param masks One or more masking arrays.
+     */
+    @Override
+    public void removeMask(int i, boolean[] is14, double[]... masks) {
+        double[] permanentFieldMask = masks[0];
+        var m12 = mask12[i];
+        for (int value : m12) {
+            permanentFieldMask[value] = 1.0;
+        }
+        var m13 = mask13[i];
+        for (int value : m13) {
+            permanentFieldMask[value] = 1.0;
+        }
+        var m14 = mask14[i];
+        for (int value : m14) {
+            permanentFieldMask[value] = 1.0;
+            for (int k : ip11[i]) {
+                if (k == value) {
+                    permanentFieldMask[value] = 1.0;
+                    break;
+                }
+            }
+        }
+        // Apply group based polarization masking rule.
+        double[] polarizationGroupMask = masks[1];
+        for (int index : ip11[i]) {
+            polarizationGroupMask[index] = 1.0;
+        }
     }
 
     @Override
@@ -298,87 +369,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
         } catch (Exception e) {
             String message = "Fatal exception computing the permanent multipole field.\n";
             logger.log(Level.SEVERE, message, e);
-        }
-    }
-
-    /**
-     * Apply permanent field masking rules.
-     *
-     * @param i     The atom whose masking rules should be applied.
-     * @param is14  True if atom i and the current atom are 1-4 to each other.
-     * @param masks One or more masking arrays.
-     */
-    @Override
-    public void applyMask(int i, boolean[] is14, double[]... masks) {
-        double[] maskp_local = masks[0];
-        double[] mask_local = masks[1];
-        Atom ai = atoms[i];
-        for (Torsion torsion : ai.getTorsions()) {
-            Atom ak = torsion.get1_4(ai);
-            if (ak != null) {
-                int index = ak.getIndex() - 1;
-                maskp_local[index] = scaleParameters.p14scale;
-                for (int k : ip11[i]) {
-                    if (k == index) {
-                        maskp_local[index] = scaleParameters.intra14Scale * scaleParameters.p14scale;
-                        break;
-                    }
-                }
-            }
-        }
-        for (Angle angle : ai.getAngles()) {
-            Atom ak = angle.get1_3(ai);
-            if (ak != null) {
-                int index = ak.getIndex() - 1;
-                maskp_local[index] = scaleParameters.p13scale;
-            }
-        }
-        for (Bond bond : ai.getBonds()) {
-            int index = bond.get1_2(ai).getIndex() - 1;
-            maskp_local[index] = scaleParameters.p12scale;
-        }
-
-        // Apply group based polarization masking rule.
-        for (int index : ip11[i]) {
-            mask_local[index] = scaleParameters.d11scale;
-        }
-    }
-
-    /**
-     * Remove permanent field masking rules.
-     *
-     * @param i     The atom whose masking rules should be removed.
-     * @param is14  True if atom i and the current atom are 1-4 to each other.
-     * @param masks One or more masking arrays.
-     */
-    @Override
-    public void removeMask(int i, boolean[] is14, double[]... masks) {
-        double[] maskp_local = masks[0];
-        double[] mask_local = masks[1];
-        Atom ai = atoms[i];
-        for (Atom ak : ai.get1_5s()) {
-            maskp_local[ak.getIndex() - 1] = 1.0;
-        }
-        for (Torsion torsion : ai.getTorsions()) {
-            Atom ak = torsion.get1_4(ai);
-            if (ak != null) {
-                int index = ak.getIndex() - 1;
-                maskp_local[index] = 1.0;
-            }
-        }
-        for (Angle angle : ai.getAngles()) {
-            Atom ak = angle.get1_3(ai);
-            if (ak != null) {
-                int index = ak.getIndex() - 1;
-                maskp_local[index] = 1.0;
-            }
-        }
-        for (Bond bond : ai.getBonds()) {
-            int index = bond.get1_2(ai).getIndex() - 1;
-            maskp_local[index] = 1.0;
-        }
-        for (int index : ip11[i]) {
-            mask_local[index] = 1.0;
         }
     }
 
@@ -442,31 +432,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
         }
 
         @Override
-        public void start() {
-            sharedCount.set(0);
-        }
-
-        @Override
-        public void run() {
-            int threadIndex = getThreadIndex();
-            if (initializationLoop[threadIndex] == null) {
-                initializationLoop[threadIndex] = new InitializationLoop();
-                permanentRealSpaceFieldLoop[threadIndex] = new PermanentRealSpaceFieldLoop();
-            }
-            try {
-                int nAtoms = atoms.length;
-                execute(0, nAtoms - 1, initializationLoop[threadIndex]);
-                execute(0, nAtoms - 1, permanentRealSpaceFieldLoop[threadIndex]);
-            } catch (RuntimeException e) {
-                String message = "Runtime exception computing the real space field.\n";
-                logger.log(Level.SEVERE, message, e);
-            } catch (Exception e) {
-                String message = "Fatal exception computing the real space field in thread " + getThreadIndex() + "\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
-
-        @Override
         public void finish() {
             if (realSpaceRanges == null) {
                 logger.severe(" RealSpaceRange array is null");
@@ -522,21 +487,32 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
             }
         }
 
+        @Override
+        public void run() {
+            int threadIndex = getThreadIndex();
+            if (initializationLoop[threadIndex] == null) {
+                initializationLoop[threadIndex] = new InitializationLoop();
+                permanentRealSpaceFieldLoop[threadIndex] = new PermanentRealSpaceFieldLoop();
+            }
+            try {
+                int nAtoms = atoms.length;
+                execute(0, nAtoms - 1, initializationLoop[threadIndex]);
+                execute(0, nAtoms - 1, permanentRealSpaceFieldLoop[threadIndex]);
+            } catch (RuntimeException e) {
+                String message = "Runtime exception computing the real space field.\n";
+                logger.log(Level.SEVERE, message, e);
+            } catch (Exception e) {
+                String message = "Fatal exception computing the real space field in thread " + getThreadIndex() + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+
+        @Override
+        public void start() {
+            sharedCount.set(0);
+        }
+
         private class InitializationLoop extends IntegerForLoop {
-
-            @Override
-            public IntegerSchedule schedule() {
-                return IntegerSchedule.fixed();
-            }
-
-            /**
-             * Initialize the field arrays.
-             */
-            @Override
-            public void start() {
-                int threadIndex = getThreadIndex();
-                realSpacePermTime[threadIndex] -= System.nanoTime();
-            }
 
             @Override
             public void finish() {
@@ -564,13 +540,27 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
                     }
                 }
             }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
+
+            /**
+             * Initialize the field arrays.
+             */
+            @Override
+            public void start() {
+                int threadIndex = getThreadIndex();
+                realSpacePermTime[threadIndex] -= System.nanoTime();
+            }
         }
 
         private class PermanentRealSpaceFieldLoop extends IntegerForLoop {
 
-            private int threadID;
             private final double[] dx_local;
             private final double[][] transOp;
+            private int threadID;
             private double[] mask_local;
             private double[] maskp_local;
             private int count;
@@ -585,28 +575,9 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
             }
 
             @Override
-            public void start() {
-                threadID = getThreadIndex();
-                realSpacePermTime[threadID] -= System.nanoTime();
-                count = 0;
-                int nAtoms = atoms.length;
-                if (mask_local == null || mask_local.length < nAtoms) {
-                    mask_local = new double[nAtoms];
-                    maskp_local = new double[nAtoms];
-                    fill(mask_local, 1.0);
-                    fill(maskp_local, 1.0);
-                }
-            }
-
-            @Override
             public void finish() {
                 sharedCount.addAndGet(count);
                 realSpacePermTime[threadID] += System.nanoTime();
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return permanentSchedule;
             }
 
             @Override
@@ -984,6 +955,25 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
                         field.add(threadID, i, fix, fiy, fiz);
                         fieldCR.add(threadID, i, fix, fiy, fiz);
                     }
+                }
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return permanentSchedule;
+            }
+
+            @Override
+            public void start() {
+                threadID = getThreadIndex();
+                realSpacePermTime[threadID] -= System.nanoTime();
+                count = 0;
+                int nAtoms = atoms.length;
+                if (mask_local == null || mask_local.length < nAtoms) {
+                    mask_local = new double[nAtoms];
+                    maskp_local = new double[nAtoms];
+                    fill(mask_local, 1.0);
+                    fill(maskp_local, 1.0);
                 }
             }
         }

@@ -37,7 +37,11 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.System.arraycopy;
@@ -74,9 +78,9 @@ public class Residue extends MSGroup implements Comparable<Residue> {
      */
     private static final Comparator<Residue> resComparator =
             Comparator.comparing(Residue::getSegID).
-            thenComparingInt(Residue::getResidueNumber).
-            thenComparing(Residue::getResidueType).
-            thenComparing(Residue::getName);
+                    thenComparingInt(Residue::getResidueNumber).
+                    thenComparing(Residue::getResidueType).
+                    thenComparing(Residue::getName);
     /**
      * Constant <code>NA1toNA3</code>
      */
@@ -536,7 +540,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
                 if (carbon == null) {
                     return null;
                 }
-                ArrayList<Bond> bonds = carbon.getBonds();
+                List<Bond> bonds = carbon.getBonds();
                 for (Bond b : bonds) {
                     Atom other = b.get1_2(carbon);
                     if (other.getName().equalsIgnoreCase("N")) {
@@ -550,7 +554,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
                 if (oxygen == null) {
                     return null;
                 }
-                ArrayList<Bond> bonds = oxygen.getBonds();
+                List<Bond> bonds = oxygen.getBonds();
                 for (Bond b : bonds) {
                     Atom other = b.get1_2(oxygen);
                     if (other.getName().equalsIgnoreCase("P")) {
@@ -637,7 +641,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
                 if (nitrogen == null) {
                     return null;
                 }
-                ArrayList<Bond> bonds = nitrogen.getBonds();
+                List<Bond> bonds = nitrogen.getBonds();
                 for (Bond b : bonds) {
                     Atom other = b.get1_2(nitrogen);
                     if (other.getName().equalsIgnoreCase("C")) {
@@ -651,7 +655,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
                 if (phosphate == null) {
                     return null;
                 }
-                ArrayList<Bond> bonds = phosphate.getBonds();
+                List<Bond> bonds = phosphate.getBonds();
                 for (Bond b : bonds) {
                     Atom other = b.get1_2(phosphate);
                     if (other.getName().equalsIgnoreCase("O3\'")) {
@@ -1180,6 +1184,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
 
         NA, AA, UNK
     }
+
     public enum SSType {
 
         NONE, HELIX, SHEET, TURN

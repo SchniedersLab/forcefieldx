@@ -38,6 +38,7 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
@@ -347,7 +348,7 @@ public class Angle extends BondedTerm {
         angleType = a;
 
         // Count the number of hydrogens attached to the central atom, but that are not part of the angle.
-        ArrayList<Bond> ba = atoms[1].getBonds();
+        List<Bond> ba = atoms[1].getBonds();
         nh = 0;
         for (Bond b1 : ba) {
             if (b1 != bonds[0] && b1 != bonds[1]) {

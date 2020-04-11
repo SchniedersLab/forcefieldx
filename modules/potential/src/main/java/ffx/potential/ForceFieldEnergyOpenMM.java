@@ -247,15 +247,10 @@ import static ffx.utilities.Constants.kB;
 public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     private static final Logger logger = Logger.getLogger(ForceFieldEnergyOpenMM.class.getName());
-
     /**
-     * OpenMM Context.
+     * Whether to enforce periodic boundary conditions when obtaining new States.
      */
-    private Context context;
-    /**
-     * OpenMM System.
-     */
-    private System system;
+    public final int enforcePBC;
     /**
      * The atoms this ForceFieldEnergyOpenMM operates on.
      */
@@ -265,9 +260,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private final int nAtoms;
     /**
-     * Whether to enforce periodic boundary conditions when obtaining new States.
+     * OpenMM Context.
      */
-    public final int enforcePBC;
+    private Context context;
+    /**
+     * OpenMM System.
+     */
+    private System system;
     /**
      * Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. This is useful for conformational
      * optimization if full removal of vdW interactions is not desired (i.e. lambdaStart = ~0.2).
@@ -350,52 +349,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * Returns the Context instance.
-     *
-     * @return context
-     */
-    public Context getContext() {
-        return context;
-    }
-
-    /**
-     * Get a reference to the System instance.
-     *
-     * @return Java wrapper to an OpenMM system.
-     */
-    public System getSystem() {
-        return system;
-    }
-
-    /**
-     * Update active atoms.
-     */
-    public void setActiveAtoms() {
-        system.updateAtomMass();
-        // Tests show reinitialization of the OpenMM Context is not necessary to pick up mass changes.
-        // context.reinitContext();
-    }
-
-    /**
-     * Update parameters if the Use flags and/or Lambda value has changed.
-     *
-     * @param atoms Atoms in this list are considered.
-     */
-    public void updateParameters(Atom[] atoms) {
-        system.updateParameters(atoms);
-    }
-
-    /**
-     * Coordinates for active atoms.
-     *
-     * @param x Atomic coordinates.
+     * {@inheritDoc}
      */
     @Override
-    public void setCoordinates(double[] x) {
-        // Set FFX coordiantes.
-        super.setCoordinates(x);
-        // Set OpenMM coordinates.
-        context.setOpenMMPositions(x);
+    public boolean destroy() {
+        boolean ffxFFEDestroy = super.destroy();
+        free();
+        logger.fine(" Destroyed the Context, Integrator, and OpenMMSystem.");
+        return ffxFFEDestroy;
     }
 
     /**
@@ -525,27 +486,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * Compute the energy using the pure Java code path.
-     *
-     * @param x Atomic coordinates.
-     * @return The energy (kcal/mol)
-     */
-    public double energyFFX(double[] x) {
-        return super.energy(x, false);
-    }
-
-    /**
-     * Compute the energy using the pure Java code path.
-     *
-     * @param x       Input atomic coordinates
-     * @param verbose Use verbose logging.
-     * @return The energy (kcal/mol)
-     */
-    public double energyFFX(double[] x, boolean verbose) {
-        return super.energy(x, verbose);
-    }
-
-    /**
      * Compute the energy and gradient using the pure Java code path.
      *
      * @param x Input atomic coordinates
@@ -569,12 +509,48 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Compute the energy using the pure Java code path.
+     *
+     * @param x Atomic coordinates.
+     * @return The energy (kcal/mol)
+     */
+    public double energyFFX(double[] x) {
+        return super.energy(x, false);
+    }
+
+    /**
+     * Compute the energy using the pure Java code path.
+     *
+     * @param x       Input atomic coordinates
+     * @param verbose Use verbose logging.
+     * @return The energy (kcal/mol)
+     */
+    public double energyFFX(double[] x, boolean verbose) {
+        return super.energy(x, verbose);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
-    public void setCrystal(Crystal crystal) {
-        super.setCrystal(crystal);
-        context.setPeriodicBoxVectors();
+    public void finalize() throws Throwable {
+        // Safer to leave super.finalize() in, even though right now that calls Object.finalize().
+        logger.info(" ForceFieldEnergyOpenMM instance is being finalized.");
+        super.finalize();
+        if (destroyed) {
+            logger.info(String.format(" Finalize called on a destroyed OpenMM ForceFieldEnergy %s", this.toString()));
+        } else {
+            destroy();
+        }
+    }
+
+    /**
+     * Returns the Context instance.
+     *
+     * @return context
+     */
+    public Context getContext() {
+        return context;
     }
 
     /**
@@ -596,6 +572,23 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     @Override
     public Platform getPlatform() {
         return context.platform;
+    }
+
+    /**
+     * Get a reference to the System instance.
+     *
+     * @return Java wrapper to an OpenMM system.
+     */
+    public System getSystem() {
+        return system;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        return 0.0;
     }
 
     /**
@@ -668,37 +661,34 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * {@inheritDoc}
+     * Update active atoms.
+     */
+    public void setActiveAtoms() {
+        system.updateAtomMass();
+        // Tests show reinitialization of the OpenMM Context is not necessary to pick up mass changes.
+        // context.reinitContext();
+    }
+
+    /**
+     * Coordinates for active atoms.
+     *
+     * @param x Atomic coordinates.
      */
     @Override
-    public double getd2EdL2() {
-        return 0.0;
+    public void setCoordinates(double[] x) {
+        // Set FFX coordiantes.
+        super.setCoordinates(x);
+        // Set OpenMM coordinates.
+        context.setOpenMMPositions(x);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean destroy() {
-        boolean ffxFFEDestroy = super.destroy();
-        free();
-        logger.fine(" Destroyed the Context, Integrator, and OpenMMSystem.");
-        return ffxFFEDestroy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void finalize() throws Throwable {
-        // Safer to leave super.finalize() in, even though right now that calls Object.finalize().
-        logger.info(" ForceFieldEnergyOpenMM instance is being finalized.");
-        super.finalize();
-        if (destroyed) {
-            logger.info(String.format(" Finalize called on a destroyed OpenMM ForceFieldEnergy %s", this.toString()));
-        } else {
-            destroy();
-        }
+    public void setCrystal(Crystal crystal) {
+        super.setCrystal(crystal);
+        context.setPeriodicBoxVectors();
     }
 
     /**
@@ -747,6 +737,125 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Update parameters if the Use flags and/or Lambda value has changed.
+     *
+     * @param atoms Atoms in this list are considered.
+     */
+    public void updateParameters(Atom[] atoms) {
+        system.updateParameters(atoms);
+    }
+
+    /**
+     * Gets the default co-processor device, ignoring any CUDA_DEVICE over-ride.
+     * This is either determined by process rank and the
+     * availableDevices/CUDA_DEVICES property, or just 0 if neither property is
+     * sets.
+     *
+     * @param props Properties in use.
+     * @return Pre-override device index.
+     */
+    private static int getDefaultDevice(CompositeConfiguration props) {
+        String availDeviceProp = props.getString("availableDevices",
+                props.getString("CUDA_DEVICES"));
+        if (availDeviceProp == null) {
+            int nDevs = props.getInt("numCudaDevices", 1);
+            availDeviceProp = IntStream.range(0, nDevs).
+                    mapToObj(Integer::toString).
+                    collect(Collectors.joining(" "));
+        }
+        availDeviceProp = availDeviceProp.trim();
+
+        String[] availDevices = availDeviceProp.split("\\s+");
+        int nDevs = availDevices.length;
+        int[] devs = new int[nDevs];
+        for (int i = 0; i < nDevs; i++) {
+            devs[i] = Integer.parseInt(availDevices[i]);
+        }
+
+        logger.info(format(" Number of CUDA devices: %d.", nDevs));
+
+        int index = 0;
+        try {
+            Comm world = Comm.world();
+            if (world != null) {
+                int size = world.size();
+
+                // Format the host as a CharacterBuf of length 100.
+                int messageLen = 100;
+                String host = world.host();
+                // Truncate to max 100 characters.
+                host = host.substring(0, Math.min(messageLen, host.length()));
+                // Pad to 100 characters.
+                host = String.format("%-100s", host);
+                char[] messageOut = host.toCharArray();
+                CharacterBuf out = CharacterBuf.buffer(messageOut);
+
+                // Now create CharacterBuf array for all incoming messages.
+                char[][] incoming = new char[size][messageLen];
+                CharacterBuf[] in = new CharacterBuf[size];
+                for (int i = 0; i < size; i++) {
+                    in[i] = CharacterBuf.buffer(incoming[i]);
+                }
+
+                try {
+                    world.allGather(out, in);
+                } catch (IOException ex) {
+                    logger.severe(String.format(" Failure at the allGather step for determining rank: %s\n%s", ex, Utilities.stackTraceToString(ex)));
+                }
+                int ownIndex = -1;
+                int rank = world.rank();
+                boolean selfFound = false;
+
+                for (int i = 0; i < size; i++) {
+                    String hostI = new String(incoming[i]);
+                    if (hostI.equalsIgnoreCase(host)) {
+                        ++ownIndex;
+                        if (i == rank) {
+                            selfFound = true;
+                            break;
+                        }
+                    }
+                }
+                if (!selfFound) {
+                    logger.severe(String.format(" Rank %d: Could not find any incoming host messages matching self %s!", rank, host.trim()));
+                } else {
+                    index = ownIndex % nDevs;
+                }
+            }
+        } catch (IllegalStateException ise) {
+            // Behavior is just to keep index = 0.
+        }
+        return devs[index];
+    }
+
+    /**
+     * Create a JNA Pointer to a String.
+     *
+     * @param string WARNING: assumes ascii-only string
+     * @return pointer.
+     */
+    private static Pointer pointerForString(String string) {
+        Pointer pointer = new Memory(string.length() + 1);
+        pointer.setString(0, string);
+        return pointer;
+    }
+
+    /**
+     * Returns the platform array as a String
+     *
+     * @param stringArray The OpenMM String array.
+     * @param i           The index of the String to return.
+     * @return String The requested String.
+     */
+    private static String stringFromArray(PointerByReference stringArray, int i) {
+        Pointer platformPtr = OpenMM_StringArray_get(stringArray, i);
+        if (platformPtr == null) {
+            return null;
+        }
+        return platformPtr.getString(0);
+    }
+
+    /**
      * Creates and manage an OpenMM Context.
      * <p>
      * A Context stores the complete state of a simulation. More specifically, it includes:
@@ -762,6 +871,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     public class Context {
 
         /**
+         * Requested Platform (i.e. Java or an OpenMM platform).
+         */
+        private final Platform platform;
+        /**
          * OpenMM Context pointer.
          */
         private PointerByReference contextPointer = null;
@@ -769,10 +882,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * Instance of the OpenMM Integrator class.
          */
         private Integrator integrator;
-        /**
-         * Requested Platform (i.e. Java or an OpenMM platform).
-         */
-        private final Platform platform;
         /**
          * OpenMM Platform pointer.
          */
@@ -807,19 +916,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         /**
-         * Free OpenMM memory for the current Context and Integrator.
-         */
-        void free() {
-            if (contextPointer != null) {
-                OpenMM_Context_destroy(contextPointer);
-            }
-            contextPointer = null;
-            if (integrator != null) {
-                integrator.destroyIntegrator();
-            }
-        }
-
-        /**
          * Get a Pointer to the OpenMM Context. A Context is created if none has been instantiated yet.
          *
          * @return Context pointer.
@@ -838,6 +934,123 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          */
         public PointerByReference getIntegrator() {
             return integrator.getIntegratorPointer();
+        }
+
+        /**
+         * Use the Context / Integrator combination to take the requested number of steps.
+         *
+         * @param numSteps Number of steps to take.
+         */
+        public void integrate(int numSteps) {
+            OpenMM_Integrator_step(integrator.getIntegratorPointer(), numSteps);
+        }
+
+        /**
+         * Use the Context to optimize the system to the requested tolerance.
+         *
+         * @param eps           Convergence criteria (kcal/mole/A).
+         * @param maxIterations Maximum number of iterations.
+         */
+        public void optimize(double eps, int maxIterations) {
+            OpenMM_LocalEnergyMinimizer_minimize(contextPointer, eps / (OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ), maxIterations);
+        }
+
+        /**
+         * The array x contains atomic coordinates only for active atoms.
+         *
+         * @param x Atomic coordinate array for only active atoms.
+         */
+        public void setOpenMMPositions(double[] x) {
+            PointerByReference positions = OpenMM_Vec3Array_create(0);
+            OpenMM_Vec3.ByValue coords = new OpenMM_Vec3.ByValue();
+            int index = 0;
+            for (Atom a : atoms) {
+                if (a.isActive()) {
+                    coords.x = x[index++] * OpenMM_NmPerAngstrom;
+                    coords.y = x[index++] * OpenMM_NmPerAngstrom;
+                    coords.z = x[index++] * OpenMM_NmPerAngstrom;
+                    OpenMM_Vec3Array_append(positions, coords);
+                } else {
+                    // OpenMM requires coordinates for even "inactive" atoms with mass of zero.
+                    coords.x = a.getX() * OpenMM_NmPerAngstrom;
+                    coords.y = a.getY() * OpenMM_NmPerAngstrom;
+                    coords.z = a.getZ() * OpenMM_NmPerAngstrom;
+                    OpenMM_Vec3Array_append(positions, coords);
+                }
+            }
+            OpenMM_Context_setPositions(contextPointer, positions);
+            OpenMM_Vec3Array_destroy(positions);
+        }
+
+        /**
+         * The array v contains velocity values for active atomic coordinates.
+         *
+         * @param v Velocity array for active atoms.
+         */
+        public void setOpenMMVelocities(double[] v) {
+            PointerByReference velocities = OpenMM_Vec3Array_create(0);
+            OpenMM_Vec3.ByValue vel = new OpenMM_Vec3.ByValue();
+            int index = 0;
+            for (Atom a : atoms) {
+                if (a.isActive()) {
+                    vel.x = v[index++] * OpenMM_NmPerAngstrom;
+                    vel.y = v[index++] * OpenMM_NmPerAngstrom;
+                    vel.z = v[index++] * OpenMM_NmPerAngstrom;
+                    OpenMM_Vec3Array_append(velocities, vel);
+                } else {
+                    // OpenMM requires velocities for even "inactive" atoms with mass of zero.
+                    vel.x = 0.0;
+                    vel.y = 0.0;
+                    vel.z = 0.0;
+                    OpenMM_Vec3Array_append(velocities, vel);
+                }
+            }
+            OpenMM_Context_setVelocities(contextPointer, velocities);
+            OpenMM_Vec3Array_destroy(velocities);
+        }
+
+        /**
+         * Set the periodic box vectors for a context based on the crystal instance.
+         */
+        public void setPeriodicBoxVectors() {
+            Crystal crystal = getCrystal();
+            if (!crystal.aperiodic()) {
+                OpenMM_Vec3 a = new OpenMM_Vec3();
+                OpenMM_Vec3 b = new OpenMM_Vec3();
+                OpenMM_Vec3 c = new OpenMM_Vec3();
+                double[][] Ai = crystal.Ai;
+                a.x = Ai[0][0] * OpenMM_NmPerAngstrom;
+                a.y = Ai[0][1] * OpenMM_NmPerAngstrom;
+                a.z = Ai[0][2] * OpenMM_NmPerAngstrom;
+                b.x = Ai[1][0] * OpenMM_NmPerAngstrom;
+                b.y = Ai[1][1] * OpenMM_NmPerAngstrom;
+                b.z = Ai[1][2] * OpenMM_NmPerAngstrom;
+                c.x = Ai[2][0] * OpenMM_NmPerAngstrom;
+                c.y = Ai[2][1] * OpenMM_NmPerAngstrom;
+                c.z = Ai[2][2] * OpenMM_NmPerAngstrom;
+                OpenMM_Context_setPeriodicBoxVectors(contextPointer, a, b, c);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString() {
+            return String.format(" OpenMM context with integrator %s, timestep %9.3g fsec, temperature %9.3g K, constraintTolerance %9.3g", integratorString, timeStep, temperature, constraintTolerance);
+        }
+
+        /**
+         * Free OpenMM memory for the current Context and Integrator.
+         */
+        void free() {
+            if (contextPointer != null) {
+                OpenMM_Context_destroy(contextPointer);
+            }
+            contextPointer = null;
+            if (integrator != null) {
+                integrator.destroyIntegrator();
+            }
         }
 
         /**
@@ -916,25 +1129,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         /**
-         * Use the Context / Integrator combination to take the requested number of steps.
-         *
-         * @param numSteps Number of steps to take.
-         */
-        public void integrate(int numSteps) {
-            OpenMM_Integrator_step(integrator.getIntegratorPointer(), numSteps);
-        }
-
-        /**
-         * Use the Context to optimize the system to the requested tolerance.
-         *
-         * @param eps           Convergence criteria (kcal/mole/A).
-         * @param maxIterations Maximum number of iterations.
-         */
-        public void optimize(double eps, int maxIterations) {
-            OpenMM_LocalEnergyMinimizer_minimize(contextPointer, eps / (OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ), maxIterations);
-        }
-
-        /**
          * Reinitialize the context.
          * <p>
          * When a Context is created, it may cache information about the System being simulated and the Force objects contained in it.
@@ -959,83 +1153,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         void setParameter(String name, double value) {
             if (contextPointer != null) {
                 OpenMM_Context_setParameter(contextPointer, name, value);
-            }
-        }
-
-        /**
-         * The array x contains atomic coordinates only for active atoms.
-         *
-         * @param x Atomic coordinate array for only active atoms.
-         */
-        public void setOpenMMPositions(double[] x) {
-            PointerByReference positions = OpenMM_Vec3Array_create(0);
-            OpenMM_Vec3.ByValue coords = new OpenMM_Vec3.ByValue();
-            int index = 0;
-            for (Atom a : atoms) {
-                if (a.isActive()) {
-                    coords.x = x[index++] * OpenMM_NmPerAngstrom;
-                    coords.y = x[index++] * OpenMM_NmPerAngstrom;
-                    coords.z = x[index++] * OpenMM_NmPerAngstrom;
-                    OpenMM_Vec3Array_append(positions, coords);
-                } else {
-                    // OpenMM requires coordinates for even "inactive" atoms with mass of zero.
-                    coords.x = a.getX() * OpenMM_NmPerAngstrom;
-                    coords.y = a.getY() * OpenMM_NmPerAngstrom;
-                    coords.z = a.getZ() * OpenMM_NmPerAngstrom;
-                    OpenMM_Vec3Array_append(positions, coords);
-                }
-            }
-            OpenMM_Context_setPositions(contextPointer, positions);
-            OpenMM_Vec3Array_destroy(positions);
-        }
-
-        /**
-         * The array v contains velocity values for active atomic coordinates.
-         *
-         * @param v Velocity array for active atoms.
-         */
-        public void setOpenMMVelocities(double[] v) {
-            PointerByReference velocities = OpenMM_Vec3Array_create(0);
-            OpenMM_Vec3.ByValue vel = new OpenMM_Vec3.ByValue();
-            int index = 0;
-            for (Atom a : atoms) {
-                if (a.isActive()) {
-                    vel.x = v[index++] * OpenMM_NmPerAngstrom;
-                    vel.y = v[index++] * OpenMM_NmPerAngstrom;
-                    vel.z = v[index++] * OpenMM_NmPerAngstrom;
-                    OpenMM_Vec3Array_append(velocities, vel);
-                } else {
-                    // OpenMM requires velocities for even "inactive" atoms with mass of zero.
-                    vel.x = 0.0;
-                    vel.y = 0.0;
-                    vel.z = 0.0;
-                    OpenMM_Vec3Array_append(velocities, vel);
-                }
-            }
-            OpenMM_Context_setVelocities(contextPointer, velocities);
-            OpenMM_Vec3Array_destroy(velocities);
-        }
-
-        /**
-         * Set the periodic box vectors for a context based on the crystal instance.
-         */
-        public void setPeriodicBoxVectors() {
-            Crystal crystal = getCrystal();
-            if (!crystal.aperiodic()) {
-                OpenMM_Vec3 a = new OpenMM_Vec3();
-                OpenMM_Vec3 b = new OpenMM_Vec3();
-                OpenMM_Vec3 c = new OpenMM_Vec3();
-                double[][] Ai = crystal.Ai;
-                a.x = Ai[0][0] * OpenMM_NmPerAngstrom;
-                a.y = Ai[0][1] * OpenMM_NmPerAngstrom;
-                a.z = Ai[0][2] * OpenMM_NmPerAngstrom;
-                b.x = Ai[1][0] * OpenMM_NmPerAngstrom;
-                b.y = Ai[1][1] * OpenMM_NmPerAngstrom;
-                b.z = Ai[1][2] * OpenMM_NmPerAngstrom;
-                c.x = Ai[2][0] * OpenMM_NmPerAngstrom;
-                c.y = Ai[2][1] * OpenMM_NmPerAngstrom;
-                c.z = Ai[2][2] * OpenMM_NmPerAngstrom;
-                OpenMM_Context_setPeriodicBoxVectors(contextPointer, a, b, c);
             }
         }
 
@@ -1136,14 +1253,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 platformPointer = OpenMM_Platform_getPlatformByName("Reference");
                 logger.info(" Platform: AMOEBA CPU Reference");
             }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String toString() {
-            return String.format(" OpenMM context with integrator %s, timestep %9.3g fsec, temperature %9.3g K, constraintTolerance %9.3g", integratorString, timeStep, temperature, constraintTolerance);
         }
     }
 
@@ -1343,6 +1452,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * passing in a VirtualSite object that defines the rules for computing its position.
      */
     public class System {
+        private static final double DEFAULT_MELD_SCALE_FACTOR = -1.0;
+        private final double meldScaleFactor;
         /**
          * The Force Field in use.
          */
@@ -1478,8 +1589,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * A negative value indicates we're not using MELD.
          */
         private boolean useMeld;
-        private static final double DEFAULT_MELD_SCALE_FACTOR = -1.0;
-        private final double meldScaleFactor;
 
         /**
          * OpenMMSystem constructor.
@@ -1664,135 +1773,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         /**
-         * Return a reference to the System.
-         *
-         * @return System referenece.
-         */
-        PointerByReference getSystem() {
-            return system;
-        }
-
-        /**
-         * Destroy the system.
-         */
-        public void free() {
-            if (system != null) {
-                OpenMM_System_destroy(system);
-                system = null;
-            }
-        }
-
-        /**
-         * Set the default values of the vectors defining the axes of the periodic box (measured in nm).
-         * <p>
-         * Any newly created Context will have its box vectors set to these.
-         * They will affect any Force added to the System that uses periodic boundary conditions.
-         * <p>
-         * Triclinic boxes are supported, but the vectors must satisfy certain requirements.
-         * In particular, a must point in the x direction,
-         * b must point "mostly" in the y direction,
-         * and c must point "mostly" in the z direction. See the documentation for details.
-         */
-        private void setDefaultPeriodicBoxVectors() {
-            Crystal crystal = getCrystal();
-            if (!crystal.aperiodic()) {
-                OpenMM_Vec3 a = new OpenMM_Vec3();
-                OpenMM_Vec3 b = new OpenMM_Vec3();
-                OpenMM_Vec3 c = new OpenMM_Vec3();
-                double[][] Ai = crystal.Ai;
-                a.x = Ai[0][0] * OpenMM_NmPerAngstrom;
-                a.y = Ai[0][1] * OpenMM_NmPerAngstrom;
-                a.z = Ai[0][2] * OpenMM_NmPerAngstrom;
-                b.x = Ai[1][0] * OpenMM_NmPerAngstrom;
-                b.y = Ai[1][1] * OpenMM_NmPerAngstrom;
-                b.z = Ai[1][2] * OpenMM_NmPerAngstrom;
-                c.x = Ai[2][0] * OpenMM_NmPerAngstrom;
-                c.y = Ai[2][1] * OpenMM_NmPerAngstrom;
-                c.z = Ai[2][2] * OpenMM_NmPerAngstrom;
-                OpenMM_System_setDefaultPeriodicBoxVectors(system, a, b, c);
-            }
-        }
-
-        /**
-         * Calculate the number of degrees of freedom.
-         *
-         * @return Number of degrees of freedom.
-         */
-        public int calculateDegreesOfFreedom() {
-            // Begin from the 3 times the number of active atoms.
-            int dof = getNumberOfVariables();
-            // Remove OpenMM constraints.
-            dof = dof - OpenMM_System_getNumConstraints(system);
-            // Remove center of mass motion.
-            if (commRemover != null) {
-                dof -= 3;
-            }
-            return dof;
-        }
-
-        /**
-         * Print current lambda values.
-         */
-        public void printLambdaValues() {
-            logger.info(format("\n Lambda Values\n Torsion: %6.3f vdW: %6.3f Elec: %6.3f ", lambdaTorsion, lambdaVDW, lambdaElec));
-        }
-
-        /**
-         * Set the overall lambda value for the system.
-         */
-        public void setLambda(double lambda) {
-
-            // Initially set all lambda values to 1.0.
-            lambdaTorsion = 1.0;
-
-            // Applied to softcore vdW forces.
-            lambdaVDW = 1.0;
-
-            // Applied to normal electrostatic parameters for alchemical atoms.
-            lambdaElec = 1.0;
-
-            if (torsionLambdaTerm) {
-                // Multiply torsional potentials by L^2 (dU/dL = 0 at L=0).
-                lambdaTorsion = pow(lambda, torsionalLambdaPower);
-                if (useMeld) {
-                    lambdaTorsion = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
-                }
-            }
-
-            if (elecLambdaTerm && vdwLambdaTerm) {
-                // Lambda effects both vdW and electrostatics.
-                if (lambda < electrostaticStart) {
-                    // Begin turning vdW on with electrostatics off.
-                    lambdaElec = 0.0;
-                } else {
-                    // Turn electrostatics on during the latter part of the path.
-                    double elecWindow = 1.0 - electrostaticStart;
-                    lambdaElec = (lambda - electrostaticStart) / elecWindow;
-                    lambdaElec = pow(lambdaElec, electrostaticLambdaPower);
-                }
-                lambdaVDW = lambda;
-                if (useMeld) {
-                    lambdaElec = sqrt(meldScaleFactor + lambda * (1.0 - meldScaleFactor));
-                    lambdaVDW = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
-                }
-            } else if (vdwLambdaTerm) {
-                // Lambda effects vdW, with electrostatics turned off.
-                lambdaElec = 0.0;
-                lambdaVDW = lambda;
-                if (useMeld) {
-                    lambdaVDW = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
-                }
-
-            } else if (elecLambdaTerm) {
-                // Lambda effects electrostatics, but not vdW.
-                lambdaElec = lambda;
-                if (useMeld) {
-                    lambdaElec = sqrt(meldScaleFactor + lambda * (1.0 - meldScaleFactor));
-                }
-            }
-        }
-
-        /**
          * Add an Andersen thermostat to the system.
          *
          * @param targetTemp Target temperature in Kelvins.
@@ -1866,6 +1846,135 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 logger.fine(format("  MC Move Frequency:    %6d", frequency));
             }
 
+        }
+
+        /**
+         * Calculate the number of degrees of freedom.
+         *
+         * @return Number of degrees of freedom.
+         */
+        public int calculateDegreesOfFreedom() {
+            // Begin from the 3 times the number of active atoms.
+            int dof = getNumberOfVariables();
+            // Remove OpenMM constraints.
+            dof = dof - OpenMM_System_getNumConstraints(system);
+            // Remove center of mass motion.
+            if (commRemover != null) {
+                dof -= 3;
+            }
+            return dof;
+        }
+
+        /**
+         * Destroy the system.
+         */
+        public void free() {
+            if (system != null) {
+                OpenMM_System_destroy(system);
+                system = null;
+            }
+        }
+
+        /**
+         * Print current lambda values.
+         */
+        public void printLambdaValues() {
+            logger.info(format("\n Lambda Values\n Torsion: %6.3f vdW: %6.3f Elec: %6.3f ", lambdaTorsion, lambdaVDW, lambdaElec));
+        }
+
+        /**
+         * Set the overall lambda value for the system.
+         */
+        public void setLambda(double lambda) {
+
+            // Initially set all lambda values to 1.0.
+            lambdaTorsion = 1.0;
+
+            // Applied to softcore vdW forces.
+            lambdaVDW = 1.0;
+
+            // Applied to normal electrostatic parameters for alchemical atoms.
+            lambdaElec = 1.0;
+
+            if (torsionLambdaTerm) {
+                // Multiply torsional potentials by L^2 (dU/dL = 0 at L=0).
+                lambdaTorsion = pow(lambda, torsionalLambdaPower);
+                if (useMeld) {
+                    lambdaTorsion = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
+                }
+            }
+
+            if (elecLambdaTerm && vdwLambdaTerm) {
+                // Lambda effects both vdW and electrostatics.
+                if (lambda < electrostaticStart) {
+                    // Begin turning vdW on with electrostatics off.
+                    lambdaElec = 0.0;
+                } else {
+                    // Turn electrostatics on during the latter part of the path.
+                    double elecWindow = 1.0 - electrostaticStart;
+                    lambdaElec = (lambda - electrostaticStart) / elecWindow;
+                    lambdaElec = pow(lambdaElec, electrostaticLambdaPower);
+                }
+                lambdaVDW = lambda;
+                if (useMeld) {
+                    lambdaElec = sqrt(meldScaleFactor + lambda * (1.0 - meldScaleFactor));
+                    lambdaVDW = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
+                }
+            } else if (vdwLambdaTerm) {
+                // Lambda effects vdW, with electrostatics turned off.
+                lambdaElec = 0.0;
+                lambdaVDW = lambda;
+                if (useMeld) {
+                    lambdaVDW = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
+                }
+
+            } else if (elecLambdaTerm) {
+                // Lambda effects electrostatics, but not vdW.
+                lambdaElec = lambda;
+                if (useMeld) {
+                    lambdaElec = sqrt(meldScaleFactor + lambda * (1.0 - meldScaleFactor));
+                }
+            }
+        }
+
+        /**
+         * Return a reference to the System.
+         *
+         * @return System referenece.
+         */
+        PointerByReference getSystem() {
+            return system;
+        }
+
+        /**
+         * Set the default values of the vectors defining the axes of the periodic box (measured in nm).
+         * <p>
+         * Any newly created Context will have its box vectors set to these.
+         * They will affect any Force added to the System that uses periodic boundary conditions.
+         * <p>
+         * Triclinic boxes are supported, but the vectors must satisfy certain requirements.
+         * In particular, a must point in the x direction,
+         * b must point "mostly" in the y direction,
+         * and c must point "mostly" in the z direction. See the documentation for details.
+         */
+        private void setDefaultPeriodicBoxVectors() {
+            Crystal crystal = getCrystal();
+            if (!crystal.aperiodic()) {
+                OpenMM_Vec3 a = new OpenMM_Vec3();
+                OpenMM_Vec3 b = new OpenMM_Vec3();
+                OpenMM_Vec3 c = new OpenMM_Vec3();
+                double[][] Ai = crystal.Ai;
+                a.x = Ai[0][0] * OpenMM_NmPerAngstrom;
+                a.y = Ai[0][1] * OpenMM_NmPerAngstrom;
+                a.z = Ai[0][2] * OpenMM_NmPerAngstrom;
+                b.x = Ai[1][0] * OpenMM_NmPerAngstrom;
+                b.y = Ai[1][1] * OpenMM_NmPerAngstrom;
+                b.z = Ai[1][2] * OpenMM_NmPerAngstrom;
+                c.x = Ai[2][0] * OpenMM_NmPerAngstrom;
+                c.y = Ai[2][1] * OpenMM_NmPerAngstrom;
+                c.z = Ai[2][2] * OpenMM_NmPerAngstrom;
+                OpenMM_System_setDefaultPeriodicBoxVectors(system, a, b, c);
+            }
         }
 
         /**
@@ -2812,7 +2921,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             IntByReference atomi = new IntByReference();
             IntByReference atomj = new IntByReference();
-            int[][] torsionMask = vdW.getTorsionMask();
+            int[][] torsionMask = vdW.getMask14();
 
             for (int i = 0; i < range; i++) {
                 OpenMM_NonbondedForce_getExceptionParameters(fixedChargeNonBondedForce, i, atomi, atomj, charge, sigma, eps);
@@ -3020,8 +3129,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 OpenMM_AmoebaVdwForce_setSoftcorePower(amoebaVDWForce, (int) vdwSoftcorePower);
             }
 
-            int[][] bondMask = vdW.getBondMask();
-            int[][] angleMask = vdW.getAngleMask();
+            int[][] bondMask = vdW.getMask12();
+            int[][] angleMask = vdW.getMask13();
 
             // Create exclusion lists.
             PointerByReference exclusions = OpenMM_IntArray_create(0);
@@ -3217,70 +3326,50 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             int[][] ip11 = pme.getPolarization11();
 
-            ArrayList<Integer> list12 = new ArrayList<>();
-            ArrayList<Integer> list13 = new ArrayList<>();
-            ArrayList<Integer> list14 = new ArrayList<>();
-
             PointerByReference covalentMap = OpenMM_IntArray_create(0);
             for (int i = 0; i < nAtoms; i++) {
                 Atom ai = atoms[i];
-                list12.clear();
-                list13.clear();
-                list14.clear();
 
-                for (Bond bond : ai.getBonds()) {
-                    int index = bond.get1_2(ai).getIndex() - 1;
-                    OpenMM_IntArray_append(covalentMap, index);
-                    list12.add(index);
+                // 1-2 Mask
+                OpenMM_IntArray_resize(covalentMap, 0);
+                for (Atom ak : ai.get12List()) {
+                    OpenMM_IntArray_append(covalentMap, ak.getIndex() - 1);
                 }
                 OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
                         OpenMM_AmoebaMultipoleForce_Covalent12, covalentMap);
-                OpenMM_IntArray_resize(covalentMap, 0);
 
-                for (Angle angle : ai.getAngles()) {
-                    Atom ak = angle.get1_3(ai);
-                    if (ak != null) {
-                        int index = ak.getIndex() - 1;
-                        if (!list12.contains(index)) {
-                            list13.add(index);
-                            OpenMM_IntArray_append(covalentMap, index);
-                        }
-                    }
+                // 1-3 Mask
+                OpenMM_IntArray_resize(covalentMap, 0);
+                for (Atom ak : ai.get13List()) {
+                    OpenMM_IntArray_append(covalentMap, ak.getIndex() - 1);
+
                 }
                 OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
                         OpenMM_AmoebaMultipoleForce_Covalent13, covalentMap);
-                OpenMM_IntArray_resize(covalentMap, 0);
 
-                for (Torsion torsion : ai.getTorsions()) {
-                    Atom ak = torsion.get1_4(ai);
-                    if (ak != null) {
-                        int index = ak.getIndex() - 1;
-                        if (!list12.contains(index) && !list13.contains(index)) {
-                            list14.add(index);
-                            OpenMM_IntArray_append(covalentMap, index);
-                        }
-                    }
+                // 1-4 Mask
+                OpenMM_IntArray_resize(covalentMap, 0);
+                for (Atom ak : ai.get14List()) {
+                    OpenMM_IntArray_append(covalentMap, ak.getIndex() - 1);
                 }
                 OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
                         OpenMM_AmoebaMultipoleForce_Covalent14, covalentMap);
-                OpenMM_IntArray_resize(covalentMap, 0);
 
-                for (Atom ak : ai.get1_5s()) {
-                    int index = ak.getIndex() - 1;
-                    if (!list12.contains(index) && !list13.contains(index) && !list14.contains(index)) {
-                        OpenMM_IntArray_append(covalentMap, index);
-                    }
+                // 1-5 Mask
+                OpenMM_IntArray_resize(covalentMap, 0);
+                for (Atom ak : ai.get15List()) {
+                    OpenMM_IntArray_append(covalentMap, ak.getIndex() - 1);
                 }
                 OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
                         OpenMM_AmoebaMultipoleForce_Covalent15, covalentMap);
-                OpenMM_IntArray_resize(covalentMap, 0);
 
+                // 1-1 Polarization Groups.
+                OpenMM_IntArray_resize(covalentMap, 0);
                 for (int j = 0; j < ip11[i].length; j++) {
                     OpenMM_IntArray_append(covalentMap, ip11[i][j]);
                 }
                 OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
                         OpenMM_AmoebaMultipoleForce_PolarizationCovalent11, covalentMap);
-                OpenMM_IntArray_resize(covalentMap, 0);
 
                 // AMOEBA does not scale between 1-2, 1-3, etc polarization groups.
             }
@@ -4149,6 +4238,22 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public class State {
         /**
+         * Potential energy (kcal/mol).
+         */
+        public final double potentialEnergy;
+        /**
+         * Kinetic energy (kcal/mol).
+         */
+        public final double kineticEnergy;
+        /**
+         * Total energy (kcal/mol).
+         */
+        public final double totalEnergy;
+        /**
+         * Temperature (K).
+         */
+        public final double temperature;
+        /**
          * Pointer to an OpenMM state.
          */
         final private PointerByReference state;
@@ -4168,22 +4273,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * If true. forces are available.
          */
         final private boolean forces;
-        /**
-         * Potential energy (kcal/mol).
-         */
-        public final double potentialEnergy;
-        /**
-         * Kinetic energy (kcal/mol).
-         */
-        public final double kineticEnergy;
-        /**
-         * Total energy (kcal/mol).
-         */
-        public final double totalEnergy;
-        /**
-         * Temperature (K).
-         */
-        public final double temperature;
 
         /**
          * Construct an OpenMM State with the requested information.
@@ -4233,74 +4322,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         public void free() {
             OpenMM_State_destroy(state);
-        }
-
-        /**
-         * The positions array contains the OpenMM atomic position information for all atoms.
-         * The returned array x contains coordinates only for active atoms.
-         *
-         * @param x Atomic coordinates only for active atoms.
-         * @return x The atomic coordinates for only active atoms.
-         */
-        public double[] getPositions(double[] x) {
-            if (!positions) {
-                return x;
-            }
-
-            int n = getNumberOfVariables();
-            if (x == null || x.length != n) {
-                x = new double[n];
-            }
-
-            PointerByReference positionsPointer = OpenMM_State_getPositions(state);
-            for (int i = 0, index = 0; i < nAtoms; i++) {
-                Atom atom = atoms[i];
-                if (atom.isActive()) {
-                    OpenMM_Vec3 pos = OpenMM_Vec3Array_get(positionsPointer, i);
-                    double xx = pos.x * OpenMM_AngstromsPerNm;
-                    double yy = pos.y * OpenMM_AngstromsPerNm;
-                    double zz = pos.z * OpenMM_AngstromsPerNm;
-                    x[index++] = xx;
-                    x[index++] = yy;
-                    x[index++] = zz;
-                    atom.moveTo(xx, yy, zz);
-                }
-            }
-            return x;
-        }
-
-        /**
-         * The positions array contains the OpenMM atomic position information for all atoms.
-         * The returned array x contains coordinates for active atoms only.
-         *
-         * @param v Velocity only for active atomic coordinates.
-         * @return v The velocity for each active atomic coordinate.
-         */
-        public double[] getVelocities(double[] v) {
-            if (!velocities) {
-                return v;
-            }
-
-            int n = getNumberOfVariables();
-            if (v == null || v.length != n) {
-                v = new double[n];
-            }
-
-            PointerByReference velocitiesPointer = OpenMM_State_getVelocities(state);
-            for (int i = 0, index = 0; i < nAtoms; i++) {
-                Atom atom = atoms[i];
-                if (atom.isActive()) {
-                    OpenMM_Vec3 vel = OpenMM_Vec3Array_get(velocitiesPointer, i);
-                    double xx = vel.x * OpenMM_AngstromsPerNm;
-                    double yy = vel.y * OpenMM_AngstromsPerNm;
-                    double zz = vel.z * OpenMM_AngstromsPerNm;
-                    v[index++] = xx;
-                    v[index++] = yy;
-                    v[index++] = zz;
-                    atom.setVelocity(xx, yy, zz);
-                }
-            }
-            return v;
         }
 
         /**
@@ -4416,6 +4437,74 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
 
+        /**
+         * The positions array contains the OpenMM atomic position information for all atoms.
+         * The returned array x contains coordinates only for active atoms.
+         *
+         * @param x Atomic coordinates only for active atoms.
+         * @return x The atomic coordinates for only active atoms.
+         */
+        public double[] getPositions(double[] x) {
+            if (!positions) {
+                return x;
+            }
+
+            int n = getNumberOfVariables();
+            if (x == null || x.length != n) {
+                x = new double[n];
+            }
+
+            PointerByReference positionsPointer = OpenMM_State_getPositions(state);
+            for (int i = 0, index = 0; i < nAtoms; i++) {
+                Atom atom = atoms[i];
+                if (atom.isActive()) {
+                    OpenMM_Vec3 pos = OpenMM_Vec3Array_get(positionsPointer, i);
+                    double xx = pos.x * OpenMM_AngstromsPerNm;
+                    double yy = pos.y * OpenMM_AngstromsPerNm;
+                    double zz = pos.z * OpenMM_AngstromsPerNm;
+                    x[index++] = xx;
+                    x[index++] = yy;
+                    x[index++] = zz;
+                    atom.moveTo(xx, yy, zz);
+                }
+            }
+            return x;
+        }
+
+        /**
+         * The positions array contains the OpenMM atomic position information for all atoms.
+         * The returned array x contains coordinates for active atoms only.
+         *
+         * @param v Velocity only for active atomic coordinates.
+         * @return v The velocity for each active atomic coordinate.
+         */
+        public double[] getVelocities(double[] v) {
+            if (!velocities) {
+                return v;
+            }
+
+            int n = getNumberOfVariables();
+            if (v == null || v.length != n) {
+                v = new double[n];
+            }
+
+            PointerByReference velocitiesPointer = OpenMM_State_getVelocities(state);
+            for (int i = 0, index = 0; i < nAtoms; i++) {
+                Atom atom = atoms[i];
+                if (atom.isActive()) {
+                    OpenMM_Vec3 vel = OpenMM_Vec3Array_get(velocitiesPointer, i);
+                    double xx = vel.x * OpenMM_AngstromsPerNm;
+                    double yy = vel.y * OpenMM_AngstromsPerNm;
+                    double zz = vel.z * OpenMM_AngstromsPerNm;
+                    v[index++] = xx;
+                    v[index++] = yy;
+                    v[index++] = zz;
+                    atom.setVelocity(xx, yy, zz);
+                }
+            }
+            return v;
+        }
+
 
     }
 
@@ -4431,115 +4520,5 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             system.free();
             system = null;
         }
-    }
-
-    /**
-     * Gets the default co-processor device, ignoring any CUDA_DEVICE over-ride.
-     * This is either determined by process rank and the
-     * availableDevices/CUDA_DEVICES property, or just 0 if neither property is
-     * sets.
-     *
-     * @param props Properties in use.
-     * @return Pre-override device index.
-     */
-    private static int getDefaultDevice(CompositeConfiguration props) {
-        String availDeviceProp = props.getString("availableDevices",
-                props.getString("CUDA_DEVICES"));
-        if (availDeviceProp == null) {
-            int nDevs = props.getInt("numCudaDevices", 1);
-            availDeviceProp = IntStream.range(0, nDevs).
-                    mapToObj(Integer::toString).
-                    collect(Collectors.joining(" "));
-        }
-        availDeviceProp = availDeviceProp.trim();
-
-        String[] availDevices = availDeviceProp.split("\\s+");
-        int nDevs = availDevices.length;
-        int[] devs = new int[nDevs];
-        for (int i = 0; i < nDevs; i++) {
-            devs[i] = Integer.parseInt(availDevices[i]);
-        }
-
-        logger.info(format(" Number of CUDA devices: %d.", nDevs));
-
-        int index = 0;
-        try {
-            Comm world = Comm.world();
-            if (world != null) {
-                int size = world.size();
-
-                // Format the host as a CharacterBuf of length 100.
-                int messageLen = 100;
-                String host = world.host();
-                // Truncate to max 100 characters.
-                host = host.substring(0, Math.min(messageLen, host.length()));
-                // Pad to 100 characters.
-                host = String.format("%-100s", host);
-                char[] messageOut = host.toCharArray();
-                CharacterBuf out = CharacterBuf.buffer(messageOut);
-
-                // Now create CharacterBuf array for all incoming messages.
-                char[][] incoming = new char[size][messageLen];
-                CharacterBuf[] in = new CharacterBuf[size];
-                for (int i = 0; i < size; i++) {
-                    in[i] = CharacterBuf.buffer(incoming[i]);
-                }
-
-                try {
-                    world.allGather(out, in);
-                } catch (IOException ex) {
-                    logger.severe(String.format(" Failure at the allGather step for determining rank: %s\n%s", ex, Utilities.stackTraceToString(ex)));
-                }
-                int ownIndex = -1;
-                int rank = world.rank();
-                boolean selfFound = false;
-
-                for (int i = 0; i < size; i++) {
-                    String hostI = new String(incoming[i]);
-                    if (hostI.equalsIgnoreCase(host)) {
-                        ++ownIndex;
-                        if (i == rank) {
-                            selfFound = true;
-                            break;
-                        }
-                    }
-                }
-                if (!selfFound) {
-                    logger.severe(String.format(" Rank %d: Could not find any incoming host messages matching self %s!", rank, host.trim()));
-                } else {
-                    index = ownIndex % nDevs;
-                }
-            }
-        } catch (IllegalStateException ise) {
-            // Behavior is just to keep index = 0.
-        }
-        return devs[index];
-    }
-
-    /**
-     * Create a JNA Pointer to a String.
-     *
-     * @param string WARNING: assumes ascii-only string
-     * @return pointer.
-     */
-    private static Pointer pointerForString(String string) {
-        Pointer pointer = new Memory(string.length() + 1);
-        pointer.setString(0, string);
-        return pointer;
-    }
-
-    /**
-     * Returns the platform array as a String
-     *
-     * @param stringArray The OpenMM String array.
-     * @param i           The index of the String to return.
-     * @return String The requested String.
-     */
-    private static String stringFromArray(PointerByReference stringArray, int i) {
-        Pointer platformPtr = OpenMM_StringArray_get(stringArray, i);
-        if (platformPtr == null) {
-            return null;
-        }
-        return platformPtr.getString(0);
     }
 }

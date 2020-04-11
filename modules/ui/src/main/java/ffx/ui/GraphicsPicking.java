@@ -41,6 +41,7 @@ import javax.swing.tree.TreePath;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -77,18 +78,11 @@ import static ffx.numerics.math.DoubleMath.dist;
  */
 public class GraphicsPicking extends PickMouseBehavior {
 
-    private static final Logger logger = Logger.getLogger(GraphicsPicking.class.getName());
-
-    public enum PickLevel {
-
-        PICKATOM, PICKBOND, PICKANGLE, PICKDIHEDRAL, PICKRESIDUE, PICKMOLECULE,
-        PICKPOLYMER, PICKSYSTEM, MEASUREDISTANCE, MEASUREANGLE, MEASUREDIHEDRAL
-    }
-
     /**
      * Constant <code>pickLevelHash</code>
      */
     static final Hashtable<String, PickLevel> pickLevelHash = new Hashtable<>();
+    private static final Logger logger = Logger.getLogger(GraphicsPicking.class.getName());
 
     static {
         PickLevel[] values = PickLevel.values();
@@ -120,7 +114,6 @@ public class GraphicsPicking extends PickMouseBehavior {
     private Transform3D systemTransform3D = new Transform3D();
     private Vector3d syspos = new Vector3d();
     private Vector3d atpos = new Vector3d();
-
     /**
      * Constructor
      *
@@ -155,29 +148,6 @@ public class GraphicsPicking extends PickMouseBehavior {
         atomCache.clear();
     }
 
-    private void distance(Atom atom, double[] pos) {
-        MolecularAssembly m = (MolecularAssembly) atom
-                .getMSNode(MolecularAssembly.class);
-        m.getTransformGroup().getTransform(systemTransform3D);
-        systemTransform3D.get(syspos);
-        systemTransform3D.setScale(1.0d);
-        systemTransform3D.setTranslation(new Vector3d(0, 0, 0));
-        atom.getV3D(atpos);
-        systemTransform3D.transform(atpos);
-        atpos.add(syspos);
-        atpos.get(pos);
-    }
-
-    /**
-     * <p>
-     * getPick</p>
-     *
-     * @return a {@link ffx.potential.bonded.MSNode} object.
-     */
-    MSNode getPick() {
-        return previousPick;
-    }
-
     /**
      * <p>
      * Getter for the field <code>picking</code>.</p>
@@ -190,84 +160,6 @@ public class GraphicsPicking extends PickMouseBehavior {
 
     /**
      * <p>
-     * Getter for the field <code>pickLevel</code>.</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    String getPickLevel() {
-        return pickLevel.toString();
-    }
-
-
-    private void measure() {
-        String measurement;
-        double value;
-        Atom a1, a2, a3, a4;
-        switch (pickLevel) {
-            case MEASUREDISTANCE:
-                if (atomCache.size() < 2) {
-                    return;
-                }
-                a1 = atomCache.get(0);
-                a2 = atomCache.get(1);
-                distance(a1, a);
-                distance(a2, b);
-                value = dist(a, b);
-                measurement = "\nDistance\t" + a1.getIndex() + ", " + a2.getIndex()
-                        + ":   \t" + format("%10.5f", value);
-                break;
-            case MEASUREANGLE:
-                if (atomCache.size() < 3) {
-                    return;
-                }
-                a1 = atomCache.get(0);
-                a2 = atomCache.get(1);
-                a3 = atomCache.get(2);
-                distance(a1, a);
-                distance(a2, b);
-                distance(a3, c);
-                value = bondAngle(a, b, c);
-                value = toDegrees(value);
-                measurement = "\nAngle\t" + a1.getIndex() + ", " + a2.getIndex() + ", "
-                        + a3.getIndex() + ":   \t" + format("%10.5f", value);
-                break;
-            case MEASUREDIHEDRAL:
-                if (atomCache.size() < 4) {
-                    return;
-                }
-                a1 = atomCache.get(0);
-                a2 = atomCache.get(1);
-                a3 = atomCache.get(2);
-                a4 = atomCache.get(3);
-                distance(a1, a);
-                distance(a2, b);
-                distance(a3, c);
-                distance(a4, d);
-                value = dihedralAngle(a, b, c, d);
-                value = toDegrees(value);
-                measurement = "\nDihedral\t" + a1.getIndex() + ", " + a2.getIndex()
-                        + ", " + a3.getIndex() + ", " + a4.getIndex() + ":\t"
-                        + format("%10.5f", value);
-                break;
-            default:
-                return;
-        }
-        logger.info(measurement);
-        ModelingShell modelingShell = mainPanel.getModelingShell();
-        modelingShell.setMeasurement(measurement, value);
-        count = 0;
-    }
-
-    /**
-     * <p>
-     * resetCount</p>
-     */
-    void resetCount() {
-        count = 0;
-    }
-
-    /**
-     * <p>
      * Setter for the field <code>picking</code>.</p>
      *
      * @param m a boolean.
@@ -276,18 +168,6 @@ public class GraphicsPicking extends PickMouseBehavior {
         picking = m;
         if (!picking) {
             clear();
-        }
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>pickLevel</code>.</p>
-     *
-     * @param newPick a {@link java.lang.String} object.
-     */
-    void setPickLevel(String newPick) {
-        if (pickLevelHash.containsKey(newPick.toUpperCase())) {
-            newPickLevel = pickLevelHash.get(newPick.toUpperCase());
         }
     }
 
@@ -364,7 +244,7 @@ public class GraphicsPicking extends PickMouseBehavior {
                         case PICKBOND:
                         case PICKANGLE:
                         case PICKDIHEDRAL:
-                            ArrayList terms;
+                            List terms;
                             if (pickLevel == PickLevel.PICKBOND) {
                                 terms = a.getBonds();
                             } else if (pickLevel == PickLevel.PICKANGLE) {
@@ -387,15 +267,15 @@ public class GraphicsPicking extends PickMouseBehavior {
                         case PICKSYSTEM:
                             MSNode dataNode;
                             if (pickLevel == PickLevel.PICKRESIDUE) {
-                                dataNode = (MSNode) a.getMSNode(Residue.class);
+                                dataNode = a.getMSNode(Residue.class);
                             } else if (pickLevel == PickLevel.PICKPOLYMER) {
-                                dataNode = (MSNode) a.getMSNode(Polymer.class);
+                                dataNode = a.getMSNode(Polymer.class);
                             } else if (pickLevel == PickLevel.PICKSYSTEM) {
-                                dataNode = (MSNode) a.getMSNode(MolecularAssembly.class);
+                                dataNode = a.getMSNode(MolecularAssembly.class);
                             } else {
-                                dataNode = (MSNode) a.getMSNode(Molecule.class);
+                                dataNode =  a.getMSNode(Molecule.class);
                                 if (dataNode == null) {
-                                    dataNode = (MSNode) a.getMSNode(Polymer.class);
+                                    dataNode = a.getMSNode(Polymer.class);
                                 }
                             }
                             currentPick = dataNode;
@@ -425,5 +305,122 @@ public class GraphicsPicking extends PickMouseBehavior {
                 }
             }
         }
+    }
+
+    public enum PickLevel {
+
+        PICKATOM, PICKBOND, PICKANGLE, PICKDIHEDRAL, PICKRESIDUE, PICKMOLECULE,
+        PICKPOLYMER, PICKSYSTEM, MEASUREDISTANCE, MEASUREANGLE, MEASUREDIHEDRAL
+    }
+
+    private void distance(Atom atom, double[] pos) {
+        MolecularAssembly m = atom.getMSNode(MolecularAssembly.class);
+        m.getTransformGroup().getTransform(systemTransform3D);
+        systemTransform3D.get(syspos);
+        systemTransform3D.setScale(1.0d);
+        systemTransform3D.setTranslation(new Vector3d(0, 0, 0));
+        atom.getV3D(atpos);
+        systemTransform3D.transform(atpos);
+        atpos.add(syspos);
+        atpos.get(pos);
+    }
+
+    /**
+     * <p>
+     * getPick</p>
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
+    MSNode getPick() {
+        return previousPick;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>pickLevel</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    String getPickLevel() {
+        return pickLevel.toString();
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>pickLevel</code>.</p>
+     *
+     * @param newPick a {@link java.lang.String} object.
+     */
+    void setPickLevel(String newPick) {
+        if (pickLevelHash.containsKey(newPick.toUpperCase())) {
+            newPickLevel = pickLevelHash.get(newPick.toUpperCase());
+        }
+    }
+
+    private void measure() {
+        String measurement;
+        double value;
+        Atom a1, a2, a3, a4;
+        switch (pickLevel) {
+            case MEASUREDISTANCE:
+                if (atomCache.size() < 2) {
+                    return;
+                }
+                a1 = atomCache.get(0);
+                a2 = atomCache.get(1);
+                distance(a1, a);
+                distance(a2, b);
+                value = dist(a, b);
+                measurement = "\nDistance\t" + a1.getIndex() + ", " + a2.getIndex()
+                        + ":   \t" + format("%10.5f", value);
+                break;
+            case MEASUREANGLE:
+                if (atomCache.size() < 3) {
+                    return;
+                }
+                a1 = atomCache.get(0);
+                a2 = atomCache.get(1);
+                a3 = atomCache.get(2);
+                distance(a1, a);
+                distance(a2, b);
+                distance(a3, c);
+                value = bondAngle(a, b, c);
+                value = toDegrees(value);
+                measurement = "\nAngle\t" + a1.getIndex() + ", " + a2.getIndex() + ", "
+                        + a3.getIndex() + ":   \t" + format("%10.5f", value);
+                break;
+            case MEASUREDIHEDRAL:
+                if (atomCache.size() < 4) {
+                    return;
+                }
+                a1 = atomCache.get(0);
+                a2 = atomCache.get(1);
+                a3 = atomCache.get(2);
+                a4 = atomCache.get(3);
+                distance(a1, a);
+                distance(a2, b);
+                distance(a3, c);
+                distance(a4, d);
+                value = dihedralAngle(a, b, c, d);
+                value = toDegrees(value);
+                measurement = "\nDihedral\t" + a1.getIndex() + ", " + a2.getIndex()
+                        + ", " + a3.getIndex() + ", " + a4.getIndex() + ":\t"
+                        + format("%10.5f", value);
+                break;
+            default:
+                return;
+        }
+        logger.info(measurement);
+        ModelingShell modelingShell = mainPanel.getModelingShell();
+        modelingShell.setMeasurement(measurement, value);
+        count = 0;
+    }
+
+    /**
+     * <p>
+     * resetCount</p>
+     */
+    void resetCount() {
+        count = 0;
     }
 }

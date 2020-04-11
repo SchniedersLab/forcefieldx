@@ -4076,7 +4076,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     final double zi = z[i];
                     final Atom ai = atoms[i];
                     if (iSymm == 0) {
-                        for (Atom ak : ai.get1_5s()) {
+                        for (Atom ak : ai.get15List()) {
                             masking_local[ak.getArrayIndex()] = m15scale;
                         }
                         for (Torsion torsion : ai.getTorsions()) {
@@ -4178,7 +4178,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                         count++;
                     }
                     if (iSymm == 0) {
-                        for (Atom ak : ai.get1_5s()) {
+                        for (Atom ak : ai.get15List()) {
                             int index = ak.getArrayIndex();
                             masking_local[index] = 1.0;
                             maskingp_local[index] = 1.0;
@@ -6316,7 +6316,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      */
     private void applyMaskingRules(boolean set, int i, double[] maskPerm, double[] maskPolD, double[] maskPolP) {
         final Atom ai = atoms[i];
-        for (Atom ak : ai.get1_5s()) {
+        for (Atom ak : ai.get15List()) {
             if (maskPerm != null) {
                 maskPerm[ak.getArrayIndex()] = (set) ? m15scale : 1.0;
             }

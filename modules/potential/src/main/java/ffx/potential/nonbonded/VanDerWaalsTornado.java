@@ -38,6 +38,7 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -467,13 +468,13 @@ public class VanDerWaalsTornado extends VanDerWaals {
 
             // Apply masks
             for (int ii = maskPointers[i3]; ii < maskPointers[i3 + 1]; ii++) {
-                mask[masks[ii]] = scale14;
+                mask[masks[ii]] = scale12;
             }
             for (int ii = maskPointers[i3 + 1]; ii < maskPointers[i3 + 2]; ii++) {
                 mask[masks[ii]] = scale13;
             }
             for (int ii = maskPointers[i3 + 2]; ii < maskPointers[i3 + 3]; ii++) {
-                mask[masks[ii]] = scale12;
+                mask[masks[ii]] = scale14;
             }
 
             // Inner loop over atoms.
@@ -666,6 +667,11 @@ public class VanDerWaalsTornado extends VanDerWaals {
             numTorsions += ai.getNumDihedrals();
         }
         mask = new int[numBonds + numAngles + numTorsions];
+
+        int[][] mask12 = getMask12();
+        int[][] mask13 = getMask13();
+        int[][] mask14 = getMask14();
+
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
@@ -692,7 +698,7 @@ public class VanDerWaalsTornado extends VanDerWaals {
                 return;
             }
             ai.setVDWType(type);
-            ArrayList<Bond> bonds = ai.getBonds();
+            List<Bond> bonds = ai.getBonds();
             numBonds = bonds.size();
             if (type.reductionFactor > 0.0 && numBonds == 1) {
                 Bond bond = bonds.get(0);
@@ -706,24 +712,16 @@ public class VanDerWaalsTornado extends VanDerWaals {
             }
             // Store bond mask for atom i.
             maskPointer[3 * i] = index;
-            ArrayList<Torsion> torsions = ai.getTorsions();
-            for (Torsion torsion : torsions) {
-                Atom ak = torsion.get1_4(ai);
-                if (ak != null) {
-                    mask[index++] = ak.getIndex() - 1;
-                }
+            for (int value : mask12[i]) {
+                mask[index++] = value;
             }
             maskPointer[3 * i + 1] = index;
-            ArrayList<Angle> angles = ai.getAngles();
-            for (Angle angle : angles) {
-                Atom ak = angle.get1_3(ai);
-                if (ak != null) {
-                    mask[index++] = ak.getIndex() - 1;
-                }
+            for (int value : mask13[i]) {
+                mask[index++] = value;
             }
             maskPointer[3 * i + 2] = index;
-            for (Bond bond : bonds) {
-                mask[index++] = bond.get1_2(ai).getIndex() - 1;
+            for (int value : mask14[i]) {
+                mask[index++] = value;
             }
         }
         maskPointer[3 * nAtoms] = index;

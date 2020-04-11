@@ -258,7 +258,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
             keep.clear();
             for (int j : list) {
                 Atom aj = atoms[j];
-                ArrayList<Bond> bonds = aj.getBonds();
+                List<Bond> bonds = aj.getBonds();
                 for (Bond b : bonds) {
                     Atom ak = b.get1_2(aj);
                     int k = ak.getIndex() - 1;
