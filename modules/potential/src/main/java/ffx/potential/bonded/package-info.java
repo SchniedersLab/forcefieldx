@@ -38,6 +38,10 @@
 /**
  * The Bonded package implements bonded molecular mechanics terms such as bonds, angles, torsions, etc.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.potential.bonded;
+
+import javax.annotation.ParametersAreNonnullByDefault;

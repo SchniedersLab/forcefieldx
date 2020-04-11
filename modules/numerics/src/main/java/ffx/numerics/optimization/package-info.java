@@ -40,6 +40,10 @@
  * The Optimization package implements the limited-memory Broyden-Fletcher-Goldfarb-Shanno (L-BFGS)
  * algorithm for large-scale multidimensional unconstrained optimization problems.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.numerics.optimization;
+
+import javax.annotation.ParametersAreNonnullByDefault;

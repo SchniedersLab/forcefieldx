@@ -41,6 +41,10 @@
  * complex numbers, vector operations, multipole tensors, multi-dimensional optimization,
  * special functions, splines and switching functions.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.numerics;
+
+import javax.annotation.ParametersAreNonnullByDefault;

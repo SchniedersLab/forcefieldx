@@ -42,4 +42,7 @@
  *
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package edu.rit.http;
+
+import javax.annotation.ParametersAreNonnullByDefault;

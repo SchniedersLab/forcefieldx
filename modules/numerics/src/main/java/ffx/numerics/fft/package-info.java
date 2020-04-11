@@ -40,6 +40,10 @@
  * The FFT package implements 1D and 3D FFTs of real or complex valued data,
  * including SMP parallelization of 3D transforms and convolution using the Parallel Java library.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.numerics.fft;
+
+import javax.annotation.ParametersAreNonnullByDefault;

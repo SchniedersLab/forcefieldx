@@ -39,6 +39,10 @@
 /**
  * The Math package implements complex numbers, a software square root, and vector operations.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.numerics.math;
+
+import javax.annotation.ParametersAreNonnullByDefault;

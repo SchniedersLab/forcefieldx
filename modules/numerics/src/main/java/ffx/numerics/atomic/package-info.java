@@ -39,6 +39,10 @@
 /**
  * The Atomic package has implementations of a double array that can be safely operated on by multiple threads.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.numerics.atomic;
+
+import javax.annotation.ParametersAreNonnullByDefault;

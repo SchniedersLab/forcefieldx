@@ -40,6 +40,10 @@
  * The Nonbonded package implements nonbonded molecular mechanics terms such as
  * van der Waals and Particle Mesh Ewald electrostastics.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.potential.nonbonded;
+
+import javax.annotation.ParametersAreNonnullByDefault;

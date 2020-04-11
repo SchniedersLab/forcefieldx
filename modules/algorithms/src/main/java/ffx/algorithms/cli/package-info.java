@@ -41,4 +41,7 @@
  *
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.algorithms.cli;
+
+import javax.annotation.ParametersAreNonnullByDefault;

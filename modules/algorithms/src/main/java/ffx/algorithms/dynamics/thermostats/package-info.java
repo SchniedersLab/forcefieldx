@@ -41,4 +41,7 @@
  *
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.algorithms.dynamics.thermostats;
+
+import javax.annotation.ParametersAreNonnullByDefault;

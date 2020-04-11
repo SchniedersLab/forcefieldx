@@ -39,6 +39,10 @@
 /**
  * The Integrate package implements 1D numerical integration.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.numerics.integrate;
+
+import javax.annotation.ParametersAreNonnullByDefault;

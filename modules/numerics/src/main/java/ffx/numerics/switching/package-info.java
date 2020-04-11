@@ -39,6 +39,10 @@
 /**
  * The Switching package implements univariate switching functions.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.numerics.switching;
+
+import javax.annotation.ParametersAreNonnullByDefault;

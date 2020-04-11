@@ -42,4 +42,7 @@
  *
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.algorithms.dynamics;
+
+import javax.annotation.ParametersAreNonnullByDefault;

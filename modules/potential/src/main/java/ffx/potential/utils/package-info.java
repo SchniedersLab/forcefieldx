@@ -40,6 +40,10 @@
  * The Utils package implements core functionality needed for using the Potential package,
  * such as opening and closing structure files, basic force field energy evaluations, etc.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.potential.utils;
+
+import javax.annotation.ParametersAreNonnullByDefault;

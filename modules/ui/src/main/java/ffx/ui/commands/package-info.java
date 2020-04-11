@@ -39,6 +39,10 @@
 /**
  * The Commands package implements a Client/Server interface between Force Field X and simulations.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.ui.commands;
+
+import javax.annotation.ParametersAreNonnullByDefault;

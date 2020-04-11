@@ -40,6 +40,10 @@
  * The Multipole package computes derivatives of 1/|<b>r</b>| via recursion to arbitrary order using
  * Cartesian multipoles in either a global frame or a quasi-internal frame.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.numerics.multipole;
+
+import javax.annotation.ParametersAreNonnullByDefault;

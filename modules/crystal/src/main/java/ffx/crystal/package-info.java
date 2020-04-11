@@ -35,10 +35,13 @@
 // exception statement from your version.
 //
 //******************************************************************************
-
 /**
  * The Crystal package implements space group symmetry and periodic boundary condition support.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.crystal;
+
+import javax.annotation.ParametersAreNonnullByDefault;

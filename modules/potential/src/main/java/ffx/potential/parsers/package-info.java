@@ -39,6 +39,10 @@
 /**
  * The Parsers package handles reading/writing files to/from the internal data structure.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.potential.parsers;
+
+import javax.annotation.ParametersAreNonnullByDefault;

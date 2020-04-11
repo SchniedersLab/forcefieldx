@@ -42,4 +42,7 @@
  *
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.algorithms.thermodynamics;
+
+import javax.annotation.ParametersAreNonnullByDefault;

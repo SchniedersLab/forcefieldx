@@ -40,6 +40,10 @@
  * The Parameters package stores force field atom types, bond types, etc,
  * and keywords that define the potential.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.potential.parameters;
+
+import javax.annotation.ParametersAreNonnullByDefault;

@@ -39,6 +39,10 @@
 /**
  * The UI package provides views and controllers for manipulating molecular systems.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.ui;
+
+import javax.annotation.ParametersAreNonnullByDefault;

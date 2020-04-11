@@ -326,6 +326,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${compiler.version}</version>
                     <configuration>
+                        <useIncrementalCompilation>true</useIncrementalCompilation>
                         <debug>true</debug>
                         <optimize>true</optimize>
                         <verbose>false</verbose>
@@ -599,7 +600,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler.version}</version>
                 <configuration>
-                    <useIncrementalCompilation>false</useIncrementalCompilation>
+                    <useIncrementalCompilation>true</useIncrementalCompilation>
                     <optimize>true</optimize>
                     <debug>true</debug>
                     <source>${compileVersion}</source>
@@ -1099,8 +1100,10 @@
         <commons-lang3.version>3.9</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
         <fastutil.version>8.3.0</fastutil.version>
+        <findbugs.version>3.0.2</findbugs.version>
         <groovy-all.version>3.0.0.1</groovy-all.version>
         <guava.version>28.1-jre</guava.version>
+        <jaxb-api.version>2.3.0</jaxb-api.version>
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.7.0-final</java3d.version>
         <jcuda.version>10.1.0</jcuda.version>
@@ -1167,9 +1170,14 @@
             <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
-            <version>2.3.0</version>
-            <type>jar</type>
+            <version>${jaxb-api.version}</version>
             <scope>compile</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305 -->
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>${findbugs.version}</version>
         </dependency>
     </dependencies>
 </project>

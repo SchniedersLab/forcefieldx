@@ -40,6 +40,10 @@
  * The Special package implements special functions including the complex error function (Erf)
  * and the modified Bessel functions.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.numerics.special;
+
+import javax.annotation.ParametersAreNonnullByDefault;

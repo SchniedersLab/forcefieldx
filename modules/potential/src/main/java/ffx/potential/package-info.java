@@ -39,6 +39,10 @@
 /**
  * The Potential package implements molecular mechanics force fields with shared memory Parallel Java and via OpenMM.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.potential;
+
+import javax.annotation.ParametersAreNonnullByDefault;

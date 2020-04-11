@@ -39,6 +39,10 @@
 /**
  * The X-ray package implements support for X-ray and Neutron refinement.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.xray;
+
+import javax.annotation.ParametersAreNonnullByDefault;

@@ -38,6 +38,10 @@
 /**
  * The Real Space package implements real space structure refinement.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.realspace;
+
+import javax.annotation.ParametersAreNonnullByDefault;

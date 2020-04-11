@@ -41,6 +41,10 @@
  * local and global optimization, molecular dynamics, free energy differences, etc,
  * with special support for crystal space groups.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx;
+
+import javax.annotation.ParametersAreNonnullByDefault;

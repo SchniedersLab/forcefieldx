@@ -42,4 +42,7 @@
  *
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.algorithms.optimize;
+
+import javax.annotation.ParametersAreNonnullByDefault;

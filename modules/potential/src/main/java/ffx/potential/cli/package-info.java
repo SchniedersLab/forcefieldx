@@ -39,6 +39,10 @@
 /**
  * The Potential CLI package defines reusable options for PicoCLI command line scripts.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.potential.cli;
+
+import javax.annotation.ParametersAreNonnullByDefault;

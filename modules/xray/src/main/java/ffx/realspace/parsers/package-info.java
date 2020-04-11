@@ -38,6 +38,10 @@
 /**
  * The Parsers package reads and writes CCP4 map files.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.realspace.parsers;
+
+import javax.annotation.ParametersAreNonnullByDefault;

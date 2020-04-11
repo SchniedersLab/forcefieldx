@@ -42,4 +42,7 @@
  *
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package edu.rit.io;
+
+import javax.annotation.ParametersAreNonnullByDefault;

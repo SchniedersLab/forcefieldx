@@ -40,6 +40,10 @@
  * The Utilities package implements a variety of useful Directory, File, Port, String, etc
  * functionality.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.utilities;
+
+import javax.annotation.ParametersAreNonnullByDefault;

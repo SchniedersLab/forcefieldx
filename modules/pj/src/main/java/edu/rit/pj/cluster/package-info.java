@@ -42,4 +42,7 @@
  *
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package edu.rit.pj.cluster;
+
+import javax.annotation.ParametersAreNonnullByDefault;

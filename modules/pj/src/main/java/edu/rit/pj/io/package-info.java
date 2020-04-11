@@ -44,4 +44,7 @@
  *
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package edu.rit.pj.io;
+
+import javax.annotation.ParametersAreNonnullByDefault;

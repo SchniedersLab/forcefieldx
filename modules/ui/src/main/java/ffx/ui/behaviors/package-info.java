@@ -39,6 +39,10 @@
 /**
  * The Behaviors package contains Java3D Behaviors that turn user actions into scenegraph changes.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.ui.behaviors;
+
+import javax.annotation.ParametersAreNonnullByDefault;

@@ -39,6 +39,10 @@
 /**
  * The Spline package implements implements B-splines and Tricubic splines.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.numerics.spline;
+
+import javax.annotation.ParametersAreNonnullByDefault;

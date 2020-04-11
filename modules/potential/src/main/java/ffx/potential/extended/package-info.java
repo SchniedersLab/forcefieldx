@@ -40,6 +40,10 @@
  * The Extended package is progress toward support for constant pH molecular dynamics
  * using extended system variables (i.e. lambda dynamics on protonation).
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
+@ParametersAreNonnullByDefault
 package ffx.potential.extended;
+
+import javax.annotation.ParametersAreNonnullByDefault;
