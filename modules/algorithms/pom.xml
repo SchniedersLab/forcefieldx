@@ -50,7 +50,7 @@
             </plugin>
             <plugin>
                 <!-- Copy scripts into the target/classes directory for inclusion in the jar
-                     Using the maven-resources-plugin, instead of using the build/resource pom section,
+                     using the maven-resources-plugin, instead of using the build/resource pom section,
                      prevents Intellij from classifying the Groovy source directory as a resource directory.
                 -->
                 <groupId>org.apache.maven.plugins</groupId>
