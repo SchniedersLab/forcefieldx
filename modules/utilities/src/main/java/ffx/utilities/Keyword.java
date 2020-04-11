@@ -160,26 +160,6 @@ public class Keyword {
     }
 
     /**
-     * <p>
-     * print</p>
-     */
-    public void print() {
-        logger.info(this.toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder(keyword + " ");
-        for (String s : data) {
-            sb.append(s);
-        }
-        return sb.toString();
-    }
-
-    /**
      * This method sets up configuration properties in the following precedence
      * * order:
      * <p>
@@ -300,5 +280,25 @@ public class Keyword {
         }
 
         return properties;
+    }
+
+    /**
+     * <p>
+     * print</p>
+     */
+    public void print() {
+        logger.info(this.toString());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(keyword + " ");
+        for (String s : data) {
+            sb.append(s);
+        }
+        return sb.toString();
     }
 }

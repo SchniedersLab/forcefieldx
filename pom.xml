@@ -1091,13 +1091,13 @@
         <!-- Specify versions of Dependencies to Use -->
         <biojava.version>5.3.0</biojava.version>
         <cdk.version>2.3</cdk.version>
-        <ciftools-java.version>0.9.1</ciftools-java.version>
+        <ciftools-java.version>0.10.0</ciftools-java.version>
         <clustering.version>1.2.0</clustering.version>
         <commons-beanutils.version>1.9.3</commons-beanutils.version>
         <commons-collections4.version>4.4</commons-collections4.version>
-        <commons-configuration2.version>2.6</commons-configuration2.version>
+        <commons-configuration2.version>2.7</commons-configuration2.version>
         <commons-io.version>2.6</commons-io.version>
-        <commons-lang3.version>3.9</commons-lang3.version>
+        <commons-lang3.version>3.10</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
         <fastutil.version>8.3.0</fastutil.version>
         <findbugs.version>3.0.2</findbugs.version>
