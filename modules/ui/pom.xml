@@ -273,12 +273,6 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>javax.help</groupId>
-            <artifactId>javahelp</artifactId>
-            <type>jar</type>
-            <version>${javahelp.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-io</artifactId>
             <type>jar</type>

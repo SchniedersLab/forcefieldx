@@ -1104,7 +1104,6 @@
         <groovy-all.version>3.0.0.1</groovy-all.version>
         <guava.version>28.1-jre</guava.version>
         <jaxb-api.version>2.3.0</jaxb-api.version>
-        <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.7.0-final</java3d.version>
         <jcuda.version>10.1.0</jcuda.version>
         <jna.version>4.1.0</jna.version>

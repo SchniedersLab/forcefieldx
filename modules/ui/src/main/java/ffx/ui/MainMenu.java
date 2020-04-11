@@ -330,12 +330,6 @@ public class MainMenu extends JMenuBar {
         globalAxisCBMI.setSelected(true);
         toolBar.addSeparator();
 
-        // Help Menu - Events handled by the MainPanel.
-        Action a = addMenuItem(helpMenu, icons + "help", "HelpContents", 'H', KeyEvent.VK_HELP, f);
-
-        // Fix the ACCELERATOR_KEY for the Help menu item; no modifiers will be used.
-        a.putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_HELP, 0));
-
         addMenuItem(helpMenu, "BLANK", "About", 'A', -1, f);
     }
 

@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.ui;
 
-import javax.help.HelpSet;
-import javax.help.JHelp;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
@@ -383,32 +381,6 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * <p>
-     * help</p>
-     */
-    private void help() {
-        String helpHS = "ffx/help/jhelpset.hs";
-        ClassLoader cl = getClass().getClassLoader();
-        HelpSet hs;
-        try {
-            URL hsURL = HelpSet.findHelpSet(cl, helpHS);
-            hs = new HelpSet(null, hsURL);
-        } catch (Exception e) {
-            logger.warning("HelpSet not found: " + e);
-            return;
-        }
-        JHelp jhelp = new JHelp(hs);
-        JFrame helpFrame = new JFrame();
-        JFrame.setDefaultLookAndFeelDecorated(true);
-        helpFrame.add(jhelp);
-        helpFrame.setTitle("Force Field X Help");
-        helpFrame.setSize(jhelp.getPreferredSize());
-        helpFrame.setVisible(true);
-        jhelp.setCurrentID("ForceFieldXBook");
-        helpFrame.toFront();
-    }
-
-    /**
-     * <p>
      * about</p>
      */
     public void about() {
@@ -520,9 +492,6 @@ public final class MainPanel extends JPanel implements ActionListener,
             resizePanes(20);
         } else if (arg.equals("ExpandGraphicsWindow")) {
             resizePanes(-20);
-            // Help
-        } else if (arg.equals("HelpContents")) {
-            help();
         } else if (arg.equals("About")) {
             about();
             // Others
