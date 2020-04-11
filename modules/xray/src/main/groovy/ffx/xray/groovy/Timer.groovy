@@ -136,7 +136,7 @@ class Timer extends AlgorithmsScript {
             if (timerOptions.noGradient) {
                 e = energy.energy(x)
             } else {
-                e = energy.energyAndGradient(x,g)
+                e = energy.energyAndGradient(x, g)
             }
             time += System.nanoTime()
             logger.info(String.format(" Target energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
@@ -151,7 +151,6 @@ class Timer extends AlgorithmsScript {
         double rmsTime = Math.sqrt(sumTime2 / halfnEvals)
         logger.info(String.format("\n Minimum time:           %6.3f (sec)", minTime * 1.0E-9))
         logger.info(String.format(" RMS time (latter half): %6.3f (sec)", rmsTime))
-
 
 
         return this

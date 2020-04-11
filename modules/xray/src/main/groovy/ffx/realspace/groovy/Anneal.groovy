@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.realspace.groovy
 
+import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
@@ -47,7 +48,7 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.cli.WriteoutOptions
 import ffx.realspace.cli.RealSpaceOptions
 import ffx.xray.RefinementEnergy
-import org.apache.commons.io.FilenameUtils
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters

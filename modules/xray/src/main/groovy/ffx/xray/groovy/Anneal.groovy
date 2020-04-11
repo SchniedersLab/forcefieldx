@@ -37,18 +37,20 @@
 //******************************************************************************
 package ffx.xray.groovy
 
-import ffx.algorithms.optimize.anneal.SimulatedAnnealing
-import ffx.potential.cli.WriteoutOptions
 import org.apache.commons.configuration2.CompositeConfiguration
+import org.apache.commons.io.FilenameUtils
+
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.optimize.anneal.SimulatedAnnealing
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.potential.cli.WriteoutOptions
 import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
 import ffx.xray.cli.XrayOptions
-import org.apache.commons.io.FilenameUtils
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters

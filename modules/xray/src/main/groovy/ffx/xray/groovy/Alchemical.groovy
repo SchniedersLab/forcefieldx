@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.xray.groovy
 
-import ffx.algorithms.thermodynamics.HistogramSettings
-
 import java.util.logging.Logger
 
 import org.apache.commons.configuration2.CompositeConfiguration
@@ -51,6 +49,7 @@ import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.integrators.IntegratorEnum
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum
+import ffx.algorithms.thermodynamics.HistogramSettings
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.OptimizationParameters
 import ffx.numerics.Potential

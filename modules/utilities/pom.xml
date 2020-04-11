@@ -15,17 +15,8 @@
     <packaging>jar</packaging>
     <name>Utilities</name>
     <description>
-        The Utilities module includes support for byte-swapping, keywords
-        and Hybrid36.
+        The Utilities module includes support for byte-swapping, keywords and Hybrid36.
     </description>
-    <build>
-        <resources>
-            <resource>
-                <directory>${basedir}/src/main/groovy/ffx/utilities/groovy</directory>
-                <targetPath>ffx/scripts</targetPath>
-            </resource>
-        </resources>
-    </build>
     <dependencies>
         <dependency>
             <groupId>info.picocli</groupId>

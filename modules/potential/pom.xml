@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -68,6 +68,34 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <!-- Copy scripts into the target/classes directory for inclusion in the jar
+                     Using the maven-resources-plugin, instead of using the build/resource pom section,
+                     prevents Intellij from classifying the Groovy source directory as a resource directory.
+                -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${resources.version}</version>
+                <executions>
+                    <execution>
+                        <id>jar-scripts</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <encoding>UTF-8</encoding>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/groovy/ffx/potential/groovy</directory>
+                                </resource>
+                            </resources>
+                            <outputDirectory>target/classes/ffx/scripts</outputDirectory>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <resources>
             <resource>
@@ -85,10 +113,6 @@
                 <includes>
                     <include>*</include>
                 </includes>
-            </resource>
-            <resource>
-                <directory>${basedir}/src/main/groovy/ffx/potential/groovy</directory>
-                <targetPath>ffx/scripts</targetPath>
             </resource>
         </resources>
     </build>

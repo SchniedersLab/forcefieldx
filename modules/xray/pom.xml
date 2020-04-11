@@ -75,6 +75,28 @@
                 <inherited>false</inherited>
                 <executions>
                     <execution>
+                        <id>jar-scripts</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <encoding>UTF-8</encoding>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/main/groovy/ffx/xray/groovy</directory>
+                                    <targetPath>xray</targetPath>
+                                </resource>
+                                <resource>
+                                    <directory>${basedir}/src/main/groovy/ffx/realspace/groovy</directory>
+                                    <targetPath>realspace</targetPath>
+                                </resource>
+                            </resources>
+                            <outputDirectory>target/classes/ffx/scripts</outputDirectory>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>website-scripts</id>
                         <phase>process-resources</phase>
                         <goals>
@@ -120,14 +142,6 @@
             </plugin>
         </plugins>
         <resources>
-            <resource>
-                <directory>${basedir}/src/main/groovy/ffx/xray/groovy</directory>
-                <targetPath>ffx/scripts/xray</targetPath>
-            </resource>
-            <resource>
-                <directory>${basedir}/src/main/groovy/ffx/realspace/groovy</directory>
-                <targetPath>ffx/scripts/realspace</targetPath>
-            </resource>
             <resource>
                 <directory>${basedir}/src/main/java/ffx/xray/structures</directory>
                 <targetPath>ffx/xray/structures</targetPath>

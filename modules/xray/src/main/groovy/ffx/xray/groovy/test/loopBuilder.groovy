@@ -439,8 +439,8 @@ if (runOST) {
 
     boolean asynchronous = true;
     Potential ost = new OrthogonalSpaceTempering(refinementEnergy, refinementEnergy,
-                lambdaRestart, histogramRestart, active.getProperties(),
-                (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
+            lambdaRestart, histogramRestart, active.getProperties(),
+            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     ost.setLambda(lambda);
     ost.setThetaMass(5.0e-19);
     ost.getOptimizationParameters().setOptimization(true, active);
