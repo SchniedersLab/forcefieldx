@@ -40,7 +40,6 @@ package ffx.potential.bonded;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import ffx.potential.parameters.ForceField;
@@ -64,6 +63,7 @@ public class RelativeSolvation {
      * Solvation library in use.
      */
     private SolvationLibrary solvationLibrary;
+
     /**
      * <p>Constructor for RelativeSolvation.</p>
      *

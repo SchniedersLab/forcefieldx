@@ -38,7 +38,6 @@
 package ffx.algorithms.cli;
 
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import ffx.algorithms.dynamics.Barostat;
@@ -55,8 +54,6 @@ import picocli.CommandLine.Option;
  * @since 1.0
  */
 public class BarostatOptions {
-
-    private static final Logger logger = Logger.getLogger(BarostatOptions.class.getName());
 
     /**
      * Default maximum density constraint on the barostat that prevents reduction in unit cell
@@ -80,7 +77,7 @@ public class BarostatOptions {
      * Default mean number of MD steps (Poisson distribution) between barostat move proposals.
      */
     public static final int DEFAULT_BAROSTAT_INTERVAL = 10;
-
+    private static final Logger logger = Logger.getLogger(BarostatOptions.class.getName());
     /**
      * -p or --npt Specify use of a MC Barostat at the given pressure (default 0 = constant volume).
      */

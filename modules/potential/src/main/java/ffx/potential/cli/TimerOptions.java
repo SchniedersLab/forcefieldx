@@ -44,7 +44,6 @@ import picocli.CommandLine.Option;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class TimerOptions {
     /**
@@ -85,21 +84,21 @@ public class TimerOptions {
     }
 
     /**
-     * <p>Getter for the field <code>threads</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getThreads() {
-        return threads;
-    }
-
-    /**
      * <p>Getter for the field <code>noGradient</code>.</p>
      *
      * @return a boolean.
      */
     public boolean getNoGradient() {
         return noGradient;
+    }
+
+    /**
+     * <p>Getter for the field <code>threads</code>.</p>
+     *
+     * @return a int.
+     */
+    public int getThreads() {
+        return threads;
     }
 
     /**

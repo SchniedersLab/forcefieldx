@@ -49,7 +49,6 @@ import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.ReplicaExchange
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
-import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.WriteoutOptions
 

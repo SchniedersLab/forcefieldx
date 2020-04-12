@@ -241,6 +241,24 @@ public class DiffractionFile {
     }
 
     /**
+     * <p>getDiffractionfilter.</p>
+     *
+     * @return the diffractionFilter
+     */
+    public DiffractionFileFilter getDiffractionfilter() {
+        return diffractionFilter;
+    }
+
+    /**
+     * <p>getFilename.</p>
+     *
+     * @return the fileName
+     */
+    public String getFilename() {
+        return fileName;
+    }
+
+    /**
      * return the weight of this dataset
      *
      * @return weight wA
@@ -256,24 +274,6 @@ public class DiffractionFile {
      */
     public boolean isNeutron() {
         return neutron;
-    }
-
-    /**
-     * <p>getFilename.</p>
-     *
-     * @return the fileName
-     */
-    public String getFilename() {
-        return fileName;
-    }
-
-    /**
-     * <p>getDiffractionfilter.</p>
-     *
-     * @return the diffractionFilter
-     */
-    public DiffractionFileFilter getDiffractionfilter() {
-        return diffractionFilter;
     }
 
 }

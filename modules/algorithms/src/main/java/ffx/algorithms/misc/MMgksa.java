@@ -47,7 +47,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
-import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.PotentialsFunctions;
 
@@ -69,6 +68,7 @@ public class MMgksa {
     private final Atom[] proteinAtoms;
     private final Atom[] ligandAtoms;
     private final boolean docking;
+    private final EnergyTerm gksaTerm;
     private Atom[] ignoreAtoms;
     private double elecWt = 1.0;
     private double solvWt = 1.0;
@@ -80,7 +80,6 @@ public class MMgksa {
      */
     private NonPolar nonPolar = NonPolar.NONE;
     private EnergyTerm[] terms;
-    private final EnergyTerm gksaTerm;
 
     /**
      * Constructs an MMgksa instance on a single assembly (not for binding).
@@ -134,15 +133,93 @@ public class MMgksa {
     }
 
     /**
-     * Sets atoms to be ignored entirely.
+     * Evaluates binding or average protein energy.
      *
-     * @param ignored an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param frequency Evaluate energy every X frames
      */
-    public void setIgnoredAtoms(Atom[] ignored) {
-        ignoreAtoms = new Atom[ignored.length];
-        System.arraycopy(ignored, 0, ignoreAtoms, 0, ignored.length);
-        for (Atom atom : ignoreAtoms) {
-            atom.setUse(false);
+    public void runMMgksa(int frequency) {
+        runMMgksa(frequency, -1);
+    }
+
+    /**
+     * <p>runMMgksa.</p>
+     *
+     * @param frequency a int.
+     * @param maxEvals  a int.
+     */
+    public void runMMgksa(int frequency, int maxEvals) {
+        setEnergyTerms();
+        int nTerms = terms.length;
+        double[] meanE = new double[nTerms];
+        double meanGKSA = 0.0;
+        Arrays.fill(meanE, 0.0);
+        int nEvals = 0;
+        int counter = 0;
+        do {
+            if (counter++ % frequency != 0) {
+                continue;
+            }
+            ++nEvals;
+            double[] totE = currentEnergies();
+            double totGKSA = gksaTerm.en();
+            if (docking) {
+                for (Atom atom : ligandAtoms) {
+                    atom.setUse(false);
+                }
+                double[] protE = currentEnergies();
+                double protGKSA = gksaTerm.en();
+                for (Atom atom : ligandAtoms) {
+                    atom.setUse(true);
+                }
+
+                for (Atom atom : proteinAtoms) {
+                    atom.setUse(false);
+                }
+                double[] ligE = currentEnergies();
+                double ligGKSA = gksaTerm.en();
+                for (Atom atom : proteinAtoms) {
+                    atom.setUse(true);
+                }
+
+                double[] snapE = new double[nTerms];
+                for (int i = 0; i < nTerms; i++) {
+                    snapE[i] = totE[i] - (protE[i] + ligE[i]);
+                }
+                double snapGKSA = totGKSA - (protGKSA + ligGKSA);
+
+                for (int i = 0; i < nTerms; i++) {
+                    meanE[i] += (snapE[i] - meanE[i]) / nEvals;
+                }
+                meanGKSA += (snapGKSA - meanGKSA) / nEvals;
+
+                logger.info(String.format(" %10d frames read, %10d frames "
+                        + "evaluated", counter, nEvals));
+                logger.info(formatHeader());
+                logger.info(formatEnergy("Running Mean", meanGKSA, meanE));
+                logger.info(formatEnergy("Snapshot", snapGKSA, snapE));
+                logger.info(formatEnergy("Complex", totGKSA, totE));
+                logger.info(formatEnergy("Protein", protGKSA, protE));
+                logger.info(formatEnergy("Ligand", ligGKSA, ligE));
+            }
+        } while (filter.readNext() && (maxEvals < 0 || nEvals < maxEvals));
+
+        logger.info(String.format(" MM-GKSA evaluation complete, %10d frames "
+                + "read, %11.6f kcal/mol mean energy", nEvals, meanGKSA));
+        filter.closeReader();
+    }
+
+    /**
+     * <p>Setter for the field <code>decompose</code>.</p>
+     *
+     * @param decompose a boolean.
+     */
+    public void setDecompose(boolean decompose) {
+        this.decompose = decompose;
+        try {
+            String cavModel = mola.getForceField().getString("CAVMODEL", "CAV_DISP").toUpperCase();
+            nonPolar = GeneralizedKirkwood.getNonPolarModel(cavModel);
+        } catch (Exception ex) {
+            nonPolar = NonPolar.NONE;
         }
     }
 
@@ -153,6 +230,19 @@ public class MMgksa {
      */
     public void setElectrostaticsWeight(double eWt) {
         this.elecWt = eWt;
+    }
+
+    /**
+     * Sets atoms to be ignored entirely.
+     *
+     * @param ignored an array of {@link ffx.potential.bonded.Atom} objects.
+     */
+    public void setIgnoredAtoms(Atom[] ignored) {
+        ignoreAtoms = new Atom[ignored.length];
+        System.arraycopy(ignored, 0, ignoreAtoms, 0, ignored.length);
+        for (Atom atom : ignoreAtoms) {
+            atom.setUse(false);
+        }
     }
 
     /**
@@ -174,12 +264,37 @@ public class MMgksa {
     }
 
     /**
-     * Evaluates binding or average protein energy.
-     *
-     * @param frequency Evaluate energy every X frames
+     * Functional interface for above.
      */
-    public void runMMgksa(int frequency) {
-        runMMgksa(frequency, -1);
+    private interface getE {
+        public double getEnergy();
+    }
+
+    /**
+     * Has a name, and some method to grab an energy.
+     */
+    private class EnergyTerm {
+        private final String name;
+        private final getE method;
+
+        public EnergyTerm(String name, getE method) {
+            this.name = name;
+            this.method = method;
+        }
+
+        public double en() {
+            //return method.getEnergy(energy);
+            return method.getEnergy();
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String toString() {
+            return getName();
+        }
     }
 
     /**
@@ -254,21 +369,6 @@ public class MMgksa {
     }
 
     /**
-     * <p>Setter for the field <code>decompose</code>.</p>
-     *
-     * @param decompose a boolean.
-     */
-    public void setDecompose(boolean decompose) {
-        this.decompose = decompose;
-        try {
-            String cavModel = mola.getForceField().getString("CAVMODEL", "CAV_DISP").toUpperCase();
-            nonPolar = GeneralizedKirkwood.getNonPolarModel(cavModel);
-        } catch (Exception ex) {
-            nonPolar = NonPolar.NONE;
-        }
-    }
-
-    /**
      * Evaluates and decomposes energy of the system.
      *
      * @return MMGKSA energy components.
@@ -281,73 +381,6 @@ public class MMgksa {
             energies[i] = terms[i].en();
         }
         return energies;
-    }
-
-    /**
-     * <p>runMMgksa.</p>
-     *
-     * @param frequency a int.
-     * @param maxEvals  a int.
-     */
-    public void runMMgksa(int frequency, int maxEvals) {
-        setEnergyTerms();
-        int nTerms = terms.length;
-        double[] meanE = new double[nTerms];
-        double meanGKSA = 0.0;
-        Arrays.fill(meanE, 0.0);
-        int nEvals = 0;
-        int counter = 0;
-        do {
-            if (counter++ % frequency != 0) {
-                continue;
-            }
-            ++nEvals;
-            double[] totE = currentEnergies();
-            double totGKSA = gksaTerm.en();
-            if (docking) {
-                for (Atom atom : ligandAtoms) {
-                    atom.setUse(false);
-                }
-                double[] protE = currentEnergies();
-                double protGKSA = gksaTerm.en();
-                for (Atom atom : ligandAtoms) {
-                    atom.setUse(true);
-                }
-
-                for (Atom atom : proteinAtoms) {
-                    atom.setUse(false);
-                }
-                double[] ligE = currentEnergies();
-                double ligGKSA = gksaTerm.en();
-                for (Atom atom : proteinAtoms) {
-                    atom.setUse(true);
-                }
-
-                double[] snapE = new double[nTerms];
-                for (int i = 0; i < nTerms; i++) {
-                    snapE[i] = totE[i] - (protE[i] + ligE[i]);
-                }
-                double snapGKSA = totGKSA - (protGKSA + ligGKSA);
-
-                for (int i = 0; i < nTerms; i++) {
-                    meanE[i] += (snapE[i] - meanE[i]) / nEvals;
-                }
-                meanGKSA += (snapGKSA - meanGKSA) / nEvals;
-
-                logger.info(String.format(" %10d frames read, %10d frames "
-                        + "evaluated", counter, nEvals));
-                logger.info(formatHeader());
-                logger.info(formatEnergy("Running Mean", meanGKSA, meanE));
-                logger.info(formatEnergy("Snapshot", snapGKSA, snapE));
-                logger.info(formatEnergy("Complex", totGKSA, totE));
-                logger.info(formatEnergy("Protein", protGKSA, protE));
-                logger.info(formatEnergy("Ligand", ligGKSA, ligE));
-            }
-        } while (filter.readNext() && (maxEvals < 0 || nEvals < maxEvals));
-
-        logger.info(String.format(" MM-GKSA evaluation complete, %10d frames "
-                + "read, %11.6f kcal/mol mean energy", nEvals, meanGKSA));
-        filter.closeReader();
     }
 
     private String formatHeader() {
@@ -365,39 +398,5 @@ public class MMgksa {
             sb.append(String.format("  %13.5f", e));
         }
         return sb.toString();
-    }
-
-    /**
-     * Has a name, and some method to grab an energy.
-     */
-    private class EnergyTerm {
-        private final String name;
-        private final getE method;
-
-        public EnergyTerm(String name, getE method) {
-            this.name = name;
-            this.method = method;
-        }
-
-        public double en() {
-            //return method.getEnergy(energy);
-            return method.getEnergy();
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public String toString() {
-            return getName();
-        }
-    }
-
-    /**
-     * Functional interface for above.
-     */
-    private interface getE {
-        public double getEnergy();
     }
 }

@@ -51,7 +51,6 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum
 import ffx.algorithms.mc.MCLoop
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing
-
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.OptimizationParameters
 import ffx.numerics.Potential
@@ -407,7 +406,7 @@ if (runOST) {
 
     Potential orthogonalSpaceTempering = new OrthogonalSpaceTempering(forceFieldEnergy, forceFieldEnergy,
             lambdaRestart, histogramRestart, active.getProperties(),
-                temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
 
     orthogonalSpaceTempering.setLambda(lambda);
     orthogonalSpaceTempering.setThetaMass(1.0e-19);

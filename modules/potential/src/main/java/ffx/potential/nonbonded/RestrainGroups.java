@@ -249,15 +249,6 @@ public class RestrainGroups {
     }
 
     /**
-     * Get the number of group restraints.
-     *
-     * @return The number of group restraints.
-     */
-    public int getNumberOfRestraints() {
-        return nRestraints;
-    }
-
-    /**
      * Compute energy and derivatives for group distance restraint terms.
      *
      * @param gradient If true, compute the derivative.
@@ -351,6 +342,15 @@ public class RestrainGroups {
             }
         }
         return energy;
+    }
+
+    /**
+     * Get the number of group restraints.
+     *
+     * @return The number of group restraints.
+     */
+    public int getNumberOfRestraints() {
+        return nRestraints;
     }
 
 }

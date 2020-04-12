@@ -83,12 +83,22 @@ public class RelativeSolvationType extends BaseType implements Comparator<String
     }
 
     /**
-     * <p>Getter for the field <code>solvEnergy</code>.</p>
-     *
-     * @return a double.
+     * {@inheritDoc}
      */
-    public double getSolvEnergy() {
-        return solvEnergy;
+    @Override
+    public int compare(String o1, String o2) {
+        return o1.compareTo(o2);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof RelativeSolvationType) {
+            return ((RelativeSolvationType) o).getResName().equals(resName);
+        }
+        return false;
     }
 
     /**
@@ -98,6 +108,23 @@ public class RelativeSolvationType extends BaseType implements Comparator<String
      */
     public String getResName() {
         return resName;
+    }
+
+    /**
+     * <p>Getter for the field <code>solvEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getSolvEnergy() {
+        return solvEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(resName);
     }
 
     /**
@@ -129,33 +156,6 @@ public class RelativeSolvationType extends BaseType implements Comparator<String
     @Override
     public String toString() {
         return format("relative solvation %10s %8.5f", resName, solvEnergy);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compare(String o1, String o2) {
-        return o1.compareTo(o2);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof RelativeSolvationType) {
-            return ((RelativeSolvationType) o).getResName().equals(resName);
-        }
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(resName);
     }
 
 }

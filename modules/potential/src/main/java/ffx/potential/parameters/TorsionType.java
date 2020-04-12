@@ -63,15 +63,6 @@ import static ffx.potential.parameters.ForceField.ForceFieldType.TORSION;
 public final class TorsionType extends BaseType implements Comparator<String> {
 
     private static final Logger logger = Logger.getLogger(TorsionType.class.getName());
-
-    /**
-     * Torsion modes include Normal or In-Plane
-     */
-    public enum TorsionMode {
-
-        NORMAL, IMPROPER
-    }
-
     /**
      * Atom classes that for this Torsion angle.
      */
@@ -104,7 +95,6 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      * The torsion mode in use.
      */
     private final TorsionMode torsionMode;
-
     /**
      * TorsionType Constructor.
      *
@@ -166,67 +156,6 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>setScaleFactor.</p>
-     *
-     * @param scale a double.
-     */
-    void setScaleFactor(double scale) {
-        for (int i = 0; i < amplitude.length; i++) {
-            amplitude[i] *= scale;
-        }
-    }
-
-    /**
-     * <p>
-     * incrementClasses</p>
-     *
-     * @param increment a int.
-     */
-    public void incrementClasses(int increment) {
-        for (int i = 0; i < atomClasses.length; i++) {
-            if (atomClasses[i] != 0) {
-                atomClasses[i] += increment;
-            }
-        }
-        setKey(sortKey(atomClasses));
-    }
-
-    /**
-     * Remap new atom classes to known internal ones.
-     *
-     * @param typeMap a lookup between new atom types and known atom types.
-     * @return a {@link ffx.potential.parameters.TorsionType} object.
-     */
-    public TorsionType patchClasses(HashMap<AtomType, AtomType> typeMap) {
-        int count = 0;
-        int len = atomClasses.length;
-
-        // Look for new TorsionTypes that contain 1 to 3 mapped atom classes.
-        for (AtomType newType : typeMap.keySet()) {
-            for (int atomClass : atomClasses) {
-                if (atomClass == newType.atomClass) {
-                    count++;
-                }
-            }
-        }
-
-        // If found, create a new TorsionType that bridges to known classes.
-        if (count == 1 || count == 2 || count == 3) {
-            int[] newClasses = copyOf(atomClasses, len);
-            for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < len; i++) {
-                    if (atomClasses[i] == newType.atomClass) {
-                        AtomType knownType = typeMap.get(newType);
-                        newClasses[i] = knownType.atomClass;
-                    }
-                }
-            }
-            return new TorsionType(newClasses, amplitude, phase, periodicity);
-        }
-        return null;
-    }
-
-    /**
      * <p>average.</p>
      *
      * @param torsionType1 a {@link ffx.potential.parameters.TorsionType} object.
@@ -255,46 +184,83 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * This method sorts the atom classes for the torsion.
+     * {@inheritDoc}
      *
-     * @param c atomClasses
-     * @return lookup key
      * @since 1.0
      */
-    public static String sortKey(int[] c) {
-        if (c == null || c.length != 4) {
-            return null;
-        }
-        if (c[1] < c[2]) {
-            // Do nothing.
-        } else if (c[2] < c[1]) {
-            // Reverse the order.
-            int temp = c[0];
-            c[0] = c[3];
-            c[3] = temp;
-            temp = c[1];
-            c[1] = c[2];
-            c[2] = temp;
-        } else if (c[1] == c[2]) {
-            if (c[0] > c[3]) {
-                // Reverse the order.
-                int temp = c[0];
-                c[0] = c[3];
-                c[3] = temp;
-            }
-        } else if (c[0] <= c[3]) {
-            // Do nothing.
-        } else {
-            // Reverse the order.
-            int temp = c[0];
-            c[0] = c[3];
-            c[3] = temp;
-            temp = c[1];
-            c[1] = c[2];
-            c[2] = temp;
+    @Override
+    public int compare(String s1, String s2) {
+        String[] keys1 = s1.split(" ");
+        String[] keys2 = s2.split(" ");
+        int[] c1 = new int[4];
+        int[] c2 = new int[4];
+
+        for (int i = 0; i < 4; i++) {
+            c1[i] = parseInt(keys1[i]);
+            c2[i] = parseInt(keys2[i]);
         }
 
-        return c[0] + " " + c[1] + " " + c[2] + " " + c[3];
+        if (c1[1] < c2[1]) {
+            return -1;
+        } else if (c1[1] > c2[1]) {
+            return 1;
+        } else if (c1[2] < c2[2]) {
+            return -1;
+        } else if (c1[2] > c2[2]) {
+            return 1;
+        } else if (c1[0] < c2[0]) {
+            return -1;
+        } else if (c1[0] > c2[0]) {
+            return 1;
+        } else if (c1[3] < c2[3]) {
+            return -1;
+        } else if (c1[3] > c2[3]) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Override the default <code>equals</code> method.
+     *
+     * @since 1.0
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TorsionType torsionType = (TorsionType) o;
+        return Arrays.equals(atomClasses, torsionType.atomClasses);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation of the <code>hashCode</code> method.
+     *
+     * @since 1.0
+     */
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(atomClasses);
+    }
+
+    /**
+     * <p>
+     * incrementClasses</p>
+     *
+     * @param increment a int.
+     */
+    public void incrementClasses(int increment) {
+        for (int i = 0; i < atomClasses.length; i++) {
+            if (atomClasses[i] != 0) {
+                atomClasses[i] += increment;
+            }
+        }
+        setKey(sortKey(atomClasses));
     }
 
     /**
@@ -370,6 +336,84 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * Remap new atom classes to known internal ones.
+     *
+     * @param typeMap a lookup between new atom types and known atom types.
+     * @return a {@link ffx.potential.parameters.TorsionType} object.
+     */
+    public TorsionType patchClasses(HashMap<AtomType, AtomType> typeMap) {
+        int count = 0;
+        int len = atomClasses.length;
+
+        // Look for new TorsionTypes that contain 1 to 3 mapped atom classes.
+        for (AtomType newType : typeMap.keySet()) {
+            for (int atomClass : atomClasses) {
+                if (atomClass == newType.atomClass) {
+                    count++;
+                }
+            }
+        }
+
+        // If found, create a new TorsionType that bridges to known classes.
+        if (count == 1 || count == 2 || count == 3) {
+            int[] newClasses = copyOf(atomClasses, len);
+            for (AtomType newType : typeMap.keySet()) {
+                for (int i = 0; i < len; i++) {
+                    if (atomClasses[i] == newType.atomClass) {
+                        AtomType knownType = typeMap.get(newType);
+                        newClasses[i] = knownType.atomClass;
+                    }
+                }
+            }
+            return new TorsionType(newClasses, amplitude, phase, periodicity);
+        }
+        return null;
+    }
+
+    /**
+     * This method sorts the atom classes for the torsion.
+     *
+     * @param c atomClasses
+     * @return lookup key
+     * @since 1.0
+     */
+    public static String sortKey(int[] c) {
+        if (c == null || c.length != 4) {
+            return null;
+        }
+        if (c[1] < c[2]) {
+            // Do nothing.
+        } else if (c[2] < c[1]) {
+            // Reverse the order.
+            int temp = c[0];
+            c[0] = c[3];
+            c[3] = temp;
+            temp = c[1];
+            c[1] = c[2];
+            c[2] = temp;
+        } else if (c[1] == c[2]) {
+            if (c[0] > c[3]) {
+                // Reverse the order.
+                int temp = c[0];
+                c[0] = c[3];
+                c[3] = temp;
+            }
+        } else if (c[0] <= c[3]) {
+            // Do nothing.
+        } else {
+            // Reverse the order.
+            int temp = c[0];
+            c[0] = c[3];
+            c[3] = temp;
+            temp = c[1];
+            c[1] = c[2];
+            c[2] = temp;
+        }
+
+        return c[0] + " " + c[1] + " " + c[2] + " " + c[3];
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted Torsion angle.
@@ -410,68 +454,22 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @since 1.0
+     * Torsion modes include Normal or In-Plane
      */
-    @Override
-    public int compare(String s1, String s2) {
-        String[] keys1 = s1.split(" ");
-        String[] keys2 = s2.split(" ");
-        int[] c1 = new int[4];
-        int[] c2 = new int[4];
+    public enum TorsionMode {
 
-        for (int i = 0; i < 4; i++) {
-            c1[i] = parseInt(keys1[i]);
-            c2[i] = parseInt(keys2[i]);
-        }
-
-        if (c1[1] < c2[1]) {
-            return -1;
-        } else if (c1[1] > c2[1]) {
-            return 1;
-        } else if (c1[2] < c2[2]) {
-            return -1;
-        } else if (c1[2] > c2[2]) {
-            return 1;
-        } else if (c1[0] < c2[0]) {
-            return -1;
-        } else if (c1[0] > c2[0]) {
-            return 1;
-        } else if (c1[3] < c2[3]) {
-            return -1;
-        } else if (c1[3] > c2[3]) {
-            return 1;
-        }
-
-        return 0;
+        NORMAL, IMPROPER
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Override the default <code>equals</code> method.
+     * <p>setScaleFactor.</p>
      *
-     * @since 1.0
+     * @param scale a double.
      */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TorsionType torsionType = (TorsionType) o;
-        return Arrays.equals(atomClasses, torsionType.atomClasses);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation of the <code>hashCode</code> method.
-     *
-     * @since 1.0
-     */
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(atomClasses);
+    void setScaleFactor(double scale) {
+        for (int i = 0; i < amplitude.length; i++) {
+            amplitude[i] *= scale;
+        }
     }
 
 }

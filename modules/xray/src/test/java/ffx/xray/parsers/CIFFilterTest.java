@@ -61,33 +61,6 @@ import ffx.xray.DiffractionRefinementData;
 public class CIFFilterTest {
 
     @Test
-    public void testCIFFilter3DYC() {
-        String filename = "ffx/xray/structures/3DYC.ent";
-        ClassLoader cl = this.getClass().getClassLoader();
-        File cifFile = new File(cl.getResource(filename).getPath());
-        // load any properties associated with it
-        CompositeConfiguration properties = Keyword.loadProperties(cifFile);
-
-        CIFFilter cifFilter = new CIFFilter();
-        ReflectionList reflectionList = cifFilter.getReflectionList(cifFile);
-        assertNotNull(" Reflection list should not be null", reflectionList);
-        DiffractionRefinementData refinementData = new DiffractionRefinementData(properties, reflectionList);
-
-        assertTrue(" CIF data not read in correctly",
-                cifFilter.readFile(cifFile, reflectionList, refinementData, properties));
-
-        HKL hkl = reflectionList.getHKL(58, 0, 13);
-        assertEquals("58 0 13 F", 99.7, refinementData.getF(hkl.index()), 0.01);
-        assertEquals("58 0 13 sigF", 69.7, refinementData.getSigF(hkl.index()), 0.01);
-        assertEquals("58 0 13 freeR value", 1, refinementData.freeR[hkl.index()]);
-
-        hkl = reflectionList.getHKL(28, 20, 5);
-        assertEquals("28 20 5 F", 428.1, refinementData.getF(hkl.index()), 0.01);
-        assertEquals("28 20 5 sigF", 10.1, refinementData.getSigF(hkl.index()), 0.01);
-        assertEquals("28 20 5 freeR value", 0, refinementData.freeR[hkl.index()]);
-    }
-
-    @Test
     public void testCIFFilter2DRM() {
         String filename = "ffx/xray/structures/2DRM.cif";
         ClassLoader cl = this.getClass().getClassLoader();
@@ -117,5 +90,32 @@ public class CIFFilterTest {
         assertEquals("-21 -6 7 F", 20.2, refinementData.getF(hkl.index()), 0.01);
         assertEquals("-21 -6 7 sigF", 5.0, refinementData.getSigF(hkl.index()), 0.01);
         assertEquals("-21 -6 7 freeR value", 1, refinementData.freeR[hkl.index()]);
+    }
+
+    @Test
+    public void testCIFFilter3DYC() {
+        String filename = "ffx/xray/structures/3DYC.ent";
+        ClassLoader cl = this.getClass().getClassLoader();
+        File cifFile = new File(cl.getResource(filename).getPath());
+        // load any properties associated with it
+        CompositeConfiguration properties = Keyword.loadProperties(cifFile);
+
+        CIFFilter cifFilter = new CIFFilter();
+        ReflectionList reflectionList = cifFilter.getReflectionList(cifFile);
+        assertNotNull(" Reflection list should not be null", reflectionList);
+        DiffractionRefinementData refinementData = new DiffractionRefinementData(properties, reflectionList);
+
+        assertTrue(" CIF data not read in correctly",
+                cifFilter.readFile(cifFile, reflectionList, refinementData, properties));
+
+        HKL hkl = reflectionList.getHKL(58, 0, 13);
+        assertEquals("58 0 13 F", 99.7, refinementData.getF(hkl.index()), 0.01);
+        assertEquals("58 0 13 sigF", 69.7, refinementData.getSigF(hkl.index()), 0.01);
+        assertEquals("58 0 13 freeR value", 1, refinementData.freeR[hkl.index()]);
+
+        hkl = reflectionList.getHKL(28, 20, 5);
+        assertEquals("28 20 5 F", 428.1, refinementData.getF(hkl.index()), 0.01);
+        assertEquals("28 20 5 sigF", 10.1, refinementData.getSigF(hkl.index()), 0.01);
+        assertEquals("28 20 5 freeR value", 0, refinementData.freeR[hkl.index()]);
     }
 }

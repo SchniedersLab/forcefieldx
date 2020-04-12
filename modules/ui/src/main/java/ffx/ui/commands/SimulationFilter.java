@@ -64,13 +64,19 @@ public final class SimulationFilter extends SystemFilter {
      * Constructor for SimulationFilter.</p>
      *
      * @param sys a {@link ffx.ui.commands.SimulationDefinition} object.
-     * @param m a {@link ffx.potential.MolecularAssembly} object.
+     * @param m   a {@link ffx.potential.MolecularAssembly} object.
      */
     public SimulationFilter(SimulationDefinition sys, MolecularAssembly m) {
         super(new File(""), m, null, null);
         system = sys;
         fileType = FileType.SIM;
         fileRead = false;
+    }
+
+    @Override
+    public void closeReader() {
+        //logger.fine(" Reading trajectories not yet supported for MergeFilter");
+        // No logger set for SimulationFilter.
     }
 
     /**
@@ -129,11 +135,13 @@ public final class SimulationFilter extends SystemFilter {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
+    public boolean readNext(boolean resetPosition) {
+        return false;
+    }
+
+    @Override
+    public boolean readNext(boolean resetPosition, boolean print) {
         return false;
     }
 
@@ -142,19 +150,11 @@ public final class SimulationFilter extends SystemFilter {
         return readNext(false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public boolean readNext(boolean resetPosition) {
+    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
         return false;
-    }
-
-    @Override
-    public boolean readNext(boolean resetPosition,  boolean print) {
-        return false;
-    }
-
-    @Override
-    public void closeReader() {
-        //logger.fine(" Reading trajectories not yet supported for MergeFilter");
-        // No logger set for SimulationFilter.
     }
 }

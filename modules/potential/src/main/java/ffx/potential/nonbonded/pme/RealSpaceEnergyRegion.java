@@ -62,7 +62,6 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.MaskingInterface;
 import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.AlchemicalParameters;
@@ -70,6 +69,7 @@ import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.RealSpaceNeighborParameters;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleParameters;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ELEC_FORM;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
@@ -302,33 +302,48 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
 
     @Override
     public void applyMask(int i, boolean[] is14, double[]... masks) {
-        double[] permanentEnergyMask = masks[0];
-        double[] permanentFieldMask = masks[1];
-        for (int value : mask12[i]) {
-            permanentFieldMask[value] = scaleParameters.p12scale;
-            permanentEnergyMask[value] = scaleParameters.m12scale;
-        }
-        for (int value : mask13[i]) {
-            permanentFieldMask[value] = scaleParameters.p13scale;
-            permanentEnergyMask[value] = scaleParameters.m13scale;
-        }
-        for (int value : mask14[i]) {
-            permanentFieldMask[value] = scaleParameters.p14scale;
-            permanentEnergyMask[value] = scaleParameters.m14scale;
-            for (int k : ip11[i]) {
-                if (k == value) {
-                    permanentFieldMask[value] = scaleParameters.intra14Scale * scaleParameters.p14scale;
-                    break;
+        if (ip11[i] != null) {
+            // AMOEBA
+            double[] permanentEnergyMask = masks[0];
+            double[] permanentFieldMask = masks[1];
+            for (int value : mask12[i]) {
+                permanentFieldMask[value] = scaleParameters.p12scale;
+                permanentEnergyMask[value] = scaleParameters.m12scale;
+            }
+            for (int value : mask13[i]) {
+                permanentFieldMask[value] = scaleParameters.p13scale;
+                permanentEnergyMask[value] = scaleParameters.m13scale;
+            }
+            for (int value : mask14[i]) {
+                permanentFieldMask[value] = scaleParameters.p14scale;
+                permanentEnergyMask[value] = scaleParameters.m14scale;
+                for (int k : ip11[i]) {
+                    if (k == value) {
+                        permanentFieldMask[value] = scaleParameters.intra14Scale * scaleParameters.p14scale;
+                        break;
+                    }
                 }
             }
-        }
-        for (int value : mask15[i]) {
-            permanentEnergyMask[value] = scaleParameters.m15scale;
-        }
-        // Apply group based polarization masking rule.
-        double[] polarizationGroupMask = masks[2];
-        for (int j : ip11[i]) {
-            polarizationGroupMask[j] = scaleParameters.d11scale;
+            for (int value : mask15[i]) {
+                permanentEnergyMask[value] = scaleParameters.m15scale;
+            }
+            // Apply group based polarization masking rule.
+            double[] polarizationGroupMask = masks[2];
+            for (int j : ip11[i]) {
+                polarizationGroupMask[j] = scaleParameters.d11scale;
+            }
+        } else {
+            // Fixed Charge Force Fields.
+            double[] permanentEnergyMask = masks[0];
+            for (int value : mask12[i]) {
+                permanentEnergyMask[value] = scaleParameters.m12scale;
+            }
+            for (int value : mask13[i]) {
+                permanentEnergyMask[value] = scaleParameters.m13scale;
+            }
+            for (int value : mask14[i]) {
+                permanentEnergyMask[value] = scaleParameters.m14scale;
+            }
         }
     }
 
@@ -452,33 +467,48 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
 
     @Override
     public void removeMask(int i, boolean[] is14, double[]... masks) {
-        double[] permanentEnergyMask = masks[0];
-        double[] permanentFieldMask = masks[1];
-        for (int value : mask12[i]) {
-            permanentFieldMask[value] = 1.0;
-            permanentEnergyMask[value] = 1.0;
-        }
-        for (int value : mask13[i]) {
-            permanentFieldMask[value] = 1.0;
-            permanentEnergyMask[value] = 1.0;
-        }
-        for (int value : mask14[i]) {
-            permanentFieldMask[value] = 1.0;
-            permanentEnergyMask[value] = 1.0;
-            for (int k : ip11[i]) {
-                if (k == value) {
-                    permanentFieldMask[value] = 1.0;
-                    break;
+        if (ip11[i] != null) {
+            // AMOEBA
+            double[] permanentEnergyMask = masks[0];
+            double[] permanentFieldMask = masks[1];
+            for (int value : mask12[i]) {
+                permanentFieldMask[value] = 1.0;
+                permanentEnergyMask[value] = 1.0;
+            }
+            for (int value : mask13[i]) {
+                permanentFieldMask[value] = 1.0;
+                permanentEnergyMask[value] = 1.0;
+            }
+            for (int value : mask14[i]) {
+                permanentFieldMask[value] = 1.0;
+                permanentEnergyMask[value] = 1.0;
+                for (int k : ip11[i]) {
+                    if (k == value) {
+                        permanentFieldMask[value] = 1.0;
+                        break;
+                    }
                 }
             }
-        }
-        for (int value : mask15[i]) {
-            permanentEnergyMask[value] = 1.0;
-        }
-        // Apply group based polarization masking rule.
-        double[] polarizationGroupMask = masks[2];
-        for (int j : ip11[i]) {
-            polarizationGroupMask[j] = 1.0;
+            for (int value : mask15[i]) {
+                permanentEnergyMask[value] = 1.0;
+            }
+            // Apply group based polarization masking rule.
+            double[] polarizationGroupMask = masks[2];
+            for (int j : ip11[i]) {
+                polarizationGroupMask[j] = 1.0;
+            }
+        } else {
+            // Fixed Charge Force Fields.
+            double[] permanentEnergyMask = masks[0];
+            for (int value : mask12[i]) {
+                permanentEnergyMask[value] = 1.0;
+            }
+            for (int value : mask13[i]) {
+                permanentEnergyMask[value] = 1.0;
+            }
+            for (int value : mask14[i]) {
+                permanentEnergyMask[value] = 1.0;
+            }
         }
     }
 

@@ -61,7 +61,16 @@ import ffx.potential.bonded.RotamerLibrary;
 public class DistanceRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(DistanceRegion.class.getName());
-
+    private final DistanceLoop[] distanceLoops;
+    private final int nResidues;
+    private final Crystal crystal;
+    private final int nSymm;
+    private final int[][][] lists;
+    private final IntegerSchedule pairwiseSchedule;
+    /**
+     * AlgorithmListener who should receive updates as the optimization runs.
+     */
+    protected AlgorithmListener algorithmListener;
     private RotamerOptimization rotamerOptimization;
     private DistanceMatrix dM;
     /**
@@ -78,23 +87,12 @@ public class DistanceRegion extends ParallelRegion {
      */
     private RotamerLibrary library;
     /**
-     * AlgorithmListener who should receive updates as the optimization runs.
-     */
-    protected AlgorithmListener algorithmListener;
-    /**
      * The minimum distance between atoms of a residue pair, taking into account
      * interactions with symmetry mates.
      * <p>
      * [residue1][rotamer1][residue2][rotamer2]
      */
     private double[][][][] distanceMatrix;
-
-    private final DistanceLoop[] distanceLoops;
-    private final int nResidues;
-    private final Crystal crystal;
-    private final int nSymm;
-    private final int[][][] lists;
-    private final IntegerSchedule pairwiseSchedule;
 
     public DistanceRegion(int nt, int nResidues, Crystal crystal,
                           int[][][] lists, IntegerSchedule schedule) {
@@ -133,23 +131,7 @@ public class DistanceRegion extends ParallelRegion {
         }
     }
 
-    private double[][] getCoordinates(Residue residue, Rotamer rotamer, boolean forced) {
-        synchronized (residue) {
-            if (!forced) {
-                RotamerLibrary.applyRotamer(residue, rotamer);
-                return residue.storeCoordinateArray();
-            } else {
-                return residue.storeCoordinateArray();
-            }
-        }
-    }
-
     private class DistanceLoop extends IntegerForLoop {
-
-        @Override
-        public IntegerSchedule schedule() {
-            return pairwiseSchedule;
-        }
 
         @Override
         public void run(int lb, int ub) {
@@ -231,6 +213,22 @@ public class DistanceRegion extends ParallelRegion {
                         }
                     }
                 }
+            }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return pairwiseSchedule;
+        }
+    }
+
+    private double[][] getCoordinates(Residue residue, Rotamer rotamer, boolean forced) {
+        synchronized (residue) {
+            if (!forced) {
+                RotamerLibrary.applyRotamer(residue, rotamer);
+                return residue.storeCoordinateArray();
+            } else {
+                return residue.storeCoordinateArray();
             }
         }
     }

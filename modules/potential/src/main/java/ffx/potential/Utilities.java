@@ -67,31 +67,6 @@ import static ffx.numerics.math.DoubleMath.sub;
 public final class Utilities {
 
     private static final Logger logger = Logger.getLogger(Utilities.class.getName());
-
-    /**
-     * An enumeration of recognized file types.
-     */
-    public enum FileType {
-
-        XYZ, INT, ARC, PDB, ANY, SIM, UNK
-    }
-
-    /**
-     * An enumeration of recognized organic polymers.
-     */
-    public enum PolymerType {
-
-        AMINOACID, NUCLEICACID, UNKNOWN
-    }
-
-    /**
-     * The algorithms used to split arrays of atoms into a structural hierarchy
-     * use a bunch of List instances. Pooling them seems like it might be a
-     * performance win - although better algorithms probably exist. This is
-     * currently backed by ArrayLists.
-     */
-    private static List<List<Atom>> atomListPool = new ArrayList<>();
-
     /**
      * Repeating atomic numbers of an amino acid chain.
      */
@@ -108,6 +83,13 @@ public final class Utilities {
      * case.
      */
     private static final HashMap<String, String> sidechainStoichiometry = new HashMap<>();
+    /**
+     * The algorithms used to split arrays of atoms into a structural hierarchy
+     * use a bunch of List instances. Pooling them seems like it might be a
+     * performance win - although better algorithms probably exist. This is
+     * currently backed by ArrayLists.
+     */
+    private static List<List<Atom>> atomListPool = new ArrayList<>();
 
     static {
         // Amino Acid Side Chains
@@ -139,6 +121,219 @@ public final class Utilities {
         sidechainStoichiometry.put("C3", "1"); // Proline / Valine
         sidechainStoichiometry.put("C4", "2"); // (ISO)Leucine
         sidechainStoichiometry.put("O2N5C7", "3"); // DNA Gaunine / RNA Adenine
+    }
+
+    /**
+     * Finds the RMS deviation between the atoms of MolecularAssembly m1 and m2
+     * provided they have the same number of atoms.
+     *
+     * @param m1 a {@link ffx.potential.MolecularAssembly} object.
+     * @param m2 a {@link ffx.potential.MolecularAssembly} object.
+     * @return a double.
+     */
+    public static double RMSCoordDev(MolecularAssembly m1, MolecularAssembly m2) {
+        if (m1 == null || m2 == null) {
+            return 0;
+        }
+        int n1 = m1.getAtomList().size();
+        int n2 = m2.getAtomList().size();
+        if (n1 != n2) {
+            return 0;
+        }
+        Atom a1, a2;
+        double[] d = new double[3];
+        double[] da = new double[3];
+        double[] db = new double[3];
+        double rms = 0;
+        ListIterator li, lj;
+        for (li = m1.getAtomList().listIterator(), lj = m2.getAtomList().listIterator(); li.hasNext(); ) {
+            a1 = (Atom) li.next();
+            a2 = (Atom) lj.next();
+            a1.getXYZ(da);
+            a2.getXYZ(db);
+            sub(da, db, d);
+            rms += d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+        }
+        return sqrt(rms / n1);
+    }
+
+    /**
+     * This routine sub-divides a system into groups of ions, water, hetero
+     * molecules, and polynucleotides/polypeptides.
+     *
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
+     *                          object.
+     * @param atoms             a {@link java.util.List} object.
+     */
+    public static void biochemistry(MolecularAssembly molecularAssembly, List<Atom> atoms) {
+        Atom atom, seed = null;
+        int num = 0;
+        int waterNum = 0;
+        int ionNum = 0;
+        int moleculeNum = 0;
+        List<String> segIDs = new ArrayList<>();
+        while (atoms.size() > 0) {
+            /*
+              Nitrogen is used to "seed" a backbone search because carbon can
+              be separated from the backbone by a sulfur (ie. MET).
+             */
+            for (Atom a : atoms) {
+                seed = a;
+                if (seed.getAtomicNumber() == 7) {
+                    break;
+                }
+            }
+            // If no nitrogen atoms remain, there are no nucleic or amino acids.
+            if (seed.getAtomicNumber() != 7) {
+                List<Atom> moleculeAtoms;
+                while (atoms.size() > 0) {
+                    atom = atoms.get(0);
+                    // Check for a metal ion or noble gas
+                    if (atom.getNumBonds() == 0) {
+                        ionNum++;
+                        Molecule ion = new Molecule(atom.getName() + "-" + ionNum);
+                        ion.addMSNode(atom);
+                        atoms.remove(0);
+                        molecularAssembly.addMSNode(ion);
+                        continue;
+                    } // Check for water
+                    else if (atom.getAtomicNumber() == 8 && isWaterOxygen(atom)) {
+                        waterNum++;
+                        Molecule water = new Molecule("Water-" + waterNum);
+                        water.addMSNode(atom);
+                        atoms.remove(0);
+                        List<Bond> bonds = atom.getBonds();
+                        for (Bond b : bonds) {
+                            Atom hydrogen = b.get1_2(atom);
+                            water.addMSNode(hydrogen);
+                            atoms.remove(hydrogen);
+                        }
+                        molecularAssembly.addMSNode(water);
+                        continue;
+                    }
+                    // Otherwise classify the molecule as a hetero
+                    moleculeNum++;
+                    Molecule molecule = new Molecule("Molecule-" + moleculeNum);
+                    moleculeAtoms = getAtomListFromPool();
+                    collectAtoms(atoms.get(0), moleculeAtoms);
+                    while (moleculeAtoms.size() > 0) {
+                        atom = moleculeAtoms.get(0);
+                        moleculeAtoms.remove(0);
+                        molecule.addMSNode(atom);
+                        atoms.remove(atom);
+                    }
+                    molecularAssembly.addMSNode(molecule);
+                }
+                break;
+            }
+
+            List<Atom> backbone = findPolymer(seed, null);
+
+            if (backbone.size() > 0) {
+                seed = backbone.get(backbone.size() - 1);
+                backbone = findPolymer(seed, null);
+            }
+
+            Character chainID = getChainID(num);
+            String segID = getSegID(chainID, segIDs);
+            Polymer c = new Polymer(chainID, segID, true);
+            if (backbone.size() > 2 && divideBackbone(backbone, c)) {
+                for (Atom a : c.getAtomList()) {
+                    atoms.remove(a);
+                }
+                logger.fine(" Sequenced chain: " + c.getName());
+                molecularAssembly.addMSNode(c);
+                num++;
+            } else {
+                moleculeNum++;
+                Molecule hetero = new Molecule("" + moleculeNum + "-Hetero");
+                atom = backbone.get(0);
+                List<Atom> heteroAtomList = getAtomListFromPool();
+                collectAtoms(atom, heteroAtomList);
+                for (Atom a : heteroAtomList) {
+                    hetero.addMSNode(a);
+                }
+                for (Atom a : hetero.getAtomList()) {
+                    atoms.remove(a);
+                }
+                molecularAssembly.addMSNode(hetero);
+            }
+        }
+    }
+
+    /**
+     * Returns the first nitrogen atom found that is bonded to the adjacent
+     * atom.
+     *
+     * @param adjacent Atom
+     * @return Atom a nitrogen atom.
+     */
+    public static Atom findN(Atom adjacent) {
+        for (Bond b : adjacent.getBonds()) {
+            Atom nitrogen = b.get1_2(adjacent);
+            if (nitrogen.getAtomicNumber() == 7) {
+                return nitrogen;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns an atom bonded to the "end" atom, which is not equal to "other".
+     *
+     * @param end   Atom
+     * @param other Atom
+     * @return Atom
+     */
+    public static Atom findSeed(Atom end, Atom other) {
+        for (Bond b : end.getBonds()) {
+            Atom seed = b.get1_2(end);
+            if (seed != other) {
+                return seed;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Determine chainID for a given polymer number.
+     *
+     * @param i int
+     * @return Character
+     */
+    public static Character getChainID(int i) {
+        if (i > 35) {
+            i = i % 36;
+        }
+        Character c;
+        if (i < 26) {
+            // 65 is 'A'. 90 is 'Z'.
+            c = (char) (i + 65);
+        } else {
+            i -= 26;
+            // 48 is '0'. 57 is '9'.
+            c = (char) (i + 48);
+        }
+        return c;
+    }
+
+    /**
+     * Gets the stack trace for an exception and converts it to a String.
+     *
+     * @param ex An exception.
+     * @return A String of its stack trace.
+     */
+    public static String stackTraceToString(Throwable ex) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (PrintStream ps = new PrintStream(baos, true, "UTF-8")) {
+            ex.printStackTrace(ps);
+            return new String(baos.toByteArray(), StandardCharsets.UTF_8);
+        } catch (UnsupportedEncodingException uex) {
+            logger.warning(format(" UTF-8 encoding somehow not " +
+                    "supported by PrintStream for exception %s.", ex.toString()));
+            ex.printStackTrace();
+            return "";
+        }
     }
 
     /**
@@ -330,141 +525,6 @@ public final class Utilities {
             // logger.info(a.toString());
         }
         return residue;
-    }
-
-    /**
-     * This routine sub-divides a system into groups of ions, water, hetero
-     * molecules, and polynucleotides/polypeptides.
-     *
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     *                          object.
-     * @param atoms             a {@link java.util.List} object.
-     */
-    public static void biochemistry(MolecularAssembly molecularAssembly, List<Atom> atoms) {
-        Atom atom, seed = null;
-        int num = 0;
-        int waterNum = 0;
-        int ionNum = 0;
-        int moleculeNum = 0;
-        List<String> segIDs = new ArrayList<>();
-        while (atoms.size() > 0) {
-            /*
-              Nitrogen is used to "seed" a backbone search because carbon can
-              be separated from the backbone by a sulfur (ie. MET).
-             */
-            for (Atom a : atoms) {
-                seed = a;
-                if (seed.getAtomicNumber() == 7) {
-                    break;
-                }
-            }
-            // If no nitrogen atoms remain, there are no nucleic or amino acids.
-            if (seed.getAtomicNumber() != 7) {
-                List<Atom> moleculeAtoms;
-                while (atoms.size() > 0) {
-                    atom = atoms.get(0);
-                    // Check for a metal ion or noble gas
-                    if (atom.getNumBonds() == 0) {
-                        ionNum++;
-                        Molecule ion = new Molecule(atom.getName() + "-" + ionNum);
-                        ion.addMSNode(atom);
-                        atoms.remove(0);
-                        molecularAssembly.addMSNode(ion);
-                        continue;
-                    } // Check for water
-                    else if (atom.getAtomicNumber() == 8 && isWaterOxygen(atom)) {
-                        waterNum++;
-                        Molecule water = new Molecule("Water-" + waterNum);
-                        water.addMSNode(atom);
-                        atoms.remove(0);
-                        List<Bond> bonds = atom.getBonds();
-                        for (Bond b : bonds) {
-                            Atom hydrogen = b.get1_2(atom);
-                            water.addMSNode(hydrogen);
-                            atoms.remove(hydrogen);
-                        }
-                        molecularAssembly.addMSNode(water);
-                        continue;
-                    }
-                    // Otherwise classify the molecule as a hetero
-                    moleculeNum++;
-                    Molecule molecule = new Molecule("Molecule-" + moleculeNum);
-                    moleculeAtoms = getAtomListFromPool();
-                    collectAtoms(atoms.get(0), moleculeAtoms);
-                    while (moleculeAtoms.size() > 0) {
-                        atom = moleculeAtoms.get(0);
-                        moleculeAtoms.remove(0);
-                        molecule.addMSNode(atom);
-                        atoms.remove(atom);
-                    }
-                    molecularAssembly.addMSNode(molecule);
-                }
-                break;
-            }
-
-            List<Atom> backbone = findPolymer(seed, null);
-
-            if (backbone.size() > 0) {
-                seed = backbone.get(backbone.size() - 1);
-                backbone = findPolymer(seed, null);
-            }
-
-            Character chainID = getChainID(num);
-            String segID = getSegID(chainID, segIDs);
-            Polymer c = new Polymer(chainID, segID, true);
-            if (backbone.size() > 2 && divideBackbone(backbone, c)) {
-                for (Atom a : c.getAtomList()) {
-                    atoms.remove(a);
-                }
-                logger.fine(" Sequenced chain: " + c.getName());
-                molecularAssembly.addMSNode(c);
-                num++;
-            } else {
-                moleculeNum++;
-                Molecule hetero = new Molecule("" + moleculeNum + "-Hetero");
-                atom = backbone.get(0);
-                List<Atom> heteroAtomList = getAtomListFromPool();
-                collectAtoms(atom, heteroAtomList);
-                for (Atom a : heteroAtomList) {
-                    hetero.addMSNode(a);
-                }
-                for (Atom a : hetero.getAtomList()) {
-                    atoms.remove(a);
-                }
-                molecularAssembly.addMSNode(hetero);
-            }
-        }
-    }
-
-    /**
-     * Convert possibly duplicate chainID into a unique segID.
-     *
-     * @param c chain ID just read.
-     * @return a unique segID.
-     */
-    private static String getSegID(Character c, List<String> segIDs) {
-        if (c == null || c.equals(' ')) {
-            c = 'A';
-        }
-
-        // Loop through existing segIDs to find the first one that is unused.
-        int m = 0;
-        for (String segID : segIDs) {
-            if (segID.endsWith(c.toString())) {
-                m++;
-            }
-        }
-
-        // If the count is greater than 0, then append it.
-        String newSegID;
-        if (m == 0) {
-            newSegID = c.toString();
-        } else {
-            newSegID = c.toString() + m;
-        }
-
-        segIDs.add(newSegID);
-        return newSegID;
     }
 
     /**
@@ -772,25 +832,6 @@ public final class Utilities {
     }
 
     /**
-     * Gets the stack trace for an exception and converts it to a String.
-     *
-     * @param ex An exception.
-     * @return A String of its stack trace.
-     */
-    public static String stackTraceToString(Throwable ex) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (PrintStream ps = new PrintStream(baos, true, "UTF-8")) {
-            ex.printStackTrace(ps);
-            return new String(baos.toByteArray(), StandardCharsets.UTF_8);
-        } catch (UnsupportedEncodingException uex) {
-            logger.warning(format(" UTF-8 encoding somehow not " +
-                    "supported by PrintStream for exception %s.", ex.toString()));
-            ex.printStackTrace();
-            return "";
-        }
-    }
-
-    /**
      * Returns a carbon that is bonded to the atom a, a carbonyl group, and a
      * nitrogen. O=C-alpha-N
      *
@@ -845,27 +886,6 @@ public final class Utilities {
     }
 
     /**
-     * Returns a carbon that is bonded to the adjacent atom and an oxygen.
-     *
-     * @param adjacent Atom
-     * @return Atom
-     */
-    private static Atom findCarbonyl(Atom adjacent) {
-        for (Bond b : adjacent.getBonds()) {
-            Atom carbonyl = b.get1_2(adjacent);
-            if (carbonyl.getAtomicNumber() == 6) {
-                for (Bond b2 : carbonyl.getBonds()) {
-                    Atom oxygen = b2.get1_2(carbonyl);
-                    if (oxygen.getAtomicNumber() == 8 && oxygen.getBonds().size() == 1) {
-                        return carbonyl;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
      * Returns a carbon that is bonded to the adjacent atom, which bonds 2
      * carbons and 1 oxygen.
      *
@@ -883,23 +903,6 @@ public final class Utilities {
     }
 
     /**
-     * Returns the first nitrogen atom found that is bonded to the adjacent
-     * atom.
-     *
-     * @param adjacent Atom
-     * @return Atom a nitrogen atom.
-     */
-    public static Atom findN(Atom adjacent) {
-        for (Bond b : adjacent.getBonds()) {
-            Atom nitrogen = b.get1_2(adjacent);
-            if (nitrogen.getAtomicNumber() == 7) {
-                return nitrogen;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Returns a carbon that is bonded to the adjacent atom, which bonds at
      * least 1 oxygen.
      *
@@ -911,6 +914,27 @@ public final class Utilities {
             Atom carbon = b.get1_2(adjacent);
             if (carbon.getAtomicNumber() == 6 && formsBondsWith(carbon, 8)) {
                 return carbon;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns a carbon that is bonded to the adjacent atom and an oxygen.
+     *
+     * @param adjacent Atom
+     * @return Atom
+     */
+    private static Atom findCarbonyl(Atom adjacent) {
+        for (Bond b : adjacent.getBonds()) {
+            Atom carbonyl = b.get1_2(adjacent);
+            if (carbonyl.getAtomicNumber() == 6) {
+                for (Bond b2 : carbonyl.getBonds()) {
+                    Atom oxygen = b2.get1_2(carbonyl);
+                    if (oxygen.getAtomicNumber() == 8 && oxygen.getBonds().size() == 1) {
+                        return carbonyl;
+                    }
+                }
             }
         }
         return null;
@@ -1062,23 +1086,6 @@ public final class Utilities {
     }
 
     /**
-     * Returns an atom bonded to the "end" atom, which is not equal to "other".
-     *
-     * @param end   Atom
-     * @param other Atom
-     * @return Atom
-     */
-    public static Atom findSeed(Atom end, Atom other) {
-        for (Bond b : end.getBonds()) {
-            Atom seed = b.get1_2(end);
-            if (seed != other) {
-                return seed;
-            }
-        }
-        return null;
-    }
-
-    /**
      * True if Atom a forms a bond with another atom of the specified atomic
      * Number.
      *
@@ -1107,6 +1114,37 @@ public final class Utilities {
             return new ArrayList<>();
         }
         return atomListPool.remove(0);
+    }
+
+    /**
+     * Convert possibly duplicate chainID into a unique segID.
+     *
+     * @param c chain ID just read.
+     * @return a unique segID.
+     */
+    private static String getSegID(Character c, List<String> segIDs) {
+        if (c == null || c.equals(' ')) {
+            c = 'A';
+        }
+
+        // Loop through existing segIDs to find the first one that is unused.
+        int m = 0;
+        for (String segID : segIDs) {
+            if (segID.endsWith(c.toString())) {
+                m++;
+            }
+        }
+
+        // If the count is greater than 0, then append it.
+        String newSegID;
+        if (m == 0) {
+            newSegID = c.toString();
+        } else {
+            newSegID = c.toString() + m;
+        }
+
+        segIDs.add(newSegID);
+        return newSegID;
     }
 
     /**
@@ -1256,28 +1294,6 @@ public final class Utilities {
     }
 
     /**
-     * Determine chainID for a given polymer number.
-     *
-     * @param i int
-     * @return Character
-     */
-    public static Character getChainID(int i) {
-        if (i > 35) {
-            i = i % 36;
-        }
-        Character c;
-        if (i < 26) {
-            // 65 is 'A'. 90 is 'Z'.
-            c = (char) (i + 65);
-        } else {
-            i -= 26;
-            // 48 is '0'. 57 is '9'.
-            c = (char) (i + 48);
-        }
-        return c;
-    }
-
-    /**
      * Returns an List with reversed ordering.
      *
      * @param atomList List
@@ -1292,36 +1308,18 @@ public final class Utilities {
     }
 
     /**
-     * Finds the RMS deviation between the atoms of MolecularAssembly m1 and m2
-     * provided they have the same number of atoms.
-     *
-     * @param m1 a {@link ffx.potential.MolecularAssembly} object.
-     * @param m2 a {@link ffx.potential.MolecularAssembly} object.
-     * @return a double.
+     * An enumeration of recognized file types.
      */
-    public static double RMSCoordDev(MolecularAssembly m1, MolecularAssembly m2) {
-        if (m1 == null || m2 == null) {
-            return 0;
-        }
-        int n1 = m1.getAtomList().size();
-        int n2 = m2.getAtomList().size();
-        if (n1 != n2) {
-            return 0;
-        }
-        Atom a1, a2;
-        double[] d = new double[3];
-        double[] da = new double[3];
-        double[] db = new double[3];
-        double rms = 0;
-        ListIterator li, lj;
-        for (li = m1.getAtomList().listIterator(), lj = m2.getAtomList().listIterator(); li.hasNext(); ) {
-            a1 = (Atom) li.next();
-            a2 = (Atom) lj.next();
-            a1.getXYZ(da);
-            a2.getXYZ(db);
-            sub(da, db, d);
-            rms += d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
-        }
-        return sqrt(rms / n1);
+    public enum FileType {
+
+        XYZ, INT, ARC, PDB, ANY, SIM, UNK
+    }
+
+    /**
+     * An enumeration of recognized organic polymers.
+     */
+    public enum PolymerType {
+
+        AMINOACID, NUCLEICACID, UNKNOWN
     }
 }

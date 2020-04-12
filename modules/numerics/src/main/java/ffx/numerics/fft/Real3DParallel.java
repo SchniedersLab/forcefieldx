@@ -377,11 +377,6 @@ public class Real3DParallel {
             }
 
             @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
             public void run(final int lb, final int ub) {
                 for (int z = lb; z <= ub; z++) {
                     for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
@@ -391,6 +386,11 @@ public class Real3DParallel {
                         fftY.fft(input, offset, nextY);
                     }
                 }
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
             }
         }
 
@@ -403,11 +403,6 @@ public class Real3DParallel {
             private FFTZLoop() {
                 work = new double[nZ2];
                 fft = new Complex(nZ);
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return schedule;
             }
 
             @Override
@@ -425,6 +420,11 @@ public class Real3DParallel {
                         }
                     }
                 }
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
             }
         }
     }
@@ -478,11 +478,6 @@ public class Real3DParallel {
             }
 
             @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
             public void run(final int lb, final int ub) {
                 for (int x = lb; x <= ub; x++) {
                     for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
@@ -498,6 +493,11 @@ public class Real3DParallel {
                     }
                 }
             }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
+            }
         }
 
         private class IFFTXYLoop extends IntegerForLoop {
@@ -512,11 +512,6 @@ public class Real3DParallel {
             }
 
             @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
             public void run(final int lb, final int ub) {
                 for (int z = lb; z <= ub; z++) {
                     for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
@@ -526,6 +521,11 @@ public class Real3DParallel {
                         fftX.ifft(input, offset);
                     }
                 }
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
             }
         }
     }
@@ -585,11 +585,6 @@ public class Real3DParallel {
             }
 
             @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
             public void run(final int lb, final int ub) {
                 for (int z = lb; z <= ub; z++) {
                     for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
@@ -599,6 +594,11 @@ public class Real3DParallel {
                         fftY.fft(input, offset, nextY);
                     }
                 }
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
             }
         }
 
@@ -611,11 +611,6 @@ public class Real3DParallel {
             private FFTZ_Multiply_IFFTZLoop() {
                 work = new double[nZ2];
                 fft = new Complex(nZ);
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return schedule;
             }
 
             @Override
@@ -641,6 +636,11 @@ public class Real3DParallel {
                     }
                 }
             }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
+            }
         }
 
         private class IFFTXYLoop extends IntegerForLoop {
@@ -655,11 +655,6 @@ public class Real3DParallel {
             }
 
             @Override
-            public IntegerSchedule schedule() {
-                return schedule;
-            }
-
-            @Override
             public void run(final int lb, final int ub) {
                 for (int z = lb; z <= ub; z++) {
                     for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
@@ -669,6 +664,11 @@ public class Real3DParallel {
                         fftX.ifft(input, offset);
                     }
                 }
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
             }
         }
     }

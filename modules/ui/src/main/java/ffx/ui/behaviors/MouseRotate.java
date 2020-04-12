@@ -58,8 +58,8 @@ import org.jogamp.vecmath.Vector3d;
  */
 public class MouseRotate extends MouseBehavior {
 
-    private static Transform3D VPTG_T3D = new Transform3D();
     private static final Vector3d zero3d = new Vector3d(0.0, 0.0, 0.0);
+    private static Transform3D VPTG_T3D = new Transform3D();
     private static Vector3d translation = new Vector3d();
     private static Matrix4d mat = new Matrix4d();
     double xAngle, yAngle;

@@ -92,17 +92,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public static final Map<Integer, Color3f> AtomColor;
     /**
-     * Constant <code>SP=2</code>
+     * Logger for the Atom class.
      */
-    public static final int SP = 2;
-    /**
-     * Constant <code>SP2=3</code>
-     */
-    public static final int SP2 = 3;
-    /**
-     * Constant <code>SP3=4</code>
-     */
-    public static final int SP3 = 4;
     private static final Logger logger = Logger.getLogger(Atom.class.getName());
     /**
      * Constant <code>AtomVDW</code>
@@ -112,8 +103,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Constant <code>hybridTable</code>
      */
     private static final Map<String, Integer> hybridTable;
-
-
+    // *************************************************************************
+    // Java3D methods and variables for visualization of this Atom.
+    // The current ViewModel
+    private static final Point3d point3d = new Point3d();
+    private static final Point2d point2d = new Point2d();
     /**
      * Compare two atoms (implementation of the Comparator interface).
      * <p>
@@ -157,7 +151,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
             return 0;
         }
     };
-
     /**
      * Compare two atoms (implementation of the Comparator interface).
      * <p>
@@ -212,12 +205,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
             return 0;
         }
     };
-
-    // *************************************************************************
-    // Java3D methods and variables for visualization of this Atom.
-    // The current ViewModel
-    private static Point3d point3d = new Point3d();
-    private static Point2d point2d = new Point2d();
 
     static {
         // Initialize HashMaps
@@ -330,9 +317,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     private final double[] xyzLambdaGradient = new double[3];
     // Connectivity information.
-    private final ArrayList<Bond> bonds = new ArrayList<>();
-    private final ArrayList<Angle> angles = new ArrayList<>();
-    private final ArrayList<Torsion> torsions = new ArrayList<>();
+    private final List<Bond> bonds = new ArrayList<>();
+    private final List<Angle> angles = new ArrayList<>();
+    private final List<Torsion> torsions = new ArrayList<>();
     private final Vector3d vector3d = new Vector3d();
     /**
      * Contiguous atom index ranging from 1..nAtoms.
@@ -917,7 +904,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<Angle> getAngles() {
+    public List<Angle> getAngles() {
         return angles;
     }
 
@@ -1024,7 +1011,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * {@inheritDoc}
      */
     @Override
-    public ArrayList<Atom> getAtomList() {
+    public List<Atom> getAtomList() {
         ArrayList<Atom> atoms = new ArrayList<>();
         atoms.add(this);
         return atoms;
@@ -1880,7 +1867,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<Torsion> getTorsions() {
+    public List<Torsion> getTorsions() {
         return torsions;
     }
 

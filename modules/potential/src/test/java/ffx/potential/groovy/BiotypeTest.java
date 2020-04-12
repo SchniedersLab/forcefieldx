@@ -41,10 +41,8 @@ import java.util.List;
 
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.Before;
-
-import ffx.potential.groovy.Biotype;
+import org.junit.Test;
 
 import groovy.lang.Binding;
 
@@ -56,31 +54,17 @@ public class BiotypeTest {
     Binding binding;
     Biotype biotype;
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        biotype = new Biotype();
-        biotype.setBinding(binding);
-    }
-
     @After
     public void after() {
         biotype.destroyPotentials();
         System.gc();
     }
 
-    @Test
-    public void testBiotypeHelp() {
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        biotype.run();
-
-        // Pull out the biotype results to check.
-        List<String> biotypes = biotype.biotypes;
-        Assert.assertNull(biotypes);
+    @Before
+    public void before() {
+        binding = new Binding();
+        biotype = new Biotype();
+        biotype.setBinding(binding);
     }
 
     @Test
@@ -99,6 +83,20 @@ public class BiotypeTest {
         Assert.assertEquals(19, biotypes.size());
         Assert.assertTrue(" Check the value of the first Biotype.",
                 biotypes.get(0).trim().equalsIgnoreCase("biotype   1    C \"ace\" 405    C    C    N"));
+    }
+
+    @Test
+    public void testBiotypeHelp() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"-h"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        biotype.run();
+
+        // Pull out the biotype results to check.
+        List<String> biotypes = biotype.biotypes;
+        Assert.assertNull(biotypes);
     }
 
 }

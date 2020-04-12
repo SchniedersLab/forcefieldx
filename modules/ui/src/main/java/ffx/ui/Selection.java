@@ -50,6 +50,57 @@ import ffx.potential.bonded.MSNode;
  */
 public class Selection {
 
+    MSNode m;
+    private Class scale;
+    private String criteria;
+    private ArrayList<MSNode> selected;
+    private Selection(MSNode m, Class scale, String criteria) {
+        this.scale = scale;
+        this.criteria = criteria;
+        this.m = m;
+        selected = new ArrayList<>();
+    }
+    private Selection(MSNode m, String scale, String criteria) {
+        try {
+            this.scale = Class.forName(scale);
+        } catch (Exception e) {
+            this.scale = null;
+        }
+        this.criteria = criteria;
+        this.m = m;
+        selected = new ArrayList<>();
+    }
+
+    /**
+     * <p>
+     * and</p>
+     *
+     * @param scale    a {@link java.lang.Class} object.
+     * @param criteria a {@link java.lang.String} object.
+     * @return a {@link ffx.ui.Selection} object.
+     */
+    public Selection and(Class scale, String criteria) {
+        this.scale = scale;
+        this.criteria = criteria;
+        evaluate();
+        return this;
+    }
+
+    /**
+     * <p>
+     * or</p>
+     *
+     * @param scale    a {@link java.lang.Class} object.
+     * @param criteria a {@link java.lang.String} object.
+     * @return a {@link ffx.ui.Selection} object.
+     */
+    public Selection or(Class scale, String criteria) {
+        this.scale = scale;
+        this.criteria = criteria;
+        evaluate();
+        return this;
+    }
+
     /**
      * <p>
      * select</p>
@@ -80,44 +131,6 @@ public class Selection {
         return s;
     }
 
-    private Class scale;
-    private String criteria;
-    MSNode m;
-    private ArrayList<MSNode> selected;
-
-    private Selection(MSNode m, Class scale, String criteria) {
-        this.scale = scale;
-        this.criteria = criteria;
-        this.m = m;
-        selected = new ArrayList<>();
-    }
-
-    private Selection(MSNode m, String scale, String criteria) {
-        try {
-            this.scale = Class.forName(scale);
-        } catch (Exception e) {
-            this.scale = null;
-        }
-        this.criteria = criteria;
-        this.m = m;
-        selected = new ArrayList<>();
-    }
-
-    /**
-     * <p>
-     * and</p>
-     *
-     * @param scale    a {@link java.lang.Class} object.
-     * @param criteria a {@link java.lang.String} object.
-     * @return a {@link ffx.ui.Selection} object.
-     */
-    public Selection and(Class scale, String criteria) {
-        this.scale = scale;
-        this.criteria = criteria;
-        evaluate();
-        return this;
-    }
-
     private void evaluate() {
         Enumeration e = m.depthFirstEnumeration();
         while (e.hasMoreElements()) {
@@ -126,20 +139,5 @@ public class Selection {
                 selected.add(n);
             }
         }
-    }
-
-    /**
-     * <p>
-     * or</p>
-     *
-     * @param scale    a {@link java.lang.Class} object.
-     * @param criteria a {@link java.lang.String} object.
-     * @return a {@link ffx.ui.Selection} object.
-     */
-    public Selection or(Class scale, String criteria) {
-        this.scale = scale;
-        this.criteria = criteria;
-        evaluate();
-        return this;
     }
 }

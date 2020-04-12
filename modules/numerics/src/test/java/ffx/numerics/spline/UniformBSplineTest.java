@@ -55,25 +55,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(Parameterized.class)
 public class UniformBSplineTest {
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        // Order 5, x = 0.00
-        double[] c1 = {0.0416666e0, 0.4583333e0, 0.4583333e0, 0.0416666e0, 0.0000000e0};
-        double[] d1 = {-0.1666667e0, -0.5000000e0, 0.5000000e0, 0.1666667e0, 0.0000000e0};
-        // Order 5, x = 0.25
-        double[] c2 = {0.0131836e0, 0.3248700e0, 0.5608720e0, 0.1009110e0, 0.0001627e0};
-        double[] d2 = {-0.0703125e0, -0.5416670e0, 0.2968750e0, 0.3125000e0, 0.0026042e0};
-        // Order 5, x = 0.50
-        double[] c3 = {0.0026041e0, 0.1979167e0, 0.5989583e0, 0.1979167e0, 0.0026041e0};
-        double[] d3 = {-0.0208333e0, -0.4583333e0, 0.0000000e0, 0.4583333e0, 0.0208333e0};
-
-        return Arrays.asList(new Object[][]{
-                {"Order 5, x = 0.00", 5, 0.00e0, c1, d1},
-                {"Order 5, x = 0.25", 5, 0.25e0, c2, d2},
-                {"Order 5, x = 0.50", 5, 0.50e0, c3, d3}
-        });
-    }
-
     private static double tolerance = 1.0e-6;
     private final String info;
     private final int order;
@@ -106,6 +87,25 @@ public class UniformBSplineTest {
         coefficients = new double[order];
         theta = new double[order][deriveOrder + 1];
         bSplineWork = new double[order][order];
+    }
+
+    @Parameters
+    public static Collection<Object[]> data() {
+        // Order 5, x = 0.00
+        double[] c1 = {0.0416666e0, 0.4583333e0, 0.4583333e0, 0.0416666e0, 0.0000000e0};
+        double[] d1 = {-0.1666667e0, -0.5000000e0, 0.5000000e0, 0.1666667e0, 0.0000000e0};
+        // Order 5, x = 0.25
+        double[] c2 = {0.0131836e0, 0.3248700e0, 0.5608720e0, 0.1009110e0, 0.0001627e0};
+        double[] d2 = {-0.0703125e0, -0.5416670e0, 0.2968750e0, 0.3125000e0, 0.0026042e0};
+        // Order 5, x = 0.50
+        double[] c3 = {0.0026041e0, 0.1979167e0, 0.5989583e0, 0.1979167e0, 0.0026041e0};
+        double[] d3 = {-0.0208333e0, -0.4583333e0, 0.0000000e0, 0.4583333e0, 0.0208333e0};
+
+        return Arrays.asList(new Object[][]{
+                {"Order 5, x = 0.00", 5, 0.00e0, c1, d1},
+                {"Order 5, x = 0.25", 5, 0.25e0, c2, d2},
+                {"Order 5, x = 0.50", 5, 0.50e0, c3, d3}
+        });
     }
 
     /**

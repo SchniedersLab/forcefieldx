@@ -47,7 +47,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import ffx.algorithms.misc.PJDependentTest;
-import ffx.algorithms.groovy.CrystalMin;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
@@ -63,27 +62,17 @@ public class CrystalMinTest extends PJDependentTest {
     Binding binding;
     CrystalMin xtalMin;
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        xtalMin = new CrystalMin();
-        xtalMin.setBinding(binding);
-    }
-
     @After
     public void after() {
         xtalMin.destroyPotentials();
         System.gc();
     }
 
-    @Test
-    public void testCrystalMinHelp() {
-        // Set-up the input arguments for the CrystalMin script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        xtalMin.run();
+    @Before
+    public void before() {
+        binding = new Binding();
+        xtalMin = new CrystalMin();
+        xtalMin.setBinding(binding);
     }
 
     /**
@@ -109,7 +98,7 @@ public class CrystalMinTest extends PJDependentTest {
         double expectedPotentialEnergy = -32.72657252765883;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy,1E-6);
+        Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
 
         // Delete all created directories and files.
         try {
@@ -121,12 +110,12 @@ public class CrystalMinTest extends PJDependentTest {
     }
 
     /**
-     * Tests the iterations flag of the CrystalMin class.
+     * Tests the fractional flag of the CrystalMin class.
      */
     @Test
-    public void testCrystalMinIterations() {
+    public void testCrystalMinCoords() {
         // Set-up the input arguments for the script.
-        String[] args = {"-I", "1", "-e", "0.25", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"};
+        String[] args = {"-c", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"};
         binding.setVariable("args", args);
 
         Path path = null;
@@ -140,7 +129,7 @@ public class CrystalMinTest extends PJDependentTest {
         // Evaluate the script.
         xtalMin.run();
 
-        double expectedPotentialEnergy = -32.63130589380454;
+        double expectedPotentialEnergy = -32.535694367226576;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
         Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
@@ -188,13 +177,23 @@ public class CrystalMinTest extends PJDependentTest {
         }
     }
 
+    @Test
+    public void testCrystalMinHelp() {
+        // Set-up the input arguments for the CrystalMin script.
+        String[] args = {"-h"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        xtalMin.run();
+    }
+
     /**
-     * Tests the fractional flag of the CrystalMin class.
+     * Tests the iterations flag of the CrystalMin class.
      */
     @Test
-    public void testCrystalMinCoords() {
+    public void testCrystalMinIterations() {
         // Set-up the input arguments for the script.
-        String[] args = {"-c", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"};
+        String[] args = {"-I", "1", "-e", "0.25", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"};
         binding.setVariable("args", args);
 
         Path path = null;
@@ -208,10 +207,10 @@ public class CrystalMinTest extends PJDependentTest {
         // Evaluate the script.
         xtalMin.run();
 
-        double expectedPotentialEnergy = -32.535694367226576;
+        double expectedPotentialEnergy = -32.63130589380454;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy,1E-6);
+        Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
 
         // Delete all created directories and files.
         try {

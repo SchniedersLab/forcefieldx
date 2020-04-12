@@ -155,7 +155,9 @@ public class PJDoubleArray implements AtomicDoubleArray {
      * {@inheritDoc}
      */
     @Override
-    public void set(int threadID, int index, double value) { array.getAndSet(index, value); }
+    public void set(int threadID, int index, double value) {
+        array.getAndSet(index, value);
+    }
 
     /**
      * {@inheritDoc}

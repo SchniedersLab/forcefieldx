@@ -62,8 +62,10 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ELEC_FORM;
 import ffx.potential.parameters.MultipoleType;
 import static ffx.potential.extended.ExtConstants.RNG;
+import static ffx.potential.parameters.MultipoleType.multipoleTypeFactory;
 import static ffx.utilities.Constants.kB;
 
 /**
@@ -74,43 +76,8 @@ import static ffx.utilities.Constants.kB;
  */
 public final class ExtUtils {
 
-    /**
-     * Static class.
-     */
-    private ExtUtils() {
-    }
-
     private static final Logger logger = Logger.getLogger(ExtUtils.class.getName());
-
-    /**
-     * <p>setProp.</p>
-     *
-     * @param key a {@link java.lang.String} object.
-     * @param set a T object.
-     * @param <T> a T object.
-     */
-    public static <T> void setProp(String key, T set) {
-        if (key.startsWith("esv.")) {
-            if (Arrays.asList(ExtendedSystem.ExtendedSystemConfig.class.getDeclaredFields())
-                    .stream().noneMatch((Field f) -> key.substring(4).equalsIgnoreCase(f.getName()))) {
-                logger.warning(format("Setting an unused property: %s", key));
-            }
-        }
-        System.setProperty(key, String.valueOf(set));
-    }
-
-    /**
-     * <p>setProp.</p>
-     *
-     * @param set  a boolean.
-     * @param keys a {@link java.lang.String} object.
-     */
-    public static void setProp(boolean set, String... keys) {
-        for (String key : keys) {
-            setProp(key, set);
-        }
-    }
-
+    private static AbstractConfiguration systemCache;
     /**
      * Constant <code>debug=prop("dbg.debug", false)</code>
      */
@@ -123,175 +90,10 @@ public final class ExtUtils {
      * Constant <code>doubleFormat="prop(dbg.debugFormat, %.3f)"</code>
      */
     public static final String doubleFormat = prop("dbg.debugFormat", "%.3f");
-
     /**
-     * Print the Properties defined by the given key prefixes.
-     *
-     * @param header      a {@link java.lang.String} object.
-     * @param properties  a {@link java.util.Properties} object.
-     * @param keyPrefixes an array of {@link java.lang.String} objects.
+     * Static class.
      */
-    public static void printConfigSet(String header, Properties properties, String[] keyPrefixes) {
-        StringBuilder SB = new StringBuilder();
-        properties.keySet().stream()
-                .filter(k -> {
-                    String key = k.toString().toLowerCase();
-                    for (String prefix : keyPrefixes) {
-                        if (key.startsWith(prefix)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                })
-                .forEach(key -> SB.append(String.format("   %-30s %s",
-                        key.toString() + ":", System.getProperty(key.toString()))));
-        if (!SB.toString().isEmpty()) {
-            if (header != null) {
-                SB.insert(0, format(" %s", header));
-            }
-            logger.info(SB.toString());
-        }
-    }
-
-    /**
-     * <p>printConfigSet.</p>
-     *
-     * @param header     a {@link java.lang.String} object.
-     * @param properties a {@link java.util.Properties} object.
-     * @param prefix     a {@link java.lang.String} object.
-     */
-    public static void printConfigSet(String header, Properties properties, String prefix) {
-        printConfigSet(header, properties, new String[]{prefix});
-    }
-
-    /**
-     * <p>primitivizeIntegers.</p>
-     *
-     * @param list a {@link java.util.List} object.
-     * @return an array of {@link int} objects.
-     */
-    public static int[] primitivizeIntegers(List<Integer> list) {
-        return list.stream().mapToInt((Integer i) -> i).toArray();
-    }
-
-    /**
-     * <p>primitivizeDoubles.</p>
-     *
-     * @param list a {@link java.util.List} object.
-     * @return an array of {@link double} objects.
-     */
-    public static double[] primitivizeDoubles(List<Double> list) {
-        return list.stream().mapToDouble((Double i) -> i).toArray();
-    }
-
-    /**
-     * <p>initializeBackgroundMultipoles.</p>
-     *
-     * @param backgroundAtoms a {@link java.util.List} object.
-     * @param ff              a {@link ffx.potential.parameters.ForceField} object.
-     */
-    public static void initializeBackgroundMultipoles(List<Atom> backgroundAtoms, ForceField ff) {
-        for (int i = 0; i < backgroundAtoms.size(); i++) {
-            Atom bg = backgroundAtoms.get(i);
-            MultipoleType type = MultipoleType.multipoleTypeFactory(bg, ff);
-            if (type == null) {
-                logger.severe(format("No MultipoleType could be assigned:\n %s --> %s",
-                        bg.toString(), bg.getAtomType()));
-            }
-        }
-    }
-
-    @SafeVarargs
-    @SuppressWarnings("serial")
-    private static <T> Collection<T> join(Collection<? extends T>... add) {
-        return (new ArrayList<T>() {
-            {
-                for (Collection<? extends T> c : add) {
-                    addAll(c);
-                }
-            }
-        });
-    }
-
-    /**
-     * <p>join.</p>
-     *
-     * @param add a {@link java.util.List} object.
-     * @param <T> a T object.
-     * @return a {@link java.util.List} object.
-     */
-    @SafeVarargs
-    @SuppressWarnings("serial")
-    public static <T> List<T> join(List<? extends T>... add) {
-        return (new ArrayList<T>() {
-            {
-                for (Collection<? extends T> c : add) {
-                    addAll(c);
-                }
-            }
-        });
-    }
-
-    /**
-     * <p>intRange.</p>
-     *
-     * @param start a int.
-     * @param end   a int.
-     * @return a {@link java.util.List} object.
-     */
-    public static List<Integer> intRange(int start, int end) {
-        List<Integer> intArray = new ArrayList<>();
-        for (int i = start; i <= end; i++) {
-            intArray.add(i);
-        }
-        return intArray;
-    }
-
-    /**
-     * <p>intRangeArray.</p>
-     *
-     * @param start a int.
-     * @param end   a int.
-     * @return an array of {@link int} objects.
-     */
-    public static int[] intRangeArray(int start, int end) {
-        int array[] = new int[end - start + 1];
-        for (int i = start; i <= end; i++) {
-            array[i - start] = i;
-        }
-        return array;
-    }
-
-    /**
-     * <p>intRange.</p>
-     *
-     * @param single a int.
-     * @return a {@link java.util.List} object.
-     */
-    public static List<Integer> intRange(int single) {
-        return intRange(single, single);
-    }
-
-    /**
-     * <p>view.</p>
-     *
-     * @param c   a {@link java.util.Collection} object.
-     * @param <T> a T object.
-     * @return a {@link java.util.Collection} object.
-     */
-    public static <T> Collection<T> view(Collection<? extends T> c) {
-        return (c != null) ? Collections.unmodifiableCollection(c) : null;
-    }
-
-    /**
-     * <p>view.</p>
-     *
-     * @param c   a {@link java.util.List} object.
-     * @param <T> a T object.
-     * @return a {@link java.util.List} object.
-     */
-    public static <T> List<T> view(List<? extends T> c) {
-        return (c != null) ? Collections.unmodifiableList(c) : null;
+    private ExtUtils() {
     }
 
     /**
@@ -309,13 +111,19 @@ public final class ExtUtils {
     }
 
     /**
-     * <p>frmt.</p>
+     * Returns the result of calling toString() on each element of the array.
+     * Returned type is Object[] (rather than String[]) to support use as
+     * varargs. Example: format("%s", Arrays.toString( array ); // GOOD
+     * format("%s %s %s %s", Arrays.toString( array ); // FAIL
+     * <p>
+     * format("%s", arrayToStrings( array ); // FAIL format("%s %s %s %s",
+     * arrayToStrings( array ); // GOOD
      *
-     * @param x an array of {@link double} objects.
-     * @return a {@link java.lang.String} object.
+     * @param args an array of {@link java.lang.Object} objects.
+     * @return an array of {@link java.lang.Object} objects.
      */
-    public static String frmt(double[] x) {
-        return formatArray(x);
+    public static Object[] arrayToStrings(Object[] args) {
+        return Arrays.stream(args).map(Object::toString).toArray();
     }
 
     /**
@@ -361,6 +169,214 @@ public final class ExtUtils {
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    /**
+     * <p>frmt.</p>
+     *
+     * @param x an array of {@link double} objects.
+     * @return a {@link java.lang.String} object.
+     */
+    public static String frmt(double[] x) {
+        return formatArray(x);
+    }
+
+    /**
+     * <p>initializeBackgroundMultipoles.</p>
+     *
+     * @param backgroundAtoms a {@link java.util.List} object.
+     * @param ff              a {@link ffx.potential.parameters.ForceField} object.
+     */
+    public static void initializeBackgroundMultipoles(List<Atom> backgroundAtoms, ForceField ff) {
+        for (int i = 0; i < backgroundAtoms.size(); i++) {
+            Atom bg = backgroundAtoms.get(i);
+            MultipoleType type = multipoleTypeFactory(ELEC_FORM.PAM, bg, ff);
+            if (type == null) {
+                logger.severe(format("No MultipoleType could be assigned:\n %s --> %s",
+                        bg.toString(), bg.getAtomType()));
+            }
+        }
+    }
+
+    /**
+     * <p>intRange.</p>
+     *
+     * @param start a int.
+     * @param end   a int.
+     * @return a {@link java.util.List} object.
+     */
+    public static List<Integer> intRange(int start, int end) {
+        List<Integer> intArray = new ArrayList<>();
+        for (int i = start; i <= end; i++) {
+            intArray.add(i);
+        }
+        return intArray;
+    }
+
+    /**
+     * <p>intRange.</p>
+     *
+     * @param single a int.
+     * @return a {@link java.util.List} object.
+     */
+    public static List<Integer> intRange(int single) {
+        return intRange(single, single);
+    }
+
+    /**
+     * <p>intRangeArray.</p>
+     *
+     * @param start a int.
+     * @param end   a int.
+     * @return an array of {@link int} objects.
+     */
+    public static int[] intRangeArray(int start, int end) {
+        int array[] = new int[end - start + 1];
+        for (int i = start; i <= end; i++) {
+            array[i - start] = i;
+        }
+        return array;
+    }
+
+    /**
+     * <p>join.</p>
+     *
+     * @param add a {@link java.util.List} object.
+     * @param <T> a T object.
+     * @return a {@link java.util.List} object.
+     */
+    @SafeVarargs
+    @SuppressWarnings("serial")
+    public static <T> List<T> join(List<? extends T>... add) {
+        return (new ArrayList<T>() {
+            {
+                for (Collection<? extends T> c : add) {
+                    addAll(c);
+                }
+            }
+        });
+    }
+
+    /**
+     * Use this to iterate easily over a collection of lists. Returns the
+     * inferred parent list type. Duplicate elements allowed. "View" intentional
+     * to avoid vain attempts at modifying the component lists.
+     *
+     * @param lists a {@link java.util.List} object.
+     * @param <T>   a T object.
+     * @return a {@link java.util.List} object.
+     */
+    @SafeVarargs
+    public static final <T> List<T> joinedListView(List<? extends T>... lists) {
+        List<T> joined = new ArrayList<>();
+        for (List<? extends T> list : lists) {
+            joined.addAll(list);
+        }
+        return Collections.unmodifiableList(joined);
+    }
+
+    /**
+     * Return velocities from a Maxwell-Boltzmann distribution of momenta. The
+     * variance of each independent momentum component is kT * mass.
+     *
+     * @param mass        a double.
+     * @param temperature a double.
+     * @return an array of {@link double} objects.
+     */
+    public static double[] maxwellVelocity(double mass, double temperature) {
+        double vv[] = new double[3];
+        for (int i = 0; i < 3; i++) {
+            vv[i] = RNG.nextGaussian() * sqrt(kB * temperature / mass);
+        }
+        return vv;
+    }
+
+    /**
+     * <p>primitivizeDoubles.</p>
+     *
+     * @param list a {@link java.util.List} object.
+     * @return an array of {@link double} objects.
+     */
+    public static double[] primitivizeDoubles(List<Double> list) {
+        return list.stream().mapToDouble((Double i) -> i).toArray();
+    }
+
+    /**
+     * <p>primitivizeIntegers.</p>
+     *
+     * @param list a {@link java.util.List} object.
+     * @return an array of {@link int} objects.
+     */
+    public static int[] primitivizeIntegers(List<Integer> list) {
+        return list.stream().mapToInt((Integer i) -> i).toArray();
+    }
+
+    /**
+     * Print the Properties defined by the given key prefixes.
+     *
+     * @param header      a {@link java.lang.String} object.
+     * @param properties  a {@link java.util.Properties} object.
+     * @param keyPrefixes an array of {@link java.lang.String} objects.
+     */
+    public static void printConfigSet(String header, Properties properties, String[] keyPrefixes) {
+        StringBuilder SB = new StringBuilder();
+        properties.keySet().stream()
+                .filter(k -> {
+                    String key = k.toString().toLowerCase();
+                    for (String prefix : keyPrefixes) {
+                        if (key.startsWith(prefix)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })
+                .forEach(key -> SB.append(String.format("   %-30s %s",
+                        key.toString() + ":", System.getProperty(key.toString()))));
+        if (!SB.toString().isEmpty()) {
+            if (header != null) {
+                SB.insert(0, format(" %s", header));
+            }
+            logger.info(SB.toString());
+        }
+    }
+
+    /**
+     * <p>printConfigSet.</p>
+     *
+     * @param header     a {@link java.lang.String} object.
+     * @param properties a {@link java.util.Properties} object.
+     * @param prefix     a {@link java.lang.String} object.
+     */
+    public static void printConfigSet(String header, Properties properties, String prefix) {
+        printConfigSet(header, properties, new String[]{prefix});
+    }
+
+    /**
+     * <p>printTreeFromNode.</p>
+     *
+     * @param target a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public static void printTreeFromNode(MSNode target) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(format(" Tree Hierarchy for %s\n", target.getName()));
+        sb.append(format(" ===================%s\n", StringUtils.repeat("=", target.getName().length())));
+        TreeNode root = target;
+        while (root.getParent() != null) {
+            root = root.getParent();
+        }
+        List<MSNode> toLeaves = target.getDescendants(MSNode.class);
+        boolean init = false;
+        for (MSNode node : toLeaves) {
+            if (!init) {
+                sb.append(format(" %s> %s\n", StringUtils.repeat(">", node.getLevel()), node.getName()));
+                init = true;
+                continue;
+            }
+            if (!node.getName().isEmpty()) {
+                sb.append(format(" └%s> %s\n", StringUtils.repeat("-", node.getLevel()), node.getName()));
+            }
+        }
+        logger.info(sb.toString());
     }
 
     /**
@@ -463,8 +479,6 @@ public final class ExtUtils {
         }
     }
 
-    private static AbstractConfiguration systemCache;
-
     /**
      * If no Configuration is supplied, default to a converted and cached copy
      * of System.getProperties().
@@ -545,47 +559,67 @@ public final class ExtUtils {
     }
 
     /**
-     * Return velocities from a Maxwell-Boltzmann distribution of momenta. The
-     * variance of each independent momentum component is kT * mass.
+     * <p>removeFinalNewline.</p>
      *
-     * @param mass        a double.
-     * @param temperature a double.
-     * @return an array of {@link double} objects.
+     * @param sb a {@link java.lang.StringBuilder} object.
+     * @return a {@link java.lang.StringBuilder} object.
      */
-    public static double[] maxwellVelocity(double mass, double temperature) {
-        double vv[] = new double[3];
-        for (int i = 0; i < 3; i++) {
-            vv[i] = RNG.nextGaussian() * sqrt(kB * temperature / mass);
+    public static StringBuilder removeFinalNewline(StringBuilder sb) {
+        if (sb.lastIndexOf("\n") + 1 == sb.length()) {
+            sb.replace(sb.length() - 1, sb.length(), "");
         }
-        return vv;
+        return sb;
     }
 
     /**
-     * <p>printTreeFromNode.</p>
+     * <p>setProp.</p>
      *
-     * @param target a {@link ffx.potential.bonded.MSNode} object.
+     * @param key a {@link java.lang.String} object.
+     * @param set a T object.
+     * @param <T> a T object.
      */
-    public static void printTreeFromNode(MSNode target) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(format(" Tree Hierarchy for %s\n", target.getName()));
-        sb.append(format(" ===================%s\n", StringUtils.repeat("=", target.getName().length())));
-        TreeNode root = target;
-        while (root.getParent() != null) {
-            root = root.getParent();
-        }
-        List<MSNode> toLeaves = target.getDescendants(MSNode.class);
-        boolean init = false;
-        for (MSNode node : toLeaves) {
-            if (!init) {
-                sb.append(format(" %s> %s\n", StringUtils.repeat(">", node.getLevel()), node.getName()));
-                init = true;
-                continue;
-            }
-            if (!node.getName().isEmpty()) {
-                sb.append(format(" └%s> %s\n", StringUtils.repeat("-", node.getLevel()), node.getName()));
+    public static <T> void setProp(String key, T set) {
+        if (key.startsWith("esv.")) {
+            if (Arrays.asList(ExtendedSystem.ExtendedSystemConfig.class.getDeclaredFields())
+                    .stream().noneMatch((Field f) -> key.substring(4).equalsIgnoreCase(f.getName()))) {
+                logger.warning(format("Setting an unused property: %s", key));
             }
         }
-        logger.info(sb.toString());
+        System.setProperty(key, String.valueOf(set));
+    }
+
+    /**
+     * <p>setProp.</p>
+     *
+     * @param set  a boolean.
+     * @param keys a {@link java.lang.String} object.
+     */
+    public static void setProp(boolean set, String... keys) {
+        for (String key : keys) {
+            setProp(key, set);
+        }
+    }
+
+    /**
+     * <p>view.</p>
+     *
+     * @param c   a {@link java.util.Collection} object.
+     * @param <T> a T object.
+     * @return a {@link java.util.Collection} object.
+     */
+    public static <T> Collection<T> view(Collection<? extends T> c) {
+        return (c != null) ? Collections.unmodifiableCollection(c) : null;
+    }
+
+    /**
+     * <p>view.</p>
+     *
+     * @param c   a {@link java.util.List} object.
+     * @param <T> a T object.
+     * @return a {@link java.util.List} object.
+     */
+    public static <T> List<T> view(List<? extends T> c) {
+        return (c != null) ? Collections.unmodifiableList(c) : null;
     }
 
     /**
@@ -632,51 +666,16 @@ public final class ExtUtils {
         return termSum;
     }
 
-    /**
-     * <p>removeFinalNewline.</p>
-     *
-     * @param sb a {@link java.lang.StringBuilder} object.
-     * @return a {@link java.lang.StringBuilder} object.
-     */
-    public static StringBuilder removeFinalNewline(StringBuilder sb) {
-        if (sb.lastIndexOf("\n") + 1 == sb.length()) {
-            sb.replace(sb.length() - 1, sb.length(), "");
-        }
-        return sb;
-    }
-
-    /**
-     * Returns the result of calling toString() on each element of the array.
-     * Returned type is Object[] (rather than String[]) to support use as
-     * varargs. Example: format("%s", Arrays.toString( array ); // GOOD
-     * format("%s %s %s %s", Arrays.toString( array ); // FAIL
-     * <p>
-     * format("%s", arrayToStrings( array ); // FAIL format("%s %s %s %s",
-     * arrayToStrings( array ); // GOOD
-     *
-     * @param args an array of {@link java.lang.Object} objects.
-     * @return an array of {@link java.lang.Object} objects.
-     */
-    public static Object[] arrayToStrings(Object[] args) {
-        return Arrays.stream(args).map(Object::toString).toArray();
-    }
-
-    /**
-     * Use this to iterate easily over a collection of lists. Returns the
-     * inferred parent list type. Duplicate elements allowed. "View" intentional
-     * to avoid vain attempts at modifying the component lists.
-     *
-     * @param lists a {@link java.util.List} object.
-     * @param <T>   a T object.
-     * @return a {@link java.util.List} object.
-     */
     @SafeVarargs
-    public static final <T> List<T> joinedListView(List<? extends T>... lists) {
-        List<T> joined = new ArrayList<>();
-        for (List<? extends T> list : lists) {
-            joined.addAll(list);
-        }
-        return Collections.unmodifiableList(joined);
+    @SuppressWarnings("serial")
+    private static <T> Collection<T> join(Collection<? extends T>... add) {
+        return (new ArrayList<T>() {
+            {
+                for (Collection<? extends T> c : add) {
+                    addAll(c);
+                }
+            }
+        });
     }
 
     @SuppressWarnings("serial")

@@ -147,6 +147,55 @@ public class TopologyOptions {
     String lambdaFunction = "1.0";
 
     /**
+     * Performs the bulk of the work of setting up a multi-topology system.
+     * <p>
+     * The sb StringBuilder is often something like "Timing energy and gradients for". The
+     * method will append the exact type of Potential being assembled.
+     *
+     * @param assemblies   Opened MolecularAssembly(s).
+     * @param threadsAvail Number of available threads.
+     * @param sb           A StringBuilder describing what is to be done.
+     * @return a {@link ffx.numerics.Potential} object.
+     */
+    public Potential assemblePotential(MolecularAssembly[] assemblies, int threadsAvail, StringBuilder sb) {
+        int nargs = assemblies.length;
+        int numPar = getNumParallel(threadsAvail, nargs);
+        UnivariateSwitchingFunction sf = nargs > 1 ? getSwitchingFunction() : null;
+        List<Integer> uniqueA;
+        List<Integer> uniqueB;
+        if (assemblies.length >= 4) {
+            uniqueA = getUniqueAtomsA(assemblies[0]);
+            uniqueB = getUniqueAtomsB(assemblies[2]);
+        } else {
+            uniqueA = Collections.emptyList();
+            uniqueB = Collections.emptyList();
+        }
+
+        return getTopology(assemblies, sf, uniqueA, uniqueB, numPar, sb);
+    }
+
+    /**
+     * The number of topologies to run in parallel.
+     *
+     * @param threadsAvail a int.
+     * @param nArgs        a int.
+     * @return a int.
+     */
+    public int getNumParallel(int threadsAvail, int nArgs) {
+        int numParallel = nPar;
+        if (threadsAvail % numParallel != 0) {
+            logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d reverting to sequential",
+                    threadsAvail, numParallel));
+            numParallel = 1;
+        } else if (nArgs % numParallel != 0) {
+            logger.warning(String.format(" Number of topologies %d not evenly divisible by np %d reverting to sequential",
+                    nArgs, numParallel));
+            numParallel = 1;
+        }
+        return numParallel;
+    }
+
+    /**
      * Return the switching function between topology energies.
      *
      * @return the switching function.
@@ -184,62 +233,57 @@ public class TopologyOptions {
     }
 
     /**
-     * The number of topologies to run in parallel.
+     * Configure a Dual-, Quad- or Oct- Topology.
      *
-     * @param threadsAvail a int.
-     * @param nArgs        a int.
-     * @return a int.
+     * @param topologies  The topologies.
+     * @param sf          The Potential switching function.
+     * @param uniqueA     The unique atoms of topology A.
+     * @param uniqueB     The unique atoms of topology B.
+     * @param numParallel The number of energies to evaluate in parallel.
+     * @param sb          A StringBuilder for logging.
+     * @return The Potential for the Topology.
      */
-    public int getNumParallel(int threadsAvail, int nArgs) {
-        int numParallel = nPar;
-        if (threadsAvail % numParallel != 0) {
-            logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d reverting to sequential",
-                    threadsAvail, numParallel));
-            numParallel = 1;
-        } else if (nArgs % numParallel != 0) {
-            logger.warning(String.format(" Number of topologies %d not evenly divisible by np %d reverting to sequential",
-                    nArgs, numParallel));
-            numParallel = 1;
+    public Potential getTopology(MolecularAssembly[] topologies,
+                                 UnivariateSwitchingFunction sf,
+                                 List<Integer> uniqueA, List<Integer> uniqueB,
+                                 int numParallel, StringBuilder sb) {
+        Potential potential = null;
+
+        switch (topologies.length) {
+            case 1:
+                sb.append("single topology ");
+                potential = topologies[0].getPotentialEnergy();
+                break;
+            case 2:
+                sb.append("dual topology ");
+                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+                if (numParallel == 2) {
+                    dte.setParallel(true);
+                }
+                potential = dte;
+                break;
+            case 4:
+                sb.append("quad topology ");
+                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
+                QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
+                if (numParallel >= 2) {
+                    qte.setParallel(true);
+                    if (numParallel == 4) {
+                        dta.setParallel(true);
+                        dtb.setParallel(true);
+                    }
+                }
+                potential = qte;
+                break;
+            default:
+                logger.severe(" Must have 2, 4, or 8 topologies!");
+                break;
         }
-        return numParallel;
-    }
-
-    /**
-     * Set the alchemical atoms for this topology.
-     *
-     * @param topology a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void setSecondSystemAlchemistry(MolecularAssembly topology) {
-        AlchemicalOptions.setAlchemicalAtoms(topology, s2, f2, ligAt2);
-    }
-
-    /**
-     * Set uncharged atoms for this topology.
-     *
-     * @param topology a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void setSecondSystemUnchargedAtoms(MolecularAssembly topology) {
-        AlchemicalOptions.setUnchargedAtoms(topology, es2, ef2);
-    }
-
-    /**
-     * Collect unique atoms for the A dual-topology.
-     *
-     * @param topology A MolecularAssembly from dual-topology A.
-     * @return A List of Integers.
-     */
-    public List<Integer> getUniqueAtomsA(MolecularAssembly topology) {
-        return getUniqueAtoms(topology, "A", unsharedA);
-    }
-
-    /**
-     * Collect unique atoms for the B dual-topology.
-     *
-     * @param topology A MolecularAssembly from dual-topology B.
-     * @return A List of Integers.
-     */
-    public List<Integer> getUniqueAtomsB(MolecularAssembly topology) {
-        return getUniqueAtoms(topology, "B", unsharedB);
+        sb.append(Arrays.stream(topologies).
+                map(MolecularAssembly::toString).
+                collect(Collectors.joining(", ", " [", "] ")));
+        return potential;
     }
 
     /**
@@ -300,85 +344,23 @@ public class TopologyOptions {
     }
 
     /**
-     * Performs the bulk of the work of setting up a multi-topology system.
-     * <p>
-     * The sb StringBuilder is often something like "Timing energy and gradients for". The
-     * method will append the exact type of Potential being assembled.
+     * Collect unique atoms for the A dual-topology.
      *
-     * @param assemblies   Opened MolecularAssembly(s).
-     * @param threadsAvail Number of available threads.
-     * @param sb           A StringBuilder describing what is to be done.
-     * @return a {@link ffx.numerics.Potential} object.
+     * @param topology A MolecularAssembly from dual-topology A.
+     * @return A List of Integers.
      */
-    public Potential assemblePotential(MolecularAssembly[] assemblies, int threadsAvail, StringBuilder sb) {
-        int nargs = assemblies.length;
-        int numPar = getNumParallel(threadsAvail, nargs);
-        UnivariateSwitchingFunction sf = nargs > 1 ? getSwitchingFunction() : null;
-        List<Integer> uniqueA;
-        List<Integer> uniqueB;
-        if (assemblies.length >= 4) {
-            uniqueA = getUniqueAtomsA(assemblies[0]);
-            uniqueB = getUniqueAtomsB(assemblies[2]);
-        } else {
-            uniqueA = Collections.emptyList();
-            uniqueB = Collections.emptyList();
-        }
-
-        return getTopology(assemblies, sf, uniqueA, uniqueB, numPar, sb);
+    public List<Integer> getUniqueAtomsA(MolecularAssembly topology) {
+        return getUniqueAtoms(topology, "A", unsharedA);
     }
 
     /**
-     * Configure a Dual-, Quad- or Oct- Topology.
+     * Collect unique atoms for the B dual-topology.
      *
-     * @param topologies  The topologies.
-     * @param sf          The Potential switching function.
-     * @param uniqueA     The unique atoms of topology A.
-     * @param uniqueB     The unique atoms of topology B.
-     * @param numParallel The number of energies to evaluate in parallel.
-     * @param sb          A StringBuilder for logging.
-     * @return The Potential for the Topology.
+     * @param topology A MolecularAssembly from dual-topology B.
+     * @return A List of Integers.
      */
-    public Potential getTopology(MolecularAssembly[] topologies,
-                                 UnivariateSwitchingFunction sf,
-                                 List<Integer> uniqueA, List<Integer> uniqueB,
-                                 int numParallel, StringBuilder sb) {
-        Potential potential = null;
-
-        switch (topologies.length) {
-            case 1:
-                sb.append("single topology ");
-                potential = topologies[0].getPotentialEnergy();
-                break;
-            case 2:
-                sb.append("dual topology ");
-                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
-                if (numParallel == 2) {
-                    dte.setParallel(true);
-                }
-                potential = dte;
-                break;
-            case 4:
-                sb.append("quad topology ");
-                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
-                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
-                QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
-                if (numParallel >= 2) {
-                    qte.setParallel(true);
-                    if (numParallel == 4) {
-                        dta.setParallel(true);
-                        dtb.setParallel(true);
-                    }
-                }
-                potential = qte;
-                break;
-            default:
-                logger.severe(" Must have 2, 4, or 8 topologies!");
-                break;
-        }
-        sb.append(Arrays.stream(topologies).
-                map(MolecularAssembly::toString).
-                collect(Collectors.joining(", ", " [", "] ")));
-        return potential;
+    public List<Integer> getUniqueAtomsB(MolecularAssembly topology) {
+        return getUniqueAtoms(topology, "B", unsharedB);
     }
 
     /**
@@ -388,5 +370,23 @@ public class TopologyOptions {
      */
     public boolean hasSoftcore() {
         return ((ligAt2 != null && ligAt2.length() > 0) || s2 > 0);
+    }
+
+    /**
+     * Set the alchemical atoms for this topology.
+     *
+     * @param topology a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public void setSecondSystemAlchemistry(MolecularAssembly topology) {
+        AlchemicalOptions.setAlchemicalAtoms(topology, s2, f2, ligAt2);
+    }
+
+    /**
+     * Set uncharged atoms for this topology.
+     *
+     * @param topology a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public void setSecondSystemUnchargedAtoms(MolecularAssembly topology) {
+        AlchemicalOptions.setUnchargedAtoms(topology, es2, ef2);
     }
 }

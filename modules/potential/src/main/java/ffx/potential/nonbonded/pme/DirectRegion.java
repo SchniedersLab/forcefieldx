@@ -62,17 +62,7 @@ import static ffx.potential.parameters.MultipoleType.t100;
 public class DirectRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(DirectRegion.class.getName());
-
-    /**
-     * An ordered array of atoms in the system.
-     */
-    private Atom[] atoms;
-    private double[] polarizability;
-    /**
-     * Dimensions of [nsymm][nAtoms][10]
-     */
-    private double[][][] globalMultipole;
-    private double[][] cartMultipolePhi;
+    private final DirectLoop[] directLoop;
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
@@ -83,6 +73,16 @@ public class DirectRegion extends ParallelRegion {
      */
     public double[][] directDipole;
     public double[][] directDipoleCR;
+    /**
+     * An ordered array of atoms in the system.
+     */
+    private Atom[] atoms;
+    private double[] polarizability;
+    /**
+     * Dimensions of [nsymm][nAtoms][10]
+     */
+    private double[][][] globalMultipole;
+    private double[][] cartMultipolePhi;
     /**
      * Field array.
      */
@@ -98,10 +98,23 @@ public class DirectRegion extends ParallelRegion {
     private GeneralizedKirkwood generalizedKirkwood;
     private double aewald;
     private double aewald3;
-    private final DirectLoop[] directLoop;
 
     public DirectRegion(int nt) {
         directLoop = new DirectLoop[nt];
+    }
+
+    /**
+     * Execute the DirectRegion with the passed ParallelTeam.
+     *
+     * @param parallelTeam The ParallelTeam instance to execute with.
+     */
+    public void executeWith(ParallelTeam parallelTeam) {
+        try {
+            parallelTeam.execute(this);
+        } catch (Exception e) {
+            String message = " Exception computing direct induced dipoles.\n";
+            logger.log(Level.WARNING, message, e);
+        }
     }
 
     public void init(Atom[] atoms, double[] polarizability, double[][][] globalMultipole, double[][] cartMultipolePhi,
@@ -128,20 +141,6 @@ public class DirectRegion extends ParallelRegion {
         this.directDipoleCR = directDipoleCR;
     }
 
-    /**
-     * Execute the DirectRegion with the passed ParallelTeam.
-     *
-     * @param parallelTeam The ParallelTeam instance to execute with.
-     */
-    public void executeWith(ParallelTeam parallelTeam) {
-        try {
-            parallelTeam.execute(this);
-        } catch (Exception e) {
-            String message = " Exception computing direct induced dipoles.\n";
-            logger.log(Level.WARNING, message, e);
-        }
-    }
-
     @Override
     public void run() throws Exception {
         int ti = getThreadIndex();
@@ -158,11 +157,6 @@ public class DirectRegion extends ParallelRegion {
     }
 
     private class DirectLoop extends IntegerForLoop {
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
 
         @Override
         public void run(int lb, int ub) throws Exception {
@@ -216,6 +210,11 @@ public class DirectRegion extends ParallelRegion {
                 directCRi[1] = indCR[1];
                 directCRi[2] = indCR[2];
             }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
         }
     }
 }

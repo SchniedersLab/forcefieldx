@@ -60,6 +60,99 @@ import groovy.lang.Binding;
 @RunWith(Parameterized.class)
 public class EnergyTest extends BaseFFXTest {
 
+    private final String info;
+    private final String filename;
+    private final int nAtoms;
+    private final int nBonds;
+    private final int nAngles;
+    private final int nStretchBends;
+    private final int nUreyBradleys;
+    private final int nOutOfPlaneBends;
+    private final int nTorsions;
+    private final int nImproperTorsions;
+    private final int nPiOrbitalTorsions;
+    private final int nTorsionTorsions;
+    private final int nVanDerWaals;
+    private final int nPermanent;
+    private final int nPolar;
+    private final int nGK;
+    private final double bondEnergy;
+    private final double angleEnergy;
+    private final double stretchBendEnergy;
+    private final double ureyBradleyEnergy;
+    private final double outOfPlaneBendEnergy;
+    private final double torsionEnergy;
+    private final double improperTorsionEnergy;
+    private final double piOrbitalTorsionEnergy;
+    private final double torsionTorsionEnergy;
+    private final double vanDerWaalsEnergy;
+    private final double permanentEnergy;
+    private final double polarizationEnergy;
+    private final double gkEnergy;
+    private final double totalEnergy;
+    private final boolean testOpenMM;
+    private final double tolerance = 1.0e-2;
+    private final double openMMTolerance = 0.5;
+    private Binding binding;
+    private Energy energy;
+    private Gradient gradient;
+    private LambdaGradient lambdaGradient;
+    public EnergyTest(String info, String filename, int nAtoms,
+                      double bondEnergy, int nBonds,
+                      double angleEnergy, int nAngles,
+                      double stretchBendEnergy, int nStretchBends,
+                      double ureyBradleyEnergy, int nUreyBradleys,
+                      double outOfPlaneBendEnergy, int nOutOfPlaneBends,
+                      double torsionEnergy, int nTorsions,
+                      double improperTorsionEnergy, int nImproperTorsions,
+                      double piOrbitalTorsionEnergy, int nPiOrbitalTorsions,
+                      double torsionTorsionEnergy, int nTorsionTorsions,
+                      double vanDerWaalsEnergy, int nVanDerWaals,
+                      double permanentEnergy, int nPermanent,
+                      double polarizationEnergy, int nPolar,
+                      double gkEnergy, int nGK, boolean testOpenMM) {
+        this.filename = filename;
+        this.info = info;
+        this.nAtoms = nAtoms;
+        this.bondEnergy = bondEnergy;
+        this.nBonds = nBonds;
+        this.angleEnergy = angleEnergy;
+        this.nAngles = nAngles;
+        this.stretchBendEnergy = stretchBendEnergy;
+        this.nStretchBends = nStretchBends;
+        this.ureyBradleyEnergy = ureyBradleyEnergy;
+        this.nUreyBradleys = nUreyBradleys;
+        this.outOfPlaneBendEnergy = outOfPlaneBendEnergy;
+        this.nOutOfPlaneBends = nOutOfPlaneBends;
+        this.torsionEnergy = torsionEnergy;
+        this.nTorsions = nTorsions;
+        this.improperTorsionEnergy = improperTorsionEnergy;
+        this.nImproperTorsions = nImproperTorsions;
+        this.piOrbitalTorsionEnergy = piOrbitalTorsionEnergy;
+        this.nPiOrbitalTorsions = nPiOrbitalTorsions;
+        this.torsionTorsionEnergy = torsionTorsionEnergy;
+        this.nTorsionTorsions = nTorsionTorsions;
+        this.vanDerWaalsEnergy = vanDerWaalsEnergy;
+        this.nVanDerWaals = nVanDerWaals;
+        this.permanentEnergy = permanentEnergy;
+        this.nPermanent = nPermanent;
+        this.polarizationEnergy = polarizationEnergy;
+        this.nPolar = nPolar;
+        this.gkEnergy = gkEnergy;
+        this.nGK = nGK;
+        this.testOpenMM = testOpenMM;
+
+        totalEnergy = bondEnergy + angleEnergy + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
+                + torsionEnergy + improperTorsionEnergy + piOrbitalTorsionEnergy + torsionTorsionEnergy
+                + vanDerWaalsEnergy + permanentEnergy + polarizationEnergy + gkEnergy;
+    }
+
+    @Before
+    public void before() {
+        binding = new Binding();
+        System.clearProperty("platform");
+    }
+
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
@@ -182,7 +275,7 @@ public class EnergyTest extends BaseFFXTest {
                         20.39805900, 748,
                         -78.53945229, 748,
                         -8.62910979, 748,
-                        -57.36727089002825, 903, false},
+                        -58.7112682143682, 903, false},
                 {
                         "Amber99sb Peptide",
                         "ffx/potential/structures/peptide-amber99sb.xyz",
@@ -356,101 +449,6 @@ public class EnergyTest extends BaseFFXTest {
         });
     }
 
-    private final String info;
-    private final String filename;
-    private final int nAtoms;
-    private final int nBonds;
-    private final int nAngles;
-    private final int nStretchBends;
-    private final int nUreyBradleys;
-    private final int nOutOfPlaneBends;
-    private final int nTorsions;
-    private final int nImproperTorsions;
-    private final int nPiOrbitalTorsions;
-    private final int nTorsionTorsions;
-    private final int nVanDerWaals;
-    private final int nPermanent;
-    private final int nPolar;
-    private final int nGK;
-    private final double bondEnergy;
-    private final double angleEnergy;
-    private final double stretchBendEnergy;
-    private final double ureyBradleyEnergy;
-    private final double outOfPlaneBendEnergy;
-    private final double torsionEnergy;
-    private final double improperTorsionEnergy;
-    private final double piOrbitalTorsionEnergy;
-    private final double torsionTorsionEnergy;
-    private final double vanDerWaalsEnergy;
-    private final double permanentEnergy;
-    private final double polarizationEnergy;
-    private final double gkEnergy;
-    private final double totalEnergy;
-    private final boolean testOpenMM;
-    private final double tolerance = 1.0e-2;
-    private final double openMMTolerance = 0.5;
-
-    private Binding binding;
-    private Energy energy;
-    private Gradient gradient;
-    private LambdaGradient lambdaGradient;
-
-    public EnergyTest(String info, String filename, int nAtoms,
-                      double bondEnergy, int nBonds,
-                      double angleEnergy, int nAngles,
-                      double stretchBendEnergy, int nStretchBends,
-                      double ureyBradleyEnergy, int nUreyBradleys,
-                      double outOfPlaneBendEnergy, int nOutOfPlaneBends,
-                      double torsionEnergy, int nTorsions,
-                      double improperTorsionEnergy, int nImproperTorsions,
-                      double piOrbitalTorsionEnergy, int nPiOrbitalTorsions,
-                      double torsionTorsionEnergy, int nTorsionTorsions,
-                      double vanDerWaalsEnergy, int nVanDerWaals,
-                      double permanentEnergy, int nPermanent,
-                      double polarizationEnergy, int nPolar,
-                      double gkEnergy, int nGK, boolean testOpenMM) {
-        this.filename = filename;
-        this.info = info;
-        this.nAtoms = nAtoms;
-        this.bondEnergy = bondEnergy;
-        this.nBonds = nBonds;
-        this.angleEnergy = angleEnergy;
-        this.nAngles = nAngles;
-        this.stretchBendEnergy = stretchBendEnergy;
-        this.nStretchBends = nStretchBends;
-        this.ureyBradleyEnergy = ureyBradleyEnergy;
-        this.nUreyBradleys = nUreyBradleys;
-        this.outOfPlaneBendEnergy = outOfPlaneBendEnergy;
-        this.nOutOfPlaneBends = nOutOfPlaneBends;
-        this.torsionEnergy = torsionEnergy;
-        this.nTorsions = nTorsions;
-        this.improperTorsionEnergy = improperTorsionEnergy;
-        this.nImproperTorsions = nImproperTorsions;
-        this.piOrbitalTorsionEnergy = piOrbitalTorsionEnergy;
-        this.nPiOrbitalTorsions = nPiOrbitalTorsions;
-        this.torsionTorsionEnergy = torsionTorsionEnergy;
-        this.nTorsionTorsions = nTorsionTorsions;
-        this.vanDerWaalsEnergy = vanDerWaalsEnergy;
-        this.nVanDerWaals = nVanDerWaals;
-        this.permanentEnergy = permanentEnergy;
-        this.nPermanent = nPermanent;
-        this.polarizationEnergy = polarizationEnergy;
-        this.nPolar = nPolar;
-        this.gkEnergy = gkEnergy;
-        this.nGK = nGK;
-        this.testOpenMM = testOpenMM;
-
-        totalEnergy = bondEnergy + angleEnergy + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
-                + torsionEnergy + improperTorsionEnergy + piOrbitalTorsionEnergy + torsionTorsionEnergy
-                + vanDerWaalsEnergy + permanentEnergy + polarizationEnergy + gkEnergy;
-    }
-
-    @Before
-    public void before() {
-        binding = new Binding();
-        System.clearProperty("platform");
-    }
-
     @Test
     public void testEnergy() {
         if (nAtoms > 10000 && !ffxCI) {
@@ -509,32 +507,6 @@ public class EnergyTest extends BaseFFXTest {
         // GK Energy
         assertEquals(info + " Solvation", gkEnergy, forceFieldEnergy.getSolvationEnergy(), tolerance);
         assertEquals(info + " Solvation Count", nGK, forceFieldEnergy.getSolvationInteractions());
-        energy.destroyPotentials();
-        System.gc();
-    }
-
-    @Test
-    public void testOpenMMEnergy() {
-        if (!testOpenMM || !ffxOpenMM) {
-            return;
-        }
-        logger.info(" Testing OpenMM energy for " + info);
-
-        energy = new Energy();
-        energy.setBinding(binding);
-
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"src/main/java/" + filename};
-        binding.setVariable("args", args);
-
-        System.setProperty("platform", "OMM");
-
-        // Evaluate the script.
-        energy.run();
-
-        System.clearProperty("platform");
-
-        assertEquals(info + " OpenMM Energy", totalEnergy, energy.energy, openMMTolerance);
         energy.destroyPotentials();
         System.gc();
     }
@@ -602,6 +574,32 @@ public class EnergyTest extends BaseFFXTest {
         assertEquals(info + " dEdXdL failures: ", 0, lambdaGradient.ndEdXdLFailures);
         assertEquals(info + " dEdX failures: ", 0, lambdaGradient.ndEdXFailures);
         lambdaGradient.destroyPotentials();
+        System.gc();
+    }
+
+    @Test
+    public void testOpenMMEnergy() {
+        if (!testOpenMM || !ffxOpenMM) {
+            return;
+        }
+        logger.info(" Testing OpenMM energy for " + info);
+
+        energy = new Energy();
+        energy.setBinding(binding);
+
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"src/main/java/" + filename};
+        binding.setVariable("args", args);
+
+        System.setProperty("platform", "OMM");
+
+        // Evaluate the script.
+        energy.run();
+
+        System.clearProperty("platform");
+
+        assertEquals(info + " OpenMM Energy", totalEnergy, energy.energy, openMMTolerance);
+        energy.destroyPotentials();
         System.gc();
     }
 }

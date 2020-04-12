@@ -65,8 +65,8 @@ import static ffx.numerics.math.DoubleMath.X;
 import static ffx.numerics.math.DoubleMath.dist;
 import static ffx.numerics.math.DoubleMath.dist2;
 import static ffx.numerics.math.DoubleMath.dot;
-import static ffx.numerics.math.DoubleMath.normalize;
 import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.normalize;
 
 /**
  * ConnollyRegion uses the algorithms from the AMS/VAM programs of
@@ -95,16 +95,27 @@ import static ffx.numerics.math.DoubleMath.length;
  */
 public class ConnollyRegion extends ParallelRegion {
 
+    /**
+     * Default size of a vector to randomly perturb coordinates.
+     */
+    public final static double DEFAULT_WIGGLE = 1.0e-8;
     private static final Logger logger = Logger.getLogger(ConnollyRegion.class.getName());
-
+    /**
+     * 3D grid for finding atom neighbors.
+     */
+    private final static int MAXCUBE = 40;
+    /**
+     * maximum number of cycle convex edges.
+     */
+    private final static int MAXCYEP = 30;
+    /**
+     * maximum number of convex face cycles.
+     */
+    private final static int MAXFPCY = 10;
     /**
      * Number of atoms in the system.
      */
     private final int nAtoms;
-    /**
-     * Array of atoms.
-     */
-    private Atom[] atoms;
     /**
      * Base atomic radii without the "exclude" buffer.
      */
@@ -118,48 +129,14 @@ public class ConnollyRegion extends ParallelRegion {
      */
     private final boolean[] skip;
     /**
-     * If true, compute the gradient
-     */
-    private boolean gradient = false;
-    /**
      * Array to store volume gradient
      **/
     private final double[][] volumeGradient;
     private final int[] itab;
-
     private final ParallelTeam parallelTeam;
     private final VolumeLoop[] volumeLoop;
     private final SharedDouble sharedVolume;
     private final SharedDouble sharedArea;
-    /**
-     * Probe is used for molecular (contact/reentrant) volume and surface area.
-     */
-    private double probe = 0.0;
-    /**
-     * Exclude is used for excluded volume and accessible surface area.
-     */
-    private double exclude = 1.4;
-    /**
-     * Default size of a vector to randomly perturb coordinates.
-     */
-    public final static double DEFAULT_WIGGLE = 1.0e-8;
-    /**
-     * Size of a vector to randomly perturb coordinates.
-     */
-    private double wiggle = DEFAULT_WIGGLE;
-
-    /**
-     * 3D grid for finding atom neighbors.
-     */
-    private final static int MAXCUBE = 40;
-    /**
-     * maximum number of cycle convex edges.
-     */
-    private final static int MAXCYEP = 30;
-    /**
-     * maximum number of convex face cycles.
-     */
-    private final static int MAXFPCY = 10;
     /**
      * Maximum number of saddle faces.
      */
@@ -238,10 +215,6 @@ public class ConnollyRegion extends ParallelRegion {
      */
     private final int[] neighborToTorus;
     /**
-     * Number of temporary tori.
-     */
-    private int nTempTori;
-    /**
      * Temporary torus atom numbers.
      */
     private final int[][] tempToriAtomNumbers;
@@ -278,10 +251,6 @@ public class ConnollyRegion extends ParallelRegion {
      */
     private final double[][] torusAxis;
     /**
-     * Number of tori.
-     */
-    private int nTori;
-    /**
      * Torus atom number.
      */
     private final int[][] torusAtomNumber;
@@ -298,10 +267,6 @@ public class ConnollyRegion extends ParallelRegion {
      */
     private final double[][] probeCoords;
     /**
-     * Number of probe positions.
-     */
-    private int nProbePositions;
-    /**
      * Probe position atom numbers.
      */
     private final int[][] probeAtomNumbers;
@@ -310,14 +275,6 @@ public class ConnollyRegion extends ParallelRegion {
      */
     private final double[][] vertexCoords;
     /**
-     * Number of concave faces.
-     */
-    private int nConcaveFaces;
-    /**
-     * Number of vertices.
-     */
-    private int nConcaveVerts;
-    /**
      * Vertex atom number.
      */
     private final int[] vertexAtomNumbers;
@@ -325,10 +282,6 @@ public class ConnollyRegion extends ParallelRegion {
      * Vertex probe number.
      */
     private final int[] vertexProbeNumber;
-    /**
-     * Number of concave edges.
-     */
-    private int nConcaveEdges;
     /**
      * Vertex numbers for each concave edge.
      */
@@ -346,10 +299,6 @@ public class ConnollyRegion extends ParallelRegion {
      */
     private final double[] circleRadius;
     /**
-     * Number of circles.
-     */
-    private int nCircles;
-    /**
      * Circle atom number.
      */
     private final int[] circleAtomNumber;
@@ -357,10 +306,6 @@ public class ConnollyRegion extends ParallelRegion {
      * Circle torus number.
      */
     private final int[] circleTorusNumber;
-    /**
-     * Number of convex edges.
-     */
-    private int nConvexEdges;
     /**
      * Convex edge circle number.
      */
@@ -382,10 +327,6 @@ public class ConnollyRegion extends ParallelRegion {
      */
     private final int[] convexEdgeNext;
     /**
-     * Number of saddle faces.
-     */
-    private int nSaddleFaces;
-    /**
      * Saddle face concave edge numbers.
      */
     private final int[][] saddleConcaveEdgeNumbers;
@@ -394,10 +335,6 @@ public class ConnollyRegion extends ParallelRegion {
      */
     private final int[][] saddleConvexEdgeNumbers;
     /**
-     * Number of cycles.
-     */
-    private int nCycles;
-    /**
      * Number of convex edges in cycle.
      */
     private final int[] convexEdgeCycleNum;
@@ -405,10 +342,6 @@ public class ConnollyRegion extends ParallelRegion {
      * Cycle convex edge numbers.
      */
     private final int[][] convexEdgeCycleNumbers;
-    /**
-     * Number of convex faces.
-     */
-    private int nConvexFaces;
     /**
      * Atom number of convex face.
      */
@@ -421,8 +354,6 @@ public class ConnollyRegion extends ParallelRegion {
      * Number of cycles bounding convex face.
      */
     private final int[] convexFaceNumCycles;
-
-    // These are from the "nearby" method.
     /**
      * True if cube contains active atoms.
      */
@@ -443,6 +374,72 @@ public class ConnollyRegion extends ParallelRegion {
      * Pointer to next atom in cube.
      */
     private final int[] nextAtomPointer;
+    /**
+     * Array of atoms.
+     */
+    private Atom[] atoms;
+    /**
+     * If true, compute the gradient
+     */
+    private boolean gradient = false;
+    /**
+     * Probe is used for molecular (contact/reentrant) volume and surface area.
+     */
+    private double probe = 0.0;
+    /**
+     * Exclude is used for excluded volume and accessible surface area.
+     */
+    private double exclude = 1.4;
+    /**
+     * Size of a vector to randomly perturb coordinates.
+     */
+    private double wiggle = DEFAULT_WIGGLE;
+    /**
+     * Number of temporary tori.
+     */
+    private int nTempTori;
+    /**
+     * Number of tori.
+     */
+    private int nTori;
+    /**
+     * Number of probe positions.
+     */
+    private int nProbePositions;
+    /**
+     * Number of concave faces.
+     */
+    private int nConcaveFaces;
+    /**
+     * Number of vertices.
+     */
+    private int nConcaveVerts;
+    /**
+     * Number of concave edges.
+     */
+    private int nConcaveEdges;
+
+    // These are from the "nearby" method.
+    /**
+     * Number of circles.
+     */
+    private int nCircles;
+    /**
+     * Number of convex edges.
+     */
+    private int nConvexEdges;
+    /**
+     * Number of saddle faces.
+     */
+    private int nSaddleFaces;
+    /**
+     * Number of cycles.
+     */
+    private int nCycles;
+    /**
+     * Number of convex faces.
+     */
+    private int nConvexFaces;
 
     /**
      * VolumeRegion constructor.
@@ -556,44 +553,20 @@ public class ConnollyRegion extends ParallelRegion {
         itab = new int[nAtoms];
     }
 
-    /**
-     * Initialize this VolumeRegion instance for an energy evaluation.
-     * <p>
-     * Currently the number of atoms cannot change.
-     *
-     * @param atoms    Array of atoms.
-     * @param gradient Compute the atomic coordinate gradient.
-     */
-    public void init(Atom[] atoms, boolean gradient) {
-        this.atoms = atoms;
-        this.gradient = gradient;
+    public double getExclude() {
+        return exclude;
     }
 
     public void setExclude(double exclude) {
         this.exclude = exclude;
     }
 
-    public void setProbe(double probe) {
-        this.probe = probe;
-    }
-
-    public double getExclude() {
-        return exclude;
-    }
-
     public double getProbe() {
         return probe;
     }
 
-    /**
-     * Apply a random perturbation to the atomic coordinates
-     * to avoid numerical instabilities for various linear, planar and
-     * symmetric structures.
-     *
-     * @param wiggle Size of the random vector move in Angstroms.
-     */
-    public void setWiggle(double wiggle) {
-        this.wiggle = wiggle;
+    public void setProbe(double probe) {
+        this.probe = probe;
     }
 
     public double getSurfaceArea() {
@@ -609,6 +582,29 @@ public class ConnollyRegion extends ParallelRegion {
     }
 
     /**
+     * Initialize this VolumeRegion instance for an energy evaluation.
+     * <p>
+     * Currently the number of atoms cannot change.
+     *
+     * @param atoms    Array of atoms.
+     * @param gradient Compute the atomic coordinate gradient.
+     */
+    public void init(Atom[] atoms, boolean gradient) {
+        this.atoms = atoms;
+        this.gradient = gradient;
+    }
+
+    @Override
+    public void run() {
+        try {
+            execute(0, nAtoms - 1, volumeLoop[getThreadIndex()]);
+        } catch (Exception e) {
+            String message = "Fatal exception computing Volume energy in thread " + getThreadIndex() + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    /**
      * Execute the VolumeRegion with a private, single threaded ParallelTeam.
      */
     public void runVolume() {
@@ -618,6 +614,17 @@ public class ConnollyRegion extends ParallelRegion {
             String message = " Fatal exception computing the Connolly surface area and volume.";
             logger.log(Level.SEVERE, message, e);
         }
+    }
+
+    /**
+     * Apply a random perturbation to the atomic coordinates
+     * to avoid numerical instabilities for various linear, planar and
+     * symmetric structures.
+     *
+     * @param wiggle Size of the random vector move in Angstroms.
+     */
+    public void setWiggle(double wiggle) {
+        this.wiggle = wiggle;
     }
 
     @Override
@@ -632,41 +639,6 @@ public class ConnollyRegion extends ParallelRegion {
             atomCoords[1][i] = atom.getY() + (wiggle * vector[1]);
             atomCoords[2][i] = atom.getZ() + (wiggle * vector[2]);
         }
-    }
-
-    @Override
-    public void run() {
-        try {
-            execute(0, nAtoms - 1, volumeLoop[getThreadIndex()]);
-        } catch (Exception e) {
-            String message = "Fatal exception computing Volume energy in thread " + getThreadIndex() + "\n";
-            logger.log(Level.SEVERE, message, e);
-        }
-    }
-
-    /**
-     * Construct the 3-dimensional random unit vector.
-     *
-     * @param vector The generated vector.
-     */
-    private void getRandomVector(double[] vector) {
-        double x, y, s;
-        x = 0;
-        y = 0;
-
-        // Get a pair of appropriate components in the plane.
-        s = 2.0;
-        while (s >= 1.0) {
-            x = (2.0 * Math.random()) - 1.0;
-            y = (2.0 * Math.random()) - 1.0;
-            s = (x * x) + (y * y);
-        }
-
-        // Construct the 3-dimensional random unit vector.
-        vector[2] = 1.0 - 2.0 * s;
-        s = 2.0 * sqrt(1.0 - s);
-        vector[1] = s * y;
-        vector[0] = s * x;
     }
 
     /**
@@ -692,14 +664,9 @@ public class ConnollyRegion extends ParallelRegion {
         private double localSurfaceArea;
 
         @Override
-        public void start() {
-            localVolume = 0.0;
-            localSurfaceArea = 0.0;
-            if (gradient) {
-                fill(volumeGradient[0], 0.0);
-                fill(volumeGradient[1], 0.0);
-                fill(volumeGradient[2], 0.0);
-            }
+        public void finish() {
+            sharedVolume.addAndGet(localVolume);
+            sharedArea.addAndGet(localSurfaceArea);
         }
 
         @Override
@@ -712,9 +679,14 @@ public class ConnollyRegion extends ParallelRegion {
         }
 
         @Override
-        public void finish() {
-            sharedVolume.addAndGet(localVolume);
-            sharedArea.addAndGet(localSurfaceArea);
+        public void start() {
+            localVolume = 0.0;
+            localSurfaceArea = 0.0;
+            if (gradient) {
+                fill(volumeGradient[0], 0.0);
+                fill(volumeGradient[1], 0.0);
+                fill(volumeGradient[2], 0.0);
+            }
         }
 
         /**
@@ -3957,5 +3929,30 @@ public class ConnollyRegion extends ParallelRegion {
                 volumeGradient[2][ir] = 0.5 * rrsq * pre_dz;
             }
         }
+    }
+
+    /**
+     * Construct the 3-dimensional random unit vector.
+     *
+     * @param vector The generated vector.
+     */
+    private void getRandomVector(double[] vector) {
+        double x, y, s;
+        x = 0;
+        y = 0;
+
+        // Get a pair of appropriate components in the plane.
+        s = 2.0;
+        while (s >= 1.0) {
+            x = (2.0 * Math.random()) - 1.0;
+            y = (2.0 * Math.random()) - 1.0;
+            s = (x * x) + (y * y);
+        }
+
+        // Construct the 3-dimensional random unit vector.
+        vector[2] = 1.0 - 2.0 * s;
+        s = 2.0 * sqrt(1.0 - s);
+        vector[1] = s * y;
+        vector[0] = s * x;
     }
 }

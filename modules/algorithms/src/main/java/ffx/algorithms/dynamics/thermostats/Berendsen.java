@@ -37,15 +37,14 @@
 //******************************************************************************
 package ffx.algorithms.dynamics.thermostats;
 
+import java.util.Collections;
+import java.util.List;
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Thermostat a molecular dynamics trajectory to an external bath using the
@@ -106,13 +105,17 @@ public class Berendsen extends Thermostat {
     }
 
     /**
+     * {@inheritDoc}
      * <p>
-     * Setter for the field <code>tau</code>.</p>
-     *
-     * @param tau a double.
+     * Full step velocity modification.
      */
-    public void setTau(double tau) {
-        this.tau = tau;
+    @Override
+    public void fullStep(double dt) {
+        double ratio = targetTemperature / currentTemperature;
+        double scale = sqrt(1.0 + (dt / tau) * (ratio - 1.0));
+        for (int i = 0; i < nVariables; i++) {
+            v[i] *= scale;
+        }
     }
 
     /**
@@ -126,12 +129,13 @@ public class Berendsen extends Thermostat {
     }
 
     /**
-     * Add Thermostat details to the kinetic energy and temperature details.
+     * <p>
+     * Setter for the field <code>tau</code>.</p>
      *
-     * @return Description of the thermostat, kinetic energy and temperature.
+     * @param tau a double.
      */
-    public String toThermostatString() {
-        return format("\n Berendsen Thermostat (tau = %8.3f psec)\n  %s", tau, super.toString());
+    public void setTau(double tau) {
+        this.tau = tau;
     }
 
     /**
@@ -145,16 +149,11 @@ public class Berendsen extends Thermostat {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Full step velocity modification.
+     * Add Thermostat details to the kinetic energy and temperature details.
+     *
+     * @return Description of the thermostat, kinetic energy and temperature.
      */
-    @Override
-    public void fullStep(double dt) {
-        double ratio = targetTemperature / currentTemperature;
-        double scale = sqrt(1.0 + (dt / tau) * (ratio - 1.0));
-        for (int i = 0; i < nVariables; i++) {
-            v[i] *= scale;
-        }
+    public String toThermostatString() {
+        return format("\n Berendsen Thermostat (tau = %8.3f psec)\n  %s", tau, super.toString());
     }
 }

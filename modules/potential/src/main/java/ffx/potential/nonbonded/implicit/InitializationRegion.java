@@ -59,7 +59,7 @@ import ffx.potential.bonded.Atom;
 public class InitializationRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(InitializationRegion.class.getName());
-
+    private final InitializationLoop[] initializationLoop;
     /**
      * Array of atoms.
      */
@@ -81,20 +81,8 @@ public class InitializationRegion extends ParallelRegion {
      */
     private AtomicDoubleArray sharedBornGrad;
 
-    private final InitializationLoop[] initializationLoop;
-
     public InitializationRegion(int maxThreads) {
         initializationLoop = new InitializationLoop[maxThreads];
-    }
-
-    public void init(Atom[] atoms, boolean lambdaTerm,
-                     AtomicDoubleArray3D grad, AtomicDoubleArray3D torque,
-                     AtomicDoubleArray sharedBornGrad) {
-        this.atoms = atoms;
-        this.lambdaTerm = lambdaTerm;
-        this.grad = grad;
-        this.torque = torque;
-        this.sharedBornGrad = sharedBornGrad;
     }
 
     /**
@@ -109,6 +97,16 @@ public class InitializationRegion extends ParallelRegion {
             String message = " Exception expanding initializing GK.\n";
             logger.log(Level.SEVERE, message, e);
         }
+    }
+
+    public void init(Atom[] atoms, boolean lambdaTerm,
+                     AtomicDoubleArray3D grad, AtomicDoubleArray3D torque,
+                     AtomicDoubleArray sharedBornGrad) {
+        this.atoms = atoms;
+        this.lambdaTerm = lambdaTerm;
+        this.grad = grad;
+        this.torque = torque;
+        this.sharedBornGrad = sharedBornGrad;
     }
 
     @Override
@@ -130,16 +128,6 @@ public class InitializationRegion extends ParallelRegion {
         private int threadID;
 
         @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
-
-        @Override
-        public void start() {
-            threadID = getThreadIndex();
-        }
-
-        @Override
         public void run(int lb, int ub) {
             grad.reset(threadID, lb, ub);
             torque.reset(threadID, lb, ub);
@@ -152,6 +140,16 @@ public class InitializationRegion extends ParallelRegion {
                     }
                 }
             }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
+        }
+
+        @Override
+        public void start() {
+            threadID = getThreadIndex();
         }
     }
 }

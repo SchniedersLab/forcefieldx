@@ -109,6 +109,22 @@ public class BaseScript extends Script {
     }
 
     /**
+     * Default help information.
+     *
+     * @return String describing how to use this command.
+     */
+    public String helpString() {
+        try {
+            StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream());
+            usage(this, sos, color);
+            return " " + sos.toString();
+        } catch (UnsupportedEncodingException e) {
+            logger.log(Level.WARNING, e.toString());
+            return null;
+        }
+    }
+
+    /**
      * Initialize this Script based on the specified command line arguments.
      *
      * @return boolean Returns true if the script should continue and false to exit.
@@ -138,22 +154,6 @@ public class BaseScript extends Script {
         }
 
         return true;
-    }
-
-    /**
-     * Default help information.
-     *
-     * @return String describing how to use this command.
-     */
-    public String helpString() {
-        try {
-            StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream());
-            usage(this, sos, color);
-            return " " + sos.toString();
-        } catch (UnsupportedEncodingException e) {
-            logger.log(Level.WARNING, e.toString());
-            return null;
-        }
     }
 
     /**

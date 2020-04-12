@@ -84,49 +84,15 @@ import ffx.xray.parsers.MTZWriter.MTZType;
 public class MTZFilter implements DiffractionFileFilter {
 
     private static final Logger logger = Logger.getLogger(MTZFilter.class.getName());
-
-    private class Column {
-
-        public String label;
-        public char type;
-        public int id;
-        public double min, max;
-    }
-
-    private class Dataset {
-
-        String project;
-        String dataset;
-        public double lambda;
-        public double[] cell = new double[6];
-    }
-
-    private enum Header {
-
-        VERS, TITLE, NCOL, SORT, SYMINF, SYMM, RESO, VALM, COL, COLUMN, NDIF,
-        PROJECT, CRYSTAL, DATASET, DCELL, DWAVEL, BATCH,
-        END, NOVALUE;
-
-        public static Header toHeader(String str) {
-            try {
-                return valueOf(str);
-            } catch (Exception ex) {
-                return NOVALUE;
-            }
-        }
-    }
-
     final private ArrayList<Column> columns = new ArrayList<>();
     final private ArrayList<Dataset> dataSets = new ArrayList<>();
     private boolean headerParsed = false;
     private String title;
     private String foString, sigFoString, rFreeString;
-
     private int h, k, l, fo, sigFo, rFree;
     private int fPlus, sigFPlus, fMinus, sigFMinus, rFreePlus, rFreeMinus;
     private int fc, phiC, fs, phiS;
     private int dsetOffset = 1;
-
     private int nColumns;
     private int nReflections;
     private int spaceGroupNum;
@@ -142,11 +108,38 @@ public class MTZFilter implements DiffractionFileFilter {
     }
 
     /**
-     * {@inheritDoc}
+     * Average the computed structure factors for two systems.
+     *
+     * @param mtzFile1       This file will be overwritten and become the new average.
+     * @param mtzFile2       Second MTZ file.
+     * @param reflectionlist List of HKLs.
+     * @param iter           The iteration in the running average.
+     * @param properties     The CompositeConfiguration defines the properties of
+     *                       each system.
      */
-    @Override
-    public ReflectionList getReflectionList(File mtzFile) {
-        return getReflectionList(mtzFile, null);
+    public void averageFcs(File mtzFile1, File mtzFile2, ReflectionList reflectionlist,
+                           int iter, CompositeConfiguration properties) {
+
+        DiffractionRefinementData fcdata1 = new DiffractionRefinementData(properties, reflectionlist);
+        DiffractionRefinementData fcdata2 = new DiffractionRefinementData(properties, reflectionlist);
+
+        readFcs(mtzFile1, reflectionlist, fcdata1, properties);
+        readFcs(mtzFile2, reflectionlist, fcdata2, properties);
+
+        // compute running average using mtzFile1 as current average
+        logger.info(format(" Iteration for averaging: %d.", iter));
+        for (int i = 0; i < reflectionlist.hkllist.size(); i++) {
+            fcdata1.fc[i][0] += (fcdata2.fc[i][0] - fcdata1.fc[i][0]) / iter;
+            fcdata1.fc[i][1] += (fcdata2.fc[i][1] - fcdata1.fc[i][1]) / iter;
+
+            fcdata1.fs[i][0] += (fcdata2.fs[i][0] - fcdata1.fs[i][0]) / iter;
+            fcdata1.fs[i][1] += (fcdata2.fs[i][1] - fcdata1.fs[i][1]) / iter;
+        }
+
+        // overwrite original MTZ
+        MTZWriter mtzOut = new MTZWriter(reflectionlist, fcdata1,
+                mtzFile1.getName(), MTZType.FCONLY);
+        mtzOut.write();
     }
 
     /**
@@ -269,9 +262,58 @@ public class MTZFilter implements DiffractionFileFilter {
      * {@inheritDoc}
      */
     @Override
+    public ReflectionList getReflectionList(File mtzFile) {
+        return getReflectionList(mtzFile, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public double getResolution(File mtzFile, Crystal crystal) {
         ReflectionList reflectionList = getReflectionList(mtzFile, null);
         return reflectionList.getMaxResolution();
+    }
+
+    /**
+     * <p>
+     * printHeader</p>
+     */
+    public void printHeader() {
+        if (logger.isLoggable(Level.INFO)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(" MTZ title: ").append(title).append("\n");
+            sb.append(" MTZ space group: ").append(spaceGroupName).
+                    append(" space group number: ").append(spaceGroupNum).append(" (").
+                    append(SpaceGroup.spaceGroupNames[spaceGroupNum - 1]).append(")\n");
+            sb.append(" MTZ resolution: ").append(resLow).append(" - ").
+                    append(resHigh).append("\n");
+            sb.append(" Number of reflections: ").append(nReflections).append("\n");
+
+            int ndset = 1;
+            for (Iterator i = dataSets.iterator(); i.hasNext(); ndset++) {
+                Dataset d = (Dataset) i.next();
+                sb.append("  dataset ").append(ndset).append(": ").append(d.dataset).append("\n");
+                sb.append("  project ").append(ndset).append(": ").append(d.project).append("\n");
+                sb.append("  wavelength ").append(ndset).append(": ").
+                        append(d.lambda).append("\n");
+                sb.append("  cell ").append(ndset).append(": ").append(d.cell[0]).
+                        append(" ").append(d.cell[1]).append(" ").append(d.cell[2]).
+                        append(" ").append(d.cell[3]).append(" ").append(d.cell[4]).
+                        append(" ").append(d.cell[5]).append("\n");
+                sb.append("\n");
+            }
+
+            sb.append(" Number of columns: ").append(nColumns).append("\n");
+            int nc = 0;
+            for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
+                Column c = (Column) i.next();
+                sb.append(String.format(
+                        "  column %d: dataset id: %d min: %9.2f max: %9.2f label: %s type: %c\n",
+                        nc, c.id, c.min, c.max, c.label, c.type));
+            }
+            logger.info(sb.toString());
+        }
     }
 
     /**
@@ -538,39 +580,35 @@ public class MTZFilter implements DiffractionFileFilter {
         return true;
     }
 
-    /**
-     * Average the computed structure factors for two systems.
-     *
-     * @param mtzFile1       This file will be overwritten and become the new average.
-     * @param mtzFile2       Second MTZ file.
-     * @param reflectionlist List of HKLs.
-     * @param iter           The iteration in the running average.
-     * @param properties     The CompositeConfiguration defines the properties of
-     *                       each system.
-     */
-    public void averageFcs(File mtzFile1, File mtzFile2, ReflectionList reflectionlist,
-                           int iter, CompositeConfiguration properties) {
+    private enum Header {
 
-        DiffractionRefinementData fcdata1 = new DiffractionRefinementData(properties, reflectionlist);
-        DiffractionRefinementData fcdata2 = new DiffractionRefinementData(properties, reflectionlist);
+        VERS, TITLE, NCOL, SORT, SYMINF, SYMM, RESO, VALM, COL, COLUMN, NDIF,
+        PROJECT, CRYSTAL, DATASET, DCELL, DWAVEL, BATCH,
+        END, NOVALUE;
 
-        readFcs(mtzFile1, reflectionlist, fcdata1, properties);
-        readFcs(mtzFile2, reflectionlist, fcdata2, properties);
-
-        // compute running average using mtzFile1 as current average
-        logger.info(format(" Iteration for averaging: %d.", iter));
-        for (int i = 0; i < reflectionlist.hkllist.size(); i++) {
-            fcdata1.fc[i][0] += (fcdata2.fc[i][0] - fcdata1.fc[i][0]) / iter;
-            fcdata1.fc[i][1] += (fcdata2.fc[i][1] - fcdata1.fc[i][1]) / iter;
-
-            fcdata1.fs[i][0] += (fcdata2.fs[i][0] - fcdata1.fs[i][0]) / iter;
-            fcdata1.fs[i][1] += (fcdata2.fs[i][1] - fcdata1.fs[i][1]) / iter;
+        public static Header toHeader(String str) {
+            try {
+                return valueOf(str);
+            } catch (Exception ex) {
+                return NOVALUE;
+            }
         }
+    }
 
-        // overwrite original MTZ
-        MTZWriter mtzOut = new MTZWriter(reflectionlist, fcdata1,
-                mtzFile1.getName(), MTZType.FCONLY);
-        mtzOut.write();
+    private class Column {
+
+        public String label;
+        public char type;
+        public int id;
+        public double min, max;
+    }
+
+    private class Dataset {
+
+        public double lambda;
+        public double[] cell = new double[6];
+        String project;
+        String dataset;
     }
 
     /**
@@ -1009,47 +1047,6 @@ public class MTZFilter implements DiffractionFileFilter {
             }
         }
         if (logger.isLoggable(Level.INFO) && print) {
-            logger.info(sb.toString());
-        }
-    }
-
-    /**
-     * <p>
-     * printHeader</p>
-     */
-    public void printHeader() {
-        if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(" MTZ title: ").append(title).append("\n");
-            sb.append(" MTZ space group: ").append(spaceGroupName).
-                    append(" space group number: ").append(spaceGroupNum).append(" (").
-                    append(SpaceGroup.spaceGroupNames[spaceGroupNum - 1]).append(")\n");
-            sb.append(" MTZ resolution: ").append(resLow).append(" - ").
-                    append(resHigh).append("\n");
-            sb.append(" Number of reflections: ").append(nReflections).append("\n");
-
-            int ndset = 1;
-            for (Iterator i = dataSets.iterator(); i.hasNext(); ndset++) {
-                Dataset d = (Dataset) i.next();
-                sb.append("  dataset ").append(ndset).append(": ").append(d.dataset).append("\n");
-                sb.append("  project ").append(ndset).append(": ").append(d.project).append("\n");
-                sb.append("  wavelength ").append(ndset).append(": ").
-                        append(d.lambda).append("\n");
-                sb.append("  cell ").append(ndset).append(": ").append(d.cell[0]).
-                        append(" ").append(d.cell[1]).append(" ").append(d.cell[2]).
-                        append(" ").append(d.cell[3]).append(" ").append(d.cell[4]).
-                        append(" ").append(d.cell[5]).append("\n");
-                sb.append("\n");
-            }
-
-            sb.append(" Number of columns: ").append(nColumns).append("\n");
-            int nc = 0;
-            for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
-                Column c = (Column) i.next();
-                sb.append(String.format(
-                        "  column %d: dataset id: %d min: %9.2f max: %9.2f label: %s type: %c\n",
-                        nc, c.id, c.min, c.max, c.label, c.type));
-            }
             logger.info(sb.toString());
         }
     }

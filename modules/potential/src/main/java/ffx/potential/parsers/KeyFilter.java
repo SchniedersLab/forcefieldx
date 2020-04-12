@@ -61,24 +61,9 @@ public class KeyFilter {
 
     /**
      * <p>
-     * loadSystemKeywords</p>
-     *
-     * @return a {@link java.util.Hashtable} object.
+     * Constructor for KeyFilter.</p>
      */
-    private static Hashtable<String, Keyword> loadSystemKeywords() {
-        File f = new File("/etc/ffx.conf");
-        Hashtable<String, Keyword> systemKeywords = new Hashtable<>();
-        if (f.exists() && f.canRead()) {
-            logger.info("Reading /etc/ffx.conf");
-            systemKeywords = KeyFilter.open(f, systemKeywords);
-        }
-        String path = System.getProperty("user.home") + File.separator + ".ffx/ffx.conf";
-        f = new File(path);
-        if (f.exists() && f.canRead()) {
-            logger.log(Level.INFO, "Reading {0}", path);
-            systemKeywords = KeyFilter.open(f, systemKeywords);
-        }
-        return systemKeywords;
+    public KeyFilter() {
     }
 
     /**
@@ -217,8 +202,23 @@ public class KeyFilter {
 
     /**
      * <p>
-     * Constructor for KeyFilter.</p>
+     * loadSystemKeywords</p>
+     *
+     * @return a {@link java.util.Hashtable} object.
      */
-    public KeyFilter() {
+    private static Hashtable<String, Keyword> loadSystemKeywords() {
+        File f = new File("/etc/ffx.conf");
+        Hashtable<String, Keyword> systemKeywords = new Hashtable<>();
+        if (f.exists() && f.canRead()) {
+            logger.info("Reading /etc/ffx.conf");
+            systemKeywords = KeyFilter.open(f, systemKeywords);
+        }
+        String path = System.getProperty("user.home") + File.separator + ".ffx/ffx.conf";
+        f = new File(path);
+        if (f.exists() && f.canRead()) {
+            logger.log(Level.INFO, "Reading {0}", path);
+            systemKeywords = KeyFilter.open(f, systemKeywords);
+        }
+        return systemKeywords;
     }
 }

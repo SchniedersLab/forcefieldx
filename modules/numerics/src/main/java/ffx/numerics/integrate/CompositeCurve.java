@@ -120,6 +120,14 @@ public class CompositeCurve extends FunctionDataCurve {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double fX(double x) {
+        return valAt(x);
+    }
+
+    /**
      * Gets the component FunctionDataCurves of this CompositeCurve.
      *
      * @return List of component FunctionDataCurves.
@@ -147,14 +155,6 @@ public class CompositeCurve extends FunctionDataCurve {
             val += (curves[i].integralAt(x) * coeffs[i]);
         }
         return val;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double fX(double x) {
-        return valAt(x);
     }
 
     /**

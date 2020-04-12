@@ -61,20 +61,27 @@ import static ffx.potential.parameters.MultipoleType.t100;
 public class OPTRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(OPTRegion.class.getName());
-
+    public final double[] optCoefficients;
     /**
-     * An ordered array of atoms in the system.
+     * Induced dipoles for extrapolated perturbation theory.
      */
-    private Atom[] atoms;
-    private double[] polarizability;
+    public final int optOrder = 2;
+    private final OPTLoop[] optLoop;
+    private final double[] optCoefficientsSum;
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
     public double[][][] inducedDipole;
     public double[][][] inducedDipoleCR;
+    public double[][][] optDipole;
+    public double[][][] optDipoleCR;
+    /**
+     * An ordered array of atoms in the system.
+     */
+    private Atom[] atoms;
+    private double[] polarizability;
     private double[][] cartesianDipolePhi;
     private double[][] cartesianDipolePhiCR;
-
     /**
      * Field array.
      */
@@ -83,7 +90,6 @@ public class OPTRegion extends ParallelRegion {
      * Chain rule field array.
      */
     private AtomicDoubleArray3D fieldCR;
-
     /**
      * Flag to indicate use of generalized Kirkwood.
      */
@@ -91,18 +97,7 @@ public class OPTRegion extends ParallelRegion {
     private GeneralizedKirkwood generalizedKirkwood;
     private double aewald;
     private double aewald3;
-
     private int currentOptOrder;
-    private final OPTLoop[] optLoop;
-    public final double[] optCoefficients;
-    private final double[] optCoefficientsSum;
-
-    /**
-     * Induced dipoles for extrapolated perturbation theory.
-     */
-    public final int optOrder = 2;
-    public double[][][] optDipole;
-    public double[][][] optDipoleCR;
 
     public OPTRegion(int nt) {
         optLoop = new OPTLoop[nt];
@@ -201,11 +196,6 @@ public class OPTRegion extends ParallelRegion {
     private class OPTLoop extends IntegerForLoop {
 
         @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
-
-        @Override
         public void run(int lb, int ub) throws Exception {
             int threadID = getThreadIndex();
             final double[][] induced0 = inducedDipole[0];
@@ -254,6 +244,11 @@ public class OPTRegion extends ParallelRegion {
                     indCR[j] = optDipoleCR[currentOptOrder][i][j];
                 }
             }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
         }
     }
 }

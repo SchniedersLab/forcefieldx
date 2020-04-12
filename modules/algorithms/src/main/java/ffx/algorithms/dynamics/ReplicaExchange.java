@@ -62,13 +62,9 @@ import static ffx.utilities.Constants.kB;
 public class ReplicaExchange implements Terminatable {
 
     private static final Logger logger = Logger.getLogger(ReplicaExchange.class.getName());
-    private MolecularDynamics replica;
     private final AlgorithmListener algorithmListener;
     private final int nReplicas;
     private final Random random;
-    private boolean done = false;
-    private boolean terminate = false;
-
     /**
      * Parallel Java world communicator.
      */
@@ -81,19 +77,21 @@ public class ReplicaExchange implements Terminatable {
      * Rank of this process.
      */
     private final int rank;
-
     /**
      * The parameters array stores communicated parameters for each process (i.e. each RepEx
      * system). Currently the array is of size [number of Processes][2].
      * <p>
      */
     private final double[][] parameters;
-    private double[] myParameters;
     /**
      * Each parameter array is wrapped inside a Parallel Java DoubleBuf for the
      * All-Gather communication calls.
      */
     private final DoubleBuf[] parametersBuf;
+    private MolecularDynamics replica;
+    private boolean done = false;
+    private boolean terminate = false;
+    private double[] myParameters;
     private DoubleBuf myParametersBuf;
 
     private int[] temp2Rank;
@@ -140,33 +138,9 @@ public class ReplicaExchange implements Terminatable {
         }
 
         // A convenience reference to the parameters of this process are updated
-         // during communication calls.
+        // during communication calls.
         myParameters = parameters[rank];
         myParametersBuf = parametersBuf[rank];
-    }
-
-    /**
-     * <p>Setter for the field <code>temperatures</code>.</p>
-     *
-     * @param temperatures an array of {@link double} objects.
-     */
-    public void setTemperatures(double[] temperatures) {
-        assert (temperatures.length == nReplicas);
-        this.temperatures = temperatures;
-    }
-
-    /**
-     * <p>setExponentialTemperatureLadder.</p>
-     *
-     * @param lowTemperature a double.
-     * @param exponent       a double.
-     */
-    public void setExponentialTemperatureLadder(double lowTemperature, double exponent) {
-        for (int i = 0; i < nReplicas; i++) {
-            temperatures[i] = lowTemperature * exp(exponent * i);
-            temp2Rank[i] = i;
-            rank2Temp[i] = i;
-        }
     }
 
     /**
@@ -190,6 +164,52 @@ public class ReplicaExchange implements Terminatable {
             dynamic(nSteps, timeStep, printInterval, saveInterval);
             logger.info(String.format(" Applying exchange condition for cycle %d.", i));
             exchange(i);
+        }
+    }
+
+    /**
+     * <p>setExponentialTemperatureLadder.</p>
+     *
+     * @param lowTemperature a double.
+     * @param exponent       a double.
+     */
+    public void setExponentialTemperatureLadder(double lowTemperature, double exponent) {
+        for (int i = 0; i < nReplicas; i++) {
+            temperatures[i] = lowTemperature * exp(exponent * i);
+            temp2Rank[i] = i;
+            rank2Temp[i] = i;
+        }
+    }
+
+    /**
+     * <p>Setter for the field <code>temperatures</code>.</p>
+     *
+     * @param temperatures an array of {@link double} objects.
+     */
+    public void setTemperatures(double[] temperatures) {
+        assert (temperatures.length == nReplicas);
+        this.temperatures = temperatures;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This should be implemented as a blocking interrupt; when the method
+     * returns the <code>Terminatable</code> algorithm has reached a clean
+     * termination point. For example, between minimize or molecular dynamics
+     * steps.
+     */
+    @Override
+    public void terminate() {
+        terminate = true;
+        while (!done) {
+            synchronized (this) {
+                try {
+                    wait(1);
+                } catch (InterruptedException e) {
+                    logger.log(Level.WARNING, "Exception terminating replica exchange.\n", e);
+                }
+            }
         }
     }
 
@@ -269,28 +289,6 @@ public class ReplicaExchange implements Terminatable {
         } catch (IOException ex) {
             String message = " Replica Exchange allGather failed.";
             logger.log(Level.SEVERE, message, ex);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This should be implemented as a blocking interrupt; when the method
-     * returns the <code>Terminatable</code> algorithm has reached a clean
-     * termination point. For example, between minimize or molecular dynamics
-     * steps.
-     */
-    @Override
-    public void terminate() {
-        terminate = true;
-        while (!done) {
-            synchronized (this) {
-                try {
-                    wait(1);
-                } catch (InterruptedException e) {
-                    logger.log(Level.WARNING, "Exception terminating replica exchange.\n", e);
-                }
-            }
         }
     }
 

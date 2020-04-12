@@ -75,6 +75,34 @@ public class Barostat implements CrystalPotential {
      */
     private static final double kB = 1.98720415e-3;
     /**
+     * MolecularAssembly being simulated.
+     */
+    private final MolecularAssembly molecularAssembly;
+    /**
+     * Mass of the system.
+     */
+    private final double mass;
+    /**
+     * ForceFieldEnergy that describes the system.
+     */
+    private final CrystalPotential potential;
+    /**
+     * Atomic coordinates.
+     */
+    private final double[] x;
+    /**
+     * The number of space group symmetry operators.
+     */
+    private final int nSymm;
+    /**
+     * Number of independent molecules in the simulation cell.
+     */
+    private final SpaceGroup spaceGroup;
+    /**
+     * Number of molecules in the systems.
+     */
+    private final int nMolecules;
+    /**
      * Ideal gas constant * temperature (kcal/mol).
      */
     private double kT;
@@ -95,22 +123,6 @@ public class Barostat implements CrystalPotential {
      */
     private double maxAngleMove = 0.5;
     /**
-     * MolecularAssembly being simulated.
-     */
-    private final MolecularAssembly molecularAssembly;
-    /**
-     * Mass of the system.
-     */
-    private final double mass;
-    /**
-     * ForceFieldEnergy that describes the system.
-     */
-    private final CrystalPotential potential;
-    /**
-     * Atomic coordinates.
-     */
-    private final double[] x;
-    /**
      * Boundary conditions and symmetry operators (may be a ReplicatedCrystal).
      */
     private Crystal crystal;
@@ -118,18 +130,6 @@ public class Barostat implements CrystalPotential {
      * The unit cell.
      */
     private Crystal unitCell;
-    /**
-     * The number of space group symmetry operators.
-     */
-    private final int nSymm;
-    /**
-     * Number of independent molecules in the simulation cell.
-     */
-    private final SpaceGroup spaceGroup;
-    /**
-     * Number of molecules in the systems.
-     */
-    private final int nMolecules;
     /**
      * Number of energy evaluations between application of MC moves.
      */
@@ -250,12 +250,21 @@ public class Barostat implements CrystalPotential {
     }
 
     /**
-     * Set the Metropolis Monte Carlo temperature.
+     * <p>density.</p>
      *
-     * @param temperature Temperature (Kelvin).
+     * @return a double.
      */
-    public void setTemperature(double temperature) {
-        this.kT = temperature * kB;
+    public double density() {
+        return (mass * nSymm / AVOGADRO) * (1.0e24 / unitCell.volume);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean destroy() {
+        // Nothing at this level to destroy.
+        return potential.destroy();
     }
 
     /**
@@ -268,12 +277,92 @@ public class Barostat implements CrystalPotential {
     }
 
     /**
-     * <p>Setter for the field <code>meanBarostatInterval</code>.</p>
-     *
-     * @param meanBarostatInterval a int.
+     * {@inheritDoc}
      */
-    public void setMeanBarostatInterval(int meanBarostatInterval) {
-        this.meanBarostatInterval = meanBarostatInterval;
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+
+        // Calculate the energy and gradient as usual.
+        double energy = potential.energyAndGradient(x, g);
+
+        // Apply the barostat during computation of slowly varying forces.
+        if (active && state != STATE.FAST) {
+            if (random() < (1.0 / meanBarostatInterval)) {
+
+                // Attempt to change the unit cell parameters.
+                moveAccepted = false;
+
+                applyBarostat(energy);
+
+                // Collect Statistics.
+                collectStats();
+
+                // If a move was accepted, then re-calculate the gradient so
+                // that it's consistent with the current unit cell parameters.
+                if (moveAccepted) {
+                    energy = potential.energyAndGradient(x, g);
+                }
+            }
+        }
+        return energy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        return potential.getAcceleration(acceleration);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        return potential.getCoordinates(parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Crystal getCrystal() {
+        return potential.getCrystal();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCrystal(Crystal crystal) {
+        potential.setCrystal(crystal);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnergyTermState(STATE state) {
+        this.state = state;
+        potential.setEnergyTermState(state);
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getMass() {
+        return potential.getMass();
     }
 
     /**
@@ -286,39 +375,29 @@ public class Barostat implements CrystalPotential {
     }
 
     /**
-     * <p>Setter for the field <code>minDensity</code>.</p>
+     * <p>Setter for the field <code>meanBarostatInterval</code>.</p>
      *
-     * @param minDensity a double.
+     * @param meanBarostatInterval a int.
      */
-    public void setMinDensity(double minDensity) {
-        this.minDensity = minDensity;
+    public void setMeanBarostatInterval(int meanBarostatInterval) {
+        this.meanBarostatInterval = meanBarostatInterval;
     }
 
     /**
-     * <p>Setter for the field <code>maxDensity</code>.</p>
-     *
-     * @param maxDensity a double.
+     * {@inheritDoc}
      */
-    public void setMaxDensity(double maxDensity) {
-        this.maxDensity = maxDensity;
+    @Override
+    public int getNumberOfVariables() {
+        return potential.getNumberOfVariables();
     }
 
     /**
-     * <p>Setter for the field <code>maxAngleMove</code>.</p>
+     * Gets the pressure of this Barostat in atm.
      *
-     * @param maxAngleMove a double.
+     * @return Pressure in atm.
      */
-    public void setMaxAngleMove(double maxAngleMove) {
-        this.maxAngleMove = maxAngleMove;
-    }
-
-    /**
-     * <p>Setter for the field <code>maxSideMove</code>.</p>
-     *
-     * @param maxSideMove a double.
-     */
-    public void setMaxSideMove(double maxSideMove) {
-        this.maxSideMove = maxSideMove;
+    public double getPressure() {
+        return pressure;
     }
 
     /**
@@ -331,12 +410,161 @@ public class Barostat implements CrystalPotential {
     }
 
     /**
-     * Gets the pressure of this Barostat in atm.
-     *
-     * @return Pressure in atm.
+     * {@inheritDoc}
      */
-    public double getPressure() {
-        return pressure;
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        return potential.getPreviousAcceleration(previousAcceleration);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return potential.getScaling();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        potential.setScaling(scaling);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTotalEnergy() {
+        return potential.getTotalEnergy();
+    }
+
+    @Override
+    public List<Potential> getUnderlyingPotentials() {
+        List<Potential> underlying = new ArrayList<>();
+        underlying.add(potential);
+        underlying.addAll(potential.getUnderlyingPotentials());
+        return underlying;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return potential.getVariableTypes();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        return potential.getVelocity(velocity);
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    /**
+     * <p>Setter for the field <code>active</code>.</p>
+     *
+     * @param active a boolean.
+     */
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        potential.setAcceleration(acceleration);
+    }
+
+    /**
+     * <p>setDensity.</p>
+     *
+     * @param density a double.
+     */
+    public void setDensity(double density) {
+        molecularAssembly.computeFractionalCoordinates();
+        crystal.setDensity(density, mass);
+        potential.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCoordinates();
+    }
+
+    /**
+     * <p>Setter for the field <code>maxAngleMove</code>.</p>
+     *
+     * @param maxAngleMove a double.
+     */
+    public void setMaxAngleMove(double maxAngleMove) {
+        this.maxAngleMove = maxAngleMove;
+    }
+
+    /**
+     * <p>Setter for the field <code>maxDensity</code>.</p>
+     *
+     * @param maxDensity a double.
+     */
+    public void setMaxDensity(double maxDensity) {
+        this.maxDensity = maxDensity;
+    }
+
+    /**
+     * <p>Setter for the field <code>maxSideMove</code>.</p>
+     *
+     * @param maxSideMove a double.
+     */
+    public void setMaxSideMove(double maxSideMove) {
+        this.maxSideMove = maxSideMove;
+    }
+
+    /**
+     * <p>Setter for the field <code>minDensity</code>.</p>
+     *
+     * @param minDensity a double.
+     */
+    public void setMinDensity(double minDensity) {
+        this.minDensity = minDensity;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        potential.setPreviousAcceleration(previousAcceleration);
+    }
+
+    /**
+     * Set the Metropolis Monte Carlo temperature.
+     *
+     * @param temperature Temperature (Kelvin).
+     */
+    public void setTemperature(double temperature) {
+        this.kT = temperature * kB;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        potential.setVelocity(velocity);
+    }
+
+    /**
+     * The type of Barostat move.
+     */
+    private enum MoveType {
+
+        SIDE, ANGLE, UNIT
     }
 
     private double mcStep(double currentE, double currentV) {
@@ -484,15 +712,6 @@ public class Barostat implements CrystalPotential {
 
         // Reset the atomic coordinates to maintain molecular fractional centers of mass.
         molecularAssembly.moveToFractionalCoordinates();
-    }
-
-    /**
-     * <p>density.</p>
-     *
-     * @return a double.
-     */
-    public double density() {
-        return (mass * nSymm / AVOGADRO) * (1.0e24 / unitCell.volume);
     }
 
     private double mcUNIT(double currentE) {
@@ -661,18 +880,6 @@ public class Barostat implements CrystalPotential {
             return mcStep(currentE, currentV);
         }
         return currentE;
-    }
-
-    /**
-     * <p>setDensity.</p>
-     *
-     * @param density a double.
-     */
-    public void setDensity(double density) {
-        molecularAssembly.computeFractionalCoordinates();
-        crystal.setDensity(density, mass);
-        potential.setCrystal(crystal);
-        molecularAssembly.moveToFractionalCoordinates();
     }
 
     /**
@@ -861,50 +1068,6 @@ public class Barostat implements CrystalPotential {
         return currentE;
     }
 
-    /**
-     * <p>Setter for the field <code>active</code>.</p>
-     *
-     * @param active a boolean.
-     */
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energyAndGradient(double[] x, double[] g) {
-
-        // Calculate the energy and gradient as usual.
-        double energy = potential.energyAndGradient(x, g);
-
-        // Apply the barostat during computation of slowly varying forces.
-        if (active && state != STATE.FAST) {
-            if (random() < (1.0 / meanBarostatInterval)) {
-
-                // Attempt to change the unit cell parameters.
-                moveAccepted = false;
-
-                applyBarostat(energy);
-
-                // Collect Statistics.
-                collectStats();
-
-                // If a move was accepted, then re-calculate the gradient so
-                // that it's consistent with the current unit cell parameters.
-                if (moveAccepted) {
-                    energy = potential.energyAndGradient(x, g);
-                }
-            }
-        }
-        return energy;
-    }
-
     private void collectStats() {
         // Collect statistics.
         barostatCount++;
@@ -963,168 +1126,5 @@ public class Barostat implements CrystalPotential {
             betaMean2 = 0;
             gammaMean2 = 0;
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setScaling(double[] scaling) {
-        potential.setScaling(scaling);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return potential.getScaling();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] parameters) {
-        return potential.getCoordinates(parameters);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getMass() {
-        return potential.getMass();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getTotalEnergy() {
-        return potential.getTotalEnergy();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNumberOfVariables() {
-        return potential.getNumberOfVariables();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public VARIABLE_TYPE[] getVariableTypes() {
-        return potential.getVariableTypes();
-    }
-
-    @Override
-    public List<Potential> getUnderlyingPotentials() {
-        List<Potential> underlying = new ArrayList<>();
-        underlying.add(potential);
-        underlying.addAll(potential.getUnderlyingPotentials());
-        return underlying;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setEnergyTermState(STATE state) {
-        this.state = state;
-        potential.setEnergyTermState(state);
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public STATE getEnergyTermState() {
-        return state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        potential.setVelocity(velocity);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        potential.setAcceleration(acceleration);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        potential.setPreviousAcceleration(previousAcceleration);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getVelocity(double[] velocity) {
-        return potential.getVelocity(velocity);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        return potential.getAcceleration(acceleration);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        return potential.getPreviousAcceleration(previousAcceleration);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Crystal getCrystal() {
-        return potential.getCrystal();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setCrystal(Crystal crystal) {
-        potential.setCrystal(crystal);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        // Nothing at this level to destroy.
-        return potential.destroy();
-    }
-
-    /**
-     * The type of Barostat move.
-     */
-    private enum MoveType {
-
-        SIDE, ANGLE, UNIT
     }
 }

@@ -245,30 +245,31 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
      */
     @Override
     public void applyMask(int i, boolean[] is14, double[]... masks) {
-        double[] permanentFieldMask = masks[0];
-        var m12 = mask12[i];
-        for (int value : m12) {
-            permanentFieldMask[value] = scaleParameters.p12scale;
-        }
-        var m13 = mask13[i];
-        for (int value : m13) {
-            permanentFieldMask[value] = scaleParameters.p13scale;
-        }
-        var m14 = mask14[i];
-        for (int value : m14) {
-            permanentFieldMask[value] = scaleParameters.p14scale;
-            for (int k : ip11[i]) {
-                if (k == value) {
-                    permanentFieldMask[value] = scaleParameters.intra14Scale * scaleParameters.p14scale;
-                    break;
+        if (ip11[i] != null) {
+            double[] permanentFieldMask = masks[0];
+            var m12 = mask12[i];
+            for (int value : m12) {
+                permanentFieldMask[value] = scaleParameters.p12scale;
+            }
+            var m13 = mask13[i];
+            for (int value : m13) {
+                permanentFieldMask[value] = scaleParameters.p13scale;
+            }
+            var m14 = mask14[i];
+            for (int value : m14) {
+                permanentFieldMask[value] = scaleParameters.p14scale;
+                for (int k : ip11[i]) {
+                    if (k == value) {
+                        permanentFieldMask[value] = scaleParameters.intra14Scale * scaleParameters.p14scale;
+                        break;
+                    }
                 }
             }
-        }
-
-        // Apply group based polarization masking rule.
-        double[] polarizationGroupMask = masks[1];
-        for (int index : ip11[i]) {
-            polarizationGroupMask[index] = scaleParameters.d11scale;
+            // Apply group based polarization masking rule.
+            double[] polarizationGroupMask = masks[1];
+            for (int index : ip11[i]) {
+                polarizationGroupMask[index] = scaleParameters.d11scale;
+            }
         }
     }
 
@@ -332,29 +333,31 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
      */
     @Override
     public void removeMask(int i, boolean[] is14, double[]... masks) {
-        double[] permanentFieldMask = masks[0];
-        var m12 = mask12[i];
-        for (int value : m12) {
-            permanentFieldMask[value] = 1.0;
-        }
-        var m13 = mask13[i];
-        for (int value : m13) {
-            permanentFieldMask[value] = 1.0;
-        }
-        var m14 = mask14[i];
-        for (int value : m14) {
-            permanentFieldMask[value] = 1.0;
-            for (int k : ip11[i]) {
-                if (k == value) {
-                    permanentFieldMask[value] = 1.0;
-                    break;
+        if (ip11[i] != null) {
+            double[] permanentFieldMask = masks[0];
+            var m12 = mask12[i];
+            for (int value : m12) {
+                permanentFieldMask[value] = 1.0;
+            }
+            var m13 = mask13[i];
+            for (int value : m13) {
+                permanentFieldMask[value] = 1.0;
+            }
+            var m14 = mask14[i];
+            for (int value : m14) {
+                permanentFieldMask[value] = 1.0;
+                for (int k : ip11[i]) {
+                    if (k == value) {
+                        permanentFieldMask[value] = 1.0;
+                        break;
+                    }
                 }
             }
-        }
-        // Apply group based polarization masking rule.
-        double[] polarizationGroupMask = masks[1];
-        for (int index : ip11[i]) {
-            polarizationGroupMask[index] = 1.0;
+            // Apply group based polarization masking rule.
+            double[] polarizationGroupMask = masks[1];
+            for (int index : ip11[i]) {
+                polarizationGroupMask[index] = 1.0;
+            }
         }
     }
 

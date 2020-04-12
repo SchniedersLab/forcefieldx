@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -94,61 +93,6 @@ public class MultiDynamicsOptions {
      */
     @CommandLine.Option(names = {"--dw", "--distributeWalkers"}, paramLabel = "OFF", description = "AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.")
     private String distributeWalkersString = "OFF";
-
-    /**
-     * <p>isSynchronous.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isSynchronous() {
-        return synchronous;
-    }
-
-    /**
-     * Opens a file and processes it. Extends the behavior of AlchemicalOptions.openFile
-     * by permitting use of a rank-dependent File.
-     *
-     * @param afuncts       AlgorithmFunctions object.
-     * @param topOptions    Topology Options.
-     * @param threadsPer    Threads to use per system.
-     * @param toOpen        Filename to open.
-     * @param topNum        Number of the topology to open.
-     * @param alchemy       Alchemical Options.
-     * @param rank          Rank in the world communicator.
-     * @param structureFile a {@link java.io.File} object.
-     * @return a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public MolecularAssembly openFile(AlgorithmFunctions afuncts, TopologyOptions topOptions, int threadsPer,
-                                      String toOpen, int topNum, AlchemicalOptions alchemy, File structureFile, int rank) {
-        boolean autoDist = distributeWalkersString.equalsIgnoreCase("AUTO");
-
-        if (autoDist) {
-            String openName = format("%s_%d", toOpen, rank + 1);
-            File testFile = new File(openName);
-            if (testFile.exists()) {
-                toOpen = openName;
-            } else {
-                logger.warning(format(" File %s does not exist; using default %s", openName, toOpen));
-            }
-        }
-        MolecularAssembly assembly = alchemy.openFile(afuncts, topOptions, threadsPer, toOpen, topNum);
-        assembly.setFile(structureFile);
-        return assembly;
-    }
-
-    /**
-     * Parses --dw into optimization tokens if it's not "OFF", "AUTO", or null.
-     *
-     * @return An array of Strings from splitting the distributed flag.
-     */
-    private String[] parseDistributed() {
-        if (distributeWalkersString.equalsIgnoreCase("OFF") ||
-                distributeWalkersString.equalsIgnoreCase("AUTO") ||
-                distributeWalkersString.isEmpty()) {
-            return null;
-        }
-        return distributeWalkersString.split("\\.");
-    }
 
     /**
      * If residues selected for distributing initial configurations, performs many-body optimization for this distribution.
@@ -218,6 +162,61 @@ public class MultiDynamicsOptions {
         } else {
             logger.finer(" Skipping RO-based distribution of initial configurations.");
         }
+    }
+
+    /**
+     * <p>isSynchronous.</p>
+     *
+     * @return a boolean.
+     */
+    public boolean isSynchronous() {
+        return synchronous;
+    }
+
+    /**
+     * Opens a file and processes it. Extends the behavior of AlchemicalOptions.openFile
+     * by permitting use of a rank-dependent File.
+     *
+     * @param afuncts       AlgorithmFunctions object.
+     * @param topOptions    Topology Options.
+     * @param threadsPer    Threads to use per system.
+     * @param toOpen        Filename to open.
+     * @param topNum        Number of the topology to open.
+     * @param alchemy       Alchemical Options.
+     * @param rank          Rank in the world communicator.
+     * @param structureFile a {@link java.io.File} object.
+     * @return a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public MolecularAssembly openFile(AlgorithmFunctions afuncts, TopologyOptions topOptions, int threadsPer,
+                                      String toOpen, int topNum, AlchemicalOptions alchemy, File structureFile, int rank) {
+        boolean autoDist = distributeWalkersString.equalsIgnoreCase("AUTO");
+
+        if (autoDist) {
+            String openName = format("%s_%d", toOpen, rank + 1);
+            File testFile = new File(openName);
+            if (testFile.exists()) {
+                toOpen = openName;
+            } else {
+                logger.warning(format(" File %s does not exist; using default %s", openName, toOpen));
+            }
+        }
+        MolecularAssembly assembly = alchemy.openFile(afuncts, topOptions, threadsPer, toOpen, topNum);
+        assembly.setFile(structureFile);
+        return assembly;
+    }
+
+    /**
+     * Parses --dw into optimization tokens if it's not "OFF", "AUTO", or null.
+     *
+     * @return An array of Strings from splitting the distributed flag.
+     */
+    private String[] parseDistributed() {
+        if (distributeWalkersString.equalsIgnoreCase("OFF") ||
+                distributeWalkersString.equalsIgnoreCase("AUTO") ||
+                distributeWalkersString.isEmpty()) {
+            return null;
+        }
+        return distributeWalkersString.split("\\.");
     }
 
     /**

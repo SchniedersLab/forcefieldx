@@ -128,24 +128,6 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>getScaleBulkEnergy.</p>
-     *
-     * @return a {@link ffx.xray.ScaleBulkEnergy} object.
-     */
-    ScaleBulkEnergy getScaleBulkEnergy() {
-        return bulkSolventEnergy;
-    }
-
-    /**
-     * <p>getNumberOfVariables.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberOfVariables() {
-        return x.length;
-    }
-
-    /**
      * <p>getCoordinates.</p>
      *
      * @param x an array of {@link double} objects.
@@ -159,28 +141,13 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         return x;
     }
 
-    private void setInitialScale() {
-        double[][] fc = refinementData.fc;
-        double[][] fSigf = refinementData.fSigF;
-
-        bulkSolventEnergy.setScaling(scaling);
-        double e = bulkSolventEnergy.energyAndGradient(x, grad);
-        bulkSolventEnergy.setScaling(null);
-
-        double sumfofc = 0.0;
-        double sumfc = 0.0;
-        for (HKL ih : reflectionlist.hkllist) {
-            int i = ih.index();
-            if (isNaN(fc[i][0]) || isNaN(fSigf[i][0]) || fSigf[i][1] <= 0.0) {
-                continue;
-            }
-
-            double fcTotF = refinementData.fcTotF(i);
-            sumfofc += fSigf[i][0] * fcTotF;
-            sumfc += fcTotF * fcTotF;
-        }
-
-        x[0] = log(4.0 * sumfofc / sumfc);
+    /**
+     * <p>getNumberOfVariables.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberOfVariables() {
+        return x.length;
     }
 
     /**
@@ -219,55 +186,6 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         logger.info(" minks: " + bulkSolventK + " minbs: " + bulkSolventUeq + " min: " + min);
         refinementData.bulkSolventK = bulkSolventK;
         refinementData.bulkSolventUeq = bulkSolventUeq;
-        bulkSolventEnergy.setScaling(null);
-    }
-
-    /**
-     * <p>
-     * GridOptimize</p>
-     */
-    void gridOptimize() {
-        if (crystalReciprocalSpace == null) {
-            return;
-        }
-
-        bulkSolventEnergy.setScaling(scaling);
-
-        double min = Double.POSITIVE_INFINITY;
-        double solventA = crystalReciprocalSpace.solventA;
-        double solventB = crystalReciprocalSpace.solventB;
-        double amin = solventA - 1.0;
-        double amax = (solventA + 1.0) / 0.9999;
-        double astep = 0.25;
-        double bmin = solventB - 0.2;
-        double bmax = (solventB + 0.2) / 0.9999;
-        double bstep = 0.05;
-        if (crystalReciprocalSpace.solventModel == SolventModel.BINARY) {
-            amin = solventA - 0.2;
-            amax = (solventA + 0.2) / 0.9999;
-            astep = 0.05;
-        }
-
-        logger.info(" Bulk Solvent Grid Search");
-        for (double i = amin; i <= amax; i += astep) {
-            for (double j = bmin; j <= bmax; j += bstep) {
-                crystalReciprocalSpace.setSolventAB(i, j);
-                crystalReciprocalSpace.computeDensity(refinementData.fs);
-                double sum = bulkSolventEnergy.energy(x);
-                logger.info(format(" A: %6.3f B: %6.3f Sum: %12.8f", i, j, sum));
-                if (sum < min) {
-                    min = sum;
-                    solventA = i;
-                    solventB = j;
-                }
-            }
-        }
-
-        logger.info(format("\n Minimum at\n A: %6.3f B: %6.3f Sum: %12.8f", solventA, solventB, min));
-        crystalReciprocalSpace.setSolventAB(solventA, solventB);
-        refinementData.solventA = solventA;
-        refinementData.solventB = solventB;
-        crystalReciprocalSpace.computeDensity(refinementData.fs);
         bulkSolventEnergy.setScaling(null);
     }
 
@@ -397,5 +315,87 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
                 }
             }
         }
+    }
+
+    /**
+     * <p>getScaleBulkEnergy.</p>
+     *
+     * @return a {@link ffx.xray.ScaleBulkEnergy} object.
+     */
+    ScaleBulkEnergy getScaleBulkEnergy() {
+        return bulkSolventEnergy;
+    }
+
+    private void setInitialScale() {
+        double[][] fc = refinementData.fc;
+        double[][] fSigf = refinementData.fSigF;
+
+        bulkSolventEnergy.setScaling(scaling);
+        double e = bulkSolventEnergy.energyAndGradient(x, grad);
+        bulkSolventEnergy.setScaling(null);
+
+        double sumfofc = 0.0;
+        double sumfc = 0.0;
+        for (HKL ih : reflectionlist.hkllist) {
+            int i = ih.index();
+            if (isNaN(fc[i][0]) || isNaN(fSigf[i][0]) || fSigf[i][1] <= 0.0) {
+                continue;
+            }
+
+            double fcTotF = refinementData.fcTotF(i);
+            sumfofc += fSigf[i][0] * fcTotF;
+            sumfc += fcTotF * fcTotF;
+        }
+
+        x[0] = log(4.0 * sumfofc / sumfc);
+    }
+
+    /**
+     * <p>
+     * GridOptimize</p>
+     */
+    void gridOptimize() {
+        if (crystalReciprocalSpace == null) {
+            return;
+        }
+
+        bulkSolventEnergy.setScaling(scaling);
+
+        double min = Double.POSITIVE_INFINITY;
+        double solventA = crystalReciprocalSpace.solventA;
+        double solventB = crystalReciprocalSpace.solventB;
+        double amin = solventA - 1.0;
+        double amax = (solventA + 1.0) / 0.9999;
+        double astep = 0.25;
+        double bmin = solventB - 0.2;
+        double bmax = (solventB + 0.2) / 0.9999;
+        double bstep = 0.05;
+        if (crystalReciprocalSpace.solventModel == SolventModel.BINARY) {
+            amin = solventA - 0.2;
+            amax = (solventA + 0.2) / 0.9999;
+            astep = 0.05;
+        }
+
+        logger.info(" Bulk Solvent Grid Search");
+        for (double i = amin; i <= amax; i += astep) {
+            for (double j = bmin; j <= bmax; j += bstep) {
+                crystalReciprocalSpace.setSolventAB(i, j);
+                crystalReciprocalSpace.computeDensity(refinementData.fs);
+                double sum = bulkSolventEnergy.energy(x);
+                logger.info(format(" A: %6.3f B: %6.3f Sum: %12.8f", i, j, sum));
+                if (sum < min) {
+                    min = sum;
+                    solventA = i;
+                    solventB = j;
+                }
+            }
+        }
+
+        logger.info(format("\n Minimum at\n A: %6.3f B: %6.3f Sum: %12.8f", solventA, solventB, min));
+        crystalReciprocalSpace.setSolventAB(solventA, solventB);
+        refinementData.solventA = solventA;
+        refinementData.solventB = solventB;
+        crystalReciprocalSpace.computeDensity(refinementData.fs);
+        bulkSolventEnergy.setScaling(null);
     }
 }

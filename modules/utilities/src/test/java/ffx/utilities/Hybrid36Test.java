@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2020.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -44,6 +44,35 @@ import static org.junit.Assert.assertEquals;
  * @author Michael J. Schnieders
  */
 public class Hybrid36Test {
+
+    private static int random_seed = 13;
+
+    /**
+     * Test of decode method, of class Hybrid36.
+     */
+    @Test
+    public void testDecode() {
+        checkInt(Hybrid36.decode(4, "    "), 0);
+        checkInt(Hybrid36.decode(4, "  -0"), 0);
+        checkInt(Hybrid36.decode(5, "     "), 0);
+        checkInt(Hybrid36.decode(5, "   -0"), 0);
+        checkDecodeException(4, "", "invalid number literal.");
+        checkDecodeException(4, "    0", "invalid number literal.");
+        checkDecodeException(4, " abc", "invalid number literal.");
+        checkDecodeException(4, "abc-", "invalid number literal.");
+        checkDecodeException(4, "A=BC", "invalid number literal.");
+        checkDecodeException(4, "40a0", "invalid number literal.");
+        checkDecodeException(4, "40A0", "invalid number literal.");
+        checkDecodeException(5, "", "invalid number literal.");
+        checkDecodeException(5, "     0", "invalid number literal.");
+        checkDecodeException(5, " abcd", "invalid number literal.");
+        checkDecodeException(5, "ABCD-", "invalid number literal.");
+        checkDecodeException(5, "a=bcd", "invalid number literal.");
+        checkDecodeException(5, "410b0", "invalid number literal.");
+        checkDecodeException(5, "410B0", "invalid number literal.");
+        checkDecodeException(3, "AAA", "unsupported width.");
+        checkDecodeException(6, "zzzzzz", "unsupported width.");
+    }
 
     /**
      * Test of encode method, of class Hybrid36.
@@ -157,41 +186,14 @@ public class Hybrid36Test {
         }
     }
 
-    /**
-     * Test of decode method, of class Hybrid36.
-     */
-    @Test
-    public void testDecode() {
-        checkInt(Hybrid36.decode(4, "    "), 0);
-        checkInt(Hybrid36.decode(4, "  -0"), 0);
-        checkInt(Hybrid36.decode(5, "     "), 0);
-        checkInt(Hybrid36.decode(5, "   -0"), 0);
-        checkDecodeException(4, "", "invalid number literal.");
-        checkDecodeException(4, "    0", "invalid number literal.");
-        checkDecodeException(4, " abc", "invalid number literal.");
-        checkDecodeException(4, "abc-", "invalid number literal.");
-        checkDecodeException(4, "A=BC", "invalid number literal.");
-        checkDecodeException(4, "40a0", "invalid number literal.");
-        checkDecodeException(4, "40A0", "invalid number literal.");
-        checkDecodeException(5, "", "invalid number literal.");
-        checkDecodeException(5, "     0", "invalid number literal.");
-        checkDecodeException(5, " abcd", "invalid number literal.");
-        checkDecodeException(5, "ABCD-", "invalid number literal.");
-        checkDecodeException(5, "a=bcd", "invalid number literal.");
-        checkDecodeException(5, "410b0", "invalid number literal.");
-        checkDecodeException(5, "410B0", "invalid number literal.");
-        checkDecodeException(3, "AAA", "unsupported width.");
-        checkDecodeException(6, "zzzzzz", "unsupported width.");
-    }
-    private static int random_seed = 13;
-
-    private static int kernighan_and_ritchie_rand() {
-        random_seed = random_seed * 1103515245 + 12345;
-        int result = (random_seed / 65536) % 32768;
-        if (result < 0) {
-            result += 32768;
+    private static void checkDecodeException(int width, String s, String expected_msg) {
+        String msg = "";
+        try {
+            Hybrid36.decode(width, s);
+        } catch (Error e) {
+            msg = e.toString();
         }
-        return result;
+        checkString(msg, "java.lang.Error: " + expected_msg);
     }
 
     private static void checkEncodeException(int width, int value, String expected_msg) {
@@ -204,14 +206,11 @@ public class Hybrid36Test {
         checkString(msg, "java.lang.Error: " + expected_msg);
     }
 
-    private static void checkDecodeException(int width, String s, String expected_msg) {
-        String msg = "";
-        try {
-            Hybrid36.decode(width, s);
-        } catch (Error e) {
-            msg = e.toString();
+    private static void checkInt(int result, int expected) {
+        assertEquals(" checkInt", result, expected);
+        if (result != expected) {
+            System.out.println("" + result + " != " + expected);
         }
-        checkString(msg, "java.lang.Error: " + expected_msg);
     }
 
     private static void checkString(String result, String expected) {
@@ -221,11 +220,13 @@ public class Hybrid36Test {
         }
     }
 
-    private static void checkInt(int result, int expected) {
-        assertEquals(" checkInt", result, expected);
-        if (result != expected) {
-            System.out.println("" + result + " != " + expected);
+    private static int kernighan_and_ritchie_rand() {
+        random_seed = random_seed * 1103515245 + 12345;
+        int result = (random_seed / 65536) % 32768;
+        if (result < 0) {
+            result += 32768;
         }
+        return result;
     }
 
     private static void recycle4(int value, String encoded) {

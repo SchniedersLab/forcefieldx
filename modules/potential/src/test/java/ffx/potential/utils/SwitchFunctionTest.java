@@ -46,10 +46,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import ffx.numerics.switching.MultiplicativeSwitch;
 import ffx.numerics.switching.PowerSwitch;
 import ffx.numerics.switching.SquaredTrigSwitch;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
-import ffx.numerics.switching.MultiplicativeSwitch;
 
 /**
  * Test the various switching functions.
@@ -72,6 +72,29 @@ public class SwitchFunctionTest {
 
     private final static double LOOSE_TOLERANCE = 0.000001;
     private final static double MID_TOLERANCE = 1.0E-10;
+
+    /**
+     * Tests multiplicative switch functions.
+     */
+    @Test
+    public void multSwitchTest() {
+        logger.info(" Testing multiplicative switch functionality");
+        MultiplicativeSwitch sf = new MultiplicativeSwitch();
+        standardTest(sf);
+
+        assertEquals("Default multiplicative switch zero bound != 0.0", 0.0, sf.getZeroBound(), ULP_ZERO_2);
+        assertEquals("Default power-switch one bound != 1.0", 1.0, sf.getOneBound(), ULP_ONE_2);
+        assertFalse("Power switches are not constant outside the bounds.", sf.constantOutsideBounds());
+        assertFalse("Power switches are not valid outside the bounds.", sf.validOutsideBounds());
+        assertEquals("Default power-switch max-zero-derivative should return 2", 2, sf.getHighestOrderZeroDerivative());
+        assertTrue("Default power-switch should be equal unity with symmetric inputs", sf.symmetricToUnity());
+
+        sf = new MultiplicativeSwitch(1.0, 0.0);
+        standardTest(sf);
+
+        sf = new MultiplicativeSwitch(9.0, 7.2);
+        standardTest(sf, LOOSE_TOLERANCE);
+    }
 
     /**
      * Tests interpolation via the PowerSwitch class.
@@ -295,29 +318,6 @@ public class SwitchFunctionTest {
             double d2 = funct.secondDerivative(x);
             assertEquals(String.format("Second derivative of power-switch %s at %8.4g should always be %8.4g, was %8.4g", funct.toString(), x, trueVal, d2), trueVal, d2, ULP_ZERO_10);
         }
-    }
-
-    /**
-     * Tests multiplicative switch functions.
-     */
-    @Test
-    public void multSwitchTest() {
-        logger.info(" Testing multiplicative switch functionality");
-        MultiplicativeSwitch sf = new MultiplicativeSwitch();
-        standardTest(sf);
-
-        assertEquals("Default multiplicative switch zero bound != 0.0", 0.0, sf.getZeroBound(), ULP_ZERO_2);
-        assertEquals("Default power-switch one bound != 1.0", 1.0, sf.getOneBound(), ULP_ONE_2);
-        assertFalse("Power switches are not constant outside the bounds.", sf.constantOutsideBounds());
-        assertFalse("Power switches are not valid outside the bounds.", sf.validOutsideBounds());
-        assertEquals("Default power-switch max-zero-derivative should return 2", 2, sf.getHighestOrderZeroDerivative());
-        assertTrue("Default power-switch should be equal unity with symmetric inputs", sf.symmetricToUnity());
-
-        sf = new MultiplicativeSwitch(1.0, 0.0);
-        standardTest(sf);
-
-        sf = new MultiplicativeSwitch(9.0, 7.2);
-        standardTest(sf, LOOSE_TOLERANCE);
     }
 
     @Test
@@ -604,7 +604,7 @@ public class SwitchFunctionTest {
      * a much looser tolerance for acceptance (1/1 million) instead of the
      * default tolerances, approximately 100*ulp(0) and 100*ulp(1).
      *
-     * @param sf              Switching function to test.
+     * @param sf        Switching function to test.
      * @param tolerance Use looser tolerances for test acceptance
      */
     private void standardTest(UnivariateSwitchingFunction sf, double tolerance) {

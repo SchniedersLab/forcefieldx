@@ -78,15 +78,6 @@ public class StringOutputStream extends PrintStream {
     }
 
     /**
-     * <p>toString.</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String toString() {
-        return new String(byteArrayOutputStream.toByteArray(), charset);
-    }
-
-    /**
      * <p>close.</p>
      */
     public void close() {
@@ -96,6 +87,15 @@ public class StringOutputStream extends PrintStream {
         } catch (Exception e) {
             //
         }
+    }
+
+    /**
+     * <p>toString.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String toString() {
+        return new String(byteArrayOutputStream.toByteArray(), charset);
     }
 
 }

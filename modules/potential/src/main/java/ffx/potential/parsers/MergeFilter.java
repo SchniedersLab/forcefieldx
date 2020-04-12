@@ -50,7 +50,6 @@ import ffx.potential.bonded.Bond;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class MergeFilter extends SystemFilter {
 
@@ -68,40 +67,52 @@ public class MergeFilter extends SystemFilter {
         bondList = b;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void closeReader() {
+        //logger.fine(" Reading trajectories not yet supported for MergeFilter");
+        // No logger set for MergeFilter.
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readFile() {
         return true;
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
-        return false;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public boolean readNext() {
-        return readNext(false);
-    }
-
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readNext(boolean resetPosition) {
         return false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readNext(boolean resetPosition, boolean print) {
         return false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void closeReader() {
-        //logger.fine(" Reading trajectories not yet supported for MergeFilter");
-        // No logger set for MergeFilter.
+    public boolean readNext() {
+        return readNext(false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
+        return false;
     }
 }

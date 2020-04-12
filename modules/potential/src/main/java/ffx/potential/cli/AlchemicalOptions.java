@@ -66,7 +66,7 @@ public class AlchemicalOptions {
 
     /**
      * A regular expression used to parse ranges of atoms.
-     *
+     * <p>
      * Constant <code>rangeregex</code>
      */
     public static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
@@ -128,123 +128,6 @@ public class AlchemicalOptions {
     int actFinal = -1;
 
     /**
-     * Set active atoms for a MolecularAssembly.
-     *
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void setActiveAtoms(MolecularAssembly molecularAssembly) {
-        Atom[] atoms = molecularAssembly.getAtomArray();
-        if (actFinal > 0) {
-            // Apply active atom selection
-            int nAtoms = atoms.length;
-            if (actFinal > actStart && actStart > 0 && actFinal <= nAtoms) {
-                // Make all atoms inactive.
-                for (int i = 1; i <= nAtoms; i++) {
-                    Atom ai = atoms[i - 1];
-                    ai.setActive(false);
-                }
-                // Make requested atoms active.
-                for (int i = actStart; i <= actFinal; i++) {
-                    Atom ai = atoms[i - 1];
-                    ai.setActive(true);
-                }
-            }
-        }
-    }
-
-    /**
-     * Set the alchemical atoms for this molecularAssembly.
-     *
-     * @param topology a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void setFirstSystemAlchemistry(MolecularAssembly topology) {
-        setAlchemicalAtoms(topology, s1, f1, ligAt1);
-    }
-
-    /**
-     * Sets the alchemical atoms for a MolecularAssembly.
-     *
-     * @param assembly Assembly to which the atoms belong.
-     * @param start    First atom to set lambda for.
-     * @param fin      Last atom to set lambda for.
-     * @param ligAt    Additional ranges of atoms to set lambda for.
-     */
-    public static void setAlchemicalAtoms(MolecularAssembly assembly, int start, int fin, String ligAt) {
-        Atom[] atoms = assembly.getAtomArray();
-        if (start > 0) {
-            logger.info(format(" Setting atoms %d (%s) to %d (%s) as alchemical", start, atoms[start - 1], fin, atoms[fin - 1]));
-            for (int i = start; i <= fin; i++) {
-                Atom ai = atoms[i - 1];
-                ai.setApplyLambda(true);
-                ai.print(Level.FINE);
-            }
-        }
-        if (ligAt != null) {
-            String[] ranges = ligAt.split("\\.");
-            for (String range : ranges) {
-                Matcher m = rangeregex.matcher(range);
-                if (m.find()) {
-                    int rangeStart = Integer.parseInt(m.group(1));
-                    int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
-                    if (rangeStart > rangeEnd) {
-                        logger.severe(format(" Range %s was invalid; start was greater than end", range));
-                    }
-                    logger.info(format(" Setting atoms %d (%s) to %d (%s) as alchemical", rangeStart, atoms[rangeStart - 1], rangeEnd, atoms[rangeEnd - 1]));
-                    // Don't need to worry about negative numbers; rangeregex just won't match.
-                    for (int i = rangeStart; i <= rangeEnd; i++) {
-                        Atom ai = atoms[i - 1];
-                        ai.setApplyLambda(true);
-                        ai.print(Level.FINE);
-                    }
-                } else {
-                    logger.warning(format(" Could not recognize %s as a valid range; skipping", range));
-                }
-            }
-        }
-    }
-
-    /**
-     * Set uncharged atoms for this molecularAssembly.
-     *
-     * @param topology a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void setFirstSystemUnchargedAtoms(MolecularAssembly topology) {
-        setUnchargedAtoms(topology, es1, ef1);
-    }
-
-    /**
-     * Set uncharged atoms for a MolecularAssembly.
-     *
-     * @param assembly Assembly to decharge on.
-     * @param eStart   First atom to decharge.
-     * @param eEnd     Last atom to decharge.
-     */
-    public static void setUnchargedAtoms(MolecularAssembly assembly, int eStart, int eEnd) {
-        Atom[] atoms = assembly.getAtomArray();
-        // Apply the no electrostatics atom selection
-        int noElecStart = eStart;
-        noElecStart = (noElecStart < 1) ? 1 : noElecStart;
-
-        int noElecStop = eEnd;
-        noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
-
-        for (int i = noElecStart; i <= noElecStop; i++) {
-            Atom ai = atoms[i - 1];
-            ai.setElectrostatics(false);
-            // ai.print();
-        }
-    }
-
-    /**
-     * If any softcore Atoms have been detected.
-     *
-     * @return Presence of softcore Atoms.
-     */
-    public boolean hasSoftcore() {
-        return ((ligAt1 != null && ligAt1.length() > 0) || s1 > 0);
-    }
-
-    /**
      * Gets the initial value of lambda.
      *
      * @return Initial lambda.
@@ -300,6 +183,15 @@ public class AlchemicalOptions {
     }
 
     /**
+     * If any softcore Atoms have been detected.
+     *
+     * @return Presence of softcore Atoms.
+     */
+    public boolean hasSoftcore() {
+        return ((ligAt1 != null && ligAt1.length() > 0) || s1 > 0);
+    }
+
+    /**
      * Opens a File to a MolecularAssembly for alchemistry.
      *
      * @param potentialFunctions A utility object for opening Files into MolecularAssemblys.
@@ -345,6 +237,114 @@ public class AlchemicalOptions {
         energy.getCrystal().setSpecialPositionCutoff(0.0);
 
         return mola;
+    }
+
+    /**
+     * Set active atoms for a MolecularAssembly.
+     *
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public void setActiveAtoms(MolecularAssembly molecularAssembly) {
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        if (actFinal > 0) {
+            // Apply active atom selection
+            int nAtoms = atoms.length;
+            if (actFinal > actStart && actStart > 0 && actFinal <= nAtoms) {
+                // Make all atoms inactive.
+                for (int i = 1; i <= nAtoms; i++) {
+                    Atom ai = atoms[i - 1];
+                    ai.setActive(false);
+                }
+                // Make requested atoms active.
+                for (int i = actStart; i <= actFinal; i++) {
+                    Atom ai = atoms[i - 1];
+                    ai.setActive(true);
+                }
+            }
+        }
+    }
+
+    /**
+     * Sets the alchemical atoms for a MolecularAssembly.
+     *
+     * @param assembly Assembly to which the atoms belong.
+     * @param start    First atom to set lambda for.
+     * @param fin      Last atom to set lambda for.
+     * @param ligAt    Additional ranges of atoms to set lambda for.
+     */
+    public static void setAlchemicalAtoms(MolecularAssembly assembly, int start, int fin, String ligAt) {
+        Atom[] atoms = assembly.getAtomArray();
+        if (start > 0) {
+            logger.info(format(" Setting atoms %d (%s) to %d (%s) as alchemical", start, atoms[start - 1], fin, atoms[fin - 1]));
+            for (int i = start; i <= fin; i++) {
+                Atom ai = atoms[i - 1];
+                ai.setApplyLambda(true);
+                ai.print(Level.FINE);
+            }
+        }
+        if (ligAt != null) {
+            String[] ranges = ligAt.split("\\.");
+            for (String range : ranges) {
+                Matcher m = rangeregex.matcher(range);
+                if (m.find()) {
+                    int rangeStart = Integer.parseInt(m.group(1));
+                    int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
+                    if (rangeStart > rangeEnd) {
+                        logger.severe(format(" Range %s was invalid; start was greater than end", range));
+                    }
+                    logger.info(format(" Setting atoms %d (%s) to %d (%s) as alchemical", rangeStart, atoms[rangeStart - 1], rangeEnd, atoms[rangeEnd - 1]));
+                    // Don't need to worry about negative numbers; rangeregex just won't match.
+                    for (int i = rangeStart; i <= rangeEnd; i++) {
+                        Atom ai = atoms[i - 1];
+                        ai.setApplyLambda(true);
+                        ai.print(Level.FINE);
+                    }
+                } else {
+                    logger.warning(format(" Could not recognize %s as a valid range; skipping", range));
+                }
+            }
+        }
+    }
+
+    /**
+     * Set the alchemical atoms for this molecularAssembly.
+     *
+     * @param topology a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public void setFirstSystemAlchemistry(MolecularAssembly topology) {
+        setAlchemicalAtoms(topology, s1, f1, ligAt1);
+    }
+
+    /**
+     * Set uncharged atoms for this molecularAssembly.
+     *
+     * @param topology a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public void setFirstSystemUnchargedAtoms(MolecularAssembly topology) {
+        setUnchargedAtoms(topology, es1, ef1);
+    }
+
+    /**
+     * Set uncharged atoms for a MolecularAssembly.
+     *
+     * @param assembly Assembly to decharge on.
+     * @param eStart   First atom to decharge.
+     * @param eEnd     Last atom to decharge.
+     */
+    public static void setUnchargedAtoms(MolecularAssembly assembly, int eStart, int eEnd) {
+        Atom[] atoms = assembly.getAtomArray();
+        // Apply the no electrostatics atom selection
+        int noElecStart = eStart;
+        noElecStart = (noElecStart < 1) ? 1 : noElecStart;
+
+        int noElecStop = eEnd;
+        noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
+
+        for (int i = noElecStart; i <= noElecStop; i++) {
+            Atom ai = atoms[i - 1];
+            ai.setElectrostatics(false);
+            // ai.print();
+        }
     }
 
 }

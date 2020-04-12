@@ -107,9 +107,9 @@ public class ScaleBulkEnergy implements Potential {
     private final double[][] fSigF;
     private final int n;
     private final int solventN;
-    private double[] optimizationScaling = null;
     private final ParallelTeam parallelTeam;
     private final ScaleBulkEnergyRegion scaleBulkEnergyRegion;
+    private double[] optimizationScaling = null;
     private double totalEnergy;
     private STATE state = STATE.BOTH;
 
@@ -146,18 +146,228 @@ public class ScaleBulkEnergy implements Potential {
         scaleBulkEnergyRegion = new ScaleBulkEnergyRegion(threadCount);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean destroy() {
+        // The parallelTeam should have been passed in by DiffractionData, which handles destroying it.
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energy(double[] x) {
+        unscaleCoordinates(x);
+        double sum = target(x, null, false, false);
+        scaleCoordinates(x);
+        return sum;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        unscaleCoordinates(x);
+        double sum = target(x, g, true, false);
+        scaleCoordinatesAndGradient(x, g);
+        return sum;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnergyTermState(Potential.STATE state) {
+        this.state = state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getMass() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfVariables() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return optimizationScaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        if (scaling != null && scaling.length == n) {
+            optimizationScaling = scaling;
+        } else {
+            optimizationScaling = null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTotalEnergy() {
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Return a reference to each variables type.
+     */
+    @Override
+    public Potential.VARIABLE_TYPE[] getVariableTypes() {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * <p>
+     * target</p>
+     *
+     * @param x        an array of double.
+     * @param g        an array of double.
+     * @param gradient a boolean.
+     * @param print    a boolean.
+     * @return a double.
+     */
+    public double target(double[] x, double[] g, boolean gradient, boolean print) {
+
+        try {
+            scaleBulkEnergyRegion.init(x, g, gradient);
+            parallelTeam.execute(scaleBulkEnergyRegion);
+        } catch (Exception e) {
+            logger.info(e.toString());
+        }
+
+        double sum = scaleBulkEnergyRegion.sum.get();
+        double sumfo = scaleBulkEnergyRegion.sumFo.get();
+        double r = scaleBulkEnergyRegion.r.get();
+        double rf = scaleBulkEnergyRegion.rf.get();
+        double rfree = scaleBulkEnergyRegion.rFree.get();
+        double rfreef = scaleBulkEnergyRegion.rFreeF.get();
+
+        if (gradient) {
+            double isumfo = 1.0 / sumfo;
+            for (int i = 0; i < g.length; i++) {
+                g[i] *= isumfo;
+            }
+        }
+
+        if (print) {
+            StringBuilder sb = new StringBuilder("\n");
+            sb.append("Bulk solvent and scale fit\n");
+            sb.append(String.format("   residual:  %8.3f\n", sum / sumfo));
+            sb.append(String.format("   R:  %8.3f  Rfree:  %8.3f\n",
+                    (r / rf) * 100.0, (rfree / rfreef) * 100.0));
+            sb.append("x: ");
+            for (double x1 : x) {
+                sb.append(String.format("%8g ", x1));
+            }
+            sb.append("\ng: ");
+            for (double v : g) {
+                sb.append(String.format("%8g ", v));
+            }
+            sb.append("\n");
+            logger.info(sb.toString());
+        }
+        totalEnergy = sum / sumfo;
+        return sum / sumfo;
+    }
 
     private class ScaleBulkEnergyRegion extends ParallelRegion {
 
+        private final double[] modelB = new double[6];
+        private final double[][] uStar = new double[3][3];
+        private final double[][] resM = new double[3][3];
         boolean gradient = true;
         double[] x;
         double[] g;
         double solventK;
         double modelK;
         double solventUEq;
-        private final double[] modelB = new double[6];
-        private final double[][] uStar = new double[3][3];
-        private final double[][] resM = new double[3][3];
         SharedDouble r;
         SharedDouble rf;
         SharedDouble rFree;
@@ -177,10 +387,33 @@ public class ScaleBulkEnergy implements Potential {
             sumFo = new SharedDouble();
         }
 
+        @Override
+        public void finish() {
+            if (gradient) {
+                for (int i = 0; i < g.length; i++) {
+                    g[i] = grad.get(i);
+                }
+            }
+        }
+
         public void init(double x[], double g[], boolean gradient) {
             this.x = x;
             this.g = g;
             this.gradient = gradient;
+        }
+
+        @Override
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+            if (scaleBulkEnergyLoop[ti] == null) {
+                scaleBulkEnergyLoop[ti] = new ScaleBulkEnergyLoop();
+            }
+
+            try {
+                execute(0, reflectionList.hkllist.size() - 1, scaleBulkEnergyLoop[ti]);
+            } catch (Exception e) {
+                logger.info(e.toString());
+            }
         }
 
         @Override
@@ -220,29 +453,6 @@ public class ScaleBulkEnergy implements Potential {
             }
         }
 
-        @Override
-        public void run() throws Exception {
-            int ti = getThreadIndex();
-            if (scaleBulkEnergyLoop[ti] == null) {
-                scaleBulkEnergyLoop[ti] = new ScaleBulkEnergyLoop();
-            }
-
-            try {
-                execute(0, reflectionList.hkllist.size() - 1, scaleBulkEnergyLoop[ti]);
-            } catch (Exception e) {
-                logger.info(e.toString());
-            }
-        }
-
-        @Override
-        public void finish() {
-            if (gradient) {
-                for (int i = 0; i < g.length; i++) {
-                    g[i] = grad.get(i);
-                }
-            }
-        }
-
         private class ScaleBulkEnergyLoop extends IntegerForLoop {
 
             private final double[] resv = new double[3];
@@ -265,14 +475,16 @@ public class ScaleBulkEnergy implements Potential {
             }
 
             @Override
-            public void start() {
-                lr = 0.0;
-                lrf = 0.0;
-                lrfree = 0.0;
-                lrfreef = 0.0;
-                lsum = 0.0;
-                lsumfo = 0.0;
-                fill(lgrad, 0.0);
+            public void finish() {
+                r.addAndGet(lr);
+                rf.addAndGet(lrf);
+                rFree.addAndGet(lrfree);
+                rFreeF.addAndGet(lrfreef);
+                sum.addAndGet(lsum);
+                sumFo.addAndGet(lsumfo);
+                for (int i = 0; i < lgrad.length; i++) {
+                    grad.getAndAdd(i, lgrad[i]);
+                }
             }
 
             @Override
@@ -389,228 +601,15 @@ public class ScaleBulkEnergy implements Potential {
             }
 
             @Override
-            public void finish() {
-                r.addAndGet(lr);
-                rf.addAndGet(lrf);
-                rFree.addAndGet(lrfree);
-                rFreeF.addAndGet(lrfreef);
-                sum.addAndGet(lsum);
-                sumFo.addAndGet(lsumfo);
-                for (int i = 0; i < lgrad.length; i++) {
-                    grad.getAndAdd(i, lgrad[i]);
-                }
+            public void start() {
+                lr = 0.0;
+                lrf = 0.0;
+                lrfree = 0.0;
+                lrfreef = 0.0;
+                lsum = 0.0;
+                lsumfo = 0.0;
+                fill(lgrad, 0.0);
             }
         }
-    }
-
-    /**
-     * <p>
-     * target</p>
-     *
-     * @param x        an array of double.
-     * @param g        an array of double.
-     * @param gradient a boolean.
-     * @param print    a boolean.
-     * @return a double.
-     */
-    public double target(double[] x, double[] g, boolean gradient, boolean print) {
-
-        try {
-            scaleBulkEnergyRegion.init(x, g, gradient);
-            parallelTeam.execute(scaleBulkEnergyRegion);
-        } catch (Exception e) {
-            logger.info(e.toString());
-        }
-
-        double sum = scaleBulkEnergyRegion.sum.get();
-        double sumfo = scaleBulkEnergyRegion.sumFo.get();
-        double r = scaleBulkEnergyRegion.r.get();
-        double rf = scaleBulkEnergyRegion.rf.get();
-        double rfree = scaleBulkEnergyRegion.rFree.get();
-        double rfreef = scaleBulkEnergyRegion.rFreeF.get();
-
-        if (gradient) {
-            double isumfo = 1.0 / sumfo;
-            for (int i = 0; i < g.length; i++) {
-                g[i] *= isumfo;
-            }
-        }
-
-        if (print) {
-            StringBuilder sb = new StringBuilder("\n");
-            sb.append("Bulk solvent and scale fit\n");
-            sb.append(String.format("   residual:  %8.3f\n", sum / sumfo));
-            sb.append(String.format("   R:  %8.3f  Rfree:  %8.3f\n",
-                    (r / rf) * 100.0, (rfree / rfreef) * 100.0));
-            sb.append("x: ");
-            for (double x1 : x) {
-                sb.append(String.format("%8g ", x1));
-            }
-            sb.append("\ng: ");
-            for (double v : g) {
-                sb.append(String.format("%8g ", v));
-            }
-            sb.append("\n");
-            logger.info(sb.toString());
-        }
-        totalEnergy = sum / sumfo;
-        return sum / sumfo;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energy(double[] x) {
-        unscaleCoordinates(x);
-        double sum = target(x, null, false, false);
-        scaleCoordinates(x);
-        return sum;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energyAndGradient(double[] x, double[] g) {
-        unscaleCoordinates(x);
-        double sum = target(x, g, true, false);
-        scaleCoordinatesAndGradient(x, g);
-        return sum;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setScaling(double[] scaling) {
-        if (scaling != null && scaling.length == n) {
-            optimizationScaling = scaling;
-        } else {
-            optimizationScaling = null;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return optimizationScaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getMass() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getTotalEnergy() {
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNumberOfVariables() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] parameters) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Return a reference to each variables type.
-     */
-    @Override
-    public Potential.VARIABLE_TYPE[] getVariableTypes() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public STATE getEnergyTermState() {
-        return state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setEnergyTermState(Potential.STATE state) {
-        this.state = state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        // The parallelTeam should have been passed in by DiffractionData, which handles destroying it.
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

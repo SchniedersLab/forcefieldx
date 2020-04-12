@@ -58,30 +58,10 @@ public abstract class RowLoop extends IntegerForLoop {
 
     protected ArrayList<Integer> buildListA = new ArrayList<>();
     protected ArrayList<Integer> buildListS = new ArrayList<>();
-
-    private int nAtoms;
-    private int nSymm;
     protected RowRegion rowRegion;
     protected boolean rebuildList = false;
-
-    /**
-     * <p>saveZYValues.</p>
-     *
-     * @param zAtListBuild an array of {@link int} objects.
-     */
-    public void saveZYValues(int[][][] zAtListBuild) {
-    }
-
-    /**
-     * <p>checkList.</p>
-     *
-     * @param zAtListBuild an array of {@link int} objects.
-     * @param buff         a int.
-     * @return a boolean.
-     */
-    public boolean checkList(int[][][] zAtListBuild, int buff) {
-        return false;
-    }
+    private int nAtoms;
+    private int nSymm;
 
     /**
      * <p>Constructor for RowLoop.</p>
@@ -97,15 +77,26 @@ public abstract class RowLoop extends IntegerForLoop {
     }
 
     /**
-     * <p>
-     * setNsymm</p>
+     * <p>checkList.</p>
      *
-     * @param nSymm a int.
+     * @param zAtListBuild an array of {@link int} objects.
+     * @param buff         a int.
+     * @return a boolean.
      */
-    public void setNsymm(int nSymm) {
-        this.nSymm = nSymm;
-        assert (nSymm <= rowRegion.nSymm);
+    public boolean checkList(int[][][] zAtListBuild, int buff) {
+        return false;
     }
+
+    /**
+     * Apply electron density "as normal" for an atom, but check that the y and
+     * z indeces are within the supplied bounds (inclusive).
+     *
+     * @param iSymm the SymOp to apply.
+     * @param iAtom the index of the Atom to put onto the grid.
+     * @param lb    the lower bound for the y and z-axes.
+     * @param ub    the upper bound for the y and z-axes.
+     */
+    public abstract void gridDensity(int iSymm, int iAtom, int lb, int ub);
 
     /**
      * {@inheritDoc}
@@ -122,13 +113,21 @@ public abstract class RowLoop extends IntegerForLoop {
     }
 
     /**
-     * Apply electron density "as normal" for an atom, but check that the y and
-     * z indeces are within the supplied bounds (inclusive).
+     * <p>saveZYValues.</p>
      *
-     * @param iSymm the SymOp to apply.
-     * @param iAtom the index of the Atom to put onto the grid.
-     * @param lb    the lower bound for the y and z-axes.
-     * @param ub    the upper bound for the y and z-axes.
+     * @param zAtListBuild an array of {@link int} objects.
      */
-    public abstract void gridDensity(int iSymm, int iAtom, int lb, int ub);
+    public void saveZYValues(int[][][] zAtListBuild) {
+    }
+
+    /**
+     * <p>
+     * setNsymm</p>
+     *
+     * @param nSymm a int.
+     */
+    public void setNsymm(int nSymm) {
+        this.nSymm = nSymm;
+        assert (nSymm <= rowRegion.nSymm);
+    }
 }

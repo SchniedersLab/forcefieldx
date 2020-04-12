@@ -60,13 +60,6 @@ public class DirectoryUtils {
     public static void deleteDirectoryTree(Path path) throws IOException {
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException e)
                     throws IOException {
                 if (e == null) {
@@ -76,6 +69,13 @@ public class DirectoryUtils {
                     // directory iteration failed
                     throw e;
                 }
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
             }
         });
     }

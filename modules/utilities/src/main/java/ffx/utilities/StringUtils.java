@@ -48,14 +48,20 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
 import static java.lang.String.format;
 
 import org.apache.commons.math3.util.FastMath;
@@ -69,13 +75,13 @@ import static ffx.utilities.TinkerUtils.parseTinkerAtomList;
  */
 public class StringUtils {
 
+    public static final String STANDARD_WATER_NAME = "HOH";
     private static final Logger logger = Logger.getLogger(StringUtils.class.getName());
-
     private static final Set<String> waterNames =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList("HOH", "DOD", "WAT", "TIP", "TIP3", "TIP4", "MOL")));
-    public static final String STANDARD_WATER_NAME = "HOH";
     private static final Map<String, String> ionNames;
-    
+    private static final Pattern intRangePattern = Pattern.compile("(\\d+)-(\\d+)");
+
     static {
         Map<String, String> ions = new HashMap<>();
 
@@ -111,141 +117,48 @@ public class StringUtils {
         ionNames = Collections.unmodifiableMap(ions);
     }
 
-    private static final Pattern intRangePattern = Pattern.compile("(\\d+)-(\\d+)");
+    /**
+     * <p>
+     * cifForID</p>
+     *
+     * @param id a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     */
+    public static String cifForID(String id) {
+        if (id.length() != 4) {
+            return null;
+        }
+        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".cif";
+    }
 
     /**
-     * Parses a numerical argument for an atom-specific flag. Intended to reduce
-     * the amount of repetitive code in applyAtomProperties by parsing and
-     * checking for validity, and then returning the appropriate range. Input
-     * should be 1-indexed (user end), output 0-indexed.
+     * Finds consecutive subranges in an array of ints, and returns their mins
+     * and maxes. This can include singletons.
+     * <p>
+     * Example: [4, 5, 6, 1, 1, 2, 5, 6, 7] would become [4,6],[1,1],[1,2],[5,7]
      *
-     * @param keyType Type of key
-     * @param st      Input string
-     * @param nAtoms  Number of atoms in the MolecularAssembly
-     * @return A List of selected atoms.
-     * @throws java.lang.IllegalArgumentException if an invalid argument
+     * @param set Array of ints to split into consecutive subranges.
+     * @return Consecutive subrange mins, maxes
      */
-    public static List<Integer> parseAtNumArg(String keyType, String st, int nAtoms) throws IllegalArgumentException {
-        Matcher m = intRangePattern.matcher(st);
-        if (m.matches()) {
-            int start = Integer.parseInt(m.group(1)) - 1;
-            int end = Integer.parseInt(m.group(2)) - 1;
-            if (start > end) {
-                throw new IllegalArgumentException(format(" %s input %s not valid: start > end.", keyType, st));
-            } else if (start < 0) {
-                throw new IllegalArgumentException(format(" %s input %s not valid: atoms should be indexed starting from 1.", keyType, st));
-            } else if (start >= nAtoms) {
-                throw new IllegalArgumentException(format(" %s input %s not valid: atom range is out of bounds for assembly of length %d.", keyType, st, nAtoms));
+    public static List<int[]> consecutiveInts(int[] set) {
+        if (set == null || set.length == 0) {
+            return Collections.emptyList();
+        }
+        List<int[]> allRanges = new ArrayList<>();
+
+        int rangeStart = set[0];
+        int rangeEnd = rangeStart;
+        for (int i = 1; i < set.length; i++) {
+            if (set[i] == rangeEnd + 1) {
+                rangeEnd = set[i];
             } else {
-                if (end >= nAtoms) {
-                    logger.log(Level.INFO, format(" Truncating range %s to end of valid range %d.", st, nAtoms));
-                    end = nAtoms - 1;
-                }
-                List<Integer> selectedAtoms = new ArrayList<>();
-                for (int i=start; i<=end; i++) {
-                    selectedAtoms.add(i);
-                }
-                return selectedAtoms;
-            }
-        } else {
-            try {
-                int atNum = Integer.parseUnsignedInt(st) - 1;
-                if (atNum < 0 || atNum >= nAtoms) {
-                    throw new IllegalArgumentException(format(" %s numerical argument %s out-of-bounds for range 1 to %d", keyType, st, nAtoms));
-                }
-                List<Integer> selectedAtoms = new ArrayList<>();
-                selectedAtoms.add(atNum);
-                return selectedAtoms;
-            } catch (NumberFormatException ex) {
-                // Try to parse as a Tinker style range.
-                List<String> tokens = Arrays.asList(st.split("\\s+"));
-                List<Integer> range = parseTinkerAtomList(tokens, -1, -1);
-                return range;
+                allRanges.add(new int[]{rangeStart, rangeEnd});
+                rangeStart = set[i];
+                rangeEnd = rangeStart;
             }
         }
-    }
-
-    /**
-     * Checks if a String matches a known water name.
-     * @param name String to check.
-     * @return     If it is a water name.
-     */
-    public static boolean looksLikeWater(String name) {
-        return waterNames.contains(name.toUpperCase());
-    }
-
-    /**
-     * Checks if a String matches a known monoatomic ion name.
-     * @param name String to check.
-     * @return     If it is the name of a monoatomic ion.
-     */
-    public static boolean looksLikeIon(String name) {
-        return ionNames.containsKey(name.toUpperCase());
-    }
-
-    /**
-     * Returns a List of recognized water names (defensive copy).
-     * @return List of water names.
-     */
-    public static List<String> getWaterNames() {
-        return new ArrayList<>(waterNames);
-    }
-
-    /**
-     * Returns a Map from recognized ion names to standard ion names.
-     * @return Map from ion names to standardized ion names.
-     */
-    public static Map<String, String> getIonNames() {
-        return new HashMap<>(ionNames);
-    }
-
-    /**
-     * Checks if a String looks like a water. Returns either a standardized
-     * water name, or null if it doesn't look like water.
-     * @param name String to check.
-     * @return     Standard water name (matches) or null (no match).
-     */
-    public static String tryParseWater(String name) {
-        return waterNames.contains(name.toUpperCase()) ? STANDARD_WATER_NAME : null;
-    }
-
-    /**
-     * Checks if a String looks like a known ion. Returns either its standardized
-     * name, or null if it doesn't look like an ion.
-     * @param name String to check.
-     * @return     Standard ion name (matches) or null (no match).
-     */
-    public static String tryParseIon(String name) {
-        return ionNames.getOrDefault(name.toUpperCase(), null);
-    }
-
-    /**
-     * Creates a writer for text to a Gzip file.
-     *
-     * @param file Gzip file to write to.
-     * @return A Writer
-     * @throws java.io.IOException Thrown if creation of the GZip Writer fails.
-     */
-    public static Writer createGzipWriter(File file) throws IOException {
-        return createGzipWriter(file, Charset.defaultCharset());
-    }
-
-    /**
-     * Creates a writer for text to a Gzip file.
-     *
-     * @param file Gzip file to write to.
-     * @param cs   Character set to use.
-     * @return A Writer
-     * @throws java.io.IOException Thrown if creation of the GZip Writer fails.
-     */
-    public static Writer createGzipWriter(File file, Charset cs) throws IOException {
-        /*
-         * The BufferedWriter buffers the input.
-         * The OutputStreamWriter converts the input to bytes.
-         * The GZIPOutputStream compresses the bytes.
-         * The FileOutputStream writes bytes to a file.
-         */
-        return new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(file)), cs));
+        allRanges.add(new int[]{rangeStart, rangeEnd});
+        return allRanges;
     }
 
     /**
@@ -275,6 +188,35 @@ public class StringUtils {
          * The FileInputStream reads raw bytes from a (gzipped) file.
          */
         return new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file)), cs));
+    }
+
+    /**
+     * Creates a writer for text to a Gzip file.
+     *
+     * @param file Gzip file to write to.
+     * @return A Writer
+     * @throws java.io.IOException Thrown if creation of the GZip Writer fails.
+     */
+    public static Writer createGzipWriter(File file) throws IOException {
+        return createGzipWriter(file, Charset.defaultCharset());
+    }
+
+    /**
+     * Creates a writer for text to a Gzip file.
+     *
+     * @param file Gzip file to write to.
+     * @param cs   Character set to use.
+     * @return A Writer
+     * @throws java.io.IOException Thrown if creation of the GZip Writer fails.
+     */
+    public static Writer createGzipWriter(File file, Charset cs) throws IOException {
+        /*
+         * The BufferedWriter buffers the input.
+         * The OutputStreamWriter converts the input to bytes.
+         * The GZIPOutputStream compresses the bytes.
+         * The FileOutputStream writes bytes to a file.
+         */
+        return new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(file)), cs));
     }
 
     /**
@@ -361,15 +303,41 @@ public class StringUtils {
     }
 
     /**
-     * <p>
-     * padRight</p>
+     * Returns a Map from recognized ion names to standard ion names.
      *
-     * @param s a {@link java.lang.String} object.
-     * @param n a int.
-     * @return a {@link java.lang.String} object.
+     * @return Map from ion names to standardized ion names.
      */
-    public static String padRight(String s, int n) {
-        return String.format("%-" + n + "s", s);
+    public static Map<String, String> getIonNames() {
+        return new HashMap<>(ionNames);
+    }
+
+    /**
+     * Returns a List of recognized water names (defensive copy).
+     *
+     * @return List of water names.
+     */
+    public static List<String> getWaterNames() {
+        return new ArrayList<>(waterNames);
+    }
+
+    /**
+     * Checks if a String matches a known monoatomic ion name.
+     *
+     * @param name String to check.
+     * @return If it is the name of a monoatomic ion.
+     */
+    public static boolean looksLikeIon(String name) {
+        return ionNames.containsKey(name.toUpperCase());
+    }
+
+    /**
+     * Checks if a String matches a known water name.
+     *
+     * @param name String to check.
+     * @return If it is a water name.
+     */
+    public static boolean looksLikeWater(String name) {
+        return waterNames.contains(name.toUpperCase());
     }
 
     /**
@@ -382,6 +350,70 @@ public class StringUtils {
      */
     public static String padLeft(String s, int n) {
         return String.format("%" + n + "s", s);
+    }
+
+    /**
+     * <p>
+     * padRight</p>
+     *
+     * @param s a {@link java.lang.String} object.
+     * @param n a int.
+     * @return a {@link java.lang.String} object.
+     */
+    public static String padRight(String s, int n) {
+        return String.format("%-" + n + "s", s);
+    }
+
+    /**
+     * Parses a numerical argument for an atom-specific flag. Intended to reduce
+     * the amount of repetitive code in applyAtomProperties by parsing and
+     * checking for validity, and then returning the appropriate range. Input
+     * should be 1-indexed (user end), output 0-indexed.
+     *
+     * @param keyType Type of key
+     * @param st      Input string
+     * @param nAtoms  Number of atoms in the MolecularAssembly
+     * @return A List of selected atoms.
+     * @throws java.lang.IllegalArgumentException if an invalid argument
+     */
+    public static List<Integer> parseAtNumArg(String keyType, String st, int nAtoms) throws IllegalArgumentException {
+        Matcher m = intRangePattern.matcher(st);
+        if (m.matches()) {
+            int start = Integer.parseInt(m.group(1)) - 1;
+            int end = Integer.parseInt(m.group(2)) - 1;
+            if (start > end) {
+                throw new IllegalArgumentException(format(" %s input %s not valid: start > end.", keyType, st));
+            } else if (start < 0) {
+                throw new IllegalArgumentException(format(" %s input %s not valid: atoms should be indexed starting from 1.", keyType, st));
+            } else if (start >= nAtoms) {
+                throw new IllegalArgumentException(format(" %s input %s not valid: atom range is out of bounds for assembly of length %d.", keyType, st, nAtoms));
+            } else {
+                if (end >= nAtoms) {
+                    logger.log(Level.INFO, format(" Truncating range %s to end of valid range %d.", st, nAtoms));
+                    end = nAtoms - 1;
+                }
+                List<Integer> selectedAtoms = new ArrayList<>();
+                for (int i = start; i <= end; i++) {
+                    selectedAtoms.add(i);
+                }
+                return selectedAtoms;
+            }
+        } else {
+            try {
+                int atNum = Integer.parseUnsignedInt(st) - 1;
+                if (atNum < 0 || atNum >= nAtoms) {
+                    throw new IllegalArgumentException(format(" %s numerical argument %s out-of-bounds for range 1 to %d", keyType, st, nAtoms));
+                }
+                List<Integer> selectedAtoms = new ArrayList<>();
+                selectedAtoms.add(atNum);
+                return selectedAtoms;
+            } catch (NumberFormatException ex) {
+                // Try to parse as a Tinker style range.
+                List<String> tokens = Arrays.asList(st.split("\\s+"));
+                List<Integer> range = parseTinkerAtomList(tokens, -1, -1);
+                return range;
+            }
+        }
     }
 
     /**
@@ -399,46 +431,24 @@ public class StringUtils {
     }
 
     /**
-     * <p>
-     * cifForID</p>
+     * Checks if a String looks like a known ion. Returns either its standardized
+     * name, or null if it doesn't look like an ion.
      *
-     * @param id a {@link java.lang.String} object.
-     * @return a {@link java.lang.String} object.
+     * @param name String to check.
+     * @return Standard ion name (matches) or null (no match).
      */
-    public static String cifForID(String id) {
-        if (id.length() != 4) {
-            return null;
-        }
-        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".cif";
+    public static String tryParseIon(String name) {
+        return ionNames.getOrDefault(name.toUpperCase(), null);
     }
 
     /**
-     * Finds consecutive subranges in an array of ints, and returns their mins
-     * and maxes. This can include singletons.
-     * <p>
-     * Example: [4, 5, 6, 1, 1, 2, 5, 6, 7] would become [4,6],[1,1],[1,2],[5,7]
+     * Checks if a String looks like a water. Returns either a standardized
+     * water name, or null if it doesn't look like water.
      *
-     * @param set Array of ints to split into consecutive subranges.
-     * @return Consecutive subrange mins, maxes
+     * @param name String to check.
+     * @return Standard water name (matches) or null (no match).
      */
-    public static List<int[]> consecutiveInts(int[] set) {
-        if (set == null || set.length == 0) {
-            return Collections.emptyList();
-        }
-        List<int[]> allRanges = new ArrayList<>();
-
-        int rangeStart = set[0];
-        int rangeEnd = rangeStart;
-        for (int i = 1; i < set.length; i++) {
-            if (set[i] == rangeEnd + 1) {
-                rangeEnd = set[i];
-            } else {
-                allRanges.add(new int[]{rangeStart, rangeEnd});
-                rangeStart = set[i];
-                rangeEnd = rangeStart;
-            }
-        }
-        allRanges.add(new int[]{rangeStart, rangeEnd});
-        return allRanges;
+    public static String tryParseWater(String name) {
+        return waterNames.contains(name.toUpperCase()) ? STANDARD_WATER_NAME : null;
     }
 }

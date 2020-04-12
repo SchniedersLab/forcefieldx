@@ -140,9 +140,9 @@ public class SigmaAEnergy implements Potential {
     private final double[] wa;
 
     private final SigmaARegion sigmaARegion;
+    private final boolean useCernBessel;
     private double[] optimizationScaling = null;
     private double totalEnergy;
-    private final boolean useCernBessel;
     private STATE state = STATE.BOTH;
 
     /**
@@ -183,36 +183,161 @@ public class SigmaAEnergy implements Potential {
     }
 
     /**
-     * From sim and sim_integ functions in clipper utils:
-     * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html and from lnI0
-     * and i1OverI0 functions in bessel.h in scitbx module of cctbx:
-     * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
-     *
-     * @param x a double.
-     * @return a double.
+     * {@inheritDoc}
      */
-    private static double sim(double x) {
-        if (x >= 0.0) {
-            return (((x + sim_a) * x + sim_b) * x)
-                    / (((x + sim_c) * x + sim_d) * x + sim_e);
+    @Override
+    public boolean destroy() {
+        // Should be destroyed upstream in DiffractionData.
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energy(double[] x) {
+        unscaleCoordinates(x);
+        double sum = target(x, null, false, false);
+        scaleCoordinates(x);
+        return sum;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        unscaleCoordinates(x);
+        double sum = target(x, g, true, false);
+        scaleCoordinatesAndGradient(x, g);
+        return sum;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnergyTermState(STATE state) {
+        this.state = state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getMass() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfVariables() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return optimizationScaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        if (scaling != null && scaling.length == nBins * 2) {
+            optimizationScaling = scaling;
         } else {
-            return -(-(-(-x + sim_a) * x + sim_b) * x)
-                    / (-(-(-x + sim_c) * x + sim_d) * x + sim_e);
+            optimizationScaling = null;
         }
     }
 
     /**
-     * <p>
-     * sim_integ</p>
-     *
-     * @param x0 a double.
-     * @return a double.
+     * {@inheritDoc}
      */
-    private static double sim_integ(double x0) {
-        double x = abs(x0);
-        double z = (x + sim_p) / sim_q;
-        return sim_A * log(x + sim_g) + 0.5 * sim_B * log(z * z + 1.0)
-                + sim_r * atan(z) + x + 1.0;
+    @Override
+    public double getTotalEnergy() {
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Return a reference to each variables type.
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     /**
@@ -265,125 +390,49 @@ public class SigmaAEnergy implements Potential {
     }
 
     /**
-     * {@inheritDoc}
+     * From sim and sim_integ functions in clipper utils:
+     * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html and from lnI0
+     * and i1OverI0 functions in bessel.h in scitbx module of cctbx:
+     * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
+     *
+     * @param x a double.
+     * @return a double.
      */
-    @Override
-    public double energy(double[] x) {
-        unscaleCoordinates(x);
-        double sum = target(x, null, false, false);
-        scaleCoordinates(x);
-        return sum;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energyAndGradient(double[] x, double[] g) {
-        unscaleCoordinates(x);
-        double sum = target(x, g, true, false);
-        scaleCoordinatesAndGradient(x, g);
-        return sum;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setScaling(double[] scaling) {
-        if (scaling != null && scaling.length == nBins * 2) {
-            optimizationScaling = scaling;
+    private static double sim(double x) {
+        if (x >= 0.0) {
+            return (((x + sim_a) * x + sim_b) * x)
+                    / (((x + sim_c) * x + sim_d) * x + sim_e);
         } else {
-            optimizationScaling = null;
+            return -(-(-(-x + sim_a) * x + sim_b) * x)
+                    / (-(-(-x + sim_c) * x + sim_d) * x + sim_e);
         }
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return optimizationScaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getMass() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getTotalEnergy() {
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNumberOfVariables() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] parameters) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
      * <p>
-     * Return a reference to each variables type.
+     * sim_integ</p>
+     *
+     * @param x0 a double.
+     * @return a double.
      */
-    @Override
-    public VARIABLE_TYPE[] getVariableTypes() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public STATE getEnergyTermState() {
-        return state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setEnergyTermState(STATE state) {
-        this.state = state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        // Should be destroyed upstream in DiffractionData.
-        return true;
+    private static double sim_integ(double x0) {
+        double x = abs(x0);
+        double z = (x + sim_p) / sim_q;
+        return sim_A * log(x + sim_g) + 0.5 * sim_B * log(z * z + 1.0)
+                + sim_r * atan(z) + x + 1.0;
     }
 
     private class SigmaARegion extends ParallelRegion {
 
+        private final double[][] resm = new double[3][3];
+        private final double[] model_b = new double[6];
+        private final double[][] ustar = new double[3][3];
         boolean gradient = true;
         double modelK;
         double solventK;
         double solventUEq;
         double[] x;
         double[] g;
-        private final double[][] resm = new double[3][3];
-        private final double[] model_b = new double[6];
-        private final double[][] ustar = new double[3][3];
         SharedInteger nSum;
         SharedInteger nSumR;
         SharedDouble sum;
@@ -399,6 +448,15 @@ public class SigmaAEnergy implements Potential {
             sumR = new SharedDouble();
         }
 
+        @Override
+        public void finish() {
+            if (gradient) {
+                for (int i = 0; i < g.length; i++) {
+                    g[i] = grad.get(i);
+                }
+            }
+        }
+
         public void init(double[] x, double[] g, boolean gradient) {
             this.x = x;
             this.g = g;
@@ -406,11 +464,17 @@ public class SigmaAEnergy implements Potential {
         }
 
         @Override
-        public void finish() {
-            if (gradient) {
-                for (int i = 0; i < g.length; i++) {
-                    g[i] = grad.get(i);
-                }
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+
+            if (sigmaALoop[ti] == null) {
+                sigmaALoop[ti] = new SigmaALoop();
+            }
+
+            try {
+                execute(0, reflectionList.hkllist.size() - 1, sigmaALoop[ti]);
+            } catch (Exception e) {
+                logger.info(e.toString());
             }
         }
 
@@ -452,28 +516,8 @@ public class SigmaAEnergy implements Potential {
             }
         }
 
-        @Override
-        public void run() throws Exception {
-            int ti = getThreadIndex();
-
-            if (sigmaALoop[ti] == null) {
-                sigmaALoop[ti] = new SigmaALoop();
-            }
-
-            try {
-                execute(0, reflectionList.hkllist.size() - 1, sigmaALoop[ti]);
-            } catch (Exception e) {
-                logger.info(e.toString());
-            }
-        }
-
         private class SigmaALoop extends IntegerForLoop {
 
-            // Thread local work variables.
-            private double lSum;
-            private double lSumR;
-            private int lSumN;
-            private int lSumRN;
             private final double[] lGrad;
             private final double[] resv = new double[3];
             private final double[] ihc = new double[3];
@@ -490,18 +534,14 @@ public class SigmaAEnergy implements Potential {
             private final ComplexNumber mfo2 = new ComplexNumber();
             private final ComplexNumber dfcc = new ComplexNumber();
             private final ReflectionSpline spline = new ReflectionSpline(reflectionList, nBins);
+            // Thread local work variables.
+            private double lSum;
+            private double lSumR;
+            private int lSumN;
+            private int lSumRN;
 
             SigmaALoop() {
                 lGrad = new double[2 * nBins];
-            }
-
-            @Override
-            public void start() {
-                lSum = 0.0;
-                lSumR = 0.0;
-                lSumN = 0;
-                lSumRN = 0;
-                fill(lGrad, 0.0);
             }
 
             @Override
@@ -695,55 +735,15 @@ public class SigmaAEnergy implements Potential {
                     }
                 }
             }
+
+            @Override
+            public void start() {
+                lSum = 0.0;
+                lSumR = 0.0;
+                lSumN = 0;
+                lSumRN = 0;
+                fill(lGrad, 0.0);
+            }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getVelocity(double[] velocity) {
-
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

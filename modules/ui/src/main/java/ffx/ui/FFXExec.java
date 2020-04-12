@@ -53,7 +53,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * thread should not be dependent on a JVM instance.
  *
  * @author Michael J. Schnieders
- *
  */
 public class FFXExec implements Runnable {
 
@@ -61,23 +60,6 @@ public class FFXExec implements Runnable {
     private static String path;
     private static String ld_library_path;
     private static String classpath;
-
-    // Set up the PATH (to TINKER/bin), CLASSPATH and LD_LIBRARY_PATH
-    private void setEnv() {
-        path = MainPanel.ffxDir.getAbsolutePath();
-        classpath = MainPanel.classpath;
-        // java.home should be the jre directory.
-        ld_library_path = System.getProperty("java.home", ".");
-        if (!SystemUtils.IS_OS_WINDOWS) {
-            ld_library_path = ld_library_path + "/lib/i386/client:"
-                    + ld_library_path + "/lib/i386:" + ld_library_path
-                    + "/lib/i386/native_threads";
-        } else {
-            ld_library_path = ld_library_path + "\\bin\\client";
-            path = path + File.pathSeparator + ld_library_path;
-        }
-    }
-
     private FFXSystem system;
     private String name;
     private String args;
@@ -87,17 +69,16 @@ public class FFXExec implements Runnable {
     private boolean alive = true;
     private boolean openOnto;
     private int returnValue = 0;
-
     /**
      * Constructor
      *
-     * @param s FFXSystem the Native command will execute on
-     * @param n Name of the log file
-     * @param a Command to execute
-     * @param d Directory to launch the command in
-     * @param m MainPanel
+     * @param s    FFXSystem the Native command will execute on
+     * @param n    Name of the log file
+     * @param a    Command to execute
+     * @param d    Directory to launch the command in
+     * @param m    MainPanel
      * @param file File to open
-     * @param o Load the resulting version file onto the passed FFXSystem
+     * @param o    Load the resulting version file onto the passed FFXSystem
      */
     public FFXExec(FFXSystem s, String n, String a, String d, MainPanel m,
                    File file, boolean o) {
@@ -130,19 +111,6 @@ public class FFXExec implements Runnable {
     public boolean isAlive() {
         return alive;
     }
-
-    /**
-     * nativeExec method for launching native executables
-     *
-     * @param argv String
-     * @param dir String
-     * @param path String
-     * @param classpath String
-     * @param jre String
-     * @return int
-     */
-    private native int nativeExec(String argv, String dir, String path,
-                                  String classpath, String jre);
 
     /**
      * Executes the native call to "System()" and notifies the ResultPanel upon
@@ -189,7 +157,7 @@ public class FFXExec implements Runnable {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Commons.Lang Style toString.
      */
     @Override
@@ -197,4 +165,33 @@ public class FFXExec implements Runnable {
         ToStringBuilder toStringBuilder = new ToStringBuilder(this).append(path).append(classpath).append(ld_library_path);
         return toStringBuilder.toString();
     }
+
+    // Set up the PATH (to TINKER/bin), CLASSPATH and LD_LIBRARY_PATH
+    private void setEnv() {
+        path = MainPanel.ffxDir.getAbsolutePath();
+        classpath = MainPanel.classpath;
+        // java.home should be the jre directory.
+        ld_library_path = System.getProperty("java.home", ".");
+        if (!SystemUtils.IS_OS_WINDOWS) {
+            ld_library_path = ld_library_path + "/lib/i386/client:"
+                    + ld_library_path + "/lib/i386:" + ld_library_path
+                    + "/lib/i386/native_threads";
+        } else {
+            ld_library_path = ld_library_path + "\\bin\\client";
+            path = path + File.pathSeparator + ld_library_path;
+        }
+    }
+
+    /**
+     * nativeExec method for launching native executables
+     *
+     * @param argv      String
+     * @param dir       String
+     * @param path      String
+     * @param classpath String
+     * @param jre       String
+     * @return int
+     */
+    private native int nativeExec(String argv, String dir, String path,
+                                  String classpath, String jre);
 }

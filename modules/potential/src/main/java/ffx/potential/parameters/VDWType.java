@@ -58,19 +58,6 @@ import static ffx.potential.parameters.ForceField.ForceFieldType.VDW14;
 public final class VDWType extends BaseType implements Comparator<String> {
 
     private static final Logger logger = Logger.getLogger(VDWType.class.getName());
-
-    /**
-     * Torsion modes include Normal or In-Plane
-     */
-    public enum VDWMode {
-
-        NORMAL, VDW14
-    }
-
-    /**
-     * The atom class that uses this van der Waals parameter.
-     */
-    public int atomClass;
     /**
      * The radius of the minimum well depth energy (angstroms).
      */
@@ -86,10 +73,13 @@ public final class VDWType extends BaseType implements Comparator<String> {
      */
     public final double reductionFactor;
     /**
+     * The atom class that uses this van der Waals parameter.
+     */
+    public int atomClass;
+    /**
      * Is this a normal vdW parameter or is it for 1-4 interactions.
      */
     private VDWMode vdwMode;
-
     /**
      * van der Waals constructor. If the reduction factor is .LE. 0.0, no
      * reduction is used for this atom type.
@@ -126,17 +116,6 @@ public final class VDWType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>
-     * incrementClass</p>
-     *
-     * @param increment a int.
-     */
-    void incrementClass(int increment) {
-        atomClass += increment;
-        setKey(Integer.toString(atomClass));
-    }
-
-    /**
      * <p>average.</p>
      *
      * @param vdwType1  a {@link ffx.potential.parameters.VDWType} object.
@@ -154,6 +133,35 @@ public final class VDWType extends BaseType implements Comparator<String> {
         double reductionFactor = (vdwType1.reductionFactor + vdwType2.reductionFactor) / 2.0;
 
         return new VDWType(atomClass, radius, wellDepth, reductionFactor);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compare(String s1, String s2) {
+        int t1 = parseInt(s1);
+        int t2 = parseInt(s2);
+        return Integer.compare(t1, t2);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        VDWType vdwType = (VDWType) o;
+        return (vdwType.atomClass == this.atomClass);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(atomClass);
     }
 
     /**
@@ -235,32 +243,22 @@ public final class VDWType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * {@inheritDoc}
+     * Torsion modes include Normal or In-Plane
      */
-    @Override
-    public int compare(String s1, String s2) {
-        int t1 = parseInt(s1);
-        int t2 = parseInt(s2);
-        return Integer.compare(t1, t2);
+    public enum VDWMode {
+
+        NORMAL, VDW14
     }
 
     /**
-     * {@inheritDoc}
+     * <p>
+     * incrementClass</p>
+     *
+     * @param increment a int.
      */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        VDWType vdwType = (VDWType) o;
-        return (vdwType.atomClass == this.atomClass);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(atomClass);
+    void incrementClass(int increment) {
+        atomClass += increment;
+        setKey(Integer.toString(atomClass));
     }
 
 }

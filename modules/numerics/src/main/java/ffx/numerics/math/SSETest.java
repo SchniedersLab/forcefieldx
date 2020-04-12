@@ -49,6 +49,22 @@ import static org.apache.commons.math3.util.FastMath.floor;
  */
 public class SSETest {
 
+    public final double[][] A;
+    public final double[] x;
+    private final double[] flatA;
+
+    /**
+     * <p>Constructor for SSETest.</p>
+     *
+     * @param m a int.
+     * @param n a int.
+     */
+    private SSETest(int m, int n) {
+        A = new double[m][n];
+        flatA = new double[m * n];
+        x = new double[n];
+    }
+
     /**
      * <p>main.</p>
      *
@@ -98,22 +114,6 @@ public class SSETest {
                 time = 0;
             }
         }
-    }
-
-    public final double[][] A;
-    public final double[] x;
-    private final double[] flatA;
-
-    /**
-     * <p>Constructor for SSETest.</p>
-     *
-     * @param m a int.
-     * @param n a int.
-     */
-    private SSETest(int m, int n) {
-        A = new double[m][n];
-        flatA = new double[m * n];
-        x = new double[n];
     }
 
     private void init(int n, int m) {

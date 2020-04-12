@@ -52,70 +52,26 @@ import ffx.potential.bonded.Atom;
 public class SoluteRadii {
 
     private static final Logger logger = Logger.getLogger(SoluteRadii.class.getName());
-
-    private SoluteRadii() {
-    }
-
     /**
      * This maps atomic number to reasonable GK base radii.
      */
     private static final Map<Integer, Double> DEFAULT_RADII = new HashMap<>();
-
     /**
      * This map connects AMOEBA '09 atom classes to GK base radii.
      */
     private static final Map<Integer, Double> AMOEBA_2009_GK_RADII = new HashMap<>();
-
     /**
      * This map connects AMOEBA '14 atom classes to GK base radii.
      */
     private static final Map<Integer, Double> AMOEBA_2014_GK_RADII = new HashMap<>();
-
     /**
      * This map connects AMOEBA Nucleic Acid '17 atom classes to GK base radii.
      */
     private static final Map<Integer, Double> AMOEBA_NUC_2017_GK_RADII = new HashMap<>();
-
     /**
      * This map connects AMOEBA Bio '18 atom classes to GK base radii.
      */
     private static final Map<Integer, Double> AMOEBA_BIO_2018_GK_RADII = new HashMap<>();
-
-
-    public static void logRadiiSource(ForceField forceField) {
-        String forcefieldName = forceField.getString("FORCEFIELD", ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
-        forcefieldName = forcefieldName.replaceAll("_", "-");
-        if (forceField.getBoolean("GK_USEFITRADII", true)) {
-            if (forcefieldName.equalsIgnoreCase("AMOEBA-2009")) {
-                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
-            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-2014")) {
-                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
-            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-NUC-2017")) {
-                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
-            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-BIO-2018")) {
-                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
-            }
-        }
-    }
-
-    public static double applyGKRadii(ForceField forceField, double bondiScale,
-                                      Atom[] atoms, double[] baseRadius) {
-        int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom atom = atoms[i];
-            baseRadius[i] = DEFAULT_RADII.get(atom.getAtomicNumber()) * bondiScale;
-            int key = atom.getAtomType().type;
-            SoluteType soluteType = forceField.getSoluteType(Integer.toString(key));
-            if (soluteType != null) {
-                baseRadius[i] = soluteType.diameter * 0.5;
-            }
-        }
-        return bondiScale;
-    }
-
-    // All solvation free energies are for 1 M standard state in both vacuum and solvent.
-    // No "phase potential" correction is applied for moving ions across the vacuum - liquid interface.
-
     /**
      * Lithium Ion Li+
      * Wang Thesis: -116.91 kca/mol
@@ -154,6 +110,9 @@ public class SoluteRadii {
      * Solvation               -74.38693205
      */
     private static final double GK_AMOEBA_POTASSIUM = 4.230;
+
+    // All solvation free energies are for 1 M standard state in both vacuum and solvent.
+    // No "phase potential" correction is applied for moving ions across the vacuum - liquid interface.
     /**
      * Rubidium Ion Rb+
      * Wang Thesis:  -69.05 kcal/mol
@@ -231,12 +190,12 @@ public class SoluteRadii {
     private static final double GK_AMOEBA_FLUORIDE = 2.734;
     /**
      * Chloride Ion Cl-
-     *
+     * <p>
      * Target Data:
      * Grossfield et al: -86.5 kca/mol (from previous AMOEBA Chloride parameters).
      * Wang Thesis:  -86.12 kca/mol (from 2018).
      * Nonpolar solvation: 2.87 kcal/mol
-
+     *
      * <p>
      * AMOEBA 2009 Class 15
      * <p>
@@ -636,7 +595,6 @@ public class SoluteRadii {
      * AMOEBA 2009 Class 93
      */
     private static final double GK_AMOEBA_IMIDAZOLE_HC = 3.000;
-
     /**
      * TODO: Fit this so GK matches GXG trimer charging.
      */
@@ -648,7 +606,6 @@ public class SoluteRadii {
     private static final double GK_AMOEBA_PROTEIN_TERMINAL_NH3 = 6.200;//GK_AMOEBA_IMIDAZOLE_NH;
     private static final double GK_AMOEBA_PROTEIN_TERMINAL_H3N = GK_AMOEBA_NITROGEN_H;
     private static final double GK_AMOEBA_PROTEIN_HISTIDINE_NH = 6.200;//GK_AMOEBA_IMIDAZOLE_NH;
-
 
     static {
         DEFAULT_RADII.put(0, 0.0);
@@ -1045,5 +1002,38 @@ public class SoluteRadii {
         AMOEBA_BIO_2018_GK_RADII.put(104, GK_AMOEBA_IODIDE / 2.0);
 
 
+    }
+    private SoluteRadii() {
+    }
+
+    public static double applyGKRadii(ForceField forceField, double bondiScale,
+                                      Atom[] atoms, double[] baseRadius) {
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            baseRadius[i] = DEFAULT_RADII.get(atom.getAtomicNumber()) * bondiScale;
+            int key = atom.getAtomType().type;
+            SoluteType soluteType = forceField.getSoluteType(Integer.toString(key));
+            if (soluteType != null) {
+                baseRadius[i] = soluteType.diameter * 0.5;
+            }
+        }
+        return bondiScale;
+    }
+
+    public static void logRadiiSource(ForceField forceField) {
+        String forcefieldName = forceField.getString("FORCEFIELD", ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
+        forcefieldName = forcefieldName.replaceAll("_", "-");
+        if (forceField.getBoolean("GK_USEFITRADII", true)) {
+            if (forcefieldName.equalsIgnoreCase("AMOEBA-2009")) {
+                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
+            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-2014")) {
+                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
+            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-NUC-2017")) {
+                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
+            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-BIO-2018")) {
+                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
+            }
+        }
     }
 }

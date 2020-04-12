@@ -51,7 +51,6 @@ import java.util.logging.Logger;
  * are sent by the FFXServer to the FFXClient on request.
  *
  * @author Michael J. Schnieders
- *
  */
 public class FFXClient {
 

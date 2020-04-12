@@ -482,17 +482,6 @@ public class Complex3DParallel {
         private Complex localFFTY;
 
         @Override
-        public IntegerSchedule schedule() {
-            return schedule;
-        }
-
-        @Override
-        public void start() {
-            localFFTX = fftX[getThreadIndex()];
-            localFFTY = fftY[getThreadIndex()];
-        }
-
-        @Override
         public void run(final int lb, final int ub) {
             for (int z = lb; z <= ub; z++) {
                 for (int offset = z * strideZ, y = 0; y < nY; y++, offset += strideY) {
@@ -503,6 +492,17 @@ public class Complex3DParallel {
                 }
             }
         }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return schedule;
+        }
+
+        @Override
+        public void start() {
+            localFFTX = fftX[getThreadIndex()];
+            localFFTY = fftY[getThreadIndex()];
+        }
     }
 
     private class FFTZLoop extends IntegerForLoop {
@@ -512,16 +512,6 @@ public class Complex3DParallel {
 
         private FFTZLoop() {
             work = new double[nZ2];
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return schedule;
-        }
-
-        @Override
-        public void start() {
-            localFFTZ = fftZ[getThreadIndex()];
         }
 
         @Override
@@ -540,12 +530,6 @@ public class Complex3DParallel {
                 }
             }
         }
-    }
-
-    private class IFFTXYLoop extends IntegerForLoop {
-
-        private Complex localFFTY;
-        private Complex localFFTX;
 
         @Override
         public IntegerSchedule schedule() {
@@ -554,9 +538,14 @@ public class Complex3DParallel {
 
         @Override
         public void start() {
-            localFFTX = fftX[getThreadIndex()];
-            localFFTY = fftY[getThreadIndex()];
+            localFFTZ = fftZ[getThreadIndex()];
         }
+    }
+
+    private class IFFTXYLoop extends IntegerForLoop {
+
+        private Complex localFFTY;
+        private Complex localFFTX;
 
         @Override
         public void run(final int lb, final int ub) {
@@ -569,6 +558,17 @@ public class Complex3DParallel {
                 }
             }
         }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return schedule;
+        }
+
+        @Override
+        public void start() {
+            localFFTX = fftX[getThreadIndex()];
+            localFFTY = fftY[getThreadIndex()];
+        }
     }
 
     private class IFFTZLoop extends IntegerForLoop {
@@ -578,16 +578,6 @@ public class Complex3DParallel {
 
         private IFFTZLoop() {
             work = new double[nZ2];
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return schedule;
-        }
-
-        @Override
-        public void start() {
-            localFFTZ = fftZ[getThreadIndex()];
         }
 
         @Override
@@ -606,16 +596,6 @@ public class Complex3DParallel {
                 }
             }
         }
-    }
-
-    private class FFTZIZLoop extends IntegerForLoop {
-
-        private final double[] work;
-        private Complex localFFTZ;
-
-        private FFTZIZLoop() {
-            work = new double[nZ2];
-        }
 
         @Override
         public IntegerSchedule schedule() {
@@ -625,6 +605,16 @@ public class Complex3DParallel {
         @Override
         public void start() {
             localFFTZ = fftZ[getThreadIndex()];
+        }
+    }
+
+    private class FFTZIZLoop extends IntegerForLoop {
+
+        private final double[] work;
+        private Complex localFFTZ;
+
+        private FFTZIZLoop() {
+            work = new double[nZ2];
         }
 
         @Override
@@ -649,6 +639,16 @@ public class Complex3DParallel {
                     }
                 }
             }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return schedule;
+        }
+
+        @Override
+        public void start() {
+            localFFTZ = fftZ[getThreadIndex()];
         }
     }
 }

@@ -127,16 +127,6 @@ public class MouseTranslate extends MouseBehavior {
     }
 
     /**
-     * <p>
-     * Setter for the field <code>mouseButton</code>.</p>
-     *
-     * @param button a int.
-     */
-    public void setMouseButton(int button) {
-        mouseButton = button;
-    }
-
-    /**
      * {@inheritDoc}
      */
     public void processStimulus(Iterator<WakeupCriterion> criteria) {
@@ -227,6 +217,16 @@ public class MouseTranslate extends MouseBehavior {
     public void setFactor(double xFactor, double yFactor) {
         this.xFactor = xFactor;
         this.yFactor = yFactor;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>mouseButton</code>.</p>
+     *
+     * @param button a int.
+     */
+    public void setMouseButton(int button) {
+        mouseButton = button;
     }
 
     /**

@@ -96,21 +96,21 @@ public enum PotentialComponent {
     }
 
     /**
-     * <p>Getter for the field <code>parent</code>.</p>
-     *
-     * @return a {@link ffx.potential.PotentialComponent} object.
-     */
-    public PotentialComponent getParent() {
-        return parent;
-    }
-
-    /**
      * <p>Getter for the field <code>children</code>.</p>
      *
      * @return a {@link java.util.List} object.
      */
     public List<PotentialComponent> getChildren() {
         return children;
+    }
+
+    /**
+     * <p>Getter for the field <code>parent</code>.</p>
+     *
+     * @return a {@link ffx.potential.PotentialComponent} object.
+     */
+    public PotentialComponent getParent() {
+        return parent;
     }
 
     /**

@@ -48,7 +48,6 @@ import org.xml.sax.InputSource;
  * Type Definition (DTD) files.
  *
  * @author Michael J. Schnieders
- *
  */
 public class DTDResolver implements EntityResolver {
 

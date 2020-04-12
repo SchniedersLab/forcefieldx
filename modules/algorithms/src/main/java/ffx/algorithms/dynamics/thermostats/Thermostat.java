@@ -64,42 +64,26 @@ import static ffx.utilities.Constants.kB;
 public abstract class Thermostat {
 
     private static final Logger logger = Logger.getLogger(Thermostat.class.getName());
-
     /**
-     * Parse a string into a Thermostat enumeration.
-     *
-     * @param str Thermostat String.
-     * @return An instance of the ThermostatEnum.
+     * The center of mass coordinates.
      */
-    public static ThermostatEnum parseThermostat(String str) {
-        try {
-            return ThermostatEnum.valueOf(str.toUpperCase());
-        } catch (Exception e) {
-            logger.info(format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
-            return ThermostatEnum.BERENDSEN;
-        }
-    }
-
+    private final double[] centerOfMass = new double[3];
+    /**
+     * The linear momentum.
+     */
+    private final double[] linearMomentum = new double[3];
+    /**
+     * The angular momentum.
+     */
+    private final double[] angularMomentum = new double[3];
     /**
      * The identity of this Thermostat.
      */
     protected ThermostatEnum name;
     /**
-     * The target temperature that this thermostat should maintain.
-     */
-    double targetTemperature;
-    /**
-     * The current temperature of the degrees of freedom.
-     */
-    double currentTemperature;
-    /**
      * The value of kT in kcal/mol at the target temperature.
      */
     protected double kT;
-    /**
-     * The current kinetic energy of the system.
-     */
-    private double currentKineticEnergy;
     /**
      * Number of variables.
      */
@@ -127,38 +111,37 @@ public abstract class Thermostat {
      */
     protected VARIABLE_TYPE[] type;
     /**
-     * The center of mass coordinates.
-     */
-    private final double[] centerOfMass = new double[3];
-    /**
-     * The linear momentum.
-     */
-    private final double[] linearMomentum = new double[3];
-    /**
-     * The angular momentum.
-     */
-    private final double[] angularMomentum = new double[3];
-    /**
-     * Flag to indicate that center of mass motion should be removed.
-     */
-    private boolean removeCenterOfMassMotion;
-    /**
      * The random number generator that the Thermostat will use to initialize velocities.
      */
     protected Random random;
-    /**
-     * Reduce logging.
-     */
-    private boolean quiet = false;
     /**
      * Any geometric constraints to apply during integration.
      */
     protected List<Constraint> constraints;
     /**
+     * The target temperature that this thermostat should maintain.
+     */
+    double targetTemperature;
+    /**
+     * The current temperature of the degrees of freedom.
+     */
+    double currentTemperature;
+    /**
+     * The current kinetic energy of the system.
+     */
+    private double currentKineticEnergy;
+    /**
+     * Flag to indicate that center of mass motion should be removed.
+     */
+    private boolean removeCenterOfMassMotion;
+    /**
+     * Reduce logging.
+     */
+    private boolean quiet = false;
+    /**
      * Number of degrees of freedom removed by constraints.
      */
     private int constrainedDoF;
-
     /**
      * <p>
      * Constructor for Thermostat.</p>
@@ -203,209 +186,6 @@ public abstract class Thermostat {
 
         // Update the kinetic energy.
         computeKineticEnergy();
-    }
-
-    /**
-     * To allow chemical perturbations during MD.
-     *
-     * @param n                        Number of degrees of freedom.
-     * @param x                        Atomic coordinates.
-     * @param v                        Velocities.
-     * @param mass                     Mass of each degrees of freedom.
-     * @param type                     the VARIABLE_TYPE of each variable.
-     * @param removeCenterOfMassMotion a boolean.
-     */
-    public void setNumberOfVariables(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
-                                     boolean removeCenterOfMassMotion) {
-        this.nVariables = n;
-        this.x = x;
-        this.v = v;
-        this.mass = mass;
-        this.type = type;
-        assert (x.length == nVariables);
-        assert (v.length == nVariables);
-        assert (mass.length == nVariables);
-        assert (type.length == nVariables);
-        setRemoveCenterOfMassMotion(removeCenterOfMassMotion);
-    }
-
-    /**
-     * If center of mass motion is being removed, then the mean kinetic energy
-     * of the system will be 3 * kT/2 less than if center of mass motion is
-     * allowed.
-     *
-     * @param remove <code>true</code> if center of mass motion is being
-     *               removed.
-     */
-    public void setRemoveCenterOfMassMotion(boolean remove) {
-        removeCenterOfMassMotion = remove;
-        if (removeCenterOfMassMotion) {
-            degreesOfFreedom = nVariables - 3 - constrainedDoF;
-        } else {
-            degreesOfFreedom = nVariables - constrainedDoF;
-        }
-    }
-
-    /**
-     * <p>Getter for the field <code>removeCenterOfMassMotion</code>.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean getRemoveCenterOfMassMotion() {
-        return removeCenterOfMassMotion;
-    }
-
-    /**
-     * <p>Setter for the field <code>quiet</code>.</p>
-     *
-     * @param quiet a boolean.
-     */
-    public void setQuiet(boolean quiet) {
-        this.quiet = quiet;
-    }
-
-    /**
-     * <p>
-     * The setRandomSeed method is used to initialize the Random number
-     * generator to the same starting state, such that separate runs produce the
-     * same Maxwell-Boltzmann initial velocities. same </p>
-     *
-     * @param seed The seed.
-     */
-    public void setRandomSeed(long seed) {
-        random.setSeed(seed);
-    }
-
-    /**
-     * <p>
-     * Log the target temperature and current number of kT per degree of freedom (should be 0.5 kT at equilibrium).</p>
-     *
-     * @param level a {@link java.util.logging.Level} object.
-     */
-    protected void log(Level level) {
-        if (logger.isLoggable(level) && !quiet) {
-            logger.log(level, toString());
-        }
-    }
-
-    /**
-     * Get the current temperature.
-     * <p>
-     * This depends on a previous call to the computeKineticEnergy.
-     *
-     * @return Current temperature.
-     */
-    public double getCurrentTemperature() {
-        return currentTemperature;
-    }
-
-    /**
-     * Get the current kinetic energy.
-     * <p>
-     * This depends on a previous call to the computeKineticEnergy.
-     *
-     * @return Kinetic energy.
-     */
-    public double getKineticEnergy() {
-        return currentKineticEnergy;
-    }
-
-    /**
-     * Get the target temperature.
-     *
-     * @return Target temperature.
-     */
-    public double getTargetTemperature() {
-        return targetTemperature;
-    }
-
-    /**
-     * Return the number of degrees of freedom.
-     *
-     * @return Degrees of freedom.
-     */
-    public int getDegreesOfFreedom() {
-        return degreesOfFreedom;
-    }
-
-    /**
-     * Set the target temperature.
-     *
-     * @param t Target temperature must be greater than absolute zero.
-     * @since 1.0
-     */
-    public void setTargetTemperature(double t) {
-        // Obey the Third Law of Thermodynamics.
-        assert (t > 0.0);
-        targetTemperature = t;
-        kT = t * kB;
-    }
-
-    /**
-     * Return 3 velocities from a Maxwell-Boltzmann distribution of momenta. The
-     * variance of each independent momentum component is kT * mass.
-     *
-     * @param mass The mass for the degrees of freedom.
-     * @return three velocity components.
-     */
-    public double[] maxwellIndividual(double mass) {
-        double[] vv = new double[3];
-        for (int i = 0; i < 3; i++) {
-            vv[i] = random.nextGaussian() * sqrt(kB * targetTemperature / mass);
-        }
-        return vv;
-    }
-
-    /**
-     * Reset velocities from a Maxwell-Boltzmann distribution of momenta based
-     * on the supplied target temperature. The variance of each independent
-     * momentum component is kT * mass.
-     *
-     * @param targetTemperature the target Temperature for the Maxwell
-     *                          distribution.
-     */
-    public void maxwell(double targetTemperature) {
-        logger.info("\n Initializing velocities to target temperature");
-
-        setTargetTemperature(targetTemperature);
-
-        for (int i = 0; i < nVariables; i++) {
-            double m = mass[i];
-            v[i] = random.nextGaussian() * sqrt(kB * targetTemperature / m);
-        }
-
-        // Remove the center of mass motion.
-        if (removeCenterOfMassMotion) {
-            centerOfMassMotion(true, !quiet);
-        }
-
-        // Find the current kinetic energy and temperature.
-        computeKineticEnergy();
-
-        /*
-          The current temperature will deviate slightly from the target
-          temperature if the center of mass motion was removed and/or due to
-          finite system size.
-
-          Scale the velocities to enforce the target temperature.
-         */
-        double scale = sqrt(targetTemperature / currentTemperature);
-        for (int i = 0; i < nVariables; i++) {
-            v[i] *= scale;
-        }
-
-        // Update the kinetic energy and current temperature.
-        computeKineticEnergy();
-
-        log(Level.INFO);
-    }
-
-    /**
-     * Reset velocities from a Maxwell-Boltzmann distribution based on the
-     * current target temperature of thermostat.
-     */
-    public void maxwell() {
-        maxwell(targetTemperature);
     }
 
     /**
@@ -477,6 +257,241 @@ public abstract class Thermostat {
     }
 
     /**
+     * Compute the current temperature and kinetic energy of the system.
+     */
+    public final void computeKineticEnergy() {
+        double e = 0.0;
+        for (int i = 0; i < nVariables; i++) {
+            double velocity = v[i];
+            double v2 = velocity * velocity;
+            e += mass[i] * v2;
+        }
+        currentTemperature = e / (kB * degreesOfFreedom);
+        e *= 0.5 / KCAL_TO_GRAM_ANG2_PER_PS2;
+        currentKineticEnergy = e;
+    }
+
+    /**
+     * The full-step temperature correction.
+     *
+     * @param dt a double.
+     */
+    public abstract void fullStep(double dt);
+
+    /**
+     * Get the current temperature.
+     * <p>
+     * This depends on a previous call to the computeKineticEnergy.
+     *
+     * @return Current temperature.
+     */
+    public double getCurrentTemperature() {
+        return currentTemperature;
+    }
+
+    /**
+     * Return the number of degrees of freedom.
+     *
+     * @return Degrees of freedom.
+     */
+    public int getDegreesOfFreedom() {
+        return degreesOfFreedom;
+    }
+
+    /**
+     * Get the current kinetic energy.
+     * <p>
+     * This depends on a previous call to the computeKineticEnergy.
+     *
+     * @return Kinetic energy.
+     */
+    public double getKineticEnergy() {
+        return currentKineticEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>removeCenterOfMassMotion</code>.</p>
+     *
+     * @return a boolean.
+     */
+    public boolean getRemoveCenterOfMassMotion() {
+        return removeCenterOfMassMotion;
+    }
+
+    /**
+     * If center of mass motion is being removed, then the mean kinetic energy
+     * of the system will be 3 * kT/2 less than if center of mass motion is
+     * allowed.
+     *
+     * @param remove <code>true</code> if center of mass motion is being
+     *               removed.
+     */
+    public void setRemoveCenterOfMassMotion(boolean remove) {
+        removeCenterOfMassMotion = remove;
+        if (removeCenterOfMassMotion) {
+            degreesOfFreedom = nVariables - 3 - constrainedDoF;
+        } else {
+            degreesOfFreedom = nVariables - constrainedDoF;
+        }
+    }
+
+    /**
+     * Get the target temperature.
+     *
+     * @return Target temperature.
+     */
+    public double getTargetTemperature() {
+        return targetTemperature;
+    }
+
+    /**
+     * Set the target temperature.
+     *
+     * @param t Target temperature must be greater than absolute zero.
+     * @since 1.0
+     */
+    public void setTargetTemperature(double t) {
+        // Obey the Third Law of Thermodynamics.
+        assert (t > 0.0);
+        targetTemperature = t;
+        kT = t * kB;
+    }
+
+    /**
+     * The half-step temperature correction.
+     *
+     * @param dt a double.
+     */
+    public abstract void halfStep(double dt);
+
+    /**
+     * Reset velocities from a Maxwell-Boltzmann distribution of momenta based
+     * on the supplied target temperature. The variance of each independent
+     * momentum component is kT * mass.
+     *
+     * @param targetTemperature the target Temperature for the Maxwell
+     *                          distribution.
+     */
+    public void maxwell(double targetTemperature) {
+        logger.info("\n Initializing velocities to target temperature");
+
+        setTargetTemperature(targetTemperature);
+
+        for (int i = 0; i < nVariables; i++) {
+            double m = mass[i];
+            v[i] = random.nextGaussian() * sqrt(kB * targetTemperature / m);
+        }
+
+        // Remove the center of mass motion.
+        if (removeCenterOfMassMotion) {
+            centerOfMassMotion(true, !quiet);
+        }
+
+        // Find the current kinetic energy and temperature.
+        computeKineticEnergy();
+
+        /*
+          The current temperature will deviate slightly from the target
+          temperature if the center of mass motion was removed and/or due to
+          finite system size.
+
+          Scale the velocities to enforce the target temperature.
+         */
+        double scale = sqrt(targetTemperature / currentTemperature);
+        for (int i = 0; i < nVariables; i++) {
+            v[i] *= scale;
+        }
+
+        // Update the kinetic energy and current temperature.
+        computeKineticEnergy();
+
+        log(Level.INFO);
+    }
+
+    /**
+     * Reset velocities from a Maxwell-Boltzmann distribution based on the
+     * current target temperature of thermostat.
+     */
+    public void maxwell() {
+        maxwell(targetTemperature);
+    }
+
+    /**
+     * Return 3 velocities from a Maxwell-Boltzmann distribution of momenta. The
+     * variance of each independent momentum component is kT * mass.
+     *
+     * @param mass The mass for the degrees of freedom.
+     * @return three velocity components.
+     */
+    public double[] maxwellIndividual(double mass) {
+        double[] vv = new double[3];
+        for (int i = 0; i < 3; i++) {
+            vv[i] = random.nextGaussian() * sqrt(kB * targetTemperature / mass);
+        }
+        return vv;
+    }
+
+    /**
+     * Parse a string into a Thermostat enumeration.
+     *
+     * @param str Thermostat String.
+     * @return An instance of the ThermostatEnum.
+     */
+    public static ThermostatEnum parseThermostat(String str) {
+        try {
+            return ThermostatEnum.valueOf(str.toUpperCase());
+        } catch (Exception e) {
+            logger.info(format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
+            return ThermostatEnum.BERENDSEN;
+        }
+    }
+
+    /**
+     * To allow chemical perturbations during MD.
+     *
+     * @param n                        Number of degrees of freedom.
+     * @param x                        Atomic coordinates.
+     * @param v                        Velocities.
+     * @param mass                     Mass of each degrees of freedom.
+     * @param type                     the VARIABLE_TYPE of each variable.
+     * @param removeCenterOfMassMotion a boolean.
+     */
+    public void setNumberOfVariables(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
+                                     boolean removeCenterOfMassMotion) {
+        this.nVariables = n;
+        this.x = x;
+        this.v = v;
+        this.mass = mass;
+        this.type = type;
+        assert (x.length == nVariables);
+        assert (v.length == nVariables);
+        assert (mass.length == nVariables);
+        assert (type.length == nVariables);
+        setRemoveCenterOfMassMotion(removeCenterOfMassMotion);
+    }
+
+    /**
+     * <p>Setter for the field <code>quiet</code>.</p>
+     *
+     * @param quiet a boolean.
+     */
+    public void setQuiet(boolean quiet) {
+        this.quiet = quiet;
+    }
+
+    /**
+     * <p>
+     * The setRandomSeed method is used to initialize the Random number
+     * generator to the same starting state, such that separate runs produce the
+     * same Maxwell-Boltzmann initial velocities. same </p>
+     *
+     * @param seed The seed.
+     */
+    public void setRandomSeed(long seed) {
+        random.setSeed(seed);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -488,6 +503,18 @@ public abstract class Thermostat {
         sb.append(format("  Kinetic Energy:               %7.2f\n", currentKineticEnergy));
         sb.append(format("  kT per degree of freedom:     %7.2f", KCAL_TO_GRAM_ANG2_PER_PS2 * currentKineticEnergy / (degreesOfFreedom * kT)));
         return sb.toString();
+    }
+
+    /**
+     * <p>
+     * Log the target temperature and current number of kT per degree of freedom (should be 0.5 kT at equilibrium).</p>
+     *
+     * @param level a {@link java.util.logging.Level} object.
+     */
+    protected void log(Level level) {
+        if (logger.isLoggable(level) && !quiet) {
+            logger.log(level, toString());
+        }
     }
 
     /**
@@ -579,33 +606,4 @@ public abstract class Thermostat {
             logger.info("  Center of mass motion removed.");
         }
     }
-
-    /**
-     * Compute the current temperature and kinetic energy of the system.
-     */
-    public final void computeKineticEnergy() {
-        double e = 0.0;
-        for (int i = 0; i < nVariables; i++) {
-            double velocity = v[i];
-            double v2 = velocity * velocity;
-            e += mass[i] * v2;
-        }
-        currentTemperature = e / (kB * degreesOfFreedom);
-        e *= 0.5 / KCAL_TO_GRAM_ANG2_PER_PS2;
-        currentKineticEnergy = e;
-    }
-
-    /**
-     * The half-step temperature correction.
-     *
-     * @param dt a double.
-     */
-    public abstract void halfStep(double dt);
-
-    /**
-     * The full-step temperature correction.
-     *
-     * @param dt a double.
-     */
-    public abstract void fullStep(double dt);
 }

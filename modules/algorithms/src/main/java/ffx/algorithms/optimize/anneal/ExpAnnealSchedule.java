@@ -74,8 +74,23 @@ public class ExpAnnealSchedule implements AnnealingSchedule {
         this.gamma = StrictMath.pow((tLow / tHigh), (1.0 / (nWindows - 1)));
 
         description = String.format("Exponential annealing schedule with %d windows, " +
-                "initial temperature %12.7g K, final temperature %12.7g K, gamma %12.7g",
+                        "initial temperature %12.7g K, final temperature %12.7g K, gamma %12.7g",
                 nWindows, tHigh, tLow, gamma);
+    }
+
+    @Override
+    public double getHighTemp() {
+        return tHigh;
+    }
+
+    @Override
+    public double getLowTemp() {
+        return tLow;
+    }
+
+    @Override
+    public int getNumWindows() {
+        return nWindows;
     }
 
     @Override
@@ -94,22 +109,7 @@ public class ExpAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
-    public int getNumWindows() {
-        return nWindows;
-    }
-
-    @Override
-    public double getHighTemp() {
-        return tHigh;
-    }
-
-    @Override
-    public double getLowTemp() {
-        return tLow;
-    }
-
-    @Override
-    public double windowLength(int window) {
+    public double maxWindowLength() {
         return 1.0;
     }
 
@@ -119,8 +119,8 @@ public class ExpAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
-    public double maxWindowLength() {
-        return 1.0;
+    public String toString() {
+        return description;
     }
 
     @Override
@@ -129,7 +129,7 @@ public class ExpAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
-    public String toString() {
-        return description;
+    public double windowLength(int window) {
+        return 1.0;
     }
 }

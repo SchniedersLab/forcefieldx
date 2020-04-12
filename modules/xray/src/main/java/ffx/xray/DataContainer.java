@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.xray;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -55,14 +55,6 @@ public interface DataContainer {
 
     /**
      * <p>
-     * getAtomArray</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    Atom[] getAtomArray();
-
-    /**
-     * <p>
      * getActiveAtomArray</p>
      *
      * @return an array of {@link ffx.potential.bonded.Atom} objects.
@@ -71,19 +63,27 @@ public interface DataContainer {
 
     /**
      * <p>
-     * getAltResidues</p>
+     * getAltMolecules</p>
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    ArrayList<ArrayList<Residue>> getAltResidues();
+    List<List<Molecule>> getAltMolecules();
 
     /**
      * <p>
-     * getAltMolecules</p>
+     * getAltResidues</p>
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    ArrayList<ArrayList<Molecule>> getAltMolecules();
+    List<List<Residue>> getAltResidues();
+
+    /**
+     * <p>
+     * getAtomArray</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Atom} objects.
+     */
+    Atom[] getAtomArray();
 
     /**
      * <p>
@@ -119,6 +119,14 @@ public interface DataContainer {
 
     /**
      * <p>
+     * printEnergyUpdate</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    String printEnergyUpdate();
+
+    /**
+     * <p>
      * printOptimizationHeader</p>
      *
      * @return a {@link java.lang.String} object.
@@ -132,12 +140,4 @@ public interface DataContainer {
      * @return a {@link java.lang.String} object.
      */
     String printOptimizationUpdate();
-
-    /**
-     * <p>
-     * printEnergyUpdate</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    String printEnergyUpdate();
 }

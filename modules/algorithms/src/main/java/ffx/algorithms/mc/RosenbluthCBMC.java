@@ -88,13 +88,13 @@ public class RosenbluthCBMC implements MonteCarloListener {
      */
     private final int mcFrequency;
     /**
-     * Keeps track of calls to mcUpdate (e.g. MD steps).
-     */
-    private int steps = 0;
-    /**
      * Size of the trial sets, k.
      */
     private final int trialSetSize;
+    /**
+     * Keeps track of calls to mcUpdate (e.g. MD steps).
+     */
+    private int steps = 0;
     /**
      * Counters for proposed and accepted moves.
      */
@@ -146,18 +146,6 @@ public class RosenbluthCBMC implements MonteCarloListener {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean mcUpdate(double temperature) {
-        steps++;
-        if (steps % mcFrequency == 0) {
-            return cbmcStep();
-        }
-        return false;
-    }
-
-    /**
      * <p>cbmcStep.</p>
      *
      * @return a boolean.
@@ -194,6 +182,32 @@ public class RosenbluthCBMC implements MonteCarloListener {
     }
 
     /**
+     * <p>controlStep.</p>
+     *
+     * @return a boolean.
+     */
+    public boolean controlStep() {
+        int index = ThreadLocalRandom.current().nextInt(targets.size());
+        Residue target = targets.get(index);
+        RosenbluthChiAllMove cbmcMove = new RosenbluthChiAllMove(
+                molecularAssembly, target, -1, forceFieldEnergy, temperature,
+                false, numMovesProposed, true);
+        return cbmcMove.wasAccepted();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean mcUpdate(double temperature) {
+        steps++;
+        if (steps % mcFrequency == 0) {
+            return cbmcStep();
+        }
+        return false;
+    }
+
+    /**
      * Write out a PDB file.
      */
     private void write() {
@@ -206,20 +220,6 @@ public class RosenbluthCBMC implements MonteCarloListener {
         }
         File file = new File(filename);
         writer.writeFile(file, false);
-    }
-
-    /**
-     * <p>controlStep.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean controlStep() {
-        int index = ThreadLocalRandom.current().nextInt(targets.size());
-        Residue target = targets.get(index);
-        RosenbluthChiAllMove cbmcMove = new RosenbluthChiAllMove(
-                molecularAssembly, target, -1, forceFieldEnergy, temperature,
-                false, numMovesProposed, true);
-        return cbmcMove.wasAccepted();
     }
 
 }

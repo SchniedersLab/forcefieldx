@@ -39,7 +39,6 @@ package ffx.ui;
 
 import java.io.File;
 import java.util.Hashtable;
-import java.util.logging.Logger;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -53,8 +52,6 @@ import ffx.utilities.Keyword;
  * class.
  *
  * @author Michael J. Schnieders
- *
- *
  */
 public class FFXSystem extends MolecularAssembly {
 
@@ -77,27 +74,15 @@ public class FFXSystem extends MolecularAssembly {
     /**
      * Constructor.
      *
-     * @param file Coordinate file.
+     * @param file        Coordinate file.
      * @param description Short description of the command that created this system.
-     * @param properties Properties controlling operations on this system.
+     * @param properties  Properties controlling operations on this system.
      */
     public FFXSystem(File file, String description, CompositeConfiguration properties) {
         super(FilenameUtils.getBaseName(file.getName()));
         setFile(file);
         commandDescription = description;
         this.properties = properties;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>properties</code>.</p>
-     *
-     * @return a {@link org.apache.commons.configuration2.CompositeConfiguration}
-     * object.
-     */
-    @Override
-    public CompositeConfiguration getProperties() {
-        return properties;
     }
 
     /**
@@ -134,6 +119,16 @@ public class FFXSystem extends MolecularAssembly {
 
     /**
      * <p>
+     * Setter for the field <code>keyFile</code>.</p>
+     *
+     * @param f a {@link java.io.File} object.
+     */
+    public void setKeyFile(File f) {
+        keyFile = f;
+    }
+
+    /**
+     * <p>
      * getKeyword</p>
      *
      * @param k a {@link java.lang.String} object.
@@ -151,6 +146,16 @@ public class FFXSystem extends MolecularAssembly {
      */
     public Hashtable<String, Keyword> getKeywords() {
         return keywords;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>keywords</code>.</p>
+     *
+     * @param k a {@link java.util.Hashtable} object.
+     */
+    public void setKeywords(Hashtable<String, Keyword> k) {
+        keywords = k;
     }
 
     /**
@@ -174,6 +179,28 @@ public class FFXSystem extends MolecularAssembly {
 
     /**
      * <p>
+     * Setter for the field <code>logFile</code>.</p>
+     *
+     * @param f a {@link java.io.File} object.
+     */
+    public void setLogFile(File f) {
+        logFile = f;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>properties</code>.</p>
+     *
+     * @return a {@link org.apache.commons.configuration2.CompositeConfiguration}
+     * object.
+     */
+    @Override
+    public CompositeConfiguration getProperties() {
+        return properties;
+    }
+
+    /**
+     * <p>
      * Getter for the field <code>trajectory</code>.</p>
      *
      * @return a {@link ffx.ui.Trajectory} object.
@@ -184,12 +211,32 @@ public class FFXSystem extends MolecularAssembly {
 
     /**
      * <p>
+     * Setter for the field <code>trajectory</code>.</p>
+     *
+     * @param t a {@link ffx.ui.Trajectory} object.
+     */
+    public void setTrajectory(Trajectory t) {
+        trajectory = t;
+    }
+
+    /**
+     * <p>
      * isClosing</p>
      *
      * @return a boolean.
      */
     public boolean isClosing() {
         return closing;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>closing</code>.</p>
+     *
+     * @param b a boolean.
+     */
+    public void setClosing(boolean b) {
+        closing = b;
     }
 
     /**
@@ -221,62 +268,12 @@ public class FFXSystem extends MolecularAssembly {
 
     /**
      * <p>
-     * Setter for the field <code>closing</code>.</p>
-     *
-     * @param b a boolean.
-     */
-    public void setClosing(boolean b) {
-        closing = b;
-    }
-
-    /**
-     * <p>
      * Setter for the field <code>commandDescription</code>.</p>
      *
      * @param command a {@link java.lang.String} object.
      */
     public void setCommandDescription(String command) {
         commandDescription = command;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>keyFile</code>.</p>
-     *
-     * @param f a {@link java.io.File} object.
-     */
-    public void setKeyFile(File f) {
-        keyFile = f;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>keywords</code>.</p>
-     *
-     * @param k a {@link java.util.Hashtable} object.
-     */
-    public void setKeywords(Hashtable<String, Keyword> k) {
-        keywords = k;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>logFile</code>.</p>
-     *
-     * @param f a {@link java.io.File} object.
-     */
-    public void setLogFile(File f) {
-        logFile = f;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>trajectory</code>.</p>
-     *
-     * @param t a {@link ffx.ui.Trajectory} object.
-     */
-    public void setTrajectory(Trajectory t) {
-        trajectory = t;
     }
 
     /**

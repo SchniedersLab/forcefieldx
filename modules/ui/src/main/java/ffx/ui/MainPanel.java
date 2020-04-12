@@ -89,6 +89,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -142,11 +143,33 @@ import static ffx.utilities.StringUtils.pdbForID;
 public final class MainPanel extends JPanel implements ActionListener,
         ChangeListener {
 
-    private static final Logger logger = Logger.getLogger(MainPanel.class.getName());
     /**
-     * Constant <code>GRAPHICS=0</code>
+     * Constant <code>dynFileFilter</code>
      */
-    private static final int GRAPHICS = 0;
+    public static final DYNFileFilter dynFileFilter = new DYNFileFilter();
+    /**
+     * Constant <code>version="1.0.0-BETA"</code>
+     */
+    public static final String version = "1.0.0-BETA";
+    /**
+     * Constant <code>date="January 2020"</code>
+     */
+    public static final String date = "October 2019";
+    /**
+     * Constant
+     */
+    public static final String border
+            = " ______________________________________________________________________________\n";
+    /**
+     * Constant
+     */
+    public static final String title
+            = "        FORCE FIELD X - Software for Molecular Biophysics \n";
+    /**
+     * Attempts to initialize version, date, and SCM versioning from
+     * target/ffx-mvn.properties.
+     */
+    public static final String aboutString;
     /**
      * Constant <code>KEYWORDS=1</code>
      */
@@ -155,6 +178,44 @@ public final class MainPanel extends JPanel implements ActionListener,
      * Constant <code>MODELING=2</code>
      */
     static final int MODELING = 2;
+    /**
+     * Constant <code>forceFieldFileFilter</code>
+     */
+    static final ForceFieldFileFilter forceFieldFileFilter = new ForceFieldFileFilter();
+    /**
+     * Constant <code>keyFileFilter</code>
+     */
+    static final KeyFileFilter keyFileFilter = new KeyFileFilter();
+    private static final Logger logger = Logger.getLogger(MainPanel.class.getName());
+    /**
+     * Constant <code>GRAPHICS=0</code>
+     */
+    private static final int GRAPHICS = 0;
+    /**
+     * Constant <code>xyzFileFilter</code>
+     */
+    private static final XYZFileFilter xyzFileFilter = new XYZFileFilter();
+    /**
+     * Constant <code>arcFileFilter</code>
+     */
+    private static final ARCFileFilter arcFileFilter = new ARCFileFilter();
+    /**
+     * Constant <code>intFileFilter</code>
+     */
+    private static final INTFileFilter intFileFilter = new INTFileFilter();
+    /**
+     * Constant <code>indFileFilter</code>
+     */
+    private static final InducedFileFilter indFileFilter = new InducedFileFilter();
+    /**
+     * Constant <code>pdbFileFilter</code>
+     */
+    private static final PDBFileFilter pdbFileFilter = new PDBFileFilter();
+    /**
+     * Constant <code>ffxFileFilter</code>
+     */
+    private static final FFXFileFilter ffxFileFilter = new FFXFileFilter();
+    private static final Preferences preferences = Preferences.userNodeForPackage(MainPanel.class);
     /**
      * Constant <code>classpath=""</code>
      */
@@ -171,48 +232,74 @@ public final class MainPanel extends JPanel implements ActionListener,
      * JFileChooser for choosing a file.
      */
     private static JFileChooser fileChooser = null;
-    /**
-     * Constant <code>xyzFileFilter</code>
-     */
-    private static final XYZFileFilter xyzFileFilter = new XYZFileFilter();
-    /**
-     * Constant <code>arcFileFilter</code>
-     */
-    private static final ARCFileFilter arcFileFilter = new ARCFileFilter();
-    /**
-     * Constant <code>intFileFilter</code>
-     */
-    private static final INTFileFilter intFileFilter = new INTFileFilter();
-    /**
-     * Constant <code>dynFileFilter</code>
-     */
-    public static final DYNFileFilter dynFileFilter = new DYNFileFilter();
-    /**
-     * Constant <code>indFileFilter</code>
-     */
-    private static final InducedFileFilter indFileFilter = new InducedFileFilter();
-    /**
-     * Constant <code>forceFieldFileFilter</code>
-     */
-    static final ForceFieldFileFilter forceFieldFileFilter = new ForceFieldFileFilter();
-    /**
-     * Constant <code>pdbFileFilter</code>
-     */
-    private static final PDBFileFilter pdbFileFilter = new PDBFileFilter();
-    /**
-     * Constant <code>keyFileFilter</code>
-     */
-    static final KeyFileFilter keyFileFilter = new KeyFileFilter();
-    /**
-     * Constant <code>ffxFileFilter</code>
-     */
-    private static final FFXFileFilter ffxFileFilter = new FFXFileFilter();
-    /**
-     * Number of File Opener Threads.
-     */
-    private int fileOpenerThreads = -1;
 
     static {
+        var basedir = System.getProperty("basedir");
+        var mvnProps = new File(basedir + "/target/ffx-mvn.properties");
+        var commitVersion = version + "-unknown";
+        var commitDate = date;
+        var commitSCM = "";
+        if (mvnProps.exists()) {
+            try (BufferedReader br = new BufferedReader(new FileReader(mvnProps))) {
+                var ffxVersion = "1.0.0-BETA";
+                var ffxVersionProp = "ffx.version=";
+                var gitCommitsCount = "";
+                var gitCommitsCountProp = "git.commitsCount=";
+                var timestampProp = "timestamp=";
+                var gitRevisionProp = "git.revision=";
+                var line = br.readLine();
+                while (line != null) {
+                    line = line.trim();
+                    if (line.startsWith(ffxVersionProp)) {
+                        ffxVersion = line.replaceFirst(ffxVersionProp, "");
+                    } else if (line.startsWith(gitCommitsCountProp)) {
+                        gitCommitsCount = line.replaceFirst(gitCommitsCountProp, "");
+                    } else if (line.startsWith(timestampProp)) {
+                        var timeStr = line.replaceFirst(timestampProp, "");
+                        // Expected to be MM-dd-yyyy
+                        var timeToks = timeStr.split("-");
+                        try {
+                            var year = timeToks[2];
+                            int mon = Integer.parseInt(timeToks[0]);
+                            Month month = Month.of(mon);
+                            var mstr = month.toString();
+                            commitDate = format("%c%s %s", mstr.charAt(0), mstr.substring(1).toLowerCase(), year);
+                        } catch (Exception ex) {
+                            commitDate = date;
+                        }
+                    } else if (line.startsWith(gitRevisionProp) && !line.contains("UNKNOWN_REVISION")) {
+                        var scm = line.replaceFirst(gitRevisionProp, "");
+                        commitSCM = format("        %s %s \n", "SCM version ", scm);
+                    }
+                    line = br.readLine();
+                }
+                var sb = new StringBuilder(ffxVersion).append("-");
+                if (!gitCommitsCount.isEmpty()) {
+                    sb.append(gitCommitsCount);
+                } else {
+                    sb.append("unknown");
+                }
+                commitVersion = sb.toString();
+            } catch (Exception ex) {
+                //
+            }
+        }
+        aboutString
+                = "        Version " + commitVersion + "  " + commitDate + " \n"
+                + commitSCM // Will contain its own spacing/newline, or be empty.
+                + "\n        Copyright (c)  Michael J. Schnieders    2001-2020 \n"
+                + "        Portions Copyright (c)  Timothy D. Fenn 2009-2020 \n"
+                + "        Portions Copyright (c)  Jacob M. Litman 2015-2020 \n"
+                + "\n"
+                + "        All Rights Reserved \n"
+                + "\n"
+                + "        Force Field X is distributed under the GPL v. 3 license\n"
+                + "        with linking exception and is hosted by the Schnieders Lab \n"
+                + "        at The University of Iowa.\n"
+                + "\n"
+                + "        For publications see    http://ffx.biochem.uiowa.edu/publications.html \n"
+                + "        For the GPL v.3 license http://ffx.biochem.uiowa.edu/license.html \n";
+
         try {
             String ffxString = System.getProperty("ffx.dir", ".");
             ffxDir = new File(ffxString);
@@ -221,12 +308,17 @@ public final class MainPanel extends JPanel implements ActionListener,
         } catch (Exception e) {
             logger.severe(" FFX directory could not be found.\n" + e);
         }
+
     }
 
     /**
      * Main FFX JFrame.
      */
-    private JFrame frame;
+    private final JFrame frame;
+    /**
+     * Number of File Opener Threads.
+     */
+    private int fileOpenerThreads = -1;
     /**
      * Root of the structural hierarchy.
      */
@@ -255,7 +347,6 @@ public final class MainPanel extends JPanel implements ActionListener,
      * A reference to the Modeling Shell.
      */
     private ModelingShell modelingShell = null;
-    // private LogPanel logPanel;
     /**
      * The Java3D Graphics Canvas.
      */
@@ -348,39 +439,6 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * <p>
-     * getPWD</p>
-     *
-     * @return a {@link java.io.File} object.
-     */
-    static File getPWD() {
-        if (pwd == null) {
-            pwd = new File(System.getProperty("user.dir",
-                    FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath()));
-        }
-        return pwd;
-    }
-
-    /**
-     * JFileChooser
-     *
-     * @return a {@link javax.swing.JFileChooser} object.
-     */
-    static JFileChooser resetFileChooser() {
-        if (fileChooser == null) {
-            fileChooser = new JFileChooser();
-        }
-        fileChooser.resetChoosableFileFilters();
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fileChooser.setFileHidingEnabled(false);
-        fileChooser.setAcceptAllFileFilterUsed(true);
-        fileChooser.setCurrentDirectory(getPWD());
-        fileChooser.setMultiSelectionEnabled(false);
-        fileChooser.setSelectedFile(null);
-        return fileChooser;
-    }
-
-    /**
-     * <p>
      * about</p>
      */
     public void about() {
@@ -420,99 +478,575 @@ public final class MainPanel extends JPanel implements ActionListener,
             logger.finest(" Action: " + arg);
         }
         // File Commands
-        if (arg.equals("Open")) {
-            open();
-        } else if (arg.equals("DownloadFromPDB")) {
-            openFromPDB();
-        } else if (arg.equals("SaveAs")) {
-            saveAsXYZ(null);
-        } else if (arg.equals("Close")) {
-            close();
-        } else if (arg.equals("CloseAll")) {
-            closeAll();
-        } else if (arg.equals("ChooseKeyFile")) {
-            chooseKey();
-        } else if (arg.equals("ChooseLogFile")) {
-            chooseLog();
-        } else if (arg.equals("LoadInducedData")) {
-            openInduced();
-            // Selection Commands
-        } else if (arg.equals("SelectAll")) {
-            selectAll();
-        } else if (arg.equals("MergeSelections")) {
-            merge();
-        } else if (arg.equals("HighlightSelections")) {
-            highlightSelections(evt);
-            // Trajectory
-        } else if (arg.equals("Play")) {
-            play();
-        } else if (arg.equals("Stop")) {
-            stop();
-        } else if (arg.equals("StepForward")) {
-            stepForward();
-        } else if (arg.equals("StepBack")) {
-            stepBack();
-        } else if (arg.equals("Reset")) {
-            reset();
-        } else if (arg.equals("Oscillate")) {
-            oscillate(evt);
-        } else if (arg.equals("Frame")) {
-            frame();
-        } else if (arg.equals("Speed")) {
-            speed();
-        } else if (arg.equals("Skip")) {
-            skip();
-            // Simulation
-        } else if (arg.equals("ConnectToLocalJob")) {
-            connectToTINKER(null, null);
-        } else if (arg.equals("ConnectToRemoteJob")) {
-            connect();
-        } else if (arg.equals("ReleaseJob")) {
-            release();
-        } else if (arg.equals("SetPort")) {
-            setPort();
-        } else if (arg.equals("SetRemoteJobAddress")) {
-            setRemoteJobAddress();
-            // Window
-        } else if (arg.equals("ShowToolBar")) {
-            showToolBar(evt);
-        } else if (arg.equals("ShowTree")) {
-            showTree(evt);
-        } else if (arg.equals("ShowGlobalAxes")) {
-            showGlobalAxes(evt);
-        } else if (arg.equals("ResetPanes")) {
-            resetPanes();
-        } else if (arg.equals("ResetConsole")) {
-            resetShell();
-        } else if (arg.equals("OceanLookAndFeel")) {
-            oceanLookAndFeel();
-        } else if (arg.equals("WindowsLookAndFeel") || arg.equals("MacOSXLookAndFeel") || arg.equals("MotifLookAndFeel")) {
-            platformLookAndFeel();
-        } else if (arg.equals("ShrinkGraphicsWindow")) {
-            resizePanes(20);
-        } else if (arg.equals("ExpandGraphicsWindow")) {
-            resizePanes(-20);
-        } else if (arg.equals("About")) {
-            about();
-            // Others
-        } else if (arg.equals("GarbageCollect")) {
-            Runtime.getRuntime().runFinalization();
-            Runtime.getRuntime().gc();
-        } else if (arg.equals("Exit")) {
-            exit();
-        } else {
-            try {
-                ClassLoader cl = MainPanel.class.getClassLoader();
-                URL url = cl.getResource(arg);
-                logger.info(url.toString());
-                File structureFile = new File(url.getFile());
-                logger.info(structureFile.toString());
-                String tempFile = copyInputStreamToTmpFile(url.openStream(), "ffx", structureFile.getName(), "pdb");
-                open(tempFile);
-            } catch (Exception e) {
-                System.err.println("MainPanel - Menu command not found: " + arg);
-            }
+        switch (arg) {
+            case "Open":
+                open();
+                break;
+            case "DownloadFromPDB":
+                openFromPDB();
+                break;
+            case "SaveAs":
+                saveAsXYZ(null);
+                break;
+            case "Close":
+                close();
+                break;
+            case "CloseAll":
+                closeAll();
+                break;
+            case "ChooseKeyFile":
+                chooseKey();
+                break;
+            case "ChooseLogFile":
+                chooseLog();
+                break;
+            case "LoadInducedData":
+                openInduced();
+                // Selection Commands
+                break;
+            case "SelectAll":
+                selectAll();
+                break;
+            case "MergeSelections":
+                merge();
+                break;
+            case "HighlightSelections":
+                highlightSelections(evt);
+                // Trajectory
+                break;
+            case "Play":
+                play();
+                break;
+            case "Stop":
+                stop();
+                break;
+            case "StepForward":
+                stepForward();
+                break;
+            case "StepBack":
+                stepBack();
+                break;
+            case "Reset":
+                reset();
+                break;
+            case "Oscillate":
+                oscillate(evt);
+                break;
+            case "Frame":
+                frame();
+                break;
+            case "Speed":
+                speed();
+                break;
+            case "Skip":
+                skip();
+                // Simulation
+                break;
+            case "ConnectToLocalJob":
+                connectToTINKER(null, null);
+                break;
+            case "ConnectToRemoteJob":
+                connect();
+                break;
+            case "ReleaseJob":
+                release();
+                break;
+            case "SetPort":
+                setPort();
+                break;
+            case "SetRemoteJobAddress":
+                setRemoteJobAddress();
+                // Window
+                break;
+            case "ShowToolBar":
+                showToolBar(evt);
+                break;
+            case "ShowTree":
+                showTree(evt);
+                break;
+            case "ShowGlobalAxes":
+                showGlobalAxes(evt);
+                break;
+            case "ResetPanes":
+                resetPanes();
+                break;
+            case "ResetConsole":
+                resetShell();
+                break;
+            case "OceanLookAndFeel":
+                oceanLookAndFeel();
+                break;
+            case "WindowsLookAndFeel":
+            case "MacOSXLookAndFeel":
+            case "MotifLookAndFeel":
+                platformLookAndFeel();
+                break;
+            case "ShrinkGraphicsWindow":
+                resizePanes(20);
+                break;
+            case "ExpandGraphicsWindow":
+                resizePanes(-20);
+                break;
+            case "About":
+                about();
+                // Others
+                break;
+            case "GarbageCollect":
+                Runtime.getRuntime().runFinalization();
+                Runtime.getRuntime().gc();
+                break;
+            case "Exit":
+                exit();
+                break;
+            default:
+                try {
+                    ClassLoader cl = MainPanel.class.getClassLoader();
+                    URL url = cl.getResource(arg);
+                    logger.info(url.toString());
+                    File structureFile = new File(url.getFile());
+                    logger.info(structureFile.toString());
+                    String tempFile = copyInputStreamToTmpFile(url.openStream(), "ffx", structureFile.getName(), "pdb");
+                    open(tempFile);
+                } catch (Exception e) {
+                    System.err.println("MainPanel - Menu command not found: " + arg);
+                }
 
+                break;
+        }
+    }
+
+    /**
+     * Detach the active FSystem's BranchGroup from the Scene and clear that
+     * FSystem's data
+     *
+     * @return a {@link java.lang.Thread} object.
+     */
+    public Thread close() {
+        FFXSystem m = hierarchy.getActive();
+        return close(m);
+    }
+
+    /**
+     * <p>
+     * close</p>
+     *
+     * @param closedModel a {@link ffx.ui.FFXSystem} object.
+     * @return a {@link java.lang.Thread} object.
+     */
+    public Thread close(FFXSystem closedModel) {
+        if (closedModel.getParent() != null) {
+            Trajectory traj = closedModel.getTrajectory();
+            if (traj != null) {
+                traj.stop();
+            }
+            if (simulation != null && simulation.getFSystem() == closedModel) {
+                release();
+            }
+            hierarchy.removeTreeNode(closedModel);
+            closedModel.setView(RendererCache.ViewModel.DESTROY, null);
+            Thread thread = new Thread(new UIFileCloser(closedModel));
+            thread.start();
+            return thread;
+        }
+        return null;
+    }
+
+    /**
+     * <p>
+     * exit with current exit code (default: 0 (ExitStatus.NORMAL))</p>
+     */
+    public void exit() {
+        exit(exitType);
+    }
+
+    /**
+     * <p>
+     * frame</p>
+     */
+    public void frame() {
+        Trajectory trajectory = getTrajectory();
+        if (trajectory == null) {
+            return;
+        }
+        String frameNumber = "" + trajectory.getFrame();
+        frameNumber = JOptionPane.showInputDialog("Enter the Frame Number",
+                frameNumber);
+        try {
+            int f = Integer.parseInt(frameNumber);
+            trajectory.setFrame(f);
+        } catch (NumberFormatException e) {
+            //
+        }
+    }
+
+    /**
+     * Return the active SystemFilter.
+     *
+     * @return the active SystemFilter.
+     */
+    public SystemFilter getFilter() {
+        return activeFilter;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>frame</code>.</p>
+     *
+     * @return a {@link java.awt.Frame} object.
+     */
+    public Frame getFrame() {
+        return frame;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>hierarchy</code>.</p>
+     *
+     * @return a {@link ffx.ui.Hierarchy} object.
+     */
+    public Hierarchy getHierarchy() {
+        return hierarchy;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>mainMenu</code>.</p>
+     *
+     * @return a {@link ffx.ui.MainMenu} object.
+     */
+    public MainMenu getMainMenu() {
+        return mainMenu;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>modelingShell</code>.</p>
+     *
+     * @return a {@link ffx.ui.ModelingShell} object.
+     */
+    public ModelingShell getModelingShell() {
+        if (modelingShell == null) {
+            modelingShell = new ModelingShell(this);
+            modelingShell.run();
+        }
+        return modelingShell;
+    }
+
+    /**
+     * <p>
+     * initialize</p>
+     */
+    public void initialize() {
+        if (init) {
+            return;
+        }
+        init = true;
+
+        String dir = System.getProperty("user.dir", FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath());
+        setCWD(new File(dir));
+        locale = new FFXLocale("en", "US");
+
+        // Create the Root Node
+        dataRoot = new MSRoot();
+        Border bb = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+        statusLabel = new JLabel("  ");
+        JLabel stepLabel = new JLabel("  ");
+        stepLabel.setHorizontalAlignment(JLabel.RIGHT);
+        JLabel energyLabel = new JLabel("  ");
+        energyLabel.setHorizontalAlignment(JLabel.RIGHT);
+        JPanel statusPanel = new JPanel(new GridLayout(1, 3));
+        statusPanel.setBorder(bb);
+        statusPanel.add(statusLabel);
+        statusPanel.add(stepLabel);
+        statusPanel.add(energyLabel);
+
+        // Initialize various Panels
+        setLayout(new BorderLayout());
+        hierarchy = new Hierarchy(this);
+        hierarchy.setStatus(statusLabel, stepLabel, energyLabel);
+        keywordPanel = new KeywordPanel(this);
+        modelingPanel = new ModelingPanel(this);
+
+        JPanel treePane = new JPanel(new BorderLayout());
+        JScrollPane scrollPane = new JScrollPane(hierarchy,
+                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        treePane.add(scrollPane, BorderLayout.CENTER);
+
+        if (!GraphicsEnvironment.isHeadless()) {
+            GraphicsConfigTemplate3D template3D = new GraphicsConfigTemplate3D();
+            // template3D.setDoubleBuffer(GraphicsConfigTemplate.PREFERRED);
+            GraphicsConfiguration gc = null;
+            try {
+                gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getBestConfiguration(template3D);
+                // gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+            } catch (Exception e) {
+                e.fillInStackTrace();
+                e.printStackTrace();
+                logger.log(Level.SEVERE,
+                        " Exception encountered when trying to get the best GraphicsConfiguration", e);
+            }
+            try {
+                graphicsCanvas = new GraphicsCanvas(gc, this);
+            } catch (Exception e) {
+                e.fillInStackTrace();
+                e.printStackTrace();
+                logger.log(Level.SEVERE,
+                        " Exception encountered when trying to create the GraphicsCanvas", e);
+            }
+            graphicsPanel = new GraphicsPanel(graphicsCanvas, statusPanel);
+        }
+
+        // Holds 3D Graphics, Keyword Editor, Modeling Commands and Log Panels
+        // JTabbedPane tabbedPane = new JTabbedPane();
+        // ClassLoader loader = getClass().getClassLoader();
+        // ImageIcon graphicsIcon = new ImageIcon(loader.getResource("ffx/ui/icons/monitor.png"));
+        // ImageIcon keywordIcon = new ImageIcon(loader.getResource("ffx/ui/icons/key.png"));
+        // ImageIcon modelingIcon = new ImageIcon(loader.getResource("ffx/ui/icons/cog.png"));
+        // tabbedPane.addTab(locale.getValue("Graphics"), graphicsIcon, graphicsPanel);
+        // tabbedPane.addTab(locale.getValue("KeywordEditor"), keywordIcon, keywordPanel);
+        // tabbedPane.addTab(locale.getValue("ModelingCommands"), modelingIcon, modelingPanel);
+        // tabbedPane.addChangeListener(this);
+        // splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false, treePane, tabbedPane);
+
+        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false, treePane, graphicsPanel);
+        splitPane.setResizeWeight(0.25);
+        splitPane.setOneTouchExpandable(true);
+        add(splitPane, BorderLayout.CENTER);
+
+        if (!GraphicsEnvironment.isHeadless()) {
+            mainMenu = new MainMenu(this);
+            add(mainMenu.getToolBar(), BorderLayout.NORTH);
+            getModelingShell();
+            loadPrefs();
+        }
+    }
+
+    /**
+     * <p>
+     * merge</p>
+     *
+     * @param nodesToMerge an array of {@link ffx.potential.bonded.MSNode}
+     *                     objects.
+     */
+    public void merge(MSNode[] nodesToMerge) {
+        ArrayList<MSNode> activeNodes = new ArrayList<>();
+        for (MSNode node : nodesToMerge) {
+            if (node != null) {
+                activeNodes.add(node);
+            }
+        }
+        if (activeNodes.size() > 1) {
+            merge(activeNodes);
+        }
+    }
+
+    public Thread open(File file, String commandDescription) {
+        UIFileOpener opener = openInit(file, commandDescription);
+        openThread = new Thread(opener);
+        openThread.start();
+        setPanel(GRAPHICS);
+        return openThread;
+    }
+
+    public Thread open(List<File> files, String commandDescription) {
+        UIFileOpener openFile = openInit(files, commandDescription);
+        openThread = new Thread(openFile);
+        openThread.start();
+        setPanel(GRAPHICS);
+        return openThread;
+    }
+
+    /**
+     * <p>
+     * open</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @return a {@link java.lang.Thread} object.
+     */
+    public Thread open(String name) {
+        File file = resolveName(name);
+        if (file == null) {
+            logger.log(Level.WARNING, "{0}: could not be found.", name);
+            return null;
+        }
+        return open(file, null);
+    }
+
+    /**
+     * <p>
+     * open</p>
+     *
+     * @param names an array of {@link java.lang.String} objects.
+     * @return a {@link java.lang.Thread} object.
+     */
+    public Thread open(String[] names) {
+        if (names == null) {
+            return null;
+        }
+        List<File> files = new ArrayList<>();
+        // Resolve all file names.
+        for (String name : names) {
+            File file = resolveName(name);
+            if (file == null || !file.exists()) {
+                return null;
+            }
+            files.add(file);
+        }
+        return open(files, null);
+    }
+
+    public synchronized MolecularAssembly[] openWaitUtils(String file) {
+        UIFileOpener opener = openFromUtils(file);
+        Thread thread = new Thread(opener);
+        while (thread.isAlive()) {
+            try {
+                wait(1);
+            } catch (InterruptedException e) {
+                String message = "Exception waiting for " + file + " to open.";
+                logger.log(Level.WARNING, message, e);
+                return null;
+            }
+        }
+
+        MolecularAssembly[] systems = activeFilter.getMolecularAssemblys();
+        if (systems != null) {
+            int n = systems.length;
+            FFXSystem[] ffxSystems = new FFXSystem[n];
+            FFXSystem[] allSystems = getHierarchy().getSystems();
+            int total = allSystems.length;
+            System.arraycopy(allSystems, total - n, ffxSystems, 0, n);
+            return ffxSystems;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * <p>
+     * reset</p>
+     */
+    public void reset() {
+        Trajectory trajectory = getTrajectory();
+        if (trajectory == null) {
+            return;
+        }
+        trajectory.stop();
+        trajectory.rewind();
+    }
+
+    public void saveKeywordFile(File file) {
+        keywordPanel.keySave(file);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void stateChanged(ChangeEvent evt) {
+        JTabbedPane jtp = (JTabbedPane) evt.getSource();
+        int index = jtp.getSelectedIndex();
+        if (index == 0) {
+            graphicsCanvas.selected();
+        } else if (index == 1) {
+            keywordPanel.selected();
+        } else if (index == 2) {
+            modelingPanel.selected();
+        }
+    }
+
+    /**
+     * <p>
+     * stop</p>
+     */
+    public void stop() {
+        Trajectory trajectory = getTrajectory();
+        if (trajectory == null) {
+            return;
+        }
+        trajectory.stop();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return "Program Control";
+    }
+
+    /**
+     * <p>
+     * getPWD</p>
+     *
+     * @return a {@link java.io.File} object.
+     */
+    static File getPWD() {
+        if (pwd == null) {
+            pwd = new File(System.getProperty("user.dir",
+                    FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath()));
+        }
+        return pwd;
+    }
+
+    /**
+     * JFileChooser
+     *
+     * @return a {@link javax.swing.JFileChooser} object.
+     */
+    static JFileChooser resetFileChooser() {
+        if (fileChooser == null) {
+            fileChooser = new JFileChooser();
+        }
+        fileChooser.resetChoosableFileFilters();
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setFileHidingEnabled(false);
+        fileChooser.setAcceptAllFileFilterUsed(true);
+        fileChooser.setCurrentDirectory(getPWD());
+        fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.setSelectedFile(null);
+        return fileChooser;
+    }
+
+    /**
+     * Enumerates the exit status codes FFX may terminate with; 0 will indicate
+     * normal execution, 1-99 will indicate fatal errors, 100-199 non-fatal
+     * errors, and 200-254 other exit statuses. Presently, only 0, 1, 3, 100,
+     * and 200 have been defined for FFX.
+     * <p>
+     * When adding to this enumeration, avoid the ranges 2, 64-78, 126-128, 130,
+     * 137, and 255 or greater (see http://tldp.org/LDP/abs/html/exitcodes.html
+     * and the C/C++ standard /usr/include/sysexits.h).
+     */
+    enum ExitStatus {
+        // Normal termination.
+        NORMAL(0),
+        // Indicates some uncaught Exception, Error, or Throwable. As of now,
+        // this enum value is unused, and we rely on the JVM automatically exiting
+        // with a system code of 1 under these circumstances.
+        EXCEPTION(1),
+        // A call to logger.severe() resulted in program termination.
+        SEVERE(3),
+        // Algorithm did not complete properly (a minimization had a bad
+        // interpolation, etc).
+        ALGORITHM_FAILURE(100),
+        // Some issue not listed here.
+        OTHER(200);
+
+        // This gets sent to System.exit().
+        private final int exitCode;
+
+        ExitStatus(int exitCode) {
+            this.exitCode = exitCode;
+        }
+
+        /**
+         * Gets the exit code associated with this exit status.
+         *
+         * @return JVM exit code.
+         */
+        int getExitCode() {
+            return exitCode;
         }
     }
 
@@ -569,17 +1103,6 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * Detach the active FSystem's BranchGroup from the Scene and clear that
-     * FSystem's data
-     *
-     * @return a {@link java.lang.Thread} object.
-     */
-    public Thread close() {
-        FFXSystem m = hierarchy.getActive();
-        return close(m);
-    }
-
-    /**
      * <p>
      * closeWait</p>
      */
@@ -598,31 +1121,6 @@ public final class MainPanel extends JPanel implements ActionListener,
                 logger.log(Level.WARNING, message, e);
             }
         }
-    }
-
-    /**
-     * <p>
-     * close</p>
-     *
-     * @param closedModel a {@link ffx.ui.FFXSystem} object.
-     * @return a {@link java.lang.Thread} object.
-     */
-    public Thread close(FFXSystem closedModel) {
-        if (closedModel != null && closedModel.getParent() != null) {
-            Trajectory traj = closedModel.getTrajectory();
-            if (traj != null) {
-                traj.stop();
-            }
-            if (simulation != null && simulation.getFSystem() == closedModel) {
-                release();
-            }
-            hierarchy.removeTreeNode(closedModel);
-            closedModel.setView(RendererCache.ViewModel.DESTROY, null);
-            Thread thread = new Thread(new UIFileCloser(closedModel));
-            thread.start();
-            return thread;
-        }
-        return null;
     }
 
     /**
@@ -761,14 +1259,6 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * <p>
-     * exit with current exit code (default: 0 (ExitStatus.NORMAL))</p>
-     */
-    public void exit() {
-        exit(exitType);
-    }
-
-    /**
-     * <p>
      * exit with a target ExitStatus</p>
      *
      * @param exitStatus How FFX has closed.
@@ -790,26 +1280,6 @@ public final class MainPanel extends JPanel implements ActionListener,
     void setExitType(ExitStatus exitType) {
         // Package-private out of conservatism; may be safe to make public.
         this.exitType = exitType;
-    }
-
-    /**
-     * <p>
-     * frame</p>
-     */
-    public void frame() {
-        Trajectory trajectory = getTrajectory();
-        if (trajectory == null) {
-            return;
-        }
-        String frameNumber = "" + trajectory.getFrame();
-        frameNumber = JOptionPane.showInputDialog("Enter the Frame Number",
-                frameNumber);
-        try {
-            int f = Integer.parseInt(frameNumber);
-            trajectory.setFrame(f);
-        } catch (NumberFormatException e) {
-            //
-        }
     }
 
     /**
@@ -844,16 +1314,6 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * <p>
-     * Getter for the field <code>hierarchy</code>.</p>
-     *
-     * @return a {@link ffx.ui.Hierarchy} object.
-     */
-    public Hierarchy getHierarchy() {
-        return hierarchy;
-    }
-
-    /**
-     * <p>
      * Getter for the field <code>keywordPanel</code>.</p>
      *
      * @return a {@link ffx.ui.KeywordPanel} object.
@@ -862,42 +1322,8 @@ public final class MainPanel extends JPanel implements ActionListener,
         return keywordPanel;
     }
 
-    /**
-     * <p>
-     * Getter for the field <code>mainMenu</code>.</p>
-     *
-     * @return a {@link ffx.ui.MainMenu} object.
-     */
-    public MainMenu getMainMenu() {
-        return mainMenu;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>frame</code>.</p>
-     *
-     * @return a {@link java.awt.Frame} object.
-     */
-    public Frame getFrame() {
-        return frame;
-    }
-
     ModelingPanel getModelingPanel() {
         return modelingPanel;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>modelingShell</code>.</p>
-     *
-     * @return a {@link ffx.ui.ModelingShell} object.
-     */
-    public ModelingShell getModelingShell() {
-        if (modelingShell == null) {
-            modelingShell = new ModelingShell(this);
-            modelingShell.run();
-        }
-        return modelingShell;
     }
 
     /**
@@ -931,15 +1357,6 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * Return the active SystemFilter.
-     *
-     * @return the active SystemFilter.
-     */
-    public SystemFilter getFilter() {
-        return activeFilter;
-    }
-
-    /**
      * <p>
      * highlightSelections</p>
      *
@@ -965,116 +1382,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
-    /**
-     * Constant <code>version="1.0.0-BETA"</code>
-     */
-    public static final String version = "1.0.0-BETA";
-    /**
-     * Constant <code>date="January 2020"</code>
-     */
-    public static final String date = "October 2019";
-
-    private static final String commitVersion;
-    private static final String commitDate;
-    private static final String commitSCM; // Presently using Git.
-
-    /*
-      Attempts to initialize version, date, and SCM versioning from
-      target/ffx-mvn.properties. Fallback is to use defaults from above.
-     */
-    static {
-        String basedir = System.getProperty("basedir");
-        File mvnProps = new File(basedir + "/target/ffx-mvn.properties");
-        String cVers = version + "-unknown";
-        String cDate = date;
-        String cSCM = "";
-        if (mvnProps.exists()) {
-            try (BufferedReader br = new BufferedReader(new FileReader(mvnProps))) {
-                String ffxVers = "1.0.0-BETA";
-                String ffxvProp = "ffx.version=";
-
-                String commitsCount = "";
-                String ccProp = "git.commitsCount=";
-
-                String timeProp = "timestamp=";
-
-                String scmProp = "git.revision=";
-
-                String line = br.readLine();
-                while (line != null) {
-                    line = line.trim();
-                    if (line.startsWith(ffxvProp)) {
-                        ffxVers = line.replaceFirst(ffxvProp, "");
-                    }/* else if (line.startsWith(gtProp)) {
-                        gitTag = line.replaceFirst(gtProp, "");
-                    } */ else if (line.startsWith(ccProp)) {
-                        commitsCount = line.replaceFirst(ccProp, "");
-                    } else if (line.startsWith(timeProp)) {
-                        String timeStr = line.replaceFirst(timeProp, "");
-                        // Expected to be MM-dd-yyyy
-                        String[] timeToks = timeStr.split("-");
-                        try {
-                            String year = timeToks[2];
-                            int mon = Integer.parseInt(timeToks[0]);
-                            Month month = Month.of(mon);
-                            String mstr = month.toString();
-                            cDate = String.format("%c%s %s", mstr.charAt(0), mstr.substring(1).toLowerCase(), year);
-                        } catch (Exception ex) {
-                            cDate = date;
-                        }
-                    } else if (line.startsWith(scmProp) && !line.contains("UNKNOWN_REVISION")) {
-                        String scm = line.replaceFirst(scmProp, "");
-                        cSCM = String.format("        %s %s \n", "SCM version ", scm);
-                    }
-                    line = br.readLine();
-                }
-
-                StringBuilder sb = new StringBuilder(ffxVers).append("-");
-
-                if (!commitsCount.isEmpty()) {
-                    sb.append(commitsCount);
-                } else {
-                    sb.append("unknown");
-                }
-                cVers = sb.toString();
-            } catch (Exception ex) {
-                //
-            }
-        }
-        commitVersion = cVers;
-        commitDate = cDate;
-        commitSCM = cSCM;
-    }
-
-    /**
-     * Constant
-     */
-    public static final String border
-            = " ______________________________________________________________________________\n";
-    /**
-     * Constant
-     */
-    public static final String title
-            = "        FORCE FIELD X - Software for Molecular Biophysics \n";
-    /**
-     * Constant
-     */
-    public static final String aboutString
-            = "        Version " + commitVersion + "  " + commitDate + " \n"
-            + commitSCM // Will contain its own spacing/newline, or be empty.
-            + "\n        Copyright (c)  Michael J. Schnieders    2001-2020 \n"
-            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2020 \n"
-            + "        Portions Copyright (c)  Jacob M. Litman 2015-2020 \n"
-            + "\n"
-            + "        All Rights Reserved \n"
-            + "\n"
-            + "        Force Field X is distributed under the GPL v. 3 license\n"
-            + "        with linking exception and is hosted by the Schnieders Lab \n"
-            + "        at The University of Iowa.\n"
-            + "\n"
-            + "        For publications see    http://ffx.biochem.uiowa.edu/publications.html \n"
-            + "        For the GPL v.3 license http://ffx.biochem.uiowa.edu/license.html \n";
-
     private void initAbout() {
         aboutTextArea = new JTextArea();
         Font font = Font.decode(Font.MONOSPACED);
@@ -1082,96 +1389,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         aboutTextArea.setText(aboutString);
         aboutTextArea.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
         aboutTextArea.setEditable(false);
-    }
-
-    /**
-     * <p>
-     * initialize</p>
-     */
-    public void initialize() {
-        if (init) {
-            return;
-        }
-        init = true;
-
-        String dir = System.getProperty("user.dir", FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath());
-        setCWD(new File(dir));
-        locale = new FFXLocale("en", "US");
-
-        // Create the Root Node
-        dataRoot = new MSRoot();
-        Border bb = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
-        statusLabel = new JLabel("  ");
-        JLabel stepLabel = new JLabel("  ");
-        stepLabel.setHorizontalAlignment(JLabel.RIGHT);
-        JLabel energyLabel = new JLabel("  ");
-        energyLabel.setHorizontalAlignment(JLabel.RIGHT);
-        JPanel statusPanel = new JPanel(new GridLayout(1, 3));
-        statusPanel.setBorder(bb);
-        statusPanel.add(statusLabel);
-        statusPanel.add(stepLabel);
-        statusPanel.add(energyLabel);
-
-        // Initialize various Panels
-        setLayout(new BorderLayout());
-        hierarchy = new Hierarchy(this);
-        hierarchy.setStatus(statusLabel, stepLabel, energyLabel);
-        keywordPanel = new KeywordPanel(this);
-        modelingPanel = new ModelingPanel(this);
-
-        JPanel treePane = new JPanel(new BorderLayout());
-        JScrollPane scrollPane = new JScrollPane(hierarchy,
-                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-        treePane.add(scrollPane, BorderLayout.CENTER);
-
-        if (!GraphicsEnvironment.isHeadless()) {
-            GraphicsConfigTemplate3D template3D = new GraphicsConfigTemplate3D();
-            // template3D.setDoubleBuffer(GraphicsConfigTemplate.PREFERRED);
-            GraphicsConfiguration gc = null;
-            try {
-                gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getBestConfiguration(template3D);
-                // gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
-            } catch (Exception e) {
-                e.fillInStackTrace();
-                e.printStackTrace();
-                logger.log(Level.SEVERE,
-                        " Exception encountered when trying to get the best GraphicsConfiguration", e);
-            }
-            try {
-                graphicsCanvas = new GraphicsCanvas(gc, this);
-            } catch (Exception e) {
-                e.fillInStackTrace();
-                e.printStackTrace();
-                logger.log(Level.SEVERE,
-                        " Exception encountered when trying to create the GraphicsCanvas", e);
-            }
-            graphicsPanel = new GraphicsPanel(graphicsCanvas, statusPanel);
-        }
-
-        // Holds 3D Graphics, Keyword Editor, Modeling Commands and Log Panels
-        // JTabbedPane tabbedPane = new JTabbedPane();
-        // ClassLoader loader = getClass().getClassLoader();
-        // ImageIcon graphicsIcon = new ImageIcon(loader.getResource("ffx/ui/icons/monitor.png"));
-        // ImageIcon keywordIcon = new ImageIcon(loader.getResource("ffx/ui/icons/key.png"));
-        // ImageIcon modelingIcon = new ImageIcon(loader.getResource("ffx/ui/icons/cog.png"));
-        // tabbedPane.addTab(locale.getValue("Graphics"), graphicsIcon, graphicsPanel);
-        // tabbedPane.addTab(locale.getValue("KeywordEditor"), keywordIcon, keywordPanel);
-        // tabbedPane.addTab(locale.getValue("ModelingCommands"), modelingIcon, modelingPanel);
-        // tabbedPane.addChangeListener(this);
-        // splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false, treePane, tabbedPane);
-
-        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false, treePane, graphicsPanel);
-        splitPane.setResizeWeight(0.25);
-        splitPane.setOneTouchExpandable(true);
-        add(splitPane, BorderLayout.CENTER);
-
-        if (!GraphicsEnvironment.isHeadless()) {
-            mainMenu = new MainMenu(this);
-            add(mainMenu.getToolBar(), BorderLayout.NORTH);
-            getModelingShell();
-            loadPrefs();
-        }
     }
 
     /**
@@ -1333,25 +1550,6 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * <p>
-     * merge</p>
-     *
-     * @param nodesToMerge an array of {@link ffx.potential.bonded.MSNode}
-     *                     objects.
-     */
-    public void merge(MSNode[] nodesToMerge) {
-        ArrayList<MSNode> activeNodes = new ArrayList<>();
-        for (MSNode node : nodesToMerge) {
-            if (node != null) {
-                activeNodes.add(node);
-            }
-        }
-        if (activeNodes.size() > 1) {
-            merge(activeNodes);
-        }
-    }
-
-    /**
-     * <p>
      * oceanLookAndFeel</p>
      */
     private void oceanLookAndFeel() {
@@ -1392,14 +1590,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         openThread.start();
         setPanel(GRAPHICS);
         return opener;
-    }
-
-    public Thread open(File file, String commandDescription) {
-        UIFileOpener opener = openInit(file, commandDescription);
-        openThread = new Thread(opener);
-        openThread.start();
-        setPanel(GRAPHICS);
-        return openThread;
     }
 
     /**
@@ -1450,7 +1640,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             ForceField patchForceField = forceFieldFilter.parse();
             forceField.append(patchForceField);
             if (RotamerLibrary.addRotPatch(patch)) {
-                logger.info(String.format(" Loaded rotamer definitions from patch %s.", patch));
+                logger.info(format(" Loaded rotamer definitions from patch %s.", patch));
             }
         }
         newSystem.setForceField(forceField);
@@ -1484,14 +1674,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         openThread.start();
         setPanel(GRAPHICS);
         return openFile;
-    }
-
-    public Thread open(List<File> files, String commandDescription) {
-        UIFileOpener openFile = openInit(files, commandDescription);
-        openThread = new Thread(openFile);
-        openThread.start();
-        setPanel(GRAPHICS);
-        return openThread;
     }
 
     /**
@@ -1529,7 +1711,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             ForceField patchForceField = forceFieldFilter.parse();
             forceField.append(patchForceField);
             if (RotamerLibrary.addRotPatch(patch)) {
-                logger.info(String.format(" Loaded rotamer definitions from patch %s.", patch));
+                logger.info(format(" Loaded rotamer definitions from patch %s.", patch));
             }
         }
         newSystem.setForceField(forceField);
@@ -1554,32 +1736,6 @@ public final class MainPanel extends JPanel implements ActionListener,
             fileOpener.setNThreads(fileOpenerThreads);
         }
         return fileOpener;
-    }
-
-    public synchronized MolecularAssembly[] openWaitUtils(String file) {
-        UIFileOpener opener = openFromUtils(file);
-        Thread thread = new Thread(opener);
-        while (thread.isAlive()) {
-            try {
-                wait(1);
-            } catch (InterruptedException e) {
-                String message = "Exception waiting for " + file + " to open.";
-                logger.log(Level.WARNING, message, e);
-                return null;
-            }
-        }
-
-        MolecularAssembly[] systems = activeFilter.getMolecularAssemblys();
-        if (systems != null) {
-            int n = systems.length;
-            FFXSystem[] ffxSystems = new FFXSystem[n];
-            FFXSystem[] allSystems = getHierarchy().getSystems();
-            int total = allSystems.length;
-            System.arraycopy(allSystems, total - n, ffxSystems, 0, n);
-            return ffxSystems;
-        } else {
-            return null;
-        }
     }
 
     /**
@@ -1677,22 +1833,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         return systs;
     }
 
-    /**
-     * <p>
-     * open</p>
-     *
-     * @param name a {@link java.lang.String} object.
-     * @return a {@link java.lang.Thread} object.
-     */
-    public Thread open(String name) {
-        File file = resolveName(name);
-        if (file == null) {
-            logger.log(Level.WARNING, "{0}: could not be found.", name);
-            return null;
-        }
-        return open(file, null);
-    }
-
     private UIFileOpener openFromUtils(String name) {
         File file = resolveName(name);
         if (file == null) {
@@ -1738,29 +1878,6 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
         return null;
-    }
-
-    /**
-     * <p>
-     * open</p>
-     *
-     * @param names an array of {@link java.lang.String} objects.
-     * @return a {@link java.lang.Thread} object.
-     */
-    public Thread open(String[] names) {
-        if (names == null) {
-            return null;
-        }
-        List<File> files = new ArrayList<>();
-        // Resolve all file names.
-        for (String name : names) {
-            File file = resolveName(name);
-            if (file == null || !file.exists()) {
-                return null;
-            }
-            files.add(file);
-        }
-        return open(files, null);
     }
 
     private UIFileOpener openFromUtils(String[] names) {
@@ -1810,7 +1927,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                 return;
             }
         } else {
-            String message = String.format(" Reading the local copy of the PDB file %s.", pdbFile);
+            String message = format(" Reading the local copy of the PDB file %s.", pdbFile);
             logger.info(message);
         }
         PDBFilter pdbFilter = new PDBFilter(pdbFile, newSystem, forceField, properties);
@@ -1835,17 +1952,17 @@ public final class MainPanel extends JPanel implements ActionListener,
         try {
             fromURL = new URL(fromString);
         } catch (MalformedURLException e) {
-            String message = String.format(" URL incorrectly formatted %s.", fromString);
+            String message = format(" URL incorrectly formatted %s.", fromString);
             logger.log(Level.INFO, message, e);
             return null;
         }
 
         // Download the URL to a local file.
-        logger.info(String.format(" Downloading %s", fromString));
+        logger.info(format(" Downloading %s", fromString));
         try {
             File toFile = new File(FilenameUtils.getName(fromURL.getPath()));
             FileUtils.copyURLToFile(fromURL, toFile, 1000, 1000);
-            logger.info(String.format(" Saved to %s\n", toFile.getPath()));
+            logger.info(format(" Saved to %s\n", toFile.getPath()));
             return toFile;
         } catch (IOException ex) {
             logger.log(Level.INFO, " Failed to read URL " + fromURL.getPath(), ex);
@@ -1999,19 +2116,6 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * <p>
-     * reset</p>
-     */
-    public void reset() {
-        Trajectory trajectory = getTrajectory();
-        if (trajectory == null) {
-            return;
-        }
-        trajectory.stop();
-        trajectory.rewind();
-    }
-
-    /**
-     * <p>
      * resetPanes</p>
      */
     private void resetPanes() {
@@ -2084,10 +2188,6 @@ public final class MainPanel extends JPanel implements ActionListener,
                 }
             }
         }
-    }
-
-    public void saveKeywordFile(File file) {
-        keywordPanel.keySave(file);
     }
 
     /**
@@ -2230,7 +2330,7 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         Crystal crystal = system.getCrystal();
         int nSymOps = crystal.spaceGroup.getNumberOfSymOps();
-        logger.info(String.format(" Writing %d symmetry mates for %s", nSymOps, system.toString()));
+        logger.info(format(" Writing %d symmetry mates for %s", nSymOps, system.toString()));
         for (int i = 1; i < nSymOps; i++) {
             pdbFilter.setSymOp(i);
             String saveFileName = filename + suffix + "_" + i + ".pdb";
@@ -2258,7 +2358,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
 
             if (saveFile.exists()) {
-                logger.warning(String.format(" Could not successfully version file "
+                logger.warning(format(" Could not successfully version file "
                         + "%s: appending to file %s", saveFileName, saveFile.getName()));
                 if (!pdbFilter.writeFileWithHeader(saveFile, symSb.toString(), true)) {
                     logger.log(Level.INFO, " Save failed for: {0}", system);
@@ -2299,8 +2399,6 @@ public final class MainPanel extends JPanel implements ActionListener,
             activeFilter = pdbFilter;
         }
     }
-
-    private static final Preferences preferences = Preferences.userNodeForPackage(MainPanel.class);
 
     /**
      * Save preferences to the user node
@@ -2519,22 +2617,6 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void stateChanged(ChangeEvent evt) {
-        JTabbedPane jtp = (JTabbedPane) evt.getSource();
-        int index = jtp.getSelectedIndex();
-        if (index == 0) {
-            graphicsCanvas.selected();
-        } else if (index == 1) {
-            keywordPanel.selected();
-        } else if (index == 2) {
-            modelingPanel.selected();
-        }
-    }
-
-    /**
      * <p>
      * stepBack</p>
      */
@@ -2558,67 +2640,5 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         trajectory.stop();
         trajectory.forward();
-    }
-
-    /**
-     * <p>
-     * stop</p>
-     */
-    public void stop() {
-        Trajectory trajectory = getTrajectory();
-        if (trajectory == null) {
-            return;
-        }
-        trajectory.stop();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "Program Control";
-    }
-
-    /**
-     * Enumerates the exit status codes FFX may terminate with; 0 will indicate
-     * normal execution, 1-99 will indicate fatal errors, 100-199 non-fatal
-     * errors, and 200-254 other exit statuses. Presently, only 0, 1, 3, 100,
-     * and 200 have been defined for FFX.
-     * <p>
-     * When adding to this enumeration, avoid the ranges 2, 64-78, 126-128, 130,
-     * 137, and 255 or greater (see http://tldp.org/LDP/abs/html/exitcodes.html
-     * and the C/C++ standard /usr/include/sysexits.h).
-     */
-    enum ExitStatus {
-        // Normal termination.
-        NORMAL(0),
-        // Indicates some uncaught Exception, Error, or Throwable. As of now,
-        // this enum value is unused, and we rely on the JVM automatically exiting
-        // with a system code of 1 under these circumstances.
-        EXCEPTION(1),
-        // A call to logger.severe() resulted in program termination.
-        SEVERE(3),
-        // Algorithm did not complete properly (a minimization had a bad
-        // interpolation, etc).
-        ALGORITHM_FAILURE(100),
-        // Some issue not listed here.
-        OTHER(200);
-
-        // This gets sent to System.exit().
-        private final int exitCode;
-
-        ExitStatus(int exitCode) {
-            this.exitCode = exitCode;
-        }
-
-        /**
-         * Gets the exit code associated with this exit status.
-         *
-         * @return JVM exit code.
-         */
-        int getExitCode() {
-            return exitCode;
-        }
     }
 }

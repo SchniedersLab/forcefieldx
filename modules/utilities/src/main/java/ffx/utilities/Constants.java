@@ -128,7 +128,7 @@ public class Constants {
 
     /**
      * Coulomb constant in units of kcal*Ang/(mol*electron^2)
-     *
+     * <p>
      * Note -- this value varies slightly between force field definitions and can be set using the
      * ELECTRIC property. As such, SHOULD NOT ever be updated to SI/CODATA standards, but rather
      * kept up-to-date with the coulomb parameter in Tinker/source/units.f. At present, the
@@ -137,12 +137,12 @@ public class Constants {
     public static final double DEFAULT_ELECTRIC = 332.063713;
 
     /**
-     * Conversion from electron-Angstroms to Debyes. NOT at current SI standard (copied from Tinker).
+     * Conversion from electron-Angstroms to Debyes.
      */
     public static final double ELEC_ANG_TO_DEBYE = 4.80321;
 
     /**
-     * Conversion from electron-Angstroms^2 to Buckinghams. NOT at current SI standard (copied from Tinker).
+     * Conversion from electron-Angstroms^2 to Buckinghams.
      */
     public static final double ELEC_ANG2_TO_BUCKINGHAMS = ELEC_ANG_TO_DEBYE * ELEC_ANG_TO_DEBYE;
     /**

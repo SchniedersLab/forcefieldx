@@ -74,12 +74,12 @@ public class Adiabatic extends Thermostat {
     }
 
     /**
-     * Add Thermostat details to the kinetic energy and temperature details.
-     *
-     * @return Description of the thermostat, kinetic energy and temperature.
+     * {@inheritDoc}
+     * <p>
+     * No full-step velocity modifications are made.
      */
-    public String toThermostatString() {
-        return format("\n Adiabatic Thermostat\n%s", super.toString());
+    @Override
+    public void fullStep(double dt) {
     }
 
     /**
@@ -93,19 +93,19 @@ public class Adiabatic extends Thermostat {
 
     /**
      * {@inheritDoc}
-     * <p>
-     * No full-step velocity modifications are made.
-     */
-    @Override
-    public void fullStep(double dt) {
-    }
-
-    /**
-     * {@inheritDoc}
      */
     @Override
     public void setTargetTemperature(double t) {
         targetTemperature = t;
         kT = t * Constants.kB;
+    }
+
+    /**
+     * Add Thermostat details to the kinetic energy and temperature details.
+     *
+     * @return Description of the thermostat, kinetic energy and temperature.
+     */
+    public String toThermostatString() {
+        return format("\n Adiabatic Thermostat\n%s", super.toString());
     }
 }

@@ -60,6 +60,7 @@ import groovy.lang.Binding;
 @RunWith(Parameterized.class)
 public class DynamicsStochasticTest extends PJDependentTest {
 
+    private static final Logger logger = Logger.getLogger(DynamicsStochasticTest.class.getName());
     private String info;
     private String filename;
     private double endKineticEnergy;
@@ -69,11 +70,34 @@ public class DynamicsStochasticTest extends PJDependentTest {
     private boolean testFriction00;
     private boolean testFriction01;
     private double tolerance = 0.1;
-
     private Binding binding;
     private Dynamics dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsStochasticTest.class.getName());
+    public DynamicsStochasticTest(String info, String filename, double endKineticEnergy,
+                                  double endPotentialEnergy, double endTotalEnergy, boolean testSeed, boolean testFriction00, boolean testFriction01) {
+
+        this.info = info;
+        this.filename = filename;
+        this.endKineticEnergy = endKineticEnergy;
+        this.endPotentialEnergy = endPotentialEnergy;
+        this.endTotalEnergy = endTotalEnergy;
+        this.testSeed = testSeed;
+        this.testFriction00 = testFriction00;
+        this.testFriction01 = testFriction01;
+    }
+
+    @After
+    public void after() {
+        dynamics.destroyPotentials();
+        System.gc();
+    }
+
+    @Before
+    public void before() {
+        binding = new Binding();
+        dynamics = new Dynamics();
+        dynamics.setBinding(binding);
+    }
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -109,32 +133,6 @@ public class DynamicsStochasticTest extends PJDependentTest {
                         true // testFriction01
                 }
         });
-    }
-
-    public DynamicsStochasticTest(String info, String filename, double endKineticEnergy,
-                                  double endPotentialEnergy, double endTotalEnergy, boolean testSeed, boolean testFriction00, boolean testFriction01) {
-
-        this.info = info;
-        this.filename = filename;
-        this.endKineticEnergy = endKineticEnergy;
-        this.endPotentialEnergy = endPotentialEnergy;
-        this.endTotalEnergy = endTotalEnergy;
-        this.testSeed = testSeed;
-        this.testFriction00 = testFriction00;
-        this.testFriction01 = testFriction01;
-    }
-
-    @Before
-    public void before() {
-        binding = new Binding();
-        dynamics = new Dynamics();
-        dynamics.setBinding(binding);
-    }
-
-    @After
-    public void after() {
-        dynamics.destroyPotentials();
-        System.gc();
     }
 
     @Test

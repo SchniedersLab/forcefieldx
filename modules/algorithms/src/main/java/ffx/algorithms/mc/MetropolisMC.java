@@ -63,25 +63,11 @@ public interface MetropolisMC {
     boolean evaluateMove(double e1, double e2);
 
     /**
-     * Sets temperature of Monte Carlo criterion.
+     * If last step taken was a success.
      *
-     * @param temp a double.
+     * @return Acceptance of last move
      */
-    void setTemperature(double temp);
-
-    /**
-     * Returns temperature of the Monte Carlo criterion.
-     *
-     * @return temperature
-     */
-    double getTemperature();
-
-    /**
-     * Sets whether the implementation prints its own messages.
-     *
-     * @param print Print energies, accept/reject, etc.
-     */
-    void setPrint(boolean print);
+    boolean getAccept();
 
     /**
      * Return starting energy from last attempted step.
@@ -98,17 +84,26 @@ public interface MetropolisMC {
     double getE2();
 
     /**
+     * Returns temperature of the Monte Carlo criterion.
+     *
+     * @return temperature
+     */
+    double getTemperature();
+
+    /**
+     * Sets temperature of Monte Carlo criterion.
+     *
+     * @param temp a double.
+     */
+    void setTemperature(double temp);
+
+    /**
      * Returns the energy as of the last step taken (not including any extra-
      * potential energy adjustments).
      *
      * @return Last step's energy
      */
     double lastEnergy();
-
-    /**
-     * If possible, reverts the last successful Monte Carlo step taken.
-     */
-    void revertStep();
 
     /**
      * Calculates the current system energy and performs an MCMove.
@@ -147,10 +142,15 @@ public interface MetropolisMC {
     boolean mcStep(List<MCMove> moves, double en1);
 
     /**
-     * If last step taken was a success.
-     *
-     * @return Acceptance of last move
+     * If possible, reverts the last successful Monte Carlo step taken.
      */
-    boolean getAccept();
+    void revertStep();
+
+    /**
+     * Sets whether the implementation prints its own messages.
+     *
+     * @param print Print energies, accept/reject, etc.
+     */
+    void setPrint(boolean print);
 
 }

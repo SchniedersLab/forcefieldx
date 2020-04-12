@@ -65,18 +65,6 @@ public class LogHandler extends Handler {
     private boolean fatal = false;
 
     /**
-     * A reference to the Force Field X MainPanel container to shut down if we
-     * encounter a fatal (SEVERE) exception. If we are not in Headless mode,
-     * then LogRecords can be published to the ModelingShell.
-     *
-     * @param mainPanel the Force Field X MainPanel.
-     * @since 1.0
-     */
-    public void setMainPanel(MainPanel mainPanel) {
-        this.mainPanel = mainPanel;
-    }
-
-    /**
      * Construct the Force Field X logging handler.
      *
      * @since 1.0
@@ -90,6 +78,30 @@ public class LogHandler extends Handler {
         }
         setFormatter(new LogFormatter(false, mpiLogging));
         setLevel(Level.ALL);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Flush, but do not close System.out or the Shell.
+     *
+     * @since 1.0
+     */
+    @Override
+    public void close() {
+        flush();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void flush() {
+        System.out.flush();
+        System.err.flush();
+        if (mainPanel.getModelingShell() != null) {
+            // Scroll to visible!
+        }
     }
 
     /**
@@ -172,26 +184,14 @@ public class LogHandler extends Handler {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void flush() {
-        System.out.flush();
-        System.err.flush();
-        if (mainPanel.getModelingShell() != null) {
-            // Scroll to visible!
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Flush, but do not close System.out or the Shell.
+     * A reference to the Force Field X MainPanel container to shut down if we
+     * encounter a fatal (SEVERE) exception. If we are not in Headless mode,
+     * then LogRecords can be published to the ModelingShell.
      *
+     * @param mainPanel the Force Field X MainPanel.
      * @since 1.0
      */
-    @Override
-    public void close() {
-        flush();
+    public void setMainPanel(MainPanel mainPanel) {
+        this.mainPanel = mainPanel;
     }
 }

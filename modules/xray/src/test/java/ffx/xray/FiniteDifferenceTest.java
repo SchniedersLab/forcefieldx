@@ -72,24 +72,11 @@ import static ffx.xray.CrystalReciprocalSpace.SolventModel.NONE;
 @RunWith(Parameterized.class)
 public class FiniteDifferenceTest extends BaseFFXTest {
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {true,
-                        "ala met anisou",
-                        NONE,
-                        new int[]{91, 105, 119},
-                        "ffx/xray/structures/alamet.pdb",
-                        "ffx/xray/structures/alamet.mtz"}
-        });
-    }
-
     private final boolean ciOnly;
     private final Atom[] atomArray;
     private final int[] atoms;
     private final DiffractionRefinementData refinementData;
     private final SigmaAMinimize sigmaAMinimize;
-
     public FiniteDifferenceTest(boolean ciOnly,
                                 String info, SolventModel solventModel, int[] atoms,
                                 String pdbName, String mtzName) {
@@ -177,7 +164,7 @@ public class FiniteDifferenceTest extends BaseFFXTest {
         String gridString = properties.getString("grid-method", "SLICE").toUpperCase();
         CrystalReciprocalSpace.GridMethod gridMethod;
         try {
-            gridMethod =  CrystalReciprocalSpace.GridMethod.valueOf(gridString);
+            gridMethod = CrystalReciprocalSpace.GridMethod.valueOf(gridString);
         } catch (Exception e) {
             gridMethod = CrystalReciprocalSpace.GridMethod.SLICE;
         }
@@ -209,6 +196,18 @@ public class FiniteDifferenceTest extends BaseFFXTest {
         crystalstats.printHKLStats();
         crystalstats.printSNStats();
         crystalstats.printRStats();
+    }
+
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {true,
+                        "ala met anisou",
+                        NONE,
+                        new int[]{91, 105, 119},
+                        "ffx/xray/structures/alamet.pdb",
+                        "ffx/xray/structures/alamet.mtz"}
+        });
     }
 
     @Test

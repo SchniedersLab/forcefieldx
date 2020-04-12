@@ -44,7 +44,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.BOND;
 
@@ -93,6 +92,7 @@ public final class BondType extends BaseType implements Comparator<String> {
      * The function used by the bond: harmonic or quartic with flat-bottom variants.
      */
     public BondFunction bondFunction;
+
     /**
      * The default BondType constructor defines use of the Quartic BondFunction.
      *

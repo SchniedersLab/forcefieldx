@@ -61,7 +61,18 @@ import ffx.potential.nonbonded.GeneralizedKirkwood;
 public class ChandlerCavitation {
 
     private static final Logger logger = Logger.getLogger(ChandlerCavitation.class.getName());
-
+    /**
+     * Volume / Surface Area are switched on / off over 7.0 Angstroms; half is 3.5 A.
+     */
+    private final double HALF_SWITCH_RANGE = 3.5;
+    /**
+     * A value of 0.2 A smoothly moves from Volume dependence to Surface Area dependence.
+     * <p>
+     * However, a smaller offset of 0.0 to ~0.1 A overshoots the limiting surface tension.
+     */
+    private final double SA_SWITCH_OFFSET = 0.2;
+    private final GaussVol gaussVol;
+    private final ConnollyRegion connollyRegion;
     /**
      * Surface area (Ang^2).
      */
@@ -108,16 +119,6 @@ public class ChandlerCavitation {
      */
     private double crossOver = GeneralizedKirkwood.DEFAULT_CROSSOVER;
     /**
-     * Volume / Surface Area are switched on / off over 7.0 Angstroms; half is 3.5 A.
-     */
-    private final double HALF_SWITCH_RANGE = 3.5;
-    /**
-     * A value of 0.2 A smoothly moves from Volume dependence to Surface Area dependence.
-     *
-     * However, a smaller offset of 0.0 to ~0.1 A overshoots the limiting surface tension.
-     */
-    private final double SA_SWITCH_OFFSET = 0.2;
-    /**
      * Begin turning off the Volume term.
      */
     private double beginVolumeOff = crossOver - HALF_SWITCH_RANGE;
@@ -141,11 +142,8 @@ public class ChandlerCavitation {
      * Surface area multiplicative switch.
      */
     private MultiplicativeSwitch surfaceAreaSwitch = new MultiplicativeSwitch(beginSurfaceAreaOff, endSurfaceAreaOff);
-
     private int nAtoms;
     private Atom[] atoms;
-    private final GaussVol gaussVol;
-    private final ConnollyRegion connollyRegion;
 
     public ChandlerCavitation(Atom[] atoms, GaussVol gaussVol) {
         this.atoms = atoms;
@@ -159,14 +157,6 @@ public class ChandlerCavitation {
         this.nAtoms = atoms.length;
         this.connollyRegion = connollyRegion;
         this.gaussVol = null;
-    }
-
-    public GaussVol getGaussVol() {
-        return gaussVol;
-    }
-
-    public ConnollyRegion getConnollyRegion() {
-        return getConnollyRegion();
     }
 
     /**
@@ -259,7 +249,8 @@ public class ChandlerCavitation {
         }
 
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine(format("\n Volume:              %8.3f (Ang^3)", volume));
+            logger.fine("\n Connolly");
+            logger.fine(format(" Volume:              %8.3f (Ang^3)", volume));
             logger.fine(format(" Volume Energy:       %8.3f (kcal/mol)", volumeEnergy));
             logger.fine(format(" Surface Area:        %8.3f (Ang^2)", surfaceArea));
             logger.fine(format(" Surface Area Energy: %8.3f (kcal/mol)", surfaceAreaEnergy));
@@ -343,7 +334,8 @@ public class ChandlerCavitation {
         }
 
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine(format("\n Volume:              %8.3f (Ang^3)", volume));
+            logger.fine("\n GaussVol");
+            logger.fine(format(" Volume:              %8.3f (Ang^3)", volume));
             logger.fine(format(" Volume Energy:       %8.3f (kcal/mol)", volumeEnergy));
             logger.fine(format(" Surface Area:        %8.3f (Ang^2)", surfaceArea));
             logger.fine(format(" Surface Area Energy: %8.3f (kcal/mol)", surfaceAreaEnergy));
@@ -352,6 +344,108 @@ public class ChandlerCavitation {
         }
 
         return cavitationEnergy;
+    }
+
+    public ConnollyRegion getConnollyRegion() {
+        return getConnollyRegion();
+    }
+
+    public double getCrossOver() {
+        return crossOver;
+    }
+
+    public void setCrossOver(double crossOver) {
+        if (crossOver < 3.5) {
+            logger.severe(format(" The cross-over point (%8.6f A) must be greater than 3.5 A", crossOver));
+            return;
+        }
+        this.crossOver = crossOver;
+        beginVolumeOff = crossOver - HALF_SWITCH_RANGE;
+        endVolumeOff = beginVolumeOff + 2.0 * HALF_SWITCH_RANGE;
+        beginSurfaceAreaOff = crossOver + SA_SWITCH_OFFSET + HALF_SWITCH_RANGE;
+        endSurfaceAreaOff = beginSurfaceAreaOff - 2.0 * HALF_SWITCH_RANGE;
+        volumeSwitch = new MultiplicativeSwitch(beginVolumeOff, endVolumeOff);
+        surfaceAreaSwitch = new MultiplicativeSwitch(beginSurfaceAreaOff, endSurfaceAreaOff);
+    }
+
+    public double getEffectiveRadius() {
+        return effectiveRadius;
+    }
+
+    public double getEnergy() {
+        return cavitationEnergy;
+    }
+
+    public GaussVol getGaussVol() {
+        return gaussVol;
+    }
+
+    public double getSolventPressure() {
+        return solventPressure;
+    }
+
+    public void setSolventPressure(double solventPressure) {
+        double newCrossOver = 3.0 * surfaceTension / solventPressure;
+        if (newCrossOver < 3.5) {
+            logger.severe(format(" The solvent pressure (%8.6f kcal/mol/A^3)" +
+                            " and surface tension (%8.6f kcal/mol/A^2) combination is not supported.",
+                    solventPressure, surfaceTension));
+            return;
+        }
+        this.solventPressure = solventPressure;
+        this.setCrossOver(newCrossOver);
+    }
+
+    /**
+     * Return Surface Area (A^2).
+     *
+     * @return Surface Area (A^2).
+     */
+    public double getSurfaceArea() {
+        return surfaceArea;
+    }
+
+    /**
+     * Return Surface Area based cavitation energy.
+     *
+     * @return Surface Area based cavitation energy.
+     */
+    public double getSurfaceAreaEnergy() {
+        return surfaceAreaEnergy;
+    }
+
+    public double getSurfaceTension() {
+        return surfaceTension;
+    }
+
+    public void setSurfaceTension(double surfaceTension) {
+        double newCrossOver = 3.0 * surfaceTension / solventPressure;
+        if (newCrossOver < 3.5) {
+            logger.severe(format(" The solvent pressure (%8.6f kcal/mol/A^3)" +
+                            " and surface tension (%8.6f kcal/mol/A^2) combination is not supported.",
+                    solventPressure, surfaceTension));
+            return;
+        }
+        this.surfaceTension = surfaceTension;
+        this.setCrossOver(newCrossOver);
+    }
+
+    /**
+     * Return Volume (A^3).
+     *
+     * @return Volume (A^3).
+     */
+    public double getVolume() {
+        return volume;
+    }
+
+    /**
+     * Return Volume based cavitation energy.
+     *
+     * @return Volume based cavitation energy.
+     */
+    public double getVolumeEnergy() {
+        return volumeEnergy;
     }
 
     /**
@@ -390,100 +484,6 @@ public class ChandlerCavitation {
             double gz = factor * surfaceAreaGradient[index];
             gradient.add(0, i, gx, gy, gz);
         }
-    }
-
-    public double getEnergy() {
-        return cavitationEnergy;
-    }
-
-    public double getSolventPressure() {
-        return solventPressure;
-    }
-
-    public double getSurfaceTension() {
-        return surfaceTension;
-    }
-
-    public void setSolventPressure(double solventPressure) {
-        double newCrossOver = 3.0 * surfaceTension / solventPressure;
-        if (newCrossOver < 3.5) {
-            logger.severe(format(" The solvent pressure (%8.6f kcal/mol/A^3)" +
-                            " and surface tension (%8.6f kcal/mol/A^2) combination is not supported.",
-                    solventPressure, surfaceTension));
-            return;
-        }
-        this.solventPressure = solventPressure;
-        this.setCrossOver(newCrossOver);
-    }
-
-    public void setSurfaceTension(double surfaceTension) {
-        double newCrossOver = 3.0 * surfaceTension / solventPressure;
-        if (newCrossOver < 3.5) {
-            logger.severe(format(" The solvent pressure (%8.6f kcal/mol/A^3)" +
-                            " and surface tension (%8.6f kcal/mol/A^2) combination is not supported.",
-                    solventPressure, surfaceTension));
-            return;
-        }
-        this.surfaceTension = surfaceTension;
-        this.setCrossOver(newCrossOver);
-    }
-
-    public void setCrossOver(double crossOver) {
-        if (crossOver < 3.5) {
-            logger.severe(format(" The cross-over point (%8.6f A) must be greater than 3.5 A", crossOver));
-            return;
-        }
-        this.crossOver = crossOver;
-        beginVolumeOff = crossOver - HALF_SWITCH_RANGE;
-        endVolumeOff = beginVolumeOff + 2.0 * HALF_SWITCH_RANGE;
-        beginSurfaceAreaOff = crossOver + SA_SWITCH_OFFSET + HALF_SWITCH_RANGE;
-        endSurfaceAreaOff = beginSurfaceAreaOff - 2.0 * HALF_SWITCH_RANGE;
-        volumeSwitch = new MultiplicativeSwitch(beginVolumeOff, endVolumeOff);
-        surfaceAreaSwitch = new MultiplicativeSwitch(beginSurfaceAreaOff, endSurfaceAreaOff);
-    }
-
-    public double getCrossOver() {
-        return crossOver;
-    }
-
-    /**
-     * Return Volume based cavitation energy.
-     *
-     * @return Volume based cavitation energy.
-     */
-    public double getVolumeEnergy() {
-        return volumeEnergy;
-    }
-
-    /**
-     * Return Surface Area based cavitation energy.
-     *
-     * @return Surface Area based cavitation energy.
-     */
-    public double getSurfaceAreaEnergy() {
-        return surfaceAreaEnergy;
-    }
-
-    /**
-     * Return Volume (A^3).
-     *
-     * @return Volume (A^3).
-     */
-    public double getVolume() {
-        return volume;
-    }
-
-    /**
-     * Return Surface Area (A^2).
-     *
-     * @return Surface Area (A^2).
-     */
-    public double getSurfaceArea() {
-        return surfaceArea;
-    }
-
-    public double getEffectiveRadius() {
-        return effectiveRadius;
     }
 
 }

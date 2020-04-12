@@ -39,7 +39,6 @@ package ffx.algorithms.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.logging.Logger;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -71,20 +70,6 @@ public class DynamicsInitVelocitiesTest extends PJDependentTest {
     private Binding binding;
     private Dynamics dynamics;
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {
-                        "Water Tiny Initialize Velocities",  //info
-                        "ffx/algorithms/structures/watertiny.xyz",  // filename
-                        64.8511,  // endKineticEnergy
-                        -218.0760,  // endPotentialEnergy
-                        -153.2249  // endTotalEnergy
-                }
-
-        });
-    }
-
     public DynamicsInitVelocitiesTest(String info, String filename, double endKineticEnergy, double endPotentialEnergy, double endTotalEnergy) {
 
         this.info = info;
@@ -99,6 +84,20 @@ public class DynamicsInitVelocitiesTest extends PJDependentTest {
         binding = new Binding();
         dynamics = new Dynamics();
         dynamics.setBinding(binding);
+    }
+
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {
+                        "Water Tiny Initialize Velocities",  //info
+                        "ffx/algorithms/structures/watertiny.xyz",  // filename
+                        64.8511,  // endKineticEnergy
+                        -218.0760,  // endPotentialEnergy
+                        -153.2249  // endTotalEnergy
+                }
+
+        });
     }
 
     @Test

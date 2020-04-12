@@ -44,14 +44,17 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
-import ffx.utilities.FileUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -83,6 +86,7 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
+import ffx.utilities.FileUtils;
 import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS;
 import static ffx.utilities.Constants.R;
 
@@ -99,15 +103,6 @@ import static ffx.utilities.Constants.R;
 public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(OrthogonalSpaceTempering.class.getName());
-
-    /**
-     * The MolecularAssembly being simulated.
-     */
-    protected MolecularAssembly molecularAssembly;
-    /**
-     * A potential energy that implements the LambdaInterface.
-     */
-    private final LambdaInterface lambdaInterface;
     /**
      * The potential energy of the system.
      */
@@ -122,13 +117,17 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      */
     protected final AlgorithmListener algorithmListener;
     /**
-     * Contains counts for the OST bias.
+     * Print detailed energy information.
      */
-    private Histogram histogram;
+    protected final boolean print = false;
     /**
-     * Index of the current Histogram.
+     * Number of variables.
      */
-    private int histogramIndex;
+    protected final int nVariables;
+    /**
+     * A potential energy that implements the LambdaInterface.
+     */
+    private final LambdaInterface lambdaInterface;
     /**
      * List of additional Histograms this OST can switch to.
      */
@@ -138,43 +137,37 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      */
     private final OptimizationParameters optimizationParameters;
     /**
-     * Interval between writing an OST restart file in steps.
-     * <p>
-     * The default saveFrequency = 1000.
-     */
-    int saveFrequency;
-    /**
-     * Print detailed energy information.
-     */
-    protected final boolean print = false;
-
-    /**
-     * State variable lambda ranges from 0.0 .. 1.0.
-     */
-    protected double lambda;
-    /**
      * Each walker has a unique lambda restart file.
      */
     private final File lambdaFile;
-    /**
-     * Flag to indicate that the Lambda particle should be propagated.
-     */
-    private boolean propagateLambda = true;
     /**
      * Write out structures only for lambda values greater than or equal to this threshold.
      */
     private final double lambdaWriteOut;
     /**
-     * Interval between printing information on the lambda particle in steps.
-     * <p>
-     * The default printFrequency = 100.
+     * Properties.
      */
-    private int printFrequency;
-
+    private final CompositeConfiguration properties;
     /**
-     * Number of variables.
+     * Temperature in Kelvins.
      */
-    protected final int nVariables;
+    private final double temperature;
+    /**
+     * Timestep.
+     */
+    private final double dt;
+    /**
+     * Whether to use asynchronous communications.
+     */
+    private final boolean asynchronous;
+    /**
+     * The MolecularAssembly being simulated.
+     */
+    protected MolecularAssembly molecularAssembly;
+    /**
+     * State variable lambda ranges from 0.0 .. 1.0.
+     */
+    protected double lambda;
     /**
      * Are FAST varying energy terms being computed, SLOW varying energy terms,
      * or BOTH. OST is not active when only FAST varying energy terms are being
@@ -182,14 +175,38 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      */
     protected Potential.STATE state = Potential.STATE.BOTH;
     /**
+     * Force Field Potential Energy (i.e. with no bias terms added).
+     */
+    protected double forceFieldEnergy;
+    /**
+     * Interval between writing an OST restart file in steps.
+     * <p>
+     * The default saveFrequency = 1000.
+     */
+    int saveFrequency;
+    /**
      * Number of times the OST biasing potential has been evaluated with the
      * "propagateLambda" flag true.
      */
     long energyCount;
     /**
-     * Force Field Potential Energy (i.e. with no bias terms added).
+     * Contains counts for the OST bias.
      */
-    protected double forceFieldEnergy;
+    private Histogram histogram;
+    /**
+     * Index of the current Histogram.
+     */
+    private int histogramIndex;
+    /**
+     * Flag to indicate that the Lambda particle should be propagated.
+     */
+    private boolean propagateLambda = true;
+    /**
+     * Interval between printing information on the lambda particle in steps.
+     * <p>
+     * The default printFrequency = 100.
+     */
+    private int printFrequency;
     /**
      * Partial derivative of the force field energy with respect to lambda.
      */
@@ -228,22 +245,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * If true, values of (lambda, dU/dL) that have not been observed are rejected.
      */
     private boolean hardWallConstraint = false;
-    /**
-     * Properties.
-     */
-    private final CompositeConfiguration properties;
-    /**
-     * Temperature in Kelvins.
-     */
-    private final double temperature;
-    /**
-     * Timestep.
-     */
-    private final double dt;
-    /**
-     * Whether to use asynchronous communications.
-     */
-    private final boolean asynchronous;
 
     /**
      * OST Constructor.
@@ -363,11 +364,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         logger.info(format("  Save Interval:                  %6.3f psec", saveInterval));
     }
 
-    // TODO: Delete method when debugging of RepexOST is done.
-    public void logOutputFiles(int index) {
-        logger.info(String.format(" OST: Lambda file %s, histogram %s", histogram.lambdaFileName, allHistograms.get(index).hisFileName));
-    }
-
     /**
      * Add an alternate Histogram this OST can use.
      *
@@ -382,66 +378,21 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     /**
-     * Switch to an alternate Histogram.
-     *
-     * @param index Index of the Histogram to use.
+     * {@inheritDoc}
      */
-    public void switchHistogram(int index) {
-        histogramIndex = index;
-        histogram = allHistograms.get(histogramIndex);
-        logger.info(" OST switching to histogram " + histogramIndex);
-    }
-
-    public Histogram[] getAllHistograms() {
-        int nHisto = allHistograms.size();
-        Histogram[] ret = new Histogram[nHisto];
-        ret = allHistograms.toArray(ret);
-        return ret;
+    @Override
+    public boolean dEdLZeroAtEnds() {
+        return false;
     }
 
     /**
-     * Switch to an alternate Histogram.
-     *
-     * @param histo Histogram to switch to.
+     * {@inheritDoc}
      */
-    public void switchHistogram(Histogram histo) {
-        if (allHistograms.contains(histo)) {
-            histogram = histo;
-            histogramIndex = allHistograms.indexOf(histo);
-        } else {
-            logger.warning(" Likely unintended behavior: switching to a Histogram this OST does not yet know about!");
-            histogram = histo;
-            allHistograms.add(histogram);
-            histogramIndex = allHistograms.size() - 1;
-        }
-    }
-
-    /**
-     * Return the current 2D Histogram of counts.
-     *
-     * @return the Histogram.
-     */
-    public Histogram getHistogram() {
-        return histogram;
-    }
-
-    /**
-     * Return a 2D Histogram of counts.
-     *
-     * @param index Index of the Histogram to fetch.
-     * @return the index'th Histogram.
-     */
-    public Histogram getHistogram(int index) {
-        return allHistograms.get(index);
-    }
-
-    /**
-     * Return the OST optimization information.
-     *
-     * @return The OST optimization parameters.
-     */
-    public OptimizationParameters getOptimizationParameters() {
-        return optimizationParameters;
+    @Override
+    public boolean destroy() {
+        // Shut down the CountReceiveThread.
+        histogram.destroy();
+        return potential.destroy();
     }
 
     /**
@@ -580,207 +531,19 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         return totalEnergy;
     }
 
-    @Override
-    public void writeAdditionalRestartInfo(boolean recursive) {
-        writeRestart();
-        if (recursive) {
-            potential.writeAdditionalRestartInfo(true);
-        }
-    }
-
-    /**
-     * Write histogram and lambda restart files.
-     */
-    private void writeRestart() {
-        if (algorithmListener != null) {
-            algorithmListener.algorithmUpdate(molecularAssembly);
-        }
-
-        // Only the rank 0 process writes a histogram restart file.
-        histogram.writeRestart();
-
-        // All ranks write a lambda restart file.
-        try {
-            LambdaWriter lambdaWriter = new LambdaWriter(this,
-                    new BufferedWriter(new FileWriter(lambdaFile)));
-            lambdaWriter.writeLambdaFile();
-            lambdaWriter.flush();
-            lambdaWriter.close();
-            logger.info(format(" Wrote lambda restart file to %s.", histogram.lambdaFileName));
-        } catch (IOException ex) {
-            String message = format(" Exception writing lambda restart file %s.", lambdaFile);
-            logger.log(Level.INFO, Utilities.stackTraceToString(ex));
-            logger.log(Level.SEVERE, message, ex);
-        }
-    }
-
-    double getLambdaWriteOut() {
-        return lambdaWriteOut;
-    }
-
-    /**
-     * Indicate if the Lambda extended system particle should be propagated using Langevin dynamics.
-     *
-     * @param propagateLambda If true, Lambda will be propagated using Langevin dynamics.
-     */
-    public void setPropagateLambda(boolean propagateLambda) {
-        this.propagateLambda = propagateLambda;
-    }
-
-    /**
-     * <p>getForceFielddEdL.</p>
-     *
-     * @return a double.
-     */
-    double getForceFielddEdL() {
-        return dForceFieldEnergydL;
-    }
-
-    /**
-     * <p>getTotaldEdLambda.</p>
-     *
-     * @return a double.
-     */
-    public double getTotaldEdLambda() {
-        return dUdLambda;
-    }
-
-    /**
-     * <p>Getter for the field <code>forceFieldEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getForceFieldEnergy() {
-        return forceFieldEnergy;
-    }
-
-    /**
-     * <p>Getter for the field <code>biasEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    double getBiasEnergy() {
-        return biasEnergy;
-    }
-
-    /**
-     * Returns basic information about the current histogram.
-     *
-     * @return Tempering parameter, threshold, and bias magnitude.
-     */
-    String histoInfo() {
-        return histoInfo(histogramIndex);
-    }
-
-    /**
-     * Returns basic information about the histogram.
-     *
-     * @param index Index of the histogram to print information about.
-     * @return Tempering parameter, threshold, and bias magnitude.
-     */
-    String histoInfo(int index) {
-        Histogram histo = allHistograms.get(index);
-        return String.format(" Tempering parameter: %.5f kBT. Threshold: %.5f kcal/mol. Bias magnitude: %.5f kcal/mol", histo.temperingFactor, histo.temperOffset, histo.biasMag);
-    }
-
-    /**
-     * <p>getPotentialEnergy.</p>
-     *
-     * @return a {@link ffx.numerics.Potential} object.
-     */
-    public Potential getPotentialEnergy() {
-        return potential;
-    }
-
-    /**
-     * <p>Setter for the field <code>lambda</code>.</p>
-     *
-     * @param lambda a double.
-     */
-    public void setLambda(double lambda) {
-        lambdaInterface.setLambda(lambda);
-        this.lambda = lambda;
-        histogram.theta = asin(sqrt(lambda));
-    }
-
-    /**
-     * <p>Getter for the field <code>lambda</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getLambda() {
-        return lambda;
-    }
-
-    /**
-     * <p>Getter for the field <code>lambdaInterface</code>.</p>
-     *
-     * @return a {@link ffx.potential.bonded.LambdaInterface} object.
-     */
-    public LambdaInterface getLambdaInterface() {
-        return lambdaInterface;
-    }
-
-    /**
-     * Set the number of counts.
-     *
-     * @param counts
-     */
-    public void setEnergyCount(long counts) {
-        this.energyCount = counts;
-    }
-
-    public void setMolecularAssembly(MolecularAssembly molecularAssembly) {
-        this.molecularAssembly = molecularAssembly;
-    }
-
-    /**
-     * Returns the number of energy evaluations performed by this OST,
-     * including those picked up in the lambda file.
-     *
-     * @return Number of energy steps taken by this walker.
-     */
-    public long getEnergyCount() {
-        return energyCount;
-    }
-
-    /**
-     * If this flag is true, (lambda, dU/dL) Monte Carlo samples that have no weight in the Histogram are rejected.
-     */
-    public void setHardWallConstraint(boolean hardWallConstraint) {
-        this.hardWallConstraint = hardWallConstraint;
-    }
-
-    /**
-     * If the dUdLHardWall flag is set to true, this method will
-     * return false if the (lambda, dU/dL) sample is has not been seen.
-     *
-     * @param lambda The proposed lambda value.
-     * @param dUdL   The proposed dU/dL value.
-     * @return Returns false only if the dUdLHardWall flag is true, and the (lambda, dU/dL) sample has not been seen.
-     */
-    boolean insideHardWallConstraint(double lambda, double dUdL) {
-        if (hardWallConstraint) {
-            double weight = histogram.evaluateHistogram(lambda, dUdL);
-            return weight > 0.0;
-        }
-        return true;
-    }
-
     /**
      * {@inheritDoc}
      */
     @Override
-    public void setScaling(double[] scaling) {
-        potential.setScaling(scaling);
+    public double[] getAcceleration(double[] acceleration) {
+        return potential.getAcceleration(acceleration);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return potential.getScaling();
+    public Histogram[] getAllHistograms() {
+        int nHisto = allHistograms.size();
+        Histogram[] ret = new Histogram[nHisto];
+        ret = allHistograms.toArray(ret);
+        return ret;
     }
 
     /**
@@ -795,8 +558,184 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * {@inheritDoc}
      */
     @Override
+    public Crystal getCrystal() {
+        return potential.getCrystal();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCrystal(Crystal crystal) {
+        potential.setCrystal(crystal);
+    }
+
+    /**
+     * Returns the number of energy evaluations performed by this OST,
+     * including those picked up in the lambda file.
+     *
+     * @return Number of energy steps taken by this walker.
+     */
+    public long getEnergyCount() {
+        return energyCount;
+    }
+
+    /**
+     * Set the number of counts.
+     *
+     * @param counts
+     */
+    public void setEnergyCount(long counts) {
+        this.energyCount = counts;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Potential.STATE getEnergyTermState() {
+        return state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnergyTermState(Potential.STATE state) {
+        this.state = state;
+        potential.setEnergyTermState(state);
+    }
+
+    /**
+     * <p>Getter for the field <code>forceFieldEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getForceFieldEnergy() {
+        return forceFieldEnergy;
+    }
+
+    /**
+     * Return the current 2D Histogram of counts.
+     *
+     * @return the Histogram.
+     */
+    public Histogram getHistogram() {
+        return histogram;
+    }
+
+    /**
+     * Return a 2D Histogram of counts.
+     *
+     * @param index Index of the Histogram to fetch.
+     * @return the index'th Histogram.
+     */
+    public Histogram getHistogram(int index) {
+        return allHistograms.get(index);
+    }
+
+    /**
+     * <p>Getter for the field <code>lambda</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * <p>Setter for the field <code>lambda</code>.</p>
+     *
+     * @param lambda a double.
+     */
+    public void setLambda(double lambda) {
+        lambdaInterface.setLambda(lambda);
+        this.lambda = lambda;
+        histogram.theta = asin(sqrt(lambda));
+    }
+
+    /**
+     * <p>Getter for the field <code>lambdaInterface</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.LambdaInterface} object.
+     */
+    public LambdaInterface getLambdaInterface() {
+        return lambdaInterface;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public double[] getMass() {
         return potential.getMass();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfVariables() {
+        return potential.getNumberOfVariables();
+    }
+
+    /**
+     * Return the OST optimization information.
+     *
+     * @return The OST optimization parameters.
+     */
+    public OptimizationParameters getOptimizationParameters() {
+        return optimizationParameters;
+    }
+
+    /**
+     * <p>getPotentialEnergy.</p>
+     *
+     * @return a {@link ffx.numerics.Potential} object.
+     */
+    public Potential getPotentialEnergy() {
+        return potential;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        return potential.getPreviousAcceleration(previousAcceleration);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return potential.getScaling();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        potential.setScaling(scaling);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTotalEnergy() {
+        return totalEnergy;
+    }
+
+    /**
+     * <p>getTotaldEdLambda.</p>
+     *
+     * @return a double.
+     */
+    public double getTotaldEdLambda() {
+        return dUdLambda;
     }
 
     /**
@@ -813,115 +752,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * {@inheritDoc}
      */
     @Override
-    public double getTotalEnergy() {
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNumberOfVariables() {
-        return potential.getNumberOfVariables();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setEnergyTermState(Potential.STATE state) {
-        this.state = state;
-        potential.setEnergyTermState(state);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Potential.STATE getEnergyTermState() {
-        return state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        potential.setVelocity(velocity);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        potential.setAcceleration(acceleration);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        potential.setPreviousAcceleration(previousAcceleration);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public double[] getVelocity(double[] velocity) {
         return potential.getVelocity(velocity);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        return potential.getAcceleration(acceleration);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        return potential.getPreviousAcceleration(previousAcceleration);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setCrystal(Crystal crystal) {
-        potential.setCrystal(crystal);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Crystal getCrystal() {
-        return potential.getCrystal();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        // Shut down the CountReceiveThread.
-        histogram.destroy();
-        return potential.destroy();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getdEdL() {
-        return getTotaldEdLambda();
     }
 
     /**
@@ -936,16 +768,101 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * {@inheritDoc}
      */
     @Override
-    public void getdEdXdL(double[] gradient) {
-        throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
+    public double getdEdL() {
+        return getTotaldEdLambda();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean dEdLZeroAtEnds() {
-        return false;
+    public void getdEdXdL(double[] gradient) {
+        throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
+    }
+
+    // TODO: Delete method when debugging of RepexOST is done.
+    public void logOutputFiles(int index) {
+        logger.info(String.format(" OST: Lambda file %s, histogram %s", histogram.lambdaFileName, allHistograms.get(index).hisFileName));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        potential.setAcceleration(acceleration);
+    }
+
+    /**
+     * If this flag is true, (lambda, dU/dL) Monte Carlo samples that have no weight in the Histogram are rejected.
+     */
+    public void setHardWallConstraint(boolean hardWallConstraint) {
+        this.hardWallConstraint = hardWallConstraint;
+    }
+
+    public void setMolecularAssembly(MolecularAssembly molecularAssembly) {
+        this.molecularAssembly = molecularAssembly;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        potential.setPreviousAcceleration(previousAcceleration);
+    }
+
+    /**
+     * Indicate if the Lambda extended system particle should be propagated using Langevin dynamics.
+     *
+     * @param propagateLambda If true, Lambda will be propagated using Langevin dynamics.
+     */
+    public void setPropagateLambda(boolean propagateLambda) {
+        this.propagateLambda = propagateLambda;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        potential.setVelocity(velocity);
+    }
+
+    /**
+     * Switch to an alternate Histogram.
+     *
+     * @param index Index of the Histogram to use.
+     */
+    public void switchHistogram(int index) {
+        histogramIndex = index;
+        histogram = allHistograms.get(histogramIndex);
+        logger.info(" OST switching to histogram " + histogramIndex);
+    }
+
+    /**
+     * Switch to an alternate Histogram.
+     *
+     * @param histo Histogram to switch to.
+     */
+    public void switchHistogram(Histogram histo) {
+        if (allHistograms.contains(histo)) {
+            histogram = histo;
+            histogramIndex = allHistograms.indexOf(histo);
+        } else {
+            logger.warning(" Likely unintended behavior: switching to a Histogram this OST does not yet know about!");
+            histogram = histo;
+            allHistograms.add(histogram);
+            histogramIndex = allHistograms.size() - 1;
+        }
+    }
+
+    @Override
+    public void writeAdditionalRestartInfo(boolean recursive) {
+        writeRestart();
+        if (recursive) {
+            potential.writeAdditionalRestartInfo(true);
+        }
     }
 
     /**
@@ -1025,27 +942,29 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * <p>setOptimization.</p>
+         * <p>getOptimumCoordinates.</p>
          *
-         * @param doOptimization    a boolean.
-         * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+         * @return an array of {@link double} objects.
          */
-        public void setOptimization(boolean doOptimization, MolecularAssembly molecularAssembly) {
-            this.doOptimization = doOptimization;
-            OrthogonalSpaceTempering.this.molecularAssembly = molecularAssembly;
-            File file = molecularAssembly.getFile();
-
-            String fileName = FilenameUtils.removeExtension(file.getAbsolutePath());
-            String ext = FilenameUtils.getExtension(file.getAbsolutePath());
-            if (optimizationFilter == null) {
-                if (ext.toUpperCase().contains("XYZ")) {
-                    optimizationFile = new File(fileName + "_opt.xyz");
-                    optimizationFilter = new XYZFilter(optimizationFile, molecularAssembly, null, null);
-                } else {
-                    optimizationFile = new File(fileName + "_opt.pdb");
-                    optimizationFilter = new PDBFilter(optimizationFile, molecularAssembly, null, null);
-                }
+        public double[] getOptimumCoordinates() {
+            if (optimumEnergy < Double.MAX_VALUE) {
+                return optimumCoords;
+            } else {
+                logger.info("Lambda optimization cutoff was not reached. Try increasing the number of timesteps.");
+                return null;
             }
+        }
+
+        /**
+         * <p>getOptimumEnergy.</p>
+         *
+         * @return a double.
+         */
+        public double getOptimumEnergy() {
+            if (optimumEnergy == Double.MAX_VALUE) {
+                logger.info("Lambda optimization cutoff was not reached. Try increasing the number of timesteps.");
+            }
+            return optimumEnergy;
         }
 
         /**
@@ -1140,28 +1059,26 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * <p>getOptimumEnergy.</p>
+         * <p>setOptimization.</p>
          *
-         * @return a double.
+         * @param doOptimization    a boolean.
+         * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
          */
-        public double getOptimumEnergy() {
-            if (optimumEnergy == Double.MAX_VALUE) {
-                logger.info("Lambda optimization cutoff was not reached. Try increasing the number of timesteps.");
-            }
-            return optimumEnergy;
-        }
+        public void setOptimization(boolean doOptimization, MolecularAssembly molecularAssembly) {
+            this.doOptimization = doOptimization;
+            OrthogonalSpaceTempering.this.molecularAssembly = molecularAssembly;
+            File file = molecularAssembly.getFile();
 
-        /**
-         * <p>getOptimumCoordinates.</p>
-         *
-         * @return an array of {@link double} objects.
-         */
-        public double[] getOptimumCoordinates() {
-            if (optimumEnergy < Double.MAX_VALUE) {
-                return optimumCoords;
-            } else {
-                logger.info("Lambda optimization cutoff was not reached. Try increasing the number of timesteps.");
-                return null;
+            String fileName = FilenameUtils.removeExtension(file.getAbsolutePath());
+            String ext = FilenameUtils.getExtension(file.getAbsolutePath());
+            if (optimizationFilter == null) {
+                if (ext.toUpperCase().contains("XYZ")) {
+                    optimizationFile = new File(fileName + "_opt.xyz");
+                    optimizationFilter = new XYZFilter(optimizationFile, molecularAssembly, null, null);
+                } else {
+                    optimizationFile = new File(fileName + "_opt.pdb");
+                    optimizationFilter = new PDBFilter(optimizationFile, molecularAssembly, null, null);
+                }
             }
         }
     }
@@ -1176,20 +1093,31 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     public class Histogram {
 
         /**
-         * Each walker reads the same histogram restart file. Only the walker of
-         * rank 0 writes the histogram restart file.
+         * If realBiasMagnitude is 0, temporarily set biasMag to this for some calculations.
          */
-        private final File histogramFile;
+        private static final double PSEUDO_BIAS_MAGNITUDE = 0.01;
         /**
-         * The recursion kernel stores the weight of each [lambda][Flambda] bin.
+         * Temperature in Kelvin.
+         * <p>
+         * The default is 298.15.
          */
-        private double[][] recursionKernel;
-
+        protected final double temperature;
+        /**
+         * Time step in picoseconds.
+         */
+        protected final double dt;
+        /**
+         * Parallel Java world communicator.
+         */
+        protected final Comm world;
+        /**
+         * Rank of this process.
+         */
+        protected final int rank;
         /**
          * If true, use discrete lambda values instead of continuous lambda values.
          */
         final boolean discreteLambda;
-        
         /**
          * Width of a lambda bin, or the distance between discrete lambda values.
          * <p>
@@ -1211,26 +1139,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         final double dFL_2;
         /**
-         * The minimum value of the first lambda bin.
-         * <p>
-         * minLambda = -dL_2 for continuous lambda.
-         * <p>
-         * minLambda = 0 for discrete lambda.
-         */
-        private final double minLambda;
-        /**
-         * The minimum value of the first F_lambda bin.
-         * <p>
-         * minFLambda = -(dFL * FLambdaBins) / 2.0.
-         */
-        double minFLambda;
-        /**
-         * The maximum value of the last F_lambda bin.
-         * <p>
-         * maxFLambda = minFLambda + FLambdaBins * dFL.
-         */
-        private double maxFLambda;
-        /**
          * For continuous lambda:
          * The first Lambda bin is centered on 0.0 (-0.005 .. 0.005). The final
          * Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
@@ -1244,30 +1152,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         final int lambdaBins;
         /**
-         * It is useful to have an odd number of bins, so that there is a bin from
-         * FL=-dFL/2 to dFL/2 so that as FL approaches zero its contribution to
-         * thermodynamic integration goes to zero.
-         * <p>
-         * Otherwise a contribution of zero from a L bin can only result from equal
-         * sampling of the ranges -dFL to 0 and 0 to dFL.
-         * <p>
-         * The default FLambdaBins = 401.
-         */
-        int FLambdaBins;
-        /**
          * When evaluating the biasing potential, contributions from Gaussians
          * centered on bins more the "biasCutoff" away will be neglected.
          * <p>
          * The default biasCutoff = 5.
          */
         final int biasCutoff;
-
-        /**
-         * Magnitude of each hill (not including tempering). Can be temporarily set to a dummy value if set to 0.
-         * <p>
-         * The default biasMag = 0.05 (kcal/mol).
-         */
-        private double biasMag;
         /**
          * Magnitude of each hill (not including tempering).
          * <p>
@@ -1275,16 +1165,36 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         final double realBiasMagnitude;
         /**
-         * If realBiasMagnitude is 0, temporarily set biasMag to this for some calculations.
+         * 1D PMF with respect to lambda F(L).
          */
-        private static final double PSEUDO_BIAS_MAGNITUDE = 0.01;
-
+        final double[] FLambda;
         /**
-         * Temperature in Kelvin.
-         * <p>
-         * The default is 298.15.
+         * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
          */
-        protected final double temperature;
+        final double thetaFriction;
+        /**
+         * Reasonable thetaMass is ~100 a.m.u. (100 a.m.u is 1.6605e-22 grams).
+         */
+        final double thetaMass;
+        /**
+         * Interval between adding a count to the Recursion kernel in MD steps.
+         * <p>
+         * The default countInterval = 10.
+         */
+        final int countInterval;
+        /**
+         * Each walker reads the same histogram restart file. Only the walker of
+         * rank 0 writes the histogram restart file.
+         */
+        private final File histogramFile;
+        /**
+         * The minimum value of the first lambda bin.
+         * <p>
+         * minLambda = -dL_2 for continuous lambda.
+         * <p>
+         * minLambda = 0 for discrete lambda.
+         */
+        private final double minLambda;
         /**
          * The Dama et al. transition-tempering rate parameter. A reasonable value
          * is about 2 to 8 kT, with larger values being resulting in slower decay.
@@ -1298,12 +1208,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * deltaT = temperingFactor * kB * T.
          */
         private final double deltaT;
-        /**
-         * The Dama et al. transition-tempering weight.
-         * <p>
-         * The initial temperingWeight = 1.0, and more generally temperingWeight = exp(-biasHeight/deltaT)
-         */
-        private double temperingWeight = 1.0;
         /**
          * An offset applied before calculating tempering weight.
          * <p>
@@ -1321,10 +1225,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         private final double temperOffset;
         /**
-         * 1D PMF with respect to lambda F(L).
-         */
-        final double[] FLambda;
-        /**
          * Interval between how often the 1D histogram is printed to screen versus
          * silently updated in background.
          * <p>
@@ -1332,44 +1232,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         private final int fLambdaPrintInterval;
         /**
-         * A count of FLambdaUpdates.
-         */
-        private int fLambdaUpdates = 0;
-        /**
          * The integration algorithm used for thermodynamic integration.
          */
         private final IntegrationType integrationType;
-        /**
-         * If the recursion kernel becomes too large or too small for some combinations of (Lambda, dU/dL),
-         * then its statistical weight = exp(kernel * beta) will cannot be represented by a double value.
-         */
-        private double[] kernelValues;
-        /**
-         * Number of times a Gaussian has been added.
-         */
-        private int biasCount = 0;
-
-        /**
-         * Time step in picoseconds.
-         */
-        protected final double dt;
-        /**
-         * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
-         */
-        final double thetaFriction;
-        /**
-         * Reasonable thetaMass is ~100 a.m.u. (100 a.m.u is 1.6605e-22 grams).
-         */
-        final double thetaMass;
-        double halfThetaVelocity = 0.0;
-        /**
-         * Map lambda to a periodic variable theta.
-         *
-         * <code>theta = asin(sqrt(lambda))</code>
-         *
-         * <code>lambda = sin^2 (theta).</code>
-         */
-        private double theta;
         /**
          * Random force conversion to kcal/mol/A;
          * Units: Sqrt (4.184 Joule per calorie) / (nanometers per meter)
@@ -1385,32 +1250,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         private final Random stochasticRandom;
         /**
-         * Interval between adding a count to the Recursion kernel in MD steps.
-         * <p>
-         * The default countInterval = 10.
-         */
-        final int countInterval;
-
-        /**
          * Once the lambda reset value is reached, OST statistics are reset.
          */
         private final double lambdaResetValue;
-        /**
-         * Flag set to false once OST statistics are reset at lambdaResetValue.
-         */
-        private boolean resetStatistics;
-
-        /**
-         * Parallel Java world communicator.
-         */
-        protected final Comm world;
-        /**
-         * Rank of this process.
-         */
-        protected final int rank;
         private final boolean writeIndependent;
         private final boolean independentWalkers;
-
         /**
          * Flag to indicate if OST should send and receive counts between processes
          * synchronously or asynchronously. The latter can be faster by ~40% because
@@ -1423,13 +1267,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         private final AsynchronousSend asynchronousSend;
         private final SynchronousSend synchronousSend;
-
-        /**
-         * Most recent lambda values for each Walker.
-         */
-        private double lastReceivedLambda;
-        private double lastReceiveddUdL;
-
         /**
          * Relative path to the histogram restart file.
          * Assumption: a Histogram object will never change its histogram or lambda files.
@@ -1440,6 +1277,76 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * Assumption: a Histogram object will never change its histogram or lambda files.
          */
         private final String lambdaFileName;
+        /**
+         * The minimum value of the first F_lambda bin.
+         * <p>
+         * minFLambda = -(dFL * FLambdaBins) / 2.0.
+         */
+        double minFLambda;
+        /**
+         * It is useful to have an odd number of bins, so that there is a bin from
+         * FL=-dFL/2 to dFL/2 so that as FL approaches zero its contribution to
+         * thermodynamic integration goes to zero.
+         * <p>
+         * Otherwise a contribution of zero from a L bin can only result from equal
+         * sampling of the ranges -dFL to 0 and 0 to dFL.
+         * <p>
+         * The default FLambdaBins = 401.
+         */
+        int FLambdaBins;
+        double halfThetaVelocity = 0.0;
+        /**
+         * The recursion kernel stores the weight of each [lambda][Flambda] bin.
+         */
+        private double[][] recursionKernel;
+        /**
+         * The maximum value of the last F_lambda bin.
+         * <p>
+         * maxFLambda = minFLambda + FLambdaBins * dFL.
+         */
+        private double maxFLambda;
+        /**
+         * Magnitude of each hill (not including tempering). Can be temporarily set to a dummy value if set to 0.
+         * <p>
+         * The default biasMag = 0.05 (kcal/mol).
+         */
+        private double biasMag;
+        /**
+         * The Dama et al. transition-tempering weight.
+         * <p>
+         * The initial temperingWeight = 1.0, and more generally temperingWeight = exp(-biasHeight/deltaT)
+         */
+        private double temperingWeight = 1.0;
+        /**
+         * A count of FLambdaUpdates.
+         */
+        private int fLambdaUpdates = 0;
+        /**
+         * If the recursion kernel becomes too large or too small for some combinations of (Lambda, dU/dL),
+         * then its statistical weight = exp(kernel * beta) will cannot be represented by a double value.
+         */
+        private double[] kernelValues;
+        /**
+         * Number of times a Gaussian has been added.
+         */
+        private int biasCount = 0;
+        /**
+         * Map lambda to a periodic variable theta.
+         *
+         * <code>theta = asin(sqrt(lambda))</code>
+         *
+         * <code>lambda = sin^2 (theta).</code>
+         */
+        private double theta;
+        /**
+         * Flag set to false once OST statistics are reset at lambdaResetValue.
+         */
+        private boolean resetStatistics;
+        /**
+         * Most recent lambda values for each Walker.
+         */
+        private double lastReceivedLambda;
+        private double lastReceiveddUdL;
 
         /**
          * Histogram constructor.
@@ -1452,7 +1359,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             this.dt = settings.dt;
             this.histogramFile = settings.getHistogramFile();
             this.asynchronous = settings.asynchronous;
-            
+
             biasCutoff = settings.biasCutoff;
             biasMag = settings.getBiasMag();
             realBiasMagnitude = biasMag;
@@ -1485,11 +1392,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             dFL_2 = dFL / 2.0;
             maxFLambda = minFLambda + (FLambdaBins * dFL);
             FLambda = new double[lambdaBins];
-            
+
             writeIndependent = settings.writeIndependent();
             independentWalkers = settings.independentWalkers();
             assert !(independentWalkers && !writeIndependent);
-            
+
             lambdaResetValue = settings.getLambdaResetValue();
             resetStatistics = settings.resetStatistics();
             countInterval = settings.countInterval;
@@ -1557,31 +1464,66 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             }
         }
 
-        public String toString() {
-            return String.format(" Histogram with tempering rate %.3f, tempering offset/threshold %.3f, " +
-                    "bias magnitude %.3g, writing to restart file %s.\n Lambda bins: %d. dU/dL bins: %d. dL: %.5f. dL_2: %.5f, dFL: %.5f, dFL_2: %.5f", temperingFactor, temperOffset, biasMag,
-                    FileUtils.relativePathTo(histogramFile).toString(), lambdaBins, FLambdaBins, dL, dL_2, dFL, dFL_2);
+        /**
+         * <p>checkRecursionKernelSize.</p>
+         */
+        public void checkRecursionKernelSize() {
+            double[] x = new double[nVariables];
+            x = potential.getCoordinates(x);
+            double[] g = new double[nVariables];
+            potential.energyAndGradient(x, g, false);
+            double dudl = lambdaInterface.getdEdL();
+            checkRecursionKernelSize(dudl);
+        }
+
+        public void disableResetStatistics() {
+            resetStatistics = false;
         }
 
         /**
-         * Converts a continuous lambda value into its nearest discretized value.
+         * <p>evaluate2DPMF.</p>
          *
-         * @param lambda Lambda to discretize.
-         * @return       Discretized lambda.
+         * @return A StringBuffer with 2D Bias PMF.
          */
-        private double discretizedLambda(double lambda) {
-            assert discreteLambda;
-            int bin = indexForLambda(lambda);
-            return bin * dL;
+        public StringBuffer evaluate2DPMF() {
+            StringBuffer sb = new StringBuffer();
+            for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
+                double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
+                sb.append(format(" %16.8f", currentFL));
+                for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
+                    double bias = -evaluateKernel(lambdaBin, fLambdaBin);
+                    sb.append(format(" %16.8f", bias));
+                }
+                sb.append("\n");
+            }
+            return sb;
         }
 
         /**
-         * Return the SynchronousSend associated with this Histogram, if any.
+         * <p>evaluateTotalPMF.</p>
          *
-         * @return The SynchronousSend, if any.
+         * @return A StringBuffer the total 2D PMF.
          */
-        public Optional<SynchronousSend> getSynchronousSend() {
-            return Optional.ofNullable(synchronousSend);
+        public StringBuffer evaluateTotalPMF() {
+            StringBuffer sb = new StringBuffer();
+            for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
+
+                double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
+                sb.append(format(" %16.8f", currentFL));
+
+                for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
+                    lambda = lambdaBin * dL + dL_2;
+                    double bias1D = -current1DBiasEnergy(lambda, false);
+                    double totalBias = bias1D - evaluateKernel(lambdaBin, fLambdaBin);
+                    sb.append(format(" %16.8f", totalBias));
+                }
+                sb.append("\n");
+            }
+            return sb;
+        }
+
+        public double getBiasMagnitude() {
+            return realBiasMagnitude;
         }
 
         /**
@@ -1593,32 +1535,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             return independentWalkers;
         }
 
-        public double getBiasMagnitude() {
-            return realBiasMagnitude;
-        }
-
-        public boolean getResetStatistics() {
-            return resetStatistics;
-        }
-
-        public void disableResetStatistics() {
-            resetStatistics = false;
-        }
-
-        public void setHalfThetaVelocity(double halfThetaV) {
-            halfThetaVelocity = halfThetaV;
-        }
-
         public double getLambdaResetValue() {
             return lambdaResetValue;
-        }
-
-        public void setLastReceivedLambda(double lastReceivedLambda) {
-            this.lastReceivedLambda = lastReceivedLambda;
-        }
-
-        public void setLastReceiveddUdL(double lastReceiveddUdL) {
-            this.lastReceiveddUdL = lastReceiveddUdL;
         }
 
         /**
@@ -1628,6 +1546,208 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          */
         public int getRank() {
             return rank;
+        }
+
+        public boolean getResetStatistics() {
+            return resetStatistics;
+        }
+
+        /**
+         * Return the SynchronousSend associated with this Histogram, if any.
+         *
+         * @return The SynchronousSend, if any.
+         */
+        public Optional<SynchronousSend> getSynchronousSend() {
+            return Optional.ofNullable(synchronousSend);
+        }
+
+        public void setHalfThetaVelocity(double halfThetaV) {
+            halfThetaVelocity = halfThetaV;
+        }
+
+        public void setLastReceiveddUdL(double lastReceiveddUdL) {
+            this.lastReceiveddUdL = lastReceiveddUdL;
+        }
+
+        public String toString() {
+            return String.format(" Histogram with tempering rate %.3f, tempering offset/threshold %.3f, " +
+                            "bias magnitude %.3g, writing to restart file %s.\n Lambda bins: %d. dU/dL bins: %d. dL: %.5f. dL_2: %.5f, dFL: %.5f, dFL_2: %.5f", temperingFactor, temperOffset, biasMag,
+                    FileUtils.relativePathTo(histogramFile).toString(), lambdaBins, FLambdaBins, dL, dL_2, dFL, dFL_2);
+        }
+
+        /**
+         * Eqs. 7 and 8 from the 2012 Crystal Thermodynamics paper.
+         *
+         * @param print Whether to write the histogram to screen.
+         * @param save  Whether to write the histogram to disk.
+         * @return Free energy (via integration of ensemble-average dU/dL)
+         */
+        public double updateFLambda(boolean print, boolean save) {
+            double freeEnergy = 0.0;
+            double minFL = Double.MAX_VALUE;
+
+            // If the bias magnitude is zero, computing <dU/dL> from
+            // counts will not be correct. Assign a temporary non-zero bias magnitude.
+            boolean biasMagZero = false;
+            if (realBiasMagnitude == 0) {
+                biasMagZero = true;
+                biasMag = PSEUDO_BIAS_MAGNITUDE;
+            }
+
+            // Total histogram weight.
+            double totalWeight = 0;
+            double beta = 1.0 / (R * temperature);
+            StringBuilder stringBuilder = new StringBuilder();
+
+            // Loop over lambda bins, computing <dU/dL> for each bin.
+            for (int iL = 0; iL < lambdaBins; iL++) {
+                int ulFL = -1;
+                int llFL = -1;
+
+                // Find the smallest FL bin that has counts.
+                for (int jFL = 0; jFL < FLambdaBins; jFL++) {
+                    double count = recursionKernel[iL][jFL];
+                    if (count > 0) {
+                        llFL = jFL;
+                        break;
+                    }
+                }
+
+                // Find the largest FL bin that has counts.
+                for (int jFL = FLambdaBins - 1; jFL >= 0; jFL--) {
+                    double count = recursionKernel[iL][jFL];
+                    if (count > 0) {
+                        ulFL = jFL;
+                        break;
+                    }
+                }
+
+                double lambdaCount = 0;
+                // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
+                double lla = 0.0;
+                double ula = 0.0;
+                double maxBias = 0;
+                if (llFL == -1 || ulFL == -1) {
+                    FLambda[iL] = 0.0;
+                    minFL = 0.0;
+                } else {
+                    double ensembleAverageFLambda = 0.0;
+                    double partitionFunction = 0.0;
+
+                    // Evaluate and regularize all kernel values for this value of lambda.
+                    double offset = evaluateKernelforLambda(iL, llFL, ulFL);
+
+                    for (int jFL = llFL; jFL <= ulFL; jFL++) {
+                        double kernel = kernelValues[jFL];
+
+                        if (kernel - offset > maxBias) {
+                            maxBias = kernel - offset;
+                        }
+
+                        double weight = exp(kernel * beta);
+                        partitionFunction += weight;
+
+                        double currentFLambda = minFLambda + jFL * dFL + dFL_2;
+                        ensembleAverageFLambda += currentFLambda * weight;
+                        lambdaCount += recursionKernel[iL][jFL];
+                    }
+                    if (minFL > maxBias) {
+                        minFL = maxBias;
+                    }
+                    FLambda[iL] = ensembleAverageFLambda / partitionFunction;
+                    lla = minFLambda + llFL * dFL;
+                    ula = minFLambda + (ulFL + 1) * dFL;
+                }
+
+                double delta = dL;
+                if (!discreteLambda && (iL == 0 || iL == lambdaBins - 1)) {
+                    // The first and last lambda bins are half size.
+                    delta = dL_2;
+                } else if (discreteLambda && iL == 0) {
+                    // The free energy change to move from L=0 to L=0 is zero.
+                    delta = 0.0;
+                }
+                double deltaFreeEnergy = FLambda[iL] * delta;
+                freeEnergy += deltaFreeEnergy;
+                totalWeight += lambdaCount;
+
+                if (print || save) {
+                    double llL = iL * dL - dL_2;
+                    double ulL = llL + dL;
+                    if (llL < 0.0) {
+                        llL = 0.0;
+                    }
+                    if (ulL > 1.0) {
+                        ulL = 1.0;
+                    }
+
+                    double midLambda = llL;
+                    if (!discreteLambda) {
+                        midLambda = (llL + ulL) / 2.0;
+                    }
+                    double bias1D = current1DBiasEnergy(midLambda, false);
+
+                    double bias2D = 0.0;
+                    if (!biasMagZero) {
+                        bias2D = computeBiasEnergy(midLambda, FLambda[iL]) - bias1D;
+                    }
+
+                    stringBuilder.append(format(" %6.2e %7.5f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f   %8.2f\n",
+                            lambdaCount, midLambda, lla, ula, FLambda[iL], bias1D, bias2D, bias1D + bias2D,
+                            freeEnergy, bias1D + bias2D + freeEnergy));
+                }
+            }
+
+            // Revert the bias magnitude.
+            if (biasMagZero) {
+                biasMag = 0.0;
+            } else {
+                double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
+                temperingWeight = exp(temperEnergy / deltaT);
+            }
+
+            freeEnergy = integrateNumeric(FLambda, integrationType);
+
+            if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
+                logger.info("  Weight   Lambda      dU/dL Bins  <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)");
+                logger.info(stringBuilder.toString());
+                logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+                        freeEnergy, totalWeight, temperingWeight, biasCount));
+                logger.info(format(" Minimum Bias %8.3f", minFL));
+                previousFreeEnergy = freeEnergy;
+            } else if (!save && (print || biasCount % printFrequency == 0)) {
+                logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+                        freeEnergy, totalWeight, temperingWeight, biasCount));
+            }
+
+            if (save) {
+                String modelFilename = molecularAssembly.getFile().getAbsolutePath();
+                File saveDir = new File(FilenameUtils.getFullPath(modelFilename));
+                String dirName = saveDir.toString() + File.separator;
+                String fileName = dirName + "histogram.txt";
+                try {
+                    logger.info(" Writing " + fileName);
+                    PrintWriter printWriter = new PrintWriter(new File(fileName));
+                    printWriter.write(stringBuilder.toString());
+                    printWriter.close();
+                } catch (Exception e) {
+                    logger.info(format(" Failed to write %s.", fileName));
+                }
+            }
+
+            return freeEnergy;
+        }
+
+        /**
+         * Converts a continuous lambda value into its nearest discretized value.
+         *
+         * @param lambda Lambda to discretize.
+         * @return Discretized lambda.
+         */
+        private double discretizedLambda(double lambda) {
+            assert discreteLambda;
+            int bin = indexForLambda(lambda);
+            return bin * dL;
         }
 
         /**
@@ -2095,48 +2215,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * <p>evaluate2DPMF.</p>
-         *
-         * @return A StringBuffer with 2D Bias PMF.
-         */
-        public StringBuffer evaluate2DPMF() {
-            StringBuffer sb = new StringBuffer();
-            for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
-                double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
-                sb.append(format(" %16.8f", currentFL));
-                for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
-                    double bias = -evaluateKernel(lambdaBin, fLambdaBin);
-                    sb.append(format(" %16.8f", bias));
-                }
-                sb.append("\n");
-            }
-            return sb;
-        }
-
-        /**
-         * <p>evaluateTotalPMF.</p>
-         *
-         * @return A StringBuffer the total 2D PMF.
-         */
-        public StringBuffer evaluateTotalPMF() {
-            StringBuffer sb = new StringBuffer();
-            for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
-
-                double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
-                sb.append(format(" %16.8f", currentFL));
-
-                for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
-                    lambda = lambdaBin * dL + dL_2;
-                    double bias1D = -current1DBiasEnergy(lambda, false);
-                    double totalBias = bias1D - evaluateKernel(lambdaBin, fLambdaBin);
-                    sb.append(format(" %16.8f", totalBias));
-                }
-                sb.append("\n");
-            }
-            return sb;
-        }
-
-        /**
          * <p>evaluateHistogram.</p>
          *
          * @param lambda the lambda value.
@@ -2216,169 +2294,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         /**
-         * Eqs. 7 and 8 from the 2012 Crystal Thermodynamics paper.
-         *
-         * @param print Whether to write the histogram to screen.
-         * @param save  Whether to write the histogram to disk.
-         * @return Free energy (via integration of ensemble-average dU/dL)
-         */
-        public double updateFLambda(boolean print, boolean save) {
-            double freeEnergy = 0.0;
-            double minFL = Double.MAX_VALUE;
-
-            // If the bias magnitude is zero, computing <dU/dL> from
-            // counts will not be correct. Assign a temporary non-zero bias magnitude.
-            boolean biasMagZero = false;
-            if (realBiasMagnitude == 0) {
-                biasMagZero = true;
-                biasMag = PSEUDO_BIAS_MAGNITUDE;
-            }
-
-            // Total histogram weight.
-            double totalWeight = 0;
-            double beta = 1.0 / (R * temperature);
-            StringBuilder stringBuilder = new StringBuilder();
-
-            // Loop over lambda bins, computing <dU/dL> for each bin.
-            for (int iL = 0; iL < lambdaBins; iL++) {
-                int ulFL = -1;
-                int llFL = -1;
-
-                // Find the smallest FL bin that has counts.
-                for (int jFL = 0; jFL < FLambdaBins; jFL++) {
-                    double count = recursionKernel[iL][jFL];
-                    if (count > 0) {
-                        llFL = jFL;
-                        break;
-                    }
-                }
-
-                // Find the largest FL bin that has counts.
-                for (int jFL = FLambdaBins - 1; jFL >= 0; jFL--) {
-                    double count = recursionKernel[iL][jFL];
-                    if (count > 0) {
-                        ulFL = jFL;
-                        break;
-                    }
-                }
-
-                double lambdaCount = 0;
-                // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
-                double lla = 0.0;
-                double ula = 0.0;
-                double maxBias = 0;
-                if (llFL == -1 || ulFL == -1) {
-                    FLambda[iL] = 0.0;
-                    minFL = 0.0;
-                } else {
-                    double ensembleAverageFLambda = 0.0;
-                    double partitionFunction = 0.0;
-
-                    // Evaluate and regularize all kernel values for this value of lambda.
-                    double offset = evaluateKernelforLambda(iL, llFL, ulFL);
-
-                    for (int jFL = llFL; jFL <= ulFL; jFL++) {
-                        double kernel = kernelValues[jFL];
-
-                        if (kernel - offset > maxBias) {
-                            maxBias = kernel - offset;
-                        }
-
-                        double weight = exp(kernel * beta);
-                        partitionFunction += weight;
-
-                        double currentFLambda = minFLambda + jFL * dFL + dFL_2;
-                        ensembleAverageFLambda += currentFLambda * weight;
-                        lambdaCount += recursionKernel[iL][jFL];
-                    }
-                    if (minFL > maxBias) {
-                        minFL = maxBias;
-                    }
-                    FLambda[iL] = ensembleAverageFLambda / partitionFunction;
-                    lla = minFLambda + llFL * dFL;
-                    ula = minFLambda + (ulFL + 1) * dFL;
-                }
-
-                double delta = dL;
-                if (!discreteLambda && (iL == 0 || iL == lambdaBins - 1)) {
-                    // The first and last lambda bins are half size.
-                    delta = dL_2;
-                } else if (discreteLambda && iL == 0) {
-                    // The free energy change to move from L=0 to L=0 is zero.
-                    delta = 0.0;
-                }
-                double deltaFreeEnergy = FLambda[iL] * delta;
-                freeEnergy += deltaFreeEnergy;
-                totalWeight += lambdaCount;
-
-                if (print || save) {
-                    double llL = iL * dL - dL_2;
-                    double ulL = llL + dL;
-                    if (llL < 0.0) {
-                        llL = 0.0;
-                    }
-                    if (ulL > 1.0) {
-                        ulL = 1.0;
-                    }
-
-                    double midLambda = llL;
-                    if (!discreteLambda) {
-                        midLambda = (llL + ulL) / 2.0;
-                    }
-                    double bias1D = current1DBiasEnergy(midLambda, false);
-
-                    double bias2D = 0.0;
-                    if (!biasMagZero) {
-                        bias2D = computeBiasEnergy(midLambda, FLambda[iL]) - bias1D;
-                    }
-
-                    stringBuilder.append(format(" %6.2e %7.5f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f   %8.2f\n",
-                            lambdaCount, midLambda, lla, ula, FLambda[iL], bias1D, bias2D, bias1D + bias2D,
-                            freeEnergy, bias1D + bias2D + freeEnergy));
-                }
-            }
-
-            // Revert the bias magnitude.
-            if (biasMagZero) {
-                biasMag = 0.0;
-            } else {
-                double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
-                temperingWeight = exp(temperEnergy / deltaT);
-            }
-
-            freeEnergy = integrateNumeric(FLambda, integrationType);
-
-            if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
-                logger.info("  Weight   Lambda      dU/dL Bins  <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)");
-                logger.info(stringBuilder.toString());
-                logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
-                        freeEnergy, totalWeight, temperingWeight, biasCount));
-                logger.info(format(" Minimum Bias %8.3f", minFL));
-                previousFreeEnergy = freeEnergy;
-            } else if (!save && (print || biasCount % printFrequency == 0)) {
-                logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
-                        freeEnergy, totalWeight, temperingWeight, biasCount));
-            }
-
-            if (save) {
-                String modelFilename = molecularAssembly.getFile().getAbsolutePath();
-                File saveDir = new File(FilenameUtils.getFullPath(modelFilename));
-                String dirName = saveDir.toString() + File.separator;
-                String fileName = dirName + "histogram.txt";
-                try {
-                    logger.info(" Writing " + fileName);
-                    PrintWriter printWriter = new PrintWriter(new File(fileName));
-                    printWriter.write(stringBuilder.toString());
-                    printWriter.close();
-                } catch (Exception e) {
-                    logger.info(format(" Failed to write %s.", fileName));
-                }
-            }
-
-            return freeEnergy;
-        }
-
-        /**
          * Add a Gaussian hill to the Histogram at (lambda, dEdU).
          */
         void addBias(double dEdU, double[] x, double[] gradient) {
@@ -2401,18 +2316,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             if (energyCount > 0 && energyCount % saveFrequency == 0) {
                 OrthogonalSpaceTempering.this.writeRestart();
             }
-        }
-
-        /**
-         * <p>checkRecursionKernelSize.</p>
-         */
-        public void checkRecursionKernelSize() {
-            double[] x = new double[nVariables];
-            x = potential.getCoordinates(x);
-            double[] g = new double[nVariables];
-            potential.energyAndGradient(x, g, false);
-            double dudl = lambdaInterface.getdEdL();
-            checkRecursionKernelSize(dudl);
         }
 
         /**
@@ -2462,6 +2365,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             return lastReceivedLambda;
         }
 
+        public void setLastReceivedLambda(double lastReceivedLambda) {
+            this.lastReceivedLambda = lastReceivedLambda;
+        }
+
         /**
          * Gets the last dU/dL value received by this Histogram. This can be out-of-date w.r.t. the OST's
          * current dU/dL!
@@ -2498,6 +2405,90 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 return synchronousSend.getHistogramIndex();
             }
         }
+    }
+
+    /**
+     * Write histogram and lambda restart files.
+     */
+    private void writeRestart() {
+        if (algorithmListener != null) {
+            algorithmListener.algorithmUpdate(molecularAssembly);
+        }
+
+        // Only the rank 0 process writes a histogram restart file.
+        histogram.writeRestart();
+
+        // All ranks write a lambda restart file.
+        try {
+            LambdaWriter lambdaWriter = new LambdaWriter(this,
+                    new BufferedWriter(new FileWriter(lambdaFile)));
+            lambdaWriter.writeLambdaFile();
+            lambdaWriter.flush();
+            lambdaWriter.close();
+            logger.info(format(" Wrote lambda restart file to %s.", histogram.lambdaFileName));
+        } catch (IOException ex) {
+            String message = format(" Exception writing lambda restart file %s.", lambdaFile);
+            logger.log(Level.INFO, Utilities.stackTraceToString(ex));
+            logger.log(Level.SEVERE, message, ex);
+        }
+    }
+
+    double getLambdaWriteOut() {
+        return lambdaWriteOut;
+    }
+
+    /**
+     * <p>getForceFielddEdL.</p>
+     *
+     * @return a double.
+     */
+    double getForceFielddEdL() {
+        return dForceFieldEnergydL;
+    }
+
+    /**
+     * <p>Getter for the field <code>biasEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    double getBiasEnergy() {
+        return biasEnergy;
+    }
+
+    /**
+     * Returns basic information about the current histogram.
+     *
+     * @return Tempering parameter, threshold, and bias magnitude.
+     */
+    String histoInfo() {
+        return histoInfo(histogramIndex);
+    }
+
+    /**
+     * Returns basic information about the histogram.
+     *
+     * @param index Index of the histogram to print information about.
+     * @return Tempering parameter, threshold, and bias magnitude.
+     */
+    String histoInfo(int index) {
+        Histogram histo = allHistograms.get(index);
+        return String.format(" Tempering parameter: %.5f kBT. Threshold: %.5f kcal/mol. Bias magnitude: %.5f kcal/mol", histo.temperingFactor, histo.temperOffset, histo.biasMag);
+    }
+
+    /**
+     * If the dUdLHardWall flag is set to true, this method will
+     * return false if the (lambda, dU/dL) sample is has not been seen.
+     *
+     * @param lambda The proposed lambda value.
+     * @param dUdL   The proposed dU/dL value.
+     * @return Returns false only if the dUdLHardWall flag is true, and the (lambda, dU/dL) sample has not been seen.
+     */
+    boolean insideHardWallConstraint(double lambda, double dUdL) {
+        if (hardWallConstraint) {
+            double weight = histogram.evaluateHistogram(lambda, dUdL);
+            return weight > 0.0;
+        }
+        return true;
     }
 
 }

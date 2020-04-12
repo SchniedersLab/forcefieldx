@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.realspace;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -77,20 +77,35 @@ import static ffx.crystal.Crystal.mod;
 public class RealSpaceData implements DataContainer {
 
     private static final Logger logger = Logger.getLogger(RealSpaceData.class.getName());
-
+    /**
+     * Parallel Team instance.
+     */
+    private final ParallelTeam parallelTeam;
+    /**
+     * Calculate the real space target in parallel.
+     */
+    private final RealSpaceRegion realSpaceRegion;
+    /**
+     * The real space data files.
+     */
+    private final RealSpaceFile[] realSpaceFile;
+    /**
+     * The number of real space data sources to consider.
+     */
+    private final int nRealSpaceData;
+    /**
+     * The refinement model.
+     */
+    private final RefinementModel refinementModel;
+    /**
+     * A flag to indicate if the lambda term is active.
+     */
+    private final boolean lambdaTerm;
     /**
      * The collection of MolecularAssembly instances that model the real space
      * data.
      */
-    private MolecularAssembly[] molecularAssemblies;
-    /**
-     * The real space data files.
-     */
-    private RealSpaceFile[] realSpaceFile;
-    /**
-     * The number of real space data sources to consider.
-     */
-    private int nRealSpaceData;
+    private final MolecularAssembly[] molecularAssemblies;
     /**
      * The collection of crystals that describe the PBC and symmetry of each
      * data source.
@@ -100,10 +115,6 @@ public class RealSpaceData implements DataContainer {
      * The real space refinement data for each data source.
      */
     private RealSpaceRefinementData[] refinementData;
-    /**
-     * The refinement model.
-     */
-    private RefinementModel refinementModel;
     /**
      * The total real space energy.
      */
@@ -128,18 +139,6 @@ public class RealSpaceData implements DataContainer {
      * The current value of the state variable lambda.
      */
     private double lambda = 1.0;
-    /**
-     * A flag to indicate if the lambda term is active.
-     */
-    private boolean lambdaTerm;
-    /**
-     * Parallel Team instance.
-     */
-    private final ParallelTeam parallelTeam;
-    /**
-     * Calculate the real space target in parallel.
-     */
-    private final RealSpaceRegion realSpaceRegion;
 
     /**
      * Construct a real space data molecularAssemblies, assumes a real space map
@@ -327,62 +326,101 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
-     * compute real space target value, also fills in atomic derivatives
+     * Similar to Potential.destroy(), frees up resources associated with this RealSpaceData.
      *
-     * @return target value sum over all data sets.
+     * @return If assets successfully freed.
      */
-    double computeRealSpaceTarget() {
-
-        long time = -System.nanoTime();
-        // Zero out the realSpaceTarget energy.
-        realSpaceEnergy = 0.0;
-        // Zero out the realSpacedUdL energy.
-        realSpacedUdL = 0.0;
-        // Initialize gradient to zero; allocate space if necessary.
-        int nActive = 0;
-        int nAtoms = refinementModel.getTotalAtomArray().length;
-        for (int i = 0; i < nAtoms; i++) {
-            if (refinementModel.getTotalAtomArray()[i].isActive()) {
-                nActive++;
-            }
-        }
-
-        int nGrad = nActive * 3;
-        if (realSpaceGradient == null || realSpaceGradient.length < nGrad) {
-            realSpaceGradient = new double[nGrad];
-        } else {
-            fill(realSpaceGradient, 0.0);
-        }
-
-        // Initialize dUdXdL to zero; allocate space if necessary.
-        if (realSpacedUdXdL == null || realSpacedUdXdL.length < nGrad) {
-            realSpacedUdXdL = new double[nGrad];
-        } else {
-            fill(realSpacedUdXdL, 0.0);
-        }
-
+    public boolean destroy() {
         try {
-            parallelTeam.execute(realSpaceRegion);
-        } catch (Exception e) {
-            String message = " Exception computing real space energy";
-            logger.log(Level.SEVERE, message, e);
+            boolean underlyingShutdown = true;
+            for (MolecularAssembly assembly : molecularAssemblies) {
+                // Continue trying to shut assemblies down even if one fails to shut down.
+                boolean thisShutdown = assembly.destroy();
+                underlyingShutdown = underlyingShutdown && thisShutdown;
+            }
+            parallelTeam.shutdown();
+            return underlyingShutdown;
+        } catch (Exception ex) {
+            logger.warning(format(" Exception in shutting down a RealSpaceData: %s", ex));
+            logger.info(Utilities.stackTraceToString(ex));
+            return false;
         }
-
-        time += System.nanoTime();
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(format(" Real space energy time: %16.8f (sec).", time * 1.0e-9));
-        }
-
-        return realSpaceEnergy;
     }
 
     /**
-     * <p>getdEdL.</p>
-     *
-     * @return a double.
+     * {@inheritDoc}
      */
-    double getdEdL() {
-        return realSpacedUdL;
+    @Override
+    public Atom[] getActiveAtomArray() {
+        return refinementModel.getActiveAtomArray();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<List<Molecule>> getAltMolecules() {
+        return refinementModel.getAltMolecules();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<List<Residue>> getAltResidues() {
+        return refinementModel.getAltResidues();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Atom[] getAtomArray() {
+        return refinementModel.getTotalAtomArray();
+    }
+
+    /**
+     * <p>Getter for the field <code>crystal</code>.</p>
+     *
+     * @return the crystal
+     */
+    public Crystal[] getCrystal() {
+        return crystal;
+    }
+
+    /**
+     * <p>Setter for the field <code>crystal</code>.</p>
+     *
+     * @param crystal the crystal to set
+     */
+    public void setCrystal(Crystal[] crystal) {
+        this.crystal = crystal;
+    }
+
+    /**
+     * <p>Getter for the field <code>lambda</code>.</p>
+     *
+     * @return the lambda
+     */
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * Set the current value of the state variable.
+     *
+     * @param lambda a double.
+     */
+    public void setLambda(double lambda) {
+        this.lambda = lambda;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public MolecularAssembly[] getMolecularAssemblies() {
+        return molecularAssemblies;
     }
 
     /**
@@ -410,77 +448,21 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
-     * <p>getdEdXdL.</p>
+     * <p>Getter for the field <code>refinementData</code>.</p>
      *
-     * @param gradient an array of {@link double} objects.
-     * @return an array of {@link double} objects.
+     * @return the refinementData
      */
-    double[] getdEdXdL(double[] gradient) {
-        int nAtoms = refinementModel.getTotalAtomArray().length;
-        int nActiveAtoms = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            if (refinementModel.getTotalAtomArray()[i].isActive()) {
-                nActiveAtoms++;
-            }
-        }
-
-        if (gradient == null || gradient.length < nActiveAtoms * 3) {
-            gradient = new double[nActiveAtoms * 3];
-        }
-
-        for (int i = 0; i < nActiveAtoms * 3; i++) {
-            gradient[i] += realSpacedUdXdL[i];
-        }
-        return gradient;
+    public RealSpaceRefinementData[] getRefinementData() {
+        return refinementData;
     }
 
     /**
-     * Set the current value of the state variable.
+     * <p>Setter for the field <code>refinementData</code>.</p>
      *
-     * @param lambda a double.
+     * @param refinementData the refinementData to set
      */
-    public void setLambda(double lambda) {
-        this.lambda = lambda;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Atom[] getAtomArray() {
-        return refinementModel.getTotalAtomArray();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Atom[] getActiveAtomArray() {
-        return refinementModel.getActiveAtomArray();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ArrayList<ArrayList<Residue>> getAltResidues() {
-        return refinementModel.getAltResidues();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ArrayList<ArrayList<Molecule>> getAltMolecules() {
-        return refinementModel.getAltMolecules();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public MolecularAssembly[] getMolecularAssemblies() {
-        return molecularAssemblies;
+    public void setRefinementData(RealSpaceRefinementData[] refinementData) {
+        this.refinementData = refinementData;
     }
 
     /**
@@ -511,6 +493,21 @@ public class RealSpaceData implements DataContainer {
      * {@inheritDoc}
      */
     @Override
+    public String printEnergyUpdate() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < nRealSpaceData; i++) {
+            sb.append(format("     dataset %d (weight: %5.1f): chemical energy: %8.2f density score: %8.2f\n",
+                    i + 1, realSpaceFile[i].getWeight(),
+                    molecularAssemblies[0].getPotentialEnergy().getTotalEnergy(),
+                    realSpaceFile[i].getWeight() * refinementData[i].getDensityScore()));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String printOptimizationHeader() {
         return "Density score";
     }
@@ -527,31 +524,16 @@ public class RealSpaceData implements DataContainer {
         return sb.toString();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String printEnergyUpdate() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < nRealSpaceData; i++) {
-            sb.append(format("     dataset %d (weight: %5.1f): chemical energy: %8.2f density score: %8.2f\n",
-                    i + 1, realSpaceFile[i].getWeight(),
-                    molecularAssemblies[0].getPotentialEnergy().getTotalEnergy(),
-                    realSpaceFile[i].getWeight() * refinementData[i].getDensityScore()));
-        }
-        return sb.toString();
-    }
-
     private class RealSpaceRegion extends ParallelRegion {
 
-        private int nAtoms;
-        private int nData;
         private final AtomicDoubleArray3D gradient;
         private final AtomicDoubleArray3D lambdaGrad;
         private final InitializationLoop[] initializationLoops;
         private final RealSpaceLoop[] realSpaceLoops;
         private final SharedDouble[] sharedTarget;
         private final SharedDouble shareddUdL;
+        private int nAtoms;
+        private int nData;
 
         RealSpaceRegion(int nThreads, int nAtoms, int nData) {
             this.nAtoms = nAtoms;
@@ -565,16 +547,6 @@ public class RealSpaceData implements DataContainer {
             shareddUdL = new SharedDouble();
             gradient = new AtomicDoubleArray3D(AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
             lambdaGrad = new AtomicDoubleArray3D(AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
-        }
-
-        @Override
-        public void start() {
-            for (int i = 0; i < nData; i++) {
-                sharedTarget[i].set(0.0);
-            }
-            shareddUdL.set(0.0);
-            gradient.alloc(nAtoms);
-            lambdaGrad.alloc(nAtoms);
         }
 
         @Override
@@ -626,6 +598,16 @@ public class RealSpaceData implements DataContainer {
 
         }
 
+        @Override
+        public void start() {
+            for (int i = 0; i < nData; i++) {
+                sharedTarget[i].set(0.0);
+            }
+            shareddUdL.set(0.0);
+            gradient.alloc(nAtoms);
+            lambdaGrad.alloc(nAtoms);
+        }
+
         /**
          * Initialize gradient and lambda gradient arrays.
          */
@@ -648,14 +630,6 @@ public class RealSpaceData implements DataContainer {
 
             double[] target = new double[nData];
             double localdUdL;
-
-            @Override
-            public void start() {
-                for (int i = 0; i < nData; i++) {
-                    target[i] = 0;
-                }
-                localdUdL = 0;
-            }
 
             @Override
             public void finish() {
@@ -787,8 +761,100 @@ public class RealSpaceData implements DataContainer {
                 lambdaGrad.reduce(first, last);
             }
 
+            @Override
+            public void start() {
+                for (int i = 0; i < nData; i++) {
+                    target[i] = 0;
+                }
+                localdUdL = 0;
+            }
+
         }
 
+    }
+
+    /**
+     * compute real space target value, also fills in atomic derivatives
+     *
+     * @return target value sum over all data sets.
+     */
+    double computeRealSpaceTarget() {
+
+        long time = -System.nanoTime();
+        // Zero out the realSpaceTarget energy.
+        realSpaceEnergy = 0.0;
+        // Zero out the realSpacedUdL energy.
+        realSpacedUdL = 0.0;
+        // Initialize gradient to zero; allocate space if necessary.
+        int nActive = 0;
+        int nAtoms = refinementModel.getTotalAtomArray().length;
+        for (int i = 0; i < nAtoms; i++) {
+            if (refinementModel.getTotalAtomArray()[i].isActive()) {
+                nActive++;
+            }
+        }
+
+        int nGrad = nActive * 3;
+        if (realSpaceGradient == null || realSpaceGradient.length < nGrad) {
+            realSpaceGradient = new double[nGrad];
+        } else {
+            fill(realSpaceGradient, 0.0);
+        }
+
+        // Initialize dUdXdL to zero; allocate space if necessary.
+        if (realSpacedUdXdL == null || realSpacedUdXdL.length < nGrad) {
+            realSpacedUdXdL = new double[nGrad];
+        } else {
+            fill(realSpacedUdXdL, 0.0);
+        }
+
+        try {
+            parallelTeam.execute(realSpaceRegion);
+        } catch (Exception e) {
+            String message = " Exception computing real space energy";
+            logger.log(Level.SEVERE, message, e);
+        }
+
+        time += System.nanoTime();
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Real space energy time: %16.8f (sec).", time * 1.0e-9));
+        }
+
+        return realSpaceEnergy;
+    }
+
+    /**
+     * <p>getdEdL.</p>
+     *
+     * @return a double.
+     */
+    double getdEdL() {
+        return realSpacedUdL;
+    }
+
+    /**
+     * <p>getdEdXdL.</p>
+     *
+     * @param gradient an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
+    double[] getdEdXdL(double[] gradient) {
+        int nAtoms = refinementModel.getTotalAtomArray().length;
+        int nActiveAtoms = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            if (refinementModel.getTotalAtomArray()[i].isActive()) {
+                nActiveAtoms++;
+            }
+        }
+
+        if (gradient == null || gradient.length < nActiveAtoms * 3) {
+            gradient = new double[nActiveAtoms * 3];
+        }
+
+        for (int i = 0; i < nActiveAtoms * 3; i++) {
+            gradient[i] += realSpacedUdXdL[i];
+        }
+        return gradient;
     }
 
     /**
@@ -807,72 +873,5 @@ public class RealSpaceData implements DataContainer {
      */
     private int getnRealSpaceData() {
         return nRealSpaceData;
-    }
-
-    /**
-     * <p>Getter for the field <code>crystal</code>.</p>
-     *
-     * @return the crystal
-     */
-    public Crystal[] getCrystal() {
-        return crystal;
-    }
-
-    /**
-     * <p>Setter for the field <code>crystal</code>.</p>
-     *
-     * @param crystal the crystal to set
-     */
-    public void setCrystal(Crystal[] crystal) {
-        this.crystal = crystal;
-    }
-
-    /**
-     * <p>Getter for the field <code>refinementData</code>.</p>
-     *
-     * @return the refinementData
-     */
-    public RealSpaceRefinementData[] getRefinementData() {
-        return refinementData;
-    }
-
-    /**
-     * <p>Setter for the field <code>refinementData</code>.</p>
-     *
-     * @param refinementData the refinementData to set
-     */
-    public void setRefinementData(RealSpaceRefinementData[] refinementData) {
-        this.refinementData = refinementData;
-    }
-
-    /**
-     * <p>Getter for the field <code>lambda</code>.</p>
-     *
-     * @return the lambda
-     */
-    public double getLambda() {
-        return lambda;
-    }
-
-    /**
-     * Similar to Potential.destroy(), frees up resources associated with this RealSpaceData.
-     *
-     * @return If assets successfully freed.
-     */
-    public boolean destroy() {
-        try {
-            boolean underlyingShutdown = true;
-            for (MolecularAssembly assembly : molecularAssemblies) {
-                // Continue trying to shut assemblies down even if one fails to shut down.
-                boolean thisShutdown = assembly.destroy();
-                underlyingShutdown = underlyingShutdown && thisShutdown;
-            }
-            parallelTeam.shutdown();
-            return underlyingShutdown;
-        } catch (Exception ex) {
-            logger.warning(format(" Exception in shutting down a RealSpaceData: %s", ex));
-            logger.info(Utilities.stackTraceToString(ex));
-            return false;
-        }
     }
 }

@@ -92,71 +92,23 @@ public class ExtendedVariableTest extends BaseFFXTest {
     private static final Polarization decompPolarState = Polarization.DIRECT;
     private static final Polarization decompPolarComplement
             = (decompPolarState == Polarization.MUTUAL) ? Polarization.DIRECT : Polarization.MUTUAL;
-
-    private static boolean resultsOnly = false;
     private static final double tolerance = 1e-6;
     private static final double errorThreshold = 1e-9;
     private static final String resourcePrefix = "ffx/potential/structures/";
-
     private static final boolean includeManualQiEndStates = true;
     private static final boolean oneSidedFiniteAtExtremes = false;    // TODO analyze bonded behavior
     private static final boolean smoothnessDecomposition = false;
     private static final boolean singleThreaded = false;
     private static final boolean assertions = false;    // TODO enable
-    private List<Double> lambdaValuesToTest;
-
-    /**
-     * Arguments to the class constructor. EsvTest.END_STATES requires two ESVs
-     * and that 4x states + energies be defined. EsvTest.DERIVATIVES can take
-     * any system; use derivativeLambdas to control FD points.
-     * EsvTest.SMOOTHNESS is ad-hoc; TODO: use d2U_dL2 from FD to assess
-     * smoothness instead.
-     */
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {EsvTest.EndStates, Interactions.All, CellType.Crystal},
-                {EsvTest.Deriv_OneEsv, Interactions.All, CellType.Crystal}
-        });
-    }
-
-    // Setup control of PME lambda derivative calculation.
-    private ExtendedSystemConfig setDebugParameters() {
-        setProp("sys.reuseTensors", false);
-        setProp("polarization", Polarization.MUTUAL);
-        setProp("scf-algorithm", SCFAlgorithm.CG);
-
-        setProp("use-charges", yes);
-        setProp("use-dipoles", yes);
-        setProp("use-quadrupoles", yes);
-
-        ExtendedSystemConfig esvConfig = new ExtendedSystemConfig();
-        return esvConfig;
-    }
-
+    private static boolean resultsOnly = false;
     private static Properties originalSystemConfig;    // properties as they existed before class setup
-
-    private Interactions interactions;
-
-    public enum Interactions {
-        All, OnePermOneInd, TwoPermOneInd, OnePermTwoInd, OnePermAllInd, AllPermOneInd;
-    }
-
     private final EsvTest test;
-
-    public enum EsvTest {
-        EndStates, Derivatives, Smoothness, All,
-        Deriv_OneEsv, Deriv_TwoEsvs;
-    }
-
-    public enum CellType {
-        Aperiodic, Crystal, TightCrystal;
-    }
-
     private final String esvFilename;
     private final String esvResidueIDs;
     private final String[] stateFilenames;
     private final double[] initialLambda;
+    private List<Double> lambdaValuesToTest;
+    private Interactions interactions;
 
     public ExtendedVariableTest(EsvTest test, Interactions interactions, CellType cell) {
         this.test = test;
@@ -191,6 +143,21 @@ public class ExtendedVariableTest extends BaseFFXTest {
                 initialLambda = new double[]{0.5, 0.5};
                 break;
         }
+    }
+
+    /**
+     * Arguments to the class constructor. EsvTest.END_STATES requires two ESVs
+     * and that 4x states + energies be defined. EsvTest.DERIVATIVES can take
+     * any system; use derivativeLambdas to control FD points.
+     * EsvTest.SMOOTHNESS is ad-hoc; TODO: use d2U_dL2 from FD to assess
+     * smoothness instead.
+     */
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {EsvTest.EndStates, Interactions.All, CellType.Crystal},
+                {EsvTest.Deriv_OneEsv, Interactions.All, CellType.Crystal}
+        });
     }
 
     /**
@@ -251,15 +218,6 @@ public class ExtendedVariableTest extends BaseFFXTest {
         setProp(true, "ffe.combineBonded", "ffe.decomposePme");
     }
 
-    /**
-     * Revert props to their state prior to construction.
-     */
-    @AfterClass
-    public static void tearDownClass() {
-        System.getProperties().clear();
-        System.getProperties().putAll(originalSystemConfig);
-    }
-
     public MolecularAssembly setup(String filename, boolean quietly) {
 
         if (quietly || resultsOnly) {
@@ -293,56 +251,12 @@ public class ExtendedVariableTest extends BaseFFXTest {
     }
 
     /**
-     * Locates files packed into the uberjar by Maven.
+     * Revert props to their state prior to construction.
      */
-    private MolecularAssembly openResource(String filename, boolean quietly) {
-
-        if (quietly || resultsOnly) {
-            utils.setSilentPotential(true);
-        }
-
-        MolecularAssembly mola;
-        ClassLoader cl = this.getClass().getClassLoader();
-        File structure = new File(cl.getResource(resourcePrefix + filename).getPath());
-        mola = utils.open(structure);
-        return mola;
-    }
-
-    /**
-     * Wrapper to forward assertions only if enabled at the class level.
-     */
-    private void assertEquals(String message, double expected, double actual, double delta) {
-        if (assertions) {
-            org.junit.Assert.assertEquals(message, expected, actual, delta);
-        }
-    }
-
-    @Test
-    public void testLauncher() {
-        lambdaValuesToTest = (ffxCI) ? ciLambdaTestPoints : stdLambdaTestPoints;
-        switch (test) {
-            case EndStates:
-                testEndStates();
-                break;
-            case Derivatives:   // intentional fallthrough
-            case Deriv_OneEsv:
-            case Deriv_TwoEsvs:
-                testDerivatives(setDebugParameters());
-                break;
-            case Smoothness:
-                if (ffxCI) {
-                    testSmoothness();
-                }
-                break;
-            default:
-            case All:
-                testEndStates();
-                testDerivatives(setDebugParameters());
-                if (ffxCI) {
-                    testSmoothness();
-                }
-                break;
-        }
+    @AfterClass
+    public static void tearDownClass() {
+        System.getProperties().clear();
+        System.getProperties().putAll(originalSystemConfig);
     }
 
     /**
@@ -484,32 +398,6 @@ public class ExtendedVariableTest extends BaseFFXTest {
             }    // lambda loop
         }    // ESV loop
     }    // testDerivatives method
-
-    private static String err(double analytic, double numeric) {
-        return err(analytic, numeric, errorThreshold);
-    }
-
-    private static String err(double analytic, double numeric, double threshold) {
-        double error = analytic - numeric;
-        double absError = Math.abs(error);
-        double percentError = Math.abs(error) / Math.abs(numeric) * 100;
-        return (absError <= threshold && (percentError < 1.0 || numeric == 0.0)) ? "nil"
-                : (absError < 1e-4) ? format("%12.1e", error) : format("%12.4f", error);
-    }
-
-    private static ExtendedSystemConfig activateAll() {
-        setProp("polarization", Polarization.MUTUAL);
-        setProp("scf-algorithm", SCFAlgorithm.CG);
-        setProp("rotate-multipoles", yes);
-        setProp("esv.verbose", false);
-        setProp("esv.allowLambdaSwitch", false);
-        setProp("esv.nonlinearMultipoles", false);
-        setProp("esv.cloneXyzIndices", yes);
-        setProp("use-charges", yes);
-        setProp("use-dipoles", yes);
-        setProp("use-quadrupoles", yes);
-        return new ExtendedSystemConfig();
-    }
 
     /**
      * Verify that a lys-lys system with two ESVs can exactly reproduce the
@@ -758,6 +646,34 @@ public class ExtendedVariableTest extends BaseFFXTest {
         logger.info(sb.toString());
     }
 
+    @Test
+    public void testLauncher() {
+        lambdaValuesToTest = (ffxCI) ? ciLambdaTestPoints : stdLambdaTestPoints;
+        switch (test) {
+            case EndStates:
+                testEndStates();
+                break;
+            case Derivatives:   // intentional fallthrough
+            case Deriv_OneEsv:
+            case Deriv_TwoEsvs:
+                testDerivatives(setDebugParameters());
+                break;
+            case Smoothness:
+                if (ffxCI) {
+                    testSmoothness();
+                }
+                break;
+            default:
+            case All:
+                testEndStates();
+                testDerivatives(setDebugParameters());
+                if (ffxCI) {
+                    testSmoothness();
+                }
+                break;
+        }
+    }
+
     /**
      * Numerically ensure that the energy and lambda derivatives are smooth all
      * along both ESV coordinates in the dilysine system.
@@ -878,6 +794,84 @@ public class ExtendedVariableTest extends BaseFFXTest {
         }
         utils.setSilentPotential(false);
         logger.info(sb.toString());
+    }
+
+    private static ExtendedSystemConfig activateAll() {
+        setProp("polarization", Polarization.MUTUAL);
+        setProp("scf-algorithm", SCFAlgorithm.CG);
+        setProp("rotate-multipoles", yes);
+        setProp("esv.verbose", false);
+        setProp("esv.allowLambdaSwitch", false);
+        setProp("esv.nonlinearMultipoles", false);
+        setProp("esv.cloneXyzIndices", yes);
+        setProp("use-charges", yes);
+        setProp("use-dipoles", yes);
+        setProp("use-quadrupoles", yes);
+        return new ExtendedSystemConfig();
+    }
+
+    private static String err(double analytic, double numeric, double threshold) {
+        double error = analytic - numeric;
+        double absError = Math.abs(error);
+        double percentError = Math.abs(error) / Math.abs(numeric) * 100;
+        return (absError <= threshold && (percentError < 1.0 || numeric == 0.0)) ? "nil"
+                : (absError < 1e-4) ? format("%12.1e", error) : format("%12.4f", error);
+    }
+
+    private static String err(double analytic, double numeric) {
+        return err(analytic, numeric, errorThreshold);
+    }
+
+    public enum Interactions {
+        All, OnePermOneInd, TwoPermOneInd, OnePermTwoInd, OnePermAllInd, AllPermOneInd;
+    }
+
+    public enum EsvTest {
+        EndStates, Derivatives, Smoothness, All,
+        Deriv_OneEsv, Deriv_TwoEsvs;
+    }
+
+    public enum CellType {
+        Aperiodic, Crystal, TightCrystal;
+    }
+
+    // Setup control of PME lambda derivative calculation.
+    private ExtendedSystemConfig setDebugParameters() {
+        setProp("sys.reuseTensors", false);
+        setProp("polarization", Polarization.MUTUAL);
+        setProp("scf-algorithm", SCFAlgorithm.CG);
+
+        setProp("use-charges", yes);
+        setProp("use-dipoles", yes);
+        setProp("use-quadrupoles", yes);
+
+        ExtendedSystemConfig esvConfig = new ExtendedSystemConfig();
+        return esvConfig;
+    }
+
+    /**
+     * Locates files packed into the uberjar by Maven.
+     */
+    private MolecularAssembly openResource(String filename, boolean quietly) {
+
+        if (quietly || resultsOnly) {
+            utils.setSilentPotential(true);
+        }
+
+        MolecularAssembly mola;
+        ClassLoader cl = this.getClass().getClassLoader();
+        File structure = new File(cl.getResource(resourcePrefix + filename).getPath());
+        mola = utils.open(structure);
+        return mola;
+    }
+
+    /**
+     * Wrapper to forward assertions only if enabled at the class level.
+     */
+    private void assertEquals(String message, double expected, double actual, double delta) {
+        if (assertions) {
+            org.junit.Assert.assertEquals(message, expected, actual, delta);
+        }
     }
 
     private StringBuilder printAsTable(double[][] values, String title, StringBuilder sb) {

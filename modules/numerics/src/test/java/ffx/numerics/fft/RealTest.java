@@ -59,14 +59,6 @@ public class RealTest {
     private final double[] complexData;
     private final double[] expected;
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{{"Test n = 20", 20},
-                {"Test n = 22", 22},
-                {"Test n = 120", 120}
-        });
-    }
-
     public RealTest(String info, int n) {
         this.info = info;
         this.n = n;
@@ -82,6 +74,14 @@ public class RealTest {
             complexData[i * 2] = d;
             expected[i] = d;
         }
+    }
+
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{{"Test n = 20", 20},
+                {"Test n = 22", 22},
+                {"Test n = 120", 120}
+        });
     }
 
     /**

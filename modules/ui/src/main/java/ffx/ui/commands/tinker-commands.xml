@@ -41,15 +41,15 @@
 <!DOCTYPE TinkerCommands>
 <TinkerCommands>
     <properties>
-        <author email="michael-schnieders@uiowa.edu" />
+        <author email="michael-schnieders@uiowa.edu"/>
         <title>Tinker Commands</title>
-        <meta name="Tinker Commands" />
+        <meta name="Tinker Commands"/>
     </properties>
     <Command
-        name="Alchemy"
-        fileType="ARC"
-        action="SHOWLOG"
-        description="A simple program to perform very basic free energy perturbation calculations. This program
+            name="Alchemy"
+            fileType="ARC"
+            action="SHOWLOG"
+            description="A simple program to perform very basic free energy perturbation calculations. This program
  is provided mostly for demonstration purposes. For example, we use ALCHEMY in a
  molecular modeling course laboratory exercise to perform such classic mutations as chloride
  to bromide and ethane to methanol in water. The present version uses the perturbation
@@ -61,44 +61,44 @@
  development."
     >
         <Option
-            name="Files"
-            description="Numbers of the First and Last File to Analyze"
-            gui="TEXTFIELD"
-            default="1 100"
+                name="Files"
+                description="Numbers of the First and Last File to Analyze"
+                gui="TEXTFIELD"
+                default="1 100"
         />
         <Option
-            name="Lambda"
-            description="Lambda Increment for Free Energy Perturbation"
-            gui="TEXTFIELD"
-            default="0.5"
+                name="Lambda"
+                description="Lambda Increment for Free Energy Perturbation"
+                gui="TEXTFIELD"
+                default="0.5"
         />
         <Option
-            name="Temperature"
-            description="System Temperature (K)"
-            gui="TEXTFIELD"
-            default="300"
+                name="Temperature"
+                description="System Temperature (K)"
+                gui="TEXTFIELD"
+                default="300"
         />
         <Option
-            name="Blocks"
-            description="Number of Blocks for Sub-Averages"
-            gui="TEXTFIELD"
-            default="1"
+                name="Blocks"
+                description="Number of Blocks for Sub-Averages"
+                gui="TEXTFIELD"
+                default="1"
         />
         <Option
-            name="Intermolecular"
-            description="Consider only Intermolecular Perturbation Energy"
-            gui="RADIOBUTTONS"
-            default="N"
+                name="Intermolecular"
+                description="Consider only Intermolecular Perturbation Energy"
+                gui="RADIOBUTTONS"
+                default="N"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
     </Command>
     <Command
-        name="Analyze"
-        fileType="XYZ ARC"
-        action="SHOWLOG"
-        description="Provides information about a specific molecular structure. The program will ask for the name
+            name="Analyze"
+            fileType="XYZ ARC"
+            action="SHOWLOG"
+            description="Provides information about a specific molecular structure. The program will ask for the name
  of a structure file, which must be in the TINKER .xyz file format, and the type of analysis
  desired. Options allow output of: (1) total potential energy of the system, (2) breakdown of
  the energy by potential function type or over individual atoms, (3) computation of the total
@@ -107,8 +107,8 @@
  specified individual interactions."
     >
         <Option
-            name="Analysis Options"
-            description=" The TINKER Analysis Facility can Provide :&#10;
+                name="Analysis Options"
+                description=" The TINKER Analysis Facility can Provide :&#10;
 &#10;
  Total Potential Energy and its Components [E]&#10;
  Energy Breakdown over each of the Atoms [A]&#10;
@@ -119,29 +119,29 @@
  Connectivity Lists for Each of the Atoms [C]&#10;
 &#10;
  Choose All Desired Analysis Types"
-            gui="CHECKBOXES"
-            default="E"
+                gui="CHECKBOXES"
+                default="E"
         >
-            <Value name="E" />
-            <Value name="A" />
-            <Value name="L" />
-            <Value name="D" />
-            <Value name="M" />
-            <Value name="P" />
-            <Value name="C" />
+            <Value name="E"/>
+            <Value name="A"/>
+            <Value name="L"/>
+            <Value name="D"/>
+            <Value name="M"/>
+            <Value name="P"/>
+            <Value name="C"/>
             <Conditional
-                name="Value"
-                value="A"
-                description="List Atoms for which Output is Desired [blank for all atoms]"
-                gui="TERMINATEDTEXTFIELD"
+                    name="Value"
+                    value="A"
+                    description="List Atoms for which Output is Desired [blank for all atoms]"
+                    gui="TERMINATEDTEXTFIELD"
             />
         </Option>
     </Command>
     <Command
-        name="Anneal"
-        fileType="XYZ"
-        action="CONNECT"
-        description="Performs a molecular dynamics simulated annealing computation. The program starts from
+            name="Anneal"
+            fileType="XYZ"
+            action="CONNECT"
+            description="Performs a molecular dynamics simulated annealing computation. The program starts from
  a specified input molecular structure in TINKER .xyz format. The trajectory is updated
  using either a modified Beeman or a velocity Verlet integration method. The annealing
  protocol is implemented by allowing smooth changes between starting and final values of the
@@ -153,57 +153,57 @@
  sets along the trajectory are placed in sequentially numbered cycle files."
     >
         <Option
-            name="Temperature"
-            description="Initial and Final Temperatures in Degrees Kelvin"
-            gui="TEXTFIELD"
-            default="1000, 0"
+                name="Temperature"
+                description="Initial and Final Temperatures in Degrees Kelvin"
+                gui="TEXTFIELD"
+                default="1000, 0"
         />
         <Option
-            name="Steps"
-            description="Number of Equilibration Steps"
-            gui="TEXTFIELD"
-            default="0"
+                name="Steps"
+                description="Number of Equilibration Steps"
+                gui="TEXTFIELD"
+                default="0"
         />
         <Option
-            name="Cooling"
-            description="Number of Cooling Protocol Steps"
-            gui="TEXTFIELD"
-            default="2000"
+                name="Cooling"
+                description="Number of Cooling Protocol Steps"
+                gui="TEXTFIELD"
+                default="2000"
         />
         <Option
-            name="Protocol"
-            description="Use Linear, Sigmoidal or Exponential Cooling Protocol"
-            gui="RADIOBUTTONS"
-            default="L"
+                name="Protocol"
+                description="Use Linear, Sigmoidal or Exponential Cooling Protocol"
+                gui="RADIOBUTTONS"
+                default="L"
         >
-            <Value name="L" />
-            <Value name="S" />
-            <Value name="E" />
+            <Value name="L"/>
+            <Value name="S"/>
+            <Value name="E"/>
         </Option>
         <Option
-            name="Time Step"
-            description="Time Step Length in Femtoseconds"
-            gui="TEXTFIELD"
-            default="1.0"
+                name="Time Step"
+                description="Time Step Length in Femtoseconds"
+                gui="TEXTFIELD"
+                default="1.0"
         />
         <Option
-            name="Dumps"
-            description="Time Between Dumps in Picoseconds"
-            gui="TEXTFIELD"
-            default="0.1"
+                name="Dumps"
+                description="Time Between Dumps in Picoseconds"
+                gui="TEXTFIELD"
+                default="0.1"
         />
         <Option
-            name="Atomic Weight"
-            description="Increase Atomic Weights by a Factor of 10^x"
-            gui="TEXTFIELD"
-            default="0.0"
+                name="Atomic Weight"
+                description="Increase Atomic Weights by a Factor of 10^x"
+                gui="TEXTFIELD"
+                default="0.0"
         />
     </Command>
     <Command
-        name="Archive"
-        fileType="XYZ INT ARC"
-        action="NONE"
-        description="A program for concatenating TINKER cycle files into a single archive file; useful for storing
+            name="Archive"
+            fileType="XYZ INT ARC"
+            action="NONE"
+            description="A program for concatenating TINKER cycle files into a single archive file; useful for storing
  the intermediate results of minimizations, dynamics trajectories, and so on. The archive file
  can be written in TINKER format, or in formats usable with MSI’s InsightII (their CAR file
  with .msi extension) or with XMakemol (their file format with .xmol extension). Only active
@@ -211,36 +211,36 @@
  structures. The program can also extract individual cycle files from a TINKER archive."
     >
         <Option
-            name="Action"
-            description="Create (C) or Extract (E) from an Archive"
-            gui="RADIOBUTTONS"
-            default="C"
+                name="Action"
+                description="Create (C) or Extract (E) from an Archive"
+                gui="RADIOBUTTONS"
+                default="C"
         >
-            <Value name="C" />
-            <Value name="E" />
+            <Value name="C"/>
+            <Value name="E"/>
         </Option>
         <Option
-            name="Format"
-            description="Use TINKER (T), XMol XYZ (X) or InsightII (I)"
-            gui="RADIOBUTTONS"
-            default="T"
+                name="Format"
+                description="Use TINKER (T), XMol XYZ (X) or InsightII (I)"
+                gui="RADIOBUTTONS"
+                default="T"
         >
-            <Value name="T" />
-            <Value name="X" />
-            <Value name="I" />
+            <Value name="T"/>
+            <Value name="X"/>
+            <Value name="I"/>
         </Option>
         <Option
-            name="File Numbers"
-            description="Numbers of First and Last File and Step Increment"
-            gui="TEXTFIELD"
-            default="1 100 1"
+                name="File Numbers"
+                description="Numbers of First and Last File and Step Increment"
+                gui="TEXTFIELD"
+                default="1 100 1"
         />
     </Command>
     <Command
-        name="Diffuse"
-        fileType="ARC"
-        action="SHOWLOG"
-        description="A program to compute the self-diffusion constant for a homogeneous liquid via the Einstein
+            name="Diffuse"
+            fileType="ARC"
+            action="SHOWLOG"
+            description="A program to compute the self-diffusion constant for a homogeneous liquid via the Einstein
  equation. A previously saved dynamics trajectory is read in and ‘‘unfolded’’ to reverse
  translation of molecules due to use of periodic boundary conditions. The average motion over
  all molecules is then used to compute the self-diffusion constant. While the current program
@@ -248,28 +248,28 @@
  individual molecules or other desired effects."
     >
         <Option
-            name="Files"
-            description="Numbers of the First and Last Frame and Step Increment"
-            gui="TEXTFIELD"
-            default="1 100 1"
+                name="Files"
+                description="Numbers of the First and Last Frame and Step Increment"
+                gui="TEXTFIELD"
+                default="1 100 1"
         />
         <Option
-            name="Time Increment"
-            description="Time Inrement in Picoseconds"
-            gui="TEXTFIELD"
-            default="1.0"
+                name="Time Increment"
+                description="Time Inrement in Picoseconds"
+                gui="TEXTFIELD"
+                default="1.0"
         />
         <Option
-            name="Unit Cell"
-            description="Unit Cell Axis Lengths"
-            gui="TEXTFIELD"
+                name="Unit Cell"
+                description="Unit Cell Axis Lengths"
+                gui="TEXTFIELD"
         />
     </Command>
     <Command
-        name="Dynamic"
-        fileType="XYZ"
-        action="CONNECT"
-        description="Performs a molecular dynamics (MD) or stochastic dynamics (SD) computation. Starts either
+            name="Dynamic"
+            fileType="XYZ"
+            action="CONNECT"
+            description="Performs a molecular dynamics (MD) or stochastic dynamics (SD) computation. Starts either
  from a specified input molecular structure (an .xyz file) or from a structure-velocityacceleration
  set saved from a previous dynamics trajectory (a restart from a .dyn file). MD
  trajectories are propagated using either a modified Beeman or a velocity Verlet integration
@@ -284,72 +284,72 @@
  that point is updated and stored in the .dyn file."
     >
         <Option
-            name="Number of Steps"
-            description="Number of Dynamic Steps to be taken"
-            gui="TEXTFIELD"
-            default="10000"
+                name="Number of Steps"
+                description="Number of Dynamic Steps to be taken"
+                gui="TEXTFIELD"
+                default="10000"
         />
         <Option
-            name="Time Step"
-            description="Time Step Length in Femtoseconds "
-            gui="TEXTFIELD"
-            default="1.0"
+                name="Time Step"
+                description="Time Step Length in Femtoseconds "
+                gui="TEXTFIELD"
+                default="1.0"
         />
         <Option
-            name="Dump"
-            description="Time between Dumps in Picoseconds "
-            gui="TEXTFIELD"
-            default="0.1"
+                name="Dump"
+                description="Time between Dumps in Picoseconds "
+                gui="TEXTFIELD"
+                default="0.1"
         />
         <Option
-            name="Ensemble"
-            description="Ensemble used for periodic boundry conditions&#10;
+                name="Ensemble"
+                description="Ensemble used for periodic boundry conditions&#10;
  (1) Microcanonical        (NVE)&#10;
  (2) Canonical             (NVT)&#10;
  (3) Isoenthalpic-Isobaric (NPE)&#10;
  (4) Isothermal-Isobaric   (NPT)"
-            gui="RADIOBUTTONS"
-            default="2"
+                gui="RADIOBUTTONS"
+                default="2"
         >
-            <Value name="1" />
-            <Value name="2" />
-            <Value name="3" />
-            <Value name="4" />
+            <Value name="1"/>
+            <Value name="2"/>
+            <Value name="3"/>
+            <Value name="4"/>
             <Conditional
-                name="KEYWORD"
-                value="A-AXIS B-AXIS C-AXIS"
+                    name="KEYWORD"
+                    value="A-AXIS B-AXIS C-AXIS"
             />
         </Option>
         <Option
-            name="Temperature"
-            description="Desired Temperature in Degrees Kelvin "
-            gui="TEXTFIELD"
-            default="300"
+                name="Temperature"
+                description="Desired Temperature in Degrees Kelvin "
+                gui="TEXTFIELD"
+                default="300"
         />
         <Option
-            name="Pressure"
-            description="Desired Pressure in Atmospheres"
-            gui="TEXTFIELD"
-            default="1"
+                name="Pressure"
+                description="Desired Pressure in Atmospheres"
+                gui="TEXTFIELD"
+                default="1"
         >
             <Conditional
-                name="OPTION - ENSEMBLE"
-                value="3 4"
+                    name="OPTION - ENSEMBLE"
+                    value="3 4"
             />
         </Option>
     </Command>
     <Command
-        name="INTXYZ"
-        fileType="INT"
-        action="LOADXYZ"
-        description="A program to convert a TINKER .int internal coordinates formatted file into a TINKER
+            name="INTXYZ"
+            fileType="INT"
+            action="LOADXYZ"
+            description="A program to convert a TINKER .int internal coordinates formatted file into a TINKER
 .xyz Cartesian coordinates formatted file."
     />
     <Command
-        name="Minimize"
-        fileType="XYZ"
-        action="CONNECT LOADXYZ"
-        description="The MINIMIZE program performs a limited memory L-BFGS minimization of an input
+            name="Minimize"
+            fileType="XYZ"
+            action="CONNECT LOADXYZ"
+            description="The MINIMIZE program performs a limited memory L-BFGS minimization of an input
  structure over Cartesian coordinates using a modified version of the algorithm of Jorge
  Nocedal. The method requires only the potential energy and gradient at each step along the
  minimization pathway. It requires storage space proportional to the number of atoms in the
@@ -362,69 +362,69 @@
  written to updated .xyz files or to cycle files."
     >
         <Option
-            name="Convergence Criteria"
-            description="RMS Gradient per Atom Criterion"
-            gui="TEXTFIELD"
-            default="0.01"
+                name="Convergence Criteria"
+                description="RMS Gradient per Atom Criterion"
+                gui="TEXTFIELD"
+                default="0.01"
         />
     </Command>
     <Command
-        name="Minrigid"
-        fileType="XYZ"
-        action="CONNECT LOADXYZ"
-        description="The MINRIGID program is similar to MINIMIZE except that it operates on rigid bodies
+            name="Minrigid"
+            fileType="XYZ"
+            action="CONNECT LOADXYZ"
+            description="The MINRIGID program is similar to MINIMIZE except that it operates on rigid bodies
  starting from a TINKER .xyz coordinate file and the rigid body group definitions found in
  the corresponding .key file. Output is saved in an updated .xyz file or in cycle files."
     >
         <Option
-            name="Convergence Criteria"
-            description="RMS Gradient per Rigid Body Criterion"
-            gui="TEXTFIELD"
-            default="0.01"
+                name="Convergence Criteria"
+                description="RMS Gradient per Rigid Body Criterion"
+                gui="TEXTFIELD"
+                default="0.01"
         />
     </Command>
     <Command
-        name="Minirot"
-        fileType="INT"
-        action="CONNECT LOADINT"
-        description="The MINIROT program uses the same limited memory L-BFGS method as MINIMIZE, but performs the
+            name="Minirot"
+            fileType="INT"
+            action="CONNECT LOADINT"
+            description="The MINIROT program uses the same limited memory L-BFGS method as MINIMIZE, but performs the
  computation in terms of dihedral angles instead of Cartesian coordinates. Output is saved in an updated .int
  file or in cycle files."
     >
         <Option
-            name="Selection of Torsion Angles"
-            description=" Selection of Torsional Angles for Rotation :&#10;
+                name="Selection of Torsion Angles"
+                description=" Selection of Torsional Angles for Rotation :&#10;
 &#10;
     0  - Automatic Selection of Torsional Angles&#10;
     1  - Manual Selection of Angles to Rotate&#10;
     2  - Manual Selection of Angles to Freeze&#10;
 &#10;"
-            gui="RADIOBUTTONS"
-            default="0"
+                gui="RADIOBUTTONS"
+                default="0"
         >
-            <Value name="0" />
-            <Value name="1" />
-            <Value name="2" />
+            <Value name="0"/>
+            <Value name="1"/>
+            <Value name="2"/>
             <Conditional
-                name="VALUE"
-                value="1 2"
-                description="Enter Atoms in Rotatable Bond(s)"
-                gui="TERMINATEDTEXTFIELD"
-                postProcess="ATOMPAIRS"
+                    name="VALUE"
+                    value="1 2"
+                    description="Enter Atoms in Rotatable Bond(s)"
+                    gui="TERMINATEDTEXTFIELD"
+                    postProcess="ATOMPAIRS"
             />
         </Option>
         <Option
-            name="Convergence Criteria"
-            description="Enter RMS Gradient per Torsion Criterion:"
-            gui="TEXTFIELD"
-            default="0.01"
+                name="Convergence Criteria"
+                description="Enter RMS Gradient per Torsion Criterion:"
+                gui="TEXTFIELD"
+                default="0.01"
         />
     </Command>
     <Command
-        name="Monte"
-        fileType="XYZ"
-        action="CONNECT LOADXYZ"
-        description="The MONTE program implements the Monte Carlo Minimization algorithm developed by
+            name="Monte"
+            fileType="XYZ"
+            action="CONNECT LOADXYZ"
+            description="The MONTE program implements the Monte Carlo Minimization algorithm developed by
  Harold Scheraga’s group and others. The procedure takes Monte Carlo steps for either a
  single atom or a single torsional angle, then performs a minimization before application of
  the Metropolis sampling method. This results in effective sampling of a modified potential
@@ -432,44 +432,44 @@
  surface. The program can be easily modified to elaborate on the available move set."
     >
         <Option
-            name="Steps"
-            description="Number of Monte Carlo Steps"
-            gui="TEXTFIELD"
-            default="1000"
+                name="Steps"
+                description="Number of Monte Carlo Steps"
+                gui="TEXTFIELD"
+                default="1000"
         />
         <Option
-            name="Move"
-            description="Use Cartesian (C) or Torsional (T 0) Moves"
-            gui="RADIOBUTTONS"
-            default="S"
+                name="Move"
+                description="Use Cartesian (C) or Torsional (T 0) Moves"
+                gui="RADIOBUTTONS"
+                default="S"
         >
-            <Value name="S" />
-            <Value name="T 0" />
+            <Value name="S"/>
+            <Value name="T 0"/>
         </Option>
         <Option
-            name="Step Size"
-            description="Maximum Step in Angstroms (Cartesian) or Degrees (Torsional)"
-            gui="TEXTFIELD"
-            default="3.0"
+                name="Step Size"
+                description="Maximum Step in Angstroms (Cartesian) or Degrees (Torsional)"
+                gui="TEXTFIELD"
+                default="3.0"
         />
         <Option
-            name="Temperature"
-            description="Temperature in Degrees Kelvin"
-            gui="TEXTFIELD"
-            default="298"
+                name="Temperature"
+                description="Temperature in Degrees Kelvin"
+                gui="TEXTFIELD"
+                default="298"
         />
         <Option
-            name="RMSG"
-            description="RMS Gradient Criterion"
-            gui="TEXTFIELD"
-            default="0.01"
+                name="RMSG"
+                description="RMS Gradient Criterion"
+                gui="TEXTFIELD"
+                default="0.01"
         />
     </Command>
     <Command
-        name="Newton"
-        fileType="XYZ"
-        action="CONNECT LOADXYZ"
-        description="A truncated Newton minimization method which requires potential energy, gradient and
+            name="Newton"
+            fileType="XYZ"
+            action="CONNECT LOADXYZ"
+            description="A truncated Newton minimization method which requires potential energy, gradient and
  Hessian information. This procedure has significant advantages over standard Newton
  methods, and is able to minimize very large structures completely. Several options are
  provided with respect to minimization method and preconditioning of the Newton equations.
@@ -485,151 +485,151 @@
  coordinates and minimization statistics."
     >
         <Option
-            name="Method"
-            description="Automatic (A), Newton (N), TNCG (T) or DTNCG (D) Method"
-            gui="RADIOBUTTONS"
-            default="A"
+                name="Method"
+                description="Automatic (A), Newton (N), TNCG (T) or DTNCG (D) Method"
+                gui="RADIOBUTTONS"
+                default="A"
         >
-            <Value name="A" />
-            <Value name="N" />
-            <Value name="T" />
-            <Value name="D" />
+            <Value name="A"/>
+            <Value name="N"/>
+            <Value name="T"/>
+            <Value name="D"/>
         </Option>
         <Option
-            name="Precondition"
-            description="Precondition via Auto (A), None (N), Diag (D), Block (B), SSOR (S), or ICCG (I) "
-            gui="RADIOBUTTONS"
-            default="A"
+                name="Precondition"
+                description="Precondition via Auto (A), None (N), Diag (D), Block (B), SSOR (S), or ICCG (I) "
+                gui="RADIOBUTTONS"
+                default="A"
         >
-            <Value name="A" />
-            <Value name="N" />
-            <Value name="D" />
-            <Value name="B" />
-            <Value name="S" />
-            <Value name="I" />
+            <Value name="A"/>
+            <Value name="N"/>
+            <Value name="D"/>
+            <Value name="B"/>
+            <Value name="S"/>
+            <Value name="I"/>
         </Option>
         <Option
-            name="RMS Gradient"
-            description="RMS Gradient per Atom Criterion"
-            gui="TEXTFIELD"
-            default="0.01"
+                name="RMS Gradient"
+                description="RMS Gradient per Atom Criterion"
+                gui="TEXTFIELD"
+                default="0.01"
         />
     </Command>
     <Command
-        name="Newtrot"
-        fileType="INT"
-        action="CONNECT LOADINT"
-        description="The NEWTROT program is similar to NEWTON except that it requires a .int file as input and then
+            name="Newtrot"
+            fileType="INT"
+            action="CONNECT LOADINT"
+            description="The NEWTROT program is similar to NEWTON except that it requires a .int file as input and then
  operates in terms of dihedral angles as the minimization variables. Since the dihedral space Hessian matrix
  of an arbitrary structure is often indefinite, this method will often not perform as well as the other, simpler
  dihedral angle based minimizers."
     >
         <Option
-            name="Selection of Torsion Angles"
-            description=" Selection of Torsional Angles for Rotation :&#10;
+                name="Selection of Torsion Angles"
+                description=" Selection of Torsional Angles for Rotation :&#10;
 &#10;
     0  - Automatic Selection of Torsional Angles&#10;
     1  - Manual Selection of Angles to Rotate&#10;
     2  - Manual Selection of Angles to Freeze&#10;
 &#10;"
-            gui="RADIOBUTTONS"
-            default="0"
+                gui="RADIOBUTTONS"
+                default="0"
         >
-            <Value name="0" />
-            <Value name="1" />
-            <Value name="2" />
+            <Value name="0"/>
+            <Value name="1"/>
+            <Value name="2"/>
             <Conditional
-                name="VALUE"
-                value="1 2"
-                description="Enter Atoms in Rotatable Bond(s)"
-                gui="TERMINATEDTEXTFIELD"
-                postProcess="ATOMPAIRS"
+                    name="VALUE"
+                    value="1 2"
+                    description="Enter Atoms in Rotatable Bond(s)"
+                    gui="TERMINATEDTEXTFIELD"
+                    postProcess="ATOMPAIRS"
             />
         </Option>
         <Option
-            name="Method"
-            description="Automatic (A), Newton (N), TNCG (T) or DTNCG (D) Method"
-            gui="RADIOBUTTONS"
-            default="A"
+                name="Method"
+                description="Automatic (A), Newton (N), TNCG (T) or DTNCG (D) Method"
+                gui="RADIOBUTTONS"
+                default="A"
         >
-            <Value name="A" />
-            <Value name="N" />
-            <Value name="T" />
-            <Value name="D" />
+            <Value name="A"/>
+            <Value name="N"/>
+            <Value name="T"/>
+            <Value name="D"/>
         </Option>
         <Option
-            name="Precondition"
-            description="Precondition via Auto (A), None (N), Diag (D), Block (B), SSOR (S), or ICCG (I) "
-            gui="RADIOBUTTONS"
-            default="A"
+                name="Precondition"
+                description="Precondition via Auto (A), None (N), Diag (D), Block (B), SSOR (S), or ICCG (I) "
+                gui="RADIOBUTTONS"
+                default="A"
         >
-            <Value name="A" />
-            <Value name="N" />
-            <Value name="D" />
-            <Value name="B" />
-            <Value name="S" />
-            <Value name="I" />
+            <Value name="A"/>
+            <Value name="N"/>
+            <Value name="D"/>
+            <Value name="B"/>
+            <Value name="S"/>
+            <Value name="I"/>
         </Option>
         <Option
-            name="RMS Gradient"
-            description="RMS Gradient per Atom Criterion"
-            gui="TEXTFIELD"
-            default="0.01"
+                name="RMS Gradient"
+                description="RMS Gradient per Atom Criterion"
+                gui="TEXTFIELD"
+                default="0.01"
         />
     </Command>
     <Command
-        name="Nucleic"
-        description="A program for automated building of nucleic acid structures. Upon input of a
+            name="Nucleic"
+            description="A program for automated building of nucleic acid structures. Upon input of a
  nucleotide sequence with optional phosphate backbone angles, the program builds internal and
  Cartesian coordinates. Standard bond lengths and angles are used. Both DNA and RNA sequences are
  supported as are A-, B- and Z-form structures. Double helixes of complementary sequence can be
  automatically constructed via a rigid docking of individual strands."
-        fileType="ANY"
-        action="LOADXYZ"
+            fileType="ANY"
+            action="LOADXYZ"
     >
         <Option
-            name="File Name"
-            description="Specify name to be used for output files"
-            gui="TEXTFIELD"
-            default="nucleic"
+                name="File Name"
+                description="Specify name to be used for output files"
+                gui="TEXTFIELD"
+                default="nucleic"
         />
         <Option
-            name="Title"
-            description="Enter title"
-            gui="TEXTFIELD"
-            default="Nucleic Acid built with TINKER/Force Field Xplorer"
+                name="Title"
+                description="Enter title"
+                gui="TEXTFIELD"
+                default="Nucleic Acid built with TINKER/Force Field Xplorer"
         />
         <Option
-            name="Helix Type"
-            description="A-, B- or Z-Form Helix for the Structure"
-            gui="RADIOBUTTONS"
-            default="B"
+                name="Helix Type"
+                description="A-, B- or Z-Form Helix for the Structure"
+                gui="RADIOBUTTONS"
+                default="B"
         >
-            <Value name="A" />
-            <Value name="B" />
-            <Value name="Z" />
+            <Value name="A"/>
+            <Value name="B"/>
+            <Value name="Z"/>
         </Option>
         <Option
-            name="Sequence"
-            description="One Nucleotide per entry is specified, 5' to 3'. Each 3 letter code may be
+                name="Sequence"
+                description="One Nucleotide per entry is specified, 5' to 3'. Each 3 letter code may be
  followed by backbone torsions (6F) and a glycosidic torsion (1F). Choosing MOL begins a new strand."
-            gui="NUCLEIC"
+                gui="NUCLEIC"
         />
         <Option
-            name="Double Helix"
-            description="Build a Double Helix using Complimentary Bases"
-            gui="RADIOBUTTONS"
-            default="N"
+                name="Double Helix"
+                description="Build a Double Helix using Complimentary Bases"
+                gui="RADIOBUTTONS"
+                default="N"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
     </Command>
     <Command
-        name="Optimize"
-        fileType="XYZ"
-        action="CONNECT LOADXYZ"
-        description="The OPTIMIZE program performs a optimally conditioned variable metric minimization of
+            name="Optimize"
+            fileType="XYZ"
+            action="CONNECT LOADXYZ"
+            description="The OPTIMIZE program performs a optimally conditioned variable metric minimization of
  an input structure over Cartesian coordinates using an algorithm due to William Davidon.
  The method does not perform line searches, but requires computation of energies and
  gradients as well as storage for an estimate of the inverse Hessian matrix. The program
@@ -641,71 +641,71 @@
  coordinates are saved in updated .xyz files or as cycle files."
     >
         <Option
-            name="Convergence Criteria"
-            description="RMS Gradient per Atom Criterion"
-            gui="TEXTFIELD"
-            default="0.01"
+                name="Convergence Criteria"
+                description="RMS Gradient per Atom Criterion"
+                gui="TEXTFIELD"
+                default="0.01"
         />
     </Command>
     <Command
-        name="Optrigid"
-        fileType="XYZ"
-        action="CONNECT LOADXYZ"
-        description="The OPTRIGID program is similar to OPTIMIZE except that it operates on rigid bodies
+            name="Optrigid"
+            fileType="XYZ"
+            action="CONNECT LOADXYZ"
+            description="The OPTRIGID program is similar to OPTIMIZE except that it operates on rigid bodies
  starting from a TINKER .xyz coordinate file and the rigid body atom group definitions
  found in the corresponding .key file. Output is saved in an updated .xyz file or in cycle
  files."
     >
         <Option
-            name="Convergence Criteria"
-            description="RMS Gradient per Rigid Body Criterion"
-            gui="TEXTFIELD"
-            default="0.01"
+                name="Convergence Criteria"
+                description="RMS Gradient per Rigid Body Criterion"
+                gui="TEXTFIELD"
+                default="0.01"
         />
     </Command>
     <Command
-        name="Optirot"
-        fileType="INT"
-        action="CONNECT LOADINT"
-        description="The OPTIROT program is similar to OPTIMIZE except that it operates on dihedral angles starting from a
+            name="Optirot"
+            fileType="INT"
+            action="CONNECT LOADINT"
+            description="The OPTIROT program is similar to OPTIMIZE except that it operates on dihedral angles starting from a
  TINKER .int internal coordinate file. This program is usually the preferred method for most dihedral angle
  optimization problems since Truncated Newton methods appear, in our hands, to lose some of their efficacy
  in moving from Cartesian to torsional coordinate."
     >
         <Option
-            name="Selection of Torsion Angles"
-            description=" Selection of Torsional Angles for Rotation :&#10;
+                name="Selection of Torsion Angles"
+                description=" Selection of Torsional Angles for Rotation :&#10;
 &#10;
     0  - Automatic Selection of Torsional Angles&#10;
     1  - Manual Selection of Angles to Rotate&#10;
     2  - Manual Selection of Angles to Freeze&#10;
 &#10;"
-            gui="RADIOBUTTONS"
-            default="0"
+                gui="RADIOBUTTONS"
+                default="0"
         >
-            <Value name="0" />
-            <Value name="1" />
-            <Value name="2" />
+            <Value name="0"/>
+            <Value name="1"/>
+            <Value name="2"/>
             <Conditional
-                name="VALUE"
-                value="1 2"
-                description="Enter Atoms in Rotatable Bond(s)"
-                gui="TERMINATEDTEXTFIELD"
-                postProcess="ATOMPAIRS"
+                    name="VALUE"
+                    value="1 2"
+                    description="Enter Atoms in Rotatable Bond(s)"
+                    gui="TERMINATEDTEXTFIELD"
+                    postProcess="ATOMPAIRS"
             />
         </Option>
         <Option
-            name="Convergence Criteria"
-            description="Enter RMS Gradient per Torsion Criterion:"
-            gui="TEXTFIELD"
-            default="0.01"
+                name="Convergence Criteria"
+                description="Enter RMS Gradient per Torsion Criterion:"
+                gui="TEXTFIELD"
+                default="0.01"
         />
     </Command>
     <Command
-        name="Path"
-        fileType="XYZ"
-        action="CONNECT"
-        description="A program that implements a variant of Elber’s Lagrangian multiplier-based reaction path
+            name="Path"
+            fileType="XYZ"
+            action="CONNECT"
+            description="A program that implements a variant of Elber’s Lagrangian multiplier-based reaction path
  following algorithm. The program takes as input a pair of structural minima as TINKER
  .xyz files, and then generates a user specified number of points along a path through
  conformational space connecting the input structures. The intermediate structures are
@@ -713,29 +713,29 @@
  Newton-based optimization to locate conformational transition states."
     >
         <Option
-            name="Structure"
-            description="Second structural minima"
-            gui="SYSTEMS"
-            default="XYZ"
+                name="Structure"
+                description="Second structural minima"
+                gui="SYSTEMS"
+                default="XYZ"
         />
         <Option
-            name="Reaction Points"
-            description="Number of reaction points to generate"
-            gui="TEXTFIELD"
-            default="9"
+                name="Reaction Points"
+                description="Number of reaction points to generate"
+                gui="TEXTFIELD"
+                default="9"
         />
         <Option
-            name="Convergence Criteria"
-            description="Enter the RMS Gradient per Atom Criterion"
-            gui="TEXTFIELD"
-            default="0.1"
+                name="Convergence Criteria"
+                description="Enter the RMS Gradient per Atom Criterion"
+                gui="TEXTFIELD"
+                default="0.1"
         />
     </Command>
     <Command
-        name="PDBXYZ"
-        fileType="PDB"
-        action="LOADXYZ"
-        description="A program for converting a Brookhaven Protein Data Bank file (a PDB file) into a TINKER .xyz Cartesian
+            name="PDBXYZ"
+            fileType="PDB"
+            action="LOADXYZ"
+            description="A program for converting a Brookhaven Protein Data Bank file (a PDB file) into a TINKER .xyz Cartesian
  coordinate file. If the PDB file contains only protein/peptide amino acid residues, then standard protein
  connectivity is assumed, and transferred to the .xyz file. For non-protein portions of the PDB file, atom
  connectivity is determined by the program based on interatomic distances. The program also has the ability
@@ -743,94 +743,94 @@
  computation."
     >
         <Option
-            name="Alternate Location"
-            description="Enter a Set of Alternate Atom Locations: "
-            gui="RADIOBUTTONS"
+                name="Alternate Location"
+                description="Enter a Set of Alternate Atom Locations: "
+                gui="RADIOBUTTONS"
         >
             <Conditional
-                name="REFLECTION"
-                value="AltLoc"
-                description="Specify which Alternate Locaton to use "
+                    name="REFLECTION"
+                    value="AltLoc"
+                    description="Specify which Alternate Locaton to use "
             />
         </Option>
         <Option
-            name="Chain Names"
-            description="Enter the Chain Name(s) to Inlcude: "
-            gui="RADIOBUTTONS"
-            default="ALL"
+                name="Chain Names"
+                description="Enter the Chain Name(s) to Inlcude: "
+                gui="RADIOBUTTONS"
+                default="ALL"
         >
-            <Value name="ALL" />
+            <Value name="ALL"/>
             <Conditional
-                name="REFLECTION"
-                value="Chains"
-                description="Specify which Chain(s) to use"
+                    name="REFLECTION"
+                    value="Chains"
+                    description="Specify which Chain(s) to use"
             />
         </Option>
     </Command>
     <Command
-        name="Protein"
-        description="A program for automated building of peptide and protein structures.
+            name="Protein"
+            description="A program for automated building of peptide and protein structures.
  Upon input of an amino acid sequence with optional phi/psi/omega/chi angles, D/L chirality,
  etc., the program builds internal and Cartesian coordinates. Standard bond lengths and angles are
  assumed for the peptide. The program will optionally convert the structure to a cyclic peptide, or
  add either or both N- and C-terminal capping groups. Atom type numbers are automatically assigned
  for the specified force field. The final coordinates and a sequence file are produced as the output."
-        fileType="ANY"
-        action="LOADXYZ"
+            fileType="ANY"
+            action="LOADXYZ"
     >
         <Option
-            name="File Name"
-            description="Enter name to be used for output file"
-            gui="TEXTFIELD"
-            default="protein"
+                name="File Name"
+                description="Enter name to be used for output file"
+                gui="TEXTFIELD"
+                default="protein"
         />
         <Option
-            name="Title"
-            description="Enter title"
-            gui="TEXTFIELD"
-            default="Protein built with TINKER/Force Field Xplorer"
+                name="Title"
+                description="Enter title"
+                gui="TEXTFIELD"
+                default="Protein built with TINKER/Force Field Xplorer"
         />
         <Option
-            name="N-CAP"
-            description="The allowed N-Cap Residues are Acetyl=ACE or Formyl=FOR"
-            gui="RADIOBUTTONS"
-            default="ACE"
+                name="N-CAP"
+                description="The allowed N-Cap Residues are Acetyl=ACE or Formyl=FOR"
+                gui="RADIOBUTTONS"
+                default="ACE"
         >
-            <Value name="ACE" />
-            <Value name="FOR" />
-            <Value name="NONE" />
+            <Value name="ACE"/>
+            <Value name="FOR"/>
+            <Value name="NONE"/>
         </Option>
         <Option
-            name="Sequence"
-            description="3 Letter Code, Phi/Psi/Omega (3F), Chi Angles (4F),
+                name="Sequence"
+                description="3 Letter Code, Phi/Psi/Omega (3F), Chi Angles (4F),
  Disulfide Partner if a CYS (I), and D/L Chirality as desired (A1)"
-            gui="PROTEIN"
+                gui="PROTEIN"
         />
         <Option
-            name="C-CAP"
-            description="Possible C-Cap Residues are N-MethylAmide=NME or Amide=NH2"
-            gui="RADIOBUTTONS"
-            default="NH2"
+                name="C-CAP"
+                description="Possible C-Cap Residues are N-MethylAmide=NME or Amide=NH2"
+                gui="RADIOBUTTONS"
+                default="NH2"
         >
-            <Value name="NME" />
-            <Value name="NH2" />
-            <Value name="NONE" />
+            <Value name="NME"/>
+            <Value name="NH2"/>
+            <Value name="NONE"/>
         </Option>
         <Option
-            name="Cyclize"
-            description="Cyclize the Polypeptide Chain"
-            gui="RADIOBUTTONS"
-            default="N"
+                name="Cyclize"
+                description="Cyclize the Polypeptide Chain"
+                gui="RADIOBUTTONS"
+                default="N"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
     </Command>
     <Command
-        name="PSS"
-        fileType="XYZ"
-        action="CONNECT"
-        description="Implements our version of a potential smoothing and search algorithm for the global
+            name="PSS"
+            fileType="XYZ"
+            action="CONNECT"
+            description="Implements our version of a potential smoothing and search algorithm for the global
  optimization of molecular conformation. An initial structure in .xyz format is first
  minimized in Cartesian coordinates on a series of increasingly smoothed potential energy
  surfaces. Then the smoothing procedure is reversed with minimization on each successive
@@ -842,96 +842,96 @@
  backtracking procedures are placed in sequentially numbered cycle files."
     >
         <Option
-            name="Steps"
-            description="Number of Steps for Smoothing Schedule "
-            gui="TEXTFIELD"
-            default="100"
+                name="Steps"
+                description="Number of Steps for Smoothing Schedule "
+                gui="TEXTFIELD"
+                default="100"
         />
         <Option
-            name="Forward Smoothing"
-            description="Perform Forward Smoothing from Input Structure"
-            gui="RADIOBUTTONS"
-            default="Y"
+                name="Forward Smoothing"
+                description="Perform Forward Smoothing from Input Structure"
+                gui="RADIOBUTTONS"
+                default="Y"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
         <Option
-            name="Schedule"
-            description="Use Quadratic (Q), Cubic (C) or Sigmoidal (S) Schedule:"
-            gui="RADIOBUTTONS"
-            default="Q"
+                name="Schedule"
+                description="Use Quadratic (Q), Cubic (C) or Sigmoidal (S) Schedule:"
+                gui="RADIOBUTTONS"
+                default="Q"
         >
-            <Value name="Q" />
-            <Value name="C" />
-            <Value name="S" />
+            <Value name="Q"/>
+            <Value name="C"/>
+            <Value name="S"/>
         </Option>
         <Option
-            name="Search Type"
-            description="Local Search Type - available only from the command line"
-            gui="RADIOBUTTONS"
-            default="N"
+                name="Search Type"
+                description="Local Search Type - available only from the command line"
+                gui="RADIOBUTTONS"
+                default="N"
         >
-            <Value name="N" />
+            <Value name="N"/>
         </Option>
         <Option
-            name="RMS Gradient"
-            description="RMS Gradient per Atom Criterion"
-            gui="TEXTFIELD"
-            default="0.0001"
+                name="RMS Gradient"
+                description="RMS Gradient per Atom Criterion"
+                gui="TEXTFIELD"
+                default="0.0001"
         />
     </Command>
     <Command
-        name="PSSRigid"
-        fileType="XYZ"
-        action="CONNECT"
-        description="This program implements the potential smoothing and search method as described above for
+            name="PSSRigid"
+            fileType="XYZ"
+            action="CONNECT"
+            description="This program implements the potential smoothing and search method as described above for
  the PSS program, but performs the computation in terms of keyfile-defined rigid body atom
  groups instead of Cartesian coordinates. Output is saved in numbered cycle files with the
  .xyz file format."
     >
         <Option
-            name="Smoothing Parameter"
-            description="Potential Surface Smoothing Parameter"
-            gui="TEXTFIELD"
-            default="0.0"
+                name="Smoothing Parameter"
+                description="Potential Surface Smoothing Parameter"
+                gui="TEXTFIELD"
+                default="0.0"
         />
         <Option
-            name="Steps"
-            description="Number of Steps for the PSS Schedule"
-            gui="TEXTFIELD"
-            default="100"
+                name="Steps"
+                description="Number of Steps for the PSS Schedule"
+                gui="TEXTFIELD"
+                default="100"
         />
         <Option
-            name="Local Search"
-            description="Use Local Search to Explore Each Smoothing Level"
-            gui="RADIOBUTTONS"
-            default="N"
+                name="Local Search"
+                description="Use Local Search to Explore Each Smoothing Level"
+                gui="RADIOBUTTONS"
+                default="N"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
         <Option
-            name="RMS Gradient"
-            description="RMS Gradient per Atom Rigid Body Criterion"
-            gui="TEXTFIELD"
-            default="0.0001"
+                name="RMS Gradient"
+                description="RMS Gradient per Atom Rigid Body Criterion"
+                gui="TEXTFIELD"
+                default="0.0001"
         />
     </Command>
     <Command
-        name="Polarize"
-        fileType="XYZ"
-        action="SHOWLOG"
-        description="A program for computing molecular polarizability from an atom-based distributed model of
+            name="Polarize"
+            fileType="XYZ"
+            action="SHOWLOG"
+            description="A program for computing molecular polarizability from an atom-based distributed model of
  polarizability. A damped interaction model due to Thole is optionally via keyfile settings. A
  TINKER .xyz file is required as input. The output consists of the overall polarizability
  tensor in the global coordinates and its eigenvalues."
     />
     <Command
-        name="Saddle"
-        fileType="XYZ"
-        action="CONNECT"
-        description="A program for the location of a conformational transition state between two potential energy
+            name="Saddle"
+            fileType="XYZ"
+            action="CONNECT"
+            description="A program for the location of a conformational transition state between two potential energy
  minima. SADDLE uses a conglomeration of ideas from the Bell-Crighton quadratic path and
  the Halgren-Lipscomb synchronous transit methods. The basic idea is to perform a nonlinear
  conjugate gradient optimization in a subspace orthogonal to a suitably defined reaction
@@ -943,31 +943,31 @@
  major iteration."
     >
         <Option
-            name="Second Structure"
-            description="Second structural minima"
-            gui="SYSTEMS"
+                name="Second Structure"
+                description="Second structural minima"
+                gui="SYSTEMS"
         />
         <Option
-            name="RMS Gradient"
-            description="Enter RMS Gradient per Atom Criterion"
-            gui="TEXTFIELD"
-            default="0.1"
+                name="RMS Gradient"
+                description="Enter RMS Gradient per Atom Criterion"
+                gui="TEXTFIELD"
+                default="0.1"
         />
         <Option
-            name="Synchronous"
-            description="Perform Synchronous Transit Pathway Scans"
-            gui="RADIOBUTTONS"
-            default="N"
+                name="Synchronous"
+                description="Perform Synchronous Transit Pathway Scans"
+                gui="RADIOBUTTONS"
+                default="N"
         >
-            <Value name="N" />
-            <Value name="Y" />
+            <Value name="N"/>
+            <Value name="Y"/>
         </Option>
     </Command>
     <Command
-        name="Scan"
-        fileType="XYZ"
-        action="CONNECT"
-        description="A program for general conformational search of an entire potential energy surface via a basin
+            name="Scan"
+            fileType="XYZ"
+            action="CONNECT"
+            description="A program for general conformational search of an entire potential energy surface via a basin
  hopping method. The program takes as input a TINKER .xyz coordinates file which is then
  minimized to find the first local minimum for a search list. A series of activations along
  various normal modes from this initial minimum are used as seed points for additional
@@ -980,46 +980,46 @@
  attraction spaning the entire surface."
     >
         <Option
-            name="Rotation"
-            description="Selection of torsional angles for rotation"
-            gui="RADIOBUTTONS"
-            default="0"
+                name="Rotation"
+                description="Selection of torsional angles for rotation"
+                gui="RADIOBUTTONS"
+                default="0"
         >
-            <Value name="0" />
-            <Value name="1" />
-            <Value name="2" />
+            <Value name="0"/>
+            <Value name="1"/>
+            <Value name="2"/>
             <Conditional
-                name="VALUE"
-                value="1 2"
-                description="Enter Atoms in Rotatable Bond(s)"
-                gui="TERMINATEDTEXTFIELD"
-                postProcess="ATOMPAIRS"
+                    name="VALUE"
+                    value="1 2"
+                    description="Enter Atoms in Rotatable Bond(s)"
+                    gui="TERMINATEDTEXTFIELD"
+                    postProcess="ATOMPAIRS"
             />
         </Option>
         <Option
-            name="Search Directions"
-            description="Number Search Directions for Local Search"
-            gui="TEXTFIELD"
-            default="5"
+                name="Search Directions"
+                description="Number Search Directions for Local Search"
+                gui="TEXTFIELD"
+                default="5"
         />
         <Option
-            name="Threshold"
-            description="Energy Threshold for Local Minima"
-            gui="TEXTFIELD"
-            default="100"
+                name="Threshold"
+                description="Energy Threshold for Local Minima"
+                gui="TEXTFIELD"
+                default="100"
         />
         <Option
-            name="RMS Gradient"
-            description="RMS Gradient per Atom Criterion"
-            gui="TEXTFIELD"
-            default="0.0001"
+                name="RMS Gradient"
+                description="RMS Gradient per Atom Criterion"
+                gui="TEXTFIELD"
+                default="0.0001"
         />
     </Command>
     <Command
-        name="Sniffer"
-        fileType="XYZ"
-        action="CONNECT"
-        description="A program that implements the Sniffer global optimization algorithm of Butler and
+            name="Sniffer"
+            fileType="XYZ"
+            action="CONNECT"
+            description="A program that implements the Sniffer global optimization algorithm of Butler and
  Slaminka, a discrete version of Griewank’s global search trajectory method. The program
  takes an input TINKER .xyz coordinates file and shakes it vigorously via a modified
  dynamics trajectory before, hopefully, settling into a low lying minimum. Some trial and
@@ -1029,29 +1029,29 @@
  optimizing conformation within a limited range of convergence."
     >
         <Option
-            name="Steps"
-            description="Number of Steps in the Initial Set"
-            gui="TEXTFIELD"
-            default="100"
+                name="Steps"
+                description="Number of Steps in the Initial Set"
+                gui="TEXTFIELD"
+                default="100"
         />
         <Option
-            name="Target Energy"
-            description="Target Energy for the Global Minimum"
-            gui="TEXTFIELD"
-            default="0.0"
+                name="Target Energy"
+                description="Target Energy for the Global Minimum"
+                gui="TEXTFIELD"
+                default="0.0"
         />
         <Option
-            name="RMS Gradient"
-            description="RMS Gradient per Atom Criterion"
-            gui="TEXTFIELD"
-            default="1.0"
+                name="RMS Gradient"
+                description="RMS Gradient per Atom Criterion"
+                gui="TEXTFIELD"
+                default="1.0"
         />
     </Command>
     <Command
-        name="Spacefill"
-        fileType="XYZ"
-        action="SHOWLOG"
-        description="A program to compute the volume and surface areas of molecules. Using a modified version
+            name="Spacefill"
+            fileType="XYZ"
+            action="SHOWLOG"
+            description="A program to compute the volume and surface areas of molecules. Using a modified version
  of Connolly’s original analytical description of the molecular surface, the program determines
  either the van der Waals, accessible or molecular (contact/reentrant) volume and surface
  area. Both surface area and volume are broken down into their geometric components, and
@@ -1061,38 +1061,38 @@
  each structure in the input file."
     >
         <Option
-            name="Type of Area and Volume"
-            description=" Three Types of Area and Volume can be Computed :&#10;
+                name="Type of Area and Volume"
+                description=" Three Types of Area and Volume can be Computed :&#10;
     (1) Van der Waals Area and Volume&#10;
     (2) Accessible Area and Excluded Volume&#10;
     (3) Contact-Reentrant Area and Volume&#10;"
-            gui="RADIOBUTTONS"
-            default="1"
+                gui="RADIOBUTTONS"
+                default="1"
         >
-            <Value name="1" />
-            <Value name="2" />
-            <Value name="3" />
+            <Value name="1"/>
+            <Value name="2"/>
+            <Value name="3"/>
         </Option>
         <Option
-            name="Probe Radius"
-            description="Probe Radius in Angstroms (Leave blank for van der Waals Area and Volume)"
-            gui="TEXTFIELD"
+                name="Probe Radius"
+                description="Probe Radius in Angstroms (Leave blank for van der Waals Area and Volume)"
+                gui="TEXTFIELD"
         />
         <Option
-            name="Hydrogens"
-            description="Include hydrogen atoms in the computation"
-            gui="RADIOBUTTONS"
-            default="N"
+                name="Hydrogens"
+                description="Include hydrogen atoms in the computation"
+                gui="RADIOBUTTONS"
+                default="N"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
     </Command>
     <Command
-        name="Superpose"
-        fileType="XYZ"
-        action="LOADXYZ"
-        description="A program to superimpose two molecular structures in 3-dimensions. A variety of options for
+            name="Superpose"
+            fileType="XYZ"
+            action="LOADXYZ"
+            description="A program to superimpose two molecular structures in 3-dimensions. A variety of options for
  input of the atom sets to be used during the superposition are presented interactively to the
  user. The superposition can be mass-weighted if desired, and the coordinates of the second
  structure superimposed on the first structure are optionally output. If TINKER archive files
@@ -1100,345 +1100,345 @@
  in the input files."
     >
         <Option
-            name="Second Structure"
-            description="System to Superpose on the selected structure"
-            gui="SYSTEMS"
+                name="Second Structure"
+                description="System to Superpose on the selected structure"
+                gui="SYSTEMS"
         />
         <Option
-            name="Atom Specification"
-            description="Specification of individual atom pairs is only available from the command line"
-            gui="RADIOBUTTONS"
-            default="1"
-            postProcess="APPEND"
+                name="Atom Specification"
+                description="Specification of individual atom pairs is only available from the command line"
+                gui="RADIOBUTTONS"
+                default="1"
+                postProcess="APPEND"
         >
-            <Value name="1" />
+            <Value name="1"/>
         </Option>
         <Option
-            name="First Atom"
-            description="First Atom through Last Atom from structure 1 to the corresponding atoms of structure 2."
-            gui="TEXTFIELD"
-            default="1"
-            blank="1"
-            lowerLimit="1"
-            upperLimit="ATOMS"
-            postProcess="APPEND"
+                name="First Atom"
+                description="First Atom through Last Atom from structure 1 to the corresponding atoms of structure 2."
+                gui="TEXTFIELD"
+                default="1"
+                blank="1"
+                lowerLimit="1"
+                upperLimit="ATOMS"
+                postProcess="APPEND"
         />
         <Option
-            name="Last Atom"
-            description="Fit First Atom through Last Atom from structure 1 to the corresponding atoms of structure 2."
-            gui="TEXTFIELD"
-            default="ATOMS"
-            blank="ATOMS"
-            lowerLimit="1"
-            upperLimit="ATOMS"
+                name="Last Atom"
+                description="Fit First Atom through Last Atom from structure 1 to the corresponding atoms of structure 2."
+                gui="TEXTFIELD"
+                default="ATOMS"
+                blank="ATOMS"
+                lowerLimit="1"
+                upperLimit="ATOMS"
         />
         <Option
-            name="Hydrogens"
-            description="Include Hydrogen Atoms in the Fitting"
-            gui="RADIOBUTTONS"
-            default="Y"
+                name="Hydrogens"
+                description="Include Hydrogen Atoms in the Fitting"
+                gui="RADIOBUTTONS"
+                default="Y"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
         <Option
-            name="Weighting"
-            description="Use Mass (M) or Unit (U) Weighted Coordinates"
-            gui="RADIOBUTTONS"
-            default="U"
+                name="Weighting"
+                description="Use Mass (M) or Unit (U) Weighted Coordinates"
+                gui="RADIOBUTTONS"
+                default="U"
         >
-            <Value name="M" />
-            <Value name="U" />
+            <Value name="M"/>
+            <Value name="U"/>
         </Option>
         <Option
-            name="Output"
-            description="Write Best-Fit Coordinates of 2nd Molecule"
-            gui="RADIOBUTTONS"
-            default="N"
+                name="Output"
+                description="Write Best-Fit Coordinates of 2nd Molecule"
+                gui="RADIOBUTTONS"
+                default="N"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
         <Option
-            name="RMS Cutoff"
-            description="Cutoff Value for Listing RMS Deviations"
-            gui="TEXTFIELD"
-            default="0.0"
-            blank="0.0"
-            lowerLimit="0.0"
-            upperLimit="NONE"
+                name="RMS Cutoff"
+                description="Cutoff Value for Listing RMS Deviations"
+                gui="TEXTFIELD"
+                default="0.0"
+                blank="0.0"
+                lowerLimit="0.0"
+                upperLimit="NONE"
         />
     </Command>
     <Command
-        name="Testgrad"
-        fileType="XYZ"
-        action="SHOWLOG"
-        description="The TESTGRAD program computes and compares the analytical and numerical first
+            name="Testgrad"
+            fileType="XYZ"
+            action="SHOWLOG"
+            description="The TESTGRAD program computes and compares the analytical and numerical first
  derivatives (i.e., the gradient vector) of the potential energy for a Cartesian coordinate input
  structure. The output can be used to test or debug the current potential or any added user
  defined energy terms."
     >
         <Option
-            name="Analytic"
-            description="Compute the Analytical Gradient Vector"
-            gui="RADIOBUTTONS"
-            default="Y"
+                name="Analytic"
+                description="Compute the Analytical Gradient Vector"
+                gui="RADIOBUTTONS"
+                default="Y"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
         <Option
-            name="Numerical"
-            description="Compute the Numerical Gradient Vector"
-            gui="RADIOBUTTONS"
-            default="Y"
+                name="Numerical"
+                description="Compute the Numerical Gradient Vector"
+                gui="RADIOBUTTONS"
+                default="Y"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
         <Option
-            name="Stepsize"
-            description="Enter a Numerical Stepsize in Angstroms"
-            gui="TEXTFIELD"
-            default="0.1D-04"
+                name="Stepsize"
+                description="Enter a Numerical Stepsize in Angstroms"
+                gui="TEXTFIELD"
+                default="0.1D-04"
         />
         <Option
-            name="Output"
-            description="Output Breakdown by Gradient Component"
-            gui="RADIOBUTTONS"
-            default="N"
+                name="Output"
+                description="Output Breakdown by Gradient Component"
+                gui="RADIOBUTTONS"
+                default="N"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
     </Command>
     <Command
-        name="Testhess"
-        fileType="XYZ"
-        action="SHOWLOG"
-        description="The TESTHESS program computes and compares the analytical and numerical second
+            name="Testhess"
+            fileType="XYZ"
+            action="SHOWLOG"
+            description="The TESTHESS program computes and compares the analytical and numerical second
  derivatives (i.e., the Hessian matrix) of the potential energy for a Cartesian coordinate input
  structure. The output can be used to test or debug the current potential or any added user
  defined energy terms."
     >
         <Option
-            name="Analytic"
-            description="Compute Analytical Hessian Matrix"
-            gui="RADIOBUTTONS"
-            default="Y"
+                name="Analytic"
+                description="Compute Analytical Hessian Matrix"
+                gui="RADIOBUTTONS"
+                default="Y"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
         <Option
-            name="Numerical"
-            description="Compute Numerical Hessian Matrix"
-            gui="RADIOBUTTONS"
-            default="Y"
+                name="Numerical"
+                description="Compute Numerical Hessian Matrix"
+                gui="RADIOBUTTONS"
+                default="Y"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
         <Option
-            name="Method"
-            description="Numerical Hessian from Gradient or Function"
-            gui="RADIOBUTTONS"
-            default="G"
+                name="Method"
+                description="Numerical Hessian from Gradient or Function"
+                gui="RADIOBUTTONS"
+                default="G"
         >
-            <Value name="G" />
-            <Value name="F" />
+            <Value name="G"/>
+            <Value name="F"/>
         </Option>
         <Option
-            name="Stepsize"
-            description="Enter a Numerical Stepsize in Angstroms"
-            gui="TEXTFIELD"
-            default="0.1D-04"
+                name="Stepsize"
+                description="Enter a Numerical Stepsize in Angstroms"
+                gui="TEXTFIELD"
+                default="0.1D-04"
         />
     </Command>
     <Command
-        name="Testrot"
-        fileType="INT"
-        action="SHOWLOG"
-        description="The TESTROT program computes and compares the analytical and numerical first derivatives (i.e., the
+            name="Testrot"
+            fileType="INT"
+            action="SHOWLOG"
+            description="The TESTROT program computes and compares the analytical and numerical first derivatives (i.e., the
  gradient vector) of the potential energy with respect to dihedral angles. Input is a TINKER .int internal
  coordinate file. The output can be used to test or debug the current potential functions or any added user
  defined energy terms."
     >
         <Option
-            name="Selection of Torsion Angles"
-            description=" Selection of Torsional Angles for Rotation :&#10;
+                name="Selection of Torsion Angles"
+                description=" Selection of Torsional Angles for Rotation :&#10;
 &#10;
     0  - Automatic Selection of Torsional Angles&#10;
     1  - Manual Selection of Angles to Rotate&#10;
     2  - Manual Selection of Angles to Freeze&#10;
 &#10;"
-            gui="RADIOBUTTONS"
-            default="0"
+                gui="RADIOBUTTONS"
+                default="0"
         >
-            <Value name="0" />
-            <Value name="1" />
-            <Value name="2" />
+            <Value name="0"/>
+            <Value name="1"/>
+            <Value name="2"/>
             <Conditional
-                name="VALUE"
-                value="1 2"
-                description="Enter Atoms in Rotatable Bond(s)"
-                gui="TERMINATEDTEXTFIELD"
-                postProcess="ATOMPAIRS"
+                    name="VALUE"
+                    value="1 2"
+                    description="Enter Atoms in Rotatable Bond(s)"
+                    gui="TERMINATEDTEXTFIELD"
+                    postProcess="ATOMPAIRS"
             />
         </Option>
         <Option
-            name="Stepsize"
-            description="Enter a Numerical Stepsize in Angstroms"
-            gui="TEXTFIELD"
-            default="0.1D-04"
+                name="Stepsize"
+                description="Enter a Numerical Stepsize in Angstroms"
+                gui="TEXTFIELD"
+                default="0.1D-04"
         />
     </Command>
     <Command
-        name="Timer"
-        fileType="XYZ"
-        action="SHOWLOG"
-        description="A simple program to provide timing statistics for energy function calls within the TINKER
+            name="Timer"
+            fileType="XYZ"
+            action="SHOWLOG"
+            description="A simple program to provide timing statistics for energy function calls within the TINKER
  package. TIMER requires an input .xyz file and outputs the CPU time (wall clock time on
  some machine types) needed to perform a specified number of energy, gradient and Hessian
  evaluations."
     >
         <Option
-            name="Repetitions"
-            description="Enter Desired Number of Repetitions"
-            gui="TEXTFIELD"
-            default="1"
+                name="Repetitions"
+                description="Enter Desired Number of Repetitions"
+                gui="TEXTFIELD"
+                default="1"
         />
         <Option
-            name="Hessian"
-            description="Include Timing for Hessian Evaluations"
-            gui="RADIOBUTTONS"
-            default="Y"
+                name="Hessian"
+                description="Include Timing for Hessian Evaluations"
+                gui="RADIOBUTTONS"
+                default="Y"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
     </Command>
     <Command
-        name="Timerot"
-        fileType="INT"
-        action="SHOWLOG"
-        description="This program is similar to TIMER, only it operates over dihedral angles via input of a TINKER .int
+            name="Timerot"
+            fileType="INT"
+            action="SHOWLOG"
+            description="This program is similar to TIMER, only it operates over dihedral angles via input of a TINKER .int
  internal coordinate file. In the current version, the torsional Hessian is computed numerically from the
  analytical torsional gradient."
     >
         <Option
-            name="Selection of Torsion Angles"
-            description=" Selection of Torsional Angles for Rotation :&#10;
+                name="Selection of Torsion Angles"
+                description=" Selection of Torsional Angles for Rotation :&#10;
 &#10;
     0  - Automatic Selection of Torsional Angles&#10;
     1  - Manual Selection of Angles to Rotate&#10;
     2  - Manual Selection of Angles to Freeze&#10;
 &#10;"
-            gui="RADIOBUTTONS"
-            default="0"
+                gui="RADIOBUTTONS"
+                default="0"
         >
-            <Value name="0" />
-            <Value name="1" />
-            <Value name="2" />
+            <Value name="0"/>
+            <Value name="1"/>
+            <Value name="2"/>
             <Conditional
-                name="VALUE"
-                value="1 2"
-                description="Enter Atoms in Rotatable Bond(s)"
-                gui="TERMINATEDTEXTFIELD"
-                postProcess="ATOMPAIRS"
+                    name="VALUE"
+                    value="1 2"
+                    description="Enter Atoms in Rotatable Bond(s)"
+                    gui="TERMINATEDTEXTFIELD"
+                    postProcess="ATOMPAIRS"
             />
         </Option>
         <Option
-            name="Repetitions"
-            description="Enter Desired Number of Repetitions"
-            gui="TEXTFIELD"
-            default="1"
+                name="Repetitions"
+                description="Enter Desired Number of Repetitions"
+                gui="TEXTFIELD"
+                default="1"
         />
         <Option
-            name="Hessian"
-            description="Include Timing for Hessian Evaluations"
-            gui="RADIOBUTTONS"
-            default="Y"
+                name="Hessian"
+                description="Include Timing for Hessian Evaluations"
+                gui="RADIOBUTTONS"
+                default="Y"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
     </Command>
     <Command
-        name="Vibrate"
-        fileType="XYZ"
-        action="SHOWLOG"
-        description="A program to perform vibrational analysis by computing and diagonalizing the full Hessian
+            name="Vibrate"
+            fileType="XYZ"
+            action="SHOWLOG"
+            description="A program to perform vibrational analysis by computing and diagonalizing the full Hessian
  matrix (i.e., the second partial derivatives) for an input structure (a TINKER .xyz file).
  Eigenvalues and eigenvectors of the mass weighted Hessian (i.e., the vibrational frequencies
  and normal modes) are also calculated. Structures corresponding to individual normal mode
  motions can be saved in cycle files."
     >
         <Option
-            name="Vibration"
-            description="Enter the Number(s) of the Vibration(s) to be Output"
-            default="7 8 9"
-            gui="TEXTFIELD"
-            postProcess="SPLIT"
+                name="Vibration"
+                description="Enter the Number(s) of the Vibration(s) to be Output"
+                default="7 8 9"
+                gui="TEXTFIELD"
+                postProcess="SPLIT"
         />
     </Command>
     <Command
-        name="Vibrot"
-        fileType="INT"
-        action="SHOWLOG"
-        description="The program VIBROT forms the torsional Hessian matrix via numerical differentiation of the analytical
+            name="Vibrot"
+            fileType="INT"
+            action="SHOWLOG"
+            description="The program VIBROT forms the torsional Hessian matrix via numerical differentiation of the analytical
  torsional gradient. The Hessian is then diagonalized and the eigenvalues are output.
  The present versiondoes not compute the kinetic energy matrix elements needed to convert the
  Hessian into the torsional normal modes; this will be added in a later version. The required
  input is a TINKER .int internal coordinate file."
     >
         <Option
-            name="Selection of Torsion Angles"
-            description=" Selection of Torsional Angles for Rotation :&#10;
+                name="Selection of Torsion Angles"
+                description=" Selection of Torsional Angles for Rotation :&#10;
 &#10;
     0  - Automatic Selection of Torsional Angles&#10;
     1  - Manual Selection of Angles to Rotate&#10;
     2  - Manual Selection of Angles to Freeze&#10;
 &#10;"
-            gui="RADIOBUTTONS"
-            default="0"
+                gui="RADIOBUTTONS"
+                default="0"
         >
-            <Value name="0" />
-            <Value name="1" />
-            <Value name="2" />
+            <Value name="0"/>
+            <Value name="1"/>
+            <Value name="2"/>
             <Conditional
-                name="VALUE"
-                value="1 2"
-                description="Enter Atoms in Rotatable Bond(s)"
-                gui="TERMINATEDTEXTFIELD"
-                postProcess="ATOMPAIRS"
+                    name="VALUE"
+                    value="1 2"
+                    description="Enter Atoms in Rotatable Bond(s)"
+                    gui="TERMINATEDTEXTFIELD"
+                    postProcess="ATOMPAIRS"
             />
         </Option>
     </Command>
     <Command
-        name="XYZINT"
-        fileType="XYZ"
-        action="LOADINT"
-        description="A program for converting a TINKER .xyz Cartesian coordinate formatted file into a
+            name="XYZINT"
+            fileType="XYZ"
+            action="LOADINT"
+            description="A program for converting a TINKER .xyz Cartesian coordinate formatted file into a
  TINKER .int internal coordinates formatted file. This program can optionally use an
  existing internal coordinates file as a template for the connectivity information."
     >
         <Option
-            name="Conversion Mode"
-            description="Template (T), Dihedrals (D) or Automatic [A]"
-            gui="RADIOBUTTONS"
-            default="A"
+                name="Conversion Mode"
+                description="Template (T), Dihedrals (D) or Automatic [A]"
+                gui="RADIOBUTTONS"
+                default="A"
         >
-            <Value name="T" />
-            <Value name="D" />
-            <Value name="A" />
+            <Value name="T"/>
+            <Value name="D"/>
+            <Value name="A"/>
         </Option>
     </Command>
     <Command
-        name="XYZPDB"
-        fileType="XYZ"
-        action="LOADPDB"
-        description="A program for converting a TINKER .xyz Cartesian coordinate file into a Brookhaven
+            name="XYZPDB"
+            fileType="XYZ"
+            action="LOADPDB"
+            description="A program for converting a TINKER .xyz Cartesian coordinate file into a Brookhaven
  Protein Data Bank file (a PDB file)."
     />
 </TinkerCommands>

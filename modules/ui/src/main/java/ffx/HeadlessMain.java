@@ -59,6 +59,10 @@ import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
 public class HeadlessMain {
 
     private static final Logger logger = Logger.getLogger(HeadlessMain.class.getName());
+    /**
+     * This is the main application container for both the GUI and CLI.
+     */
+    public MainPanel mainPanel;
 
     /**
      * Complete initializations.
@@ -132,10 +136,5 @@ public class HeadlessMain {
         ToStringBuilder toStringBuilder = new ToStringBuilder(this).append("Logger: " + logger.getName());
         return toStringBuilder.toString();
     }
-
-    /**
-     * This is the main application container for both the GUI and CLI.
-     */
-    public MainPanel mainPanel;
 
 }

@@ -54,7 +54,7 @@ public class Rattle {
 
     /**
      * Literature reference (from Tinker):
-     *
+     * <p>
      * H. C. Andersen, "RATTLE: A Velocity Version of the SHAKE
      * Algorithm for Molecular Dynamics Calculations", Journal of
      * Computational Physics, 52, 24-34 (1983)
@@ -83,7 +83,6 @@ public class Rattle {
         Atom[] tempArray = molAss.getAtomArray();
         int size = tempArray.length;
         this.nVariables = nVariables;
-
 
 
         //get velocities prior to integrator

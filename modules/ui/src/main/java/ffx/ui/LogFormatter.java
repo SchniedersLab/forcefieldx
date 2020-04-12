@@ -53,9 +53,9 @@ import edu.rit.pj.Comm;
  */
 public class LogFormatter extends SimpleFormatter {
 
+    private static final int warningLevel = Level.WARNING.intValue();
     private final boolean debug;
     private final boolean mpiLogging;
-    private static final int warningLevel = Level.WARNING.intValue();
 
     /**
      * Constructor for the LogFormatter.
@@ -113,8 +113,8 @@ public class LogFormatter extends SimpleFormatter {
     /**
      * Prepend the MPI rank to a line of text to give: " [Rank]line"
      *
-     * @param size Number of MPI processes.
-     * @param rank Rank of this MPI processs.
+     * @param size  Number of MPI processes.
+     * @param rank  Rank of this MPI processs.
      * @param lines The String to format split by new line characters.
      * @return " [Rank]line"
      */

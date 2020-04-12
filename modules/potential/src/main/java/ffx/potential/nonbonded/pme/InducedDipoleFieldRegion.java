@@ -79,7 +79,19 @@ import static ffx.numerics.special.Erf.erfc;
 public class InducedDipoleFieldRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(InducedDipoleFieldRegion.class.getName());
-
+    /**
+     * Specify inter-molecular softcore.
+     */
+    private final boolean intermolecularSoftcore;
+    /**
+     * Specify intra-molecular softcore.
+     */
+    private final boolean intramolecularSoftcore;
+    /**
+     * Dimensions of [nsymm][nAtoms][3]
+     */
+    public double[][][] inducedDipole;
+    public double[][][] inducedDipoleCR;
     /**
      * An ordered array of atoms in the system.
      */
@@ -128,11 +140,6 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
      */
     private int[][] realSpaceCounts;
     /**
-     * Dimensions of [nsymm][nAtoms][3]
-     */
-    public double[][][] inducedDipole;
-    public double[][][] inducedDipoleCR;
-    /**
      * Pairwise schedule for load balancing.
      */
     private IntegerSchedule realSpaceSchedule;
@@ -157,15 +164,6 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
      * Chain rule field array.
      */
     private AtomicDoubleArray3D fieldCR;
-    /**
-     * Specify inter-molecular softcore.
-     */
-    private final boolean intermolecularSoftcore;
-    /**
-     * Specify intra-molecular softcore.
-     */
-    private final boolean intramolecularSoftcore;
-
     private InducedDipoleRealSpaceFieldSection inducedRealSpaceFieldSection;
     private InducedDipoleReciprocalFieldSection inducedReciprocalFieldSection;
 
@@ -181,6 +179,28 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
             intermolecularSoftcore = false;
             intramolecularSoftcore = false;
         }
+    }
+
+    /**
+     * Execute the InducedDipoleFieldRegion with the passed ParallelTeam.
+     *
+     * @param sectionTeam The ParallelTeam instance to execute with.
+     */
+    public void executeWith(ParallelTeam sectionTeam) {
+        try {
+            sectionTeam.execute(this);
+        } catch (RuntimeException e) {
+            String message = "Runtime exception computing the induced reciprocal space field.\n";
+            logger.log(Level.WARNING, message, e);
+            throw e;
+        } catch (Exception ex) {
+            String message = "Fatal exception computing the induced reciprocal space field.\n";
+            logger.log(Level.SEVERE, message, ex);
+        }
+    }
+
+    public long getRealSpaceSCFTotal() {
+        return realSpaceSCFTotal;
     }
 
     public void init(Atom[] atoms, Crystal crystal, boolean[] use, int[] molecule,
@@ -213,28 +233,6 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
         this.fieldCR = fieldCR;
         this.realSpaceSCFTotal = pmeTimings.realSpaceSCFTotal;
         this.realSpaceSCFTime = pmeTimings.realSpaceSCFTime;
-    }
-
-    public long getRealSpaceSCFTotal() {
-        return realSpaceSCFTotal;
-    }
-
-    /**
-     * Execute the InducedDipoleFieldRegion with the passed ParallelTeam.
-     *
-     * @param sectionTeam The ParallelTeam instance to execute with.
-     */
-    public void executeWith(ParallelTeam sectionTeam) {
-        try {
-            sectionTeam.execute(this);
-        } catch (RuntimeException e) {
-            String message = "Runtime exception computing the induced reciprocal space field.\n";
-            logger.log(Level.WARNING, message, e);
-            throw e;
-        } catch (Exception ex) {
-            String message = "Fatal exception computing the induced reciprocal space field.\n";
-            logger.log(Level.SEVERE, message, ex);
-        }
     }
 
     @Override
@@ -314,22 +312,6 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
             private double[] x, y, z;
 
             InducedRealSpaceFieldLoop() {
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return realSpaceSchedule;
-            }
-
-            @Override
-            public void start() {
-                threadID = getThreadIndex();
-                realSpaceSCFTime[threadID] -= System.nanoTime();
-                x = coordinates[0][0];
-                y = coordinates[0][1];
-                z = coordinates[0][2];
-                ind = inducedDipole[0];
-                indCR = inducedDipoleCR[0];
             }
 
             @Override
@@ -631,6 +613,22 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
                         fieldCR.add(threadID, i, px, py, pz);
                     }
                 }
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return realSpaceSchedule;
+            }
+
+            @Override
+            public void start() {
+                threadID = getThreadIndex();
+                realSpaceSCFTime[threadID] -= System.nanoTime();
+                x = coordinates[0][0];
+                y = coordinates[0][1];
+                z = coordinates[0][2];
+                ind = inducedDipole[0];
+                indCR = inducedDipoleCR[0];
             }
         }
     }

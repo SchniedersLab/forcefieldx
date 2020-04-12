@@ -56,15 +56,6 @@ import edu.rit.pj.ParallelTeam;
 @RunWith(Parameterized.class)
 public class Real3DParallelTest {
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32, nCPUs=1}", 32, 32, 32, 1},
-                {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
-                {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
-                {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
-        });
-    }
-
     private final String info;
     private final int nx;
     private final int ny;
@@ -89,6 +80,15 @@ public class Real3DParallelTest {
         parallelTeam = new ParallelTeam(nCPUs);
     }
 
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32, nCPUs=1}", 32, 32, 32, 1},
+                {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
+                {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
+                {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
+        });
+    }
+
     @Before
     public void setUp() {
         Random random = new Random();
@@ -108,13 +108,13 @@ public class Real3DParallelTest {
     }
 
     /**
-     * Test of the fft and ifft methods, of class Real3DParallel.
+     * Test of convolution method, of class Real3DParallel.
      */
     @Test
-    public void testFft() {
+    public void testConvolution() {
         Real3DParallel real3D = new Real3DParallel(nx, ny, nz, parallelTeam);
-        real3D.fft(data);
-        real3D.ifft(data);
+        real3D.setRecip(recip);
+        real3D.convolution(data);
         int paddedIndex = 0;
         int index = 0;
         for (int z = 0; z < nz; z++) {
@@ -130,13 +130,13 @@ public class Real3DParallelTest {
     }
 
     /**
-     * Test of convolution method, of class Real3DParallel.
+     * Test of the fft and ifft methods, of class Real3DParallel.
      */
     @Test
-    public void testConvolution() {
+    public void testFft() {
         Real3DParallel real3D = new Real3DParallel(nx, ny, nz, parallelTeam);
-        real3D.setRecip(recip);
-        real3D.convolution(data);
+        real3D.fft(data);
+        real3D.ifft(data);
         int paddedIndex = 0;
         int index = 0;
         for (int z = 0; z < nz; z++) {

@@ -37,14 +37,11 @@
 //******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
-import ffx.numerics.Potential;
-import ffx.numerics.Constraint;
-import ffx.utilities.Constants;
-
-import java.util.Arrays;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 
+import ffx.numerics.Constraint;
+import ffx.numerics.Potential;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 
 /**
@@ -75,6 +72,22 @@ public class VelocityVerlet extends Integrator {
     /**
      * {@inheritDoc}
      * <p>
+     * Use Newton's second law to find accelerations and
+     * then full-step velocities.
+     */
+    @Override
+    public void postForce(double[] gradient) {
+        copyAccelerationToPrevious();
+        for (int i = 0; i < nVariables; i++) {
+            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
+            v[i] = v[i] + a[i] * dt_2;
+        }
+        constraints.forEach((Constraint c) -> c.applyConstraintToVelocities(x, v, mass, constraintTolerance));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Find half-step velocities and full-step positions.
      */
     @Override
@@ -97,22 +110,6 @@ public class VelocityVerlet extends Integrator {
                 v[i] = velScale * (x[i] - xPrior[i]);
             }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Use Newton's second law to find accelerations and
-     * then full-step velocities.
-     */
-    @Override
-    public void postForce(double[] gradient) {
-        copyAccelerationToPrevious();
-        for (int i = 0; i < nVariables; i++) {
-            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
-            v[i] = v[i] + a[i] * dt_2;
-        }
-        constraints.forEach((Constraint c) -> c.applyConstraintToVelocities(x, v, mass, constraintTolerance));
     }
 
     /**

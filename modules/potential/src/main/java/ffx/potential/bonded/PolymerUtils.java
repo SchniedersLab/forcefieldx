@@ -55,11 +55,11 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter.PDBFileStandard;
-import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.math.DoubleMath.dist;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.scale;
-import static ffx.numerics.math.DoubleMath.add;
+import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
 import static ffx.potential.bonded.Bond.logNoBondType;
 import static ffx.potential.bonded.BondedUtils.buildBond;
@@ -90,12 +90,12 @@ public class PolymerUtils {
      *
      * @param molecularAssembly MolecularAssembly to operate on.
      * @param fileStandard      PDB file standard to follow.
-     * @return An ArrayList of created bonds.
+     * @return An List of created bonds.
      */
-    public static ArrayList<Bond> assignAtomTypes(MolecularAssembly molecularAssembly,
-                                                  PDBFileStandard fileStandard) {
+    public static List<Bond> assignAtomTypes(MolecularAssembly molecularAssembly,
+                                             PDBFileStandard fileStandard) {
         // Create a list to store bonds defined by PDB atom names.
-        ArrayList<Bond> bondList = new ArrayList<>();
+        List<Bond> bondList = new ArrayList<>();
 
         ForceField forceField = molecularAssembly.getForceField();
         CompositeConfiguration properties = molecularAssembly.getProperties();
@@ -239,7 +239,7 @@ public class PolymerUtils {
         }
 
         // Assign ion atom types.
-        ArrayList<MSNode> ions = molecularAssembly.getIons();
+        List<MSNode> ions = molecularAssembly.getIons();
         if (ions != null && ions.size() > 0) {
             logger.info(format(" Assigning atom types for %d ions.", ions.size()));
             for (MSNode m : ions) {
@@ -287,7 +287,7 @@ public class PolymerUtils {
             }
         }
         // Assign water atom types.
-        ArrayList<MSNode> water = molecularAssembly.getWaters();
+        List<MSNode> water = molecularAssembly.getWaters();
         if (water != null && water.size() > 0) {
             logger.info(format(" Assigning atom types for %d waters.", water.size()));
             for (MSNode m : water) {
@@ -308,12 +308,12 @@ public class PolymerUtils {
         }
 
         // Assign small molecule atom types.
-        ArrayList<MSNode> molecules = molecularAssembly.getMolecules();
+        List<MSNode> molecules = molecularAssembly.getMolecules();
         for (MSNode m : molecules) {
             Molecule molecule = (Molecule) m;
             String moleculeName = molecule.getResidueName();
             logger.info(" Attempting to patch " + moleculeName);
-            ArrayList<Atom> moleculeAtoms = molecule.getAtomList();
+            List<Atom> moleculeAtoms = molecule.getAtomList();
             boolean patched = true;
             HashMap<String, AtomType> types = forceField.getAtomTypes(moleculeName);
             // Assign atom types for all known atoms.
@@ -512,7 +512,7 @@ public class PolymerUtils {
      * @param molecularAssembly MolecularAssembly to operate on.
      * @param bondList          Add new SS-Bonds to this list.
      */
-    public static void buildDisulfideBonds(List<Bond> ssBondList, MolecularAssembly molecularAssembly, ArrayList<Bond> bondList) {
+    public static void buildDisulfideBonds(List<Bond> ssBondList, MolecularAssembly molecularAssembly, List<Bond> bondList) {
         StringBuilder sb = new StringBuilder(" Disulfide Bonds:");
         ForceField forceField = molecularAssembly.getForceField();
         for (Bond bond : ssBondList) {
@@ -774,7 +774,7 @@ public class PolymerUtils {
      * @param pdbToNewResMap    Maps chainIDResNumInsCode to renumbered chainIDResNum. For example,
      *                          residue 52A in chain C might be renumbered to residue 53, and mapped as
      *                          "C52A" to "C53".
-     * @return An ArrayList of Bond instances for SS-Bonds.
+     * @return An List of Bond instances for SS-Bonds.
      */
     public static List<Bond> locateDisulfideBonds(List<String> ssbonds, MolecularAssembly molecularAssembly, Map<String, String> pdbToNewResMap) {
         List<Bond> ssBondList = new ArrayList<>();
@@ -897,7 +897,7 @@ public class PolymerUtils {
      * @param bondList          Add created bonds to this list.
      */
     public static void resolvePolymerLinks(List<MSNode> molecules, MolecularAssembly molecularAssembly,
-                                           ArrayList<Bond> bondList) {
+                                           List<Bond> bondList) {
 
         ForceField forceField = molecularAssembly.getForceField();
         CompositeConfiguration properties = molecularAssembly.getProperties();
@@ -915,7 +915,7 @@ public class PolymerUtils {
                 cyclicLen = parseInt(toks[3]);
             }
 
-            ArrayList<Molecule> matches = new ArrayList<>();
+            List<Molecule> matches = new ArrayList<>();
             for (MSNode node : molecules) {
                 Molecule m = (Molecule) node;
                 if (m.getResidueName().equalsIgnoreCase(resName)) {

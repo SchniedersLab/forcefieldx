@@ -42,9 +42,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -96,20 +96,12 @@ public class DiffractionData implements DataContainer {
     private final CrystalReciprocalSpace[] crystalReciprocalSpacesFs;
     private final SolventModel solventModel;
     private final RefinementModel refinementModel;
-    private ScaleBulkMinimize[] scaleBulkMinimize;
-    private SigmaAMinimize[] sigmaAMinimize;
-    private SplineMinimize[] splineMinimize;
-    private CrystalStats[] crystalStats;
-    private ParallelTeam parallelTeam;
-    private CrystalReciprocalSpace.GridMethod gridMethod;
-    private boolean[] scaled;
     // Settings
     private final double fsigfCutoff;
     private final boolean use_3g;
     private final double aRadBuff;
     private final double xrayScaleTol;
     private final double sigmaATol;
-    private double xWeight;
     private final double bSimWeight;
     private final double bNonZeroWeight;
     private final double bMass;
@@ -119,7 +111,14 @@ public class DiffractionData implements DataContainer {
     private final boolean refineMolOcc;
     private final double occMass;
     private final boolean nativeEnvironmentApproximation;
-
+    private ScaleBulkMinimize[] scaleBulkMinimize;
+    private SigmaAMinimize[] sigmaAMinimize;
+    private SplineMinimize[] splineMinimize;
+    private CrystalStats[] crystalStats;
+    private ParallelTeam parallelTeam;
+    private CrystalReciprocalSpace.GridMethod gridMethod;
+    private boolean[] scaled;
+    private double xWeight;
     /**
      * If true, perform a grid search for bulk solvent parameters.
      */
@@ -379,7 +378,7 @@ public class DiffractionData implements DataContainer {
 
         String gridString = properties.getString("grid-method", "SLICE").toUpperCase();
         try {
-            gridMethod =  CrystalReciprocalSpace.GridMethod.valueOf(gridString);
+            gridMethod = CrystalReciprocalSpace.GridMethod.valueOf(gridString);
         } catch (Exception e) {
             gridMethod = CrystalReciprocalSpace.GridMethod.SLICE;
         }
@@ -484,20 +483,6 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
-     * Move the atomic coordinates for the FFT calculation - this is independent
-     * of the {@link ffx.potential.bonded.Atom} object coordinates as it uses a linearized array
-     *
-     * @param x array of coordinates to move atoms to
-     * @see CrystalReciprocalSpace#setCoordinates(double[])
-     */
-    void setFFTCoordinates(double[] x) {
-        for (int i = 0; i < n; i++) {
-            crystalReciprocalSpacesFc[i].setCoordinates(x);
-            crystalReciprocalSpacesFs[i].setCoordinates(x);
-        }
-    }
-
-    /**
      * Parallelized call to compute atomic density on a grid, followed by FFT to
      * compute structure factors.
      *
@@ -513,48 +498,25 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
-     * Determine the total atomic gradients due to the diffraction data -
-     * performs an inverse FFT
+     * Similar to Potential.destroy(), frees up resources associated with this RealSpaceData.
      *
-     * @param refinementMode the
-     *                       {@link RefinementMinimize.RefinementMode refinement mode} requested
-     * @see CrystalReciprocalSpace#computeAtomicGradients(double[][], int[],
-     * int, ffx.xray.RefinementMinimize.RefinementMode, boolean)
-     * computeAtomicGradients
+     * @return If assets successfully freed.
      */
-    void computeAtomicGradients(RefinementMode refinementMode) {
-        for (int i = 0; i < n; i++) {
-            crystalReciprocalSpacesFc[i].computeAtomicGradients(refinementData[i].dFc,
-                    refinementData[i].freeR, refinementData[i].rFreeFlag,
-                    refinementMode);
-            crystalReciprocalSpacesFs[i].computeAtomicGradients(refinementData[i].dFs,
-                    refinementData[i].freeR, refinementData[i].rFreeFlag,
-                    refinementMode);
+    public boolean destroy() {
+        try {
+            boolean underlyingShutdown = true;
+            for (MolecularAssembly assem : assembly) {
+                // Continue trying to shut assemblies down even if one fails to shut down.
+                boolean thisShutdown = assem.destroy();
+                underlyingShutdown = underlyingShutdown && thisShutdown;
+            }
+            parallelTeam.shutdown();
+            return underlyingShutdown;
+        } catch (Exception ex) {
+            logger.warning(format(" Exception in shutting down a RealSpaceData: %s", ex));
+            logger.info(Utilities.stackTraceToString(ex));
+            return false;
         }
-    }
-
-    /**
-     * compute total crystallographic likelihood target
-     *
-     * @return the total -log likelihood
-     * @see SigmaAMinimize#calculateLikelihood()
-     */
-    double computeLikelihood() {
-        double e = 0.0;
-        for (int i = 0; i < n; i++) {
-            e += dataFiles[i].getWeight() * sigmaAMinimize[i].calculateLikelihood();
-        }
-        return e;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * return the atom array for the model associated with this data
-     */
-    @Override
-    public Atom[] getAtomArray() {
-        return refinementModel.getTotalAtomArray();
     }
 
     /**
@@ -570,16 +532,98 @@ public class DiffractionData implements DataContainer {
      * {@inheritDoc}
      */
     @Override
-    public ArrayList<ArrayList<Residue>> getAltResidues() {
-        return refinementModel.getAltResidues();
+    public List<List<Molecule>> getAltMolecules() {
+        return refinementModel.getAltMolecules();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public ArrayList<ArrayList<Molecule>> getAltMolecules() {
-        return refinementModel.getAltMolecules();
+    public List<List<Residue>> getAltResidues() {
+        return refinementModel.getAltResidues();
+    }
+
+    /**
+     * <p>Getter for the field <code>assembly</code>.</p>
+     *
+     * @return the assembly
+     */
+    public MolecularAssembly[] getAssembly() {
+        return assembly;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * return the atom array for the model associated with this data
+     */
+    @Override
+    public Atom[] getAtomArray() {
+        return refinementModel.getTotalAtomArray();
+    }
+
+    /**
+     * <p>Getter for the field <code>crystal</code>.</p>
+     *
+     * @return the crystal
+     */
+    public Crystal[] getCrystal() {
+        return crystal;
+    }
+
+    /**
+     * <p>Getter for the field <code>crs_fc</code>.</p>
+     *
+     * @return the crs_fc
+     */
+    public CrystalReciprocalSpace[] getCrystalReciprocalSpacesFc() {
+        return crystalReciprocalSpacesFc;
+    }
+
+    /**
+     * <p>Getter for the field <code>crs_fs</code>.</p>
+     *
+     * @return the crs_fs
+     */
+    public CrystalReciprocalSpace[] getCrystalReciprocalSpacesFs() {
+        return crystalReciprocalSpacesFs;
+    }
+
+    /**
+     * <p>Getter for the field <code>crystalStats</code>.</p>
+     *
+     * @return the crystalStats
+     */
+    public CrystalStats[] getCrystalStats() {
+        return crystalStats;
+    }
+
+    /**
+     * <p>Getter for the field <code>dataFiles</code>.</p>
+     *
+     * @return the dataFiles
+     */
+    public DiffractionFile[] getDataFiles() {
+        return dataFiles;
+    }
+
+    /**
+     * <p>Getter for the field <code>fsigfCutoff</code>.</p>
+     *
+     * @return the fsigfCutoff
+     */
+    public double getFsigfCutoff() {
+        return fsigfCutoff;
+    }
+
+    /**
+     * <p>Getter for the field <code>modelName</code>.</p>
+     *
+     * @return the modelName
+     */
+    public String getModelName() {
+        return modelName;
     }
 
     /**
@@ -591,11 +635,119 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>n</code>.</p>
+     *
+     * @return the n
+     */
+    public int getN() {
+        return n;
+    }
+
+    /**
+     * <p>Getter for the field <code>parallelTeam</code>.</p>
+     *
+     * @return the parallelTeam
+     */
+    public ParallelTeam getParallelTeam() {
+        return parallelTeam;
+    }
+
+    /**
+     * Return R value for OST x-ray minimization.
+     *
+     * @return a double.
+     */
+    public double getRCrystalStat() {
+        return crystalStats[0].getR();
+    }
+
+    /**
+     * <p>Getter for the field <code>refinementData</code>.</p>
+     *
+     * @return the refinementData
+     */
+    public DiffractionRefinementData[] getRefinementData() {
+        return refinementData;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public RefinementModel getRefinementModel() {
         return refinementModel;
+    }
+
+    /**
+     * <p>Getter for the field <code>reflectionList</code>.</p>
+     *
+     * @return the reflectionList
+     */
+    public ReflectionList[] getReflectionList() {
+        return reflectionList;
+    }
+
+    /**
+     * <p>Getter for the field <code>resolution</code>.</p>
+     *
+     * @return the resolution
+     */
+    public Resolution[] getResolution() {
+        return resolution;
+    }
+
+    /**
+     * <p>Getter for the field <code>scaleBulkMinimize</code>.</p>
+     *
+     * @return the scaleBulkMinimize
+     */
+    public ScaleBulkMinimize[] getScaleBulkMinimize() {
+        return scaleBulkMinimize;
+    }
+
+    /**
+     * <p>Getter for the field <code>scaled</code>.</p>
+     *
+     * @return the scaled
+     */
+    public boolean[] getScaled() {
+        return scaled;
+    }
+
+    /**
+     * <p>Getter for the field <code>sigmaAMinimize</code>.</p>
+     *
+     * @return the sigmaAMinimize
+     */
+    public SigmaAMinimize[] getSigmaAMinimize() {
+        return sigmaAMinimize;
+    }
+
+    /**
+     * <p>Getter for the field <code>sigmaATol</code>.</p>
+     *
+     * @return the sigmaATol
+     */
+    public double getSigmaATol() {
+        return sigmaATol;
+    }
+
+    /**
+     * <p>Getter for the field <code>solventModel</code>.</p>
+     *
+     * @return the solventModel
+     */
+    public SolventModel getSolventModel() {
+        return solventModel;
+    }
+
+    /**
+     * <p>Getter for the field <code>splineMinimize</code>.</p>
+     *
+     * @return the splineMinimize
+     */
+    public SplineMinimize[] getSplineMinimize() {
+        return splineMinimize;
     }
 
     /**
@@ -612,6 +764,70 @@ public class DiffractionData implements DataContainer {
     @Override
     public void setWeight(double weight) {
         this.xWeight = weight;
+    }
+
+    /**
+     * <p>Getter for the field <code>xrayScaleTol</code>.</p>
+     *
+     * @return the xrayScaleTol
+     */
+    public double getXrayScaleTol() {
+        return xrayScaleTol;
+    }
+
+    /**
+     * <p>Getter for the field <code>aRadBuff</code>.</p>
+     *
+     * @return the aRadBuff
+     */
+    public double getaRadBuff() {
+        return aRadBuff;
+    }
+
+    /**
+     * <p>Getter for the field <code>xWeight</code>.</p>
+     *
+     * @return the xWeight
+     */
+    public double getxWeight() {
+        return xWeight;
+    }
+
+    /**
+     * <p>isRefineMolOcc.</p>
+     *
+     * @return the refineMolOcc
+     */
+    public boolean isRefineMolOcc() {
+        return refineMolOcc;
+    }
+
+    /**
+     * <p>isUse_3g.</p>
+     *
+     * @return the use_3g
+     */
+    public boolean isUse_3g() {
+        return use_3g;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String printEnergyUpdate() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < n; i++) {
+            sb.append(format("     dataset %d (weight: %5.1f): R: %6.2f Rfree: %6.2f chemical energy: %8.2f likelihood: %8.2f free likelihood: %8.2f\n",
+                    i + 1, dataFiles[i].getWeight(),
+                    crystalStats[i].getR(),
+                    crystalStats[i].getRFree(),
+                    assembly[0].getPotentialEnergy().getTotalEnergy(),
+                    dataFiles[i].getWeight() * sigmaAMinimize[i].calculateLikelihood(),
+                    dataFiles[i].getWeight() * refinementData[i].llkF));
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -635,34 +851,6 @@ public class DiffractionData implements DataContainer {
         }
 
         return sb.toString();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String printEnergyUpdate() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < n; i++) {
-            sb.append(format("     dataset %d (weight: %5.1f): R: %6.2f Rfree: %6.2f chemical energy: %8.2f likelihood: %8.2f free likelihood: %8.2f\n",
-                    i + 1, dataFiles[i].getWeight(),
-                    crystalStats[i].getR(),
-                    crystalStats[i].getRFree(),
-                    assembly[0].getPotentialEnergy().getTotalEnergy(),
-                    dataFiles[i].getWeight() * sigmaAMinimize[i].calculateLikelihood(),
-                    dataFiles[i].getWeight() * refinementData[i].llkF));
-        }
-
-        return sb.toString();
-    }
-
-    /**
-     * Return R value for OST x-ray minimization.
-     *
-     * @return a double.
-     */
-    public double getRCrystalStat() {
-        return crystalStats[0].getR();
     }
 
     /**
@@ -777,18 +965,6 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
-     * <p>setLambdaTerm.</p>
-     *
-     * @param lambdaTerm a boolean.
-     */
-    void setLambdaTerm(boolean lambdaTerm) {
-        for (int i = 0; i < n; i++) {
-            crystalReciprocalSpacesFc[i].setLambdaTerm(lambdaTerm);
-            crystalReciprocalSpacesFs[i].setLambdaTerm(lambdaTerm);
-        }
-    }
-
-    /**
      * set the bulk solvent parameters for a given bulk solvent model
      *
      * @param a typically the width of the atom
@@ -822,42 +998,6 @@ public class DiffractionData implements DataContainer {
                         RefinementMode.COORDINATES, true);
             }
         }
-    }
-
-    /**
-     * Write current model to PDB file.
-     *
-     * @param filename output PDB filename
-     */
-    public void writeModel(String filename) {
-        StringBuilder remark = new StringBuilder();
-        File file = new File(filename);
-        PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assembly), null, null);
-
-        Date now = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss ");
-        remark.append("REMARK FFX output ISO-8601 date: " + sdf.format(now) + "\n");
-        remark.append("REMARK\n");
-        remark.append("REMARK   3\n");
-        remark.append("REMARK   3 REFINEMENT\n");
-        remark.append("REMARK   3   PROGRAM     : FORCE FIELD X\n");
-        remark.append("REMARK   3\n");
-        for (int i = 0; i < n; i++) {
-            remark.append("REMARK   3  DATA SET " + (i + 1) + "\n");
-            if (dataFiles[i].isNeutron()) {
-                remark.append("REMARK   3   DATA SET TYPE   : NEUTRON\n");
-            } else {
-                remark.append("REMARK   3   DATA SET TYPE   : X-RAY\n");
-            }
-            remark.append("REMARK   3   DATA SET WEIGHT : " + dataFiles[i].getWeight() + "\n");
-            remark.append("REMARK   3\n");
-            remark.append(crystalStats[i].getPDBHeaderString());
-        }
-        for (int i = 0; i < assembly.length; i++) {
-            remark.append("REMARK   3  CHEMICAL SYSTEM " + (i + 1) + "\n");
-            remark.append(assembly[i].getPotentialEnergy().getPDBHeaderString());
-        }
-        pdbFilter.writeFileWithHeader(file, remark);
     }
 
     /**
@@ -909,6 +1049,135 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * Write current model to PDB file.
+     *
+     * @param filename output PDB filename
+     */
+    public void writeModel(String filename) {
+        StringBuilder remark = new StringBuilder();
+        File file = new File(filename);
+        PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assembly), null, null);
+
+        Date now = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss ");
+        remark.append("REMARK FFX output ISO-8601 date: " + sdf.format(now) + "\n");
+        remark.append("REMARK\n");
+        remark.append("REMARK   3\n");
+        remark.append("REMARK   3 REFINEMENT\n");
+        remark.append("REMARK   3   PROGRAM     : FORCE FIELD X\n");
+        remark.append("REMARK   3\n");
+        for (int i = 0; i < n; i++) {
+            remark.append("REMARK   3  DATA SET " + (i + 1) + "\n");
+            if (dataFiles[i].isNeutron()) {
+                remark.append("REMARK   3   DATA SET TYPE   : NEUTRON\n");
+            } else {
+                remark.append("REMARK   3   DATA SET TYPE   : X-RAY\n");
+            }
+            remark.append("REMARK   3   DATA SET WEIGHT : " + dataFiles[i].getWeight() + "\n");
+            remark.append("REMARK   3\n");
+            remark.append(crystalStats[i].getPDBHeaderString());
+        }
+        for (int i = 0; i < assembly.length; i++) {
+            remark.append("REMARK   3  CHEMICAL SYSTEM " + (i + 1) + "\n");
+            remark.append(assembly[i].getPotentialEnergy().getPDBHeaderString());
+        }
+        pdbFilter.writeFileWithHeader(file, remark);
+    }
+
+    /**
+     * Write bulk solvent mask for all datasets to a CCP4 map file.
+     *
+     * @param filename output filename, or output root filename for multiple
+     *                 datasets
+     * @see CCP4MapWriter#write(double[], boolean)
+     */
+    public void writeSolventMask(String filename) {
+        if (n == 1) {
+            writeSolventMask(filename, 0);
+        } else {
+            for (int i = 0; i < n; i++) {
+                writeSolventMask("" + FilenameUtils.removeExtension(filename) + "_" + i + ".map", i);
+            }
+        }
+    }
+
+    /**
+     * Write bulk solvent mask for all datasets to a CNS map file.
+     *
+     * @param filename output filename, or output root filename for multiple datasets
+     */
+    public void writeSolventMaskCNS(String filename) {
+        if (n == 1) {
+            writeSolventMaskCNS(filename, 0);
+        } else {
+            for (int i = 0; i < n; i++) {
+                writeSolventMaskCNS("" + FilenameUtils.removeExtension(filename) + "_" + i + ".map", i);
+            }
+        }
+    }
+
+    /**
+     * Move the atomic coordinates for the FFT calculation - this is independent
+     * of the {@link ffx.potential.bonded.Atom} object coordinates as it uses a linearized array
+     *
+     * @param x array of coordinates to move atoms to
+     * @see CrystalReciprocalSpace#setCoordinates(double[])
+     */
+    void setFFTCoordinates(double[] x) {
+        for (int i = 0; i < n; i++) {
+            crystalReciprocalSpacesFc[i].setCoordinates(x);
+            crystalReciprocalSpacesFs[i].setCoordinates(x);
+        }
+    }
+
+    /**
+     * Determine the total atomic gradients due to the diffraction data -
+     * performs an inverse FFT
+     *
+     * @param refinementMode the
+     *                       {@link RefinementMinimize.RefinementMode refinement mode} requested
+     * @see CrystalReciprocalSpace#computeAtomicGradients(double[][], int[],
+     * int, ffx.xray.RefinementMinimize.RefinementMode, boolean)
+     * computeAtomicGradients
+     */
+    void computeAtomicGradients(RefinementMode refinementMode) {
+        for (int i = 0; i < n; i++) {
+            crystalReciprocalSpacesFc[i].computeAtomicGradients(refinementData[i].dFc,
+                    refinementData[i].freeR, refinementData[i].rFreeFlag,
+                    refinementMode);
+            crystalReciprocalSpacesFs[i].computeAtomicGradients(refinementData[i].dFs,
+                    refinementData[i].freeR, refinementData[i].rFreeFlag,
+                    refinementMode);
+        }
+    }
+
+    /**
+     * compute total crystallographic likelihood target
+     *
+     * @return the total -log likelihood
+     * @see SigmaAMinimize#calculateLikelihood()
+     */
+    double computeLikelihood() {
+        double e = 0.0;
+        for (int i = 0; i < n; i++) {
+            e += dataFiles[i].getWeight() * sigmaAMinimize[i].calculateLikelihood();
+        }
+        return e;
+    }
+
+    /**
+     * <p>setLambdaTerm.</p>
+     *
+     * @param lambdaTerm a boolean.
+     */
+    void setLambdaTerm(boolean lambdaTerm) {
+        for (int i = 0; i < n; i++) {
+            crystalReciprocalSpacesFc[i].setLambdaTerm(lambdaTerm);
+            crystalReciprocalSpacesFs[i].setLambdaTerm(lambdaTerm);
+        }
+    }
+
+    /**
      * write 2Fo-Fc and Fo-Fc maps for a datasets
      *
      * @param filename output root filename for Fo-Fc and 2Fo-Fc maps
@@ -947,21 +1216,6 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
-     * Write bulk solvent mask for all datasets to a CNS map file.
-     *
-     * @param filename output filename, or output root filename for multiple datasets
-     */
-    public void writeSolventMaskCNS(String filename) {
-        if (n == 1) {
-            writeSolventMaskCNS(filename, 0);
-        } else {
-            for (int i = 0; i < n; i++) {
-                writeSolventMaskCNS("" + FilenameUtils.removeExtension(filename) + "_" + i + ".map", i);
-            }
-        }
-    }
-
-    /**
      * Write bulk solvent mask for dataset i to a CNS map file.
      *
      * @param filename output filename
@@ -990,23 +1244,6 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
-     * Write bulk solvent mask for all datasets to a CCP4 map file.
-     *
-     * @param filename output filename, or output root filename for multiple
-     *                 datasets
-     * @see CCP4MapWriter#write(double[], boolean)
-     */
-    public void writeSolventMask(String filename) {
-        if (n == 1) {
-            writeSolventMask(filename, 0);
-        } else {
-            for (int i = 0; i < n; i++) {
-                writeSolventMask("" + FilenameUtils.removeExtension(filename) + "_" + i + ".map", i);
-            }
-        }
-    }
-
-    /**
      * Write bulk solvent mask for dataset i to a CCP4 map file.
      *
      * @param filename output filename
@@ -1020,222 +1257,6 @@ public class DiffractionData implements DataContainer {
                     crystal[i], filename);
             mapwriter.write(crystalReciprocalSpacesFs[i].getSolventGrid());
         }
-    }
-
-    /**
-     * <p>Getter for the field <code>assembly</code>.</p>
-     *
-     * @return the assembly
-     */
-    public MolecularAssembly[] getAssembly() {
-        return assembly;
-    }
-
-    /**
-     * <p>Getter for the field <code>modelName</code>.</p>
-     *
-     * @return the modelName
-     */
-    public String getModelName() {
-        return modelName;
-    }
-
-    /**
-     * <p>Getter for the field <code>dataFiles</code>.</p>
-     *
-     * @return the dataFiles
-     */
-    public DiffractionFile[] getDataFiles() {
-        return dataFiles;
-    }
-
-    /**
-     * <p>Getter for the field <code>n</code>.</p>
-     *
-     * @return the n
-     */
-    public int getN() {
-        return n;
-    }
-
-    /**
-     * <p>Getter for the field <code>crystal</code>.</p>
-     *
-     * @return the crystal
-     */
-    public Crystal[] getCrystal() {
-        return crystal;
-    }
-
-    /**
-     * <p>Getter for the field <code>resolution</code>.</p>
-     *
-     * @return the resolution
-     */
-    public Resolution[] getResolution() {
-        return resolution;
-    }
-
-    /**
-     * <p>Getter for the field <code>reflectionList</code>.</p>
-     *
-     * @return the reflectionList
-     */
-    public ReflectionList[] getReflectionList() {
-        return reflectionList;
-    }
-
-    /**
-     * <p>Getter for the field <code>refinementData</code>.</p>
-     *
-     * @return the refinementData
-     */
-    public DiffractionRefinementData[] getRefinementData() {
-        return refinementData;
-    }
-
-    /**
-     * <p>Getter for the field <code>crs_fc</code>.</p>
-     *
-     * @return the crs_fc
-     */
-    public CrystalReciprocalSpace[] getCrystalReciprocalSpacesFc() {
-        return crystalReciprocalSpacesFc;
-    }
-
-    /**
-     * <p>Getter for the field <code>crs_fs</code>.</p>
-     *
-     * @return the crs_fs
-     */
-    public CrystalReciprocalSpace[] getCrystalReciprocalSpacesFs() {
-        return crystalReciprocalSpacesFs;
-    }
-
-    /**
-     * <p>Getter for the field <code>solventModel</code>.</p>
-     *
-     * @return the solventModel
-     */
-    public SolventModel getSolventModel() {
-        return solventModel;
-    }
-
-    /**
-     * <p>Getter for the field <code>scaleBulkMinimize</code>.</p>
-     *
-     * @return the scaleBulkMinimize
-     */
-    public ScaleBulkMinimize[] getScaleBulkMinimize() {
-        return scaleBulkMinimize;
-    }
-
-    /**
-     * <p>Getter for the field <code>sigmaAMinimize</code>.</p>
-     *
-     * @return the sigmaAMinimize
-     */
-    public SigmaAMinimize[] getSigmaAMinimize() {
-        return sigmaAMinimize;
-    }
-
-    /**
-     * <p>Getter for the field <code>splineMinimize</code>.</p>
-     *
-     * @return the splineMinimize
-     */
-    public SplineMinimize[] getSplineMinimize() {
-        return splineMinimize;
-    }
-
-    /**
-     * <p>Getter for the field <code>crystalStats</code>.</p>
-     *
-     * @return the crystalStats
-     */
-    public CrystalStats[] getCrystalStats() {
-        return crystalStats;
-    }
-
-    /**
-     * <p>Getter for the field <code>parallelTeam</code>.</p>
-     *
-     * @return the parallelTeam
-     */
-    public ParallelTeam getParallelTeam() {
-        return parallelTeam;
-    }
-
-    /**
-     * <p>Getter for the field <code>scaled</code>.</p>
-     *
-     * @return the scaled
-     */
-    public boolean[] getScaled() {
-        return scaled;
-    }
-
-    /**
-     * <p>Getter for the field <code>fsigfCutoff</code>.</p>
-     *
-     * @return the fsigfCutoff
-     */
-    public double getFsigfCutoff() {
-        return fsigfCutoff;
-    }
-
-    /**
-     * <p>isUse_3g.</p>
-     *
-     * @return the use_3g
-     */
-    public boolean isUse_3g() {
-        return use_3g;
-    }
-
-    /**
-     * <p>Getter for the field <code>aRadBuff</code>.</p>
-     *
-     * @return the aRadBuff
-     */
-    public double getaRadBuff() {
-        return aRadBuff;
-    }
-
-    /**
-     * <p>Getter for the field <code>xrayScaleTol</code>.</p>
-     *
-     * @return the xrayScaleTol
-     */
-    public double getXrayScaleTol() {
-        return xrayScaleTol;
-    }
-
-    /**
-     * <p>Getter for the field <code>sigmaATol</code>.</p>
-     *
-     * @return the sigmaATol
-     */
-    public double getSigmaATol() {
-        return sigmaATol;
-    }
-
-    /**
-     * <p>Getter for the field <code>xWeight</code>.</p>
-     *
-     * @return the xWeight
-     */
-    public double getxWeight() {
-        return xWeight;
-    }
-
-    /**
-     * <p>isRefineMolOcc.</p>
-     *
-     * @return the refineMolOcc
-     */
-    public boolean isRefineMolOcc() {
-        return refineMolOcc;
     }
 
     /**
@@ -1299,28 +1320,6 @@ public class DiffractionData implements DataContainer {
      */
     double getOccMass() {
         return occMass;
-    }
-
-    /**
-     * Similar to Potential.destroy(), frees up resources associated with this RealSpaceData.
-     *
-     * @return If assets successfully freed.
-     */
-    public boolean destroy() {
-        try {
-            boolean underlyingShutdown = true;
-            for (MolecularAssembly assem : assembly) {
-                // Continue trying to shut assemblies down even if one fails to shut down.
-                boolean thisShutdown = assem.destroy();
-                underlyingShutdown = underlyingShutdown && thisShutdown;
-            }
-            parallelTeam.shutdown();
-            return underlyingShutdown;
-        } catch (Exception ex) {
-            logger.warning(format(" Exception in shutting down a RealSpaceData: %s", ex));
-            logger.info(Utilities.stackTraceToString(ex));
-            return false;
-        }
     }
 
 }

@@ -360,8 +360,8 @@ class MostBar extends AlgorithmsScript {
         sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Counts Max_Lambda Counts         BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
         for (int i = 0; i < (lamBins - 1); i++) {
             sb.append(String.format(" %-10.8f %6d %-10.8f %6d %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
-                lamPoints[i], eAt[i].length, lamPoints[i + 1], observations[i+1], barFE[i], barVar[i],
-                forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
+                    lamPoints[i], eAt[i].length, lamPoints[i + 1], observations[i + 1], barFE[i], barVar[i],
+                    forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
         }
         logger.info(sb.toString())
 
@@ -427,7 +427,7 @@ class MostBar extends AlgorithmsScript {
             sb = new StringBuilder(" Free Energy Profile\n Min_Lambda Counts Max_Lambda Counts         BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
             for (int i = 0; i < (lamBins - 1); i++) {
                 sb.append(String.format(" %-10.8f %6d %-10.8f %6d %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
-                        lamPoints[i], eAt[i].length, lamPoints[i + 1], observations[i+1], barFE[i], barVar[i],
+                        lamPoints[i], eAt[i].length, lamPoints[i + 1], observations[i + 1], barFE[i], barVar[i],
                         forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
             }
             logger.info(sb.toString())

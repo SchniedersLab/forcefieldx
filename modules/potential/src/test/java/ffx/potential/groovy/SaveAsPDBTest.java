@@ -46,7 +46,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.SaveAsPDB;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
@@ -59,27 +58,17 @@ public class SaveAsPDBTest {
     Binding binding;
     SaveAsPDB saveAsPDB;
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        saveAsPDB = new SaveAsPDB();
-        saveAsPDB.setBinding(binding);
-    }
-
     @After
     public void after() {
         saveAsPDB.destroyPotentials();
         System.gc();
     }
 
-    @Test
-    public void testSaveAsPDBHelp() {
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        saveAsPDB.run();
+    @Before
+    public void before() {
+        binding = new Binding();
+        saveAsPDB = new SaveAsPDB();
+        saveAsPDB.setBinding(binding);
     }
 
     @Test
@@ -106,5 +95,15 @@ public class SaveAsPDBTest {
             System.out.println(e.toString());
             Assert.fail(" Exception deleting files created by SaveAsPDB.");
         }
+    }
+
+    @Test
+    public void testSaveAsPDBHelp() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"-h"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        saveAsPDB.run();
     }
 }

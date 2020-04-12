@@ -71,43 +71,16 @@ import ffx.xray.parsers.MTZFilter;
 public class XRayMinimizeTest extends BaseFFXTest {
 
     private static final Logger logger = Logger.getLogger(XRayMinimizeTest.class.getName());
-
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                    {false,
-                            "NSF D2 domain test",
-                            "ffx/xray/structures/1NSF.pdb",
-                            "ffx/xray/structures/1NSF.mtz",
-                            null,
-                            25.17866326312945,
-                            25.448305511010272,
-                            0.893903833644513,
-                            0.14952134994994207},
-                    {true,
-                            "SNARE complex",
-                            "ffx/xray/structures/1N7S.pdb",
-                            "ffx/xray/structures/1N7S.mtz",
-                            null,
-                            19.41267149593652,
-                            21.555930987392596,
-                            0.9336845537932159,
-                            0.1319269157669047}
-            });
-    }
-
     private final String info;
     private final CrystalStats crystalStats;
-    private DiffractionRefinementData refinementData;
-    private ReflectionList reflectionList;
-    private ParallelTeam parallelTeam;
-
     private final double r;
     private final double rFree;
     private final double sigmaA;
     private final double sigmaW;
     private final boolean ciOnly;
-
+    private DiffractionRefinementData refinementData;
+    private ReflectionList reflectionList;
+    private ParallelTeam parallelTeam;
     public XRayMinimizeTest(boolean ciOnly,
                             String info, String pdbname, String mtzname, String cifname,
                             double r, double rFree, double sigmaA, double sigmaW) {
@@ -194,13 +167,28 @@ public class XRayMinimizeTest extends BaseFFXTest {
         crystalStats = new CrystalStats(reflectionList, refinementData);
     }
 
-    @Test
-    public void testLauncher() {
-        if (!ffxCI && ciOnly) return;
-        testCrystalStats();
-        testScaleBulk();
-        testSigmaA();
-        testSpline();
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {false,
+                        "NSF D2 domain test",
+                        "ffx/xray/structures/1NSF.pdb",
+                        "ffx/xray/structures/1NSF.mtz",
+                        null,
+                        25.17866326312945,
+                        25.448305511010272,
+                        0.893903833644513,
+                        0.14952134994994207},
+                {true,
+                        "SNARE complex",
+                        "ffx/xray/structures/1N7S.pdb",
+                        "ffx/xray/structures/1N7S.mtz",
+                        null,
+                        19.41267149593652,
+                        21.555930987392596,
+                        0.9336845537932159,
+                        0.1319269157669047}
+        });
     }
 
     public void testCrystalStats() {
@@ -221,6 +209,15 @@ public class XRayMinimizeTest extends BaseFFXTest {
                 sigmaA, crystalStats.getSigmaA(), 0.001);
         assertEquals(info + " sigmaA w",
                 sigmaW, crystalStats.getSigmaW(), 0.001);
+    }
+
+    @Test
+    public void testLauncher() {
+        if (!ffxCI && ciOnly) return;
+        testCrystalStats();
+        testScaleBulk();
+        testSigmaA();
+        testSpline();
     }
 
     public void testScaleBulk() {

@@ -46,7 +46,6 @@ import java.awt.event.KeyListener;
  * The FullScreenWindow class controls full screen graphics.
  *
  * @author Michael J. Schnieders
- *
  */
 public class GraphicsFullScreen extends Window implements KeyListener {
 
@@ -56,7 +55,7 @@ public class GraphicsFullScreen extends Window implements KeyListener {
      * <p>
      * Constructor for GraphicsFullScreen.</p>
      *
-     * @param f a {@link java.awt.Frame} object.
+     * @param f        a {@link java.awt.Frame} object.
      * @param graphics a {@link ffx.ui.GraphicsCanvas} object.
      */
     public GraphicsFullScreen(Frame f, GraphicsCanvas graphics) {
@@ -70,28 +69,6 @@ public class GraphicsFullScreen extends Window implements KeyListener {
          * addKeyListener(this); fullScreenCanvas.addKeyListener(this);
          * setFocusable(true); fullScreenCanvas.setFocusable(true);
          * add(fullScreenCanvas, BorderLayout.CENTER);
-         */
-    }
-
-    /**
-     * <p>
-     * enterFullScreen</p>
-     */
-    void enterFullScreen() {
-        /*
-         * if (fullScreen) { return; } fullScreenCanvas.startRenderer();
-         * setVisible(true); fullScreenCanvas.requestFocus(); fullScreen = true;
-         */
-    }
-
-    /**
-     * <p>
-     * exitFullScreen</p>
-     */
-    private void exitFullScreen() {
-        /*
-         * if (!fullScreen) { return; } setVisible(false);
-         * fullScreenCanvas.stopRenderer(); fullScreen = false;
          */
     }
 
@@ -132,5 +109,27 @@ public class GraphicsFullScreen extends Window implements KeyListener {
         } else {
             enterFullScreen();
         }
+    }
+
+    /**
+     * <p>
+     * enterFullScreen</p>
+     */
+    void enterFullScreen() {
+        /*
+         * if (fullScreen) { return; } fullScreenCanvas.startRenderer();
+         * setVisible(true); fullScreenCanvas.requestFocus(); fullScreen = true;
+         */
+    }
+
+    /**
+     * <p>
+     * exitFullScreen</p>
+     */
+    private void exitFullScreen() {
+        /*
+         * if (!fullScreen) { return; } setVisible(false);
+         * fullScreenCanvas.stopRenderer(); fullScreen = false;
+         */
     }
 }

@@ -46,7 +46,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.Frac2Cart;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
@@ -59,31 +58,17 @@ public class Frac2CartTest {
     Binding binding;
     Frac2Cart frac2Cart;
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        frac2Cart = new Frac2Cart();
-        frac2Cart.setBinding(binding);
-    }
-
     @After
     public void after() {
         frac2Cart.destroyPotentials();
         System.gc();
     }
 
-    @Test
-    public void testFrac2CartHelp() {
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        frac2Cart.run();
-
-        // Pull out the biotype results to check.
-        Assert.assertNull(frac2Cart.cartCoordinates);
-        Assert.assertNull(frac2Cart.fracCoordinates);
+    @Before
+    public void before() {
+        binding = new Binding();
+        frac2Cart = new Frac2Cart();
+        frac2Cart.setBinding(binding);
     }
 
     @Test
@@ -125,5 +110,19 @@ public class Frac2CartTest {
             System.out.println(e.toString());
             Assert.fail(" Exception deleting files created by Frac2Cart.");
         }
+    }
+
+    @Test
+    public void testFrac2CartHelp() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"-h"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        frac2Cart.run();
+
+        // Pull out the biotype results to check.
+        Assert.assertNull(frac2Cart.cartCoordinates);
+        Assert.assertNull(frac2Cart.fracCoordinates);
     }
 }

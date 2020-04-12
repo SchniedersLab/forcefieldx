@@ -112,7 +112,7 @@ public class Loop {
      * @return a {@link java.util.List} object.
      */
     public List<double[]> generateLoops(int firstResidue, int endResidue) {
-        ArrayList<Atom> backBoneAtoms = molecularAssembly.getBackBoneAtoms();
+        List<Atom> backBoneAtoms = molecularAssembly.getBackBoneAtoms();
 
         boolean bool1 = true;
         int i = 0;
@@ -234,7 +234,7 @@ public class Loop {
         }
 
         Polymer[] newChain = molecularAssembly.getChains();
-        ArrayList<Atom> backBoneAtoms;
+        List<Atom> backBoneAtoms;
 
         Atom[] atomArray = molecularAssembly.getAtomArray();
         double[][] coordsArray = new double[atomArray.length][3];

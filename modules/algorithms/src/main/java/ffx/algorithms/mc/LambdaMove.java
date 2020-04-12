@@ -54,15 +54,14 @@ import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
 public class LambdaMove implements MCMove {
 
     private static final Logger logger = Logger.getLogger(LambdaMove.class.getName());
-
-    /**
-     * Current value of lambda, which always refreshed from the OST instance.
-     */
-    private double currentLambda;
     /**
      * Apply the Lambda move to an OST instance.
      */
     private final OrthogonalSpaceTempering orthogonalSpaceTempering;
+    /**
+     * Current value of lambda, which always refreshed from the OST instance.
+     */
+    private double currentLambda;
     /**
      * Random number generator.
      */
@@ -100,33 +99,35 @@ public class LambdaMove implements MCMove {
     }
 
     /**
-     * {@inheritDoc}
+     * Get the Lambda move size, which is a standard deviation for continuous moves or step size for discrete moves.
+     *
+     * @return The lambda move size.
      */
-    @Override
-    public void move() {
-        currentLambda = orthogonalSpaceTempering.getLambda();
-
-        // Draw a trial move from the distribution.
-        double dL = isContinuous ? continuousMove() : discreteMove();
-        double newLambda = mirror(currentLambda, dL);
-
-        // Update the OST instance.
-        orthogonalSpaceTempering.setLambda(newLambda);
+    public double getMoveSize() {
+        return moveSize;
     }
 
     /**
-     * Applies 0-1 mirroring conditions to lam + dL. Skips any moves where
-     * dL is greater than 1 or less than -1, and skips 50% of moves from
-     * 0 or 1 (exact).
+     * Get the Lambda move size, which is a standard deviation for continuous moves or step size for discrete moves.
      *
-     * @param lam Initial lambda.
-     * @param dL  Change in lambda.
-     * @return Correctly mirrored lam + dL
+     * @param moveSize a double.
      */
-    private double mirror(double lam, double dL) {
-        // Telescope to public static method because a public static method
-        // may be useful in the future.
-        return mirror(random, lam, dL);
+    public void setMoveSize(double moveSize) {
+        this.moveSize = moveSize;
+    }
+
+    /**
+     * If true, do continuous moves. Otherwise, use discrete moves.
+     */
+    public boolean isContinuous() {
+        return isContinuous;
+    }
+
+    /**
+     * If true, do continuous moves. Otherwise, use discrete moves.
+     */
+    public void setContinuous(boolean continuous) {
+        isContinuous = continuous;
     }
 
     /**
@@ -158,6 +159,29 @@ public class LambdaMove implements MCMove {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void move() {
+        currentLambda = orthogonalSpaceTempering.getLambda();
+
+        // Draw a trial move from the distribution.
+        double dL = isContinuous ? continuousMove() : discreteMove();
+        double newLambda = mirror(currentLambda, dL);
+
+        // Update the OST instance.
+        orthogonalSpaceTempering.setLambda(newLambda);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void revertMove() {
+        orthogonalSpaceTempering.setLambda(currentLambda);
+    }
+
+    /**
      * Validate lambda is in the range [0 .. 1].
      * <p>
      * For discrete moves, set Lambda to the closest valid value [0, dL, 2dL, .. 1].
@@ -179,43 +203,18 @@ public class LambdaMove implements MCMove {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void revertMove() {
-        orthogonalSpaceTempering.setLambda(currentLambda);
-    }
-
-    /**
-     * Get the Lambda move size, which is a standard deviation for continuous moves or step size for discrete moves.
+     * Applies 0-1 mirroring conditions to lam + dL. Skips any moves where
+     * dL is greater than 1 or less than -1, and skips 50% of moves from
+     * 0 or 1 (exact).
      *
-     * @param moveSize a double.
+     * @param lam Initial lambda.
+     * @param dL  Change in lambda.
+     * @return Correctly mirrored lam + dL
      */
-    public void setMoveSize(double moveSize) {
-        this.moveSize = moveSize;
-    }
-
-    /**
-     * Get the Lambda move size, which is a standard deviation for continuous moves or step size for discrete moves.
-     *
-     * @return The lambda move size.
-     */
-    public double getMoveSize() {
-        return moveSize;
-    }
-
-    /**
-     * If true, do continuous moves. Otherwise, use discrete moves.
-     */
-    public boolean isContinuous() {
-        return isContinuous;
-    }
-
-    /**
-     * If true, do continuous moves. Otherwise, use discrete moves.
-     */
-    public void setContinuous(boolean continuous) {
-        isContinuous = continuous;
+    private double mirror(double lam, double dL) {
+        // Telescope to public static method because a public static method
+        // may be useful in the future.
+        return mirror(random, lam, dL);
     }
 
     /**

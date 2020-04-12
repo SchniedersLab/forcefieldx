@@ -65,12 +65,11 @@ public class ObjectPair<T, S extends Comparable<S>> implements Comparable<Object
     }
 
     /**
-     * <p>Getter for the field <code>val</code>.</p>
-     *
-     * @return a T object.
+     * {@inheritDoc}
      */
-    public T getVal() {
-        return val;
+    @Override
+    public int compareTo(ObjectPair<T, S> o) {
+        return key.compareTo(o.getKey());
     }
 
     /**
@@ -83,11 +82,12 @@ public class ObjectPair<T, S extends Comparable<S>> implements Comparable<Object
     }
 
     /**
-     * {@inheritDoc}
+     * <p>Getter for the field <code>val</code>.</p>
+     *
+     * @return a T object.
      */
-    @Override
-    public int compareTo(ObjectPair<T, S> o) {
-        return key.compareTo(o.getKey());
+    public T getVal() {
+        return val;
     }
 
     /**

@@ -58,27 +58,17 @@ public class CrystalThermoPathTest extends PotentialScript {
     Binding binding;
     LambdaGradient lambdaGradient;
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        lambdaGradient = new ffx.potential.groovy.test.LambdaGradient();
-        lambdaGradient.setBinding(binding);
-    }
-
     @After
     public void after() {
         lambdaGradient.destroyPotentials();
         System.gc();
     }
 
-    @Test
-    public void testLambdaGradientHelp() {
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        lambdaGradient.run();
+    @Before
+    public void before() {
+        binding = new Binding();
+        lambdaGradient = new ffx.potential.groovy.test.LambdaGradient();
+        lambdaGradient.setBinding(binding);
     }
 
     /**
@@ -97,7 +87,7 @@ public class CrystalThermoPathTest extends PotentialScript {
 
         System.clearProperty("lambdaterm");
 
-        double expectedPotentialEnergyVac =   -7.70864934;
+        double expectedPotentialEnergyVac = -7.70864934;
         double expectedPotentialEnergyXtal = -36.22707541638729;
         double actualPotentialEnergyVac = lambdaGradient.e0;
         double actualPotentialEnergyXtal = lambdaGradient.e1;
@@ -108,6 +98,16 @@ public class CrystalThermoPathTest extends PotentialScript {
         assertEquals(0, lambdaGradient.nd2EdL2Failures);
         assertEquals(0, lambdaGradient.ndEdXdLFailures);
         assertEquals(0, lambdaGradient.ndEdXFailures);
+    }
+
+    @Test
+    public void testLambdaGradientHelp() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"-h"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        lambdaGradient.run();
     }
 
     /**
@@ -126,7 +126,7 @@ public class CrystalThermoPathTest extends PotentialScript {
 
         System.clearProperty("lambdaterm");
 
-        double expectedPotentialEnergyVac =   -6.67890842;
+        double expectedPotentialEnergyVac = -6.67890842;
         double expectedPotentialEnergyXtal = -57.410945848200896;
         double actualPotentialEnergyVac = lambdaGradient.e0;
         double actualPotentialEnergyXtal = lambdaGradient.e1;

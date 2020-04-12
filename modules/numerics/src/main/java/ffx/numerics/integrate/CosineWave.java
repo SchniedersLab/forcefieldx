@@ -104,16 +104,16 @@ public class CosineWave extends FunctionDataCurve {
      * {@inheritDoc}
      */
     @Override
-    public double integralAt(double x) {
-        return a * nInverse * sin(n * x);
+    public double fX(double x) {
+        return cosAt(x);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public double fX(double x) {
-        return cosAt(x);
+    public double integralAt(double x) {
+        return a * nInverse * sin(n * x);
     }
 
     /**

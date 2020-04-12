@@ -66,11 +66,6 @@ import static ffx.utilities.Constants.NS2SEC;
 public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     private static final Logger logger = Logger.getLogger(MolecularDynamicsOpenMM.class.getName());
-
-    /**
-     * OpenMM ForceFieldEnergy.
-     */
-    private ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
     /**
      * Integrator Type.
      */
@@ -79,6 +74,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * Thermostat Type.
      */
     private final ThermostatEnum thermostatType;
+    /**
+     * OpenMM ForceFieldEnergy.
+     */
+    private ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
     /**
      * Integrator String.
      */
@@ -168,79 +167,25 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
-     * Sets whether or not to obtain all variables (velocities, gradients) from OpenMM,
-     * or just positions and energies.
-     *
-     * @param obtainVA If true, obtain all variables from OpenMM each update.
-     */
-    @Override
-    public void setObtainVelAcc(boolean obtainVA) {
-        // TODO: Make this more generic by letting it obtain any weird combination of variables.
-        getAllVars = obtainVA;
-        obtainVariables = obtainVA ? this::getAllOpenMMVariables : this::getOpenMMEnergiesAndPositions;
-    }
-
-    @Override
-    protected void appendSnapshot(String[] extraLines) {
-        if (!getAllVars) {
-            // If !getAllVars, need to ensure coordinates are synced before writing a snapshot.
-            getOpenMMEnergiesAndPositions();
-        }
-        super.appendSnapshot(extraLines);
-    }
-
-    @Override
-    public void writeRestart() {
-        if (!getAllVars) {
-            // If !getAllVars, need to ensure all variables are synced before writing the restart.
-            getAllOpenMMVariables();
-        }
-        super.writeRestart();
-    }
-
-    /**
+     * {@inheritDoc}
      * <p>
-     * Setter for the field <code>intervalSteps</code>.</p>
-     *
-     * @param intervalSteps a int.
+     * UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling
+     * extended system variables. Will throw an UnsupportedOperationException.
      */
     @Override
-    public void setIntervalSteps(int intervalSteps) {
-        this.intervalSteps = intervalSteps;
+    public void attachExtendedSystem(ExtendedSystem system, int printFrequency) {
+        throw new UnsupportedOperationException(" MolecularDynamicsOpenMM does not support extended system variables!");
     }
 
     /**
      * {@inheritDoc}
+     * <p>
+     * UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling
+     * extended system variables. Will throw an UnsupportedOperationException.
      */
     @Override
-    public void init(long numSteps, double timeStep, double loggingInterval, double trajectoryInterval,
-                     String fileType, double restartInterval, double temperature, boolean initVelocities, File dyn) {
-
-        super.init(numSteps, timeStep, loggingInterval, trajectoryInterval,
-                fileType, restartInterval, temperature, initVelocities, dyn);
-
-        boolean isLangevin = integratorType.equals(IntegratorEnum.STOCHASTIC);
-
-        ForceFieldEnergyOpenMM.System system = forceFieldEnergyOpenMM.getSystem();
-        if (!isLangevin && !thermostatType.equals(ThermostatEnum.ADIABATIC)) {
-            // Add Andersen thermostat, or if already present update its target temperature.
-            system.addAndersenThermostatForce(targetTemperature);
-        }
-
-        if (constantPressure) {
-            // Add a Monte Carlo barostat, or if already present update its target temperature, pressure and frequency.
-            double pressure = barostat.getPressure();
-            int frequency = barostat.getMeanBarostatInterval();
-            system.addMonteCarloBarostatForce(pressure, targetTemperature, frequency);
-        }
-
-        // For Langevin/Stochastic dynamics, center of mass motion will not be removed.
-        if (!isLangevin) {
-            // No action is taken if a COMMRemover is already present.
-            system.addCOMMRemoverForce();
-        }
-
-        forceFieldEnergyOpenMM.setLambda(forceFieldEnergyOpenMM.getLambda());
+    public void detachExtendedSystem() {
+        throw new UnsupportedOperationException(" MolecularDynamicsOpenMM does not support extended system variables!");
     }
 
     /**
@@ -298,6 +243,25 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * {@inheritDoc}
      */
     @Override
+    public int getIntervalSteps() {
+        return intervalSteps;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>intervalSteps</code>.</p>
+     *
+     * @param intervalSteps a int.
+     */
+    @Override
+    public void setIntervalSteps(int intervalSteps) {
+        this.intervalSteps = intervalSteps;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public double getTimeStep() {
         return dt;
     }
@@ -306,8 +270,40 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * {@inheritDoc}
      */
     @Override
-    public int getIntervalSteps() {
-        return intervalSteps;
+    public void init(long numSteps, double timeStep, double loggingInterval, double trajectoryInterval,
+                     String fileType, double restartInterval, double temperature, boolean initVelocities, File dyn) {
+
+        super.init(numSteps, timeStep, loggingInterval, trajectoryInterval,
+                fileType, restartInterval, temperature, initVelocities, dyn);
+
+        boolean isLangevin = integratorType.equals(IntegratorEnum.STOCHASTIC);
+
+        ForceFieldEnergyOpenMM.System system = forceFieldEnergyOpenMM.getSystem();
+        if (!isLangevin && !thermostatType.equals(ThermostatEnum.ADIABATIC)) {
+            // Add Andersen thermostat, or if already present update its target temperature.
+            system.addAndersenThermostatForce(targetTemperature);
+        }
+
+        if (constantPressure) {
+            // Add a Monte Carlo barostat, or if already present update its target temperature, pressure and frequency.
+            double pressure = barostat.getPressure();
+            int frequency = barostat.getMeanBarostatInterval();
+            system.addMonteCarloBarostatForce(pressure, targetTemperature, frequency);
+        }
+
+        // For Langevin/Stochastic dynamics, center of mass motion will not be removed.
+        if (!isLangevin) {
+            // No action is taken if a COMMRemover is already present.
+            system.addCOMMRemoverForce();
+        }
+
+        forceFieldEnergyOpenMM.setLambda(forceFieldEnergyOpenMM.getLambda());
+    }
+
+    @Override
+    public void revertState() throws Exception {
+        super.revertState();
+        setOpenMMState();
     }
 
     /**
@@ -319,25 +315,34 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling
-     * extended system variables. Will throw an UnsupportedOperationException.
+     * Sets whether or not to obtain all variables (velocities, gradients) from OpenMM,
+     * or just positions and energies.
+     *
+     * @param obtainVA If true, obtain all variables from OpenMM each update.
      */
     @Override
-    public void attachExtendedSystem(ExtendedSystem system, int printFrequency) {
-        throw new UnsupportedOperationException(" MolecularDynamicsOpenMM does not support extended system variables!");
+    public void setObtainVelAcc(boolean obtainVA) {
+        // TODO: Make this more generic by letting it obtain any weird combination of variables.
+        getAllVars = obtainVA;
+        obtainVariables = obtainVA ? this::getAllOpenMMVariables : this::getOpenMMEnergiesAndPositions;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling
-     * extended system variables. Will throw an UnsupportedOperationException.
-     */
     @Override
-    public void detachExtendedSystem() {
-        throw new UnsupportedOperationException(" MolecularDynamicsOpenMM does not support extended system variables!");
+    public void writeRestart() {
+        if (!getAllVars) {
+            // If !getAllVars, need to ensure all variables are synced before writing the restart.
+            getAllOpenMMVariables();
+        }
+        super.writeRestart();
+    }
+
+    @Override
+    protected void appendSnapshot(String[] extraLines) {
+        if (!getAllVars) {
+            // If !getAllVars, need to ensure coordinates are synced before writing a snapshot.
+            getOpenMMEnergiesAndPositions();
+        }
+        super.appendSnapshot(extraLines);
     }
 
     /**
@@ -348,12 +353,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     private void takeOpenMMSteps(int intervalSteps) {
         Context context = forceFieldEnergyOpenMM.getContext();
         context.integrate(intervalSteps);
-    }
-
-    @Override
-    public void revertState() throws Exception {
-        super.revertState();
-        setOpenMMState();
     }
 
     /**

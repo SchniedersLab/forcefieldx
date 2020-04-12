@@ -45,8 +45,8 @@ import java.util.logging.Logger;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
-import ffx.algorithms.optimize.Minimize;
 import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.optimize.Minimize;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -62,25 +62,42 @@ public class MCLoop implements MonteCarloListener {
 
     private static final Logger logger = Logger.getLogger(MCLoop.class.getName());
     /**
+     * Boltzmann's constant is kcal/mol/Kelvin.
+     */
+    private static final double boltzmann = 0.0019872041;
+    /**
      * The MoleularAssembly.
      */
     private final MolecularAssembly molAss;
-    /**
-     * The MolecularDynamics object controlling the simulation.
-     */
-    private MolecularDynamics molDyn;
     /**
      * The MD thermostat.
      */
     private final ffx.algorithms.dynamics.thermostats.Thermostat thermostat;
     /**
-     * Boltzmann's constant is kcal/mol/Kelvin.
-     */
-    private static final double boltzmann = 0.0019872041;
-    /**
      * Energy of the system at initialization.
      */
     private final double systemReferenceEnergy;
+    /**
+     * First and last residue numbers of loop.
+     */
+    private final int firstResidue;
+    private final int endResidue;
+    /**
+     * Everyone's favorite.
+     */
+    private final Random rng = new Random();
+    /**
+     * The ForceFieldEnergy object being used by MD.
+     */
+    private final ForceFieldEnergy forceFieldEnergy;
+    /**
+     * KIC generation of loop solutions. See doi:10.1002/jcc.10416
+     */
+    Loop loop;
+    /**
+     * The MolecularDynamics object controlling the simulation.
+     */
+    private MolecularDynamics molDyn;
     /**
      * The current MD step.
      */
@@ -98,10 +115,6 @@ public class MCLoop implements MonteCarloListener {
      */
     private double[] oldCoords;
     /**
-     * KIC generation of loop solutions. See doi:10.1002/jcc.10416
-     */
-    Loop loop;
-    /**
      * Number of KIC iterations per MC move.
      */
     private int iterations;
@@ -109,19 +122,6 @@ public class MCLoop implements MonteCarloListener {
      * List of active atoms.
      */
     private Atom[] atoms;
-    /**
-     * First and last residue numbers of loop.
-     */
-    private final int firstResidue;
-    private final int endResidue;
-    /**
-     * Everyone's favorite.
-     */
-    private final Random rng = new Random();
-    /**
-     * The ForceFieldEnergy object being used by MD.
-     */
-    private final ForceFieldEnergy forceFieldEnergy;
     /**
      * The LambdaInterface object being used by OST.
      */
@@ -159,6 +159,35 @@ public class MCLoop implements MonteCarloListener {
         logger.info(sb.toString());
 
         loop = new Loop(molAss);
+    }
+
+    /**
+     * <p>addLambdaInterface.</p>
+     *
+     * @param lambdaInterface a {@link ffx.potential.bonded.LambdaInterface} object.
+     */
+    public void addLambdaInterface(LambdaInterface lambdaInterface) {
+        this.lambdaInterface = lambdaInterface;
+    }
+
+    /**
+     * <p>addMolDyn.</p>
+     *
+     * @param molDyn a {@link MolecularDynamics} object.
+     */
+    public void addMolDyn(MolecularDynamics molDyn) {
+        this.molDyn = molDyn;
+    }
+
+    /**
+     * Get the current MC acceptance rate.
+     *
+     * @return the acceptance rate.
+     */
+    public double getAcceptanceRate() {
+        // Intentional integer division.
+        int numTries = stepCount / mcStepFrequency;
+        return (double) numMovesAccepted / numTries;
     }
 
     /**
@@ -218,6 +247,19 @@ public class MCLoop implements MonteCarloListener {
         // Perform the MC move.
         boolean accepted = tryLoopStep(loopSolutions);
         return accepted;
+    }
+
+    /**
+     * <p>Setter for the field <code>iterations</code>.</p>
+     *
+     * @param iterations a int.
+     */
+    public void setIterations(int iterations) {
+        this.iterations = iterations;
+    }
+
+    private enum MCOverride {
+        ACCEPT, REJECT, NONE;
     }
 
     /**
@@ -298,44 +340,6 @@ public class MCLoop implements MonteCarloListener {
         }
     }
 
-    /**
-     * Get the current MC acceptance rate.
-     *
-     * @return the acceptance rate.
-     */
-    public double getAcceptanceRate() {
-        // Intentional integer division.
-        int numTries = stepCount / mcStepFrequency;
-        return (double) numMovesAccepted / numTries;
-    }
-
-    /**
-     * <p>Setter for the field <code>iterations</code>.</p>
-     *
-     * @param iterations a int.
-     */
-    public void setIterations(int iterations) {
-        this.iterations = iterations;
-    }
-
-    /**
-     * <p>addMolDyn.</p>
-     *
-     * @param molDyn a {@link MolecularDynamics} object.
-     */
-    public void addMolDyn(MolecularDynamics molDyn) {
-        this.molDyn = molDyn;
-    }
-
-    /**
-     * <p>addLambdaInterface.</p>
-     *
-     * @param lambdaInterface a {@link ffx.potential.bonded.LambdaInterface} object.
-     */
-    public void addLambdaInterface(LambdaInterface lambdaInterface) {
-        this.lambdaInterface = lambdaInterface;
-    }
-
     private double[] storeActiveCoordinates() {
         double[] coords = new double[atoms.length * 3];
         int index = 0;
@@ -345,9 +349,5 @@ public class MCLoop implements MonteCarloListener {
             coords[index++] = a.getZ();
         }
         return coords;
-    }
-
-    private enum MCOverride {
-        ACCEPT, REJECT, NONE;
     }
 }

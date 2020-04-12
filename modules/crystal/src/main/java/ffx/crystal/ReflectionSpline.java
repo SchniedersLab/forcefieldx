@@ -72,11 +72,68 @@ public class ReflectionSpline {
 
     /**
      * <p>
+     * dfi0</p>
+     *
+     * @return a double.
+     */
+    public double dfi0() {
+        return dfi0;
+    }
+
+    /**
+     * <p>
+     * dfi1</p>
+     *
+     * @return a double.
+     */
+    public double dfi1() {
+        return dfi1;
+    }
+
+    /**
+     * <p>
+     * dfi2</p>
+     *
+     * @return a double.
+     */
+    public double dfi2() {
+        return dfi2;
+    }
+
+    /**
+     * <p>
      * f</p>
      *
      * @return a double.
      */
     public double f() {
+        return f;
+    }
+
+    /**
+     * Evaluate basis function and derivative at a given resolution (Equations
+     * 24 and 25 in Cowtan et al.).
+     *
+     * @param invressq resolution of desired spline interpolation
+     * @param params   current spline parameters
+     * @return value at invressq
+     */
+    public double f(double invressq, double[] params) {
+        double s = nParams * reflectionList.ordinal(invressq);
+        int i = (int) floor(s);
+        double ds = s - i - 0.5;
+        i0 = min(max(0, i - 1), nParams - 1);
+        i1 = min(max(0, i), nParams - 1);
+        i2 = min(max(0, i + 1), nParams - 1);
+
+        f = params[i0] * 0.5 * (ds - 0.5) * (ds - 0.5)
+                + params[i1] * (0.75 - ds * ds)
+                + params[i2] * 0.5 * (ds + 0.5) * (ds + 0.5);
+
+        dfi0 = 0.5 * (ds - 0.5) * (ds - 0.5);
+        dfi1 = 0.75 - ds * ds;
+        dfi2 = 0.5 * (ds + 0.5) * (ds + 0.5);
+
         return f;
     }
 
@@ -108,62 +165,5 @@ public class ReflectionSpline {
      */
     public int i2() {
         return i2;
-    }
-
-    /**
-     * <p>
-     * dfi0</p>
-     *
-     * @return a double.
-     */
-    public double dfi0() {
-        return dfi0;
-    }
-
-    /**
-     * <p>
-     * dfi1</p>
-     *
-     * @return a double.
-     */
-    public double dfi1() {
-        return dfi1;
-    }
-
-    /**
-     * <p>
-     * dfi2</p>
-     *
-     * @return a double.
-     */
-    public double dfi2() {
-        return dfi2;
-    }
-
-    /**
-     * Evaluate basis function and derivative at a given resolution (Equations
-     * 24 and 25 in Cowtan et al.).
-     *
-     * @param invressq resolution of desired spline interpolation
-     * @param params   current spline parameters
-     * @return value at invressq
-     */
-    public double f(double invressq, double[] params) {
-        double s = nParams * reflectionList.ordinal(invressq);
-        int i = (int) floor(s);
-        double ds = s - i - 0.5;
-        i0 = min(max(0, i - 1), nParams - 1);
-        i1 = min(max(0, i), nParams - 1);
-        i2 = min(max(0, i + 1), nParams - 1);
-
-        f = params[i0] * 0.5 * (ds - 0.5) * (ds - 0.5)
-                + params[i1] * (0.75 - ds * ds)
-                + params[i2] * 0.5 * (ds + 0.5) * (ds + 0.5);
-
-        dfi0 = 0.5 * (ds - 0.5) * (ds - 0.5);
-        dfi1 = 0.75 - ds * ds;
-        dfi2 = 0.5 * (ds + 0.5) * (ds + 0.5);
-
-        return f;
     }
 }

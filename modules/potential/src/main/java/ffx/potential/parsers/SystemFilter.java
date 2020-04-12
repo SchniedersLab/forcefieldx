@@ -72,17 +72,10 @@ import static ffx.utilities.StringUtils.parseAtNumArg;
  */
 public abstract class SystemFilter {
 
-    public enum Versioning {
-        TINKER, PREFIX, POSTFIX, PREFIX_ABSOLUTE, POSTFIX_ABSOLUTE, NONE;
-    }
-
+    protected static final Pattern lambdaPattern = Pattern.compile("Lambda: +([01]\\.\\d+)");
+    private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
     private static Versioning vers = Versioning.TINKER;
     private static int absoluteCounter = 0;
-
-    protected static final Pattern lambdaPattern = Pattern.compile("Lambda: +([01]\\.\\d+)");
-
-    private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
-
     /**
      * Constant <code>dieOnMissingAtom=</code>
      */
@@ -96,30 +89,19 @@ public abstract class SystemFilter {
      * nuclear centers (applies primarily to hydrogens).
      */
     protected final boolean vdwH;
-
     /**
      * The atomList is filled by filters that extend SystemFilter.
      */
-    protected ArrayList<Atom> atomList = null;
+    protected List<Atom> atomList = null;
     /**
      * The bondList may be filled by the filters that extend SystemFilter.
      */
-    protected ArrayList<Bond> bondList = null;
-    /**
-     * The current MolecularAssembly being populated. Note that more than one
-     * MolecularAssembly should be defined for PDB files with alternate
-     * locations.
-     */
-    MolecularAssembly activeMolecularAssembly;
+    protected List<Bond> bondList = null;
     /**
      * All MolecularAssembly instances defined. More than one MolecularAssembly
      * should be defined for PDB entries with alternate locations.
      */
     protected List<MolecularAssembly> systems = new Vector<>();
-    /**
-     * File currently being read.
-     */
-    File currentFile = null;
     /**
      * Append multiple files into one MolecularAssembly.
      */
@@ -140,6 +122,16 @@ public abstract class SystemFilter {
      * True after the file has been read successfully.
      */
     protected boolean fileRead = false;
+    /**
+     * The current MolecularAssembly being populated. Note that more than one
+     * MolecularAssembly should be defined for PDB files with alternate
+     * locations.
+     */
+    MolecularAssembly activeMolecularAssembly;
+    /**
+     * File currently being read.
+     */
+    File currentFile = null;
     /**
      * A set of coordinate restraints obtained from the properties.
      */
@@ -223,429 +215,6 @@ public abstract class SystemFilter {
         this.currentFile = file;
         this.systems = new ArrayList<>(molecularAssemblies);
         this.activeMolecularAssembly = systems.get(0);
-    }
-
-    /**
-     * Use setVersioning() to choose between prefix/postfix.
-     *
-     * @param file a {@link java.io.File} object.
-     * @return a {@link java.io.File} object.
-     */
-    public static File version(File file) {
-        if (vers == Versioning.TINKER) {
-            return versionTinker(file);
-        } else {
-            if (vers == Versioning.PREFIX_ABSOLUTE || vers == Versioning.POSTFIX_ABSOLUTE) {
-                return versionAbsolute(file, (vers == Versioning.PREFIX_ABSOLUTE));
-            } else {
-                return version(file, (vers == Versioning.PREFIX_ABSOLUTE));
-            }
-        }
-    }
-
-    /**
-     * This follows the TINKER file versioning scheme.
-     *
-     * @param file File to find a version for.
-     * @return File Versioned File.
-     */
-    private static File versionTinker(File file) {
-        if (file == null) {
-            return null;
-        }
-        if (!file.exists()) {
-            return file;
-        }
-        String fileName = file.getAbsolutePath();
-        int dot = file.getAbsolutePath().lastIndexOf(".");
-        int under = file.getAbsolutePath().lastIndexOf("_");
-        File newFile = file;
-        if (under > dot) {
-            String name = fileName.substring(0, under);
-            newFile = new File(name);
-        }
-        File oldFile = newFile;
-        int i = 1;
-        while (newFile.exists()) {
-            i = i + 1;
-            String newFileString = format("%s_%d", oldFile.getAbsolutePath(), i);
-            newFile = new File(newFileString);
-        }
-        return newFile;
-    }
-
-    /**
-     * Negative: prefix a version number; Positive: postfix; Zero: TINKER-style.
-     *
-     * @param vers a {@link ffx.potential.parsers.SystemFilter.Versioning} object.
-     */
-    public static void setVersioning(Versioning vers) {
-        SystemFilter.vers = vers;
-    }
-
-    private static File version(File file, boolean prefix) {
-        if (file == null || !(file.exists())) {
-            return file;
-        }
-        String fn = file.getAbsolutePath();
-        int dot = fn.lastIndexOf(".");
-        int under = fn.lastIndexOf("_");
-        if (dot < 0) {
-            fn += ".unk";
-            dot = fn.lastIndexOf(".");
-        }
-        if (under < 0) {
-            under = dot;
-        }
-        String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
-        String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
-        int number = 0;
-        String newFn = (prefix)
-                ? format("%s_%d.%s", name, number, extension)
-                : format("%s.%s_%d", name, extension, number);
-        if (prefix && under < dot) {
-            try {
-                number = Integer.parseInt(fn.substring(under + 1, dot));
-            } catch (NumberFormatException ex) {
-                // Then we have something like "AKA_dyn.pdb"
-                name = fn.substring(0, dot);
-                number++;
-                newFn = format("%s_%d.%s", name, number, extension);
-            }
-        } else if (!prefix && under > dot) {
-            try {
-                number = Integer.parseInt(fn.substring(under + 1));
-                number++;
-            } catch (NumberFormatException ex) {
-                //
-            }
-        }
-        File newFile = new File(newFn);
-        while (newFile.exists()) {
-            ++number;
-            newFn = (prefix)
-                    ? format("%s_%d.%s", name, number, extension)
-                    : format("%s.%s_%d", name, extension, number);
-            newFile = new File(newFn);
-        }
-        return newFile;
-    }
-
-    private synchronized static File versionAbsolute(File file, boolean prefix) {
-        if (file == null || !(file.exists())) {
-            return file;
-        }
-        String fn = file.getAbsolutePath();
-        int dot = fn.lastIndexOf(".");
-        int under = fn.lastIndexOf("_");
-        if (dot < 0) {
-            fn += ".unk";
-            dot = fn.lastIndexOf(".");
-        }
-        if (under < 0) {
-            under = dot;
-        }
-        String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
-        String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
-        String newFn = (prefix)
-                ? format("%s_%d.%s", name, absoluteCounter, extension)
-                : format("%s.%s_%d", name, extension, absoluteCounter);
-        File newFile = new File(newFn);
-        while (newFile.exists()) {
-            absoluteCounter++;
-            newFn = (prefix)
-                    ? format("%s_%d.%s", name, absoluteCounter, extension)
-                    : format("%s.%s_%d", name, extension, absoluteCounter);
-            newFile = new File(newFn);
-        }
-        return newFile;
-    }
-
-    /**
-     * <p>
-     * previousVersion</p>
-     *
-     * @param file a {@link java.io.File} object.
-     * @return a {@link java.io.File} object.
-     */
-    public static File previousVersion(File file) {
-        if (file == null) {
-            return null;
-        }
-        String fileName = file.getAbsolutePath();
-        int dot = file.getAbsolutePath().lastIndexOf(".");
-        int under = file.getAbsolutePath().lastIndexOf("_");
-        File newFile = file;
-        if (under > dot) {
-            String name = fileName.substring(0, under);
-            newFile = new File(name);
-        }
-        File baseFile = newFile;
-        File previousFile = null;
-        int i = 1;
-        while (newFile.exists()) {
-            i = i + 1;
-            previousFile = newFile;
-            newFile = baseFile;
-            int thousand = i / 1000;
-            int hundred = (i - 1000 * thousand) / 100;
-            int tens = (i - 1000 * thousand - 100 * hundred) / 10;
-            int ones = i - 1000 * thousand - 100 * hundred - 10 * tens;
-            StringBuilder newFileString = new StringBuilder(baseFile.getAbsolutePath());
-            if (thousand != 0) {
-                newFileString.append('_').append(thousand).append(hundred).append(tens).append(ones);
-            } else if (hundred != 0) {
-                newFileString.append('_').append(hundred).append(tens).append(
-                        ones);
-            } else if (tens != 0) {
-                newFileString.append('_').append(tens).append(ones);
-            } else {
-                newFileString.append('_').append(ones);
-            }
-            newFile = new File(newFileString.toString());
-        }
-        return previousFile;
-    }
-
-    /**
-     * Returns true if the read was successful
-     *
-     * @return a boolean.
-     */
-    public boolean fileRead() {
-        return fileRead;
-    }
-
-    /**
-     * Reads the next model if applicable (currently, ARC and PDB files only).
-     *
-     * @return If next model read.
-     */
-    public abstract boolean readNext();
-
-    /**
-     * Reads the next model if applicable (currently, ARC files only).
-     *
-     * @param resetPosition Resets to first frame.
-     * @return If next model read.
-     */
-    public abstract boolean readNext(boolean resetPosition);
-
-    /**
-     * Reads the next model if applicable (currently, ARC files only).
-     *
-     * @param resetPosition Resets to first frame.
-     * @param print         Flag to print.
-     * @return If next model read.
-     */
-    public abstract boolean readNext(boolean resetPosition, boolean print);
-
-    /**
-     * Return snapshot number.
-     *
-     * @return The snapshot number.
-     */
-    public int getSnapshot() {
-        return -1;
-    }
-
-    /**
-     * Attempts to close any open resources associated with the underlying file;
-     * primarily to be used when finished reading a trajectory.
-     */
-    public abstract void closeReader();
-
-    public int countNumModels() {
-        return -1;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>atomList</code>.</p>
-     *
-     * @return a {@link java.util.ArrayList} object.
-     */
-    public ArrayList<Atom> getAtomList() {
-        return atomList;
-    }
-
-    /**
-     * <p>
-     * getBondCount</p>
-     *
-     * @return a int.
-     */
-    public int getBondCount() {
-        if (bondList == null) {
-            return 0;
-        }
-        return bondList.size();
-    }
-
-    /**
-     * Return the MolecularSystem that has been read in
-     *
-     * @return a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public MolecularAssembly getActiveMolecularSystem() {
-        return activeMolecularAssembly;
-    }
-
-    /**
-     * <p>
-     * getMolecularAssemblys</p>
-     *
-     * @return an array of {@link ffx.potential.MolecularAssembly} objects.
-     */
-    public MolecularAssembly[] getMolecularAssemblys() {
-        if (systems.size() > 0) {
-            return systems.toArray(new MolecularAssembly[0]);
-        } else {
-            return new MolecularAssembly[]{activeMolecularAssembly};
-        }
-    }
-
-    /**
-     * <p>
-     * getType</p>
-     *
-     * @return a {@link ffx.potential.Utilities.FileType} object.
-     */
-    public FileType getType() {
-        return fileType;
-    }
-
-    /**
-     * <p>
-     * getFile</p>
-     *
-     * @return a {@link java.io.File} object.
-     */
-    public File getFile() {
-        return currentFile;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>files</code>.</p>
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<File> getFiles() {
-        return files;
-    }
-
-    /**
-     * This method is different for each subclass and must be overidden
-     *
-     * @return a boolean.
-     */
-    public abstract boolean readFile();
-
-    /**
-     * <p>
-     * Setter for the field <code>fileRead</code>.</p>
-     *
-     * @param fileRead a boolean.
-     */
-    protected void setFileRead(boolean fileRead) {
-        this.fileRead = fileRead;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>forceField</code>.</p>
-     *
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     */
-    public void setForceField(ForceField forceField) {
-        this.forceField = forceField;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>properties</code>.</p>
-     *
-     * @param properties a
-     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     */
-    public void setProperties(CompositeConfiguration properties) {
-        this.properties = properties;
-    }
-
-    /**
-     * <p>
-     * setMolecularSystem</p>
-     *
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     *                          object.
-     */
-    void setMolecularSystem(MolecularAssembly molecularAssembly) {
-        activeMolecularAssembly = molecularAssembly;
-    }
-
-    /**
-     * <p>
-     * setType</p>
-     *
-     * @param fileType a {@link ffx.potential.Utilities.FileType} object.
-     */
-    public void setType(FileType fileType) {
-        this.fileType = fileType;
-    }
-
-    /**
-     * <p>
-     * setFile</p>
-     *
-     * @param file a {@link java.io.File} object.
-     */
-    public void setFile(File file) {
-        this.currentFile = file;
-        files = new ArrayList<>();
-        if (file != null) {
-            files.add(file);
-        }
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>files</code>.</p>
-     *
-     * @param files a {@link java.util.List} object.
-     */
-    public void setFiles(List<File> files) {
-        this.files = files;
-        if (files != null && !files.isEmpty()) {
-            this.currentFile = files.get(0);
-        } else {
-            this.currentFile = null;
-        }
-    }
-
-    private static Set<Atom> parseAtomicRanges(MolecularAssembly mola, String[] toks, int tokOffset) {
-        return parseAtomicRanges(mola, Arrays.copyOfRange(toks, tokOffset, toks.length));
-    }
-
-    private static Set<Atom> parseAtomicRanges(MolecularAssembly mola, String[] toks) {
-        Atom[] atoms = mola.getAtomArray();
-        return Arrays.stream(toks).
-                parallel().
-                flatMap((String tok) -> {
-                    if (tok.equalsIgnoreCase("HEAVY")) {
-                        return Arrays.stream(mola.getChains()).
-                                flatMap((Polymer poly) -> poly.getAtomList().stream().filter(Atom::isHeavy));
-                    } else if (tok.matches("^[0-9]+$")) {
-                        return Stream.of(atoms[Integer.parseInt(tok) - 1]);
-                    } else if (tok.matches("^[0-9]+-[0-9]+")) {
-                        String[] subtoks = tok.split("-");
-                        int first = Integer.parseInt(subtoks[0]) - 1;
-                        int last = Integer.parseInt(subtoks[1]) - 1;
-                        return IntStream.rangeClosed(first, last).mapToObj((int i) -> atoms[i]);
-                    } else {
-                        return Arrays.stream(atoms).filter((Atom a) -> a.getName().equals(tok));
-                    }
-                }).collect(Collectors.toSet());
     }
 
     /**
@@ -862,6 +431,57 @@ public abstract class SystemFilter {
     }
 
     /**
+     * Attempts to close any open resources associated with the underlying file;
+     * primarily to be used when finished reading a trajectory.
+     */
+    public abstract void closeReader();
+
+    public int countNumModels() {
+        return -1;
+    }
+
+    /**
+     * Returns true if the read was successful
+     *
+     * @return a boolean.
+     */
+    public boolean fileRead() {
+        return fileRead;
+    }
+
+    /**
+     * Return the MolecularSystem that has been read in
+     *
+     * @return a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public MolecularAssembly getActiveMolecularSystem() {
+        return activeMolecularAssembly;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>atomList</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
+    public List<Atom> getAtomList() {
+        return atomList;
+    }
+
+    /**
+     * <p>
+     * getBondCount</p>
+     *
+     * @return a int.
+     */
+    public int getBondCount() {
+        if (bondList == null) {
+            return 0;
+        }
+        return bondList.size();
+    }
+
+    /**
      * Gets the coordinate restraints parsed by this Filter.
      *
      * @return Coordinate restraints.
@@ -871,6 +491,241 @@ public abstract class SystemFilter {
             return new ArrayList<>(coordRestraints);
         } else {
             return null;
+        }
+    }
+
+    /**
+     * <p>
+     * getFile</p>
+     *
+     * @return a {@link java.io.File} object.
+     */
+    public File getFile() {
+        return currentFile;
+    }
+
+    /**
+     * <p>
+     * setFile</p>
+     *
+     * @param file a {@link java.io.File} object.
+     */
+    public void setFile(File file) {
+        this.currentFile = file;
+        files = new ArrayList<>();
+        if (file != null) {
+            files.add(file);
+        }
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>files</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
+    public List<File> getFiles() {
+        return files;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>files</code>.</p>
+     *
+     * @param files a {@link java.util.List} object.
+     */
+    public void setFiles(List<File> files) {
+        this.files = files;
+        if (files != null && !files.isEmpty()) {
+            this.currentFile = files.get(0);
+        } else {
+            this.currentFile = null;
+        }
+    }
+
+    /**
+     * Gets the last read lambda value read by the filter, if any.
+     *
+     * @return Last lambda value read by this filter.
+     */
+    public OptionalDouble getLastReadLambda() {
+        return OptionalDouble.empty();
+    }
+
+    /**
+     * <p>
+     * getMolecularAssemblys</p>
+     *
+     * @return an array of {@link ffx.potential.MolecularAssembly} objects.
+     */
+    public MolecularAssembly[] getMolecularAssemblys() {
+        if (systems.size() > 0) {
+            return systems.toArray(new MolecularAssembly[0]);
+        } else {
+            return new MolecularAssembly[]{activeMolecularAssembly};
+        }
+    }
+
+    /**
+     * Gets all remark lines read by the last readFile or readNext call.
+     *
+     * @return Array of Strings representing remark lines, if any.
+     */
+    public String[] getRemarkLines() {
+        return new String[0];
+    }
+
+    /**
+     * Return snapshot number.
+     *
+     * @return The snapshot number.
+     */
+    public int getSnapshot() {
+        return -1;
+    }
+
+    /**
+     * <p>
+     * getType</p>
+     *
+     * @return a {@link ffx.potential.Utilities.FileType} object.
+     */
+    public FileType getType() {
+        return fileType;
+    }
+
+    /**
+     * <p>
+     * setType</p>
+     *
+     * @param fileType a {@link ffx.potential.Utilities.FileType} object.
+     */
+    public void setType(FileType fileType) {
+        this.fileType = fileType;
+    }
+
+    /**
+     * <p>
+     * previousVersion</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @return a {@link java.io.File} object.
+     */
+    public static File previousVersion(File file) {
+        if (file == null) {
+            return null;
+        }
+        String fileName = file.getAbsolutePath();
+        int dot = file.getAbsolutePath().lastIndexOf(".");
+        int under = file.getAbsolutePath().lastIndexOf("_");
+        File newFile = file;
+        if (under > dot) {
+            String name = fileName.substring(0, under);
+            newFile = new File(name);
+        }
+        File baseFile = newFile;
+        File previousFile = null;
+        int i = 1;
+        while (newFile.exists()) {
+            i = i + 1;
+            previousFile = newFile;
+            newFile = baseFile;
+            int thousand = i / 1000;
+            int hundred = (i - 1000 * thousand) / 100;
+            int tens = (i - 1000 * thousand - 100 * hundred) / 10;
+            int ones = i - 1000 * thousand - 100 * hundred - 10 * tens;
+            StringBuilder newFileString = new StringBuilder(baseFile.getAbsolutePath());
+            if (thousand != 0) {
+                newFileString.append('_').append(thousand).append(hundred).append(tens).append(ones);
+            } else if (hundred != 0) {
+                newFileString.append('_').append(hundred).append(tens).append(
+                        ones);
+            } else if (tens != 0) {
+                newFileString.append('_').append(tens).append(ones);
+            } else {
+                newFileString.append('_').append(ones);
+            }
+            newFile = new File(newFileString.toString());
+        }
+        return previousFile;
+    }
+
+    /**
+     * This method is different for each subclass and must be overidden
+     *
+     * @return a boolean.
+     */
+    public abstract boolean readFile();
+
+    /**
+     * Reads the next model if applicable (currently, ARC and PDB files only).
+     *
+     * @return If next model read.
+     */
+    public abstract boolean readNext();
+
+    /**
+     * Reads the next model if applicable (currently, ARC files only).
+     *
+     * @param resetPosition Resets to first frame.
+     * @return If next model read.
+     */
+    public abstract boolean readNext(boolean resetPosition);
+
+    /**
+     * Reads the next model if applicable (currently, ARC files only).
+     *
+     * @param resetPosition Resets to first frame.
+     * @param print         Flag to print.
+     * @return If next model read.
+     */
+    public abstract boolean readNext(boolean resetPosition, boolean print);
+
+    /**
+     * <p>
+     * Setter for the field <code>forceField</code>.</p>
+     *
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     */
+    public void setForceField(ForceField forceField) {
+        this.forceField = forceField;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>properties</code>.</p>
+     *
+     * @param properties a
+     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
+    public void setProperties(CompositeConfiguration properties) {
+        this.properties = properties;
+    }
+
+    /**
+     * Negative: prefix a version number; Positive: postfix; Zero: TINKER-style.
+     *
+     * @param vers a {@link ffx.potential.parsers.SystemFilter.Versioning} object.
+     */
+    public static void setVersioning(Versioning vers) {
+        SystemFilter.vers = vers;
+    }
+
+    /**
+     * Use setVersioning() to choose between prefix/postfix.
+     *
+     * @param file a {@link java.io.File} object.
+     * @return a {@link java.io.File} object.
+     */
+    public static File version(File file) {
+        if (vers == Versioning.TINKER) {
+            return versionTinker(file);
+        } else {
+            if (vers == Versioning.PREFIX_ABSOLUTE || vers == Versioning.POSTFIX_ABSOLUTE) {
+                return versionAbsolute(file, (vers == Versioning.PREFIX_ABSOLUTE));
+            } else {
+                return version(file, (vers == Versioning.PREFIX_ABSOLUTE));
+            }
         }
     }
 
@@ -901,21 +756,162 @@ public abstract class SystemFilter {
      */
     public abstract boolean writeFile(File saveFile, boolean append, String[] extraLines);
 
-    /**
-     * Gets all remark lines read by the last readFile or readNext call.
-     *
-     * @return Array of Strings representing remark lines, if any.
-     */
-    public String[] getRemarkLines() {
-        return new String[0];
+    private static Set<Atom> parseAtomicRanges(MolecularAssembly mola, String[] toks, int tokOffset) {
+        return parseAtomicRanges(mola, Arrays.copyOfRange(toks, tokOffset, toks.length));
+    }
+
+    private static Set<Atom> parseAtomicRanges(MolecularAssembly mola, String[] toks) {
+        Atom[] atoms = mola.getAtomArray();
+        return Arrays.stream(toks).
+                parallel().
+                flatMap((String tok) -> {
+                    if (tok.equalsIgnoreCase("HEAVY")) {
+                        return Arrays.stream(mola.getChains()).
+                                flatMap((Polymer poly) -> poly.getAtomList().stream().filter(Atom::isHeavy));
+                    } else if (tok.matches("^[0-9]+$")) {
+                        return Stream.of(atoms[Integer.parseInt(tok) - 1]);
+                    } else if (tok.matches("^[0-9]+-[0-9]+")) {
+                        String[] subtoks = tok.split("-");
+                        int first = Integer.parseInt(subtoks[0]) - 1;
+                        int last = Integer.parseInt(subtoks[1]) - 1;
+                        return IntStream.rangeClosed(first, last).mapToObj((int i) -> atoms[i]);
+                    } else {
+                        return Arrays.stream(atoms).filter((Atom a) -> a.getName().equals(tok));
+                    }
+                }).collect(Collectors.toSet());
+    }
+
+    private static File version(File file, boolean prefix) {
+        if (file == null || !(file.exists())) {
+            return file;
+        }
+        String fn = file.getAbsolutePath();
+        int dot = fn.lastIndexOf(".");
+        int under = fn.lastIndexOf("_");
+        if (dot < 0) {
+            fn += ".unk";
+            dot = fn.lastIndexOf(".");
+        }
+        if (under < 0) {
+            under = dot;
+        }
+        String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
+        String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
+        int number = 0;
+        String newFn = (prefix)
+                ? format("%s_%d.%s", name, number, extension)
+                : format("%s.%s_%d", name, extension, number);
+        if (prefix && under < dot) {
+            try {
+                number = Integer.parseInt(fn.substring(under + 1, dot));
+            } catch (NumberFormatException ex) {
+                // Then we have something like "AKA_dyn.pdb"
+                name = fn.substring(0, dot);
+                number++;
+                newFn = format("%s_%d.%s", name, number, extension);
+            }
+        } else if (!prefix && under > dot) {
+            try {
+                number = Integer.parseInt(fn.substring(under + 1));
+                number++;
+            } catch (NumberFormatException ex) {
+                //
+            }
+        }
+        File newFile = new File(newFn);
+        while (newFile.exists()) {
+            ++number;
+            newFn = (prefix)
+                    ? format("%s_%d.%s", name, number, extension)
+                    : format("%s.%s_%d", name, extension, number);
+            newFile = new File(newFn);
+        }
+        return newFile;
+    }
+
+    private synchronized static File versionAbsolute(File file, boolean prefix) {
+        if (file == null || !(file.exists())) {
+            return file;
+        }
+        String fn = file.getAbsolutePath();
+        int dot = fn.lastIndexOf(".");
+        int under = fn.lastIndexOf("_");
+        if (dot < 0) {
+            fn += ".unk";
+            dot = fn.lastIndexOf(".");
+        }
+        if (under < 0) {
+            under = dot;
+        }
+        String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
+        String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
+        String newFn = (prefix)
+                ? format("%s_%d.%s", name, absoluteCounter, extension)
+                : format("%s.%s_%d", name, extension, absoluteCounter);
+        File newFile = new File(newFn);
+        while (newFile.exists()) {
+            absoluteCounter++;
+            newFn = (prefix)
+                    ? format("%s_%d.%s", name, absoluteCounter, extension)
+                    : format("%s.%s_%d", name, extension, absoluteCounter);
+            newFile = new File(newFn);
+        }
+        return newFile;
     }
 
     /**
-     * Gets the last read lambda value read by the filter, if any.
+     * This follows the TINKER file versioning scheme.
      *
-     * @return Last lambda value read by this filter.
+     * @param file File to find a version for.
+     * @return File Versioned File.
      */
-    public OptionalDouble getLastReadLambda() {
-        return OptionalDouble.empty();
+    private static File versionTinker(File file) {
+        if (file == null) {
+            return null;
+        }
+        if (!file.exists()) {
+            return file;
+        }
+        String fileName = file.getAbsolutePath();
+        int dot = file.getAbsolutePath().lastIndexOf(".");
+        int under = file.getAbsolutePath().lastIndexOf("_");
+        File newFile = file;
+        if (under > dot) {
+            String name = fileName.substring(0, under);
+            newFile = new File(name);
+        }
+        File oldFile = newFile;
+        int i = 1;
+        while (newFile.exists()) {
+            i = i + 1;
+            String newFileString = format("%s_%d", oldFile.getAbsolutePath(), i);
+            newFile = new File(newFileString);
+        }
+        return newFile;
+    }
+
+    public enum Versioning {
+        TINKER, PREFIX, POSTFIX, PREFIX_ABSOLUTE, POSTFIX_ABSOLUTE, NONE;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>fileRead</code>.</p>
+     *
+     * @param fileRead a boolean.
+     */
+    protected void setFileRead(boolean fileRead) {
+        this.fileRead = fileRead;
+    }
+
+    /**
+     * <p>
+     * setMolecularSystem</p>
+     *
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
+     *                          object.
+     */
+    void setMolecularSystem(MolecularAssembly molecularAssembly) {
+        activeMolecularAssembly = molecularAssembly;
     }
 }

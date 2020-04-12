@@ -59,11 +59,6 @@ public final class BioType extends BaseType implements Comparator<String> {
      * A Logger for the BioType class.
      */
     private static final Logger logger = Logger.getLogger(BioType.class.getName());
-
-    /**
-     * The index of this BioType.
-     */
-    public int index;
     /**
      * The PDB atom name for this BioType.
      */
@@ -73,13 +68,17 @@ public final class BioType extends BaseType implements Comparator<String> {
      */
     public final String moleculeName;
     /**
-     * The force field atom type to be used for the molecule / atom name combination.
-     */
-    public int atomType;
-    /**
      * Bonds are required to listed atom names.
      */
     public final String[] bonds;
+    /**
+     * The index of this BioType.
+     */
+    public int index;
+    /**
+     * The force field atom type to be used for the molecule / atom name combination.
+     */
+    public int atomType;
 
     /**
      * BioType Constructor.
@@ -104,16 +103,32 @@ public final class BioType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>
-     * incrementIndexAndType</p>
-     *
-     * @param indexIncrement a int.
-     * @param typeIncrement  a int.
+     * {@inheritDoc}
      */
-    void incrementIndexAndType(int indexIncrement, int typeIncrement) {
-        index += indexIncrement;
-        atomType += typeIncrement;
-        setKey(Integer.toString(index));
+    @Override
+    public int compare(String s1, String s2) {
+        int t1 = parseInt(s1);
+        int t2 = parseInt(s2);
+        return Integer.compare(t1, t2);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BioType bioType = (BioType) o;
+        return bioType.index == this.index;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(index);
     }
 
     /**
@@ -178,31 +193,15 @@ public final class BioType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * {@inheritDoc}
+     * <p>
+     * incrementIndexAndType</p>
+     *
+     * @param indexIncrement a int.
+     * @param typeIncrement  a int.
      */
-    @Override
-    public int compare(String s1, String s2) {
-        int t1 = parseInt(s1);
-        int t2 = parseInt(s2);
-        return Integer.compare(t1, t2);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        BioType bioType = (BioType) o;
-        return bioType.index == this.index;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(index);
+    void incrementIndexAndType(int indexIncrement, int typeIncrement) {
+        index += indexIncrement;
+        atomType += typeIncrement;
+        setKey(Integer.toString(index));
     }
 }

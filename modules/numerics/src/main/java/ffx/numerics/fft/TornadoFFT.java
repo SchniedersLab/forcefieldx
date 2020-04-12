@@ -57,13 +57,12 @@ import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floatSin
 public class TornadoFFT {
 
     private static final Logger logger = Logger.getLogger(TornadoFFT.class.getName());
-
-    private int size;
     float[] inReal;
     float[] inImag;
     float[] outReal;
     float[] outImag;
     long time;
+    private int size;
 
     public TornadoFFT(int size) {
         this.size = size;
@@ -73,9 +72,19 @@ public class TornadoFFT {
         outImag = new float[size];
     }
 
-    public void execute() {
-        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-        execute(device);
+    public static void computeDft(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
+        int n = inreal.length;
+        for (@Parallel int k = 0; k < n; k++) { // For each output element
+            float sumReal = 0;
+            float simImag = 0;
+            for (int t = 0; t < n; t++) { // For each input element
+                float angle = (2 * floatPI() * t * k) / n;
+                sumReal += inreal[t] * floatCos(angle) + inimag[t] * floatSin(angle);
+                simImag += -inreal[t] * floatSin(angle) + inimag[t] * floatCos(angle);
+            }
+            outreal[k] = sumReal;
+            outimag[k] = simImag;
+        }
     }
 
     public void execute(TornadoDevice device) {
@@ -104,6 +113,11 @@ public class TornadoFFT {
 
     }
 
+    public void execute() {
+        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        execute(device);
+    }
+
     public void validate(int deviceID) {
         TornadoDevice device = FFXTornado.getDevice(deviceID);
 
@@ -130,21 +144,6 @@ public class TornadoFFT {
         FFXTornado.logDevice(device);
         System.out.println(" Correct: " + validation);
         System.out.println(format(" %10s %8.6f (sec)\n %10s %8.6f (sec)", " Java", 1.0e-9 * javaTime, " OpenCL", 1.0e-9 * time));
-    }
-
-    public static void computeDft(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
-        int n = inreal.length;
-        for (@Parallel int k = 0; k < n; k++) { // For each output element
-            float sumReal = 0;
-            float simImag = 0;
-            for (int t = 0; t < n; t++) { // For each input element
-                float angle = (2 * floatPI() * t * k) / n;
-                sumReal += inreal[t] * floatCos(angle) + inimag[t] * floatSin(angle);
-                simImag += -inreal[t] * floatSin(angle) + inimag[t] * floatCos(angle);
-            }
-            outreal[k] = sumReal;
-            outimag[k] = simImag;
-        }
     }
 
 }

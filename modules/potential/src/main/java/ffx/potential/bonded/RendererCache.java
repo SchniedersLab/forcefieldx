@@ -804,6 +804,7 @@ public class RendererCache {
         transform3D.setScale(scale);
         return transform3D;
     }
+
     public enum ColorModel {
 
         CPK, GROUP, RESIDUE, POLYMER, MOLECULE, MONOCHROME, USERCOLOR, PARTIALCHARGE, PICK, SELECT, REVERT, STRUCTURE, APPLYUSERCOLOR

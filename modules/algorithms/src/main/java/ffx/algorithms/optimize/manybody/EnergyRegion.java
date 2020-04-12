@@ -44,7 +44,6 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
 
-import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
 
 public class EnergyRegion extends ParallelRegion {
@@ -70,30 +69,24 @@ public class EnergyRegion extends ParallelRegion {
         energyLoops = new EnergyLoop[nThreads];
     }
 
-    public void init(EnergyExpansion eE, Residue[] residues, int[] rotamers, boolean threeBodyTerm) {
-        this.eE = eE;
-        this.rotamers = rotamers;
-        this.nResidues = residues.length;
-        this.residues = Arrays.copyOf(residues, nResidues);
-        this.threeBodyTerm = threeBodyTerm;
-    }
-
-    public void start() {
-        self.set(0.0);
-        twoBody.set(0.0);
-        threeBody.set(0.0);
-    }
-
     public double getSelf() {
         return self.get();
+    }
+
+    public double getThreeBody() {
+        return threeBody.get();
     }
 
     public double getTwoBody() {
         return twoBody.get();
     }
 
-    public double getThreeBody() {
-        return threeBody.get();
+    public void init(EnergyExpansion eE, Residue[] residues, int[] rotamers, boolean threeBodyTerm) {
+        this.eE = eE;
+        this.rotamers = rotamers;
+        this.nResidues = residues.length;
+        this.residues = Arrays.copyOf(residues, nResidues);
+        this.threeBodyTerm = threeBodyTerm;
     }
 
     @Override
@@ -105,23 +98,17 @@ public class EnergyRegion extends ParallelRegion {
         execute(0, nResidues - 1, energyLoops[threadID]);
     }
 
+    public void start() {
+        self.set(0.0);
+        twoBody.set(0.0);
+        threeBody.set(0.0);
+    }
+
     private class EnergyLoop extends IntegerForLoop {
 
         private double selfSum;
         private double pairSum;
         private double threeBodySum;
-
-        @Override
-        public void start() {
-            selfSum = 0.0;
-            pairSum = 0.0;
-            threeBodySum = 0.0;
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.dynamic();
-        }
 
         @Override
         public void finish() {
@@ -146,6 +133,18 @@ public class EnergyRegion extends ParallelRegion {
                     }
                 }
             }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.dynamic();
+        }
+
+        @Override
+        public void start() {
+            selfSum = 0.0;
+            pairSum = 0.0;
+            threeBodySum = 0.0;
         }
     }
 }

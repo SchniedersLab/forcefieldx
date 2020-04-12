@@ -157,76 +157,6 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
     }
 
     /**
-     * Check if this Improper Torsion Type is defined by 1 or more atom classes equal to zero.
-     *
-     * @return True if there are no zero "wildcard" atom classes for this type.
-     */
-    public boolean noZeroClasses() {
-        if (atomClasses[0] != 0 && atomClasses[1] != 0 && atomClasses[3] != 0) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * <p>
-     * incrementClasses</p>
-     *
-     * @param increment a int.
-     */
-    public void incrementClasses(int increment) {
-        for (int i = 0; i < atomClasses.length; i++) {
-            if (atomClasses[i] != 0) {
-                atomClasses[i] += increment;
-            }
-        }
-        setKey(sortKey(atomClasses));
-    }
-
-    /**
-     * Remap new atom classes to known internal ones.
-     *
-     * @param typeMap a lookup between new atom types and known atom types.
-     */
-    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
-        int count = 0;
-        for (AtomType newType : typeMap.keySet()) {
-            for (int atomClass : atomClasses) {
-                if (atomClass == newType.atomClass) {
-                    count++;
-                }
-            }
-        }
-        if (count > 0 && count < atomClasses.length) {
-            for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < atomClasses.length; i++) {
-                    if (atomClasses[i] == newType.atomClass) {
-                        AtomType knownType = typeMap.get(newType);
-                        atomClasses[i] = knownType.atomClass;
-                    }
-                }
-
-            }
-            setKey(sortKey(atomClasses));
-        }
-    }
-
-    /**
-     * This method sorts the atom classes for the improper torsion.
-     *
-     * @param c atomClasses
-     * @return lookup key
-     * @since 1.0
-     */
-    public static String sortKey(int[] c) {
-        if (c == null || c.length != 4) {
-            return null;
-        }
-        return c[0] + " " + c[1] + " " + c[2] + " " + c[3];
-    }
-
-    /**
      * Average two ImproperTorsionType instances. The atom classes that define the
      * new type must be supplied.
      *
@@ -251,54 +181,6 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
         double phase = (improperTorsionType1.phase + improperTorsionType2.phase) / 2.0;
 
         return new ImproperTorsionType(atomClasses, forceConstant, phase, periodicity);
-    }
-
-    /**
-     * Construct an ImproperTorsionType from an input string.
-     *
-     * @param input  The overall input String.
-     * @param tokens The input String tokenized.
-     * @return an ImproperTorsionType instance.
-     */
-    public static ImproperTorsionType parse(String input, String[] tokens) {
-        if (tokens.length < 8) {
-            logger.log(Level.WARNING, "Invalid IMPTORS type:\n{0}", input);
-        } else {
-            try {
-                int[] atomClasses = new int[4];
-                atomClasses[0] = parseInt(tokens[1]);
-                atomClasses[1] = parseInt(tokens[2]);
-                atomClasses[2] = parseInt(tokens[3]);
-                atomClasses[3] = parseInt(tokens[4]);
-                double k = parseDouble(tokens[5]);
-                double phase = parseDouble(tokens[6]);
-                int period = parseInt(tokens[7]);
-                return new ImproperTorsionType(atomClasses, k, phase, period);
-            } catch (NumberFormatException e) {
-                String message = "Exception parsing IMPTORS type:\n" + input + "\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Nicely formatted Torsion angle.
-     *
-     * @since 1.0
-     */
-    @Override
-    public String toString() {
-        StringBuilder imptorsBuffer = new StringBuilder("imptors");
-        for (int i : atomClasses) {
-            imptorsBuffer.append(String.format(" %5d", i));
-        }
-        imptorsBuffer.append(String.format(" %7.3f %7.3f %1d",
-                k, phase, periodicity));
-
-        return imptorsBuffer.toString();
     }
 
     /**
@@ -366,6 +248,124 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
     @Override
     public int hashCode() {
         return Arrays.hashCode(atomClasses);
+    }
+
+    /**
+     * <p>
+     * incrementClasses</p>
+     *
+     * @param increment a int.
+     */
+    public void incrementClasses(int increment) {
+        for (int i = 0; i < atomClasses.length; i++) {
+            if (atomClasses[i] != 0) {
+                atomClasses[i] += increment;
+            }
+        }
+        setKey(sortKey(atomClasses));
+    }
+
+    /**
+     * Check if this Improper Torsion Type is defined by 1 or more atom classes equal to zero.
+     *
+     * @return True if there are no zero "wildcard" atom classes for this type.
+     */
+    public boolean noZeroClasses() {
+        if (atomClasses[0] != 0 && atomClasses[1] != 0 && atomClasses[3] != 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Construct an ImproperTorsionType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return an ImproperTorsionType instance.
+     */
+    public static ImproperTorsionType parse(String input, String[] tokens) {
+        if (tokens.length < 8) {
+            logger.log(Level.WARNING, "Invalid IMPTORS type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[4];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                atomClasses[3] = parseInt(tokens[4]);
+                double k = parseDouble(tokens[5]);
+                double phase = parseDouble(tokens[6]);
+                int period = parseInt(tokens[7]);
+                return new ImproperTorsionType(atomClasses, k, phase, period);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing IMPTORS type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Remap new atom classes to known internal ones.
+     *
+     * @param typeMap a lookup between new atom types and known atom types.
+     */
+    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+        int count = 0;
+        for (AtomType newType : typeMap.keySet()) {
+            for (int atomClass : atomClasses) {
+                if (atomClass == newType.atomClass) {
+                    count++;
+                }
+            }
+        }
+        if (count > 0 && count < atomClasses.length) {
+            for (AtomType newType : typeMap.keySet()) {
+                for (int i = 0; i < atomClasses.length; i++) {
+                    if (atomClasses[i] == newType.atomClass) {
+                        AtomType knownType = typeMap.get(newType);
+                        atomClasses[i] = knownType.atomClass;
+                    }
+                }
+
+            }
+            setKey(sortKey(atomClasses));
+        }
+    }
+
+    /**
+     * This method sorts the atom classes for the improper torsion.
+     *
+     * @param c atomClasses
+     * @return lookup key
+     * @since 1.0
+     */
+    public static String sortKey(int[] c) {
+        if (c == null || c.length != 4) {
+            return null;
+        }
+        return c[0] + " " + c[1] + " " + c[2] + " " + c[3];
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Nicely formatted Torsion angle.
+     *
+     * @since 1.0
+     */
+    @Override
+    public String toString() {
+        StringBuilder imptorsBuffer = new StringBuilder("imptors");
+        for (int i : atomClasses) {
+            imptorsBuffer.append(String.format(" %5d", i));
+        }
+        imptorsBuffer.append(String.format(" %7.3f %7.3f %1d",
+                k, phase, periodicity));
+
+        return imptorsBuffer.toString();
     }
 
 }

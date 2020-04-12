@@ -67,6 +67,15 @@ import ffx.potential.utils.PotentialsFunctions;
 public interface AlgorithmFunctions extends PotentialsFunctions {
 
     /**
+     * Returns a default Listener if available (null by default).
+     *
+     * @return An AlgorithmListener or null.
+     */
+    default AlgorithmListener getDefaultListener() {
+        return null;
+    }
+
+    /**
      * Runs molecular dynamics on an assembly.
      *
      * @param assembly       a {@link ffx.potential.MolecularAssembly} object.
@@ -79,8 +88,8 @@ public interface AlgorithmFunctions extends PotentialsFunctions {
      * @param dyn            Dynamics file
      */
     void md(MolecularAssembly assembly, int nStep, double timeStep,
-                            double printInterval, double saveInterval, double temperature,
-                            boolean initVelocities, File dyn);
+            double printInterval, double saveInterval, double temperature,
+            boolean initVelocities, File dyn);
 
     /**
      * Relax the coordinates of a MolecularAssembly and minimize its potential energy
@@ -90,13 +99,4 @@ public interface AlgorithmFunctions extends PotentialsFunctions {
      * @return A <code>Potential</code>
      */
     Potential minimize(MolecularAssembly assembly, double eps);
-
-    /**
-     * Returns a default Listener if available (null by default).
-     *
-     * @return An AlgorithmListener or null.
-     */
-    default AlgorithmListener getDefaultListener() {
-        return null;
-    }
 }

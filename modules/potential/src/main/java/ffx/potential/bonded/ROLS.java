@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.jogamp.java3d.BranchGroup;
@@ -87,11 +86,11 @@ public interface ROLS {
      * getList</p>
      *
      * @param c     a {@link java.lang.Class} object.
-     * @param nodes a {@link java.util.ArrayList} object.
+     * @param nodes a {@link java.util.List} object.
      * @param <T>   Node Type to collect.
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    <T> ArrayList<T> getList(Class<T> c, ArrayList<T> nodes);
+    <T> List<T> getList(Class<T> c, List<T> nodes);
 
     /**
      * <p>

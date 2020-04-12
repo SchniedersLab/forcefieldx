@@ -57,6 +57,24 @@ import static ffx.numerics.func1d.QuasiLinearThetaMap.Branch.D;
 @RunWith(Parameterized.class)
 public class QuasiLinearSwitchTest {
     private static final double TOL = 1E-11;
+    private final String info;
+    private final QuasiLinearThetaMap mapF;
+    private final double[] expectedConsts;
+    private final double[][] expecteds;
+    private final Branch[] primaryBranch;
+    private final Branch[] secondaryBranch;
+    private final int nVals;
+
+    public QuasiLinearSwitchTest(String info, OptionalDouble theta0, double[] eConsts, double[][] eVals, Branch[] primary, Branch[] secondary) {
+        this.info = info;
+        mapF = theta0.isPresent() ? new QuasiLinearThetaMap(theta0.getAsDouble()) : new QuasiLinearThetaMap();
+        expectedConsts = eConsts;
+        expecteds = eVals;
+        primaryBranch = primary;
+        secondaryBranch = secondary;
+        nVals = eVals.length;
+        assertTrue("Inequal number of arguments for expected vals & branches!", nVals == primary.length && nVals == secondary.length);
+    }
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
@@ -172,25 +190,6 @@ public class QuasiLinearSwitchTest {
         });
     }
 
-    private final String info;
-    private final QuasiLinearThetaMap mapF;
-    private final double[] expectedConsts;
-    private final double[][] expecteds;
-    private final Branch[] primaryBranch;
-    private final Branch[] secondaryBranch;
-    private final int nVals;
-
-    public QuasiLinearSwitchTest(String info, OptionalDouble theta0, double[] eConsts, double[][] eVals, Branch[] primary, Branch[] secondary) {
-        this.info = info;
-        mapF = theta0.isPresent() ? new QuasiLinearThetaMap(theta0.getAsDouble()) : new QuasiLinearThetaMap();
-        expectedConsts = eConsts;
-        expecteds = eVals;
-        primaryBranch = primary;
-        secondaryBranch = secondary;
-        nVals = eVals.length;
-        assertTrue("Inequal number of arguments for expected vals & branches!", nVals == primary.length && nVals == secondary.length);
-    }
-
     @Test
     public void testPoints() {
         for (int i = 0; i < 4; i++) {
@@ -206,6 +205,11 @@ public class QuasiLinearSwitchTest {
                 testJoint(exp, prim, secon);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return info;
     }
 
     private void testMidPoint(double[] expect, Branch br) {
@@ -256,10 +260,5 @@ public class QuasiLinearSwitchTest {
         eVal = expect[3];
         val = mapF.sd(t, prim);
         assertEquals("A joint second derivative was incorrect!", val, eVal, TOL);
-    }
-
-    @Override
-    public String toString() {
-        return info;
     }
 }

@@ -51,15 +51,14 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
 public abstract class BaseType {
 
     private static final Logger logger = Logger.getLogger(BaseType.class.getName());
-
-    /**
-     * The ForceFieldType of this term.
-     */
-    ForceFieldType forceFieldType;
     /**
      * The look-up key for this term, which is usually a concatenation of atom classes or atom types.
      */
     protected String key;
+    /**
+     * The ForceFieldType of this term.
+     */
+    ForceFieldType forceFieldType;
 
     /**
      * Public constructor.
@@ -83,6 +82,16 @@ public abstract class BaseType {
     public BaseType(ForceFieldType forceFieldType, String key) {
         this.forceFieldType = forceFieldType;
         this.key = key;
+    }
+
+    /**
+     * Get the <code>key</code> for this Type.
+     *
+     * @return the key
+     * @since 1.0
+     */
+    public String getKey() {
+        return key;
     }
 
     /**
@@ -113,16 +122,6 @@ public abstract class BaseType {
      */
     public void setKey(String key) {
         this.key = key;
-    }
-
-    /**
-     * Get the <code>key</code> for this Type.
-     *
-     * @return the key
-     * @since 1.0
-     */
-    public String getKey() {
-        return key;
     }
 
     /**

@@ -60,7 +60,12 @@ import ffx.potential.bonded.Atom;
 public class ExpandInducedDipolesRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(ExpandInducedDipolesRegion.class.getName());
-
+    private final ExpandInducedDipoleLoop[] expandInducedDipoleLoop;
+    /**
+     * Dimensions of [nsymm][nAtoms][3]
+     */
+    public double[][][] inducedDipole;
+    public double[][][] inducedDipoleCR;
     /**
      * An ordered array of atoms in the system.
      */
@@ -69,29 +74,12 @@ public class ExpandInducedDipolesRegion extends ParallelRegion {
      * Unit cell and spacegroup information.
      */
     private Crystal crystal;
-    /**
-     * Dimensions of [nsymm][nAtoms][3]
-     */
-    public double[][][] inducedDipole;
-    public double[][][] inducedDipoleCR;
-
-    private final ExpandInducedDipoleLoop[] expandInducedDipoleLoop;
 
     public ExpandInducedDipolesRegion(int maxThreads) {
         expandInducedDipoleLoop = new ExpandInducedDipoleLoop[maxThreads];
         for (int i = 0; i < maxThreads; i++) {
             expandInducedDipoleLoop[i] = new ExpandInducedDipoleLoop();
         }
-    }
-
-    public void init(Atom[] atoms, Crystal crystal,
-                     double[][][] inducedDipole, double[][][] inducedDipoleCR) {
-        // Input
-        this.atoms = atoms;
-        this.crystal = crystal;
-        // Output
-        this.inducedDipole = inducedDipole;
-        this.inducedDipoleCR = inducedDipoleCR;
     }
 
     /**
@@ -108,6 +96,16 @@ public class ExpandInducedDipolesRegion extends ParallelRegion {
         }
     }
 
+    public void init(Atom[] atoms, Crystal crystal,
+                     double[][][] inducedDipole, double[][][] inducedDipoleCR) {
+        // Input
+        this.atoms = atoms;
+        this.crystal = crystal;
+        // Output
+        this.inducedDipole = inducedDipole;
+        this.inducedDipoleCR = inducedDipoleCR;
+    }
+
     @Override
     public void run() {
         try {
@@ -122,11 +120,6 @@ public class ExpandInducedDipolesRegion extends ParallelRegion {
     private class ExpandInducedDipoleLoop extends IntegerForLoop {
 
         @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
-
-        @Override
         public void run(int lb, int ub) {
             List<SymOp> symOps = crystal.spaceGroup.symOps;
             int nSymm = symOps.size();
@@ -137,6 +130,11 @@ public class ExpandInducedDipolesRegion extends ParallelRegion {
                     crystal.applySymRot(inducedDipoleCR[0][ii], inducedDipoleCR[s][ii], symOp);
                 }
             }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
         }
     }
 }

@@ -79,23 +79,6 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
     /**
      * {@inheritDoc}
      * <p>
-     * Logs time since this interface was created and the last time this method
-     * was called. May be more elegant to replace this by using protected
-     * variables and simply inheriting the time() function.
-     */
-    @Override
-    public double time() {
-        long currTime = System.nanoTime();
-        logger.info(String.format(" Time since interface established: %f", (currTime - initTime) * 1.0E-9));
-        double elapsed = (currTime - interTime) * 1.0E-9;
-        interTime = currTime;
-        logger.info(String.format(" Time since last timer call: %f", elapsed));
-        return elapsed;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Performs molecular dynamics on a MolecularAssembly.
      */
     @Override
@@ -129,5 +112,22 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
             Potential potential = minimize.minimize(eps);
             return potential;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Logs time since this interface was created and the last time this method
+     * was called. May be more elegant to replace this by using protected
+     * variables and simply inheriting the time() function.
+     */
+    @Override
+    public double time() {
+        long currTime = System.nanoTime();
+        logger.info(String.format(" Time since interface established: %f", (currTime - initTime) * 1.0E-9));
+        double elapsed = (currTime - interTime) * 1.0E-9;
+        interTime = currTime;
+        logger.info(String.format(" Time since last timer call: %f", elapsed));
+        return elapsed;
     }
 }

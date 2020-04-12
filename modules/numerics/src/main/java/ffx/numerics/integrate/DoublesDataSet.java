@@ -204,14 +204,6 @@ public class DoublesDataSet implements DataSet {
      * {@inheritDoc}
      */
     @Override
-    public double upperBound() {
-        return ub;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(format("Data set with %d points from lower bound %9.3g and upper bound %9.3g", nX, lb, ub));
         if (halfWidthEnd) {
@@ -219,6 +211,14 @@ public class DoublesDataSet implements DataSet {
         }
         sb.append(".");
         return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double upperBound() {
+        return ub;
     }
 
     /**

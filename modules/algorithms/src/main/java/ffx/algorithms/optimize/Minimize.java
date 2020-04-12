@@ -112,10 +112,6 @@ public class Minimize implements OptimizationListener, Terminatable {
      */
     protected double energy;
     /**
-     * The final RMS gradient.
-     */
-    double rmsGradient;
-    /**
      * The return status of the optimization.
      */
     protected int status;
@@ -123,6 +119,10 @@ public class Minimize implements OptimizationListener, Terminatable {
      * The number of optimization steps taken.
      */
     protected int nSteps;
+    /**
+     * The final RMS gradient.
+     */
+    double rmsGradient;
 
     /**
      * <p>
@@ -165,62 +165,8 @@ public class Minimize implements OptimizationListener, Terminatable {
         fill(scaling, 12.0);
     }
 
-    /**
-     * Enumerates available molecular minimization engines; presently limited to the
-     * FFX reference engine and the OpenMM engine.
-     * <p>
-     * Distinct from the force field energy Platform,
-     * as the FFX engine can use OpenMM energies, but not vice-versa.
-     */
-    public enum MinimizationEngine {
-        FFX(true, true), OPENMM(false, true);
-
-        // Set of supported Platforms. The EnumSet paradigm is very efficient, as it
-        // is internally stored as a bit field.
-        private final EnumSet<ForceFieldEnergy.Platform> platforms = EnumSet.noneOf(ForceFieldEnergy.Platform.class);
-
-        /**
-         * Constructs a DynamicsEngine using the two presently known types of
-         * Platform.
-         *
-         * @param ffx    Add support for the FFX reference energy platform.
-         * @param openMM Add support for the OpenMM energy platforms.
-         */
-        MinimizationEngine(boolean ffx, boolean openMM) {
-            if (ffx) {
-                platforms.add(ForceFieldEnergy.Platform.FFX);
-            }
-            if (openMM) {
-                platforms.add(ForceFieldEnergy.Platform.OMM);
-                platforms.add(ForceFieldEnergy.Platform.OMM_REF);
-                platforms.add(ForceFieldEnergy.Platform.OMM_CUDA);
-                platforms.add(ForceFieldEnergy.Platform.OMM_OPENCL);
-                platforms.add(ForceFieldEnergy.Platform.OMM_OPTCPU);
-            }
-        }
-
-        /**
-         * Checks if this energy Platform is supported by this DynamicsEngine
-         *
-         * @param platform The requested platform.
-         * @return If supported
-         */
-        public boolean supportsPlatform(ForceFieldEnergy.Platform platform) {
-            return platforms.contains(platform);
-        }
-
-        /**
-         * Gets the set of Platforms supported by this DynamicsEngine
-         *
-         * @return An EnumSet
-         */
-        public EnumSet<ForceFieldEnergy.Platform> getSupportedPlatforms() {
-            return EnumSet.copyOf(platforms);
-        }
-    }
-
     public static MinimizationEngine defaultEngine(MolecularAssembly molecularAssembly,
-                                                    Potential potentialEnergy) {
+                                                   Potential potentialEnergy) {
         CompositeConfiguration properties = molecularAssembly.getProperties();
         String minimizeEngine = properties.getString("minimize-engine", null);
         if (minimizeEngine != null) {
@@ -239,24 +185,30 @@ public class Minimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>
-     * dynamicsFactory.</p>
+     * <p>Getter for the field <code>energy</code>.</p>
      *
-     * @param assembly        a {@link ffx.potential.MolecularAssembly} object.
-     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param listener        a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param engine          a {@link MolecularDynamics.DynamicsEngine} object.
-     * @return a {@link MolecularDynamics} object.
+     * @return a double.
      */
-    public static Minimize minimizeFactory(MolecularAssembly assembly, Potential potentialEnergy,
-                                           AlgorithmListener listener, MinimizationEngine engine) {
-        switch (engine) {
-            case OPENMM:
-                return new MinimizeOpenMM(assembly, (ForceFieldEnergyOpenMM) potentialEnergy, listener);
-            case FFX:
-            default:
-                return new Minimize(assembly, potentialEnergy, listener);
-        }
+    public double getEnergy() {
+        return energy;
+    }
+
+    /**
+     * <p>getRMSGradient.</p>
+     *
+     * @return a double.
+     */
+    public double getRMSGradient() {
+        return rmsGradient;
+    }
+
+    /**
+     * <p>Getter for the field <code>status</code>.</p>
+     *
+     * @return a int.
+     */
+    public int getStatus() {
+        return status;
     }
 
     /**
@@ -337,46 +289,23 @@ public class Minimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>getRMSGradient.</p>
+     * <p>
+     * dynamicsFactory.</p>
      *
-     * @return a double.
+     * @param assembly        a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
+     * @param listener        a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param engine          a {@link MolecularDynamics.DynamicsEngine} object.
+     * @return a {@link MolecularDynamics} object.
      */
-    public double getRMSGradient() {
-        return rmsGradient;
-    }
-
-    /**
-     * <p>Getter for the field <code>status</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getStatus() {
-        return status;
-    }
-
-    /**
-     * <p>Getter for the field <code>energy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getEnergy() {
-        return energy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void terminate() {
-        terminate = true;
-        while (!done) {
-            synchronized (this) {
-                try {
-                    wait(1);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Exception terminating minimization.\n", e);
-                }
-            }
+    public static Minimize minimizeFactory(MolecularAssembly assembly, Potential potentialEnergy,
+                                           AlgorithmListener listener, MinimizationEngine engine) {
+        switch (engine) {
+            case OPENMM:
+                return new MinimizeOpenMM(assembly, (ForceFieldEnergyOpenMM) potentialEnergy, listener);
+            case FFX:
+            default:
+                return new Minimize(assembly, potentialEnergy, listener);
         }
     }
 
@@ -424,6 +353,77 @@ public class Minimize implements OptimizationListener, Terminatable {
             return false;
         }
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void terminate() {
+        terminate = true;
+        while (!done) {
+            synchronized (this) {
+                try {
+                    wait(1);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Exception terminating minimization.\n", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Enumerates available molecular minimization engines; presently limited to the
+     * FFX reference engine and the OpenMM engine.
+     * <p>
+     * Distinct from the force field energy Platform,
+     * as the FFX engine can use OpenMM energies, but not vice-versa.
+     */
+    public enum MinimizationEngine {
+        FFX(true, true), OPENMM(false, true);
+
+        // Set of supported Platforms. The EnumSet paradigm is very efficient, as it
+        // is internally stored as a bit field.
+        private final EnumSet<ForceFieldEnergy.Platform> platforms = EnumSet.noneOf(ForceFieldEnergy.Platform.class);
+
+        /**
+         * Constructs a DynamicsEngine using the two presently known types of
+         * Platform.
+         *
+         * @param ffx    Add support for the FFX reference energy platform.
+         * @param openMM Add support for the OpenMM energy platforms.
+         */
+        MinimizationEngine(boolean ffx, boolean openMM) {
+            if (ffx) {
+                platforms.add(ForceFieldEnergy.Platform.FFX);
+            }
+            if (openMM) {
+                platforms.add(ForceFieldEnergy.Platform.OMM);
+                platforms.add(ForceFieldEnergy.Platform.OMM_REF);
+                platforms.add(ForceFieldEnergy.Platform.OMM_CUDA);
+                platforms.add(ForceFieldEnergy.Platform.OMM_OPENCL);
+                platforms.add(ForceFieldEnergy.Platform.OMM_OPTCPU);
+            }
+        }
+
+        /**
+         * Gets the set of Platforms supported by this DynamicsEngine
+         *
+         * @return An EnumSet
+         */
+        public EnumSet<ForceFieldEnergy.Platform> getSupportedPlatforms() {
+            return EnumSet.copyOf(platforms);
+        }
+
+        /**
+         * Checks if this energy Platform is supported by this DynamicsEngine
+         *
+         * @param platform The requested platform.
+         * @return If supported
+         */
+        public boolean supportsPlatform(ForceFieldEnergy.Platform platform) {
+            return platforms.contains(platform);
+        }
     }
 
 

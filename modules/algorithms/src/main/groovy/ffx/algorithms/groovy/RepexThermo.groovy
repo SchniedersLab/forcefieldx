@@ -37,23 +37,26 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
+import java.util.stream.Collectors
+
+import org.apache.commons.configuration2.CompositeConfiguration
+import org.apache.commons.io.FilenameUtils
+
 import edu.rit.pj.Comm
+
 import ffx.algorithms.cli.RepexOSTOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
+import ffx.algorithms.groovy.Thermodynamics
 import ffx.algorithms.thermodynamics.MonteCarloOST
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.algorithms.thermodynamics.RepExOST
-import ffx.algorithms.groovy.Thermodynamics
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
-import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine
 
-import java.util.stream.Collectors;
+import picocli.CommandLine
 
 /**
  * The Thermodynamics script uses the Transition-Tempered Orthogonal Space Random Walk
@@ -169,14 +172,16 @@ class RepexThermo extends Thermodynamics {
 
         StringBuilder sb = new StringBuilder("\n Running ");
         switch (thermodynamics.getAlgorithm()) {
-            // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
+        // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
             case ThermodynamicsOptions.ThermodynamicsAlgorithm.OST:
-                ostAlg: {
+                ostAlg:
+                {
                     sb.append("Orthogonal Space Tempering");
                 }
                 break;
             default:
-                defAlg: {
+                defAlg:
+                {
                     throw new IllegalArgumentException(" RepexThermo currently does not support fixed-lambda alchemy!");
                 }
                 break;

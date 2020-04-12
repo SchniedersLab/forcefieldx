@@ -81,7 +81,7 @@ public class EstimateBootstrapper {
      */
     public static int[] getBootstrapIndices(int length, Random random, int minDistinct) {
         // Handle extremely short lengths with special-case handling.
-        switch(length) {
+        switch (length) {
             case 0:
                 return new int[0];
             case 1:

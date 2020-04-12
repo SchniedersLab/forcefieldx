@@ -56,11 +56,11 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
-import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.normalize;
 import static ffx.numerics.math.DoubleMath.scale;
-import static ffx.numerics.math.DoubleMath.add;
+import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t002;
@@ -101,6 +101,8 @@ public class InitializationRegion extends ParallelRegion {
      * If set to false, multipole quadrupoles are set to zero (default is true).
      */
     private final boolean useQuadrupoles;
+    private final InitializationLoop[] initializationLoop;
+    private final RotateMultipolesLoop[] rotateMultipolesLoop;
     /**
      * If lambdaTerm is true, some ligand atom interactions with the environment
      * are being turned on/off.
@@ -190,8 +192,6 @@ public class InitializationRegion extends ParallelRegion {
      * Partial derivative of the torque with respect to Lambda.
      */
     private AtomicDoubleArray3D lambdaTorque;
-    private final InitializationLoop[] initializationLoop;
-    private final RotateMultipolesLoop[] rotateMultipolesLoop;
 
     public InitializationRegion(int maxThreads, ForceField forceField) {
         initializationLoop = new InitializationLoop[maxThreads];
@@ -200,6 +200,24 @@ public class InitializationRegion extends ParallelRegion {
         useDipoles = forceField.getBoolean("USE_DIPOLES", true);
         useQuadrupoles = forceField.getBoolean("USE_QUADRUPOLES", true);
         rotateMultipoles = forceField.getBoolean("ROTATE_MULTIPOLES", true);
+    }
+
+    /**
+     * Execute the InitializationRegion with the passed ParallelTeam.
+     *
+     * @param parallelTeam The ParallelTeam instance to execute with.
+     */
+    public void executeWith(ParallelTeam parallelTeam) {
+        try {
+            parallelTeam.execute(this);
+        } catch (RuntimeException e) {
+            String message = "RuntimeException expanding coordinates and rotating multipoles.\n";
+            logger.log(Level.WARNING, message, e);
+            throw e;
+        } catch (Exception e) {
+            String message = "Fatal exception expanding coordinates and rotating multipoles.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
     }
 
     public void init(boolean lambdaTerm, boolean gradient, double lambdaScaleMultipoles,
@@ -228,24 +246,6 @@ public class InitializationRegion extends ParallelRegion {
         this.torque = torque;
         this.lambdaGrad = lambdaGrad;
         this.lambdaTorque = lambdaTorque;
-    }
-
-    /**
-     * Execute the InitializationRegion with the passed ParallelTeam.
-     *
-     * @param parallelTeam The ParallelTeam instance to execute with.
-     */
-    public void executeWith(ParallelTeam parallelTeam) {
-        try {
-            parallelTeam.execute(this);
-        } catch (RuntimeException e) {
-            String message = "RuntimeException expanding coordinates and rotating multipoles.\n";
-            logger.log(Level.WARNING, message, e);
-            throw e;
-        } catch (Exception e) {
-            String message = "Fatal exception expanding coordinates and rotating multipoles.\n";
-            logger.log(Level.SEVERE, message, e);
-        }
     }
 
     @Override
@@ -277,19 +277,6 @@ public class InitializationRegion extends ParallelRegion {
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         private long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
-
-        @Override
-        public void start() {
-            x = coordinates[0][0];
-            y = coordinates[0][1];
-            z = coordinates[0][2];
-            threadID = getThreadIndex();
-        }
 
         @Override
         public void run(int lb, int ub) {
@@ -345,6 +332,19 @@ public class InitializationRegion extends ParallelRegion {
                 }
             }
         }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
+        }
+
+        @Override
+        public void start() {
+            x = coordinates[0][0];
+            y = coordinates[0][1];
+            z = coordinates[0][2];
+            threadID = getThreadIndex();
+        }
     }
 
     private class RotateMultipolesLoop extends IntegerForLoop {
@@ -362,11 +362,6 @@ public class InitializationRegion extends ParallelRegion {
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         private long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
 
         @Override
         public void run(int lb, int ub) {
@@ -428,7 +423,12 @@ public class InitializationRegion extends ParallelRegion {
                             out[t101] = 0.0;
                             out[t011] = 0.0;
                             PolarizeType polarizeType = atoms[ii].getPolarizeType();
-                            polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
+                            if (polarizeType != null) {
+                                polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
+                            } else {
+                                // Fixed charge force field.
+                                polarizability[ii] = 0.0;
+                            }
                             continue;
                         }
 
@@ -694,6 +694,11 @@ public class InitializationRegion extends ParallelRegion {
                     polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
                 }
             }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
         }
     }
 }

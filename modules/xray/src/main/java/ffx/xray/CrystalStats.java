@@ -104,6 +104,79 @@ public class CrystalStats {
     }
 
     /**
+     * Simply return the current R value.
+     *
+     * @return R value as a percent.
+     */
+    public double getR() {
+        double numer;
+        double denom;
+        double sum = 0.0;
+        double sumfo = 0.0;
+        double sumall = 0.0;
+        double sumfoall = 0.0;
+        for (HKL ih : reflectionList.hkllist) {
+            int i = ih.index();
+
+            // Ignored cases
+            if (isNaN(fcTot[i][0])
+                    || isNaN(fSigF[i][0])
+                    || fSigF[i][1] <= 0.0) {
+                continue;
+            }
+
+            // Spline setup
+            double ss = invressq(crystal, ih);
+            double fh = spline.f(ss, refinementData.spline);
+
+            ComplexNumber c = new ComplexNumber(fcTot[i][0], fcTot[i][1]);
+            numer = abs(abs(fSigF[i][0]) - fh * abs(c.abs()));
+            denom = abs(fSigF[i][0]);
+            sumall += numer;
+            sumfoall += denom;
+            if (!refinementData.isFreeR(i)) {
+                sum += numer;
+                sumfo += denom;
+            }
+        }
+
+        rall = (sumall / sumfoall) * 100.0;
+        r = (sum / sumfo) * 100.0;
+        return r;
+    }
+
+    /**
+     * Simply return the current sigmaA value.
+     *
+     * @return sigmaA
+     */
+    public double getSigmaA() {
+        double sum = 0.0;
+        int nhkl = 0;
+        ReflectionSpline sigmaaspline = new ReflectionSpline(reflectionList,
+                refinementData.sigmaA.length);
+
+        for (HKL ih : reflectionList.hkllist) {
+            int i = ih.index();
+
+            // Ignored cases
+            if (isNaN(fcTot[i][0]) || isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
+                continue;
+            }
+
+            // Spline setup
+            double ss = invressq(crystal, ih);
+            spline.f(ss, refinementData.spline);
+            double sa = sigmaaspline.f(ss, refinementData.sigmaA);
+
+            nhkl++;
+            sum += (sa - sum) / nhkl;
+        }
+
+        return sum;
+    }
+
+    /**
      * <p>
      * getPDBHeaderString</p>
      *
@@ -221,48 +294,6 @@ public class CrystalStats {
     }
 
     /**
-     * Simply return the current R value.
-     *
-     * @return R value as a percent.
-     */
-    public double getR() {
-        double numer;
-        double denom;
-        double sum = 0.0;
-        double sumfo = 0.0;
-        double sumall = 0.0;
-        double sumfoall = 0.0;
-        for (HKL ih : reflectionList.hkllist) {
-            int i = ih.index();
-
-            // Ignored cases
-            if (isNaN(fcTot[i][0])
-                    || isNaN(fSigF[i][0])
-                    || fSigF[i][1] <= 0.0) {
-                continue;
-            }
-
-            // Spline setup
-            double ss = invressq(crystal, ih);
-            double fh = spline.f(ss, refinementData.spline);
-
-            ComplexNumber c = new ComplexNumber(fcTot[i][0], fcTot[i][1]);
-            numer = abs(abs(fSigF[i][0]) - fh * abs(c.abs()));
-            denom = abs(fSigF[i][0]);
-            sumall += numer;
-            sumfoall += denom;
-            if (!refinementData.isFreeR(i)) {
-                sum += numer;
-                sumfo += denom;
-            }
-        }
-
-        rall = (sumall / sumfoall) * 100.0;
-        r = (sum / sumfo) * 100.0;
-        return r;
-    }
-
-    /**
      * Simply return the current R free value.
      *
      * @return R free value as a percent.
@@ -293,37 +324,6 @@ public class CrystalStats {
 
         rfree = (sum / sumfo) * 100.0;
         return rfree;
-    }
-
-    /**
-     * Simply return the current sigmaA value.
-     *
-     * @return sigmaA
-     */
-    public double getSigmaA() {
-        double sum = 0.0;
-        int nhkl = 0;
-        ReflectionSpline sigmaaspline = new ReflectionSpline(reflectionList,
-                refinementData.sigmaA.length);
-
-        for (HKL ih : reflectionList.hkllist) {
-            int i = ih.index();
-
-            // Ignored cases
-            if (isNaN(fcTot[i][0]) || isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
-                continue;
-            }
-
-            // Spline setup
-            double ss = invressq(crystal, ih);
-            spline.f(ss, refinementData.spline);
-            double sa = sigmaaspline.f(ss, refinementData.sigmaA);
-
-            nhkl++;
-            sum += (sa - sum) / nhkl;
-        }
-
-        return sum;
     }
 
     /**

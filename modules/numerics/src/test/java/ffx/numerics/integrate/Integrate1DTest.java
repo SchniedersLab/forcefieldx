@@ -65,6 +65,223 @@ public class Integrate1DTest {
     private final static Logger logger = Logger.getLogger(Integrate1DTest.class.getName());
 
     /**
+     * Ensures that integration performs the same on a DoublesDataSet constructed
+     * from a function as directly from the function; uses both DoublesDataSet
+     * constructors.
+     */
+    @Test
+    public void castToDoubleSetTest() {
+        logger.info(" Testing casting of a function to a DoublesDataSet");
+
+        double[] points = Integrate1DNumeric.generateXPoints(0.0, 1.0, 11, false);
+
+        double[] zeroOrder = {1.0}; // f(x) = 1
+        double[] firstOrder = {2.0, 1.0}; // f(x) = x+2
+        double[] secondOrder = {1.5, -4.0, 1.0}; // f(x) = x^2 - 4x + 1.5
+        double[] thirdOrder = {2.0, -1.0, -3.0, 1.0}; // f(x) = x^3 - 3x^2 - x + 2
+        double[] fourthOrder = {1, -4.0, -6.0, 4.0, 1.0}; // f(x) = x^4 + 4x^3 - 6x^2 - 4x + 1
+        double[] fifthOrder = {2.0, 10.0, -18.0, 8.0, -5.0, 1.0}; // f(x) = x^5 - 5x^4 + 8x^3 - 18x^2 + 10x + 2
+
+        // Accumulate the coefficients into a 2-D array.
+        double[][] coeffs = {zeroOrder, firstOrder, secondOrder, thirdOrder, fourthOrder, fifthOrder};
+        List<FunctionDataCurve> polynomials = Arrays.stream(coeffs).map((double[] coeff) -> {
+            return new PolynomialCurve(points, false, coeff);
+        }).collect(Collectors.toList());
+
+        for (FunctionDataCurve pn : polynomials) {
+            DataSet dpn = new DoublesDataSet(pn);
+            double[] ypts = pn.getAllFxPoints();
+            DataSet abInitio = new DoublesDataSet(points, ypts, false);
+
+            for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
+                IntegrationResult rpn = new IntegrationResult(pn, j);
+                IntegrationResult rdpn = new IntegrationResult(dpn, j);
+                IntegrationResult raipn = new IntegrationResult(abInitio, j);
+
+                double pnVal = rpn.getValue();
+                double dpnVal = rdpn.getValue();
+                double aipnVal = raipn.getValue();
+
+                String message = format(" Casted function:\n%s\nfunction "
+                                + "result %9.3g, casted result %9.3g, from points %9.3g, "
+                                + "difference to casted %9.3g, difference to from-points %9.3g"
+                                + "\nintegration method %s", pn.toString(), pnVal, dpnVal,
+                        aipnVal, (pnVal - dpnVal), (pnVal - aipnVal), rpn.toString());
+                assertToUlp(message, pnVal, 10.0, dpnVal, aipnVal);
+            }
+        }
+        logger.info(" Polynomial casting tests without halved sides complete.");
+
+        double[] points2 = Integrate1DNumeric.generateXPoints(0.0, 1.0, 12, true);
+        polynomials = Arrays.stream(coeffs).map((double[] coeff) -> {
+            return new PolynomialCurve(points2, true, coeff);
+        }).collect(Collectors.toList());
+
+        for (FunctionDataCurve pn : polynomials) {
+            DataSet dpn = new DoublesDataSet(pn);
+            double[] ypts = pn.getAllFxPoints();
+            DataSet abInitio = new DoublesDataSet(points2, ypts, true);
+
+            for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
+                IntegrationResult rpn = new IntegrationResult(pn, j);
+                IntegrationResult rdpn = new IntegrationResult(dpn, j);
+                IntegrationResult raipn = new IntegrationResult(abInitio, j);
+
+                double pnVal = rpn.getValue();
+                double dpnVal = rdpn.getValue();
+                double aipnVal = raipn.getValue();
+
+                String message = format(" Casted function:\n%s\nfunction "
+                                + "result %9.3g, casted result %9.3g, from points %9.3g, "
+                                + "difference to casted %9.3g, difference to from-points %9.3g"
+                                + "\nintegration method %s", pn.toString(), pnVal, dpnVal,
+                        aipnVal, (pnVal - dpnVal), (pnVal - aipnVal), rpn.toString());
+                assertToUlp(message, pnVal, 10.0, dpnVal, aipnVal);
+            }
+        }
+        logger.info(" Polynomial casting tests with halved sides complete.");
+
+        double[] sinePoints = Integrate1DNumeric.generateXPoints(0, 4.0, 101, false);
+        FunctionDataCurve sinWave = new SinWave(sinePoints, false, 20, 30);
+        DataSet dsw = new DoublesDataSet(sinWave);
+        double[] ypts = sinWave.getAllFxPoints();
+        DataSet abInitio = new DoublesDataSet(sinePoints, ypts, false);
+
+        for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
+            IntegrationResult rsw = new IntegrationResult(sinWave, j);
+            IntegrationResult rdsw = new IntegrationResult(dsw, j);
+            IntegrationResult raisw = new IntegrationResult(abInitio, j);
+
+            double swVal = rsw.getValue();
+            double dswVal = rdsw.getValue();
+            double aiswVal = raisw.getValue();
+
+            String message = format(" Casted function:\n%s\nfunction "
+                            + "result %9.3g, casted result %9.3g, from points %9.3g, "
+                            + "difference to casted %9.3g, difference to from-points %9.3g"
+                            + "\nintegration method %s", sinWave.toString(), swVal, dswVal,
+                    aiswVal, (swVal - dswVal), (swVal - aiswVal), rsw.toString());
+            assertToUlp(message, swVal, 10.0, dswVal, aiswVal);
+        }
+        logger.info(" Sine-wave casting tests with halved sides complete.");
+
+        double[] sinePoints2 = Integrate1DNumeric.generateXPoints(0, 4.0, 102, true);
+        sinWave = new SinWave(sinePoints2, true, 20, 30);
+        dsw = new DoublesDataSet(sinWave);
+        ypts = sinWave.getAllFxPoints();
+        abInitio = new DoublesDataSet(sinePoints2, ypts, true);
+
+        for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
+            IntegrationResult rsw = new IntegrationResult(sinWave, j);
+            IntegrationResult rdsw = new IntegrationResult(dsw, j);
+            IntegrationResult raisw = new IntegrationResult(abInitio, j);
+
+            double swVal = rsw.getValue();
+            double dswVal = rdsw.getValue();
+            double aiswVal = raisw.getValue();
+
+            String message = format(" Casted function:\n%s\nfunction "
+                            + "result %9.3g, casted result %9.3g, from points %9.3g, "
+                            + "difference to casted %9.3g, difference to from-points %9.3g"
+                            + "\nintegration method %s", sinWave.toString(), swVal, dswVal,
+                    aiswVal, (swVal - dswVal), (swVal - aiswVal), rsw.toString());
+            assertToUlp(message, swVal, 10.0, dswVal, aiswVal);
+        }
+        logger.info(" Sine-wave casting tests with halved sides complete.");
+        logger.info(" Casting tests complete.");
+    }
+
+    /**
+     * Tests the parallelized versions of the integration methods. Overall,
+     * these are not recommended for production use; it would require an enormous
+     * number of points for numerical integration of a 1-D function to be at
+     * all significant for timing, and the parallelized versions are probably
+     * not quite as CPU-efficient.
+     */
+    @Test
+    public void parallelTest() {
+        double[] pts = Integrate1DNumeric.generateXPoints(0, 2.0, 92, false);
+        FunctionDataCurve tcurve = new SinWave(pts, false, 60, 60);
+        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
+            IntegrationResult seqResult = new IntegrationResult(tcurve, i, false);
+            IntegrationResult parResult = new IntegrationResult(tcurve, i, true);
+            double seqVal = seqResult.getValue();
+            double parVal = parResult.getValue();
+            String message = format("Parallel value %9.3g did not match sequential value %9.3g, error %9.3g", parVal, seqVal, (parVal - seqVal));
+            assertToUlp(message, seqVal, 80.0, parVal);
+        }
+    }
+
+    /**
+     * A more difficult test on polynomials, with just five points and larger
+     * coefficients; intended to test stability in extreme cases.
+     */
+    @Test
+    public void polynomialGrinderTest() {
+        logger.info(" Testing integration methods on polynomials with large coefficients.");
+        double[] points = Integrate1DNumeric.generateXPoints(0.0, 2.0, 5, false);
+
+        double[] zeroOrder = {-2.0};
+        double[] firstOrder = {6.0, -14.0};
+        double[] secondOrder = {4.5, -5.0, 3.0};
+        double[] thirdOrder = {-3.0, 5.0, -2.0, 12.0};
+        double[] fourthOrder = {12, -4.5, 8.0, -5.0, 4.0};
+        double[] fifthOrder = {-4.0, 10.0, -18.0, 8.0, -5.0, 8.0};
+
+        double[][] coeffs = {zeroOrder, firstOrder, secondOrder, thirdOrder, fourthOrder, fifthOrder};
+
+        List<FunctionDataCurve> polynomials = Arrays.stream(coeffs).map((double[] coeff) -> {
+            return new PolynomialCurve(points, false, coeff);
+        }).collect(Collectors.toList());
+
+        for (int i = 0; i < polynomials.size(); i++) {
+            FunctionDataCurve pn = polynomials.get(i);
+
+            // Get the analyticalIntegral over the range.
+            double analytical = pn.analyticalIntegral();
+
+            double rLeft = Integrate1DNumeric.rectangular(pn, LEFT);
+            double rRight = Integrate1DNumeric.rectangular(pn, RIGHT);
+
+            double tLeft = Integrate1DNumeric.trapezoidal(pn, LEFT);
+            double tRight = Integrate1DNumeric.trapezoidal(pn, RIGHT);
+
+            double sLeft = Integrate1DNumeric.simpsons(pn, LEFT);
+            double sRight = Integrate1DNumeric.simpsons(pn, RIGHT);
+
+            double bLeft = Integrate1DNumeric.booles(pn, LEFT);
+            double bRight = Integrate1DNumeric.booles(pn, RIGHT);
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.append(format(" Integrals for polynomial of degree %d\n", i));
+            sb.append(format(" %-18s %9.3g\n", "Analytical", analytical));
+            sb.append(" Numerical integration errors:\n");
+            sb.append(format(" %-18s %9.3g  %-18s %9.3g\n", "Left rectangular", rLeft - analytical, "Right rectangular", rRight - analytical));
+            sb.append(format(" %-18s %9.3g  %-18s %9.3g\n", "Left trapezoidal", tLeft - analytical, "Right trapezoidal", tRight - analytical));
+            sb.append(format(" %-18s %9.3g  %-18s %9.3g\n", "Left Simpson's", sLeft - analytical, "Right Simpson's", sRight - analytical));
+            sb.append(format(" %-18s %9.3g  %-18s %9.3g\n", "Left Boole's", bLeft - analytical, "Right Boole's", bRight - analytical));
+            sb.append("\n");
+
+            logger.info(sb.toString());
+
+            if (i == 0) {
+                assertToUlp(analytical, 500.0, rLeft, rRight);
+            }
+            if (i <= 1) {
+                assertToUlp(analytical, 500.0, tLeft, tRight);
+            }
+            if (i <= 2) {
+                assertToUlp(analytical, 500.0, sLeft, sRight);
+            }
+            if (i <= 4) {
+                assertToUlp(analytical, 500.0, bLeft, bRight);
+            }
+        }
+
+    }
+
+    /**
      * Basic test for polynomial functions; checks to ensure that each integration
      * method is behaving as expected, and returns the exact value (to within
      * machine precision) when the method should be exact. For example, Simpson's
@@ -202,72 +419,117 @@ public class Integrate1DTest {
     }
 
     /**
-     * A more difficult test on polynomials, with just five points and larger
-     * coefficients; intended to test stability in extreme cases.
+     * Ensures that the by-bin integration machinery matches an all-at-once integral.
      */
     @Test
-    public void polynomialGrinderTest() {
-        logger.info(" Testing integration methods on polynomials with large coefficients.");
-        double[] points = Integrate1DNumeric.generateXPoints(0.0, 2.0, 5, false);
+    public void testByBinIntegral() {
+        double[] pts = Integrate1DNumeric.generateXPoints(0, 1.0, 18, false);
+        FunctionDataCurve curve = new SinWave(pts, 1, 20.0);
 
-        double[] zeroOrder = {-2.0};
-        double[] firstOrder = {6.0, -14.0};
-        double[] secondOrder = {4.5, -5.0, 3.0};
-        double[] thirdOrder = {-3.0, 5.0, -2.0, 12.0};
-        double[] fourthOrder = {12, -4.5, 8.0, -5.0, 4.0};
-        double[] fifthOrder = {-4.0, 10.0, -18.0, 8.0, -5.0, 8.0};
+        logger.info(" Testing by-bin integration with a sin wave (sum vs. overall result).");
+        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
+            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
+            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
+            double seqResult = Arrays.stream(sequentialPts).sum();
 
-        double[][] coeffs = {zeroOrder, firstOrder, secondOrder, thirdOrder, fourthOrder, fifthOrder};
-
-        List<FunctionDataCurve> polynomials = Arrays.stream(coeffs).map((double[] coeff) -> {
-            return new PolynomialCurve(points, false, coeff);
-        }).collect(Collectors.toList());
-
-        for (int i = 0; i < polynomials.size(); i++) {
-            FunctionDataCurve pn = polynomials.get(i);
-
-            // Get the analyticalIntegral over the range.
-            double analytical = pn.analyticalIntegral();
-
-            double rLeft = Integrate1DNumeric.rectangular(pn, LEFT);
-            double rRight = Integrate1DNumeric.rectangular(pn, RIGHT);
-
-            double tLeft = Integrate1DNumeric.trapezoidal(pn, LEFT);
-            double tRight = Integrate1DNumeric.trapezoidal(pn, RIGHT);
-
-            double sLeft = Integrate1DNumeric.simpsons(pn, LEFT);
-            double sRight = Integrate1DNumeric.simpsons(pn, RIGHT);
-
-            double bLeft = Integrate1DNumeric.booles(pn, LEFT);
-            double bRight = Integrate1DNumeric.booles(pn, RIGHT);
-
-            StringBuilder sb = new StringBuilder();
-
-            sb.append(format(" Integrals for polynomial of degree %d\n", i));
-            sb.append(format(" %-18s %9.3g\n", "Analytical", analytical));
-            sb.append(" Numerical integration errors:\n");
-            sb.append(format(" %-18s %9.3g  %-18s %9.3g\n", "Left rectangular", rLeft - analytical, "Right rectangular", rRight - analytical));
-            sb.append(format(" %-18s %9.3g  %-18s %9.3g\n", "Left trapezoidal", tLeft - analytical, "Right trapezoidal", tRight - analytical));
-            sb.append(format(" %-18s %9.3g  %-18s %9.3g\n", "Left Simpson's", sLeft - analytical, "Right Simpson's", sRight - analytical));
-            sb.append(format(" %-18s %9.3g  %-18s %9.3g\n", "Left Boole's", bLeft - analytical, "Right Boole's", bRight - analytical));
-            sb.append("\n");
-
-            logger.info(sb.toString());
-
-            if (i == 0) {
-                assertToUlp(analytical, 500.0, rLeft, rRight);
+            double knownVal = knownResult.getValue();
+            assertToUlp(format(" Mismatch for result %s\n ", knownResult, knownVal,
+                    seqResult), knownVal, 200.0, seqResult);
+        }
+        logger.info(" Testing match to analytical integrals.\n");
+        double[] leftPts = Integrate1DNumeric.integrateByBins(curve, LEFT, IntegrationType.BOOLE);
+        double[] rightPts = Integrate1DNumeric.integrateByBins(curve, RIGHT, IntegrationType.BOOLE);
+        double maxDelta = 0.075;
+        for (int i = 0; i < pts.length; i++) {
+            double leftAnalytic = curve.analyticalIntegral(pts[0], pts[i]);
+            if (i > 0) {
+                leftAnalytic -= curve.analyticalIntegral(pts[0], pts[i - 1]);
             }
-            if (i <= 1) {
-                assertToUlp(analytical, 500.0, tLeft, tRight);
+            double rightAnalytic = curve.analyticalIntegral(pts[i], pts[pts.length - 1]);
+            if (i < (pts.length - 1)) {
+                rightAnalytic -= curve.analyticalIntegral(pts[i + 1], pts[pts.length - 1]);
             }
-            if (i <= 2) {
-                assertToUlp(analytical, 500.0, sLeft, sRight);
-            }
-            if (i <= 4) {
-                assertToUlp(analytical, 500.0, bLeft, bRight);
-            }
+
+            assertEquals(format(" Contribution of bin %d to left-hand integral of %s does not match analytic solution", i, curve), leftAnalytic, leftPts[i], maxDelta);
+            assertEquals(format(" Contribution of bin %d to right-hand integral of %s does not match analytic solution", i, curve), rightAnalytic, rightPts[i], maxDelta);
         }
 
+        logger.info(" Testing by-bin integration with a higher-frequency wave.");
+        curve = new CosineWave(pts, 1, 120.0);
+        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
+            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
+            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
+            double seqResult = Arrays.stream(sequentialPts).sum();
+
+            double knownVal = knownResult.getValue();
+            assertToUlp(format(" Mismatch for result %s\n ", knownResult, knownVal,
+                    seqResult), knownVal, 200.0, seqResult);
+        }
+        logger.info(" Testing match to analytical integrals.\n");
+        leftPts = Integrate1DNumeric.integrateByBins(curve, LEFT, IntegrationType.BOOLE);
+        rightPts = Integrate1DNumeric.integrateByBins(curve, RIGHT, IntegrationType.BOOLE);
+        maxDelta = 0.075;
+        for (int i = 0; i < pts.length; i++) {
+            double leftAnalytic = curve.analyticalIntegral(pts[0], pts[i]);
+            if (i > 0) {
+                leftAnalytic -= curve.analyticalIntegral(pts[0], pts[i - 1]);
+            }
+            double rightAnalytic = curve.analyticalIntegral(pts[i], pts[pts.length - 1]);
+            if (i < (pts.length - 1)) {
+                rightAnalytic -= curve.analyticalIntegral(pts[i + 1], pts[pts.length - 1]);
+            }
+
+            assertEquals(format(" Contribution of bin %d to left-hand integral of %s does not match analytic solution", i, curve), leftAnalytic, leftPts[i], maxDelta);
+            assertEquals(format(" Contribution of bin %d to right-hand integral of %s does not match analytic solution", i, curve), rightAnalytic, rightPts[i], maxDelta);
+        }
+
+        logger.info(" Testing by-bin integration with a higher-frequency wave with half-width ending bins.");
+        pts = Integrate1DNumeric.generateXPoints(0, 1.0, 19, true);
+        curve = new CosineWave(pts, true, 1, 120.0);
+        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
+            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
+            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
+            double seqResult = Arrays.stream(sequentialPts).sum();
+
+            double knownVal = knownResult.getValue();
+            assertToUlp(format(" Mismatch for result %s\n Points %s\n ", knownResult, Arrays.toString(sequentialPts), knownVal,
+                    seqResult), knownVal, 200.0, seqResult);
+        }
+        logger.info(" Testing match to analytical integrals.\n");
+        leftPts = Integrate1DNumeric.integrateByBins(curve, LEFT, IntegrationType.BOOLE);
+        rightPts = Integrate1DNumeric.integrateByBins(curve, RIGHT, IntegrationType.BOOLE);
+        maxDelta = 0.1;
+        for (int i = 0; i < pts.length; i++) {
+            double leftAnalytic = curve.analyticalIntegral(pts[0], pts[i]);
+            if (i > 0) {
+                leftAnalytic -= curve.analyticalIntegral(pts[0], pts[i - 1]);
+            }
+            double rightAnalytic = curve.analyticalIntegral(pts[i], pts[pts.length - 1]);
+            if (i < (pts.length - 1)) {
+                rightAnalytic -= curve.analyticalIntegral(pts[i + 1], pts[pts.length - 1]);
+            }
+
+            assertEquals(format(" Contribution of bin %d to left-hand integral of %s does not match analytic solution", i, curve), leftAnalytic, leftPts[i], maxDelta);
+            assertEquals(format(" Contribution of bin %d to right-hand integral of %s does not match analytic solution", i, curve), rightAnalytic, rightPts[i], maxDelta);
+        }
+
+        logger.info(" Testing by-bin integration with a polynomial function.");
+        pts = Integrate1DNumeric.generateXPoints(0.0, 2.0, 5, false);
+        double[] fifthOrder = {-4.0, 10.0, -18.0, 8.0, -5.0, 8.0};
+        curve = new PolynomialCurve(pts, false, fifthOrder);
+
+        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
+            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
+            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
+            double seqResult = Arrays.stream(sequentialPts).sum();
+
+            double knownVal = knownResult.getValue();
+            assertToUlp(format(" Mismatch for result %s\n ", knownResult, knownVal,
+                    seqResult), knownVal, 200.0, seqResult);
+        }
+        // Skip testing to analytical integrals: the points done by rectangular & trapezoidal are simply too inaccurate.
+
+        logger.info(" Completed testing of by-bin integration\n");
     }
 
     @Test
@@ -286,6 +548,166 @@ public class Integrate1DTest {
         logger.info("\n Cosine wave test with half-width bins");
         sinTest(points, true, true, verb);
         logger.info("\n");
+    }
+
+    /**
+     * Assert that doubles are equal to within a multiplier of ulp (machine precision).
+     *
+     * @param trueVal True answer
+     * @param ulpMult Multiple of ulp to use
+     * @param values  Values to check
+     */
+    private static void assertToUlp(double trueVal, double ulpMult, double... values) {
+        double ulp = Math.ulp(trueVal) * ulpMult;
+        for (double val : values) {
+            assertEquals(trueVal, val, ulp);
+        }
+    }
+
+    /**
+     * Assert that doubles are equal to within a multiplier of ulp (machine precision).
+     *
+     * @param message To print if assertion fails
+     * @param trueVal True answer
+     * @param ulpMult Multiple of ulp to use
+     * @param values  Values to check
+     */
+    private static void assertToUlp(String message, double trueVal, double ulpMult, double... values) {
+        double ulp = Math.ulp(trueVal) * ulpMult;
+        for (double val : values) {
+            assertEquals(message, trueVal, val, ulp);
+        }
+    }
+
+    /**
+     * Intended to be a shorthand way of performing all the standard
+     * integrations, instead of tediously coding in separate tests for all
+     * four integration types in both directions; auto-assigns several fields
+     * based on the provided index.
+     */
+    private class IntegrationResult {
+        private final IntegrationType type;
+        private final IntegrationSide side;
+        private final boolean halvedSides;
+        private final DataSet data;
+        private final double integratedValue;
+        private final boolean parallel;
+
+        /**
+         * Basic constructor, automatically setting direction and integration
+         * method based on index with a useful toString.
+         * <p>
+         * Even index values produce a left-hand integral, odd a right-hand
+         * integral.
+         * <p>
+         * Integration type is as follows, 0-7, after modulo(8)
+         * 0-1: Rectangular
+         * 2-3: Trapezoidal
+         * 4-5: Simpson's rule
+         * 6-7: Boole's rule
+         *
+         * @param data  Data to numerically integrate
+         * @param index Automatically set method and direction
+         */
+        public IntegrationResult(DataSet data, int index) {
+            this(data, index, false);
+        }
+
+        public IntegrationResult(DataSet data, int index, boolean parallel) {
+            switch ((index / 2) % 4) {
+                case 0:
+                    type = IntegrationType.RECTANGULAR;
+                    break;
+                case 1:
+                    type = IntegrationType.TRAPEZOIDAL;
+                    break;
+                case 2:
+                    type = IntegrationType.SIMPSONS;
+                    break;
+                case 3:
+                    type = IntegrationType.BOOLE;
+                    break;
+                default:
+                    throw new IllegalArgumentException(" How did ((index / 2) % 4) ever come out to not be 0-3?");
+            }
+            side = (index % 2 == 0) ? LEFT : RIGHT;
+            halvedSides = data.halfWidthEnds();
+            this.data = data;
+            this.parallel = parallel;
+
+            if (parallel) {
+                switch (type) {
+                    case RECTANGULAR:
+                        integratedValue = Integrate1DNumeric.rectangularParallel(data, side);
+                        break;
+                    case TRAPEZOIDAL:
+                        integratedValue = Integrate1DNumeric.trapezoidalParallel(data, side);
+                        break;
+                    case SIMPSONS:
+                        integratedValue = Integrate1DNumeric.simpsonsParallel(data, side);
+                        break;
+                    case BOOLE:
+                        integratedValue = Integrate1DNumeric.boolesParallel(data, side);
+                        break;
+                    default:
+                        throw new IllegalArgumentException(" How did this end up with an integration type not rectangular, trapezoidal, Simpson's, or Boole's?");
+                }
+
+            } else {
+                switch (type) {
+                    case RECTANGULAR:
+                        integratedValue = Integrate1DNumeric.rectangular(data, side);
+                        break;
+                    case TRAPEZOIDAL:
+                        integratedValue = Integrate1DNumeric.trapezoidal(data, side);
+                        break;
+                    case SIMPSONS:
+                        integratedValue = Integrate1DNumeric.simpsons(data, side);
+                        break;
+                    case BOOLE:
+                        integratedValue = Integrate1DNumeric.booles(data, side);
+                        break;
+                    default:
+                        throw new IllegalArgumentException(" How did this end up with an integration type not rectangular, trapezoidal, Simpson's, or Boole's?");
+                }
+            }
+        }
+
+        public DataSet getDataSet() {
+            return data;
+        }
+
+        public boolean getHalvedSides() {
+            return halvedSides;
+        }
+
+        public IntegrationSide getSide() {
+            return side;
+        }
+
+        public IntegrationType getType() {
+            return type;
+        }
+
+        public double getValue() {
+            return integratedValue;
+        }
+
+        public boolean isParallel() {
+            return parallel;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder(type.toString().toLowerCase());
+            sb.append(", ").append(side.toString().toLowerCase());
+            sb.append("-side integral");
+            if (halvedSides) {
+                sb.append(" with half-width ending bins");
+            }
+            sb.append(".");
+            return sb.toString();
+        }
     }
 
     /**
@@ -409,428 +831,6 @@ public class Integrate1DTest {
             assertTrue(format("Trapezoidal%s%d", midMessage, 100), failTleft > 100 && failTright > 100);
             assertTrue(format("Simpson's%s%d", midMessage, 250), failSleft > 250 && failSright > 250);
             assertTrue(format("Boole's%s%d", midMessage, 240), failBleft > 240 && failBright > 240);
-        }
-    }
-
-    /**
-     * Ensures that integration performs the same on a DoublesDataSet constructed
-     * from a function as directly from the function; uses both DoublesDataSet
-     * constructors.
-     */
-    @Test
-    public void castToDoubleSetTest() {
-        logger.info(" Testing casting of a function to a DoublesDataSet");
-
-        double[] points = Integrate1DNumeric.generateXPoints(0.0, 1.0, 11, false);
-
-        double[] zeroOrder = {1.0}; // f(x) = 1
-        double[] firstOrder = {2.0, 1.0}; // f(x) = x+2
-        double[] secondOrder = {1.5, -4.0, 1.0}; // f(x) = x^2 - 4x + 1.5
-        double[] thirdOrder = {2.0, -1.0, -3.0, 1.0}; // f(x) = x^3 - 3x^2 - x + 2
-        double[] fourthOrder = {1, -4.0, -6.0, 4.0, 1.0}; // f(x) = x^4 + 4x^3 - 6x^2 - 4x + 1
-        double[] fifthOrder = {2.0, 10.0, -18.0, 8.0, -5.0, 1.0}; // f(x) = x^5 - 5x^4 + 8x^3 - 18x^2 + 10x + 2
-
-        // Accumulate the coefficients into a 2-D array.
-        double[][] coeffs = {zeroOrder, firstOrder, secondOrder, thirdOrder, fourthOrder, fifthOrder};
-        List<FunctionDataCurve> polynomials = Arrays.stream(coeffs).map((double[] coeff) -> {
-            return new PolynomialCurve(points, false, coeff);
-        }).collect(Collectors.toList());
-
-        for (FunctionDataCurve pn : polynomials) {
-            DataSet dpn = new DoublesDataSet(pn);
-            double[] ypts = pn.getAllFxPoints();
-            DataSet abInitio = new DoublesDataSet(points, ypts, false);
-
-            for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
-                IntegrationResult rpn = new IntegrationResult(pn, j);
-                IntegrationResult rdpn = new IntegrationResult(dpn, j);
-                IntegrationResult raipn = new IntegrationResult(abInitio, j);
-
-                double pnVal = rpn.getValue();
-                double dpnVal = rdpn.getValue();
-                double aipnVal = raipn.getValue();
-
-                String message = format(" Casted function:\n%s\nfunction "
-                                + "result %9.3g, casted result %9.3g, from points %9.3g, "
-                                + "difference to casted %9.3g, difference to from-points %9.3g"
-                                + "\nintegration method %s", pn.toString(), pnVal, dpnVal,
-                        aipnVal, (pnVal - dpnVal), (pnVal - aipnVal), rpn.toString());
-                assertToUlp(message, pnVal, 10.0, dpnVal, aipnVal);
-            }
-        }
-        logger.info(" Polynomial casting tests without halved sides complete.");
-
-        double[] points2 = Integrate1DNumeric.generateXPoints(0.0, 1.0, 12, true);
-        polynomials = Arrays.stream(coeffs).map((double[] coeff) -> {
-            return new PolynomialCurve(points2, true, coeff);
-        }).collect(Collectors.toList());
-
-        for (FunctionDataCurve pn : polynomials) {
-            DataSet dpn = new DoublesDataSet(pn);
-            double[] ypts = pn.getAllFxPoints();
-            DataSet abInitio = new DoublesDataSet(points2, ypts, true);
-
-            for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
-                IntegrationResult rpn = new IntegrationResult(pn, j);
-                IntegrationResult rdpn = new IntegrationResult(dpn, j);
-                IntegrationResult raipn = new IntegrationResult(abInitio, j);
-
-                double pnVal = rpn.getValue();
-                double dpnVal = rdpn.getValue();
-                double aipnVal = raipn.getValue();
-
-                String message = format(" Casted function:\n%s\nfunction "
-                                + "result %9.3g, casted result %9.3g, from points %9.3g, "
-                                + "difference to casted %9.3g, difference to from-points %9.3g"
-                                + "\nintegration method %s", pn.toString(), pnVal, dpnVal,
-                        aipnVal, (pnVal - dpnVal), (pnVal - aipnVal), rpn.toString());
-                assertToUlp(message, pnVal, 10.0, dpnVal, aipnVal);
-            }
-        }
-        logger.info(" Polynomial casting tests with halved sides complete.");
-
-        double[] sinePoints = Integrate1DNumeric.generateXPoints(0, 4.0, 101, false);
-        FunctionDataCurve sinWave = new SinWave(sinePoints, false, 20, 30);
-        DataSet dsw = new DoublesDataSet(sinWave);
-        double[] ypts = sinWave.getAllFxPoints();
-        DataSet abInitio = new DoublesDataSet(sinePoints, ypts, false);
-
-        for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
-            IntegrationResult rsw = new IntegrationResult(sinWave, j);
-            IntegrationResult rdsw = new IntegrationResult(dsw, j);
-            IntegrationResult raisw = new IntegrationResult(abInitio, j);
-
-            double swVal = rsw.getValue();
-            double dswVal = rdsw.getValue();
-            double aiswVal = raisw.getValue();
-
-            String message = format(" Casted function:\n%s\nfunction "
-                            + "result %9.3g, casted result %9.3g, from points %9.3g, "
-                            + "difference to casted %9.3g, difference to from-points %9.3g"
-                            + "\nintegration method %s", sinWave.toString(), swVal, dswVal,
-                    aiswVal, (swVal - dswVal), (swVal - aiswVal), rsw.toString());
-            assertToUlp(message, swVal, 10.0, dswVal, aiswVal);
-        }
-        logger.info(" Sine-wave casting tests with halved sides complete.");
-
-        double[] sinePoints2 = Integrate1DNumeric.generateXPoints(0, 4.0, 102, true);
-        sinWave = new SinWave(sinePoints2, true, 20, 30);
-        dsw = new DoublesDataSet(sinWave);
-        ypts = sinWave.getAllFxPoints();
-        abInitio = new DoublesDataSet(sinePoints2, ypts, true);
-
-        for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
-            IntegrationResult rsw = new IntegrationResult(sinWave, j);
-            IntegrationResult rdsw = new IntegrationResult(dsw, j);
-            IntegrationResult raisw = new IntegrationResult(abInitio, j);
-
-            double swVal = rsw.getValue();
-            double dswVal = rdsw.getValue();
-            double aiswVal = raisw.getValue();
-
-            String message = format(" Casted function:\n%s\nfunction "
-                            + "result %9.3g, casted result %9.3g, from points %9.3g, "
-                            + "difference to casted %9.3g, difference to from-points %9.3g"
-                            + "\nintegration method %s", sinWave.toString(), swVal, dswVal,
-                    aiswVal, (swVal - dswVal), (swVal - aiswVal), rsw.toString());
-            assertToUlp(message, swVal, 10.0, dswVal, aiswVal);
-        }
-        logger.info(" Sine-wave casting tests with halved sides complete.");
-        logger.info(" Casting tests complete.");
-    }
-
-    /**
-     * Ensures that the by-bin integration machinery matches an all-at-once integral.
-     */
-    @Test
-    public void testByBinIntegral() {
-        double[] pts = Integrate1DNumeric.generateXPoints(0, 1.0, 18, false);
-        FunctionDataCurve curve = new SinWave(pts, 1, 20.0);
-
-        logger.info(" Testing by-bin integration with a sin wave (sum vs. overall result).");
-        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
-            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
-            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
-            double seqResult = Arrays.stream(sequentialPts).sum();
-
-            double knownVal = knownResult.getValue();
-            assertToUlp(format(" Mismatch for result %s\n ", knownResult, knownVal,
-                    seqResult), knownVal, 200.0, seqResult);
-        }
-        logger.info(" Testing match to analytical integrals.\n");
-        double[] leftPts = Integrate1DNumeric.integrateByBins(curve, LEFT, IntegrationType.BOOLE);
-        double[] rightPts = Integrate1DNumeric.integrateByBins(curve, RIGHT, IntegrationType.BOOLE);
-        double maxDelta = 0.075;
-        for (int i = 0; i < pts.length; i++) {
-            double leftAnalytic = curve.analyticalIntegral(pts[0], pts[i]);
-            if (i > 0) {
-                leftAnalytic -= curve.analyticalIntegral(pts[0], pts[i - 1]);
-            }
-            double rightAnalytic = curve.analyticalIntegral(pts[i], pts[pts.length - 1]);
-            if (i < (pts.length - 1)) {
-                rightAnalytic -= curve.analyticalIntegral(pts[i + 1], pts[pts.length - 1]);
-            }
-
-            assertEquals(format(" Contribution of bin %d to left-hand integral of %s does not match analytic solution", i, curve), leftAnalytic, leftPts[i], maxDelta);
-            assertEquals(format(" Contribution of bin %d to right-hand integral of %s does not match analytic solution", i, curve), rightAnalytic, rightPts[i], maxDelta);
-        }
-
-        logger.info(" Testing by-bin integration with a higher-frequency wave.");
-        curve = new CosineWave(pts, 1, 120.0);
-        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
-            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
-            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
-            double seqResult = Arrays.stream(sequentialPts).sum();
-
-            double knownVal = knownResult.getValue();
-            assertToUlp(format(" Mismatch for result %s\n ", knownResult, knownVal,
-                    seqResult), knownVal, 200.0, seqResult);
-        }
-        logger.info(" Testing match to analytical integrals.\n");
-        leftPts = Integrate1DNumeric.integrateByBins(curve, LEFT, IntegrationType.BOOLE);
-        rightPts = Integrate1DNumeric.integrateByBins(curve, RIGHT, IntegrationType.BOOLE);
-        maxDelta = 0.075;
-        for (int i = 0; i < pts.length; i++) {
-            double leftAnalytic = curve.analyticalIntegral(pts[0], pts[i]);
-            if (i > 0) {
-                leftAnalytic -= curve.analyticalIntegral(pts[0], pts[i - 1]);
-            }
-            double rightAnalytic = curve.analyticalIntegral(pts[i], pts[pts.length - 1]);
-            if (i < (pts.length - 1)) {
-                rightAnalytic -= curve.analyticalIntegral(pts[i + 1], pts[pts.length - 1]);
-            }
-
-            assertEquals(format(" Contribution of bin %d to left-hand integral of %s does not match analytic solution", i, curve), leftAnalytic, leftPts[i], maxDelta);
-            assertEquals(format(" Contribution of bin %d to right-hand integral of %s does not match analytic solution", i, curve), rightAnalytic, rightPts[i], maxDelta);
-        }
-
-        logger.info(" Testing by-bin integration with a higher-frequency wave with half-width ending bins.");
-        pts = Integrate1DNumeric.generateXPoints(0, 1.0, 19, true);
-        curve = new CosineWave(pts, true, 1, 120.0);
-        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
-            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
-            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
-            double seqResult = Arrays.stream(sequentialPts).sum();
-
-            double knownVal = knownResult.getValue();
-            assertToUlp(format(" Mismatch for result %s\n Points %s\n ", knownResult, Arrays.toString(sequentialPts), knownVal,
-                    seqResult), knownVal, 200.0, seqResult);
-        }
-        logger.info(" Testing match to analytical integrals.\n");
-        leftPts = Integrate1DNumeric.integrateByBins(curve, LEFT, IntegrationType.BOOLE);
-        rightPts = Integrate1DNumeric.integrateByBins(curve, RIGHT, IntegrationType.BOOLE);
-        maxDelta = 0.1;
-        for (int i = 0; i < pts.length; i++) {
-            double leftAnalytic = curve.analyticalIntegral(pts[0], pts[i]);
-            if (i > 0) {
-                leftAnalytic -= curve.analyticalIntegral(pts[0], pts[i - 1]);
-            }
-            double rightAnalytic = curve.analyticalIntegral(pts[i], pts[pts.length - 1]);
-            if (i < (pts.length - 1)) {
-                rightAnalytic -= curve.analyticalIntegral(pts[i + 1], pts[pts.length - 1]);
-            }
-
-            assertEquals(format(" Contribution of bin %d to left-hand integral of %s does not match analytic solution", i, curve), leftAnalytic, leftPts[i], maxDelta);
-            assertEquals(format(" Contribution of bin %d to right-hand integral of %s does not match analytic solution", i, curve), rightAnalytic, rightPts[i], maxDelta);
-        }
-
-        logger.info(" Testing by-bin integration with a polynomial function.");
-        pts = Integrate1DNumeric.generateXPoints(0.0, 2.0, 5, false);
-        double[] fifthOrder = {-4.0, 10.0, -18.0, 8.0, -5.0, 8.0};
-        curve = new PolynomialCurve(pts, false, fifthOrder);
-
-        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
-            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
-            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
-            double seqResult = Arrays.stream(sequentialPts).sum();
-
-            double knownVal = knownResult.getValue();
-            assertToUlp(format(" Mismatch for result %s\n ", knownResult, knownVal,
-                    seqResult), knownVal, 200.0, seqResult);
-        }
-        // Skip testing to analytical integrals: the points done by rectangular & trapezoidal are simply too inaccurate.
-
-        logger.info(" Completed testing of by-bin integration\n");
-    }
-
-    /**
-     * Assert that doubles are equal to within a multiplier of ulp (machine precision).
-     *
-     * @param trueVal True answer
-     * @param ulpMult Multiple of ulp to use
-     * @param values  Values to check
-     */
-    private static void assertToUlp(double trueVal, double ulpMult, double... values) {
-        double ulp = Math.ulp(trueVal) * ulpMult;
-        for (double val : values) {
-            assertEquals(trueVal, val, ulp);
-        }
-    }
-
-    /**
-     * Assert that doubles are equal to within a multiplier of ulp (machine precision).
-     *
-     * @param message To print if assertion fails
-     * @param trueVal True answer
-     * @param ulpMult Multiple of ulp to use
-     * @param values  Values to check
-     */
-    private static void assertToUlp(String message, double trueVal, double ulpMult, double... values) {
-        double ulp = Math.ulp(trueVal) * ulpMult;
-        for (double val : values) {
-            assertEquals(message, trueVal, val, ulp);
-        }
-    }
-
-    /**
-     * Tests the parallelized versions of the integration methods. Overall,
-     * these are not recommended for production use; it would require an enormous
-     * number of points for numerical integration of a 1-D function to be at
-     * all significant for timing, and the parallelized versions are probably
-     * not quite as CPU-efficient.
-     */
-    @Test
-    public void parallelTest() {
-        double[] pts = Integrate1DNumeric.generateXPoints(0, 2.0, 92, false);
-        FunctionDataCurve tcurve = new SinWave(pts, false, 60, 60);
-        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
-            IntegrationResult seqResult = new IntegrationResult(tcurve, i, false);
-            IntegrationResult parResult = new IntegrationResult(tcurve, i, true);
-            double seqVal = seqResult.getValue();
-            double parVal = parResult.getValue();
-            String message = format("Parallel value %9.3g did not match sequential value %9.3g, error %9.3g", parVal, seqVal, (parVal - seqVal));
-            assertToUlp(message, seqVal, 80.0, parVal);
-        }
-    }
-
-    /**
-     * Intended to be a shorthand way of performing all the standard
-     * integrations, instead of tediously coding in separate tests for all
-     * four integration types in both directions; auto-assigns several fields
-     * based on the provided index.
-     */
-    private class IntegrationResult {
-        private final IntegrationType type;
-        private final IntegrationSide side;
-        private final boolean halvedSides;
-        private final DataSet data;
-        private final double integratedValue;
-        private final boolean parallel;
-
-        /**
-         * Basic constructor, automatically setting direction and integration
-         * method based on index with a useful toString.
-         * <p>
-         * Even index values produce a left-hand integral, odd a right-hand
-         * integral.
-         * <p>
-         * Integration type is as follows, 0-7, after modulo(8)
-         * 0-1: Rectangular
-         * 2-3: Trapezoidal
-         * 4-5: Simpson's rule
-         * 6-7: Boole's rule
-         *
-         * @param data  Data to numerically integrate
-         * @param index Automatically set method and direction
-         */
-        public IntegrationResult(DataSet data, int index) {
-            this(data, index, false);
-        }
-
-        public IntegrationResult(DataSet data, int index, boolean parallel) {
-            switch ((index / 2) % 4) {
-                case 0:
-                    type = IntegrationType.RECTANGULAR;
-                    break;
-                case 1:
-                    type = IntegrationType.TRAPEZOIDAL;
-                    break;
-                case 2:
-                    type = IntegrationType.SIMPSONS;
-                    break;
-                case 3:
-                    type = IntegrationType.BOOLE;
-                    break;
-                default:
-                    throw new IllegalArgumentException(" How did ((index / 2) % 4) ever come out to not be 0-3?");
-            }
-            side = (index % 2 == 0) ? LEFT : RIGHT;
-            halvedSides = data.halfWidthEnds();
-            this.data = data;
-            this.parallel = parallel;
-
-            if (parallel) {
-                switch (type) {
-                    case RECTANGULAR:
-                        integratedValue = Integrate1DNumeric.rectangularParallel(data, side);
-                        break;
-                    case TRAPEZOIDAL:
-                        integratedValue = Integrate1DNumeric.trapezoidalParallel(data, side);
-                        break;
-                    case SIMPSONS:
-                        integratedValue = Integrate1DNumeric.simpsonsParallel(data, side);
-                        break;
-                    case BOOLE:
-                        integratedValue = Integrate1DNumeric.boolesParallel(data, side);
-                        break;
-                    default:
-                        throw new IllegalArgumentException(" How did this end up with an integration type not rectangular, trapezoidal, Simpson's, or Boole's?");
-                }
-
-            } else {
-                switch (type) {
-                    case RECTANGULAR:
-                        integratedValue = Integrate1DNumeric.rectangular(data, side);
-                        break;
-                    case TRAPEZOIDAL:
-                        integratedValue = Integrate1DNumeric.trapezoidal(data, side);
-                        break;
-                    case SIMPSONS:
-                        integratedValue = Integrate1DNumeric.simpsons(data, side);
-                        break;
-                    case BOOLE:
-                        integratedValue = Integrate1DNumeric.booles(data, side);
-                        break;
-                    default:
-                        throw new IllegalArgumentException(" How did this end up with an integration type not rectangular, trapezoidal, Simpson's, or Boole's?");
-                }
-            }
-        }
-
-        public IntegrationType getType() {
-            return type;
-        }
-
-        public IntegrationSide getSide() {
-            return side;
-        }
-
-        public DataSet getDataSet() {
-            return data;
-        }
-
-        public boolean getHalvedSides() {
-            return halvedSides;
-        }
-
-        public double getValue() {
-            return integratedValue;
-        }
-
-        public boolean isParallel() {
-            return parallel;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder(type.toString().toLowerCase());
-            sb.append(", ").append(side.toString().toLowerCase());
-            sb.append("-side integral");
-            if (halvedSides) {
-                sb.append(" with half-width ending bins");
-            }
-            sb.append(".");
-            return sb.toString();
         }
     }
 }

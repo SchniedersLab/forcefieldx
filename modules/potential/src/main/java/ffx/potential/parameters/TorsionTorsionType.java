@@ -62,8 +62,11 @@ import static ffx.potential.parameters.ForceField.ForceFieldType.TORTORS;
  */
 public final class TorsionTorsionType extends BaseType implements Comparator<String> {
 
+    /**
+     * Convert Torsion-Torsion energy to kcal/mole.
+     */
+    public static final double units = 1.0;
     private static final Logger logger = Logger.getLogger(TorsionTorsionType.class.getName());
-
     /**
      * Atom classes that form this Torsion-Torsion type.
      */
@@ -104,10 +107,6 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * Grid points.
      */
     private final int[] gridPoints;
-    /**
-     * Convert Torsion-Torsion energy to kcal/mole.
-     */
-    public static final double units = 1.0;
 
     /**
      * <p>
@@ -252,6 +251,58 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     }
 
     /**
+     * <p>average.</p>
+     *
+     * @param torsionTorsionType1 a {@link ffx.potential.parameters.TorsionTorsionType} object.
+     * @param torsionTorsionType2 a {@link ffx.potential.parameters.TorsionTorsionType} object.
+     * @param atomClasses         an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.TorsionTorsionType} object.
+     */
+    public static TorsionTorsionType average(TorsionTorsionType torsionTorsionType1,
+                                             TorsionTorsionType torsionTorsionType2, int[] atomClasses) {
+        if (torsionTorsionType1 == null || torsionTorsionType2 == null || atomClasses == null) {
+            return null;
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compare(String key1, String key2) {
+        String[] keys1 = key1.split(" ");
+        String[] keys2 = key2.split(" ");
+        int c1 = parseInt(keys1[2]);
+        int c2 = parseInt(keys2[2]);
+        if (c1 < c2) {
+            return -1;
+        } else if (c1 > c2) {
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TorsionTorsionType torsionTorsionType = (TorsionTorsionType) o;
+        return Arrays.equals(atomClasses, torsionTorsionType.atomClasses);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(atomClasses);
+    }
+
+    /**
      * <p>
      * incrementClasses</p>
      *
@@ -262,6 +313,93 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
             atomClasses[i] += increment;
         }
         setKey(sortKey(atomClasses));
+    }
+
+    /**
+     * Construct a TorsionTorsionType from multiple input lines.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @param br     a BufferedReader instance.
+     * @return a TorsionTorsionType instance.
+     */
+    public static TorsionTorsionType parse(String input, String[] tokens, BufferedReader br) {
+        if (tokens.length < 8) {
+            logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[5];
+                for (int i = 0; i < 5; i++) {
+                    atomClasses[i] = parseInt(tokens[i + 1]);
+                }
+                int[] gridPoints = new int[2];
+                gridPoints[0] = parseInt(tokens[6]);
+                gridPoints[1] = parseInt(tokens[7]);
+                int points = gridPoints[0] * gridPoints[1];
+                double[] torsion1 = new double[points];
+                double[] torsion2 = new double[points];
+                double[] energy = new double[points];
+                for (int i = 0; i < points; i++) {
+                    input = br.readLine();
+                    tokens = input.trim().split(" +");
+                    if (tokens.length != 3) {
+                        logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
+                        return null;
+                    }
+                    torsion1[i] = parseDouble(tokens[0]);
+                    torsion2[i] = parseDouble(tokens[1]);
+                    energy[i] = parseDouble(tokens[2]);
+                }
+                return new TorsionTorsionType(atomClasses, gridPoints, torsion1, torsion2, energy);
+            } catch (NumberFormatException | IOException e) {
+                String message = "Exception parsing TORTORS type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Construct a TorsionTorsionType from a single input line.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a TorsionTorsionType instance.
+     */
+    public static TorsionTorsionType parse(String input, String[] tokens) {
+        if (tokens.length < 8) {
+            logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[5];
+                for (int i = 0; i < 5; i++) {
+                    atomClasses[i] = parseInt(tokens[i + 1]);
+                }
+                int[] gridPoints = new int[2];
+                gridPoints[0] = parseInt(tokens[6]);
+                gridPoints[1] = parseInt(tokens[7]);
+                int points = gridPoints[0] * gridPoints[1];
+                int numTokens = points * 3 + 8;
+                if (tokens.length < numTokens) {
+                    logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
+                    return null;
+                }
+                double[] torsion1 = new double[points];
+                double[] torsion2 = new double[points];
+                double[] energy = new double[points];
+                int index = 8;
+                for (int i = 0; i < points; i++) {
+                    torsion1[i] = parseDouble(tokens[index++]);
+                    torsion2[i] = parseDouble(tokens[index++]);
+                    energy[i] = parseDouble(tokens[index++]);
+                }
+                return new TorsionTorsionType(atomClasses, gridPoints, torsion1, torsion2, energy);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing TORTORS type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
     }
 
     /**
@@ -294,148 +432,45 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     }
 
     /**
-     * Computes the coefficients for an aperiodic interpolating cubic spline.
+     * Reversed key for the Torsion-Torsion lookup.
      *
-     * @param n
-     * @param x0
-     * @param y0
-     * @param y21
-     * @param y2n
-     * @param s1
-     * @param s2
-     * @param h
-     * @param g
-     * @param dy
-     * @param dla
-     * @param dmu
+     * @param c atomClasses
+     * @return lookup key
      */
-    private void nspline(int n, double[] x0, double[] y0, double y21, double y2n, double[] s1,
-                         double[] s2, double[] h, double[] g, double[] dy, double[] dla, double[] dmu) {
-
-        // Calculate the intervals.
-        for (int i = 0; i < n; i++) {
-            h[i] = x0[i + 1] - x0[i];
-            dy[i] = (y0[i + 1] - y0[i]) / h[i];
-        }
-
-        // Get the coeffcients.
-        for (int i = 1; i < n; i++) {
-            dla[i] = h[i] / (h[i] + h[i - 1]);
-            dmu[i] = 1.0 - dla[i];
-            g[i] = 3.0 * (dla[i] * dy[i - 1] + dmu[i] * dy[i]);
-        }
-
-        // Set the initial value via natural boundary condition.
-        dla[n] = 1.0;
-        dla[0] = 0.0;
-        dmu[n] = 0.0;
-        dmu[0] = 1.0;
-        g[0] = 3.0 * dy[0] - 0.5 * h[0] * y21;
-        g[n] = 3.0 * dy[n - 1] + 0.5 * h[n - 1] * y2n;
-
-        // Solve the triagonal system of linear equations.
-        dmu[0] = 0.5 * dmu[0];
-        g[0] = 0.5 * g[0];
-        for (int i = 1; i <= n; i++) {
-            double t = 2.0 - dmu[i - 1] * dla[i];
-            dmu[i] = dmu[i] / t;
-            g[i] = (g[i] - g[i - 1] * dla[i]) / t;
-        }
-
-        for (int i = n - 1; i >= 0; i--) {
-            g[i] = g[i] - dmu[i] * g[i + 1];
-        }
-
-        // Get the first derivative at each grid point.
-        arraycopy(g, 0, s1, 0, n + 1);
-
-        // Get the second derivative at each grid point.
-        s2[0] = y21;
-        s2[n] = y2n;
-        for (int i = 1; i < n; i++) {
-            s2[i] = 6.0 * (y0[i + 1] - y0[i]) / (h[i] * h[i])
-                    - 4.0 * s1[i] / h[i] - 2.0 * s1[i + 1] / h[i];
-        }
-
+    public static String reverseKey(int[] c) {
+        return c[4] + " " + c[3] + " " + c[2] + " " + c[1] + " " + c[0];
     }
 
     /**
-     * Computes the coefficients for a periodic interpolating cubic spline.
+     * No sorting is done for the Torsion-Torsion lookup.
      *
-     * @param n
-     * @param xn
-     * @param fn
-     * @param b
-     * @param d
-     * @param h
-     * @param du
-     * @param dm
-     * @param rc
-     * @param rs
+     * @param c atomClasses
+     * @return lookup key
      */
-    private void cspline(int n, double[] xn, double[] fn, double[] b,
-                         double[] c, double[] d, double[] h, double[] du, double[] dm,
-                         double[] rc, double[] rs) {
-        double eps = 0.000001;
-        if (abs(fn[n] - fn[0]) > eps) {
-            logger.severe("TORTOR values are not periodic.");
-        }
-
-        // Make the spline exactly periodic making the ends equal to their mean.
-        double mean = 0.5 * (fn[0] + fn[n]);
-        fn[0] = mean;
-        fn[n] = mean;
-
-        // Set up auxiliary variables and matrix elements on first call.
-        for (int i = 0; i < n; i++) {
-            h[i] = xn[i + 1] - xn[i];
-        }
-        h[n] = h[0];
-
-        if (n - 1 >= 0) arraycopy(h, 1, du, 1, n - 1);
-
-        du[n] = h[0];
-        for (int i = 1; i <= n; i++) {
-            dm[i] = 2.0 * (h[i - 1] + h[i]);
-        }
-
-        // Compute the RHS.
-        double temp1 = (fn[1] - fn[0]) / h[0];
-        for (int i = 1; i < n; i++) {
-            double temp2 = (fn[i + 1] - fn[i]) / h[i];
-            rs[i] = 3.0 * (temp2 - temp1);
-            temp1 = temp2;
-        }
-        rs[n] = 3.0 * ((fn[1] - fn[0]) / h[0] - temp1);
-
-        // Solve the linear system with factorization.
-        if (cytsy(n, dm, du, rc, rs, c) != 1) {
-            return;
-        }
-
-        // Compute remaining spline coefficients.
-        c[0] = c[n];
-        for (int i = 0; i < n; i++) {
-            b[i] = (fn[i + 1] - fn[i]) / h[i] - h[i] / 3.0 * (c[i + 1] + 2.0 * c[i]);
-            d[i] = (c[i + 1] - c[i]) / (3.0 * h[i]);
-        }
-        b[n] = (fn[1] - fn[n]) / h[n] - h[n] / 3.0 * (c[1] + 2.0 * c[n]);
+    public static String sortKey(int[] c) {
+        return c[0] + " " + c[1] + " " + c[2] + " " + c[3] + " " + c[4];
     }
 
     /**
-     * <p>average.</p>
-     *
-     * @param torsionTorsionType1 a {@link ffx.potential.parameters.TorsionTorsionType} object.
-     * @param torsionTorsionType2 a {@link ffx.potential.parameters.TorsionTorsionType} object.
-     * @param atomClasses         an array of {@link int} objects.
-     * @return a {@link ffx.potential.parameters.TorsionTorsionType} object.
+     * {@inheritDoc}
+     * <p>
+     * Nicely formatted torsion-torsion type.
      */
-    public static TorsionTorsionType average(TorsionTorsionType torsionTorsionType1,
-                                             TorsionTorsionType torsionTorsionType2, int[] atomClasses) {
-        if (torsionTorsionType1 == null || torsionTorsionType2 == null || atomClasses == null) {
-            return null;
+    @Override
+    public String toString() {
+        StringBuilder tortorBuffer = new StringBuilder("tortors");
+        for (int i : atomClasses) {
+            tortorBuffer.append(format("  %5d", i));
         }
-        return null;
+        tortorBuffer.append(format("  %2d  %2d", gridPoints[0],
+                gridPoints[1]));
+        for (int i = 0; i < energy.length; i++) {
+            int nxi = i % nx;
+            int nyi = i / ny;
+            tortorBuffer.append(format(" \\\n  % 6.1f  % 6.1f  % 8.5f",
+                    tx[nxi], ty[nyi], energy[i]));
+        }
+        return tortorBuffer.toString();
     }
 
     /**
@@ -572,167 +607,131 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     }
 
     /**
-     * No sorting is done for the Torsion-Torsion lookup.
+     * Computes the coefficients for an aperiodic interpolating cubic spline.
      *
-     * @param c atomClasses
-     * @return lookup key
+     * @param n
+     * @param x0
+     * @param y0
+     * @param y21
+     * @param y2n
+     * @param s1
+     * @param s2
+     * @param h
+     * @param g
+     * @param dy
+     * @param dla
+     * @param dmu
      */
-    public static String sortKey(int[] c) {
-        return c[0] + " " + c[1] + " " + c[2] + " " + c[3] + " " + c[4];
+    private void nspline(int n, double[] x0, double[] y0, double y21, double y2n, double[] s1,
+                         double[] s2, double[] h, double[] g, double[] dy, double[] dla, double[] dmu) {
+
+        // Calculate the intervals.
+        for (int i = 0; i < n; i++) {
+            h[i] = x0[i + 1] - x0[i];
+            dy[i] = (y0[i + 1] - y0[i]) / h[i];
+        }
+
+        // Get the coeffcients.
+        for (int i = 1; i < n; i++) {
+            dla[i] = h[i] / (h[i] + h[i - 1]);
+            dmu[i] = 1.0 - dla[i];
+            g[i] = 3.0 * (dla[i] * dy[i - 1] + dmu[i] * dy[i]);
+        }
+
+        // Set the initial value via natural boundary condition.
+        dla[n] = 1.0;
+        dla[0] = 0.0;
+        dmu[n] = 0.0;
+        dmu[0] = 1.0;
+        g[0] = 3.0 * dy[0] - 0.5 * h[0] * y21;
+        g[n] = 3.0 * dy[n - 1] + 0.5 * h[n - 1] * y2n;
+
+        // Solve the triagonal system of linear equations.
+        dmu[0] = 0.5 * dmu[0];
+        g[0] = 0.5 * g[0];
+        for (int i = 1; i <= n; i++) {
+            double t = 2.0 - dmu[i - 1] * dla[i];
+            dmu[i] = dmu[i] / t;
+            g[i] = (g[i] - g[i - 1] * dla[i]) / t;
+        }
+
+        for (int i = n - 1; i >= 0; i--) {
+            g[i] = g[i] - dmu[i] * g[i + 1];
+        }
+
+        // Get the first derivative at each grid point.
+        arraycopy(g, 0, s1, 0, n + 1);
+
+        // Get the second derivative at each grid point.
+        s2[0] = y21;
+        s2[n] = y2n;
+        for (int i = 1; i < n; i++) {
+            s2[i] = 6.0 * (y0[i + 1] - y0[i]) / (h[i] * h[i])
+                    - 4.0 * s1[i] / h[i] - 2.0 * s1[i + 1] / h[i];
+        }
+
     }
 
     /**
-     * Reversed key for the Torsion-Torsion lookup.
+     * Computes the coefficients for a periodic interpolating cubic spline.
      *
-     * @param c atomClasses
-     * @return lookup key
+     * @param n
+     * @param xn
+     * @param fn
+     * @param b
+     * @param d
+     * @param h
+     * @param du
+     * @param dm
+     * @param rc
+     * @param rs
      */
-    public static String reverseKey(int[] c) {
-        return c[4] + " " + c[3] + " " + c[2] + " " + c[1] + " " + c[0];
-    }
-
-    /**
-     * Construct a TorsionTorsionType from multiple input lines.
-     *
-     * @param input  The overall input String.
-     * @param tokens The input String tokenized.
-     * @param br     a BufferedReader instance.
-     * @return a TorsionTorsionType instance.
-     */
-    public static TorsionTorsionType parse(String input, String[] tokens, BufferedReader br) {
-        if (tokens.length < 8) {
-            logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
-        } else {
-            try {
-                int[] atomClasses = new int[5];
-                for (int i = 0; i < 5; i++) {
-                    atomClasses[i] = parseInt(tokens[i + 1]);
-                }
-                int[] gridPoints = new int[2];
-                gridPoints[0] = parseInt(tokens[6]);
-                gridPoints[1] = parseInt(tokens[7]);
-                int points = gridPoints[0] * gridPoints[1];
-                double[] torsion1 = new double[points];
-                double[] torsion2 = new double[points];
-                double[] energy = new double[points];
-                for (int i = 0; i < points; i++) {
-                    input = br.readLine();
-                    tokens = input.trim().split(" +");
-                    if (tokens.length != 3) {
-                        logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
-                        return null;
-                    }
-                    torsion1[i] = parseDouble(tokens[0]);
-                    torsion2[i] = parseDouble(tokens[1]);
-                    energy[i] = parseDouble(tokens[2]);
-                }
-                return new TorsionTorsionType(atomClasses, gridPoints, torsion1, torsion2, energy);
-            } catch (NumberFormatException | IOException e) {
-                String message = "Exception parsing TORTORS type:\n" + input + "\n";
-                logger.log(Level.SEVERE, message, e);
-            }
+    private void cspline(int n, double[] xn, double[] fn, double[] b,
+                         double[] c, double[] d, double[] h, double[] du, double[] dm,
+                         double[] rc, double[] rs) {
+        double eps = 0.000001;
+        if (abs(fn[n] - fn[0]) > eps) {
+            logger.severe("TORTOR values are not periodic.");
         }
-        return null;
-    }
 
-    /**
-     * Construct a TorsionTorsionType from a single input line.
-     *
-     * @param input  The overall input String.
-     * @param tokens The input String tokenized.
-     * @return a TorsionTorsionType instance.
-     */
-    public static TorsionTorsionType parse(String input, String[] tokens) {
-        if (tokens.length < 8) {
-            logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
-        } else {
-            try {
-                int[] atomClasses = new int[5];
-                for (int i = 0; i < 5; i++) {
-                    atomClasses[i] = parseInt(tokens[i + 1]);
-                }
-                int[] gridPoints = new int[2];
-                gridPoints[0] = parseInt(tokens[6]);
-                gridPoints[1] = parseInt(tokens[7]);
-                int points = gridPoints[0] * gridPoints[1];
-                int numTokens = points * 3 + 8;
-                if (tokens.length < numTokens) {
-                    logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
-                    return null;
-                }
-                double[] torsion1 = new double[points];
-                double[] torsion2 = new double[points];
-                double[] energy = new double[points];
-                int index = 8;
-                for (int i = 0; i < points; i++) {
-                    torsion1[i] = parseDouble(tokens[index++]);
-                    torsion2[i] = parseDouble(tokens[index++]);
-                    energy[i] = parseDouble(tokens[index++]);
-                }
-                return new TorsionTorsionType(atomClasses, gridPoints, torsion1, torsion2, energy);
-            } catch (NumberFormatException e) {
-                String message = "Exception parsing TORTORS type:\n" + input + "\n";
-                logger.log(Level.SEVERE, message, e);
-            }
+        // Make the spline exactly periodic making the ends equal to their mean.
+        double mean = 0.5 * (fn[0] + fn[n]);
+        fn[0] = mean;
+        fn[n] = mean;
+
+        // Set up auxiliary variables and matrix elements on first call.
+        for (int i = 0; i < n; i++) {
+            h[i] = xn[i + 1] - xn[i];
         }
-        return null;
-    }
+        h[n] = h[0];
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Nicely formatted torsion-torsion type.
-     */
-    @Override
-    public String toString() {
-        StringBuilder tortorBuffer = new StringBuilder("tortors");
-        for (int i : atomClasses) {
-            tortorBuffer.append(format("  %5d", i));
+        if (n - 1 >= 0) arraycopy(h, 1, du, 1, n - 1);
+
+        du[n] = h[0];
+        for (int i = 1; i <= n; i++) {
+            dm[i] = 2.0 * (h[i - 1] + h[i]);
         }
-        tortorBuffer.append(format("  %2d  %2d", gridPoints[0],
-                gridPoints[1]));
-        for (int i = 0; i < energy.length; i++) {
-            int nxi = i % nx;
-            int nyi = i / ny;
-            tortorBuffer.append(format(" \\\n  % 6.1f  % 6.1f  % 8.5f",
-                    tx[nxi], ty[nyi], energy[i]));
+
+        // Compute the RHS.
+        double temp1 = (fn[1] - fn[0]) / h[0];
+        for (int i = 1; i < n; i++) {
+            double temp2 = (fn[i + 1] - fn[i]) / h[i];
+            rs[i] = 3.0 * (temp2 - temp1);
+            temp1 = temp2;
         }
-        return tortorBuffer.toString();
-    }
+        rs[n] = 3.0 * ((fn[1] - fn[0]) / h[0] - temp1);
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compare(String key1, String key2) {
-        String[] keys1 = key1.split(" ");
-        String[] keys2 = key2.split(" ");
-        int c1 = parseInt(keys1[2]);
-        int c2 = parseInt(keys2[2]);
-        if (c1 < c2) {
-            return -1;
-        } else if (c1 > c2) {
-            return 1;
+        // Solve the linear system with factorization.
+        if (cytsy(n, dm, du, rc, rs, c) != 1) {
+            return;
         }
-        return 0;
-    }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TorsionTorsionType torsionTorsionType = (TorsionTorsionType) o;
-        return Arrays.equals(atomClasses, torsionTorsionType.atomClasses);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(atomClasses);
+        // Compute remaining spline coefficients.
+        c[0] = c[n];
+        for (int i = 0; i < n; i++) {
+            b[i] = (fn[i + 1] - fn[i]) / h[i] - h[i] / 3.0 * (c[i + 1] + 2.0 * c[i]);
+            d[i] = (c[i + 1] - c[i]) / (3.0 * h[i]);
+        }
+        b[n] = (fn[1] - fn[n]) / h[n] - h[n] / 3.0 * (c[1] + 2.0 * c[n]);
     }
 }

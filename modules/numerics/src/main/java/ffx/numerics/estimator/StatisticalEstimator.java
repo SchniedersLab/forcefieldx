@@ -58,7 +58,7 @@ public interface StatisticalEstimator {
      *
      * @return Individual bin/window uncertainties.
      */
-     double[] getBinUncertainties();
+    double[] getBinUncertainties();
 
     /**
      * Returns the estimated free energy (usually in kcal/mol).

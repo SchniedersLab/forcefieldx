@@ -71,26 +71,6 @@ public class MTZFilterTest {
     private DiffractionRefinementData refinementData = new DiffractionRefinementData(properties, reflectionList);
 
     @Test
-    public void testMTZReadFile() {
-        MTZFilter mtzFilter = new MTZFilter();
-        assertTrue("mtz file should be read in without errors",
-                mtzFilter.readFile(mtzFile, reflectionList, refinementData, null));
-    }
-
-    @Test
-    public void testMTZParams() {
-        MTZFilter mtzFilter = new MTZFilter();
-        assertTrue("mtz file should be read in without errors",
-                mtzFilter.readFile(mtzFile, reflectionList, refinementData, null));
-        assertEquals("mtz file number of columns",
-                6, mtzFilter.getnColumns());
-        assertEquals("mtz file number of reflections",
-                48115, mtzFilter.getnReflections());
-        assertEquals("mtz file space group number",
-                1, mtzFilter.getSpaceGroupNum());
-    }
-
-    @Test
     public void testMTZHKL() {
         MTZFilter mtzFilter = new MTZFilter();
         assertTrue("mtz file errors",
@@ -107,6 +87,26 @@ public class MTZFilterTest {
                 Double.NaN, refinementData.getF(hkl.index()), 0.1);
         assertEquals("-10 1 10 SIGFP value should be NaN",
                 Double.NaN, refinementData.getSigF(hkl.index()), 0.1);
+    }
+
+    @Test
+    public void testMTZParams() {
+        MTZFilter mtzFilter = new MTZFilter();
+        assertTrue("mtz file should be read in without errors",
+                mtzFilter.readFile(mtzFile, reflectionList, refinementData, null));
+        assertEquals("mtz file number of columns",
+                6, mtzFilter.getnColumns());
+        assertEquals("mtz file number of reflections",
+                48115, mtzFilter.getnReflections());
+        assertEquals("mtz file space group number",
+                1, mtzFilter.getSpaceGroupNum());
+    }
+
+    @Test
+    public void testMTZReadFile() {
+        MTZFilter mtzFilter = new MTZFilter();
+        assertTrue("mtz file should be read in without errors",
+                mtzFilter.readFile(mtzFile, reflectionList, refinementData, null));
     }
 
     @Test

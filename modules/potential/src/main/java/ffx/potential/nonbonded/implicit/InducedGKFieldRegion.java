@@ -64,7 +64,19 @@ import static ffx.utilities.Constants.dWater;
 public class InducedGKFieldRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(InducedGKFieldRegion.class.getName());
-
+    /**
+     * Empirical constant that controls the GK cross-term.
+     */
+    private final double gkc;
+    /**
+     * Kirkwood dipole reaction field constant.
+     */
+    private final double fd;
+    /**
+     * Kirkwood quadrupole reaction field constant.
+     */
+    private final double fq;
+    private final InducedGKFieldLoop[] inducedGKFieldLoop;
     /**
      * An ordered array of atoms in the system.
      */
@@ -109,20 +121,6 @@ public class InducedGKFieldRegion extends ParallelRegion {
      * Atomic GK field chain-rule array.
      */
     private AtomicDoubleArray3D sharedGKFieldCR;
-
-    /**
-     * Empirical constant that controls the GK cross-term.
-     */
-    private final double gkc;
-    /**
-     * Kirkwood dipole reaction field constant.
-     */
-    private final double fd;
-    /**
-     * Kirkwood quadrupole reaction field constant.
-     */
-    private final double fq;
-    private final InducedGKFieldLoop[] inducedGKFieldLoop;
 
     public InducedGKFieldRegion(int nt, ForceField forceField) {
         // Set the Kirkwood multipolar reaction field constants.
@@ -174,12 +172,12 @@ public class InducedGKFieldRegion extends ParallelRegion {
      */
     private class InducedGKFieldLoop extends IntegerForLoop {
 
-        private int threadID;
         private final double[][] a;
         private final double[] gux;
         private final double[] guy;
         private final double[] guz;
         private final double[] dx_local;
+        private int threadID;
         private double xi, yi, zi;
         private double uix, uiy, uiz;
         private double uixCR, uiyCR, uizCR;

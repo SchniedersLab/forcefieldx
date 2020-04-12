@@ -98,24 +98,6 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>Getter for the field <code>splineEnergy</code>.</p>
-     *
-     * @return a {@link ffx.xray.SplineEnergy} object.
-     */
-    SplineEnergy getSplineEnergy() {
-        return splineEnergy;
-    }
-
-    /**
-     * <p>getNumberOfVariables.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberOfVariables() {
-        return x.length;
-    }
-
-    /**
      * <p>getCoordinates.</p>
      *
      * @param x an array of {@link double} objects.
@@ -127,6 +109,15 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         }
         arraycopy(this.x, 0, x, 0, this.x.length);
         return x;
+    }
+
+    /**
+     * <p>getNumberOfVariables.</p>
+     *
+     * @return a int.
+     */
+    public int getNumberOfVariables() {
+        return x.length;
     }
 
     /**
@@ -214,5 +205,14 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
                 }
             }
         }
+    }
+
+    /**
+     * <p>Getter for the field <code>splineEnergy</code>.</p>
+     *
+     * @return a {@link ffx.xray.SplineEnergy} object.
+     */
+    SplineEnergy getSplineEnergy() {
+        return splineEnergy;
     }
 }

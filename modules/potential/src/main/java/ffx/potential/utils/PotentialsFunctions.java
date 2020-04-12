@@ -76,6 +76,67 @@ public interface PotentialsFunctions {
     Logger logger = Logger.getLogger(PotentialsFunctions.class.getName());
 
     /**
+     * Performs any necessary shutdown operations on a MolecularAssembly,
+     * primarily shutting down Parallel Java threads and closing any other open
+     * resources.
+     *
+     * @param assembly Assembly to close.
+     */
+    void close(MolecularAssembly assembly);
+
+    /**
+     * Performs any necessary shutdown operations on an array of
+     * MolecularAssembly, primarily shutting down Parallel Java threads and
+     * closing any other open resources.
+     *
+     * @param assemblies Assemblies to close.
+     */
+    void closeAll(MolecularAssembly[] assemblies);
+
+    /**
+     * Evaluates the energy of a MolecularAssembly and returns its
+     * ForceFieldEnergy object.
+     *
+     * @param assembly To evaluate
+     * @return assembly's ForceFieldEnergy.
+     */
+    ForceFieldEnergy energy(MolecularAssembly assembly);
+
+    /**
+     * Returns either the active assembly from the overlying UI, or the "active"
+     * molecular assembly from the last used SystemFilter.
+     *
+     * @return A MolecularAssembly or null
+     */
+    default MolecularAssembly getActiveAssembly() {
+        SystemFilter filt = getFilter();
+        if (filt != null) {
+            return filt.getActiveMolecularSystem();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * If available, returns CLI arguments; default implementation does not have
+     * access to CLI arguments, and throws UnsupportedOperationException.
+     *
+     * @return CLI arguments
+     * @throws java.lang.UnsupportedOperationException If unimplemented
+     * @throws java.lang.UnsupportedOperationException if any.
+     */
+    default List<String> getArguments() throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Returns the last SystemFilter created by this (may be null).
+     *
+     * @return Last SystemFilter
+     */
+    SystemFilter getFilter();
+
+    /**
      * True if using a local implementation (not in a user interfaces module).
      *
      * @return If a local implementation
@@ -94,6 +155,19 @@ public interface PotentialsFunctions {
             logger.log(Level.WARNING, " Found multiple assemblies in file {0}, opening first.", filename);
         }
         return assemblies[0];
+    }
+
+    /**
+     * Opens an array of files and returns all created MolecularAssembly
+     * objects, setting any underlying Potential to use a certain number of
+     * threads. Default implementation simply ignores nThreads.
+     *
+     * @param files    an array of {@link java.lang.String} objects.
+     * @param nThreads Use non-default num threads
+     * @return Array of MolecularAssembly.
+     */
+    default MolecularAssembly[] open(String[] files, int nThreads) {
+        return openAll(files);
     }
 
     /**
@@ -127,42 +201,13 @@ public interface PotentialsFunctions {
     }
 
     /**
-     * Opens an array of files and returns all created MolecularAssembly
-     * objects, setting any underlying Potential to use a certain number of
-     * threads. Default implementation simply ignores nThreads.
+     * Returns the energy of a MolecularAssembly in kcal/mol (as a double) and
+     * prints the energy evaluation
      *
-     * @param files    an array of {@link java.lang.String} objects.
-     * @param nThreads Use non-default num threads
-     * @return Array of MolecularAssembly.
+     * @param assembly To evaluate energy of
+     * @return Potential energy (kcal/mol)
      */
-    default MolecularAssembly[] open(String[] files, int nThreads) {
-        return openAll(files);
-    }
-
-    /**
-     * Performs any necessary shutdown operations on a MolecularAssembly,
-     * primarily shutting down Parallel Java threads and closing any other open
-     * resources.
-     *
-     * @param assembly Assembly to close.
-     */
-    void close(MolecularAssembly assembly);
-
-    /**
-     * Performs any necessary shutdown operations on an array of
-     * MolecularAssembly, primarily shutting down Parallel Java threads and
-     * closing any other open resources.
-     *
-     * @param assemblies Assemblies to close.
-     */
-    void closeAll(MolecularAssembly[] assemblies);
-
-    /**
-     * Logs time elapsed since last call.
-     *
-     * @return Time.
-     */
-    double time();
+    double returnEnergy(MolecularAssembly assembly);
 
     /**
      * Saves the current state of a MolecularAssembly to an XYZ file.
@@ -171,14 +216,6 @@ public interface PotentialsFunctions {
      * @param file     Destination .xyz
      */
     void save(MolecularAssembly assembly, File file);
-
-    /**
-     * Saves the current state of a MolecularAssembly to an XYZ file.
-     *
-     * @param assembly MolecularAssembly to save
-     * @param file     Destination .xyz
-     */
-    void saveAsXYZ(MolecularAssembly assembly, File file);
 
     /**
      * Saves the current state of a MolecularAssembly to an XYZ file as a P1
@@ -208,6 +245,14 @@ public interface PotentialsFunctions {
     void saveAsPDB(MolecularAssembly assembly, File file, boolean writeEnd, boolean append);
 
     /**
+     * Saves the current state of a MolecularAssembly to an XYZ file.
+     *
+     * @param assembly MolecularAssembly to save
+     * @param file     Destination .xyz
+     */
+    void saveAsXYZ(MolecularAssembly assembly, File file);
+
+    /**
      * Saves the symmetry mates of a MolecularAssembly to PDB files.
      *
      * @param assembly To save
@@ -225,56 +270,11 @@ public interface PotentialsFunctions {
     void savePDBSymMates(MolecularAssembly assembly, File file, String suffix);
 
     /**
-     * Evaluates the energy of a MolecularAssembly and returns its
-     * ForceFieldEnergy object.
+     * Logs time elapsed since last call.
      *
-     * @param assembly To evaluate
-     * @return assembly's ForceFieldEnergy.
+     * @return Time.
      */
-    ForceFieldEnergy energy(MolecularAssembly assembly);
-
-    /**
-     * Returns the energy of a MolecularAssembly in kcal/mol (as a double) and
-     * prints the energy evaluation
-     *
-     * @param assembly To evaluate energy of
-     * @return Potential energy (kcal/mol)
-     */
-    double returnEnergy(MolecularAssembly assembly);
-
-    /**
-     * Returns the last SystemFilter created by this (may be null).
-     *
-     * @return Last SystemFilter
-     */
-    SystemFilter getFilter();
-
-    /**
-     * Returns either the active assembly from the overlying UI, or the "active"
-     * molecular assembly from the last used SystemFilter.
-     *
-     * @return A MolecularAssembly or null
-     */
-    default MolecularAssembly getActiveAssembly() {
-        SystemFilter filt = getFilter();
-        if (filt != null) {
-            return filt.getActiveMolecularSystem();
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * If available, returns CLI arguments; default implementation does not have
-     * access to CLI arguments, and throws UnsupportedOperationException.
-     *
-     * @return CLI arguments
-     * @throws java.lang.UnsupportedOperationException If unimplemented
-     * @throws java.lang.UnsupportedOperationException if any.
-     */
-    default List<String> getArguments() throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
-    }
+    double time();
 
     /**
      * Versions a file, attempting to find an unused filename in the set

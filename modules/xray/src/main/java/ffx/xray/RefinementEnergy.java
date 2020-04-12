@@ -37,14 +37,12 @@
 //******************************************************************************
 package ffx.xray;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
@@ -85,10 +83,6 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      */
     private final MolecularAssembly[] molecularAssemblies;
     /**
-     * Compute fast varying forces, slowly varying forces, or both.
-     */
-    private STATE state = STATE.BOTH;
-    /**
      * Container to huge experimental data.
      */
     private final DataContainer data;
@@ -109,17 +103,21 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      */
     private final List<Integer>[] xIndex;
     /**
-     * The Potential based on experimental data.
+     * The refinement mode being used.
      */
-    private CrystalPotential dataEnergy;
+    private final RefinementMode refinementMode;
+    /**
+     * Atomic coordinates for computing the chemical energy.
+     */
+    private final double[][] xChemical;
+    /**
+     * Array for storing chemical gradient.
+     */
+    private final double[][] gChemical;
     /**
      * A thermostat instance.
      */
     protected Thermostat thermostat;
-    /**
-     * The refinement mode being used.
-     */
-    private RefinementMode refinementMode;
     /**
      * The number of XYZ coordinates being refined.
      */
@@ -133,6 +131,14 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      */
     int nOccupancy;
     /**
+     * Compute fast varying forces, slowly varying forces, or both.
+     */
+    private STATE state = STATE.BOTH;
+    /**
+     * The Potential based on experimental data.
+     */
+    private CrystalPotential dataEnergy;
+    /**
      * The total number of parameters being refined.
      */
     private int n;
@@ -140,14 +146,6 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * The kT scale factor.
      */
     private double kTScale;
-    /**
-     * Atomic coordinates for computing the chemical energy.
-     */
-    private double[][] xChemical;
-    /**
-     * Array for storing chemical gradient.
-     */
-    private double[][] gChemical;
     /**
      * Array for storing the experimental gradient.
      */
@@ -291,10 +289,10 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                             || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                             || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                             || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-                        for (ArrayList<Residue> list : refinementModel.getAltResidues()) {
+                        for (List<Residue> list : refinementModel.getAltResidues()) {
                             nOccupancy += list.size();
                         }
-                        for (ArrayList<Molecule> list : refinementModel.getAltMolecules()) {
+                        for (List<Molecule> list : refinementModel.getAltMolecules()) {
                             nOccupancy += list.size();
                         }
                         if (nActive != nAtoms) {
@@ -347,59 +345,24 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     }
 
     /**
-     * <p>Getter for the field <code>dataEnergy</code>.</p>
-     *
-     * @return a {@link ffx.crystal.CrystalPotential} object.
+     * {@inheritDoc}
      */
-    public CrystalPotential getDataEnergy() {
-        return dataEnergy;
-    }
-
-    /**
-     * <p>getActiveAtoms.</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    public Atom[] getActiveAtoms() {
-        return activeAtomArray;
-    }
-
-    /**
-     * Sets the printOnFailure flag; if override is true, over-rides any
-     * existing property. Essentially sets the default value of printOnFailure
-     * for an algorithm. For example, rotamer optimization will generally run
-     * into force field issues in the normal course of execution as it tries
-     * unphysical self and 2-Body configurations, so the algorithm should not
-     * print out a large number of error PDBs.
-     *
-     * @param onFail   To set
-     * @param override Override properties
-     */
-    public void setPrintOnFailure(boolean onFail, boolean override) {
-        if (override) {
-            // Ignore any pre-existing value
-            printOnFailure = onFail;
-        } else {
-            try {
-                molecularAssemblies[0].getForceField().getBoolean("PRINT_ON_FAILURE");
-                /*
-                 * If the call was successful, the property was explicitly set
-                 * somewhere and should be kept. If an exception was thrown, the
-                 * property was never set explicitly, so over-write.
-                 */
-            } catch (Exception ex) {
-                printOnFailure = onFail;
-            }
+    @Override
+    public boolean algorithmUpdate(MolecularAssembly active) {
+        if (thermostat != null) {
+            kTScale = KCAL_TO_GRAM_ANG2_PER_PS2 / (thermostat.getTargetTemperature() * kB);
         }
+        logger.info(" kTscale: " + kTScale);
+        logger.info(data.printEnergyUpdate());
+        return true;
     }
 
     /**
-     * <p>Getter for the field <code>printOnFailure</code>.</p>
-     *
-     * @return a boolean.
+     * {@inheritDoc}
      */
-    public boolean getPrintOnFailure() {
-        return printOnFailure;
+    @Override
+    public boolean destroy() {
+        return dataEnergy.destroy();
     }
 
     /**
@@ -591,50 +554,91 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     }
 
     /**
-     * Get the MolecularAssembly associated with index i of n; put in xChem.
-     *
-     * @param i     The desired MolecularAssembly index for xChem.
-     * @param x     All parameters.
-     * @param xChem The xChem parameters for the particular MolecularAssembly
-     *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
+     * {@inheritDoc}
      */
-    private void getAssemblyi(int i, double[] x, double[] xChem) {
-        assert (x != null && xChem != null);
-        for (int j = 0; j < xChem.length; j += 3) {
-            int index = j / 3;
-            int aindex = xIndex[i].get(index) * 3;
-            xChem[j] = x[aindex];
-            xChem[j + 1] = x[aindex + 1];
-            xChem[j + 2] = x[aindex + 2];
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        if (this.nBFactor > 0 || this.nOccupancy > 0) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
+        int n = getNumberOfVariables();
+        if (acceleration == null || acceleration.length < n) {
+            acceleration = new double[n];
+        }
+        int index = 0;
+        double[] a = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atomArray[i].isActive()) {
+                atomArray[i].getAcceleration(a);
+                acceleration[index++] = a[0];
+                acceleration[index++] = a[1];
+                acceleration[index++] = a[2];
+            }
+        }
+        return acceleration;
     }
 
     /**
-     * Set the MolecularAssembly associated with index i of n; put in x.
+     * <p>getActiveAtoms.</p>
      *
-     * @param i     the desired MolecularAssembly index for "setting" x.
-     * @param x     All parameters.
-     * @param xChem The xChem parameters for the particular MolecularAssembly
-     *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
+     * @return an array of {@link ffx.potential.bonded.Atom} objects.
      */
-    private void setAssemblyi(int i, double[] x, double[] xChem) {
-        assert (x != null && xChem != null);
-        for (int j = 0; j < xChem.length; j += 3) {
-            int index = j / 3;
-            int aindex = xIndex[i].get(index) * 3;
-            x[aindex] += xChem[j];
-            x[aindex + 1] += xChem[j + 1];
-            x[aindex + 2] += xChem[j + 2];
-        }
+    public Atom[] getActiveAtoms() {
+        return activeAtomArray;
     }
 
     /**
-     * Get the current data weight (wA).
-     *
-     * @return weight wA
+     * {@inheritDoc}
      */
-    public double getXWeight() {
-        return data.getWeight();
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        return dataEnergy.getCoordinates(parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Crystal getCrystal() {
+        return dataEnergy.getCrystal();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCrystal(Crystal crystal) {
+        logger.severe(" RefinementEnergy does implement setCrystal yet.");
+    }
+
+    /**
+     * <p>Getter for the field <code>dataEnergy</code>.</p>
+     *
+     * @return a {@link ffx.crystal.CrystalPotential} object.
+     */
+    public CrystalPotential getDataEnergy() {
+        return dataEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnergyTermState(STATE state) {
+        this.state = state;
+        for (MolecularAssembly molecularAssembly : molecularAssemblies) {
+            ForceFieldEnergy fe = molecularAssembly.getPotentialEnergy();
+            fe.setEnergyTermState(state);
+        }
+        dataEnergy.setEnergyTermState(state);
     }
 
     /**
@@ -659,81 +663,16 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * {@inheritDoc}
      */
     @Override
-    public void setScaling(double[] scaling) {
-        optimizationScaling = scaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return optimizationScaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getMass() {
-        return dataEnergy.getMass();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getTotalEnergy() {
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNumberOfVariables() {
-        return dataEnergy.getNumberOfVariables();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] parameters) {
-        return dataEnergy.getCoordinates(parameters);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean algorithmUpdate(MolecularAssembly active) {
-        if (thermostat != null) {
-            kTScale = KCAL_TO_GRAM_ANG2_PER_PS2 / (thermostat.getTargetTemperature() * kB);
+    public double getLambda() {
+        double lambda = 1.0;
+        if (data instanceof DiffractionData) {
+            XRayEnergy xRayEnergy = (XRayEnergy) dataEnergy;
+            lambda = xRayEnergy.getLambda();
+        } else if (data instanceof RealSpaceData) {
+            RealSpaceEnergy realSpaceEnergy = (RealSpaceEnergy) dataEnergy;
+            lambda = realSpaceEnergy.getLambda();
         }
-        logger.info(" kTscale: " + kTScale);
-        logger.info(data.printEnergyUpdate());
-        return true;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>thermostat</code>.</p>
-     *
-     * @param thermostat a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
-     */
-    public void setThermostat(Thermostat thermostat) {
-        this.thermostat = thermostat;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>thermostat</code>.</p>
-     *
-     * @return a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
-     */
-    public Thermostat getThermostat() {
-        return thermostat;
+        return lambda;
     }
 
     /**
@@ -758,16 +697,171 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * {@inheritDoc}
      */
     @Override
-    public double getLambda() {
-        double lambda = 1.0;
-        if (data instanceof DiffractionData) {
-            XRayEnergy xRayEnergy = (XRayEnergy) dataEnergy;
-            lambda = xRayEnergy.getLambda();
-        } else if (data instanceof RealSpaceData) {
-            RealSpaceEnergy realSpaceEnergy = (RealSpaceEnergy) dataEnergy;
-            lambda = realSpaceEnergy.getLambda();
+    public double[] getMass() {
+        return dataEnergy.getMass();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfVariables() {
+        return dataEnergy.getNumberOfVariables();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        if (this.nBFactor > 0 || this.nOccupancy > 0) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
-        return lambda;
+        int n = getNumberOfVariables();
+        if (previousAcceleration == null || previousAcceleration.length < n) {
+            previousAcceleration = new double[n];
+        }
+        int index = 0;
+        double[] a = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            if (atomArray[i].isActive()) {
+                atomArray[i].getPreviousAcceleration(a);
+                previousAcceleration[index++] = a[0];
+                previousAcceleration[index++] = a[1];
+                previousAcceleration[index++] = a[2];
+            }
+        }
+        return previousAcceleration;
+    }
+
+    /**
+     * <p>Getter for the field <code>printOnFailure</code>.</p>
+     *
+     * @return a boolean.
+     */
+    public boolean getPrintOnFailure() {
+        return printOnFailure;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return optimizationScaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        optimizationScaling = scaling;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>thermostat</code>.</p>
+     *
+     * @return a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
+     */
+    public Thermostat getThermostat() {
+        return thermostat;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>thermostat</code>.</p>
+     *
+     * @param thermostat a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
+     */
+    public void setThermostat(Thermostat thermostat) {
+        this.thermostat = thermostat;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTotalEnergy() {
+        return totalEnergy;
+    }
+
+    @Override
+    public List<Potential> getUnderlyingPotentials() {
+        Stream<Potential> directPEs = Arrays.stream(molecularAssemblies).map(MolecularAssembly::getPotentialEnergy);
+        Stream<Potential> allPEs = Arrays.stream(molecularAssemblies).map(MolecularAssembly::getPotentialEnergy).
+                map(Potential::getUnderlyingPotentials).
+                flatMap(List::stream);
+        return Stream.concat(directPEs, allPEs).collect(Collectors.toList());
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Return a reference to each variables type.
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return dataEnergy.getVariableTypes();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        if (this.nBFactor > 0 || this.nOccupancy > 0) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        int n = getNumberOfVariables();
+        if (velocity == null || velocity.length < n) {
+            velocity = new double[n];
+        }
+        int index = 0;
+        double[] v = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atomArray[i];
+            if (a.isActive()) {
+                a.getVelocity(v);
+                velocity[index++] = v[0];
+                velocity[index++] = v[1];
+                velocity[index++] = v[2];
+            }
+        }
+        return velocity;
+    }
+
+    /**
+     * Get the current data weight (wA).
+     *
+     * @return weight wA
+     */
+    public double getXWeight() {
+        return data.getWeight();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        double d2EdL2 = 0.0;
+        if (thermostat != null) {
+            kTScale = KCAL_TO_GRAM_ANG2_PER_PS2 / (thermostat.getTargetTemperature() * kB);
+        }
+        int assemblysize = molecularAssemblies.length;
+
+        // Compute the chemical energy and gradient.
+        for (int i = 0; i < assemblysize; i++) {
+            ForceFieldEnergy forceFieldEnergy = molecularAssemblies[i].getPotentialEnergy();
+            double curE = forceFieldEnergy.getd2EdL2();
+            d2EdL2 += (curE - d2EdL2) / (i + 1);
+        }
+        d2EdL2 *= kTScale;
+
+        // No 2nd derivative for scattering term.
+        return d2EdL2;
     }
 
     /**
@@ -797,29 +891,6 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             dEdL += weight * realSpaceEnergy.getdEdL();
         }
         return dEdL;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdL2() {
-        double d2EdL2 = 0.0;
-        if (thermostat != null) {
-            kTScale = KCAL_TO_GRAM_ANG2_PER_PS2 / (thermostat.getTargetTemperature() * kB);
-        }
-        int assemblysize = molecularAssemblies.length;
-
-        // Compute the chemical energy and gradient.
-        for (int i = 0; i < assemblysize; i++) {
-            ForceFieldEnergy forceFieldEnergy = molecularAssemblies[i].getPotentialEnergy();
-            double curE = forceFieldEnergy.getd2EdL2();
-            d2EdL2 += (curE - d2EdL2) / (i + 1);
-        }
-        d2EdL2 *= kTScale;
-
-        // No 2nd derivative for scattering term.
-        return d2EdL2;
     }
 
     /**
@@ -879,60 +950,6 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
 
     /**
      * {@inheritDoc}
-     * <p>
-     * Return a reference to each variables type.
-     */
-    @Override
-    public VARIABLE_TYPE[] getVariableTypes() {
-        return dataEnergy.getVariableTypes();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public STATE getEnergyTermState() {
-        return state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setEnergyTermState(STATE state) {
-        this.state = state;
-        for (MolecularAssembly molecularAssembly : molecularAssemblies) {
-            ForceFieldEnergy fe = molecularAssembly.getPotentialEnergy();
-            fe.setEnergyTermState(state);
-        }
-        dataEnergy.setEnergyTermState(state);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        if (this.nBFactor > 0 || this.nOccupancy > 0) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        if (velocity == null) {
-            return;
-        }
-        int index = 0;
-        double[] vel = new double[3];
-        for (int i = 0; i < nAtoms; i++) {
-            if (atomArray[i].isActive()) {
-                vel[0] = velocity[index++];
-                vel[1] = velocity[index++];
-                vel[2] = velocity[index++];
-                atomArray[i].setVelocity(vel);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
      */
     @Override
     public void setAcceleration(double[] acceleration) {
@@ -978,111 +995,92 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     }
 
     /**
-     * {@inheritDoc}
+     * Sets the printOnFailure flag; if override is true, over-rides any
+     * existing property. Essentially sets the default value of printOnFailure
+     * for an algorithm. For example, rotamer optimization will generally run
+     * into force field issues in the normal course of execution as it tries
+     * unphysical self and 2-Body configurations, so the algorithm should not
+     * print out a large number of error PDBs.
+     *
+     * @param onFail   To set
+     * @param override Override properties
      */
-    @Override
-    public double[] getVelocity(double[] velocity) {
-        if (this.nBFactor > 0 || this.nOccupancy > 0) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        int n = getNumberOfVariables();
-        if (velocity == null || velocity.length < n) {
-            velocity = new double[n];
-        }
-        int index = 0;
-        double[] v = new double[3];
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atomArray[i];
-            if (a.isActive()) {
-                a.getVelocity(v);
-                velocity[index++] = v[0];
-                velocity[index++] = v[1];
-                velocity[index++] = v[2];
+    public void setPrintOnFailure(boolean onFail, boolean override) {
+        if (override) {
+            // Ignore any pre-existing value
+            printOnFailure = onFail;
+        } else {
+            try {
+                molecularAssemblies[0].getForceField().getBoolean("PRINT_ON_FAILURE");
+                /*
+                 * If the call was successful, the property was explicitly set
+                 * somewhere and should be kept. If an exception was thrown, the
+                 * property was never set explicitly, so over-write.
+                 */
+            } catch (Exception ex) {
+                printOnFailure = onFail;
             }
         }
-        return velocity;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public double[] getAcceleration(double[] acceleration) {
+    public void setVelocity(double[] velocity) {
         if (this.nBFactor > 0 || this.nOccupancy > 0) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
-        int n = getNumberOfVariables();
-        if (acceleration == null || acceleration.length < n) {
-            acceleration = new double[n];
+        if (velocity == null) {
+            return;
         }
         int index = 0;
-        double[] a = new double[3];
-        for (int i = 0; i < nAtoms; i++) {
-            if (atomArray[i].isActive()) {
-                atomArray[i].getAcceleration(a);
-                acceleration[index++] = a[0];
-                acceleration[index++] = a[1];
-                acceleration[index++] = a[2];
-            }
-        }
-        return acceleration;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        if (this.nBFactor > 0 || this.nOccupancy > 0) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        int n = getNumberOfVariables();
-        if (previousAcceleration == null || previousAcceleration.length < n) {
-            previousAcceleration = new double[n];
-        }
-        int index = 0;
-        double[] a = new double[3];
+        double[] vel = new double[3];
         for (int i = 0; i < nAtoms; i++) {
             if (atomArray[i].isActive()) {
-                atomArray[i].getPreviousAcceleration(a);
-                previousAcceleration[index++] = a[0];
-                previousAcceleration[index++] = a[1];
-                previousAcceleration[index++] = a[2];
+                vel[0] = velocity[index++];
+                vel[1] = velocity[index++];
+                vel[2] = velocity[index++];
+                atomArray[i].setVelocity(vel);
             }
         }
-        return previousAcceleration;
     }
 
     /**
-     * {@inheritDoc}
+     * Get the MolecularAssembly associated with index i of n; put in xChem.
+     *
+     * @param i     The desired MolecularAssembly index for xChem.
+     * @param x     All parameters.
+     * @param xChem The xChem parameters for the particular MolecularAssembly
+     *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
      */
-    @Override
-    public Crystal getCrystal() {
-        return dataEnergy.getCrystal();
+    private void getAssemblyi(int i, double[] x, double[] xChem) {
+        assert (x != null && xChem != null);
+        for (int j = 0; j < xChem.length; j += 3) {
+            int index = j / 3;
+            int aindex = xIndex[i].get(index) * 3;
+            xChem[j] = x[aindex];
+            xChem[j + 1] = x[aindex + 1];
+            xChem[j + 2] = x[aindex + 2];
+        }
     }
 
     /**
-     * {@inheritDoc}
+     * Set the MolecularAssembly associated with index i of n; put in x.
+     *
+     * @param i     the desired MolecularAssembly index for "setting" x.
+     * @param x     All parameters.
+     * @param xChem The xChem parameters for the particular MolecularAssembly
+     *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
      */
-    @Override
-    public void setCrystal(Crystal crystal) {
-        logger.severe(" RefinementEnergy does implement setCrystal yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        return dataEnergy.destroy();
-    }
-
-    @Override
-    public List<Potential> getUnderlyingPotentials() {
-        Stream<Potential> directPEs = Arrays.stream(molecularAssemblies).map(MolecularAssembly::getPotentialEnergy);
-        Stream<Potential> allPEs = Arrays.stream(molecularAssemblies).map(MolecularAssembly::getPotentialEnergy).
-                map(Potential::getUnderlyingPotentials).
-                flatMap(List::stream);
-        return Stream.concat(directPEs, allPEs).collect(Collectors.toList());
+    private void setAssemblyi(int i, double[] x, double[] xChem) {
+        assert (x != null && xChem != null);
+        for (int j = 0; j < xChem.length; j += 3) {
+            int index = j / 3;
+            int aindex = xIndex[i].get(index) * 3;
+            x[aindex] += xChem[j];
+            x[aindex + 1] += xChem[j + 1];
+            x[aindex + 2] += xChem[j + 2];
+        }
     }
 }

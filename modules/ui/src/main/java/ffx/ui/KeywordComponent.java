@@ -78,12 +78,6 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         ChangeListener, DocumentListener {
 
     private static final Logger logger = Logger.getLogger(KeywordComponent.class.getName());
-
-    public enum SwingRepresentation {
-
-        TEXTFIELD, CHECKBOX, CHECKBOXES, EDITCOMBOBOX, COMBOBOX, MULTIPOLE
-    }
-
     /**
      * This is used to test if ANY keyword has been modified, so it is static
      * across all keyword objects
@@ -99,6 +93,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         entryDimension = textField.getPreferredSize();
     }
 
+    private final FlowLayout flowLayout;
     /**
      * TINKER Keyword String.
      */
@@ -112,7 +107,6 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      */
     private ArrayList<Component> keywordValues;
     private JPanel keywordGUI = null;
-    private final FlowLayout flowLayout;
     /**
      * The type of Swing Conponent used in representing this Keyword
      */
@@ -122,7 +116,6 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     private JTextArea output;
     private boolean active;
     private boolean init = false;
-
     /**
      * The Default Constructor k - Keyword String kg - Keyword Group t - Type of
      * GUI Components used to represent Keyword modifiers d - Keyword
@@ -163,45 +156,6 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                      String keywordDescription, JTextArea jTextArea, String[] options) {
         this(keyword, keywordGroup, swingRepresentation, keywordDescription, jTextArea);
         this.options = options;
-    }
-
-    /**
-     * <p>
-     * fillPanel</p>
-     *
-     * @param jPanel             a {@link javax.swing.JPanel} object.
-     * @param gridBagLayout      a {@link java.awt.GridBagLayout} object.
-     * @param gridBagConstraints a {@link java.awt.GridBagConstraints} object.
-     */
-    static void fillPanel(JPanel jPanel, GridBagLayout gridBagLayout, GridBagConstraints gridBagConstraints) {
-        JLabel jfill = new JLabel(" ");
-        gridBagConstraints.weightx = 1;
-        gridBagConstraints.weighty = 1;
-        gridBagConstraints.fill = GridBagConstraints.BOTH;
-        gridBagConstraints.gridwidth = GridBagConstraints.REMAINDER;
-        gridBagConstraints.gridheight = GridBagConstraints.REMAINDER;
-        gridBagLayout.setConstraints(jfill, gridBagConstraints);
-        jPanel.add(jfill);
-    }
-
-    /**
-     * <p>
-     * isKeywordModified</p>
-     *
-     * @return a boolean.
-     */
-    static boolean isKeywordModified() {
-        return isModified;
-    }
-
-    /**
-     * <p>
-     * setKeywordModified</p>
-     *
-     * @param b a boolean.
-     */
-    static void setKeywordModified(boolean b) {
-        isModified = b;
     }
 
     /**
@@ -250,6 +204,254 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     @Override
     public void changedUpdate(DocumentEvent evt) {
         isModified = true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Overidden equals method return true if object equals this, or if it of
+     * the same class and has the same Tinker Keyword.
+     */
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        } else if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        KeywordComponent other = (KeywordComponent) object;
+        return keyword.equalsIgnoreCase(other.keyword);
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>keyword</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getKeyword() {
+        return keyword;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(keyword.hashCode());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void insertUpdate(DocumentEvent evt) {
+        isModified = true;
+    }
+
+    /**
+     * <p>
+     * isActive</p>
+     *
+     * @return a boolean.
+     */
+    public boolean isActive() {
+        return active;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void mouseClicked(MouseEvent evt) {
+        synchronized (this) {
+            active = toString() != null;
+            output.setText(keyword + ": " + keywordDescription);
+            JViewport jsp = (JViewport) output.getParent();
+            jsp.setViewPosition(new Point(20, 20));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void mouseEntered(MouseEvent evt) {
+        mouseClicked(evt);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void mouseExited(MouseEvent evt) {
+        mouseClicked(evt);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void mousePressed(MouseEvent evt) {
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void mouseReleased(MouseEvent evt) {
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void removeUpdate(DocumentEvent evt) {
+        isModified = true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void stateChanged(ChangeEvent evt) {
+        isModified = true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Overridden toString methods facilitates Keyword output to a file.
+     */
+    @Override
+    public String toString() {
+        synchronized (this) {
+            if (!active || !init) {
+                return null;
+            }
+            StringBuilder s;
+            // Torsion entries are long...
+            // Some static layout variables
+            String spaces = "                             ";
+            if (!keyword.equalsIgnoreCase("TORSION")) {
+                s = new StringBuilder(keyword
+                        + spaces.substring(0, 18 - keyword.length()));
+            } else {
+                s = new StringBuilder(keyword);
+            }
+            for (Component c : keywordValues) {
+                if (c instanceof JCheckBox) {
+                    JCheckBox cb = (JCheckBox) c;
+                    if (keywordValues.size() == 1) {
+                        if (!cb.isSelected()) {
+                            return null;
+                        }
+                    } else if (cb.getText().equalsIgnoreCase(keyword)) {
+                        if (!cb.isSelected()) {
+                            s = new StringBuilder();
+                        }
+                    } else {
+                        if (cb.isSelected()) {
+                            if (s.length() > 0) {
+                                s.append("\n").append(keyword).append(" ").append(cb.getText());
+                            } else {
+                                s.append(keyword).append(" ").append(cb.getText());
+                            }
+                        }
+                    }
+                } else if (c instanceof JTextField) {
+                    JTextField tf = (JTextField) c;
+                    if (tf.getText().equals("")) {
+                        return null;
+                    }
+                    String v = tf.getText();
+                    if (v.length() < 8) {
+                        s.append(v).append(spaces, 0, 8 - v.length());
+                    } else {
+                        s.append(v);
+                    }
+                    break;
+                } else if (c instanceof JComboBox) {
+                    JComboBox cb = (JComboBox) c;
+                    if (swingRepresentation == SwingRepresentation.EDITCOMBOBOX) {
+                        int count = cb.getItemCount();
+                        if (count == 0) {
+                            return null;
+                        }
+                        String[] entries = new String[count];
+                        for (int i = 0; i < count; i++) {
+                            entries[i] = (String) cb.getItemAt(i);
+                        }
+                        java.util.Arrays.sort(entries);
+                        StringBuilder sb = new StringBuilder();
+                        for (int i = 0; i < count; i++) {
+                            sb.append(keyword).append(spaces.substring(0, 18 - keyword.length()));
+                            sb.append(entries[i].toUpperCase());
+                            if (i < count - 1) {
+                                sb.append("\n");
+                            }
+                        }
+                        s = sb;
+                    } else {
+                        String selection = (String) cb.getSelectedItem();
+                        if (selection.startsWith("DEFAULT")) {
+                            return null;
+                        } else if (!selection.equalsIgnoreCase("PRESENT")) {
+                            s.append(" ").append(selection);
+                        }
+                    }
+                    break;
+                }
+            }
+            if (s.length() == 0) {
+                return null;
+            }
+            return s.toString();
+        }
+    }
+
+    /**
+     * <p>
+     * fillPanel</p>
+     *
+     * @param jPanel             a {@link javax.swing.JPanel} object.
+     * @param gridBagLayout      a {@link java.awt.GridBagLayout} object.
+     * @param gridBagConstraints a {@link java.awt.GridBagConstraints} object.
+     */
+    static void fillPanel(JPanel jPanel, GridBagLayout gridBagLayout, GridBagConstraints gridBagConstraints) {
+        JLabel jfill = new JLabel(" ");
+        gridBagConstraints.weightx = 1;
+        gridBagConstraints.weighty = 1;
+        gridBagConstraints.fill = GridBagConstraints.BOTH;
+        gridBagConstraints.gridwidth = GridBagConstraints.REMAINDER;
+        gridBagConstraints.gridheight = GridBagConstraints.REMAINDER;
+        gridBagLayout.setConstraints(jfill, gridBagConstraints);
+        jPanel.add(jfill);
+    }
+
+    /**
+     * <p>
+     * isKeywordModified</p>
+     *
+     * @return a boolean.
+     */
+    static boolean isKeywordModified() {
+        return isModified;
+    }
+
+    /**
+     * <p>
+     * setKeywordModified</p>
+     *
+     * @param b a boolean.
+     */
+    static void setKeywordModified(boolean b) {
+        isModified = b;
+    }
+
+    public enum SwingRepresentation {
+
+        TEXTFIELD, CHECKBOX, CHECKBOXES, EDITCOMBOBOX, COMBOBOX, MULTIPOLE
     }
 
     private void checkBoxesInit() {
@@ -350,33 +552,6 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Overidden equals method return true if object equals this, or if it of
-     * the same class and has the same Tinker Keyword.
-     */
-    @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        KeywordComponent other = (KeywordComponent) object;
-        return keyword.equalsIgnoreCase(other.keyword);
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>keyword</code>.</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String getKeyword() {
-        return keyword;
-    }
-
-    /**
      * <p>
      * getKeywordData</p>
      *
@@ -467,14 +642,6 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(keyword.hashCode());
-    }
-
     private void initSwingComponents() {
         if (swingRepresentation == SwingRepresentation.CHECKBOX) {
             checkBoxInit();
@@ -490,24 +657,6 @@ public final class KeywordComponent implements MouseListener, ActionListener,
             return;
         }
         init = true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void insertUpdate(DocumentEvent evt) {
-        isModified = true;
-    }
-
-    /**
-     * <p>
-     * isActive</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isActive() {
-        return active;
     }
 
     /**
@@ -549,65 +698,6 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void mouseClicked(MouseEvent evt) {
-        synchronized (this) {
-            active = toString() != null;
-            output.setText(keyword + ": " + keywordDescription);
-            JViewport jsp = (JViewport) output.getParent();
-            jsp.setViewPosition(new Point(20, 20));
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void mouseEntered(MouseEvent evt) {
-        mouseClicked(evt);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void mouseExited(MouseEvent evt) {
-        mouseClicked(evt);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void mousePressed(MouseEvent evt) {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void mouseReleased(MouseEvent evt) {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void removeUpdate(DocumentEvent evt) {
-        isModified = true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void stateChanged(ChangeEvent evt) {
-        isModified = true;
-    }
-
     private void textFieldInit() {
         JLabel jl = new JLabel(keyword);
         jl.addMouseListener(this);
@@ -630,97 +720,5 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         tf.setPreferredSize(entryDimension);
         tf.setMaximumSize(entryDimension);
         keywordValues.add(tf);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Overridden toString methods facilitates Keyword output to a file.
-     */
-    @Override
-    public String toString() {
-        synchronized (this) {
-            if (!active || !init) {
-                return null;
-            }
-            StringBuilder s;
-            // Torsion entries are long...
-            // Some static layout variables
-            String spaces = "                             ";
-            if (!keyword.equalsIgnoreCase("TORSION")) {
-                s = new StringBuilder(keyword
-                        + spaces.substring(0, 18 - keyword.length()));
-            } else {
-                s = new StringBuilder(keyword);
-            }
-            for (Component c : keywordValues) {
-                if (c instanceof JCheckBox) {
-                    JCheckBox cb = (JCheckBox) c;
-                    if (keywordValues.size() == 1) {
-                        if (!cb.isSelected()) {
-                            return null;
-                        }
-                    } else if (cb.getText().equalsIgnoreCase(keyword)) {
-                        if (!cb.isSelected()) {
-                            s = new StringBuilder();
-                        }
-                    } else {
-                        if (cb.isSelected()) {
-                            if (s.length() > 0) {
-                                s.append("\n").append(keyword).append(" ").append(cb.getText());
-                            } else {
-                                s.append(keyword).append(" ").append(cb.getText());
-                            }
-                        }
-                    }
-                } else if (c instanceof JTextField) {
-                    JTextField tf = (JTextField) c;
-                    if (tf.getText().equals("")) {
-                        return null;
-                    }
-                    String v = tf.getText();
-                    if (v.length() < 8) {
-                        s.append(v).append(spaces, 0, 8 - v.length());
-                    } else {
-                        s.append(v);
-                    }
-                    break;
-                } else if (c instanceof JComboBox) {
-                    JComboBox cb = (JComboBox) c;
-                    if (swingRepresentation == SwingRepresentation.EDITCOMBOBOX) {
-                        int count = cb.getItemCount();
-                        if (count == 0) {
-                            return null;
-                        }
-                        String[] entries = new String[count];
-                        for (int i = 0; i < count; i++) {
-                            entries[i] = (String) cb.getItemAt(i);
-                        }
-                        java.util.Arrays.sort(entries);
-                        StringBuilder sb = new StringBuilder();
-                        for (int i = 0; i < count; i++) {
-                            sb.append(keyword).append(spaces.substring(0, 18 - keyword.length()));
-                            sb.append(entries[i].toUpperCase());
-                            if (i < count - 1) {
-                                sb.append("\n");
-                            }
-                        }
-                        s = sb;
-                    } else {
-                        String selection = (String) cb.getSelectedItem();
-                        if (selection.startsWith("DEFAULT")) {
-                            return null;
-                        } else if (!selection.equalsIgnoreCase("PRESENT")) {
-                            s.append(" ").append(selection);
-                        }
-                    }
-                    break;
-                }
-            }
-            if (s.length() == 0) {
-                return null;
-            }
-            return s.toString();
-        }
     }
 }

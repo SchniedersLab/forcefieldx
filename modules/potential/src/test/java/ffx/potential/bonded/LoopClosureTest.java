@@ -64,6 +64,26 @@ public class LoopClosureTest {
     private double[][] xyzCTest;
     private double[][] xyzATest;
 
+    public LoopClosureTest(double[][] xyzNTest, double[][] xyzATest, double[][] xyzCTest, double[][] xyzOTest) {
+        int startResidue = 2;
+        int endResidue = 4;
+        ClassLoader classLoader = getClass().getClassLoader();
+        File structure = new File(classLoader.getResource("ffx/potential/structures/LoopClosureTest.pdb").getPath());
+        PotentialsUtils potentialsUtils = new PotentialsUtils();
+        molecularAssembly = potentialsUtils.open(structure);
+        loop = new Loop(molecularAssembly, startResidue, endResidue);
+
+        this.xyzNTest = xyzNTest;
+        this.xyzATest = xyzATest;
+        this.xyzCTest = xyzCTest;
+    }
+
+    @After
+    public void after() {
+        molecularAssembly.getPotentialEnergy().destroy();
+        System.gc();
+    }
+
     @Parameters
     public static Collection<Object[]> data() {
 
@@ -116,26 +136,6 @@ public class LoopClosureTest {
                 new Object[][]{
                         {xyzNTest, xyzATest, xyzCTest, xyzOTest}, // constructor arguments for test set 1
                 });
-    }
-
-    public LoopClosureTest(double[][] xyzNTest, double[][] xyzATest, double[][] xyzCTest, double[][] xyzOTest) {
-        int startResidue = 2;
-        int endResidue = 4;
-        ClassLoader classLoader = getClass().getClassLoader();
-        File structure = new File(classLoader.getResource("ffx/potential/structures/LoopClosureTest.pdb").getPath());
-        PotentialsUtils potentialsUtils = new PotentialsUtils();
-        molecularAssembly = potentialsUtils.open(structure);
-        loop = new Loop(molecularAssembly, startResidue, endResidue);
-
-        this.xyzNTest = xyzNTest;
-        this.xyzATest = xyzATest;
-        this.xyzCTest = xyzCTest;
-    }
-
-    @After
-    public void after() {
-        molecularAssembly.getPotentialEnergy().destroy();
-        System.gc();
     }
 
     @Test

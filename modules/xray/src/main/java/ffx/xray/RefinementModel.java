@@ -59,14 +59,6 @@ import ffx.potential.bonded.Residue;
 public class RefinementModel {
 
     private static final Logger logger = Logger.getLogger(RefinementModel.class.getName());
-
-    /**
-     * Map between atom in different molecular assemblies.
-     */
-    private List<Integer>[] xIndex;
-    private ArrayList<ArrayList<Residue>> altResidues;
-    private ArrayList<ArrayList<Molecule>> altMolecules;
-
     /**
      * An atom list.
      */
@@ -75,7 +67,6 @@ public class RefinementModel {
      * An atom array.
      */
     private final Atom[] totalAtomArray;
-
     /**
      * An atom list.
      */
@@ -84,6 +75,12 @@ public class RefinementModel {
      * An atom array.
      */
     private final Atom[] activeAtomArray;
+    /**
+     * Map between atom in different molecular assemblies.
+     */
+    private final List<Integer>[] xIndex;
+    private final List<List<Residue>> altResidues;
+    private final List<List<Molecule>> altMolecules;
 
     /**
      * <p>
@@ -109,9 +106,9 @@ public class RefinementModel {
         // Build alternate conformer list for occupancy refinement (if necessary).
         altResidues = new ArrayList<>();
         altMolecules = new ArrayList<>();
-        ArrayList<MSNode> nodeList0 = assembly[0].getNodeList();
-        ArrayList<Residue> tempResidues = null;
-        ArrayList<Molecule> tempMolecules = null;
+        List<MSNode> nodeList0 = assembly[0].getNodeList();
+        List<Residue> tempResidues = null;
+        List<Molecule> tempMolecules = null;
         boolean alternateConformer;
 
         // By residue/molecule.
@@ -148,7 +145,7 @@ public class RefinementModel {
             }
             if (alternateConformer) {
                 for (int j = 1; j < assembly.length; j++) {
-                    ArrayList<MSNode> nlist = assembly[j].getNodeList();
+                    List<MSNode> nlist = assembly[j].getNodeList();
                     MSNode node = nlist.get(i);
                     for (Atom a : node.getAtomList()) {
                         if (!a.getUse()) {
@@ -231,7 +228,7 @@ public class RefinementModel {
           Make sure the occupancy values make sense, otherwise print warnings
           (since this could destabilize the refinement, should we error out?)
          */
-        for (ArrayList<Residue> list : altResidues) {
+        for (List<Residue> list : altResidues) {
             double tocc = 0.0;
             for (Residue r : list) {
                 for (Atom a : r.getAtomList()) {
@@ -253,48 +250,12 @@ public class RefinementModel {
     }
 
     /**
-     * <p>Getter for the field <code>xIndex</code>.</p>
+     * <p>Getter for the field <code>activeAtomArray</code>.</p>
      *
-     * @return the xIndex
+     * @return the activeAtomArray
      */
-    List<Integer>[] getxIndex() {
-        return xIndex;
-    }
-
-    /**
-     * <p>Getter for the field <code>altResidues</code>.</p>
-     *
-     * @return the altResidues
-     */
-    public ArrayList<ArrayList<Residue>> getAltResidues() {
-        return altResidues;
-    }
-
-    /**
-     * <p>Getter for the field <code>altMolecules</code>.</p>
-     *
-     * @return the altMolecules
-     */
-    public ArrayList<ArrayList<Molecule>> getAltMolecules() {
-        return altMolecules;
-    }
-
-    /**
-     * <p>Getter for the field <code>totalAtomList</code>.</p>
-     *
-     * @return the totalAtomList
-     */
-    List<Atom> getTotalAtomList() {
-        return totalAtomList;
-    }
-
-    /**
-     * <p>Getter for the field <code>totalAtomArray</code>.</p>
-     *
-     * @return the totalAtomArray
-     */
-    public Atom[] getTotalAtomArray() {
-        return totalAtomArray;
+    public Atom[] getActiveAtomArray() {
+        return activeAtomArray;
     }
 
     /**
@@ -307,11 +268,47 @@ public class RefinementModel {
     }
 
     /**
-     * <p>Getter for the field <code>activeAtomArray</code>.</p>
+     * <p>Getter for the field <code>altMolecules</code>.</p>
      *
-     * @return the activeAtomArray
+     * @return the altMolecules
      */
-    public Atom[] getActiveAtomArray() {
-        return activeAtomArray;
+    public List<List<Molecule>> getAltMolecules() {
+        return altMolecules;
+    }
+
+    /**
+     * <p>Getter for the field <code>altResidues</code>.</p>
+     *
+     * @return the altResidues
+     */
+    public List<List<Residue>> getAltResidues() {
+        return altResidues;
+    }
+
+    /**
+     * <p>Getter for the field <code>totalAtomArray</code>.</p>
+     *
+     * @return the totalAtomArray
+     */
+    public Atom[] getTotalAtomArray() {
+        return totalAtomArray;
+    }
+
+    /**
+     * <p>Getter for the field <code>xIndex</code>.</p>
+     *
+     * @return the xIndex
+     */
+    List<Integer>[] getxIndex() {
+        return xIndex;
+    }
+
+    /**
+     * <p>Getter for the field <code>totalAtomList</code>.</p>
+     *
+     * @return the totalAtomList
+     */
+    List<Atom> getTotalAtomList() {
+        return totalAtomList;
     }
 }

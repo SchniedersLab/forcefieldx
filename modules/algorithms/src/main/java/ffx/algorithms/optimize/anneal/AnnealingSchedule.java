@@ -46,58 +46,67 @@ package ffx.algorithms.optimize.anneal;
  */
 public interface AnnealingSchedule {
     /**
-     * Get the temperature for annealing step i.
-     * @param i An annealing step [0-nWindows)
-     * @return  Associated temperature.
-     */
-    double getTemperature(int i);
-
-    /**
-     * Get all temperatures this schedule specifies.
-     * @return An array of temperatures specified.
-     */
-    double[] getTemperatures();
-
-    /**
-     * Gets the number of annealing windows (including repeat windows).
-     * @return Number of annealing windows.
-     */
-    int getNumWindows();
-
-    /**
      * Gets the starting temperature.
+     *
      * @return Starting temperature in Kelvin.
      */
     double getHighTemp();
 
     /**
      * Gets the final temperature.
+     *
      * @return Final temperature in Kelvin.
      */
     double getLowTemp();
 
     /**
-     * Get the relative size of a window (normalized to the number of MD steps in a "regular" window).
-     * @param window Window to check.
-     * @return       Normalized length of the window.
+     * Gets the number of annealing windows (including repeat windows).
+     *
+     * @return Number of annealing windows.
      */
-    double windowLength(int window);
+    int getNumWindows();
 
     /**
-     * Returns the shortest window to be used (normalized to the number of MD steps in a "regular" window).
-     * @return Minimum normalized window length.
+     * Get the temperature for annealing step i.
+     *
+     * @param i An annealing step [0-nWindows)
+     * @return Associated temperature.
      */
-    double minWindowLength();
+    double getTemperature(int i);
+
+    /**
+     * Get all temperatures this schedule specifies.
+     *
+     * @return An array of temperatures specified.
+     */
+    double[] getTemperatures();
 
     /**
      * Returns the longest window to be used (normalized to the number of MD steps in a "regular" window).
+     *
      * @return Maximum normalized window length.
      */
     double maxWindowLength();
 
     /**
+     * Returns the shortest window to be used (normalized to the number of MD steps in a "regular" window).
+     *
+     * @return Minimum normalized window length.
+     */
+    double minWindowLength();
+
+    /**
      * Returns the sum of window lengths to be used (normalized to the number of MD steps in a "regular" window).
+     *
      * @return Total normalized window length.
      */
     double totalWindowLength();
+
+    /**
+     * Get the relative size of a window (normalized to the number of MD steps in a "regular" window).
+     *
+     * @param window Window to check.
+     * @return Normalized length of the window.
+     */
+    double windowLength(int window);
 }

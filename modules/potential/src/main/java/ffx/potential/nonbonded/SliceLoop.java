@@ -56,40 +56,12 @@ import edu.rit.pj.IntegerForLoop;
  */
 public abstract class SliceLoop extends IntegerForLoop {
 
-    private int nAtoms;
-    private int nSymm;
     protected boolean rebuildList = false;
     protected ArrayList<Integer> buildListA = new ArrayList<>();
     protected ArrayList<Integer> buildListS = new ArrayList<>();
     protected SliceRegion sliceRegion;
-
-    /**
-     * <p>Setter for the field <code>rebuildList</code>.</p>
-     *
-     * @param rebuildList a boolean.
-     */
-    void setRebuildList(boolean rebuildList) {
-        this.rebuildList = rebuildList;
-    }
-
-    /**
-     * <p>saveZValues.</p>
-     *
-     * @param zAtListBuild an array of {@link int} objects.
-     */
-    public void saveZValues(int[][] zAtListBuild) {
-    }
-
-    /**
-     * <p>checkList.</p>
-     *
-     * @param zAtListBuild an array of {@link int} objects.
-     * @param buff         a int.
-     * @return a boolean.
-     */
-    public boolean checkList(int[][] zAtListBuild, int buff) {
-        return false;
-    }
+    private int nAtoms;
+    private int nSymm;
 
     /**
      * <p>Constructor for SliceLoop.</p>
@@ -105,15 +77,26 @@ public abstract class SliceLoop extends IntegerForLoop {
     }
 
     /**
-     * <p>
-     * setNsymm</p>
+     * <p>checkList.</p>
      *
-     * @param nSymm a int.
+     * @param zAtListBuild an array of {@link int} objects.
+     * @param buff         a int.
+     * @return a boolean.
      */
-    public void setNsymm(int nSymm) {
-        this.nSymm = nSymm;
-        assert (nSymm <= sliceRegion.nSymm);
+    public boolean checkList(int[][] zAtListBuild, int buff) {
+        return false;
     }
+
+    /**
+     * Apply electron density "as normal" for an atom, but check that the z
+     * index is within the supplied bounds (inclusive).
+     *
+     * @param iSymm the SymOp to apply.
+     * @param iAtom the index of the Atom to put onto the grid.
+     * @param lb    the lower bound along the z-axis.
+     * @param ub    the upper bound along the z-axis.
+     */
+    public abstract void gridDensity(int iSymm, int iAtom, int lb, int ub);
 
     /**
      * {@inheritDoc}
@@ -130,13 +113,30 @@ public abstract class SliceLoop extends IntegerForLoop {
     }
 
     /**
-     * Apply electron density "as normal" for an atom, but check that the z
-     * index is within the supplied bounds (inclusive).
+     * <p>saveZValues.</p>
      *
-     * @param iSymm the SymOp to apply.
-     * @param iAtom the index of the Atom to put onto the grid.
-     * @param lb    the lower bound along the z-axis.
-     * @param ub    the upper bound along the z-axis.
+     * @param zAtListBuild an array of {@link int} objects.
      */
-    public abstract void gridDensity(int iSymm, int iAtom, int lb, int ub);
+    public void saveZValues(int[][] zAtListBuild) {
+    }
+
+    /**
+     * <p>
+     * setNsymm</p>
+     *
+     * @param nSymm a int.
+     */
+    public void setNsymm(int nSymm) {
+        this.nSymm = nSymm;
+        assert (nSymm <= sliceRegion.nSymm);
+    }
+
+    /**
+     * <p>Setter for the field <code>rebuildList</code>.</p>
+     *
+     * @param rebuildList a boolean.
+     */
+    void setRebuildList(boolean rebuildList) {
+        this.rebuildList = rebuildList;
+    }
 }

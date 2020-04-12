@@ -41,7 +41,6 @@ import java.io.BufferedReader;
 import java.io.Reader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.lang.String.format;
 
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 
@@ -63,10 +62,19 @@ public class LambdaReader extends BufferedReader {
     /**
      * Constructor.
      *
-     * @param reader                   The Reader to use.
+     * @param reader The Reader to use.
      */
     public LambdaReader(Reader reader) {
         super(reader);
+    }
+
+    /**
+     * Get the index of the histogram associated with this lambda file.
+     *
+     * @return Associated histogram index.
+     */
+    public int getHistogramIndex() {
+        return histoIndex;
     }
 
     /**
@@ -103,13 +111,5 @@ public class LambdaReader extends BufferedReader {
         if (!resetEnergyCount && nSteps > 0) {
             ost.setEnergyCount(nSteps);
         }
-    }
-
-    /**
-     * Get the index of the histogram associated with this lambda file.
-     * @return Associated histogram index.
-     */
-    public int getHistogramIndex() {
-        return histoIndex;
     }
 }

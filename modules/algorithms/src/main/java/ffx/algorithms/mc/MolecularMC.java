@@ -129,6 +129,18 @@ public class MolecularMC extends BoltzmannMC {
 
     /**
      * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Default Metropolis Monte Carlo implementation\nTemperature: ");
+        sb.append(getTemperature());
+        sb.append(format("\ne1: %10.6f   e2: %10.6f\nMolecular Assembly", getE1(), getE2()));
+        sb.append(molecularAssembly.toString()).append("\nPotential: ").append(potential.toString());
+        return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>
      * Calculates the energy at the current state; identical to
      * RotamerOptimization method of same name.
@@ -146,18 +158,6 @@ public class MolecularMC extends BoltzmannMC {
             logger.warning(ex.getMessage());
             return 1e100;
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("Default Metropolis Monte Carlo implementation\nTemperature: ");
-        sb.append(getTemperature());
-        sb.append(format("\ne1: %10.6f   e2: %10.6f\nMolecular Assembly", getE1(), getE2()));
-        sb.append(molecularAssembly.toString()).append("\nPotential: ").append(potential.toString());
-        return sb.toString();
     }
 
     /**

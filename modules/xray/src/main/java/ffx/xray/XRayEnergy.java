@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.xray;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -55,11 +54,11 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.potential.parameters.ForceField;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import static ffx.numerics.math.MatrixMath.determinant3;
+import static ffx.numerics.math.ScalarMath.b2u;
+import static ffx.numerics.math.ScalarMath.u2b;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.kB;
-import static ffx.numerics.math.ScalarMath.b2u;
-import static ffx.numerics.math.MatrixMath.determinant3;
-import static ffx.numerics.math.ScalarMath.u2b;
 
 /**
  * Combine the X-ray target and chemical potential energy.
@@ -79,10 +78,17 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
     private final RefinementModel refinementModel;
     private final Atom[] activeAtomArray;
     private final int nAtoms;
+    private final double bMass;
+    private final double kTbNonzero;
+    private final double kTbSimWeight;
+    private final double occMass;
+    private final boolean lambdaTerm;
+    private final double[] g2;
+    private final double[] dUdXdL;
+    protected double lambda = 1.0;
     private int nXYZ;
     private int nB;
     private int nOCC;
-
     private RefinementMode refinementMode;
     private boolean refineXYZ = false;
     private boolean refineOCC = false;
@@ -90,18 +96,9 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
     private boolean xrayTerms = true;
     private boolean restraintTerms = true;
     private double[] optimizationScaling = null;
-
-    private final double bMass;
-    private final double kTbNonzero;
-    private final double kTbSimWeight;
-    private final double occMass;
-    private boolean lambdaTerm;
     private double totalEnergy;
     private double dEdL;
-    private double[] g2;
-    private double[] dUdXdL;
     private STATE state = STATE.BOTH;
-    protected double lambda = 1.0;
 
     /**
      * Diffraction data energy target
@@ -161,6 +158,14 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
             logger.info("  Non-zero restraint weight:   " + diffractionData.getbNonZeroWeight());
             logger.info("  Similarity restraint weight: " + diffractionData.getbSimWeight());
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean destroy() {
+        return diffractionData.destroy();
     }
 
     /**
@@ -358,238 +363,11 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
     }
 
     /**
-     * <p>
-     * Getter for the field <code>refinementMode</code>.</p>
-     *
-     * @return a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     * {@inheritDoc}
      */
-    public RefinementMode getRefinementMode() {
-        return refinementMode;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>refinementMode</code>.</p>
-     *
-     * @param refinementmode a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
-     */
-    public void setRefinementMode(RefinementMode refinementmode) {
-        this.refinementMode = refinementmode;
-        setRefinementBooleans();
-    }
-
-    /**
-     * if the refinement mode has changed, this should be called to update which
-     * parameters are being fit
-     */
-    private void setRefinementBooleans() {
-        // reset, if previously set
-        refineXYZ = false;
-        refineB = false;
-        refineOCC = false;
-
-        if (refinementMode == RefinementMode.COORDINATES
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
-                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            refineXYZ = true;
-        }
-
-        if (refinementMode == RefinementMode.BFACTORS
-                || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            refineB = true;
-        }
-
-        if (refinementMode == RefinementMode.OCCUPANCIES
-                || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            refineOCC = true;
-        }
-    }
-
-    /**
-     * Get the number of xyz parameters being fit.
-     *
-     * @return the number of xyz parameters
-     */
-    public int getNXYZ() {
-        return nXYZ;
-    }
-
-    /**
-     * set the number of xyz parameters
-     *
-     * @param nXYZ requested number of xyz parameters
-     */
-    public void setNXYZ(int nXYZ) {
-        this.nXYZ = nXYZ;
-    }
-
-    /**
-     * get the number of B factor parameters being fit
-     *
-     * @return the number of B factor parameters
-     */
-    public int getNB() {
-        return nB;
-    }
-
-    /**
-     * set the number of B factor parameters
-     *
-     * @param nB requested number of B factor parameters
-     */
-    public void setNB(int nB) {
-        this.nB = nB;
-    }
-
-    /**
-     * get the number of occupancy parameters being fit
-     *
-     * @return the number of occupancy parameters
-     */
-    public int getNOcc() {
-        return nOCC;
-    }
-
-    /**
-     * set the number of occupancy parameters
-     *
-     * @param nOCC requested number of occupancy parameters
-     */
-    public void setNOcc(int nOCC) {
-        this.nOCC = nOCC;
-    }
-
-    /**
-     * fill gradient array with B factor gradients
-     *
-     * @param g array to add gradients to
-     */
-    private void getBFactorGradients(double[] g) {
-        assert (g != null);
-        double[] grad = null;
-        int index = nXYZ;
-        int resnum = -1;
-        int nres = diffractionData.getnResidueBFactor() + 1;
-        for (Atom a : activeAtomArray) {
-            // ignore hydrogens!!!
-            if (a.getAtomicNumber() == 1) {
-                continue;
-            }
-            if (a.getAnisou(null) != null) {
-                grad = a.getAnisouGradient(grad);
-                g[index++] = grad[0];
-                g[index++] = grad[1];
-                g[index++] = grad[2];
-                g[index++] = grad[3];
-                g[index++] = grad[4];
-                g[index++] = grad[5];
-            } else if (diffractionData.isResidueBFactor()) {
-                if (resnum != a.getResidueNumber()) {
-                    if (nres >= diffractionData.getnResidueBFactor()) {
-                        if (resnum > -1
-                                && index < nXYZ + nB - 1) {
-                            index++;
-                        }
-                        nres = 1;
-                    } else {
-                        nres++;
-                    }
-                    g[index] += a.getTempFactorGradient();
-                    resnum = a.getResidueNumber();
-                } else {
-                    g[index] += a.getTempFactorGradient();
-                }
-            } else {
-                g[index++] = a.getTempFactorGradient();
-            }
-        }
-    }
-
-    /**
-     * Fill gradient array with occupancy gradients.
-     * Note: this also acts to constrain the occupancies
-     * by moving the gradient vector COM to zero
-     *
-     * @param g array to add gradients to
-     */
-    private void getOccupancyGradients(double[] g) {
-        double ave;
-        int index = nXYZ + nB;
-
-        // First: Alternate Residues
-        for (ArrayList<Residue> list : refinementModel.getAltResidues()) {
-            ave = 0.0;
-            for (Residue r : list) {
-                for (Atom a : r.getAtomList()) {
-                    if (a.getOccupancy() < 1.0) {
-                        ave += a.getOccupancyGradient();
-                    }
-                }
-            }
-            /*
-              Should this be normalized with respect to number of atoms in residue in addition
-              to the number of conformers?
-             */
-            ave /= list.size();
-            for (Residue r : list) {
-                for (Atom a : r.getAtomList()) {
-                    if (a.getOccupancy() < 1.0) {
-                        g[index] += a.getOccupancyGradient();
-                    }
-                }
-                if (list.size() > 1) {
-                    // Subtract average to move COM to zero
-                    g[index] -= ave;
-                }
-                index++;
-            }
-        }
-
-        // Now the molecules (HETATMs).
-        for (ArrayList<Molecule> list : refinementModel.getAltMolecules()) {
-            ave = 0.0;
-            for (Molecule m : list) {
-                for (Atom a : m.getAtomList()) {
-                    if (a.getOccupancy() < 1.0) {
-                        ave += a.getOccupancyGradient();
-                    }
-                }
-            }
-            ave /= list.size();
-            for (Molecule m : list) {
-                for (Atom a : m.getAtomList()) {
-                    if (a.getOccupancy() < 1.0) {
-                        g[index] += a.getOccupancyGradient();
-                    }
-                }
-                if (list.size() > 1) {
-                    g[index] -= ave;
-                }
-                index++;
-            }
-        }
-    }
-
-    /**
-     * Fill gradient array with atomic coordinate partial derivatives.
-     *
-     * @param g gradient array
-     */
-    private void getXYZGradients(double[] g) {
-        assert (g != null);
-        double[] grad = new double[3];
-        int index = 0;
-        for (Atom a : activeAtomArray) {
-            a.getXYZGradient(grad);
-            g[index++] = grad[0];
-            g[index++] = grad[1];
-            g[index++] = grad[2];
-        }
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     /**
@@ -661,7 +439,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         }
 
         if (refineOCC) {
-            for (ArrayList<Residue> list : refinementModel.getAltResidues()) {
+            for (List<Residue> list : refinementModel.getAltResidues()) {
                 for (Residue r : list) {
                     for (Atom a : r.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -671,7 +449,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                     }
                 }
             }
-            for (ArrayList<Molecule> list : refinementModel.getAltMolecules()) {
+            for (List<Molecule> list : refinementModel.getAltMolecules()) {
                 for (Molecule m : list) {
                     for (Atom a : m.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -684,6 +462,512 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         }
 
         return x;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Crystal getCrystal() {
+        return diffractionData.getCrystal()[0];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCrystal(Crystal crystal) {
+        logger.severe(" XRayEnergy does implement setCrystal yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnergyTermState(STATE state) {
+        this.state = state;
+        switch (state) {
+            case FAST:
+                xrayTerms = false;
+                restraintTerms = true;
+                break;
+            case SLOW:
+                xrayTerms = true;
+                restraintTerms = false;
+                break;
+            default:
+                xrayTerms = true;
+                restraintTerms = true;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setLambda(double lambda) {
+        if (lambda <= 1.0 && lambda >= 0.0) {
+            this.lambda = lambda;
+        } else {
+            String message = format("Lambda value %8.3f is not in the range [0..1].", lambda);
+            logger.warning(message);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getMass() {
+        double[] mass = new double[nXYZ + nB + nOCC];
+        int i = 0;
+        if (refineXYZ) {
+            for (Atom a : activeAtomArray) {
+                double m = a.getMass();
+                mass[i++] = m;
+                mass[i++] = m;
+                mass[i++] = m;
+            }
+        }
+
+        if (refineB) {
+            for (int j = i; j < nXYZ + nB; i++, j++) {
+                mass[j] = bMass;
+            }
+        }
+
+        if (refineOCC) {
+            for (int j = i; j < nXYZ + nB + nOCC; i++, j++) {
+                mass[j] = occMass;
+            }
+        }
+        return mass;
+    }
+
+    /**
+     * get the number of B factor parameters being fit
+     *
+     * @return the number of B factor parameters
+     */
+    public int getNB() {
+        return nB;
+    }
+
+    /**
+     * set the number of B factor parameters
+     *
+     * @param nB requested number of B factor parameters
+     */
+    public void setNB(int nB) {
+        this.nB = nB;
+    }
+
+    /**
+     * get the number of occupancy parameters being fit
+     *
+     * @return the number of occupancy parameters
+     */
+    public int getNOcc() {
+        return nOCC;
+    }
+
+    /**
+     * set the number of occupancy parameters
+     *
+     * @param nOCC requested number of occupancy parameters
+     */
+    public void setNOcc(int nOCC) {
+        this.nOCC = nOCC;
+    }
+
+    /**
+     * Get the number of xyz parameters being fit.
+     *
+     * @return the number of xyz parameters
+     */
+    public int getNXYZ() {
+        return nXYZ;
+    }
+
+    /**
+     * set the number of xyz parameters
+     *
+     * @param nXYZ requested number of xyz parameters
+     */
+    public void setNXYZ(int nXYZ) {
+        this.nXYZ = nXYZ;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfVariables() {
+        return nXYZ + nB + nOCC;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>refinementMode</code>.</p>
+     *
+     * @return a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     */
+    public RefinementMode getRefinementMode() {
+        return refinementMode;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>refinementMode</code>.</p>
+     *
+     * @param refinementmode a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     */
+    public void setRefinementMode(RefinementMode refinementmode) {
+        this.refinementMode = refinementmode;
+        setRefinementBooleans();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return optimizationScaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        optimizationScaling = scaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTotalEnergy() {
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Return a reference to each variables type.
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        VARIABLE_TYPE[] vtypes = new VARIABLE_TYPE[nXYZ + nB + nOCC];
+        int i = 0;
+        if (refineXYZ) {
+            for (Atom a : activeAtomArray) {
+                vtypes[i++] = VARIABLE_TYPE.X;
+                vtypes[i++] = VARIABLE_TYPE.Y;
+                vtypes[i++] = VARIABLE_TYPE.Z;
+            }
+        }
+
+        if (refineB) {
+            for (int j = i; j < nXYZ + nB; i++, j++) {
+                vtypes[j] = VARIABLE_TYPE.OTHER;
+            }
+        }
+
+        if (refineOCC) {
+            for (int j = i; j < nXYZ + nB + nOCC; i++, j++) {
+                vtypes[j] = VARIABLE_TYPE.OTHER;
+            }
+        }
+        return vtypes;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        return 0.0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getdEdL() {
+        return dEdL;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        int n = dUdXdL.length;
+        arraycopy(dUdXdL, 0, gradient, 0, n);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * set atomic xyz coordinates based on current position
+     *
+     * @param x current parameters to set coordinates with
+     */
+    public void setCoordinates(double[] x) {
+        assert (x != null);
+        double[] xyz = new double[3];
+        int index = 0;
+        for (Atom a : activeAtomArray) {
+            xyz[0] = x[index++];
+            xyz[1] = x[index++];
+            xyz[2] = x[index++];
+            a.moveTo(xyz);
+        }
+    }
+
+    /**
+     * set atom occupancies based on current position
+     *
+     * @param x current parameters to set occupancies with
+     */
+    public void setOccupancies(double[] x) {
+        double occ;
+        int index = nXYZ + nB;
+        for (List<Residue> list : refinementModel.getAltResidues()) {
+            for (Residue r : list) {
+                occ = x[index++];
+                for (Atom a : r.getAtomList()) {
+                    if (a.getOccupancy() < 1.0) {
+                        a.setOccupancy(occ);
+                    }
+                }
+            }
+        }
+        for (List<Molecule> list : refinementModel.getAltMolecules()) {
+            for (Molecule m : list) {
+                occ = x[index++];
+                for (Atom a : m.getAtomList()) {
+                    if (a.getOccupancy() < 1.0) {
+                        a.setOccupancy(occ);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * if the refinement mode has changed, this should be called to update which
+     * parameters are being fit
+     */
+    private void setRefinementBooleans() {
+        // reset, if previously set
+        refineXYZ = false;
+        refineB = false;
+        refineOCC = false;
+
+        if (refinementMode == RefinementMode.COORDINATES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            refineXYZ = true;
+        }
+
+        if (refinementMode == RefinementMode.BFACTORS
+                || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            refineB = true;
+        }
+
+        if (refinementMode == RefinementMode.OCCUPANCIES
+                || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            refineOCC = true;
+        }
+    }
+
+    /**
+     * fill gradient array with B factor gradients
+     *
+     * @param g array to add gradients to
+     */
+    private void getBFactorGradients(double[] g) {
+        assert (g != null);
+        double[] grad = null;
+        int index = nXYZ;
+        int resnum = -1;
+        int nres = diffractionData.getnResidueBFactor() + 1;
+        for (Atom a : activeAtomArray) {
+            // ignore hydrogens!!!
+            if (a.getAtomicNumber() == 1) {
+                continue;
+            }
+            if (a.getAnisou(null) != null) {
+                grad = a.getAnisouGradient(grad);
+                g[index++] = grad[0];
+                g[index++] = grad[1];
+                g[index++] = grad[2];
+                g[index++] = grad[3];
+                g[index++] = grad[4];
+                g[index++] = grad[5];
+            } else if (diffractionData.isResidueBFactor()) {
+                if (resnum != a.getResidueNumber()) {
+                    if (nres >= diffractionData.getnResidueBFactor()) {
+                        if (resnum > -1
+                                && index < nXYZ + nB - 1) {
+                            index++;
+                        }
+                        nres = 1;
+                    } else {
+                        nres++;
+                    }
+                    g[index] += a.getTempFactorGradient();
+                    resnum = a.getResidueNumber();
+                } else {
+                    g[index] += a.getTempFactorGradient();
+                }
+            } else {
+                g[index++] = a.getTempFactorGradient();
+            }
+        }
+    }
+
+    /**
+     * Fill gradient array with occupancy gradients.
+     * Note: this also acts to constrain the occupancies
+     * by moving the gradient vector COM to zero
+     *
+     * @param g array to add gradients to
+     */
+    private void getOccupancyGradients(double[] g) {
+        double ave;
+        int index = nXYZ + nB;
+
+        // First: Alternate Residues
+        for (List<Residue> list : refinementModel.getAltResidues()) {
+            ave = 0.0;
+            for (Residue r : list) {
+                for (Atom a : r.getAtomList()) {
+                    if (a.getOccupancy() < 1.0) {
+                        ave += a.getOccupancyGradient();
+                    }
+                }
+            }
+            /*
+              Should this be normalized with respect to number of atoms in residue in addition
+              to the number of conformers?
+             */
+            ave /= list.size();
+            for (Residue r : list) {
+                for (Atom a : r.getAtomList()) {
+                    if (a.getOccupancy() < 1.0) {
+                        g[index] += a.getOccupancyGradient();
+                    }
+                }
+                if (list.size() > 1) {
+                    // Subtract average to move COM to zero
+                    g[index] -= ave;
+                }
+                index++;
+            }
+        }
+
+        // Now the molecules (HETATMs).
+        for (List<Molecule> list : refinementModel.getAltMolecules()) {
+            ave = 0.0;
+            for (Molecule m : list) {
+                for (Atom a : m.getAtomList()) {
+                    if (a.getOccupancy() < 1.0) {
+                        ave += a.getOccupancyGradient();
+                    }
+                }
+            }
+            ave /= list.size();
+            for (Molecule m : list) {
+                for (Atom a : m.getAtomList()) {
+                    if (a.getOccupancy() < 1.0) {
+                        g[index] += a.getOccupancyGradient();
+                    }
+                }
+                if (list.size() > 1) {
+                    g[index] -= ave;
+                }
+                index++;
+            }
+        }
+    }
+
+    /**
+     * Fill gradient array with atomic coordinate partial derivatives.
+     *
+     * @param g gradient array
+     */
+    private void getXYZGradients(double[] g) {
+        assert (g != null);
+        double[] grad = new double[3];
+        int index = 0;
+        for (Atom a : activeAtomArray) {
+            a.getXYZGradient(grad);
+            g[index++] = grad[0];
+            g[index++] = grad[1];
+            g[index++] = grad[2];
+        }
     }
 
     /**
@@ -768,53 +1052,6 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
             if (a.getAtomicNumber() == 1) {
                 Atom b = a.getBonds().get(0).get1_2(a);
                 a.setTempFactor(b.getTempFactor());
-            }
-        }
-    }
-
-    /**
-     * set atomic xyz coordinates based on current position
-     *
-     * @param x current parameters to set coordinates with
-     */
-    public void setCoordinates(double[] x) {
-        assert (x != null);
-        double[] xyz = new double[3];
-        int index = 0;
-        for (Atom a : activeAtomArray) {
-            xyz[0] = x[index++];
-            xyz[1] = x[index++];
-            xyz[2] = x[index++];
-            a.moveTo(xyz);
-        }
-    }
-
-    /**
-     * set atom occupancies based on current position
-     *
-     * @param x current parameters to set occupancies with
-     */
-    public void setOccupancies(double[] x) {
-        double occ;
-        int index = nXYZ + nB;
-        for (ArrayList<Residue> list : refinementModel.getAltResidues()) {
-            for (Residue r : list) {
-                occ = x[index++];
-                for (Atom a : r.getAtomList()) {
-                    if (a.getOccupancy() < 1.0) {
-                        a.setOccupancy(occ);
-                    }
-                }
-            }
-        }
-        for (ArrayList<Molecule> list : refinementModel.getAltMolecules()) {
-            for (Molecule m : list) {
-                occ = x[index++];
-                for (Atom a : m.getAtomList()) {
-                    if (a.getOccupancy() < 1.0) {
-                        a.setOccupancy(occ);
-                    }
-                }
             }
         }
     }
@@ -947,245 +1184,5 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
             }
         }
         return e;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setScaling(double[] scaling) {
-        optimizationScaling = scaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return optimizationScaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getMass() {
-        double[] mass = new double[nXYZ + nB + nOCC];
-        int i = 0;
-        if (refineXYZ) {
-            for (Atom a : activeAtomArray) {
-                double m = a.getMass();
-                mass[i++] = m;
-                mass[i++] = m;
-                mass[i++] = m;
-            }
-        }
-
-        if (refineB) {
-            for (int j = i; j < nXYZ + nB; i++, j++) {
-                mass[j] = bMass;
-            }
-        }
-
-        if (refineOCC) {
-            for (int j = i; j < nXYZ + nB + nOCC; i++, j++) {
-                mass[j] = occMass;
-            }
-        }
-        return mass;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getTotalEnergy() {
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNumberOfVariables() {
-        return nXYZ + nB + nOCC;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setLambda(double lambda) {
-        if (lambda <= 1.0 && lambda >= 0.0) {
-            this.lambda = lambda;
-        } else {
-            String message = format("Lambda value %8.3f is not in the range [0..1].", lambda);
-            logger.warning(message);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getLambda() {
-        return lambda;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getdEdL() {
-        return dEdL;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdL2() {
-        return 0.0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void getdEdXdL(double[] gradient) {
-        int n = dUdXdL.length;
-        arraycopy(dUdXdL, 0, gradient, 0, n);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Return a reference to each variables type.
-     */
-    @Override
-    public VARIABLE_TYPE[] getVariableTypes() {
-        VARIABLE_TYPE[] vtypes = new VARIABLE_TYPE[nXYZ + nB + nOCC];
-        int i = 0;
-        if (refineXYZ) {
-            for (Atom a : activeAtomArray) {
-                vtypes[i++] = VARIABLE_TYPE.X;
-                vtypes[i++] = VARIABLE_TYPE.Y;
-                vtypes[i++] = VARIABLE_TYPE.Z;
-            }
-        }
-
-        if (refineB) {
-            for (int j = i; j < nXYZ + nB; i++, j++) {
-                vtypes[j] = VARIABLE_TYPE.OTHER;
-            }
-        }
-
-        if (refineOCC) {
-            for (int j = i; j < nXYZ + nB + nOCC; i++, j++) {
-                vtypes[j] = VARIABLE_TYPE.OTHER;
-            }
-        }
-        return vtypes;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public STATE getEnergyTermState() {
-        return state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setEnergyTermState(STATE state) {
-        this.state = state;
-        switch (state) {
-            case FAST:
-                xrayTerms = false;
-                restraintTerms = true;
-                break;
-            case SLOW:
-                xrayTerms = true;
-                restraintTerms = false;
-                break;
-            default:
-                xrayTerms = true;
-                restraintTerms = true;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Crystal getCrystal() {
-        return diffractionData.getCrystal()[0];
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setCrystal(Crystal crystal) {
-        logger.severe(" XRayEnergy does implement setCrystal yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        return diffractionData.destroy();
     }
 }

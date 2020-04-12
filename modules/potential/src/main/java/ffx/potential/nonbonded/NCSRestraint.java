@@ -61,24 +61,24 @@ import static ffx.numerics.math.DoubleMath.length2;
 public class NCSRestraint implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(NCSRestraint.class.getName());
-    private Crystal ncsCrystal;
-    private SpaceGroup spaceGroup;
     private final Atom[] atoms;
-    private int nAtoms;
     private final double forceConstant = 10.0;
     private final double[][] transOp = new double[3][3];
-    private int nSymm;
     private final double[] a1 = new double[3];
     private final double[] a2 = new double[3];
     private final double[] dx = new double[3];
-    private double lambda = 1.0;
     private final double lambdaExp = 2.0;
+    private final double[] lambdaGradient;
+    private Crystal ncsCrystal;
+    private SpaceGroup spaceGroup;
+    private int nAtoms;
+    private int nSymm;
+    private double lambda = 1.0;
     private double lambdaPow = pow(lambda, lambdaExp);
     private double dLambdaPow = lambdaExp * pow(lambda, lambdaExp - 1.0);
     private double d2LambdaPow = lambdaExp * (lambdaExp - 1.0) * pow(lambda, lambdaExp - 2.0);
     private double dEdL = 0.0;
     private double d2EdL2 = 0.0;
-    private final double[] lambdaGradient;
     private boolean lambdaTerm;
 
     /**
@@ -109,6 +109,93 @@ public class NCSRestraint implements LambdaInterface {
 
         logger.info(format("\n NCS Restraint%s", crystal.toString()));
 
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setLambda(double lambda) {
+        if (lambdaTerm) {
+            this.lambda = lambda;
+
+            double lambdaWindow = 1.0;
+
+            if (this.lambda < lambdaWindow) {
+                double dldgl = 1.0 / lambdaWindow;
+                double l = dldgl * this.lambda;
+                double l2 = l * l;
+                double l3 = l2 * l;
+                double l4 = l2 * l2;
+                double l5 = l4 * l;
+                double c3 = 10.0;
+                double c4 = -15.0;
+                double c5 = 6.0;
+                double threeC3 = 3.0 * c3;
+                double sixC3 = 6.0 * c3;
+                double fourC4 = 4.0 * c4;
+                double twelveC4 = 12.0 * c4;
+                double fiveC5 = 5.0 * c5;
+                double twentyC5 = 20.0 * c5;
+                lambdaPow = c3 * l3 + c4 * l4 + c5 * l5;
+                dLambdaPow = (threeC3 * l2 + fourC4 * l3 + fiveC5 * l4) * dldgl;
+                d2LambdaPow = (sixC3 * l + twelveC4 * l2 + twentyC5 * l3) * dldgl * dldgl;
+            } else {
+                lambdaPow = 1.0;
+                dLambdaPow = 0.0;
+                d2LambdaPow = 0.0;
+            }
+        } else {
+            this.lambda = 1.0;
+            lambdaPow = 1.0;
+            dLambdaPow = 0.0;
+            d2LambdaPow = 0.0;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        if (lambdaTerm) {
+            return d2EdL2;
+        } else {
+            return 0.0;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getdEdL() {
+        if (lambdaTerm) {
+            return dEdL;
+        } else {
+            return 0.0;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        if (lambdaTerm) {
+            int n3 = nAtoms * 3;
+            for (int i = 0; i < n3; i++) {
+                gradient[i] += lambdaGradient[i];
+            }
+        }
     }
 
     /**
@@ -191,92 +278,5 @@ public class NCSRestraint implements LambdaInterface {
             d2EdL2 = d2LambdaPow * forceConstant * residual;
         }
         return forceConstant * residual * lambdaPow;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setLambda(double lambda) {
-        if (lambdaTerm) {
-            this.lambda = lambda;
-
-            double lambdaWindow = 1.0;
-
-            if (this.lambda < lambdaWindow) {
-                double dldgl = 1.0 / lambdaWindow;
-                double l = dldgl * this.lambda;
-                double l2 = l * l;
-                double l3 = l2 * l;
-                double l4 = l2 * l2;
-                double l5 = l4 * l;
-                double c3 = 10.0;
-                double c4 = -15.0;
-                double c5 = 6.0;
-                double threeC3 = 3.0 * c3;
-                double sixC3 = 6.0 * c3;
-                double fourC4 = 4.0 * c4;
-                double twelveC4 = 12.0 * c4;
-                double fiveC5 = 5.0 * c5;
-                double twentyC5 = 20.0 * c5;
-                lambdaPow = c3 * l3 + c4 * l4 + c5 * l5;
-                dLambdaPow = (threeC3 * l2 + fourC4 * l3 + fiveC5 * l4) * dldgl;
-                d2LambdaPow = (sixC3 * l + twelveC4 * l2 + twentyC5 * l3) * dldgl * dldgl;
-            } else {
-                lambdaPow = 1.0;
-                dLambdaPow = 0.0;
-                d2LambdaPow = 0.0;
-            }
-        } else {
-            this.lambda = 1.0;
-            lambdaPow = 1.0;
-            dLambdaPow = 0.0;
-            d2LambdaPow = 0.0;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getLambda() {
-        return lambda;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getdEdL() {
-        if (lambdaTerm) {
-            return dEdL;
-        } else {
-            return 0.0;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdL2() {
-        if (lambdaTerm) {
-            return d2EdL2;
-        } else {
-            return 0.0;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void getdEdXdL(double[] gradient) {
-        if (lambdaTerm) {
-            int n3 = nAtoms * 3;
-            for (int i = 0; i < n3; i++) {
-                gradient[i] += lambdaGradient[i];
-            }
-        }
     }
 }

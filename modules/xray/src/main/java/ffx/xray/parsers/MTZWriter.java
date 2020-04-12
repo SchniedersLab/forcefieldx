@@ -73,27 +73,6 @@ import ffx.xray.DiffractionRefinementData;
 public class MTZWriter {
 
     private static final Logger logger = Logger.getLogger(MTZWriter.class.getName());
-
-    /**
-     * The possible output "styles".
-     */
-    public interface MTZType {
-
-        /**
-         * Output unscaled data only.
-         */
-        int DATAONLY = 1;
-        /**
-         * Output unscaled Fcs only (still requires data to be read in).
-         */
-        int FCONLY = 2;
-        /**
-         * Everything, including fitted/scaled coefficients (e.g. sigmaA, map
-         * coefficients).
-         */
-        int ALL = 3;
-    }
-
     private final String fileName;
     private final ReflectionList reflectionList;
     private final DiffractionRefinementData refinementData;
@@ -604,5 +583,25 @@ public class MTZWriter {
             String message = "Fatal exception evaluating structure factors.\n";
             logger.log(Level.SEVERE, message, e);
         }
+    }
+
+    /**
+     * The possible output "styles".
+     */
+    public interface MTZType {
+
+        /**
+         * Output unscaled data only.
+         */
+        int DATAONLY = 1;
+        /**
+         * Output unscaled Fcs only (still requires data to be read in).
+         */
+        int FCONLY = 2;
+        /**
+         * Everything, including fitted/scaled coefficients (e.g. sigmaA, map
+         * coefficients).
+         */
+        int ALL = 3;
     }
 }

@@ -46,7 +46,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.MoveIntoUnitCell;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
@@ -59,31 +58,17 @@ public class MoveIntoUnitCellTest {
     Binding binding;
     MoveIntoUnitCell moveIntoUnitCell;
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        moveIntoUnitCell = new MoveIntoUnitCell();
-        moveIntoUnitCell.setBinding(binding);
-    }
-
     @After
     public void after() {
         moveIntoUnitCell.destroyPotentials();
         System.gc();
     }
 
-    @Test
-    public void testMoveIntoUnitCellHelp() {
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        moveIntoUnitCell.run();
-
-        // Pull out the biotype results to check.
-        Assert.assertNull(moveIntoUnitCell.origCoordinates);
-        Assert.assertNull(moveIntoUnitCell.unitCellCoordinates);
+    @Before
+    public void before() {
+        binding = new Binding();
+        moveIntoUnitCell = new MoveIntoUnitCell();
+        moveIntoUnitCell.setBinding(binding);
     }
 
     @Test
@@ -127,5 +112,19 @@ public class MoveIntoUnitCellTest {
             System.out.println(e.toString());
             Assert.fail(" Exception deleting files created by Frac2Cart.");
         }
+    }
+
+    @Test
+    public void testMoveIntoUnitCellHelp() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"-h"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        moveIntoUnitCell.run();
+
+        // Pull out the biotype results to check.
+        Assert.assertNull(moveIntoUnitCell.origCoordinates);
+        Assert.assertNull(moveIntoUnitCell.unitCellCoordinates);
     }
 }

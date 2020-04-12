@@ -37,9 +37,9 @@
 //******************************************************************************
 package ffx.algorithms.cli;
 
-import picocli.CommandLine;
-
 import java.util.logging.Logger;
+
+import picocli.CommandLine;
 
 public class RepexOSTOptions {
     private static final Logger logger = Logger.getLogger(RepexOSTOptions.class.getName());

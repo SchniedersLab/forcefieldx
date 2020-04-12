@@ -40,8 +40,6 @@ package ffx.potential.nonbonded.pme;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.String.format;
-
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
@@ -92,6 +90,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     private static final Logger logger = Logger.getLogger(ReciprocalEnergyRegion.class.getName());
 
     private static final double SQRT_PI = sqrt(Math.PI);
+    private static final int tensorCount = MultipoleTensor.tensorCount(3);
     private final double electric;
     private final double aewald1;
     private final double aewald2;
@@ -99,8 +98,16 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     private final double aewald4;
     private final double oneThird;
     private final double twoThirds;
-    private static final int tensorCount = MultipoleTensor.tensorCount(3);
     private final int maxThreads;
+    private final SharedDouble inducedDipoleSelfEnergy;
+    private final SharedDouble inducedDipoleRecipEnergy;
+    private final PermanentReciprocalEnergyLoop[] permanentReciprocalEnergyLoop;
+    private final InducedDipoleReciprocalEnergyLoop[] inducedDipoleReciprocalEnergyLoop;
+    /**
+     * Dimensions of [nsymm][nAtoms][3]
+     */
+    public double[][][] inducedDipole;
+    public double[][][] inducedDipoleCR;
     private double nfftX, nfftY, nfftZ;
     private double[][] multipole;
     private double[][] ind;
@@ -113,11 +120,6 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     private double[][] fracInducedDipoleCRPhi;
     private double permanentSelfEnergy;
     private double permanentReciprocalEnergy;
-    private final SharedDouble inducedDipoleSelfEnergy;
-    private final SharedDouble inducedDipoleRecipEnergy;
-    private final PermanentReciprocalEnergyLoop[] permanentReciprocalEnergyLoop;
-    private final InducedDipoleReciprocalEnergyLoop[] inducedDipoleReciprocalEnergyLoop;
-
     /**
      * An ordered array of atoms in the system.
      */
@@ -151,11 +153,6 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
      */
     private double[][][] globalMultipole;
     private double[][] cartMultipolePhi;
-    /**
-     * Dimensions of [nsymm][nAtoms][3]
-     */
-    public double[][][] inducedDipole;
-    public double[][][] inducedDipoleCR;
     private double[][] cartesianDipolePhi;
     private double[][] cartesianDipolePhiCR;
     /**
@@ -220,6 +217,51 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         twoThirds = 2.0 / 3.0;
     }
 
+    /**
+     * Execute the ReciprocalEnergyRegion with the passed ParallelTeam.
+     *
+     * @param parallelTeam The ParallelTeam instance to execute with.
+     */
+    public void executeWith(ParallelTeam parallelTeam) {
+        try {
+            parallelTeam.execute(this);
+        } catch (Exception e) {
+            String message = " Exception computing the electrostatic energy.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    @Override
+    public void finish() {
+        /*
+          The permanent multipole self energy contributions are large
+          enough that rounding differences that result from threads
+          finishing in different orders removes deterministic behavior.
+         */
+        permanentSelfEnergy = 0.0;
+        permanentReciprocalEnergy = 0.0;
+        for (int i = 0; i < maxThreads; i++) {
+            permanentSelfEnergy += permanentReciprocalEnergyLoop[i].eSelf;
+            permanentReciprocalEnergy += permanentReciprocalEnergyLoop[i].eRecip;
+        }
+    }
+
+    public double getInducedDipoleReciprocalEnergy() {
+        return inducedDipoleRecipEnergy.get();
+    }
+
+    public double getInducedDipoleSelfEnergy() {
+        return inducedDipoleSelfEnergy.get();
+    }
+
+    public double getPermanentReciprocalEnergy() {
+        return permanentReciprocalEnergy;
+    }
+
+    public double getPermanentSelfEnergy() {
+        return permanentSelfEnergy;
+    }
+
     public void init(Atom[] atoms, Crystal crystal, boolean[] use,
                      double[][][] globalMultipole, double[][] cartMultipolePhi,
                      double[][][] inducedDipole, double[][][] inducedDipoleCR,
@@ -258,32 +300,21 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         this.dEdLSign = alchemicalParameters.dEdLSign;
     }
 
-    public double getPermanentSelfEnergy() {
-        return permanentSelfEnergy;
-    }
-
-    public double getPermanentReciprocalEnergy() {
-        return permanentReciprocalEnergy;
-    }
-
-    public double getInducedDipoleSelfEnergy() {
-        return inducedDipoleSelfEnergy.get();
-    }
-
-    public double getInducedDipoleReciprocalEnergy() {
-        return inducedDipoleRecipEnergy.get();
-    }
-
-    /**
-     * Execute the ReciprocalEnergyRegion with the passed ParallelTeam.
-     *
-     * @param parallelTeam The ParallelTeam instance to execute with.
-     */
-    public void executeWith(ParallelTeam parallelTeam) {
+    @Override
+    public void run() throws Exception {
+        int threadIndex = getThreadIndex();
+        if (permanentReciprocalEnergyLoop[threadIndex] == null) {
+            permanentReciprocalEnergyLoop[threadIndex] = new PermanentReciprocalEnergyLoop();
+            inducedDipoleReciprocalEnergyLoop[threadIndex] = new InducedDipoleReciprocalEnergyLoop();
+        }
         try {
-            parallelTeam.execute(this);
+            int nAtoms = atoms.length;
+            execute(0, nAtoms - 1, permanentReciprocalEnergyLoop[threadIndex]);
+            if (polarization != Polarization.NONE) {
+                execute(0, nAtoms - 1, inducedDipoleReciprocalEnergyLoop[threadIndex]);
+            }
         } catch (Exception e) {
-            String message = " Exception computing the electrostatic energy.\n";
+            String message = "Fatal exception computing the real space field in thread " + threadIndex + "\n";
             logger.log(Level.SEVERE, message, e);
         }
     }
@@ -306,40 +337,6 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         nfftZ = reciprocalSpace.getZDim();
     }
 
-    @Override
-    public void run() throws Exception {
-        int threadIndex = getThreadIndex();
-        if (permanentReciprocalEnergyLoop[threadIndex] == null) {
-            permanentReciprocalEnergyLoop[threadIndex] = new PermanentReciprocalEnergyLoop();
-            inducedDipoleReciprocalEnergyLoop[threadIndex] = new InducedDipoleReciprocalEnergyLoop();
-        }
-        try {
-            int nAtoms = atoms.length;
-            execute(0, nAtoms - 1, permanentReciprocalEnergyLoop[threadIndex]);
-            if (polarization != Polarization.NONE) {
-                execute(0, nAtoms - 1, inducedDipoleReciprocalEnergyLoop[threadIndex]);
-            }
-        } catch (Exception e) {
-            String message = "Fatal exception computing the real space field in thread " + threadIndex + "\n";
-            logger.log(Level.SEVERE, message, e);
-        }
-    }
-
-    @Override
-    public void finish() {
-        /*
-          The permanent multipole self energy contributions are large
-          enough that rounding differences that result from threads
-          finishing in different orders removes deterministic behavior.
-         */
-        permanentSelfEnergy = 0.0;
-        permanentReciprocalEnergy = 0.0;
-        for (int i = 0; i < maxThreads; i++) {
-            permanentSelfEnergy += permanentReciprocalEnergyLoop[i].eSelf;
-            permanentReciprocalEnergy += permanentReciprocalEnergyLoop[i].eRecip;
-        }
-    }
-
     private class PermanentReciprocalEnergyLoop extends IntegerForLoop {
 
         int threadID;
@@ -347,15 +344,9 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         double eRecip;
 
         @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
-
-        @Override
-        public void start() {
-            eSelf = 0.0;
-            eRecip = 0.0;
-            threadID = getThreadIndex();
+        public void finish() {
+            eSelf *= permanentScale;
+            eRecip *= permanentScale * 0.5 * electric;
         }
 
         @Override
@@ -453,21 +444,6 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         }
 
         @Override
-        public void finish() {
-            eSelf *= permanentScale;
-            eRecip *= permanentScale * 0.5 * electric;
-        }
-    }
-
-    private class InducedDipoleReciprocalEnergyLoop extends IntegerForLoop {
-
-        private double eSelf;
-        private double eRecip;
-        private int threadID;
-        private final double[] sfPhi = new double[tensorCount];
-        private final double[] sPhi = new double[tensorCount];
-
-        @Override
         public IntegerSchedule schedule() {
             return IntegerSchedule.fixed();
         }
@@ -477,6 +453,21 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
             eSelf = 0.0;
             eRecip = 0.0;
             threadID = getThreadIndex();
+        }
+    }
+
+    private class InducedDipoleReciprocalEnergyLoop extends IntegerForLoop {
+
+        private final double[] sfPhi = new double[tensorCount];
+        private final double[] sPhi = new double[tensorCount];
+        private double eSelf;
+        private double eRecip;
+        private int threadID;
+
+        @Override
+        public void finish() {
+            inducedDipoleSelfEnergy.addAndGet(polarizationScale * eSelf);
+            inducedDipoleRecipEnergy.addAndGet(polarizationScale * eRecip);
         }
 
         @Override
@@ -598,9 +589,15 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         }
 
         @Override
-        public void finish() {
-            inducedDipoleSelfEnergy.addAndGet(polarizationScale * eSelf);
-            inducedDipoleRecipEnergy.addAndGet(polarizationScale * eRecip);
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
+        }
+
+        @Override
+        public void start() {
+            eSelf = 0.0;
+            eRecip = 0.0;
+            threadID = getThreadIndex();
         }
     }
 }

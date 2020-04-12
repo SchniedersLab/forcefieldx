@@ -93,6 +93,18 @@ public class SpatialDensitySchedule extends IntegerSchedule {
      * {@inheritDoc}
      */
     @Override
+    public Range next(int threadID) {
+        if (!threadDone[threadID]) {
+            threadDone[threadID] = true;
+            return ranges[threadID];
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void start(int nThreads, Range chunkRange) {
         this.nThreads = nThreads;
         this.chunkRange = chunkRange;
@@ -107,18 +119,6 @@ public class SpatialDensitySchedule extends IntegerSchedule {
         }
 
         defineRanges();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Range next(int threadID) {
-        if (!threadDone[threadID]) {
-            threadDone[threadID] = true;
-            return ranges[threadID];
-        }
-        return null;
     }
 
     private void defineRanges() {

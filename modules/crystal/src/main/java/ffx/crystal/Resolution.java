@@ -45,7 +45,6 @@ import static org.apache.commons.math3.util.FastMath.abs;
  * for a given crystal and/or data set.
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public class Resolution {
@@ -59,7 +58,7 @@ public class Resolution {
      * Constructor for Resolution.</p>
      *
      * @param resolution a double.
-     * @param sampling a double.
+     * @param sampling   a double.
      */
     public Resolution(double resolution, double sampling) {
         this.resolution = resolution;
@@ -82,7 +81,7 @@ public class Resolution {
      * checkProperties</p>
      *
      * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @return a {@link ffx.crystal.Resolution} object.
      */
     public static Resolution checkProperties(CompositeConfiguration properties) {
@@ -98,32 +97,17 @@ public class Resolution {
 
     /**
      * <p>
-     * resolutionLimit</p>
+     * inInverseResSqRange</p>
      *
-     * @return a double.
+     * @param res a double.
+     * @return a boolean.
      */
-    public double resolutionLimit() {
-        return resolution;
-    }
-
-    /**
-     * <p>
-     * inverseResSqLimit</p>
-     *
-     * @return a double.
-     */
-    public double inverseResSqLimit() {
-        return inverseResSq;
-    }
-
-    /**
-     * <p>
-     * samplingLimit</p>
-     *
-     * @return a double.
-     */
-    public double samplingLimit() {
-        return sampling;
+    public boolean inInverseResSqRange(double res) {
+        if (abs(res - this.inverseResSq) < 1e-8) {
+            return true;
+        } else {
+            return res < this.inverseResSq;
+        }
     }
 
     /**
@@ -143,16 +127,31 @@ public class Resolution {
 
     /**
      * <p>
-     * inInverseResSqRange</p>
+     * inverseResSqLimit</p>
      *
-     * @param res a double.
-     * @return a boolean.
+     * @return a double.
      */
-    public boolean inInverseResSqRange(double res) {
-        if (abs(res - this.inverseResSq) < 1e-8) {
-            return true;
-        } else {
-            return res < this.inverseResSq;
-        }
+    public double inverseResSqLimit() {
+        return inverseResSq;
+    }
+
+    /**
+     * <p>
+     * resolutionLimit</p>
+     *
+     * @return a double.
+     */
+    public double resolutionLimit() {
+        return resolution;
+    }
+
+    /**
+     * <p>
+     * samplingLimit</p>
+     *
+     * @return a double.
+     */
+    public double samplingLimit() {
+        return sampling;
     }
 }

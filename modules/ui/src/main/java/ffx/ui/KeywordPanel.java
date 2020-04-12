@@ -103,6 +103,28 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     private static final Logger logger = Logger.getLogger(KeywordPanel.class.getName());
     private static final Preferences preferences = Preferences.userNodeForPackage(KeywordPanel.class);
     /**
+     * The MainPanel has references to many things the KeywordPanel uses.
+     */
+    private final MainPanel mainPanel;
+    private final JLabel statusLabel = new JLabel("  ");
+    private final GridBagLayout gridBagLayout = new GridBagLayout();
+    private final GridBagConstraints gridBagConstraints = new GridBagConstraints();
+    /**
+     * The gridPanel holds an array of KeywordComponents.
+     */
+    private final JPanel gridPanel = new JPanel(gridBagLayout);
+    /**
+     * A simple label if no Keyword File is open.
+     */
+    private final JLabel noSystemLabel = new JLabel(
+            "Keywords for the active system are edited here. ");
+    // A simple label if no Keyword Description is available.
+    private final JLabel noKeywordLabel = new JLabel(
+            "Keyword desciptions are displayed here.");
+    private final JPanel noKeywordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+    private final FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
+    private final BorderLayout borderLayout = new BorderLayout();
+    /**
      * True if a Key File is open.
      */
     private boolean fileOpen = false;
@@ -118,10 +140,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * FFXSystem associated with currently open Key File (if any).
      */
     private FFXSystem currentSystem;
-    /**
-     * The MainPanel has references to many things the KeywordPanel uses.
-     */
-    private final MainPanel mainPanel;
     /**
      * HashMap for Keyword GUI Components.
      */
@@ -146,7 +164,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * (bottom).
      */
     private JSplitPane splitPane;
-    private final JLabel statusLabel = new JLabel("  ");
     /**
      * The editScrollPane holds the gridPanel, where KeywordComponents actually
      * live.
@@ -165,12 +182,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * Allow the user to show/hide Keyword Descriptions.
      */
     private JCheckBoxMenuItem descriptCheckBox;
-    private final GridBagLayout gridBagLayout = new GridBagLayout();
-    private final GridBagConstraints gridBagConstraints = new GridBagConstraints();
-    /**
-     * The gridPanel holds an array of KeywordComponents.
-     */
-    private final JPanel gridPanel = new JPanel(gridBagLayout);
     /**
      * Lines in Keyword files that are comments, unrecognized keywords, or
      * keywords where editing is not supported are stored in a big
@@ -181,17 +192,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * This component shows what the saved Key file will look like (WYSIWYG).
      */
     private JTextArea flatfileTextArea;
-    /**
-     * A simple label if no Keyword File is open.
-     */
-    private final JLabel noSystemLabel = new JLabel(
-            "Keywords for the active system are edited here. ");
-    // A simple label if no Keyword Description is available.
-    private final JLabel noKeywordLabel = new JLabel(
-            "Keyword desciptions are displayed here.");
-    private final JPanel noKeywordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
-    private final FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
-    private final BorderLayout borderLayout = new BorderLayout();
     private String[] paramNames = null;
     private LinkedHashMap<String, String> paramHashtable = null;
 
@@ -304,16 +304,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
 
     /**
      * <p>
-     * Getter for the field <code>paramFiles</code>.</p>
-     *
-     * @return an array of {@link java.lang.String} objects.
-     */
-    String[] getParamFiles() {
-        return paramNames;
-    }
-
-    /**
-     * <p>
      * getParamPath</p>
      *
      * @param key a {@link java.lang.String} object.
@@ -321,6 +311,105 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      */
     public String getParamPath(String key) {
         return paramHashtable.get(key);
+    }
+
+    /**
+     * <p>
+     * isKeyword</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a boolean.
+     */
+    public boolean isKeyword(String key) {
+        synchronized (this) {
+            KeywordComponent keyword = keywordHashMap.get(key.toUpperCase());
+            return keyword != null;
+        }
+    }
+
+    /**
+     * <p>
+     * selected</p>
+     */
+    public void selected() {
+        setDivider(descriptCheckBox.isSelected());
+        validate();
+        repaint();
+    }
+
+    /**
+     * Make the passed Keyword Group active in the editor.
+     *
+     * @param keygroup String
+     */
+    public void setKeywordGroup(String keygroup) {
+        synchronized (this) {
+            keygroup = groupHashMap.get(keygroup.toUpperCase());
+            if (keygroup == null) {
+                return;
+            }
+            if (!groupComboBox.getSelectedItem().equals(keygroup)) {
+                groupComboBox.setSelectedItem(keygroup);
+                loadKeywordGroup();
+            }
+        }
+    }
+
+    /**
+     * Load a value into a KeywordComponent. Value is equivalent to one line in
+     * a TINKER key file, except without the keyword at the beginning. Value
+     * should be null to just indicate the Keyword is present (active). If this
+     * Keyword can apprear many times, value will be appended to the list.
+     *
+     * @param key   String
+     * @param value String
+     */
+    public void setKeywordValue(String key, String value) {
+        synchronized (this) {
+            KeywordComponent keyword = keywordHashMap.get(key.toUpperCase());
+            if (keyword == null) {
+                return;
+            }
+            keyword.loadKeywordEntry(value);
+            String keygroup = keyword.getKeywordGroup();
+            if (!groupComboBox.getSelectedItem().equals(keygroup)) {
+                groupComboBox.setSelectedItem(keygroup);
+                loadKeywordGroup();
+            }
+            mainPanel.setPanel(MainPanel.KEYWORDS);
+        }
+    }
+
+    /**
+     * Store the KeywordPanel's current keyword content into sys.
+     *
+     * @param sys FFXSystem
+     */
+    public void store(FFXSystem sys) {
+        synchronized (this) {
+            FFXSystem back = currentSystem;
+            currentSystem = sys;
+            storeActive();
+            currentSystem = back;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return "Keyword Editor";
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>paramFiles</code>.</p>
+     *
+     * @return an array of {@link java.lang.String} objects.
+     */
+    String[] getParamFiles() {
+        return paramNames;
     }
 
     private void initialize() {
@@ -438,20 +527,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      */
     boolean isFileOpen() {
         return fileOpen;
-    }
-
-    /**
-     * <p>
-     * isKeyword</p>
-     *
-     * @param key a {@link java.lang.String} object.
-     * @return a boolean.
-     */
-    public boolean isKeyword(String key) {
-        synchronized (this) {
-            KeywordComponent keyword = keywordHashMap.get(key.toUpperCase());
-            return keyword != null;
-        }
     }
 
     /**
@@ -1064,16 +1139,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
 
     /**
      * <p>
-     * selected</p>
-     */
-    public void selected() {
-        setDivider(descriptCheckBox.isSelected());
-        validate();
-        repaint();
-    }
-
-    /**
-     * <p>
      * setDivider</p>
      *
      * @param b a boolean.
@@ -1085,49 +1150,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             splitPane.setDividerLocation(spDivider);
         } else {
             splitPane.setDividerLocation(1.0);
-        }
-    }
-
-    /**
-     * Make the passed Keyword Group active in the editor.
-     *
-     * @param keygroup String
-     */
-    public void setKeywordGroup(String keygroup) {
-        synchronized (this) {
-            keygroup = groupHashMap.get(keygroup.toUpperCase());
-            if (keygroup == null) {
-                return;
-            }
-            if (!groupComboBox.getSelectedItem().equals(keygroup)) {
-                groupComboBox.setSelectedItem(keygroup);
-                loadKeywordGroup();
-            }
-        }
-    }
-
-    /**
-     * Load a value into a KeywordComponent. Value is equivalent to one line in
-     * a TINKER key file, except without the keyword at the beginning. Value
-     * should be null to just indicate the Keyword is present (active). If this
-     * Keyword can apprear many times, value will be appended to the list.
-     *
-     * @param key   String
-     * @param value String
-     */
-    public void setKeywordValue(String key, String value) {
-        synchronized (this) {
-            KeywordComponent keyword = keywordHashMap.get(key.toUpperCase());
-            if (keyword == null) {
-                return;
-            }
-            keyword.loadKeywordEntry(value);
-            String keygroup = keyword.getKeywordGroup();
-            if (!groupComboBox.getSelectedItem().equals(keygroup)) {
-                groupComboBox.setSelectedItem(keygroup);
-                loadKeywordGroup();
-            }
-            mainPanel.setPanel(MainPanel.KEYWORDS);
         }
     }
 
@@ -1158,20 +1180,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             paramNames[0] = "AAA";
             java.util.Arrays.sort(paramNames);
             paramNames[0] = "Use an existing TINKER Key file".intern();
-        }
-    }
-
-    /**
-     * Store the KeywordPanel's current keyword content into sys.
-     *
-     * @param sys FFXSystem
-     */
-    public void store(FFXSystem sys) {
-        synchronized (this) {
-            FFXSystem back = currentSystem;
-            currentSystem = sys;
-            storeActive();
-            currentSystem = back;
         }
     }
 
@@ -1208,13 +1216,5 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             newKeys.put("COMMENTS", comments);
             currentSystem.setKeywords(newKeys);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "Keyword Editor";
     }
 }

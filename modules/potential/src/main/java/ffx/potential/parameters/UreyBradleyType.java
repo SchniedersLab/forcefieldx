@@ -57,11 +57,6 @@ import static ffx.potential.parameters.ForceField.ForceFieldType.UREYBRAD;
 public final class UreyBradleyType extends BaseType implements Comparator<String> {
 
     /**
-     * A Logger for the UreyBradleyType class.
-     */
-    private static final Logger logger = Logger.getLogger(UreyBradleyType.class.getName());
-
-    /**
      * Convert bond stretch energy to kcal/mole.
      */
     public static final double units = 1.0;
@@ -73,6 +68,10 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
      * Quartic coefficient in bond stretch potential.
      */
     public static final double quartic = 0.0;
+    /**
+     * A Logger for the UreyBradleyType class.
+     */
+    private static final Logger logger = Logger.getLogger(UreyBradleyType.class.getName());
     /**
      * Atom classes that form this Urey-Bradley cross term.
      */
@@ -101,6 +100,74 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
     }
 
     /**
+     * <p>average.</p>
+     *
+     * @param ureyBradleyType1 a {@link ffx.potential.parameters.UreyBradleyType} object.
+     * @param ureyBradleyType2 a {@link ffx.potential.parameters.UreyBradleyType} object.
+     * @param atomClasses      an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.UreyBradleyType} object.
+     */
+    public static UreyBradleyType average(UreyBradleyType ureyBradleyType1,
+                                          UreyBradleyType ureyBradleyType2, int[] atomClasses) {
+        if (ureyBradleyType1 == null || ureyBradleyType2 == null || atomClasses == null) {
+            return null;
+        }
+
+        double forceConstant = (ureyBradleyType1.forceConstant + ureyBradleyType2.forceConstant) / 2.0;
+        double distance = (ureyBradleyType1.distance + ureyBradleyType2.distance) / 2.0;
+
+        return new UreyBradleyType(atomClasses, forceConstant, distance);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compare(String key1, String key2) {
+        String[] keys1 = key1.split(" ");
+        String[] keys2 = key2.split(" ");
+        int[] c1 = new int[3];
+        int[] c2 = new int[3];
+        for (int i = 0; i < 3; i++) {
+            c1[i] = parseInt(keys1[i]);
+            c2[i] = parseInt(keys2[i]);
+        }
+        if (c1[1] < c2[1]) {
+            return -1;
+        } else if (c1[1] > c2[1]) {
+            return 1;
+        } else if (c1[0] < c2[0]) {
+            return -1;
+        } else if (c1[0] > c2[0]) {
+            return 1;
+        } else if (c1[2] < c2[2]) {
+            return -1;
+        } else if (c1[2] > c2[2]) {
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UreyBradleyType ureyBradleyType = (UreyBradleyType) o;
+        return Arrays.equals(atomClasses, ureyBradleyType.atomClasses);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(atomClasses);
+    }
+
+    /**
      * <p>
      * incrementClasses</p>
      *
@@ -111,6 +178,33 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
             atomClasses[i] += increment;
         }
         setKey(sortKey(atomClasses));
+    }
+
+    /**
+     * Construct a UreyBradleyType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a UreyBradleyType instance.
+     */
+    public static UreyBradleyType parse(String input, String[] tokens) {
+        if (tokens.length < 5) {
+            logger.log(Level.WARNING, "Invalid UREYBRAD type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[3];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                double forceConstant = parseDouble(tokens[4]);
+                double distance = parseDouble(tokens[5]);
+                return new UreyBradleyType(atomClasses, forceConstant, distance);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing UREYBRAD type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
     }
 
     /**
@@ -161,53 +255,6 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
     }
 
     /**
-     * <p>average.</p>
-     *
-     * @param ureyBradleyType1 a {@link ffx.potential.parameters.UreyBradleyType} object.
-     * @param ureyBradleyType2 a {@link ffx.potential.parameters.UreyBradleyType} object.
-     * @param atomClasses      an array of {@link int} objects.
-     * @return a {@link ffx.potential.parameters.UreyBradleyType} object.
-     */
-    public static UreyBradleyType average(UreyBradleyType ureyBradleyType1,
-                                          UreyBradleyType ureyBradleyType2, int[] atomClasses) {
-        if (ureyBradleyType1 == null || ureyBradleyType2 == null || atomClasses == null) {
-            return null;
-        }
-
-        double forceConstant = (ureyBradleyType1.forceConstant + ureyBradleyType2.forceConstant) / 2.0;
-        double distance = (ureyBradleyType1.distance + ureyBradleyType2.distance) / 2.0;
-
-        return new UreyBradleyType(atomClasses, forceConstant, distance);
-    }
-
-    /**
-     * Construct a UreyBradleyType from an input string.
-     *
-     * @param input  The overall input String.
-     * @param tokens The input String tokenized.
-     * @return a UreyBradleyType instance.
-     */
-    public static UreyBradleyType parse(String input, String[] tokens) {
-        if (tokens.length < 5) {
-            logger.log(Level.WARNING, "Invalid UREYBRAD type:\n{0}", input);
-        } else {
-            try {
-                int[] atomClasses = new int[3];
-                atomClasses[0] = parseInt(tokens[1]);
-                atomClasses[1] = parseInt(tokens[2]);
-                atomClasses[2] = parseInt(tokens[3]);
-                double forceConstant = parseDouble(tokens[4]);
-                double distance = parseDouble(tokens[5]);
-                return new UreyBradleyType(atomClasses, forceConstant, distance);
-            } catch (NumberFormatException e) {
-                String message = "Exception parsing UREYBRAD type:\n" + input + "\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
-        return null;
-    }
-
-    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted Urey-Bradley string.
@@ -216,54 +263,6 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
     public String toString() {
         return format("ureybrad  %5d  %5d  %5d  %6.2f  %7.4f",
                 atomClasses[0], atomClasses[1], atomClasses[2], forceConstant, distance);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compare(String key1, String key2) {
-        String[] keys1 = key1.split(" ");
-        String[] keys2 = key2.split(" ");
-        int[] c1 = new int[3];
-        int[] c2 = new int[3];
-        for (int i = 0; i < 3; i++) {
-            c1[i] = parseInt(keys1[i]);
-            c2[i] = parseInt(keys2[i]);
-        }
-        if (c1[1] < c2[1]) {
-            return -1;
-        } else if (c1[1] > c2[1]) {
-            return 1;
-        } else if (c1[0] < c2[0]) {
-            return -1;
-        } else if (c1[0] > c2[0]) {
-            return 1;
-        } else if (c1[2] < c2[2]) {
-            return -1;
-        } else if (c1[2] > c2[2]) {
-            return 1;
-        }
-        return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        UreyBradleyType ureyBradleyType = (UreyBradleyType) o;
-        return Arrays.equals(atomClasses, ureyBradleyType.atomClasses);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(atomClasses);
     }
 
 }

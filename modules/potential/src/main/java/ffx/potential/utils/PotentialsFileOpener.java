@@ -242,21 +242,53 @@ public class PotentialsFileOpener implements FileOpener {
     }
 
     /**
-     * <p>setMutations.</p>
-     *
-     * @param mutations a {@link java.util.List} object.
+     * {@inheritDoc}
+     * <p>
+     * Returns all MolecularAssembly objects created by this opener.
      */
-    void setMutations(List<Mutation> mutations) {
-        mutationsToApply = mutations;
+    @Override
+    public MolecularAssembly[] getAllAssemblies() {
+        return assemblies.toArray(new MolecularAssembly[0]);
     }
 
     /**
-     * <p>Setter for the field <code>nThreads</code>.</p>
-     *
-     * @param nThreads a int.
+     * {@inheritDoc}
+     * <p>
+     * Returns the properties of all MolecularAssembly objects created by this
+     * opener.
      */
-    void setNThreads(int nThreads) {
-        this.nThreads = nThreads;
+    @Override
+    public CompositeConfiguration[] getAllProperties() {
+        return propertyList.toArray(new CompositeConfiguration[0]);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the first MolecularAssembly created by the run() function.
+     */
+    @Override
+    public MolecularAssembly getAssembly() {
+        return activeAssembly;
+    }
+
+    /**
+     * <p>Getter for the field <code>filter</code>.</p>
+     *
+     * @return a {@link ffx.potential.parsers.SystemFilter} object.
+     */
+    public SystemFilter getFilter() {
+        return filter;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the properties associated with the first MolecularAssembly.
+     */
+    @Override
+    public CompositeConfiguration getProperties() {
+        return activeProperties;
     }
 
     /**
@@ -382,52 +414,20 @@ public class PotentialsFileOpener implements FileOpener {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Returns the first MolecularAssembly created by the run() function.
-     */
-    @Override
-    public MolecularAssembly getAssembly() {
-        return activeAssembly;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns all MolecularAssembly objects created by this opener.
-     */
-    @Override
-    public MolecularAssembly[] getAllAssemblies() {
-        return assemblies.toArray(new MolecularAssembly[0]);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns the properties associated with the first MolecularAssembly.
-     */
-    @Override
-    public CompositeConfiguration getProperties() {
-        return activeProperties;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns the properties of all MolecularAssembly objects created by this
-     * opener.
-     */
-    @Override
-    public CompositeConfiguration[] getAllProperties() {
-        return propertyList.toArray(new CompositeConfiguration[0]);
-    }
-
-    /**
-     * <p>Getter for the field <code>filter</code>.</p>
+     * <p>setMutations.</p>
      *
-     * @return a {@link ffx.potential.parsers.SystemFilter} object.
+     * @param mutations a {@link java.util.List} object.
      */
-    public SystemFilter getFilter() {
-        return filter;
+    void setMutations(List<Mutation> mutations) {
+        mutationsToApply = mutations;
+    }
+
+    /**
+     * <p>Setter for the field <code>nThreads</code>.</p>
+     *
+     * @param nThreads a int.
+     */
+    void setNThreads(int nThreads) {
+        this.nThreads = nThreads;
     }
 }

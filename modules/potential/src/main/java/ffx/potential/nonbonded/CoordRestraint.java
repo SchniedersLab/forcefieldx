@@ -65,7 +65,6 @@ public class CoordRestraint implements LambdaInterface {
 
     private final Atom[] atoms;
     private final double[][] initialCoordinates;
-    private int nAtoms = 0;
     /**
      * Force constant variable stores K/2 in Kcal/mol/A.
      * E = K/2 * dx^2.
@@ -73,15 +72,8 @@ public class CoordRestraint implements LambdaInterface {
     private final double forceConstant;
     private final double[] a1 = new double[3];
     private final double[] dx = new double[3];
-    private double lambda = 1.0;
     private final double lambdaExp = 1.0;
-    private double lambdaPow = pow(lambda, lambdaExp);
-    private double dLambdaPow = lambdaExp * pow(lambda, lambdaExp - 1.0);
-    private double d2LambdaPow = 0;
-    private double dEdL = 0.0;
-    private double d2EdL2 = 0.0;
     private final double[] lambdaGradient;
-    private boolean lambdaTerm;
     private final String atomIndexRestraints;
     private final int atom1Index;
     private final int atom2Index;
@@ -90,6 +82,14 @@ public class CoordRestraint implements LambdaInterface {
     private final AtomType atom1Type;
     private final AtomType atom2Type;
     private final AtomType atom3Type;
+    private int nAtoms = 0;
+    private double lambda = 1.0;
+    private double lambdaPow = pow(lambda, lambdaExp);
+    private double dLambdaPow = lambdaExp * pow(lambda, lambdaExp - 1.0);
+    private double d2LambdaPow = 0;
+    private double dEdL = 0.0;
+    private double d2EdL2 = 0.0;
+    private boolean lambdaTerm;
     private boolean ignoreHydrogen = true;
 
     /**
@@ -204,6 +204,91 @@ public class CoordRestraint implements LambdaInterface {
     }
 
     /**
+     * <p>getCoordinatePin.</p>
+     *
+     * @param xyz an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
+    public double[][] getCoordinatePin(double[][] xyz) {
+        if (xyz == null) {
+            xyz = new double[nAtoms][3];
+        } else if (xyz.length != nAtoms) {
+            throw new IllegalArgumentException(" Incorrect number of atoms!");
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            arraycopy(initialCoordinates[i], 0, xyz[i], 0, 3);
+        }
+        return xyz;
+    }
+
+    /**
+     * Returns the force constant in kcal/mol/Angstrom^2.
+     *
+     * @return a double.
+     */
+    public double getForceConstant() {
+        return forceConstant;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setLambda(double lambda) {
+        if (lambdaTerm) {
+            this.lambda = lambda;
+
+            double lambdaWindow = 1.0;
+            if (this.lambda <= lambdaWindow) {
+                double dldgl = 1.0 / lambdaWindow;
+                double l = dldgl * this.lambda;
+                double l2 = l * l;
+                double l3 = l2 * l;
+                double l4 = l2 * l2;
+                double l5 = l4 * l;
+                double c3 = 10.0;
+                double c4 = -15.0;
+                double c5 = 6.0;
+                double threeC3 = 3.0 * c3;
+                double sixC3 = 6.0 * c3;
+                double fourC4 = 4.0 * c4;
+                double twelveC4 = 12.0 * c4;
+                double fiveC5 = 5.0 * c5;
+                double twentyC5 = 20.0 * c5;
+                lambdaPow = c3 * l3 + c4 * l4 + c5 * l5;
+                dLambdaPow = (threeC3 * l2 + fourC4 * l3 + fiveC5 * l4) * dldgl;
+                d2LambdaPow = (sixC3 * l + twelveC4 * l2 + twentyC5 * l3) * dldgl * dldgl;
+            } else {
+                lambdaPow = 1.0;
+                dLambdaPow = 0.0;
+                d2LambdaPow = 0.0;
+            }
+        } else {
+            this.lambda = 1.0;
+            lambdaPow = 1.0;
+            dLambdaPow = 0.0;
+            d2LambdaPow = 0.0;
+        }
+    }
+
+    /**
+     * <p>getNumAtoms.</p>
+     *
+     * @return a int.
+     */
+    public int getNumAtoms() {
+        return nAtoms;
+    }
+
+    /**
      * Returns the original coordinates of this restraint, indexed by atoms then x,y,z. This is the opposite order of
      * the internal storage.
      *
@@ -221,21 +306,51 @@ public class CoordRestraint implements LambdaInterface {
     }
 
     /**
-     * Returns the force constant in kcal/mol/Angstrom^2.
-     *
-     * @return a double.
+     * {@inheritDoc}
      */
-    public double getForceConstant() {
-        return forceConstant;
+    @Override
+    public double getd2EdL2() {
+        if (lambdaTerm) {
+            return d2EdL2;
+        } else {
+            return 0.0;
+        }
     }
 
     /**
-     * <p>getNumAtoms.</p>
-     *
-     * @return a int.
+     * {@inheritDoc}
      */
-    public int getNumAtoms() {
-        return nAtoms;
+    @Override
+    public double getdEdL() {
+        if (lambdaTerm) {
+            return dEdL;
+        } else {
+            return 0.0;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        if (lambdaTerm) {
+            int n3 = nAtoms * 3;
+            for (int i = 0; i < n3; i++) {
+                gradient[i] += lambdaGradient[i];
+            }
+        }
+    }
+
+    /**
+     * <p>resetCoordinatePin.</p>
+     */
+    public void resetCoordinatePin() {
+        double[] aixyz = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            atoms[i].getXYZ(aixyz);
+            arraycopy(aixyz, 0, initialCoordinates[i], 0, 3);
+        }
     }
 
     /**
@@ -358,47 +473,6 @@ public class CoordRestraint implements LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setLambda(double lambda) {
-        if (lambdaTerm) {
-            this.lambda = lambda;
-
-            double lambdaWindow = 1.0;
-            if (this.lambda <= lambdaWindow) {
-                double dldgl = 1.0 / lambdaWindow;
-                double l = dldgl * this.lambda;
-                double l2 = l * l;
-                double l3 = l2 * l;
-                double l4 = l2 * l2;
-                double l5 = l4 * l;
-                double c3 = 10.0;
-                double c4 = -15.0;
-                double c5 = 6.0;
-                double threeC3 = 3.0 * c3;
-                double sixC3 = 6.0 * c3;
-                double fourC4 = 4.0 * c4;
-                double twelveC4 = 12.0 * c4;
-                double fiveC5 = 5.0 * c5;
-                double twentyC5 = 20.0 * c5;
-                lambdaPow = c3 * l3 + c4 * l4 + c5 * l5;
-                dLambdaPow = (threeC3 * l2 + fourC4 * l3 + fiveC5 * l4) * dldgl;
-                d2LambdaPow = (sixC3 * l + twelveC4 * l2 + twentyC5 * l3) * dldgl * dldgl;
-            } else {
-                lambdaPow = 1.0;
-                dLambdaPow = 0.0;
-                d2LambdaPow = 0.0;
-            }
-        } else {
-            this.lambda = 1.0;
-            lambdaPow = 1.0;
-            dLambdaPow = 0.0;
-            d2LambdaPow = 0.0;
-        }
-    }
-
-    /**
      * Sets the initial coordinates to new values.
      *
      * @param newInitialCoordinates Indexed xyz,atom number.
@@ -419,79 +493,5 @@ public class CoordRestraint implements LambdaInterface {
      */
     public void setIgnoreHydrogen(boolean ignoreHydrogen) {
         this.ignoreHydrogen = ignoreHydrogen;
-    }
-
-    /**
-     * <p>resetCoordinatePin.</p>
-     */
-    public void resetCoordinatePin() {
-        double[] aixyz = new double[3];
-        for (int i = 0; i < nAtoms; i++) {
-            atoms[i].getXYZ(aixyz);
-            arraycopy(aixyz, 0, initialCoordinates[i], 0, 3);
-        }
-    }
-
-    /**
-     * <p>getCoordinatePin.</p>
-     *
-     * @param xyz an array of {@link double} objects.
-     * @return an array of {@link double} objects.
-     */
-    public double[][] getCoordinatePin(double[][] xyz) {
-        if (xyz == null) {
-            xyz = new double[nAtoms][3];
-        } else if (xyz.length != nAtoms) {
-            throw new IllegalArgumentException(" Incorrect number of atoms!");
-        }
-        for (int i = 0; i < nAtoms; i++) {
-            arraycopy(initialCoordinates[i], 0, xyz[i], 0, 3);
-        }
-        return xyz;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getLambda() {
-        return lambda;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getdEdL() {
-        if (lambdaTerm) {
-            return dEdL;
-        } else {
-            return 0.0;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdL2() {
-        if (lambdaTerm) {
-            return d2EdL2;
-        } else {
-            return 0.0;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void getdEdXdL(double[] gradient) {
-        if (lambdaTerm) {
-            int n3 = nAtoms * 3;
-            for (int i = 0; i < n3; i++) {
-                gradient[i] += lambdaGradient[i];
-            }
-        }
     }
 }

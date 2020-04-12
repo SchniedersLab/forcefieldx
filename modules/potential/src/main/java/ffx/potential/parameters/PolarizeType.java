@@ -68,10 +68,6 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
 
     private static final double sixth = 1.0 / 6.0;
     /**
-     * Atom type number.
-     */
-    public int type;
-    /**
      * Thole damping factor.
      */
     public final double thole;
@@ -83,6 +79,10 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      * Isotropic polarizability in units of Angstroms^3.
      */
     public final double polarizability;
+    /**
+     * Atom type number.
+     */
+    public int type;
     /**
      * Connected types in the polarization group of each atom. (may be null)
      */
@@ -112,50 +112,6 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
 
     /**
      * <p>
-     * incrementType</p>
-     *
-     * @param increment a int.
-     */
-    void incrementType(int increment) {
-        type += increment;
-        setKey(Integer.toString(type));
-        if (polarizationGroup != null) {
-            for (int i = 0; i < polarizationGroup.length; i++) {
-                polarizationGroup[i] += increment;
-            }
-        }
-    }
-
-    /**
-     * Add mapped known types to the polarization group of a new patch.
-     *
-     * @param typeMap a lookup between new atom types and known atom types.
-     * @return a boolean.
-     */
-    boolean patchTypes(HashMap<AtomType, AtomType> typeMap) {
-        if (polarizationGroup == null) {
-            return false;
-        }
-
-        // Append known mapped types.
-        int len = polarizationGroup.length;
-        int added = 0;
-        for (AtomType newType : typeMap.keySet()) {
-            for (int i = 1; i < len; i++) {
-                if (polarizationGroup[i] == newType.type) {
-                    AtomType knownType = typeMap.get(newType);
-                    added++;
-                    polarizationGroup = Arrays.copyOf(polarizationGroup, len + added);
-                    polarizationGroup[len + added - 1] = knownType.type;
-                }
-            }
-        }
-
-        return added > 0;
-    }
-
-    /**
-     * <p>
      * add</p>
      *
      * @param key a int.
@@ -171,26 +127,6 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         arraycopy(polarizationGroup, 0, newGroup, 0, len);
         newGroup[len] = key;
         polarizationGroup = newGroup;
-    }
-
-    /**
-     * Average two PolarizeType instances. The atom types to include in the new
-     * polarizationGroup must be supplied.
-     *
-     * @param polarizeType1     a {@link ffx.potential.parameters.PolarizeType} object.
-     * @param polarizeType2     a {@link ffx.potential.parameters.PolarizeType} object.
-     * @param atomType          a int.
-     * @param polarizationGroup an array of {@link int} objects.
-     * @return a {@link ffx.potential.parameters.PolarizeType} object.
-     */
-    public static PolarizeType average(PolarizeType polarizeType1, PolarizeType polarizeType2,
-                                       int atomType, int[] polarizationGroup) {
-        if (polarizeType1 == null || polarizeType2 == null) {
-            return null;
-        }
-        double thole = (polarizeType1.thole + polarizeType2.thole) / 2.0;
-        double polarizability = (polarizeType1.polarizability + polarizeType2.polarizability) / 2.0;
-        return new PolarizeType(atomType, polarizability, thole, polarizationGroup);
     }
 
     /**
@@ -312,40 +248,52 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * A recursive method that checks all atoms bonded to the seed atom for
-     * inclusion in the polarization group. The method is called on each newly
-     * found group member.
+     * Average two PolarizeType instances. The atom types to include in the new
+     * polarizationGroup must be supplied.
      *
-     * @param polarizationGroup Atom types that should be included in the group.
-     * @param group             XYZ indices of current group members.
-     * @param seed              The bonds of the seed atom are queried for inclusion in the group.
+     * @param polarizeType1     a {@link ffx.potential.parameters.PolarizeType} object.
+     * @param polarizeType2     a {@link ffx.potential.parameters.PolarizeType} object.
+     * @param atomType          a int.
+     * @param polarizationGroup an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.PolarizeType} object.
      */
-    private static void growGroup(List<Integer> polarizationGroup, List<Integer> group, Atom seed) {
-        List<Bond> bonds = seed.getBonds();
-        for (Bond bi : bonds) {
-            Atom aj = bi.get1_2(seed);
-            int tj = aj.getType();
-            boolean added = false;
-            for (int g : polarizationGroup) {
-                if (g == tj) {
-                    Integer index = aj.getIndex() - 1;
-                    if (!group.contains(index)) {
-                        group.add(index);
-                        added = true;
-                        break;
-                    }
-                }
-            }
-            if (added) {
-                PolarizeType polarizeType = aj.getPolarizeType();
-                for (int i : polarizeType.polarizationGroup) {
-                    if (!polarizationGroup.contains(i)) {
-                        polarizationGroup.add(i);
-                    }
-                }
-                growGroup(polarizationGroup, group, aj);
-            }
+    public static PolarizeType average(PolarizeType polarizeType1, PolarizeType polarizeType2,
+                                       int atomType, int[] polarizationGroup) {
+        if (polarizeType1 == null || polarizeType2 == null) {
+            return null;
         }
+        double thole = (polarizeType1.thole + polarizeType2.thole) / 2.0;
+        double polarizability = (polarizeType1.polarizability + polarizeType2.polarizability) / 2.0;
+        return new PolarizeType(atomType, polarizability, thole, polarizationGroup);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compare(String s1, String s2) {
+        int t1 = parseInt(s1);
+        int t2 = parseInt(s2);
+        return Integer.compare(t1, t2);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PolarizeType polarizeType = (PolarizeType) o;
+        return polarizeType.type == this.type;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(type);
     }
 
     /**
@@ -398,32 +346,84 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * {@inheritDoc}
+     * A recursive method that checks all atoms bonded to the seed atom for
+     * inclusion in the polarization group. The method is called on each newly
+     * found group member.
+     *
+     * @param polarizationGroup Atom types that should be included in the group.
+     * @param group             XYZ indices of current group members.
+     * @param seed              The bonds of the seed atom are queried for inclusion in the group.
      */
-    @Override
-    public int compare(String s1, String s2) {
-        int t1 = parseInt(s1);
-        int t2 = parseInt(s2);
-        return Integer.compare(t1, t2);
+    private static void growGroup(List<Integer> polarizationGroup, List<Integer> group, Atom seed) {
+        List<Bond> bonds = seed.getBonds();
+        for (Bond bi : bonds) {
+            Atom aj = bi.get1_2(seed);
+            int tj = aj.getType();
+            boolean added = false;
+            for (int g : polarizationGroup) {
+                if (g == tj) {
+                    Integer index = aj.getIndex() - 1;
+                    if (!group.contains(index)) {
+                        group.add(index);
+                        added = true;
+                        break;
+                    }
+                }
+            }
+            if (added) {
+                PolarizeType polarizeType = aj.getPolarizeType();
+                for (int i : polarizeType.polarizationGroup) {
+                    if (!polarizationGroup.contains(i)) {
+                        polarizationGroup.add(i);
+                    }
+                }
+                growGroup(polarizationGroup, group, aj);
+            }
+        }
     }
 
     /**
-     * {@inheritDoc}
+     * <p>
+     * incrementType</p>
+     *
+     * @param increment a int.
      */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PolarizeType polarizeType = (PolarizeType) o;
-        return polarizeType.type == this.type;
+    void incrementType(int increment) {
+        type += increment;
+        setKey(Integer.toString(type));
+        if (polarizationGroup != null) {
+            for (int i = 0; i < polarizationGroup.length; i++) {
+                polarizationGroup[i] += increment;
+            }
+        }
     }
 
     /**
-     * {@inheritDoc}
+     * Add mapped known types to the polarization group of a new patch.
+     *
+     * @param typeMap a lookup between new atom types and known atom types.
+     * @return a boolean.
      */
-    @Override
-    public int hashCode() {
-        return Objects.hash(type);
+    boolean patchTypes(HashMap<AtomType, AtomType> typeMap) {
+        if (polarizationGroup == null) {
+            return false;
+        }
+
+        // Append known mapped types.
+        int len = polarizationGroup.length;
+        int added = 0;
+        for (AtomType newType : typeMap.keySet()) {
+            for (int i = 1; i < len; i++) {
+                if (polarizationGroup[i] == newType.type) {
+                    AtomType knownType = typeMap.get(newType);
+                    added++;
+                    polarizationGroup = Arrays.copyOf(polarizationGroup, len + added);
+                    polarizationGroup[len + added - 1] = knownType.type;
+                }
+            }
+        }
+
+        return added > 0;
     }
 
 }

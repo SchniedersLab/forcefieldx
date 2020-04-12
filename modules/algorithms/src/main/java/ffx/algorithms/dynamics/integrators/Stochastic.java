@@ -62,6 +62,14 @@ import static ffx.utilities.Constants.kB;
 public class Stochastic extends Integrator {
 
     /**
+     * Friction coefficient.
+     */
+    private final double friction;
+    /**
+     * Random number generator.
+     */
+    private final Random random;
+    /**
      * Per degree of freedom friction.
      */
     private double[] vFriction;
@@ -69,10 +77,6 @@ public class Stochastic extends Integrator {
      * Per degree of freedom random velocity change.
      */
     private double[] vRandom;
-    /**
-     * Friction coefficient.
-     */
-    private final double friction;
     /**
      * Inverse friction coefficient.
      */
@@ -89,10 +93,6 @@ public class Stochastic extends Integrator {
      * Simulation temperature.
      */
     private double temperature;
-    /**
-     * Random number generator.
-     */
-    private final Random random;
 
     /**
      * Constructor for Stochastic Dynamics.
@@ -124,37 +124,16 @@ public class Stochastic extends Integrator {
     /**
      * {@inheritDoc}
      * <p>
-     * Set the stochastic dynamics time-step.
+     * Use Newton's second law to get the next acceleration and find the
+     * full-step velocities using the Verlet recursion.
      */
     @Override
-    public void setTimeStep(double dt) {
-        this.dt = dt;
-        fdt = friction * dt;
-        efdt = exp(-fdt);
-        if (friction >= 0) {
-            inverseFriction = 1.0 / friction;
-        } else {
-            inverseFriction = Double.POSITIVE_INFINITY;
+    public void postForce(double[] gradient) {
+        copyAccelerationToPrevious();
+        for (int i = 0; i < nVariables; i++) {
+            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
+            v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
         }
-    }
-
-    /**
-     * <p>Setter for the field <code>temperature</code>.</p>
-     *
-     * @param temperature a double.
-     */
-    public void setTemperature(double temperature) {
-        this.temperature = temperature;
-    }
-
-    /**
-     * Initialize the Random number generator used to apply random forces to the
-     * particles.
-     *
-     * @param seed Random number generator seed.
-     */
-    public void setRandomSeed(long seed) {
-        random.setSeed(seed);
     }
 
     /**
@@ -243,21 +222,6 @@ public class Stochastic extends Integrator {
     /**
      * {@inheritDoc}
      * <p>
-     * Use Newton's second law to get the next acceleration and find the
-     * full-step velocities using the Verlet recursion.
-     */
-    @Override
-    public void postForce(double[] gradient) {
-        copyAccelerationToPrevious();
-        for (int i = 0; i < nVariables; i++) {
-            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
-            v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Update the integrator to be consistent with chemical perturbations. This
      * overrides the default implementation so that the vFriction and vRandom arrays
      * can be resized.
@@ -269,6 +233,42 @@ public class Stochastic extends Integrator {
         if (nVariables > vFriction.length) {
             vFriction = new double[nVariables];
             vRandom = new double[nVariables];
+        }
+    }
+
+    /**
+     * Initialize the Random number generator used to apply random forces to the
+     * particles.
+     *
+     * @param seed Random number generator seed.
+     */
+    public void setRandomSeed(long seed) {
+        random.setSeed(seed);
+    }
+
+    /**
+     * <p>Setter for the field <code>temperature</code>.</p>
+     *
+     * @param temperature a double.
+     */
+    public void setTemperature(double temperature) {
+        this.temperature = temperature;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Set the stochastic dynamics time-step.
+     */
+    @Override
+    public void setTimeStep(double dt) {
+        this.dt = dt;
+        fdt = friction * dt;
+        efdt = exp(-fdt);
+        if (friction >= 0) {
+            inverseFriction = 1.0 / friction;
+        } else {
+            inverseFriction = Double.POSITIVE_INFINITY;
         }
     }
 

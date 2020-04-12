@@ -195,7 +195,7 @@ public class Polymer extends MSGroup {
      * @param multiTerminus a {@link ffx.potential.bonded.MultiTerminus} object.
      */
     public void addMultiTerminus(Residue residue, MultiTerminus multiTerminus) {
-        ArrayList<MSNode> children = residue.getChildList();
+        List<MSNode> children = residue.getChildList();
         for (MSNode child : children) {
             multiTerminus.add(child);
         }
@@ -259,7 +259,7 @@ public class Polymer extends MSGroup {
      */
     @Override
     public void finalize(boolean finalizeGroups, ForceField forceField) {
-        ArrayList<MSNode> residues = getAtomNodeList();
+        List<MSNode> residues = getAtomNodeList();
         setFinalized(false);
 
         // Finalize the residues in the Polymer
@@ -363,15 +363,15 @@ public class Polymer extends MSGroup {
      * TODO: Was the sole hook on BondedTerm equality definition via getID();
      * will rewrite with a simple Comparator soon.
      *
-     * @return An ArrayList of Dihedral objects representing the Phi/Psi angles
+     * @return An List of Dihedral objects representing the Phi/Psi angles
      * of the Polymer, useful for creating Ramachandran plots
      */
-    public List<ArrayList<Torsion>> getPhiPsiList() {
+    public List<List<Torsion>> getPhiPsiList() {
         MSNode dihedrals;
         ListIterator<MSNode> li, lj;
-        List<ArrayList<Torsion>> phipsi = new ArrayList<>();
-        ArrayList<Torsion> phi = new ArrayList<>();
-        ArrayList<Torsion> psi = new ArrayList<>();
+        List<List<Torsion>> phipsi = new ArrayList<>();
+        List<Torsion> phi = new ArrayList<>();
+        List<Torsion> psi = new ArrayList<>();
         phipsi.add(phi);
         phipsi.add(psi);
         MSNode joints = getTermNode();
@@ -492,10 +492,10 @@ public class Polymer extends MSGroup {
      * <p>
      * getResidues</p>
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<Residue> getResidues() {
-        ArrayList<Residue> residues = new ArrayList<>();
+    public List<Residue> getResidues() {
+        List<Residue> residues = new ArrayList<>();
         for (Enumeration e = getAtomNode().children(); e.hasMoreElements(); ) {
             Residue r = (Residue) e.nextElement();
             residues.add(r);

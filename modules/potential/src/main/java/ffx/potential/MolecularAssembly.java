@@ -93,8 +93,8 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.StringUtils;
-import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
@@ -109,31 +109,17 @@ import static ffx.potential.extended.ExtUtils.prop;
  */
 public class MolecularAssembly extends MSGroup {
 
-    private static final Logger logger = Logger.getLogger(MolecularAssembly.class.getName());
-
-    public enum FractionalMode {OFF, MOLECULE, ATOM}
-
-    private static double[] a = new double[3];
-
     /**
      * Constant <code>atomIndexing</code>
      */
     public static final Indexing atomIndexing = prop(Indexing.class, "sys.atomIndexing", Indexing.XYZ);
+    private static final Logger logger = Logger.getLogger(MolecularAssembly.class.getName());
+    private static final double[] a = new double[3];
     /**
      * Persistent index parallel to xyzIndex.
      */
     public static int persistentAtomIndexer = 1;
-
-    // MolecularAssembly member variables
-    private File file;
     private final List<String> headerLines = new ArrayList<>();
-    protected ForceField forceField;
-    private ForceFieldEnergy potentialEnergy;
-    private CompositeConfiguration properties;
-    private Vector3d offset;
-    private int cycles = 1;
-    private int currentCycle = 1;
-    private List<String> altLoc = null;
     // Data Nodes
     private final MSNode ions = new MSNode("Ions");
     private final HashMap<String, Molecule> ionHashMap = new HashMap<>();
@@ -141,7 +127,16 @@ public class MolecularAssembly extends MSGroup {
     private final HashMap<String, Molecule> waterHashMap = new HashMap<>();
     private final MSNode molecules = new MSNode("Hetero Molecules");
     private final HashMap<String, Molecule> moleculeHashMap = new HashMap<>();
-
+    private final List<BranchGroup> myNewShapes = new ArrayList<>();
+    protected ForceField forceField;
+    // MolecularAssembly member variables
+    private File file;
+    private ForceFieldEnergy potentialEnergy;
+    private CompositeConfiguration properties;
+    private Vector3d offset;
+    private int cycles = 1;
+    private int currentCycle = 1;
+    private List<String> altLoc = null;
     // 3D Graphics Nodes - There is a diagram explaining the MolecularAssembly
     // Scenegraph below
     private BranchGroup branchGroup;
@@ -161,7 +156,6 @@ public class MolecularAssembly extends MSGroup {
     private Atom[] atomLookUp;
     private LineAttributes lineAttributes;
     private boolean visible = false;
-    private final ArrayList<BranchGroup> myNewShapes = new ArrayList<>();
     private FractionalMode fractionalMode = FractionalMode.MOLECULE;
     private double[][] fractionalCoordinates;
 
@@ -173,7 +167,7 @@ public class MolecularAssembly extends MSGroup {
      */
     public MolecularAssembly(String name) {
         super(name);
-        MolecularAssembly.this.getAtomNode().setName("MacroMolecules");
+        getAtomNode().setName("MacroMolecules");
         add(molecules);
         add(ions);
         add(water);
@@ -203,67 +197,228 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field <code>fractionalMode</code>.</p>
+     * <p>
+     * addAltLocation</p>
      *
-     * @param mode a {@link ffx.potential.MolecularAssembly.FractionalMode} object.
+     * @param s a {@link java.lang.String} object.
      */
-    public void setFractionalMode(FractionalMode mode) {
-        fractionalMode = mode;
+    public void addAltLocation(String s) {
+        if (altLoc == null) {
+            altLoc = new Vector<>();
+        }
+        if (!altLoc.contains(s)) {
+            altLoc.add(s);
+        }
     }
 
     /**
-     * <p>Getter for the field <code>fractionalMode</code>.</p>
+     * Adds a header line to this MolecularAssembly (particularly for PDB
+     * formats)
      *
-     * @return a {@link ffx.potential.MolecularAssembly.FractionalMode} object.
+     * @param line Line to add.
      */
-    public FractionalMode getFractionalMode() {
-        return fractionalMode;
+    public void addHeaderLine(String line) {
+        headerLines.add(line);
     }
 
     /**
-     * Count the number of fractional coordinate entities in the system. If fractionalMode is MOLECULE, then the count
-     * is equal to the number of molecules. If fractionalMode is ATOM, then the count is the number of atoms. Otherwise
-     * the count is zero.
-     *
-     * @return The number of fractional coordinate entities.
+     * {@inheritDoc}
      */
-    public int fractionalCount() {
-        int count = 0;
-        switch (fractionalMode) {
-            case MOLECULE:
-                // Move polymers togethers.
-                Polymer polymers[] = getChains();
-                if (polymers != null && polymers.length > 0) {
-                    count += polymers.length;
+    @Override
+    public MSNode addMSNode(MSNode o) {
+        List<MSNode> Polymers = getAtomNodeList();
+        if (o instanceof Atom) {
+            Atom atom = (Atom) o;
+            if (atom.isModRes()) {
+                return getResidue(atom, true, Residue.ResidueType.AA);
+            } else if (!atom.isHetero()) {
+                return getResidue(atom, true);
+            } else {
+                return getMolecule(atom, true);
+            }
+        } else if (o instanceof Residue) {
+            Residue residue = (Residue) o;
+            Character chainID = residue.getChainID();
+            String segID = residue.getSegID();
+            int index = Polymers.indexOf(new Polymer(chainID, segID));
+            // See if the polymer already exists.
+            if (index != -1) {
+                Polymer c = (Polymer) Polymers.get(index);
+                setFinalized(false);
+                return c.addMSNode(residue);
+            } else {
+                Polymer newc = new Polymer(chainID, segID);
+                getAtomNode().add(newc);
+                setFinalized(false);
+                return newc.addMSNode(residue);
+            }
+        } else if (o instanceof Polymer) {
+            Polymer c = (Polymer) o;
+            int index = Polymers.indexOf(c);
+            if (index == -1) {
+                getAtomNode().add(c);
+                setFinalized(false);
+                return c;
+            } else {
+                return (Polymer) Polymers.get(index);
+            }
+        } else if (o instanceof Molecule) {
+            Molecule m = (Molecule) o;
+            String key = m.getKey();
+            if (m.getAtomNode().getChildCount() == 1) {
+                ions.add(m);
+                if (ionHashMap.containsKey(key)) {
+                    logger.info(" Ion map already contains " + m.toString());
+                } else {
+                    ionHashMap.put(m.getKey(), m);
                 }
-                List<MSNode> molecules = getMolecules();
-                if (molecules != null) {
-                    count += molecules.size();
+                return m;
+            } else if (Utilities.isWaterOxygen((Atom) m.getAtomNode().getChildAt(0))) {
+                water.add(m);
+                if (waterHashMap.containsKey(key)) {
+                    logger.info(" Water map already contains " + m.toString());
+                } else {
+                    waterHashMap.put(m.getKey(), m);
                 }
-
-                List<MSNode> waters = getWaters();
-                if (waters != null) {
-                    count += waters.size();
+                return m;
+            } else {
+                molecules.add(m);
+                if (moleculeHashMap.containsKey(key)) {
+                    logger.info(" Molecule map already contains " + m.toString());
+                } else {
+                    moleculeHashMap.put(m.getKey(), m);
                 }
-
-                List<MSNode> ions = getIons();
-                if (ions != null) {
-                    count += ions.size();
-                }
-                break;
-            case ATOM:
-                count = getAtomArray().length;
-                break;
-            case OFF:
-                count = 0;
-                break;
+                return m;
+            }
+        } else {
+            String message = "Programming error in MolecularAssembly addNode";
+            logger.log(Level.SEVERE, message);
+            return o;
         }
+    }
 
-        if (fractionalCoordinates == null || fractionalCoordinates.length != count) {
-            fractionalCoordinates = new double[count][3];
+    /**
+     * Applies a randomly drawn density to a molecular system's crystal.
+     *
+     * @param ucDensity Target density.
+     */
+    public void applyRandomDensity(double ucDensity) {
+        if (ucDensity > 0) {
+            logger.info(format("\n Applying random unit cell axes with target density of %6.3f\n", ucDensity));
+            // The replicates crystal is needed here (not the unit cell).
+            Crystal crystal = getCrystal();
+            if (!crystal.aperiodic()) {
+                double mass = getMass();
+                crystal.randomParameters(ucDensity, mass);
+                potentialEnergy.setCrystal(crystal);
+            } else {
+                logger.fine(String.format(" Potential %s is an aperiodic system!", potentialEnergy));
+            }
         }
+    }
 
-        return count;
+    /**
+     * Randomizes position in the unit cell of each molecule by applying a Cartesian SymOp with a random translation.
+     *
+     * @param x SymOp with translation range -x/2 .. x/2 (0 for random placement in the unit cell, negative for no SymOp)
+     */
+    public void applyRandomSymOp(double x) {
+        // The Unit Cell is needed here (not the ReplicatesCrystal).
+        Crystal crystal = getCrystal().getUnitCell();
+        if (crystal.aperiodic() || x < 0) {
+            return;
+        }
+        double[] xyz = new double[3];
+        List<MSNode> molecules = getMolecules();
+        int moleculeNum = 1;
+        for (MSNode msNode : molecules) {
+            List<Atom> atoms = msNode.getAtomList();
+            SymOp symOp;
+            if (x == 0) {
+                double[] translation = crystal.getRandomCartTranslation();
+                symOp = SymOp.randomSymOpFactory(translation);
+            } else {
+                symOp = SymOp.randomSymOpFactory(x);
+            }
+            logger.info(format("\n Applying random Cartesian SymOp to molecule %d:\n%s", moleculeNum, symOp.toString()));
+            for (Atom atom : atoms) {
+                atom.getXYZ(xyz);
+                crystal.applyCartesianSymOp(xyz, xyz, symOp);
+                atom.setXYZ(xyz);
+            }
+            moleculeNum++;
+        }
+    }
+
+    /**
+     * <p>
+     * center</p>
+     */
+    public void center() {
+        double[] center = getMultiScaleCenter(false);
+        offset = new Vector3d(center);
+        if (vrml != null) {
+            vrmlTd.set(offset);
+            vrmlTG.setTransform(vrmlTd);
+        }
+        offset.negate();
+        originToRotV3D.set(offset);
+        originToRotT3D.setTranslation(originToRotV3D);
+        originToRot.setTransform(originToRotT3D);
+        rotToCOMT3D.setIdentity();
+        rotToCOM.setTransform(rotToCOMT3D);
+        offset.negate();
+        rotateAbout(offset);
+        originToRotT3D.get(offset);
+    }
+
+    /**
+     * <p>
+     * centerAt</p>
+     *
+     * @param d an array of double.
+     */
+    public void centerAt(double[] d) {
+        double[] Rc = {0, 0, 0};
+        double[] c = new double[3];
+        ListIterator<Atom> li;
+        int i, num = getAtomList().size();
+        for (li = getAtomList().listIterator(); li.hasNext(); ) {
+            (li.next()).getXYZ(a);
+            Rc[0] += a[0];
+            Rc[1] += a[1];
+            Rc[2] += a[2];
+        }
+        for (i = 0; i < 3; i++) {
+            Rc[i] /= num;
+        }
+        sub(d, Rc, c);
+        for (li = getAtomList().listIterator(); li.hasNext(); ) {
+            (li.next()).move(c);
+        }
+    }
+
+    /**
+     * <p>
+     * centerView</p>
+     *
+     * @param rot   a boolean.
+     * @param trans a boolean.
+     */
+    public void centerView(boolean rot, boolean trans) {
+        originToRot.getTransform(originToRotT3D);
+        if (rot) {
+            Matrix3d m3d = new Matrix3d();
+            m3d.setIdentity();
+            originToRotT3D.setRotation(m3d);
+            // rotToCOMT3D.setRotation(m3d);
+        }
+        if (trans) {
+            originToRotV3D.set(offset);
+            originToRotT3D.set(originToRotV3D);
+        }
+        originToRot.setTransform(originToRotT3D);
+        // rotToCOM.setTransform(rotToCOMT3D);
     }
 
     /**
@@ -280,7 +435,7 @@ public class MolecularAssembly extends MSGroup {
         switch (fractionalMode) {
             case MOLECULE:
                 int iMolecule = 0;
-                Polymer polymers[] = getChains();
+                Polymer[] polymers = getChains();
                 if (polymers != null && polymers.length > 0) {
                     // Find the center of mass
                     for (Polymer polymer : polymers) {
@@ -370,7 +525,7 @@ public class MolecularAssembly extends MSGroup {
                 }
                 break;
             case ATOM:
-                Atom atoms[] = getAtomArray();
+                Atom[] atoms = getAtomArray();
                 int nAtoms = atoms.length;
                 for (int i = 0; i < nAtoms; i++) {
                     atoms[i].getXYZ(com);
@@ -380,6 +535,1026 @@ public class MolecularAssembly extends MSGroup {
             case OFF:
                 break;
         }
+    }
+
+    /**
+     * <p>
+     * createBox</p>
+     */
+    public void createBox() {
+        int vertices = 8;
+        LineArray la = new LineArray(4 * vertices, GeometryArray.COORDINATES | GeometryArray.COLOR_4 | GeometryArray.NORMALS);
+        la.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
+        la.setCapability(LineArray.ALLOW_COORDINATE_READ);
+        la.setCapability(LineArray.ALLOW_COLOR_WRITE);
+        la.setCapability(LineArray.ALLOW_COUNT_READ);
+        la.setCapability(LineArray.ALLOW_INTERSECT);
+        la.setCapability(LineArray.ALLOW_FORMAT_READ);
+        // Create a normal
+        // for (ListIterator<MSNode> li = bondlist.listIterator(); li.hasNext(); ){
+        // la.setCoordinate(i, a1);
+        // la.setColor(i, col);
+        // la.setNormal(i++, a1);
+        // }
+        ColoringAttributes cola = new ColoringAttributes(new Color3f(),
+                ColoringAttributes.SHADE_GOURAUD);
+        Appearance app = new Appearance();
+        lineAttributes = new LineAttributes();
+        lineAttributes.setLineWidth(RendererCache.bondwidth);
+        lineAttributes.setCapability(LineAttributes.ALLOW_WIDTH_WRITE);
+        lineAttributes.setLineAntialiasingEnable(true);
+        app.setLineAttributes(lineAttributes);
+        app.setCapability(Appearance.ALLOW_LINE_ATTRIBUTES_READ);
+        app.setCapability(Appearance.ALLOW_LINE_ATTRIBUTES_WRITE);
+        RenderingAttributes ra = new RenderingAttributes();
+        ra.setAlphaTestValue(0.1f);
+        ra.setAlphaTestFunction(RenderingAttributes.GREATER);
+        ra.setDepthBufferEnable(true);
+        ra.setDepthBufferWriteEnable(true);
+        app.setRenderingAttributes(ra);
+        app.setColoringAttributes(cola);
+        Shape3D wireframe = new Shape3D(la, app);
+        // PickTool.setCapabilities(wire, PickTool.INTERSECT_COORD);
+        wireframe.setUserData(this);
+        wireframe.setBounds(new BoundingSphere(new Point3d(0, 0, 0), 10.0));
+        try {
+            wireframe.setBoundsAutoCompute(false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        wireframe.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
+        wireframe.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
+        // return wire;
+    }
+
+    /**
+     * <p>
+     * deleteMolecule</p>
+     *
+     * @param molecule a {@link ffx.potential.bonded.Molecule} object.
+     */
+    public void deleteMolecule(Molecule molecule) {
+        List<MSNode> list = ions.getChildList();
+        for (MSNode node : list) {
+            Molecule m = (Molecule) node;
+            if (molecule == m) {
+                ions.remove(m);
+                ionHashMap.remove(m.getKey());
+                return;
+            }
+        }
+        list = water.getChildList();
+        for (MSNode node : list) {
+            Molecule m = (Molecule) node;
+            if (molecule == m) {
+                water.remove(m);
+                waterHashMap.remove(m.getKey());
+                return;
+            }
+        }
+        list = molecules.getChildList();
+        for (MSNode node : list) {
+            Molecule m = (Molecule) node;
+            if (molecule == m) {
+                molecules.remove(m);
+                moleculeHashMap.remove(m.getKey());
+                return;
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean destroy() {
+        try {
+            if (potentialEnergy == null) {
+                finishDestruction();
+                return true;
+            } else {
+                // potentialEnergy.destroy() will loop around to call finishDestruction().
+                // This is a poor construction, but is necessary due to prior decisions.
+                return potentialEnergy.destroy();
+            }
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception in destroying a MolecularAssembly: %s", ex));
+            logger.info(Utilities.stackTraceToString(ex));
+            return false;
+        }
+    }
+
+    /**
+     * <p>
+     * detach</p>
+     */
+    public void detach() {
+        synchronized (this) {
+            if (branchGroup != null && branchGroup.isLive()) {
+                branchGroup.detach();
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void finalize(boolean finalizeGroups, ForceField forceField) {
+        setFinalized(false);
+        if (finalizeGroups) {
+            bondTime = 0;
+            angleTime = 0;
+            stretchBendTime = 0;
+            ureyBradleyTime = 0;
+            outOfPlaneBendTime = 0;
+            torsionTime = 0;
+            piOrbitalTorsionTime = 0;
+            torsionTorsionTime = 0;
+            List<MSNode> Polymers = getAtomNodeList();
+            for (MSNode msNode : Polymers) {
+                MSGroup group = (MSGroup) msNode;
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(" Finalizing bonded terms for polymer " + group.toString());
+                }
+                try {
+                    group.finalize(true, forceField);
+                } catch (Exception e) {
+                    String message = "Fatal exception finalizing " + group.toString();
+                    logger.log(Level.SEVERE, message, e);
+                    System.exit(-1);
+                }
+                if (logger.isLoggable(Level.FINE)) {
+                    Runtime runtime = Runtime.getRuntime();
+                    long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
+                    long MB = 1024 * 1024;
+                    logger.fine("\n In-Use Memory   (Mb): " + occupiedMemory / MB
+                            + "\n Free Memory     (Mb): " + runtime.freeMemory() / MB
+                            + "\n Total Memory    (Mb): " + runtime.totalMemory() / MB);
+                }
+            }
+            for (MSNode m : molecules.getChildList()) {
+                Molecule molecule = (Molecule) m;
+                molecule.finalize(true, forceField);
+            }
+            for (MSNode m : water.getChildList()) {
+                Molecule molecule = (Molecule) m;
+                molecule.finalize(true, forceField);
+            }
+            for (MSNode m : ions.getChildList()) {
+                Molecule molecule = (Molecule) m;
+                molecule.finalize(true, forceField);
+            }
+            if (logger.isLoggable(Level.FINE)) {
+                StringBuilder sb = new StringBuilder("\n Time to create bonded energy terms\n\n");
+                sb.append(format(" Bond Streching     %10.3f\n", bondTime * 1.0e-9));
+                sb.append(format(" Angle Bending      %10.3f\n", angleTime * 1.0e-9));
+                sb.append(format(" Stretch-Bend       %10.3f\n", stretchBendTime * 1.0e-9));
+                sb.append(format(" Urey-Bradley       %10.3f\n", ureyBradleyTime * 1.0e-9));
+                sb.append(format(" Out-of-Plane Bend  %10.3f\n", outOfPlaneBendTime * 1.0e-9));
+                sb.append(format(" Torsionanl Angle   %10.3f\n", torsionTime * 1.0e-9));
+                sb.append(format(" Pi-Orbital Torsion %10.3f\n", piOrbitalTorsionTime * 1.0e-9));
+                sb.append(format(" Torsion-Torsion    %10.3f\n", torsionTorsionTime * 1.0e-9));
+                logger.fine(sb.toString());
+            }
+        }
+        if (!java.awt.GraphicsEnvironment.isHeadless()) {
+            createScene(!finalizeGroups);
+            center();
+        }
+        removeLeaves();
+
+        // Apply the Heavy Hydrogen flag.
+        boolean heavyHydrogen = forceField.getBoolean("HEAVY_HYDROGENS", false);
+        heavyHydrogen = forceField.getBoolean("HEAVY_HYDROGEN", heavyHydrogen);
+        if (heavyHydrogen) {
+            applyHeavyHydrogen();
+        }
+
+        setFinalized(true);
+    }
+
+    /**
+     * <p>
+     * findAtom</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
+    public Atom findAtom(Atom atom) {
+        if (!atom.isHetero() || atom.isModRes()) {
+            Polymer polymer = getPolymer(atom.getChainID(), atom.getSegID(), false);
+            if (polymer != null) {
+                Residue res = polymer.getResidue(atom.getResidueName(), atom.getResidueNumber(), false);
+                if (res != null) {
+                    MSNode node = res.getAtomNode();
+                    return (Atom) node.contains(atom);
+                }
+            }
+            return null;
+        } else {
+            String resName = atom.getResidueName();
+            int resNum = atom.getResidueNumber();
+            String segID = atom.getSegID();
+            String key = resNum + resName + segID;
+            Molecule m = ionHashMap.get(key);
+            if (m == null) {
+                m = waterHashMap.get(key);
+                if (m == null) {
+                    m = moleculeHashMap.get(key);
+                    if (m == null) {
+                        return null;
+                    }
+                }
+            }
+            return (Atom) m.contains(atom);
+        }
+    }
+
+    /**
+     * Count the number of fractional coordinate entities in the system. If fractionalMode is MOLECULE, then the count
+     * is equal to the number of molecules. If fractionalMode is ATOM, then the count is the number of atoms. Otherwise
+     * the count is zero.
+     *
+     * @return The number of fractional coordinate entities.
+     */
+    public int fractionalCount() {
+        int count = 0;
+        switch (fractionalMode) {
+            case MOLECULE:
+                // Move polymers togethers.
+                Polymer polymers[] = getChains();
+                if (polymers != null && polymers.length > 0) {
+                    count += polymers.length;
+                }
+                List<MSNode> molecules = getMolecules();
+                if (molecules != null) {
+                    count += molecules.size();
+                }
+
+                List<MSNode> waters = getWaters();
+                if (waters != null) {
+                    count += waters.size();
+                }
+
+                List<MSNode> ions = getIons();
+                if (ions != null) {
+                    count += ions.size();
+                }
+                break;
+            case ATOM:
+                count = getAtomArray().length;
+                break;
+            case OFF:
+                count = 0;
+                break;
+        }
+
+        if (fractionalCoordinates == null || fractionalCoordinates.length != count) {
+            fractionalCoordinates = new double[count][3];
+        }
+
+        return count;
+    }
+
+    /**
+     * <p>
+     * getActiveAtomArray</p>
+     *
+     * @return an array of active {@link ffx.potential.bonded.Atom} objects.
+     */
+    public Atom[] getActiveAtomArray() {
+        List<Atom> atoms = getAtomList();
+        List<Atom> activeAtoms = new ArrayList<>();
+        for (Atom a : atoms) {
+            if (a.isActive()) {
+                activeAtoms.add(a);
+            }
+        }
+        Atom[] atomArray = activeAtoms.toArray(new Atom[0]);
+        Arrays.sort(atomArray);
+        return atomArray;
+    }
+
+    /**
+     * Gets all bonded entities in this MolecularAssembly, where an entity can be a polymer,
+     * molecule, monoatomic ion, or monoatomic gas (i.e. noble gas atoms).
+     *
+     * @return All bonded groups of atoms and all singleton atoms.
+     */
+    public List<MSNode> getAllBondedEntities() {
+        // Initial construction via HashSet to eliminate duplicates.
+        Set<MSNode> allBondedNodes = new HashSet<>(getIons());
+        allBondedNodes.addAll(getMolecules());
+        allBondedNodes.addAll(getWaters());
+        Polymer[] polys = getChains();
+        if (polys != null && polys.length > 0) {
+            allBondedNodes.addAll(Arrays.asList(polys));
+        }
+        return new ArrayList<>(allBondedNodes);
+    }
+
+    /**
+     * <p>
+     * getAltLocations</p>
+     *
+     * @return an array of {@link java.lang.String} objects.
+     */
+    public String[] getAltLocations() {
+        if (altLoc == null || altLoc.isEmpty()) {
+            return null;
+        }
+
+        String[] names = new String[altLoc.size()];
+        int i = 0;
+        for (String s : altLoc) {
+            names[i++] = s;
+        }
+
+        return names;
+    }
+
+    /**
+     * <p>
+     * getAtomArray</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Atom} objects.
+     */
+    public Atom[] getAtomArray() {
+        List<Atom> atoms = getAtomList();
+        Atom[] atomArray = atoms.toArray(new Atom[0]);
+        for (int i = 0; i < atoms.size(); i++) {
+            atomArray[i].setXyzIndex(i + 1);
+        }
+
+        return atomArray;
+    }
+
+    /**
+     * <p>
+     * getAtomFromWireVertex</p>
+     *
+     * @param i a int.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
+    public Atom getAtomFromWireVertex(int i) {
+        if (atomLookUp != null && atomLookUp.length > i) {
+            return atomLookUp[i];
+        }
+        return null;
+    }
+
+    /**
+     * <p>
+     * getBackBoneAtoms</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
+    public List<Atom> getBackBoneAtoms() {
+        List<Atom> backbone = new ArrayList<>();
+        List<Residue> residues = getResidueList();
+        for (Residue residue : residues) {
+            backbone.addAll(residue.getBackboneAtoms());
+        }
+        return backbone;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>branchGroup</code>.</p>
+     *
+     * @return a {@link org.jogamp.java3d.BranchGroup} object.
+     */
+    public BranchGroup getBranchGroup() {
+        return branchGroup;
+    }
+
+    /**
+     * <p>
+     * getChain</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.bonded.Polymer} object.
+     */
+    public Polymer getChain(String name) {
+        for (MSNode node : getAtomNodeList()) {
+            if (node instanceof Polymer) {
+                String chainName = node.getName();
+                if (chainName.equalsIgnoreCase(name)) {
+                    return (Polymer) node;
+                } else if (name.contentEquals(" ")) {
+                    return (Polymer) node;
+                }
+                /* TODO: Right now if a molecular assembly has no chain ID, the first node is returned.
+                    This functionality will not work for cases where multiple chains exist and one of those chains has no name.*/
+            }
+        }
+        return null;
+    }
+
+    /**
+     * <p>
+     * getChainNames</p>
+     *
+     * @return an array of {@link java.lang.String} objects.
+     */
+    public String[] getChainNames() {
+        List<String> temp = new ArrayList<>();
+        for (MSNode node : getAtomNodeList()) {
+            if (node instanceof Polymer) {
+                temp.add(node.getName());
+            }
+        }
+        if (temp.isEmpty()) {
+            return null;
+        }
+
+        String[] names = new String[temp.size()];
+        for (int i = 0; i < temp.size(); i++) {
+            names[i] = temp.get(i);
+        }
+
+        return names;
+    }
+
+    /**
+     * <p>
+     * getChains</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Polymer} objects.
+     */
+    public Polymer[] getChains() {
+        List<Polymer> polymers = new ArrayList<>();
+        for (MSNode node : getAtomNodeList()) {
+            if (node instanceof Polymer) {
+                polymers.add((Polymer) node);
+            }
+        }
+        if (polymers.isEmpty()) {
+            return null;
+        }
+        return polymers.toArray(new Polymer[0]);
+    }
+
+    /**
+     * Sums up charge of the system, checking nonstandard residues for
+     * non-unitary charges.
+     *
+     * @param alwaysLog Log non-unitary charge warnings for all nodes
+     * @return System charge
+     */
+    public double getCharge(boolean alwaysLog) {
+        double totalCharge = 0;
+        for (MSNode node : getNodeList()) {
+            double charge = 0;
+            boolean isNonstandard = false;
+            for (Atom atom : node.getAtomList()) {
+                charge += atom.getCharge(forceField);
+                if (atom.isModRes()) {
+                    isNonstandard = true;
+                }
+            }
+            if ((alwaysLog || isNonstandard) && (Math.abs(Math.round(charge) - charge) > 1.0E-5)) {
+                logger.warning(String.format(" Node %s has non-unitary charge %12.8f", node.toString(), charge));
+            }
+            totalCharge += charge;
+        }
+        return totalCharge;
+    }
+
+    /**
+     * <p>
+     * getCrystal</p>
+     *
+     * @return a {@link ffx.crystal.Crystal} object.
+     */
+    public Crystal getCrystal() {
+        if (potentialEnergy == null) {
+            return null;
+        }
+        return potentialEnergy.getCrystal();
+    }
+
+    /**
+     * Set the Crystal for the Potential of this MolecularAssembly.
+     *
+     * @param crystal Crystal instance.
+     */
+    public void setCrystal(Crystal crystal) {
+        if (potentialEnergy != null) {
+            potentialEnergy.setCrystal(crystal);
+        }
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>currentCycle</code>.</p>
+     *
+     * @return a int.
+     */
+    public int getCurrentCycle() {
+        return currentCycle;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>currentCycle</code>.</p>
+     *
+     * @param c a int.
+     */
+    public void setCurrentCycle(int c) {
+        if (c <= cycles && c > 0) {
+            currentCycle = c;
+            for (Atom atom : getAtomList()) {
+                atom.setCurrentCycle(currentCycle);
+            }
+        }
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>cycles</code>.</p>
+     *
+     * @return a int.
+     */
+    public int getCycles() {
+        return cycles;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>cycles</code>.</p>
+     *
+     * @param c a int.
+     */
+    public void setCycles(int c) {
+        cycles = c;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getExtent() {
+        double[] Rc = {0, 0, 0};
+        int num = getAtomList().size();
+        for (Atom atom : getAtomList()) {
+            atom.getXYZ(a);
+            Rc[0] += a[0];
+            Rc[1] += a[1];
+            Rc[2] += a[2];
+        }
+
+        for (int i = 0; i < 3; i++) {
+            Rc[i] /= num;
+        }
+
+        double r, d = 0;
+        double[] xyz = new double[3];
+        for (Atom atom : getAtomList()) {
+            atom.getXYZ(xyz);
+            sub(xyz, Rc, xyz);
+            r = length(xyz);
+            if (d < r) {
+                d = r;
+            }
+
+        }
+        return d;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>file</code>.</p>
+     *
+     * @return a {@link java.io.File} object.
+     */
+    public File getFile() {
+        return file;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>file</code>.</p>
+     *
+     * @param f a {@link java.io.File} object.
+     */
+    public void setFile(File f) {
+        if (f == null) {
+            return;
+        }
+        file = f;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>forceField</code>.</p>
+     *
+     * @return a {@link ffx.potential.parameters.ForceField} object.
+     */
+    public ForceField getForceField() {
+        return forceField;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>forceField</code>.</p>
+     *
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     */
+    public void setForceField(ForceField forceField) {
+        this.forceField = forceField;
+    }
+
+    /**
+     * <p>Getter for the field <code>fractionalMode</code>.</p>
+     *
+     * @return a {@link ffx.potential.MolecularAssembly.FractionalMode} object.
+     */
+    public FractionalMode getFractionalMode() {
+        return fractionalMode;
+    }
+
+    /**
+     * <p>Setter for the field <code>fractionalMode</code>.</p>
+     *
+     * @param mode a {@link ffx.potential.MolecularAssembly.FractionalMode} object.
+     */
+    public void setFractionalMode(FractionalMode mode) {
+        fractionalMode = mode;
+    }
+
+    /**
+     * Gets the header lines associated with this MolecularAssembly
+     * (particularly for PDB)
+     *
+     * @return Header lines.
+     */
+    public String[] getHeaderLines() {
+        String[] ret = new String[headerLines.size()];
+        headerLines.toArray(ret);
+        return ret;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>ions</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
+    public List<MSNode> getIons() {
+        return ions.getChildList();
+    }
+
+    /**
+     * <p>getMass.</p>
+     *
+     * @return a double.
+     */
+    public double getMass() {
+        double mass = 0;
+        for (Atom atom : getAtomArray()) {
+            mass += atom.getMass();
+        }
+        return mass;
+    }
+
+    /**
+     * This method assigns a unique integer to every molecule in the
+     * MolecularAssembly beginning at 0. An integer array with these values for
+     * each atom is returned.
+     *
+     * @return an array of molecule numbers for each atom.
+     */
+    public int[] getMoleculeNumbers() {
+        int[] moleculeNumber = new int[getAtomList().size()];
+        int current = 0;
+        // Loop over polymers together
+        Polymer[] polymers = getChains();
+        if (polymers != null && polymers.length > 0) {
+            for (Polymer polymer : polymers) {
+                List<Atom> atomList = polymer.getAtomList();
+                for (Atom atom : atomList) {
+                    moleculeNumber[atom.getXyzIndex() - 1] = current;
+                }
+                current++;
+            }
+        }
+
+        // Loop over each molecule
+        for (MSNode molecule : molecules.getChildList()) {
+            List<Atom> atomList = molecule.getAtomList();
+            for (Atom atom : atomList) {
+                moleculeNumber[atom.getXyzIndex() - 1] = current;
+                atom.setMoleculeNumber(current);
+            }
+            current++;
+        }
+
+        // Loop over each water
+        for (MSNode wat : water.getChildList()) {
+            List<Atom> atomList = wat.getAtomList();
+            for (Atom atom : atomList) {
+                moleculeNumber[atom.getXyzIndex() - 1] = current;
+            }
+            current++;
+        }
+
+        // Loop over each ion
+        for (MSNode ion : ions.getChildList()) {
+            List<Atom> atomList = ion.getAtomList();
+            for (Atom atom : atomList) {
+                moleculeNumber[atom.getXyzIndex() - 1] = current;
+            }
+            current++;
+        }
+
+        return moleculeNumber;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>molecules</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
+    public List<MSNode> getMolecules() {
+        return molecules.getChildList();
+    }
+
+    /**
+     * <p>
+     * getNodeList</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
+    public List<MSNode> getNodeList() {
+        List<MSNode> residues = new ArrayList<>();
+        ListIterator<MSNode> li, lj;
+        MSNode o;
+        Polymer c;
+        for (li = getAtomNodeList().listIterator(); li.hasNext(); ) {
+            o = li.next();
+            if (o instanceof Polymer) {
+                c = (Polymer) o;
+                for (lj = c.getAtomNodeList().listIterator(); lj.hasNext(); ) {
+                    o = lj.next();
+                    if (o instanceof Residue) {
+                        residues.add(o);
+                    }
+
+                }
+            }
+        }
+
+        residues.addAll(ions.getChildList());
+        residues.addAll(water.getChildList());
+        residues.addAll(molecules.getChildList());
+
+        return residues;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>offset</code>.</p>
+     *
+     * @return a {@link org.jogamp.vecmath.Vector3d} object.
+     */
+    public Vector3d getOffset() {
+        if (offset == null) {
+            offset = new Vector3d(0.0, 0.0, 0.0);
+        }
+
+        return offset;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>offset</code>.</p>
+     *
+     * @param o a {@link org.jogamp.vecmath.Vector3d} object.
+     */
+    public void setOffset(Vector3d o) {
+        offset = o;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>originToRot</code>.</p>
+     *
+     * @return a {@link org.jogamp.java3d.TransformGroup} object.
+     */
+    public TransformGroup getOriginToRot() {
+        return originToRot;
+    }
+
+    /**
+     * <p>getParallelTeam.</p>
+     *
+     * @return a {@link edu.rit.pj.ParallelTeam} object.
+     */
+    public ParallelTeam getParallelTeam() {
+        if (potentialEnergy != null) {
+            return potentialEnergy.getParallelTeam();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * <p>
+     * getPolymer</p>
+     *
+     * @param chainID a {@link java.lang.Character} object.
+     * @param segID   a {@link java.lang.String} object.
+     * @param create  a boolean.
+     * @return a {@link ffx.potential.bonded.Polymer} object.
+     */
+    public Polymer getPolymer(Character chainID, String segID, boolean create) {
+        for (MSNode node : getAtomNodeList()) {
+            if (node instanceof Polymer) {
+                Polymer polymer = (Polymer) node;
+                if (polymer.getName().equals(segID)
+                        && polymer.getChainID().equals(chainID)) {
+                    return (Polymer) node;
+                }
+            }
+        }
+        if (create) {
+            Polymer polymer = new Polymer(chainID, segID, true);
+            addMSNode(polymer);
+            return polymer;
+        }
+
+        return null;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>potentialEnergy</code>.</p>
+     *
+     * @return a {@link ffx.potential.ForceFieldEnergy} object.
+     */
+    public ForceFieldEnergy getPotentialEnergy() {
+        return potentialEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>properties</code>.</p>
+     *
+     * @return a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
+    public CompositeConfiguration getProperties() {
+        return properties == null ? forceField.getProperties() : properties;
+    }
+
+    /**
+     * <p>
+     * getResidueList</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
+    public List<Residue> getResidueList() {
+        List<Residue> residues = new ArrayList<>();
+        ListIterator<MSNode> li, lj;
+        MSNode o;
+        Polymer c;
+        for (li = getAtomNodeList().listIterator(); li.hasNext(); ) {
+            o = li.next();
+            if (o instanceof Polymer) {
+                c = (Polymer) o;
+                for (lj = c.getAtomNodeList().listIterator(); lj.hasNext(); ) {
+                    o = lj.next();
+                    if (o instanceof Residue) {
+                        residues.add((Residue) o);
+                    }
+
+                }
+            }
+        }
+        return residues;
+    }
+
+    /**
+     * <p>getResiduePosition.</p>
+     *
+     * @param residueNumber a int.
+     * @return a {@link ffx.potential.bonded.Residue.ResiduePosition} object.
+     */
+    public ResiduePosition getResiduePosition(int residueNumber) {
+        ResiduePosition position;
+        int numberOfResidues = 0;
+        Polymer polymers[] = getChains();
+        int nPolymers = polymers.length;
+        for (int i = 0; i < nPolymers; i++) {
+            Polymer polymer = polymers[i];
+            List<Residue> residues = polymer.getResidues();
+            numberOfResidues += residues.size();
+        }
+        if (residueNumber == 0) {
+            position = FIRST_RESIDUE;
+        } else if (residueNumber == numberOfResidues - 1) {
+            position = LAST_RESIDUE;
+        } else {
+            position = MIDDLE_RESIDUE;
+        }
+        return position;
+    }
+
+    /**
+     * <p>
+     * getTransformGroup</p>
+     *
+     * @return a {@link org.jogamp.java3d.TransformGroup} object.
+     */
+    public TransformGroup getTransformGroup() {
+        return originToRot;
+    }
+
+    /**
+     * <p>
+     * getWaters</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
+    public List<MSNode> getWaters() {
+        return water.getChildList();
+    }
+
+    /**
+     * <p>
+     * getWireFrame</p>
+     *
+     * @return a {@link org.jogamp.java3d.Node} object.
+     */
+    public Node getWireFrame() {
+        return wire;
+    }
+
+    /**
+     * <p>
+     * isVisible</p>
+     *
+     * @return a boolean.
+     */
+    public boolean isVisible() {
+        return visible;
+    }
+
+    /**
+     * <p>
+     * loadVRML</p>
+     *
+     * @return a {@link org.jogamp.java3d.BranchGroup} object.
+     */
+    public BranchGroup loadVRML() {
+//        try {
+//            VrmlLoader loader = new VrmlLoader();
+//            VrmlScene scene = null;
+//            if (vrmlFile != null && vrmlFile.exists()) {
+//                scene = (VrmlScene) loader.load(vrmlFile.getAbsolutePath());
+//            } else if (vrmlURL != null) {
+//                scene = (VrmlScene) loader.load(vrmlURL);
+//            } else {
+//                return null;
+//            }
+//            BranchGroup bg = scene.getSceneGroup();
+//            recurseVRML(bg);
+//            bg.setCapability(BranchGroup.ALLOW_DETACH);
+//            bg.setCapability(BranchGroup.ALLOW_BOUNDS_READ);
+//            bg.compile();
+//            return bg;
+//        } catch (Exception e) {
+//            String message = "Fatal exception loading VRML.\n";
+//            logger.log(Level.SEVERE, message, e);
+//            System.exit(-1);
+//            return null;
+//        }
+        return null;
+    }
+
+    /**
+     * Moves the center of all chemical entities into the primary
+     * unit cell. Somewhat experimental feature; use with caution.
+     */
+    public void moveAllIntoUnitCell() {
+        moveIntoUnitCell(getChains());
+        moveIntoUnitCell(getWaters());
+        moveIntoUnitCell(getIons());
+        moveIntoUnitCell(getMolecules());
+    }
+
+    /**
+     * <p>
+     * moveCenter</p>
+     *
+     * @param d an array of double.
+     */
+    public void moveCenter(double[] d) {
+        for (ListIterator<Atom> li = getAtomList().listIterator(); li.hasNext(); ) {
+            (li.next()).move(d);
+        }
+
     }
 
     /**
@@ -397,7 +1572,7 @@ public class MolecularAssembly extends MSGroup {
         switch (fractionalMode) {
             case MOLECULE:
                 int iMolecule = 0;
-                Polymer polymers[] = getChains();
+                Polymer[] polymers = getChains();
                 if (polymers != null && polymers.length > 0) {
                     // Find the center of mass
                     for (Polymer polymer : polymers) {
@@ -496,9 +1671,8 @@ public class MolecularAssembly extends MSGroup {
                     unitCell.toCartesianCoordinates(com, com);
 
                     double r = length(com);
-                    /**
-                     * Warn if an atom is moved more than 1 Angstrom.
-                     */
+
+                    // Warn if an atom is moved more than 1 Angstrom.
                     if (r > 1.0) {
                         int i = iMolecule - 1;
                         logger.info(String.format(" %d R: %16.8f", i, r));
@@ -547,7 +1721,7 @@ public class MolecularAssembly extends MSGroup {
                 }
                 break;
             case ATOM:
-                Atom atoms[] = getAtomArray();
+                Atom[] atoms = getAtomArray();
                 int nAtoms = atoms.length;
                 for (int i = 0; i < nAtoms; i++) {
                     // Convert the stored factional coordinates to Cartesian coordinates in the current unitcell.
@@ -558,1439 +1732,6 @@ public class MolecularAssembly extends MSGroup {
             case OFF:
                 break;
         }
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>forceField</code>.</p>
-     *
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     */
-    public void setForceField(ForceField forceField) {
-        this.forceField = forceField;
-    }
-
-    /**
-     * <p>setPropertiesFromForceField.</p>
-     */
-    public void setPropertiesFromForceField() {
-        this.properties = forceField.getProperties();
-    }
-
-    /**
-     * <p>
-     * setPotential</p>
-     *
-     * @param potentialEnergy a {@link ffx.potential.ForceFieldEnergy} object.
-     */
-    public void setPotential(ForceFieldEnergy potentialEnergy) {
-        this.potentialEnergy = potentialEnergy;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>potentialEnergy</code>.</p>
-     *
-     * @return a {@link ffx.potential.ForceFieldEnergy} object.
-     */
-    public ForceFieldEnergy getPotentialEnergy() {
-        return potentialEnergy;
-    }
-
-    /**
-     * <p>getParallelTeam.</p>
-     *
-     * @return a {@link edu.rit.pj.ParallelTeam} object.
-     */
-    public ParallelTeam getParallelTeam() {
-        if (potentialEnergy != null) {
-            return potentialEnergy.getParallelTeam();
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * <p>getResiduePosition.</p>
-     *
-     * @param residueNumber a int.
-     * @return a {@link ffx.potential.bonded.Residue.ResiduePosition} object.
-     */
-    public ResiduePosition getResiduePosition(int residueNumber) {
-        ResiduePosition position;
-        int numberOfResidues = 0;
-        Polymer polymers[] = getChains();
-        int nPolymers = polymers.length;
-        for (int i = 0; i < nPolymers; i++) {
-            Polymer polymer = polymers[i];
-            ArrayList<Residue> residues = polymer.getResidues();
-            numberOfResidues += residues.size();
-        }
-        if (residueNumber == 0) {
-            position = FIRST_RESIDUE;
-        } else if (residueNumber == numberOfResidues - 1) {
-            position = LAST_RESIDUE;
-        } else {
-            position = MIDDLE_RESIDUE;
-        }
-        return position;
-    }
-
-    /**
-     * Adds a header line to this MolecularAssembly (particularly for PDB
-     * formats)
-     *
-     * @param line Line to add.
-     */
-    public void addHeaderLine(String line) {
-        headerLines.add(line);
-    }
-
-    /**
-     * Gets the header lines associated with this MolecularAssembly
-     * (particularly for PDB)
-     *
-     * @return Header lines.
-     */
-    public String[] getHeaderLines() {
-        String[] ret = new String[headerLines.size()];
-        headerLines.toArray(ret);
-        return ret;
-    }
-
-    /**
-     * <p>
-     * getCrystal</p>
-     *
-     * @return a {@link ffx.crystal.Crystal} object.
-     */
-    public Crystal getCrystal() {
-        if (potentialEnergy == null) {
-            return null;
-        }
-        return potentialEnergy.getCrystal();
-    }
-
-    /**
-     * Set the Crystal for the Potential of this MolecularAssembly.
-     *
-     * @param crystal Crystal instance.
-     */
-    public void setCrystal(Crystal crystal) {
-        if (potentialEnergy != null) {
-            potentialEnergy.setCrystal(crystal);
-        }
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>forceField</code>.</p>
-     *
-     * @return a {@link ffx.potential.parameters.ForceField} object.
-     */
-    public ForceField getForceField() {
-        return forceField;
-    }
-
-    /**
-     * <p>
-     * addAltLocation</p>
-     *
-     * @param s a {@link java.lang.String} object.
-     */
-    public void addAltLocation(String s) {
-        if (altLoc == null) {
-            altLoc = new Vector<>();
-        }
-        if (!altLoc.contains(s)) {
-            altLoc.add(s);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public MSNode addMSNode(MSNode o) {
-        ArrayList<MSNode> Polymers = getAtomNodeList();
-        if (o instanceof Atom) {
-            Atom atom = (Atom) o;
-            if (atom.isModRes()) {
-                return getResidue(atom, true, Residue.ResidueType.AA);
-            } else if (!atom.isHetero()) {
-                return getResidue(atom, true);
-            } else {
-                return getMolecule(atom, true);
-            }
-        } else if (o instanceof Residue) {
-            Residue residue = (Residue) o;
-            Character chainID = residue.getChainID();
-            String segID = residue.getSegID();
-            int index = Polymers.indexOf(new Polymer(chainID, segID));
-            // See if the polymer already exists.
-            if (index != -1) {
-                Polymer c = (Polymer) Polymers.get(index);
-                setFinalized(false);
-                return c.addMSNode(residue);
-            } else {
-                Polymer newc = new Polymer(chainID, segID);
-                getAtomNode().add(newc);
-                setFinalized(false);
-                return newc.addMSNode(residue);
-            }
-        } else if (o instanceof Polymer) {
-            Polymer c = (Polymer) o;
-            int index = Polymers.indexOf(c);
-            if (index == -1) {
-                getAtomNode().add(c);
-                setFinalized(false);
-                return c;
-            } else {
-                return (Polymer) Polymers.get(index);
-            }
-        } else if (o instanceof Molecule) {
-            Molecule m = (Molecule) o;
-            String key = m.getKey();
-            if (m.getAtomNode().getChildCount() == 1) {
-                ions.add(m);
-                if (ionHashMap.containsKey(key)) {
-                    logger.info(" Ion map already contains " + m.toString());
-                } else {
-                    ionHashMap.put(m.getKey(), m);
-                }
-                return m;
-            } else if (Utilities.isWaterOxygen((Atom) m.getAtomNode().getChildAt(0))) {
-                water.add(m);
-                if (waterHashMap.containsKey(key)) {
-                    logger.info(" Water map already contains " + m.toString());
-                } else {
-                    waterHashMap.put(m.getKey(), m);
-                }
-                return m;
-            } else {
-                molecules.add(m);
-                if (moleculeHashMap.containsKey(key)) {
-                    logger.info(" Molecule map already contains " + m.toString());
-                } else {
-                    moleculeHashMap.put(m.getKey(), m);
-                }
-                return m;
-            }
-        } else {
-            String message = "Programming error in MolecularAssembly addNode";
-            logger.log(Level.SEVERE, message);
-            return o;
-        }
-    }
-
-    /**
-     * <p>
-     * center</p>
-     */
-    public void center() {
-        double[] center = getMultiScaleCenter(false);
-        offset = new Vector3d(center);
-        if (vrml != null) {
-            vrmlTd.set(offset);
-            vrmlTG.setTransform(vrmlTd);
-        }
-        offset.negate();
-        originToRotV3D.set(offset);
-        originToRotT3D.setTranslation(originToRotV3D);
-        originToRot.setTransform(originToRotT3D);
-        rotToCOMT3D.setIdentity();
-        rotToCOM.setTransform(rotToCOMT3D);
-        offset.negate();
-        rotateAbout(offset);
-        originToRotT3D.get(offset);
-    }
-
-    /**
-     * <p>
-     * centerAt</p>
-     *
-     * @param d an array of double.
-     */
-    public void centerAt(double[] d) {
-        double[] Rc = {0, 0, 0};
-        double[] c = new double[3];
-        ListIterator<Atom> li;
-        int i, num = getAtomList().size();
-        for (li = getAtomList().listIterator(); li.hasNext(); ) {
-            (li.next()).getXYZ(a);
-            Rc[0] += a[0];
-            Rc[1] += a[1];
-            Rc[2] += a[2];
-        }
-        for (i = 0; i < 3; i++) {
-            Rc[i] /= num;
-        }
-        sub(d, Rc, c);
-        for (li = getAtomList().listIterator(); li.hasNext(); ) {
-            (li.next()).move(c);
-        }
-    }
-
-    /**
-     * <p>
-     * centerView</p>
-     *
-     * @param rot   a boolean.
-     * @param trans a boolean.
-     */
-    public void centerView(boolean rot, boolean trans) {
-        originToRot.getTransform(originToRotT3D);
-        if (rot) {
-            Matrix3d m3d = new Matrix3d();
-            m3d.setIdentity();
-            originToRotT3D.setRotation(m3d);
-            // rotToCOMT3D.setRotation(m3d);
-        }
-        if (trans) {
-            originToRotV3D.set(offset);
-            originToRotT3D.set(originToRotV3D);
-        }
-        originToRot.setTransform(originToRotT3D);
-        // rotToCOM.setTransform(rotToCOMT3D);
-    }
-
-    /**
-     * <p>
-     * createBox</p>
-     */
-    public void createBox() {
-        int vertices = 8;
-        LineArray la = new LineArray(4 * vertices, GeometryArray.COORDINATES | GeometryArray.COLOR_4 | GeometryArray.NORMALS);
-        la.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
-        la.setCapability(LineArray.ALLOW_COORDINATE_READ);
-        la.setCapability(LineArray.ALLOW_COLOR_WRITE);
-        la.setCapability(LineArray.ALLOW_COUNT_READ);
-        la.setCapability(LineArray.ALLOW_INTERSECT);
-        la.setCapability(LineArray.ALLOW_FORMAT_READ);
-        // Create a normal
-        // for (ListIterator<MSNode> li = bondlist.listIterator(); li.hasNext(); ){
-        // la.setCoordinate(i, a1);
-        // la.setColor(i, col);
-        // la.setNormal(i++, a1);
-        // }
-        ColoringAttributes cola = new ColoringAttributes(new Color3f(),
-                ColoringAttributes.SHADE_GOURAUD);
-        Appearance app = new Appearance();
-        lineAttributes = new LineAttributes();
-        lineAttributes.setLineWidth(RendererCache.bondwidth);
-        lineAttributes.setCapability(LineAttributes.ALLOW_WIDTH_WRITE);
-        lineAttributes.setLineAntialiasingEnable(true);
-        app.setLineAttributes(lineAttributes);
-        app.setCapability(Appearance.ALLOW_LINE_ATTRIBUTES_READ);
-        app.setCapability(Appearance.ALLOW_LINE_ATTRIBUTES_WRITE);
-        RenderingAttributes ra = new RenderingAttributes();
-        ra.setAlphaTestValue(0.1f);
-        ra.setAlphaTestFunction(RenderingAttributes.GREATER);
-        ra.setDepthBufferEnable(true);
-        ra.setDepthBufferWriteEnable(true);
-        app.setRenderingAttributes(ra);
-        app.setColoringAttributes(cola);
-        Shape3D wireframe = new Shape3D(la, app);
-        // PickTool.setCapabilities(wire, PickTool.INTERSECT_COORD);
-        wireframe.setUserData(this);
-        wireframe.setBounds(new BoundingSphere(new Point3d(0, 0, 0), 10.0));
-        try {
-            wireframe.setBoundsAutoCompute(false);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        wireframe.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
-        wireframe.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
-        // return wire;
-    }
-
-    /**
-     * The MolecularAssembly BranchGroup has two TransformGroups between it and
-     * the "base" node where geometry is attached. If the point between the two
-     * transformations is where user rotation occurs. For example, if rotating
-     * about the center of mass of the system, the RotToCOM transformation will
-     * be an identity transformation (ie. none). If rotation is about some atom
-     * or group of atoms within the system, then the RotToCOM transformation
-     * will be a translation from that point to the COM.
-     *
-     * @param zero boolean
-     * @return BranchGroup
-     */
-    private BranchGroup createScene(boolean zero) {
-        originToRotT3D = new Transform3D();
-        originToRotV3D = new Vector3d();
-        originToRot = new TransformGroup(originToRotT3D);
-        branchGroup = new BranchGroup();
-        rotToCOM = new TransformGroup();
-        rotToCOMT3D = new Transform3D();
-        rotToCOMV3D = new Vector3d();
-        // Set capabilities needed for picking and moving the MolecularAssembly
-        branchGroup.setCapability(BranchGroup.ALLOW_DETACH);
-        originToRot.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        originToRot.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-        originToRot.setCapability(TransformGroup.ENABLE_PICK_REPORTING);
-        rotToCOM.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-        rotToCOM.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        // Put the MolecularAssembly in the middle of the scene
-        if (zero) {
-            originToRotV3D.set(0.0, 0.0, 0.0);
-            originToRotT3D.set(originToRotV3D);
-            originToRot.setTransform(originToRotT3D);
-        }
-        wire = renderWire();
-        switchGroup = new Switch(Switch.CHILD_NONE);
-        switchGroup.setCapability(Switch.ALLOW_SWITCH_WRITE);
-        base = new BranchGroup();
-        base.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
-        base.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
-        childNodes = new BranchGroup();
-        childNodes.setCapability(BranchGroup.ALLOW_DETACH);
-        childNodes.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
-        childNodes.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
-        switchGroup.addChild(base);
-        if (wire != null) {
-            base.addChild(wire);
-        }
-        vrml = loadVRML();
-        if (vrml != null) {
-            vrmlTG = new TransformGroup();
-            vrmlTd = new Transform3D();
-            vrmlTG.setTransform(vrmlTd);
-            vrmlTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-            vrmlTG.addChild(vrml);
-            switchGroup.addChild(vrmlTG);
-            setView(RendererCache.ViewModel.INVISIBLE, null);
-        }
-        switchGroup.setWhichChild(Switch.CHILD_ALL);
-        rotToCOM.addChild(switchGroup);
-        originToRot.addChild(rotToCOM);
-        branchGroup.addChild(originToRot);
-        branchGroup.compile();
-        return branchGroup;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        try {
-            if (potentialEnergy == null) {
-                finishDestruction();
-                return true;
-            } else {
-                // potentialEnergy.destroy() will loop around to call finishDestruction().
-                // This is a poor construction, but is necessary due to prior decisions.
-                return potentialEnergy.destroy();
-            }
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception in destroying a MolecularAssembly: %s", ex));
-            logger.info(Utilities.stackTraceToString(ex));
-            return false;
-        }
-    }
-
-    void finishDestruction() {
-        detach();
-        super.destroy();
-    }
-
-    /**
-     * <p>
-     * detach</p>
-     */
-    public void detach() {
-        synchronized (this) {
-            if (branchGroup != null && branchGroup.isLive()) {
-                branchGroup.detach();
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void finalize(boolean finalizeGroups, ForceField forceField) {
-        setFinalized(false);
-        if (finalizeGroups) {
-            bondTime = 0;
-            angleTime = 0;
-            stretchBendTime = 0;
-            ureyBradleyTime = 0;
-            outOfPlaneBendTime = 0;
-            torsionTime = 0;
-            piOrbitalTorsionTime = 0;
-            torsionTorsionTime = 0;
-            ArrayList<MSNode> Polymers = getAtomNodeList();
-            for (MSNode msNode : Polymers) {
-                MSGroup group = (MSGroup) msNode;
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(" Finalizing bonded terms for polymer " + group.toString());
-                }
-                try {
-                    group.finalize(true, forceField);
-                } catch (Exception e) {
-                    String message = "Fatal exception finalizing " + group.toString();
-                    logger.log(Level.SEVERE, message, e);
-                    System.exit(-1);
-                }
-                if (logger.isLoggable(Level.FINE)) {
-                    Runtime runtime = Runtime.getRuntime();
-                    long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
-                    long MB = 1024 * 1024;
-                    logger.fine("\n In-Use Memory   (Mb): " + occupiedMemory / MB
-                            + "\n Free Memory     (Mb): " + runtime.freeMemory() / MB
-                            + "\n Total Memory    (Mb): " + runtime.totalMemory() / MB);
-                }
-            }
-            for (MSNode m : molecules.getChildList()) {
-                Molecule molecule = (Molecule) m;
-                molecule.finalize(true, forceField);
-            }
-            for (MSNode m : water.getChildList()) {
-                Molecule molecule = (Molecule) m;
-                molecule.finalize(true, forceField);
-            }
-            for (MSNode m : ions.getChildList()) {
-                Molecule molecule = (Molecule) m;
-                molecule.finalize(true, forceField);
-            }
-            if (logger.isLoggable(Level.FINE)) {
-                StringBuilder sb = new StringBuilder("\n Time to create bonded energy terms\n\n");
-                sb.append(format(" Bond Streching     %10.3f\n", bondTime * 1.0e-9));
-                sb.append(format(" Angle Bending      %10.3f\n", angleTime * 1.0e-9));
-                sb.append(format(" Stretch-Bend       %10.3f\n", stretchBendTime * 1.0e-9));
-                sb.append(format(" Urey-Bradley       %10.3f\n", ureyBradleyTime * 1.0e-9));
-                sb.append(format(" Out-of-Plane Bend  %10.3f\n", outOfPlaneBendTime * 1.0e-9));
-                sb.append(format(" Torsionanl Angle   %10.3f\n", torsionTime * 1.0e-9));
-                sb.append(format(" Pi-Orbital Torsion %10.3f\n", piOrbitalTorsionTime * 1.0e-9));
-                sb.append(format(" Torsion-Torsion    %10.3f\n", torsionTorsionTime * 1.0e-9));
-                logger.fine(sb.toString());
-            }
-        }
-        if (!java.awt.GraphicsEnvironment.isHeadless()) {
-            createScene(!finalizeGroups);
-            center();
-        }
-        removeLeaves();
-
-        // Apply the Heavy Hydrogen flag.
-        boolean heavyHydrogen = forceField.getBoolean("HEAVY_HYDROGENS", false);
-        heavyHydrogen = forceField.getBoolean("HEAVY_HYDROGEN", heavyHydrogen);
-        if (heavyHydrogen) {
-            applyHeavyHydrogen();
-        }
-
-        setFinalized(true);
-    }
-
-    /**
-     * Move mass from heavy atoms to their attached hydrogens.
-     * <p>
-     * The mass of each hydrogen is scaled by a factor of 3.
-     * The mass of the heavy atom is reduced by 2 AMU.
-     */
-    private void applyHeavyHydrogen() {
-        ArrayList<Bond> bonds = getBondList();
-        for (Bond bond : bonds) {
-            Atom a1 = bond.getAtom(0);
-            Atom a2 = bond.getAtom(1);
-            if (a1.isHydrogen() && a2.isHeavy()) {
-                double hydrogenMass = a1.getMass();
-                double heavyAtomMass = a2.getMass();
-                if (hydrogenMass < 1.1) {
-                    a2.setMass(heavyAtomMass - 2.0 * hydrogenMass);
-                    a1.setMass(3.0 * hydrogenMass);
-                }
-            } else if (a1.isHeavy() && a2.isHydrogen()) {
-                double heavyAtomMass = a1.getMass();
-                double hydrogenMass = a2.getMass();
-                if (hydrogenMass < 1.1) {
-                    a1.setMass(heavyAtomMass - 2.0 * hydrogenMass);
-                    a2.setMass(3.0 * hydrogenMass);
-                }
-            }
-        }
-    }
-
-    /**
-     * <p>
-     * findAtom</p>
-     *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @return a {@link ffx.potential.bonded.Atom} object.
-     */
-    public Atom findAtom(Atom atom) {
-        if (!atom.isHetero() || atom.isModRes()) {
-            Polymer polymer = getPolymer(atom.getChainID(), atom.getSegID(), false);
-            if (polymer != null) {
-                Residue res = polymer.getResidue(atom.getResidueName(), atom.getResidueNumber(), false);
-                if (res != null) {
-                    MSNode node = res.getAtomNode();
-                    return (Atom) node.contains(atom);
-                }
-            }
-            return null;
-        } else {
-            String resName = atom.getResidueName();
-            int resNum = atom.getResidueNumber();
-            String segID = atom.getSegID();
-            String key = resNum + resName + segID;
-            Molecule m = ionHashMap.get(key);
-            if (m == null) {
-                m = waterHashMap.get(key);
-                if (m == null) {
-                    m = moleculeHashMap.get(key);
-                    if (m == null) {
-                        return null;
-                    }
-                }
-            }
-            return (Atom) m.contains(atom);
-        }
-    }
-
-    /**
-     * This method assigns a unique integer to every molecule in the
-     * MolecularAssembly beginning at 0. An integer array with these values for
-     * each atom is returned.
-     *
-     * @return an array of molecule numbers for each atom.
-     */
-    public int[] getMoleculeNumbers() {
-        int[] moleculeNumber = new int[getAtomList().size()];
-        int current = 0;
-        // Loop over polymers together
-        Polymer[] polymers = getChains();
-        if (polymers != null && polymers.length > 0) {
-            for (Polymer polymer : polymers) {
-                List<Atom> atomList = polymer.getAtomList();
-                for (Atom atom : atomList) {
-                    moleculeNumber[atom.getXyzIndex() - 1] = current;
-                }
-                current++;
-            }
-        }
-
-        // Loop over each molecule
-        for (MSNode molecule : molecules.getChildList()) {
-            List<Atom> atomList = molecule.getAtomList();
-            for (Atom atom : atomList) {
-                moleculeNumber[atom.getXyzIndex() - 1] = current;
-                atom.setMoleculeNumber(current);
-            }
-            current++;
-        }
-
-        // Loop over each water
-        for (MSNode wat : water.getChildList()) {
-            List<Atom> atomList = wat.getAtomList();
-            for (Atom atom : atomList) {
-                moleculeNumber[atom.getXyzIndex() - 1] = current;
-            }
-            current++;
-        }
-
-        // Loop over each ion
-        for (MSNode ion : ions.getChildList()) {
-            List<Atom> atomList = ion.getAtomList();
-            for (Atom atom : atomList) {
-                moleculeNumber[atom.getXyzIndex() - 1] = current;
-            }
-            current++;
-        }
-
-        return moleculeNumber;
-    }
-
-    /**
-     * <p>
-     * getAltLocations</p>
-     *
-     * @return an array of {@link java.lang.String} objects.
-     */
-    public String[] getAltLocations() {
-        if (altLoc == null || altLoc.isEmpty()) {
-            return null;
-        }
-
-        String[] names = new String[altLoc.size()];
-        int i = 0;
-        for (String s : altLoc) {
-            names[i++] = s;
-        }
-
-        return names;
-    }
-
-    /**
-     * <p>
-     * getAtomFromWireVertex</p>
-     *
-     * @param i a int.
-     * @return a {@link ffx.potential.bonded.Atom} object.
-     */
-    public Atom getAtomFromWireVertex(
-            int i) {
-        if (atomLookUp != null && atomLookUp.length > i) {
-            return atomLookUp[i];
-        }
-        return null;
-    }
-
-    /**
-     * <p>
-     * getAtomArray</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    public Atom[] getAtomArray() {
-        ArrayList<Atom> atoms = getAtomList();
-        Atom[] atomArray = atoms.toArray(new Atom[0]);
-        for (int i = 0; i < atoms.size(); i++) {
-            atomArray[i].setXyzIndex(i + 1);
-        }
-
-        return atomArray;
-    }
-
-    /**
-     * <p>
-     * getActiveAtomArray</p>
-     *
-     * @return an array of active {@link ffx.potential.bonded.Atom} objects.
-     */
-    public Atom[] getActiveAtomArray() {
-        ArrayList<Atom> atoms = getAtomList();
-        ArrayList<Atom> activeAtoms = new ArrayList<>();
-        for (Atom a : atoms) {
-            if (a.isActive()) {
-                activeAtoms.add(a);
-            }
-        }
-        Atom[] atomArray = activeAtoms.toArray(new Atom[0]);
-        Arrays.sort(atomArray);
-        return atomArray;
-    }
-
-    /**
-     * <p>
-     * getBackBoneAtoms</p>
-     *
-     * @return a {@link java.util.ArrayList} object.
-     */
-    public ArrayList<Atom> getBackBoneAtoms() {
-        ArrayList<Atom> backbone = new ArrayList<>();
-        List<Residue> residues = getResidueList();
-        for (Residue residue : residues) {
-            backbone.addAll(residue.getBackboneAtoms());
-        }
-        return backbone;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>branchGroup</code>.</p>
-     *
-     * @return a {@link org.jogamp.java3d.BranchGroup} object.
-     */
-    public BranchGroup getBranchGroup() {
-        return branchGroup;
-    }
-
-    /**
-     * <p>
-     * getChain</p>
-     *
-     * @param name a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.bonded.Polymer} object.
-     */
-    public Polymer getChain(String name) {
-        for (MSNode node : getAtomNodeList()) {
-            if (node instanceof Polymer) {
-                String chainName = node.getName();
-                if (chainName.equalsIgnoreCase(name)) {
-                    return (Polymer) node;
-                } else if (name.contentEquals(" ")) {
-                    return (Polymer) node;
-                }
-                /* TODO: Right now if a molecular assembly has no chain ID, the first node is returned.
-                    This functionality will not work for cases where multiple chains exist and one of those chains has no name.*/
-            }
-        }
-        return null;
-    }
-
-    /**
-     * <p>
-     * getChainNames</p>
-     *
-     * @return an array of {@link java.lang.String} objects.
-     */
-    public String[] getChainNames() {
-        ArrayList<String> temp = new ArrayList<>();
-        for (MSNode node : getAtomNodeList()) {
-            if (node instanceof Polymer) {
-                temp.add(node.getName());
-            }
-        }
-        if (temp.isEmpty()) {
-            return null;
-        }
-
-        String[] names = new String[temp.size()];
-        for (int i = 0; i < temp.size(); i++) {
-            names[i] = temp.get(i);
-        }
-
-        return names;
-    }
-
-    /**
-     * Gets all bonded entities in this MolecularAssembly, where an entity can be a polymer,
-     * molecule, monoatomic ion, or monoatomic gas (i.e. noble gas atoms).
-     *
-     * @return All bonded groups of atoms and all singleton atoms.
-     */
-    public List<MSNode> getAllBondedEntities() {
-        // Initial construction via HashSet to eliminate duplicates.
-        Set<MSNode> allBondedNodes = new HashSet<>(getIons());
-        allBondedNodes.addAll(getMolecules());
-        allBondedNodes.addAll(getWaters());
-        Polymer[] polys = getChains();
-        if (polys != null && polys.length > 0) {
-            allBondedNodes.addAll(Arrays.asList(polys));
-        }
-        return new ArrayList<>(allBondedNodes);
-    }
-
-    /**
-     * <p>
-     * getChains</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.Polymer} objects.
-     */
-    public Polymer[] getChains() {
-        ArrayList<Polymer> polymers = new ArrayList<>();
-        for (MSNode node : getAtomNodeList()) {
-            if (node instanceof Polymer) {
-                polymers.add((Polymer) node);
-            }
-        }
-        if (polymers.isEmpty()) {
-            return null;
-        }
-        return polymers.toArray(new Polymer[0]);
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>currentCycle</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getCurrentCycle() {
-        return currentCycle;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>cycles</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getCycles() {
-        return cycles;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getExtent() {
-        double[] Rc = {0, 0, 0};
-        int num = getAtomList().size();
-        for (Atom atom : getAtomList()) {
-            atom.getXYZ(a);
-            Rc[0] += a[0];
-            Rc[1] += a[1];
-            Rc[2] += a[2];
-        }
-
-        for (int i = 0; i < 3; i++) {
-            Rc[i] /= num;
-        }
-
-        double r, d = 0;
-        double[] xyz = new double[3];
-        for (Atom atom : getAtomList()) {
-            atom.getXYZ(xyz);
-            sub(xyz, Rc, xyz);
-            r = length(xyz);
-            if (d < r) {
-                d = r;
-            }
-
-        }
-        return d;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>file</code>.</p>
-     *
-     * @return a {@link java.io.File} object.
-     */
-    public File getFile() {
-        return file;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>offset</code>.</p>
-     *
-     * @return a {@link org.jogamp.vecmath.Vector3d} object.
-     */
-    public Vector3d getOffset() {
-        if (offset == null) {
-            offset = new Vector3d(0.0, 0.0, 0.0);
-        }
-
-        return offset;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>originToRot</code>.</p>
-     *
-     * @return a {@link org.jogamp.java3d.TransformGroup} object.
-     */
-    public TransformGroup getOriginToRot() {
-        return originToRot;
-    }
-
-    /**
-     * <p>Getter for the field <code>properties</code>.</p>
-     *
-     * @return a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     */
-    public CompositeConfiguration getProperties() {
-        return properties == null ? forceField.getProperties() : properties;
-    }
-
-    /**
-     * <p>
-     * getPolymer</p>
-     *
-     * @param chainID a {@link java.lang.Character} object.
-     * @param segID   a {@link java.lang.String} object.
-     * @param create  a boolean.
-     * @return a {@link ffx.potential.bonded.Polymer} object.
-     */
-    public Polymer getPolymer(Character chainID, String segID, boolean create) {
-        for (MSNode node : getAtomNodeList()) {
-            if (node instanceof Polymer) {
-                Polymer polymer = (Polymer) node;
-                if (polymer.getName().equals(segID)
-                        && polymer.getChainID().equals(chainID)) {
-                    return (Polymer) node;
-                }
-            }
-        }
-        if (create) {
-            Polymer polymer = new Polymer(chainID, segID, true);
-            addMSNode(polymer);
-            return polymer;
-        }
-
-        return null;
-    }
-
-    private Atom getResidue(Atom atom, boolean create) {
-        return getResidue(atom, create, Residue.ResidueType.UNK);
-    }
-
-    private Atom getResidue(Atom atom, boolean create, Residue.ResidueType defaultRT) {
-        Character chainID = atom.getChainID();
-        String resName = atom.getResidueName();
-        int resNum = atom.getResidueNumber();
-        String segID = atom.getSegID();
-        // Find/Create the chain
-        Polymer polymer = getPolymer(chainID, segID, create);
-        if (polymer == null) {
-            return null;
-        }
-        Residue res = polymer.getResidue(resName, resNum, create, defaultRT);
-        if (create && res != null) {
-            return (Atom) res.addMSNode(atom);
-        }
-        return null;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>ions</code>.</p>
-     *
-     * @return a {@link java.util.ArrayList} object.
-     */
-    public ArrayList<MSNode> getIons() {
-        return ions.getChildList();
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>molecules</code>.</p>
-     *
-     * @return a {@link java.util.ArrayList} object.
-     */
-    public ArrayList<MSNode> getMolecules() {
-        return molecules.getChildList();
-    }
-
-    /**
-     * <p>
-     * getWaters</p>
-     *
-     * @return a {@link java.util.ArrayList} object.
-     */
-    public ArrayList<MSNode> getWaters() {
-        return water.getChildList();
-    }
-
-    /**
-     * <p>
-     * deleteMolecule</p>
-     *
-     * @param molecule a {@link ffx.potential.bonded.Molecule} object.
-     */
-    public void deleteMolecule(Molecule molecule) {
-        ArrayList<MSNode> list = ions.getChildList();
-        for (MSNode node : list) {
-            Molecule m = (Molecule) node;
-            if (molecule == m) {
-                ions.remove(m);
-                ionHashMap.remove(m.getKey());
-                return;
-            }
-        }
-        list = water.getChildList();
-        for (MSNode node : list) {
-            Molecule m = (Molecule) node;
-            if (molecule == m) {
-                water.remove(m);
-                waterHashMap.remove(m.getKey());
-                return;
-            }
-        }
-        list = molecules.getChildList();
-        for (MSNode node : list) {
-            Molecule m = (Molecule) node;
-            if (molecule == m) {
-                molecules.remove(m);
-                moleculeHashMap.remove(m.getKey());
-                return;
-            }
-        }
-    }
-
-    /**
-     * <p>getMass.</p>
-     *
-     * @return a double.
-     */
-    public double getMass() {
-        double mass = 0;
-        for (Atom atom : getAtomArray()) {
-            mass += atom.getMass();
-        }
-        return mass;
-    }
-
-    private Atom getMolecule(Atom atom, boolean create) {
-        String resName = atom.getResidueName();
-        int resNum = atom.getResidueNumber();
-        Character chainID = atom.getChainID();
-        String segID = atom.getSegID();
-
-        String key = resNum + resName + segID;
-        Molecule m = ionHashMap.get(key);
-        if (m == null) {
-            m = waterHashMap.get(key);
-            if (m == null) {
-                m = moleculeHashMap.get(key);
-            }
-        }
-        if (m != null) {
-            return (Atom) m.addMSNode(atom);
-        }
-
-        if (create) {
-            boolean isWater = false;
-            boolean isIon = false;
-            if (StringUtils.looksLikeWater(resName)) {
-                resName = StringUtils.STANDARD_WATER_NAME;
-                isWater = true;
-            } else if (StringUtils.looksLikeIon(resName)) {
-                resName = StringUtils.tryParseIon(resName);
-                isIon = true;
-            }
-            atom.setResName(resName);
-            m = new Molecule(resName, resNum, chainID, segID);
-            m.addMSNode(atom);
-            if (resName == null) {
-                logger.warning(format(" Attempting to create a molecule %s with a null name on atom %s! Defaulting to creating a generic Molecule.", m, atom));
-                molecules.add(m);
-                moleculeHashMap.put(key, m);
-            } else if (isWater) {
-                water.add(m);
-                waterHashMap.put(key, m);
-            } else if (isIon) {
-                ions.add(m);
-                ionHashMap.put(key, m);
-            } else {
-                molecules.add(m);
-                moleculeHashMap.put(key, m);
-            }
-            return atom;
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * <p>
-     * getResidueList</p>
-     *
-     * @return a {@link java.util.ArrayList} object.
-     */
-    public ArrayList<Residue> getResidueList() {
-        ArrayList<Residue> residues = new ArrayList<>();
-        ListIterator<MSNode> li, lj;
-        MSNode o;
-        Polymer c;
-        for (li = getAtomNodeList().listIterator(); li.hasNext(); ) {
-            o = li.next();
-            if (o instanceof Polymer) {
-                c = (Polymer) o;
-                for (lj = c.getAtomNodeList().listIterator(); lj.hasNext(); ) {
-                    o = lj.next();
-                    if (o instanceof Residue) {
-                        residues.add((Residue) o);
-                    }
-
-                }
-            }
-        }
-        return residues;
-    }
-
-    /**
-     * <p>
-     * getNodeList</p>
-     *
-     * @return a {@link java.util.ArrayList} object.
-     */
-    public ArrayList<MSNode> getNodeList() {
-        ArrayList<MSNode> residues = new ArrayList<>();
-        ListIterator<MSNode> li, lj;
-        MSNode o;
-        Polymer c;
-        for (li = getAtomNodeList().listIterator(); li.hasNext(); ) {
-            o = li.next();
-            if (o instanceof Polymer) {
-                c = (Polymer) o;
-                for (lj = c.getAtomNodeList().listIterator(); lj.hasNext(); ) {
-                    o = lj.next();
-                    if (o instanceof Residue) {
-                        residues.add(o);
-                    }
-
-                }
-            }
-        }
-
-        residues.addAll(ions.getChildList());
-        residues.addAll(water.getChildList());
-        residues.addAll(molecules.getChildList());
-
-        return residues;
-    }
-
-    /**
-     * Sums up charge of the system, checking nonstandard residues for
-     * non-unitary charges.
-     *
-     * @param alwaysLog Log non-unitary charge warnings for all nodes
-     * @return System charge
-     */
-    public double getCharge(boolean alwaysLog) {
-        double totalCharge = 0;
-        for (MSNode node : getNodeList()) {
-            double charge = 0;
-            boolean isNonstandard = false;
-            for (Atom atom : node.getAtomList()) {
-                charge += atom.getCharge(forceField);
-                if (atom.isModRes()) {
-                    isNonstandard = true;
-                }
-            }
-            if ((alwaysLog || isNonstandard) && (Math.abs(Math.round(charge) - charge) > 1.0E-5)) {
-                logger.warning(String.format(" Node %s has non-unitary charge %12.8f", node.toString(), charge));
-            }
-            totalCharge += charge;
-        }
-        return totalCharge;
-    }
-
-    /**
-     * <p>
-     * getTransformGroup</p>
-     *
-     * @return a {@link org.jogamp.java3d.TransformGroup} object.
-     */
-    public TransformGroup getTransformGroup() {
-        return originToRot;
-    }
-
-    /**
-     * <p>
-     * getWireFrame</p>
-     *
-     * @return a {@link org.jogamp.java3d.Node} object.
-     */
-    public Node getWireFrame() {
-        return wire;
-    }
-
-    /**
-     * <p>
-     * isVisible</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isVisible() {
-        return visible;
-    }
-
-    /**
-     * <p>
-     * loadVRML</p>
-     *
-     * @return a {@link org.jogamp.java3d.BranchGroup} object.
-     */
-    public BranchGroup loadVRML() {
-//        try {
-//            VrmlLoader loader = new VrmlLoader();
-//            VrmlScene scene = null;
-//            if (vrmlFile != null && vrmlFile.exists()) {
-//                scene = (VrmlScene) loader.load(vrmlFile.getAbsolutePath());
-//            } else if (vrmlURL != null) {
-//                scene = (VrmlScene) loader.load(vrmlURL);
-//            } else {
-//                return null;
-//            }
-//            BranchGroup bg = scene.getSceneGroup();
-//            recurseVRML(bg);
-//            bg.setCapability(BranchGroup.ALLOW_DETACH);
-//            bg.setCapability(BranchGroup.ALLOW_BOUNDS_READ);
-//            bg.compile();
-//            return bg;
-//        } catch (Exception e) {
-//            String message = "Fatal exception loading VRML.\n";
-//            logger.log(Level.SEVERE, message, e);
-//            System.exit(-1);
-//            return null;
-//        }
-        return null;
-    }
-
-    /**
-     * <p>
-     * moveCenter</p>
-     *
-     * @param d an array of double.
-     */
-    public void moveCenter(double[] d) {
-        for (ListIterator<Atom> li = getAtomList().listIterator(); li.hasNext(); ) {
-            (li.next()).move(d);
-        }
-
-    }
-
-    private void recurseVRML(Node node) {
-        if (node instanceof Shape3D) {
-            Shape3D s3d = (Shape3D) node;
-            PickTool.setCapabilities(s3d, PickTool.INTERSECT_COORD);
-        } else if (node instanceof SharedGroup) {
-            SharedGroup sg = (SharedGroup) node;
-            for (Iterator<Node> e = sg.getAllChildren(); e.hasNext(); ) {
-                recurseVRML(e.next());
-            }
-        } else if (node instanceof BranchGroup) {
-            BranchGroup bg = (BranchGroup) node;
-            for (Iterator<Node> e = bg.getAllChildren(); e.hasNext(); ) {
-                recurseVRML(e.next());
-            }
-        } else if (node instanceof TransformGroup) {
-            TransformGroup vrmlTG1 = (TransformGroup) node;
-            for (Iterator<Node> e = vrmlTG1.getAllChildren(); e.hasNext(); ) {
-                node = e.next();
-                recurseVRML(node);
-            }
-        } else if (node instanceof Link) {
-            Link link = (Link) node;
-            recurseVRML(link.getSharedGroup());
-        } else if (node instanceof Group) {
-            Group group = (Group) node;
-            for (Iterator<Node> e = group.getAllChildren(); e.hasNext(); ) {
-                recurseVRML(e.next());
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void removeLeaves() {
-        super.removeLeaves();
-        MSNode macroNode = getAtomNode();
-        if (macroNode != null) {
-            if (macroNode.getChildCount() > 0) {
-                getAtomNode().setName(
-                        "Macromolecules " + "(" + macroNode.getChildCount() + ")");
-            } else if (macroNode.getParent() == this) {
-                removeChild(macroNode);
-            }
-        }
-
-        if (molecules.getChildCount() == 0) {
-            removeChild(molecules);
-        } else {
-            molecules.setName("Hetero Molecules " + "(" + molecules.getChildCount() + ")");
-        }
-
-        if (ions.getChildCount() == 0) {
-            removeChild(ions);
-        } else {
-            ions.setName("Ions " + "(" + ions.getChildCount() + ")");
-        }
-
-        if (water.getChildCount() == 0) {
-            removeChild(water);
-        } else {
-            water.setName("Water " + "(" + water.getChildCount() + ")");
-        }
-
-    }
-
-    private Shape3D renderWire() {
-        ArrayList<Bond> bonds = getBondList();
-        int numbonds = bonds.size();
-        if (numbonds < 1) {
-            return null;
-        }
-
-        Vector3d bondmidpoint = new Vector3d();
-        double[] mid = {0, 0, 0};
-        Vector3d v1 = new Vector3d();
-        Vector3d v2 = new Vector3d();
-        float[] a1 = {0, 0, 0};
-        float[] a2 = {0, 0, 0};
-        float[] col = new float[4];
-
-        Atom atom1, atom2;
-        LineArray la = new LineArray(4 * numbonds, GeometryArray.COORDINATES | GeometryArray.COLOR_4 | GeometryArray.NORMALS);
-        la.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
-        la.setCapability(LineArray.ALLOW_COORDINATE_READ);
-        la.setCapability(LineArray.ALLOW_COLOR_WRITE);
-        la.setCapability(LineArray.ALLOW_COUNT_READ);
-        la.setCapability(LineArray.ALLOW_INTERSECT);
-        la.setCapability(LineArray.ALLOW_FORMAT_READ);
-        atomLookUp
-                = new Atom[4 * numbonds];
-        int i = 0;
-        col[3] = 0.9f;
-        for (Bond bond : bonds) {
-            bond.setWire(la, i);
-            atom1 = bond.getAtom(0);
-            atom2 = bond.getAtom(1);
-            atom1.getV3D(v1);
-            atom2.getV3D(v2);
-            a1[0] = (float) v1.x;
-            a1[1] = (float) v1.y;
-            a1[2] = (float) v1.z;
-            a2[0] = (float) v2.x;
-            a2[1] = (float) v2.y;
-            a2[2] = (float) v2.z;
-            // Find the bond center
-            bondmidpoint.add(v1, v2);
-            bondmidpoint.scale(0.5d);
-            bondmidpoint.get(mid);
-
-            // Atom #1
-            Atom.AtomColor.get(atom1.getAtomicNumber()).get(col);
-            atomLookUp[i] = atom1;
-            la.setCoordinate(i, a1);
-            la.setColor(i, col);
-            la.setNormal(i, a2);
-            i++;
-
-            atomLookUp[i] = atom1;
-            la.setCoordinate(i, mid);
-            la.setColor(i, col);
-            la.setNormal(i, a2);
-            i++;
-
-            // Atom #2
-            Atom.AtomColor.get(atom2.getAtomicNumber()).get(col);
-            atomLookUp[i] = atom2;
-            la.setCoordinate(i, a2);
-            la.setColor(i, col);
-            la.setNormal(i, a1);
-            i++;
-
-            atomLookUp[i] = atom2;
-            la.setCoordinate(i, mid);
-            la.setColor(i, col);
-            la.setNormal(i, a1);
-            i++;
-
-        }
-
-        ColoringAttributes cola = new ColoringAttributes(new Color3f(),
-                ColoringAttributes.SHADE_GOURAUD);
-        Appearance app = new Appearance();
-        lineAttributes
-                = new LineAttributes();
-        lineAttributes.setLineWidth(RendererCache.bondwidth);
-        lineAttributes.setCapability(LineAttributes.ALLOW_WIDTH_WRITE);
-        lineAttributes.setLineAntialiasingEnable(true);
-        app.setLineAttributes(lineAttributes);
-        app.setCapability(Appearance.ALLOW_LINE_ATTRIBUTES_READ);
-        app.setCapability(Appearance.ALLOW_LINE_ATTRIBUTES_WRITE);
-        RenderingAttributes ra = new RenderingAttributes();
-        ra.setAlphaTestValue(0.1f);
-        ra.setAlphaTestFunction(RenderingAttributes.GREATER);
-        ra.setDepthBufferEnable(true);
-        ra.setDepthBufferWriteEnable(true);
-        app.setRenderingAttributes(ra);
-        app.setColoringAttributes(cola);
-        Shape3D wireframe = new Shape3D(la, app);
-        // PickTool.setCapabilities(wire, PickTool.INTERSECT_COORD);
-        wireframe.setUserData(this);
-        wireframe.setBounds(new BoundingSphere(new Point3d(0, 0, 0), 1000.0));
-        try {
-            wireframe.setBoundsAutoCompute(false);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        wireframe.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
-        wireframe.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
-        wireframe.setCapability(Shape3D.ALLOW_LOCAL_TO_VWORLD_READ);
-        return wireframe;
     }
 
     /**
@@ -2102,50 +1843,19 @@ public class MolecularAssembly extends MSGroup {
 
     /**
      * <p>
-     * Setter for the field <code>currentCycle</code>.</p>
+     * setPotential</p>
      *
-     * @param c a int.
+     * @param potentialEnergy a {@link ffx.potential.ForceFieldEnergy} object.
      */
-    public void setCurrentCycle(int c) {
-        if (c <= cycles && c > 0) {
-            currentCycle = c;
-            for (Atom atom : getAtomList()) {
-                atom.setCurrentCycle(currentCycle);
-            }
-        }
+    public void setPotential(ForceFieldEnergy potentialEnergy) {
+        this.potentialEnergy = potentialEnergy;
     }
 
     /**
-     * <p>
-     * Setter for the field <code>cycles</code>.</p>
-     *
-     * @param c a int.
+     * <p>setPropertiesFromForceField.</p>
      */
-    public void setCycles(int c) {
-        cycles = c;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>file</code>.</p>
-     *
-     * @param f a {@link java.io.File} object.
-     */
-    public void setFile(File f) {
-        if (f == null) {
-            return;
-        }
-        file = f;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>offset</code>.</p>
-     *
-     * @param o a {@link org.jogamp.vecmath.Vector3d} object.
-     */
-    public void setOffset(Vector3d o) {
-        offset = o;
+    public void setPropertiesFromForceField() {
+        this.properties = forceField.getProperties();
     }
 
     /**
@@ -2173,10 +1883,10 @@ public class MolecularAssembly extends MSGroup {
              * We'll collect new Scenegraph Shapes in our newShapeNode This is
              * to avoid the case where setView is called from the root node and
              * all new shapes for every MolecularAssembly would then be put into
-             * the same ArrayList.
+             * the same List.
              */
             super.setView(newViewModel, myNewShapes);
-            ArrayList<Molecule> moleculeList = getList(Molecule.class, new ArrayList<>());
+            List<Molecule> moleculeList = getList(Molecule.class, new ArrayList<>());
             for (Molecule m : moleculeList) {
                 m.setView(newViewModel, myNewShapes);
             }
@@ -2218,7 +1928,7 @@ public class MolecularAssembly extends MSGroup {
      * sidePolymerCOM</p>
      */
     public void sidePolymerCOM() {
-        ArrayList<Residue> residues = getResidueList();
+        List<Residue> residues = getResidueList();
         Residue r;
 
         ListIterator<Residue> li;
@@ -2229,15 +1939,352 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    public enum FractionalMode {OFF, MOLECULE, ATOM}
+
     /**
-     * Moves the center of all chemical entities into the primary
-     * unit cell. Somewhat experimental feature; use with caution.
+     * The MolecularAssembly BranchGroup has two TransformGroups between it and
+     * the "base" node where geometry is attached. If the point between the two
+     * transformations is where user rotation occurs. For example, if rotating
+     * about the center of mass of the system, the RotToCOM transformation will
+     * be an identity transformation (ie. none). If rotation is about some atom
+     * or group of atoms within the system, then the RotToCOM transformation
+     * will be a translation from that point to the COM.
+     *
+     * @param zero boolean
+     * @return BranchGroup
      */
-    public void moveAllIntoUnitCell() {
-        moveIntoUnitCell(getChains());
-        moveIntoUnitCell(getWaters());
-        moveIntoUnitCell(getIons());
-        moveIntoUnitCell(getMolecules());
+    private BranchGroup createScene(boolean zero) {
+        originToRotT3D = new Transform3D();
+        originToRotV3D = new Vector3d();
+        originToRot = new TransformGroup(originToRotT3D);
+        branchGroup = new BranchGroup();
+        rotToCOM = new TransformGroup();
+        rotToCOMT3D = new Transform3D();
+        rotToCOMV3D = new Vector3d();
+        // Set capabilities needed for picking and moving the MolecularAssembly
+        branchGroup.setCapability(BranchGroup.ALLOW_DETACH);
+        originToRot.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        originToRot.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+        originToRot.setCapability(TransformGroup.ENABLE_PICK_REPORTING);
+        rotToCOM.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+        rotToCOM.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        // Put the MolecularAssembly in the middle of the scene
+        if (zero) {
+            originToRotV3D.set(0.0, 0.0, 0.0);
+            originToRotT3D.set(originToRotV3D);
+            originToRot.setTransform(originToRotT3D);
+        }
+        wire = renderWire();
+        switchGroup = new Switch(Switch.CHILD_NONE);
+        switchGroup.setCapability(Switch.ALLOW_SWITCH_WRITE);
+        base = new BranchGroup();
+        base.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
+        base.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
+        childNodes = new BranchGroup();
+        childNodes.setCapability(BranchGroup.ALLOW_DETACH);
+        childNodes.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
+        childNodes.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
+        switchGroup.addChild(base);
+        if (wire != null) {
+            base.addChild(wire);
+        }
+        vrml = loadVRML();
+        if (vrml != null) {
+            vrmlTG = new TransformGroup();
+            vrmlTd = new Transform3D();
+            vrmlTG.setTransform(vrmlTd);
+            vrmlTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+            vrmlTG.addChild(vrml);
+            switchGroup.addChild(vrmlTG);
+            setView(RendererCache.ViewModel.INVISIBLE, null);
+        }
+        switchGroup.setWhichChild(Switch.CHILD_ALL);
+        rotToCOM.addChild(switchGroup);
+        originToRot.addChild(rotToCOM);
+        branchGroup.addChild(originToRot);
+        branchGroup.compile();
+        return branchGroup;
+    }
+
+    void finishDestruction() {
+        detach();
+        super.destroy();
+    }
+
+    /**
+     * Move mass from heavy atoms to their attached hydrogens.
+     * <p>
+     * The mass of each hydrogen is scaled by a factor of 3.
+     * The mass of the heavy atom is reduced by 2 AMU.
+     */
+    private void applyHeavyHydrogen() {
+        List<Bond> bonds = getBondList();
+        for (Bond bond : bonds) {
+            Atom a1 = bond.getAtom(0);
+            Atom a2 = bond.getAtom(1);
+            if (a1.isHydrogen() && a2.isHeavy()) {
+                double hydrogenMass = a1.getMass();
+                double heavyAtomMass = a2.getMass();
+                if (hydrogenMass < 1.1) {
+                    a2.setMass(heavyAtomMass - 2.0 * hydrogenMass);
+                    a1.setMass(3.0 * hydrogenMass);
+                }
+            } else if (a1.isHeavy() && a2.isHydrogen()) {
+                double heavyAtomMass = a1.getMass();
+                double hydrogenMass = a2.getMass();
+                if (hydrogenMass < 1.1) {
+                    a1.setMass(heavyAtomMass - 2.0 * hydrogenMass);
+                    a2.setMass(3.0 * hydrogenMass);
+                }
+            }
+        }
+    }
+
+    private Atom getResidue(Atom atom, boolean create) {
+        return getResidue(atom, create, Residue.ResidueType.UNK);
+    }
+
+    private Atom getResidue(Atom atom, boolean create, Residue.ResidueType defaultRT) {
+        Character chainID = atom.getChainID();
+        String resName = atom.getResidueName();
+        int resNum = atom.getResidueNumber();
+        String segID = atom.getSegID();
+        // Find/Create the chain
+        Polymer polymer = getPolymer(chainID, segID, create);
+        if (polymer == null) {
+            return null;
+        }
+        Residue res = polymer.getResidue(resName, resNum, create, defaultRT);
+        if (create && res != null) {
+            return (Atom) res.addMSNode(atom);
+        }
+        return null;
+    }
+
+    private Atom getMolecule(Atom atom, boolean create) {
+        String resName = atom.getResidueName();
+        int resNum = atom.getResidueNumber();
+        Character chainID = atom.getChainID();
+        String segID = atom.getSegID();
+
+        String key = resNum + resName + segID;
+        Molecule m = ionHashMap.get(key);
+        if (m == null) {
+            m = waterHashMap.get(key);
+            if (m == null) {
+                m = moleculeHashMap.get(key);
+            }
+        }
+        if (m != null) {
+            return (Atom) m.addMSNode(atom);
+        }
+
+        if (create) {
+            boolean isWater = false;
+            boolean isIon = false;
+            if (StringUtils.looksLikeWater(resName)) {
+                resName = StringUtils.STANDARD_WATER_NAME;
+                isWater = true;
+            } else if (StringUtils.looksLikeIon(resName)) {
+                resName = StringUtils.tryParseIon(resName);
+                isIon = true;
+            }
+            atom.setResName(resName);
+            m = new Molecule(resName, resNum, chainID, segID);
+            m.addMSNode(atom);
+            if (resName == null) {
+                logger.warning(format(" Attempting to create a molecule %s with a null name on atom %s! Defaulting to creating a generic Molecule.", m, atom));
+                molecules.add(m);
+                moleculeHashMap.put(key, m);
+            } else if (isWater) {
+                water.add(m);
+                waterHashMap.put(key, m);
+            } else if (isIon) {
+                ions.add(m);
+                ionHashMap.put(key, m);
+            } else {
+                molecules.add(m);
+                moleculeHashMap.put(key, m);
+            }
+            return atom;
+        } else {
+            return null;
+        }
+    }
+
+    private void recurseVRML(Node node) {
+        if (node instanceof Shape3D) {
+            Shape3D s3d = (Shape3D) node;
+            PickTool.setCapabilities(s3d, PickTool.INTERSECT_COORD);
+        } else if (node instanceof SharedGroup) {
+            SharedGroup sg = (SharedGroup) node;
+            for (Iterator<Node> e = sg.getAllChildren(); e.hasNext(); ) {
+                recurseVRML(e.next());
+            }
+        } else if (node instanceof BranchGroup) {
+            BranchGroup bg = (BranchGroup) node;
+            for (Iterator<Node> e = bg.getAllChildren(); e.hasNext(); ) {
+                recurseVRML(e.next());
+            }
+        } else if (node instanceof TransformGroup) {
+            TransformGroup vrmlTG1 = (TransformGroup) node;
+            for (Iterator<Node> e = vrmlTG1.getAllChildren(); e.hasNext(); ) {
+                node = e.next();
+                recurseVRML(node);
+            }
+        } else if (node instanceof Link) {
+            Link link = (Link) node;
+            recurseVRML(link.getSharedGroup());
+        } else if (node instanceof Group) {
+            Group group = (Group) node;
+            for (Iterator<Node> e = group.getAllChildren(); e.hasNext(); ) {
+                recurseVRML(e.next());
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void removeLeaves() {
+        super.removeLeaves();
+        MSNode macroNode = getAtomNode();
+        if (macroNode != null) {
+            if (macroNode.getChildCount() > 0) {
+                getAtomNode().setName(
+                        "Macromolecules " + "(" + macroNode.getChildCount() + ")");
+            } else if (macroNode.getParent() == this) {
+                removeChild(macroNode);
+            }
+        }
+
+        if (molecules.getChildCount() == 0) {
+            removeChild(molecules);
+        } else {
+            molecules.setName("Hetero Molecules " + "(" + molecules.getChildCount() + ")");
+        }
+
+        if (ions.getChildCount() == 0) {
+            removeChild(ions);
+        } else {
+            ions.setName("Ions " + "(" + ions.getChildCount() + ")");
+        }
+
+        if (water.getChildCount() == 0) {
+            removeChild(water);
+        } else {
+            water.setName("Water " + "(" + water.getChildCount() + ")");
+        }
+
+    }
+
+    private Shape3D renderWire() {
+        List<Bond> bonds = getBondList();
+        int numbonds = bonds.size();
+        if (numbonds < 1) {
+            return null;
+        }
+
+        Vector3d bondmidpoint = new Vector3d();
+        double[] mid = {0, 0, 0};
+        Vector3d v1 = new Vector3d();
+        Vector3d v2 = new Vector3d();
+        float[] a1 = {0, 0, 0};
+        float[] a2 = {0, 0, 0};
+        float[] col = new float[4];
+
+        Atom atom1, atom2;
+        LineArray la = new LineArray(4 * numbonds, GeometryArray.COORDINATES | GeometryArray.COLOR_4 | GeometryArray.NORMALS);
+        la.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
+        la.setCapability(LineArray.ALLOW_COORDINATE_READ);
+        la.setCapability(LineArray.ALLOW_COLOR_WRITE);
+        la.setCapability(LineArray.ALLOW_COUNT_READ);
+        la.setCapability(LineArray.ALLOW_INTERSECT);
+        la.setCapability(LineArray.ALLOW_FORMAT_READ);
+        atomLookUp
+                = new Atom[4 * numbonds];
+        int i = 0;
+        col[3] = 0.9f;
+        for (Bond bond : bonds) {
+            bond.setWire(la, i);
+            atom1 = bond.getAtom(0);
+            atom2 = bond.getAtom(1);
+            atom1.getV3D(v1);
+            atom2.getV3D(v2);
+            a1[0] = (float) v1.x;
+            a1[1] = (float) v1.y;
+            a1[2] = (float) v1.z;
+            a2[0] = (float) v2.x;
+            a2[1] = (float) v2.y;
+            a2[2] = (float) v2.z;
+            // Find the bond center
+            bondmidpoint.add(v1, v2);
+            bondmidpoint.scale(0.5d);
+            bondmidpoint.get(mid);
+
+            // Atom #1
+            Atom.AtomColor.get(atom1.getAtomicNumber()).get(col);
+            atomLookUp[i] = atom1;
+            la.setCoordinate(i, a1);
+            la.setColor(i, col);
+            la.setNormal(i, a2);
+            i++;
+
+            atomLookUp[i] = atom1;
+            la.setCoordinate(i, mid);
+            la.setColor(i, col);
+            la.setNormal(i, a2);
+            i++;
+
+            // Atom #2
+            Atom.AtomColor.get(atom2.getAtomicNumber()).get(col);
+            atomLookUp[i] = atom2;
+            la.setCoordinate(i, a2);
+            la.setColor(i, col);
+            la.setNormal(i, a1);
+            i++;
+
+            atomLookUp[i] = atom2;
+            la.setCoordinate(i, mid);
+            la.setColor(i, col);
+            la.setNormal(i, a1);
+            i++;
+
+        }
+
+        ColoringAttributes cola = new ColoringAttributes(new Color3f(),
+                ColoringAttributes.SHADE_GOURAUD);
+        Appearance app = new Appearance();
+        lineAttributes
+                = new LineAttributes();
+        lineAttributes.setLineWidth(RendererCache.bondwidth);
+        lineAttributes.setCapability(LineAttributes.ALLOW_WIDTH_WRITE);
+        lineAttributes.setLineAntialiasingEnable(true);
+        app.setLineAttributes(lineAttributes);
+        app.setCapability(Appearance.ALLOW_LINE_ATTRIBUTES_READ);
+        app.setCapability(Appearance.ALLOW_LINE_ATTRIBUTES_WRITE);
+        RenderingAttributes ra = new RenderingAttributes();
+        ra.setAlphaTestValue(0.1f);
+        ra.setAlphaTestFunction(RenderingAttributes.GREATER);
+        ra.setDepthBufferEnable(true);
+        ra.setDepthBufferWriteEnable(true);
+        app.setRenderingAttributes(ra);
+        app.setColoringAttributes(cola);
+        Shape3D wireframe = new Shape3D(la, app);
+        // PickTool.setCapabilities(wire, PickTool.INTERSECT_COORD);
+        wireframe.setUserData(this);
+        wireframe.setBounds(new BoundingSphere(new Point3d(0, 0, 0), 1000.0));
+        try {
+            wireframe.setBoundsAutoCompute(false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        wireframe.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
+        wireframe.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
+        wireframe.setCapability(Shape3D.ALLOW_LOCAL_TO_VWORLD_READ);
+        return wireframe;
     }
 
     /**
@@ -2338,59 +2385,6 @@ public class MolecularAssembly extends MSGroup {
 
             for (Atom atom : atoms) {
                 atom.move(translate);
-            }
-        }
-    }
-
-    /**
-     * Randomizes position in the unit cell of each molecule by applying a Cartesian SymOp with a random translation.
-     *
-     * @param x SymOp with translation range -x/2 .. x/2 (0 for random placement in the unit cell, negative for no SymOp)
-     */
-    public void applyRandomSymOp(double x) {
-        // The Unit Cell is needed here (not the ReplicatesCrystal).
-        Crystal crystal = getCrystal().getUnitCell();
-        if (crystal.aperiodic() || x < 0) {
-            return;
-        }
-        double[] xyz = new double[3];
-        ArrayList<MSNode> molecules = getMolecules();
-        int moleculeNum = 1;
-        for (MSNode msNode : molecules) {
-            ArrayList<Atom> atoms = msNode.getAtomList();
-            SymOp symOp;
-            if (x == 0) {
-                double[] translation = crystal.getRandomCartTranslation();
-                symOp = SymOp.randomSymOpFactory(translation);
-            } else {
-                symOp = SymOp.randomSymOpFactory(x);
-            }
-            logger.info(format("\n Applying random Cartesian SymOp to molecule %d:\n%s", moleculeNum, symOp.toString()));
-            for (Atom atom : atoms) {
-                atom.getXYZ(xyz);
-                crystal.applyCartesianSymOp(xyz, xyz, symOp);
-                atom.setXYZ(xyz);
-            }
-            moleculeNum++;
-        }
-    }
-
-    /**
-     * Applies a randomly drawn density to a molecular system's crystal.
-     *
-     * @param ucDensity Target density.
-     */
-    public void applyRandomDensity(double ucDensity) {
-        if (ucDensity > 0) {
-            logger.info(format("\n Applying random unit cell axes with target density of %6.3f\n", ucDensity));
-            // The replicates crystal is needed here (not the unit cell).
-            Crystal crystal = getCrystal();
-            if (!crystal.aperiodic()) {
-                double mass = getMass();
-                crystal.randomParameters(ucDensity, mass);
-                potentialEnergy.setCrystal(crystal);
-            } else {
-                logger.fine(String.format(" Potential %s is an aperiodic system!", potentialEnergy));
             }
         }
     }

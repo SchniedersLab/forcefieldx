@@ -56,15 +56,6 @@ import edu.rit.pj.ParallelTeam;
 @RunWith(Parameterized.class)
 public class Complex3DParallelTest {
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32, nCPUs=1}", 32, 32, 32, 1},
-                {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
-                {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
-                {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
-        });
-    }
-
     private final String info;
     private final int nx;
     private final int ny;
@@ -88,6 +79,15 @@ public class Complex3DParallelTest {
         parallelTeam = new ParallelTeam(nCPUs);
     }
 
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32, nCPUs=1}", 32, 32, 32, 1},
+                {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
+                {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
+                {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
+        });
+    }
+
     @Before
     public void setUp() {
         Random random = new Random();
@@ -101,13 +101,13 @@ public class Complex3DParallelTest {
     }
 
     /**
-     * Test of the fft and ifft methods, of class Complex3D.
+     * Test of convolution method, of class Complex3D.
      */
     @Test
-    public void testFft() {
+    public void testConvolution() {
         Complex3DParallel complex3D = new Complex3DParallel(nx, ny, nz, parallelTeam);
-        complex3D.fft(data);
-        complex3D.ifft(data);
+        complex3D.setRecip(recip);
+        complex3D.convolution(data);
         for (int i = 0; i < tot; i++) {
             int index = i * 2;
             double actual = data[index] / tot;
@@ -117,13 +117,13 @@ public class Complex3DParallelTest {
     }
 
     /**
-     * Test of convolution method, of class Complex3D.
+     * Test of the fft and ifft methods, of class Complex3D.
      */
     @Test
-    public void testConvolution() {
+    public void testFft() {
         Complex3DParallel complex3D = new Complex3DParallel(nx, ny, nz, parallelTeam);
-        complex3D.setRecip(recip);
-        complex3D.convolution(data);
+        complex3D.fft(data);
+        complex3D.ifft(data);
         for (int i = 0; i < tot; i++) {
             int index = i * 2;
             double actual = data[index] / tot;

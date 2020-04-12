@@ -67,7 +67,12 @@ import ffx.potential.utils.EnergyException;
 public class BornGradRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(BornRadiiRegion.class.getName());
-
+    private static final double PI4_3 = 4.0 / 3.0 * PI;
+    /**
+     * Constant factor used with quadrupoles.
+     */
+    private static final double oneThird = 1.0 / 3.0;
+    private final BornCRLoop[] bornCRLoop;
     /**
      * An ordered array of atoms in the system.
      */
@@ -120,12 +125,25 @@ public class BornGradRegion extends ParallelRegion {
      */
     private AtomicDoubleArray sharedBornGrad;
 
-    private final BornCRLoop[] bornCRLoop;
-
     public BornGradRegion(int nt) {
         bornCRLoop = new BornCRLoop[nt];
         for (int i = 0; i < nt; i++) {
             bornCRLoop[i] = new BornCRLoop();
+        }
+    }
+
+    /**
+     * Execute the InitializationRegion with the passed ParallelTeam.
+     *
+     * @param parallelTeam The ParallelTeam instance to execute with.
+     */
+    public void executeWith(ParallelTeam parallelTeam) {
+        sharedBornGrad.reduce(parallelTeam, 0, atoms.length - 1);
+        try {
+            parallelTeam.execute(this);
+        } catch (Exception e) {
+            String message = " Exception evaluating Born radii chain rule gradient.\n";
+            logger.log(Level.SEVERE, message, e);
         }
     }
 
@@ -145,21 +163,6 @@ public class BornGradRegion extends ParallelRegion {
         this.born = born;
         this.grad = grad;
         this.sharedBornGrad = sharedBornGrad;
-    }
-
-    /**
-     * Execute the InitializationRegion with the passed ParallelTeam.
-     *
-     * @param parallelTeam The ParallelTeam instance to execute with.
-     */
-    public void executeWith(ParallelTeam parallelTeam) {
-        sharedBornGrad.reduce(parallelTeam, 0, atoms.length - 1);
-        try {
-            parallelTeam.execute(this);
-        } catch (Exception e) {
-            String message = " Exception evaluating Born radii chain rule gradient.\n";
-            logger.log(Level.SEVERE, message, e);
-        }
     }
 
     @Override
@@ -191,85 +194,6 @@ public class BornGradRegion extends ParallelRegion {
 
         BornCRLoop() {
             dx_local = new double[3];
-        }
-
-        @Override
-        public void start() {
-            threadID = getThreadIndex();
-        }
-
-        /**
-         * Use pairwise descreening to compute derivative of the integral of
-         * 1/r^6 with respect to r.
-         *
-         * @param r            separation distance.
-         * @param r2           separation distance squared.
-         * @param radius       base radius of descreened atom.
-         * @param scaledRadius scaled radius descreening atom.
-         * @return the derivative.
-         */
-        private double integralDerivative(double r, double r2, double radius, double scaledRadius) {
-            double de = 0.0;
-            // Descreen only if the descreened atom does not engulf the descreener.
-            if (radius < r + scaledRadius) {
-                // Atom i is engulfed by atom k.
-                if (radius + r < scaledRadius) {
-                    double uik = scaledRadius - r;
-                    double uik2 = uik * uik;
-                    double uik4 = uik2 * uik2;
-                    de = -4.0 * PI / uik4;
-                }
-
-                // Lower integration bound depends on atoms sizes and separation.
-                double sk2 = scaledRadius * scaledRadius;
-                if (radius + r < scaledRadius) {
-                    // Atom i is engulfed by atom k.
-                    double lik = scaledRadius - r;
-                    double lik2 = lik * lik;
-                    double lik4 = lik2 * lik2;
-                    de = de + 0.25 * PI * (sk2 - 4.0 * scaledRadius * r + 17.0 * r2) / (r2 * lik4);
-                } else if (r < radius + scaledRadius) {
-                    // Atoms are overlapped, begin integration from ri.
-                    double lik = radius;
-                    double lik2 = lik * lik;
-                    double lik4 = lik2 * lik2;
-                    de = de + 0.25 * PI * (2.0 * radius * radius - sk2 - r2) / (r2 * lik4);
-                } else {
-                    // No overlap between atoms.
-                    double lik = r - scaledRadius;
-                    double lik2 = lik * lik;
-                    double lik4 = lik2 * lik2;
-                    de = de + 0.25 * PI * (sk2 - 4.0 * scaledRadius * r + r2) / (r2 * lik4);
-                }
-                // Upper integration bound is always the same.
-                double uik = r + scaledRadius;
-                double uik2 = uik * uik;
-                double uik4 = uik2 * uik2;
-                de = de - 0.25 * PI * (sk2 + 4.0 * scaledRadius * r + r2) / (r2 * uik4);
-            }
-
-            return de;
-        }
-
-        /**
-         * Accumulate a contribution to the gradient and dU/dX/dL.
-         *
-         * @param i  index of atom i.
-         * @param k  index of atom k.
-         * @param dE partial derivative of the energy with respect to R.
-         * @param xr x-component of the separation vector.
-         * @param yr y-component of the separation vector.
-         * @param zr z-component of the separation vector.
-         */
-        private void incrementGradient(int i, int k, double dE, double xr, double yr, double zr, double[][] transOp) {
-            double dedx = dE * xr;
-            double dedy = dE * yr;
-            double dedz = dE * zr;
-            grad.add(threadID, i, dedx, dedy, dedz);
-            final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
-            final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
-            final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
-            grad.sub(threadID, k, dedxk, dedyk, dedzk);
         }
 
         @Override
@@ -369,11 +293,84 @@ public class BornGradRegion extends ParallelRegion {
                 }
             }
         }
-    }
 
-    private static final double PI4_3 = 4.0 / 3.0 * PI;
-    /**
-     * Constant factor used with quadrupoles.
-     */
-    private static final double oneThird = 1.0 / 3.0;
+        @Override
+        public void start() {
+            threadID = getThreadIndex();
+        }
+
+        /**
+         * Use pairwise descreening to compute derivative of the integral of
+         * 1/r^6 with respect to r.
+         *
+         * @param r            separation distance.
+         * @param r2           separation distance squared.
+         * @param radius       base radius of descreened atom.
+         * @param scaledRadius scaled radius descreening atom.
+         * @return the derivative.
+         */
+        private double integralDerivative(double r, double r2, double radius, double scaledRadius) {
+            double de = 0.0;
+            // Descreen only if the descreened atom does not engulf the descreener.
+            if (radius < r + scaledRadius) {
+                // Atom i is engulfed by atom k.
+                if (radius + r < scaledRadius) {
+                    double uik = scaledRadius - r;
+                    double uik2 = uik * uik;
+                    double uik4 = uik2 * uik2;
+                    de = -4.0 * PI / uik4;
+                }
+
+                // Lower integration bound depends on atoms sizes and separation.
+                double sk2 = scaledRadius * scaledRadius;
+                if (radius + r < scaledRadius) {
+                    // Atom i is engulfed by atom k.
+                    double lik = scaledRadius - r;
+                    double lik2 = lik * lik;
+                    double lik4 = lik2 * lik2;
+                    de = de + 0.25 * PI * (sk2 - 4.0 * scaledRadius * r + 17.0 * r2) / (r2 * lik4);
+                } else if (r < radius + scaledRadius) {
+                    // Atoms are overlapped, begin integration from ri.
+                    double lik = radius;
+                    double lik2 = lik * lik;
+                    double lik4 = lik2 * lik2;
+                    de = de + 0.25 * PI * (2.0 * radius * radius - sk2 - r2) / (r2 * lik4);
+                } else {
+                    // No overlap between atoms.
+                    double lik = r - scaledRadius;
+                    double lik2 = lik * lik;
+                    double lik4 = lik2 * lik2;
+                    de = de + 0.25 * PI * (sk2 - 4.0 * scaledRadius * r + r2) / (r2 * lik4);
+                }
+                // Upper integration bound is always the same.
+                double uik = r + scaledRadius;
+                double uik2 = uik * uik;
+                double uik4 = uik2 * uik2;
+                de = de - 0.25 * PI * (sk2 + 4.0 * scaledRadius * r + r2) / (r2 * uik4);
+            }
+
+            return de;
+        }
+
+        /**
+         * Accumulate a contribution to the gradient and dU/dX/dL.
+         *
+         * @param i  index of atom i.
+         * @param k  index of atom k.
+         * @param dE partial derivative of the energy with respect to R.
+         * @param xr x-component of the separation vector.
+         * @param yr y-component of the separation vector.
+         * @param zr z-component of the separation vector.
+         */
+        private void incrementGradient(int i, int k, double dE, double xr, double yr, double zr, double[][] transOp) {
+            double dedx = dE * xr;
+            double dedy = dE * yr;
+            double dedz = dE * zr;
+            grad.add(threadID, i, dedx, dedy, dedz);
+            final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
+            final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
+            final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
+            grad.sub(threadID, k, dedxk, dedyk, dedzk);
+        }
+    }
 }

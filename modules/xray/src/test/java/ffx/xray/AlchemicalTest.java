@@ -39,12 +39,11 @@ package ffx.xray;
 
 import java.util.logging.Logger;
 
-import ffx.algorithms.misc.PJDependentTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-
+import ffx.algorithms.misc.PJDependentTest;
 import ffx.realspace.cli.RealSpaceOptions;
 import ffx.realspace.groovy.Alchemical;
 
@@ -60,26 +59,16 @@ public class AlchemicalTest extends PJDependentTest {
     Binding binding;
     Alchemical alchemical;
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        alchemical = new Alchemical();
-        alchemical.setBinding(binding);
-    }
-
     @After
     public void after() {
         alchemical.destroyPotentials();
     }
 
-    @Test
-    public void testAlchemicalHelp() {
-        // Set-up the input arguments for the Alchemical script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        alchemical.run();
+    @Before
+    public void before() {
+        binding = new Binding();
+        alchemical = new Alchemical();
+        alchemical.setBinding(binding);
     }
 
     @Test
@@ -90,6 +79,16 @@ public class AlchemicalTest extends PJDependentTest {
                 "src/main/java/ffx/xray/structures/5zck_ffx_2fofc.map"};
         binding.setVariable("args", args);
 
+        alchemical.run();
+    }
+
+    @Test
+    public void testAlchemicalHelp() {
+        // Set-up the input arguments for the Alchemical script.
+        String[] args = {"-h"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
         alchemical.run();
     }
 }

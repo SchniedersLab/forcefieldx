@@ -47,7 +47,6 @@ import ffx.utilities.Keyword;
  * Test creation of a Force Field object from a CompositeConfiguration.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class ForceFieldFilterTest {

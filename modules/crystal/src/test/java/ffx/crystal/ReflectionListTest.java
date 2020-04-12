@@ -58,6 +58,37 @@ import ffx.utilities.BaseFFXTest;
 @RunWith(Parameterized.class)
 public class ReflectionListTest extends BaseFFXTest {
 
+    private final String info;
+    private final int size;
+    private final HKL valid;
+    private final HKL invalid;
+    private final int epsilon;
+    private final int allowed;
+    private final boolean ciOnly;
+    private final ReflectionList reflectionlist;
+    public ReflectionListTest(boolean ciOnly,
+                              String info, double a, double b, double c,
+                              double alpha, double beta, double gamma, String sg,
+                              double resolution,
+                              int size, HKL valid, HKL invalid, int epsilon, int allowed) {
+        this.ciOnly = ciOnly;
+        this.info = info;
+        this.size = size;
+        this.valid = valid;
+        this.invalid = invalid;
+        this.epsilon = epsilon;
+        this.allowed = allowed;
+
+        if (!ffxCI && ciOnly) {
+            this.reflectionlist = null;
+            return;
+        }
+
+        Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
+        Resolution res = new Resolution(resolution);
+        this.reflectionlist = new ReflectionList(crystal, res);
+    }
+
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
@@ -88,50 +119,6 @@ public class ReflectionListTest extends BaseFFXTest {
         });
     }
 
-    private final String info;
-    private final int size;
-    private final HKL valid;
-    private final HKL invalid;
-    private final int epsilon;
-    private final int allowed;
-    private final boolean ciOnly;
-    private final ReflectionList reflectionlist;
-
-    public ReflectionListTest(boolean ciOnly,
-                              String info, double a, double b, double c,
-                              double alpha, double beta, double gamma, String sg,
-                              double resolution,
-                              int size, HKL valid, HKL invalid, int epsilon, int allowed) {
-        this.ciOnly = ciOnly;
-        this.info = info;
-        this.size = size;
-        this.valid = valid;
-        this.invalid = invalid;
-        this.epsilon = epsilon;
-        this.allowed = allowed;
-
-        if (!ffxCI && ciOnly) {
-            this.reflectionlist = null;
-            return;
-        }
-
-        Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
-        Resolution res = new Resolution(resolution);
-        this.reflectionlist = new ReflectionList(crystal, res);
-    }
-
-    @Test
-    public void testsize() {
-        if (!ffxCI && ciOnly) {
-            return;
-        }
-
-        assertEquals(info + " hash map and arraylist should have equal length",
-                reflectionlist.hklmap.size(), reflectionlist.hkllist.size());
-        assertEquals(info + " reflection list should have correct size",
-                size, reflectionlist.hkllist.size());
-    }
-
     @Test
     public void testreflections() {
         if (!ffxCI && ciOnly) {
@@ -148,5 +135,17 @@ public class ReflectionListTest extends BaseFFXTest {
                 epsilon, hkl.epsilon());
         assertEquals(info + " list 0 0 0 reflection should have correct allowance",
                 allowed, hkl.allowed);
+    }
+
+    @Test
+    public void testsize() {
+        if (!ffxCI && ciOnly) {
+            return;
+        }
+
+        assertEquals(info + " hash map and arraylist should have equal length",
+                reflectionlist.hklmap.size(), reflectionlist.hkllist.size());
+        assertEquals(info + " reflection list should have correct size",
+                size, reflectionlist.hkllist.size());
     }
 }

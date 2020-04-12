@@ -118,46 +118,6 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getHighestOrderZeroDerivative() {
-        return 2;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getOneBound() {
-        return a > b ? a : b;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getZeroBound() {
-        return b < a ? b : a;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean symmetricToUnity() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return false;
-    }
-
-    /**
      * First derivative of the switching function at r.
      *
      * @param r  r
@@ -188,6 +148,48 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
     @Override
     public double firstDerivative(double x) {
         return dtaper(x);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getHighestOrderZeroDerivative() {
+        return 2;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getOneBound() {
+        return a > b ? a : b;
+    }
+
+    /**
+     * Get the value where the switch starts.
+     *
+     * @return Switch start.
+     */
+    public double getSwitchEnd() {
+        return b;
+    }
+
+    /**
+     * Get the value where the switch starts.
+     *
+     * @return Switch start.
+     */
+    public double getSwitchStart() {
+        return a;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getZeroBound() {
+        return b < a ? b : a;
     }
 
     /**
@@ -236,26 +238,8 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        return taper(x);
-    }
-
-    /**
-     * Get the value where the switch starts.
-     *
-     * @return Switch start.
-     */
-    public double getSwitchEnd() {
-        return b;
-    }
-
-    /**
-     * Get the value where the switch starts.
-     *
-     * @return Switch start.
-     */
-    public double getSwitchStart() {
-        return a;
+    public boolean symmetricToUnity() {
+        return true;
     }
 
     /**
@@ -293,5 +277,21 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
         return format("Multiplicative switch of form f(x) = %8.4g*x^5 + "
                         + "%8.4g*x^4 + %8.4g*x^3 + %8.4g*x^2 + %8.4g*x + %8.4g",
                 c5, c4, c3, c2, c1, c0);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean validOutsideBounds() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        return taper(x);
     }
 }

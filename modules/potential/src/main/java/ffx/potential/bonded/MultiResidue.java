@@ -81,7 +81,7 @@ public class MultiResidue extends Residue {
     /**
      * List of residues under consideration.
      */
-    private ArrayList<Residue> consideredResidues;
+    private List<Residue> consideredResidues;
     /**
      * The ForceFieldEnergy in use.
      */
@@ -301,7 +301,7 @@ public class MultiResidue extends Residue {
      * {@inheritDoc}
      */
     @Override
-    public ArrayList<MSNode> getAtomNodeList() {
+    public List<MSNode> getAtomNodeList() {
         return activeResidue.getAtomNodeList();
     }
 
@@ -356,7 +356,7 @@ public class MultiResidue extends Residue {
     /**
      * Returns a copy of this MultiResidue's consideredResidues array.
      *
-     * @return a new ArrayList of the considered residues.
+     * @return a new List of the considered residues.
      */
     public List<Residue> getConsideredResidues() {
         return new ArrayList<>(consideredResidues);
@@ -366,7 +366,7 @@ public class MultiResidue extends Residue {
      * {@inheritDoc}
      */
     @Override
-    public ArrayList getDangelingAtoms() {
+    public List getDangelingAtoms() {
         return activeResidue.getDangelingAtoms();
     }
 
@@ -374,7 +374,7 @@ public class MultiResidue extends Residue {
      * {@inheritDoc}
      */
     @Override
-    public void setDangelingAtoms(ArrayList<Atom> a) {
+    public void setDangelingAtoms(List<Atom> a) {
         activeResidue.setDangelingAtoms(a);
     }
 
@@ -382,7 +382,7 @@ public class MultiResidue extends Residue {
      * Returns a list of this MultiResidue's inactive residues. Adding/removing
      * from the returned list does nothing.
      *
-     * @return a new ArrayList of inactive residues.
+     * @return a new List of inactive residues.
      */
     public List<Residue> getInactive() {
         List<Residue> ret = new ArrayList<>();
@@ -491,7 +491,7 @@ public class MultiResidue extends Residue {
      * {@inheritDoc}
      */
     @Override
-    public ArrayList<Atom> getSideChainAtoms() {
+    public List<Atom> getSideChainAtoms() {
         return activeResidue.getSideChainAtoms();
     }
 
@@ -902,16 +902,16 @@ public class MultiResidue extends Residue {
         }
 
         // Update atom references to local geometry.
-        ArrayList<Atom> atoms = residue.getAtomList();
-        ArrayList<Bond> bonds = residue.getBondList();
-        ArrayList<Angle> angles = residue.getAngleList();
-        ArrayList<Torsion> torsions = residue.getTorsionList();
+        List<Atom> atoms = residue.getAtomList();
+        List<Bond> bonds = residue.getBondList();
+        List<Angle> angles = residue.getAngleList();
+        List<Torsion> torsions = residue.getTorsionList();
         if (prev != null) {
             atoms.addAll(prev.getAtomList());
             bonds.addAll(prev.getBondList());
             angles.addAll(prev.getAngleList());
             torsions.addAll(prev.getTorsionList());
-            ArrayList<Joint> joints = prev.getJoints();
+            List<Joint> joints = prev.getJoints();
             for (Joint joint : joints) {
                 bonds.addAll(joint.getBondList());
                 angles.addAll(joint.getAngleList());
@@ -928,7 +928,7 @@ public class MultiResidue extends Residue {
             bonds.addAll(next.getBondList());
             angles.addAll(next.getAngleList());
             torsions.addAll(next.getTorsionList());
-            ArrayList<Joint> joints = next.getJoints();
+            List<Joint> joints = next.getJoints();
             for (Joint joint : joints) {
                 bonds.addAll(joint.getBondList());
                 angles.addAll(joint.getAngleList());
@@ -987,7 +987,7 @@ public class MultiResidue extends Residue {
         moveBackBoneAtoms(activeResidue, newResidue);
 
         // Pass references of the active Residues' joints to the new Residue.
-        ArrayList<Joint> joints = activeResidue.getJoints();
+        List<Joint> joints = activeResidue.getJoints();
         for (Joint joint : joints) {
             newResidue.addJoint(joint);
         }

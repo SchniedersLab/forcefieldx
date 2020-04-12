@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
@@ -54,56 +54,54 @@ public class EliminatedRotamers {
 
     private static final Logger logger = Logger.getLogger(EliminatedRotamers.class.getName());
 
-    private RotamerOptimization rO;
-    private DistanceMatrix dM;
-    private EnergyExpansion eE;
-    private RotamerLibrary library;
+    private final RotamerOptimization rO;
+    private final DistanceMatrix dM;
+    private final RotamerLibrary library;
     /**
      * A list of all residues being optimized. Note that Box and Window
      * optimizations operate on subsets of this list.
      */
-    private ArrayList<Residue> allResiduesList;
+    private final List<Residue> allResiduesList;
     /**
      * Maximum depth to check if a rotamer can be eliminated.
      */
-    private int maxRotCheckDepth;
+    private final int maxRotCheckDepth;
     /**
      * Clash energy threshold (kcal/mole).
      */
-    private double clashThreshold;
+    private final double clashThreshold;
     /**
      * Clash energy threshold (kcal/mole).
      */
-    private double pairClashThreshold;
+    private final double pairClashThreshold;
     /**
      * Clash energy threshold (kcal/mol) for MultiResidues, which can have much
      * more variation in self and 2-Body energies.
      */
-    private double multiResClashThreshold;
+    private final double multiResClashThreshold;
     /**
      * Factor by which to multiply the pruning constraints for nucleic acids.
      * nucleicPairsPruningFactor is the arithmetic mean of 1.0 and the pruning
      * factor, and is applied for AA-NA pairs.
      */
-    private double nucleicPruningFactor;
-    private double nucleicPairsPruningFactor;
+    private final double nucleicPruningFactor;
+    private final double nucleicPairsPruningFactor;
     /**
      * Pair clash energy threshold (kcal/mol) for MultiResidues.
      */
-    private double multiResPairClashAddn;
+    private final double multiResPairClashAddn;
     /**
      * Flag to prune clashes.
      */
-    private boolean pruneClashes;
+    private final boolean pruneClashes;
     /**
      * Flag to prune pair clashes.
      */
-    private boolean prunePairClashes;
+    private final boolean prunePairClashes;
     /**
      * Flag to control the verbosity of printing.
      */
-    private boolean print;
-
+    private final boolean print;
     /**
      * Eliminated rotamers. [residue][rotamer]
      */
@@ -120,9 +118,10 @@ public class EliminatedRotamers {
      * Pruned rotamer pairs. Only for JUnit testing purposes.
      */
     public boolean[][][][] onlyPrunedPairs;
+    private EnergyExpansion eE;
 
     public EliminatedRotamers(RotamerOptimization rO, DistanceMatrix dM, RotamerLibrary library,
-                              ArrayList<Residue> allResiduesList, int maxRotCheckDepth,
+                              List<Residue> allResiduesList, int maxRotCheckDepth,
                               double clashThreshold, double pairClashThreshold, double multiResClashThreshold,
                               double nucleicPruningFactor, double nucleicPairsPruningFactor, double multiResPairClashAddn,
                               boolean pruneClashes, boolean prunePairClashes, boolean print, Residue[] residues) {
@@ -141,46 +140,6 @@ public class EliminatedRotamers {
         this.prunePairClashes = prunePairClashes;
         this.print = print;
         allocateEliminationMemory(residues);
-    }
-
-    public void setEnergyExpansion(EnergyExpansion eE) {
-        this.eE = eE;
-    }
-
-    /**
-     * <p>
-     * allocateEliminationMemory.</p>
-     *
-     * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
-     */
-    private void allocateEliminationMemory(Residue[] residues) {
-        int nres = residues.length;
-        eliminatedSingles = new boolean[nres][];
-        eliminatedPairs = new boolean[nres][][][];
-        // Loop over residues.
-        for (int i = 0; i < nres; i++) {
-            Residue residuei = residues[i];
-            Rotamer[] rotamersi = residuei.getRotamers(library);
-            int lenri = rotamersi.length;  // Length rotamers i
-            rO.logIfMaster(format(" %3d Residue %7s with %2d rotamers.", i + 1,
-                    residuei.toFormattedString(false, true), lenri));
-            eliminatedSingles[i] = new boolean[lenri];
-            eliminatedPairs[i] = new boolean[lenri][][];
-            // Loop over the set of rotamers for residue i.
-            for (int ri = 0; ri < lenri; ri++) {
-                eliminatedSingles[i][ri] = false;
-                eliminatedPairs[i][ri] = new boolean[nres][];
-                for (int j = i + 1; j < nres; j++) {
-                    Residue residuej = residues[j];
-                    Rotamer[] rotamersj = residuej.getRotamers(library);
-                    int lenrj = rotamersj.length;
-                    eliminatedPairs[i][ri][j] = new boolean[lenrj];
-                    for (int rj = 0; rj < lenrj; rj++) {
-                        eliminatedPairs[i][ri][j][rj] = false;
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -221,6 +180,46 @@ public class EliminatedRotamers {
             rj = iri;
         }
         return eliminatedPairs[i][ri][j][rj];
+    }
+
+    /**
+     * Check for pruned rotamer pair; true if eliminated. Only used during
+     * testing.
+     *
+     * @param i  Residue i.
+     * @param ri Rotamer ri.
+     * @param j  Residue j.
+     * @param rj Rotamer rj.
+     * @return a boolean.
+     */
+    public boolean checkPrunedPairs(int i, int ri, int j, int rj) {
+        if (onlyPrunedPairs == null) {
+            return false;
+        }
+
+        if (j < i) {
+            int ii = i;
+            int iri = ri;
+            i = j;
+            ri = rj;
+            j = ii;
+            rj = iri;
+        }
+        return onlyPrunedPairs[i][ri][j][rj];
+    }
+
+    /**
+     * Check for pruned rotamer; true if eliminated. Only used during testing.
+     *
+     * @param i  a int.
+     * @param ri a int.
+     * @return a boolean.
+     */
+    public boolean checkPrunedSingles(int i, int ri) {
+        if (onlyPrunedSingles == null) {
+            return false;
+        }
+        return onlyPrunedSingles[i][ri];
     }
 
     /**
@@ -326,23 +325,6 @@ public class EliminatedRotamers {
         return true;
     }
 
-    public int eliminateRotamerPairs(Residue[] residues, int i, int ri, boolean verbose) {
-        int eliminatedPairs = 0;
-        for (int j = 0; j < residues.length; j++) {
-            if (j == i) {
-                continue;
-            }
-            Residue resj = residues[j];
-            int lenrj = resj.getRotamers(library).length;
-            for (int rj = 0; rj < lenrj; rj++) {
-                if (eliminateRotamerPair(residues, i, ri, j, rj, verbose)) {
-                    ++eliminatedPairs;
-                }
-            }
-        }
-        return eliminatedPairs;
-    }
-
     public boolean eliminateRotamerPair(Residue[] residues, int i, int ri, int j, int rj, boolean verbose) {
         if (i > j) {
             int ii = i;
@@ -368,6 +350,423 @@ public class EliminatedRotamers {
             return true;
         } else {
             return false;
+        }
+    }
+
+    public int eliminateRotamerPairs(Residue[] residues, int i, int ri, boolean verbose) {
+        int eliminatedPairs = 0;
+        for (int j = 0; j < residues.length; j++) {
+            if (j == i) {
+                continue;
+            }
+            Residue resj = residues[j];
+            int lenrj = resj.getRotamers(library).length;
+            for (int rj = 0; rj < lenrj; rj++) {
+                if (eliminateRotamerPair(residues, i, ri, j, rj, verbose)) {
+                    ++eliminatedPairs;
+                }
+            }
+        }
+        return eliminatedPairs;
+    }
+
+    /**
+     * Method to check if pairs elimination for some residue pair has enabled a
+     * singles rotamer elimination by eliminating all ri-rj for some ri or some
+     * rj.
+     *
+     * @param residues Residues under consideration.
+     * @param i        A residue index.
+     * @param j        A residue index j!=i
+     * @return If any singletons were eliminated.
+     */
+    public boolean pairsToSingleElimination(Residue[] residues, int i, int j) {
+        assert i != j;
+        assert i < residues.length;
+        assert j < residues.length;
+
+        Residue residuei = residues[i];
+        Residue residuej = residues[j];
+        Rotamer[] rotsi = residuei.getRotamers(library);
+        Rotamer[] rotsj = residuej.getRotamers(library);
+        int lenri = rotsi.length;
+        int lenrj = rotsj.length;
+        boolean eliminated = false;
+
+        // Now check ris with no remaining pairs to j.
+        for (int ri = 0; ri < lenri; ri++) {
+            if (check(i, ri)) {
+                continue;
+            }
+            boolean pairRemaining = false;
+            for (int rj = 0; rj < lenrj; rj++) {
+                if (!check(j, rj) && !check(i, ri, j, rj)) {
+                    pairRemaining = true;
+                    break;
+                }
+            }
+            if (!pairRemaining) {
+                if (eliminateRotamer(residues, i, ri, print)) {
+                    eliminated = true;
+                    rO.logIfMaster(format(" Eliminating rotamer %s-%d with no remaining pairs to residue %s.", residuei.toFormattedString(false, true), ri, residuej));
+                } else {
+                    rO.logIfMaster(format(" Already eliminated rotamer %s-%d with no remaining pairs to residue %s.", residuei.toFormattedString(false, true), ri, residuej), Level.WARNING);
+                }
+            }
+        }
+
+        // Check rjs with no remaining pairs to i.
+        for (int rj = 0; rj < lenrj; rj++) {
+            if (check(j, rj)) {
+                continue;
+            }
+            boolean pairRemaining = false;
+            for (int ri = 0; ri < lenri; ri++) {
+                if (!check(i, ri) && !check(i, ri, j, rj)) {
+                    pairRemaining = true;
+                    break;
+                }
+            }
+            if (!pairRemaining) {
+                if (eliminateRotamer(residues, j, rj, print)) {
+                    eliminated = true;
+                    rO.logIfMaster(format(" Eliminating rotamer %s-%d with no remaining pairs to residue %s.", residuej.toFormattedString(false, true), rj, residuei));
+                } else {
+                    rO.logIfMaster(format(" Already eliminated rotamer J %s-%d with no remaining pairs to residue %s.", residuej.toFormattedString(false, true), rj, residuei), Level.WARNING);
+                }
+            }
+        }
+
+        return eliminated;
+    }
+
+    /**
+     * Pre-prunes any pairs that have a pair-energy of Double.NaN before pruning
+     * and eliminations happen.
+     *
+     * @param residues Array of all residues.
+     */
+    public void prePrunePairs(Residue[] residues) {
+        // Pre-Prune if pair-energy is Double.NaN.
+        // Loop over first residue.
+        int nResidues = residues.length;
+        for (int i = 0; i < nResidues - 1; i++) {
+            Residue resi = residues[i];
+            Rotamer[] roti = resi.getRotamers(library);
+            int ni = roti.length;
+            // Loop over second residue.
+            for (int j = i + 1; j < nResidues; j++) {
+                Residue resj = residues[j];
+                Rotamer[] rotj = resj.getRotamers(library);
+                int nj = rotj.length;
+                // Loop over the rotamers for residue i.
+                for (int ri = 0; ri < ni; ri++) {
+                    if (!validRotamer(residues, i, ri)) {
+                        continue;
+                    }
+                    // Loop over rotamers for residue j.
+                    for (int rj = 0; rj < nj; rj++) {
+                        if (!validRotamer(residues, j, rj) || check(i, ri, j, rj)) {
+                            continue;
+                        }
+                        if (!check(i, ri, j, rj) && Double.isNaN(eE.get2Body(i, ri, j, rj))) {
+                            rO.logIfMaster(format(" Rotamer Pair (%7s,%2d) (%7s,%2d) 2-body energy %12.4f pre-pruned since energy is NaN.",
+                                    i, ri, j, rj, eE.get2Body(i, ri, j, rj)));
+                            eliminateRotamerPair(residues, i, ri, j, rj, print);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Pre-prunes any selves that have a self-energy of Double.NaN before
+     * pruning and elminations happen.
+     *
+     * @param residues Array of all residues.
+     */
+    public void prePruneSelves(Residue[] residues) {
+        //Pre-Prune if self-energy is Double.NaN.
+        for (int i = 0; i < residues.length; i++) {
+            Residue residue = residues[i];
+            Rotamer[] rotamers = residue.getRotamers(library);
+            int nrot = rotamers.length;
+            for (int ri = 0; ri < nrot; ri++) {
+                if (!check(i, ri) && Double.isNaN(eE.getSelf(i, ri))) {
+                    rO.logIfMaster(format(" Rotamer (%7s,%2d) self-energy %12.4f pre-pruned since energy is NaN.",
+                            residue, ri, eE.getSelf(i, ri)));
+                    eliminateRotamer(residues, i, ri, false);
+                }
+            }
+        }
+    }
+
+    /**
+     * Prunes rotamer ri of residue i if all ri-j pair energies are worse than
+     * the best i-j pair by some threshold value; additionally prunes ri-rj
+     * pairs if they exceed the best i-j pair by a greater threshold value;
+     * additionally performs this in reverse (searches over j-i).
+     *
+     * @param residues Residues whose rotamers are to be pruned.
+     */
+    public void prunePairClashes(Residue[] residues) {
+        if (!prunePairClashes) {
+            return;
+        }
+        int nResidues = residues.length;
+
+        for (int i = 0; i < nResidues - 1; i++) {
+            Residue resi = residues[i];
+            Rotamer[] rotsi = resi.getRotamers(library);
+            int lenri = rotsi.length;
+            int indI = allResiduesList.indexOf(resi);
+            for (int j = i + 1; j < nResidues; j++) {
+                Residue resj = residues[j];
+                Rotamer[] rotsj = resj.getRotamers(library);
+                int lenrj = rotsj.length;
+                int indJ = allResiduesList.indexOf(resj);
+
+                double minPair = Double.MAX_VALUE;
+                int minRI = -1;
+                int minRJ = -1;
+
+                boolean cutoffPair = true;
+                for (int ri = 0; ri < lenri; ri++) {
+                    if (check(i, ri)) {
+                        continue;
+                    }
+                    for (int rj = 0; rj < lenrj; rj++) {
+                        if (check(j, rj) || check(i, ri, j, rj) || dM.checkPairDistThreshold(indI, ri, indJ, rj)) {
+                            continue;
+                        }
+                        cutoffPair = false;
+                        double pairEnergy = eE.get2Body(i, ri, j, rj) + eE.getSelf(i, ri) + eE.getSelf(j, rj);
+                        assert Double.isFinite(pairEnergy);
+                        if (pairEnergy < minPair) {
+                            minPair = pairEnergy;
+                            minRI = ri;
+                            minRJ = rj;
+                        }
+                    }
+                }
+                if (cutoffPair) {
+                    // Under this branch: no rotamer pairs that clear the distance threshold.
+                    continue;
+                }
+                assert (minRI >= 0 && minRJ >= 0); // Otherwise, i and j are not on a well-packed backbone.
+
+                // Calculate all the modifiers to the pair clash elimination threshold.
+                double threshold = pairClashThreshold;
+                if (resi instanceof MultiResidue) {
+                    threshold += multiResPairClashAddn;
+                }
+                if (resj instanceof MultiResidue) {
+                    threshold += multiResPairClashAddn;
+                }
+                int numNARes = (resi.getResidueType() == NA ? 1 : 0) + (resj.getResidueType() == NA ? 1 : 0);
+                switch (numNARes) {
+                    case 0:
+                        break;
+                    case 1:
+                        threshold *= nucleicPairsPruningFactor;
+                        break;
+                    case 2:
+                        threshold *= nucleicPruningFactor;
+                        break;
+                    default:
+                        throw new ArithmeticException(" RotamerOptimization.prunePairClashes() has somehow "
+                                + "found less than zero or more than two nucleic acid residues in a pair of"
+                                + " residues. This result should be impossible.");
+                }
+                double toEliminate = threshold + minPair;
+
+                for (int ri = 0; ri < lenri; ri++) {
+                    if (check(i, ri)) {
+                        continue;
+                    }
+                    for (int rj = 0; rj < lenrj; rj++) {
+                        if (check(j, rj) || check(i, ri, j, rj)) {
+                            continue;
+                        }
+                        double pairEnergy = eE.get2Body(i, ri, j, rj) + eE.getSelf(i, ri) + eE.getSelf(j, rj);
+                        assert Double.isFinite(pairEnergy);
+                        if (pairEnergy > toEliminate) {
+                            rO.logIfMaster(format(" Pruning pair %s-%d %s-%d by %s-%d %s-%d; energy %s > "
+                                            + "%s + %s", resi.toFormattedString(false, true),
+                                    ri, resj.toFormattedString(false, true),
+                                    rj, resi.toFormattedString(false, true),
+                                    minRI, resj.toFormattedString(false, true), minRJ,
+                                    rO.formatEnergy(pairEnergy), rO.formatEnergy(threshold), rO.formatEnergy(minPair)));
+                        }
+                    }
+                }
+
+                pairsToSingleElimination(residues, i, j);
+            }
+        }
+    }
+
+    /**
+     * Uses calculated energies to prune rotamers based on a threshold distance
+     * from that residue's minimum energy rotamer (by default 20 kcal/mol). The
+     * threshold can be modulated by presence of nucleic acids or MultiResidues,
+     * which require more generous pruning criteria.
+     *
+     * @param residues Residues to prune rotamers over.
+     */
+    public void pruneSingleClashes(Residue[] residues) {
+        if (!pruneClashes) {
+            return;
+        }
+        for (int i = 0; i < residues.length; i++) {
+            Residue residue = residues[i];
+            Rotamer rotamers[] = residue.getRotamers(library);
+            int nrot = rotamers.length;
+            double minEnergy = Double.MAX_VALUE;
+            int minRot = -1;
+            for (int ri = 0; ri < nrot; ri++) {
+                if (!check(i, ri) && eE.getSelf(i, ri) < minEnergy) {
+                    minEnergy = eE.getSelf(i, ri);
+                    minRot = ri;
+                }
+            }
+
+            /**
+             * Regular: ep = minEnergy + clashThreshold Nucleic acids: ep =
+             * minEnergy + (clashThreshold * factor * factor) MultiResidues: ep
+             * = minEnergy + multiResClashThreshold
+             *
+             * Nucleic acids are bigger than amino acids, and MultiResidues can
+             * have wild swings in energy on account of chemical perturbation.
+             */
+            double energyToPrune = (residue instanceof MultiResidue) ? multiResClashThreshold : clashThreshold;
+            energyToPrune = (residue.getResidueType() == NA) ? energyToPrune * nucleicPruningFactor : energyToPrune;
+            energyToPrune += minEnergy;
+
+            for (int ri = 0; ri < nrot; ri++) {
+                if (!check(i, ri) && (eE.getSelf(i, ri) > energyToPrune)) {
+                    if (eliminateRotamer(residues, i, ri, print)) {
+                        rO.logIfMaster(format("  Rotamer (%7s,%2d) self-energy %s pruned by (%7s,%2d) %s.",
+                                residue, ri, rO.formatEnergy(eE.getSelf(i, ri)),
+                                residue, minRot, rO.formatEnergy(minEnergy)));
+                    }
+                }
+            }
+        }
+    }
+
+    public void setEnergyExpansion(EnergyExpansion eE) {
+        this.eE = eE;
+    }
+
+    @Override
+    public String toString() {
+        int rotamerCount = 0;
+        int pairCount = 0;
+        int singles = 0;
+        int pairs = 0;
+        int nres = eliminatedSingles.length;
+        for (int i = 0; i < nres; i++) {
+            int nroti = eliminatedSingles[i].length;
+            rotamerCount += nroti;
+            for (int ri = 0; ri < nroti; ri++) {
+                if (eliminatedSingles[i][ri]) {
+                    singles++;
+                }
+                for (int j = i + 1; j < nres; j++) {
+                    int nrotj = eliminatedPairs[i][ri][j].length;
+                    pairCount += nrotj;
+                    for (int rj = 0; rj < nrotj; rj++) {
+                        if (eliminatedPairs[i][ri][j][rj]) {
+                            pairs++;
+                        }
+                    }
+                }
+            }
+        }
+        StringBuilder sb = new StringBuilder(format(" %d out of %d rotamers eliminated.\n", singles, rotamerCount));
+        sb.append(format(" %d out of %d rotamer pairs eliminated.", pairs, pairCount));
+        return sb.toString();
+    }
+
+    public boolean validateDEE(Residue[] residues) {
+        int nres = eliminatedSingles.length;
+        // Validate residues
+        for (int i = 0; i < nres; i++) {
+            Residue residuei = residues[i];
+            int ni = eliminatedSingles[i].length;
+            boolean valid = false;
+            for (int ri = 0; ri < ni; ri++) {
+                if (!check(i, ri)) {
+                    valid = true;
+                }
+            }
+            if (!valid) {
+                logger.severe(format(" Coding error: all %d rotamers for residue %s eliminated.", ni, residuei));
+            }
+        }
+
+        // Validate pairs
+        for (int i = 0; i < nres; i++) {
+            Residue residuei = residues[i];
+            Rotamer[] rotamersi = residuei.getRotamers(library);
+            int ni = rotamersi.length;
+            for (int j = i + 1; j < nres; j++) {
+                Residue residuej = residues[j];
+                Rotamer[] rotamersj = residuej.getRotamers(library);
+                int nj = rotamersj.length;
+                boolean valid = false;
+                for (int ri = 0; ri < ni; ri++) {
+                    for (int rj = 0; rj < nj; rj++) {
+                        if (!check(i, ri, j, rj)) {
+                            valid = true;
+                        }
+                    }
+                }
+                if (!valid) {
+                    logger.severe(format(" Coding error: all pairs for %s with residue %s eliminated.",
+                            residuei.toFormattedString(false, true), residuej));
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * <p>
+     * allocateEliminationMemory.</p>
+     *
+     * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
+     */
+    private void allocateEliminationMemory(Residue[] residues) {
+        int nres = residues.length;
+        eliminatedSingles = new boolean[nres][];
+        eliminatedPairs = new boolean[nres][][][];
+        // Loop over residues.
+        for (int i = 0; i < nres; i++) {
+            Residue residuei = residues[i];
+            Rotamer[] rotamersi = residuei.getRotamers(library);
+            int lenri = rotamersi.length;  // Length rotamers i
+            rO.logIfMaster(format(" %3d Residue %7s with %2d rotamers.", i + 1,
+                    residuei.toFormattedString(false, true), lenri));
+            eliminatedSingles[i] = new boolean[lenri];
+            eliminatedPairs[i] = new boolean[lenri][][];
+            // Loop over the set of rotamers for residue i.
+            for (int ri = 0; ri < lenri; ri++) {
+                eliminatedSingles[i][ri] = false;
+                eliminatedPairs[i][ri] = new boolean[nres][];
+                for (int j = i + 1; j < nres; j++) {
+                    Residue residuej = residues[j];
+                    Rotamer[] rotamersj = residuej.getRotamers(library);
+                    int lenrj = rotamersj.length;
+                    eliminatedPairs[i][ri][j] = new boolean[lenrj];
+                    for (int rj = 0; rj < lenrj; rj++) {
+                        eliminatedPairs[i][ri][j][rj] = false;
+                    }
+                }
+            }
         }
     }
 
@@ -551,406 +950,6 @@ public class EliminatedRotamers {
             }
         }
         return tripleCount;
-    }
-
-    /**
-     * Uses calculated energies to prune rotamers based on a threshold distance
-     * from that residue's minimum energy rotamer (by default 20 kcal/mol). The
-     * threshold can be modulated by presence of nucleic acids or MultiResidues,
-     * which require more generous pruning criteria.
-     *
-     * @param residues Residues to prune rotamers over.
-     */
-    public void pruneSingleClashes(Residue[] residues) {
-        if (!pruneClashes) {
-            return;
-        }
-        for (int i = 0; i < residues.length; i++) {
-            Residue residue = residues[i];
-            Rotamer rotamers[] = residue.getRotamers(library);
-            int nrot = rotamers.length;
-            double minEnergy = Double.MAX_VALUE;
-            int minRot = -1;
-            for (int ri = 0; ri < nrot; ri++) {
-                if (!check(i, ri) && eE.getSelf(i, ri) < minEnergy) {
-                    minEnergy = eE.getSelf(i, ri);
-                    minRot = ri;
-                }
-            }
-
-            /**
-             * Regular: ep = minEnergy + clashThreshold Nucleic acids: ep =
-             * minEnergy + (clashThreshold * factor * factor) MultiResidues: ep
-             * = minEnergy + multiResClashThreshold
-             *
-             * Nucleic acids are bigger than amino acids, and MultiResidues can
-             * have wild swings in energy on account of chemical perturbation.
-             */
-            double energyToPrune = (residue instanceof MultiResidue) ? multiResClashThreshold : clashThreshold;
-            energyToPrune = (residue.getResidueType() == NA) ? energyToPrune * nucleicPruningFactor : energyToPrune;
-            energyToPrune += minEnergy;
-
-            for (int ri = 0; ri < nrot; ri++) {
-                if (!check(i, ri) && (eE.getSelf(i, ri) > energyToPrune)) {
-                    if (eliminateRotamer(residues, i, ri, print)) {
-                        rO.logIfMaster(format("  Rotamer (%7s,%2d) self-energy %s pruned by (%7s,%2d) %s.",
-                                residue, ri, rO.formatEnergy(eE.getSelf(i, ri)),
-                                residue, minRot, rO.formatEnergy(minEnergy)));
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Pre-prunes any selves that have a self-energy of Double.NaN before
-     * pruning and elminations happen.
-     *
-     * @param residues Array of all residues.
-     */
-    public void prePruneSelves(Residue[] residues) {
-        //Pre-Prune if self-energy is Double.NaN.
-        for (int i = 0; i < residues.length; i++) {
-            Residue residue = residues[i];
-            Rotamer[] rotamers = residue.getRotamers(library);
-            int nrot = rotamers.length;
-            for (int ri = 0; ri < nrot; ri++) {
-                if (!check(i, ri) && Double.isNaN(eE.getSelf(i, ri))) {
-                    rO.logIfMaster(format(" Rotamer (%7s,%2d) self-energy %12.4f pre-pruned since energy is NaN.",
-                            residue, ri, eE.getSelf(i, ri)));
-                    eliminateRotamer(residues, i, ri, false);
-                }
-            }
-        }
-    }
-
-    /**
-     * Pre-prunes any pairs that have a pair-energy of Double.NaN before pruning
-     * and eliminations happen.
-     *
-     * @param residues Array of all residues.
-     */
-    public void prePrunePairs(Residue[] residues) {
-        // Pre-Prune if pair-energy is Double.NaN.
-        // Loop over first residue.
-        int nResidues = residues.length;
-        for (int i = 0; i < nResidues - 1; i++) {
-            Residue resi = residues[i];
-            Rotamer[] roti = resi.getRotamers(library);
-            int ni = roti.length;
-            // Loop over second residue.
-            for (int j = i + 1; j < nResidues; j++) {
-                Residue resj = residues[j];
-                Rotamer[] rotj = resj.getRotamers(library);
-                int nj = rotj.length;
-                // Loop over the rotamers for residue i.
-                for (int ri = 0; ri < ni; ri++) {
-                    if (!validRotamer(residues, i, ri)) {
-                        continue;
-                    }
-                    // Loop over rotamers for residue j.
-                    for (int rj = 0; rj < nj; rj++) {
-                        if (!validRotamer(residues, j, rj) || check(i, ri, j, rj)) {
-                            continue;
-                        }
-                        if (!check(i, ri, j, rj) && Double.isNaN(eE.get2Body(i, ri, j, rj))) {
-                            rO.logIfMaster(format(" Rotamer Pair (%7s,%2d) (%7s,%2d) 2-body energy %12.4f pre-pruned since energy is NaN.",
-                                    i, ri, j, rj, eE.get2Body(i, ri, j, rj)));
-                            eliminateRotamerPair(residues, i, ri, j, rj, print);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Prunes rotamer ri of residue i if all ri-j pair energies are worse than
-     * the best i-j pair by some threshold value; additionally prunes ri-rj
-     * pairs if they exceed the best i-j pair by a greater threshold value;
-     * additionally performs this in reverse (searches over j-i).
-     *
-     * @param residues Residues whose rotamers are to be pruned.
-     */
-    public void prunePairClashes(Residue[] residues) {
-        if (!prunePairClashes) {
-            return;
-        }
-        int nResidues = residues.length;
-
-        for (int i = 0; i < nResidues - 1; i++) {
-            Residue resi = residues[i];
-            Rotamer[] rotsi = resi.getRotamers(library);
-            int lenri = rotsi.length;
-            int indI = allResiduesList.indexOf(resi);
-            for (int j = i + 1; j < nResidues; j++) {
-                Residue resj = residues[j];
-                Rotamer[] rotsj = resj.getRotamers(library);
-                int lenrj = rotsj.length;
-                int indJ = allResiduesList.indexOf(resj);
-
-                double minPair = Double.MAX_VALUE;
-                int minRI = -1;
-                int minRJ = -1;
-
-                boolean cutoffPair = true;
-                for (int ri = 0; ri < lenri; ri++) {
-                    if (check(i, ri)) {
-                        continue;
-                    }
-                    for (int rj = 0; rj < lenrj; rj++) {
-                        if (check(j, rj) || check(i, ri, j, rj) || dM.checkPairDistThreshold(indI, ri, indJ, rj)) {
-                            continue;
-                        }
-                        cutoffPair = false;
-                        double pairEnergy = eE.get2Body(i, ri, j, rj) + eE.getSelf(i, ri) + eE.getSelf(j, rj);
-                        assert Double.isFinite(pairEnergy);
-                        if (pairEnergy < minPair) {
-                            minPair = pairEnergy;
-                            minRI = ri;
-                            minRJ = rj;
-                        }
-                    }
-                }
-                if (cutoffPair) {
-                    // Under this branch: no rotamer pairs that clear the distance threshold.
-                    continue;
-                }
-                assert (minRI >= 0 && minRJ >= 0); // Otherwise, i and j are not on a well-packed backbone.
-
-                // Calculate all the modifiers to the pair clash elimination threshold.
-                double threshold = pairClashThreshold;
-                if (resi instanceof MultiResidue) {
-                    threshold += multiResPairClashAddn;
-                }
-                if (resj instanceof MultiResidue) {
-                    threshold += multiResPairClashAddn;
-                }
-                int numNARes = (resi.getResidueType() == NA ? 1 : 0) + (resj.getResidueType() == NA ? 1 : 0);
-                switch (numNARes) {
-                    case 0:
-                        break;
-                    case 1:
-                        threshold *= nucleicPairsPruningFactor;
-                        break;
-                    case 2:
-                        threshold *= nucleicPruningFactor;
-                        break;
-                    default:
-                        throw new ArithmeticException(" RotamerOptimization.prunePairClashes() has somehow "
-                                + "found less than zero or more than two nucleic acid residues in a pair of"
-                                + " residues. This result should be impossible.");
-                }
-                double toEliminate = threshold + minPair;
-
-                for (int ri = 0; ri < lenri; ri++) {
-                    if (check(i, ri)) {
-                        continue;
-                    }
-                    for (int rj = 0; rj < lenrj; rj++) {
-                        if (check(j, rj) || check(i, ri, j, rj)) {
-                            continue;
-                        }
-                        double pairEnergy = eE.get2Body(i, ri, j, rj) + eE.getSelf(i, ri) + eE.getSelf(j, rj);
-                        assert Double.isFinite(pairEnergy);
-                        if (pairEnergy > toEliminate) {
-                            rO.logIfMaster(format(" Pruning pair %s-%d %s-%d by %s-%d %s-%d; energy %s > "
-                                            + "%s + %s", resi.toFormattedString(false, true),
-                                    ri, resj.toFormattedString(false, true),
-                                    rj, resi.toFormattedString(false, true),
-                                    minRI, resj.toFormattedString(false, true), minRJ,
-                                    rO.formatEnergy(pairEnergy), rO.formatEnergy(threshold), rO.formatEnergy(minPair)));
-                        }
-                    }
-                }
-
-                pairsToSingleElimination(residues, i, j);
-            }
-        }
-    }
-
-    /**
-     * Check for pruned rotamer; true if eliminated. Only used during testing.
-     *
-     * @param i  a int.
-     * @param ri a int.
-     * @return a boolean.
-     */
-    public boolean checkPrunedSingles(int i, int ri) {
-        if (onlyPrunedSingles == null) {
-            return false;
-        }
-        return onlyPrunedSingles[i][ri];
-    }
-
-    /**
-     * Check for pruned rotamer pair; true if eliminated. Only used during
-     * testing.
-     *
-     * @param i  Residue i.
-     * @param ri Rotamer ri.
-     * @param j  Residue j.
-     * @param rj Rotamer rj.
-     * @return a boolean.
-     */
-    public boolean checkPrunedPairs(int i, int ri, int j, int rj) {
-        if (onlyPrunedPairs == null) {
-            return false;
-        }
-
-        if (j < i) {
-            int ii = i;
-            int iri = ri;
-            i = j;
-            ri = rj;
-            j = ii;
-            rj = iri;
-        }
-        return onlyPrunedPairs[i][ri][j][rj];
-    }
-
-    public boolean validateDEE(Residue[] residues) {
-        int nres = eliminatedSingles.length;
-        // Validate residues
-        for (int i = 0; i < nres; i++) {
-            Residue residuei = residues[i];
-            int ni = eliminatedSingles[i].length;
-            boolean valid = false;
-            for (int ri = 0; ri < ni; ri++) {
-                if (!check(i, ri)) {
-                    valid = true;
-                }
-            }
-            if (!valid) {
-                logger.severe(format(" Coding error: all %d rotamers for residue %s eliminated.", ni, residuei));
-            }
-        }
-
-        // Validate pairs
-        for (int i = 0; i < nres; i++) {
-            Residue residuei = residues[i];
-            Rotamer[] rotamersi = residuei.getRotamers(library);
-            int ni = rotamersi.length;
-            for (int j = i + 1; j < nres; j++) {
-                Residue residuej = residues[j];
-                Rotamer[] rotamersj = residuej.getRotamers(library);
-                int nj = rotamersj.length;
-                boolean valid = false;
-                for (int ri = 0; ri < ni; ri++) {
-                    for (int rj = 0; rj < nj; rj++) {
-                        if (!check(i, ri, j, rj)) {
-                            valid = true;
-                        }
-                    }
-                }
-                if (!valid) {
-                    logger.severe(format(" Coding error: all pairs for %s with residue %s eliminated.",
-                            residuei.toFormattedString(false, true), residuej));
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Method to check if pairs elimination for some residue pair has enabled a
-     * singles rotamer elimination by eliminating all ri-rj for some ri or some
-     * rj.
-     *
-     * @param residues Residues under consideration.
-     * @param i        A residue index.
-     * @param j        A residue index j!=i
-     * @return If any singletons were eliminated.
-     */
-    public boolean pairsToSingleElimination(Residue[] residues, int i, int j) {
-        assert i != j;
-        assert i < residues.length;
-        assert j < residues.length;
-
-        Residue residuei = residues[i];
-        Residue residuej = residues[j];
-        Rotamer[] rotsi = residuei.getRotamers(library);
-        Rotamer[] rotsj = residuej.getRotamers(library);
-        int lenri = rotsi.length;
-        int lenrj = rotsj.length;
-        boolean eliminated = false;
-
-        // Now check ris with no remaining pairs to j.
-        for (int ri = 0; ri < lenri; ri++) {
-            if (check(i, ri)) {
-                continue;
-            }
-            boolean pairRemaining = false;
-            for (int rj = 0; rj < lenrj; rj++) {
-                if (!check(j, rj) && !check(i, ri, j, rj)) {
-                    pairRemaining = true;
-                    break;
-                }
-            }
-            if (!pairRemaining) {
-                if (eliminateRotamer(residues, i, ri, print)) {
-                    eliminated = true;
-                    rO.logIfMaster(format(" Eliminating rotamer %s-%d with no remaining pairs to residue %s.", residuei.toFormattedString(false, true), ri, residuej));
-                } else {
-                    rO.logIfMaster(format(" Already eliminated rotamer %s-%d with no remaining pairs to residue %s.", residuei.toFormattedString(false, true), ri, residuej), Level.WARNING);
-                }
-            }
-        }
-
-        // Check rjs with no remaining pairs to i.
-        for (int rj = 0; rj < lenrj; rj++) {
-            if (check(j, rj)) {
-                continue;
-            }
-            boolean pairRemaining = false;
-            for (int ri = 0; ri < lenri; ri++) {
-                if (!check(i, ri) && !check(i, ri, j, rj)) {
-                    pairRemaining = true;
-                    break;
-                }
-            }
-            if (!pairRemaining) {
-                if (eliminateRotamer(residues, j, rj, print)) {
-                    eliminated = true;
-                    rO.logIfMaster(format(" Eliminating rotamer %s-%d with no remaining pairs to residue %s.", residuej.toFormattedString(false, true), rj, residuei));
-                } else {
-                    rO.logIfMaster(format(" Already eliminated rotamer J %s-%d with no remaining pairs to residue %s.", residuej.toFormattedString(false, true), rj, residuei), Level.WARNING);
-                }
-            }
-        }
-
-        return eliminated;
-    }
-
-    @Override
-    public String toString() {
-        int rotamerCount = 0;
-        int pairCount = 0;
-        int singles = 0;
-        int pairs = 0;
-        int nres = eliminatedSingles.length;
-        for (int i = 0; i < nres; i++) {
-            int nroti = eliminatedSingles[i].length;
-            rotamerCount += nroti;
-            for (int ri = 0; ri < nroti; ri++) {
-                if (eliminatedSingles[i][ri]) {
-                    singles++;
-                }
-                for (int j = i + 1; j < nres; j++) {
-                    int nrotj = eliminatedPairs[i][ri][j].length;
-                    pairCount += nrotj;
-                    for (int rj = 0; rj < nrotj; rj++) {
-                        if (eliminatedPairs[i][ri][j][rj]) {
-                            pairs++;
-                        }
-                    }
-                }
-            }
-        }
-        StringBuilder sb = new StringBuilder(format(" %d out of %d rotamers eliminated.\n", singles, rotamerCount));
-        sb.append(format(" %d out of %d rotamer pairs eliminated.", pairs, pairCount));
-        return sb.toString();
     }
 
 }

@@ -61,11 +61,6 @@ import static ffx.potential.parameters.ForceField.ForceFieldType.OPBEND;
 public final class OutOfPlaneBendType extends BaseType implements Comparator<String> {
 
     /**
-     * A Logger for the OutOfPlaneBendType class.
-     */
-    private static final Logger logger = Logger.getLogger(OutOfPlaneBendType.class.getName());
-
-    /**
      * Cubic coefficient in out-of-plane angle bending potential.
      */
     public static final double cubic = -0.014;
@@ -91,6 +86,10 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
      */
     public static final double units = 1.0 / pow(180.0 / PI, 2);
     /**
+     * A Logger for the OutOfPlaneBendType class.
+     */
+    private static final Logger logger = Logger.getLogger(OutOfPlaneBendType.class.getName());
+    /**
      * Atom classes for this out-of-plane angle bending type.
      */
     public final int[] atomClasses;
@@ -112,6 +111,65 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
     }
 
     /**
+     * Average two OutOfPlaneBendType instances. The atom classes that define
+     * the new type must be supplied.
+     *
+     * @param outOfPlaneBendType1 a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
+     * @param outOfPlaneBendType2 a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
+     * @param atomClasses         an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
+     */
+    public static OutOfPlaneBendType average(OutOfPlaneBendType outOfPlaneBendType1,
+                                             OutOfPlaneBendType outOfPlaneBendType2, int[] atomClasses) {
+        if (outOfPlaneBendType1 == null || outOfPlaneBendType2 == null || atomClasses == null) {
+            return null;
+        }
+
+        double forceConstant = (outOfPlaneBendType1.forceConstant + outOfPlaneBendType2.forceConstant) / 2.0;
+
+        return new OutOfPlaneBendType(atomClasses, forceConstant);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compare(String s1, String s2) {
+        String[] keys1 = s1.split(" ");
+        String[] keys2 = s2.split(" ");
+
+        for (int i = 0; i < 4; i++) {
+            int c1 = parseInt(keys1[i]);
+            int c2 = parseInt(keys2[i]);
+            if (c1 < c2) {
+                return -1;
+            } else if (c1 > c2) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OutOfPlaneBendType outOfPlaneBendType = (OutOfPlaneBendType) o;
+        return Arrays.equals(atomClasses, outOfPlaneBendType.atomClasses);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(atomClasses);
+    }
+
+    /**
      * <p>
      * incrementClasses</p>
      *
@@ -124,6 +182,33 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
             }
         }
         setKey(sortKey(atomClasses));
+    }
+
+    /**
+     * Construct an OutOfPlaneBendType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return an OutOfPlaneBendType instance.
+     */
+    public static OutOfPlaneBendType parse(String input, String[] tokens) {
+        if (tokens.length < 6) {
+            logger.log(Level.WARNING, "Invalid OPBEND type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[4];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                atomClasses[3] = parseInt(tokens[4]);
+                double forceConstant = parseDouble(tokens[5]);
+                return new OutOfPlaneBendType(atomClasses, forceConstant);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing OPBEND type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
     }
 
     /**
@@ -177,53 +262,6 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
     }
 
     /**
-     * Average two OutOfPlaneBendType instances. The atom classes that define
-     * the new type must be supplied.
-     *
-     * @param outOfPlaneBendType1 a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
-     * @param outOfPlaneBendType2 a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
-     * @param atomClasses         an array of {@link int} objects.
-     * @return a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
-     */
-    public static OutOfPlaneBendType average(OutOfPlaneBendType outOfPlaneBendType1,
-                                             OutOfPlaneBendType outOfPlaneBendType2, int[] atomClasses) {
-        if (outOfPlaneBendType1 == null || outOfPlaneBendType2 == null || atomClasses == null) {
-            return null;
-        }
-
-        double forceConstant = (outOfPlaneBendType1.forceConstant + outOfPlaneBendType2.forceConstant) / 2.0;
-
-        return new OutOfPlaneBendType(atomClasses, forceConstant);
-    }
-
-    /**
-     * Construct an OutOfPlaneBendType from an input string.
-     *
-     * @param input  The overall input String.
-     * @param tokens The input String tokenized.
-     * @return an OutOfPlaneBendType instance.
-     */
-    public static OutOfPlaneBendType parse(String input, String[] tokens) {
-        if (tokens.length < 6) {
-            logger.log(Level.WARNING, "Invalid OPBEND type:\n{0}", input);
-        } else {
-            try {
-                int[] atomClasses = new int[4];
-                atomClasses[0] = parseInt(tokens[1]);
-                atomClasses[1] = parseInt(tokens[2]);
-                atomClasses[2] = parseInt(tokens[3]);
-                atomClasses[3] = parseInt(tokens[4]);
-                double forceConstant = parseDouble(tokens[5]);
-                return new OutOfPlaneBendType(atomClasses, forceConstant);
-            } catch (NumberFormatException e) {
-                String message = "Exception parsing OPBEND type:\n" + input + "\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
-        return null;
-    }
-
-    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted out-of-plane angle bending string.
@@ -233,45 +271,6 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
         return String.format("opbend  %5d  %5d  %5d  %5d  %6.2f", atomClasses[0],
                 atomClasses[1], atomClasses[2],
                 atomClasses[3], forceConstant);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compare(String s1, String s2) {
-        String[] keys1 = s1.split(" ");
-        String[] keys2 = s2.split(" ");
-
-        for (int i = 0; i < 4; i++) {
-            int c1 = parseInt(keys1[i]);
-            int c2 = parseInt(keys2[i]);
-            if (c1 < c2) {
-                return -1;
-            } else if (c1 > c2) {
-                return 1;
-            }
-        }
-        return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        OutOfPlaneBendType outOfPlaneBendType = (OutOfPlaneBendType) o;
-        return Arrays.equals(atomClasses, outOfPlaneBendType.atomClasses);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(atomClasses);
     }
 
 

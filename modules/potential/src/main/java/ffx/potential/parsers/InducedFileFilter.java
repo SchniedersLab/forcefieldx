@@ -49,7 +49,6 @@ import org.apache.commons.io.FilenameUtils;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class InducedFileFilter extends FileFilter {
 
@@ -61,7 +60,7 @@ public final class InducedFileFilter extends FileFilter {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This method return <code>true</code> if the file is a directory or
      * matches the extension for TINKER induced dipole (*.*U) file.
      */
@@ -76,7 +75,7 @@ public final class InducedFileFilter extends FileFilter {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Provides a description of the InducedFileFilter.
      */
     @Override

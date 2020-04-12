@@ -175,33 +175,33 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * Returns an ArrayList of all Angles below the present MSNode.
+     * Returns an List of all Angles below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<Angle> getAngleList() {
+    public List<Angle> getAngleList() {
         return getList(Angle.class, new ArrayList<>());
     }
 
     /**
-     * Returns an ArrayList of all AngleTorsions below the present MSNode.
+     * Returns an List of all AngleTorsions below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<AngleTorsion> getAngleTorsionList() {
+    public List<AngleTorsion> getAngleTorsionList() {
         return getList(AngleTorsion.class, new ArrayList<>());
     }
 
     /**
-     * Returns an ArrayList of all Atoms below the present MSNode.
+     * Returns an List of all Atoms below the present MSNode.
      *
-     * @return a new {@link java.util.ArrayList} object.
+     * @return a new {@link java.util.List} object.
      */
-    public ArrayList<Atom> getAtomList() {
+    public List<Atom> getAtomList() {
         @SuppressWarnings("unchecked")
         Enumeration<TreeNode> e = depthFirstEnumeration();
         List<TreeNode> list = Collections.list(e);
-        ArrayList<Atom> arrayList = new ArrayList<>();
+        List<Atom> arrayList = new ArrayList<>();
         for (TreeNode node : list) {
             if (node instanceof Atom) {
                 arrayList.add((Atom) node);
@@ -216,20 +216,20 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * <p>getAtomList.</p>
      *
      * @param originalOrder a boolean.
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<Atom> getAtomList(boolean originalOrder) {
+    public List<Atom> getAtomList(boolean originalOrder) {
         // As of now, for generic MSNode objects, atoms remain in their original
         // order. It is presently only a concern for MultiResidue.
         return getAtomList();
     }
 
     /**
-     * Returns an ArrayList of all Bonds below the present MSNode.
+     * Returns an List of all Bonds below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<Bond> getBondList() {
+    public List<Bond> getBondList() {
         return getList(Bond.class, new ArrayList<>());
     }
 
@@ -240,7 +240,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     public double[] getCenter(boolean w) {
         double[] Rc = {0, 0, 0};
         double sum = 0, mass = 1;
-        ArrayList<Atom> atomList = getAtomList();
+        List<Atom> atomList = getAtomList();
         for (Atom a : atomList) {
             if (w) {
                 mass = a.getMass();
@@ -260,13 +260,13 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * Returns an ArrayList of the MSNode's Children (instead of using an
+     * Returns an List of the MSNode's Children (instead of using an
      * Enumeration).
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<MSNode> getChildList() {
-        ArrayList<MSNode> l = new ArrayList<>();
+    public List<MSNode> getChildList() {
+        List<MSNode> l = new ArrayList<>();
         Enumeration<?> e = children();
         while (e.hasMoreElements()) {
             l.add((MSNode) e.nextElement());
@@ -308,11 +308,11 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * Returns an ArrayList of all ImproperTorsions below the present MSNode.
+     * Returns an List of all ImproperTorsions below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<ImproperTorsion> getImproperTorsionList() {
+    public List<ImproperTorsion> getImproperTorsionList() {
         return getList(ImproperTorsion.class, new ArrayList<>());
     }
 
@@ -320,7 +320,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * {@inheritDoc}
      */
     @Override
-    public <T> ArrayList<T> getList(Class<T> c, ArrayList<T> nodes) {
+    public <T> List<T> getList(Class<T> c, List<T> nodes) {
         if (c.isInstance(this)) {
             nodes.add(c.cast(this));
         }
@@ -407,56 +407,56 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * Returns an ArrayList of all Out-of-Plane Bends below the present MSNode.
+     * Returns an List of all Out-of-Plane Bends below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<OutOfPlaneBend> getOutOfPlaneBendList() {
+    public List<OutOfPlaneBend> getOutOfPlaneBendList() {
         return getList(OutOfPlaneBend.class, new ArrayList<>());
     }
 
     /**
-     * Returns an ArrayList of all Pi-Orbital Torsions below the present MSNode.
+     * Returns an List of all Pi-Orbital Torsions below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<PiOrbitalTorsion> getPiOrbitalTorsionList() {
+    public List<PiOrbitalTorsion> getPiOrbitalTorsionList() {
         return getList(PiOrbitalTorsion.class, new ArrayList<>());
     }
 
     /**
-     * Returns an ArrayList of all Stretch-Bends below the present MSNode.
+     * Returns an List of all Stretch-Bends below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<StretchBend> getStretchBendList() {
+    public List<StretchBend> getStretchBendList() {
         return getList(StretchBend.class, new ArrayList<>());
     }
 
     /**
-     * Returns an ArrayList of all StretchTorsions below the present MSNode.
+     * Returns an List of all StretchTorsions below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<StretchTorsion> getStretchTorsionList() {
+    public List<StretchTorsion> getStretchTorsionList() {
         return getList(StretchTorsion.class, new ArrayList<>());
     }
 
     /**
-     * Returns an ArrayList of all Torsions below the present MSNode.
+     * Returns an List of all Torsions below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<Torsion> getTorsionList() {
+    public List<Torsion> getTorsionList() {
         return getList(Torsion.class, new ArrayList<>());
     }
 
     /**
-     * Returns an ArrayList of all Torsion-Torsions below the present MSNode.
+     * Returns an List of all Torsion-Torsions below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<TorsionTorsion> getTorsionTorsionList() {
+    public List<TorsionTorsion> getTorsionTorsionList() {
         return getList(TorsionTorsion.class, new ArrayList<>());
     }
 
@@ -474,11 +474,11 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * Returns an ArrayList of all Urey-Bradleys below the present MSNode.
+     * Returns an List of all Urey-Bradleys below the present MSNode.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<UreyBradley> getUreyBradleyList() {
+    public List<UreyBradley> getUreyBradleyList() {
         return getList(UreyBradley.class, new ArrayList<>());
     }
 
@@ -616,7 +616,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      */
     private double getTotalMass(boolean recalculate, boolean useKahan) {
         if (recalculate) {
-            ArrayList<Atom> atoms = getAtomList();
+            List<Atom> atoms = getAtomList();
             if (atoms.isEmpty()) {
                 totalMass = 0.0;
             } else if (useKahan) {

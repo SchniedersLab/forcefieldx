@@ -50,7 +50,6 @@ import ffx.xray.DiffractionRefinementData;
  * DiffractionFileFilter interface.</p>
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public interface DiffractionFileFilter {
@@ -67,7 +66,7 @@ public interface DiffractionFileFilter {
     /**
      * Get reflection information from a reflection file.
      *
-     * @param file File to read in.
+     * @param file       File to read in.
      * @param properties System properties.
      * @return The {@link ffx.crystal.ReflectionList}, or null if not enough information
      * present in the reflection file.
@@ -75,23 +74,23 @@ public interface DiffractionFileFilter {
     ReflectionList getReflectionList(File file, CompositeConfiguration properties);
 
     /**
-     * Read in reflection file.
-     *
-     * @param file File to read in.
-     * @param reflectionList The {@link ffx.crystal.ReflectionList} to find data indices.
-     * @param refinementData The {@link DiffractionRefinementData} object to fill in.
-     * @param properties System properties.
-     * @return True if read in properly.
-     */
-    boolean readFile(File file, ReflectionList reflectionList,
-                     DiffractionRefinementData refinementData, CompositeConfiguration properties);
-
-    /**
      * Attempt to determine resolution of reflection file.
      *
-     * @param file File to read in.
+     * @param file    File to read in.
      * @param crystal Crystal system to determine resolution information from.
      * @return The resolution.
      */
     double getResolution(File file, Crystal crystal);
+
+    /**
+     * Read in reflection file.
+     *
+     * @param file           File to read in.
+     * @param reflectionList The {@link ffx.crystal.ReflectionList} to find data indices.
+     * @param refinementData The {@link DiffractionRefinementData} object to fill in.
+     * @param properties     System properties.
+     * @return True if read in properly.
+     */
+    boolean readFile(File file, ReflectionList reflectionList,
+                     DiffractionRefinementData refinementData, CompositeConfiguration properties);
 }

@@ -46,19 +46,35 @@
     </properties>
     <body>
         <section name="Crystal Lattice And Periodic Boundary">
-            <subsection name="A-AXIS" rep="TEXTFIELD">[real] Sets the value of the a-axis length for a crystal unit cell, or, equivalently, the X-axis length for a periodic box. The length value in Angstroms is listed after the keyword.
+            <subsection name="A-AXIS" rep="TEXTFIELD">[real] Sets the value of the a-axis length for a crystal unit
+                cell, or, equivalently, the X-axis length for a periodic box. The length value in Angstroms is listed
+                after the keyword.
             </subsection>
-            <subsection name="B-AXIS" rep="TEXTFIELD">[real] Sets the value of the b-axis length for a crystal unit cell, or, equivalently, the Y-axis length for a periodic box. The length value in Angstroms is listed after the keyword.
+            <subsection name="B-AXIS" rep="TEXTFIELD">[real] Sets the value of the b-axis length for a crystal unit
+                cell, or, equivalently, the Y-axis length for a periodic box. The length value in Angstroms is listed
+                after the keyword.
             </subsection>
-            <subsection name="C-AXIS" rep="TEXTFIELD">[real] Sets the value of the C-axis length for a crystal unit cell, or, equivalently, the Z-axis length for a periodic box. The length value in Angstroms is listed after the keyword. If the keyword is DEFAULT, the C-axis length is set equal to the A-axis length.
+            <subsection name="C-AXIS" rep="TEXTFIELD">[real] Sets the value of the C-axis length for a crystal unit
+                cell, or, equivalently, the Z-axis length for a periodic box. The length value in Angstroms is listed
+                after the keyword. If the keyword is DEFAULT, the C-axis length is set equal to the A-axis length.
             </subsection>
-            <subsection name="ALPHA" rep="TEXTFIELD">[real] Sets the value of the α-angle of a crystal unit cell, i.e., the angle between the b-axis and c-axis of a unit cell, or, equivalently, the angle between the Y-axis and Z-axis of a periodic box. The default value in the absence of the ALPHA keyword is 90 degrees.
+            <subsection name="ALPHA" rep="TEXTFIELD">[real] Sets the value of the α-angle of a crystal unit cell, i.e.,
+                the angle between the b-axis and c-axis of a unit cell, or, equivalently, the angle between the Y-axis
+                and Z-axis of a periodic box. The default value in the absence of the ALPHA keyword is 90 degrees.
             </subsection>
-            <subsection name="BETA" rep="TEXTFIELD">[real] Sets the value of the β-angle of a crystal unit cell, i.e., the angle between the a-axis and c-axis of a unit cell, or, equivalently, the angle between the X-axis and Z-axis of a periodic box. The default value in the absence of the BETA keyword is to set the β-angle equal to the α-angle as given by the keyword ALPHA.
+            <subsection name="BETA" rep="TEXTFIELD">[real] Sets the value of the β-angle of a crystal unit cell, i.e.,
+                the angle between the a-axis and c-axis of a unit cell, or, equivalently, the angle between the X-axis
+                and Z-axis of a periodic box. The default value in the absence of the BETA keyword is to set the β-angle
+                equal to the α-angle as given by the keyword ALPHA.
             </subsection>
-            <subsection name="GAMMA" rep="TEXTFIELD">[real] Sets the value of the γ-angle of a crystal unit cell, i.e., the angle between the a-axis and b-axis of a unit cell, or, equivalently, the angle between the X-axis and Z-axis of a periodic box. The default value in the absence of the GAMMA keyword is to set the γ-angle equal to the α-angle as given by the keyword ALPHA.
+            <subsection name="GAMMA" rep="TEXTFIELD">[real] Sets the value of the γ-angle of a crystal unit cell, i.e.,
+                the angle between the a-axis and b-axis of a unit cell, or, equivalently, the angle between the X-axis
+                and Z-axis of a periodic box. The default value in the absence of the GAMMA keyword is to set the
+                γ-angle equal to the α-angle as given by the keyword ALPHA.
             </subsection>
-            <subsection name="SPACEGROUP" rep="COMBOBOX">[name] This keyword selects the space group to be used in manipulation of crystal unit cells and asymmetric units. The name option must be chosen from one of the following currently.
+            <subsection name="SPACEGROUP" rep="COMBOBOX">[name] This keyword selects the space group to be used in
+                manipulation of crystal unit cells and asymmetric units. The name option must be chosen from one of the
+                following currently.
                 <Value name="P1"/>
                 <Value name="P1(-)"/>
                 <Value name="P21"/>
@@ -86,9 +102,16 @@
             </subsection>
         </section>
         <section name="Force Field Selection">
-            <subsection name="FORCEFIELD" rep="TEXTFIELD">[name] This keyword provides a name for the force field to be used in the current calculation. Its value is usually set in the master force field parameter file for the calculation (see the PARAMETERS keyword) instead of in the keyfile.
+            <subsection name="FORCEFIELD" rep="TEXTFIELD">[name] This keyword provides a name for the force field to be
+                used in the current calculation. Its value is usually set in the master force field parameter file for
+                the calculation (see the PARAMETERS keyword) instead of in the keyfile.
             </subsection>
-            <subsection name="PARAMETERS" rep="TEXTFIELD">[file name] Provides the name of the force field parameter file to be used for the current TINKER calculation. The standard file name extension for parameter files (.prm) is an optional part of the file name modifier. The default in the absence of the PARAMETERS keyword is to look for a parameter file with the same base name as the molecular system and ending in the .prm extension. If a valid parameter file is not found, the user will asked to provide a file name interactively.
+            <subsection name="PARAMETERS" rep="TEXTFIELD">[file name] Provides the name of the force field parameter
+                file to be used for the current TINKER calculation. The standard file name extension for parameter files
+                (.prm) is an optional part of the file name modifier. The default in the absence of the PARAMETERS
+                keyword is to look for a parameter file with the same base name as the molecular system and ending in
+                the .prm extension. If a valid parameter file is not found, the user will asked to provide a file name
+                interactively.
             </subsection>
         </section>
         <section name="Potential Function Selection">
@@ -108,8 +131,10 @@
                 <Value name="FALSE"/>
                 <Value name="DEFAULT"/>
             </subsection>
-            <subsection name="GKTERM" rep="COMBOBOX">This keyword controls use of the generalized Kirkwood implicit solvent.
-                In the absence of a modifying option, this keyword turns on use of the GK potential. TRUE/FALSE turns on/off use of this potential energy term,
+            <subsection name="GKTERM" rep="COMBOBOX">This keyword controls use of the generalized Kirkwood implicit
+                solvent.
+                In the absence of a modifying option, this keyword turns on use of the GK potential. TRUE/FALSE turns
+                on/off use of this potential energy term,
                 otherwise use the DEFAULT behavior FALSE.
                 <Value name="TRUE"/>
                 <Value name="FALSE"/>
@@ -117,7 +142,8 @@
             </subsection>
             <subsection name="MPOLETERM" rep="COMBOBOX">This keyword controls use of the atomic multipole
                 electrostatics potential energy term. In the absence of a modifying option, this keyword turns
-                on use of the potential. TRUE/FALSE turns on/off use of this potential energy term, otherwise use the DEFAULT
+                on use of the potential. TRUE/FALSE turns on/off use of this potential energy term, otherwise use the
+                DEFAULT
                 behavior for the chosen force field.
                 <Value name="TRUE"/>
                 <Value name="FALSE"/>
@@ -125,7 +151,8 @@
             </subsection>
             <subsection name="OPBENDTERM" rep="COMBOBOX">This keyword controls use of the Allinger MM-style outof-
                 plane bending potential energy term. In the absence of a modifying option, this keyword
-                turns on use of the potential. TRUE/FALSE turns on/off use of this potential energy term, otherwise use the DEFAULT
+                turns on use of the potential. TRUE/FALSE turns on/off use of this potential energy term, otherwise use
+                the DEFAULT
                 behavior for the chosen force field.
                 <Value name="TRUE"/>
                 <Value name="FALSE"/>
@@ -141,7 +168,8 @@
             </subsection>
             <subsection name="POLARIZETERM" rep="COMBOBOX">This keyword controls use of the atomic dipole
                 polarization potential energy term. In the absence of a modifying option, this keyword turns
-                on use of the potential. TRUE/FALSE turns on/off use of this potential energy term, otherwise use the DEFAULT
+                on use of the potential. TRUE/FALSE turns on/off use of this potential energy term, otherwise use the
+                DEFAULT
                 behavior for the chosen force field.
                 <Value name="TRUE"/>
                 <Value name="FALSE"/>
@@ -157,7 +185,8 @@
             </subsection>
             <subsection name="STRBNDTERM" rep="COMBOBOX">This keyword controls use of the bond stretching-angle
                 bending cross term potential energy. In the absence of a modifying option, this keyword
-                turns on use of the potential. TRUE/FALSE turns on/off use of this potential energy term, otherwise use the DEFAULT
+                turns on use of the potential. TRUE/FALSE turns on/off use of this potential energy term, otherwise use
+                the DEFAULT
                 behavior for the chosen force field.
                 <Value name="TRUE"/>
                 <Value name="FALSE"/>
@@ -187,9 +216,11 @@
                 <Value name="FALSE"/>
                 <Value name="DEFAULT"/>
             </subsection>
-            <subsection name="VDWTERM" rep="COMBOBOX">This keyword controls use of the van der Waals repulsion-dispersion
+            <subsection name="VDWTERM" rep="COMBOBOX">This keyword controls use of the van der Waals
+                repulsion-dispersion
                 potential energy term. In the absence of a modifying option, this keyword turns on
-                use of the potential. TRUE/FALSE turns on/off use of this potential energy term, otherwise use the DEFAULT
+                use of the potential. TRUE/FALSE turns on/off use of this potential energy term, otherwise use the
+                DEFAULT
                 behavior for the chosen force field.
                 <Value name="TRUE"/>
                 <Value name="FALSE"/>
@@ -227,13 +258,16 @@
         </section>
         <section name="X-ray Refinement">
             <subsection name="fostring" rep="TEXTFIELD">
-                Title of the Fo column in the input MTZ file (if it is not one of the default values of F, Fo, Fp or Fobs).
+                Title of the Fo column in the input MTZ file (if it is not one of the default values of F, Fo, Fp or
+                Fobs).
             </subsection>
             <subsection name="sigfostring" rep="TEXTFIELD">
-                Title of the sigFo column in the input MTZ file (if it is not one of the default values of sigF, sigFo, sigFp or SigFobs).
+                Title of the sigFo column in the input MTZ file (if it is not one of the default values of sigF, sigFo,
+                sigFp or SigFobs).
             </subsection>
             <subsection name="rfreestring" rep="TEXTFIELD">
-                Title of the Rfree column in the input MTZ file (if it is not one of the default values of Rfree, freeR, freeRflag, Rfreeflag, test, freer_flag or R-free-flags).
+                Title of the Rfree column in the input MTZ file (if it is not one of the default values of Rfree, freeR,
+                freeRflag, Rfreeflag, test, freer_flag or R-free-flags).
             </subsection>
             <subsection name="use_3g" rep="COMBOBOX">
                 Uses 3 Gaussians in form factor equation rather than 6 (set to false for atomic resolution data).
@@ -278,7 +312,8 @@
                 Weight for summed diffraction data (weights for individual data sets are provided at the script level).
             </subsection>
             <subsection name="bsimweight" rep="TEXTFIELD">
-                Harmonic restraint B-factor weight between bonded atoms (increase to 5 or 10 for low resolution structures if necessary)
+                Harmonic restraint B-factor weight between bonded atoms (increase to 5 or 10 for low resolution
+                structures if necessary)
             </subsection>
             <subsection name="bnonzeroweight" rep="TEXTFIELD">
                 Entropy term to prevent nonzero B factors.
@@ -302,7 +337,8 @@
                 <Value name="DEFAULT"/>
             </subsection>
             <subsection name="refinemolocc" rep="COMBOBOX">
-                Set to true to refine occupancies of HETATMs, only performed if hetatms are in alternate conformers or occ less than 1.0.
+                Set to true to refine occupancies of HETATMs, only performed if hetatms are in alternate conformers or
+                occ less than 1.0.
                 <Value name="TRUE"/>
                 <Value name="FALSE"/>
                 <Value name="DEFAULT"/>

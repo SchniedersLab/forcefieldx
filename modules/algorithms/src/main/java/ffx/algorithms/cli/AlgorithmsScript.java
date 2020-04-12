@@ -78,6 +78,33 @@ public class AlgorithmsScript extends BaseScript {
     protected File saveDir;
 
     /**
+     * Reclaims resources associated with all Potential objects associated with this script.
+     *
+     * @return If all Potentials had resources reclaimed.
+     */
+    public boolean destroyPotentials() {
+        boolean allSucceeded = true;
+        for (Potential potent : getPotentials()) {
+            logger.fine(String.format(" Potential %s is being destroyed. ", potent));
+            allSucceeded = allSucceeded && potent.destroy();
+        }
+        return allSucceeded;
+    }
+
+    /**
+     * Returns a List of all Potential objects associated with this script.
+     *
+     * @return All Potentials. Sometimes empty, never null.
+     */
+    public List<Potential> getPotentials() {
+        List<Potential> plist = new ArrayList<>();
+        if (activeAssembly != null && activeAssembly.getPotentialEnergy() != null) {
+            plist.add(activeAssembly.getPotentialEnergy());
+        }
+        return plist;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Execute the BaseScript init method, then load algorithm functions.
@@ -105,33 +132,6 @@ public class AlgorithmsScript extends BaseScript {
         }
 
         return true;
-    }
-
-    /**
-     * Returns a List of all Potential objects associated with this script.
-     *
-     * @return All Potentials. Sometimes empty, never null.
-     */
-    public List<Potential> getPotentials() {
-        List<Potential> plist = new ArrayList<>();
-        if (activeAssembly != null && activeAssembly.getPotentialEnergy() != null) {
-            plist.add(activeAssembly.getPotentialEnergy());
-        }
-        return plist;
-    }
-
-    /**
-     * Reclaims resources associated with all Potential objects associated with this script.
-     *
-     * @return If all Potentials had resources reclaimed.
-     */
-    public boolean destroyPotentials() {
-        boolean allSucceeded = true;
-        for (Potential potent : getPotentials()) {
-            logger.fine(String.format(" Potential %s is being destroyed. ", potent));
-            allSucceeded = allSucceeded && potent.destroy();
-        }
-        return allSucceeded;
     }
 
     /**

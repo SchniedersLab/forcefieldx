@@ -39,6 +39,7 @@ package ffx.potential.cli;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+
 import picocli.CommandLine.Option;
 
 /**

@@ -41,7 +41,6 @@ package ffx.potential.parsers;
  * <p>DataFilter interface.</p>
  *
  * @author Jacob Litman
- *
  */
 public interface DataFilter {
 

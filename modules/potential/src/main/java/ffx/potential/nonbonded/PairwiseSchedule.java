@@ -51,11 +51,11 @@ import edu.rit.util.Range;
 public class PairwiseSchedule extends IntegerSchedule {
 
     private static final Logger logger = Logger.getLogger(PairwiseSchedule.class.getName());
-    private int nAtoms;
-    private int threadOffset;
     private final int nThreads;
     private final Range[] ranges;
     private final boolean[] threadDone;
+    private int nAtoms;
+    private int threadOffset;
 
     /**
      * <p>
@@ -74,15 +74,6 @@ public class PairwiseSchedule extends IntegerSchedule {
     }
 
     /**
-     * <p>setAtoms.</p>
-     *
-     * @param nAtoms a int.
-     */
-    public void setAtoms(int nAtoms) {
-        this.nAtoms = nAtoms;
-    }
-
-    /**
      * {@inheritDoc}
      * <p>
      * This is a fixed schedule.
@@ -90,6 +81,27 @@ public class PairwiseSchedule extends IntegerSchedule {
     @Override
     public boolean isFixedSchedule() {
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Range next(int threadID) {
+        if (!threadDone[threadID]) {
+            threadDone[threadID] = true;
+            return ranges[threadID];
+        }
+        return null;
+    }
+
+    /**
+     * <p>setAtoms.</p>
+     *
+     * @param nAtoms a int.
+     */
+    public void setAtoms(int nAtoms) {
+        this.nAtoms = nAtoms;
     }
 
     /**
@@ -104,18 +116,6 @@ public class PairwiseSchedule extends IntegerSchedule {
         for (int i = 0; i < nThreads; i++) {
             threadDone[i] = false;
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Range next(int threadID) {
-        if (!threadDone[threadID]) {
-            threadDone[threadID] = true;
-            return ranges[threadID];
-        }
-        return null;
     }
 
     /**

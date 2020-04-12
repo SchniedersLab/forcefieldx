@@ -51,7 +51,6 @@ import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
 import ffx.algorithms.misc.PJDependentTest;
-import ffx.algorithms.groovy.Dynamics;
 
 import groovy.lang.Binding;
 
@@ -72,17 +71,6 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
     private Binding binding;
     private Dynamics dynamics;
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {
-                        "System OpenMM Stochastic",
-                        "ffx/algorithms/structures/waterbox_eq.xyz",
-                        11785.5305, -36464.2741, -24678.7436
-                }
-        });
-    }
-
     public DynamicsOpenMMStochasticTest(String info, String filename, double endKineticEnergy, double endPotentialEnergy,
                                         double endTotalEnergy) {
 
@@ -91,6 +79,12 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
         this.endKineticEnergy = endKineticEnergy;
         this.endPotentialEnergy = endPotentialEnergy;
         this.endTotalEnergy = endTotalEnergy;
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        System.clearProperty("platform");
+        PJDependentTest.afterClass();
     }
 
     @Before
@@ -106,17 +100,22 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
         PJDependentTest.beforeClass();
     }
 
-    @AfterClass
-    public static void afterClass() {
-        System.clearProperty("platform");
-        PJDependentTest.afterClass();
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {
+                        "System OpenMM Stochastic",
+                        "ffx/algorithms/structures/waterbox_eq.xyz",
+                        11785.5305, -36464.2741, -24678.7436
+                }
+        });
     }
 
     @Test
     public void testDynamicsOpenMMStochastic() {
 
         if (!ffxOpenMM) {
-             return;
+            return;
         }
 
         // Set-up the input arguments for the script.

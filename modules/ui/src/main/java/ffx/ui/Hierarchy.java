@@ -69,13 +69,13 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     private static final Logger logger = Logger.getLogger(Hierarchy.class.getName());
     private final MSRoot root;
     private final MainPanel mainPanel;
+    private final ArrayList<MSNode> activeNodes = new ArrayList<>();
     private DefaultTreeModel hierarchyModel;
     private DefaultTreeSelectionModel treeSelectionModel;
     // Reference to the active FFXSystem
     private FFXSystem activeSystem = null;
     // Reference to the last Selected Node
     private MSNode activeNode = null;
-    private final ArrayList<MSNode> activeNodes = new ArrayList<>();
     private JLabel status = null;
     private JLabel step = null;
     private JLabel energy = null;
@@ -99,23 +99,6 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
 
     /**
      * <p>
-     * addSelection</p>
-     *
-     * @param f a {@link ffx.potential.bonded.MSNode} object.
-     */
-    private void addSelection(MSNode f) {
-        if (f == null) {
-            return;
-        }
-        synchronized (this) {
-            TreePath path = new TreePath(f.getPath());
-            addSelectionPath(path);
-            f.setSelected(true);
-        }
-    }
-
-    /**
-     * <p>
      * addSelections</p>
      *
      * @param a a {@link java.util.ArrayList} object.
@@ -129,317 +112,12 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>
-     * addSystemNode</p>
-     *
-     * @param newSystem a {@link ffx.ui.FFXSystem} object.
-     */
-    void addSystemNode(FFXSystem newSystem) {
-        addTreeNode(newSystem, root, root.getChildCount());
-    }
-
-    /**
-     * <p>
-     * addTreeNode</p>
-     *
-     * @param nodeToAdd a {@link ffx.potential.bonded.MSNode} object.
-     * @param parent    a {@link ffx.potential.bonded.MSNode} object.
-     * @param index     a int.
-     */
-    private void addTreeNode(MSNode nodeToAdd, MSNode parent, int index) {
-        synchronized (this) {
-            if (nodeToAdd == null || nodeToAdd.getParent() != null) {
-                return;
-            }
-            int childCount = parent.getChildCount();
-            if (index < 0 || index > childCount) {
-                index = parent.getChildCount();
-            }
-
-            String name = nodeToAdd.getName();
-
-            for (int i = 0; i < parent.getChildCount(); i++) {
-                MSNode node = (MSNode) parent.getChildAt(i);
-                if (node.getName().equals(name)) {
-                    logger.info(" Parent already has a node with the name " + name);
-                }
-            }
-
-            // Add a parallel node if the ffe.lang.parallel flag was set
-            if (ROLSP.GO_PARALLEL) {
-                ROLSP parallelNode = new ROLSP();
-                parallelNode.add(nodeToAdd);
-                hierarchyModel.insertNodeInto(parallelNode, parent, index);
-            } else {
-                hierarchyModel.insertNodeInto(nodeToAdd, parent, index);
-            }
-            if (nodeToAdd instanceof FFXSystem) {
-                attach((FFXSystem) nodeToAdd);
-                hierarchyModel.nodeStructureChanged(nodeToAdd);
-            }
-            onlySelection(nodeToAdd);
-            if (!isRootVisible()) {
-                setRootVisible(true);
-            }
-        }
-    }
-
-    private void attach(FFXSystem newModel) {
-        if (newModel == null) {
-            return;
-        }
-        newModel.finalize(true, newModel.getForceField());
-        GraphicsCanvas graphics = mainPanel.getGraphics3D();
-        if (graphics != null) {
-            graphics.attachModel(newModel);
-            if (newModel.getBondList().isEmpty()) {
-                mainPanel.getGraphics3D().updateScene(newModel, false, true,
-                        RendererCache.ViewModel.SPACEFILL, false, null);
-            }
-        }
-    }
-
-    /**
-     * <p>
-     * collapseAll</p>
-     */
-    private void collapseAll() {
-        int row = getRowCount() - 1;
-        while (row >= 0) {
-            collapseRow(row);
-            row--;
-        }
-    }
-
-    /**
      * Returns the active FSystem.
      *
      * @return a {@link ffx.ui.FFXSystem} object.
      */
     public FFXSystem getActive() {
         return activeSystem;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>activeNode</code>.</p>
-     *
-     * @return a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public MSNode getActiveNode() {
-        return activeNode;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>activeNodes</code>.</p>
-     *
-     * @return a {@link java.util.ArrayList} object.
-     */
-    ArrayList<MSNode> getActiveNodes() {
-        return activeNodes;
-    }
-
-    /**
-     * <p>
-     * getNonActiveSystems</p>
-     *
-     * @return an array of {@link ffx.ui.FFXSystem} objects.
-     */
-    FFXSystem[] getNonActiveSystems() {
-        synchronized (this) {
-            int childCount = root.getChildCount();
-            if (childCount == 0) {
-                return null;
-            }
-            FFXSystem[] systems = new FFXSystem[childCount - 1];
-            int index = 0;
-            for (Enumeration e = root.children(); e.hasMoreElements(); ) {
-                FFXSystem system = (FFXSystem) e.nextElement();
-                if (system != getActive()) {
-                    systems[index++] = system;
-                }
-            }
-            return systems;
-        }
-    }
-
-    /**
-     * <p>
-     * getSystems</p>
-     *
-     * @return an array of {@link ffx.ui.FFXSystem} objects.
-     */
-    public FFXSystem[] getSystems() {
-        synchronized (this) {
-            int childCount = root.getChildCount();
-            if (childCount == 0) {
-                return null;
-            }
-            FFXSystem[] systems = new FFXSystem[childCount];
-            int index = 0;
-            for (Enumeration e = root.children(); e.hasMoreElements(); ) {
-                systems[index++] = (FFXSystem) e.nextElement();
-            }
-            return systems;
-        }
-    }
-
-    /**
-     * <p>
-     * groupSelection</p>
-     *
-     * @param f1 a {@link ffx.potential.bonded.MSNode} object.
-     * @param f2 a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void groupSelection(MSNode f1, MSNode f2) {
-        if (f1 == null || f2 == null) {
-            return;
-        }
-        synchronized (this) {
-            TreePath[] paths = new TreePath[2];
-            paths[0] = new TreePath(f1.getPath());
-            paths[1] = new TreePath(f2.getPath());
-            RowMapper rm = treeSelectionModel.getRowMapper();
-            int[] rows = rm.getRowsForPaths(paths);
-            setSelectionInterval(rows[0], rows[1]);
-        }
-    }
-
-    /**
-     * Initialize the Tree representation based on the Root data node
-     */
-    private void initTree() {
-        addTreeSelectionListener(this);
-        setExpandsSelectedPaths(true);
-        setScrollsOnExpand(true);
-        //setLargeModel(true);
-        setEditable(false);
-        putClientProperty("JTree.lineStyle", "Angled");
-        setShowsRootHandles(true);
-        DefaultTreeCellRenderer tcr = new DefaultTreeCellRenderer();
-        tcr.setBackgroundSelectionColor(Color.yellow);
-        tcr.setBorderSelectionColor(Color.black);
-        tcr.setTextSelectionColor(Color.black);
-        setCellRenderer(tcr);
-        hierarchyModel = new DefaultTreeModel(root);
-        treeSelectionModel = new DefaultTreeSelectionModel();
-        setModel(hierarchyModel);
-        setSelectionModel(treeSelectionModel);
-        setRootVisible(false);
-    }
-
-    /**
-     * <p>
-     * onlySelection</p>
-     *
-     * @param f a {@link ffx.potential.bonded.MSNode} object.
-     */
-    void onlySelection(MSNode f) {
-        synchronized (this) {
-            int num = activeNodes.size();
-            TreePath[] paths = new TreePath[num];
-            for (int i = 0; i < num; i++) {
-                paths[i] = new TreePath((activeNodes.get(i)).getPath());
-            }
-            removeSelectionPaths(paths);
-            collapseAll();
-            addSelection(f);
-        }
-    }
-
-    /**
-     * <p>
-     * removeSelection</p>
-     *
-     * @param f a {@link ffx.potential.bonded.MSNode} object.
-     */
-    private void removeSelection(MSNode f) {
-        synchronized (this) {
-            if (f == null) {
-                return;
-            }
-            TreePath path = new TreePath(f.getPath());
-            for (Enumeration e = getExpandedDescendants(path); e.hasMoreElements(); ) {
-                TreePath treePath = new TreePath(e.nextElement());
-                collapsePath(treePath);
-            }
-            removeSelectionPath(path);
-            f.setSelected(false);
-        }
-    }
-
-    /**
-     * <p>
-     * removeSelections</p>
-     *
-     * @param a a {@link java.util.ArrayList} object.
-     */
-    public void removeSelections(ArrayList<MSNode> a) {
-        synchronized (this) {
-            for (MSNode f : a) {
-                removeSelection(f);
-            }
-        }
-    }
-
-    /**
-     * <p>
-     * removeTreeNode</p>
-     *
-     * @param nodeToRemove a {@link ffx.potential.bonded.MSNode} object.
-     */
-    void removeTreeNode(MSNode nodeToRemove) {
-        synchronized (this) {
-            if (nodeToRemove == null) {
-                return;
-            }
-
-            hierarchyModel.removeNodeFromParent(nodeToRemove);
-
-            /*
-              The DefaultTreeModel and DefaultTreeSelectionModel classes retain
-              references to removed nodes. To work around this, we create new
-              instances of these classes whenever an FFXSystem is removed.
-             */
-            if (nodeToRemove instanceof FFXSystem) {
-                hierarchyModel = new DefaultTreeModel(root);
-                treeSelectionModel = new DefaultTreeSelectionModel();
-                setModel(hierarchyModel);
-                setSelectionModel(treeSelectionModel);
-            }
-
-            // Whenever a node is removed, clear and reset activeNodes and path instances.
-            activeNodes.clear();
-            previousPaths.clear();
-            newPaths.clear();
-            removedPaths.clear();
-
-            if (getActive() == nodeToRemove && root.getChildCount() != 0) {
-                FFXSystem m = (FFXSystem) root.getChildAt(0);
-                setActive(m);
-                onlySelection(activeSystem);
-            } else {
-                setActive(null);
-            }
-
-            if (root.getChildCount() <= 1) {
-                setRootVisible(false);
-            }
-        }
-    }
-
-    /**
-     * <p>
-     * selectAll</p>
-     */
-    void selectAll() {
-        synchronized (this) {
-            if (activeSystem == null) {
-                return;
-            }
-            onlySelection(root);
-        }
     }
 
     /**
@@ -499,67 +177,66 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
 
     /**
      * <p>
-     * setHighlighting</p>
+     * Getter for the field <code>activeNode</code>.</p>
      *
-     * @param h a boolean.
+     * @return a {@link ffx.potential.bonded.MSNode} object.
      */
-    void setHighlighting(boolean h) {
+    public MSNode getActiveNode() {
+        return activeNode;
+    }
+
+    /**
+     * <p>
+     * getSystems</p>
+     *
+     * @return an array of {@link ffx.ui.FFXSystem} objects.
+     */
+    public FFXSystem[] getSystems() {
         synchronized (this) {
-            if (RendererCache.highlightSelections != h) {
-                RendererCache.highlightSelections = h;
-                for (MSNode node : activeNodes) {
-                    node.setSelected(h);
-                }
-                mainPanel.getGraphics3D().updateScene(activeNodes, false,
-                        false, null, true, RendererCache.ColorModel.SELECT);
+            int childCount = root.getChildCount();
+            if (childCount == 0) {
+                return null;
             }
+            FFXSystem[] systems = new FFXSystem[childCount];
+            int index = 0;
+            for (Enumeration e = root.children(); e.hasMoreElements(); ) {
+                systems[index++] = (FFXSystem) e.nextElement();
+            }
+            return systems;
         }
     }
 
     /**
      * <p>
-     * Setter for the field <code>status</code>.</p>
+     * groupSelection</p>
      *
-     * @param s a {@link javax.swing.JLabel} object.
-     * @param t a {@link javax.swing.JLabel} object.
-     * @param e a {@link javax.swing.JLabel} object.
+     * @param f1 a {@link ffx.potential.bonded.MSNode} object.
+     * @param f2 a {@link ffx.potential.bonded.MSNode} object.
      */
-    void setStatus(JLabel s, JLabel t, JLabel e) {
-        status = s;
-        step = t;
-        energy = e;
-    }
-
-    /**
-     * <p>
-     * toggleSelection</p>
-     *
-     * @param f a {@link ffx.potential.bonded.MSNode} object.
-     */
-    void toggleSelection(MSNode f) {
+    public void groupSelection(MSNode f1, MSNode f2) {
+        if (f1 == null || f2 == null) {
+            return;
+        }
         synchronized (this) {
-            if (f == null) {
-                return;
-            }
-            TreePath path = new TreePath(f.getPath());
-            if (isPathSelected(path)) {
-                removeSelectionPath(path);
-            } else {
-                addSelectionPath(path);
-            }
+            TreePath[] paths = new TreePath[2];
+            paths[0] = new TreePath(f1.getPath());
+            paths[1] = new TreePath(f2.getPath());
+            RowMapper rm = treeSelectionModel.getRowMapper();
+            int[] rows = rm.getRowsForPaths(paths);
+            setSelectionInterval(rows[0], rows[1]);
         }
     }
 
     /**
      * <p>
-     * toggleSelections</p>
+     * removeSelections</p>
      *
      * @param a a {@link java.util.ArrayList} object.
      */
-    public void toggleSelections(ArrayList<MSNode> a) {
+    public void removeSelections(ArrayList<MSNode> a) {
         synchronized (this) {
             for (MSNode f : a) {
-                toggleSelection(f);
+                removeSelection(f);
             }
         }
     }
@@ -574,31 +251,15 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
 
     /**
      * <p>
-     * updateStatus</p>
+     * toggleSelections</p>
+     *
+     * @param a a {@link java.util.ArrayList} object.
      */
-    void updateStatus() {
-        if (activeSystem == null) {
-            status.setText("  ");
-            step.setText("  ");
-            energy.setText("  ");
-            return;
-        }
-        if (activeSystem.getFile() != null) {
-            status.setText("  " + activeSystem.toFFString());
-        } else {
-            status.setText("  " + activeSystem.toString());
-        }
-
-        if (activeSystem.getCycles() > 1) {
-            step.setText("" + activeSystem.getCurrentCycle() + "/" + activeSystem.getCycles());
-        } else {
-            step.setText("");
-        }
-
-        if (activeSystem.getCycles() > 1) {
-            energy.setText("");
-        } else {
-            energy.setText("");
+    public void toggleSelections(ArrayList<MSNode> a) {
+        synchronized (this) {
+            for (MSNode f : a) {
+                toggleSelection(f);
+            }
         }
     }
 
@@ -772,6 +433,345 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             } else if (RendererCache.labelAtoms || RendererCache.labelResidues) {
                 mainPanel.getGraphics3D().setLabelsUpdated();
             }
+        }
+    }
+
+    /**
+     * <p>
+     * addSelection</p>
+     *
+     * @param f a {@link ffx.potential.bonded.MSNode} object.
+     */
+    private void addSelection(MSNode f) {
+        if (f == null) {
+            return;
+        }
+        synchronized (this) {
+            TreePath path = new TreePath(f.getPath());
+            addSelectionPath(path);
+            f.setSelected(true);
+        }
+    }
+
+    /**
+     * <p>
+     * addSystemNode</p>
+     *
+     * @param newSystem a {@link ffx.ui.FFXSystem} object.
+     */
+    void addSystemNode(FFXSystem newSystem) {
+        addTreeNode(newSystem, root, root.getChildCount());
+    }
+
+    /**
+     * <p>
+     * addTreeNode</p>
+     *
+     * @param nodeToAdd a {@link ffx.potential.bonded.MSNode} object.
+     * @param parent    a {@link ffx.potential.bonded.MSNode} object.
+     * @param index     a int.
+     */
+    private void addTreeNode(MSNode nodeToAdd, MSNode parent, int index) {
+        synchronized (this) {
+            if (nodeToAdd == null || nodeToAdd.getParent() != null) {
+                return;
+            }
+            int childCount = parent.getChildCount();
+            if (index < 0 || index > childCount) {
+                index = parent.getChildCount();
+            }
+
+            String name = nodeToAdd.getName();
+
+            for (int i = 0; i < parent.getChildCount(); i++) {
+                MSNode node = (MSNode) parent.getChildAt(i);
+                if (node.getName().equals(name)) {
+                    logger.info(" Parent already has a node with the name " + name);
+                }
+            }
+
+            // Add a parallel node if the ffe.lang.parallel flag was set
+            if (ROLSP.GO_PARALLEL) {
+                ROLSP parallelNode = new ROLSP();
+                parallelNode.add(nodeToAdd);
+                hierarchyModel.insertNodeInto(parallelNode, parent, index);
+            } else {
+                hierarchyModel.insertNodeInto(nodeToAdd, parent, index);
+            }
+            if (nodeToAdd instanceof FFXSystem) {
+                attach((FFXSystem) nodeToAdd);
+                hierarchyModel.nodeStructureChanged(nodeToAdd);
+            }
+            onlySelection(nodeToAdd);
+            if (!isRootVisible()) {
+                setRootVisible(true);
+            }
+        }
+    }
+
+    private void attach(FFXSystem newModel) {
+        if (newModel == null) {
+            return;
+        }
+        newModel.finalize(true, newModel.getForceField());
+        GraphicsCanvas graphics = mainPanel.getGraphics3D();
+        if (graphics != null) {
+            graphics.attachModel(newModel);
+            if (newModel.getBondList().isEmpty()) {
+                mainPanel.getGraphics3D().updateScene(newModel, false, true,
+                        RendererCache.ViewModel.SPACEFILL, false, null);
+            }
+        }
+    }
+
+    /**
+     * <p>
+     * collapseAll</p>
+     */
+    private void collapseAll() {
+        int row = getRowCount() - 1;
+        while (row >= 0) {
+            collapseRow(row);
+            row--;
+        }
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>activeNodes</code>.</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
+    ArrayList<MSNode> getActiveNodes() {
+        return activeNodes;
+    }
+
+    /**
+     * <p>
+     * getNonActiveSystems</p>
+     *
+     * @return an array of {@link ffx.ui.FFXSystem} objects.
+     */
+    FFXSystem[] getNonActiveSystems() {
+        synchronized (this) {
+            int childCount = root.getChildCount();
+            if (childCount == 0) {
+                return null;
+            }
+            FFXSystem[] systems = new FFXSystem[childCount - 1];
+            int index = 0;
+            for (Enumeration e = root.children(); e.hasMoreElements(); ) {
+                FFXSystem system = (FFXSystem) e.nextElement();
+                if (system != getActive()) {
+                    systems[index++] = system;
+                }
+            }
+            return systems;
+        }
+    }
+
+    /**
+     * Initialize the Tree representation based on the Root data node
+     */
+    private void initTree() {
+        addTreeSelectionListener(this);
+        setExpandsSelectedPaths(true);
+        setScrollsOnExpand(true);
+        //setLargeModel(true);
+        setEditable(false);
+        putClientProperty("JTree.lineStyle", "Angled");
+        setShowsRootHandles(true);
+        DefaultTreeCellRenderer tcr = new DefaultTreeCellRenderer();
+        tcr.setBackgroundSelectionColor(Color.yellow);
+        tcr.setBorderSelectionColor(Color.black);
+        tcr.setTextSelectionColor(Color.black);
+        setCellRenderer(tcr);
+        hierarchyModel = new DefaultTreeModel(root);
+        treeSelectionModel = new DefaultTreeSelectionModel();
+        setModel(hierarchyModel);
+        setSelectionModel(treeSelectionModel);
+        setRootVisible(false);
+    }
+
+    /**
+     * <p>
+     * onlySelection</p>
+     *
+     * @param f a {@link ffx.potential.bonded.MSNode} object.
+     */
+    void onlySelection(MSNode f) {
+        synchronized (this) {
+            int num = activeNodes.size();
+            TreePath[] paths = new TreePath[num];
+            for (int i = 0; i < num; i++) {
+                paths[i] = new TreePath((activeNodes.get(i)).getPath());
+            }
+            removeSelectionPaths(paths);
+            collapseAll();
+            addSelection(f);
+        }
+    }
+
+    /**
+     * <p>
+     * removeSelection</p>
+     *
+     * @param f a {@link ffx.potential.bonded.MSNode} object.
+     */
+    private void removeSelection(MSNode f) {
+        synchronized (this) {
+            if (f == null) {
+                return;
+            }
+            TreePath path = new TreePath(f.getPath());
+            for (Enumeration e = getExpandedDescendants(path); e.hasMoreElements(); ) {
+                TreePath treePath = new TreePath(e.nextElement());
+                collapsePath(treePath);
+            }
+            removeSelectionPath(path);
+            f.setSelected(false);
+        }
+    }
+
+    /**
+     * <p>
+     * removeTreeNode</p>
+     *
+     * @param nodeToRemove a {@link ffx.potential.bonded.MSNode} object.
+     */
+    void removeTreeNode(MSNode nodeToRemove) {
+        synchronized (this) {
+            if (nodeToRemove == null) {
+                return;
+            }
+
+            hierarchyModel.removeNodeFromParent(nodeToRemove);
+
+            /*
+              The DefaultTreeModel and DefaultTreeSelectionModel classes retain
+              references to removed nodes. To work around this, we create new
+              instances of these classes whenever an FFXSystem is removed.
+             */
+            if (nodeToRemove instanceof FFXSystem) {
+                hierarchyModel = new DefaultTreeModel(root);
+                treeSelectionModel = new DefaultTreeSelectionModel();
+                setModel(hierarchyModel);
+                setSelectionModel(treeSelectionModel);
+            }
+
+            // Whenever a node is removed, clear and reset activeNodes and path instances.
+            activeNodes.clear();
+            previousPaths.clear();
+            newPaths.clear();
+            removedPaths.clear();
+
+            if (getActive() == nodeToRemove && root.getChildCount() != 0) {
+                FFXSystem m = (FFXSystem) root.getChildAt(0);
+                setActive(m);
+                onlySelection(activeSystem);
+            } else {
+                setActive(null);
+            }
+
+            if (root.getChildCount() <= 1) {
+                setRootVisible(false);
+            }
+        }
+    }
+
+    /**
+     * <p>
+     * selectAll</p>
+     */
+    void selectAll() {
+        synchronized (this) {
+            if (activeSystem == null) {
+                return;
+            }
+            onlySelection(root);
+        }
+    }
+
+    /**
+     * <p>
+     * setHighlighting</p>
+     *
+     * @param h a boolean.
+     */
+    void setHighlighting(boolean h) {
+        synchronized (this) {
+            if (RendererCache.highlightSelections != h) {
+                RendererCache.highlightSelections = h;
+                for (MSNode node : activeNodes) {
+                    node.setSelected(h);
+                }
+                mainPanel.getGraphics3D().updateScene(activeNodes, false,
+                        false, null, true, RendererCache.ColorModel.SELECT);
+            }
+        }
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>status</code>.</p>
+     *
+     * @param s a {@link javax.swing.JLabel} object.
+     * @param t a {@link javax.swing.JLabel} object.
+     * @param e a {@link javax.swing.JLabel} object.
+     */
+    void setStatus(JLabel s, JLabel t, JLabel e) {
+        status = s;
+        step = t;
+        energy = e;
+    }
+
+    /**
+     * <p>
+     * toggleSelection</p>
+     *
+     * @param f a {@link ffx.potential.bonded.MSNode} object.
+     */
+    void toggleSelection(MSNode f) {
+        synchronized (this) {
+            if (f == null) {
+                return;
+            }
+            TreePath path = new TreePath(f.getPath());
+            if (isPathSelected(path)) {
+                removeSelectionPath(path);
+            } else {
+                addSelectionPath(path);
+            }
+        }
+    }
+
+    /**
+     * <p>
+     * updateStatus</p>
+     */
+    void updateStatus() {
+        if (activeSystem == null) {
+            status.setText("  ");
+            step.setText("  ");
+            energy.setText("  ");
+            return;
+        }
+        if (activeSystem.getFile() != null) {
+            status.setText("  " + activeSystem.toFFString());
+        } else {
+            status.setText("  " + activeSystem.toString());
+        }
+
+        if (activeSystem.getCycles() > 1) {
+            step.setText("" + activeSystem.getCurrentCycle() + "/" + activeSystem.getCycles());
+        } else {
+            step.setText("");
+        }
+
+        if (activeSystem.getCycles() > 1) {
+            energy.setText("");
+        } else {
+            energy.setText("");
         }
     }
 }

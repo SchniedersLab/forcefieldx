@@ -101,6 +101,21 @@ public class FlatEndAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
+    public double getHighTemp() {
+        return tHigh;
+    }
+
+    @Override
+    public double getLowTemp() {
+        return tLow;
+    }
+
+    @Override
+    public int getNumWindows() {
+        return totWindows;
+    }
+
+    @Override
     public double getTemperature(int i) {
         assert i >= 0 && i < totWindows;
         if (i == 0 && useBefore) {
@@ -123,32 +138,8 @@ public class FlatEndAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
-    public double getHighTemp() {
-        return tHigh;
-    }
-
-    @Override
-    public double getLowTemp() {
-        return tLow;
-    }
-
-    @Override
-    public double windowLength(int window) {
-        assert window >= 0 && window < totWindows;
-
-        if (useBefore && window == 0) {
-            return lenBefore;
-        } else if (useAfter && window == (totWindows - 1)) {
-            return lenAfter;
-        } else {
-            window = useBefore ? window - 1 : window;
-            return middle.windowLength(window);
-        }
-    }
-
-    @Override
-    public int getNumWindows() {
-        return totWindows;
+    public double maxWindowLength() {
+        return Math.max(Math.max(lenBefore, lenAfter), middle.maxWindowLength());
     }
 
     @Override
@@ -164,8 +155,8 @@ public class FlatEndAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
-    public double maxWindowLength() {
-        return Math.max(Math.max(lenBefore, lenAfter), middle.maxWindowLength());
+    public String toString() {
+        return description;
     }
 
     @Override
@@ -174,7 +165,16 @@ public class FlatEndAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
-    public String toString() {
-        return description;
+    public double windowLength(int window) {
+        assert window >= 0 && window < totWindows;
+
+        if (useBefore && window == 0) {
+            return lenBefore;
+        } else if (useAfter && window == (totWindows - 1)) {
+            return lenAfter;
+        } else {
+            window = useBefore ? window - 1 : window;
+            return middle.windowLength(window);
+        }
     }
 }

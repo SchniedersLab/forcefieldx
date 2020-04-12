@@ -74,7 +74,9 @@ import ffx.utilities.Constants;
  */
 public class RepExOST {
     private static final Logger logger = Logger.getLogger(RepExOST.class.getName());
-
+    // Message tags to use.
+    private static final int lamTag = 42;
+    private static final int mainLoopTag = 2020;
     private final OrthogonalSpaceTempering ost;
     private final OrthogonalSpaceTempering.Histogram[] allHistograms;
     private final SynchronousSend[] sends;
@@ -96,14 +98,8 @@ public class RepExOST {
     private final String[] allFilenames;
     private final File dynFile;
     private final String extension;
-
     private final long[] totalSwaps;
     private final long[] acceptedSwaps;
-
-    // Message tags to use.
-    private static final int lamTag = 42;
-    private static final int mainLoopTag = 2020;
-
     private boolean reinitVelocities = true;
     private int currentHistoIndex;
 
@@ -178,7 +174,7 @@ public class RepExOST {
                 currentHistoIndex = lr.getHistogramIndex();
             }
         }
-        
+
         allHistograms = ost.getAllHistograms();
         // TODO: Possibly de-comment this... though HistogramSettings makes it obsolete.
         //Arrays.stream(allHistograms).forEach((OrthogonalSpaceTempering.Histogram h) -> h.setIndependentWrites(true));
@@ -225,46 +221,8 @@ public class RepExOST {
         setHistogram(rank);
     }
 
-    private void setHistogram(int index) {
-        currentHistoIndex = index;
-        ost.switchHistogram(index);
-    }
-
-    /**
-     * Construct a RepExOST for Monte Carlo orthogonal space tempering.
-     *
-     * @param ost           An OrthogonalSpaceTempering for each repex rung.
-     * @param mcOST         A MonteCarloOST for each repex rung
-     * @param dynamics      DynamicsOptions to apply universally.
-     * @param ostOpts       OST options to apply.
-     * @param fileType      File type to save to.
-     * @param twoStep       Whether to use the 2-step MC algorithm (instead of the 1-step).
-     * @param repexInterval Interval in psec between repex attempts.
-     * @return A RepExOST.
-     */
-    public static RepExOST repexMC(OrthogonalSpaceTempering ost, MonteCarloOST mcOST,
-                                   DynamicsOptions dynamics, OSTOptions ostOpts, CompositeConfiguration properties,
-                                   String fileType, boolean twoStep, double repexInterval) throws IOException {
-        MolecularDynamics md = mcOST.getMD();
-        OstType type = twoStep ? OstType.MC_TWOSTEP : OstType.MC_ONESTEP;
-        return new RepExOST(ost, mcOST, md, type, dynamics, ostOpts, properties, fileType, repexInterval);
-    }
-
-    /**
-     * Construct a RepExOST for Molecular Dynamics orthogonal space tempering.
-     *
-     * @param ost           An OrthogonalSpaceTempering for each repex rung.
-     * @param dyn           A MolecularDynamics for each repex rung.
-     * @param dynamics      DynamicsOptions to apply universally.
-     * @param ostOpts       OST options to apply.
-     * @param fileType      File type to save to.
-     * @param repexInterval Interval in psec between repex attempts.
-     * @return A RepExOST.
-     */
-    public static RepExOST repexMD(OrthogonalSpaceTempering ost, MolecularDynamics dyn,
-                                   DynamicsOptions dynamics, OSTOptions ostOpts, CompositeConfiguration properties,
-                                   String fileType, double repexInterval) throws IOException {
-        return new RepExOST(ost, null, dyn, OstType.MD, dynamics, ostOpts, properties, fileType, repexInterval);
+    public OrthogonalSpaceTempering getOST() {
+        return ost;
     }
 
     /**
@@ -313,7 +271,53 @@ public class RepExOST {
         logger.info(" Final rank-to-histogram mapping: " + Arrays.toString(rankToHisto));
     }
 
+    /**
+     * Construct a RepExOST for Monte Carlo orthogonal space tempering.
+     *
+     * @param ost           An OrthogonalSpaceTempering for each repex rung.
+     * @param mcOST         A MonteCarloOST for each repex rung
+     * @param dynamics      DynamicsOptions to apply universally.
+     * @param ostOpts       OST options to apply.
+     * @param fileType      File type to save to.
+     * @param twoStep       Whether to use the 2-step MC algorithm (instead of the 1-step).
+     * @param repexInterval Interval in psec between repex attempts.
+     * @return A RepExOST.
+     */
+    public static RepExOST repexMC(OrthogonalSpaceTempering ost, MonteCarloOST mcOST,
+                                   DynamicsOptions dynamics, OSTOptions ostOpts, CompositeConfiguration properties,
+                                   String fileType, boolean twoStep, double repexInterval) throws IOException {
+        MolecularDynamics md = mcOST.getMD();
+        OstType type = twoStep ? OstType.MC_TWOSTEP : OstType.MC_ONESTEP;
+        return new RepExOST(ost, mcOST, md, type, dynamics, ostOpts, properties, fileType, repexInterval);
+    }
+
+    /**
+     * Construct a RepExOST for Molecular Dynamics orthogonal space tempering.
+     *
+     * @param ost           An OrthogonalSpaceTempering for each repex rung.
+     * @param dyn           A MolecularDynamics for each repex rung.
+     * @param dynamics      DynamicsOptions to apply universally.
+     * @param ostOpts       OST options to apply.
+     * @param fileType      File type to save to.
+     * @param repexInterval Interval in psec between repex attempts.
+     * @return A RepExOST.
+     */
+    public static RepExOST repexMD(OrthogonalSpaceTempering ost, MolecularDynamics dyn,
+                                   DynamicsOptions dynamics, OSTOptions ostOpts, CompositeConfiguration properties,
+                                   String fileType, double repexInterval) throws IOException {
+        return new RepExOST(ost, null, dyn, OstType.MD, dynamics, ostOpts, properties, fileType, repexInterval);
+    }
+
     // Below logIf methods are intended to reduce redundant logging
+
+    private enum OstType {
+        MD, MC_ONESTEP, MC_TWOSTEP
+    }
+
+    private void setHistogram(int index) {
+        currentHistoIndex = index;
+        ost.switchHistogram(index);
+    }
 
     /**
      * Logs a message if this is the master (rank 0) process.
@@ -345,8 +349,8 @@ public class RepExOST {
     private void logIfSwapping(String message) {
         logIfMaster(message);
     }
+
     /**
-     *
      * Logs a message if it is the lowest-ranked process computing a given swap.
      * Currently, this just wraps logIfMaster, as all processes compute all swaps.
      *
@@ -378,8 +382,8 @@ public class RepExOST {
             int rankLow = histoToRank[i];
             int rankHigh = histoToRank[i + 1];
             OrthogonalSpaceTempering.Histogram histoLow = allHistograms[i];
-            OrthogonalSpaceTempering.Histogram histoHigh = allHistograms[i+1];
-            
+            OrthogonalSpaceTempering.Histogram histoHigh = allHistograms[i + 1];
+
             double lamLow = histoLow.getLastReceivedLambda();
             double dUdLLow = histoLow.getLastReceivedDUDL();
             double lamHigh = histoHigh.getLastReceivedLambda();
@@ -411,7 +415,7 @@ public class RepExOST {
             }
 
             double acceptRate = ((double) acceptedSwaps[i]) / ((double) totalSwaps[i]);
-            logIfSwapping(String.format(" Replica exchange acceptance rate for pair %d-%d is %.3f%%", i, (i+1), acceptRate * 100));
+            logIfSwapping(String.format(" Replica exchange acceptance rate for pair %d-%d is %.3f%%", i, (i + 1), acceptRate * 100));
         }
     }
 
@@ -460,13 +464,5 @@ public class RepExOST {
     private void runMD(long numSteps) {
         molDyn.dynamic(numSteps, dynamics.getDt(), dynamics.getReport(), dynamics.getSnapshotInterval(), dynamics.getTemp(),
                 reinitVelocities, fileType, dynamics.getCheckpoint(), dynFile);
-    }
-
-    public OrthogonalSpaceTempering getOST() {
-        return ost;
-    }
-
-    private enum OstType {
-        MD, MC_ONESTEP, MC_TWOSTEP
     }
 }

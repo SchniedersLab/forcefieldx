@@ -100,8 +100,35 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
+    public double firstDerivative(double x) throws IllegalArgumentException {
+        x *= a;
+        return beta * a * pow(x, beta - 1);
+    }
+
+    /**
+     * Gets the value of beta in f(x) = (a*x)^beta
+     *
+     * @return Exponent of input
+     */
+    public double getExponent() {
+        return beta;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public int getHighestOrderZeroDerivative() {
         return 0;
+    }
+
+    /**
+     * Gets the value of a in f(x) = (a*x)^beta.
+     *
+     * @return Multiplier of input
+     */
+    public double getMultiplier() {
+        return a;
     }
 
     /**
@@ -129,31 +156,6 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
     @Override
     public int highestOrderZeroDerivativeAtZeroBound() {
         return beta >= 1 ? ((int) beta) - 1 : 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean symmetricToUnity() {
-        return (beta == 1.0);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double firstDerivative(double x) throws IllegalArgumentException {
-        x *= a;
-        return beta * a * pow(x, beta - 1);
     }
 
     /**
@@ -197,27 +199,8 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        x *= a;
-        return pow(x, beta);
-    }
-
-    /**
-     * Gets the value of beta in f(x) = (a*x)^beta
-     *
-     * @return Exponent of input
-     */
-    public double getExponent() {
-        return beta;
-    }
-
-    /**
-     * Gets the value of a in f(x) = (a*x)^beta.
-     *
-     * @return Multiplier of input
-     */
-    public double getMultiplier() {
-        return a;
+    public boolean symmetricToUnity() {
+        return (beta == 1.0);
     }
 
     /**
@@ -226,5 +209,22 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
     @Override
     public String toString() {
         return format("Power switching function f(x) = (%8.4g * x)^%8.4g", a, beta);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean validOutsideBounds() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        x *= a;
+        return pow(x, beta);
     }
 }

@@ -68,37 +68,34 @@ import static ffx.numerics.math.ScalarMath.binomial;
 public class ScfPredictor {
 
     private static final Logger logger = Logger.getLogger(ScfPredictor.class.getName());
-
     /**
-     * Number of atoms.
+     * Convergence tolerance of the LeastSquares optimizer.
      */
-    private int nAtoms;
-
-    /**
-     * Maps LambdaMode to array indices: OFF/CONDENSED=0, CONDENSED_NOLIGAND=1,
-     * VAPOR=2
-     */
-    private int mode;
+    private static final double eps = 1.0e-4;
     private final PredictorMode predictorMode;
-
-    public enum PredictorMode {
-        NONE, LS, POLY, ASPC
-    }
-
+    /**
+     * Induced dipole predictor order.
+     */
+    private final int predictorOrder;
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
     protected double inducedDipole[][][];
     protected double inducedDipoleCR[][][];
     /**
+     * Number of atoms.
+     */
+    private int nAtoms;
+    /**
+     * Maps LambdaMode to array indices: OFF/CONDENSED=0, CONDENSED_NOLIGAND=1,
+     * VAPOR=2
+     */
+    private int mode;
+    /**
      * Dimensions of [mode][predictorOrder][nAtoms][3]
      */
     private double predictorInducedDipole[][][][];
     private double predictorInducedDipoleCR[][][][];
-    /**
-     * Induced dipole predictor order.
-     */
-    private final int predictorOrder;
     /**
      * Induced dipole predictor index.
      */
@@ -112,11 +109,6 @@ public class ScfPredictor {
      * squared change in parameters.
      */
     private LeastSquaresPredictor leastSquaresPredictor;
-    /**
-     * Convergence tolerance of the LeastSquares optimizer.
-     */
-    private static final double eps = 1.0e-4;
-
     /**
      * <p>Constructor for ScfPredictor.</p>
      *
@@ -141,35 +133,6 @@ public class ScfPredictor {
                 predictorInducedDipoleCR = new double[1][predictorOrder][nAtoms][3];
             }
         }
-    }
-
-    /**
-     * To be called upon initialization and update of inducedDipole arrays in
-     * parent.
-     *
-     * @param inducedDipole   an array of induced dipoles.
-     * @param inducedDipoleCR an array of induced dipoles chain rule terms.
-     * @param lambdaTerm      a boolean.
-     */
-    public void setInducedDipoleReferences(double[][][] inducedDipole, double[][][] inducedDipoleCR,
-                                           boolean lambdaTerm) {
-        this.inducedDipole = inducedDipole;
-        this.inducedDipoleCR = inducedDipoleCR;
-        if (lambdaTerm) {
-            predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
-            predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
-        } else {
-            predictorInducedDipole = new double[1][predictorOrder][nAtoms][3];
-            predictorInducedDipoleCR = new double[1][predictorOrder][nAtoms][3];
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return predictorMode.toString();
     }
 
     /**
@@ -246,63 +209,36 @@ public class ScfPredictor {
     }
 
     /**
-     * The least-squares predictor with induced dipole information from 8-10
-     * previous steps reduces the number SCF iterations by ~50%.
+     * To be called upon initialization and update of inducedDipole arrays in
+     * parent.
+     *
+     * @param inducedDipole   an array of induced dipoles.
+     * @param inducedDipoleCR an array of induced dipoles chain rule terms.
+     * @param lambdaTerm      a boolean.
      */
-    private void leastSquaresPredictor() {
-        if (predictorCount < 2) {
-            return;
+    public void setInducedDipoleReferences(double[][][] inducedDipole, double[][][] inducedDipoleCR,
+                                           boolean lambdaTerm) {
+        this.inducedDipole = inducedDipole;
+        this.inducedDipoleCR = inducedDipoleCR;
+        if (lambdaTerm) {
+            predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
+            predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
+        } else {
+            predictorInducedDipole = new double[1][predictorOrder][nAtoms][3];
+            predictorInducedDipoleCR = new double[1][predictorOrder][nAtoms][3];
         }
-        try {
-            /**
-             * The Jacobian and target do not change during the LS optimization,
-             * so it's most efficient to update them once before the
-             * Least-Squares optimizer starts.
-             */
-            leastSquaresPredictor.updateJacobianAndTarget();
-            int maxEvals, maxIter;
-            maxEvals = maxIter = 1000;
-            LeastSquaresOptimizer.Optimum optimum = leastSquaresPredictor.predict(maxEvals, maxIter);
-            double[] optimalValues = optimum.getPoint().toArray();
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.finest(String.format("\n LS RMS:            %10.6f", optimum.getRMS()));
-                logger.finest(String.format(" LS Iterations:     %10d", optimum.getIterations()));
-                logger.finest(String.format(" Jacobian Evals:    %10d", optimum.getEvaluations()));
-                logger.finest(String.format(" Root Mean Square:  %10.6f", optimum.getRMS()));
-                logger.finest(String.format(" LS Coefficients"));
-                for (int i = 0; i < predictorOrder - 1; i++) {
-                    logger.finest(String.format(" %2d  %10.6f", i + 1, optimalValues[i]));
-                }
-            }
+    }
 
-            /**
-             * Initialize a pointer into predictor induced dipole array.
-             */
-            int index = predictorStartIndex;
-            /**
-             * Apply the LS coefficients in order to provide an initial guess at
-             * the converged induced dipoles.
-             */
-            for (int k = 0; k < predictorOrder - 1; k++) {
-                /**
-                 * Set the current coefficient.
-                 */
-                double c = optimalValues[k];
-                for (int i = 0; i < nAtoms; i++) {
-                    for (int j = 0; j < 3; j++) {
-                        inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
-                        inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
-                    }
-                }
-                index++;
-                if (index >= predictorOrder) {
-                    index = 0;
-                }
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, " Exception computing predictor coefficients", e);
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return predictorMode.toString();
+    }
 
-        }
+    public enum PredictorMode {
+        NONE, LS, POLY, ASPC
     }
 
     private class LeastSquaresPredictor {
@@ -317,6 +253,13 @@ public class ScfPredictor {
         RealMatrix jacobianMatrix;
         LeastSquaresOptimizer optimizer;
         ConvergenceChecker<LeastSquaresProblem.Evaluation> checker;
+        Pair<RealVector, RealMatrix> test = new Pair<>(targetVector, jacobianMatrix);
+        MultivariateJacobianFunction function = new MultivariateJacobianFunction() {
+            @Override
+            public Pair<RealVector, RealMatrix> value(RealVector point) {
+                return new Pair<>(targetVector, jacobianMatrix);
+            }
+        };
 
         public LeastSquaresPredictor(double eps) {
             tolerance = eps;
@@ -329,6 +272,21 @@ public class ScfPredictor {
             initialSolution[0] = 1.0;
             optimizer = new LevenbergMarquardtOptimizer().withParameterRelativeTolerance(eps);
             checker = new EvaluationRmsChecker(eps);
+        }
+
+        public LeastSquaresOptimizer.Optimum predict(int maxEval, int maxIter) {
+            RealVector start = new ArrayRealVector(initialSolution);
+            LeastSquaresProblem lsp = LeastSquaresFactory.create(
+                    function, targetVector, start, checker, maxEval, maxIter);
+
+            LeastSquaresOptimizer.Optimum optimum = optimizer.optimize(lsp);
+            if (true)
+                logger.info(String.format(" LS Optimization parameters:"
+                                + "  %s %s\n"
+                                + "  %s %s\n"
+                                + "  %d %d", function, targetVector.toString(),
+                        start.toString(), checker.toString(), maxIter, maxEval));
+            return optimum;
         }
 
         public void updateJacobianAndTarget() {
@@ -398,30 +356,66 @@ public class ScfPredictor {
             }
             return new ArrayRealVector(values);
         }
+    }
 
-        Pair<RealVector, RealMatrix> test = new Pair<>(targetVector, jacobianMatrix);
-
-        public LeastSquaresOptimizer.Optimum predict(int maxEval, int maxIter) {
-            RealVector start = new ArrayRealVector(initialSolution);
-            LeastSquaresProblem lsp = LeastSquaresFactory.create(
-                    function, targetVector, start, checker, maxEval, maxIter);
-
-            LeastSquaresOptimizer.Optimum optimum = optimizer.optimize(lsp);
-            if (true)
-                logger.info(String.format(" LS Optimization parameters:"
-                                + "  %s %s\n"
-                                + "  %s %s\n"
-                                + "  %d %d", function, targetVector.toString(),
-                        start.toString(), checker.toString(), maxIter, maxEval));
-            return optimum;
+    /**
+     * The least-squares predictor with induced dipole information from 8-10
+     * previous steps reduces the number SCF iterations by ~50%.
+     */
+    private void leastSquaresPredictor() {
+        if (predictorCount < 2) {
+            return;
         }
-
-        MultivariateJacobianFunction function = new MultivariateJacobianFunction() {
-            @Override
-            public Pair<RealVector, RealMatrix> value(RealVector point) {
-                return new Pair<>(targetVector, jacobianMatrix);
+        try {
+            /**
+             * The Jacobian and target do not change during the LS optimization,
+             * so it's most efficient to update them once before the
+             * Least-Squares optimizer starts.
+             */
+            leastSquaresPredictor.updateJacobianAndTarget();
+            int maxEvals, maxIter;
+            maxEvals = maxIter = 1000;
+            LeastSquaresOptimizer.Optimum optimum = leastSquaresPredictor.predict(maxEvals, maxIter);
+            double[] optimalValues = optimum.getPoint().toArray();
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest(String.format("\n LS RMS:            %10.6f", optimum.getRMS()));
+                logger.finest(String.format(" LS Iterations:     %10d", optimum.getIterations()));
+                logger.finest(String.format(" Jacobian Evals:    %10d", optimum.getEvaluations()));
+                logger.finest(String.format(" Root Mean Square:  %10.6f", optimum.getRMS()));
+                logger.finest(String.format(" LS Coefficients"));
+                for (int i = 0; i < predictorOrder - 1; i++) {
+                    logger.finest(String.format(" %2d  %10.6f", i + 1, optimalValues[i]));
+                }
             }
-        };
+
+            /**
+             * Initialize a pointer into predictor induced dipole array.
+             */
+            int index = predictorStartIndex;
+            /**
+             * Apply the LS coefficients in order to provide an initial guess at
+             * the converged induced dipoles.
+             */
+            for (int k = 0; k < predictorOrder - 1; k++) {
+                /**
+                 * Set the current coefficient.
+                 */
+                double c = optimalValues[k];
+                for (int i = 0; i < nAtoms; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
+                        inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
+                    }
+                }
+                index++;
+                if (index >= predictorOrder) {
+                    index = 0;
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, " Exception computing predictor coefficients", e);
+
+        }
     }
 
     /**

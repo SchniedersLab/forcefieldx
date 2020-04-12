@@ -60,6 +60,7 @@ import groovy.lang.Binding;
 @RunWith(Parameterized.class)
 public class DynamicsNVETest extends PJDependentTest {
 
+    private static final Logger logger = Logger.getLogger(DynamicsNVETest.class.getName());
     private String info;
     private String filename;
     private double startingTotalEnergy;
@@ -67,13 +68,33 @@ public class DynamicsNVETest extends PJDependentTest {
     private double endPotentialEnergy;
     private double endTotalEnergy;
     private double tolerance = 0.1;
-
     private boolean alwaysFail = false;
-
     private Binding binding;
     private Dynamics dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsNVETest.class.getName());
+    public DynamicsNVETest(String info, String filename, double startingTotalEnergy, double endKineticEnergy,
+                           double endPotentialEnergy, double endTotalEnergy) {
+        this.info = info;
+        this.filename = filename;
+        this.startingTotalEnergy = startingTotalEnergy;
+        this.endKineticEnergy = endKineticEnergy;
+        this.endPotentialEnergy = endPotentialEnergy;
+        this.endTotalEnergy = endTotalEnergy;
+    }
+
+    @After
+    public void after() {
+        dynamics.destroyPotentials();
+        System.gc();
+    }
+
+    @Before
+    public void before() {
+        binding = new Binding();
+        dynamics = new Dynamics();
+        dynamics.setBinding(binding);
+
+    }
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -87,30 +108,6 @@ public class DynamicsNVETest extends PJDependentTest {
                         -25.2418 // endTotalEnergy
                 }
         });
-    }
-
-    public DynamicsNVETest(String info, String filename, double startingTotalEnergy, double endKineticEnergy,
-                           double endPotentialEnergy, double endTotalEnergy) {
-        this.info = info;
-        this.filename = filename;
-        this.startingTotalEnergy = startingTotalEnergy;
-        this.endKineticEnergy = endKineticEnergy;
-        this.endPotentialEnergy = endPotentialEnergy;
-        this.endTotalEnergy = endTotalEnergy;
-    }
-
-    @Before
-    public void before() {
-        binding = new Binding();
-        dynamics = new Dynamics();
-        dynamics.setBinding(binding);
-
-    }
-
-    @After
-    public void after() {
-        dynamics.destroyPotentials();
-        System.gc();
     }
 
     @Test

@@ -62,16 +62,16 @@ import static ffx.potential.parameters.MultipoleType.t100;
 public class InducedDipoleFieldReduceRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(DirectRegion.class.getName());
-
-    /**
-     * An ordered array of atoms in the system.
-     */
-    private Atom[] atoms;
+    private final InducedDipoleFieldReduceLoop[] inducedDipoleFieldReduceLoop;
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
     public double[][][] inducedDipole;
     public double[][][] inducedDipoleCR;
+    /**
+     * An ordered array of atoms in the system.
+     */
+    private Atom[] atoms;
     private double[][] cartesianDipolePhi;
     private double[][] cartesianDipolePhiCR;
     /**
@@ -82,7 +82,6 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
      * Chain rule field array.
      */
     private AtomicDoubleArray3D fieldCR;
-
     /**
      * Flag to indicate use of generalized Kirkwood.
      */
@@ -90,10 +89,23 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
     private GeneralizedKirkwood generalizedKirkwood;
     private double aewald;
     private double aewald3;
-    private final InducedDipoleFieldReduceLoop[] inducedDipoleFieldReduceLoop;
 
     public InducedDipoleFieldReduceRegion(int nt) {
         inducedDipoleFieldReduceLoop = new InducedDipoleFieldReduceLoop[nt];
+    }
+
+    /**
+     * Execute the InducedDipoleFieldReduceRegion with the passed ParallelTeam.
+     *
+     * @param parallelTeam The ParallelTeam instance to execute with.
+     */
+    public void executeWith(ParallelTeam parallelTeam) {
+        try {
+            parallelTeam.execute(this);
+        } catch (Exception e) {
+            String message = " Exception computing induced dipole field.\n";
+            logger.log(Level.WARNING, message, e);
+        }
     }
 
     public void init(Atom[] atoms, double[][][] inducedDipole, double[][][] inducedDipoleCR,
@@ -116,20 +128,6 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
         this.fieldCR = fieldCR;
     }
 
-    /**
-     * Execute the InducedDipoleFieldReduceRegion with the passed ParallelTeam.
-     *
-     * @param parallelTeam The ParallelTeam instance to execute with.
-     */
-    public void executeWith(ParallelTeam parallelTeam) {
-        try {
-            parallelTeam.execute(this);
-        } catch (Exception e) {
-            String message = " Exception computing induced dipole field.\n";
-            logger.log(Level.WARNING, message, e);
-        }
-    }
-
     @Override
     public void run() throws Exception {
         try {
@@ -147,11 +145,6 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
     }
 
     private class InducedDipoleFieldReduceLoop extends IntegerForLoop {
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
 
         @Override
         public void run(int lb, int ub) throws Exception {
@@ -187,6 +180,11 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
             // Reduce the PME and GK contributions.
             field.reduce(lb, ub);
             fieldCR.reduce(lb, ub);
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
         }
     }
 }

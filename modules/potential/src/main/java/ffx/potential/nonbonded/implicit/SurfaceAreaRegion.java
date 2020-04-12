@@ -84,7 +84,11 @@ import ffx.potential.utils.EnergyException;
 public class SurfaceAreaRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(SurfaceAreaRegion.class.getName());
-
+    /**
+     * Tolerance used in the tests for sphere overlaps and for colinearity.
+     */
+    private final static double delta = 1.0e-8;
+    private final static double delta2 = delta * delta;
     /**
      * Array of atoms.
      */
@@ -105,7 +109,6 @@ public class SurfaceAreaRegion extends ParallelRegion {
      * Per-atom flag to indicate the atom is used.
      */
     private final boolean[] use;
-
     /**
      * Initialization loops.
      */
@@ -123,6 +126,14 @@ public class SurfaceAreaRegion extends ParallelRegion {
      */
     private final SharedDouble sharedSurfaceArea;
     /**
+     * Radius of the probe sphere.
+     */
+    private final double probe;
+    /**
+     * Maximum number of arcs.
+     */
+    private final int MAXARC = 1000;
+    /**
      * Atoms to skip in the area calculation.
      */
     private SharedBooleanArray skip;
@@ -130,7 +141,6 @@ public class SurfaceAreaRegion extends ParallelRegion {
      * Atomic gradient array.
      */
     private AtomicDoubleArray3D grad;
-
     /**
      * Atom i overlaps. intag1[atom index][overlap index].
      */
@@ -171,7 +181,6 @@ public class SurfaceAreaRegion extends ParallelRegion {
      * Per atom flag to indicate if the atom is buried and has no surface area.
      */
     private boolean[] buried;
-
     /**
      * Accessible surface area of each atom.
      */
@@ -185,19 +194,6 @@ public class SurfaceAreaRegion extends ParallelRegion {
      * return is actual area in square Angstroms
      */
     private double surfaceTension;
-    /**
-     * Radius of the probe sphere.
-     */
-    private final double probe;
-    /**
-     * Maximum number of arcs.
-     */
-    private final int MAXARC = 1000;
-    /**
-     * Tolerance used in the tests for sphere overlaps and for colinearity.
-     */
-    private final static double delta = 1.0e-8;
-    private final static double delta2 = delta * delta;
 
     /**
      * This class is a port of the Cavitation code in TINKER.
@@ -242,8 +238,21 @@ public class SurfaceAreaRegion extends ParallelRegion {
         init();
     }
 
-    public void setSurfaceTension(double surfaceTension) {
-        this.surfaceTension = surfaceTension;
+    @Override
+    public void finish() {
+        if (logger.isLoggable(Level.FINE)) {
+            int n = initLoop.length;
+            long initTime = 0;
+            long overlapTime = 0;
+            long cavTime = 0;
+            for (int i = 0; i < n; i++) {
+                initTime = max(initLoop[i].time, initTime);
+                overlapTime = max(atomOverlapLoop[i].time, overlapTime);
+                cavTime = max(surfaceAreaLoop[i].time, cavTime);
+            }
+            logger.fine(format(" Cavitation Init: %10.3f Overlap: %10.3f Cav:  %10.3f",
+                    initTime * 1e-9, overlapTime * 1e-9, cavTime * 1e-9));
+        }
     }
 
     public double getEnergy() {
@@ -280,28 +289,6 @@ public class SurfaceAreaRegion extends ParallelRegion {
     }
 
     @Override
-    public void start() {
-        sharedSurfaceArea.set(0.0);
-    }
-
-    @Override
-    public void finish() {
-        if (logger.isLoggable(Level.FINE)) {
-            int n = initLoop.length;
-            long initTime = 0;
-            long overlapTime = 0;
-            long cavTime = 0;
-            for (int i = 0; i < n; i++) {
-                initTime = max(initLoop[i].time, initTime);
-                overlapTime = max(atomOverlapLoop[i].time, overlapTime);
-                cavTime = max(surfaceAreaLoop[i].time, cavTime);
-            }
-            logger.fine(format(" Cavitation Init: %10.3f Overlap: %10.3f Cav:  %10.3f",
-                    initTime * 1e-9, overlapTime * 1e-9, cavTime * 1e-9));
-        }
-    }
-
-    @Override
     public void run() {
         try {
             execute(0, nAtoms - 1, initLoop[getThreadIndex()]);
@@ -313,17 +300,41 @@ public class SurfaceAreaRegion extends ParallelRegion {
         }
     }
 
+    public void setSurfaceTension(double surfaceTension) {
+        this.surfaceTension = surfaceTension;
+    }
+
+    @Override
+    public void start() {
+        sharedSurfaceArea.set(0.0);
+    }
+
+    static private class IndexedDouble implements Comparable {
+
+        public double value;
+        public int key;
+
+        IndexedDouble(double value, int key) {
+            this.value = value;
+            this.key = key;
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            if (!(o instanceof IndexedDouble)) {
+                return 0;
+            }
+            IndexedDouble d = (IndexedDouble) o;
+            return Double.compare(value, d.value);
+        }
+    }
+
     /**
      * Initialize arrays for Cavitation calculation.
      */
     private class InitLoop extends IntegerForLoop {
 
         public long time;
-
-        @Override
-        public void start() {
-            time = -System.nanoTime();
-        }
 
         @Override
         public void finish() {
@@ -358,6 +369,11 @@ public class SurfaceAreaRegion extends ParallelRegion {
                 }
             }
         }
+
+        @Override
+        public void start() {
+            time = -System.nanoTime();
+        }
     }
 
     /**
@@ -368,11 +384,6 @@ public class SurfaceAreaRegion extends ParallelRegion {
     private class AtomOverlapLoop extends IntegerForLoop {
 
         public long time;
-
-        @Override
-        public void start() {
-            time = -System.nanoTime();
-        }
 
         @Override
         public void finish() {
@@ -398,6 +409,11 @@ public class SurfaceAreaRegion extends ParallelRegion {
                     }
                 }
             }
+        }
+
+        @Override
+        public void start() {
+            time = -System.nanoTime();
         }
 
         /**
@@ -470,6 +486,12 @@ public class SurfaceAreaRegion extends ParallelRegion {
      */
     private class SurfaceAreaLoop extends IntegerForLoop {
 
+        // Set pi multiples, overlap criterion and tolerances.
+        private final static double pix2 = 2.0 * PI;
+        private final static double pix4 = 4.0 * PI;
+        private final static double pid2 = PI / 2.0;
+        private final static double eps = 1.0e-8;
+        public long time;
         private double localSurfaceEnergy;
         private IndexedDouble[] arci;
         private boolean[] omit;
@@ -498,54 +520,12 @@ public class SurfaceAreaRegion extends ParallelRegion {
         private int j;
         private int ib;
         private int threadID;
-
-        // Set pi multiples, overlap criterion and tolerances.
-        private final static double pix2 = 2.0 * PI;
-        private final static double pix4 = 4.0 * PI;
-        private final static double pid2 = PI / 2.0;
-        private final static double eps = 1.0e-8;
-        public long time;
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
         SurfaceAreaLoop() {
             allocateMemory(MAXARC);
-        }
-
-        private void allocateMemory(int maxarc) {
-            arci = new IndexedDouble[maxarc];
-            arcf = new double[maxarc];
-            risq = new double[maxarc];
-            ri = new double[maxarc];
-            dsq = new double[maxarc];
-            bsq = new double[maxarc];
-            intag = new int[maxarc];
-            lt = new int[maxarc];
-            kent = new int[maxarc];
-            kout = new int[maxarc];
-            ider = new double[maxarc];
-            sign_yder = new double[maxarc];
-            xc = new double[maxarc];
-            yc = new double[maxarc];
-            zc = new double[maxarc];
-            b = new double[maxarc];
-            omit = new boolean[maxarc];
-            bg = new double[maxarc];
-            ther = new double[maxarc];
-            ex = new double[maxarc];
-            ux = new double[maxarc];
-            uy = new double[maxarc];
-            uz = new double[maxarc];
-        }
-
-        @Override
-        public void start() {
-            time = -System.nanoTime();
-            threadID = getThreadIndex();
-            localSurfaceEnergy = 0.0;
-            fill(ider, 0);
-            fill(sign_yder, 0);
         }
 
         @Override
@@ -572,6 +552,15 @@ public class SurfaceAreaRegion extends ParallelRegion {
                 area[ir] *= rrisq * surfaceTension;
                 localSurfaceEnergy += area[ir];
             }
+        }
+
+        @Override
+        public void start() {
+            time = -System.nanoTime();
+            threadID = getThreadIndex();
+            localSurfaceEnergy = 0.0;
+            fill(ider, 0);
+            fill(sign_yder, 0);
         }
 
         /**
@@ -948,6 +937,32 @@ public class SurfaceAreaRegion extends ParallelRegion {
             area[ir] = 0.0;
         }
 
+        private void allocateMemory(int maxarc) {
+            arci = new IndexedDouble[maxarc];
+            arcf = new double[maxarc];
+            risq = new double[maxarc];
+            ri = new double[maxarc];
+            dsq = new double[maxarc];
+            bsq = new double[maxarc];
+            intag = new int[maxarc];
+            lt = new int[maxarc];
+            kent = new int[maxarc];
+            kout = new int[maxarc];
+            ider = new double[maxarc];
+            sign_yder = new double[maxarc];
+            xc = new double[maxarc];
+            yc = new double[maxarc];
+            zc = new double[maxarc];
+            b = new double[maxarc];
+            omit = new boolean[maxarc];
+            bg = new double[maxarc];
+            ther = new double[maxarc];
+            ex = new double[maxarc];
+            ux = new double[maxarc];
+            uy = new double[maxarc];
+            uz = new double[maxarc];
+        }
+
         /**
          * Find number of independent boundaries and check connectivity.
          *
@@ -977,26 +992,6 @@ public class SurfaceAreaRegion extends ParallelRegion {
                 }
             }
             return false;
-        }
-    }
-
-    static private class IndexedDouble implements Comparable {
-
-        public double value;
-        public int key;
-
-        IndexedDouble(double value, int key) {
-            this.value = value;
-            this.key = key;
-        }
-
-        @Override
-        public int compareTo(Object o) {
-            if (!(o instanceof IndexedDouble)) {
-                return 0;
-            }
-            IndexedDouble d = (IndexedDouble) o;
-            return Double.compare(value, d.value);
         }
     }
 }

@@ -37,19 +37,18 @@
 //******************************************************************************
 package ffx.potential.extended;
 
-import ffx.utilities.Constants;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.utilities.Constants;
+
 /**
  * <p>ExtConstants class.</p>
  *
  * @author Stephen LuCore
- *
  * @since 1.0
  */
 public class ExtConstants {

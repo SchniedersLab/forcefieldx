@@ -66,6 +66,14 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
+    public double firstDerivative(double x) throws IllegalArgumentException {
+        return 2.0 - 2.0 * x;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public int getHighestOrderZeroDerivative() {
         return 0;
     }
@@ -84,30 +92,6 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
     @Override
     public double getZeroBound() {
         return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean symmetricToUnity() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double firstDerivative(double x) throws IllegalArgumentException {
-        return 2.0 - 2.0 * x;
     }
 
     /**
@@ -140,12 +124,28 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        return 2 * x - (x * x);
+    public boolean symmetricToUnity() {
+        return false;
     }
 
     @Override
     public String toString() {
         return "Polynomial switch of form f(x) = 2x - x^2";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean validOutsideBounds() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        return 2 * x - (x * x);
     }
 }

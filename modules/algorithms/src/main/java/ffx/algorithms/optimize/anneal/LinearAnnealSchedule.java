@@ -76,6 +76,21 @@ public class LinearAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
+    public double getHighTemp() {
+        return tHigh;
+    }
+
+    @Override
+    public double getLowTemp() {
+        return tLow;
+    }
+
+    @Override
+    public int getNumWindows() {
+        return nWindows;
+    }
+
+    @Override
     public double getTemperature(int i) {
         assert i >= 0 && i < nWindows;
         return tHigh + (dTemp * i);
@@ -91,22 +106,7 @@ public class LinearAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
-    public int getNumWindows() {
-        return nWindows;
-    }
-
-    @Override
-    public double getHighTemp() {
-        return tHigh;
-    }
-
-    @Override
-    public double getLowTemp() {
-        return tLow;
-    }
-
-    @Override
-    public double windowLength(int window) {
+    public double maxWindowLength() {
         return 1.0;
     }
 
@@ -116,8 +116,8 @@ public class LinearAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
-    public double maxWindowLength() {
-        return 1.0;
+    public String toString() {
+        return description;
     }
 
     @Override
@@ -126,7 +126,7 @@ public class LinearAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
-    public String toString() {
-        return description;
+    public double windowLength(int window) {
+        return 1.0;
     }
 }

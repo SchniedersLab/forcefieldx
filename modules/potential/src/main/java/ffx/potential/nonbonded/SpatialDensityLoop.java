@@ -74,46 +74,13 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     }
 
     /**
-     * <p>setRegion.</p>
-     *
-     * @param spatialDensityRegion a {@link ffx.potential.nonbonded.SpatialDensityRegion} object.
-     */
-    public void setRegion(SpatialDensityRegion spatialDensityRegion) {
-        this.spatialDensityRegion = spatialDensityRegion;
-        this.spatialDensitySchedule = new SpatialDensitySchedule(spatialDensityRegion.nThreads,
-                spatialDensityRegion.nAtoms, spatialDensityRegion.actualCount, 0.97);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public IntegerSchedule schedule() {
-        return spatialDensitySchedule;
-    }
-
-    /**
      * <p>
-     * setNsymm</p>
+     * gridDensity</p>
      *
-     * @param nSymm a int.
+     * @param iSymm a int.
+     * @param iAtom a int.
      */
-    public void setNsymm(int nSymm) {
-        this.nSymm = nSymm;
-        assert (nSymm <= spatialDensityRegion.nSymm);
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>octant</code>.</p>
-     *
-     * @param octant a int.
-     * @return a {@link ffx.potential.nonbonded.SpatialDensityLoop} object.
-     */
-    public SpatialDensityLoop setOctant(int octant) {
-        this.octant = octant;
-        return this;
-    }
+    public abstract void gridDensity(int iSymm, int iAtom);
 
     /**
      * {@inheritDoc}
@@ -161,6 +128,48 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IntegerSchedule schedule() {
+        return spatialDensitySchedule;
+    }
+
+    /**
+     * <p>
+     * setNsymm</p>
+     *
+     * @param nSymm a int.
+     */
+    public void setNsymm(int nSymm) {
+        this.nSymm = nSymm;
+        assert (nSymm <= spatialDensityRegion.nSymm);
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>octant</code>.</p>
+     *
+     * @param octant a int.
+     * @return a {@link ffx.potential.nonbonded.SpatialDensityLoop} object.
+     */
+    public SpatialDensityLoop setOctant(int octant) {
+        this.octant = octant;
+        return this;
+    }
+
+    /**
+     * <p>setRegion.</p>
+     *
+     * @param spatialDensityRegion a {@link ffx.potential.nonbonded.SpatialDensityRegion} object.
+     */
+    public void setRegion(SpatialDensityRegion spatialDensityRegion) {
+        this.spatialDensityRegion = spatialDensityRegion;
+        this.spatialDensitySchedule = new SpatialDensitySchedule(spatialDensityRegion.nThreads,
+                spatialDensityRegion.nAtoms, spatialDensityRegion.actualCount, 0.97);
+    }
+
     private void gridCell(int ia, int ib, int ic) {
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
             final int[] pairList = spatialDensityRegion.cellList[iSymm];
@@ -173,13 +182,4 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
             }
         }
     }
-
-    /**
-     * <p>
-     * gridDensity</p>
-     *
-     * @param iSymm a int.
-     * @param iAtom a int.
-     */
-    public abstract void gridDensity(int iSymm, int iAtom);
 }

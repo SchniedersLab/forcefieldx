@@ -59,10 +59,18 @@ import ffx.potential.MolecularAssembly;
 public interface FileOpener extends Runnable {
 
     /**
-     * {@inheritDoc}
+     * <p>getAllAssemblies.</p>
+     *
+     * @return an array of {@link ffx.potential.MolecularAssembly} objects.
      */
-    @Override
-    void run();
+    MolecularAssembly[] getAllAssemblies();
+
+    /**
+     * <p>getAllProperties.</p>
+     *
+     * @return an array of {@link org.apache.commons.configuration2.CompositeConfiguration} objects.
+     */
+    CompositeConfiguration[] getAllProperties();
 
     /**
      * <p>getAssembly.</p>
@@ -72,13 +80,6 @@ public interface FileOpener extends Runnable {
     MolecularAssembly getAssembly();
 
     /**
-     * <p>getAllAssemblies.</p>
-     *
-     * @return an array of {@link ffx.potential.MolecularAssembly} objects.
-     */
-    MolecularAssembly[] getAllAssemblies();
-
-    /**
      * <p>getProperties.</p>
      *
      * @return a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
@@ -86,9 +87,8 @@ public interface FileOpener extends Runnable {
     CompositeConfiguration getProperties();
 
     /**
-     * <p>getAllProperties.</p>
-     *
-     * @return an array of {@link org.apache.commons.configuration2.CompositeConfiguration} objects.
+     * {@inheritDoc}
      */
-    CompositeConfiguration[] getAllProperties();
+    @Override
+    void run();
 }

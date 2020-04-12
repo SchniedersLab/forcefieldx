@@ -43,7 +43,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.OptionalDouble;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -93,6 +99,12 @@ import static ffx.utilities.StringUtils.padLeft;
 public final class PDBFilter extends SystemFilter {
 
     private static final Logger logger = Logger.getLogger(PDBFilter.class.getName());
+    private final static Set<String> backboneNames;
+
+    static {
+        String[] names = {"C", "CA", "N", "O", "OXT", "OT2"};
+        backboneNames = Set.of(names);
+    }
 
     /**
      * Map of SEQRES entries.
@@ -102,15 +114,10 @@ public final class PDBFilter extends SystemFilter {
      * Map of DBREF entries.
      */
     private final Map<Character, int[]> dbRef = new HashMap<>();
-
     /**
      * List of altLoc characters seen in the PDB file.
      */
     private final List<Character> altLocs = new ArrayList<>();
-    /**
-     * The current altLoc - ie. the one we are defining a chemical system for.
-     */
-    private Character currentAltLoc = 'A';
     /**
      * List of segIDs defined for the PDB file.
      * <p>
@@ -139,6 +146,16 @@ public final class PDBFilter extends SystemFilter {
      */
     private final Map<String, String> modRes = new HashMap<>();
     /**
+     * Keep track of ATOM record serial numbers to match them with ANISOU
+     * records.
+     */
+    private final HashMap<Integer, Atom> atoms = new HashMap<>();
+    private final Map<MolecularAssembly, BufferedReader> readers = new HashMap<>();
+    /**
+     * The current altLoc - ie. the one we are defining a chemical system for.
+     */
+    private Character currentAltLoc = 'A';
+    /**
      * Character for the current chain ID.
      */
     private Character currentChainID = null;
@@ -165,11 +182,6 @@ public final class PDBFilter extends SystemFilter {
      */
     private PDBFileStandard fileStandard = VERSION3_3;
     /**
-     * Keep track of ATOM record serial numbers to match them with ANISOU
-     * records.
-     */
-    private final HashMap<Integer, Atom> atoms = new HashMap<>();
-    /**
      * If false, skip logging "Saving file".
      */
     private boolean logWrites = true;
@@ -177,22 +189,13 @@ public final class PDBFilter extends SystemFilter {
      * Keep track of the current MODEL in the file.
      */
     private int modelsRead = 1;
-    private final Map<MolecularAssembly, BufferedReader> readers = new HashMap<>();
     /**
      * Tracks output MODEL numbers. Unused if below zero.
      */
     private int modelsWritten = -1;
     private File readFile;
-
     private List<String> remarkLines = Collections.emptyList();
     private double lastReadLambda = Double.NaN;
-
-    private final static Set<String> backboneNames;
-
-    static {
-        String[] names = {"C", "CA", "N", "O", "OXT", "OT2"};
-        backboneNames = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(names)));
-    }
 
     /**
      * <p>
@@ -244,6 +247,91 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
+     * <p>
+     * clearSegIDs</p>
+     */
+    public void clearSegIDs() {
+        segIDs.clear();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void closeReader() {
+        for (MolecularAssembly system : systems) {
+            BufferedReader br = readers.get(system);
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException ex) {
+                    logger.warning(format(" Exception in closing system %s: %s", system.toString(), ex.toString()));
+                }
+            }
+        }
+    }
+
+    @Override
+    public int countNumModels() {
+        Set<File> files = systems.stream().
+                map(MolecularAssembly::getFile).
+                map(File::toString).distinct().
+                map(File::new).
+                collect(Collectors.toSet());
+
+        // Dangers of parallelism are minimized by: unique files/filenames, read-only access.
+        return files.parallelStream().mapToInt((File fi) -> {
+            int nModelsLocal = 0;
+            try (BufferedReader br = new BufferedReader(new FileReader(fi))) {
+                String line = br.readLine();
+                while (line != null) {
+                    if (line.startsWith("MODEL")) {
+                        ++nModelsLocal;
+                    }
+                    line = br.readLine();
+                }
+                nModelsLocal = Math.max(1, nModelsLocal);
+            } catch (IOException ex) {
+                logger.info(format(" Exception in parsing file %s: %s", fi, ex));
+            }
+            return nModelsLocal;
+        }).sum();
+    }
+
+    /**
+     * Get the list of alternate locations encountered.
+     *
+     * @return the alternate location list.
+     */
+    public List<Character> getAltLocs() {
+        return altLocs;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public OptionalDouble getLastReadLambda() {
+        return Double.isNaN(lastReadLambda) ? OptionalDouble.empty() : OptionalDouble.of(lastReadLambda);
+    }
+
+    /**
+     * Returns all the remark lines found by the last readFile call.
+     *
+     * @return Remark lines from the last readFile call.
+     */
+    @Override
+    public String[] getRemarkLines() {
+        int nRemarks = remarkLines.size();
+        return remarkLines.toArray(new String[nRemarks]);
+    }
+
+    @Override
+    public int getSnapshot() {
+        return modelsRead;
+    }
+
+    /**
      * Mutate a residue at the PDB file is being parsed.
      *
      * @param chainID the Chain ID of the residue to mutate.
@@ -266,117 +354,6 @@ public final class PDBFilter extends SystemFilter {
      */
     public void mutate(List<Mutation> mutations) {
         this.mutations.addAll(mutations);
-    }
-
-    /**
-     * Returns all the remark lines found by the last readFile call.
-     * @return Remark lines from the last readFile call.
-     */
-    @Override
-    public String[] getRemarkLines() {
-        int nRemarks = remarkLines.size();
-        return remarkLines.toArray(new String[nRemarks]);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public OptionalDouble getLastReadLambda() {
-        return Double.isNaN(lastReadLambda) ? OptionalDouble.empty() : OptionalDouble.of(lastReadLambda);
-    }
-
-    /**
-     * <p>
-     * clearSegIDs</p>
-     */
-    public void clearSegIDs() {
-        segIDs.clear();
-    }
-
-    /**
-     * Convert possibly duplicate chain IDs into unique segIDs.
-     *
-     * @param c chain ID just read.
-     * @return a unique segID.
-     */
-    private String getSegID(Character c) {
-        if (c.equals(' ')) {
-            c = 'A';
-        }
-
-        // If the chain ID has not changed, return the existing segID.
-        if (c.equals(currentChainID)) {
-            return currentSegID;
-        }
-
-        // Loop through existing segIDs to find the first one that is unused.
-        int count = 0;
-        for (String segID : segIDs) {
-            if (segID.endsWith(c.toString())) {
-                count++;
-            }
-        }
-
-        // If the count is greater than 0, then append it.
-        String newSegID;
-        if (count == 0) {
-            newSegID = c.toString();
-        } else {
-            newSegID = count + c.toString();
-        }
-
-        segIDs.add(newSegID);
-        currentChainID = c;
-        currentSegID = newSegID;
-
-        if (segidMap.containsKey(c)) {
-            segidMap.get(c).add(newSegID);
-        } else {
-            List<String> newChainList = new ArrayList<>();
-            newChainList.add(newSegID);
-            segidMap.put(c, newChainList);
-        }
-
-        return newSegID;
-    }
-
-    /**
-     * Specify the alternate location.
-     *
-     * @param molecularAssembly The MolecularAssembly to populate.
-     * @param altLoc            The alternate location to use.
-     */
-    public void setAltID(MolecularAssembly molecularAssembly, Character altLoc) {
-        setMolecularSystem(molecularAssembly);
-        currentAltLoc = altLoc;
-    }
-
-    /**
-     * <p>setSymOp.</p>
-     *
-     * @param symOp a int.
-     */
-    public void setSymOp(int symOp) {
-        this.nSymOp = symOp;
-    }
-
-    /**
-     * Get the list of alternate locations encountered.
-     *
-     * @return the alternate location list.
-     */
-    public List<Character> getAltLocs() {
-        return altLocs;
-    }
-
-    /**
-     * <p>setModelNumbering.</p>
-     *
-     * @param modelsWritten the number of models written.
-     */
-    public void setModelNumbering(int modelsWritten) {
-        this.modelsWritten = modelsWritten;
     }
 
     /**
@@ -1196,766 +1173,6 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * Sets whether this PDBFilter should log each time it saves to a file.
-     *
-     * @param logWrites a boolean.
-     */
-    public void setLogWrites(boolean logWrites) {
-        this.logWrites = logWrites;
-    }
-
-    /**
-     * <p>writeFileWithHeader.</p>
-     *
-     * @param saveFile a {@link java.io.File} object.
-     * @param header   a {@link java.lang.String} object.
-     * @param append   a boolean.
-     * @return a boolean.
-     */
-    public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
-        FileWriter fw;
-        BufferedWriter bw;
-        if (standardizeAtomNames) {
-            renameAtomsToPDBStandard(activeMolecularAssembly);
-        }
-        try {
-            activeMolecularAssembly.setFile(saveFile);
-            activeMolecularAssembly.setName(saveFile.getName());
-            fw = new FileWriter(saveFile, append);
-            bw = new BufferedWriter(fw);
-            bw.write(header);
-            bw.newLine();
-            bw.close();
-        } catch (Exception e) {
-            String message = "Exception writing to file: " + saveFile.toString();
-            logger.log(Level.WARNING, message, e);
-            return false;
-        }
-        if (writeFile(saveFile, true)) {
-            logger.log(Level.INFO, " Wrote PDB to file {0}", saveFile.getPath());
-            return true;
-        } else {
-            logger.log(Level.INFO, " Error writing to file {0}", saveFile.getPath());
-            return false;
-        }
-    }
-
-    /**
-     * <p>writeFileWithHeader.</p>
-     *
-     * @param saveFile a {@link java.io.File} object.
-     * @param header   a {@link java.lang.String} object.
-     * @return a boolean.
-     */
-    public boolean writeFileWithHeader(File saveFile, String header) {
-        return writeFileWithHeader(saveFile, header, true);
-    }
-
-    /**
-     * <p>writeFileWithHeader.</p>
-     *
-     * @param saveFile a {@link java.io.File} object.
-     * @param header   a {@link java.lang.StringBuilder} object.
-     * @return a boolean.
-     */
-    public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
-        return writeFileWithHeader(saveFile, header.toString());
-    }
-
-    /**
-     * <p>
-     * writeFile</p>
-     *
-     * @param saveFile    a {@link java.io.File} object.
-     * @param append      Whether to append to saveFile (vs over-write).
-     * @param printLinear Ignored (remains to present a different method signature).
-     * @param writeEnd    True if this is the final model.
-     * @return Success of writing.
-     */
-    public boolean writeFile(File saveFile, boolean append, boolean printLinear, boolean writeEnd) {
-        return writeFile(saveFile, append, Collections.emptySet(), writeEnd, true);
-    }
-
-    /**
-     * <p>
-     * writeFile</p>
-     *
-     * @param saveFile   a {@link java.io.File} object to save to.
-     * @param append     Whether to append to saveFile (vs over-write).
-     * @param toExclude  A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
-     * @param writeEnd   True if this is the final model.
-     * @param versioning True if the file being saved to should be versioned. False if the file being saved to should
-     *                   be overwritten.
-     * @return Success of writing.
-     */
-    public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd, boolean versioning) {
-        return writeFile(saveFile, append, toExclude, writeEnd, versioning, null);
-    }
-
-    /**
-     * <p>
-     * writeFile</p>
-     *
-     * @param saveFile   a {@link java.io.File} object to save to.
-     * @param append     Whether to append to saveFile (vs over-write).
-     * @param toExclude  A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
-     * @param writeEnd   True if this is the final model.
-     * @param versioning True if the file being saved to should be versioned. False if the file being saved to should
-     *                   be overwritten.
-     * @param extraLines Extra comment/header lines to write.
-     * @return Success of writing.
-     */
-    public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd, boolean versioning, String[] extraLines) {
-        if (standardizeAtomNames) {
-            renameAtomsToPDBStandard(activeMolecularAssembly);
-        }
-        final Set<Atom> atomExclusions = toExclude == null ? Collections.emptySet() : toExclude;
-        if (saveFile == null) {
-            return false;
-        }
-        if (vdwH) {
-            logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
-        }
-        if (nSymOp != 0) {
-            logger.info(format(" Printing atoms with symmetry operator %s\n",
-                    activeMolecularAssembly.getCrystal().spaceGroup.getSymOp(nSymOp).toString()));
-        }
-
-        // Create StringBuilders for ATOM, ANISOU and TER records that can be reused.
-        StringBuilder sb = new StringBuilder("ATOM  ");
-        StringBuilder anisouSB = new StringBuilder("ANISOU");
-        StringBuilder terSB = new StringBuilder("TER   ");
-        StringBuilder model = null;
-        for (int i = 6; i < 80; i++) {
-            sb.append(' ');
-            anisouSB.append(' ');
-            terSB.append(' ');
-        }
-        FileWriter fw;
-        BufferedWriter bw;
-        try {
-            File newFile = saveFile;
-            if (!append) {
-                if (versioning) {
-                    newFile = version(saveFile);
-                }
-            } else if (modelsWritten >= 0) {
-                model = new StringBuilder(format("MODEL     %-4d", ++modelsWritten));
-                for (int i = 15; i < 80; i++) {
-                    model.append(' ');
-                }
-            }
-            activeMolecularAssembly.setFile(newFile);
-            activeMolecularAssembly.setName(newFile.getName());
-            if (logWrites) {
-                logger.log(Level.INFO, " Saving {0}", activeMolecularAssembly.getName());
-            }
-            fw = new FileWriter(newFile, append);
-            bw = new BufferedWriter(fw);
-            /*
-              Will come before CRYST1 and ATOM records, but after anything
-              written by writeFileWithHeader (particularly X-ray refinement statistics).
-             */
-            String[] headerLines = activeMolecularAssembly.getHeaderLines();
-            for (String line : headerLines) {
-                bw.write(format("%s\n", line));
-            }
-            if (extraLines != null) {
-                for (String line : extraLines) {
-                    bw.write(format("REMARK 999 %s\n", line));
-                }
-            }
-            if (model != null) {
-                bw.write(model.toString());
-                bw.newLine();
-            }
-// =============================================================================
-// The CRYST1 record presents the unit cell parameters, space group, and Z
-// value. If the structure was not determined by crystallographic means, CRYST1
-// simply provides the unitary values, with an appropriate REMARK.
-//
-//  7 - 15       Real(9.3)     a              a (Angstroms).
-// 16 - 24       Real(9.3)     b              b (Angstroms).
-// 25 - 33       Real(9.3)     c              c (Angstroms).
-// 34 - 40       Real(7.2)     alpha          alpha (degrees).
-// 41 - 47       Real(7.2)     beta           beta (degrees).
-// 48 - 54       Real(7.2)     gamma          gamma (degrees).
-// 56 - 66       LString       sGroup         Space  group.
-// 67 - 70       Integer       z              Z value.
-// =============================================================================
-            Crystal crystal = activeMolecularAssembly.getCrystal();
-            if (crystal != null && !crystal.aperiodic()) {
-                Crystal c = crystal.getUnitCell();
-                bw.write(c.toCRYST1());
-            }
-// =============================================================================
-// The SSBOND record identifies each disulfide bond in protein and polypeptide
-// structures by identifying the two residues involved in the bond.
-// The disulfide bond distance is included after the symmetry operations at
-// the end of the SSBOND record.
-//
-//  8 - 10        Integer         serNum       Serial number.
-// 12 - 14        LString(3)      "CYS"        Residue name.
-// 16             Character       chainID1     Chain identifier.
-// 18 - 21        Integer         seqNum1      Residue sequence number.
-// 22             AChar           icode1       Insertion code.
-// 26 - 28        LString(3)      "CYS"        Residue name.
-// 30             Character       chainID2     Chain identifier.
-// 32 - 35        Integer         seqNum2      Residue sequence number.
-// 36             AChar           icode2       Insertion code.
-// 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
-// 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
-// 74 – 78        Real(5.2)      Length        Disulfide bond distance
-//
-// If SG of cysteine is disordered then there are possible alternate linkages.
-// wwPDB practice is to put together all possible SSBOND records. This is
-// problematic because the alternate location identifier is not specified in
-// the SSBOND record.
-// =============================================================================
-            int serNum = 1;
-            Polymer[] polymers = activeMolecularAssembly.getChains();
-            if (polymers != null) {
-                for (Polymer polymer : polymers) {
-                    ArrayList<Residue> residues = polymer.getResidues();
-                    for (Residue residue : residues) {
-                        if (residue.getName().equalsIgnoreCase("CYS")) {
-                            List<Atom> cysAtoms = residue.getAtomList().stream().
-                                    filter(a -> !atomExclusions.contains(a)).
-                                    collect(Collectors.toList());
-                            Atom SG1 = null;
-                            for (Atom atom : cysAtoms) {
-                                String atName = atom.getName().toUpperCase();
-                                if (atName.equals("SG") || atName.equals("SH") || atom.getAtomType().atomicNumber == 16) {
-                                    SG1 = atom;
-                                    break;
-                                }
-                            }
-                            List<Bond> bonds = SG1.getBonds();
-                            for (Bond bond : bonds) {
-                                Atom SG2 = bond.get1_2(SG1);
-                                if (SG2.getAtomType().atomicNumber == 16 && !atomExclusions.contains(SG2)) {
-                                    if (SG1.getIndex() < SG2.getIndex()) {
-                                        bond.energy(false);
-                                        bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
-                                                serNum++,
-                                                SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
-                                                SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()),
-                                                "", bond.getValue()));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-// =============================================================================
-//
-//  7 - 11        Integer       serial       Atom serial number.
-// 13 - 16        Atom          name         Atom name.
-// 17             Character     altLoc       Alternate location indicator.
-// 18 - 20        Residue name  resName      Residue name.
-// 22             Character     chainID      Chain identifier.
-// 23 - 26        Integer       resSeq       Residue sequence number.
-// 27             AChar         iCode        Code for insertion of residues.
-// 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in Angstroms.
-// 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in Angstroms.
-// 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in Angstroms.
-// 55 - 60        Real(6.2)     occupancy    Occupancy.
-// 61 - 66        Real(6.2)     tempFactor   Temperature factor.
-// 77 - 78        LString(2)    element      Element symbol, right-justified.
-// 79 - 80        LString(2)    charge       Charge  on the atom.
-// =============================================================================
-//         1         2         3         4         5         6         7
-//123456789012345678901234567890123456789012345678901234567890123456789012345678
-//ATOM      1  N   ILE A  16      60.614  71.140 -10.592  1.00  7.38           N
-//ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
-            MolecularAssembly[] molecularAssemblies = this.getMolecularAssemblys();
-            int serial = 1;
-            // Loop over biomolecular chains
-            if (polymers != null) {
-                for (Polymer polymer : polymers) {
-                    currentSegID = polymer.getName();
-                    currentChainID = polymer.getChainID();
-                    sb.setCharAt(21, currentChainID);
-                    // Loop over residues
-                    ArrayList<Residue> residues = polymer.getResidues();
-                    for (Residue residue : residues) {
-                        String resName = residue.getName();
-                        if (resName.length() > 3) {
-                            resName = resName.substring(0, 3);
-                        }
-                        int resID = residue.getResidueNumber();
-                        sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                        sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
-                        // Loop over atoms
-                        /*ArrayList<Atom> residueAtoms = residue.getAtomList();
-                        ArrayList<Atom> backboneAtoms = residue.getBackboneAtoms();*/
-                        List<Atom> residueAtoms = residue.getAtomList().stream().
-                                filter(a -> !atomExclusions.contains(a)).
-                                collect(Collectors.toList());
-                        List<Atom> backboneAtoms = residue.getBackboneAtoms().stream().
-                                filter(a -> !atomExclusions.contains(a)).
-                                collect(Collectors.toList());
-                        boolean altLocFound = false;
-                        for (Atom atom : backboneAtoms) {
-                            writeAtom(atom, serial++, sb, anisouSB, bw);
-                            Character altLoc = atom.getAltLoc();
-                            if (altLoc != null && !altLoc.equals(' ')) {
-                                altLocFound = true;
-                            }
-                            residueAtoms.remove(atom);
-                        }
-                        for (Atom atom : residueAtoms) {
-                            writeAtom(atom, serial++, sb, anisouSB, bw);
-                            Character altLoc = atom.getAltLoc();
-                            if (altLoc != null && !altLoc.equals(' ')) {
-                                altLocFound = true;
-                            }
-                        }
-                        // Write out alternate conformers
-                        if (altLocFound) {
-                            for (int ma = 1; ma < molecularAssemblies.length; ma++) {
-                                MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
-                                Polymer altPolymer = altMolecularAssembly.getPolymer(currentChainID,
-                                        currentSegID, false);
-                                Residue altResidue = altPolymer.getResidue(resName, resID, false);
-                                backboneAtoms = altResidue.getBackboneAtoms();
-                                residueAtoms = altResidue.getAtomList();
-                                for (Atom atom : backboneAtoms) {
-                                    if (atom.getAltLoc() != null
-                                            && !atom.getAltLoc().equals(' ')
-                                            && !atom.getAltLoc().equals('A')) {
-                                        writeAtom(atom, serial++, sb, anisouSB, bw);
-                                    }
-                                    residueAtoms.remove(atom);
-                                }
-                                for (Atom atom : residueAtoms) {
-                                    if (atom.getAltLoc() != null
-                                            && !atom.getAltLoc().equals(' ')
-                                            && !atom.getAltLoc().equals('A')) {
-                                        writeAtom(atom, serial++, sb, anisouSB, bw);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    terSB.replace(6, 11, format("%5s", Hybrid36.encode(5, serial++)));
-                    terSB.replace(12, 16, "    ");
-                    terSB.replace(16, 26, sb.substring(16, 26));
-                    bw.write(terSB.toString());
-                    bw.newLine();
-                }
-            }
-            sb.replace(0, 6, "HETATM");
-            sb.setCharAt(21, 'A');
-            int resID = 1;
-            Polymer polymer = activeMolecularAssembly.getPolymer('A', "A", false);
-            if (polymer != null) {
-                ArrayList<Residue> residues = polymer.getResidues();
-                for (Residue residue : residues) {
-                    int resID2 = residue.getResidueNumber();
-                    if (resID2 >= resID) {
-                        resID = resID2 + 1;
-                    }
-                }
-            }
-
-            // Loop over molecules, ions and then water.
-            ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
-            for (int i = 0; i < molecules.size(); i++) {
-                Molecule molecule = (Molecule) molecules.get(i);
-                Character chainID = molecule.getChainID();
-                sb.setCharAt(21, chainID);
-                String resName = molecule.getResidueName();
-                if (resName.length() > 3) {
-                    resName = resName.substring(0, 3);
-                }
-                sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
-                //ArrayList<Atom> moleculeAtoms = molecule.getAtomList();
-                List<Atom> moleculeAtoms = molecule.getAtomList().stream().
-                        filter(a -> !atomExclusions.contains(a)).
-                        collect(Collectors.toList());
-                boolean altLocFound = false;
-                for (Atom atom : moleculeAtoms) {
-                    writeAtom(atom, serial++, sb, anisouSB, bw);
-                    Character altLoc = atom.getAltLoc();
-                    if (altLoc != null && !altLoc.equals(' ')) {
-                        altLocFound = true;
-                    }
-                }
-                // Write out alternate conformers
-                if (altLocFound) {
-                    for (int ma = 1; ma < molecularAssemblies.length; ma++) {
-                        MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
-                        MSNode altmolecule = altMolecularAssembly.getMolecules().get(i);
-                        moleculeAtoms = altmolecule.getAtomList();
-                        for (Atom atom : moleculeAtoms) {
-                            if (atom.getAltLoc() != null
-                                    && !atom.getAltLoc().equals(' ')
-                                    && !atom.getAltLoc().equals('A')) {
-                                writeAtom(atom, serial++, sb, anisouSB, bw);
-                            }
-                        }
-                    }
-                }
-                resID++;
-            }
-
-            ArrayList<MSNode> ions = activeMolecularAssembly.getIons();
-            for (int i = 0; i < ions.size(); i++) {
-                Molecule ion = (Molecule) ions.get(i);
-                Character chainID = ion.getChainID();
-                sb.setCharAt(21, chainID);
-                String resName = ion.getResidueName();
-                if (resName.length() > 3) {
-                    resName = resName.substring(0, 3);
-                }
-                sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
-                //ArrayList<Atom> ionAtoms = ion.getAtomList();
-                List<Atom> ionAtoms = ion.getAtomList().stream().
-                        filter(a -> !atomExclusions.contains(a)).
-                        collect(Collectors.toList());
-                boolean altLocFound = false;
-                for (Atom atom : ionAtoms) {
-                    writeAtom(atom, serial++, sb, anisouSB, bw);
-                    Character altLoc = atom.getAltLoc();
-                    if (altLoc != null && !altLoc.equals(' ')) {
-                        altLocFound = true;
-                    }
-                }
-                // Write out alternate conformers
-                if (altLocFound) {
-                    for (int ma = 1; ma < molecularAssemblies.length; ma++) {
-                        MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
-                        MSNode altion = altMolecularAssembly.getIons().get(i);
-                        ionAtoms = altion.getAtomList();
-                        for (Atom atom : ionAtoms) {
-                            if (atom.getAltLoc() != null
-                                    && !atom.getAltLoc().equals(' ')
-                                    && !atom.getAltLoc().equals('A')) {
-                                writeAtom(atom, serial++, sb, anisouSB, bw);
-                            }
-                        }
-                    }
-                }
-                resID++;
-            }
-
-            ArrayList<MSNode> waters = activeMolecularAssembly.getWaters();
-            for (int i = 0; i < waters.size(); i++) {
-                Molecule water = (Molecule) waters.get(i);
-                Character chainID = water.getChainID();
-                sb.setCharAt(21, chainID);
-                String resName = water.getResidueName();
-                if (resName.length() > 3) {
-                    resName = resName.substring(0, 3);
-                }
-                sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
-                //ArrayList<Atom> waterAtoms = water.getAtomList();
-                List<Atom> waterAtoms = water.getAtomList().stream().
-                        filter(a -> !atomExclusions.contains(a)).
-                        collect(Collectors.toList());
-                boolean altLocFound = false;
-                for (Atom atom : waterAtoms) {
-                    writeAtom(atom, serial++, sb, anisouSB, bw);
-                    Character altLoc = atom.getAltLoc();
-                    if (altLoc != null && !altLoc.equals(' ')) {
-                        altLocFound = true;
-                    }
-                }
-                // Write out alternate conformers
-                if (altLocFound) {
-                    for (int ma = 1; ma < molecularAssemblies.length; ma++) {
-                        MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
-                        MSNode altwater = altMolecularAssembly.getWaters().get(i);
-                        waterAtoms = altwater.getAtomList();
-                        for (Atom atom : waterAtoms) {
-                            if (atom.getAltLoc() != null
-                                    && !atom.getAltLoc().equals(' ')
-                                    && !atom.getAltLoc().equals('A')) {
-                                writeAtom(atom, serial++, sb, anisouSB, bw);
-                            }
-                        }
-                    }
-                }
-                resID++;
-            }
-
-            if (writeEnd) {
-                String end = model != null ? "ENDMDL" : "END";
-                bw.write(end);
-                bw.newLine();
-            }
-            bw.close();
-        } catch (Exception e) {
-            String message = "Exception writing to file: " + saveFile.toString();
-            logger.log(Level.WARNING, message, e);
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Write out the Atomic information in PDB format.
-     */
-    @Override
-    public boolean writeFile(File saveFile, boolean append) {
-        return writeFile(saveFile, append, false, true);
-    }
-
-    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
-        return writeFile(saveFile, append, Collections.emptySet(), false, !append, extraLines);
-    }
-
-    /**
-     * Writes out the atomic information in PDB format.
-     *
-     * @param saveFile   The file to save information to.
-     * @param append     True if the current data should be appended to the saveFile (as in arc files).
-     * @param versioning True if the saveFile should be versioned. False if the saveFile should be overwritten.
-     * @return Success of writing.
-     */
-    public boolean writeFile(File saveFile, boolean append, boolean versioning) {
-        return writeFile(saveFile, append, Collections.emptySet(), true, versioning);
-    }
-
-    /**
-     * <p>
-     * writeAtom</p>
-     *
-     * @param atom     a {@link ffx.potential.bonded.Atom} object.
-     * @param serial   a int.
-     * @param sb       a {@link java.lang.StringBuilder} object.
-     * @param anisouSB a {@link java.lang.StringBuilder} object.
-     * @param bw       a {@link java.io.BufferedWriter} object.
-     * @throws java.io.IOException if any.
-     */
-    private void writeAtom(Atom atom, int serial, StringBuilder sb, StringBuilder anisouSB, BufferedWriter bw)
-            throws IOException {
-        String name = atom.getName();
-        if (name.length() > 4) {
-            name = name.substring(0, 4);
-        } else if (name.length() == 1) {
-            name = name + "  ";
-        } else if (name.length() == 2) {
-            if (atom.getAtomType().valence == 0) {
-                name = name + "  ";
-            } else {
-                name = name + " ";
-            }
-        }
-        double[] xyz = vdwH ? atom.getRedXYZ() : atom.getXYZ(null);
-        if (nSymOp != 0) {
-            Crystal crystal = activeMolecularAssembly.getCrystal();
-            SymOp symOp = crystal.spaceGroup.getSymOp(nSymOp);
-            double[] newXYZ = new double[xyz.length];
-            crystal.applySymOp(xyz, newXYZ, symOp);
-            xyz = newXYZ;
-        }
-        sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
-        Character altLoc = atom.getAltLoc();
-        if (altLoc != null) {
-            sb.setCharAt(16, altLoc);
-        } else {
-            sb.setCharAt(16, ' ');
-        }
-
-        /*
-         * On the following code:
-         * #1: StringBuilder.replace will allow for longer strings, expanding the StringBuilder's length if necessary.
-         *
-         * #2: sb was never re-initialized, so if there was overflow,
-         * sb would continue to be > 80 characters long, resulting in broken PDB files
-         *
-         * #3: It may be wiser to have XYZ coordinates result in shutdown, not
-         * truncation of coordinates. #4: Excessive B-factors aren't much of an
-         * issue; if the B-factor is past 999.99, that's the difference between
-         * "density extends to Venus" and "density extends to Pluto".
-         */
-        StringBuilder decimals = new StringBuilder();
-        for (int i = 0; i < 3; i++) {
-            try {
-                decimals.append(StringUtils.fwFpDec(xyz[i], 8, 3));
-            } catch (IllegalArgumentException ex) {
-                String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
-                logger.info(format(" XYZ %d coordinate %8.3f for atom %s "
-                                + "overflowed bounds of 8.3f string specified by PDB "
-                                + "format; truncating value to %s", i, xyz[i], atom.toString(),
-                        newValue));
-                decimals.append(newValue);
-            }
-        }
-        try {
-            decimals.append(StringUtils.fwFpDec(atom.getOccupancy(), 6, 2));
-        } catch (IllegalArgumentException ex) {
-            logger.severe(format(" Occupancy %f for atom %s is impossible; "
-                    + "value must be between 0 and 1", atom.getOccupancy(), atom.toString()));
-        }
-        try {
-            decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
-        } catch (IllegalArgumentException ex) {
-            String newValue = StringUtils.fwFpTrunc(atom.getTempFactor(), 6, 2);
-            logger.info(format(" Atom temp factor %6.2f for atom %s overflowed "
-                    + "bounds of 6.2f string specified by PDB format; truncating "
-                    + "value to %s", atom.getTempFactor(), atom.toString(), newValue));
-            decimals.append(newValue);
-        }
-        sb.replace(30, 66, decimals.toString());
-
-        name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
-        name = name.toUpperCase();
-        if (atom.isDeuterium()) {
-            name = "D";
-        }
-        sb.replace(76, 78, padLeft(name, 2));
-        sb.replace(78, 80, format("%2d", 0));
-        bw.write(sb.toString());
-        bw.newLine();
-// =============================================================================
-//  1 - 6        Record name   "ANISOU"
-//  7 - 11       Integer       serial         Atom serial number.
-// 13 - 16       Atom          name           Atom name.
-// 17            Character     altLoc         Alternate location indicator
-// 18 - 20       Residue name  resName        Residue name.
-// 22            Character     chainID        Chain identifier.
-// 23 - 26       Integer       resSeq         Residue sequence number.
-// 27            AChar         iCode          Insertion code.
-// 29 - 35       Integer       u[0][0]        U(1,1)
-// 36 - 42       Integer       u[1][1]        U(2,2)
-// 43 - 49       Integer       u[2][2]        U(3,3)
-// 50 - 56       Integer       u[0][1]        U(1,2)
-// 57 - 63       Integer       u[0][2]        U(1,3)
-// 64 - 70       Integer       u[1][2]        U(2,3)
-// 77 - 78       LString(2)    element        Element symbol, right-justified.
-// 79 - 80       LString(2)    charge         Charge on the atom.
-// =============================================================================
-        double[] anisou = atom.getAnisou(null);
-        if (anisou != null) {
-            anisouSB.replace(6, 80, sb.substring(6, 80));
-            anisouSB.replace(28, 70, format("%7d%7d%7d%7d%7d%7d",
-                    (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
-                    (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4),
-                    (int) (anisou[4] * 1e4), (int) (anisou[5] * 1e4)));
-            bw.write(anisouSB.toString());
-            bw.newLine();
-        }
-    }
-
-    /**
-     * Simple method useful for converting files to PDB format.
-     *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     */
-    public static String toPDBAtomLine(Atom atom) {
-        StringBuilder sb;
-        if (atom.isHetero()) {
-            sb = new StringBuilder("HETATM");
-        } else {
-            sb = new StringBuilder("ATOM  ");
-        }
-        for (int i = 6; i < 80; i++) {
-            sb.append(' ');
-        }
-
-        String name = atom.getName();
-        if (name.length() > 4) {
-            name = name.substring(0, 4);
-        } else if (name.length() == 1) {
-            name = name + "  ";
-        } else if (name.length() == 2) {
-            name = name + " ";
-        }
-        int serial = atom.getXyzIndex();
-        sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
-
-        Character altLoc = atom.getAltLoc();
-        if (altLoc != null) {
-            sb.setCharAt(16, altLoc);
-        } else {
-            char blankChar = ' ';
-            sb.setCharAt(16, blankChar);
-        }
-
-        String resName = atom.getResidueName();
-        sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-
-        char chain = atom.getChainID();
-        sb.setCharAt(21, chain);
-
-        int resID = atom.getResidueNumber();
-        sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
-
-        double[] xyz = atom.getXYZ(null);
-        StringBuilder decimals = new StringBuilder();
-        for (int i = 0; i < 3; i++) {
-            try {
-                decimals.append(StringUtils.fwFpDec(xyz[i], 8, 3));
-            } catch (IllegalArgumentException ex) {
-                String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
-                logger.info(format(" XYZ coordinate %8.3f for atom %s overflowed PDB format and is truncated to %s.",
-                        xyz[i], atom.toString(), newValue));
-                decimals.append(newValue);
-            }
-        }
-        try {
-            decimals.append(StringUtils.fwFpDec(atom.getOccupancy(), 6, 2));
-        } catch (IllegalArgumentException ex) {
-            logger.severe(format(" Occupancy %6.2f for atom %s must be between 0 and 1.",
-                    atom.getOccupancy(), atom.toString()));
-        }
-        try {
-            decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
-        } catch (IllegalArgumentException ex) {
-            String newValue = StringUtils.fwFpTrunc(atom.getTempFactor(), 6, 2);
-            logger.info(format(" B-factor %6.2f for atom %s overflowed the PDB format and is truncated to %s.",
-                    atom.getTempFactor(), atom.toString(), newValue));
-            decimals.append(newValue);
-        }
-
-        sb.replace(30, 66, decimals.toString());
-        sb.replace(78, 80, format("%2d", 0));
-        sb.append("\n");
-        return sb.toString();
-    }
-
-    @Override
-    public int getSnapshot() {
-        return modelsRead;
-    }
-
-    @Override
-    public int countNumModels() {
-        Set<File> files = systems.stream().
-                map(MolecularAssembly::getFile).
-                map(File::toString).distinct().
-                map(File::new).
-                collect(Collectors.toSet());
-
-        // Dangers of parallelism are minimized by: unique files/filenames, read-only access.
-        return files.parallelStream().mapToInt((File fi) -> {
-            int nModelsLocal = 0;
-            try (BufferedReader br = new BufferedReader(new FileReader(fi))) {
-                String line = br.readLine();
-                while (line != null) {
-                    if (line.startsWith("MODEL")) {
-                        ++nModelsLocal;
-                    }
-                    line = br.readLine();
-                }
-                nModelsLocal = Math.max(1, nModelsLocal);
-            } catch (IOException ex) {
-                logger.info(format(" Exception in parsing file %s: %s", fi, ex));
-            }
-            return nModelsLocal;
-        }).sum();
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -2151,55 +1368,638 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * {@inheritDoc}
+     * Specify the alternate location.
+     *
+     * @param molecularAssembly The MolecularAssembly to populate.
+     * @param altLoc            The alternate location to use.
      */
-    @Override
-    public void closeReader() {
-        for (MolecularAssembly system : systems) {
-            BufferedReader br = readers.get(system);
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException ex) {
-                    logger.warning(format(" Exception in closing system %s: %s", system.toString(), ex.toString()));
+    public void setAltID(MolecularAssembly molecularAssembly, Character altLoc) {
+        setMolecularSystem(molecularAssembly);
+        currentAltLoc = altLoc;
+    }
+
+    /**
+     * Sets whether this PDBFilter should log each time it saves to a file.
+     *
+     * @param logWrites a boolean.
+     */
+    public void setLogWrites(boolean logWrites) {
+        this.logWrites = logWrites;
+    }
+
+    /**
+     * <p>setModelNumbering.</p>
+     *
+     * @param modelsWritten the number of models written.
+     */
+    public void setModelNumbering(int modelsWritten) {
+        this.modelsWritten = modelsWritten;
+    }
+
+    /**
+     * <p>setSymOp.</p>
+     *
+     * @param symOp a int.
+     */
+    public void setSymOp(int symOp) {
+        this.nSymOp = symOp;
+    }
+
+    /**
+     * Simple method useful for converting files to PDB format.
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     */
+    public static String toPDBAtomLine(Atom atom) {
+        StringBuilder sb;
+        if (atom.isHetero()) {
+            sb = new StringBuilder("HETATM");
+        } else {
+            sb = new StringBuilder("ATOM  ");
+        }
+        for (int i = 6; i < 80; i++) {
+            sb.append(' ');
+        }
+
+        String name = atom.getName();
+        if (name.length() > 4) {
+            name = name.substring(0, 4);
+        } else if (name.length() == 1) {
+            name = name + "  ";
+        } else if (name.length() == 2) {
+            name = name + " ";
+        }
+        int serial = atom.getXyzIndex();
+        sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
+
+        Character altLoc = atom.getAltLoc();
+        if (altLoc != null) {
+            sb.setCharAt(16, altLoc);
+        } else {
+            char blankChar = ' ';
+            sb.setCharAt(16, blankChar);
+        }
+
+        String resName = atom.getResidueName();
+        sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
+
+        char chain = atom.getChainID();
+        sb.setCharAt(21, chain);
+
+        int resID = atom.getResidueNumber();
+        sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
+
+        double[] xyz = atom.getXYZ(null);
+        StringBuilder decimals = new StringBuilder();
+        for (int i = 0; i < 3; i++) {
+            try {
+                decimals.append(StringUtils.fwFpDec(xyz[i], 8, 3));
+            } catch (IllegalArgumentException ex) {
+                String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
+                logger.info(format(" XYZ coordinate %8.3f for atom %s overflowed PDB format and is truncated to %s.",
+                        xyz[i], atom.toString(), newValue));
+                decimals.append(newValue);
+            }
+        }
+        try {
+            decimals.append(StringUtils.fwFpDec(atom.getOccupancy(), 6, 2));
+        } catch (IllegalArgumentException ex) {
+            logger.severe(format(" Occupancy %6.2f for atom %s must be between 0 and 1.",
+                    atom.getOccupancy(), atom.toString()));
+        }
+        try {
+            decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
+        } catch (IllegalArgumentException ex) {
+            String newValue = StringUtils.fwFpTrunc(atom.getTempFactor(), 6, 2);
+            logger.info(format(" B-factor %6.2f for atom %s overflowed the PDB format and is truncated to %s.",
+                    atom.getTempFactor(), atom.toString(), newValue));
+            decimals.append(newValue);
+        }
+
+        sb.replace(30, 66, decimals.toString());
+        sb.replace(78, 80, format("%2d", 0));
+        sb.append("\n");
+        return sb.toString();
+    }
+
+    /**
+     * <p>
+     * writeFile</p>
+     *
+     * @param saveFile    a {@link java.io.File} object.
+     * @param append      Whether to append to saveFile (vs over-write).
+     * @param printLinear Ignored (remains to present a different method signature).
+     * @param writeEnd    True if this is the final model.
+     * @return Success of writing.
+     */
+    public boolean writeFile(File saveFile, boolean append, boolean printLinear, boolean writeEnd) {
+        return writeFile(saveFile, append, Collections.emptySet(), writeEnd, true);
+    }
+
+    /**
+     * <p>
+     * writeFile</p>
+     *
+     * @param saveFile   a {@link java.io.File} object to save to.
+     * @param append     Whether to append to saveFile (vs over-write).
+     * @param toExclude  A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
+     * @param writeEnd   True if this is the final model.
+     * @param versioning True if the file being saved to should be versioned. False if the file being saved to should
+     *                   be overwritten.
+     * @return Success of writing.
+     */
+    public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd, boolean versioning) {
+        return writeFile(saveFile, append, toExclude, writeEnd, versioning, null);
+    }
+
+    /**
+     * <p>
+     * writeFile</p>
+     *
+     * @param saveFile   a {@link java.io.File} object to save to.
+     * @param append     Whether to append to saveFile (vs over-write).
+     * @param toExclude  A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
+     * @param writeEnd   True if this is the final model.
+     * @param versioning True if the file being saved to should be versioned. False if the file being saved to should
+     *                   be overwritten.
+     * @param extraLines Extra comment/header lines to write.
+     * @return Success of writing.
+     */
+    public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd, boolean versioning, String[] extraLines) {
+        if (standardizeAtomNames) {
+            renameAtomsToPDBStandard(activeMolecularAssembly);
+        }
+        final Set<Atom> atomExclusions = toExclude == null ? Collections.emptySet() : toExclude;
+        if (saveFile == null) {
+            return false;
+        }
+        if (vdwH) {
+            logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
+        }
+        if (nSymOp != 0) {
+            logger.info(format(" Printing atoms with symmetry operator %s\n",
+                    activeMolecularAssembly.getCrystal().spaceGroup.getSymOp(nSymOp).toString()));
+        }
+
+        // Create StringBuilders for ATOM, ANISOU and TER records that can be reused.
+        StringBuilder sb = new StringBuilder("ATOM  ");
+        StringBuilder anisouSB = new StringBuilder("ANISOU");
+        StringBuilder terSB = new StringBuilder("TER   ");
+        StringBuilder model = null;
+        for (int i = 6; i < 80; i++) {
+            sb.append(' ');
+            anisouSB.append(' ');
+            terSB.append(' ');
+        }
+        FileWriter fw;
+        BufferedWriter bw;
+        try {
+            File newFile = saveFile;
+            if (!append) {
+                if (versioning) {
+                    newFile = version(saveFile);
+                }
+            } else if (modelsWritten >= 0) {
+                model = new StringBuilder(format("MODEL     %-4d", ++modelsWritten));
+                for (int i = 15; i < 80; i++) {
+                    model.append(' ');
                 }
             }
+            activeMolecularAssembly.setFile(newFile);
+            activeMolecularAssembly.setName(newFile.getName());
+            if (logWrites) {
+                logger.log(Level.INFO, " Saving {0}", activeMolecularAssembly.getName());
+            }
+            fw = new FileWriter(newFile, append);
+            bw = new BufferedWriter(fw);
+            /*
+              Will come before CRYST1 and ATOM records, but after anything
+              written by writeFileWithHeader (particularly X-ray refinement statistics).
+             */
+            String[] headerLines = activeMolecularAssembly.getHeaderLines();
+            for (String line : headerLines) {
+                bw.write(format("%s\n", line));
+            }
+            if (extraLines != null) {
+                for (String line : extraLines) {
+                    bw.write(format("REMARK 999 %s\n", line));
+                }
+            }
+            if (model != null) {
+                bw.write(model.toString());
+                bw.newLine();
+            }
+// =============================================================================
+// The CRYST1 record presents the unit cell parameters, space group, and Z
+// value. If the structure was not determined by crystallographic means, CRYST1
+// simply provides the unitary values, with an appropriate REMARK.
+//
+//  7 - 15       Real(9.3)     a              a (Angstroms).
+// 16 - 24       Real(9.3)     b              b (Angstroms).
+// 25 - 33       Real(9.3)     c              c (Angstroms).
+// 34 - 40       Real(7.2)     alpha          alpha (degrees).
+// 41 - 47       Real(7.2)     beta           beta (degrees).
+// 48 - 54       Real(7.2)     gamma          gamma (degrees).
+// 56 - 66       LString       sGroup         Space  group.
+// 67 - 70       Integer       z              Z value.
+// =============================================================================
+            Crystal crystal = activeMolecularAssembly.getCrystal();
+            if (crystal != null && !crystal.aperiodic()) {
+                Crystal c = crystal.getUnitCell();
+                bw.write(c.toCRYST1());
+            }
+// =============================================================================
+// The SSBOND record identifies each disulfide bond in protein and polypeptide
+// structures by identifying the two residues involved in the bond.
+// The disulfide bond distance is included after the symmetry operations at
+// the end of the SSBOND record.
+//
+//  8 - 10        Integer         serNum       Serial number.
+// 12 - 14        LString(3)      "CYS"        Residue name.
+// 16             Character       chainID1     Chain identifier.
+// 18 - 21        Integer         seqNum1      Residue sequence number.
+// 22             AChar           icode1       Insertion code.
+// 26 - 28        LString(3)      "CYS"        Residue name.
+// 30             Character       chainID2     Chain identifier.
+// 32 - 35        Integer         seqNum2      Residue sequence number.
+// 36             AChar           icode2       Insertion code.
+// 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
+// 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
+// 74 – 78        Real(5.2)      Length        Disulfide bond distance
+//
+// If SG of cysteine is disordered then there are possible alternate linkages.
+// wwPDB practice is to put together all possible SSBOND records. This is
+// problematic because the alternate location identifier is not specified in
+// the SSBOND record.
+// =============================================================================
+            int serNum = 1;
+            Polymer[] polymers = activeMolecularAssembly.getChains();
+            if (polymers != null) {
+                for (Polymer polymer : polymers) {
+                    List<Residue> residues = polymer.getResidues();
+                    for (Residue residue : residues) {
+                        if (residue.getName().equalsIgnoreCase("CYS")) {
+                            List<Atom> cysAtoms = residue.getAtomList().stream().
+                                    filter(a -> !atomExclusions.contains(a)).
+                                    collect(Collectors.toList());
+                            Atom SG1 = null;
+                            for (Atom atom : cysAtoms) {
+                                String atName = atom.getName().toUpperCase();
+                                if (atName.equals("SG") || atName.equals("SH") || atom.getAtomType().atomicNumber == 16) {
+                                    SG1 = atom;
+                                    break;
+                                }
+                            }
+                            List<Bond> bonds = SG1.getBonds();
+                            for (Bond bond : bonds) {
+                                Atom SG2 = bond.get1_2(SG1);
+                                if (SG2.getAtomType().atomicNumber == 16 && !atomExclusions.contains(SG2)) {
+                                    if (SG1.getIndex() < SG2.getIndex()) {
+                                        bond.energy(false);
+                                        bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
+                                                serNum++,
+                                                SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
+                                                SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()),
+                                                "", bond.getValue()));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+// =============================================================================
+//
+//  7 - 11        Integer       serial       Atom serial number.
+// 13 - 16        Atom          name         Atom name.
+// 17             Character     altLoc       Alternate location indicator.
+// 18 - 20        Residue name  resName      Residue name.
+// 22             Character     chainID      Chain identifier.
+// 23 - 26        Integer       resSeq       Residue sequence number.
+// 27             AChar         iCode        Code for insertion of residues.
+// 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in Angstroms.
+// 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in Angstroms.
+// 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in Angstroms.
+// 55 - 60        Real(6.2)     occupancy    Occupancy.
+// 61 - 66        Real(6.2)     tempFactor   Temperature factor.
+// 77 - 78        LString(2)    element      Element symbol, right-justified.
+// 79 - 80        LString(2)    charge       Charge  on the atom.
+// =============================================================================
+//         1         2         3         4         5         6         7
+//123456789012345678901234567890123456789012345678901234567890123456789012345678
+//ATOM      1  N   ILE A  16      60.614  71.140 -10.592  1.00  7.38           N
+//ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
+            MolecularAssembly[] molecularAssemblies = this.getMolecularAssemblys();
+            int serial = 1;
+            // Loop over biomolecular chains
+            if (polymers != null) {
+                for (Polymer polymer : polymers) {
+                    currentSegID = polymer.getName();
+                    currentChainID = polymer.getChainID();
+                    sb.setCharAt(21, currentChainID);
+                    // Loop over residues
+                    List<Residue> residues = polymer.getResidues();
+                    for (Residue residue : residues) {
+                        String resName = residue.getName();
+                        if (resName.length() > 3) {
+                            resName = resName.substring(0, 3);
+                        }
+                        int resID = residue.getResidueNumber();
+                        sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
+                        sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
+                        // Loop over atoms
+                        /*List<Atom> residueAtoms = residue.getAtomList();
+                        List<Atom> backboneAtoms = residue.getBackboneAtoms();*/
+                        List<Atom> residueAtoms = residue.getAtomList().stream().
+                                filter(a -> !atomExclusions.contains(a)).
+                                collect(Collectors.toList());
+                        List<Atom> backboneAtoms = residue.getBackboneAtoms().stream().
+                                filter(a -> !atomExclusions.contains(a)).
+                                collect(Collectors.toList());
+                        boolean altLocFound = false;
+                        for (Atom atom : backboneAtoms) {
+                            writeAtom(atom, serial++, sb, anisouSB, bw);
+                            Character altLoc = atom.getAltLoc();
+                            if (altLoc != null && !altLoc.equals(' ')) {
+                                altLocFound = true;
+                            }
+                            residueAtoms.remove(atom);
+                        }
+                        for (Atom atom : residueAtoms) {
+                            writeAtom(atom, serial++, sb, anisouSB, bw);
+                            Character altLoc = atom.getAltLoc();
+                            if (altLoc != null && !altLoc.equals(' ')) {
+                                altLocFound = true;
+                            }
+                        }
+                        // Write out alternate conformers
+                        if (altLocFound) {
+                            for (int ma = 1; ma < molecularAssemblies.length; ma++) {
+                                MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
+                                Polymer altPolymer = altMolecularAssembly.getPolymer(currentChainID,
+                                        currentSegID, false);
+                                Residue altResidue = altPolymer.getResidue(resName, resID, false);
+                                backboneAtoms = altResidue.getBackboneAtoms();
+                                residueAtoms = altResidue.getAtomList();
+                                for (Atom atom : backboneAtoms) {
+                                    if (atom.getAltLoc() != null
+                                            && !atom.getAltLoc().equals(' ')
+                                            && !atom.getAltLoc().equals('A')) {
+                                        writeAtom(atom, serial++, sb, anisouSB, bw);
+                                    }
+                                    residueAtoms.remove(atom);
+                                }
+                                for (Atom atom : residueAtoms) {
+                                    if (atom.getAltLoc() != null
+                                            && !atom.getAltLoc().equals(' ')
+                                            && !atom.getAltLoc().equals('A')) {
+                                        writeAtom(atom, serial++, sb, anisouSB, bw);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    terSB.replace(6, 11, format("%5s", Hybrid36.encode(5, serial++)));
+                    terSB.replace(12, 16, "    ");
+                    terSB.replace(16, 26, sb.substring(16, 26));
+                    bw.write(terSB.toString());
+                    bw.newLine();
+                }
+            }
+            sb.replace(0, 6, "HETATM");
+            sb.setCharAt(21, 'A');
+            int resID = 1;
+            Polymer polymer = activeMolecularAssembly.getPolymer('A', "A", false);
+            if (polymer != null) {
+                List<Residue> residues = polymer.getResidues();
+                for (Residue residue : residues) {
+                    int resID2 = residue.getResidueNumber();
+                    if (resID2 >= resID) {
+                        resID = resID2 + 1;
+                    }
+                }
+            }
+
+            // Loop over molecules, ions and then water.
+            List<MSNode> molecules = activeMolecularAssembly.getMolecules();
+            for (int i = 0; i < molecules.size(); i++) {
+                Molecule molecule = (Molecule) molecules.get(i);
+                Character chainID = molecule.getChainID();
+                sb.setCharAt(21, chainID);
+                String resName = molecule.getResidueName();
+                if (resName.length() > 3) {
+                    resName = resName.substring(0, 3);
+                }
+                sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
+                sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
+                //List<Atom> moleculeAtoms = molecule.getAtomList();
+                List<Atom> moleculeAtoms = molecule.getAtomList().stream().
+                        filter(a -> !atomExclusions.contains(a)).
+                        collect(Collectors.toList());
+                boolean altLocFound = false;
+                for (Atom atom : moleculeAtoms) {
+                    writeAtom(atom, serial++, sb, anisouSB, bw);
+                    Character altLoc = atom.getAltLoc();
+                    if (altLoc != null && !altLoc.equals(' ')) {
+                        altLocFound = true;
+                    }
+                }
+                // Write out alternate conformers
+                if (altLocFound) {
+                    for (int ma = 1; ma < molecularAssemblies.length; ma++) {
+                        MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
+                        MSNode altmolecule = altMolecularAssembly.getMolecules().get(i);
+                        moleculeAtoms = altmolecule.getAtomList();
+                        for (Atom atom : moleculeAtoms) {
+                            if (atom.getAltLoc() != null
+                                    && !atom.getAltLoc().equals(' ')
+                                    && !atom.getAltLoc().equals('A')) {
+                                writeAtom(atom, serial++, sb, anisouSB, bw);
+                            }
+                        }
+                    }
+                }
+                resID++;
+            }
+
+            List<MSNode> ions = activeMolecularAssembly.getIons();
+            for (int i = 0; i < ions.size(); i++) {
+                Molecule ion = (Molecule) ions.get(i);
+                Character chainID = ion.getChainID();
+                sb.setCharAt(21, chainID);
+                String resName = ion.getResidueName();
+                if (resName.length() > 3) {
+                    resName = resName.substring(0, 3);
+                }
+                sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
+                sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
+                //List<Atom> ionAtoms = ion.getAtomList();
+                List<Atom> ionAtoms = ion.getAtomList().stream().
+                        filter(a -> !atomExclusions.contains(a)).
+                        collect(Collectors.toList());
+                boolean altLocFound = false;
+                for (Atom atom : ionAtoms) {
+                    writeAtom(atom, serial++, sb, anisouSB, bw);
+                    Character altLoc = atom.getAltLoc();
+                    if (altLoc != null && !altLoc.equals(' ')) {
+                        altLocFound = true;
+                    }
+                }
+                // Write out alternate conformers
+                if (altLocFound) {
+                    for (int ma = 1; ma < molecularAssemblies.length; ma++) {
+                        MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
+                        MSNode altion = altMolecularAssembly.getIons().get(i);
+                        ionAtoms = altion.getAtomList();
+                        for (Atom atom : ionAtoms) {
+                            if (atom.getAltLoc() != null
+                                    && !atom.getAltLoc().equals(' ')
+                                    && !atom.getAltLoc().equals('A')) {
+                                writeAtom(atom, serial++, sb, anisouSB, bw);
+                            }
+                        }
+                    }
+                }
+                resID++;
+            }
+
+            List<MSNode> waters = activeMolecularAssembly.getWaters();
+            for (int i = 0; i < waters.size(); i++) {
+                Molecule water = (Molecule) waters.get(i);
+                Character chainID = water.getChainID();
+                sb.setCharAt(21, chainID);
+                String resName = water.getResidueName();
+                if (resName.length() > 3) {
+                    resName = resName.substring(0, 3);
+                }
+                sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
+                sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
+                //List<Atom> waterAtoms = water.getAtomList();
+                List<Atom> waterAtoms = water.getAtomList().stream().
+                        filter(a -> !atomExclusions.contains(a)).
+                        collect(Collectors.toList());
+                boolean altLocFound = false;
+                for (Atom atom : waterAtoms) {
+                    writeAtom(atom, serial++, sb, anisouSB, bw);
+                    Character altLoc = atom.getAltLoc();
+                    if (altLoc != null && !altLoc.equals(' ')) {
+                        altLocFound = true;
+                    }
+                }
+                // Write out alternate conformers
+                if (altLocFound) {
+                    for (int ma = 1; ma < molecularAssemblies.length; ma++) {
+                        MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
+                        MSNode altwater = altMolecularAssembly.getWaters().get(i);
+                        waterAtoms = altwater.getAtomList();
+                        for (Atom atom : waterAtoms) {
+                            if (atom.getAltLoc() != null
+                                    && !atom.getAltLoc().equals(' ')
+                                    && !atom.getAltLoc().equals('A')) {
+                                writeAtom(atom, serial++, sb, anisouSB, bw);
+                            }
+                        }
+                    }
+                }
+                resID++;
+            }
+
+            if (writeEnd) {
+                String end = model != null ? "ENDMDL" : "END";
+                bw.write(end);
+                bw.newLine();
+            }
+            bw.close();
+        } catch (Exception e) {
+            String message = "Exception writing to file: " + saveFile.toString();
+            logger.log(Level.WARNING, message, e);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Write out the Atomic information in PDB format.
+     */
+    @Override
+    public boolean writeFile(File saveFile, boolean append) {
+        return writeFile(saveFile, append, false, true);
+    }
+
+    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
+        return writeFile(saveFile, append, Collections.emptySet(), false, !append, extraLines);
+    }
+
+    /**
+     * Writes out the atomic information in PDB format.
+     *
+     * @param saveFile   The file to save information to.
+     * @param append     True if the current data should be appended to the saveFile (as in arc files).
+     * @param versioning True if the saveFile should be versioned. False if the saveFile should be overwritten.
+     * @return Success of writing.
+     */
+    public boolean writeFile(File saveFile, boolean append, boolean versioning) {
+        return writeFile(saveFile, append, Collections.emptySet(), true, versioning);
+    }
+
+    /**
+     * <p>writeFileWithHeader.</p>
+     *
+     * @param saveFile a {@link java.io.File} object.
+     * @param header   a {@link java.lang.String} object.
+     * @param append   a boolean.
+     * @return a boolean.
+     */
+    public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
+        FileWriter fw;
+        BufferedWriter bw;
+        if (standardizeAtomNames) {
+            renameAtomsToPDBStandard(activeMolecularAssembly);
+        }
+        try {
+            activeMolecularAssembly.setFile(saveFile);
+            activeMolecularAssembly.setName(saveFile.getName());
+            fw = new FileWriter(saveFile, append);
+            bw = new BufferedWriter(fw);
+            bw.write(header);
+            bw.newLine();
+            bw.close();
+        } catch (Exception e) {
+            String message = "Exception writing to file: " + saveFile.toString();
+            logger.log(Level.WARNING, message, e);
+            return false;
+        }
+        if (writeFile(saveFile, true)) {
+            logger.log(Level.INFO, " Wrote PDB to file {0}", saveFile.getPath());
+            return true;
+        } else {
+            logger.log(Level.INFO, " Error writing to file {0}", saveFile.getPath());
+            return false;
         }
     }
 
-    public static class Mutation {
+    /**
+     * <p>writeFileWithHeader.</p>
+     *
+     * @param saveFile a {@link java.io.File} object.
+     * @param header   a {@link java.lang.String} object.
+     * @return a boolean.
+     */
+    public boolean writeFileWithHeader(File saveFile, String header) {
+        return writeFileWithHeader(saveFile, header, true);
+    }
 
-        /**
-         * Residue ID of the residue to mutate.
-         */
-        final int resID;
-        /**
-         * Residue name after mutation.
-         */
-        final String resName;
-        /**
-         * Character for the chain ID of the residue that will be mutated.
-         */
-        final char chainChar;
-
-        public Mutation(int resID, char chainChar, String newResName) {
-            newResName = newResName.toUpperCase();
-            if (newResName.length() != 3) {
-                logger.log(Level.WARNING, format("Invalid mutation target: %s.", newResName));
-            }
-            try {
-                AminoAcid3.valueOf(newResName);
-            } catch (IllegalArgumentException ex) {
-                logger.log(Level.WARNING, format("Invalid mutation target: %s.", newResName));
-            }
-            this.resID = resID;
-            this.chainChar = chainChar;
-            this.resName = newResName;
-        }
-
-        public Mutation(char chain, int res, String newName) {
-            this(res, chain, newName);
-        }
+    /**
+     * <p>writeFileWithHeader.</p>
+     *
+     * @param saveFile a {@link java.io.File} object.
+     * @param header   a {@link java.lang.StringBuilder} object.
+     * @return a boolean.
+     */
+    public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
+        return writeFileWithHeader(saveFile, header.toString());
     }
 
     /**
@@ -2239,6 +2039,210 @@ public final class PDBFilter extends SystemFilter {
         VERSION3_1,
         VERSION3_2,
         VERSION3_3
+    }
+
+    public static class Mutation {
+
+        /**
+         * Residue ID of the residue to mutate.
+         */
+        final int resID;
+        /**
+         * Residue name after mutation.
+         */
+        final String resName;
+        /**
+         * Character for the chain ID of the residue that will be mutated.
+         */
+        final char chainChar;
+
+        public Mutation(int resID, char chainChar, String newResName) {
+            newResName = newResName.toUpperCase();
+            if (newResName.length() != 3) {
+                logger.log(Level.WARNING, format("Invalid mutation target: %s.", newResName));
+            }
+            try {
+                AminoAcid3.valueOf(newResName);
+            } catch (IllegalArgumentException ex) {
+                logger.log(Level.WARNING, format("Invalid mutation target: %s.", newResName));
+            }
+            this.resID = resID;
+            this.chainChar = chainChar;
+            this.resName = newResName;
+        }
+
+        public Mutation(char chain, int res, String newName) {
+            this(res, chain, newName);
+        }
+    }
+
+    /**
+     * Convert possibly duplicate chain IDs into unique segIDs.
+     *
+     * @param c chain ID just read.
+     * @return a unique segID.
+     */
+    private String getSegID(Character c) {
+        if (c.equals(' ')) {
+            c = 'A';
+        }
+
+        // If the chain ID has not changed, return the existing segID.
+        if (c.equals(currentChainID)) {
+            return currentSegID;
+        }
+
+        // Loop through existing segIDs to find the first one that is unused.
+        int count = 0;
+        for (String segID : segIDs) {
+            if (segID.endsWith(c.toString())) {
+                count++;
+            }
+        }
+
+        // If the count is greater than 0, then append it.
+        String newSegID;
+        if (count == 0) {
+            newSegID = c.toString();
+        } else {
+            newSegID = count + c.toString();
+        }
+
+        segIDs.add(newSegID);
+        currentChainID = c;
+        currentSegID = newSegID;
+
+        if (segidMap.containsKey(c)) {
+            segidMap.get(c).add(newSegID);
+        } else {
+            List<String> newChainList = new ArrayList<>();
+            newChainList.add(newSegID);
+            segidMap.put(c, newChainList);
+        }
+
+        return newSegID;
+    }
+
+    /**
+     * <p>
+     * writeAtom</p>
+     *
+     * @param atom     a {@link ffx.potential.bonded.Atom} object.
+     * @param serial   a int.
+     * @param sb       a {@link java.lang.StringBuilder} object.
+     * @param anisouSB a {@link java.lang.StringBuilder} object.
+     * @param bw       a {@link java.io.BufferedWriter} object.
+     * @throws java.io.IOException if any.
+     */
+    private void writeAtom(Atom atom, int serial, StringBuilder sb, StringBuilder anisouSB, BufferedWriter bw)
+            throws IOException {
+        String name = atom.getName();
+        if (name.length() > 4) {
+            name = name.substring(0, 4);
+        } else if (name.length() == 1) {
+            name = name + "  ";
+        } else if (name.length() == 2) {
+            if (atom.getAtomType().valence == 0) {
+                name = name + "  ";
+            } else {
+                name = name + " ";
+            }
+        }
+        double[] xyz = vdwH ? atom.getRedXYZ() : atom.getXYZ(null);
+        if (nSymOp != 0) {
+            Crystal crystal = activeMolecularAssembly.getCrystal();
+            SymOp symOp = crystal.spaceGroup.getSymOp(nSymOp);
+            double[] newXYZ = new double[xyz.length];
+            crystal.applySymOp(xyz, newXYZ, symOp);
+            xyz = newXYZ;
+        }
+        sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
+        Character altLoc = atom.getAltLoc();
+        if (altLoc != null) {
+            sb.setCharAt(16, altLoc);
+        } else {
+            sb.setCharAt(16, ' ');
+        }
+
+        /*
+         * On the following code:
+         * #1: StringBuilder.replace will allow for longer strings, expanding the StringBuilder's length if necessary.
+         *
+         * #2: sb was never re-initialized, so if there was overflow,
+         * sb would continue to be > 80 characters long, resulting in broken PDB files
+         *
+         * #3: It may be wiser to have XYZ coordinates result in shutdown, not
+         * truncation of coordinates. #4: Excessive B-factors aren't much of an
+         * issue; if the B-factor is past 999.99, that's the difference between
+         * "density extends to Venus" and "density extends to Pluto".
+         */
+        StringBuilder decimals = new StringBuilder();
+        for (int i = 0; i < 3; i++) {
+            try {
+                decimals.append(StringUtils.fwFpDec(xyz[i], 8, 3));
+            } catch (IllegalArgumentException ex) {
+                String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
+                logger.info(format(" XYZ %d coordinate %8.3f for atom %s "
+                                + "overflowed bounds of 8.3f string specified by PDB "
+                                + "format; truncating value to %s", i, xyz[i], atom.toString(),
+                        newValue));
+                decimals.append(newValue);
+            }
+        }
+        try {
+            decimals.append(StringUtils.fwFpDec(atom.getOccupancy(), 6, 2));
+        } catch (IllegalArgumentException ex) {
+            logger.severe(format(" Occupancy %f for atom %s is impossible; "
+                    + "value must be between 0 and 1", atom.getOccupancy(), atom.toString()));
+        }
+        try {
+            decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
+        } catch (IllegalArgumentException ex) {
+            String newValue = StringUtils.fwFpTrunc(atom.getTempFactor(), 6, 2);
+            logger.info(format(" Atom temp factor %6.2f for atom %s overflowed "
+                    + "bounds of 6.2f string specified by PDB format; truncating "
+                    + "value to %s", atom.getTempFactor(), atom.toString(), newValue));
+            decimals.append(newValue);
+        }
+        sb.replace(30, 66, decimals.toString());
+
+        name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
+        name = name.toUpperCase();
+        if (atom.isDeuterium()) {
+            name = "D";
+        }
+        sb.replace(76, 78, padLeft(name, 2));
+        sb.replace(78, 80, format("%2d", 0));
+        bw.write(sb.toString());
+        bw.newLine();
+// =============================================================================
+//  1 - 6        Record name   "ANISOU"
+//  7 - 11       Integer       serial         Atom serial number.
+// 13 - 16       Atom          name           Atom name.
+// 17            Character     altLoc         Alternate location indicator
+// 18 - 20       Residue name  resName        Residue name.
+// 22            Character     chainID        Chain identifier.
+// 23 - 26       Integer       resSeq         Residue sequence number.
+// 27            AChar         iCode          Insertion code.
+// 29 - 35       Integer       u[0][0]        U(1,1)
+// 36 - 42       Integer       u[1][1]        U(2,2)
+// 43 - 49       Integer       u[2][2]        U(3,3)
+// 50 - 56       Integer       u[0][1]        U(1,2)
+// 57 - 63       Integer       u[0][2]        U(1,3)
+// 64 - 70       Integer       u[1][2]        U(2,3)
+// 77 - 78       LString(2)    element        Element symbol, right-justified.
+// 79 - 80       LString(2)    charge         Charge on the atom.
+// =============================================================================
+        double[] anisou = atom.getAnisou(null);
+        if (anisou != null) {
+            anisouSB.replace(6, 80, sb.substring(6, 80));
+            anisouSB.replace(28, 70, format("%7d%7d%7d%7d%7d%7d",
+                    (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
+                    (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4),
+                    (int) (anisou[4] * 1e4), (int) (anisou[5] * 1e4)));
+            bw.write(anisouSB.toString());
+            bw.newLine();
+        }
     }
 
 }

@@ -61,7 +61,6 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.Constants;
-
 import static ffx.potential.extended.ExtUtils.prop;
 
 /**
@@ -69,48 +68,10 @@ import static ffx.potential.extended.ExtUtils.prop;
  *
  * @author Stephen LuCore
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 @SuppressWarnings("serial")
 public class TitrationUtils {
-
-    /**
-     * Utility class
-     */
-    private TitrationUtils() {
-    }
-
-    private static final Logger logger = Logger.getLogger(TitrationUtils.class.getName());
-
-    /**
-     * Advanced options to both DiscreteMCMD and DiscountPh.
-     */
-    public static class TitrationConfig {
-
-        public final ContinuousSeedDistribution seedDistribution
-                = prop("phmd-seedMode", ContinuousSeedDistribution.class, ContinuousSeedDistribution.FLAT);
-        public MCOverride mcOverride = prop("phmd-override", MCOverride.class, MCOverride.NONE);
-        public final Snapshots snapshots = prop("phmd-snapshots", Snapshots.class, Snapshots.NONE);
-        public final HistidineMode histidineMode = prop("phmd-histidineMode", HistidineMode.class, HistidineMode.HIE_ONLY);
-        public final OptionalDouble referenceOverride = prop("phmd-referenceOverride", OptionalDouble.empty());
-        public final double meltdownTemperature = prop("phmd-meltdownTemp", 6000.0);
-        public final double warningTemperature = prop("phmd-warningTemp", 1000.0);
-        public final boolean logTimings = prop("phmd-logTimings", false);
-        public final boolean titrateTermini = prop("phmd-termini", false);
-        public final boolean zeroReferences = prop("phmd-zeroReferences", true);
-        public final int debugLogLevel = prop("phmd-debugLog", 0);
-        public final boolean useConformationalBias = prop("phmd-cbmcRotamerMoves", false);
-        public final boolean inactivateBackground = prop("phmd-inactivateBackground", false);
-        public final boolean zeroReferenceEnergies
-                = prop("phmd-zeroReferences", false, "Zeroing all reference energies!");
-        public final OptionalDouble refOverride
-                = prop("phmd-refOverride", OptionalDouble.empty(), "Reference protonation energies overridden!");
-
-        public void print() {
-            ExtUtils.printConfigSet("Titration Config:", System.getProperties(), "phmd");
-        }
-    }
 
     /**
      * Constant <code>heavyStrandedDynamics=prop("phmd-heavyStrandedDynamics", false)</code>
@@ -124,44 +85,201 @@ public class TitrationUtils {
      * Constant <code>threeStateCarboxylics=prop("phmd-threeState", false)</code>
      */
     public static final boolean threeStateCarboxylics = prop("phmd-threeState", false);   // not yet implemented
+    private static final Logger logger = Logger.getLogger(TitrationUtils.class.getName());
 
     /**
-     * How DISCOUNT initializes lambda values at outset of continuous dynamics.
+     * Utility class
      */
-    public enum ContinuousSeedDistribution {
-        FLAT, BETA, BOLTZMANN, DIRAC_CURRENT, DIRAC_POINTFIVE;
+    private TitrationUtils() {
     }
 
     /**
-     * Global override of MC acceptance criteria.
-     */
-    public enum MCOverride {
-        NONE, ACCEPT, REJECT, ONCE;
-    }
-
-    /**
-     * Writes .s-[num] and .f-[num] files representing before/after MC move
-     * structures. Note: The 'after' snapshot represents the change that was
-     * PROPOSED, regardless of accept/reject.
-     */
-    public enum Snapshots {
-        INTERLEAVED, SEPARATE, NONE;
-    }
-
-    public enum HistidineMode {
-        HIE_ONLY, HID_ONLY, SINGLE, DOUBLE;
-    }
-
-    /**
-     * <p>renumberAtoms.</p>
+     * <p>activateResidue.</p>
      *
-     * @param mola a {@link ffx.potential.MolecularAssembly} object.
+     * @param addDoF a {@link ffx.potential.bonded.Residue} object.
      */
-    public static void renumberAtoms(MolecularAssembly mola) {
-        Atom[] atoms = mola.getAtomArray();
-        int setter = 0;
-        for (Atom atom : atoms) {
-            atom.setXyzIndex(setter++);
+    public static void activateResidue(Residue addDoF) {
+        List<Atom> atomList = addDoF.getAtomList();
+        for (Atom atom : atomList) {
+            atom.setActive(true);
+        }
+    }
+
+    /**
+     * Identify titratable residues and choose them all.
+     *
+     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
+     */
+    public static List<Residue> chooseTitratables(MolecularAssembly searchMe) {
+        List<Residue> chosen = new ArrayList<>();
+        Polymer polymers[] = searchMe.getChains();
+        for (int i = 0; i < polymers.length; i++) {
+            List<Residue> residues = polymers[i].getResidues();
+            for (int j = 0; j < residues.size(); j++) {
+                Residue res = residues.get(j);
+                Titration[] avail = Titration.multiLookup(res);
+                if (avail != null) {
+                    chosen.add(residues.get(j));
+                }
+            }
+        }
+        return chosen;
+    }
+
+    /**
+     * Choose titratables with intrinsic pKa inside (pH-window,pH+window).
+     *
+     * @param pH       a double.
+     * @param window   a double.
+     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
+     */
+    public static List<Residue> chooseTitratables(double pH, double window, MolecularAssembly searchMe) {
+        List<Residue> chosen = new ArrayList<>();
+        Polymer polymers[] = searchMe.getChains();
+        for (int i = 0; i < polymers.length; i++) {
+            List<Residue> residues = polymers[i].getResidues();
+            for (int j = 0; j < residues.size(); j++) {
+                Residue res = residues.get(j);
+                Titration[] avail = Titration.multiLookup(res);
+                for (Titration titration : avail) {
+                    double pKa = titration.pKa;
+                    if (pKa >= pH - window && pKa <= pH + window) {
+                        chosen.add(residues.get(j));
+                    }
+                }
+            }
+        }
+        return chosen;
+    }
+
+    /**
+     * <p>chooseTitratables.</p>
+     *
+     * @param residueIDs a {@link java.lang.String} object.
+     * @param searchMe   a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
+     */
+    public static List<Residue> chooseTitratables(String residueIDs, MolecularAssembly searchMe) {
+        String[] tokens
+                = (residueIDs.split(".").length > 1) ? residueIDs.split(".")
+                : (residueIDs.split(",").length > 1) ? residueIDs.split(",")
+                : new String[]{residueIDs};
+        return chooseTitratables(Arrays.asList(tokens), searchMe);
+
+    }
+
+    /**
+     * Select titrating residues by amino acid.
+     *
+     * @param aa       a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
+     */
+    public static List<Residue> chooseTitratables(AminoAcid3 aa, MolecularAssembly searchMe) {
+        List<Residue> chosen = new ArrayList<>();
+        Polymer polymers[] = searchMe.getChains();
+        for (Polymer polymer : polymers) {
+            List<Residue> residues = polymer.getResidues();
+            for (Residue res : residues) {
+                if (res.getAminoAcid3() == aa) {
+                    Titration[] avail = Titration.multiLookup(res);
+                    if (avail != null) {
+                        chosen.add(res);
+                    }
+                }
+            }
+        }
+        return chosen;
+    }
+
+    /**
+     * <p>chooseTitratables.</p>
+     *
+     * @param crIDs    a {@link java.util.List} object.
+     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
+     */
+    public static List<Residue> chooseTitratables(List<String> crIDs, MolecularAssembly searchMe) {
+        List<Residue> chosen = new ArrayList<>();
+        for (String crID : crIDs) {
+            char chain = crID.charAt(0);
+            int num = Integer.parseInt(crID.substring(1));
+            boolean found = false;
+            List<Residue> allRes = searchMe.getResidueList();
+            for (Residue res : allRes) {
+                if (res.getChainID() == chain && res.getResidueNumber() == num) {
+                    chosen.add(res);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                logger.severe(format("Couldn't find residue for crID %c,%d.", chain, num));
+            }
+        }
+        return chosen;
+    }
+
+    /**
+     * <p>chooseTitratables.</p>
+     *
+     * @param chain    a char.
+     * @param resID    a int.
+     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
+     */
+    public static List<Residue> chooseTitratables(char chain, int resID, MolecularAssembly searchMe) {
+        List<Residue> chosen = new ArrayList<>();
+        Polymer polymers[] = searchMe.getChains();
+        for (Polymer polymer : polymers) {
+            if (polymer.getChainID() == chain) {
+                List<Residue> residues = polymer.getResidues();
+                for (Residue residue : residues) {
+                    if (residue.getResidueNumber() == resID) {
+                        chosen.add(residue);
+                        logger.info(String.format(" Chosen: %s", residue));
+                    }
+                }
+            }
+        }
+        return chosen;
+    }
+
+    /**
+     * Locate to which Polymer in a MolecularAssembly the given Residue belongs.
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
+     * @param mola    a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link ffx.potential.bonded.Polymer} object.
+     */
+    public static Polymer findResiduePolymer(Residue residue, MolecularAssembly mola) {
+        if (residue.getChainID() == null) {
+            logger.severe("No chain ID for residue " + residue);
+        }
+        Polymer polymers[] = mola.getChains();
+        Polymer location = null;
+        for (Polymer p : polymers) {
+            if (p.getChainID().equals(residue.getChainID())) {
+                location = p;
+            }
+        }
+        if (location == null) {
+            logger.severe("Couldn't find polymer for residue " + residue);
+        }
+        return location;
+    }
+
+    /**
+     * <p>inactivateResidue.</p>
+     *
+     * @param killDoF a {@link ffx.potential.bonded.Residue} object.
+     */
+    public static void inactivateResidue(Residue killDoF) {
+        List<Atom> atomList = killDoF.getAtomList();
+        for (Atom atom : atomList) {
+            atom.setActive(false);
         }
     }
 
@@ -248,27 +366,93 @@ public class TitrationUtils {
     }
 
     /**
-     * <p>activateResidue.</p>
+     * <p>isTitratableHydrogen.</p>
      *
-     * @param addDoF a {@link ffx.potential.bonded.Residue} object.
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @return a boolean.
      */
-    public static void activateResidue(Residue addDoF) {
-        List<Atom> atomList = addDoF.getAtomList();
-        for (Atom atom : atomList) {
-            atom.setActive(true);
+    public static boolean isTitratableHydrogen(Atom atom) {
+        String name = atom.getName();
+        switch (atom.getResidueName()) {
+            case "LYS":
+                if (name.equals("HZ3")) {
+                    return true;
+                }
+                break;
+            case "TYR":
+                if (name.equals("HH")) {
+                    return true;
+                }
+                break;
+            case "CYS":
+                if (name.equals("HG")) {
+                    return true;
+                }
+                break;
+            case "HIS":
+                if (name.equals("HD1") || name.equals("HE2")) {
+                    return true;
+                }
+                break;
+            case "HID":
+                if (name.equals("HD1")) {
+                    return true;
+                }
+                break;
+            case "HIE":
+                if (name.equals("HE2")) {
+                    return true;
+                }
+                break;
+            case "ASH":
+                if (name.equals("HD2")) {
+                    return true;
+                }
+                break;
+            case "GLH":
+                if (name.equals("HE2")) {
+                    return true;
+                }
+                break;
         }
+        return false;
     }
 
     /**
-     * <p>inactivateResidue.</p>
+     * <p>openFullyProtonated.</p>
      *
-     * @param killDoF a {@link ffx.potential.bonded.Residue} object.
+     * @param structure a {@link java.io.File} object.
+     * @return a {@link ffx.potential.MolecularAssembly} object.
      */
-    public static void inactivateResidue(Residue killDoF) {
-        List<Atom> atomList = killDoF.getAtomList();
-        for (Atom atom : atomList) {
-            atom.setActive(false);
+    public static MolecularAssembly openFullyProtonated(File structure) {
+        String name = format("%s-prot", FilenameUtils.removeExtension(structure.getName()));
+        MolecularAssembly mola = new MolecularAssembly(name);
+        mola.setFile(structure);
+
+        List<Mutation> mutations = new ArrayList<>();
+        List<Residue> residues = mola.getResidueList();
+        for (Residue res : residues) {
+            char chain = res.getChainID();
+            int resID = res.getResidueNumber();
+            Titration titration = Titration.lookup(res);
+            if (res.getAminoAcid3() != titration.protForm) {
+                String protName = titration.protForm.name();
+                mutations.add(new PDBFilter.Mutation(chain, resID, protName));
+            }
         }
+
+        PotentialsUtils utils = new PotentialsUtils();
+        return utils.openWithMutations(structure, mutations);
+    }
+
+    /**
+     * <p>openFullyProtonated.</p>
+     *
+     * @param filename a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public static MolecularAssembly openFullyProtonated(String filename) {
+        return openFullyProtonated(new File(filename));
     }
 
     /**
@@ -344,247 +528,6 @@ public class TitrationUtils {
         }
 
         return type;
-    }
-
-    /**
-     * <p>openFullyProtonated.</p>
-     *
-     * @param structure a {@link java.io.File} object.
-     * @return a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public static MolecularAssembly openFullyProtonated(File structure) {
-        String name = format("%s-prot", FilenameUtils.removeExtension(structure.getName()));
-        MolecularAssembly mola = new MolecularAssembly(name);
-        mola.setFile(structure);
-
-        List<Mutation> mutations = new ArrayList<>();
-        List<Residue> residues = mola.getResidueList();
-        for (Residue res : residues) {
-            char chain = res.getChainID();
-            int resID = res.getResidueNumber();
-            Titration titration = Titration.lookup(res);
-            if (res.getAminoAcid3() != titration.protForm) {
-                String protName = titration.protForm.name();
-                mutations.add(new PDBFilter.Mutation(chain, resID, protName));
-            }
-        }
-
-        PotentialsUtils utils = new PotentialsUtils();
-        return utils.openWithMutations(structure, mutations);
-    }
-
-    /**
-     * <p>openFullyProtonated.</p>
-     *
-     * @param filename a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public static MolecularAssembly openFullyProtonated(String filename) {
-        return openFullyProtonated(new File(filename));
-    }
-
-    /**
-     * Create a MultiResidue from the given Residue by adding its alternated
-     * protonation state(s) as alternate possibilities.
-     *
-     * @param mola a {@link ffx.potential.MolecularAssembly} object.
-     * @param res  a {@link ffx.potential.bonded.Residue} object.
-     * @return a {@link ffx.potential.bonded.MultiResidue} object.
-     */
-    public static MultiResidue titratingMultiresidueFactory(MolecularAssembly mola, Residue res) {
-        ForceField ff = mola.getForceField();
-        Potential potential = mola.getPotentialEnergy();
-        if (!(potential instanceof ForceFieldEnergy)) {
-            logger.warning(String.format("TitrationFactory only supported by ForceFieldEnergy potentials."));
-            throw new IllegalStateException();
-        }
-        ForceFieldEnergy ffe = (ForceFieldEnergy) potential;
-
-        /* Create new titration state. */
-        Titration titration = Titration.lookup(res);
-        String targetName = (titration.protForm != res.getAminoAcid3())
-                ? titration.protForm.toString() : titration.deprotForm.toString();
-        int resNumber = res.getResidueNumber();
-        Residue.ResidueType resType = res.getResidueType();
-        Residue newRes = new Residue(targetName, resNumber, resType);
-
-        /* Wrap both states in a MultiResidue. */
-        MultiResidue multiRes = new MultiResidue(res, ff, ffe);
-        Polymer polymer = findResiduePolymer(res, mola);
-        polymer.addMultiResidue(multiRes);
-        multiRes.addResidue(newRes);
-
-        /* Begin in protonated state by default. */
-        multiRes.setActiveResidue(titration.protForm);
-        propagateInactiveResidues(multiRes, false);
-        ffe.reInit();
-        return multiRes;
-    }
-
-    /**
-     * Locate to which Polymer in a MolecularAssembly the given Residue belongs.
-     *
-     * @param residue a {@link ffx.potential.bonded.Residue} object.
-     * @param mola    a {@link ffx.potential.MolecularAssembly} object.
-     * @return a {@link ffx.potential.bonded.Polymer} object.
-     */
-    public static Polymer findResiduePolymer(Residue residue, MolecularAssembly mola) {
-        if (residue.getChainID() == null) {
-            logger.severe("No chain ID for residue " + residue);
-        }
-        Polymer polymers[] = mola.getChains();
-        Polymer location = null;
-        for (Polymer p : polymers) {
-            if (p.getChainID().equals(residue.getChainID())) {
-                location = p;
-            }
-        }
-        if (location == null) {
-            logger.severe("Couldn't find polymer for residue " + residue);
-        }
-        return location;
-    }
-
-    /**
-     * Identify titratable residues and choose them all.
-     *
-     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
-     * @return a {@link java.util.List} object.
-     */
-    public static List<Residue> chooseTitratables(MolecularAssembly searchMe) {
-        List<Residue> chosen = new ArrayList<>();
-        Polymer polymers[] = searchMe.getChains();
-        for (int i = 0; i < polymers.length; i++) {
-            ArrayList<Residue> residues = polymers[i].getResidues();
-            for (int j = 0; j < residues.size(); j++) {
-                Residue res = residues.get(j);
-                Titration[] avail = Titration.multiLookup(res);
-                if (avail != null) {
-                    chosen.add(residues.get(j));
-                }
-            }
-        }
-        return chosen;
-    }
-
-    /**
-     * Choose titratables with intrinsic pKa inside (pH-window,pH+window).
-     *
-     * @param pH       a double.
-     * @param window   a double.
-     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
-     * @return a {@link java.util.List} object.
-     */
-    public static List<Residue> chooseTitratables(double pH, double window, MolecularAssembly searchMe) {
-        List<Residue> chosen = new ArrayList<>();
-        Polymer polymers[] = searchMe.getChains();
-        for (int i = 0; i < polymers.length; i++) {
-            ArrayList<Residue> residues = polymers[i].getResidues();
-            for (int j = 0; j < residues.size(); j++) {
-                Residue res = residues.get(j);
-                Titration[] avail = Titration.multiLookup(res);
-                for (Titration titration : avail) {
-                    double pKa = titration.pKa;
-                    if (pKa >= pH - window && pKa <= pH + window) {
-                        chosen.add(residues.get(j));
-                    }
-                }
-            }
-        }
-        return chosen;
-    }
-
-    /**
-     * <p>chooseTitratables.</p>
-     *
-     * @param residueIDs a {@link java.lang.String} object.
-     * @param searchMe   a {@link ffx.potential.MolecularAssembly} object.
-     * @return a {@link java.util.List} object.
-     */
-    public static List<Residue> chooseTitratables(String residueIDs, MolecularAssembly searchMe) {
-        String[] tokens
-                = (residueIDs.split(".").length > 1) ? residueIDs.split(".")
-                : (residueIDs.split(",").length > 1) ? residueIDs.split(",")
-                : new String[]{residueIDs};
-        return chooseTitratables(Arrays.asList(tokens), searchMe);
-
-    }
-
-    /**
-     * Select titrating residues by amino acid.
-     *
-     * @param aa       a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
-     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
-     * @return a {@link java.util.List} object.
-     */
-    public static List<Residue> chooseTitratables(AminoAcid3 aa, MolecularAssembly searchMe) {
-        List<Residue> chosen = new ArrayList<>();
-        Polymer polymers[] = searchMe.getChains();
-        for (Polymer polymer : polymers) {
-            ArrayList<Residue> residues = polymer.getResidues();
-            for (Residue res : residues) {
-                if (res.getAminoAcid3() == aa) {
-                    Titration[] avail = Titration.multiLookup(res);
-                    if (avail != null) {
-                        chosen.add(res);
-                    }
-                }
-            }
-        }
-        return chosen;
-    }
-
-    /**
-     * <p>chooseTitratables.</p>
-     *
-     * @param crIDs    a {@link java.util.List} object.
-     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
-     * @return a {@link java.util.List} object.
-     */
-    public static List<Residue> chooseTitratables(List<String> crIDs, MolecularAssembly searchMe) {
-        List<Residue> chosen = new ArrayList<>();
-        for (String crID : crIDs) {
-            char chain = crID.charAt(0);
-            int num = Integer.parseInt(crID.substring(1));
-            boolean found = false;
-            List<Residue> allRes = searchMe.getResidueList();
-            for (Residue res : allRes) {
-                if (res.getChainID() == chain && res.getResidueNumber() == num) {
-                    chosen.add(res);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                logger.severe(format("Couldn't find residue for crID %c,%d.", chain, num));
-            }
-        }
-        return chosen;
-    }
-
-    /**
-     * <p>chooseTitratables.</p>
-     *
-     * @param chain    a char.
-     * @param resID    a int.
-     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
-     * @return a {@link java.util.List} object.
-     */
-    public static List<Residue> chooseTitratables(char chain, int resID, MolecularAssembly searchMe) {
-        List<Residue> chosen = new ArrayList<>();
-        Polymer polymers[] = searchMe.getChains();
-        for (Polymer polymer : polymers) {
-            if (polymer.getChainID() == chain) {
-                ArrayList<Residue> residues = polymer.getResidues();
-                for (Residue residue : residues) {
-                    if (residue.getResidueNumber() == resID) {
-                        chosen.add(residue);
-                        logger.info(String.format(" Chosen: %s", residue));
-                    }
-                }
-            }
-        }
-        return chosen;
     }
 
     /**
@@ -691,56 +634,54 @@ public class TitrationUtils {
     }
 
     /**
-     * <p>isTitratableHydrogen.</p>
+     * <p>renumberAtoms.</p>
      *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @return a boolean.
+     * @param mola a {@link ffx.potential.MolecularAssembly} object.
      */
-    public static boolean isTitratableHydrogen(Atom atom) {
-        String name = atom.getName();
-        switch (atom.getResidueName()) {
-            case "LYS":
-                if (name.equals("HZ3")) {
-                    return true;
-                }
-                break;
-            case "TYR":
-                if (name.equals("HH")) {
-                    return true;
-                }
-                break;
-            case "CYS":
-                if (name.equals("HG")) {
-                    return true;
-                }
-                break;
-            case "HIS":
-                if (name.equals("HD1") || name.equals("HE2")) {
-                    return true;
-                }
-                break;
-            case "HID":
-                if (name.equals("HD1")) {
-                    return true;
-                }
-                break;
-            case "HIE":
-                if (name.equals("HE2")) {
-                    return true;
-                }
-                break;
-            case "ASH":
-                if (name.equals("HD2")) {
-                    return true;
-                }
-                break;
-            case "GLH":
-                if (name.equals("HE2")) {
-                    return true;
-                }
-                break;
+    public static void renumberAtoms(MolecularAssembly mola) {
+        Atom[] atoms = mola.getAtomArray();
+        int setter = 0;
+        for (Atom atom : atoms) {
+            atom.setXyzIndex(setter++);
         }
-        return false;
+    }
+
+    /**
+     * Create a MultiResidue from the given Residue by adding its alternated
+     * protonation state(s) as alternate possibilities.
+     *
+     * @param mola a {@link ffx.potential.MolecularAssembly} object.
+     * @param res  a {@link ffx.potential.bonded.Residue} object.
+     * @return a {@link ffx.potential.bonded.MultiResidue} object.
+     */
+    public static MultiResidue titratingMultiresidueFactory(MolecularAssembly mola, Residue res) {
+        ForceField ff = mola.getForceField();
+        Potential potential = mola.getPotentialEnergy();
+        if (!(potential instanceof ForceFieldEnergy)) {
+            logger.warning(String.format("TitrationFactory only supported by ForceFieldEnergy potentials."));
+            throw new IllegalStateException();
+        }
+        ForceFieldEnergy ffe = (ForceFieldEnergy) potential;
+
+        /* Create new titration state. */
+        Titration titration = Titration.lookup(res);
+        String targetName = (titration.protForm != res.getAminoAcid3())
+                ? titration.protForm.toString() : titration.deprotForm.toString();
+        int resNumber = res.getResidueNumber();
+        Residue.ResidueType resType = res.getResidueType();
+        Residue newRes = new Residue(targetName, resNumber, resType);
+
+        /* Wrap both states in a MultiResidue. */
+        MultiResidue multiRes = new MultiResidue(res, ff, ffe);
+        Polymer polymer = findResiduePolymer(res, mola);
+        polymer.addMultiResidue(multiRes);
+        multiRes.addResidue(newRes);
+
+        /* Begin in protonated state by default. */
+        multiRes.setActiveResidue(titration.protForm);
+        propagateInactiveResidues(multiRes, false);
+        ffe.reInit();
+        return multiRes;
     }
 
     /**
@@ -862,6 +803,33 @@ public class TitrationUtils {
     }
 
     /**
+     * How DISCOUNT initializes lambda values at outset of continuous dynamics.
+     */
+    public enum ContinuousSeedDistribution {
+        FLAT, BETA, BOLTZMANN, DIRAC_CURRENT, DIRAC_POINTFIVE;
+    }
+
+    /**
+     * Global override of MC acceptance criteria.
+     */
+    public enum MCOverride {
+        NONE, ACCEPT, REJECT, ONCE;
+    }
+
+    /**
+     * Writes .s-[num] and .f-[num] files representing before/after MC move
+     * structures. Note: The 'after' snapshot represents the change that was
+     * PROPOSED, regardless of accept/reject.
+     */
+    public enum Snapshots {
+        INTERLEAVED, SEPARATE, NONE;
+    }
+
+    public enum HistidineMode {
+        HIE_ONLY, HID_ONLY, SINGLE, DOUBLE;
+    }
+
+    /**
      * Amino acid protonation reactions. Constructors below specify intrinsic
      * pKa and reference free energy of protonation, obtained via (OST)
      * metadynamics on capped monomers.
@@ -936,6 +904,35 @@ public class TitrationUtils {
 
     public enum TitrationType {
         PROT, DEPROT;
+    }
+
+    /**
+     * Advanced options to both DiscreteMCMD and DiscountPh.
+     */
+    public static class TitrationConfig {
+
+        public final ContinuousSeedDistribution seedDistribution
+                = prop("phmd-seedMode", ContinuousSeedDistribution.class, ContinuousSeedDistribution.FLAT);
+        public final Snapshots snapshots = prop("phmd-snapshots", Snapshots.class, Snapshots.NONE);
+        public final HistidineMode histidineMode = prop("phmd-histidineMode", HistidineMode.class, HistidineMode.HIE_ONLY);
+        public final OptionalDouble referenceOverride = prop("phmd-referenceOverride", OptionalDouble.empty());
+        public final double meltdownTemperature = prop("phmd-meltdownTemp", 6000.0);
+        public final double warningTemperature = prop("phmd-warningTemp", 1000.0);
+        public final boolean logTimings = prop("phmd-logTimings", false);
+        public final boolean titrateTermini = prop("phmd-termini", false);
+        public final boolean zeroReferences = prop("phmd-zeroReferences", true);
+        public final int debugLogLevel = prop("phmd-debugLog", 0);
+        public final boolean useConformationalBias = prop("phmd-cbmcRotamerMoves", false);
+        public final boolean inactivateBackground = prop("phmd-inactivateBackground", false);
+        public final boolean zeroReferenceEnergies
+                = prop("phmd-zeroReferences", false, "Zeroing all reference energies!");
+        public final OptionalDouble refOverride
+                = prop("phmd-refOverride", OptionalDouble.empty(), "Reference protonation energies overridden!");
+        public MCOverride mcOverride = prop("phmd-override", MCOverride.class, MCOverride.NONE);
+
+        public void print() {
+            ExtUtils.printConfigSet("Titration Config:", System.getProperties(), "phmd");
+        }
     }
 
 }

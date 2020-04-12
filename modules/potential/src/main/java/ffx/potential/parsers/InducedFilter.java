@@ -55,8 +55,8 @@ import ffx.potential.bonded.Atom;
 public class InducedFilter {
 
     private static final Logger logger = Logger.getLogger(InducedFilter.class.getName());
-    private MolecularAssembly molecularAssembly;
     File file;
+    private MolecularAssembly molecularAssembly;
 
     /**
      * <p>

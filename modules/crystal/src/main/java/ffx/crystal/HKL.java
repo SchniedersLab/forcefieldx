@@ -104,6 +104,90 @@ public class HKL {
     }
 
     /**
+     * <p>
+     * allowed</p>
+     *
+     * @return a double.
+     */
+    public double allowed() {
+        return ((double) allowed) * (PI / ndiv);
+    }
+
+    /**
+     * <p>
+     * allowed</p>
+     *
+     * @param allowed a int.
+     */
+    public void allowed(int allowed) {
+        this.allowed = allowed;
+    }
+
+    /**
+     * <p>
+     * bin</p>
+     *
+     * @return a int.
+     */
+    public int bin() {
+        return bin;
+    }
+
+    /**
+     * <p>
+     * bin</p>
+     *
+     * @param bin a int.
+     */
+    public void bin(int bin) {
+        this.bin = bin;
+    }
+
+    /**
+     * <p>
+     * centric</p>
+     *
+     * @return a boolean.
+     */
+    public boolean centric() {
+        return (allowed != 255);
+    }
+
+    /**
+     * <p>
+     * epsilon</p>
+     *
+     * @return a int.
+     */
+    public int epsilon() {
+        return epsilon;
+    }
+
+    /**
+     * <p>
+     * epsilon</p>
+     *
+     * @param eps a int.
+     */
+    public void epsilon(int eps) {
+        this.epsilon = eps;
+    }
+
+    /**
+     * <p>
+     * epsilonc</p>
+     *
+     * @return a int.
+     */
+    public int epsilonc() {
+        if (this.centric()) {
+            return 2 * epsilon;
+        } else {
+            return epsilon;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -112,23 +196,6 @@ public class HKL {
         if (o == null || getClass() != o.getClass()) return false;
         HKL hkl = (HKL) o;
         return (h == hkl.h() && k == hkl.k() && l == hkl.l());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(h, k, l);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return this.h() + " " + this.k() + " " + this.l()
-                + "(allowed: " + this.allowed + " eps: " + this.epsilon + ") ";
     }
 
     /**
@@ -149,6 +216,34 @@ public class HKL {
      */
     public void h(int h) {
         this.h = h;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(h, k, l);
+    }
+
+    /**
+     * <p>
+     * index</p>
+     *
+     * @return a int.
+     */
+    public int index() {
+        return index;
+    }
+
+    /**
+     * <p>
+     * index</p>
+     *
+     * @param index a int.
+     */
+    public void index(int index) {
+        this.index = index;
     }
 
     /**
@@ -192,43 +287,12 @@ public class HKL {
     }
 
     /**
-     * <p>
-     * bin</p>
-     *
-     * @return a int.
+     * {@inheritDoc}
      */
-    public int bin() {
-        return bin;
-    }
-
-    /**
-     * <p>
-     * bin</p>
-     *
-     * @param bin a int.
-     */
-    public void bin(int bin) {
-        this.bin = bin;
-    }
-
-    /**
-     * <p>
-     * index</p>
-     *
-     * @return a int.
-     */
-    public int index() {
-        return index;
-    }
-
-    /**
-     * <p>
-     * index</p>
-     *
-     * @param index a int.
-     */
-    public void index(int index) {
-        this.index = index;
+    @Override
+    public String toString() {
+        return this.h() + " " + this.k() + " " + this.l()
+                + "(allowed: " + this.allowed + " eps: " + this.epsilon + ") ";
     }
 
     /**
@@ -240,70 +304,6 @@ public class HKL {
      */
     static HKL neg(HKL hkl) {
         return new HKL(-hkl.h(), -hkl.k(), -hkl.l());
-    }
-
-    /**
-     * <p>
-     * epsilon</p>
-     *
-     * @return a int.
-     */
-    public int epsilon() {
-        return epsilon;
-    }
-
-    /**
-     * <p>
-     * epsilon</p>
-     *
-     * @param eps a int.
-     */
-    public void epsilon(int eps) {
-        this.epsilon = eps;
-    }
-
-    /**
-     * <p>
-     * epsilonc</p>
-     *
-     * @return a int.
-     */
-    public int epsilonc() {
-        if (this.centric()) {
-            return 2 * epsilon;
-        } else {
-            return epsilon;
-        }
-    }
-
-    /**
-     * <p>
-     * allowed</p>
-     *
-     * @return a double.
-     */
-    public double allowed() {
-        return ((double) allowed) * (PI / ndiv);
-    }
-
-    /**
-     * <p>
-     * allowed</p>
-     *
-     * @param allowed a int.
-     */
-    public void allowed(int allowed) {
-        this.allowed = allowed;
-    }
-
-    /**
-     * <p>
-     * centric</p>
-     *
-     * @return a boolean.
-     */
-    public boolean centric() {
-        return (allowed != 255);
     }
 
     /**

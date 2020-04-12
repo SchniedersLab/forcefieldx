@@ -37,11 +37,12 @@
 //******************************************************************************
 package ffx.potential.cli;
 
+import java.io.File;
+
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
-import picocli.CommandLine;
 
-import java.io.File;
+import picocli.CommandLine;
 
 /**
  * Represents command line options for scripts that periodically write out structures.
@@ -68,16 +69,13 @@ public class WriteoutOptions {
         return fileType;
     }
 
-    public static String toArchiveExtension(String fileType) {
-        return Extensions.nameToExt(fileType).archive;
-    }
-
     /**
      * Saves a single-snapshot file to either .xyz or .pdb, depending on the value of fileType.
+     *
      * @param baseFileName Basic file name without extension.
      * @param pFuncts      A PotentialFunctions object.
      * @param ma           MolecularAssembly to save.
-     * @return             File written to.
+     * @return File written to.
      */
     public File saveFile(String baseFileName, PotentialsFunctions pFuncts, MolecularAssembly ma) {
         String outFileName = baseFileName;
@@ -96,6 +94,10 @@ public class WriteoutOptions {
         return outFile;
     }
 
+    public static String toArchiveExtension(String fileType) {
+        return Extensions.nameToExt(fileType).archive;
+    }
+
     private enum Extensions {
         XYZ("xyz", "arc"), PDB("pdb", "pdb");
 
@@ -108,7 +110,7 @@ public class WriteoutOptions {
         }
 
         static Extensions nameToExt(String name) {
-            switch(name.toLowerCase()) {
+            switch (name.toLowerCase()) {
                 case "pdb":
                     return PDB;
                 case "xyz":

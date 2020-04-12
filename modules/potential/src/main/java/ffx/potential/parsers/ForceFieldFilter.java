@@ -105,13 +105,13 @@ public class ForceFieldFilter {
      */
     private final File forceFieldFile;
     /**
-     * The ForceField instance that will be returned.
-     */
-    private ForceField forceField;
-    /**
      * A CompositeConfiguration instance to search for force field types.
      */
     private final CompositeConfiguration properties;
+    /**
+     * The ForceField instance that will be returned.
+     */
+    private ForceField forceField;
 
     /**
      * <p>
@@ -136,6 +136,25 @@ public class ForceFieldFilter {
             forceFieldFile = null;
         }
         forceField = new ForceField(properties);
+    }
+
+    /**
+     * Parse a Force Field parameter file and echo the results with slashes.
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
+    public static void main(String[] args) {
+        if (args == null || args.length < 1) {
+            System.out.println("Usage: ForceFieldFilter <file.prm>");
+            System.exit(-1);
+        }
+        CompositeConfiguration properties = Keyword.loadProperties(null);
+        properties.setProperty("parameters", args[0]);
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
+        ForceField forceField = forceFieldFilter.parse();
+        if (forceField != null) {
+            forceField.print();
+        }
     }
 
     /**
@@ -206,13 +225,37 @@ public class ForceFieldFilter {
         if (forceFieldName != null) {
             forceFieldName = forceFieldName.toUpperCase();
             if (forceFieldName.contains("AMBER") || forceFieldName.contains("OPLS") ||
-                forceFieldName.contains("CHARMM")) {
+                    forceFieldName.contains("CHARMM")) {
                 forceField.setBondFunction(BondFunction.HARMONIC);
                 forceField.setAngleFunction(AngleFunction.HARMONIC);
             }
         }
 
         return forceField;
+    }
+
+    /**
+     * <p>
+     * parseParameterLocation</p>
+     *
+     * @param parameterLocation a {@link java.lang.String} object.
+     * @param keyFile           a {@link java.io.File} object.
+     * @return a {@link java.io.File} object.
+     */
+    private static File parseParameterLocation(String parameterLocation, File keyFile) {
+        File parameterFile = null;
+        if (parameterLocation != null && !parameterLocation.equalsIgnoreCase("NONE")) {
+            // Remove quotes
+            parameterLocation = parameterLocation.replaceAll("\"", "");
+            // Append the suffix if necessary
+            parameterFile = new File(parameterLocation);
+            // If the location is not absolute, check if it is relative
+            // to the key file location.
+            if (!parameterFile.exists() && keyFile != null) {
+                parameterFile = new File(keyFile.getParent() + File.separator + parameterLocation);
+            }
+        }
+        return parameterFile;
     }
 
     private void parse(CompositeConfiguration properties) {
@@ -450,7 +493,7 @@ public class ForceFieldFilter {
                     break;
                 case SOLUTE:
                     // SOLUTE lines can't be split on #'s because of SMARTS strings syntax
-                    baseType = SoluteType.parse(originalInput,originalInput.trim().split(" +"));
+                    baseType = SoluteType.parse(originalInput, originalInput.trim().split(" +"));
                     //baseType = SoluteType.parse(input, tokens);
                     break;
                 default:
@@ -475,48 +518,5 @@ public class ForceFieldFilter {
             logger.info(" Ignored line: " + input);
         }
 
-    }
-
-    /**
-     * <p>
-     * parseParameterLocation</p>
-     *
-     * @param parameterLocation a {@link java.lang.String} object.
-     * @param keyFile           a {@link java.io.File} object.
-     * @return a {@link java.io.File} object.
-     */
-    private static File parseParameterLocation(String parameterLocation, File keyFile) {
-        File parameterFile = null;
-        if (parameterLocation != null && !parameterLocation.equalsIgnoreCase("NONE")) {
-            // Remove quotes
-            parameterLocation = parameterLocation.replaceAll("\"", "");
-            // Append the suffix if necessary
-            parameterFile = new File(parameterLocation);
-            // If the location is not absolute, check if it is relative
-            // to the key file location.
-            if (!parameterFile.exists() && keyFile != null) {
-                parameterFile = new File(keyFile.getParent() + File.separator + parameterLocation);
-            }
-        }
-        return parameterFile;
-    }
-
-    /**
-     * Parse a Force Field parameter file and echo the results with slashes.
-     *
-     * @param args an array of {@link java.lang.String} objects.
-     */
-    public static void main(String[] args) {
-        if (args == null || args.length < 1) {
-            System.out.println("Usage: ForceFieldFilter <file.prm>");
-            System.exit(-1);
-        }
-        CompositeConfiguration properties = Keyword.loadProperties(null);
-        properties.setProperty("parameters", args[0]);
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
-        ForceField forceField = forceFieldFilter.parse();
-        if (forceField != null) {
-            forceField.print();
-        }
     }
 }

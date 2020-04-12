@@ -54,6 +54,13 @@ import static org.junit.Assert.assertEquals;
 public class SquareRootTest {
 
     private static final double tolerance = 1.0e-13;
+    private final String info;
+    private final double x;
+
+    public SquareRootTest(String info, double x) {
+        this.info = info;
+        this.x = x;
+    }
 
     /**
      * The expected values are found using java.lang.Math.sqrt.
@@ -68,12 +75,17 @@ public class SquareRootTest {
                 {"Test 1.0e2", 1.0e2},});
     }
 
-    private final String info;
-    private final double x;
-
-    public SquareRootTest(String info, double x) {
-        this.info = info;
-        this.x = x;
+    /**
+     * Test inverse sqrt method, of class InverseSqrt.
+     */
+    @Test
+    public void testInverseSqrt() {
+        for (int i = 0; i < 100; i++) {
+            double increment = i * x / 10.0;
+            double actual = SquareRoot.isqrt(x + increment);
+            double expected = 1.0 / sqrt(x + increment);
+            assertEquals(info + " + " + increment, expected, actual, tolerance);
+        }
     }
 
     /**
@@ -85,19 +97,6 @@ public class SquareRootTest {
             double increment = i * x / 100.0;
             double actual = SquareRoot.sqrt(x + increment);
             double expected = sqrt(x + increment);
-            assertEquals(info + " + " + increment, expected, actual, tolerance);
-        }
-    }
-
-    /**
-     * Test inverse sqrt method, of class InverseSqrt.
-     */
-    @Test
-    public void testInverseSqrt() {
-        for (int i = 0; i < 100; i++) {
-            double increment = i * x / 10.0;
-            double actual = SquareRoot.isqrt(x + increment);
-            double expected = 1.0 / sqrt(x + increment);
             assertEquals(info + " + " + increment, expected, actual, tolerance);
         }
     }

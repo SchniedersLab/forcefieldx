@@ -40,7 +40,7 @@ package ffx.algorithms.optimize.manybody;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,58 +65,57 @@ import ffx.potential.bonded.RotamerLibrary;
 public class SelfEnergyRegion extends WorkerRegion {
 
     private static final Logger logger = Logger.getLogger(SelfEnergyRegion.class.getName());
-
-    private RotamerOptimization rO;
-    private EnergyExpansion eE;
-    private EliminatedRotamers eR;
     private final Residue[] residues;
-    private Set<Integer> keySet;
+    private final RotamerOptimization rO;
+    private final EnergyExpansion eE;
+    private final EliminatedRotamers eR;
     /**
      * RotamerLibrary instance.
      */
-    private RotamerLibrary library;
+    private final RotamerLibrary library;
     /**
      * Map of self-energy values to compute.
      */
-    private HashMap<Integer, Integer[]> selfEnergyMap;
+    private final Map<Integer, Integer[]> selfEnergyMap;
     /**
      * Writes energies to restart file.
      */
-    private BufferedWriter energyWriter;
+    private final BufferedWriter energyWriter;
     /**
      * World Parallel Java communicator.
      */
-    private Comm world;
+    private final Comm world;
     /**
      * Number of Parallel Java processes.
      */
-    private int numProc;
+    private final int numProc;
     /**
      * Flag to prune clashes.
      */
-    private boolean pruneClashes;
+    private final boolean pruneClashes;
     /**
      * Flag to indicate if this is the master process.
      */
-    private boolean master;
+    private final boolean master;
     /**
      * Rank of this process.
      */
-    private int rank;
+    private final int rank;
     /**
      * Flag to indicate verbose logging.
      */
-    private boolean verbose;
+    private final boolean verbose;
     /**
      * If true, write out an energy restart file.
      */
-    private boolean writeEnergyRestart;
+    private final boolean writeEnergyRestart;
     /**
      * Sets whether files should be printed; true for standalone applications,
      * false for some applications which use rotamer optimization as part of a
      * larger process.
      */
-    private boolean printFiles;
+    private final boolean printFiles;
+    private Set<Integer> keySet;
 
     public SelfEnergyRegion(RotamerOptimization rO, EnergyExpansion eE, EliminatedRotamers eR,
                             Residue[] residues, RotamerLibrary library, BufferedWriter energyWriter,
@@ -139,6 +138,58 @@ public class SelfEnergyRegion extends WorkerRegion {
 
         this.selfEnergyMap = eE.getSelfEnergyMap();
         logger.info(format(" Number of self energies to calculate: %d", selfEnergyMap.size()));
+    }
+
+    @Override
+    public void finish() {
+        // Pre-Prune if self-energy is Double.NaN.
+        eR.prePruneSelves(residues);
+
+        // Prune clashes for all singles (not just the ones this node did).
+        if (pruneClashes) {
+            eR.pruneSingleClashes(residues);
+        }
+
+        // Print what we've got so far.
+        if (master && verbose) {
+            for (int i = 0; i < residues.length; i++) {
+                Residue residue = residues[i];
+                Rotamer[] rotamers = residue.getRotamers(library);
+                for (int ri = 0; ri < rotamers.length; ri++) {
+                    logger.info(format(" Self energy %8s %-2d: %s",
+                            residues[i].toFormattedString(false, true),
+                            ri, rO.formatEnergy(
+                                    eE.getSelf(i, ri))));
+                }
+            }
+        }
+    }
+
+    @Override
+    public void run() throws Exception {
+        if (!keySet.isEmpty()) {
+            try {
+                execute(0, keySet.size() - 1, new SelfEnergyLoop());
+            } catch (MultipleParallelException mpx) {
+                Collection<Throwable> subErrors = mpx.getExceptionMap().values();
+                logger.info(format(" MultipleParallelException caught: %s\n Stack trace:\n%s",
+                        mpx, Utilities.stackTraceToString(mpx)));
+                for (Throwable subError : subErrors) {
+                    logger.info(format(" Exception %s\n Stack trace:\n%s",
+                            subError, Utilities.stackTraceToString(subError)));
+                }
+                throw mpx; // Or logger.severe.
+            } catch (Throwable t) {
+                Throwable cause = t.getCause();
+                logger.info(format(" Throwable caught: %s\n Stack trace:\n%s",
+                        t, Utilities.stackTraceToString(t)));
+                if (cause != null) {
+                    logger.info(format(" Cause: %s\n Stack trace:\n%s",
+                            cause, Utilities.stackTraceToString(cause)));
+                }
+                throw t;
+            }
+        }
     }
 
     @Override
@@ -176,58 +227,6 @@ public class SelfEnergyRegion extends WorkerRegion {
         eE.setBackboneEnergy(backboneEnergy);
     }
 
-    @Override
-    public void run() throws Exception {
-        if (!keySet.isEmpty()) {
-            try {
-                execute(0, keySet.size() - 1, new SelfEnergyLoop());
-            } catch (MultipleParallelException mpx) {
-                Collection<Throwable> subErrors = mpx.getExceptionMap().values();
-                logger.info(format(" MultipleParallelException caught: %s\n Stack trace:\n%s",
-                        mpx, Utilities.stackTraceToString(mpx)));
-                for (Throwable subError : subErrors) {
-                    logger.info(format(" Exception %s\n Stack trace:\n%s",
-                            subError, Utilities.stackTraceToString(subError)));
-                }
-                throw mpx; // Or logger.severe.
-            } catch (Throwable t) {
-                Throwable cause = t.getCause();
-                logger.info(format(" Throwable caught: %s\n Stack trace:\n%s",
-                        t, Utilities.stackTraceToString(t)));
-                if (cause != null) {
-                    logger.info(format(" Cause: %s\n Stack trace:\n%s",
-                            cause, Utilities.stackTraceToString(cause)));
-                }
-                throw t;
-            }
-        }
-    }
-
-    @Override
-    public void finish() {
-        // Pre-Prune if self-energy is Double.NaN.
-        eR.prePruneSelves(residues);
-
-        // Prune clashes for all singles (not just the ones this node did).
-        if (pruneClashes) {
-            eR.pruneSingleClashes(residues);
-        }
-
-        // Print what we've got so far.
-        if (master && verbose) {
-            for (int i = 0; i < residues.length; i++) {
-                Residue residue = residues[i];
-                Rotamer[] rotamers = residue.getRotamers(library);
-                for (int ri = 0; ri < rotamers.length; ri++) {
-                    logger.info(format(" Self energy %8s %-2d: %s",
-                            residues[i].toFormattedString(false, true),
-                            ri, rO.formatEnergy(
-                                    eE.getSelf(i, ri))));
-                }
-            }
-        }
-    }
-
     private class SelfEnergyLoop extends WorkerIntegerForLoop {
 
         DoubleBuf[] resultBuffer;
@@ -239,12 +238,6 @@ public class SelfEnergyRegion extends WorkerRegion {
                 resultBuffer[i] = DoubleBuf.buffer(new double[3]);
             }
             myBuffer = resultBuffer[rank];
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            // The schedule must be fixed.
-            return IntegerSchedule.fixed();
         }
 
         @Override
@@ -314,6 +307,12 @@ public class SelfEnergyRegion extends WorkerRegion {
                     }
                 }
             }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            // The schedule must be fixed.
+            return IntegerSchedule.fixed();
         }
     }
 }

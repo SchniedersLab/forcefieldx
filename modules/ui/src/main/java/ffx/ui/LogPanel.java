@@ -155,29 +155,6 @@ public class LogPanel extends JPanel implements ActionListener {
         }
     }
 
-    private void addPane(File logFile) {
-        if (!logFile.exists()) {
-            return;
-        }
-        JTextArea logTextArea = new JTextArea();
-        logTextArea.setEditable(logFile.canWrite());
-        logTextArea.setFont(font);
-        logFiles.put(logFile.getAbsolutePath(), logTextArea);
-        JScrollPane scrollPane = new JScrollPane(logTextArea,
-                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-        scrollPane.setBorder(eb);
-        resultsTabbedPane.add(scrollPane, logFile.getAbsolutePath());
-        resultsTabbedPane.setSelectedIndex(resultsTabbedPane.getComponentCount() - 1);
-        if (resultsTabbedPane.getComponentCount() == 1) {
-            remove(noLogsPanel);
-            add(resultsTabbedPane, BorderLayout.CENTER);
-            validate();
-            repaint();
-        }
-        loadText(logTextArea, logFile);
-    }
-
     /**
      * <p>
      * close</p>
@@ -244,6 +221,92 @@ public class LogPanel extends JPanel implements ActionListener {
 
     /**
      * <p>
+     * getProgressBar</p>
+     *
+     * @return a {@link javax.swing.JProgressBar} object.
+     */
+    public JProgressBar getProgressBar() {
+        return statusProgressBar;
+    }
+
+    /**
+     * <p>
+     * selected</p>
+     */
+    public void selected() {
+        validate();
+        repaint();
+    }
+
+    /**
+     * <p>
+     * setDone</p>
+     *
+     * @param logFileName a {@link java.lang.String} object.
+     */
+    public void setDone(String logFileName) {
+        synchronized (this) {
+            if (logFileName == null) {
+                return;
+            }
+            File logFile = new File(logFileName);
+            for (Thread thread : tinkerThreads) {
+                String jobName = thread.getName();
+                if (jobName.equals(logFileName)) {
+                    tinkerThreads.remove(thread);
+                    break;
+                }
+            }
+            if (!logFile.exists()) {
+                return;
+            }
+            if (logFiles.containsKey(logFile.getAbsolutePath())) {
+                JTextArea logTextArea = logFiles.get(logFile.getAbsolutePath());
+                loadText(logTextArea, logFile);
+            } // Create a new TextArea for the file
+            else {
+                addPane(logFile);
+            }
+            resultsTabbedPane.setSelectedIndex(resultsTabbedPane.indexOfTab(logFile.getAbsolutePath()));
+            refreshStatus();
+        }
+    }
+
+    /**
+     * <p>
+     * toString</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String toString() {
+        return "Logging";
+    }
+
+    private void addPane(File logFile) {
+        if (!logFile.exists()) {
+            return;
+        }
+        JTextArea logTextArea = new JTextArea();
+        logTextArea.setEditable(logFile.canWrite());
+        logTextArea.setFont(font);
+        logFiles.put(logFile.getAbsolutePath(), logTextArea);
+        JScrollPane scrollPane = new JScrollPane(logTextArea,
+                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scrollPane.setBorder(eb);
+        resultsTabbedPane.add(scrollPane, logFile.getAbsolutePath());
+        resultsTabbedPane.setSelectedIndex(resultsTabbedPane.getComponentCount() - 1);
+        if (resultsTabbedPane.getComponentCount() == 1) {
+            remove(noLogsPanel);
+            add(resultsTabbedPane, BorderLayout.CENTER);
+            validate();
+            repaint();
+        }
+        loadText(logTextArea, logFile);
+    }
+
+    /**
+     * <p>
      * closeAll</p>
      */
     private void closeAll() {
@@ -252,16 +315,6 @@ public class LogPanel extends JPanel implements ActionListener {
             logFiles.clear();
             tinkerThreads.clear();
         }
-    }
-
-    /**
-     * <p>
-     * getProgressBar</p>
-     *
-     * @return a {@link javax.swing.JProgressBar} object.
-     */
-    public JProgressBar getProgressBar() {
-        return statusProgressBar;
     }
 
     private void initToolBar() {
@@ -435,58 +488,5 @@ public class LogPanel extends JPanel implements ActionListener {
                 }
             }
         }
-    }
-
-    /**
-     * <p>
-     * selected</p>
-     */
-    public void selected() {
-        validate();
-        repaint();
-    }
-
-    /**
-     * <p>
-     * setDone</p>
-     *
-     * @param logFileName a {@link java.lang.String} object.
-     */
-    public void setDone(String logFileName) {
-        synchronized (this) {
-            if (logFileName == null) {
-                return;
-            }
-            File logFile = new File(logFileName);
-            for (Thread thread : tinkerThreads) {
-                String jobName = thread.getName();
-                if (jobName.equals(logFileName)) {
-                    tinkerThreads.remove(thread);
-                    break;
-                }
-            }
-            if (!logFile.exists()) {
-                return;
-            }
-            if (logFiles.containsKey(logFile.getAbsolutePath())) {
-                JTextArea logTextArea = logFiles.get(logFile.getAbsolutePath());
-                loadText(logTextArea, logFile);
-            } // Create a new TextArea for the file
-            else {
-                addPane(logFile);
-            }
-            resultsTabbedPane.setSelectedIndex(resultsTabbedPane.indexOfTab(logFile.getAbsolutePath()));
-            refreshStatus();
-        }
-    }
-
-    /**
-     * <p>
-     * toString</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String toString() {
-        return "Logging";
     }
 }

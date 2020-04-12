@@ -52,6 +52,8 @@ import org.junit.BeforeClass;
  * @author Michael J. Schnieders
  */
 public abstract class BaseFFXTest {
+    public static final boolean ffxCI = System.getProperty("ffx.ci", "false").equalsIgnoreCase("true");
+    public static final boolean ffxOpenMM = System.getProperty("ffx.openMM", "false").equalsIgnoreCase("true");
     /**
      * Constant <code>logger</code>
      */
@@ -60,9 +62,6 @@ public abstract class BaseFFXTest {
     private static final Level testLevel;
     private static final Level ffxLevel;
     private static Properties properties;
-
-    public static final boolean ffxCI = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
-    public static final boolean ffxOpenMM = System.getProperty("ffx.openMM","false").equalsIgnoreCase("true");
 
     static {
         Level level;
@@ -81,6 +80,24 @@ public abstract class BaseFFXTest {
             level = origLevel;
         }
         ffxLevel = level;
+    }
+
+    /**
+     * <p>afterClass.</p>
+     */
+    @AfterClass
+    public static void afterClass() {
+        Logger.getLogger("ffx").setLevel(origLevel);
+        logger.setLevel(origLevel);
+    }
+
+    /**
+     * <p>afterTest.</p>
+     */
+    @After
+    public void afterTest() {
+        // All properties are set to the values they were at the beginning of the test.
+        System.setProperties(properties);
     }
 
     /**
@@ -109,23 +126,5 @@ public abstract class BaseFFXTest {
         for (String key : currentProperties.stringPropertyNames()) {
             properties.setProperty(key, currentProperties.getProperty(key));
         }
-    }
-
-    /**
-     * <p>afterTest.</p>
-     */
-    @After
-    public void afterTest() {
-        // All properties are set to the values they were at the beginning of the test.
-        System.setProperties(properties);
-    }
-
-    /**
-     * <p>afterClass.</p>
-     */
-    @AfterClass
-    public static void afterClass() {
-        Logger.getLogger("ffx").setLevel(origLevel);
-        logger.setLevel(origLevel);
     }
 }

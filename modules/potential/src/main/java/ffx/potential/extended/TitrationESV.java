@@ -54,7 +54,6 @@ import ffx.utilities.Constants;
  * ASP/GLU. (3) Assess bytecode-output implementation via eg. ASM.
  *
  * @author Stephen LuCore
- *
  * @since 1.0
  */
 public final class TitrationESV extends ExtendedVariable {
@@ -77,6 +76,14 @@ public final class TitrationESV extends ExtendedVariable {
         Titration titration = Titration.lookup(titrating.getActive());
         this.referenceEnergy = titration.refEnergy;
         this.pKaModel = titration.pKa;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getName() {
+        return format("Titr%d", esvIndex);
     }
 
     /**
@@ -126,14 +133,6 @@ public final class TitrationESV extends ExtendedVariable {
         double duphdl = ExtConstants.log10 * Constants.R * temperature * (pKaModel - constPh);
         double dumoddl = referenceEnergy;
         return duphdl + dumoddl;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return format("Titr%d", esvIndex);
     }
 
 }

@@ -52,13 +52,13 @@ import static ffx.potential.parameters.ForceField.ForceFieldType.CHARGE;
 public final class ChargeType extends BaseType implements Comparator<String> {
 
     /**
-     * The atom type that uses this charge parameter.
-     */
-    public int atomType;
-    /**
      * Partial atomic charge in units of electrons.
      */
     public final double charge;
+    /**
+     * The atom type that uses this charge parameter.
+     */
+    public int atomType;
 
     /**
      * ChargeType constructor.
@@ -70,16 +70,6 @@ public final class ChargeType extends BaseType implements Comparator<String> {
         super(CHARGE, "" + atomType);
         this.atomType = atomType;
         this.charge = charge;
-    }
-
-    /**
-     * <p>
-     * incrementType</p>
-     *
-     * @param increment a int.
-     */
-    public void incrementType(int increment) {
-        this.atomType += increment;
     }
 
     /**
@@ -101,22 +91,32 @@ public final class ChargeType extends BaseType implements Comparator<String> {
 
     /**
      * {@inheritDoc}
-     * <p>
-     * Nicely formatted Charge type.
-     */
-    @Override
-    public String toString() {
-        return format("charge  %5d  % 7.5f", atomType, charge);
-    }
-
-    /**
-     * {@inheritDoc}
      */
     @Override
     public int compare(String s1, String s2) {
         int t1 = parseInt(s1);
         int t2 = parseInt(s2);
         return Integer.compare(t1, t2);
+    }
+
+    /**
+     * <p>
+     * incrementType</p>
+     *
+     * @param increment a int.
+     */
+    public void incrementType(int increment) {
+        this.atomType += increment;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Nicely formatted Charge type.
+     */
+    @Override
+    public String toString() {
+        return format("charge  %5d  % 7.5f", atomType, charge);
     }
 
 }

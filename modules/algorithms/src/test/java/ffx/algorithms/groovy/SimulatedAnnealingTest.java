@@ -52,7 +52,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.groovy.Anneal;
 import ffx.algorithms.misc.PJDependentTest;
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing;
 import ffx.utilities.DirectoryUtils;
@@ -65,16 +64,38 @@ import groovy.lang.Binding;
 @RunWith(Parameterized.class)
 public class SimulatedAnnealingTest extends PJDependentTest {
 
+    private static final double tolerance = 0.01;
     private String info;
     private String filename;
     private double endKineticEnergy;
     private double endPotentialEnergy;
     private double endTotalEnergy;
     private double endTemperature;
-    private static final double tolerance = 0.01;
-
     private Binding binding;
     private Anneal anneal;
+
+    public SimulatedAnnealingTest(String info, String filename, double endKineticEnergy, double endPotentialEnergy, double endTotalEnergy,
+                                  double endTemperature) {
+        this.info = info;
+        this.filename = filename;
+        this.endKineticEnergy = endKineticEnergy;
+        this.endPotentialEnergy = endPotentialEnergy;
+        this.endTotalEnergy = endTotalEnergy;
+        this.endTemperature = endTemperature;
+    }
+
+    @After
+    public void after() {
+        anneal.destroyPotentials();
+        System.gc();
+    }
+
+    @Before
+    public void before() {
+        binding = new Binding();
+        anneal = new Anneal();
+        anneal.setBinding(binding);
+    }
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -89,29 +110,6 @@ public class SimulatedAnnealingTest extends PJDependentTest {
                 }
 
         });
-    }
-
-    public SimulatedAnnealingTest(String info, String filename, double endKineticEnergy, double endPotentialEnergy, double endTotalEnergy,
-                                  double endTemperature) {
-        this.info = info;
-        this.filename = filename;
-        this.endKineticEnergy = endKineticEnergy;
-        this.endPotentialEnergy = endPotentialEnergy;
-        this.endTotalEnergy = endTotalEnergy;
-        this.endTemperature = endTemperature;
-    }
-
-    @Before
-    public void before() {
-        binding = new Binding();
-        anneal = new Anneal();
-        anneal.setBinding(binding);
-    }
-
-    @After
-    public void after() {
-        anneal.destroyPotentials();
-        System.gc();
     }
 
     @Test

@@ -42,12 +42,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
 import static java.lang.System.arraycopy;
 
+import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
-import ffx.numerics.Constraint;
 
 /**
  * The Integrator class is responsible for propagation of degrees of freedom
@@ -60,22 +59,10 @@ import ffx.numerics.Constraint;
 public abstract class Integrator {
 
     private static final Logger logger = Logger.getLogger(Integrator.class.getName());
-
     /**
-     * Parse an integrator String into an instance of the IntegratorEnum enum.
-     *
-     * @param str Integrator string.
-     * @return Integrator enum.
+     * Numerical tolerance (as a fraction of bond length) permitted for numerical solutions to constraints.
      */
-    public static IntegratorEnum parseIntegrator(String str) {
-        try {
-            return IntegratorEnum.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
-        } catch (Exception e) {
-            logger.info(String.format(" Could not parse %s as an integrator; defaulting to Verlet.", str));
-            return IntegratorEnum.VERLET;
-        }
-    }
-
+    protected final double constraintTolerance = ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
     /**
      * Number of variables.
      */
@@ -97,18 +84,9 @@ public abstract class Integrator {
      */
     protected double[] a;
     /**
-     * Acceleration of each degree of freedom for the previous step.
-     */
-    double[] aPrevious;
-
-    /**
      * Time step (psec).
      */
     protected double dt;
-    /**
-     * Half the time step (psec).
-     */
-    double dt_2;
     /**
      * Any geometric constraints to apply during integration.
      */
@@ -118,10 +96,13 @@ public abstract class Integrator {
      */
     protected boolean useConstraints = false;
     /**
-     * Numerical tolerance (as a fraction of bond length) permitted for numerical solutions to constraints.
+     * Acceleration of each degree of freedom for the previous step.
      */
-    protected final double constraintTolerance = ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
-
+    double[] aPrevious;
+    /**
+     * Half the time step (psec).
+     */
+    double dt_2;
     /**
      * Constructor for Integrator.
      *
@@ -164,6 +145,92 @@ public abstract class Integrator {
     }
 
     /**
+     * Adds a set of Constraints that this Integrator must respect.
+     *
+     * @param addedConstraints Constraints to add.
+     */
+    public void addConstraints(List<Constraint> addedConstraints) {
+        constraints.addAll(addedConstraints);
+        useConstraints = true;
+    }
+
+    /**
+     * Copy acceleration to previous acceleration.
+     */
+    public void copyAccelerationToPrevious() {
+        if (aPrevious == null || aPrevious.length < a.length) {
+            aPrevious = new double[a.length];
+        }
+        arraycopy(a, 0, aPrevious, 0, nVariables);
+    }
+
+    /**
+     * Returns a copy of the list of Constraints.
+     *
+     * @return All Constraints this Integrator respects.
+     */
+    public List<Constraint> getConstraints() {
+        return new ArrayList<>(constraints);
+    }
+
+    /**
+     * Get the time step.
+     *
+     * @return the time step (psec).
+     */
+    public double getTimeStep() {
+        return dt;
+    }
+
+    /**
+     * Set the time step.
+     *
+     * @param dt the time step (psec).
+     */
+    abstract public void setTimeStep(double dt);
+
+    /**
+     * Parse an integrator String into an instance of the IntegratorEnum enum.
+     *
+     * @param str Integrator string.
+     * @return Integrator enum.
+     */
+    public static IntegratorEnum parseIntegrator(String str) {
+        try {
+            return IntegratorEnum.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
+        } catch (Exception e) {
+            logger.info(String.format(" Could not parse %s as an integrator; defaulting to Verlet.", str));
+            return IntegratorEnum.VERLET;
+        }
+    }
+
+    /**
+     * Integrator post-force evaluation operation.
+     *
+     * @param gradient the gradient for the post-force operation.
+     */
+    abstract public void postForce(double[] gradient);
+
+    /**
+     * Integrator pre-force evaluation operation.
+     *
+     * @param potential the Potential this integrator operates on.
+     */
+    abstract public void preForce(Potential potential);
+
+    public void removeConstraint(Constraint constraint) {
+        constraints.remove(constraint);
+        useConstraints = !constraints.isEmpty();
+    }
+
+    public void removeConstraints(Collection<Constraint> toRemove) {
+        constraints = constraints.stream().
+                filter((Constraint c) -> !toRemove.contains(c)).
+                collect(Collectors.toList());
+        useConstraints = !constraints.isEmpty();
+    }
+
+    /**
      * Update the integrator to be consistent with chemical perturbations.
      *
      * @param nVariables the number of variables being integrated.
@@ -200,76 +267,5 @@ public abstract class Integrator {
         this.a = a;
         this.mass = mass;
     }
-
-    /**
-     * Copy acceleration to previous acceleration.
-     */
-    public void copyAccelerationToPrevious() {
-        if (aPrevious == null || aPrevious.length < a.length) {
-            aPrevious = new double[a.length];
-        }
-        arraycopy(a, 0, aPrevious, 0, nVariables);
-    }
-
-    /**
-     * Get the time step.
-     *
-     * @return the time step (psec).
-     */
-    public double getTimeStep() {
-        return dt;
-    }
-
-    /**
-     * Adds a set of Constraints that this Integrator must respect.
-     *
-     * @param addedConstraints Constraints to add.
-     */
-    public void addConstraints(List<Constraint> addedConstraints) {
-        constraints.addAll(addedConstraints);
-        useConstraints = true;
-    }
-
-    /**
-     * Returns a copy of the list of Constraints.
-     *
-     * @return All Constraints this Integrator respects.
-     */
-    public List<Constraint> getConstraints() {
-        return new ArrayList<>(constraints);
-    }
-
-    public void removeConstraint(Constraint constraint) {
-        constraints.remove(constraint);
-        useConstraints = !constraints.isEmpty();
-    }
-
-    public void removeConstraints(Collection<Constraint> toRemove) {
-        constraints = constraints.stream().
-                filter((Constraint c) -> !toRemove.contains(c)).
-                collect(Collectors.toList());
-        useConstraints = !constraints.isEmpty();
-    }
-
-    /**
-     * Set the time step.
-     *
-     * @param dt the time step (psec).
-     */
-    abstract public void setTimeStep(double dt);
-
-    /**
-     * Integrator pre-force evaluation operation.
-     *
-     * @param potential the Potential this integrator operates on.
-     */
-    abstract public void preForce(Potential potential);
-
-    /**
-     * Integrator post-force evaluation operation.
-     *
-     * @param gradient the gradient for the post-force operation.
-     */
-    abstract public void postForce(double[] gradient);
 
 }

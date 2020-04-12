@@ -58,31 +58,38 @@ import static ffx.potential.parameters.ForceField.toEnumForm;
 public class VanDerWaalsForm {
 
     /**
+     * Constant <code>RADMIN=0</code>
+     */
+    static final byte RADMIN = 0;
+    /**
+     * Constant <code>EPS=1</code>
+     */
+    static final byte EPS = 1;
+    /**
      * The logger.
      */
     private static final Logger logger = Logger.getLogger(VanDerWaalsForm.class.getName());
-
-    public enum VDW_TYPE {
-
-        BUFFERED_14_7, LENNARD_JONES
-    }
-
-    public enum RADIUS_RULE {
-        ARITHMETIC, CUBIC_MEAN, GEOMETRIC
-    }
-
-    public enum RADIUS_SIZE {
-        DIAMETER, RADIUS
-    }
-
-    public enum RADIUS_TYPE {
-        R_MIN, SIGMA
-    }
-
-    public enum EPSILON_RULE {
-        GEOMETRIC, HHG
-    }
-
+    /**
+     * First constant suggested by Halgren for the Buffered-14-7 potential.
+     */
+    public final double gamma;
+    /**
+     * Second constant suggested by Halgren for the Buffered-14-7 potential.
+     */
+    public final double delta;
+    /**
+     * vdW Dispersive Power (e.g. 6).
+     */
+    final int dispersivePower;
+    final double gamma1;
+    /**
+     * Define some handy constants.
+     */
+    final double t1n;
+    final int repDispPower;
+    private final VDWPowers vdwPowers;
+    private final int dispersivePower1;
+    private final int repDispPower1;
     /**
      * van der Waals functional form.
      */
@@ -91,40 +98,12 @@ public class VanDerWaalsForm {
     public RADIUS_RULE radiusRule;
     public RADIUS_SIZE radiusSize;
     public RADIUS_TYPE radiusType;
-
-    private final VDWPowers vdwPowers;
-
-    /**
-     * vdW Dispersive Power (e.g. 6).
-     */
-    final int dispersivePower;
-
-    /**
-     * First constant suggested by Halgren for the Buffered-14-7 potential.
-     */
-    public final double gamma;
-    final double gamma1;
-
-    /**
-     * Second constant suggested by Halgren for the Buffered-14-7 potential.
-     */
-    public final double delta;
-
-    /**
-     * Define some handy constants.
-     */
-    final double t1n;
-    final int repDispPower;
-    private final int dispersivePower1;
-    private final int repDispPower1;
-
     /**
      * Define scale factors between 1-2, 1-3, etc. atoms.
      */
     protected double scale12;
     protected double scale13;
     double scale14;
-
     /**
      * Maximum number of classes in the force field.
      */
@@ -147,15 +126,6 @@ public class VanDerWaalsForm {
      * Currently this is specific to the CHARMM force fields.
      */
     private double[][] radEps14;
-    /**
-     * Constant <code>RADMIN=0</code>
-     */
-    static final byte RADMIN = 0;
-    /**
-     * Constant <code>EPS=1</code>
-     */
-    static final byte EPS = 1;
-
     /**
      * <p>Constructor for VanDerWaalsForm.</p>
      *
@@ -310,7 +280,7 @@ public class VanDerWaalsForm {
             double ri = radScale * vdwi.radius;
             double e1 = vdwi.wellDepth;
             rMin[i] = ri;
-            eps[i]  = e1;
+            eps[i] = e1;
             for (VDWType vdwj : vdwTypes.tailMap(vdwi.getKey()).values()) {
                 int j = vdwj.atomClass;
                 double rj = radScale * vdwj.radius;
@@ -378,55 +348,6 @@ public class VanDerWaalsForm {
     }
 
     /**
-     * Return the eps value for each class.
-     * @return Returns the eps array.
-     */
-    public double[] getEps() {
-        return eps;
-    }
-
-    /**
-     * Return the Rmin value for each class.
-     * @return Returns the Rmin array.
-     */
-    public double[] getRmin() {
-        return rMin;
-    }
-
-    /**
-     * Return the combined inverse Rmin value (1/Rmin).
-     *
-     * @param class1 Class for atom 1.
-     * @param class2 Class for atom 2.
-     * @return Combined inverse Rmin.
-     */
-    public double getCombinedInverseRmin(int class1, int class2) {
-        return radEps[class1][class2 * 2 + RADMIN];
-    }
-
-    /**
-     * Return the combined well depth (kcal/mol) for special 1-4 interactions
-     *
-     * @param class1 Class for atom 1.
-     * @param class2 Class for atom 2.
-     * @return Combined Eps.
-     */
-    public double getCombinedEps14(int class1, int class2) {
-        return radEps14[class1][class2 * 2 + EPS];
-    }
-
-    /**
-     * Return the combined inverse Rmin value (1/Rmin) for special 1-4 interactions.
-     *
-     * @param class1 Class for atom 1.
-     * @param class2 Class for atom 2.
-     * @return Combined inverse Rmin.
-     */
-    public double getCombinedInverseRmin14(int class1, int class2) {
-        return radEps14[class1][class2 * 2 + RADMIN];
-    }
-
-    /**
      * Get the combined EPS value.
      *
      * @param ei          The eps value of the first atom.
@@ -444,6 +365,39 @@ public class VanDerWaalsForm {
             case HHG:
                 return 4.0 * (ei * ej) / ((sei + sej) * (sei + sej));
         }
+    }
+
+    /**
+     * Return the combined well depth (kcal/mol) for special 1-4 interactions
+     *
+     * @param class1 Class for atom 1.
+     * @param class2 Class for atom 2.
+     * @return Combined Eps.
+     */
+    public double getCombinedEps14(int class1, int class2) {
+        return radEps14[class1][class2 * 2 + EPS];
+    }
+
+    /**
+     * Return the combined inverse Rmin value (1/Rmin).
+     *
+     * @param class1 Class for atom 1.
+     * @param class2 Class for atom 2.
+     * @return Combined inverse Rmin.
+     */
+    public double getCombinedInverseRmin(int class1, int class2) {
+        return radEps[class1][class2 * 2 + RADMIN];
+    }
+
+    /**
+     * Return the combined inverse Rmin value (1/Rmin) for special 1-4 interactions.
+     *
+     * @param class1 Class for atom 1.
+     * @param class2 Class for atom 2.
+     * @return Combined inverse Rmin.
+     */
+    public double getCombinedInverseRmin14(int class1, int class2) {
+        return radEps14[class1][class2 * 2 + RADMIN];
     }
 
     /**
@@ -471,6 +425,95 @@ public class VanDerWaalsForm {
     }
 
     /**
+     * Return the eps value for each class.
+     *
+     * @return Returns the eps array.
+     */
+    public double[] getEps() {
+        return eps;
+    }
+
+    /**
+     * Return the Rmin value for each class.
+     *
+     * @return Returns the Rmin array.
+     */
+    public double[] getRmin() {
+        return rMin;
+    }
+
+    /**
+     * <p>Getter for the field <code>scale14</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getScale14() {
+        return scale14;
+    }
+
+    public enum VDW_TYPE {
+
+        BUFFERED_14_7, LENNARD_JONES
+    }
+
+    public enum RADIUS_RULE {
+        ARITHMETIC, CUBIC_MEAN, GEOMETRIC
+    }
+
+    public enum RADIUS_SIZE {
+        DIAMETER, RADIUS
+    }
+
+    public enum RADIUS_TYPE {
+        R_MIN, SIGMA
+    }
+
+    public enum EPSILON_RULE {
+        GEOMETRIC, HHG
+    }
+
+    private class VDWPowers {
+
+        public double rhoDelta1(double rhoDelta) {
+            return pow(rhoDelta, repDispPower1);
+        }
+
+        public double rhoDisp1(double rho) {
+            return pow(rho, dispersivePower1);
+        }
+    }
+
+    private class LJ_6_12 extends VDWPowers {
+
+        @Override
+        public double rhoDelta1(double rhoDelta) {
+            double rhoDelta2 = rhoDelta * rhoDelta;
+            return rhoDelta2 * rhoDelta2 * rhoDelta;
+        }
+
+        @Override
+        public double rhoDisp1(double rho) {
+            double rho2 = rho * rho;
+            return rho2 * rho2 * rho;
+        }
+    }
+
+    private class Buffered_14_7 extends VDWPowers {
+
+        @Override
+        public double rhoDelta1(double rhoDelta) {
+            double rhoDelta2 = rhoDelta * rhoDelta;
+            return rhoDelta2 * rhoDelta2 * rhoDelta2;
+        }
+
+        @Override
+        public double rhoDisp1(double rho) {
+            double rho2 = rho * rho;
+            return rho2 * rho2 * rho2;
+        }
+    }
+
+    /**
      * <p>rhoDisp1.</p>
      *
      * @param rho a double.
@@ -488,55 +531,5 @@ public class VanDerWaalsForm {
      */
     double rhoDelta1(double rhoDelta) {
         return vdwPowers.rhoDisp1(rhoDelta);
-    }
-
-    /**
-     * <p>Getter for the field <code>scale14</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getScale14() {
-        return scale14;
-    }
-
-    private class VDWPowers {
-
-        public double rhoDisp1(double rho) {
-            return pow(rho, dispersivePower1);
-        }
-
-        public double rhoDelta1(double rhoDelta) {
-            return pow(rhoDelta, repDispPower1);
-        }
-    }
-
-    private class LJ_6_12 extends VDWPowers {
-
-        @Override
-        public double rhoDisp1(double rho) {
-            double rho2 = rho * rho;
-            return rho2 * rho2 * rho;
-        }
-
-        @Override
-        public double rhoDelta1(double rhoDelta) {
-            double rhoDelta2 = rhoDelta * rhoDelta;
-            return rhoDelta2 * rhoDelta2 * rhoDelta;
-        }
-    }
-
-    private class Buffered_14_7 extends VDWPowers {
-
-        @Override
-        public double rhoDisp1(double rho) {
-            double rho2 = rho * rho;
-            return rho2 * rho2 * rho2;
-        }
-
-        @Override
-        public double rhoDelta1(double rhoDelta) {
-            double rhoDelta2 = rhoDelta * rhoDelta;
-            return rhoDelta2 * rhoDelta2 * rhoDelta2;
-        }
     }
 }

@@ -39,8 +39,8 @@ package ffx.algorithms.optimize.manybody;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,72 +63,71 @@ import ffx.potential.bonded.RotamerLibrary;
 public class TwoBodyEnergyRegion extends WorkerRegion {
 
     private static final Logger logger = Logger.getLogger(TwoBodyEnergyRegion.class.getName());
-
-    private RotamerOptimization rO;
-    private DistanceMatrix dM;
-    private EnergyExpansion eE;
-    private EliminatedRotamers eR;
     private final Residue[] residues;
-    private Set<Integer> keySet;
+    private final RotamerOptimization rO;
+    private final DistanceMatrix dM;
+    private final EnergyExpansion eE;
+    private final EliminatedRotamers eR;
     /**
      * A list of all residues being optimized. Note that Box and Window
      * optimizations operate on subsets of this list.
      */
-    private ArrayList<Residue> allResiduesList;
+    private final List<Residue> allResiduesList;
     /**
      * RotamerLibrary instance.
      */
-    private RotamerLibrary library;
+    private final RotamerLibrary library;
     /**
      * Map of self-energy values to compute.
      */
-    private HashMap<Integer, Integer[]> twoBodyEnergyMap;
+    private final Map<Integer, Integer[]> twoBodyEnergyMap;
     /**
      * Writes energies to restart file.
      */
-    private BufferedWriter energyWriter;
+    private final BufferedWriter energyWriter;
     /**
      * World Parallel Java communicator.
      */
-    private Comm world;
+    private final Comm world;
     /**
      * Number of Parallel Java processes.
      */
-    private int numProc;
+    private final int numProc;
     /**
      * Flag to prune clashes.
      */
-    private boolean prunePairClashes;
+    private final boolean prunePairClashes;
     /**
      * If a pair of residues have two atoms closer together than the
      * superposition threshold, the energy is set to NaN.
      */
-    private double superpositionThreshold;
+    private final double superpositionThreshold;
     /**
      * Flag to indicate if this is the master process.
      */
-    private boolean master;
+    private final boolean master;
     /**
      * Rank of this process.
      */
-    private int rank;
+    private final int rank;
     /**
      * Flag to indicate verbose logging.
      */
-    private boolean verbose;
+    private final boolean verbose;
     /**
      * If true, write out an energy restart file.
      */
-    private boolean writeEnergyRestart;
+    private final boolean writeEnergyRestart;
     /**
      * Sets whether files should be printed; true for standalone applications,
      * false for some applications which use rotamer optimization as part of a
      * larger process.
      */
-    private boolean printFiles;
+    private final boolean printFiles;
+    private Set<Integer> keySet;
 
     public TwoBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, EnergyExpansion eE, EliminatedRotamers eR,
-                               Residue[] residues, ArrayList<Residue> allResiduesList, RotamerLibrary library,
+                               Residue[] residues, List<Residue> allResiduesList, RotamerLibrary library,
                                BufferedWriter energyWriter, Comm world, int numProc, boolean prunePairClashes, double superpositionThreshold,
                                boolean master, int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
         this.rO = rotamerOptimization;
@@ -151,36 +150,6 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
 
         this.twoBodyEnergyMap = eE.getTwoBodyEnergyMap();
         logger.info(format(" Number of 2-body energies to calculate: %d", twoBodyEnergyMap.size()));
-    }
-
-    @Override
-    public void start() {
-        int numPair = twoBodyEnergyMap.size();
-        int remainder = numPair % numProc;
-
-        // Set padded residue and rotamer to less than zero.
-        Integer[] padding = {-1, -1, -1, -1};
-
-        int padKey = numPair;
-        while (remainder != 0) {
-            twoBodyEnergyMap.put(padKey++, padding);
-            remainder = twoBodyEnergyMap.size() % numProc;
-        }
-
-        numPair = twoBodyEnergyMap.size();
-        if (numPair % numProc != 0) {
-            logger.severe(" Logic error padding pair energies.");
-        }
-
-        // Load the keySet of pair energies.
-        keySet = twoBodyEnergyMap.keySet();
-    }
-
-    @Override
-    public void run() throws Exception {
-        if (!keySet.isEmpty()) {
-            execute(0, keySet.size() - 1, new TwoBodyEnergyLoop());
-        }
     }
 
     @Override
@@ -222,6 +191,36 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
         }
     }
 
+    @Override
+    public void run() throws Exception {
+        if (!keySet.isEmpty()) {
+            execute(0, keySet.size() - 1, new TwoBodyEnergyLoop());
+        }
+    }
+
+    @Override
+    public void start() {
+        int numPair = twoBodyEnergyMap.size();
+        int remainder = numPair % numProc;
+
+        // Set padded residue and rotamer to less than zero.
+        Integer[] padding = {-1, -1, -1, -1};
+
+        int padKey = numPair;
+        while (remainder != 0) {
+            twoBodyEnergyMap.put(padKey++, padding);
+            remainder = twoBodyEnergyMap.size() % numProc;
+        }
+
+        numPair = twoBodyEnergyMap.size();
+        if (numPair % numProc != 0) {
+            logger.severe(" Logic error padding pair energies.");
+        }
+
+        // Load the keySet of pair energies.
+        keySet = twoBodyEnergyMap.keySet();
+    }
+
     private class TwoBodyEnergyLoop extends WorkerIntegerForLoop {
 
         DoubleBuf[] resultBuffer;
@@ -233,12 +232,6 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
                 resultBuffer[i] = DoubleBuf.buffer(new double[5]);
             }
             myBuffer = resultBuffer[rank];
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            // The schedule must be fixed.
-            return IntegerSchedule.fixed();
         }
 
         @Override
@@ -352,6 +345,12 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
                     }
                 }
             }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            // The schedule must be fixed.
+            return IntegerSchedule.fixed();
         }
     }
 }

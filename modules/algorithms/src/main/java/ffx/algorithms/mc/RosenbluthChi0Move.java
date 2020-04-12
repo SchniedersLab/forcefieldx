@@ -37,11 +37,9 @@
 //******************************************************************************
 package ffx.algorithms.mc;
 
-import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import static java.lang.String.format;
 
-import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
@@ -58,6 +56,10 @@ import ffx.potential.bonded.Torsion;
 public class RosenbluthChi0Move implements MCMove {
 
     /**
+     * The value of theta.
+     */
+    public final double theta;
+    /**
      * The residue to operate on.
      */
     private final Residue target;
@@ -69,10 +71,6 @@ public class RosenbluthChi0Move implements MCMove {
      * The rotamer to try.
      */
     private final Rotamer newState;
-    /**
-     * The value of theta.
-     */
-    public final double theta;
 
     /**
      * <p>Constructor for RosenbluthChi0Move.</p>
@@ -122,20 +120,20 @@ public class RosenbluthChi0Move implements MCMove {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return format("Rosenbluth Rotamer Move:\n   Res:   %s\n   Theta: %3.2f", target.toString(), theta);
+    }
+
+    /**
      * Update all torsions.
      */
     private void updateTorsions() {
         for (Torsion torsion : target.getTorsionList()) {
             torsion.update();
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return format("Rosenbluth Rotamer Move:\n   Res:   %s\n   Theta: %3.2f", target.toString(), theta);
     }
 
 }

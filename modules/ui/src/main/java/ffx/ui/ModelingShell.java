@@ -101,19 +101,21 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * The logger for this class.
      */
     private static final Logger logger = Logger.getLogger(ModelingShell.class.getName());
+    private static final double toSeconds = 1.0e-9;
+    private static final Preferences preferences = Preferences.userNodeForPackage(ModelingShell.class);
     /**
      * A reference to the main application container.
      */
     private final MainPanel mainPanel;
     /**
+     * The flag headless is true for the CLI and false for the GUI.
+     */
+    private final boolean headless;
+    /**
      * The flag interrupted is true if a script is running and the user requests
      * it be canceled.
      */
     private boolean interrupted;
-    /**
-     * The flag headless is true for the CLI and false for the GUI.
-     */
-    private final boolean headless;
     /**
      * An algorithm that implements the Terminatable interface can be cleanly
      * terminated before completion. For example, after completion of an
@@ -129,8 +131,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      */
     private long time;
     private long subTime;
-    private static final double toSeconds = 1.0e-9;
-
     private List<String> args;
 
     /**
@@ -145,6 +145,305 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         headless = java.awt.GraphicsEnvironment.isHeadless();
         initContext();
         loadPrefs();
+    }
+
+    /**
+     * <p>
+     * after</p>
+     */
+    public void after() {
+        time = System.nanoTime() - time;
+        if (!interrupted) {
+            appendOutput(String.format("\n Script wall clock time: %6.3f (sec)", time * toSeconds), getPromptStyle());
+        } else {
+            appendOutput(String.format("\n Script interrupted after: %6.3f (sec)", time * toSeconds), getPromptStyle());
+        }
+        mainPanel.getModelingPanel().enableLaunch(true);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean algorithmUpdate(MolecularAssembly active) {
+        if (interrupted) {
+            return false;
+        }
+
+        GraphicsCanvas graphics = mainPanel.getGraphics3D();
+        if (graphics != null) {
+            /*
+              Use the blocking graphics update method so that only
+              self-consistent coordinate sets are displayed.
+             */
+            //if (SwingUtilities.isEventDispatchThread()) {
+            graphics.updateSceneWait(active, true, false, null, false, null);
+            //}
+        }
+
+        // The algorithm could have been interrupted during the graphics update.
+        return !interrupted;
+    }
+
+    /**
+     * If at exit time, a script is running, the user is given an option to
+     * interrupt it first
+     * <p>
+     * {@inheritDoc}
+     */
+    @Override
+    public Object askToInterruptScript() {
+        if (!scriptRunning) {
+            return true;
+        }
+        int rc = JOptionPane.showConfirmDialog(getScrollArea(),
+                "Script executing. Press 'OK' to attempt to interrupt it before exiting.",
+                "Force Field X Shell", JOptionPane.OK_CANCEL_OPTION);
+        if (rc == JOptionPane.OK_OPTION) {
+            doInterrupt();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Return false if user elects to cancel.
+     */
+    @Override
+    public boolean askToSaveFile() {
+        File file = (File) getScriptFile();
+        if (file == null || !getDirty()) {
+            return true;
+        }
+        switch (JOptionPane.showConfirmDialog((Component) getFrame(),
+                "Save changes to " + file.getName() + "?",
+                "Force Field X Shell", JOptionPane.YES_NO_CANCEL_OPTION)) {
+            case JOptionPane.YES_OPTION:
+                return fileSave();
+            case JOptionPane.NO_OPTION:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * <p>
+     * before</p>
+     */
+    public void before() {
+        interrupted = false;
+        terminatableAlgorithm = null;
+        time = System.nanoTime();
+        subTime = time;
+        mainPanel.getModelingPanel().enableLaunch(false);
+    }
+
+    @Override
+    public void clearContext() {
+        super.clearContext();
+        initContext();
+    }
+
+    @Override
+    public void clearContext(EventObject evt) {
+        super.clearContext(evt);
+        initContext();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Print out the Force Field X promo.
+     */
+    @Override
+    final public void clearOutput() {
+        if (!java.awt.GraphicsEnvironment.isHeadless()) {
+            JTextPane output = getOutputArea();
+            output.setText("");
+            appendOutput(MainPanel.border + "\n" + MainPanel.title
+                    + MainPanel.aboutString + "\n" + MainPanel.border + "\n", getCommandStyle());
+        }
+    }
+
+    @Override
+    public void clearOutput(EventObject evt) {
+        clearOutput();
+    }
+
+    /**
+     * <p>
+     * energy</p>
+     *
+     * @return a {@link ffx.potential.ForceFieldEnergy} object.
+     */
+    public ForceFieldEnergy energy() {
+        if (interrupted) {
+            logger.info(" Algorithm interrupted - skipping energy.");
+            return null;
+        }
+        if (terminatableAlgorithm != null) {
+            logger.info(" Algorithm already running - skipping energy.");
+            return null;
+        }
+
+        MolecularAssembly active = mainPanel.getHierarchy().getActive();
+        if (active != null) {
+            ForceFieldEnergy energy = active.getPotentialEnergy();
+            if (energy == null) {
+                energy = ForceFieldEnergy.energyFactory(active);
+                active.setPotential(energy);
+            }
+            energy.energy(false, true);
+            return energy;
+        }
+        return null;
+    }
+
+    @Override
+    public void fileNewWindow() {
+        mainPanel.resetShell();
+    }
+
+    @Override
+    public void fileNewWindow(EventObject evt) {
+        fileNewWindow();
+    }
+
+    public AlgorithmFunctions getUIAlgorithmUtils() {
+        return new UIUtils(this, mainPanel);
+    }
+
+    public PotentialsFunctions getUIPotentialsUtils() {
+        return new UIUtils(this, mainPanel);
+    }
+
+    public void interruptScript() {
+        if (!scriptRunning) {
+            return;
+        }
+        doInterrupt();
+    }
+
+    /**
+     * <p>
+     * md</p>
+     *
+     * @param nStep          a int.
+     * @param timeStep       a double.
+     * @param printInterval  a double.
+     * @param saveInterval   a double.
+     * @param temperature    a double.
+     * @param initVelocities a boolean.
+     * @param dyn            a {@link java.io.File} object.
+     */
+    public void md(int nStep, double timeStep, double printInterval,
+                   double saveInterval, double temperature, boolean initVelocities,
+                   File dyn) {
+        if (interrupted || terminatableAlgorithm != null) {
+            return;
+        }
+        FFXSystem active = mainPanel.getHierarchy().getActive();
+        if (active != null) {
+            MolecularDynamics molecularDynamics = new MolecularDynamics(active,
+                    active.getPotentialEnergy(),
+                    active.getProperties(),
+                    this, ThermostatEnum.BUSSI, IntegratorEnum.BEEMAN);
+            terminatableAlgorithm = molecularDynamics;
+            molecularDynamics.dynamic(nStep, timeStep, printInterval,
+                    saveInterval, temperature, initVelocities, dyn);
+            terminatableAlgorithm = null;
+        }
+    }
+
+    /**
+     * Configure the Swing GUI for the shell.
+     */
+    @Override
+    public void run() {
+        if (!headless) {
+            if (SwingUtilities.isEventDispatchThread()) {
+                init();
+            } else {
+                try {
+                    SwingUtilities.invokeAndWait(() -> init());
+                } catch (Exception e) {
+                    //
+                }
+            }
+        }
+    }
+
+    /**
+     * <p>
+     * select</p>
+     *
+     * @param node a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void select(MSNode node) {
+        if (node != null) {
+            mainPanel.getHierarchy().onlySelection(node);
+            sync();
+            logger.info(String.format(" Selected: %s.", node));
+        }
+    }
+
+    /**
+     * <p>
+     * setArgList</p>
+     *
+     * @param argList a {@link java.util.List} object.
+     */
+    public void setArgList(List<String> argList) {
+        args = new ArrayList<>(argList);
+        setVariable("args", argList);
+    }
+
+    @Override
+    public void showAbout() {
+        mainPanel.about();
+    }
+
+    @Override
+    public void showAbout(EventObject evt) {
+        showAbout();
+    }
+
+    /**
+     * <p>
+     * time</p>
+     *
+     * @return a {@link java.lang.Double} object.
+     */
+    public Double time() {
+        long current = System.nanoTime();
+        double timer = (current - subTime) * toSeconds;
+        subTime = current;
+        appendOutput(String.format("\n Intermediate time: %8.3f (sec)\n", timer), getPromptStyle());
+        return timer;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return "Force Field X Shell";
+    }
+
+    @Override
+    public void updateTitle() {
+        JFrame frame = (JFrame) this.getFrame();
+        File file = (File) getScriptFile();
+        if (file != null) {
+            String name = file.getName();
+            frame.setTitle(name + " - Force Field X Shell");
+        } else {
+            frame.setTitle("Force Field X Shell");
+        }
     }
 
     /**
@@ -243,24 +542,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * Configure the Swing GUI for the shell.
-     */
-    @Override
-    public void run() {
-        if (!headless) {
-            if (SwingUtilities.isEventDispatchThread()) {
-                init();
-            } else {
-                try {
-                    SwingUtilities.invokeAndWait(() -> init());
-                } catch (Exception e) {
-                    //
-                }
-            }
-        }
-    }
-
-    /**
      * Initialize the Shell.
      */
     private void init() {
@@ -307,17 +588,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
-    /**
-     * <p>
-     * setArgList</p>
-     *
-     * @param argList a {@link java.util.List} object.
-     */
-    public void setArgList(List<String> argList) {
-        args = new ArrayList<>(argList);
-        setVariable("args", argList);
-    }
-
     List<String> getArgs() {
         return new ArrayList<>(args);
     }
@@ -356,63 +626,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
 
     /**
      * <p>
-     * time</p>
-     *
-     * @return a {@link java.lang.Double} object.
-     */
-    public Double time() {
-        long current = System.nanoTime();
-        double timer = (current - subTime) * toSeconds;
-        subTime = current;
-        appendOutput(String.format("\n Intermediate time: %8.3f (sec)\n", timer), getPromptStyle());
-        return timer;
-    }
-
-    /**
-     * <p>
-     * select</p>
-     *
-     * @param node a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void select(MSNode node) {
-        if (node != null) {
-            mainPanel.getHierarchy().onlySelection(node);
-            sync();
-            logger.info(String.format(" Selected: %s.", node));
-        }
-    }
-
-    /**
-     * <p>
-     * energy</p>
-     *
-     * @return a {@link ffx.potential.ForceFieldEnergy} object.
-     */
-    public ForceFieldEnergy energy() {
-        if (interrupted) {
-            logger.info(" Algorithm interrupted - skipping energy.");
-            return null;
-        }
-        if (terminatableAlgorithm != null) {
-            logger.info(" Algorithm already running - skipping energy.");
-            return null;
-        }
-
-        MolecularAssembly active = mainPanel.getHierarchy().getActive();
-        if (active != null) {
-            ForceFieldEnergy energy = active.getPotentialEnergy();
-            if (energy == null) {
-                energy = ForceFieldEnergy.energyFactory(active);
-                active.setPotential(energy);
-            }
-            energy.energy(false, true);
-            return energy;
-        }
-        return null;
-    }
-
-    /**
-     * <p>
      * returnEnergy</p>
      *
      * @return Current system energy (a double).
@@ -438,14 +651,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         }
         logger.warning(" Energy could not be calculated");
         return 0.0;
-    }
-
-    public AlgorithmFunctions getUIAlgorithmUtils() {
-        return new UIUtils(this, mainPanel);
-    }
-
-    public PotentialsFunctions getUIPotentialsUtils() {
-        return new UIUtils(this, mainPanel);
     }
 
     /**
@@ -478,100 +683,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>
-     * md</p>
-     *
-     * @param nStep          a int.
-     * @param timeStep       a double.
-     * @param printInterval  a double.
-     * @param saveInterval   a double.
-     * @param temperature    a double.
-     * @param initVelocities a boolean.
-     * @param dyn            a {@link java.io.File} object.
-     */
-    public void md(int nStep, double timeStep, double printInterval,
-                   double saveInterval, double temperature, boolean initVelocities,
-                   File dyn) {
-        if (interrupted || terminatableAlgorithm != null) {
-            return;
-        }
-        FFXSystem active = mainPanel.getHierarchy().getActive();
-        if (active != null) {
-            MolecularDynamics molecularDynamics = new MolecularDynamics(active,
-                    active.getPotentialEnergy(),
-                    active.getProperties(),
-                    this, ThermostatEnum.BUSSI, IntegratorEnum.BEEMAN);
-            terminatableAlgorithm = molecularDynamics;
-            molecularDynamics.dynamic(nStep, timeStep, printInterval,
-                    saveInterval, temperature, initVelocities, dyn);
-            terminatableAlgorithm = null;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Return false if user elects to cancel.
-     */
-    @Override
-    public boolean askToSaveFile() {
-        File file = (File) getScriptFile();
-        if (file == null || !getDirty()) {
-            return true;
-        }
-        switch (JOptionPane.showConfirmDialog((Component) getFrame(),
-                "Save changes to " + file.getName() + "?",
-                "Force Field X Shell", JOptionPane.YES_NO_CANCEL_OPTION)) {
-            case JOptionPane.YES_OPTION:
-                return fileSave();
-            case JOptionPane.NO_OPTION:
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Print out the Force Field X promo.
-     */
-    @Override
-    final public void clearOutput() {
-        if (!java.awt.GraphicsEnvironment.isHeadless()) {
-            JTextPane output = getOutputArea();
-            output.setText("");
-            appendOutput(MainPanel.border + "\n" + MainPanel.title
-                    + MainPanel.aboutString + "\n" + MainPanel.border + "\n", getCommandStyle());
-        }
-    }
-
-    @Override
-    public void clearOutput(EventObject evt) {
-        clearOutput();
-    }
-
-    @Override
-    public void fileNewWindow() {
-        mainPanel.resetShell();
-    }
-
-    @Override
-    public void fileNewWindow(EventObject evt) {
-        fileNewWindow();
-    }
-
-    @Override
-    public void showAbout() {
-        mainPanel.about();
-    }
-
-    @Override
-    public void showAbout(EventObject evt) {
-        showAbout();
-    }
-
-    /**
      * Clear output text from any previous script and then output a message
      * about the new script.
      */
@@ -592,32 +703,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
             message = String.format("\n Evaluating " + name + "...\n\n");
         }
         appendOutput(message, getPromptStyle());
-    }
-
-    /**
-     * <p>
-     * before</p>
-     */
-    public void before() {
-        interrupted = false;
-        terminatableAlgorithm = null;
-        time = System.nanoTime();
-        subTime = time;
-        mainPanel.getModelingPanel().enableLaunch(false);
-    }
-
-    /**
-     * <p>
-     * after</p>
-     */
-    public void after() {
-        time = System.nanoTime() - time;
-        if (!interrupted) {
-            appendOutput(String.format("\n Script wall clock time: %6.3f (sec)", time * toSeconds), getPromptStyle());
-        } else {
-            appendOutput(String.format("\n Script interrupted after: %6.3f (sec)", time * toSeconds), getPromptStyle());
-        }
-        mainPanel.getModelingPanel().enableLaunch(true);
     }
 
     /**
@@ -693,37 +778,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
-    public void interruptScript() {
-        if (!scriptRunning) {
-            return;
-        }
-        doInterrupt();
-    }
-
-    /**
-     * If at exit time, a script is running, the user is given an option to
-     * interrupt it first
-     * <p>
-     * {@inheritDoc}
-     */
-    @Override
-    public Object askToInterruptScript() {
-        if (!scriptRunning) {
-            return true;
-        }
-        int rc = JOptionPane.showConfirmDialog(getScrollArea(),
-                "Script executing. Press 'OK' to attempt to interrupt it before exiting.",
-                "Force Field X Shell", JOptionPane.OK_CANCEL_OPTION);
-        if (rc == JOptionPane.OK_OPTION) {
-            doInterrupt();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private static final Preferences preferences = Preferences.userNodeForPackage(ModelingShell.class);
-
     /**
      * <p>
      * loadPrefs</p>
@@ -764,62 +818,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         } catch (Exception e) {
             String message = " Exception syncing shell variables.\n";
             logger.log(Level.WARNING, message, e);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "Force Field X Shell";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean algorithmUpdate(MolecularAssembly active) {
-        if (interrupted) {
-            return false;
-        }
-
-        GraphicsCanvas graphics = mainPanel.getGraphics3D();
-        if (graphics != null) {
-            /*
-              Use the blocking graphics update method so that only
-              self-consistent coordinate sets are displayed.
-             */
-            //if (SwingUtilities.isEventDispatchThread()) {
-            graphics.updateSceneWait(active, true, false, null, false, null);
-            //}
-        }
-
-        // The algorithm could have been interrupted during the graphics update.
-        return !interrupted;
-    }
-
-    @Override
-    public void clearContext() {
-        super.clearContext();
-        initContext();
-    }
-
-    @Override
-    public void clearContext(EventObject evt) {
-        super.clearContext(evt);
-        initContext();
-    }
-
-    @Override
-    public void updateTitle() {
-        JFrame frame = (JFrame) this.getFrame();
-        File file = (File) getScriptFile();
-        if (file != null) {
-            String name = file.getName();
-            frame.setTitle(name + " - Force Field X Shell");
-        } else {
-            frame.setTitle("Force Field X Shell");
         }
     }
 }

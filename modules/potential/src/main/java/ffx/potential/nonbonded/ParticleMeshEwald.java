@@ -42,15 +42,32 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 import static java.util.Collections.sort;
+
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy.Platform;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.parameters.ForceField.ELEC_FORM;
 import ffx.potential.parameters.PolarizeType;
+import static ffx.potential.parameters.MultipoleType.t000;
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t002;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t011;
+import static ffx.potential.parameters.MultipoleType.t020;
+import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.potential.parameters.MultipoleType.t101;
+import static ffx.potential.parameters.MultipoleType.t110;
+import static ffx.potential.parameters.MultipoleType.t200;
 import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
+import static ffx.utilities.Constants.ELEC_ANG_TO_DEBYE;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -171,6 +188,164 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
     protected boolean printInducedDipoles = false;
 
     /**
+     * Compute multipole moments for an array of atoms.
+     *
+     * @param activeAtoms Atom array to consider.
+     * @param forceEnergy Force calculation of the electrostatic energy (rotate multipoles, perform SCF).
+     */
+    public void computeMoments(Atom[] activeAtoms, boolean forceEnergy) {
+        // Zero out total charge, dipole and quadrupole components.
+        var netchg = 0.0;
+        var netdpl = 0.0;
+        var xdpl = 0.0;
+        var ydpl = 0.0;
+        var zdpl = 0.0;
+        var xxqdp = 0.0;
+        var xyqdp = 0.0;
+        var xzqdp = 0.0;
+        var yxqdp = 0.0;
+        var yyqdp = 0.0;
+        var yzqdp = 0.0;
+        var zxqdp = 0.0;
+        var zyqdp = 0.0;
+        var zzqdp = 0.0;
+
+        // Find the center of mass of the set of active atoms.
+        double xmid = 0.0;
+        double ymid = 0.0;
+        double zmid = 0.0;
+        double totalMass = 0;
+        for (Atom atom : activeAtoms) {
+            var m = atom.getMass();
+            totalMass += m;
+            xmid = xmid + atom.getX() * m;
+            ymid = ymid + atom.getY() * m;
+            zmid = zmid + atom.getZ() * m;
+        }
+        if (totalMass > 0) {
+            xmid /= totalMass;
+            ymid /= totalMass;
+            zmid /= totalMass;
+        }
+        int n = activeAtoms.length;
+        double[] xcm = new double[n];
+        double[] ycm = new double[n];
+        double[] zcm = new double[n];
+        int index = 0;
+        for (Atom atom : activeAtoms) {
+            xcm[index] = atom.getX() - xmid;
+            ycm[index] = atom.getY() - ymid;
+            zcm[index] = atom.getZ() - zmid;
+            index++;
+        }
+
+        if (forceEnergy) {
+            energy(false, false);
+        }
+
+        // Account for charge, dipoles and induced dipoles.
+        for (Atom atom : activeAtoms) {
+            int i = atom.getIndex() - 1;
+            double[] globalMultipolei = globalMultipole[0][i];
+            double[] inducedDipolei = inducedDipole[0][i];
+
+            var ci = globalMultipolei[t000];
+            var dix = globalMultipolei[t100];
+            var diy = globalMultipolei[t010];
+            var diz = globalMultipolei[t001];
+            var uix = inducedDipolei[0];
+            var uiy = inducedDipolei[1];
+            var uiz = inducedDipolei[2];
+
+            netchg += ci;
+            xdpl += xcm[i] * ci + dix + uix;
+            ydpl += ycm[i] * ci + diy + uiy;
+            zdpl += zcm[i] * ci + diz + uiz;
+            xxqdp += xcm[i] * xcm[i] * ci + 2.0 * xcm[i] * (dix + uix);
+            xyqdp += xcm[i] * ycm[i] * ci + xcm[i] * (diy + uiy) + ycm[i] * (dix + uix);
+            xzqdp += xcm[i] * zcm[i] * ci + xcm[i] * (diz + uiz) + zcm[i] * (dix + uix);
+            yxqdp += ycm[i] * xcm[i] * ci + ycm[i] * (dix + uix) + xcm[i] * (diy + uiy);
+            yyqdp += ycm[i] * ycm[i] * ci + 2.0 * ycm[i] * (diy + uiy);
+            yzqdp += ycm[i] * zcm[i] * ci + ycm[i] * (diz + uiz) + zcm[i] * (diy + uiy);
+            zxqdp += zcm[i] * xcm[i] * ci + zcm[i] * (dix + uix) + xcm[i] * (diz + uiz);
+            zyqdp += zcm[i] * ycm[i] * ci + zcm[i] * (diy + uiy) + ycm[i] * (diz + uiz);
+            zzqdp += zcm[i] * zcm[i] * ci + 2.0 * zcm[i] * (diz + uiz);
+        }
+
+        // Convert the quadrupole from traced to traceless form.
+        var qave = (xxqdp + yyqdp + zzqdp) / 3.0;
+        xxqdp = 1.5 * (xxqdp - qave);
+        xyqdp = 1.5 * xyqdp;
+        xzqdp = 1.5 * xzqdp;
+        yxqdp = 1.5 * yxqdp;
+        yyqdp = 1.5 * (yyqdp - qave);
+        yzqdp = 1.5 * yzqdp;
+        zxqdp = 1.5 * zxqdp;
+        zyqdp = 1.5 * zyqdp;
+        zzqdp = 1.5 * (zzqdp - qave);
+
+        // Add the traceless atomic quadrupoles to total quadrupole.
+        for (Atom atom : activeAtoms) {
+            int i = atom.getIndex() - 1;
+            double[] globalMultipolei = globalMultipole[0][i];
+            var qixx = globalMultipolei[t200];
+            var qiyy = globalMultipolei[t020];
+            var qizz = globalMultipolei[t002];
+            var qixy = globalMultipolei[t110];
+            var qixz = globalMultipolei[t101];
+            var qiyz = globalMultipolei[t011];
+            xxqdp += qixx;
+            xyqdp += qixy;
+            xzqdp += qixz;
+            yxqdp += qixy;
+            yyqdp += qiyy;
+            yzqdp += qiyz;
+            zxqdp += qixz;
+            zyqdp += qiyz;
+            zzqdp += qizz;
+        }
+
+        // Convert dipole to Debye and quadrupole to Buckingham.
+        xdpl = xdpl * ELEC_ANG_TO_DEBYE;
+        ydpl = ydpl * ELEC_ANG_TO_DEBYE;
+        zdpl = zdpl * ELEC_ANG_TO_DEBYE;
+        xxqdp = xxqdp * ELEC_ANG_TO_DEBYE;
+        xyqdp = xyqdp * ELEC_ANG_TO_DEBYE;
+        xzqdp = xzqdp * ELEC_ANG_TO_DEBYE;
+        yxqdp = yxqdp * ELEC_ANG_TO_DEBYE;
+        yyqdp = yyqdp * ELEC_ANG_TO_DEBYE;
+        yzqdp = yzqdp * ELEC_ANG_TO_DEBYE;
+        zxqdp = zxqdp * ELEC_ANG_TO_DEBYE;
+        zyqdp = zyqdp * ELEC_ANG_TO_DEBYE;
+        zzqdp = zzqdp * ELEC_ANG_TO_DEBYE;
+
+        // Get dipole magnitude and diagonalize quadrupole tensor.
+        netdpl = sqrt(xdpl * xdpl + ydpl * ydpl + zdpl * zdpl);
+        double[][] a = new double[3][3];
+        a[0][0] = xxqdp;
+        a[0][1] = xyqdp;
+        a[0][2] = xzqdp;
+        a[1][0] = yxqdp;
+        a[1][1] = yyqdp;
+        a[1][2] = yzqdp;
+        a[2][0] = zxqdp;
+        a[2][1] = zyqdp;
+        a[2][2] = zzqdp;
+        EigenDecomposition e = new EigenDecomposition(new Array2DRowRealMatrix(a));
+        // Eigenvalues are returned in descending order, but logged below in ascending order.
+        var netqdp = e.getRealEigenvalues();
+
+        logger.info("\n Electric Moments\n");
+        logger.info(format("  Total Electric Charge:    %13.5f Electrons\n", netchg));
+        logger.info(format("  Dipole Moment Magnitude:  %13.5f Debye\n", netdpl));
+        logger.info(format("  Dipole X,Y,Z-Components:  %13.5f %13.5f %13.5f\n", xdpl, ydpl, zdpl));
+        logger.info(format("  Quadrupole Moment Tensor: %13.5f %13.5f %13.5f", xxqdp, xyqdp, xzqdp));
+        logger.info(format("       (Buckinghams)        %13.5f %13.5f %13.5f", yxqdp, yyqdp, yzqdp));
+        logger.info(format("                            %13.5f %13.5f %13.5f\n", zxqdp, zyqdp, zzqdp));
+        logger.info(format("  Principal Axes Quadrupole %13.5f %13.5f %13.5f\n", netqdp[2], netqdp[1], netqdp[0]));
+    }
+
+    /**
      * <p>destroy.</p>
      *
      * @throws java.lang.Exception if any.
@@ -217,7 +392,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
     /**
      * <p>getElecForm.</p>
      *
-     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM} object.
+     * @return a {@link ffx.potential.parameters.ForceField.ELEC_FORM} object.
      */
     public abstract ELEC_FORM getElecForm();
 
@@ -491,10 +666,6 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
 
     public enum Polarization {
         MUTUAL, DIRECT, NONE
-    }
-
-    public enum ELEC_FORM {
-        PAM, FIXED_CHARGE
     }
 
     public enum LambdaMode {

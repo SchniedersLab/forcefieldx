@@ -58,7 +58,9 @@ import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 public class PolarizationEnergyRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(PolarizationEnergyRegion.class.getName());
-
+    private final double electric;
+    private final PolarizationEnergyLoop[] polarizationLoop;
+    private final SharedDouble polarizationEnergy = new SharedDouble();
     /**
      * An ordered array of atoms in the system.
      */
@@ -74,28 +76,15 @@ public class PolarizationEnergyRegion extends ParallelRegion {
     private double[][] directDipoleCR;
     private double polarizationScale;
 
-    private final double electric;
-    private final PolarizationEnergyLoop[] polarizationLoop;
-    private final SharedDouble polarizationEnergy = new SharedDouble();
-
     public PolarizationEnergyRegion(int nt, ForceField forceField) {
         electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
         polarizationLoop = new PolarizationEnergyLoop[nt];
     }
 
-    public void init(Atom[] atoms, double[] polarizability,
-                     double[][][] inducedDipole, double[][] directDipoleCR,
-                     double polarizationScale) {
-        this.atoms = atoms;
-        this.polarizability = polarizability;
-        this.inducedDipole = inducedDipole;
-        this.directDipoleCR = directDipoleCR;
-        this.polarizationScale = polarizationScale;
-    }
-
     @Override
-    public void start() {
-        polarizationEnergy.set(0.0);
+    public void finish() {
+        double energy = polarizationEnergy.get();
+        polarizationEnergy.set(energy * polarizationScale * electric);
     }
 
     /**
@@ -114,6 +103,16 @@ public class PolarizationEnergyRegion extends ParallelRegion {
      */
     public void setPolarizationEnergy(double energy) {
         polarizationEnergy.set(energy);
+    }
+
+    public void init(Atom[] atoms, double[] polarizability,
+                     double[][][] inducedDipole, double[][] directDipoleCR,
+                     double polarizationScale) {
+        this.atoms = atoms;
+        this.polarizability = polarizability;
+        this.inducedDipole = inducedDipole;
+        this.directDipoleCR = directDipoleCR;
+        this.polarizationScale = polarizationScale;
     }
 
     @Override
@@ -135,17 +134,11 @@ public class PolarizationEnergyRegion extends ParallelRegion {
     }
 
     @Override
-    public void finish() {
-        double energy = polarizationEnergy.get();
-        polarizationEnergy.set(energy * polarizationScale * electric);
+    public void start() {
+        polarizationEnergy.set(0.0);
     }
 
     private class PolarizationEnergyLoop extends IntegerForLoop {
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
 
         @Override
         public void run(int lb, int ub) throws Exception {
@@ -163,6 +156,11 @@ public class PolarizationEnergyRegion extends ParallelRegion {
                 energy += (uix * pix + uiy * piy + uiz * piz) / polarizability[i];
             }
             polarizationEnergy.addAndGet(-0.5 * energy);
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
         }
     }
 }

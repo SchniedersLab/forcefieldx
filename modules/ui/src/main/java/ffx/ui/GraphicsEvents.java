@@ -165,23 +165,6 @@ public class GraphicsEvents extends Behavior {
 
     /**
      * <p>
-     * centerView</p>
-     *
-     * @param resetRotation    a boolean.
-     * @param resetTranslation a boolean.
-     * @param resetZoom        a boolean.
-     */
-    void centerView(boolean resetRotation, boolean resetTranslation, boolean resetZoom) {
-        viewOrbitBehavior.centerView(resetRotation, resetTranslation);
-    }
-
-    private boolean globalZoom() {
-        postId(ZOOMPOST);
-        return true;
-    }
-
-    /**
-     * <p>
      * initialize</p>
      */
     public void initialize() {
@@ -194,85 +177,6 @@ public class GraphicsEvents extends Behavior {
         awtCriterion[0] = new WakeupOnAWTEvent(java.awt.AWTEvent.MOUSE_EVENT_MASK);
         mouseCriterion = new WakeupOr(awtCriterion);
         wakeupOn(mouseCriterion);
-    }
-
-    /**
-     * <p>
-     * processMouseEvent</p>
-     *
-     * @param evt a {@link java.awt.event.MouseEvent} object.
-     */
-    private void processMouseEvent(MouseEvent evt) {
-        buttonPress = false;
-        leftButton = false;
-        middleButton = false;
-        rightButton = false;
-        int mod = evt.getModifiersEx();
-        if (evt.getID() == MouseEvent.MOUSE_PRESSED) {
-            buttonPress = true;
-        }
-        // Left Button
-        if ((mod & MouseEvent.BUTTON1_DOWN_MASK) == MouseEvent.BUTTON1_DOWN_MASK) {
-            leftButton = true;
-        }
-        // Middle Button
-        if ((mod & MouseEvent.BUTTON2_DOWN_MASK) == MouseEvent.BUTTON2_DOWN_MASK) {
-            middleButton = true;
-        }
-        // Alternatively, map "alt + button1" to the middle button
-        if ((mod & MouseEvent.ALT_DOWN_MASK) == MouseEvent.ALT_DOWN_MASK) {
-            if (leftButton) {
-                middleButton = true;
-                leftButton = false;
-            }
-        }
-        // Right Button
-        if ((mod & MouseEvent.BUTTON3_DOWN_MASK) == MouseEvent.BUTTON3_DOWN_MASK) {
-            rightButton = true;
-        }
-        // Alternatively, map "shift + button1" to the right button
-        if ((mod & MouseEvent.SHIFT_DOWN_MASK) == MouseEvent.SHIFT_DOWN_MASK) {
-            if (leftButton) {
-                rightButton = true;
-                leftButton = false;
-            }
-        }
-        int x = evt.getX();
-        int y = evt.getY();
-        atom = null;
-        axisSelected = false;
-        if (buttonPress) {
-            // Picking Results
-            pickCanvas.setShapeLocation(x, y);
-            // Once in a while "pickClosest" throws an exception due to
-            // not being able to invert a matrix??
-            // Catch and ignore this until a fix is determined...
-            try {
-                pickResult = pickCanvas.pickClosest();
-            } catch (Exception e) {
-                pickResult = null;
-            }
-            if (pickResult != null) {
-                SceneGraphPath sgp = pickResult.getSceneGraphPath();
-                Node node = sgp.getObject();
-                if (node instanceof Shape3D) {
-                    Shape3D s = (Shape3D) node;
-                    Object o = s.getUserData();
-                    if (o instanceof MolecularAssembly) {
-                        MolecularAssembly sys = (MolecularAssembly) o;
-                        if (pickResult.numIntersections() > 0) {
-                            PickIntersection pi = pickResult.getIntersection(0);
-                            int[] coords = pi.getPrimitiveCoordinateIndices();
-                            atom = sys.getAtomFromWireVertex(coords[0]);
-                        }
-                    } else if (o instanceof Atom) {
-                        atom = (Atom) o;
-                    } else if (o instanceof GraphicsAxis) {
-                        axisSelected = true;
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -360,6 +264,102 @@ public class GraphicsEvents extends Behavior {
     public void setGlobalCenter(double[] d) {
         Point3d point = new Point3d(d);
         viewOrbitBehavior.setRotationCenter(point);
+    }
+
+    /**
+     * <p>
+     * centerView</p>
+     *
+     * @param resetRotation    a boolean.
+     * @param resetTranslation a boolean.
+     * @param resetZoom        a boolean.
+     */
+    void centerView(boolean resetRotation, boolean resetTranslation, boolean resetZoom) {
+        viewOrbitBehavior.centerView(resetRotation, resetTranslation);
+    }
+
+    private boolean globalZoom() {
+        postId(ZOOMPOST);
+        return true;
+    }
+
+    /**
+     * <p>
+     * processMouseEvent</p>
+     *
+     * @param evt a {@link java.awt.event.MouseEvent} object.
+     */
+    private void processMouseEvent(MouseEvent evt) {
+        buttonPress = false;
+        leftButton = false;
+        middleButton = false;
+        rightButton = false;
+        int mod = evt.getModifiersEx();
+        if (evt.getID() == MouseEvent.MOUSE_PRESSED) {
+            buttonPress = true;
+        }
+        // Left Button
+        if ((mod & MouseEvent.BUTTON1_DOWN_MASK) == MouseEvent.BUTTON1_DOWN_MASK) {
+            leftButton = true;
+        }
+        // Middle Button
+        if ((mod & MouseEvent.BUTTON2_DOWN_MASK) == MouseEvent.BUTTON2_DOWN_MASK) {
+            middleButton = true;
+        }
+        // Alternatively, map "alt + button1" to the middle button
+        if ((mod & MouseEvent.ALT_DOWN_MASK) == MouseEvent.ALT_DOWN_MASK) {
+            if (leftButton) {
+                middleButton = true;
+                leftButton = false;
+            }
+        }
+        // Right Button
+        if ((mod & MouseEvent.BUTTON3_DOWN_MASK) == MouseEvent.BUTTON3_DOWN_MASK) {
+            rightButton = true;
+        }
+        // Alternatively, map "shift + button1" to the right button
+        if ((mod & MouseEvent.SHIFT_DOWN_MASK) == MouseEvent.SHIFT_DOWN_MASK) {
+            if (leftButton) {
+                rightButton = true;
+                leftButton = false;
+            }
+        }
+        int x = evt.getX();
+        int y = evt.getY();
+        atom = null;
+        axisSelected = false;
+        if (buttonPress) {
+            // Picking Results
+            pickCanvas.setShapeLocation(x, y);
+            // Once in a while "pickClosest" throws an exception due to
+            // not being able to invert a matrix??
+            // Catch and ignore this until a fix is determined...
+            try {
+                pickResult = pickCanvas.pickClosest();
+            } catch (Exception e) {
+                pickResult = null;
+            }
+            if (pickResult != null) {
+                SceneGraphPath sgp = pickResult.getSceneGraphPath();
+                Node node = sgp.getObject();
+                if (node instanceof Shape3D) {
+                    Shape3D s = (Shape3D) node;
+                    Object o = s.getUserData();
+                    if (o instanceof MolecularAssembly) {
+                        MolecularAssembly sys = (MolecularAssembly) o;
+                        if (pickResult.numIntersections() > 0) {
+                            PickIntersection pi = pickResult.getIntersection(0);
+                            int[] coords = pi.getPrimitiveCoordinateIndices();
+                            atom = sys.getAtomFromWireVertex(coords[0]);
+                        }
+                    } else if (o instanceof Atom) {
+                        atom = (Atom) o;
+                    } else if (o instanceof GraphicsAxis) {
+                        axisSelected = true;
+                    }
+                }
+            }
+        }
     }
 
     private boolean systemRotate() {

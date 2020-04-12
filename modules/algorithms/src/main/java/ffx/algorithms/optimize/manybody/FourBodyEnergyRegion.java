@@ -37,8 +37,8 @@
 //******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.DoubleStream;
@@ -59,30 +59,29 @@ import ffx.potential.bonded.Residue;
 public class FourBodyEnergyRegion extends WorkerRegion {
 
     private static final Logger logger = Logger.getLogger(FourBodyEnergyRegion.class.getName());
-
-    private RotamerOptimization rO;
-    private DistanceMatrix dM;
-    private EnergyExpansion eE;
-    private EliminatedRotamers eR;
     private final Residue[] residues;
-    private Set<Integer> keySet;
+    private final RotamerOptimization rO;
+    private final DistanceMatrix dM;
+    private final EnergyExpansion eE;
+    private final EliminatedRotamers eR;
     /**
      * A list of all residues being optimized. Note that Box and Window
      * optimizations operate on subsets of this list.
      */
-    private ArrayList<Residue> allResiduesList;
+    private final List<Residue> allResiduesList;
     /**
      * Map of 3-body energy values to compute.
      */
-    private HashMap<Integer, Integer[]> fourBodyEnergyMap;
+    private final Map<Integer, Integer[]> fourBodyEnergyMap;
     /**
      * If a pair of residues have two atoms closer together than the
      * superposition threshold, the energy is set to NaN.
      */
-    private double superpositionThreshold;
+    private final double superpositionThreshold;
+    private Set<Integer> keySet;
 
     public FourBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, EnergyExpansion eE, EliminatedRotamers eR,
-                                Residue[] residues, ArrayList<Residue> allResiduesList, double superpositionThreshold) {
+                                Residue[] residues, List<Residue> allResiduesList, double superpositionThreshold) {
         this.rO = rotamerOptimization;
         this.dM = dM;
         this.eE = eE;
@@ -96,23 +95,18 @@ public class FourBodyEnergyRegion extends WorkerRegion {
     }
 
     @Override
-    public void start() {
-        keySet = fourBodyEnergyMap.keySet();
-    }
-
-    @Override
     public void run() throws Exception {
         if (!keySet.isEmpty()) {
             execute(0, keySet.size() - 1, new QuadsEnergyLoop());
         }
     }
 
-    private class QuadsEnergyLoop extends WorkerIntegerForLoop {
+    @Override
+    public void start() {
+        keySet = fourBodyEnergyMap.keySet();
+    }
 
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
+    private class QuadsEnergyLoop extends WorkerIntegerForLoop {
 
         @Override
         public void run(int lb, int ub) {
@@ -245,6 +239,11 @@ public class FourBodyEnergyRegion extends WorkerRegion {
                     }
                 }
             }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
         }
     }
 }

@@ -89,6 +89,10 @@ public class RosenbluthOBMC implements MonteCarloListener {
      */
     private final int mcFrequency;
     /**
+     * Size of the trial sets, k.
+     */
+    private final int trialSetSize;
+    /**
      * Keeps track of calls to mcUpdate (e.g. MD steps).
      */
     private int steps = 0;
@@ -100,10 +104,6 @@ public class RosenbluthOBMC implements MonteCarloListener {
      * Rosenbluth factor for the backward move.
      */
     private double Wo;
-    /**
-     * Size of the trial sets, k.
-     */
-    private final int trialSetSize;
     /**
      * Counters for proposed and accepted moves.
      */
@@ -339,7 +339,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
 
     private Torsion getChiZeroTorsion(Residue residue) {
         AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-        ArrayList<Torsion> torsions = residue.getTorsionList();
+        List<Torsion> torsions = residue.getTorsionList();
         switch (name) {
             case VAL: {
                 Atom N = (Atom) residue.getAtomNode("N");

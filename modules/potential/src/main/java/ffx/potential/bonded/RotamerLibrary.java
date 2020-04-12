@@ -537,7 +537,7 @@ public class RotamerLibrary {
      */
     public static void initializeDefaultAtomicCoordinates(Polymer[] polymers) {
         for (Polymer polymer : polymers) {
-            ArrayList<Residue> current = polymer.getResidues();
+            List<Residue> current = polymer.getResidues();
             for (Residue residuej : current) {
                 switch (residuej.getResidueType()) {
                     case NA:

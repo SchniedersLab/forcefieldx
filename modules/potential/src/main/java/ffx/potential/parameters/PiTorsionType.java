@@ -87,12 +87,62 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     }
 
     /**
-     * <p>setScaleFactor.</p>
+     * Average two PiTorsionType instances. The atom classes that define the new
+     * type must be supplied.
      *
-     * @param scale a double.
+     * @param piTorsionType1 a {@link ffx.potential.parameters.PiTorsionType} object.
+     * @param piTorsionType2 a {@link ffx.potential.parameters.PiTorsionType} object.
+     * @param atomClasses    an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.PiTorsionType} object.
      */
-    void setScaleFactor(double scale) {
-        forceConstant *= scale;
+    public static PiTorsionType average(PiTorsionType piTorsionType1,
+                                        PiTorsionType piTorsionType2, int[] atomClasses) {
+        if (piTorsionType1 == null || piTorsionType2 == null || atomClasses == null) {
+            return null;
+        }
+
+        double forceConstant = (piTorsionType1.forceConstant + piTorsionType2.forceConstant) / 2.0;
+
+        return new PiTorsionType(atomClasses, forceConstant);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compare(String s1, String s2) {
+        String[] keys1 = s1.split(" ");
+        String[] keys2 = s2.split(" ");
+
+        for (int i = 0; i < 2; i++) {
+            int c1 = parseInt(keys1[i]);
+            int c2 = parseInt(keys2[i]);
+            if (c1 < c2) {
+                return -1;
+            } else if (c1 > c2) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PiTorsionType piTorsionType = (PiTorsionType) o;
+        return Arrays.equals(atomClasses, piTorsionType.atomClasses);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(atomClasses);
     }
 
     /**
@@ -106,6 +156,31 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
             atomClasses[i] += increment;
         }
         setKey(sortKey(atomClasses));
+    }
+
+    /**
+     * Construct a PiTorsionType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a PiTorsionType instance.
+     */
+    public static PiTorsionType parse(String input, String[] tokens) {
+        if (tokens.length < 4) {
+            logger.log(Level.WARNING, "Invalid PITORS type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[2];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                double forceConstant = parseDouble(tokens[3]);
+                return new PiTorsionType(atomClasses, forceConstant);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing PITORS type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
     }
 
     /**
@@ -165,51 +240,6 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     }
 
     /**
-     * Average two PiTorsionType instances. The atom classes that define the new
-     * type must be supplied.
-     *
-     * @param piTorsionType1 a {@link ffx.potential.parameters.PiTorsionType} object.
-     * @param piTorsionType2 a {@link ffx.potential.parameters.PiTorsionType} object.
-     * @param atomClasses    an array of {@link int} objects.
-     * @return a {@link ffx.potential.parameters.PiTorsionType} object.
-     */
-    public static PiTorsionType average(PiTorsionType piTorsionType1,
-                                        PiTorsionType piTorsionType2, int[] atomClasses) {
-        if (piTorsionType1 == null || piTorsionType2 == null || atomClasses == null) {
-            return null;
-        }
-
-        double forceConstant = (piTorsionType1.forceConstant + piTorsionType2.forceConstant) / 2.0;
-
-        return new PiTorsionType(atomClasses, forceConstant);
-    }
-
-    /**
-     * Construct a PiTorsionType from an input string.
-     *
-     * @param input  The overall input String.
-     * @param tokens The input String tokenized.
-     * @return a PiTorsionType instance.
-     */
-    public static PiTorsionType parse(String input, String[] tokens) {
-        if (tokens.length < 4) {
-            logger.log(Level.WARNING, "Invalid PITORS type:\n{0}", input);
-        } else {
-            try {
-                int[] atomClasses = new int[2];
-                atomClasses[0] = parseInt(tokens[1]);
-                atomClasses[1] = parseInt(tokens[2]);
-                double forceConstant = parseDouble(tokens[3]);
-                return new PiTorsionType(atomClasses, forceConstant);
-            } catch (NumberFormatException e) {
-                String message = "Exception parsing PITORS type:\n" + input + "\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
-        return null;
-    }
-
-    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted Pi-Torsion type.
@@ -220,42 +250,12 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     }
 
     /**
-     * {@inheritDoc}
+     * <p>setScaleFactor.</p>
+     *
+     * @param scale a double.
      */
-    @Override
-    public int compare(String s1, String s2) {
-        String[] keys1 = s1.split(" ");
-        String[] keys2 = s2.split(" ");
-
-        for (int i = 0; i < 2; i++) {
-            int c1 = parseInt(keys1[i]);
-            int c2 = parseInt(keys2[i]);
-            if (c1 < c2) {
-                return -1;
-            } else if (c1 > c2) {
-                return 1;
-            }
-        }
-        return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PiTorsionType piTorsionType = (PiTorsionType) o;
-        return Arrays.equals(atomClasses, piTorsionType.atomClasses);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(atomClasses);
+    void setScaleFactor(double scale) {
+        forceConstant *= scale;
     }
 
 }

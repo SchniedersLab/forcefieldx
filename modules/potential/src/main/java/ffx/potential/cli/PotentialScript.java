@@ -68,6 +68,35 @@ public abstract class PotentialScript extends BaseScript {
     public MolecularAssembly activeAssembly;
 
     /**
+     * Reclaims resources associated with all Potential objects associated with this script.
+     *
+     * @return If all Potentials had resources reclaimed.
+     */
+    public boolean destroyPotentials() {
+        boolean allSucceeded = true;
+        for (Potential potent : getPotentials()) {
+            if (potent != null) {
+                allSucceeded = allSucceeded && potent.destroy();
+            }
+        }
+        return allSucceeded;
+    }
+
+    /**
+     * Returns a List of all Potential objects associated with this script. Should be written
+     * to tolerate nulls, as many tests run help() and exit without instantiating their Potentials.
+     *
+     * @return All Potentials. Sometimes empty, never null.
+     */
+    public List<Potential> getPotentials() {
+        List<Potential> plist = new ArrayList<>();
+        if (activeAssembly != null && activeAssembly.getPotentialEnergy() != null) {
+            plist.add(activeAssembly.getPotentialEnergy());
+        }
+        return plist;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Execute the BaseScript init method, then load potential functions.
@@ -98,34 +127,5 @@ public abstract class PotentialScript extends BaseScript {
         }
 
         return true;
-    }
-
-    /**
-     * Returns a List of all Potential objects associated with this script. Should be written
-     * to tolerate nulls, as many tests run help() and exit without instantiating their Potentials.
-     *
-     * @return All Potentials. Sometimes empty, never null.
-     */
-    public List<Potential> getPotentials() {
-        List<Potential> plist = new ArrayList<>();
-        if (activeAssembly != null && activeAssembly.getPotentialEnergy() != null) {
-            plist.add(activeAssembly.getPotentialEnergy());
-        }
-        return plist;
-    }
-
-    /**
-     * Reclaims resources associated with all Potential objects associated with this script.
-     *
-     * @return If all Potentials had resources reclaimed.
-     */
-    public boolean destroyPotentials() {
-        boolean allSucceeded = true;
-        for (Potential potent : getPotentials()) {
-            if (potent != null) {
-                allSucceeded = allSucceeded && potent.destroy();
-            }
-        }
-        return allSucceeded;
     }
 }

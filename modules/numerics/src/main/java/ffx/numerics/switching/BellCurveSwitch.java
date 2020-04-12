@@ -99,6 +99,18 @@ public class BellCurveSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
+    public double firstDerivative(double x) {
+        if (x > midpoint) {
+            return invWidth * secondSwitchingFunction.firstDerivative(x);
+        } else {
+            return invWidth * switchingFunction.firstDerivative(x);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public int getHighestOrderZeroDerivative() {
         return Math.min(switchingFunction.getHighestOrderZeroDerivative(), secondSwitchingFunction.getHighestOrderZeroDerivative());
     }
@@ -117,34 +129,6 @@ public class BellCurveSwitch implements UnivariateSwitchingFunction {
     @Override
     public double getZeroBound() {
         return midpoint - halfWidth;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean symmetricToUnity() {
-        return switchingFunction.symmetricToUnity() && secondSwitchingFunction.symmetricToUnity();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return switchingFunction.validOutsideBounds() && secondSwitchingFunction.validOutsideBounds();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double firstDerivative(double x) {
-        if (x > midpoint) {
-            return invWidth * secondSwitchingFunction.firstDerivative(x);
-        } else {
-            return invWidth * switchingFunction.firstDerivative(x);
-        }
     }
 
     /**
@@ -176,17 +160,33 @@ public class BellCurveSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        if (x > midpoint) {
-            return secondSwitchingFunction.valueAt(x);
-        } else {
-            return switchingFunction.valueAt(x);
-        }
+    public boolean symmetricToUnity() {
+        return switchingFunction.symmetricToUnity() && secondSwitchingFunction.symmetricToUnity();
     }
 
     @Override
     public String toString() {
         return format(" Spliced 5'th order Hermite splines with midpoint " +
                 "%11.5g, width %11.5g", midpoint, 2.0 * halfWidth);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean validOutsideBounds() {
+        return switchingFunction.validOutsideBounds() && secondSwitchingFunction.validOutsideBounds();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        if (x > midpoint) {
+            return secondSwitchingFunction.valueAt(x);
+        } else {
+            return switchingFunction.valueAt(x);
+        }
     }
 }

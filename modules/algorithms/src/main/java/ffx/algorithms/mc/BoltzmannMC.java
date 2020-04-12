@@ -41,9 +41,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
-import static ffx.utilities.Constants.R;
 
 import static org.apache.commons.math3.util.FastMath.exp;
+
+import static ffx.utilities.Constants.R;
 
 /**
  * The BoltzmannMC abstract class is a skeleton for Boltzmann-weighted
@@ -58,17 +59,27 @@ public abstract class BoltzmannMC implements MetropolisMC {
      * Constant <code>logger</code>
      */
     private static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
-
+    protected Random random = new Random();
     private double temperature = 298.15; // Room temperature (also STP).
     private double kbTinv = -1.0 / (R * temperature); // Constant factor for Monte Carlo moves (-1/kbT)
     private boolean print = true;
-
     private double e1 = 0.0;
     private double e2 = 0.0;
     private double lastE = 0.0;
-    protected Random random = new Random();
-
     private boolean lastAccept = false;
+
+    /**
+     * <p>
+     * Boltzmann-weighted acceptance probability
+     *
+     * @param invKT 1.0 / (Boltzmann constant * temperature)
+     * @param e1    Energy before move
+     * @param e2    Proposed energy
+     * @return Chance of accepting this move
+     */
+    public static double acceptChance(double invKT, double e1, double e2) {
+        return Math.min(exp(invKT * (e2 - e1)), 1.0);
+    }
 
     /**
      * {@inheritDoc}
@@ -89,7 +100,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
      * @param invKT  1.0 / (Boltzmann constant * temperature)
      * @param e1     Energy before move
      * @param e2     Proposed energy
-     * @return       Whether to accept the move.
+     * @return Whether to accept the move.
      */
     public static boolean evaluateMove(Random random, double invKT, double e1, double e2) {
         if (e2 <= e1) {
@@ -105,33 +116,11 @@ public abstract class BoltzmannMC implements MetropolisMC {
     }
 
     /**
-     * <p>
-     * Boltzmann-weighted acceptance probability
-     *
-     * @param invKT 1.0 / (Boltzmann constant * temperature)
-     * @param e1    Energy before move
-     * @param e2    Proposed energy
-     * @return      Chance of accepting this move
-     */
-    public static double acceptChance(double invKT, double e1, double e2) {
-        return Math.min(exp(invKT * (e2 - e1)), 1.0);
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
-    public void setTemperature(double temp) {
-        temperature = temp;
-        kbTinv = -1.0 / (R * temperature);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPrint(boolean print) {
-        this.print = print;
+    public boolean getAccept() {
+        return lastAccept;
     }
 
     /**
@@ -148,6 +137,23 @@ public abstract class BoltzmannMC implements MetropolisMC {
     @Override
     public double getE2() {
         return e2;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTemperature() {
+        return temperature;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setTemperature(double temp) {
+        temperature = temp;
+        kbTinv = -1.0 / (R * temperature);
     }
 
     /**
@@ -227,16 +233,8 @@ public abstract class BoltzmannMC implements MetropolisMC {
      * {@inheritDoc}
      */
     @Override
-    public double getTemperature() {
-        return temperature;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean getAccept() {
-        return lastAccept;
+    public void setPrint(boolean print) {
+        this.print = print;
     }
 
     /**

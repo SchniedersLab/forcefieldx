@@ -39,7 +39,6 @@ package ffx.potential.nonbonded.implicit;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -69,8 +68,55 @@ import static ffx.potential.nonbonded.VanDerWaalsForm.getCombinedRadius;
  */
 public class DispersionRegion extends ParallelRegion {
 
+    /**
+     * The dispersion integral begins for each atom at:
+     * Rmin_ij + DISPERSION_OFFSET
+     */
+    public static final double DEFAULT_DISPERSION_OFFSET = 1.056;
+    /**
+     * Each solute atom blocks dispersion interactions with solvent:
+     * Rmin + SOLUTE_OFFSET
+     */
+    public static final double DEFAULT_SOLUTE_OFFSET = 0.0;
     private static final Logger logger = Logger.getLogger(DispersionRegion.class.getName());
-
+    /**
+     * The dispersion integral HCT overlap scale factor.
+     */
+    private static final double DEFAULT_DISP_OVERLAP_FACTOR = 0.75;
+    /**
+     * Conversion between solute-solvent dispersion enthalpy and solute-solvent dispersion free energy.
+     */
+    private static final double SLEVY = 1.0;
+    /**
+     * Number density of water (water per A^3).
+     */
+    private static final double AWATER = 0.033428;
+    /**
+     * AMOEBA '03 Water oxygen epsilon.
+     */
+    private static final double EPSO = 0.1100;
+    /**
+     * AMOEBA '03 Water hydrogen epsilon.
+     */
+    private static final double EPSH = 0.0135;
+    /**
+     * AMOEBA '03 Water oxygen Rmin (A).
+     */
+    private static final double RMINO = 1.7025;
+    /**
+     * AMOEBA '03 Water hydrogen Rmin (A).
+     */
+    private static final double RMINH = 1.3275;
+    /**
+     * AMOEBA epsilon rule.
+     */
+    private static final EPSILON_RULE epsilonRule = EPSILON_RULE.HHG;
+    /**
+     * AMOEBA radius rule.
+     */
+    private static final RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
+    private final DispersionLoop[] dispersionLoop;
+    private final SharedDouble sharedDispersion;
     /**
      * An ordered array of atoms in the system.
      */
@@ -104,55 +150,6 @@ public class DispersionRegion extends ParallelRegion {
      */
     private AtomicDoubleArray3D grad;
     private double[] cDisp;
-    private final DispersionLoop[] dispersionLoop;
-    private final SharedDouble sharedDispersion;
-    /**
-     * The dispersion integral HCT overlap scale factor.
-     */
-    private static final double DEFAULT_DISP_OVERLAP_FACTOR = 0.75;
-    /**
-     * The dispersion integral begins for each atom at:
-     * Rmin_ij + DISPERSION_OFFSET
-     */
-    public static final double DEFAULT_DISPERSION_OFFSET = 1.2;
-    /**
-     * Each solute atom blocks dispersion interactions with solvent:
-     * Rmin + SOLUTE_OFFSET
-     */
-    public static final double DEFAULT_SOLUTE_OFFSET = 0.0;
-    /**
-     * Conversion between solute-solvent dispersion enthalpy and solute-solvent dispersion free energy.
-     */
-    private static final double SLEVY = 1.0;
-    /**
-     * Number density of water (water per A^3).
-     */
-    private static final double AWATER = 0.033428;
-    /**
-     * AMOEBA '03 Water oxygen epsilon.
-     */
-    private static final double EPSO = 0.1100;
-    /**
-     * AMOEBA '03 Water hydrogen epsilon.
-     */
-    private static final double EPSH = 0.0135;
-    /**
-     * AMOEBA '03 Water oxygen Rmin (A).
-     */
-    private static final double RMINO = 1.7025;
-    /**
-     * AMOEBA '03 Water hydrogen Rmin (A).
-     */
-    private static final double RMINH = 1.3275;
-    /**
-     * AMOEBA epsilon rule.
-     */
-    private static final EPSILON_RULE epsilonRule = EPSILON_RULE.HHG;
-    /**
-     * AMOEBA radius rule.
-     */
-    private static final RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
-
     /**
      * Where the dispersion integral begins for each atom (A):
      * Rmin + dispersionOffset
@@ -189,6 +186,18 @@ public class DispersionRegion extends ParallelRegion {
         allocate(atoms);
     }
 
+    /**
+     * Allocate storage given the Atom array.
+     *
+     * @param atoms Atom array in use.
+     */
+    public void allocate(Atom[] atoms) {
+        this.atoms = atoms;
+        int nAtoms = atoms.length;
+        cDisp = new double[nAtoms];
+        maxDispersionEnergy();
+    }
+
     public double getDispersionOffest() {
         return dispersionOffest;
     }
@@ -204,6 +213,15 @@ public class DispersionRegion extends ParallelRegion {
         maxDispersionEnergy();
     }
 
+    /**
+     * The dispersion integral begins offset from the vdW radius.
+     *
+     * @return the dispersion integral offset.
+     */
+    public double getDispersionOffset() {
+        return dispersionOffest;
+    }
+
     public double getDispersionOverlapFactor() {
         return dispersionOverlapFactor;
     }
@@ -217,33 +235,16 @@ public class DispersionRegion extends ParallelRegion {
         this.dispersionOverlapFactor = dispersionOverlapFactor;
     }
 
+    public double getEnergy() {
+        return sharedDispersion.get();
+    }
+
     public double getSoluteOffset() {
         return soluteOffset;
     }
 
     public void setSoluteOffset(double soluteOffset) {
         this.soluteOffset = soluteOffset;
-    }
-
-    /**
-     * The dispersion integral begins offset from the vdW radius.
-     *
-     * @return the dispersion integral offset.
-     */
-    public double getDispersionOffset() {
-        return dispersionOffest;
-    }
-
-    /**
-     * Allocate storage given the Atom array.
-     *
-     * @param atoms Atom array in use.
-     */
-    public void allocate(Atom[] atoms) {
-        this.atoms = atoms;
-        int nAtoms = atoms.length;
-        cDisp = new double[nAtoms];
-        maxDispersionEnergy();
     }
 
     /**
@@ -275,36 +276,26 @@ public class DispersionRegion extends ParallelRegion {
         this.grad = grad;
     }
 
-    public double getEnergy() {
-        return sharedDispersion.get();
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void run() {
+        try {
+            int nAtoms = atoms.length;
+            execute(0, nAtoms - 1, dispersionLoop[getThreadIndex()]);
+        } catch (Exception e) {
+            String message = "Fatal exception computing Dispersion energy in thread " + getThreadIndex() + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
     }
 
     /**
-     * Compute the maximum Dispersion energy for each atom in isolation. The
-     * loss of dispersion energy due to descreening of other atoms is then
-     * calculated in the DispersionLoop.
+     * {@inheritDoc}
      */
-    private void maxDispersionEnergy() {
-        int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {
-            VDWType type = atoms[i].getVDWType();
-            double epsi = type.wellDepth;
-            double rmini = type.radius / 2.0;
-            if (rmini > 0.0 && epsi > 0.0) {
-                double emixo = getCombinedEps(EPSO, epsi, epsilonRule);
-                double rmixo = getCombinedRadius(RMINO, rmini, radiusRule);
-                // Start of integration of dispersion for atom i with water oxygen.
-                double riO = rmixo / 2.0 + dispersionOffest;
-                cDisp[i] = tailCorrection(riO, emixo, rmixo);
-                double emixh = getCombinedEps(EPSH, epsi, epsilonRule);
-                double rmixh = getCombinedRadius(RMINH, rmini, radiusRule);
-                // Start of integration of dispersion for atom i with water hydrogen.
-                double riH = rmixh / 2.0 + dispersionOffest;
-                cDisp[i] += 2.0 * tailCorrection(riH, emixh, rmixh);
-            }
-            cDisp[i] = SLEVY * AWATER * cDisp[i];
-            // logger.info(format(" CDISP %d %16.8f", i, cDisp[i]));
-        }
+    @Override
+    public void start() {
+        sharedDispersion.set(0.0);
     }
 
     /**
@@ -333,36 +324,14 @@ public class DispersionRegion extends ParallelRegion {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void start() {
-        sharedDispersion.set(0.0);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void run() {
-        try {
-            int nAtoms = atoms.length;
-            execute(0, nAtoms - 1, dispersionLoop[getThreadIndex()]);
-        } catch (Exception e) {
-            String message = "Fatal exception computing Dispersion energy in thread " + getThreadIndex() + "\n";
-            logger.log(Level.SEVERE, message, e);
-        }
-    }
-
-    /**
      * Compute Dispersion energy for a range of atoms via pairwise
      * descreening.
      *
      * @since 1.0
      */
     private class DispersionLoop extends IntegerForLoop {
-        private double edisp;
         private final double[] dx_local;
+        private double edisp;
         private double r, r2, r3;
         private double xr, yr, zr;
         private int threadID;
@@ -372,12 +341,6 @@ public class DispersionRegion extends ParallelRegion {
 
         DispersionLoop() {
             dx_local = new double[3];
-        }
-
-        @Override
-        public void start() {
-            threadID = getThreadIndex();
-            edisp = 0;
         }
 
         @Override
@@ -431,6 +394,12 @@ public class DispersionRegion extends ParallelRegion {
                 // Subtract descreening.
                 edisp -= SLEVY * AWATER * sum;
             }
+        }
+
+        @Override
+        public void start() {
+            threadID = getThreadIndex();
+            edisp = 0;
         }
 
         /**
@@ -705,6 +674,34 @@ public class DispersionRegion extends ParallelRegion {
             de += PI * er7 * rmin7 * (dl + du) / (60.0 * r2);
 
             return de;
+        }
+    }
+
+    /**
+     * Compute the maximum Dispersion energy for each atom in isolation. The
+     * loss of dispersion energy due to descreening of other atoms is then
+     * calculated in the DispersionLoop.
+     */
+    private void maxDispersionEnergy() {
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            VDWType type = atoms[i].getVDWType();
+            double epsi = type.wellDepth;
+            double rmini = type.radius / 2.0;
+            if (rmini > 0.0 && epsi > 0.0) {
+                double emixo = getCombinedEps(EPSO, epsi, epsilonRule);
+                double rmixo = getCombinedRadius(RMINO, rmini, radiusRule);
+                // Start of integration of dispersion for atom i with water oxygen.
+                double riO = rmixo / 2.0 + dispersionOffest;
+                cDisp[i] = tailCorrection(riO, emixo, rmixo);
+                double emixh = getCombinedEps(EPSH, epsi, epsilonRule);
+                double rmixh = getCombinedRadius(RMINH, rmini, radiusRule);
+                // Start of integration of dispersion for atom i with water hydrogen.
+                double riH = rmixh / 2.0 + dispersionOffest;
+                cDisp[i] += 2.0 * tailCorrection(riH, emixh, rmixh);
+            }
+            cDisp[i] = SLEVY * AWATER * cDisp[i];
+            // logger.info(format(" CDISP %d %16.8f", i, cDisp[i]));
         }
     }
 }

@@ -122,64 +122,17 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         setWEstimate();
     }
 
-    private void setWEstimate() {
-        // generate initial w estimate
-        ReflectionSpline spline = new ReflectionSpline(reflectionList, refinementData.nBins);
-        int[] nMean = new int[refinementData.nBins];
-        for (int i = 0; i < refinementData.nBins; i++) {
-            nMean[i] = 0;
-        }
-        double mean = 0.0;
-        double tot = 0.0;
-        double[][] fcTot = refinementData.fcTot;
-        double[][] fSigF = refinementData.fSigF;
-        for (HKL ih : reflectionList.hkllist) {
-            int i = ih.index();
-            if (ih.allowed() == 0.0 || isNaN(fcTot[i][0]) || isNaN(fSigF[i][0])) {
-                continue;
-            }
-
-            double s2 = Crystal.invressq(crystal, ih);
-            double epsc = ih.epsilonc();
-            ComplexNumber fct = new ComplexNumber(fcTot[i][0], fcTot[i][1]);
-            double ecscale = spline.f(s2, refinementData.esqFc);
-            double eoscale = spline.f(s2, refinementData.esqFo);
-            double ec = fct.times(sqrt(ecscale)).abs();
-            double eo = fSigF[i][0] * sqrt(eoscale);
-            double wi = pow(eo - ec, 2.0) / epsc;
-
-            nMean[spline.i1()]++;
-            tot++;
-
-            x[spline.i1() + refinementData.nBins] += (wi - x[spline.i1() + refinementData.nBins]) / nMean[spline.i1()];
-            mean += (wi - mean) / tot;
-        }
-        logger.info(format(" Starting mean w:    %8.3f", mean));
-        logger.info(format(" Starting w scaling: %8.3f", 1.0 / mean));
-        for (int i = 0; i < refinementData.nBins; i++) {
-            x[i] -= x[i + refinementData.nBins];
-            x[i] *= scaling[i];
-            scaling[i + refinementData.nBins] = 1.0 / mean;
-            x[i + refinementData.nBins] *= scaling[i + refinementData.nBins];
-        }
-    }
-
     /**
-     * <p>Getter for the field <code>sigmaAEnergy</code>.</p>
+     * <p>
+     * calculateLikelihoodFree</p>
      *
-     * @return a {@link ffx.xray.SigmaAEnergy} object.
+     * @return a double.
      */
-    SigmaAEnergy getSigmaAEnergy() {
-        return sigmaAEnergy;
-    }
-
-    /**
-     * <p>getNumberOfVariables.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberOfVariables() {
-        return x.length;
+    public double calculateLikelihoodFree() {
+        sigmaAEnergy.setScaling(scaling);
+        double energy = sigmaAEnergy.energyAndGradient(x, grad);
+        sigmaAEnergy.setScaling(null);
+        return energy;
     }
 
     /**
@@ -197,30 +150,12 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>
-     * calculateLikelihood</p>
+     * <p>getNumberOfVariables.</p>
      *
-     * @return a double.
+     * @return a int.
      */
-    double calculateLikelihood() {
-        sigmaAEnergy.setScaling(scaling);
-        sigmaAEnergy.energyAndGradient(x, grad);
-        sigmaAEnergy.setScaling(null);
-
-        return refinementData.llkR;
-    }
-
-    /**
-     * <p>
-     * calculateLikelihoodFree</p>
-     *
-     * @return a double.
-     */
-    public double calculateLikelihoodFree() {
-        sigmaAEnergy.setScaling(scaling);
-        double energy = sigmaAEnergy.energyAndGradient(x, grad);
-        sigmaAEnergy.setScaling(null);
-        return energy;
+    public int getNumberOfVariables() {
+        return x.length;
     }
 
     /**
@@ -342,5 +277,70 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
                 }
             }
         }
+    }
+
+    private void setWEstimate() {
+        // generate initial w estimate
+        ReflectionSpline spline = new ReflectionSpline(reflectionList, refinementData.nBins);
+        int[] nMean = new int[refinementData.nBins];
+        for (int i = 0; i < refinementData.nBins; i++) {
+            nMean[i] = 0;
+        }
+        double mean = 0.0;
+        double tot = 0.0;
+        double[][] fcTot = refinementData.fcTot;
+        double[][] fSigF = refinementData.fSigF;
+        for (HKL ih : reflectionList.hkllist) {
+            int i = ih.index();
+            if (ih.allowed() == 0.0 || isNaN(fcTot[i][0]) || isNaN(fSigF[i][0])) {
+                continue;
+            }
+
+            double s2 = Crystal.invressq(crystal, ih);
+            double epsc = ih.epsilonc();
+            ComplexNumber fct = new ComplexNumber(fcTot[i][0], fcTot[i][1]);
+            double ecscale = spline.f(s2, refinementData.esqFc);
+            double eoscale = spline.f(s2, refinementData.esqFo);
+            double ec = fct.times(sqrt(ecscale)).abs();
+            double eo = fSigF[i][0] * sqrt(eoscale);
+            double wi = pow(eo - ec, 2.0) / epsc;
+
+            nMean[spline.i1()]++;
+            tot++;
+
+            x[spline.i1() + refinementData.nBins] += (wi - x[spline.i1() + refinementData.nBins]) / nMean[spline.i1()];
+            mean += (wi - mean) / tot;
+        }
+        logger.info(format(" Starting mean w:    %8.3f", mean));
+        logger.info(format(" Starting w scaling: %8.3f", 1.0 / mean));
+        for (int i = 0; i < refinementData.nBins; i++) {
+            x[i] -= x[i + refinementData.nBins];
+            x[i] *= scaling[i];
+            scaling[i + refinementData.nBins] = 1.0 / mean;
+            x[i + refinementData.nBins] *= scaling[i + refinementData.nBins];
+        }
+    }
+
+    /**
+     * <p>Getter for the field <code>sigmaAEnergy</code>.</p>
+     *
+     * @return a {@link ffx.xray.SigmaAEnergy} object.
+     */
+    SigmaAEnergy getSigmaAEnergy() {
+        return sigmaAEnergy;
+    }
+
+    /**
+     * <p>
+     * calculateLikelihood</p>
+     *
+     * @return a double.
+     */
+    double calculateLikelihood() {
+        sigmaAEnergy.setScaling(scaling);
+        sigmaAEnergy.energyAndGradient(x, grad);
+        sigmaAEnergy.setScaling(null);
+
+        return refinementData.llkR;
     }
 }

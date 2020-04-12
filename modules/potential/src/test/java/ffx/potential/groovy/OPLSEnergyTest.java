@@ -40,7 +40,6 @@ package ffx.potential.groovy;
 import java.util.Arrays;
 import java.util.Collection;
 
-import ffx.utilities.BaseFFXTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,9 +48,9 @@ import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.groovy.Energy;
 import ffx.potential.groovy.test.Gradient;
 import ffx.potential.groovy.test.LambdaGradient;
+import ffx.utilities.BaseFFXTest;
 
 import groovy.lang.Binding;
 
@@ -60,6 +59,65 @@ import groovy.lang.Binding;
  */
 @RunWith(Parameterized.class)
 public class OPLSEnergyTest extends BaseFFXTest {
+
+    private final String info;
+    private final String filename;
+    private final int nAtoms;
+    private final int nBonds;
+    private final int nAngles;
+    private final int nTorsions;
+    private final int nImproperTorsions;
+    private final int nVanDerWaals;
+    private final int nPermanent;
+    private final double bondEnergy;
+    private final double angleEnergy;
+    private final double torsionEnergy;
+    private final double improperTorsionEnergy;
+    private final double vanDerWaalsEnergy;
+    private final double permanentEnergy;
+    private final double tolerance = 1.0e-2;
+    private Binding binding;
+    private Energy energy;
+    private Gradient gradient;
+    private LambdaGradient lambdaGradient;
+    public OPLSEnergyTest(String info, String filename, int nAtoms,
+                          double bondEnergy, int nBonds,
+                          double angleEnergy, int nAngles,
+                          double torsionEnergy, int nTorsions,
+                          double improperTorsionEnergy, int nImproperTorsions,
+                          double vanDerWaalsEnergy, int nVanDerWaals,
+                          double permanentEnergy, int nPermanent) {
+
+        this.info = info;
+        this.filename = filename;
+        this.nAtoms = nAtoms;
+        this.bondEnergy = bondEnergy;
+        this.nBonds = nBonds;
+        this.angleEnergy = angleEnergy;
+        this.nAngles = nAngles;
+        this.torsionEnergy = torsionEnergy;
+        this.nTorsions = nTorsions;
+        this.improperTorsionEnergy = improperTorsionEnergy;
+        this.nImproperTorsions = nImproperTorsions;
+        this.vanDerWaalsEnergy = vanDerWaalsEnergy;
+        this.nVanDerWaals = nVanDerWaals;
+        this.permanentEnergy = permanentEnergy;
+        this.nPermanent = nPermanent;
+    }
+
+    @Before
+    public void before() {
+        binding = new Binding();
+
+        energy = new Energy();
+        energy.setBinding(binding);
+
+        gradient = new Gradient();
+        gradient.setBinding(binding);
+
+        lambdaGradient = new LambdaGradient();
+        lambdaGradient.setBinding(binding);
+    }
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -117,68 +175,7 @@ public class OPLSEnergyTest extends BaseFFXTest {
         });
     }
 
-    private final String info;
-    private final String filename;
-    private final int nAtoms;
-    private final int nBonds;
-    private final int nAngles;
-    private final int nTorsions;
-    private final int nImproperTorsions;
-    private final int nVanDerWaals;
-    private final int nPermanent;
-    private final double bondEnergy;
-    private final double angleEnergy;
-    private final double torsionEnergy;
-    private final double improperTorsionEnergy;
-    private final double vanDerWaalsEnergy;
-    private final double permanentEnergy;
-    private final double tolerance = 1.0e-2;
-
-    private Binding binding;
-    private Energy energy;
-    private Gradient gradient;
-    private LambdaGradient lambdaGradient;
-
-    public OPLSEnergyTest(String info, String filename, int nAtoms,
-                          double bondEnergy, int nBonds,
-                          double angleEnergy, int nAngles,
-                          double torsionEnergy, int nTorsions,
-                          double improperTorsionEnergy, int nImproperTorsions,
-                          double vanDerWaalsEnergy, int nVanDerWaals,
-                          double permanentEnergy, int nPermanent) {
-
-        this.info = info;
-        this.filename = filename;
-        this.nAtoms = nAtoms;
-        this.bondEnergy = bondEnergy;
-        this.nBonds = nBonds;
-        this.angleEnergy = angleEnergy;
-        this.nAngles = nAngles;
-        this.torsionEnergy = torsionEnergy;
-        this.nTorsions = nTorsions;
-        this.improperTorsionEnergy = improperTorsionEnergy;
-        this.nImproperTorsions = nImproperTorsions;
-        this.vanDerWaalsEnergy = vanDerWaalsEnergy;
-        this.nVanDerWaals = nVanDerWaals;
-        this.permanentEnergy = permanentEnergy;
-        this.nPermanent = nPermanent;
-    }
-
-    @Before
-    public void before() {
-        binding = new Binding();
-
-        energy = new Energy();
-        energy.setBinding(binding);
-
-        gradient = new Gradient();
-        gradient.setBinding(binding);
-
-        lambdaGradient = new LambdaGradient();
-        lambdaGradient.setBinding(binding);
-    }
-
-    @org.junit.Test
+    @Test
     public void testEnergy() {
         logger.info(" Testing energy for " + info);
         // Set-up the input arguments for the Biotype script.

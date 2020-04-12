@@ -37,10 +37,14 @@
 //******************************************************************************
 package ffx.algorithms.thermodynamics;
 
-import ffx.numerics.integrate.Integrate1DNumeric;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 
-import java.io.*;
+import ffx.numerics.integrate.Integrate1DNumeric;
 
 /**
  * HistogramSettings is a mutable settings class for OST histograms. Many fields
@@ -48,7 +52,7 @@ import java.io.*;
  * to reasonably put in a constructor. As such, HistogramSettings stores these
  * values and their defaults, so a Histogram can have many final fields with
  * a small-signature constructor.
- *
+ * <p>
  * While most fields are package-private and can be set easily (technically
  * breaking encapsulation), some fields are fully private because they are
  * involved in side-effects. For example, dL may be adjusted slightly downwards
@@ -56,57 +60,48 @@ import java.io.*;
  * of lambda bins.
  */
 public class HistogramSettings {
-    /**
-     * Each walker reads the same histogram restart file. Only the walker of
-     * rank 0 writes the histogram restart file.
-     */
-    private final File histogramFile;
-
     private static final boolean DEFAULT_DISCRETE_LAMBDA = false;
+    private static final double DEFAULT_DL = 0.005;
+    private static final double DEFAULT_DFL = 2.0;
+    private static final int DEFAULT_BIAS_CUTOFF = 5;
+    private static final double DEFAULT_BIAS_MAG = 0.05;
+    private static final double DEFAULT_TEMPERATURE = 298.15; // TODO: Consider setting this in Constants.
+    private static final double DEFAULT_TEMPERING_FACTOR = 2.0;
+    private static final int DEFAULT_FLAMDA_PRINT_INTERVAL = 25;
+    private static final Integrate1DNumeric.IntegrationType DEFAULT_INTEGRATION = Integrate1DNumeric.IntegrationType.SIMPSONS;
+    private static final double DEFAULT_TIMESTEP = 1.0;
+    private static final double DEFAULT_THETA_FRICTION = 1.0e-19;
+    private static final double DEFAULT_THETA_MASS = 1.0e-18;
+    private static final int DEFAULT_COUNT_INTERVAL = 10;
+    private static final double DEFAULT_LAMBDA_RESET = 0.99;
+    private static final boolean DEFAULT_RESET_STATISTICS = false;
+    private static final boolean DEFAULT_TEMPERING = true;
     /**
      * If true, use discrete lambda values instead of continuous lambda values.
      * Is a final field to avoid strange interactions with dL and number of lambda bins.
      */
     public final boolean discreteLambda;
-
-    private static final double DEFAULT_DL = 0.005;
     /**
-     * Width of standard lambda bins. Must be accessed by method because
-     * of an interaction with discreteLambda; if that field is false, the Histogram
-     * needs an odd number of bins, which may affect dL.
+     * Each walker reads the same histogram restart file. Only the walker of
+     * rank 0 writes the histogram restart file.
      */
-    private double dL;
-
-    private static final double DEFAULT_DFL = 2.0;
-    double dFL;
-
-    private static final int DEFAULT_BIAS_CUTOFF = 5;
+    private final File histogramFile;
     /**
-     * When evaluating the biasing potential, contributions from Gaussians
-     * centered on bins more the "biasCutoff" away will be neglected.
-     * <p>
-     * The default biasCutoff = 5.
+     * Relative path to the histogram restart file.
+     * Assumption: a Histogram object will never change its histogram or lambda files.
      */
-    int biasCutoff;
-
-    private static final double DEFAULT_BIAS_MAG = 0.05;
+    private final String hisFileName;
     /**
-     * Magnitude of each hill (not including tempering). Must be set by method
-     * because the default behavior for temperingThreshold is to be 20x this value.
-     * <p>
-     * The default biasMag = 0.05 (kcal/mol).
+     * Relative path to the lambda restart file.
+     * Assumption: a Histogram object will never change its histogram or lambda files.
      */
-    private double biasMag = DEFAULT_BIAS_MAG;
-
-    private static final double DEFAULT_TEMPERATURE = 298.15; // TODO: Consider setting this in Constants.
+    private final String lambdaFileName;
     /**
      * Temperature in Kelvin.
      * <p>
      * The default is 298.15.
      */
     public double temperature = DEFAULT_TEMPERATURE;
-
-    private static final double DEFAULT_TEMPERING_FACTOR = 2.0;
     /**
      * The Dama et al. transition-tempering rate parameter. A reasonable value
      * is about 2 to 8 kT, with larger values being resulting in slower decay.
@@ -114,7 +109,64 @@ public class HistogramSettings {
      * The default temperingFactor = 2.0.
      */
     public double temperingFactor = DEFAULT_TEMPERING_FACTOR;
-
+    /**
+     * Time step in picoseconds.
+     */
+    public double dt = DEFAULT_TIMESTEP;
+    /**
+     * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
+     */
+    public double thetaFriction = DEFAULT_THETA_FRICTION;
+    /**
+     * Reasonable thetaMass is ~100 a.m.u. (100 a.m.u is 1.6605e-22 grams).
+     */
+    public double thetaMass = DEFAULT_THETA_MASS;
+    /**
+     * Interval between adding a count to the Recursion kernel in MD steps.
+     * <p>
+     * The default countInterval = 10.
+     */
+    public int countInterval = DEFAULT_COUNT_INTERVAL;
+    /**
+     * Flag to indicate if OST should send and receive counts between processes
+     * synchronously or asynchronously. The latter can be faster by ~40% because
+     * simulation with Lambda &gt; 0.75 must compute two condensed phase
+     * self-consistent fields to interpolate polarization.
+     */
+    public boolean asynchronous = true;
+    double dFL;
+    /**
+     * When evaluating the biasing potential, contributions from Gaussians
+     * centered on bins more the "biasCutoff" away will be neglected.
+     * <p>
+     * The default biasCutoff = 5.
+     */
+    int biasCutoff;
+    /**
+     * Interval between how often the 1D histogram is printed to screen versus
+     * silently updated in background.
+     * <p>
+     * The fLambdaPrintInterval is 25.
+     */
+    int fLambdaPrintInterval = DEFAULT_FLAMDA_PRINT_INTERVAL;
+    /**
+     * The integration algorithm used for thermodynamic integration.
+     */
+    Integrate1DNumeric.IntegrationType integrationType = DEFAULT_INTEGRATION;
+    boolean tempering = DEFAULT_TEMPERING;
+    /**
+     * Width of standard lambda bins. Must be accessed by method because
+     * of an interaction with discreteLambda; if that field is false, the Histogram
+     * needs an odd number of bins, which may affect dL.
+     */
+    private double dL;
+    /**
+     * Magnitude of each hill (not including tempering). Must be set by method
+     * because the default behavior for temperingThreshold is to be 20x this value.
+     * <p>
+     * The default biasMag = 0.05 (kcal/mol).
+     */
+    private double biasMag = DEFAULT_BIAS_MAG;
     private double DEFAULT_BIAS_TO_OFFSET = 20.0;
     /**
      * An offset applied before calculating tempering weight.
@@ -136,84 +188,16 @@ public class HistogramSettings {
     private double temperOffset = biasMag * DEFAULT_BIAS_TO_OFFSET;
     // If set true (either by method or property setting temperOffset), no longer calculate based on bias magnitude.
     private boolean temperOffsetSet = false;
-
-    private static final int DEFAULT_FLAMDA_PRINT_INTERVAL = 25;
-    /**
-     * Interval between how often the 1D histogram is printed to screen versus
-     * silently updated in background.
-     * <p>
-     * The fLambdaPrintInterval is 25.
-     */
-    int fLambdaPrintInterval = DEFAULT_FLAMDA_PRINT_INTERVAL;
-
-    private static final Integrate1DNumeric.IntegrationType DEFAULT_INTEGRATION = Integrate1DNumeric.IntegrationType.SIMPSONS;
-    /**
-     * The integration algorithm used for thermodynamic integration.
-     */
-    Integrate1DNumeric.IntegrationType integrationType = DEFAULT_INTEGRATION;
-
-    private static final double DEFAULT_TIMESTEP = 1.0;
-    /**
-     * Time step in picoseconds.
-     */
-    public double dt = DEFAULT_TIMESTEP;
-
-    private static final double DEFAULT_THETA_FRICTION = 1.0e-19;
-    /**
-     * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
-     */
-    public double thetaFriction = DEFAULT_THETA_FRICTION;
-
-    private static final double DEFAULT_THETA_MASS = 1.0e-18;
-    /**
-     * Reasonable thetaMass is ~100 a.m.u. (100 a.m.u is 1.6605e-22 grams).
-     */
-    public double thetaMass = DEFAULT_THETA_MASS;
-
-    private static final int DEFAULT_COUNT_INTERVAL = 10;
-    /**
-     * Interval between adding a count to the Recursion kernel in MD steps.
-     * <p>
-     * The default countInterval = 10.
-     */
-    public int countInterval = DEFAULT_COUNT_INTERVAL;
-
-    private static final double DEFAULT_LAMBDA_RESET = 0.99;
     /**
      * Once the lambda reset value is reached, OST statistics are reset.
      */
     private double lambdaResetValue = DEFAULT_LAMBDA_RESET;
-
-    private static final boolean DEFAULT_RESET_STATISTICS = false;
     /**
      * Flag set to false once OST statistics are reset at lambdaResetValue.
      */
     private boolean resetStatistics = DEFAULT_RESET_STATISTICS;
-
     private boolean writeIndependent = false;
     private boolean independentWalkers = false;
-
-    /**
-     * Flag to indicate if OST should send and receive counts between processes
-     * synchronously or asynchronously. The latter can be faster by ~40% because
-     * simulation with Lambda &gt; 0.75 must compute two condensed phase
-     * self-consistent fields to interpolate polarization.
-     */
-    public boolean asynchronous = true;
-
-    private static final boolean DEFAULT_TEMPERING = true;
-    boolean tempering = DEFAULT_TEMPERING;
-
-    /**
-     * Relative path to the histogram restart file.
-     * Assumption: a Histogram object will never change its histogram or lambda files.
-     */
-    private final String hisFileName;
-    /**
-     * Relative path to the lambda restart file.
-     * Assumption: a Histogram object will never change its histogram or lambda files.
-     */
-    private final String lambdaFileName;
 
     public HistogramSettings(File hisFile, String lamFileName, CompositeConfiguration properties) throws IOException {
         this(hisFile, lamFileName, properties, properties.getBoolean("discrete-lambda", DEFAULT_DISCRETE_LAMBDA));
@@ -255,6 +239,34 @@ public class HistogramSettings {
     // set it by method rather than raw access.
 
     /**
+     * Gets the Gaussian bias magnitude in kcal/mol.
+     *
+     * @return Gaussian bias magnitude in kcal/mol.
+     */
+    public double getBiasMag() {
+        return biasMag;
+    }
+
+    /**
+     * Sets the bias magnitude, and if temperOffset has not previously been set by method or
+     * property, sets temperOffset to 20x that value.
+     *
+     * @param biasMag Gaussian bias magnitude in kcal/mol
+     */
+    public void setBiasMag(double biasMag) {
+        this.biasMag = biasMag;
+        if (!temperOffsetSet) {
+            // TODO: Logger.
+            temperOffset = DEFAULT_BIAS_TO_OFFSET * biasMag;
+        }
+    }
+
+    public double getDL() {
+        continuousLambdaBins();
+        return dL;
+    }
+
+    /**
      * Sets dLambda; if an invalid value is provided (not 0-1), resets it to default 0.005.
      *
      * @param dLambda Lambda bin width.
@@ -277,25 +289,35 @@ public class HistogramSettings {
         dL = 1.0 / (lambdaBins - 1);
     }
 
-    /**
-     * If continuous lambda bins are in use, rectify dL to have an odd number of bins.
-     * If (1.0 / dL) would produce an odd number, dL is increased to make (1.0 / dL)
-     * the next even number.
-     */
-    private void continuousLambdaBins() {
-        if (!discreteLambda) {
-            // This is not really "lambda bins" so much as it's just 1.0 / dL.
-            int fullWidthBins = (int) Math.round(1.0 / dL);
-            if (fullWidthBins % 2 == 0) {
-                ++fullWidthBins;
-            }
-            dL = 1.0 / (fullWidthBins - 1);
-        }
+    public String getHisFileName() {
+        return hisFileName;
     }
 
-    public double getDL() {
-        continuousLambdaBins();
-        return dL;
+    public File getHistogramFile() {
+        return histogramFile;
+    }
+
+    public String getLambdaFileName() {
+        return lambdaFileName;
+    }
+
+    public double getLambdaResetValue() {
+        return lambdaResetValue;
+    }
+
+    public void setLambdaResetValue(double rsVal) {
+        lambdaResetValue = rsVal;
+        // TODO: Should this be a (0-1] check instead of [0-1]?
+        resetStatistics = rsVal >= 0.0 && rsVal <= 1.0;
+    }
+
+    /**
+     * Gets the tempering offset.
+     *
+     * @return Gets the tempering offset in kcal/mol.
+     */
+    public double getTemperOffset() {
+        return temperOffset;
     }
 
     /**
@@ -309,43 +331,16 @@ public class HistogramSettings {
     }
 
     /**
-     * Gets the tempering offset.
-     * @return Gets the tempering offset in kcal/mol.
-     */
-    public double getTemperOffset() {
-        return temperOffset;
-    }
-
-    /**
-     * Sets the bias magnitude, and if temperOffset has not previously been set by method or
-     * property, sets temperOffset to 20x that value.
-     *
-     * @param biasMag Gaussian bias magnitude in kcal/mol
-     */
-    public void setBiasMag(double biasMag) {
-        this.biasMag = biasMag;
-        if (!temperOffsetSet) {
-            // TODO: Logger.
-            temperOffset = DEFAULT_BIAS_TO_OFFSET * biasMag;
-        }
-    }
-
-    /**
-     * Gets the Gaussian bias magnitude in kcal/mol.
-     *
-     * @return Gaussian bias magnitude in kcal/mol.
-     */
-    public double getBiasMag() {
-        return biasMag;
-    }
-
-    /**
      * Returns the value of independentWalkers.
      *
      * @return independentWalkers.
      */
     public boolean independentWalkers() {
         return independentWalkers;
+    }
+
+    public boolean resetStatistics() {
+        return resetStatistics;
     }
 
     /**
@@ -361,29 +356,6 @@ public class HistogramSettings {
     }
 
     /**
-     * Returns the value of writeIndependent.
-     *
-     * @return writeIndependent.
-     */
-    public boolean writeIndependent() {
-        return writeIndependent;
-    }
-
-    public void setLambdaResetValue(double rsVal) {
-        lambdaResetValue = rsVal;
-        // TODO: Should this be a (0-1] check instead of [0-1]?
-        resetStatistics = rsVal >= 0.0 && rsVal <= 1.0;
-    }
-
-    public double getLambdaResetValue() {
-        return lambdaResetValue;
-    }
-
-    public boolean resetStatistics() {
-        return resetStatistics;
-    }
-
-    /**
      * Sets the value of writeIndependent.
      *
      * @param wi Value to set writeIndependent to.
@@ -396,15 +368,28 @@ public class HistogramSettings {
         writeIndependent = wi;
     }
 
-    public File getHistogramFile() {
-        return histogramFile;
+    /**
+     * Returns the value of writeIndependent.
+     *
+     * @return writeIndependent.
+     */
+    public boolean writeIndependent() {
+        return writeIndependent;
     }
 
-    public String getHisFileName() {
-        return hisFileName;
-    }
-
-    public String getLambdaFileName() {
-        return lambdaFileName;
+    /**
+     * If continuous lambda bins are in use, rectify dL to have an odd number of bins.
+     * If (1.0 / dL) would produce an odd number, dL is increased to make (1.0 / dL)
+     * the next even number.
+     */
+    private void continuousLambdaBins() {
+        if (!discreteLambda) {
+            // This is not really "lambda bins" so much as it's just 1.0 / dL.
+            int fullWidthBins = (int) Math.round(1.0 / dL);
+            if (fullWidthBins % 2 == 0) {
+                ++fullWidthBins;
+            }
+            dL = 1.0 / (fullWidthBins - 1);
+        }
     }
 }

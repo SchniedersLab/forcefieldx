@@ -39,7 +39,6 @@ package ffx.ui;
 
 import javax.swing.tree.TreePath;
 
-import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
@@ -114,6 +113,7 @@ public class GraphicsPicking extends PickMouseBehavior {
     private Transform3D systemTransform3D = new Transform3D();
     private Vector3d syspos = new Vector3d();
     private Vector3d atpos = new Vector3d();
+
     /**
      * Constructor
      *
@@ -273,7 +273,7 @@ public class GraphicsPicking extends PickMouseBehavior {
                             } else if (pickLevel == PickLevel.PICKSYSTEM) {
                                 dataNode = a.getMSNode(MolecularAssembly.class);
                             } else {
-                                dataNode =  a.getMSNode(Molecule.class);
+                                dataNode = a.getMSNode(Molecule.class);
                                 if (dataNode == null) {
                                     dataNode = a.getMSNode(Polymer.class);
                                 }

@@ -37,12 +37,10 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import ffx.algorithms.cli.OSTOptions
-import ffx.crystal.CrystalPotential
-import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.OSTOptions
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy

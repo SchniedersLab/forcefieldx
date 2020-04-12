@@ -96,6 +96,15 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
+    public double firstDerivative(double x) throws IllegalArgumentException {
+        x = xTransform.applyAsDouble(x);
+        return 2.0 * sin(x) * cos(x) * multiplier;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public int getHighestOrderZeroDerivative() {
         return 1;
     }
@@ -109,6 +118,15 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     }
 
     /**
+     * Get the repeating period of this switch.
+     *
+     * @return Period
+     */
+    public double getPeriod() {
+        return 2.0 * halfPeriod;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -117,28 +135,12 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     }
 
     /**
-     * {@inheritDoc}
+     * Return true if a cos^2(ax) transform, false if a sin^2(ax) transform.
+     *
+     * @return a boolean.
      */
-    @Override
-    public boolean symmetricToUnity() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double firstDerivative(double x) throws IllegalArgumentException {
-        x = xTransform.applyAsDouble(x);
-        return 2.0 * sin(x) * cos(x) * multiplier;
+    public boolean isCosine() {
+        return cosine;
     }
 
     /**
@@ -185,29 +187,8 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        x = xTransform.applyAsDouble(x);
-        x = sin(x);
-        x *= x;
-        return x;
-    }
-
-    /**
-     * Get the repeating period of this switch.
-     *
-     * @return Period
-     */
-    public double getPeriod() {
-        return 2.0 * halfPeriod;
-    }
-
-    /**
-     * Return true if a cos^2(ax) transform, false if a sin^2(ax) transform.
-     *
-     * @return a boolean.
-     */
-    public boolean isCosine() {
-        return cosine;
+    public boolean symmetricToUnity() {
+        return true;
     }
 
     /**
@@ -220,6 +201,25 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
         } else {
             return format("Sine-squared switching function of form f(x) = sin^2(%8.4g * x)", multiplier);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean validOutsideBounds() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        x = xTransform.applyAsDouble(x);
+        x = sin(x);
+        x *= x;
+        return x;
     }
 
     /**

@@ -37,18 +37,16 @@
 //******************************************************************************
 package ffx.numerics.estimator;
 
-import ffx.utilities.Constants;
-
-import static org.apache.commons.math3.util.FastMath.log;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import ffx.numerics.math.SummaryStatistics;
-
 import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.apache.commons.math3.util.FastMath.log;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
+import ffx.numerics.math.SummaryStatistics;
+import ffx.utilities.Constants;
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
 import static ffx.numerics.math.ScalarMath.fermiFunction;
 
@@ -205,7 +203,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
                 s1 = new SummaryStatistics(fermi1);
                 double ratio = Arrays.stream(fermi1).sum() / Arrays.stream(fermi0).sum();
 
-                c += rtMean * log(sampleRatio  * ratio);
+                c += rtMean * log(sampleRatio * ratio);
                 converged = (Math.abs(c - cold) < tolerance);
                 cold = c;
 
@@ -250,16 +248,6 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
         return totDG;
     }
 
-    @Override
-    public double getUncertainty() {
-        return totUncert;
-    }
-
-    @Override
-    public int numberOfBins() {
-        return nWindows;
-    }
-
     /**
      * Returns the backwards Zwanzig estimator used to seed BAR.
      *
@@ -276,6 +264,16 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
      */
     public Zwanzig getInitialForwardsGuess() {
         return forwardsFEP;
+    }
+
+    @Override
+    public double getUncertainty() {
+        return totUncert;
+    }
+
+    @Override
+    public int numberOfBins() {
+        return nWindows;
     }
 
     /**

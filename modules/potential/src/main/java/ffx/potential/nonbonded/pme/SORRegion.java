@@ -65,12 +65,11 @@ import static ffx.potential.parameters.MultipoleType.t100;
 public class SORRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(SORRegion.class.getName());
-
-    /**
-     * An ordered array of atoms in the system.
-     */
-    private Atom[] atoms;
-    private double[] polarizability;
+    private final int maxThreads;
+    private final double polsor;
+    private final SORLoop[] sorLoop;
+    private final SharedDouble sharedEps;
+    private final SharedDouble sharedEpsCR;
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
@@ -81,9 +80,13 @@ public class SORRegion extends ParallelRegion {
      */
     public double[][] directDipole;
     public double[][] directDipoleCR;
+    /**
+     * An ordered array of atoms in the system.
+     */
+    private Atom[] atoms;
+    private double[] polarizability;
     private double[][] cartesianDipolePhi;
     private double[][] cartesianDipolePhiCR;
-
     /**
      * Field array.
      */
@@ -92,7 +95,6 @@ public class SORRegion extends ParallelRegion {
      * Chain rule field array.
      */
     private AtomicDoubleArray3D fieldCR;
-
     /**
      * Flag to indicate use of generalized Kirkwood.
      */
@@ -100,12 +102,6 @@ public class SORRegion extends ParallelRegion {
     private GeneralizedKirkwood generalizedKirkwood;
     private double aewald;
     private double aewald3;
-
-    private final int maxThreads;
-    private final double polsor;
-    private final SORLoop[] sorLoop;
-    private final SharedDouble sharedEps;
-    private final SharedDouble sharedEpsCR;
 
     public SORRegion(int nt, ForceField forceField) {
         maxThreads = nt;
@@ -148,12 +144,6 @@ public class SORRegion extends ParallelRegion {
     }
 
     @Override
-    public void start() {
-        sharedEps.set(0.0);
-        sharedEpsCR.set(0.0);
-    }
-
-    @Override
     public void run() throws Exception {
         try {
             int ti = getThreadIndex();
@@ -172,19 +162,20 @@ public class SORRegion extends ParallelRegion {
 
     }
 
+    @Override
+    public void start() {
+        sharedEps.set(0.0);
+        sharedEpsCR.set(0.0);
+    }
+
     private class SORLoop extends IntegerForLoop {
 
         private double eps, epsCR;
 
         @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
-
-        @Override
-        public void start() {
-            eps = 0.0;
-            epsCR = 0.0;
+        public void finish() {
+            sharedEps.addAndGet(eps);
+            sharedEpsCR.addAndGet(epsCR);
         }
 
         @Override
@@ -249,9 +240,14 @@ public class SORRegion extends ParallelRegion {
         }
 
         @Override
-        public void finish() {
-            sharedEps.addAndGet(eps);
-            sharedEpsCR.addAndGet(epsCR);
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
+        }
+
+        @Override
+        public void start() {
+            eps = 0.0;
+            epsCR = 0.0;
         }
     }
 }

@@ -37,19 +37,20 @@
 //******************************************************************************
 package ffx.algorithms.cli;
 
-import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.crystal.CrystalPotential;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.cli.WriteoutOptions;
-import picocli.CommandLine;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+
+import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.crystal.CrystalPotential;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.cli.WriteoutOptions;
+
+import picocli.CommandLine;
 
 /**
  * Represents command line options for scripts that calculate thermodynamics.
@@ -86,12 +87,12 @@ public class ThermodynamicsOptions {
     private String thermoAlgoString = "OST";
 
     /**
-     * <p>Getter for the field <code>resetNumSteps</code>.</p>
+     * <p>Return the selected Thermodynamics algorithm as an enumerated type.</p>
      *
-     * @return a boolean.
+     * @return Corresponding thermodynamics algorithm
      */
-    public boolean getResetNumSteps() {
-        return resetNumSteps;
+    public ThermodynamicsAlgorithm getAlgorithm() {
+        return ThermodynamicsAlgorithm.parse(thermoAlgoString);
     }
 
     /**
@@ -104,6 +105,15 @@ public class ThermodynamicsOptions {
     }
 
     /**
+     * <p>Getter for the field <code>resetNumSteps</code>.</p>
+     *
+     * @return a boolean.
+     */
+    public boolean getResetNumSteps() {
+        return resetNumSteps;
+    }
+
+    /**
      * Run an alchemical free energy window.
      *
      * @param topologies All involved MolecularAssemblies.
@@ -112,7 +122,7 @@ public class ThermodynamicsOptions {
      * @param writeOut   WriteoutOptions
      * @param dyn        MD restart file
      * @param aListener  AlgorithmListener
-     * @return           The MolecularDynamics object constructed.
+     * @return The MolecularDynamics object constructed.
      */
     public MolecularDynamics runFixedAlchemy(MolecularAssembly[] topologies, CrystalPotential potential,
                                              DynamicsOptions dynamics, WriteoutOptions writeOut, File dyn, AlgorithmListener aListener) {
@@ -154,21 +164,6 @@ public class ThermodynamicsOptions {
         return molDyn;
     }
 
-    private void runDynamics(MolecularDynamics md, long nSteps, DynamicsOptions dynamics, WriteoutOptions writeOut,
-                             boolean initVelocities, File dyn) {
-        md.dynamic(nSteps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp,
-                initVelocities, writeOut.getFileType(), dynamics.getCheckpoint(), dyn);
-    }
-
-    /**
-     * <p>Return the selected Thermodynamics algorithm as an enumerated type.</p>
-     *
-     * @return Corresponding thermodynamics algorithm
-     */
-    public ThermodynamicsAlgorithm getAlgorithm() {
-        return ThermodynamicsAlgorithm.parse(thermoAlgoString);
-    }
-
     /**
      * Represents categories of thermodynamics algorithms that must be handled differentially.
      * For legacy reasons, MC-OST and MD-OST are both just "OST", and the differences are handled
@@ -205,5 +200,11 @@ public class ThermodynamicsOptions {
             }
             throw new IllegalArgumentException(String.format(" Could not parse %s as a ThermodynamicsAlgorithm", name));
         }
+    }
+
+    private void runDynamics(MolecularDynamics md, long nSteps, DynamicsOptions dynamics, WriteoutOptions writeOut,
+                             boolean initVelocities, File dyn) {
+        md.dynamic(nSteps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp,
+                initVelocities, writeOut.getFileType(), dynamics.getCheckpoint(), dyn);
     }
 }

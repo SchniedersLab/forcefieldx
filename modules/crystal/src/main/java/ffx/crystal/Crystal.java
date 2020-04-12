@@ -64,11 +64,11 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import ffx.numerics.math.ScalarMath;
-import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.numerics.math.MatrixMath.mat3Mat3;
 import static ffx.numerics.math.MatrixMath.mat3SymVec6;
-import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.MatrixMath.transpose3;
 import static ffx.utilities.StringUtils.padRight;
 
@@ -900,6 +900,27 @@ public class Crystal {
         return new Crystal(a, b, c, alpha, beta, gamma, sg);
     }
 
+    /**
+     * Two crystals are equal only if all unit cell parameters are exactly the
+     * same.
+     *
+     * @param o the Crystal to compare to.
+     * @return true if all unit cell parameters are exactly the same.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Crystal crystal = (Crystal) o;
+        return (a == crystal.a &&
+                b == crystal.b &&
+                c == crystal.c &&
+                alpha == crystal.alpha &&
+                beta == crystal.beta &&
+                gamma == crystal.gamma &&
+                spaceGroup.number == crystal.spaceGroup.number);
+    }
+
     public boolean getCheckRestrictions() {
         return checkRestrictions;
     }
@@ -1015,46 +1036,6 @@ public class Crystal {
     @Override
     public int hashCode() {
         return Objects.hash(a, b, c, alpha, beta, gamma, spaceGroup.number);
-    }
-
-    /**
-     * Two crystals are equal only if all unit cell parameters are exactly the
-     * same.
-     *
-     * @param o the Crystal to compare to.
-     * @return true if all unit cell parameters are exactly the same.
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Crystal crystal = (Crystal) o;
-        return (a == crystal.a &&
-                b == crystal.b &&
-                c == crystal.c &&
-                alpha == crystal.alpha &&
-                beta == crystal.beta &&
-                gamma == crystal.gamma &&
-                spaceGroup.number == crystal.spaceGroup.number);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("\n Unit Cell\n");
-        sb.append(format("  A-axis:                              %8.3f\n", a));
-        sb.append(format("  B-axis:                              %8.3f\n", b));
-        sb.append(format("  C-axis:                              %8.3f\n", c));
-        sb.append(format("  Alpha:                               %8.3f\n", alpha));
-        sb.append(format("  Beta:                                %8.3f\n", beta));
-        sb.append(format("  Gamma:                               %8.3f\n", gamma));
-        sb.append("  Space group\n");
-        sb.append(format("   Number:                                  %3d\n", spaceGroup.number));
-        sb.append(format("   Symbol:                             %8s\n", spaceGroup.shortName));
-        sb.append(format("   Number of Symmetry Operators:            %3d", spaceGroup.getNumberOfSymOps()));
-        return sb.toString();
     }
 
     /**
@@ -1531,6 +1512,25 @@ public class Crystal {
      */
     public String toShortString() {
         return format("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f", a, b, c, alpha, beta, gamma);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("\n Unit Cell\n");
+        sb.append(format("  A-axis:                              %8.3f\n", a));
+        sb.append(format("  B-axis:                              %8.3f\n", b));
+        sb.append(format("  C-axis:                              %8.3f\n", c));
+        sb.append(format("  Alpha:                               %8.3f\n", alpha));
+        sb.append(format("  Beta:                                %8.3f\n", beta));
+        sb.append(format("  Gamma:                               %8.3f\n", gamma));
+        sb.append("  Space group\n");
+        sb.append(format("   Number:                                  %3d\n", spaceGroup.number));
+        sb.append(format("   Symbol:                             %8s\n", spaceGroup.shortName));
+        sb.append(format("   Number of Symmetry Operators:            %3d", spaceGroup.getNumberOfSymOps()));
+        return sb.toString();
     }
 
     /**

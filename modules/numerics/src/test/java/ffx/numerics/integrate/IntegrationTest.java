@@ -41,15 +41,15 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
-import static ffx.numerics.integrate.Integration.leftBoole;
-import static ffx.numerics.integrate.Integration.rightBoole;
-import static ffx.numerics.integrate.Integration.halfBinComposite;
-import static ffx.numerics.integrate.Integration.leftSimpsons;
-import static ffx.numerics.integrate.Integration.rightSimpsons;
 import static ffx.numerics.integrate.Integration.generateTestData_v1;
+import static ffx.numerics.integrate.Integration.halfBinComposite;
+import static ffx.numerics.integrate.Integration.leftBoole;
 import static ffx.numerics.integrate.Integration.leftRectangularMethod;
-import static ffx.numerics.integrate.Integration.rightRectangularMethod;
+import static ffx.numerics.integrate.Integration.leftSimpsons;
 import static ffx.numerics.integrate.Integration.leftTrapInput;
+import static ffx.numerics.integrate.Integration.rightBoole;
+import static ffx.numerics.integrate.Integration.rightRectangularMethod;
+import static ffx.numerics.integrate.Integration.rightSimpsons;
 import static ffx.numerics.integrate.Integration.rightTrapInput;
 
 /**
@@ -67,6 +67,39 @@ public class IntegrationTest {
      * Create array with pointers to doubles that will contain known integrals.
      */
     private double[] knownIntegral;
+
+    /**
+     * Compares the calculated integrals with the known values.
+     */
+    @Test
+    public void integrationTest() {
+
+        /*
+         *  Calculate the integrals using the left hand trapezoidal, Simpson's,
+         * and Boole's methods using data generated with the bounds 1 and 201
+         * with an interval of .1. The second four are the right handed integrals
+         * in the same order.
+         */
+        double[] calculatedIntegral = new double[8];
+
+        calculatedIntegral[0] = leftTrapInput(generateTestData_v1());
+        calculatedIntegral[1] = leftSimpsons(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 1, "left");
+        calculatedIntegral[2] = leftBoole(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 2, "left");
+        calculatedIntegral[3] = leftRectangularMethod(generateTestData_v1());
+
+        calculatedIntegral[4] = rightTrapInput(generateTestData_v1());
+        calculatedIntegral[5] = rightSimpsons(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 1, "right");
+        calculatedIntegral[6] = rightBoole(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 2, "right");
+        calculatedIntegral[7] = rightRectangularMethod(generateTestData_v1());
+
+        // Set the delta value for the assertEquals comparison.
+        double DELTA = 1e-8;
+
+        // Assert that the known integrals and calculated integrals are the same.
+        for (int i = 0; i < 8; i++) {
+            assertEquals(knownIntegral[i], calculatedIntegral[i], DELTA);
+        }
+    }
 
     /**
      * Initializes the array before testing.
@@ -91,38 +124,5 @@ public class IntegrationTest {
         knownIntegral[5] = 3.000977174918476;
         knownIntegral[6] = 3.000977149598709;
         knownIntegral[7] = 2.968898509509485;
-    }
-
-    /**
-     * Compares the calculated integrals with the known values.
-     */
-    @Test
-    public void integrationTest() {
-
-        /*
-        *  Calculate the integrals using the left hand trapezoidal, Simpson's,
-         * and Boole's methods using data generated with the bounds 1 and 201 
-         * with an interval of .1. The second four are the right handed integrals
-         * in the same order.
-         */
-        double[] calculatedIntegral = new double[8];
-
-        calculatedIntegral[0] = leftTrapInput(generateTestData_v1());
-        calculatedIntegral[1] = leftSimpsons(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 1, "left");
-        calculatedIntegral[2] = leftBoole(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 2, "left");
-        calculatedIntegral[3] = leftRectangularMethod(generateTestData_v1());
-
-        calculatedIntegral[4] = rightTrapInput(generateTestData_v1());
-        calculatedIntegral[5] = rightSimpsons(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 1, "right");
-        calculatedIntegral[6] = rightBoole(generateTestData_v1()) + halfBinComposite(generateTestData_v1(), 2, "right");
-        calculatedIntegral[7] = rightRectangularMethod(generateTestData_v1());
-
-        // Set the delta value for the assertEquals comparison.
-        double DELTA = 1e-8;
-
-        // Assert that the known integrals and calculated integrals are the same.
-        for (int i = 0; i < 8; i++) {
-            assertEquals(knownIntegral[i], calculatedIntegral[i], DELTA);
-        }
     }
 }

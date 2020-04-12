@@ -62,20 +62,20 @@ public class LambdaParticleOptions {
     private double lambdaFriction = 1.0E-18;
 
     /**
-     * <p>Getter for the field <code>lambdaMass</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getLambdaMass() {
-        return lambdaMass;
-    }
-
-    /**
      * <p>Getter for the field <code>lambdaFriction</code>.</p>
      *
      * @return a double.
      */
     public double getLambdaFriction() {
         return lambdaFriction;
+    }
+
+    /**
+     * <p>Getter for the field <code>lambdaMass</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getLambdaMass() {
+        return lambdaMass;
     }
 }

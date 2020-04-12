@@ -123,13 +123,11 @@ public class XtalEnergy implements Potential {
     }
 
     /**
-     * <p>setFractionalCoordinateMode.</p>
-     *
-     * @param fractionalMode a {@link ffx.potential.MolecularAssembly.FractionalMode} object.
+     * {@inheritDoc}
      */
-    public void setFractionalCoordinateMode(FractionalMode fractionalMode) {
-        this.fractionalMode = fractionalMode;
-        molecularAssembly.setFractionalMode(fractionalMode);
+    @Override
+    public boolean destroy() {
+        return forceFieldEnergy.destroy();
     }
 
     /**
@@ -176,6 +174,161 @@ public class XtalEnergy implements Potential {
 
         return totalEnergy;
 
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] x) {
+        int n = getNumberOfVariables();
+        if (x == null || x.length < n) {
+            x = new double[n];
+        }
+        int index = 0;
+        for (int i = 0; i < nActive; i++) {
+            Atom a = activeAtoms[i];
+            x[index] = a.getX();
+            index++;
+            x[index] = a.getY();
+            index++;
+            x[index] = a.getZ();
+            index++;
+        }
+        x[index] = unitCell.a;
+        index++;
+        x[index] = unitCell.b;
+        index++;
+        x[index] = unitCell.c;
+        index++;
+        x[index] = unitCell.alpha;
+        index++;
+        x[index] = unitCell.beta;
+        index++;
+        x[index] = unitCell.gamma;
+        return x;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public STATE getEnergyTermState() {
+        return forceFieldEnergy.getEnergyTermState();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnergyTermState(STATE state) {
+        forceFieldEnergy.setEnergyTermState(state);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getMass() {
+        return mass;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfVariables() {
+        return nParams;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return scaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        this.scaling = scaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTotalEnergy() {
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return type;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * <p>setFractionalCoordinateMode.</p>
+     *
+     * @param fractionalMode a {@link ffx.potential.MolecularAssembly.FractionalMode} object.
+     */
+    public void setFractionalCoordinateMode(FractionalMode fractionalMode) {
+        this.fractionalMode = fractionalMode;
+        molecularAssembly.setFractionalMode(fractionalMode);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     /**
@@ -568,158 +721,5 @@ public class XtalEnergy implements Potential {
                 index += 3;
             }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setScaling(double[] scaling) {
-        this.scaling = scaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return scaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] x) {
-        int n = getNumberOfVariables();
-        if (x == null || x.length < n) {
-            x = new double[n];
-        }
-        int index = 0;
-        for (int i = 0; i < nActive; i++) {
-            Atom a = activeAtoms[i];
-            x[index] = a.getX();
-            index++;
-            x[index] = a.getY();
-            index++;
-            x[index] = a.getZ();
-            index++;
-        }
-        x[index] = unitCell.a;
-        index++;
-        x[index] = unitCell.b;
-        index++;
-        x[index] = unitCell.c;
-        index++;
-        x[index] = unitCell.alpha;
-        index++;
-        x[index] = unitCell.beta;
-        index++;
-        x[index] = unitCell.gamma;
-        return x;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getMass() {
-        return mass;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getTotalEnergy() {
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNumberOfVariables() {
-        return nParams;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public VARIABLE_TYPE[] getVariableTypes() {
-        return type;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setEnergyTermState(STATE state) {
-        forceFieldEnergy.setEnergyTermState(state);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public STATE getEnergyTermState() {
-        return forceFieldEnergy.getEnergyTermState();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        return forceFieldEnergy.destroy();
     }
 }

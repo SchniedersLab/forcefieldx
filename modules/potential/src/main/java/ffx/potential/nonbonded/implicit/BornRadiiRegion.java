@@ -66,7 +66,10 @@ import ffx.potential.bonded.Atom;
 public class BornRadiiRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(BornRadiiRegion.class.getName());
-
+    private static final double oneThird = 1.0 / 3.0;
+    private static final double PI4_3 = 4.0 / 3.0 * PI;
+    private static final double PI_12 = PI / 12.0;
+    private final BornRadiiLoop[] bornRadiiLoop;
     /**
      * An ordered array of atoms in the system.
      */
@@ -111,8 +114,6 @@ public class BornRadiiRegion extends ParallelRegion {
      */
     private boolean nativeEnvironmentApproximation;
     private boolean verboseRadii = false;
-
-    private final BornRadiiLoop[] bornRadiiLoop;
     private SharedDoubleArray sharedBorn;
     private SharedDouble ecavTot;
 
@@ -122,43 +123,6 @@ public class BornRadiiRegion extends ParallelRegion {
             bornRadiiLoop[i] = new BornRadiiLoop();
         }
         ecavTot = new SharedDouble(0.0);
-    }
-
-    public void init(Atom[] atoms, Crystal crystal, double[][][] sXYZ, int[][][] neighborLists,
-                     double[] baseRadius, double[] overlapScale, boolean[] use, double cut2,
-                     boolean nativeEnvironmentApproximation, double[] born) {
-        this.atoms = atoms;
-        this.crystal = crystal;
-        this.sXYZ = sXYZ;
-        this.neighborLists = neighborLists;
-        this.baseRadius = baseRadius;
-        this.overlapScale = overlapScale;
-        this.use = use;
-        this.cut2 = cut2;
-        this.nativeEnvironmentApproximation = nativeEnvironmentApproximation;
-        this.born = born;
-    }
-
-    @Override
-    public void start() {
-        int nAtoms = atoms.length;
-        if (sharedBorn == null || sharedBorn.length() < nAtoms) {
-            sharedBorn = new SharedDoubleArray(nAtoms);
-        }
-        for (int i = 0; i < nAtoms; i++) {
-            sharedBorn.set(i, 0.0);
-        }
-    }
-
-    @Override
-    public void run() {
-        try {
-            int nAtoms = atoms.length;
-            execute(0, nAtoms - 1, bornRadiiLoop[getThreadIndex()]);
-        } catch (Exception e) {
-            String message = "Fatal exception computing Born radii in thread " + getThreadIndex() + "\n";
-            logger.log(Level.SEVERE, message, e);
-        }
     }
 
     @Override
@@ -201,6 +165,43 @@ public class BornRadiiRegion extends ParallelRegion {
         }
     }
 
+    public void init(Atom[] atoms, Crystal crystal, double[][][] sXYZ, int[][][] neighborLists,
+                     double[] baseRadius, double[] overlapScale, boolean[] use, double cut2,
+                     boolean nativeEnvironmentApproximation, double[] born) {
+        this.atoms = atoms;
+        this.crystal = crystal;
+        this.sXYZ = sXYZ;
+        this.neighborLists = neighborLists;
+        this.baseRadius = baseRadius;
+        this.overlapScale = overlapScale;
+        this.use = use;
+        this.cut2 = cut2;
+        this.nativeEnvironmentApproximation = nativeEnvironmentApproximation;
+        this.born = born;
+    }
+
+    @Override
+    public void run() {
+        try {
+            int nAtoms = atoms.length;
+            execute(0, nAtoms - 1, bornRadiiLoop[getThreadIndex()]);
+        } catch (Exception e) {
+            String message = "Fatal exception computing Born radii in thread " + getThreadIndex() + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    @Override
+    public void start() {
+        int nAtoms = atoms.length;
+        if (sharedBorn == null || sharedBorn.length() < nAtoms) {
+            sharedBorn = new SharedDoubleArray(nAtoms);
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            sharedBorn.set(i, 0.0);
+        }
+    }
+
     /**
      * Compute Born radii for a range of atoms via the Grycuk method.
      *
@@ -219,72 +220,9 @@ public class BornRadiiRegion extends ParallelRegion {
         }
 
         @Override
-        public void start() {
-            int nAtoms = atoms.length;
-            if (localBorn == null || localBorn.length < nAtoms) {
-                localBorn = new double[nAtoms];
-            }
-            fill(localBorn, 0.0);
-        }
-
-        @Override
         public void finish() {
             sharedBorn.reduce(localBorn, DoubleOp.SUM);
             ecavTot.addAndGet(ecav);
-        }
-
-        /**
-         * Use pairwise descreening to compute integral of 1/r^6.
-         *
-         * @param r            atomic separation.
-         * @param r2           atomic separation squared.
-         * @param radius       base radius of the atom being descreened.
-         * @param scaledRadius scaled raduis of the atom doing the descreening.
-         * @return this contribution to the descreening integral.
-         */
-        private double integral(double r, double r2, double radius, double scaledRadius) {
-            double integral = 0.0;
-
-            // Descreen only if atom I does not engulf atom K.
-            if (radius < r + scaledRadius) {
-                // Atom i is engulfed by atom k.
-                if (radius + r < scaledRadius) {
-                    final double lower = radius;
-                    final double upper = scaledRadius - r;
-                    integral = (PI4_3 * (1.0 / (upper * upper * upper) - 1.0 / (lower * lower * lower)));
-                }
-
-                // Upper integration bound is always the same.
-                double upper = r + scaledRadius;
-
-                // Lower integration bound depends on atoms sizes and separation.
-                double lower;
-                if (radius + r < scaledRadius) {
-                    // Atom i is engulfed by atom k.
-                    lower = scaledRadius - r;
-                } else if (r < radius + scaledRadius) {
-                    // Atoms are overlapped, begin integration from ri.
-                    lower = radius;
-                } else {
-                    // No overlap between atoms.
-                    lower = r - scaledRadius;
-                }
-
-                double l2 = lower * lower;
-                double l4 = l2 * l2;
-                double lr = lower * r;
-                double l4r = l4 * r;
-                double u2 = upper * upper;
-                double u4 = u2 * u2;
-                double ur = upper * r;
-                double u4r = u4 * r;
-                double scaledRk2 = scaledRadius * scaledRadius;
-                double term = (3.0 * (r2 - scaledRk2) + 6.0 * u2 - 8.0 * ur) / u4r
-                        - (3.0 * (r2 - scaledRk2) + 6.0 * l2 - 8.0 * lr) / l4r;
-                integral -= PI_12 * term;
-            }
-
-            return integral;
         }
 
         @Override
@@ -359,9 +297,68 @@ public class BornRadiiRegion extends ParallelRegion {
                 }
             }
         }
-    }
 
-    private static final double oneThird = 1.0 / 3.0;
-    private static final double PI4_3 = 4.0 / 3.0 * PI;
-    private static final double PI_12 = PI / 12.0;
+        @Override
+        public void start() {
+            int nAtoms = atoms.length;
+            if (localBorn == null || localBorn.length < nAtoms) {
+                localBorn = new double[nAtoms];
+            }
+            fill(localBorn, 0.0);
+        }
+
+        /**
+         * Use pairwise descreening to compute integral of 1/r^6.
+         *
+         * @param r            atomic separation.
+         * @param r2           atomic separation squared.
+         * @param radius       base radius of the atom being descreened.
+         * @param scaledRadius scaled raduis of the atom doing the descreening.
+         * @return this contribution to the descreening integral.
+         */
+        private double integral(double r, double r2, double radius, double scaledRadius) {
+            double integral = 0.0;
+
+            // Descreen only if atom I does not engulf atom K.
+            if (radius < r + scaledRadius) {
+                // Atom i is engulfed by atom k.
+                if (radius + r < scaledRadius) {
+                    final double lower = radius;
+                    final double upper = scaledRadius - r;
+                    integral = (PI4_3 * (1.0 / (upper * upper * upper) - 1.0 / (lower * lower * lower)));
+                }
+
+                // Upper integration bound is always the same.
+                double upper = r + scaledRadius;
+
+                // Lower integration bound depends on atoms sizes and separation.
+                double lower;
+                if (radius + r < scaledRadius) {
+                    // Atom i is engulfed by atom k.
+                    lower = scaledRadius - r;
+                } else if (r < radius + scaledRadius) {
+                    // Atoms are overlapped, begin integration from ri.
+                    lower = radius;
+                } else {
+                    // No overlap between atoms.
+                    lower = r - scaledRadius;
+                }
+
+                double l2 = lower * lower;
+                double l4 = l2 * l2;
+                double lr = lower * r;
+                double l4r = l4 * r;
+                double u2 = upper * upper;
+                double u4 = u2 * u2;
+                double ur = upper * r;
+                double u4r = u4 * r;
+                double scaledRk2 = scaledRadius * scaledRadius;
+                double term = (3.0 * (r2 - scaledRk2) + 6.0 * u2 - 8.0 * ur) / u4r
+                        - (3.0 * (r2 - scaledRk2) + 6.0 * l2 - 8.0 * lr) / l4r;
+                integral -= PI_12 * term;
+            }
+
+            return integral;
+        }
+    }
 }

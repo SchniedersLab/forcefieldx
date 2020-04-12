@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.xray;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,63 +61,12 @@ import ffx.realspace.RealSpaceData;
  */
 public class RefinementMinimize implements OptimizationListener, Terminatable {
 
-    /**
-     * Different refinement mode selection types.
-     */
-    public enum RefinementMode {
-
-        /**
-         * refine coordinates only
-         */
-        COORDINATES,
-        /**
-         * refine B factors only (if anisotropic, refined as such)
-         */
-        BFACTORS,
-        /**
-         * refine coordinates and B factors (if anisotropic, refined as such)
-         */
-        COORDINATES_AND_BFACTORS,
-        /**
-         * refine occupancies only (alternate conformers are constrained)
-         */
-        OCCUPANCIES,
-        /**
-         * refine B factors and occupancies
-         */
-        BFACTORS_AND_OCCUPANCIES,
-        /**
-         * refine coordinates and occupancies
-         */
-        COORDINATES_AND_OCCUPANCIES,
-        /**
-         * refine all
-         */
-        COORDINATES_AND_BFACTORS_AND_OCCUPANCIES
-    }
-
-    /**
-     * Parse a string into a refinement mode.
-     *
-     * @param str Refinement mode string.
-     * @return An instance of RefinementMode.
-     */
-    public static RefinementMode parseMode(String str) {
-        try {
-            return RefinementMode.valueOf(str.toUpperCase());
-        } catch (Exception e) {
-            logger.info(String.format(" Could not parse %s as a refinement mode; defaulting to coordinates.", str));
-            return RefinementMode.COORDINATES;
-        }
-    }
-
+    private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
+    private static final double toSeconds = 1.0e-9;
     public final RefinementEnergy refinementEnergy;
     private final AlgorithmListener listener;
-    private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
-    private static double toSeconds = 1.0e-9;
     private final DataContainer dataContainer;
     private final Atom[] activeAtomArray;
-    private RefinementMode refinementMode;
     private final int nXYZ;
     private final int nB;
     private final int nOcc;
@@ -125,6 +74,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     private final double[] x;
     private final double[] grad;
     private final double[] scaling;
+    private final RefinementMode refinementMode;
     private boolean done = false;
     private boolean terminate = false;
     private long time;
@@ -283,13 +233,13 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             if (data instanceof DiffractionData) {
 
                 int i = nXYZ + nB;
-                for (ArrayList<Residue> list : refinementModel.getAltResidues()) {
+                for (List<Residue> list : refinementModel.getAltResidues()) {
                     for (int j = 0; j < list.size(); j++) {
                         scaling[i] = occscale;
                         i++;
                     }
                 }
-                for (ArrayList<Molecule> list : refinementModel.getAltMolecules()) {
+                for (List<Molecule> list : refinementModel.getAltMolecules()) {
                     for (int j = 0; j < list.size(); j++) {
                         scaling[i] = occscale;
                         i++;
@@ -365,15 +315,6 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * get the number of xyz parameters being fit
-     *
-     * @return the number of xyz parameters
-     */
-    public int getNXYZ() {
-        return nXYZ;
-    }
-
-    /**
      * get the number of B factor parameters being fit
      *
      * @return the number of B factor parameters
@@ -389,6 +330,15 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      */
     public int getNOcc() {
         return nOcc;
+    }
+
+    /**
+     * get the number of xyz parameters being fit
+     *
+     * @return the number of xyz parameters
+     */
+    public int getNXYZ() {
+        return nXYZ;
     }
 
     /**
@@ -557,6 +507,21 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
+     * Parse a string into a refinement mode.
+     *
+     * @param str Refinement mode string.
+     * @return An instance of RefinementMode.
+     */
+    public static RefinementMode parseMode(String str) {
+        try {
+            return RefinementMode.valueOf(str.toUpperCase());
+        } catch (Exception e) {
+            logger.info(String.format(" Could not parse %s as a refinement mode; defaulting to coordinates.", str));
+            return RefinementMode.COORDINATES;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -571,5 +536,40 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 }
             }
         }
+    }
+
+    /**
+     * Different refinement mode selection types.
+     */
+    public enum RefinementMode {
+
+        /**
+         * refine coordinates only
+         */
+        COORDINATES,
+        /**
+         * refine B factors only (if anisotropic, refined as such)
+         */
+        BFACTORS,
+        /**
+         * refine coordinates and B factors (if anisotropic, refined as such)
+         */
+        COORDINATES_AND_BFACTORS,
+        /**
+         * refine occupancies only (alternate conformers are constrained)
+         */
+        OCCUPANCIES,
+        /**
+         * refine B factors and occupancies
+         */
+        BFACTORS_AND_OCCUPANCIES,
+        /**
+         * refine coordinates and occupancies
+         */
+        COORDINATES_AND_OCCUPANCIES,
+        /**
+         * refine all
+         */
+        COORDINATES_AND_BFACTORS_AND_OCCUPANCIES
     }
 }

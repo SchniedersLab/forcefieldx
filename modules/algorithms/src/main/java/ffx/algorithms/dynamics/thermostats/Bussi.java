@@ -64,13 +64,13 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
 public class Bussi extends Thermostat {
 
     /**
-     * Bussi thermostat time constant (psec).
-     */
-    private double tau;
-    /**
      * The random number generator used to perturb velocities.
      */
     private final Random bussiRandom;
+    /**
+     * Bussi thermostat time constant (psec).
+     */
+    private double tau;
 
     /**
      * <p>
@@ -118,54 +118,6 @@ public class Bussi extends Thermostat {
     /**
      * {@inheritDoc}
      * <p>
-     * Initialize the Random number generator used to apply random forces to the
-     * particles.
-     */
-    public void setRandomSeed(long seed) {
-        bussiRandom.setSeed(seed);
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>tau</code>.</p>
-     *
-     * @param tau a double.
-     */
-    public void setTau(double tau) {
-        this.tau = tau;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>tau</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getTau() {
-        return tau;
-    }
-
-    /**
-     * Add Thermostat details to the kinetic energy and temperature details.
-     *
-     * @return Description of the thermostat, kinetic energy and temperature.
-     */
-    public String toThermostatString() {
-        return format("\n Bussi Thermostat (tau = %8.3f psec)\n%s", tau, super.toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * No velocity modifications are made by the Bussi method at the half-step.
-     */
-    @Override
-    public void halfStep(double dt) {
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Full step velocity modification.
      */
     @Override
@@ -187,5 +139,53 @@ public class Bussi extends Thermostat {
         for (int i = 0; i < nVariables; i++) {
             v[i] *= scale;
         }
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>tau</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getTau() {
+        return tau;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>tau</code>.</p>
+     *
+     * @param tau a double.
+     */
+    public void setTau(double tau) {
+        this.tau = tau;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * No velocity modifications are made by the Bussi method at the half-step.
+     */
+    @Override
+    public void halfStep(double dt) {
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Initialize the Random number generator used to apply random forces to the
+     * particles.
+     */
+    public void setRandomSeed(long seed) {
+        bussiRandom.setSeed(seed);
+    }
+
+    /**
+     * Add Thermostat details to the kinetic energy and temperature details.
+     *
+     * @return Description of the thermostat, kinetic energy and temperature.
+     */
+    public String toThermostatString() {
+        return format("\n Bussi Thermostat (tau = %8.3f psec)\n%s", tau, super.toString());
     }
 }

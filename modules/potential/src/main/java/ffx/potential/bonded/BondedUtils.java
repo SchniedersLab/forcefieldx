@@ -61,10 +61,10 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
-import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.numerics.math.DoubleMath.normalize;
 import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.normalize;
 import static ffx.numerics.math.DoubleMath.scale;
+import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.potential.bonded.Bond.logNoBondType;
 import static ffx.potential.bonded.NamingUtils.nameAcetylCap;
 
@@ -98,10 +98,10 @@ public class BondedUtils {
      * @param a1         a {@link ffx.potential.bonded.Atom} object.
      * @param a2         a {@link ffx.potential.bonded.Atom} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Bond} object.
      */
-    public static Bond buildBond(Atom a1, Atom a2, ForceField forceField, ArrayList<Bond> bondList) {
+    public static Bond buildBond(Atom a1, Atom a2, ForceField forceField, List<Bond> bondList) {
         Bond bond = new Bond(a1, a2);
         int[] c = new int[2];
         c[0] = a1.getAtomType().atomClass;
@@ -127,11 +127,11 @@ public class BondedUtils {
      * @param bondedTo   a {@link ffx.potential.bonded.Atom} object.
      * @param key        a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Atom} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
-    public static Atom buildHeavy(MSGroup residue, String atomName, Atom bondedTo, int key, ForceField forceField, ArrayList<Bond> bondList)
+    public static Atom buildHeavy(MSGroup residue, String atomName, Atom bondedTo, int key, ForceField forceField, List<Bond> bondList)
             throws MissingHeavyAtomException {
         Atom atom = (Atom) residue.getAtomNode(atomName);
         AtomType atomType = findAtomType(key, forceField);
@@ -181,11 +181,11 @@ public class BondedUtils {
      * @param chiral     a int.
      * @param lookUp     a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
     public static Atom buildHeavy(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-                                  Atom ic, double angle2, int chiral, int lookUp, ForceField forceField, ArrayList<Bond> bondList) {
+                                  Atom ic, double angle2, int chiral, int lookUp, ForceField forceField, List<Bond> bondList) {
         AtomType atomType = findAtomType(lookUp, forceField);
         return buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType, forceField, bondList);
     }
@@ -204,11 +204,11 @@ public class BondedUtils {
      * @param chiral     a int.
      * @param lookUp     a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
     public static Atom buildHydrogen(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-                                     Atom ic, double angle2, int chiral, int lookUp, ForceField forceField, ArrayList<Bond> bondList) {
+                                     Atom ic, double angle2, int chiral, int lookUp, ForceField forceField, List<Bond> bondList) {
         AtomType atomType = findAtomType(lookUp, forceField);
         return buildHydrogenAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType, forceField, bondList);
     }
@@ -227,11 +227,11 @@ public class BondedUtils {
      * @param chiral     a int.
      * @param atomType   a {@link ffx.potential.parameters.AtomType} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
     public static Atom buildHydrogenAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-                                         Atom ic, double angle2, int chiral, AtomType atomType, ForceField forceField, ArrayList<Bond> bondList) {
+                                         Atom ic, double angle2, int chiral, AtomType atomType, ForceField forceField, List<Bond> bondList) {
         if (atomType == null) {
             return null;
         }
@@ -701,12 +701,12 @@ public class BondedUtils {
      * @param chiral     a int.
      * @param atomType   a {@link ffx.potential.parameters.AtomType} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
     private static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
                                        Atom ic, double angle2, int chiral, AtomType atomType,
-                                       ForceField forceField, ArrayList<Bond> bondList) {
+                                       ForceField forceField, List<Bond> bondList) {
         Atom atom = buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
         buildBond(ia, atom, forceField, bondList);
         return atom;

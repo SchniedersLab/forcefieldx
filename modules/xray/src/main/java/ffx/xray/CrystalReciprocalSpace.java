@@ -189,10 +189,10 @@ public class CrystalReciprocalSpace {
     private final SolventScaleRegion solventScaleRegion;
     private final SolventGradientRegion solventGradientRegion;
     private final Complex3DParallel complexFFT3D;
+    protected SolventModel solventModel;
     boolean lambdaTerm = false;
     double solventA;
     double solventB;
-    protected SolventModel solventModel;
     private boolean solvent;
     private boolean useThreeGaussians = true;
     // not final for purposes of finite differences
@@ -658,6 +658,141 @@ public class CrystalReciprocalSpace {
     }
 
     /**
+     * compute inverse FFT to determine atomic gradients
+     *
+     * @param hklData        structure factors to apply inverse FFT
+     * @param freer          array of free r flags corresponding to hkldata
+     * @param flag           Rfree flag value
+     * @param refinementMode {@link RefinementMinimize.RefinementMode refinement mode}
+     * @see RefinementMinimize.RefinementMode
+     * @see DiffractionRefinementData
+     */
+    public void computeAtomicGradients(double[][] hklData, int[] freer, int flag,
+                                       RefinementMode refinementMode) {
+        computeAtomicGradients(hklData, freer, flag, refinementMode, false);
+    }
+
+    /**
+     * parallelized computation of bulk solvent structure factors
+     *
+     * @param hklData structure factor list to fill in
+     * @see DiffractionRefinementData
+     */
+    public void computeSolventDensity(double[][] hklData) {
+        computeSolventDensity(hklData, false);
+    }
+
+    /**
+     * <p>
+     * densityNorm</p>
+     *
+     * @param data   an array of double.
+     * @param meansd an array of double.
+     * @param norm   a boolean.
+     */
+    public void densityNorm(double[] data, double[] meansd, boolean norm) {
+        double mean, sd;
+
+        mean = sd = 0.0;
+        int n = 0;
+        for (int k = 0; k < fftZ; k++) {
+            for (int j = 0; j < fftY; j++) {
+                for (int i = 0; i < fftX; i++) {
+                    int index = iComplex3D(i, j, k, fftX, fftY);
+                    n++;
+                    mean += (data[index] - mean) / n;
+                }
+            }
+        }
+
+        n = 0;
+        for (int k = 0; k < fftZ; k++) {
+            for (int j = 0; j < fftY; j++) {
+                for (int i = 0; i < fftX; i++) {
+                    int index = iComplex3D(i, j, k, fftX, fftY);
+                    sd += pow(data[index] - mean, 2);
+                    n++;
+                }
+            }
+        }
+        sd = sqrt(sd / n);
+
+        if (meansd != null) {
+            meansd[0] = mean;
+            meansd[1] = sd;
+        }
+
+        if (norm) {
+            double isd = 1.0 / sd;
+            for (int k = 0; k < fftZ; k++) {
+                for (int j = 0; j < fftY; j++) {
+                    for (int i = 0; i < fftX; i++) {
+                        int index = iComplex3D(i, j, k, fftX, fftY);
+                        data[index] = (data[index] - mean) * isd;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * <p>Getter for the field <code>densityGrid</code>.</p>
+     *
+     * @return the densityGrid
+     */
+    public double[] getDensityGrid() {
+        return densityGrid;
+    }
+
+    /**
+     * return dataset weight
+     *
+     * @return the weight wA
+     */
+    public double getWeight() {
+        return weight;
+    }
+
+    /**
+     * set the dataset weight
+     *
+     * @param weight desired weight wA
+     */
+    public void setWeight(double weight) {
+        this.weight = weight;
+    }
+
+    /**
+     * <p>
+     * getXDim</p>
+     *
+     * @return a double.
+     */
+    public double getXDim() {
+        return fftX;
+    }
+
+    /**
+     * <p>
+     * getYDim</p>
+     *
+     * @return a double.
+     */
+    public double getYDim() {
+        return fftY;
+    }
+
+    /**
+     * <p>
+     * getZDim</p>
+     *
+     * @return a double.
+     */
+    public double getZDim() {
+        return fftZ;
+    }
+
+    /**
      * Parse a solvent model string and return a SolventModel enum.
      *
      * @param str The solvent model String.
@@ -673,21 +808,1975 @@ public class CrystalReciprocalSpace {
     }
 
     /**
+     * Set atomic coordinates.
+     *
+     * @param coords new coordinate positions (3 params per atom)
+     */
+    public void setCoordinates(double[] coords) {
+        assert (coords != null);
+        List<SymOp> symops = crystal.spaceGroup.symOps;
+        double[] xyz = new double[3];
+        double[] symXYZ = new double[3];
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            if (!atoms[i].isActive()) {
+                // Coordinates for inactive atoms do not change.
+                continue;
+            }
+            xyz[0] = coords[index++];
+            xyz[1] = coords[index++];
+            xyz[2] = coords[index++];
+            for (int j = 0; j < nSymm; j++) {
+                crystal.applySymOp(xyz, symXYZ, symops.get(j));
+                coordinates[j][0][i] = symXYZ[0];
+                coordinates[j][1][i] = symXYZ[1];
+                coordinates[j][2][i] = symXYZ[2];
+            }
+        }
+    }
+
+    /**
+     * The possible solvent model methods
+     */
+    public enum SolventModel {
+
+        /**
+         * Do not model solvent scattering.
+         */
+        NONE,
+        /**
+         * The classic binary (0, 1) model.
+         */
+        BINARY,
+        /**
+         * Smooth the boundary of the classic model using Gaussians.
+         */
+        GAUSSIAN,
+        /**
+         * Smooth the boundar of the classic model using a cubic polynomial
+         * switch (default).
+         */
+        POLYNOMIAL
+    }
+
+    public enum GridMethod {
+
+        SPATIAL, SLICE, ROW
+    }
+
+    private class AtomicDensityLoop extends SpatialDensityLoop {
+
+        final double[] xyz = new double[3];
+        final double[] uvw = new double[3];
+        final double[] xc = new double[3];
+        final double[] xf = new double[3];
+        final double[] grid;
+
+        AtomicDensityLoop(SpatialDensityRegion region) {
+            super(region, region.getNsymm(), region.actualCount);
+            grid = region.getGrid();
+        }
+
+        @Override
+        public void gridDensity(int iSymm, int n) {
+            if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+
+            if (lambdaTerm && atoms[n].applyLambda()) {
+                return;
+            }
+
+            xyz[0] = coordinates[iSymm][0][n];
+            xyz[1] = coordinates[iSymm][1][n];
+            xyz[2] = coordinates[iSymm][2][n];
+            FormFactor atomff = atomFormFactors[iSymm][n];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = Math.min(aRadGrid,
+                    (int) Math.floor(atoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
+
+            // Logic to loop within the cutoff box.
+            final double frx = fftX * uvw[0];
+            final int ifrx = (int) frx;
+            final int ifrxu = ifrx + frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+
+            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = atomff.rho(grid[ii], 1.0, xc);
+                    }
+                }
+            }
+        }
+    }
+
+    private class SolventDensityLoop extends SpatialDensityLoop {
+
+        final double[] xyz = new double[3];
+        final double[] uvw = new double[3];
+        final double[] xc = new double[3];
+        final double[] xf = new double[3];
+        final double[] grid;
+
+        SolventDensityLoop(SpatialDensityRegion region) {
+            super(region, region.getNsymm(), region.actualCount);
+            grid = region.getGrid();
+        }
+
+        @Override
+        public void gridDensity(int iSymm, int n) {
+            if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+
+            if (lambdaTerm && atoms[n].applyLambda()) {
+                return;
+            }
+
+            xyz[0] = coordinates[iSymm][0][n];
+            xyz[1] = coordinates[iSymm][1][n];
+            xyz[2] = coordinates[iSymm][2][n];
+            FormFactor solventff = solventFormFactors[iSymm][n];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            double vdwr = atoms[n].getVDWType().radius * 0.5;
+            int frad = aRadGrid;
+            switch (solventModel) {
+                case BINARY:
+                    frad = Math.min(aRadGrid,
+                            (int) Math.floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case GAUSSIAN:
+                    frad = Math.min(aRadGrid,
+                            (int) Math.floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
+                    break;
+                case POLYNOMIAL:
+                    frad = Math.min(aRadGrid,
+                            (int) Math.floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case NONE:
+                default:
+                    return;
+            }
+
+            // Logic to loop within the cutoff box.
+            final double frx = fftX * uvw[0];
+            final int ifrx = (int) frx;
+            final int ifrxu = ifrx + frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+
+            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = solventff.rho(grid[ii], 1.0, xc);
+                    }
+                }
+            }
+        }
+    }
+
+    private class AtomicRowLoop extends RowLoop {
+
+        final double[] xyz = new double[3];
+        final double[] uvw = new double[3];
+        final double[] xc = new double[3];
+        final double[] xf = new double[3];
+        final double[] grid;
+        final int[] optLocal;
+        long timer;
+        int previousUB, previousLB;
+        int actualWeight;
+
+        AtomicRowLoop(RowRegion region) {
+            super(region.getNatoms(), region.getNsymm(), region);
+            grid = region.getGrid();
+            optLocal = new int[fftZ * fftY];
+        }
+
+        public void buildList(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+            final int ifrzl = ifrz - frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+            final int ifryl = ifry - frad;
+
+            // Loop over allowed z coordinates for this Loop
+            // Check if the current atom is close enough
+            // If so, add to list.
+            int buff = bufferSize;
+
+            int lbZ = rowRegion.zFromRowIndex(lb);
+            int ubZ = rowRegion.zFromRowIndex(ub);
+
+            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lbZ > giz || giz > ubZ) {
+                    continue;
+                }
+                int rowLB = rowRegion.rowIndexForYZ(Crystal.mod(ifryl - buff, fftY), giz);
+                int rowUB = rowRegion.rowIndexForYZ(Crystal.mod(ifryu + buff, fftY), giz);
+                if (lb >= rowLB || rowUB <= ub) {
+                    buildListA.add(iAtom);
+                    buildListS.add(iSymm);
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public boolean checkList(int[][][] zyAtListBuild, int buff) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    if (rowRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        final int previousZ = zyAtListBuild[iSymm][iAtom][0];
+
+                        final double fry = fftY * uvw[1];
+                        final int ifry = (int) fry;
+                        final int previousY = zyAtListBuild[iSymm][iAtom][1];
+                        if (abs(ifrz - previousZ) >= buff || abs(ifry - previousY) >= buff) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void finish() {
+            for (int i = 0; i < fftZ * fftY; i++) {
+                optRowWeightAtomic.addAndGet(i, optLocal[i]);
+            }
+            timer += System.nanoTime();
+        }
+
+        @Override
+        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
+            int lbZ = rowRegion.zFromRowIndex(lb);
+            int ubZ = rowRegion.zFromRowIndex(ub);
+
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            FormFactor atomff = atomFormFactors[iSymm][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
+
+            // Logic to loop within the cutoff box.
+            final double frx = fftX * uvw[0];
+            final int ifrx = (int) frx;
+            final int ifrxu = ifrx + frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+
+            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lbZ > giz || giz > ubZ) {
+                    continue;
+                }
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
+                    if (lb > rowIndex || rowIndex > ub) {
+                        continue;
+                    }
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[rowIndex]++;
+                        actualWeight++;
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = atomff.rho(grid[ii], 1.0, xc);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void run(int lb, int ub) throws Exception {
+            boolean boundsChange = false;
+            if (previousLB != lb || previousUB != ub) {
+                boundsChange = true;
+            }
+            previousLB = lb;
+            previousUB = ub;
+            if (rebuildList || boundsChange) {
+                buildListA = new ArrayList<>();
+                buildListS = new ArrayList<>();
+                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                        if (rowRegion.select[iSymm][iAtom]) {
+                            buildList(iSymm, iAtom, lb, ub);
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < buildListA.size(); i++) {
+                if (rowRegion.select[buildListS.get(i)][buildListA.get(i)]) {
+                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
+                }
+            }
+        }
+
+        @Override
+        public void saveZYValues(int[][][] zyAtListBuild) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    zyAtListBuild[iSymm][iAtom][0] = 0;
+                    zyAtListBuild[iSymm][iAtom][1] = 0;
+                    if (rowRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+
+                        final double fry = fftY * uvw[1];
+                        final int ifry = (int) fry;
+                        zyAtListBuild[iSymm][iAtom][0] = ifrz;
+                        zyAtListBuild[iSymm][iAtom][1] = ifry;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return atomicRowSchedule;
+        }
+
+        @Override
+        public void start() {
+            fill(optLocal, 0);
+            actualWeight = 0;
+            timer = -System.nanoTime();
+        }
+
+        double getThreadTime() {
+            return timer;
+        }
+
+        int getNumberofSlices() {
+            return (previousUB - previousLB + 1);
+        }
+
+        int getThreadWeight() {
+            return actualWeight;
+        }
+    }
+
+    private class SolventRowLoop extends RowLoop {
+
+        final double[] xyz = new double[3];
+        final double[] uvw = new double[3];
+        final double[] xc = new double[3];
+        final double[] xf = new double[3];
+        final double[] grid;
+        final int[] optLocal;
+        long timer;
+        int previousUB, previousLB;
+        int actualWeight;
+
+        public SolventRowLoop(RowRegion region) {
+            super(region.getNatoms(), region.getNsymm(), region);
+            grid = region.getGrid();
+            optLocal = new int[fftZ * fftY];
+        }
+
+        public void buildList(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+            final int ifrzl = ifrz - frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+            final int ifryl = ifry - frad;
+
+            // Loop over allowed z coordinates for this Loop
+            // Check if the current atom is close enough
+            // If so, add to list.
+            int buff = bufferSize;
+
+            int lbZ = rowRegion.zFromRowIndex(lb);
+            int ubZ = rowRegion.zFromRowIndex(ub);
+
+            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lbZ > giz || giz > ubZ) {
+                    continue;
+                }
+                int rowLB = rowRegion.rowIndexForYZ(Crystal.mod(ifryl - buff, fftY), giz);
+                int rowUB = rowRegion.rowIndexForYZ(Crystal.mod(ifryu + buff, fftY), giz);
+                if (lb >= rowLB || rowUB <= ub) {
+                    buildListA.add(iAtom);
+                    buildListS.add(iSymm);
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public boolean checkList(int[][][] zyAtListBuild, int buff) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    if (rowRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        final int previousZ = zyAtListBuild[iSymm][iAtom][0];
+
+                        final double fry = fftY * uvw[1];
+                        final int ifry = (int) fry;
+                        final int previousY = zyAtListBuild[iSymm][iAtom][1];
+                        if (abs(ifrz - previousZ) >= buff || abs(ifry - previousY) >= buff) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void finish() {
+            timer += System.nanoTime();
+            for (int i = 0; i < fftZ * fftY; i++) {
+                optRowWeightSolvent.addAndGet(i, optLocal[i]);
+            }
+        }
+
+        public int getNumberofSlices() {
+            return (previousUB - previousLB + 1);
+        }
+
+        public double getThreadTime() {
+            return timer;
+        }
+
+        public int getThreadWeight() {
+            return actualWeight;
+        }
+
+        @Override
+        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
+
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            FormFactor formFactor = solventFormFactors[iSymm][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
+            int frad = aRadGrid;
+            switch (solventModel) {
+                case BINARY:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case GAUSSIAN:
+                    frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
+                    break;
+                case POLYNOMIAL:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case NONE:
+                default:
+                    return;
+            }
+
+            int ubZ = rowRegion.zFromRowIndex(ub);
+            int lbZ = rowRegion.zFromRowIndex(lb);
+
+            // Logic to loop within the cutoff box.
+            final double frx = fftX * uvw[0];
+            final int ifrx = (int) frx;
+            final int ifrxu = ifrx + frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+
+            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lbZ > giz || giz > ubZ) {
+                    continue;
+                }
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
+                    if (lb > rowIndex || rowIndex > ub) {
+                        continue;
+                    }
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[rowIndex]++;
+                        actualWeight++;
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void run(int lb, int ub) throws Exception {
+            boolean boundsChange = false;
+            if (previousLB != lb || previousUB != ub) {
+                boundsChange = true;
+            }
+            previousLB = lb;
+            previousUB = ub;
+            if (rebuildList || boundsChange) {
+                buildListA = new ArrayList<>();
+                buildListS = new ArrayList<>();
+                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                        if (rowRegion.select[iSymm][iAtom]) {
+                            buildList(iSymm, iAtom, lb, ub);
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < buildListA.size(); i++) {
+                if (rowRegion.select[buildListS.get(i)][buildListA.get(i)]) {
+                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
+                }
+            }
+        }
+
+        @Override
+        public void saveZYValues(int[][][] zyAtListBuild) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    zyAtListBuild[iSymm][iAtom][0] = 0;
+                    zyAtListBuild[iSymm][iAtom][1] = 0;
+                    if (rowRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+
+                        final double fry = fftY * uvw[1];
+                        final int ifry = (int) fry;
+                        zyAtListBuild[iSymm][iAtom][0] = ifrz;
+                        zyAtListBuild[iSymm][iAtom][1] = ifry;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return solventRowSchedule;
+        }
+
+        @Override
+        public void start() {
+            fill(optLocal, 0);
+            timer = -System.nanoTime();
+        }
+    }
+
+    private class BulkSolventRowLoop extends RowLoop {
+
+        final double[] xyz = new double[3];
+        final double[] uvw = new double[3];
+        final double[] xc = new double[3];
+        final double[] xf = new double[3];
+        final double[] grid;
+        final int[] optLocal;
+        long timer;
+        int[] threadWeights;
+        int[] threadBounds;
+
+        public BulkSolventRowLoop(RowRegion region) {
+            super(region.getNatoms(), region.getNsymm(), region);
+            grid = region.getGrid();
+            optLocal = new int[fftZ * fftY];
+        }
+
+        @Override
+        public void finish() {
+            for (int i = 0; i < fftZ * fftY; i++) {
+                optRowWeightBulkSolvent.addAndGet(i, optLocal[i]);
+            }
+            timer += System.nanoTime();
+            threadBounds = bulkSolventRowSchedule.getLowerBounds().clone();
+            threadWeights = bulkSolventRowSchedule.getThreadWeights().clone();
+            for (int i = threadCount - 1; i > 0; i--) {
+                threadWeights[i] -= threadWeights[i - 1];
+            }
+        }
+
+        public int[] getBoundsPerThread() {
+            return threadBounds;
+        }
+
+        public double getTimePerThread() {
+            return timer;
+        }
+
+        public int[] getWeightPerThread() {
+            return optLocal;
+        }
+
+        @Override
+        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            FormFactor formFactor = solventFormFactors[iSymm][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
+            int frad = aRadGrid;
+            switch (solventModel) {
+                case BINARY:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case GAUSSIAN:
+                    frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
+                    break;
+                case POLYNOMIAL:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case NONE:
+                default:
+                    return;
+            }
+
+            int ubZ = rowRegion.zFromRowIndex(ub);
+            int lbZ = rowRegion.zFromRowIndex(lb);
+
+            // Logic to loop within the cutoff box.
+            final double frx = fftX * uvw[0];
+            final int ifrx = (int) frx;
+            final int ifrxu = ifrx + frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+
+            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lbZ > giz || giz > ubZ) {
+                    continue;
+                }
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
+                    if (lb > rowIndex || rowIndex > ub) {
+                        continue;
+                    }
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[rowIndex]++;
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return bulkSolventRowSchedule;
+        }
+
+        @Override
+        public void start() {
+            timer = -System.nanoTime();
+            fill(optLocal, 0);
+        }
+    }
+
+    private class AtomicSliceLoop extends SliceLoop {
+
+        final double[] xyz = new double[3];
+        final double[] uvw = new double[3];
+        final double[] xc = new double[3];
+        final double[] xf = new double[3];
+        final double[] grid;
+        final int[] optLocal;
+        long timer;
+        int previousUB, previousLB;
+        int actualWeight;
+
+        public AtomicSliceLoop(SliceRegion region) {
+            super(region.getNatoms(), region.getNsymm(), region);
+            grid = region.getGrid();
+            optLocal = new int[fftZ];
+        }
+
+        public void buildList(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+            final int ifrzl = ifrz - frad;
+            // Loop over allowed z coordinates for this Loop
+            // Check if the current atom is close enough
+            // If so, add to list.
+            int buff = bufferSize;
+            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (giz >= lb && giz <= ub) {
+                    buildListA.add(iAtom);
+                    buildListS.add(iSymm);
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public boolean checkList(int[][] zAtListBuild, int buff) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    if (sliceRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        final int previousZ = zAtListBuild[iSymm][iAtom];
+                        if (abs(ifrz - previousZ) >= buff) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void finish() {
+            for (int i = 0; i < fftZ; i++) {
+                optSliceWeightAtomic.addAndGet(i, optLocal[i]);
+            }
+            timer += System.nanoTime();
+        }
+
+        public int getNumberofSlices() {
+            return (previousUB - previousLB + 1);
+        }
+
+        public double getThreadTime() {
+            return timer;
+        }
+
+        public int getThreadWeight() {
+            return actualWeight;
+        }
+
+        @Override
+        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            FormFactor atomff = atomFormFactors[iSymm][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
+
+            // Logic to loop within the cutoff box.
+            final double frx = fftX * uvw[0];
+            final int ifrx = (int) frx;
+            final int ifrxu = ifrx + frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+
+            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lb > giz || giz > ub) {
+                    continue;
+                }
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[giz]++;
+                        actualWeight++;
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = atomff.rho(grid[ii], 1.0, xc);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void run(int lb, int ub) throws Exception {
+            boolean boundsChange = false;
+            if (previousLB != lb || previousUB != ub) {
+                boundsChange = true;
+            }
+            previousLB = lb;
+            previousUB = ub;
+            if (rebuildList || boundsChange) {
+                buildListA = new ArrayList<>();
+                buildListS = new ArrayList<>();
+                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                        if (sliceRegion.select[iSymm][iAtom]) {
+                            buildList(iSymm, iAtom, lb, ub);
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < buildListA.size(); i++) {
+                if (sliceRegion.select[buildListS.get(i)][buildListA.get(i)]) {
+                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
+                }
+            }
+        }
+
+        @Override
+        public void saveZValues(int[][] zAtListBuild) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    zAtListBuild[iSymm][iAtom] = 0;
+                    if (sliceRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        zAtListBuild[iSymm][iAtom] = ifrz;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return atomicSliceSchedule;
+        }
+
+        @Override
+        public void start() {
+            fill(optLocal, 0);
+            actualWeight = 0;
+            timer = -System.nanoTime();
+        }
+    }
+
+    private class SolventSliceLoop extends SliceLoop {
+
+        final double[] xyz = new double[3];
+        final double[] uvw = new double[3];
+        final double[] xc = new double[3];
+        final double[] xf = new double[3];
+        final double[] grid;
+        final int[] optLocal;
+        long timer;
+        int previousUB, previousLB;
+        int actualWeight;
+
+        public SolventSliceLoop(SliceRegion region) {
+            super(region.getNatoms(), region.getNsymm(), region);
+            grid = region.getGrid();
+            optLocal = new int[fftZ];
+        }
+
+        public void buildList(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+            final int ifrzl = ifrz - frad;
+            // Loop over allowed z coordinates for this Loop
+            // Check if the current atom is close enough
+            // If so, add to list.
+            int buff = bufferSize;
+            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (giz >= lb && giz <= ub) {
+                    buildListA.add(iAtom);
+                    buildListS.add(iSymm);
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public boolean checkList(int[][] zAtListBuild, int buff) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    if (sliceRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        final int previousZ = zAtListBuild[iSymm][iAtom];
+                        if (abs(ifrz - previousZ) >= buff) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void finish() {
+            timer += System.nanoTime();
+            for (int i = 0; i < fftZ; i++) {
+                optSliceWeightSolvent.addAndGet(i, optLocal[i]);
+            }
+        }
+
+        public int getNumberofSlices() {
+            return (previousUB - previousLB + 1);
+        }
+
+        public double getThreadTime() {
+            return timer;
+        }
+
+        public int getThreadWeight() {
+            return actualWeight;
+        }
+
+        @Override
+        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            FormFactor formFactor = solventFormFactors[iSymm][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
+            int frad = aRadGrid;
+            switch (solventModel) {
+                case BINARY:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case GAUSSIAN:
+                    frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
+                    break;
+                case POLYNOMIAL:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case NONE:
+                default:
+                    return;
+            }
+
+            // Logic to loop within the cutoff box.
+            final double frx = fftX * uvw[0];
+            final int ifrx = (int) frx;
+            final int ifrxu = ifrx + frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+
+            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lb > giz || giz > ub) {
+                    continue;
+                }
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[giz]++;
+                        actualWeight++;
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void run(int lb, int ub) throws Exception {
+            boolean boundsChange = false;
+            if (previousLB != lb || previousUB != ub) {
+                boundsChange = true;
+            }
+            previousLB = lb;
+            previousUB = ub;
+            if (rebuildList || boundsChange) {
+                buildListA = new ArrayList<>();
+                buildListS = new ArrayList<>();
+                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                        if (sliceRegion.select[iSymm][iAtom]) {
+                            buildList(iSymm, iAtom, lb, ub);
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < buildListA.size(); i++) {
+                if (sliceRegion.select[buildListS.get(i)][buildListA.get(i)]) {
+                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
+                }
+            }
+        }
+
+        @Override
+        public void saveZValues(int[][] zAtListBuild) {
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+                    zAtListBuild[iSymm][iAtom] = 0;
+                    if (sliceRegion.select[iSymm][iAtom]) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                            continue;
+                        }
+                        xyz[0] = coordinates[iSymm][0][iAtom];
+                        xyz[1] = coordinates[iSymm][1][iAtom];
+                        xyz[2] = coordinates[iSymm][2][iAtom];
+                        crystal.toFractionalCoordinates(xyz, uvw);
+                        final double frz = fftZ * uvw[2];
+                        final int ifrz = (int) frz;
+                        zAtListBuild[iSymm][iAtom] = ifrz;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return solventSliceSchedule;
+        }
+
+        @Override
+        public void start() {
+            fill(optLocal, 0);
+            actualWeight = 0;
+            timer = -System.nanoTime();
+        }
+    }
+
+    private class BulkSolventSliceLoop extends SliceLoop {
+
+        final double[] xyz = new double[3];
+        final double[] uvw = new double[3];
+        final double[] xc = new double[3];
+        final double[] xf = new double[3];
+        final double[] grid;
+        final int[] optLocal;
+        long timer;
+        int[] threadBounds;
+        int[] threadWeights;
+
+        public BulkSolventSliceLoop(SliceRegion region) {
+            super(region.getNatoms(), region.getNsymm(), region);
+            grid = region.getGrid();
+            optLocal = new int[fftZ];
+        }
+
+        @Override
+        public void finish() {
+            timer += System.nanoTime();
+            for (int i = 0; i < fftZ; i++) {
+                optSliceWeightBulkSolvent.addAndGet(i, optLocal[i]);
+            }
+            threadBounds = bulkSolventSliceSchedule.getLowerBounds().clone();
+            threadWeights = bulkSolventSliceSchedule.getThreadWeights().clone();
+            for (int i = threadBounds.length - 1; i > 0; i--) {
+                threadBounds[i] -= threadBounds[i - 1];
+            }
+        }
+
+        public int[] getBoundsPerThread() {
+            return threadBounds;
+        }
+
+        public double getTimePerThread() {
+            return timer;
+        }
+
+        public int[] getWeightPerThread() {
+            return threadWeights;
+        }
+
+        @Override
+        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
+                return;
+            }
+
+            if (lambdaTerm && atoms[iAtom].applyLambda()) {
+                return;
+            }
+
+            xyz[0] = coordinates[iSymm][0][iAtom];
+            xyz[1] = coordinates[iSymm][1][iAtom];
+            xyz[2] = coordinates[iSymm][2][iAtom];
+            FormFactor formFactor = solventFormFactors[iSymm][iAtom];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
+            int frad = aRadGrid;
+            switch (solventModel) {
+                case BINARY:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case GAUSSIAN:
+                    frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
+                    break;
+                case POLYNOMIAL:
+                    frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
+                    break;
+                case NONE:
+                default:
+                    return;
+            }
+
+            // Logic to loop within the cutoff box.
+            final double frx = fftX * uvw[0];
+            final int ifrx = (int) frx;
+            final int ifrxu = ifrx + frad;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+            final int ifryu = ifry + frad;
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+            final int ifrzu = ifrz + frad;
+
+            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
+                int giz = Crystal.mod(iz, fftZ);
+                if (lb > giz || giz > ub) {
+                    continue;
+                }
+                xf[2] = iz * ifftZ;
+                for (int iy = ifry - frad; iy <= ifryu; iy++) {
+                    int giy = Crystal.mod(iy, fftY);
+                    xf[1] = iy * ifftY;
+                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        crystal.toCartesianCoordinates(xf, xc);
+                        optLocal[giz]++;
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return bulkSolventSliceSchedule;
+        }
+
+        @Override
+        public void start() {
+            fill(optLocal, 0);
+            timer = -System.nanoTime();
+        }
+    }
+
+    private class AtomicGradientRegion extends ParallelRegion {
+
+        private final AtomicGradientLoop[] atomicGradientLoop;
+        private RefinementMode refinementmode;
+
+        public AtomicGradientRegion(RefinementMode refinementmode) {
+            this.refinementmode = refinementmode;
+            atomicGradientLoop = new AtomicGradientLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                atomicGradientLoop[i] = new AtomicGradientLoop();
+            }
+        }
+
+        public RefinementMode getRefinementMode() {
+            return refinementmode;
+        }
+
+        public void setRefinementMode(RefinementMode refinementmode) {
+            this.refinementmode = refinementmode;
+        }
+
+        @Override
+        public void run() {
+            try {
+                execute(0, nAtoms - 1, atomicGradientLoop[getThreadIndex()]);
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe(e.toString());
+            }
+        }
+
+        private class AtomicGradientLoop extends IntegerForLoop {
+
+            final double[] xyz = new double[3];
+            final double[] uvw = new double[3];
+            final double[] xc = new double[3];
+            final double[] xf = new double[3];
+            final int[] optLocal = new int[nAtoms];
+            long timer;
+
+            // Extra padding to avert cache interference.
+            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+            @Override
+            public void finish() {
+                timer += System.nanoTime();
+                for (int i = 0; i < nAtoms; i++) {
+                    optAtomicGradientWeight.addAndGet(i, optLocal[i]);
+                }
+            }
+
+            @Override
+            public void run(final int lb, final int ub) {
+                for (int n = lb; n <= ub; n++) {
+                    if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
+                        continue;
+                    }
+                    if (lambdaTerm && atoms[n].applyLambda()) {
+                        continue;
+                    }
+
+                    xyz[0] = coordinates[0][0][n];
+                    xyz[1] = coordinates[0][1][n];
+                    xyz[2] = coordinates[0][2][n];
+                    FormFactor atomff = atomFormFactors[0][n];
+                    atomff.update(xyz, 0.0);
+                    crystal.toFractionalCoordinates(xyz, uvw);
+                    final int dfrad = Math.min(aRadGrid,
+                            (int) Math.floor(atoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
+
+                    // Logic to loop within the cutoff box.
+                    final double frx = fftX * uvw[0];
+                    final int ifrx = (int) frx;
+
+                    final double fry = fftY * uvw[1];
+                    final int ifry = (int) fry;
+
+                    final double frz = fftZ * uvw[2];
+                    final int ifrz = (int) frz;
+
+                    for (int ix = ifrx - dfrad; ix <= ifrx + dfrad; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        for (int iy = ifry - dfrad; iy <= ifry + dfrad; iy++) {
+                            int giy = Crystal.mod(iy, fftY);
+                            xf[1] = iy * ifftY;
+                            for (int iz = ifrz - dfrad; iz <= ifrz + dfrad; iz++) {
+                                int giz = Crystal.mod(iz, fftZ);
+                                xf[2] = iz * ifftZ;
+                                crystal.toCartesianCoordinates(xf, xc);
+                                optLocal[n]++;
+                                final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                                atomff.rhoGrad(xc, weight * getDensityGrid()[ii], refinementmode);
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return atomicGradientSchedule;
+            }
+
+            @Override
+            public void start() {
+                fill(optLocal, 0);
+                timer = -System.nanoTime();
+            }
+        }
+    }
+
+    private class SolventGradientRegion extends ParallelRegion {
+
+        private final SolventGradientLoop[] solventGradientLoop;
+        private RefinementMode refinementmode;
+
+        public SolventGradientRegion(RefinementMode refinementmode) {
+            this.refinementmode = refinementmode;
+            solventGradientLoop = new SolventGradientLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                solventGradientLoop[i] = new SolventGradientLoop();
+            }
+        }
+
+        public RefinementMode getRefinementMode() {
+            return refinementmode;
+        }
+
+        public void setRefinementMode(RefinementMode refinementmode) {
+            this.refinementmode = refinementmode;
+        }
+
+        @Override
+        public void run() {
+            try {
+                execute(0, nAtoms - 1, solventGradientLoop[getThreadIndex()]);
+            } catch (Exception e) {
+                logger.severe(e.toString());
+            }
+        }
+
+        private class SolventGradientLoop extends IntegerForLoop {
+
+            double[] xyz = new double[3];
+            double[] uvw = new double[3];
+            double[] xc = new double[3];
+            double[] xf = new double[3];
+            // Extra padding to avert cache interference.
+            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+            @Override
+            public void run(final int lb, final int ub) {
+                for (int n = lb; n <= ub; n++) {
+                    if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
+                        continue;
+                    }
+                    if (lambdaTerm && atoms[n].applyLambda()) {
+                        continue;
+                    }
+                    xyz[0] = coordinates[0][0][n];
+                    xyz[1] = coordinates[0][1][n];
+                    xyz[2] = coordinates[0][2][n];
+                    FormFactor solventff = solventFormFactors[0][n];
+                    solventff.update(xyz);
+                    crystal.toFractionalCoordinates(xyz, uvw);
+                    double vdwr = atoms[n].getVDWType().radius * 0.5;
+                    double dfcmult = 1.0;
+                    int dfrad = aRadGrid;
+                    switch (solventModel) {
+                        case BINARY:
+                            dfrad = Math.min(aRadGrid,
+                                    (int) Math.floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
+                            break;
+                        case GAUSSIAN:
+                            dfrad = Math.min(aRadGrid,
+                                    (int) Math.floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
+                            dfcmult = solventA;
+                            break;
+                        case POLYNOMIAL:
+                            dfrad = Math.min(aRadGrid,
+                                    (int) Math.floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
+                            break;
+                        case NONE:
+                            return;
+                    }
+
+                    // Logic to loop within the cutoff box.
+                    final double frx = fftX * uvw[0];
+                    final int ifrx = (int) frx;
+                    final int ifrxu = ifrx + dfrad;
+
+                    final double fry = fftY * uvw[1];
+                    final int ifry = (int) fry;
+                    final int ifryu = ifry + dfrad;
+
+                    final double frz = fftZ * uvw[2];
+                    final int ifrz = (int) frz;
+                    final int ifrzu = ifrz + dfrad;
+
+                    for (int ix = ifrx - dfrad; ix <= ifrxu; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        xf[0] = ix * ifftX;
+                        for (int iy = ifry - dfrad; iy <= ifryu; iy++) {
+                            int giy = Crystal.mod(iy, fftY);
+                            xf[1] = iy * ifftY;
+                            for (int iz = ifrz - dfrad; iz <= ifrzu; iz++) {
+                                int giz = Crystal.mod(iz, fftZ);
+                                xf[2] = iz * ifftZ;
+                                crystal.toCartesianCoordinates(xf, xc);
+                                final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
+                                solventff.rhoGrad(xc,
+                                        weight * getDensityGrid()[ii] * dfcmult * getSolventGrid()[ii],
+                                        refinementmode);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private class BabinetRegion extends ParallelRegion {
+
+        BabinetLoop[] babinetLoops;
+
+        public BabinetRegion(int nThreads) {
+            babinetLoops = new BabinetLoop[nThreads];
+
+        }
+
+        @Override
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+
+            if (babinetLoops[ti] == null) {
+                babinetLoops[ti] = new BabinetLoop();
+            }
+
+            try {
+                execute(0, fftZ - 1, babinetLoops[ti]);
+            } catch (Exception e) {
+                logger.info(e.toString());
+            }
+        }
+
+        private class BabinetLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                switch (solventModel) {
+                    case BINARY:
+                    case POLYNOMIAL:
+                        for (int k = lb; k <= ub; k++) {
+                            for (int j = 0; j < fftY; j++) {
+                                for (int i = 0; i < fftX; i++) {
+                                    final int ii = iComplex3D(i, j, k, fftX, fftY);
+                                    densityGrid[ii] = 1.0 - getDensityGrid()[ii];
+                                }
+                            }
+                        }
+                        break;
+                    case GAUSSIAN:
+                        for (int k = lb; k <= ub; k++) {
+                            for (int j = 0; j < fftY; j++) {
+                                for (int i = 0; i < fftX; i++) {
+                                    final int ii = iComplex3D(i, j, k, fftX, fftY);
+                                    densityGrid[ii] = 1.0 - exp(-solventA * getDensityGrid()[ii]);
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                }
+            }
+        }
+    }
+
+    private class SolventGridRegion extends ParallelRegion {
+
+        SolventGridLoop[] solventGridLoops;
+
+        public SolventGridRegion(int nThreads) {
+            solventGridLoops = new SolventGridLoop[nThreads];
+
+        }
+
+        @Override
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+
+            if (solventGridLoops[ti] == null) {
+                solventGridLoops[ti] = new SolventGridLoop();
+            }
+
+            try {
+                execute(0, fftZ - 1, solventGridLoops[ti]);
+            } catch (Exception e) {
+                logger.info(e.toString());
+            }
+        }
+
+        private class SolventGridLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                // case GAUSSIAN:
+                for (int k = lb; k <= ub; k++) {
+                    for (int j = 0; j < fftY; j++) {
+                        for (int i = 0; i < fftX; i++) {
+                            final int ii = iComplex3D(i, j, k, fftX, fftY);
+                            solventGrid[ii] = exp(-solventA * getSolventGrid()[ii]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private class InitRegion extends ParallelRegion {
+
+        InitLoop[] initLoops;
+        FormFactorUpdateLoop[] formFactorUpdateLoops;
+        int nHKL = reflectionList.hkllist.size();
+        double[][] hkldata = null;
+
+        public InitRegion(int nThreads) {
+            initLoops = new InitLoop[nThreads];
+            formFactorUpdateLoops = new FormFactorUpdateLoop[nThreads];
+        }
+
+        @Override
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+
+            if (initLoops[ti] == null) {
+                initLoops[ti] = new InitLoop();
+                formFactorUpdateLoops[ti] = new FormFactorUpdateLoop();
+            }
+
+            try {
+                execute(0, nHKL - 1, initLoops[ti]);
+                execute(0, nAtoms - 1, formFactorUpdateLoops[ti]);
+            } catch (Exception e) {
+                logger.info(e.toString());
+            }
+        }
+
+        public void setHKL(double[][] hkldata) {
+            this.hkldata = hkldata;
+        }
+
+        private class InitLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                for (int i = lb; i <= ub; i++) {
+                    hkldata[i][0] = 0.0;
+                    hkldata[i][1] = 0.0;
+                }
+            }
+        }
+
+        private class FormFactorUpdateLoop extends IntegerForLoop {
+
+            private final double[] xyz = new double[3];
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                for (int iSymm = 0; iSymm < bulkNSymm; iSymm++) {
+                    for (int i = lb; i <= ub; i++) {
+                        xyz[0] = coordinates[iSymm][0][i];
+                        xyz[1] = coordinates[iSymm][1][i];
+                        xyz[2] = coordinates[iSymm][2][i];
+                        if (solventFormFactors != null) {
+                            solventFormFactors[iSymm][i].update(xyz);
+                        }
+                        if (atomFormFactors != null) {
+                            atomFormFactors[iSymm][i].update(xyz, bAdd);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private class AtomicScaleRegion extends ParallelRegion {
+
+        AtomicScaleLoop[] atomicScaleLoops;
+        int nHKL = reflectionList.hkllist.size();
+        double[][] hklData = null;
+        double scale;
+
+        public AtomicScaleRegion(int nThreads) {
+            atomicScaleLoops = new AtomicScaleLoop[nThreads];
+        }
+
+        @Override
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+
+            if (atomicScaleLoops[ti] == null) {
+                atomicScaleLoops[ti] = new AtomicScaleLoop();
+            }
+
+            try {
+                execute(0, nHKL - 1, atomicScaleLoops[ti]);
+            } catch (Exception e) {
+                logger.info(e.toString());
+            }
+        }
+
+        public void setHKL(double[][] hkldata) {
+            this.hklData = hkldata;
+        }
+
+        public void setScale(double scale) {
+            this.scale = scale;
+        }
+
+        private class AtomicScaleLoop extends IntegerForLoop {
+
+            ComplexNumber c;
+
+            public AtomicScaleLoop() {
+                c = new ComplexNumber();
+            }
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                for (int i = lb; i <= ub; i++) {
+                    HKL ih = reflectionList.hkllist.get(i);
+                    double[] fc = hklData[ih.index()];
+                    c.re(fc[0]);
+                    c.im(fc[1]);
+                    // Remove Badd
+                    double s = Crystal.invressq(crystal, ih);
+                    c.timesIP(scale * exp(0.25 * bAdd * s));
+                    c.conjugateIP();
+                    fc[0] = c.re();
+                    fc[1] = c.im();
+                }
+            }
+        }
+    }
+
+    private class SolventScaleRegion extends ParallelRegion {
+
+        SolventScaleLoop[] solventScaleLoops;
+        int nHKL = reflectionList.hkllist.size();
+        double[][] hkldata = null;
+        double scale;
+
+        public SolventScaleRegion(int nThreads) {
+            solventScaleLoops = new SolventScaleLoop[nThreads];
+        }
+
+        @Override
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+
+            if (solventScaleLoops[ti] == null) {
+                solventScaleLoops[ti] = new SolventScaleLoop();
+            }
+
+            try {
+                execute(0, nHKL - 1, solventScaleLoops[ti]);
+            } catch (Exception e) {
+                logger.info(e.toString());
+            }
+        }
+
+        public void setHKL(double[][] hkldata) {
+            this.hkldata = hkldata;
+        }
+
+        public void setScale(double scale) {
+            this.scale = scale;
+        }
+
+        private class SolventScaleLoop extends IntegerForLoop {
+
+            ComplexNumber c;
+
+            public SolventScaleLoop() {
+                c = new ComplexNumber();
+            }
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                for (int i = lb; i <= ub; i++) {
+                    HKL ih = reflectionList.hkllist.get(i);
+                    double[] fc = hkldata[ih.index()];
+                    c.re(fc[0]);
+                    c.im(fc[1]);
+                    c.timesIP(scale);
+                    c.conjugateIP();
+                    // negative: babinet
+                    fc[0] = -c.re();
+                    fc[1] = -c.im();
+                }
+            }
+        }
+    }
+
+    private class ExtractRegion extends ParallelRegion {
+
+        ExtractLoop[] extractLoops;
+        int nHKL = reflectionList.hkllist.size();
+        double[][] hkldata = null;
+
+        public ExtractRegion(int nThreads) {
+            extractLoops = new ExtractLoop[nThreads];
+        }
+
+        @Override
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+
+            if (extractLoops[ti] == null) {
+                extractLoops[ti] = new ExtractLoop();
+            }
+
+            try {
+                execute(0, nHKL - 1, extractLoops[ti]);
+            } catch (Exception e) {
+                logger.info(e.toString());
+            }
+        }
+
+        public void setHKL(double[][] hkldata) {
+            this.hkldata = hkldata;
+        }
+
+        private class ExtractLoop extends IntegerForLoop {
+
+            ComplexNumber c;
+            int nsym;
+            List<SymOp> symops;
+            HKL ij;
+
+            public ExtractLoop() {
+                c = new ComplexNumber();
+                nsym = crystal.spaceGroup.symOps.size();
+                symops = crystal.spaceGroup.symOps;
+                ij = new HKL();
+            }
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                for (int i = lb; i <= ub; i++) {
+                    HKL ih = reflectionList.hkllist.get(i);
+                    double[] fc = hkldata[ih.index()];
+                    // Apply symmetry
+                    for (int j = 0; j < nsym; j++) {
+                        crystal.applyTransSymRot(ih, ij, symops.get(j));
+                        double shift = Crystal.sym_phase_shift(ih, symops.get(j));
+                        int h = Crystal.mod(ij.h(), fftX);
+                        int k = Crystal.mod(ij.k(), fftY);
+                        int l = Crystal.mod(ij.l(), fftZ);
+                        if (h < halfFFTX + 1) {
+                            final int ii = iComplex3D(h, k, l, fftX, fftY);
+                            c.re(getDensityGrid()[ii]);
+                            c.im(getDensityGrid()[ii + 1]);
+                            c.phaseShiftIP(shift);
+                            fc[0] += c.re();
+                            fc[1] += c.im();
+                        } else {
+                            h = (fftX - h) % fftX;
+                            k = (fftY - k) % fftY;
+                            l = (fftZ - l) % fftZ;
+                            final int ii = iComplex3D(h, k, l, fftX, fftY);
+                            c.re(getDensityGrid()[ii]);
+                            c.im(-getDensityGrid()[ii + 1]);
+                            c.phaseShiftIP(shift);
+                            fc[0] += c.re();
+                            fc[1] += c.im();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private class ArrayCopyRegion extends ParallelRegion {
+
+        ArrayCopyLoop[] arrayCopyLoops;
+
+        public ArrayCopyRegion() {
+            arrayCopyLoops = new ArrayCopyLoop[threadCount];
+        }
+
+        @Override
+        public void run() throws Exception {
+            int ti = getThreadIndex();
+
+            if (arrayCopyLoops[ti] == null) {
+                arrayCopyLoops[ti] = new ArrayCopyLoop();
+            }
+
+            try {
+                execute(0, complexFFT3DSpace - 1, arrayCopyLoops[ti]);
+            } catch (Exception e) {
+                logger.info(e.toString());
+            }
+        }
+
+        private class ArrayCopyLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                arraycopy(getDensityGrid(), lb, getSolventGrid(), lb, ub - lb);
+            }
+        }
+    }
+
+    /**
      * <p>Setter for the field <code>nativeEnvironmentApproximation</code>.</p>
      *
      * @param nativeEnvironmentApproximation a boolean.
      */
     void setNativeEnvironmentApproximation(boolean nativeEnvironmentApproximation) {
         this.nativeEnvironmentApproximation = nativeEnvironmentApproximation;
-    }
-
-    /**
-     * <p>Getter for the field <code>densityGrid</code>.</p>
-     *
-     * @return the densityGrid
-     */
-    public double[] getDensityGrid() {
-        return densityGrid;
     }
 
     /**
@@ -767,24 +2856,6 @@ public class CrystalReciprocalSpace {
     }
 
     /**
-     * return dataset weight
-     *
-     * @return the weight wA
-     */
-    public double getWeight() {
-        return weight;
-    }
-
-    /**
-     * set the dataset weight
-     *
-     * @param weight desired weight wA
-     */
-    public void setWeight(double weight) {
-        this.weight = weight;
-    }
-
-    /**
      * offset X coordinates (mostly for finite difference checks)
      *
      * @param n     {@link ffx.potential.bonded.Atom} to apply delta to
@@ -839,34 +2910,6 @@ public class CrystalReciprocalSpace {
     }
 
     /**
-     * Set atomic coordinates.
-     *
-     * @param coords new coordinate positions (3 params per atom)
-     */
-    public void setCoordinates(double[] coords) {
-        assert (coords != null);
-        List<SymOp> symops = crystal.spaceGroup.symOps;
-        double[] xyz = new double[3];
-        double[] symXYZ = new double[3];
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            if (!atoms[i].isActive()) {
-                // Coordinates for inactive atoms do not change.
-                continue;
-            }
-            xyz[0] = coords[index++];
-            xyz[1] = coords[index++];
-            xyz[2] = coords[index++];
-            for (int j = 0; j < nSymm; j++) {
-                crystal.applySymOp(xyz, symXYZ, symops.get(j));
-                coordinates[j][0][i] = symXYZ[0];
-                coordinates[j][1][i] = symXYZ[1];
-                coordinates[j][2][i] = symXYZ[2];
-            }
-        }
-    }
-
-    /**
      * parallelized computation of structure factors
      *
      * @param hklData structure factor list to fill in
@@ -891,21 +2934,6 @@ public class CrystalReciprocalSpace {
         } else {
             computeAtomicDensity(hklData, print);
         }
-    }
-
-    /**
-     * compute inverse FFT to determine atomic gradients
-     *
-     * @param hklData        structure factors to apply inverse FFT
-     * @param freer          array of free r flags corresponding to hkldata
-     * @param flag           Rfree flag value
-     * @param refinementMode {@link RefinementMinimize.RefinementMode refinement mode}
-     * @see RefinementMinimize.RefinementMode
-     * @see DiffractionRefinementData
-     */
-    public void computeAtomicGradients(double[][] hklData, int[] freer, int flag,
-                                       RefinementMode refinementMode) {
-        computeAtomicGradients(hklData, freer, flag, refinementMode, false);
     }
 
     /**
@@ -1216,16 +3244,6 @@ public class CrystalReciprocalSpace {
             }
         }
 
-    }
-
-    /**
-     * parallelized computation of bulk solvent structure factors
-     *
-     * @param hklData structure factor list to fill in
-     * @see DiffractionRefinementData
-     */
-    public void computeSolventDensity(double[][] hklData) {
-        computeSolventDensity(hklData, false);
     }
 
     /**
@@ -1568,2023 +3586,5 @@ public class CrystalReciprocalSpace {
             }
         }
 
-    }
-
-    /**
-     * <p>
-     * getXDim</p>
-     *
-     * @return a double.
-     */
-    public double getXDim() {
-        return fftX;
-    }
-
-    /**
-     * <p>
-     * getYDim</p>
-     *
-     * @return a double.
-     */
-    public double getYDim() {
-        return fftY;
-    }
-
-    /**
-     * <p>
-     * getZDim</p>
-     *
-     * @return a double.
-     */
-    public double getZDim() {
-        return fftZ;
-    }
-
-    /**
-     * <p>
-     * densityNorm</p>
-     *
-     * @param data   an array of double.
-     * @param meansd an array of double.
-     * @param norm   a boolean.
-     */
-    public void densityNorm(double[] data, double[] meansd, boolean norm) {
-        double mean, sd;
-
-        mean = sd = 0.0;
-        int n = 0;
-        for (int k = 0; k < fftZ; k++) {
-            for (int j = 0; j < fftY; j++) {
-                for (int i = 0; i < fftX; i++) {
-                    int index = iComplex3D(i, j, k, fftX, fftY);
-                    n++;
-                    mean += (data[index] - mean) / n;
-                }
-            }
-        }
-
-        n = 0;
-        for (int k = 0; k < fftZ; k++) {
-            for (int j = 0; j < fftY; j++) {
-                for (int i = 0; i < fftX; i++) {
-                    int index = iComplex3D(i, j, k, fftX, fftY);
-                    sd += pow(data[index] - mean, 2);
-                    n++;
-                }
-            }
-        }
-        sd = sqrt(sd / n);
-
-        if (meansd != null) {
-            meansd[0] = mean;
-            meansd[1] = sd;
-        }
-
-        if (norm) {
-            double isd = 1.0 / sd;
-            for (int k = 0; k < fftZ; k++) {
-                for (int j = 0; j < fftY; j++) {
-                    for (int i = 0; i < fftX; i++) {
-                        int index = iComplex3D(i, j, k, fftX, fftY);
-                        data[index] = (data[index] - mean) * isd;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * The possible solvent model methods
-     */
-    public enum SolventModel {
-
-        /**
-         * Do not model solvent scattering.
-         */
-        NONE,
-        /**
-         * The classic binary (0, 1) model.
-         */
-        BINARY,
-        /**
-         * Smooth the boundary of the classic model using Gaussians.
-         */
-        GAUSSIAN,
-        /**
-         * Smooth the boundar of the classic model using a cubic polynomial
-         * switch (default).
-         */
-        POLYNOMIAL
-    }
-
-    public enum GridMethod {
-
-        SPATIAL, SLICE, ROW
-    }
-
-    private class AtomicDensityLoop extends SpatialDensityLoop {
-
-        final double[] xyz = new double[3];
-        final double[] uvw = new double[3];
-        final double[] xc = new double[3];
-        final double[] xf = new double[3];
-        final double[] grid;
-
-        AtomicDensityLoop(SpatialDensityRegion region) {
-            super(region, region.getNsymm(), region.actualCount);
-            grid = region.getGrid();
-        }
-
-        @Override
-        public void gridDensity(int iSymm, int n) {
-            if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-
-            if (lambdaTerm && atoms[n].applyLambda()) {
-                return;
-            }
-
-            xyz[0] = coordinates[iSymm][0][n];
-            xyz[1] = coordinates[iSymm][1][n];
-            xyz[2] = coordinates[iSymm][2][n];
-            FormFactor atomff = atomFormFactors[iSymm][n];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            final int frad = Math.min(aRadGrid,
-                    (int) Math.floor(atoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
-
-            // Logic to loop within the cutoff box.
-            final double frx = fftX * uvw[0];
-            final int ifrx = (int) frx;
-            final int ifrxu = ifrx + frad;
-
-            final double fry = fftY * uvw[1];
-            final int ifry = (int) fry;
-            final int ifryu = ifry + frad;
-
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-
-            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                xf[2] = iz * ifftZ;
-                for (int iy = ifry - frad; iy <= ifryu; iy++) {
-                    int giy = Crystal.mod(iy, fftY);
-                    xf[1] = iy * ifftY;
-                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-                        int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix * ifftX;
-                        crystal.toCartesianCoordinates(xf, xc);
-                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = atomff.rho(grid[ii], 1.0, xc);
-                    }
-                }
-            }
-        }
-    }
-
-    private class SolventDensityLoop extends SpatialDensityLoop {
-
-        final double[] xyz = new double[3];
-        final double[] uvw = new double[3];
-        final double[] xc = new double[3];
-        final double[] xf = new double[3];
-        final double[] grid;
-
-        SolventDensityLoop(SpatialDensityRegion region) {
-            super(region, region.getNsymm(), region.actualCount);
-            grid = region.getGrid();
-        }
-
-        @Override
-        public void gridDensity(int iSymm, int n) {
-            if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-
-            if (lambdaTerm && atoms[n].applyLambda()) {
-                return;
-            }
-
-            xyz[0] = coordinates[iSymm][0][n];
-            xyz[1] = coordinates[iSymm][1][n];
-            xyz[2] = coordinates[iSymm][2][n];
-            FormFactor solventff = solventFormFactors[iSymm][n];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            double vdwr = atoms[n].getVDWType().radius * 0.5;
-            int frad = aRadGrid;
-            switch (solventModel) {
-                case BINARY:
-                    frad = Math.min(aRadGrid,
-                            (int) Math.floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
-                    break;
-                case GAUSSIAN:
-                    frad = Math.min(aRadGrid,
-                            (int) Math.floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
-                    break;
-                case POLYNOMIAL:
-                    frad = Math.min(aRadGrid,
-                            (int) Math.floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
-                    break;
-                case NONE:
-                default:
-                    return;
-            }
-
-            // Logic to loop within the cutoff box.
-            final double frx = fftX * uvw[0];
-            final int ifrx = (int) frx;
-            final int ifrxu = ifrx + frad;
-
-            final double fry = fftY * uvw[1];
-            final int ifry = (int) fry;
-            final int ifryu = ifry + frad;
-
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-
-            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                xf[2] = iz * ifftZ;
-                for (int iy = ifry - frad; iy <= ifryu; iy++) {
-                    int giy = Crystal.mod(iy, fftY);
-                    xf[1] = iy * ifftY;
-                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-                        int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix * ifftX;
-                        crystal.toCartesianCoordinates(xf, xc);
-                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = solventff.rho(grid[ii], 1.0, xc);
-                    }
-                }
-            }
-        }
-    }
-
-    private class AtomicRowLoop extends RowLoop {
-
-        final double[] xyz = new double[3];
-        final double[] uvw = new double[3];
-        final double[] xc = new double[3];
-        final double[] xf = new double[3];
-        final double[] grid;
-        final int[] optLocal;
-        long timer;
-        int previousUB, previousLB;
-        int actualWeight;
-
-        AtomicRowLoop(RowRegion region) {
-            super(region.getNatoms(), region.getNsymm(), region);
-            grid = region.getGrid();
-            optLocal = new int[fftZ * fftY];
-        }
-
-        double getThreadTime() {
-            return timer;
-        }
-
-        int getNumberofSlices() {
-            return (previousUB - previousLB + 1);
-        }
-
-        int getThreadWeight() {
-            return actualWeight;
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return atomicRowSchedule;
-        }
-
-        @Override
-        public void start() {
-            fill(optLocal, 0);
-            actualWeight = 0;
-            timer = -System.nanoTime();
-        }
-
-        @Override
-        public void finish() {
-            for (int i = 0; i < fftZ * fftY; i++) {
-                optRowWeightAtomic.addAndGet(i, optLocal[i]);
-            }
-            timer += System.nanoTime();
-        }
-
-        @Override
-        public boolean checkList(int[][][] zyAtListBuild, int buff) {
-            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                    if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                            continue;
-                        }
-                        xyz[0] = coordinates[iSymm][0][iAtom];
-                        xyz[1] = coordinates[iSymm][1][iAtom];
-                        xyz[2] = coordinates[iSymm][2][iAtom];
-                        crystal.toFractionalCoordinates(xyz, uvw);
-                        final double frz = fftZ * uvw[2];
-                        final int ifrz = (int) frz;
-                        final int previousZ = zyAtListBuild[iSymm][iAtom][0];
-
-                        final double fry = fftY * uvw[1];
-                        final int ifry = (int) fry;
-                        final int previousY = zyAtListBuild[iSymm][iAtom][1];
-                        if (abs(ifrz - previousZ) >= buff || abs(ifry - previousY) >= buff) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public void saveZYValues(int[][][] zyAtListBuild) {
-            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                    zyAtListBuild[iSymm][iAtom][0] = 0;
-                    zyAtListBuild[iSymm][iAtom][1] = 0;
-                    if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                            continue;
-                        }
-                        xyz[0] = coordinates[iSymm][0][iAtom];
-                        xyz[1] = coordinates[iSymm][1][iAtom];
-                        xyz[2] = coordinates[iSymm][2][iAtom];
-                        crystal.toFractionalCoordinates(xyz, uvw);
-                        final double frz = fftZ * uvw[2];
-                        final int ifrz = (int) frz;
-
-                        final double fry = fftY * uvw[1];
-                        final int ifry = (int) fry;
-                        zyAtListBuild[iSymm][iAtom][0] = ifrz;
-                        zyAtListBuild[iSymm][iAtom][1] = ifry;
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void run(int lb, int ub) throws Exception {
-            boolean boundsChange = false;
-            if (previousLB != lb || previousUB != ub) {
-                boundsChange = true;
-            }
-            previousLB = lb;
-            previousUB = ub;
-            if (rebuildList || boundsChange) {
-                buildListA = new ArrayList<>();
-                buildListS = new ArrayList<>();
-                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                        if (rowRegion.select[iSymm][iAtom]) {
-                            buildList(iSymm, iAtom, lb, ub);
-                        }
-                    }
-                }
-            }
-            for (int i = 0; i < buildListA.size(); i++) {
-                if (rowRegion.select[buildListS.get(i)][buildListA.get(i)]) {
-                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
-                }
-            }
-        }
-
-        public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-            xyz[0] = coordinates[iSymm][0][iAtom];
-            xyz[1] = coordinates[iSymm][1][iAtom];
-            xyz[2] = coordinates[iSymm][2][iAtom];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
-
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-            final int ifrzl = ifrz - frad;
-
-            final double fry = fftY * uvw[1];
-            final int ifry = (int) fry;
-            final int ifryu = ifry + frad;
-            final int ifryl = ifry - frad;
-
-            // Loop over allowed z coordinates for this Loop
-            // Check if the current atom is close enough
-            // If so, add to list.
-            int buff = bufferSize;
-
-            int lbZ = rowRegion.zFromRowIndex(lb);
-            int ubZ = rowRegion.zFromRowIndex(ub);
-
-            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                if (lbZ > giz || giz > ubZ) {
-                    continue;
-                }
-                int rowLB = rowRegion.rowIndexForYZ(Crystal.mod(ifryl - buff, fftY), giz);
-                int rowUB = rowRegion.rowIndexForYZ(Crystal.mod(ifryu + buff, fftY), giz);
-                if (lb >= rowLB || rowUB <= ub) {
-                    buildListA.add(iAtom);
-                    buildListS.add(iSymm);
-                    break;
-                }
-            }
-        }
-
-        @Override
-        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-
-            if (lambdaTerm && atoms[iAtom].applyLambda()) {
-                return;
-            }
-
-            int lbZ = rowRegion.zFromRowIndex(lb);
-            int ubZ = rowRegion.zFromRowIndex(ub);
-
-            xyz[0] = coordinates[iSymm][0][iAtom];
-            xyz[1] = coordinates[iSymm][1][iAtom];
-            xyz[2] = coordinates[iSymm][2][iAtom];
-            FormFactor atomff = atomFormFactors[iSymm][iAtom];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
-
-            // Logic to loop within the cutoff box.
-            final double frx = fftX * uvw[0];
-            final int ifrx = (int) frx;
-            final int ifrxu = ifrx + frad;
-
-            final double fry = fftY * uvw[1];
-            final int ifry = (int) fry;
-            final int ifryu = ifry + frad;
-
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-
-            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                if (lbZ > giz || giz > ubZ) {
-                    continue;
-                }
-                xf[2] = iz * ifftZ;
-                for (int iy = ifry - frad; iy <= ifryu; iy++) {
-                    int giy = Crystal.mod(iy, fftY);
-                    int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
-                    if (lb > rowIndex || rowIndex > ub) {
-                        continue;
-                    }
-                    xf[1] = iy * ifftY;
-                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-                        int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix * ifftX;
-                        crystal.toCartesianCoordinates(xf, xc);
-                        optLocal[rowIndex]++;
-                        actualWeight++;
-                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = atomff.rho(grid[ii], 1.0, xc);
-                    }
-                }
-            }
-        }
-    }
-
-    private class SolventRowLoop extends RowLoop {
-
-        final double[] xyz = new double[3];
-        final double[] uvw = new double[3];
-        final double[] xc = new double[3];
-        final double[] xf = new double[3];
-        final double[] grid;
-        final int[] optLocal;
-        long timer;
-        int previousUB, previousLB;
-        int actualWeight;
-
-        public SolventRowLoop(RowRegion region) {
-            super(region.getNatoms(), region.getNsymm(), region);
-            grid = region.getGrid();
-            optLocal = new int[fftZ * fftY];
-        }
-
-        public double getThreadTime() {
-            return timer;
-        }
-
-        public int getNumberofSlices() {
-            return (previousUB - previousLB + 1);
-        }
-
-        public int getThreadWeight() {
-            return actualWeight;
-        }
-
-        @Override
-        public boolean checkList(int[][][] zyAtListBuild, int buff) {
-            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                    if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                            continue;
-                        }
-                        xyz[0] = coordinates[iSymm][0][iAtom];
-                        xyz[1] = coordinates[iSymm][1][iAtom];
-                        xyz[2] = coordinates[iSymm][2][iAtom];
-                        crystal.toFractionalCoordinates(xyz, uvw);
-                        final double frz = fftZ * uvw[2];
-                        final int ifrz = (int) frz;
-                        final int previousZ = zyAtListBuild[iSymm][iAtom][0];
-
-                        final double fry = fftY * uvw[1];
-                        final int ifry = (int) fry;
-                        final int previousY = zyAtListBuild[iSymm][iAtom][1];
-                        if (abs(ifrz - previousZ) >= buff || abs(ifry - previousY) >= buff) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public void saveZYValues(int[][][] zyAtListBuild) {
-            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                    zyAtListBuild[iSymm][iAtom][0] = 0;
-                    zyAtListBuild[iSymm][iAtom][1] = 0;
-                    if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                            continue;
-                        }
-                        xyz[0] = coordinates[iSymm][0][iAtom];
-                        xyz[1] = coordinates[iSymm][1][iAtom];
-                        xyz[2] = coordinates[iSymm][2][iAtom];
-                        crystal.toFractionalCoordinates(xyz, uvw);
-                        final double frz = fftZ * uvw[2];
-                        final int ifrz = (int) frz;
-
-                        final double fry = fftY * uvw[1];
-                        final int ifry = (int) fry;
-                        zyAtListBuild[iSymm][iAtom][0] = ifrz;
-                        zyAtListBuild[iSymm][iAtom][1] = ifry;
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void run(int lb, int ub) throws Exception {
-            boolean boundsChange = false;
-            if (previousLB != lb || previousUB != ub) {
-                boundsChange = true;
-            }
-            previousLB = lb;
-            previousUB = ub;
-            if (rebuildList || boundsChange) {
-                buildListA = new ArrayList<>();
-                buildListS = new ArrayList<>();
-                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                        if (rowRegion.select[iSymm][iAtom]) {
-                            buildList(iSymm, iAtom, lb, ub);
-                        }
-                    }
-                }
-            }
-            for (int i = 0; i < buildListA.size(); i++) {
-                if (rowRegion.select[buildListS.get(i)][buildListA.get(i)]) {
-                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
-                }
-            }
-        }
-
-        public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-            xyz[0] = coordinates[iSymm][0][iAtom];
-            xyz[1] = coordinates[iSymm][1][iAtom];
-            xyz[2] = coordinates[iSymm][2][iAtom];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
-
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-            final int ifrzl = ifrz - frad;
-
-            final double fry = fftY * uvw[1];
-            final int ifry = (int) fry;
-            final int ifryu = ifry + frad;
-            final int ifryl = ifry - frad;
-
-            // Loop over allowed z coordinates for this Loop
-            // Check if the current atom is close enough
-            // If so, add to list.
-            int buff = bufferSize;
-
-            int lbZ = rowRegion.zFromRowIndex(lb);
-            int ubZ = rowRegion.zFromRowIndex(ub);
-
-            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                if (lbZ > giz || giz > ubZ) {
-                    continue;
-                }
-                int rowLB = rowRegion.rowIndexForYZ(Crystal.mod(ifryl - buff, fftY), giz);
-                int rowUB = rowRegion.rowIndexForYZ(Crystal.mod(ifryu + buff, fftY), giz);
-                if (lb >= rowLB || rowUB <= ub) {
-                    buildListA.add(iAtom);
-                    buildListS.add(iSymm);
-                    break;
-                }
-            }
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return solventRowSchedule;
-        }
-
-        @Override
-        public void start() {
-            fill(optLocal, 0);
-            timer = -System.nanoTime();
-        }
-
-        @Override
-        public void finish() {
-            timer += System.nanoTime();
-            for (int i = 0; i < fftZ * fftY; i++) {
-                optRowWeightSolvent.addAndGet(i, optLocal[i]);
-            }
-        }
-
-        @Override
-        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-
-            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-
-            if (lambdaTerm && atoms[iAtom].applyLambda()) {
-                return;
-            }
-
-            xyz[0] = coordinates[iSymm][0][iAtom];
-            xyz[1] = coordinates[iSymm][1][iAtom];
-            xyz[2] = coordinates[iSymm][2][iAtom];
-            FormFactor formFactor = solventFormFactors[iSymm][iAtom];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
-            int frad = aRadGrid;
-            switch (solventModel) {
-                case BINARY:
-                    frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
-                    break;
-                case GAUSSIAN:
-                    frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
-                    break;
-                case POLYNOMIAL:
-                    frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
-                    break;
-                case NONE:
-                default:
-                    return;
-            }
-
-            int ubZ = rowRegion.zFromRowIndex(ub);
-            int lbZ = rowRegion.zFromRowIndex(lb);
-
-            // Logic to loop within the cutoff box.
-            final double frx = fftX * uvw[0];
-            final int ifrx = (int) frx;
-            final int ifrxu = ifrx + frad;
-
-            final double fry = fftY * uvw[1];
-            final int ifry = (int) fry;
-            final int ifryu = ifry + frad;
-
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-
-            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                if (lbZ > giz || giz > ubZ) {
-                    continue;
-                }
-                xf[2] = iz * ifftZ;
-                for (int iy = ifry - frad; iy <= ifryu; iy++) {
-                    int giy = Crystal.mod(iy, fftY);
-                    int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
-                    if (lb > rowIndex || rowIndex > ub) {
-                        continue;
-                    }
-                    xf[1] = iy * ifftY;
-                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-                        int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix * ifftX;
-                        crystal.toCartesianCoordinates(xf, xc);
-                        optLocal[rowIndex]++;
-                        actualWeight++;
-                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
-                    }
-                }
-            }
-        }
-    }
-
-    private class BulkSolventRowLoop extends RowLoop {
-
-        final double[] xyz = new double[3];
-        final double[] uvw = new double[3];
-        final double[] xc = new double[3];
-        final double[] xf = new double[3];
-        final double[] grid;
-        final int[] optLocal;
-        long timer;
-        int[] threadWeights;
-        int[] threadBounds;
-
-        public BulkSolventRowLoop(RowRegion region) {
-            super(region.getNatoms(), region.getNsymm(), region);
-            grid = region.getGrid();
-            optLocal = new int[fftZ * fftY];
-        }
-
-        public double getTimePerThread() {
-            return timer;
-        }
-
-        public int[] getBoundsPerThread() {
-            return threadBounds;
-        }
-
-        public int[] getWeightPerThread() {
-            return optLocal;
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return bulkSolventRowSchedule;
-        }
-
-        @Override
-        public void start() {
-            timer = -System.nanoTime();
-            fill(optLocal, 0);
-        }
-
-        @Override
-        public void finish() {
-            for (int i = 0; i < fftZ * fftY; i++) {
-                optRowWeightBulkSolvent.addAndGet(i, optLocal[i]);
-            }
-            timer += System.nanoTime();
-            threadBounds = bulkSolventRowSchedule.getLowerBounds().clone();
-            threadWeights = bulkSolventRowSchedule.getThreadWeights().clone();
-            for (int i = threadCount - 1; i > 0; i--) {
-                threadWeights[i] -= threadWeights[i - 1];
-            }
-        }
-
-        @Override
-        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-
-            if (lambdaTerm && atoms[iAtom].applyLambda()) {
-                return;
-            }
-
-            xyz[0] = coordinates[iSymm][0][iAtom];
-            xyz[1] = coordinates[iSymm][1][iAtom];
-            xyz[2] = coordinates[iSymm][2][iAtom];
-            FormFactor formFactor = solventFormFactors[iSymm][iAtom];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
-            int frad = aRadGrid;
-            switch (solventModel) {
-                case BINARY:
-                    frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
-                    break;
-                case GAUSSIAN:
-                    frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
-                    break;
-                case POLYNOMIAL:
-                    frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
-                    break;
-                case NONE:
-                default:
-                    return;
-            }
-
-            int ubZ = rowRegion.zFromRowIndex(ub);
-            int lbZ = rowRegion.zFromRowIndex(lb);
-
-            // Logic to loop within the cutoff box.
-            final double frx = fftX * uvw[0];
-            final int ifrx = (int) frx;
-            final int ifrxu = ifrx + frad;
-
-            final double fry = fftY * uvw[1];
-            final int ifry = (int) fry;
-            final int ifryu = ifry + frad;
-
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-
-            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                if (lbZ > giz || giz > ubZ) {
-                    continue;
-                }
-                xf[2] = iz * ifftZ;
-                for (int iy = ifry - frad; iy <= ifryu; iy++) {
-                    int giy = Crystal.mod(iy, fftY);
-                    int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
-                    if (lb > rowIndex || rowIndex > ub) {
-                        continue;
-                    }
-                    xf[1] = iy * ifftY;
-                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-                        int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix * ifftX;
-                        crystal.toCartesianCoordinates(xf, xc);
-                        optLocal[rowIndex]++;
-                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
-                    }
-                }
-            }
-        }
-    }
-
-    private class AtomicSliceLoop extends SliceLoop {
-
-        final double[] xyz = new double[3];
-        final double[] uvw = new double[3];
-        final double[] xc = new double[3];
-        final double[] xf = new double[3];
-        final double[] grid;
-        final int[] optLocal;
-        long timer;
-        int previousUB, previousLB;
-        int actualWeight;
-
-        public AtomicSliceLoop(SliceRegion region) {
-            super(region.getNatoms(), region.getNsymm(), region);
-            grid = region.getGrid();
-            optLocal = new int[fftZ];
-        }
-
-        public double getThreadTime() {
-            return timer;
-        }
-
-        public int getNumberofSlices() {
-            return (previousUB - previousLB + 1);
-        }
-
-        public int getThreadWeight() {
-            return actualWeight;
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return atomicSliceSchedule;
-        }
-
-        @Override
-        public void start() {
-            fill(optLocal, 0);
-            actualWeight = 0;
-            timer = -System.nanoTime();
-        }
-
-        @Override
-        public void finish() {
-            for (int i = 0; i < fftZ; i++) {
-                optSliceWeightAtomic.addAndGet(i, optLocal[i]);
-            }
-            timer += System.nanoTime();
-        }
-
-        @Override
-        public boolean checkList(int[][] zAtListBuild, int buff) {
-            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                    if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                            continue;
-                        }
-                        xyz[0] = coordinates[iSymm][0][iAtom];
-                        xyz[1] = coordinates[iSymm][1][iAtom];
-                        xyz[2] = coordinates[iSymm][2][iAtom];
-                        crystal.toFractionalCoordinates(xyz, uvw);
-                        final double frz = fftZ * uvw[2];
-                        final int ifrz = (int) frz;
-                        final int previousZ = zAtListBuild[iSymm][iAtom];
-                        if (abs(ifrz - previousZ) >= buff) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public void saveZValues(int[][] zAtListBuild) {
-            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                    zAtListBuild[iSymm][iAtom] = 0;
-                    if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                            continue;
-                        }
-                        xyz[0] = coordinates[iSymm][0][iAtom];
-                        xyz[1] = coordinates[iSymm][1][iAtom];
-                        xyz[2] = coordinates[iSymm][2][iAtom];
-                        crystal.toFractionalCoordinates(xyz, uvw);
-                        final double frz = fftZ * uvw[2];
-                        final int ifrz = (int) frz;
-                        zAtListBuild[iSymm][iAtom] = ifrz;
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void run(int lb, int ub) throws Exception {
-            boolean boundsChange = false;
-            if (previousLB != lb || previousUB != ub) {
-                boundsChange = true;
-            }
-            previousLB = lb;
-            previousUB = ub;
-            if (rebuildList || boundsChange) {
-                buildListA = new ArrayList<>();
-                buildListS = new ArrayList<>();
-                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                        if (sliceRegion.select[iSymm][iAtom]) {
-                            buildList(iSymm, iAtom, lb, ub);
-                        }
-                    }
-                }
-            }
-            for (int i = 0; i < buildListA.size(); i++) {
-                if (sliceRegion.select[buildListS.get(i)][buildListA.get(i)]) {
-                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
-                }
-            }
-        }
-
-        public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-            xyz[0] = coordinates[iSymm][0][iAtom];
-            xyz[1] = coordinates[iSymm][1][iAtom];
-            xyz[2] = coordinates[iSymm][2][iAtom];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-            final int ifrzl = ifrz - frad;
-            // Loop over allowed z coordinates for this Loop
-            // Check if the current atom is close enough
-            // If so, add to list.
-            int buff = bufferSize;
-            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                if (giz >= lb && giz <= ub) {
-                    buildListA.add(iAtom);
-                    buildListS.add(iSymm);
-                    break;
-                }
-            }
-        }
-
-        @Override
-        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-
-            if (lambdaTerm && atoms[iAtom].applyLambda()) {
-                return;
-            }
-
-            xyz[0] = coordinates[iSymm][0][iAtom];
-            xyz[1] = coordinates[iSymm][1][iAtom];
-            xyz[2] = coordinates[iSymm][2][iAtom];
-            FormFactor atomff = atomFormFactors[iSymm][iAtom];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
-
-            // Logic to loop within the cutoff box.
-            final double frx = fftX * uvw[0];
-            final int ifrx = (int) frx;
-            final int ifrxu = ifrx + frad;
-
-            final double fry = fftY * uvw[1];
-            final int ifry = (int) fry;
-            final int ifryu = ifry + frad;
-
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-
-            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                if (lb > giz || giz > ub) {
-                    continue;
-                }
-                xf[2] = iz * ifftZ;
-                for (int iy = ifry - frad; iy <= ifryu; iy++) {
-                    int giy = Crystal.mod(iy, fftY);
-                    xf[1] = iy * ifftY;
-                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-                        int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix * ifftX;
-                        crystal.toCartesianCoordinates(xf, xc);
-                        optLocal[giz]++;
-                        actualWeight++;
-                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = atomff.rho(grid[ii], 1.0, xc);
-                    }
-                }
-            }
-        }
-    }
-
-    private class SolventSliceLoop extends SliceLoop {
-
-        final double[] xyz = new double[3];
-        final double[] uvw = new double[3];
-        final double[] xc = new double[3];
-        final double[] xf = new double[3];
-        final double[] grid;
-        final int[] optLocal;
-        long timer;
-        int previousUB, previousLB;
-        int actualWeight;
-
-        public SolventSliceLoop(SliceRegion region) {
-            super(region.getNatoms(), region.getNsymm(), region);
-            grid = region.getGrid();
-            optLocal = new int[fftZ];
-        }
-
-        public double getThreadTime() {
-            return timer;
-        }
-
-        public int getNumberofSlices() {
-            return (previousUB - previousLB + 1);
-        }
-
-        public int getThreadWeight() {
-            return actualWeight;
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return solventSliceSchedule;
-        }
-
-        public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-            xyz[0] = coordinates[iSymm][0][iAtom];
-            xyz[1] = coordinates[iSymm][1][iAtom];
-            xyz[2] = coordinates[iSymm][2][iAtom];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            final int frad = min(aRadGrid, (int) floor(atoms[iAtom].getFormFactorWidth() * fftX / crystal.a) + 1);
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-            final int ifrzl = ifrz - frad;
-            // Loop over allowed z coordinates for this Loop
-            // Check if the current atom is close enough
-            // If so, add to list.
-            int buff = bufferSize;
-            for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                if (giz >= lb && giz <= ub) {
-                    buildListA.add(iAtom);
-                    buildListS.add(iSymm);
-                    break;
-                }
-            }
-        }
-
-        @Override
-        public boolean checkList(int[][] zAtListBuild, int buff) {
-            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                    if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                            continue;
-                        }
-                        xyz[0] = coordinates[iSymm][0][iAtom];
-                        xyz[1] = coordinates[iSymm][1][iAtom];
-                        xyz[2] = coordinates[iSymm][2][iAtom];
-                        crystal.toFractionalCoordinates(xyz, uvw);
-                        final double frz = fftZ * uvw[2];
-                        final int ifrz = (int) frz;
-                        final int previousZ = zAtListBuild[iSymm][iAtom];
-                        if (abs(ifrz - previousZ) >= buff) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public void saveZValues(int[][] zAtListBuild) {
-            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                    zAtListBuild[iSymm][iAtom] = 0;
-                    if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                            continue;
-                        }
-                        xyz[0] = coordinates[iSymm][0][iAtom];
-                        xyz[1] = coordinates[iSymm][1][iAtom];
-                        xyz[2] = coordinates[iSymm][2][iAtom];
-                        crystal.toFractionalCoordinates(xyz, uvw);
-                        final double frz = fftZ * uvw[2];
-                        final int ifrz = (int) frz;
-                        zAtListBuild[iSymm][iAtom] = ifrz;
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void start() {
-            fill(optLocal, 0);
-            actualWeight = 0;
-            timer = -System.nanoTime();
-        }
-
-        @Override
-        public void run(int lb, int ub) throws Exception {
-            boolean boundsChange = false;
-            if (previousLB != lb || previousUB != ub) {
-                boundsChange = true;
-            }
-            previousLB = lb;
-            previousUB = ub;
-            if (rebuildList || boundsChange) {
-                buildListA = new ArrayList<>();
-                buildListS = new ArrayList<>();
-                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                    for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                        if (sliceRegion.select[iSymm][iAtom]) {
-                            buildList(iSymm, iAtom, lb, ub);
-                        }
-                    }
-                }
-            }
-            for (int i = 0; i < buildListA.size(); i++) {
-                if (sliceRegion.select[buildListS.get(i)][buildListA.get(i)]) {
-                    gridDensity(buildListS.get(i), buildListA.get(i), lb, ub);
-                }
-            }
-        }
-
-        @Override
-        public void finish() {
-            timer += System.nanoTime();
-            for (int i = 0; i < fftZ; i++) {
-                optSliceWeightSolvent.addAndGet(i, optLocal[i]);
-            }
-        }
-
-        @Override
-        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-
-            if (lambdaTerm && atoms[iAtom].applyLambda()) {
-                return;
-            }
-
-            xyz[0] = coordinates[iSymm][0][iAtom];
-            xyz[1] = coordinates[iSymm][1][iAtom];
-            xyz[2] = coordinates[iSymm][2][iAtom];
-            FormFactor formFactor = solventFormFactors[iSymm][iAtom];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
-            int frad = aRadGrid;
-            switch (solventModel) {
-                case BINARY:
-                    frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
-                    break;
-                case GAUSSIAN:
-                    frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
-                    break;
-                case POLYNOMIAL:
-                    frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
-                    break;
-                case NONE:
-                default:
-                    return;
-            }
-
-            // Logic to loop within the cutoff box.
-            final double frx = fftX * uvw[0];
-            final int ifrx = (int) frx;
-            final int ifrxu = ifrx + frad;
-
-            final double fry = fftY * uvw[1];
-            final int ifry = (int) fry;
-            final int ifryu = ifry + frad;
-
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-
-            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                if (lb > giz || giz > ub) {
-                    continue;
-                }
-                xf[2] = iz * ifftZ;
-                for (int iy = ifry - frad; iy <= ifryu; iy++) {
-                    int giy = Crystal.mod(iy, fftY);
-                    xf[1] = iy * ifftY;
-                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-                        int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix * ifftX;
-                        crystal.toCartesianCoordinates(xf, xc);
-                        optLocal[giz]++;
-                        actualWeight++;
-                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
-                    }
-                }
-            }
-        }
-    }
-
-    private class BulkSolventSliceLoop extends SliceLoop {
-
-        final double[] xyz = new double[3];
-        final double[] uvw = new double[3];
-        final double[] xc = new double[3];
-        final double[] xf = new double[3];
-        final double[] grid;
-        final int[] optLocal;
-        long timer;
-        int[] threadBounds;
-        int[] threadWeights;
-
-        public BulkSolventSliceLoop(SliceRegion region) {
-            super(region.getNatoms(), region.getNsymm(), region);
-            grid = region.getGrid();
-            optLocal = new int[fftZ];
-        }
-
-        public double getTimePerThread() {
-            return timer;
-        }
-
-        public int[] getBoundsPerThread() {
-            return threadBounds;
-        }
-
-        public int[] getWeightPerThread() {
-            return threadWeights;
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return bulkSolventSliceSchedule;
-        }
-
-        @Override
-        public void start() {
-            fill(optLocal, 0);
-            timer = -System.nanoTime();
-        }
-
-        @Override
-        public void finish() {
-            timer += System.nanoTime();
-            for (int i = 0; i < fftZ; i++) {
-                optSliceWeightBulkSolvent.addAndGet(i, optLocal[i]);
-            }
-            threadBounds = bulkSolventSliceSchedule.getLowerBounds().clone();
-            threadWeights = bulkSolventSliceSchedule.getThreadWeights().clone();
-            for (int i = threadBounds.length - 1; i > 0; i--) {
-                threadBounds[i] -= threadBounds[i - 1];
-            }
-        }
-
-        @Override
-        public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
-                return;
-            }
-
-            if (lambdaTerm && atoms[iAtom].applyLambda()) {
-                return;
-            }
-
-            xyz[0] = coordinates[iSymm][0][iAtom];
-            xyz[1] = coordinates[iSymm][1][iAtom];
-            xyz[2] = coordinates[iSymm][2][iAtom];
-            FormFactor formFactor = solventFormFactors[iSymm][iAtom];
-            crystal.toFractionalCoordinates(xyz, uvw);
-            double vdwr = atoms[iAtom].getVDWType().radius * 0.5;
-            int frad = aRadGrid;
-            switch (solventModel) {
-                case BINARY:
-                    frad = min(aRadGrid, (int) floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
-                    break;
-                case GAUSSIAN:
-                    frad = min(aRadGrid, (int) floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
-                    break;
-                case POLYNOMIAL:
-                    frad = min(aRadGrid, (int) floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
-                    break;
-                case NONE:
-                default:
-                    return;
-            }
-
-            // Logic to loop within the cutoff box.
-            final double frx = fftX * uvw[0];
-            final int ifrx = (int) frx;
-            final int ifrxu = ifrx + frad;
-
-            final double fry = fftY * uvw[1];
-            final int ifry = (int) fry;
-            final int ifryu = ifry + frad;
-
-            final double frz = fftZ * uvw[2];
-            final int ifrz = (int) frz;
-            final int ifrzu = ifrz + frad;
-
-            for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
-                if (lb > giz || giz > ub) {
-                    continue;
-                }
-                xf[2] = iz * ifftZ;
-                for (int iy = ifry - frad; iy <= ifryu; iy++) {
-                    int giy = Crystal.mod(iy, fftY);
-                    xf[1] = iy * ifftY;
-                    for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-                        int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix * ifftX;
-                        crystal.toCartesianCoordinates(xf, xc);
-                        optLocal[giz]++;
-                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = formFactor.rho(grid[ii], 1.0, xc);
-                    }
-                }
-            }
-        }
-    }
-
-    private class AtomicGradientRegion extends ParallelRegion {
-
-        private final AtomicGradientLoop[] atomicGradientLoop;
-        private RefinementMode refinementmode;
-
-        public AtomicGradientRegion(RefinementMode refinementmode) {
-            this.refinementmode = refinementmode;
-            atomicGradientLoop = new AtomicGradientLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                atomicGradientLoop[i] = new AtomicGradientLoop();
-            }
-        }
-
-        public RefinementMode getRefinementMode() {
-            return refinementmode;
-        }
-
-        public void setRefinementMode(RefinementMode refinementmode) {
-            this.refinementmode = refinementmode;
-        }
-
-        @Override
-        public void run() {
-            try {
-                execute(0, nAtoms - 1, atomicGradientLoop[getThreadIndex()]);
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe(e.toString());
-            }
-        }
-
-        private class AtomicGradientLoop extends IntegerForLoop {
-
-            final double[] xyz = new double[3];
-            final double[] uvw = new double[3];
-            final double[] xc = new double[3];
-            final double[] xf = new double[3];
-            final int[] optLocal = new int[nAtoms];
-            long timer;
-
-            // Extra padding to avert cache interference.
-            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-            long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
-            @Override
-            public void start() {
-                fill(optLocal, 0);
-                timer = -System.nanoTime();
-            }
-
-            @Override
-            public void finish() {
-                timer += System.nanoTime();
-                for (int i = 0; i < nAtoms; i++) {
-                    optAtomicGradientWeight.addAndGet(i, optLocal[i]);
-                }
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return atomicGradientSchedule;
-            }
-
-            @Override
-            public void run(final int lb, final int ub) {
-                for (int n = lb; n <= ub; n++) {
-                    if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
-                        continue;
-                    }
-                    if (lambdaTerm && atoms[n].applyLambda()) {
-                        continue;
-                    }
-
-                    xyz[0] = coordinates[0][0][n];
-                    xyz[1] = coordinates[0][1][n];
-                    xyz[2] = coordinates[0][2][n];
-                    FormFactor atomff = atomFormFactors[0][n];
-                    atomff.update(xyz, 0.0);
-                    crystal.toFractionalCoordinates(xyz, uvw);
-                    final int dfrad = Math.min(aRadGrid,
-                            (int) Math.floor(atoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
-
-                    // Logic to loop within the cutoff box.
-                    final double frx = fftX * uvw[0];
-                    final int ifrx = (int) frx;
-
-                    final double fry = fftY * uvw[1];
-                    final int ifry = (int) fry;
-
-                    final double frz = fftZ * uvw[2];
-                    final int ifrz = (int) frz;
-
-                    for (int ix = ifrx - dfrad; ix <= ifrx + dfrad; ix++) {
-                        int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix * ifftX;
-                        for (int iy = ifry - dfrad; iy <= ifry + dfrad; iy++) {
-                            int giy = Crystal.mod(iy, fftY);
-                            xf[1] = iy * ifftY;
-                            for (int iz = ifrz - dfrad; iz <= ifrz + dfrad; iz++) {
-                                int giz = Crystal.mod(iz, fftZ);
-                                xf[2] = iz * ifftZ;
-                                crystal.toCartesianCoordinates(xf, xc);
-                                optLocal[n]++;
-                                final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                                atomff.rhoGrad(xc, weight * getDensityGrid()[ii], refinementmode);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private class SolventGradientRegion extends ParallelRegion {
-
-        private final SolventGradientLoop[] solventGradientLoop;
-        private RefinementMode refinementmode;
-
-        public SolventGradientRegion(RefinementMode refinementmode) {
-            this.refinementmode = refinementmode;
-            solventGradientLoop = new SolventGradientLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                solventGradientLoop[i] = new SolventGradientLoop();
-            }
-        }
-
-        public RefinementMode getRefinementMode() {
-            return refinementmode;
-        }
-
-        public void setRefinementMode(RefinementMode refinementmode) {
-            this.refinementmode = refinementmode;
-        }
-
-        @Override
-        public void run() {
-            try {
-                execute(0, nAtoms - 1, solventGradientLoop[getThreadIndex()]);
-            } catch (Exception e) {
-                logger.severe(e.toString());
-            }
-        }
-
-        private class SolventGradientLoop extends IntegerForLoop {
-
-            double[] xyz = new double[3];
-            double[] uvw = new double[3];
-            double[] xc = new double[3];
-            double[] xf = new double[3];
-            // Extra padding to avert cache interference.
-            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-            long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
-            @Override
-            public void run(final int lb, final int ub) {
-                for (int n = lb; n <= ub; n++) {
-                    if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
-                        continue;
-                    }
-                    if (lambdaTerm && atoms[n].applyLambda()) {
-                        continue;
-                    }
-                    xyz[0] = coordinates[0][0][n];
-                    xyz[1] = coordinates[0][1][n];
-                    xyz[2] = coordinates[0][2][n];
-                    FormFactor solventff = solventFormFactors[0][n];
-                    solventff.update(xyz);
-                    crystal.toFractionalCoordinates(xyz, uvw);
-                    double vdwr = atoms[n].getVDWType().radius * 0.5;
-                    double dfcmult = 1.0;
-                    int dfrad = aRadGrid;
-                    switch (solventModel) {
-                        case BINARY:
-                            dfrad = Math.min(aRadGrid,
-                                    (int) Math.floor((vdwr + solventA + 0.2) * fftX / crystal.a) + 1);
-                            break;
-                        case GAUSSIAN:
-                            dfrad = Math.min(aRadGrid,
-                                    (int) Math.floor((vdwr * solventB + 2.0) * fftX / crystal.a) + 1);
-                            dfcmult = solventA;
-                            break;
-                        case POLYNOMIAL:
-                            dfrad = Math.min(aRadGrid,
-                                    (int) Math.floor((vdwr + solventB + 0.2) * fftX / crystal.a) + 1);
-                            break;
-                        case NONE:
-                            return;
-                    }
-
-                    // Logic to loop within the cutoff box.
-                    final double frx = fftX * uvw[0];
-                    final int ifrx = (int) frx;
-                    final int ifrxu = ifrx + dfrad;
-
-                    final double fry = fftY * uvw[1];
-                    final int ifry = (int) fry;
-                    final int ifryu = ifry + dfrad;
-
-                    final double frz = fftZ * uvw[2];
-                    final int ifrz = (int) frz;
-                    final int ifrzu = ifrz + dfrad;
-
-                    for (int ix = ifrx - dfrad; ix <= ifrxu; ix++) {
-                        int gix = Crystal.mod(ix, fftX);
-                        xf[0] = ix * ifftX;
-                        for (int iy = ifry - dfrad; iy <= ifryu; iy++) {
-                            int giy = Crystal.mod(iy, fftY);
-                            xf[1] = iy * ifftY;
-                            for (int iz = ifrz - dfrad; iz <= ifrzu; iz++) {
-                                int giz = Crystal.mod(iz, fftZ);
-                                xf[2] = iz * ifftZ;
-                                crystal.toCartesianCoordinates(xf, xc);
-                                final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                                solventff.rhoGrad(xc,
-                                        weight * getDensityGrid()[ii] * dfcmult * getSolventGrid()[ii],
-                                        refinementmode);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private class BabinetRegion extends ParallelRegion {
-
-        BabinetLoop[] babinetLoops;
-
-        public BabinetRegion(int nThreads) {
-            babinetLoops = new BabinetLoop[nThreads];
-
-        }
-
-        @Override
-        public void run() throws Exception {
-            int ti = getThreadIndex();
-
-            if (babinetLoops[ti] == null) {
-                babinetLoops[ti] = new BabinetLoop();
-            }
-
-            try {
-                execute(0, fftZ - 1, babinetLoops[ti]);
-            } catch (Exception e) {
-                logger.info(e.toString());
-            }
-        }
-
-        private class BabinetLoop extends IntegerForLoop {
-
-            @Override
-            public void run(int lb, int ub) throws Exception {
-                switch (solventModel) {
-                    case BINARY:
-                    case POLYNOMIAL:
-                        for (int k = lb; k <= ub; k++) {
-                            for (int j = 0; j < fftY; j++) {
-                                for (int i = 0; i < fftX; i++) {
-                                    final int ii = iComplex3D(i, j, k, fftX, fftY);
-                                    densityGrid[ii] = 1.0 - getDensityGrid()[ii];
-                                }
-                            }
-                        }
-                        break;
-                    case GAUSSIAN:
-                        for (int k = lb; k <= ub; k++) {
-                            for (int j = 0; j < fftY; j++) {
-                                for (int i = 0; i < fftX; i++) {
-                                    final int ii = iComplex3D(i, j, k, fftX, fftY);
-                                    densityGrid[ii] = 1.0 - exp(-solventA * getDensityGrid()[ii]);
-                                }
-                            }
-                        }
-                        break;
-                    default:
-                }
-            }
-        }
-    }
-
-    private class SolventGridRegion extends ParallelRegion {
-
-        SolventGridLoop[] solventGridLoops;
-
-        public SolventGridRegion(int nThreads) {
-            solventGridLoops = new SolventGridLoop[nThreads];
-
-        }
-
-        @Override
-        public void run() throws Exception {
-            int ti = getThreadIndex();
-
-            if (solventGridLoops[ti] == null) {
-                solventGridLoops[ti] = new SolventGridLoop();
-            }
-
-            try {
-                execute(0, fftZ - 1, solventGridLoops[ti]);
-            } catch (Exception e) {
-                logger.info(e.toString());
-            }
-        }
-
-        private class SolventGridLoop extends IntegerForLoop {
-
-            @Override
-            public void run(int lb, int ub) throws Exception {
-                // case GAUSSIAN:
-                for (int k = lb; k <= ub; k++) {
-                    for (int j = 0; j < fftY; j++) {
-                        for (int i = 0; i < fftX; i++) {
-                            final int ii = iComplex3D(i, j, k, fftX, fftY);
-                            solventGrid[ii] = exp(-solventA * getSolventGrid()[ii]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private class InitRegion extends ParallelRegion {
-
-        InitLoop[] initLoops;
-        FormFactorUpdateLoop[] formFactorUpdateLoops;
-        int nHKL = reflectionList.hkllist.size();
-        double[][] hkldata = null;
-
-        public InitRegion(int nThreads) {
-            initLoops = new InitLoop[nThreads];
-            formFactorUpdateLoops = new FormFactorUpdateLoop[nThreads];
-        }
-
-        public void setHKL(double[][] hkldata) {
-            this.hkldata = hkldata;
-        }
-
-        @Override
-        public void run() throws Exception {
-            int ti = getThreadIndex();
-
-            if (initLoops[ti] == null) {
-                initLoops[ti] = new InitLoop();
-                formFactorUpdateLoops[ti] = new FormFactorUpdateLoop();
-            }
-
-            try {
-                execute(0, nHKL - 1, initLoops[ti]);
-                execute(0, nAtoms - 1, formFactorUpdateLoops[ti]);
-            } catch (Exception e) {
-                logger.info(e.toString());
-            }
-        }
-
-        private class InitLoop extends IntegerForLoop {
-
-            @Override
-            public void run(int lb, int ub) throws Exception {
-                for (int i = lb; i <= ub; i++) {
-                    hkldata[i][0] = 0.0;
-                    hkldata[i][1] = 0.0;
-                }
-            }
-        }
-
-        private class FormFactorUpdateLoop extends IntegerForLoop {
-
-            private final double[] xyz = new double[3];
-
-            @Override
-            public void run(int lb, int ub) throws Exception {
-                for (int iSymm = 0; iSymm < bulkNSymm; iSymm++) {
-                    for (int i = lb; i <= ub; i++) {
-                        xyz[0] = coordinates[iSymm][0][i];
-                        xyz[1] = coordinates[iSymm][1][i];
-                        xyz[2] = coordinates[iSymm][2][i];
-                        if (solventFormFactors != null) {
-                            solventFormFactors[iSymm][i].update(xyz);
-                        }
-                        if (atomFormFactors != null) {
-                            atomFormFactors[iSymm][i].update(xyz, bAdd);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private class AtomicScaleRegion extends ParallelRegion {
-
-        AtomicScaleLoop[] atomicScaleLoops;
-        int nHKL = reflectionList.hkllist.size();
-        double[][] hklData = null;
-        double scale;
-
-        public AtomicScaleRegion(int nThreads) {
-            atomicScaleLoops = new AtomicScaleLoop[nThreads];
-        }
-
-        public void setHKL(double[][] hkldata) {
-            this.hklData = hkldata;
-        }
-
-        public void setScale(double scale) {
-            this.scale = scale;
-        }
-
-        @Override
-        public void run() throws Exception {
-            int ti = getThreadIndex();
-
-            if (atomicScaleLoops[ti] == null) {
-                atomicScaleLoops[ti] = new AtomicScaleLoop();
-            }
-
-            try {
-                execute(0, nHKL - 1, atomicScaleLoops[ti]);
-            } catch (Exception e) {
-                logger.info(e.toString());
-            }
-        }
-
-        private class AtomicScaleLoop extends IntegerForLoop {
-
-            ComplexNumber c;
-
-            public AtomicScaleLoop() {
-                c = new ComplexNumber();
-            }
-
-            @Override
-            public void run(int lb, int ub) throws Exception {
-                for (int i = lb; i <= ub; i++) {
-                    HKL ih = reflectionList.hkllist.get(i);
-                    double[] fc = hklData[ih.index()];
-                    c.re(fc[0]);
-                    c.im(fc[1]);
-                    // Remove Badd
-                    double s = Crystal.invressq(crystal, ih);
-                    c.timesIP(scale * exp(0.25 * bAdd * s));
-                    c.conjugateIP();
-                    fc[0] = c.re();
-                    fc[1] = c.im();
-                }
-            }
-        }
-    }
-
-    private class SolventScaleRegion extends ParallelRegion {
-
-        SolventScaleLoop[] solventScaleLoops;
-        int nHKL = reflectionList.hkllist.size();
-        double[][] hkldata = null;
-        double scale;
-
-        public SolventScaleRegion(int nThreads) {
-            solventScaleLoops = new SolventScaleLoop[nThreads];
-        }
-
-        public void setHKL(double[][] hkldata) {
-            this.hkldata = hkldata;
-        }
-
-        public void setScale(double scale) {
-            this.scale = scale;
-        }
-
-        @Override
-        public void run() throws Exception {
-            int ti = getThreadIndex();
-
-            if (solventScaleLoops[ti] == null) {
-                solventScaleLoops[ti] = new SolventScaleLoop();
-            }
-
-            try {
-                execute(0, nHKL - 1, solventScaleLoops[ti]);
-            } catch (Exception e) {
-                logger.info(e.toString());
-            }
-        }
-
-        private class SolventScaleLoop extends IntegerForLoop {
-
-            ComplexNumber c;
-
-            public SolventScaleLoop() {
-                c = new ComplexNumber();
-            }
-
-            @Override
-            public void run(int lb, int ub) throws Exception {
-                for (int i = lb; i <= ub; i++) {
-                    HKL ih = reflectionList.hkllist.get(i);
-                    double[] fc = hkldata[ih.index()];
-                    c.re(fc[0]);
-                    c.im(fc[1]);
-                    c.timesIP(scale);
-                    c.conjugateIP();
-                    // negative: babinet
-                    fc[0] = -c.re();
-                    fc[1] = -c.im();
-                }
-            }
-        }
-    }
-
-    private class ExtractRegion extends ParallelRegion {
-
-        ExtractLoop[] extractLoops;
-        int nHKL = reflectionList.hkllist.size();
-        double[][] hkldata = null;
-
-        public ExtractRegion(int nThreads) {
-            extractLoops = new ExtractLoop[nThreads];
-        }
-
-        public void setHKL(double[][] hkldata) {
-            this.hkldata = hkldata;
-        }
-
-        @Override
-        public void run() throws Exception {
-            int ti = getThreadIndex();
-
-            if (extractLoops[ti] == null) {
-                extractLoops[ti] = new ExtractLoop();
-            }
-
-            try {
-                execute(0, nHKL - 1, extractLoops[ti]);
-            } catch (Exception e) {
-                logger.info(e.toString());
-            }
-        }
-
-        private class ExtractLoop extends IntegerForLoop {
-
-            ComplexNumber c;
-            int nsym;
-            List<SymOp> symops;
-            HKL ij;
-
-            public ExtractLoop() {
-                c = new ComplexNumber();
-                nsym = crystal.spaceGroup.symOps.size();
-                symops = crystal.spaceGroup.symOps;
-                ij = new HKL();
-            }
-
-            @Override
-            public void run(int lb, int ub) throws Exception {
-                for (int i = lb; i <= ub; i++) {
-                    HKL ih = reflectionList.hkllist.get(i);
-                    double[] fc = hkldata[ih.index()];
-                    // Apply symmetry
-                    for (int j = 0; j < nsym; j++) {
-                        crystal.applyTransSymRot(ih, ij, symops.get(j));
-                        double shift = Crystal.sym_phase_shift(ih, symops.get(j));
-                        int h = Crystal.mod(ij.h(), fftX);
-                        int k = Crystal.mod(ij.k(), fftY);
-                        int l = Crystal.mod(ij.l(), fftZ);
-                        if (h < halfFFTX + 1) {
-                            final int ii = iComplex3D(h, k, l, fftX, fftY);
-                            c.re(getDensityGrid()[ii]);
-                            c.im(getDensityGrid()[ii + 1]);
-                            c.phaseShiftIP(shift);
-                            fc[0] += c.re();
-                            fc[1] += c.im();
-                        } else {
-                            h = (fftX - h) % fftX;
-                            k = (fftY - k) % fftY;
-                            l = (fftZ - l) % fftZ;
-                            final int ii = iComplex3D(h, k, l, fftX, fftY);
-                            c.re(getDensityGrid()[ii]);
-                            c.im(-getDensityGrid()[ii + 1]);
-                            c.phaseShiftIP(shift);
-                            fc[0] += c.re();
-                            fc[1] += c.im();
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private class ArrayCopyRegion extends ParallelRegion {
-
-        ArrayCopyLoop[] arrayCopyLoops;
-
-        public ArrayCopyRegion() {
-            arrayCopyLoops = new ArrayCopyLoop[threadCount];
-        }
-
-        @Override
-        public void run() throws Exception {
-            int ti = getThreadIndex();
-
-            if (arrayCopyLoops[ti] == null) {
-                arrayCopyLoops[ti] = new ArrayCopyLoop();
-            }
-
-            try {
-                execute(0, complexFFT3DSpace - 1, arrayCopyLoops[ti]);
-            } catch (Exception e) {
-                logger.info(e.toString());
-            }
-        }
-
-        private class ArrayCopyLoop extends IntegerForLoop {
-
-            @Override
-            public void run(int lb, int ub) throws Exception {
-                arraycopy(getDensityGrid(), lb, getSolventGrid(), lb, ub - lb);
-            }
-        }
     }
 }

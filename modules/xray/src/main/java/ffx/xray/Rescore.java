@@ -79,18 +79,16 @@ public class Rescore {
     private static final Logger logger = Logger.getLogger(Rescore.class.getName());
     private final RefinementMode refinementMode = RefinementMode.COORDINATES;
     private final AlgorithmFunctions utils;
+    private final Path pwdPath;
     private RescoreStrategy rscType = NO_RESCORE;
     private List<DiffractionFile> diffractionFiles;
     private List<RealSpaceFile> mapFiles;
-
     private double eps = -1.0;
     private int maxiter = 1000;
     private double acceptThreshold = 0.0;
     private int numToAccept = 10;
     private boolean includeRejected = true;
-
     private String fileSuffix = "_rsc";
-    private final Path pwdPath;
     private File resultsFile;
     private File resultDir;
     private Path resultPath;
@@ -109,12 +107,196 @@ public class Rescore {
     }
 
     /**
-     * <p>setRefineEps.</p>
+     * <p>rescore.</p>
      *
-     * @param eps a double.
+     * @param modelFiles an array of {@link java.io.File} objects.
+     * @return an array of {@link java.io.File} objects.
      */
-    public void setRefineEps(double eps) {
-        this.eps = eps;
+    public File[] rescore(File[] modelFiles) {
+        int numFiles = modelFiles.length;
+        DoubleIndexPair[] energies = new DoubleIndexPair[numFiles];
+        File[] rescoredFiles = new File[numFiles];
+        for (int i = 0; i < numFiles; i++) {
+            rescoredFiles[i] = rescoreSingle(modelFiles[i], rscType, energies, i);
+        }
+
+        Arrays.sort(energies);
+        ArrayList<Integer> acceptedFileIndices = new ArrayList<>();
+        int numAccepted = 1;
+        acceptedFileIndices.add(energies[0].getIndex());
+        double minEnergy = energies[0].getDoubleValue();
+
+        if (acceptThreshold > 0.0) {
+            for (int i = 1; i < numFiles; i++) {
+                DoubleIndexPair currentPair = energies[i];
+                double e = currentPair.getDoubleValue();
+                if (e - minEnergy <= acceptThreshold) {
+                    acceptedFileIndices.add(currentPair.getIndex());
+                    ++numAccepted;
+                } else {
+                    break;
+                }
+            }
+        } else {
+            numAccepted = numToAccept < numFiles ? numToAccept : numFiles;
+            for (int i = 1; i < numAccepted; i++) {
+                acceptedFileIndices.add(energies[i].getIndex());
+            }
+        }
+
+        for (int i = 0; i < numAccepted; i++) {
+            File filei = rescoredFiles[energies[i].getIndex()];
+            Path pathi;
+            pathi = generatePath(filei);
+            String relPath = pwdPath.relativize(pathi).toString();
+            logger.info(String.format(" Accepted: %s at %10.6f kcal/mol", relPath, energies[i].getDoubleValue()));
+        }
+        for (int i = numAccepted; i < numFiles; i++) {
+            File filei = rescoredFiles[energies[i].getIndex()];
+            Path pathi;
+            pathi = generatePath(filei);
+            String relPath = pwdPath.relativize(pathi).toString();
+            logger.info(String.format(" Rejected: %s at %10.6f kcal/mol", relPath, energies[i].getDoubleValue()));
+        }
+
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(resultsFile, true))) {
+            Path rscFilePath = generatePath(resultsFile);
+            String rscFileName = pwdPath.relativize(rscFilePath).toString();
+
+            logger.info(String.format(" Printing accepted files to xray.groovy.test.rescore file %s", rscFileName));
+
+            if (acceptThreshold > 0.0) {
+                String message = String.format("Minimum potential energy: %f, threshold = %6.4f", minEnergy, acceptThreshold);
+                bw.write(message);
+                message = " " + message + "\n";
+                logger.info(message);
+            } else {
+                double maxEnergy = energies[numAccepted - 1].getDoubleValue();
+                String message = String.format("Minimum potential energy: %f, maximum accepted energy %f", minEnergy, maxEnergy);
+                bw.write(message);
+                message = " " + message + "\n";
+                logger.info(message);
+            }
+            bw.newLine();
+            bw.newLine();
+            String message = String.format("Number of files accepted: %d", numAccepted);
+            bw.write(message);
+            bw.newLine();
+            logger.info(String.format(" %s", message));
+
+            for (int i = 0; i < numAccepted; i++) {
+                int fileIndex = energies[i].getIndex();
+                File pointedFile = rescoredFiles[fileIndex];
+                Path pointedPath = generatePath(pointedFile);
+                String relPath = pwdPath.relativize(pointedPath).toString();
+                double thisEnergy = energies[i].getDoubleValue();
+
+                logger.info(String.format(" Accepted file %d energy %9.3f < %9.3f kcal/mol", (i + 1), thisEnergy, minEnergy + acceptThreshold));
+                logger.info(String.format(" %s", relPath));
+                try {
+                    bw.write(String.format("Accepted file: %s rank %d energy %f\n", relPath, (i + 1), thisEnergy));
+                    if (printModels) {
+                        bw.newLine();
+                        try (BufferedReader br = new BufferedReader(new FileReader(pointedFile))) {
+                            String line = br.readLine();
+                            while (line != null) {
+                                bw.write(line);
+                                bw.newLine();
+                                line = br.readLine();
+                            }
+                        }
+                        bw.newLine();
+                    }
+                } catch (IOException ex) {
+                    logger.warning(String.format(" File %s had exception printing to xray.groovy.test.rescore file %s", relPath, ex.toString()));
+                }
+            }
+            message = String.format("\n Number of files not accepted: %d", numFiles - numAccepted);
+            logger.info(String.format(" %s", message));
+            bw.newLine();
+            bw.write(message);
+            bw.newLine();
+            if (includeRejected) {
+                for (int i = numAccepted; i < numFiles; i++) {
+                    int fileIndex = energies[i].getIndex();
+                    File pointedFile = rescoredFiles[fileIndex];
+                    Path pointedPath = generatePath(pointedFile);
+                    String relPath = pwdPath.relativize(pointedPath).toString();
+                    double thisEnergy = energies[i].getDoubleValue();
+
+                    message = String.format("Non-accepted file: %s rank %d energy %f", relPath, (i + 1), thisEnergy);
+                    logger.info(String.format(" %s", message));
+                    try {
+                        bw.write(message);
+                        bw.newLine();
+                    } catch (IOException ex) {
+                        logger.warning(String.format(" File %s had exception printing to xray.groovy.test.rescore file %s", relPath, ex.toString()));
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            logger.warning(String.format(" Exception in writing xray.groovy.test.rescore file: %s", ex.toString()));
+        }
+        return rescoredFiles;
+    }
+
+    /**
+     * Launch the rescoring algorithm on provided files. Assumes it has been
+     * given valid files to be run on; use CoordinateFileFilter.acceptDeep(File
+     * file) before sending files to this method.
+     *
+     * @param modelFiles Files to xray.groovy.test.rescore.
+     */
+    public void runRsc(File[] modelFiles) {
+        int numFiles = modelFiles.length;
+        logger.info(String.format(" Rescoring %d files", numFiles));
+        logger.info(String.format(" Rescore algorithm: %s", rscType.toString()));
+        rescore(modelFiles);
+    }
+
+    /**
+     * <p>Setter for the field <code>acceptThreshold</code>.</p>
+     *
+     * @param acceptThreshold a double.
+     */
+    public void setAcceptThreshold(double acceptThreshold) {
+        this.acceptThreshold = acceptThreshold;
+    }
+
+    /**
+     * <p>Setter for the field <code>diffractionFiles</code>.</p>
+     *
+     * @param diffractionFiles a {@link java.util.List} object.
+     */
+    public void setDiffractionFiles(List<DiffractionFile> diffractionFiles) {
+        this.diffractionFiles.addAll(diffractionFiles);
+    }
+
+    /**
+     * <p>Setter for the field <code>fileSuffix</code>.</p>
+     *
+     * @param fileSuffix a {@link java.lang.String} object.
+     */
+    public void setFileSuffix(String fileSuffix) {
+        this.fileSuffix = fileSuffix;
+    }
+
+    /**
+     * <p>Setter for the field <code>includeRejected</code>.</p>
+     *
+     * @param includeRejected a boolean.
+     */
+    public void setIncludeRejected(boolean includeRejected) {
+        this.includeRejected = includeRejected;
+    }
+
+    /**
+     * <p>Setter for the field <code>mapFiles</code>.</p>
+     *
+     * @param mapFiles a {@link java.util.List} object.
+     */
+    public void setMapFiles(List<RealSpaceFile> mapFiles) {
+        this.mapFiles.addAll(mapFiles);
     }
 
     /**
@@ -124,6 +306,42 @@ public class Rescore {
      */
     public void setMaxIter(int maxiter) {
         this.maxiter = maxiter;
+    }
+
+    /**
+     * <p>Setter for the field <code>numToAccept</code>.</p>
+     *
+     * @param numToAccept a int.
+     */
+    public void setNumToAccept(int numToAccept) {
+        this.numToAccept = numToAccept;
+    }
+
+    /**
+     * <p>Setter for the field <code>printModels</code>.</p>
+     *
+     * @param printModels a boolean.
+     */
+    public void setPrintModels(boolean printModels) {
+        this.printModels = printModels;
+    }
+
+    /**
+     * <p>setRefineEps.</p>
+     *
+     * @param eps a double.
+     */
+    public void setRefineEps(double eps) {
+        this.eps = eps;
+    }
+
+    /**
+     * <p>setRescoreStrategy.</p>
+     *
+     * @param rscType a {@link ffx.xray.Rescore.RescoreStrategy} object.
+     */
+    public void setRescoreStrategy(RescoreStrategy rscType) {
+        this.rscType = rscType;
     }
 
     /**
@@ -145,42 +363,6 @@ public class Rescore {
     }
 
     /**
-     * <p>Setter for the field <code>acceptThreshold</code>.</p>
-     *
-     * @param acceptThreshold a double.
-     */
-    public void setAcceptThreshold(double acceptThreshold) {
-        this.acceptThreshold = acceptThreshold;
-    }
-
-    /**
-     * <p>Setter for the field <code>numToAccept</code>.</p>
-     *
-     * @param numToAccept a int.
-     */
-    public void setNumToAccept(int numToAccept) {
-        this.numToAccept = numToAccept;
-    }
-
-    /**
-     * <p>Setter for the field <code>includeRejected</code>.</p>
-     *
-     * @param includeRejected a boolean.
-     */
-    public void setIncludeRejected(boolean includeRejected) {
-        this.includeRejected = includeRejected;
-    }
-
-    /**
-     * <p>Setter for the field <code>fileSuffix</code>.</p>
-     *
-     * @param fileSuffix a {@link java.lang.String} object.
-     */
-    public void setFileSuffix(String fileSuffix) {
-        this.fileSuffix = fileSuffix;
-    }
-
-    /**
      * <p>Setter for the field <code>resultsFile</code>.</p>
      *
      * @param resultsFile a {@link java.io.File} object.
@@ -191,54 +373,38 @@ public class Rescore {
         }
     }
 
-    /**
-     * <p>Setter for the field <code>printModels</code>.</p>
-     *
-     * @param printModels a boolean.
-     */
-    public void setPrintModels(boolean printModels) {
-        this.printModels = printModels;
-    }
+    public enum RescoreStrategy {
 
-    /**
-     * <p>setRescoreStrategy.</p>
-     *
-     * @param rscType a {@link ffx.xray.Rescore.RescoreStrategy} object.
-     */
-    public void setRescoreStrategy(RescoreStrategy rscType) {
-        this.rscType = rscType;
-    }
-
-    /**
-     * <p>Setter for the field <code>diffractionFiles</code>.</p>
-     *
-     * @param diffractionFiles a {@link java.util.List} object.
-     */
-    public void setDiffractionFiles(List<DiffractionFile> diffractionFiles) {
-        this.diffractionFiles.addAll(diffractionFiles);
-    }
-
-    /**
-     * <p>Setter for the field <code>mapFiles</code>.</p>
-     *
-     * @param mapFiles a {@link java.util.List} object.
-     */
-    public void setMapFiles(List<RealSpaceFile> mapFiles) {
-        this.mapFiles.addAll(mapFiles);
-    }
-
-    /**
-     * Launch the rescoring algorithm on provided files. Assumes it has been
-     * given valid files to be run on; use CoordinateFileFilter.acceptDeep(File
-     * file) before sending files to this method.
-     *
-     * @param modelFiles Files to xray.groovy.test.rescore.
-     */
-    public void runRsc(File[] modelFiles) {
-        int numFiles = modelFiles.length;
-        logger.info(String.format(" Rescoring %d files", numFiles));
-        logger.info(String.format(" Rescore algorithm: %s", rscType.toString()));
-        rescore(modelFiles);
+        NO_RESCORE {
+            @Override
+            public String toString() {
+                return "none";
+            }
+        },
+        ENERGY_EVAL {
+            @Override
+            public String toString() {
+                return "potential energy";
+            }
+        },
+        MINIMIZE {
+            @Override
+            public String toString() {
+                return "force field minimization";
+            }
+        },
+        XRAY_MIN {
+            @Override
+            public String toString() {
+                return "x-ray hybrid target minimization";
+            }
+        },
+        RS_MIN {
+            @Override
+            public String toString() {
+                return "real-space hybrid target minimization";
+            }
+        };
     }
 
     private File rescoreSingle(File modelFile, RescoreStrategy rscType, DoubleIndexPair[] energies, int i) {
@@ -396,173 +562,5 @@ public class Rescore {
             logger.info(ex.toString());
         }
         return retFile;
-    }
-
-    /**
-     * <p>rescore.</p>
-     *
-     * @param modelFiles an array of {@link java.io.File} objects.
-     * @return an array of {@link java.io.File} objects.
-     */
-    public File[] rescore(File[] modelFiles) {
-        int numFiles = modelFiles.length;
-        DoubleIndexPair[] energies = new DoubleIndexPair[numFiles];
-        File[] rescoredFiles = new File[numFiles];
-        for (int i = 0; i < numFiles; i++) {
-            rescoredFiles[i] = rescoreSingle(modelFiles[i], rscType, energies, i);
-        }
-
-        Arrays.sort(energies);
-        ArrayList<Integer> acceptedFileIndices = new ArrayList<>();
-        int numAccepted = 1;
-        acceptedFileIndices.add(energies[0].getIndex());
-        double minEnergy = energies[0].getDoubleValue();
-
-        if (acceptThreshold > 0.0) {
-            for (int i = 1; i < numFiles; i++) {
-                DoubleIndexPair currentPair = energies[i];
-                double e = currentPair.getDoubleValue();
-                if (e - minEnergy <= acceptThreshold) {
-                    acceptedFileIndices.add(currentPair.getIndex());
-                    ++numAccepted;
-                } else {
-                    break;
-                }
-            }
-        } else {
-            numAccepted = numToAccept < numFiles ? numToAccept : numFiles;
-            for (int i = 1; i < numAccepted; i++) {
-                acceptedFileIndices.add(energies[i].getIndex());
-            }
-        }
-
-        for (int i = 0; i < numAccepted; i++) {
-            File filei = rescoredFiles[energies[i].getIndex()];
-            Path pathi;
-            pathi = generatePath(filei);
-            String relPath = pwdPath.relativize(pathi).toString();
-            logger.info(String.format(" Accepted: %s at %10.6f kcal/mol", relPath, energies[i].getDoubleValue()));
-        }
-        for (int i = numAccepted; i < numFiles; i++) {
-            File filei = rescoredFiles[energies[i].getIndex()];
-            Path pathi;
-            pathi = generatePath(filei);
-            String relPath = pwdPath.relativize(pathi).toString();
-            logger.info(String.format(" Rejected: %s at %10.6f kcal/mol", relPath, energies[i].getDoubleValue()));
-        }
-
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(resultsFile, true))) {
-            Path rscFilePath = generatePath(resultsFile);
-            String rscFileName = pwdPath.relativize(rscFilePath).toString();
-
-            logger.info(String.format(" Printing accepted files to xray.groovy.test.rescore file %s", rscFileName));
-
-            if (acceptThreshold > 0.0) {
-                String message = String.format("Minimum potential energy: %f, threshold = %6.4f", minEnergy, acceptThreshold);
-                bw.write(message);
-                message = " " + message + "\n";
-                logger.info(message);
-            } else {
-                double maxEnergy = energies[numAccepted - 1].getDoubleValue();
-                String message = String.format("Minimum potential energy: %f, maximum accepted energy %f", minEnergy, maxEnergy);
-                bw.write(message);
-                message = " " + message + "\n";
-                logger.info(message);
-            }
-            bw.newLine();
-            bw.newLine();
-            String message = String.format("Number of files accepted: %d", numAccepted);
-            bw.write(message);
-            bw.newLine();
-            logger.info(String.format(" %s", message));
-
-            for (int i = 0; i < numAccepted; i++) {
-                int fileIndex = energies[i].getIndex();
-                File pointedFile = rescoredFiles[fileIndex];
-                Path pointedPath = generatePath(pointedFile);
-                String relPath = pwdPath.relativize(pointedPath).toString();
-                double thisEnergy = energies[i].getDoubleValue();
-
-                logger.info(String.format(" Accepted file %d energy %9.3f < %9.3f kcal/mol", (i + 1), thisEnergy, minEnergy + acceptThreshold));
-                logger.info(String.format(" %s", relPath));
-                try {
-                    bw.write(String.format("Accepted file: %s rank %d energy %f\n", relPath, (i + 1), thisEnergy));
-                    if (printModels) {
-                        bw.newLine();
-                        try (BufferedReader br = new BufferedReader(new FileReader(pointedFile))) {
-                            String line = br.readLine();
-                            while (line != null) {
-                                bw.write(line);
-                                bw.newLine();
-                                line = br.readLine();
-                            }
-                        }
-                        bw.newLine();
-                    }
-                } catch (IOException ex) {
-                    logger.warning(String.format(" File %s had exception printing to xray.groovy.test.rescore file %s", relPath, ex.toString()));
-                }
-            }
-            message = String.format("\n Number of files not accepted: %d", numFiles - numAccepted);
-            logger.info(String.format(" %s", message));
-            bw.newLine();
-            bw.write(message);
-            bw.newLine();
-            if (includeRejected) {
-                for (int i = numAccepted; i < numFiles; i++) {
-                    int fileIndex = energies[i].getIndex();
-                    File pointedFile = rescoredFiles[fileIndex];
-                    Path pointedPath = generatePath(pointedFile);
-                    String relPath = pwdPath.relativize(pointedPath).toString();
-                    double thisEnergy = energies[i].getDoubleValue();
-
-                    message = String.format("Non-accepted file: %s rank %d energy %f", relPath, (i + 1), thisEnergy);
-                    logger.info(String.format(" %s", message));
-                    try {
-                        bw.write(message);
-                        bw.newLine();
-                    } catch (IOException ex) {
-                        logger.warning(String.format(" File %s had exception printing to xray.groovy.test.rescore file %s", relPath, ex.toString()));
-                    }
-                }
-            }
-        } catch (IOException ex) {
-            logger.warning(String.format(" Exception in writing xray.groovy.test.rescore file: %s", ex.toString()));
-        }
-        return rescoredFiles;
-    }
-
-    public enum RescoreStrategy {
-
-        NO_RESCORE {
-            @Override
-            public String toString() {
-                return "none";
-            }
-        },
-        ENERGY_EVAL {
-            @Override
-            public String toString() {
-                return "potential energy";
-            }
-        },
-        MINIMIZE {
-            @Override
-            public String toString() {
-                return "force field minimization";
-            }
-        },
-        XRAY_MIN {
-            @Override
-            public String toString() {
-                return "x-ray hybrid target minimization";
-            }
-        },
-        RS_MIN {
-            @Override
-            public String toString() {
-                return "real-space hybrid target minimization";
-            }
-        };
     }
 }

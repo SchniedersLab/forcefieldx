@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>X-ray Module Publications</title>
         <author email="tim.fenn@gmail.com">Timothy D. Fenn</author>
@@ -53,7 +53,8 @@
                     Z. Su and P. Coppens, Acta Cryst. (1998). A54, 357
                 </li>
                 <li>
-                    <a href="http://www.iucr.org/resources/commissions/crystallographic-computing/newsletters/3" target="_blank">
+                    <a href="http://www.iucr.org/resources/commissions/crystallographic-computing/newsletters/3"
+                       target="_blank">
                         <img src="images/pdf.png" alt="PDF"/>
                     </a>
                     R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams.

@@ -90,6 +90,35 @@ public class TinkerUtils {
     }
 
     /**
+     * Get the previous file based on the TINKER scheme.
+     *
+     * @param file Root file.
+     * @return New File created previously to the passed file.
+     */
+    public static File previousVersion(File file) {
+        if (file == null) {
+            return null;
+        }
+        String fileName = file.getAbsolutePath();
+        int dot = file.getAbsolutePath().lastIndexOf(".");
+        int under = file.getAbsolutePath().lastIndexOf("_");
+        File newFile = file;
+        if (under > dot) {
+            String name = fileName.substring(0, under);
+            newFile = new File(name);
+        }
+        File baseFile = newFile;
+        File previousFile = null;
+        int i = 1;
+        while (newFile.exists()) {
+            i = i + 1;
+            previousFile = newFile;
+            newFile = tinkerFile(baseFile, i);
+        }
+        return previousFile;
+    }
+
+    /**
      * This follows the TINKER file versioning scheme.
      *
      * @param file File to find a version for.
@@ -117,35 +146,6 @@ public class TinkerUtils {
             newFile = tinkerFile(oldFile, i);
         }
         return newFile;
-    }
-
-    /**
-     * Get the previous file based on the TINKER scheme.
-     *
-     * @param file Root file.
-     * @return New File created previously to the passed file.
-     */
-    public static File previousVersion(File file) {
-        if (file == null) {
-            return null;
-        }
-        String fileName = file.getAbsolutePath();
-        int dot = file.getAbsolutePath().lastIndexOf(".");
-        int under = file.getAbsolutePath().lastIndexOf("_");
-        File newFile = file;
-        if (under > dot) {
-            String name = fileName.substring(0, under);
-            newFile = new File(name);
-        }
-        File baseFile = newFile;
-        File previousFile = null;
-        int i = 1;
-        while (newFile.exists()) {
-            i = i + 1;
-            previousFile = newFile;
-            newFile = tinkerFile(baseFile, i);
-        }
-        return previousFile;
     }
 
     /**

@@ -163,25 +163,40 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         begin();
     }
 
-    private void begin() {
-        logger.info(String.format(" Initial temperature:    %8.3f (Kelvin)", schedule.getHighTemp()));
-        logger.info(String.format(" Final temperature:      %8.3f (Kelvin)", schedule.getLowTemp()));
-        logger.info(String.format(" Annealing steps:        %8d", schedule.getNumWindows()));
-        logger.info(String.format(" MD steps/temperature:   %8d", mdSteps));
-        logger.info(String.format(" MD time step:           %8.3f (fs)", timeStep));
+    /**
+     * <p>getKineticEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getKineticEnergy() {
+        return molecularDynamics.getKineticEnergy();
+    }
 
-        Thread annealingThread = new Thread(this);
-        annealingThread.start();
-        synchronized (this) {
-            try {
-                while (annealingThread.isAlive()) {
-                    wait(100);
-                }
-            } catch (Exception e) {
-                String message = "Simulated annealing interrupted.";
-                logger.log(Level.WARNING, message, e);
-            }
-        }
+    /**
+     * <p>getPotentialEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getPotentialEnergy() {
+        return molecularDynamics.getPotentialEnergy();
+    }
+
+    /**
+     * <p>getTemperature.</p>
+     *
+     * @return a double.
+     */
+    public double getTemperature() {
+        return molecularDynamics.getTemperature();
+    }
+
+    /**
+     * <p>getTotalEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getTotalEnergy() {
+        return molecularDynamics.getTotalEnergy();
     }
 
     /**
@@ -207,7 +222,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         for (int i = 0; i < nWindows; i++) {
             double temperature = schedule.getTemperature(i);
             int nSteps = (int) (schedule.windowLength(i) * mdSteps);
-            logger.info(String.format(" Annealing window %d: %d steps at %9.4g K", (i+1), nSteps, temperature));
+            logger.info(String.format(" Annealing window %d: %d steps at %9.4g K", (i + 1), nSteps, temperature));
             molecularDynamics.dynamic(nSteps, timeStep, printInterval, saveFrequency, temperature, (reinitV || forceFirstReinit), dynFile);
             if (dynFile == null) {
                 dynFile = molecularDynamics.getDynFile();
@@ -224,23 +239,6 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
         done = true;
         terminate = false;
-    }
-
-    /**
-     * Sets the number of steps to use per OpenMM cycle.
-     * @param trajectorySteps Steps per OpenMM cycle.
-     */
-    public void setTrajectorySteps(int trajectorySteps) {
-        molecularDynamics.setIntervalSteps(trajectorySteps);
-    }
-
-    /**
-     * Sets the frequency of writing to the trajectory file.
-     *
-     * @param save Frequency (psec^-1) to write out the trajectory.
-     */
-    public void setSaveFrequency(double save) {
-        this.saveFrequency = save;
     }
 
     /**
@@ -268,6 +266,24 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     }
 
     /**
+     * Sets the frequency of writing to the trajectory file.
+     *
+     * @param save Frequency (psec^-1) to write out the trajectory.
+     */
+    public void setSaveFrequency(double save) {
+        this.saveFrequency = save;
+    }
+
+    /**
+     * Sets the number of steps to use per OpenMM cycle.
+     *
+     * @param trajectorySteps Steps per OpenMM cycle.
+     */
+    public void setTrajectorySteps(int trajectorySteps) {
+        molecularDynamics.setIntervalSteps(trajectorySteps);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -282,49 +298,6 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
                 }
             }
         }
-    }
-
-    /**
-     * <p>getKineticEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getKineticEnergy() {
-        return molecularDynamics.getKineticEnergy();
-    }
-
-    /**
-     * <p>getPotentialEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getPotentialEnergy() {
-        return molecularDynamics.getPotentialEnergy();
-    }
-
-    /**
-     * <p>getTotalEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getTotalEnergy() {
-        return molecularDynamics.getTotalEnergy();
-    }
-
-    /**
-     * <p>getTemperature.</p>
-     *
-     * @return a double.
-     */
-    public double getTemperature() {
-        return molecularDynamics.getTemperature();
-    }
-
-    /**
-     * Functional interface corresponding to constructors of non-composite AnnealingSchedules.
-     */
-    private interface ScheduleConstructor {
-        AnnealingSchedule asConstruct(int nWindows, double tLow, double tHigh);
     }
 
     /**
@@ -343,10 +316,11 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
         /**
          * Creates an AnnealingSchedule corresponding to this enum and provided values.
+         *
          * @param nWindows Number of annealing windows.
          * @param tLow     Final temperature.
          * @param tHigh    Starting temperature.
-         * @return         An AnnealingSchedule.
+         * @return An AnnealingSchedule.
          */
         public AnnealingSchedule generate(int nWindows, double tLow, double tHigh) {
             return sc.asConstruct(nWindows, tLow, tHigh);
@@ -356,7 +330,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
          * Attempt to parse a String to a Schedules in a case-insensitive, alias-recognizing fashion.
          *
          * @param name Name of a schedule.
-         * @return     A Schedules enum.
+         * @return A Schedules enum.
          */
         public static Schedules parse(String name) {
             name = name.toUpperCase();
@@ -366,6 +340,34 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
                 }
             }
             return valueOf(name);
+        }
+    }
+
+    /**
+     * Functional interface corresponding to constructors of non-composite AnnealingSchedules.
+     */
+    private interface ScheduleConstructor {
+        AnnealingSchedule asConstruct(int nWindows, double tLow, double tHigh);
+    }
+
+    private void begin() {
+        logger.info(String.format(" Initial temperature:    %8.3f (Kelvin)", schedule.getHighTemp()));
+        logger.info(String.format(" Final temperature:      %8.3f (Kelvin)", schedule.getLowTemp()));
+        logger.info(String.format(" Annealing steps:        %8d", schedule.getNumWindows()));
+        logger.info(String.format(" MD steps/temperature:   %8d", mdSteps));
+        logger.info(String.format(" MD time step:           %8.3f (fs)", timeStep));
+
+        Thread annealingThread = new Thread(this);
+        annealingThread.start();
+        synchronized (this) {
+            try {
+                while (annealingThread.isAlive()) {
+                    wait(100);
+                }
+            } catch (Exception e) {
+                String message = "Simulated annealing interrupted.";
+                logger.log(Level.WARNING, message, e);
+            }
         }
     }
 }

@@ -37,17 +37,18 @@
 //******************************************************************************
 package ffx.potential.utils;
 
+import java.util.Arrays;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
+
 import com.github.quickhull3d.QuickHull3D;
+
+import org.apache.commons.math3.util.FastMath;
 
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.utilities.Constants;
-import org.apache.commons.math3.util.FastMath;
-
-import java.util.Arrays;
-import java.util.logging.Logger;
-import java.util.stream.IntStream;
 
 /**
  * This ConvexHullOps class uses the QuickHull3D package by John E. Lloyd to
@@ -55,7 +56,7 @@ import java.util.stream.IntStream;
  * that contains all points in a set of points. This is especially useful
  * for max-dist operations, as the most distant points in a set are guaranteed
  * to be part of the convex polyhedron.
- *
+ * <p>
  * The QuickHull3D package website is at quickhull3d.github.io/quickhull3d/
  * The algorithm it uses is described in Barber, Dobkin, and Huhdanpaa,
  * "The Quickhull Algorithm for Convex Hulls" (ACM Transactions on Mathematical
@@ -71,8 +72,9 @@ public class ConvexHullOps {
 
     /**
      * Constructs a convex hull from a MolecularAssembly.
+     *
      * @param ma MolecularAssembly to build a convex hull for.
-     * @return   A QuickHull3D implementation of convex hulls.
+     * @return A QuickHull3D implementation of convex hulls.
      */
     public static QuickHull3D constructHull(MolecularAssembly ma) {
         Atom[] atoms = ma.getAtomArray();
@@ -81,8 +83,9 @@ public class ConvexHullOps {
 
     /**
      * Constructs a convex hull from a set of atoms.
+     *
      * @param atoms Atoms to build a convex hull for.
-     * @return      A QuickHull3D implementation of convex hulls.
+     * @return A QuickHull3D implementation of convex hulls.
      */
     public static QuickHull3D constructHull(Atom[] atoms) {
         int nAts = atoms.length;
@@ -92,7 +95,7 @@ public class ConvexHullOps {
         double[] xyz = new double[nAts * 3];
         for (int i = 0; i < nAts; i++) {
             Atom at = atoms[i];
-            int i3 = 3*i;
+            int i3 = 3 * i;
             xyz[i3] = at.getX();
             xyz[i3 + 1] = at.getY();
             xyz[i3 + 2] = at.getZ();
@@ -101,40 +104,24 @@ public class ConvexHullOps {
     }
 
     /**
-     * Maximum pairwise distance between atoms in an array. Uses either
-     * the convex hull method (> 10 atoms), or a brute-force loop (<= 10 atoms).
+     * UNTESTED: Identifies atoms forming the convex hull.
      *
-     * @param atoms Atoms to check max pairwise distance for.
-     * @return      Max pairwise distance in Angstroms, or 0 (0 or 1 atoms given).
+     * @param qh       A QuickHull3D.
+     * @param allAtoms Atoms used in building the QuickHull3D.
+     * @return Atoms forming the convex hull.
      */
-    public static double maxDist(Atom[] atoms) {
-        int nAts = atoms.length;
-        if (nAts < 2) {
-            return 0;
-        } else if (nAts > 10) {
-            return maxDist(constructHull(atoms));
-        } else {
-            double maxDist = 0;
-            for (int i = 0; i < nAts - 1; i++) {
-                Atom atI = atoms[i];
-                double[] xyzI = new double[3];
-                xyzI = atI.getXYZ(xyzI);
-                for (int j = i+1; j < nAts; j++) {
-                    Atom atJ = atoms[j];
-                    double[] xyzJ = new double[3];
-                    xyzJ = atJ.getXYZ(xyzJ);
-                    double dist = DoubleMath.dist2(xyzI, xyzJ);
-                    maxDist = (dist > maxDist) ? dist : maxDist;
-                }
-            }
-            return Math.sqrt(maxDist);
-        }
+    public static Atom[] identifyHullAtoms(QuickHull3D qh, Atom[] allAtoms) {
+        int[] indices = qh.getVertexPointIndices();
+        return Arrays.stream(indices).
+                mapToObj((int i) -> allAtoms[i]).
+                toArray(Atom[]::new);
     }
 
     /**
      * Find the maximum pairwise distance between vertex points on a convex hull.
+     *
      * @param qh A QuickHull3D object.
-     * @return   Maximum vertex-vertex distance.
+     * @return Maximum vertex-vertex distance.
      */
     public static double maxDist(QuickHull3D qh) {
         long time = -System.nanoTime();
@@ -142,17 +129,17 @@ public class ConvexHullOps {
         if (nVerts < 2) {
             return 0;
         }
-        double[] vertPoints = new double[3*nVerts];
+        double[] vertPoints = new double[3 * nVerts];
         qh.getVertices(vertPoints);
         double maxDist = IntStream.range(0, nVerts).
                 parallel().
                 mapToDouble((int i) -> {
                     double[] xyz = new double[3];
-                    System.arraycopy(vertPoints, 3*i, xyz, 0, 3);
+                    System.arraycopy(vertPoints, 3 * i, xyz, 0, 3);
                     double mij = 0;
                     for (int j = i + 1; j < nVerts; j++) {
                         double[] xyzJ = new double[3];
-                        System.arraycopy(vertPoints, 3*j, xyzJ, 0, 3);
+                        System.arraycopy(vertPoints, 3 * j, xyzJ, 0, 3);
                         double distIJ = DoubleMath.dist2(xyz, xyzJ);
                         mij = Math.max(mij, distIJ);
                     }
@@ -169,15 +156,33 @@ public class ConvexHullOps {
     }
 
     /**
-     * UNTESTED: Identifies atoms forming the convex hull.
-     * @param qh       A QuickHull3D.
-     * @param allAtoms Atoms used in building the QuickHull3D.
-     * @return         Atoms forming the convex hull.
+     * Maximum pairwise distance between atoms in an array. Uses either
+     * the convex hull method (> 10 atoms), or a brute-force loop (<= 10 atoms).
+     *
+     * @param atoms Atoms to check max pairwise distance for.
+     * @return Max pairwise distance in Angstroms, or 0 (0 or 1 atoms given).
      */
-    public static Atom[] identifyHullAtoms(QuickHull3D qh, Atom[] allAtoms) {
-        int[] indices = qh.getVertexPointIndices();
-        return Arrays.stream(indices).
-                mapToObj((int i) -> allAtoms[i]).
-                toArray(Atom[]::new);
+    public static double maxDist(Atom[] atoms) {
+        int nAts = atoms.length;
+        if (nAts < 2) {
+            return 0;
+        } else if (nAts > 10) {
+            return maxDist(constructHull(atoms));
+        } else {
+            double maxDist = 0;
+            for (int i = 0; i < nAts - 1; i++) {
+                Atom atI = atoms[i];
+                double[] xyzI = new double[3];
+                xyzI = atI.getXYZ(xyzI);
+                for (int j = i + 1; j < nAts; j++) {
+                    Atom atJ = atoms[j];
+                    double[] xyzJ = new double[3];
+                    xyzJ = atJ.getXYZ(xyzJ);
+                    double dist = DoubleMath.dist2(xyzI, xyzJ);
+                    maxDist = (dist > maxDist) ? dist : maxDist;
+                }
+            }
+            return Math.sqrt(maxDist);
+        }
     }
 }

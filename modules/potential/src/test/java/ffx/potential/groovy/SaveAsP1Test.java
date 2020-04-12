@@ -46,7 +46,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.SaveAsP1;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
@@ -59,27 +58,17 @@ public class SaveAsP1Test {
     Binding binding;
     SaveAsP1 saveAsP1;
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        saveAsP1 = new SaveAsP1();
-        saveAsP1.setBinding(binding);
-    }
-
     @After
     public void after() {
         saveAsP1.destroyPotentials();
         System.gc();
     }
 
-    @Test
-    public void testSaveAsP1Help() {
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        saveAsP1.run();
+    @Before
+    public void before() {
+        binding = new Binding();
+        saveAsP1 = new SaveAsP1();
+        saveAsP1.setBinding(binding);
     }
 
     @Test
@@ -106,5 +95,15 @@ public class SaveAsP1Test {
             System.out.println(e.toString());
             Assert.fail(" Exception deleting files created by SaveAsP1.");
         }
+    }
+
+    @Test
+    public void testSaveAsP1Help() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"-h"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        saveAsP1.run();
     }
 }

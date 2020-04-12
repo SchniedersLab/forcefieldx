@@ -178,6 +178,17 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
     }
 
     @Override
+    public double firstDerivative(double x) throws IllegalArgumentException {
+        if (x < lbPrimary) {
+            return fdLower(x);
+        } else if (x > ubPrimary) {
+            return fdUpper(x);
+        } else {
+            return primaryFunction.firstDerivative(x);
+        }
+    }
+
+    @Override
     public int getHighestOrderZeroDerivative() {
         return Math.max(Math.max(startSwitch.getHighestOrderZeroDerivative(), endSwitch.getHighestOrderZeroDerivative()), primaryFunction.getHighestOrderZeroDerivative());
     }
@@ -190,27 +201,6 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
     @Override
     public double getZeroBound() {
         return lb;
-    }
-
-    @Override
-    public boolean symmetricToUnity() {
-        return primaryFunction.symmetricToUnity() && startSwitch.equals(endSwitch) && (lbPrimary - lb == ub - ubPrimary);
-    }
-
-    @Override
-    public boolean validOutsideBounds() {
-        return startSwitch.constantOutsideBounds() && endSwitch.constantOutsideBounds();
-    }
-
-    @Override
-    public double firstDerivative(double x) throws IllegalArgumentException {
-        if (x < lbPrimary) {
-            return fdLower(x);
-        } else if (x > ubPrimary) {
-            return fdUpper(x);
-        } else {
-            return primaryFunction.firstDerivative(x);
-        }
     }
 
     @Override
@@ -239,14 +229,8 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
     }
 
     @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        if (x < lbPrimary) {
-            return valLower(x);
-        } else if (x > ubPrimary) {
-            return valUpper(x);
-        } else {
-            return primaryFunction.valueAt(x);
-        }
+    public boolean symmetricToUnity() {
+        return primaryFunction.symmetricToUnity() && startSwitch.equals(endSwitch) && (lbPrimary - lb == ub - ubPrimary);
     }
 
     @Override
@@ -257,6 +241,22 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
         sb.append("\n Start switch:   ").append(startSwitch.toString());
         sb.append("\n End switch:     ").append(endSwitch.toString());
         return sb.toString();
+    }
+
+    @Override
+    public boolean validOutsideBounds() {
+        return startSwitch.constantOutsideBounds() && endSwitch.constantOutsideBounds();
+    }
+
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        if (x < lbPrimary) {
+            return valLower(x);
+        } else if (x > ubPrimary) {
+            return valUpper(x);
+        } else {
+            return primaryFunction.valueAt(x);
+        }
     }
 
     private boolean approxEquals(double x1, double x2) {

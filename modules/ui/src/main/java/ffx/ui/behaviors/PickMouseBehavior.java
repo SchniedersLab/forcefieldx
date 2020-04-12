@@ -100,14 +100,6 @@ public abstract class PickMouseBehavior extends Behavior {
         wakeupOn(wakeupCondition);
     }
 
-    private void processMouseEvent(MouseEvent evt) {
-        buttonPress = evt.getID() == MouseEvent.MOUSE_PRESSED
-                | evt.getID() == MouseEvent.MOUSE_CLICKED
-                | evt.getID() == MouseEvent.MOUSE_RELEASED;
-        controlButton = evt.isControlDown();
-        shiftButton = evt.isShiftDown();
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -152,4 +144,12 @@ public abstract class PickMouseBehavior extends Behavior {
      * @param ypos a int.
      */
     public abstract void updateScene(int xpos, int ypos);
+
+    private void processMouseEvent(MouseEvent evt) {
+        buttonPress = evt.getID() == MouseEvent.MOUSE_PRESSED
+                | evt.getID() == MouseEvent.MOUSE_CLICKED
+                | evt.getID() == MouseEvent.MOUSE_RELEASED;
+        controlButton = evt.isControlDown();
+        shiftButton = evt.isShiftDown();
+    }
 }

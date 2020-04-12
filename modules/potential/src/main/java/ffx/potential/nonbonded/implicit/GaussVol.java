@@ -58,10 +58,10 @@ import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
-import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.math.DoubleMath.length2;
 import static ffx.numerics.math.DoubleMath.scale;
-import static ffx.numerics.math.DoubleMath.add;
+import static ffx.numerics.math.DoubleMath.sub;
 
 /**
  * GaussVol implements a description molecular volume and surface area described by overlapping Gaussian spheres.
@@ -101,26 +101,23 @@ public class GaussVol {
      * -------------------------------------------------------------------------- */
 
     private static final Logger logger = Logger.getLogger(GaussVol.class.getName());
-
+    /**
+     * Finite-Difference step size to compute surface area.
+     */
+    private static final double offset = 0.00005;
     /**
      * Conversion factors from spheres to Gaussians.
      */
     private static double KFC = 2.2269859253;
     private static double PFC = 2.5;
-
     /**
      * Set this to either KFC or PFC.
      */
     private static double sphereConversion = KFC;
-
     /**
      * Maximum overlap level.
      */
     private static int MAX_ORDER = 16;
-    /**
-     * Finite-Difference step size to compute surface area.
-     */
-    private static final double offset = 0.00005;
     /**
      * Volume cutoffs for the switching function (A^3).
      */
@@ -138,7 +135,15 @@ public class GaussVol {
      */
     private static double MIN_GVOL = Double.MIN_VALUE;
     // private static double MIN_GVOL = 1.0e-12;
-
+    // Output Variables
+    private final GaussVolRegion gaussVolRegion;
+    private final AtomicDoubleArray3D grad;
+    private final SharedDouble totalVolume;
+    private final SharedDouble energy;
+    private final AtomicDoubleArray gradV;
+    private final AtomicDoubleArray freeVolume;
+    private final AtomicDoubleArray selfVolume;
+    private final ParallelTeam parallelTeam;
     /**
      * Number of atoms.
      */
@@ -198,16 +203,6 @@ public class GaussVol {
      */
     private double[] surfaceAreaGradient;
 
-    // Output Variables
-    private final GaussVolRegion gaussVolRegion;
-    private final AtomicDoubleArray3D grad;
-    private final SharedDouble totalVolume;
-    private final SharedDouble energy;
-    private final AtomicDoubleArray gradV;
-    private final AtomicDoubleArray freeVolume;
-    private final AtomicDoubleArray selfVolume;
-    private final ParallelTeam parallelTeam;
-
     /**
      * Creates/Initializes a GaussVol instance.
      *
@@ -257,98 +252,6 @@ public class GaussVol {
         gradV = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
         freeVolume = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
         selfVolume = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
-    }
-
-    /**
-     * Return Volume (A^3).
-     *
-     * @return Volume (A^3).
-     */
-    public double getVolume() {
-        return volume;
-    }
-
-    /**
-     * Return Surface Area (A^2).
-     *
-     * @return Surface Area (A^2).
-     */
-    public double getSurfaceArea() {
-        return surfaceArea;
-    }
-
-    /**
-     * Returns the maximum depth of the overlap tree
-     *
-     * @return maximumDepth
-     */
-    public int getMaximumDepth() {
-        return maximumDepth;
-    }
-
-    /**
-     * Return the total number of overlaps in the tree
-     *
-     * @return totalNumberOfOverlaps
-     */
-    public int getTotalNumberOfOverlaps() {
-        return totalNumberOfOverlaps;
-    }
-
-    /**
-     * Set the isHydrogen flag.
-     *
-     * @param isHydrogen Per atom flag to indicate if its a hydrogen.
-     * @throws Exception If the array length does not match the number of atoms.
-     */
-    public void setIsHydrogen(boolean[] isHydrogen) throws Exception {
-        if (nAtoms == isHydrogen.length) {
-            this.ishydrogen = isHydrogen;
-        } else {
-            throw new Exception(" setIsHydrogen: number of atoms does not match");
-        }
-    }
-
-    /**
-     * Set radii and volumes.
-     *
-     * @param radii   Atomic radii (Angstroms).
-     * @param volumes Atomic volumes (Angstroms^3).
-     * @throws Exception If the array length does not match the number of atoms.
-     */
-    public void setRadiiAndVolumes(double[] radii, double[] volumes) throws Exception {
-        if (nAtoms == radii.length) {
-            this.radii = radii;
-            radiiOffset = new double[nAtoms];
-            volumeOffset = new double[nAtoms];
-            double fourThirdsPI = 4.0 / 3.0 * PI;
-            for (int i = 0; i < nAtoms; i++) {
-                radiiOffset[i] = radii[i] + offset;
-                volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
-            }
-        } else {
-            throw new Exception(" setRadii: number of atoms does not match");
-        }
-
-        if (nAtoms == volumes.length) {
-            this.volumes = volumes;
-        } else {
-            throw new Exception(" setVolumes: number of atoms does not match");
-        }
-    }
-
-    /**
-     * Set gamma values.
-     *
-     * @param gammas Gamma values (kcal/mol/A^2).
-     * @throws Exception If the array length does not match the number of atoms.
-     */
-    public void setGammas(double[] gammas) throws Exception {
-        if (nAtoms == gammas.length) {
-            this.gammas = gammas;
-        } else {
-            throw new Exception(" setGammas: number of atoms does not match");
-        }
     }
 
     /**
@@ -459,8 +362,22 @@ public class GaussVol {
         return volume;
     }
 
-    public double[] getVolumeGradient() {
-        return volumeGradient;
+    /**
+     * Returns the maximum depth of the overlap tree
+     *
+     * @return maximumDepth
+     */
+    public int getMaximumDepth() {
+        return maximumDepth;
+    }
+
+    /**
+     * Return Surface Area (A^2).
+     *
+     * @return Surface Area (A^2).
+     */
+    public double getSurfaceArea() {
+        return surfaceArea;
     }
 
     public double[] getSurfaceAreaGradient() {
@@ -468,88 +385,175 @@ public class GaussVol {
     }
 
     /**
-     * Constructs the tree.
+     * Return the total number of overlaps in the tree
      *
-     * @param positions Current atomic positions.
+     * @return totalNumberOfOverlaps
      */
-    private void computeTree(double[][] positions) {
-        tree.computeOverlapTreeR(positions, radii, volumes, gammas, ishydrogen);
+    public int getTotalNumberOfOverlaps() {
+        return totalNumberOfOverlaps;
     }
 
     /**
-     * Returns GaussVol volume energy function and forces.
-     * Also returns gradients with respect to atomic volumes and atomic free-volumes and self-volumes.
+     * Return Volume (A^3).
      *
-     * @param totalVolume Total volume.
-     * @param totalEnergy Total energy.
-     * @param grad        Atomic gradient.
-     * @param gradV       Volume gradient.
-     * @param freeVolume  Free volume.
-     * @param selfVolume  Self volume.
+     * @return Volume (A^3).
      */
-    private void computeVolume(SharedDouble totalVolume, SharedDouble totalEnergy, AtomicDoubleArray3D grad,
-                               AtomicDoubleArray gradV, AtomicDoubleArray freeVolume, AtomicDoubleArray selfVolume) {
-        // Initialize output variables.
-        totalVolume.set(0.0);
-        totalEnergy.set(0.0);
-        grad.reset(0, 0, nAtoms - 1);
-        gradV.reset(0, 0, nAtoms - 1);
-        freeVolume.reset(0, 0, nAtoms - 1);
-        selfVolume.reset(0, 0, nAtoms - 1);
+    public double getVolume() {
+        return volume;
+    }
 
-        // Compute the volume.
-        tree.computeVolume2R(totalVolume, totalEnergy, grad, gradV, freeVolume, selfVolume);
+    public double[] getVolumeGradient() {
+        return volumeGradient;
+    }
 
-        // Reduce output variables.
-        grad.reduce(0, nAtoms - 1);
-        gradV.reduce(0, nAtoms - 1);
-        freeVolume.reduce(0, nAtoms - 1);
-        selfVolume.reduce(0, nAtoms - 1);
+    /**
+     * Set gamma values.
+     *
+     * @param gammas Gamma values (kcal/mol/A^2).
+     * @throws Exception If the array length does not match the number of atoms.
+     */
+    public void setGammas(double[] gammas) throws Exception {
+        if (nAtoms == gammas.length) {
+            this.gammas = gammas;
+        } else {
+            throw new Exception(" setGammas: number of atoms does not match");
+        }
+    }
 
-        for (int i = 0; i < nAtoms; ++i) {
-            if (volumes[i] > 0) {
-                gradV.set(0, i, gradV.get(i) / volumes[i]);
+    /**
+     * Set the isHydrogen flag.
+     *
+     * @param isHydrogen Per atom flag to indicate if its a hydrogen.
+     * @throws Exception If the array length does not match the number of atoms.
+     */
+    public void setIsHydrogen(boolean[] isHydrogen) throws Exception {
+        if (nAtoms == isHydrogen.length) {
+            this.ishydrogen = isHydrogen;
+        } else {
+            throw new Exception(" setIsHydrogen: number of atoms does not match");
+        }
+    }
+
+    /**
+     * Set radii and volumes.
+     *
+     * @param radii   Atomic radii (Angstroms).
+     * @param volumes Atomic volumes (Angstroms^3).
+     * @throws Exception If the array length does not match the number of atoms.
+     */
+    public void setRadiiAndVolumes(double[] radii, double[] volumes) throws Exception {
+        if (nAtoms == radii.length) {
+            this.radii = radii;
+            radiiOffset = new double[nAtoms];
+            volumeOffset = new double[nAtoms];
+            double fourThirdsPI = 4.0 / 3.0 * PI;
+            for (int i = 0; i < nAtoms; i++) {
+                radiiOffset[i] = radii[i] + offset;
+                volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
             }
+        } else {
+            throw new Exception(" setRadii: number of atoms does not match");
+        }
+
+        if (nAtoms == volumes.length) {
+            this.volumes = volumes;
+        } else {
+            throw new Exception(" setVolumes: number of atoms does not match");
         }
     }
 
     /**
-     * Rescan the tree after resetting gammas, radii and volumes.
+     * Overlap between two Gaussians represented by a (V,c,a) triplet
+     * <p>
+     * V: volume of Gaussian
+     * c: position of Gaussian
+     * a: exponential coefficient
+     * <p>
+     * g(x) = V (a/pi)^(3/2) exp(-a(x-c)^2)
+     * <p>
+     * this version is based on V=V(V1,V2,r1,r2,alpha)
+     * alpha = (a1 + a2)/(a1 a2)
+     * <p>
+     * dVdr is (1/r)*(dV12/dr)
+     * dVdV is dV12/dV1
+     * dVdalpha is dV12/dalpha
+     * d2Vdalphadr is (1/r)*d^2V12/dalpha dr
+     * d2VdVdr is (1/r) d^2V12/dV1 dr
      *
-     * @param positions Atomic coordinates.
+     * @param g1   Gaussian 1.
+     * @param g2   Gaussian 2.
+     * @param g12  Overlap Gaussian.
+     * @param dVdr is (1/r)*(dV12/dr)
+     * @param dVdV is dV12/dV1
+     * @param sfp  Derivative of volume.
+     * @return Volume.
      */
-    private void rescanTreeVolumes(double[][] positions) {
-        tree.rescanTreeV(positions, radii, volumes, gammas, ishydrogen);
+    private static double overlapGaussianAlpha(GaussianVca g1, GaussianVca g2, GaussianVca g12,
+                                               double[] dVdr, double[] dVdV, double[] sfp) {
+        double[] c1 = g1.c;
+        double[] c2 = g2.c;
+        double[] dist = new double[3];
+
+        sub(c2, c1, dist);
+        double d2 = length2(dist);
+        double a12 = g1.a + g2.a;
+        double deltai = 1.0 / a12;
+
+        // 1/alpha
+        double df = (g1.a) * (g2.a) * deltai;
+        double ef = exp(-df * d2);
+        double gvol = ((g1.v * g2.v) / pow(PI / df, 1.5)) * ef;
+
+        // (1/r)*(dV/dr) w/o switching function
+        double dgvol = -2.0 * df * gvol;
+        dVdr[0] = dgvol;
+
+        // (1/r)*(dV/dr) w/o switching function
+        double dgvolv = g1.v > 0.0 ? gvol / g1.v : 0.0;
+        dVdV[0] = dgvolv;
+
+        // Parameters for overlap gaussian.
+        // Note that c1 and c2 are Vec3's, and the "*" operator wants the vector first and scalar second:
+        // vector2 = vector1 * scalar
+        // g12.c = ((c1 * g1.a) + (c2 * g2.a)) * deltai;
+        double[] c1a = new double[3];
+        double[] c2a = new double[3];
+        scale(c1, g1.a * deltai, c1a);
+        scale(c2, g2.a * deltai, c2a);
+        add(c1a, c2a, g12.c);
+        g12.a = a12;
+        g12.v = gvol;
+
+        // Switching function
+        double[] sp = new double[1];
+        double s = switchingFunction(gvol, VOLMINA, VOLMINB, sp);
+        sfp[0] = sp[0] * gvol + s;
+        return s * gvol;
     }
 
     /**
-     * Rescan the tree resetting gammas only with current values.
-     */
-    private void rescanTreeGammas() {
-        tree.rescanTreeG(gammas);
-    }
-
-    /**
-     * Returns number of overlaps for each atom.
+     * Overlap volume switching function and 1st derivative.
      *
-     * @param nov Number of overlaps.
+     * @param gvol    Gaussian volume.
+     * @param volmina Volume is zero below this limit.
+     * @param volminb Volume is not switched above this limit.
+     * @param sp      Switch first derivative.
+     * @return Switch value.
      */
-    private void getStats(int[] nov) {
-        if (nov.length != nAtoms) return;
-
-        for (int i = 0; i < nAtoms; i++) nov[i] = 0;
-        for (int atom = 0; atom < nAtoms; atom++) {
-            int slot = atom + 1;
-            nov[atom] = tree.nChildrenUnderSlotR(slot);
+    private static double switchingFunction(double gvol, double volmina, double volminb, double[] sp) {
+        if (gvol > volminb) {
+            sp[0] = 0.0;
+            return 1.0;
+        } else if (gvol < volmina) {
+            sp[0] = 0.0;
+            return 0.0;
         }
-
-    }
-
-    /**
-     * Print the tree.
-     */
-    private void printTree() {
-        tree.printTree();
+        double swd = 1.0 / (volminb - volmina);
+        double swu = (gvol - volmina) * swd;
+        double swu2 = swu * swu;
+        double swu3 = swu * swu2;
+        sp[0] = swd * 30.0 * swu2 * (1.0 - 2.0 * swu + swu2);
+        return swu3 * (10.0 - 15.0 * swu + 6.0 * swu2);
     }
 
     /**
@@ -594,6 +598,10 @@ public class GaussVol {
          */
         public double volume;
         /**
+         * The atomic index of the last atom of the overlap list (i, j, k, ..., atom)
+         */
+        public int atom;
+        /**
          * Derivative wrt volume of first atom (also stores F1..i in GPU version)
          */
         double dvv1;
@@ -613,10 +621,6 @@ public class GaussVol {
          * Switching function derivatives
          */
         double sfp;
-        /**
-         * The atomic index of the last atom of the overlap list (i, j, k, ..., atom)
-         */
-        public int atom;
         /**
          * = (Parent, atom)
          * index in tree list of parent overlap
@@ -646,17 +650,6 @@ public class GaussVol {
         }
 
         /**
-         * Print overlaps.
-         */
-        public void printOverlap() {
-            logger.info(format(" Gaussian Overlap %d: Atom: %d, Parent: %d, ChildrenStartIndex: %d, ChildrenCount: %d," +
-                            "Volume: %6.3f, Gamma: %6.3f, Gauss.a: %6.3f, Gauss.v: %6.3f, Gauss.center (%6.3f,%6.3f,%6.3f)," +
-                            "dedx: %6.3f, dedy: %6.3f, dedz: %6.3f, sfp: %6.3f",
-                    level, atom, parentIndex, childrenStartIndex, childrenCount, volume, gamma1i, g.a, g.v,
-                    g.c[0], g.c[1], g.c[2], dv1[0], dv1[1], dv1[2], sfp));
-        }
-
-        /**
          * Order by volume, larger first.
          *
          * @param o GaussianOverlap to compare to.
@@ -665,6 +658,17 @@ public class GaussVol {
         @Override
         public int compareTo(GaussianOverlap o) {
             return compare(volume, o.volume);
+        }
+
+        /**
+         * Print overlaps.
+         */
+        public void printOverlap() {
+            logger.info(format(" Gaussian Overlap %d: Atom: %d, Parent: %d, ChildrenStartIndex: %d, ChildrenCount: %d," +
+                            "Volume: %6.3f, Gamma: %6.3f, Gauss.a: %6.3f, Gauss.v: %6.3f, Gauss.center (%6.3f,%6.3f,%6.3f)," +
+                            "dedx: %6.3f, dedy: %6.3f, dedz: %6.3f, sfp: %6.3f",
+                    level, atom, parentIndex, childrenStartIndex, childrenCount, volume, gamma1i, g.a, g.v,
+                    g.c[0], g.c[1], g.c[2], dv1[0], dv1[1], dv1[2], sfp));
         }
     }
 
@@ -1271,100 +1275,6 @@ public class GaussVol {
     }
 
     /**
-     * Overlap volume switching function and 1st derivative.
-     *
-     * @param gvol    Gaussian volume.
-     * @param volmina Volume is zero below this limit.
-     * @param volminb Volume is not switched above this limit.
-     * @param sp      Switch first derivative.
-     * @return Switch value.
-     */
-    private static double switchingFunction(double gvol, double volmina, double volminb, double[] sp) {
-        if (gvol > volminb) {
-            sp[0] = 0.0;
-            return 1.0;
-        } else if (gvol < volmina) {
-            sp[0] = 0.0;
-            return 0.0;
-        }
-        double swd = 1.0 / (volminb - volmina);
-        double swu = (gvol - volmina) * swd;
-        double swu2 = swu * swu;
-        double swu3 = swu * swu2;
-        sp[0] = swd * 30.0 * swu2 * (1.0 - 2.0 * swu + swu2);
-        return swu3 * (10.0 - 15.0 * swu + 6.0 * swu2);
-    }
-
-    /**
-     * Overlap between two Gaussians represented by a (V,c,a) triplet
-     * <p>
-     * V: volume of Gaussian
-     * c: position of Gaussian
-     * a: exponential coefficient
-     * <p>
-     * g(x) = V (a/pi)^(3/2) exp(-a(x-c)^2)
-     * <p>
-     * this version is based on V=V(V1,V2,r1,r2,alpha)
-     * alpha = (a1 + a2)/(a1 a2)
-     * <p>
-     * dVdr is (1/r)*(dV12/dr)
-     * dVdV is dV12/dV1
-     * dVdalpha is dV12/dalpha
-     * d2Vdalphadr is (1/r)*d^2V12/dalpha dr
-     * d2VdVdr is (1/r) d^2V12/dV1 dr
-     *
-     * @param g1   Gaussian 1.
-     * @param g2   Gaussian 2.
-     * @param g12  Overlap Gaussian.
-     * @param dVdr is (1/r)*(dV12/dr)
-     * @param dVdV is dV12/dV1
-     * @param sfp  Derivative of volume.
-     * @return Volume.
-     */
-    private static double overlapGaussianAlpha(GaussianVca g1, GaussianVca g2, GaussianVca g12,
-                                               double[] dVdr, double[] dVdV, double[] sfp) {
-        double[] c1 = g1.c;
-        double[] c2 = g2.c;
-        double[] dist = new double[3];
-
-        sub(c2, c1, dist);
-        double d2 = length2(dist);
-        double a12 = g1.a + g2.a;
-        double deltai = 1.0 / a12;
-
-        // 1/alpha
-        double df = (g1.a) * (g2.a) * deltai;
-        double ef = exp(-df * d2);
-        double gvol = ((g1.v * g2.v) / pow(PI / df, 1.5)) * ef;
-
-        // (1/r)*(dV/dr) w/o switching function
-        double dgvol = -2.0 * df * gvol;
-        dVdr[0] = dgvol;
-
-        // (1/r)*(dV/dr) w/o switching function
-        double dgvolv = g1.v > 0.0 ? gvol / g1.v : 0.0;
-        dVdV[0] = dgvolv;
-
-        // Parameters for overlap gaussian.
-        // Note that c1 and c2 are Vec3's, and the "*" operator wants the vector first and scalar second:
-        // vector2 = vector1 * scalar
-        // g12.c = ((c1 * g1.a) + (c2 * g2.a)) * deltai;
-        double[] c1a = new double[3];
-        double[] c2a = new double[3];
-        scale(c1, g1.a * deltai, c1a);
-        scale(c2, g2.a * deltai, c2a);
-        add(c1a, c2a, g12.c);
-        g12.a = a12;
-        g12.v = gvol;
-
-        // Switching function
-        double[] sp = new double[1];
-        double s = switchingFunction(gvol, VOLMINA, VOLMINB, sp);
-        sfp[0] = sp[0] * gvol + s;
-        return s * gvol;
-    }
-
-    /**
      * Use instances of the GaussianOverlapTree to compute the GaussVol volume in parallel.
      */
     private class GaussVolRegion extends ParallelRegion {
@@ -1437,17 +1347,17 @@ public class GaussVol {
          */
         private class ComputeTreeLoop extends IntegerForLoop {
             @Override
-            public void start() {
-                localTree[getThreadIndex()].initOverlapTree(coordinates, radii, volumes, gammas, ishydrogen);
-            }
-
-            @Override
             public void run(int first, int last) throws Exception {
                 // Compute the overlaps for a subset of atoms.
                 int threadIndex = getThreadIndex();
                 for (int slot = first; slot <= last; slot++) {
                     localTree[threadIndex].computeAndAddChildrenR(slot);
                 }
+            }
+
+            @Override
+            public void start() {
+                localTree[getThreadIndex()].initOverlapTree(coordinates, radii, volumes, gammas, ishydrogen);
             }
         }
 
@@ -1484,17 +1394,17 @@ public class GaussVol {
          */
         private class RescanTreeLoop extends IntegerForLoop {
             @Override
-            public void start() {
-                localTree[getThreadIndex()].initRescanTreeV(coordinates, radii, volumes, gammas, ishydrogen);
-            }
-
-            @Override
             public void run(int first, int last) throws Exception {
                 // Compute the overlaps for a subset of atoms.
                 int threadIndex = getThreadIndex();
                 for (int slot = first; slot <= last; slot++) {
                     localTree[threadIndex].rescanR(slot);
                 }
+            }
+
+            @Override
+            public void start() {
+                localTree[getThreadIndex()].initRescanTreeV(coordinates, radii, volumes, gammas, ishydrogen);
             }
         }
 
@@ -1503,11 +1413,6 @@ public class GaussVol {
          */
         private class ReductionLoop extends IntegerForLoop {
             int threadID;
-
-            @Override
-            public void start() {
-                threadID = getThreadIndex();
-            }
 
             @Override
             public void run(int lb, int ub) {
@@ -1521,7 +1426,97 @@ public class GaussVol {
                     }
                 }
             }
+
+            @Override
+            public void start() {
+                threadID = getThreadIndex();
+            }
         }
+    }
+
+    /**
+     * Constructs the tree.
+     *
+     * @param positions Current atomic positions.
+     */
+    private void computeTree(double[][] positions) {
+        tree.computeOverlapTreeR(positions, radii, volumes, gammas, ishydrogen);
+    }
+
+    /**
+     * Returns GaussVol volume energy function and forces.
+     * Also returns gradients with respect to atomic volumes and atomic free-volumes and self-volumes.
+     *
+     * @param totalVolume Total volume.
+     * @param totalEnergy Total energy.
+     * @param grad        Atomic gradient.
+     * @param gradV       Volume gradient.
+     * @param freeVolume  Free volume.
+     * @param selfVolume  Self volume.
+     */
+    private void computeVolume(SharedDouble totalVolume, SharedDouble totalEnergy, AtomicDoubleArray3D grad,
+                               AtomicDoubleArray gradV, AtomicDoubleArray freeVolume, AtomicDoubleArray selfVolume) {
+        // Initialize output variables.
+        totalVolume.set(0.0);
+        totalEnergy.set(0.0);
+        grad.reset(0, 0, nAtoms - 1);
+        gradV.reset(0, 0, nAtoms - 1);
+        freeVolume.reset(0, 0, nAtoms - 1);
+        selfVolume.reset(0, 0, nAtoms - 1);
+
+        // Compute the volume.
+        tree.computeVolume2R(totalVolume, totalEnergy, grad, gradV, freeVolume, selfVolume);
+
+        // Reduce output variables.
+        grad.reduce(0, nAtoms - 1);
+        gradV.reduce(0, nAtoms - 1);
+        freeVolume.reduce(0, nAtoms - 1);
+        selfVolume.reduce(0, nAtoms - 1);
+
+        for (int i = 0; i < nAtoms; ++i) {
+            if (volumes[i] > 0) {
+                gradV.set(0, i, gradV.get(i) / volumes[i]);
+            }
+        }
+    }
+
+    /**
+     * Rescan the tree after resetting gammas, radii and volumes.
+     *
+     * @param positions Atomic coordinates.
+     */
+    private void rescanTreeVolumes(double[][] positions) {
+        tree.rescanTreeV(positions, radii, volumes, gammas, ishydrogen);
+    }
+
+    /**
+     * Rescan the tree resetting gammas only with current values.
+     */
+    private void rescanTreeGammas() {
+        tree.rescanTreeG(gammas);
+    }
+
+    /**
+     * Returns number of overlaps for each atom.
+     *
+     * @param nov Number of overlaps.
+     */
+    private void getStats(int[] nov) {
+        if (nov.length != nAtoms) return;
+
+        for (int i = 0; i < nAtoms; i++) nov[i] = 0;
+        for (int atom = 0; atom < nAtoms; atom++) {
+            int slot = atom + 1;
+            nov[atom] = tree.nChildrenUnderSlotR(slot);
+        }
+
+    }
+
+    /**
+     * Print the tree.
+     */
+    private void printTree() {
+        tree.printTree();
     }
 
 }

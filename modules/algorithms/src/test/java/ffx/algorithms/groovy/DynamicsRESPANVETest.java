@@ -60,17 +60,34 @@ import groovy.lang.Binding;
 @RunWith(Parameterized.class)
 public class DynamicsRESPANVETest extends PJDependentTest {
 
+    private static final Logger logger = Logger.getLogger(DynamicsRESPANVETest.class.getName());
     private String info;
     private String filename;
     private double startingTotalEnergy;
-
     // Tight tolerance on energy conservation.
     private double tolerance = 0.01;
-
     private Binding binding;
     private Dynamics dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsRESPANVETest.class.getName());
+    public DynamicsRESPANVETest(String info, String filename, double startingTotalEnergy) {
+
+        this.info = info;
+        this.filename = filename;
+        this.startingTotalEnergy = startingTotalEnergy;
+    }
+
+    @After
+    public void after() {
+        dynamics.destroyPotentials();
+        System.gc();
+    }
+
+    @Before
+    public void before() {
+        binding = new Binding();
+        dynamics = new Dynamics();
+        dynamics.setBinding(binding);
+    }
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -82,26 +99,6 @@ public class DynamicsRESPANVETest extends PJDependentTest {
                 }
         });
 
-    }
-
-    public DynamicsRESPANVETest(String info, String filename, double startingTotalEnergy) {
-
-        this.info = info;
-        this.filename = filename;
-        this.startingTotalEnergy = startingTotalEnergy;
-    }
-
-    @Before
-    public void before() {
-        binding = new Binding();
-        dynamics = new Dynamics();
-        dynamics.setBinding(binding);
-    }
-
-    @After
-    public void after() {
-        dynamics.destroyPotentials();
-        System.gc();
     }
 
     @Test

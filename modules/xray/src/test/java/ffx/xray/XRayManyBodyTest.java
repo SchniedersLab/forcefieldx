@@ -64,31 +64,17 @@ public class XRayManyBodyTest extends PJDependentTest {
     private Binding binding;
     private ManyBody manyBody;
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        manyBody = new ManyBody();
-        manyBody.setBinding(binding);
-    }
-
     @After
     public void after() {
         manyBody.destroyPotentials();
         System.gc();
     }
 
-    @Test
-    public void testManyBodyHelp() {
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        try {
-            manyBody.run();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+    @Before
+    public void before() {
+        binding = new Binding();
+        manyBody = new ManyBody();
+        manyBody.setBinding(binding);
     }
 
     @Test
@@ -130,5 +116,19 @@ public class XRayManyBodyTest extends PJDependentTest {
         }
 
         manyBody.getManyBody().getRestartFile().delete();
+    }
+
+    @Test
+    public void testManyBodyHelp() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"-h"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        try {
+            manyBody.run();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 }

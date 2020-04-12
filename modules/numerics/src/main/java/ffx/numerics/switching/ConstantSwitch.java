@@ -79,6 +79,14 @@ public class ConstantSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
+    public double firstDerivative(double x) {
+        return 0.0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public int getHighestOrderZeroDerivative() {
         return 1;
     }
@@ -97,30 +105,6 @@ public class ConstantSwitch implements UnivariateSwitchingFunction {
     @Override
     public double getZeroBound() {
         return Double.NaN;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean symmetricToUnity() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double firstDerivative(double x) {
-        return 0.0;
     }
 
     /**
@@ -148,12 +132,28 @@ public class ConstantSwitch implements UnivariateSwitchingFunction {
      * {@inheritDoc}
      */
     @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        return val;
+    public boolean symmetricToUnity() {
+        return true;
     }
 
     @Override
     public String toString() {
         return format("Constant-value f(x) = %f, with no switching behavior (i.e. a dummy switch)", val);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean validOutsideBounds() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        return val;
     }
 }

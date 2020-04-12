@@ -59,15 +59,6 @@ public final class AtomType extends BaseType implements Comparator<String> {
      * A Logger for the AngleType class.
      */
     private static final Logger logger = Logger.getLogger(AtomType.class.getName());
-
-    /**
-     * Atom type.
-     */
-    public int type;
-    /**
-     * Atom class.
-     */
-    public int atomClass;
     /**
      * Short name (ie CH3/CH2 etc).
      */
@@ -90,6 +81,14 @@ public final class AtomType extends BaseType implements Comparator<String> {
      * Valence number for this type.
      */
     public final int valence;
+    /**
+     * Atom type.
+     */
+    public int type;
+    /**
+     * Atom class.
+     */
+    public int atomClass;
 
     /**
      * AtomType Constructor.
@@ -115,16 +114,32 @@ public final class AtomType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>
-     * incrementClassAndType</p>
-     *
-     * @param classIncrement a int.
-     * @param typeIncrement  a int.
+     * {@inheritDoc}
      */
-    void incrementClassAndType(int classIncrement, int typeIncrement) {
-        atomClass += classIncrement;
-        type += typeIncrement;
-        setKey(Integer.toString(type));
+    @Override
+    public int compare(String s1, String s2) {
+        int t1 = parseInt(s1);
+        int t2 = parseInt(s2);
+        return Integer.compare(t1, t2);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AtomType atomType = (AtomType) o;
+        return atomType.type == this.type;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(type);
     }
 
     /**
@@ -212,31 +227,15 @@ public final class AtomType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * {@inheritDoc}
+     * <p>
+     * incrementClassAndType</p>
+     *
+     * @param classIncrement a int.
+     * @param typeIncrement  a int.
      */
-    @Override
-    public int compare(String s1, String s2) {
-        int t1 = parseInt(s1);
-        int t2 = parseInt(s2);
-        return Integer.compare(t1, t2);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        AtomType atomType = (AtomType) o;
-        return atomType.type == this.type;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(type);
+    void incrementClassAndType(int classIncrement, int typeIncrement) {
+        atomClass += classIncrement;
+        type += typeIncrement;
+        setKey(Integer.toString(type));
     }
 }

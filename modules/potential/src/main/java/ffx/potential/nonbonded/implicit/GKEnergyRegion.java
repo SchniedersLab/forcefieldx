@@ -69,8 +69,8 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import static ffx.utilities.Constants.dWater;
 import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
+import static ffx.utilities.Constants.dWater;
 
 /**
  * Parallel calculation of the Generalized Kirkwood reaction field energy.
@@ -81,7 +81,49 @@ import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 public class GKEnergyRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(GKEnergyRegion.class.getName());
-
+    /**
+     * Constant factor used with quadrupoles.
+     */
+    private static final double oneThird = 1.0 / 3.0;
+    /**
+     * Conversion from electron**2/Ang to kcal/mole.
+     */
+    public final double electric;
+    /**
+     * Treatment of polarization.
+     */
+    private final Polarization polarization;
+    private final NonPolar nonPolar;
+    /**
+     * Dielectric offset from:
+     * <p>
+     * W. C. Still, A. Tempczyk, R. C. Hawley and T. Hendrickson, "A Semianalytical Treatment of Solvation for Molecular
+     * Mechanics and Dynamics", J. Amer. Chem. Soc., 112, 6127-6129 (1990)
+     */
+    private final double dOffset = 0.09;
+    /**
+     * Cavitation surface tension coefficient (kcal/mol/A^2).
+     */
+    private final double surfaceTension;
+    /**
+     * Empirical constant that controls the GK cross-term.
+     */
+    private final double gkc;
+    /**
+     * Kirkwood monopole reaction field constant.
+     */
+    private final double fc;
+    /**
+     * Kirkwood dipole reaction field constant.
+     */
+    private final double fd;
+    /**
+     * Kirkwood quadrupole reaction field constant.
+     */
+    private final double fq;
+    private final SharedDouble sharedGKEnergy;
+    private final SharedInteger sharedInteractions;
+    private final GKEnergyLoop[] gkEnergyLoop;
     /**
      * An ordered array of atoms in the system.
      */
@@ -126,7 +168,6 @@ public class GKEnergyRegion extends ParallelRegion {
      * Born radius of each atom.
      */
     private double[] born;
-
     private boolean gradient = false;
     /**
      * Atomic 3D Gradient array.
@@ -140,50 +181,10 @@ public class GKEnergyRegion extends ParallelRegion {
      * Shared array for computation of Born radii gradient.
      */
     private AtomicDoubleArray sharedBornGrad;
-
-    /**
-     * Treatment of polarization.
-     */
-    private final Polarization polarization;
-    private final NonPolar nonPolar;
     /**
      * Water probe radius.
      */
     private double probe;
-    /**
-     * Dielectric offset from:
-     * <p>
-     * W. C. Still, A. Tempczyk, R. C. Hawley and T. Hendrickson, "A Semianalytical Treatment of Solvation for Molecular
-     * Mechanics and Dynamics", J. Amer. Chem. Soc., 112, 6127-6129 (1990)
-     */
-    private final double dOffset = 0.09;
-    /**
-     * Cavitation surface tension coefficient (kcal/mol/A^2).
-     */
-    private final double surfaceTension;
-    /**
-     * Conversion from electron**2/Ang to kcal/mole.
-     */
-    public final double electric;
-    /**
-     * Empirical constant that controls the GK cross-term.
-     */
-    private final double gkc;
-    /**
-     * Kirkwood monopole reaction field constant.
-     */
-    private final double fc;
-    /**
-     * Kirkwood dipole reaction field constant.
-     */
-    private final double fd;
-    /**
-     * Kirkwood quadrupole reaction field constant.
-     */
-    private final double fq;
-    private final SharedDouble sharedGKEnergy;
-    private final SharedInteger sharedInteractions;
-    private final GKEnergyLoop[] gkEnergyLoop;
 
     public GKEnergyRegion(int nt, ForceField forceField, Polarization polarization,
                           NonPolar nonPolar, double surfaceTension, double probe) {
@@ -212,6 +213,14 @@ public class GKEnergyRegion extends ParallelRegion {
         sharedInteractions = new SharedInteger();
     }
 
+    public double getEnergy() {
+        return sharedGKEnergy.get();
+    }
+
+    public int getInteractions() {
+        return sharedInteractions.get();
+    }
+
     public void init(Atom[] atoms, double[][][] globalMultipole, double[][][] inducedDipole, double[][][] inducedDipoleCR,
                      Crystal crystal, double[][][] sXYZ, int[][][] neighborLists, boolean[] use, double cut2,
                      double[] baseRadius, double[] born, boolean gradient,
@@ -235,20 +244,6 @@ public class GKEnergyRegion extends ParallelRegion {
         this.sharedBornGrad = sharedBornGrad;
     }
 
-    public double getEnergy() {
-        return sharedGKEnergy.get();
-    }
-
-    public int getInteractions() {
-        return sharedInteractions.get();
-    }
-
-    @Override
-    public void start() {
-        sharedGKEnergy.set(0.0);
-        sharedInteractions.set(0);
-    }
-
     @Override
     public void run() {
         try {
@@ -260,6 +255,12 @@ public class GKEnergyRegion extends ParallelRegion {
             String message = "Fatal exception computing GK Energy in thread " + getThreadIndex() + "\n";
             logger.log(Level.SEVERE, message, e);
         }
+    }
+
+    @Override
+    public void start() {
+        sharedGKEnergy.set(0.0);
+        sharedInteractions.set(0);
     }
 
     /**
@@ -319,15 +320,10 @@ public class GKEnergyRegion extends ParallelRegion {
             transOp = new double[3][3];
         }
 
-        public void setGradient(boolean gradient) {
-            this.gradient = gradient;
-        }
-
         @Override
-        public void start() {
-            gkEnergy = 0.0;
-            count = 0;
-            threadID = getThreadIndex();
+        public void finish() {
+            sharedInteractions.addAndGet(count);
+            sharedGKEnergy.addAndGet(gkEnergy);
         }
 
         @Override
@@ -422,10 +418,15 @@ public class GKEnergyRegion extends ParallelRegion {
             }
         }
 
+        public void setGradient(boolean gradient) {
+            this.gradient = gradient;
+        }
+
         @Override
-        public void finish() {
-            sharedInteractions.addAndGet(count);
-            sharedGKEnergy.addAndGet(gkEnergy);
+        public void start() {
+            gkEnergy = 0.0;
+            count = 0;
+            threadID = getThreadIndex();
         }
 
         private void interaction(int i, int k) {
@@ -1792,9 +1793,4 @@ public class GKEnergyRegion extends ParallelRegion {
             torque.add(threadID, k, tkx, tky, tkz);
         }
     }
-
-    /**
-     * Constant factor used with quadrupoles.
-     */
-    private static final double oneThird = 1.0 / 3.0;
 }

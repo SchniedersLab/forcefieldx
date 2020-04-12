@@ -127,11 +127,12 @@ public class RealSpaceOptions extends DataRefinementOptions {
 
     /**
      * Process input from opened molecular assemblies to a RefinementEnergy
+     *
      * @param filenames          All filenames included in the real-space data.
      * @param assemblies         All molecular assemblies included in the real-space data.
      * @param activeAssembly     An "active" assembly which is primary (or sole assembly).
      * @param algorithmFunctions An AlgorithmFunctions object.
-     * @return                   An assembled RefinementEnergy with real-space energy.
+     * @return An assembled RefinementEnergy with real-space energy.
      */
     public RefinementEnergy toRealSpaceEnergy(List<String> filenames, MolecularAssembly[] assemblies,
                                               MolecularAssembly activeAssembly, AlgorithmFunctions algorithmFunctions) {

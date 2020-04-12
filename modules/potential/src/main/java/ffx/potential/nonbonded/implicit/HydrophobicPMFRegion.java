@@ -64,13 +64,6 @@ import ffx.potential.bonded.Torsion;
 public class HydrophobicPMFRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(HydrophobicPMFRegion.class.getName());
-
-    private Atom[] atoms;
-    private int nAtoms;
-    private double[] x, y, z;
-    private boolean[] use;
-    private double[][][] grad;
-
     // Radius of a carbon atom.
     private final double rCarbon = 1.7;
     // Radius of a water molecule.
@@ -119,10 +112,15 @@ public class HydrophobicPMFRegion extends ParallelRegion {
     private final CarbonSASACRLoop[] carbonSASACRLoop;
     // Shared energy variable.
     private final SharedDouble sharedEnergy;
-    private boolean gradient;
     private final double[] dtanhSA;
     private final double[] sasa;
     private final double[] carbonSASACR;
+    private Atom[] atoms;
+    private int nAtoms;
+    private double[] x, y, z;
+    private boolean[] use;
+    private double[][][] grad;
+    private boolean gradient;
 
     public HydrophobicPMFRegion(Atom[] atoms, double[] x, double[] y, double[] z,
                                 boolean[] use, double[][][] grad, int nt) {
@@ -302,17 +300,8 @@ public class HydrophobicPMFRegion extends ParallelRegion {
         }
     }
 
-    public void setGradient(boolean gradient) {
-        this.gradient = gradient;
-    }
-
     public double getEnergy() {
         return sharedEnergy.get();
-    }
-
-    @Override
-    public void start() {
-        sharedEnergy.set(0);
     }
 
     @Override
@@ -328,6 +317,15 @@ public class HydrophobicPMFRegion extends ParallelRegion {
             String message = "Fatal exception computing Born radii in thread " + ti + "\n";
             logger.log(Level.SEVERE, message, e);
         }
+    }
+
+    public void setGradient(boolean gradient) {
+        this.gradient = gradient;
+    }
+
+    @Override
+    public void start() {
+        sharedEnergy.set(0);
     }
 
     /**
@@ -386,9 +384,9 @@ public class HydrophobicPMFRegion extends ParallelRegion {
      */
     private class HydrophobicPMFLoop extends IntegerForLoop {
 
-        private double energy;
         // Omit
         private final int[] omit;
+        private double energy;
         private double[] gX;
         private double[] gY;
         private double[] gZ;
@@ -398,20 +396,8 @@ public class HydrophobicPMFRegion extends ParallelRegion {
         }
 
         @Override
-        public void start() {
-            energy = 0.0;
-            for (int i = 0; i < nAtoms; i++) {
-                omit[i] = -1;
-            }
-            int threadID = getThreadIndex();
-            gX = grad[threadID][0];
-            gY = grad[threadID][1];
-            gZ = grad[threadID][2];
-            if (gradient) {
-                for (int i = 0; i < nCarbon; i++) {
-                    carbonSASACR[i] = 0.0;
-                }
-            }
+        public void finish() {
+            sharedEnergy.addAndGet(energy);
         }
 
         @Override
@@ -533,8 +519,20 @@ public class HydrophobicPMFRegion extends ParallelRegion {
         }
 
         @Override
-        public void finish() {
-            sharedEnergy.addAndGet(energy);
+        public void start() {
+            energy = 0.0;
+            for (int i = 0; i < nAtoms; i++) {
+                omit[i] = -1;
+            }
+            int threadID = getThreadIndex();
+            gX = grad[threadID][0];
+            gY = grad[threadID][1];
+            gZ = grad[threadID][2];
+            if (gradient) {
+                for (int i = 0; i < nCarbon; i++) {
+                    carbonSASACR[i] = 0.0;
+                }
+            }
         }
     }
 
@@ -550,14 +548,6 @@ public class HydrophobicPMFRegion extends ParallelRegion {
         private double[] gZ;
 
         public CarbonSASACRLoop() {
-        }
-
-        @Override
-        public void start() {
-            int threadID = getThreadIndex();
-            gX = grad[threadID][0];
-            gY = grad[threadID][1];
-            gZ = grad[threadID][2];
         }
 
         @Override
@@ -601,6 +591,14 @@ public class HydrophobicPMFRegion extends ParallelRegion {
                     }
                 }
             }
+        }
+
+        @Override
+        public void start() {
+            int threadID = getThreadIndex();
+            gX = grad[threadID][0];
+            gY = grad[threadID][1];
+            gZ = grad[threadID][2];
         }
     }
 }

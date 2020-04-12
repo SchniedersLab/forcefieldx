@@ -37,11 +37,8 @@
 //******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static java.util.Arrays.fill;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -69,6 +66,8 @@ public class ReduceRegion extends ParallelRegion {
      * analytic and finite-difference derivatives(default is true).
      */
     private final boolean rotateMultipoles;
+    private final TorqueLoop[] torqueLoop;
+    private final ReduceLoop[] reduceLoop;
     /**
      * If lambdaTerm is true, some ligand atom interactions with the environment
      * are being turned on/off.
@@ -111,13 +110,24 @@ public class ReduceRegion extends ParallelRegion {
      */
     private AtomicDoubleArray3D lambdaTorque;
 
-    private final TorqueLoop[] torqueLoop;
-    private final ReduceLoop[] reduceLoop;
-
     public ReduceRegion(int threadCount, ForceField forceField) {
         torqueLoop = new TorqueLoop[threadCount];
         reduceLoop = new ReduceLoop[threadCount];
         rotateMultipoles = forceField.getBoolean("ROTATE_MULTIPOLES", true);
+    }
+
+    /**
+     * Execute the ReduceRegion with the passed ParallelTeam.
+     *
+     * @param parallelTeam The ParallelTeam instance to execute with.
+     */
+    public void excuteWith(ParallelTeam parallelTeam) {
+        try {
+            parallelTeam.execute(this);
+        } catch (Exception e) {
+            String message = "Exception calculating torques.";
+            logger.log(Level.SEVERE, message, e);
+        }
     }
 
     public void init(boolean lambdaTerm, boolean gradient,
@@ -135,20 +145,6 @@ public class ReduceRegion extends ParallelRegion {
         this.torque = torque;
         this.lambdaGrad = lambdaGrad;
         this.lambdaTorque = lambdaTorque;
-    }
-
-    /**
-     * Execute the ReduceRegion with the passed ParallelTeam.
-     *
-     * @param parallelTeam The ParallelTeam instance to execute with.
-     */
-    public void excuteWith(ParallelTeam parallelTeam) {
-        try {
-            parallelTeam.execute(this);
-        } catch (Exception e) {
-            String message = "Exception calculating torques.";
-            logger.log(Level.SEVERE, message, e);
-        }
     }
 
     @Override
@@ -180,29 +176,18 @@ public class ReduceRegion extends ParallelRegion {
         }
 
         @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
-
-        @Override
-        public void start() {
-            threadID = getThreadIndex();
-            torques.init(axisAtom, frame, coordinates);
-        }
-
-        @Override
         public void run(int lb, int ub) {
             if (gradient) {
                 torque.reduce(lb, ub);
                 double[] trq = new double[3];
                 for (int i = lb; i <= ub; i++) {
                     double[][] g = new double[4][3];
-                    int[] frameIndex = {-1,-1,-1,-1};
+                    int[] frameIndex = {-1, -1, -1, -1};
                     trq[0] = torque.getX(i);
                     trq[1] = torque.getY(i);
                     trq[2] = torque.getZ(i);
                     torques.torque(i, 0, trq, frameIndex, g);
-                    for (int j = 0; j<4; j++) {
+                    for (int j = 0; j < 4; j++) {
                         int index = frameIndex[j];
                         if (index >= 0) {
                             double[] gj = g[j];
@@ -216,12 +201,12 @@ public class ReduceRegion extends ParallelRegion {
                 double[] trq = new double[3];
                 for (int i = lb; i <= ub; i++) {
                     double[][] g = new double[4][3];
-                    int[] frameIndex = {-1,-1,-1,-1};
+                    int[] frameIndex = {-1, -1, -1, -1};
                     trq[0] = lambdaTorque.getX(i);
                     trq[1] = lambdaTorque.getY(i);
                     trq[2] = lambdaTorque.getZ(i);
                     torques.torque(i, 0, trq, frameIndex, g);
-                    for (int j = 0; j<4; j++) {
+                    for (int j = 0; j < 4; j++) {
                         int index = frameIndex[j];
                         if (index >= 0) {
                             double[] gj = g[j];
@@ -231,14 +216,20 @@ public class ReduceRegion extends ParallelRegion {
                 }
             }
         }
-    }
-
-    private class ReduceLoop extends IntegerForLoop {
 
         @Override
         public IntegerSchedule schedule() {
             return IntegerSchedule.fixed();
         }
+
+        @Override
+        public void start() {
+            threadID = getThreadIndex();
+            torques.init(axisAtom, frame, coordinates);
+        }
+    }
+
+    private class ReduceLoop extends IntegerForLoop {
 
         @Override
         public void run(int lb, int ub) throws Exception {
@@ -252,6 +243,11 @@ public class ReduceRegion extends ParallelRegion {
             if (lambdaTerm) {
                 lambdaGrad.reduce(lb, ub);
             }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return IntegerSchedule.fixed();
         }
     }
 }

@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.jogamp.java3d.BranchGroup;
@@ -127,7 +126,7 @@ public abstract class MSGroup extends MSNode {
     /**
      * List of Joints.
      */
-    private ArrayList<Joint> joints = new ArrayList<>();
+    private List<Joint> joints = new ArrayList<>();
     /**
      * Whether the terms are current.
      */
@@ -139,7 +138,7 @@ public abstract class MSGroup extends MSNode {
     /**
      * List of underconstrained Atoms
      */
-    private ArrayList<Atom> dangelingatoms;
+    private List<Atom> dangelingatoms;
 
     /**
      * Default Constructor initializes a MultiScaleGroup and a few of its
@@ -359,10 +358,10 @@ public abstract class MSGroup extends MSNode {
 
         // Find Improper-Torsions.
         time = System.nanoTime();
-        ArrayList<Atom> atoms = getAtomList();
+        List<Atom> atoms = getAtomList();
         for (Atom atom : atoms) {
             if (atom.isTrigonal()) {
-                ArrayList<ImproperTorsion> improperTorsions = ImproperTorsion.improperTorsionFactory(atom, forceField);
+                List<ImproperTorsion> improperTorsions = ImproperTorsion.improperTorsionFactory(atom, forceField);
                 if (improperTorsions != null) {
                     for (ImproperTorsion improperTorsion : improperTorsions) {
                         newImproperTorsionNode.add(improperTorsion);
@@ -428,7 +427,7 @@ public abstract class MSGroup extends MSNode {
         int index = 0;
         double[] da = new double[3];
         double[] db = new double[3];
-        ArrayList<Atom> atomList = getAtomList();
+        List<Atom> atomList = getAtomList();
         for (Atom a1 : atomList) {
             index++;
             for (ListIterator li = atomList.listIterator(index); li.hasNext(); ) {
@@ -438,7 +437,7 @@ public abstract class MSGroup extends MSNode {
                 double d1 = DoubleMath.dist(da, db);
                 double d2 = Bond.BUFF + a1.getVDWR() / 2 + a2.getVDWR() / 2;
                 if (d1 < d2) {
-                    ArrayList<Bond> adjunctBonds = new ArrayList<>();
+                    List<Bond> adjunctBonds = new ArrayList<>();
                     if (a1.getNumBonds() > 0) {
                         adjunctBonds.addAll(a1.getBonds());
                     }
@@ -499,7 +498,7 @@ public abstract class MSGroup extends MSNode {
         newBondNode.setName("Bonds (" + newBondNode.getChildCount() + ")");
 
         // Collect Angles that include the joining bond(s)
-        ArrayList<Angle> angles = new ArrayList<>();
+        List<Angle> angles = new ArrayList<>();
         // Chemical Group #1
         Atom atom1 = bond.getAtom(0);
         for (Bond bond2 : atom1.getBonds()) {
@@ -548,7 +547,7 @@ public abstract class MSGroup extends MSNode {
         // Find torsions across the joint.
         atom1 = bond.getAtom(0);
         atom2 = bond.getAtom(1);
-        ArrayList<Torsion> torsions = new ArrayList<>();
+        List<Torsion> torsions = new ArrayList<>();
         if (atom1.getNumBonds() != 0 && atom2.getNumBonds() != 0) {
             for (Bond firstBond : atom1.getBonds()) {
                 if (firstBond != bond) {
@@ -668,11 +667,11 @@ public abstract class MSGroup extends MSNode {
     public abstract void finalize(boolean finalizeGroups, ForceField forceField);
 
     /**
-     * This method constructs an ArrayList of atoms which are under-constrained.
+     * This method constructs an List of atoms which are under-constrained.
      * (i.e. They can except more bonds)
      */
     public void findDangelingAtoms() {
-        ArrayList<Atom> d = new ArrayList<>();
+        List<Atom> d = new ArrayList<>();
         for (Atom a : getAtomList()) {
             if (a.isDangeling()) {
                 d.add(a);
@@ -709,7 +708,7 @@ public abstract class MSGroup extends MSNode {
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
     public Atom getAtomByName(String n, boolean caseInsensitive) {
-        ArrayList<MSNode> list = getAtomNodeList();
+        List<MSNode> list = getAtomNodeList();
         for (MSNode msNode : list) {
             if (msNode.getName().equals(n)
                     || (caseInsensitive && msNode.getName().equalsIgnoreCase(n))) {
@@ -756,7 +755,7 @@ public abstract class MSGroup extends MSNode {
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSNode getAtomNode(String n) {
-        ArrayList<MSNode> list = getAtomNodeList();
+        List<MSNode> list = getAtomNodeList();
         for (MSNode msNode : list) {
             if (msNode.getName().compareTo(n) == 0) {
                 return msNode;
@@ -766,11 +765,11 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * Returns an ArrayList of the AtomNode's children.
+     * Returns an List of the AtomNode's children.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList<MSNode> getAtomNodeList() {
+    public List<MSNode> getAtomNodeList() {
         return atomNode.getChildList();
     }
 
@@ -840,18 +839,18 @@ public abstract class MSGroup extends MSNode {
     /**
      * Returns the MultiScaleGroup's dangelingatoms list.
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    public ArrayList getDangelingAtoms() {
+    public List getDangelingAtoms() {
         return dangelingatoms;
     }
 
     /**
      * Sets the MultiScaleGroup's dangelingatoms member to a.
      *
-     * @param a a {@link java.util.ArrayList} object.
+     * @param a a {@link java.util.List} object.
      */
-    public void setDangelingAtoms(ArrayList<Atom> a) {
+    public void setDangelingAtoms(List<Atom> a) {
         dangelingatoms = a;
     }
 
@@ -868,7 +867,7 @@ public abstract class MSGroup extends MSNode {
         // if w ==
         // false
         double[] Rc = {0.0d, 0.0d, 0.0d};
-        ArrayList<Atom> atoms = getAtomList();
+        List<Atom> atoms = getAtomList();
         if (atoms == null) {
             return Rc;
         }
@@ -964,7 +963,7 @@ public abstract class MSGroup extends MSNode {
      * reOrderAtoms</p>
      */
     public void reOrderAtoms() {
-        ArrayList<Atom> atomList = getAtomList();
+        List<Atom> atomList = getAtomList();
         int nAtoms = atomList.size();
         Atom[] atoms = new Atom[nAtoms];
         atoms = atomList.toArray(atoms);
@@ -1201,9 +1200,9 @@ public abstract class MSGroup extends MSNode {
     /**
      * <p>Getter for the field <code>joints</code>.</p>
      *
-     * @return a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.List} object.
      */
-    ArrayList<Joint> getJoints() {
+    List<Joint> getJoints() {
         return joints;
     }
 

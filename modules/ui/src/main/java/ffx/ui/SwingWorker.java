@@ -51,30 +51,8 @@ import javax.swing.SwingUtilities;
  */
 public abstract class SwingWorker {
 
-    /**
-     * Class to maintain reference to current worker thread under separate
-     * synchronization control.
-     */
-    private static class ThreadVar {
-
-        private Thread thread;
-
-        ThreadVar(Thread t) {
-            thread = t;
-        }
-
-        synchronized void clear() {
-            thread = null;
-        }
-
-        synchronized Thread get() {
-            return thread;
-        }
-    }
-
     private Object value; // see getValue(), setValue()
     private ThreadVar threadVar;
-
     /**
      * Start a thread that will call the <code>construct</code> method and then
      * exit.
@@ -136,16 +114,6 @@ public abstract class SwingWorker {
     }
 
     /**
-     * Get the value produced by the worker thread, or null if it hasn't been
-     * constructed yet.
-     *
-     * @return a {@link java.lang.Object} object.
-     */
-    protected synchronized Object getValue() {
-        return value;
-    }
-
-    /**
      * A new method that interrupts the worker thread. Call this method to force
      * the worker to stop what it's doing.
      */
@@ -158,13 +126,6 @@ public abstract class SwingWorker {
     }
 
     /**
-     * Set the value produced by worker thread
-     */
-    private synchronized void setValue(Object x) {
-        value = x;
-    }
-
-    /**
      * Start the worker thread.
      */
     public void start() {
@@ -172,5 +133,43 @@ public abstract class SwingWorker {
         if (t != null) {
             t.start();
         }
+    }
+
+    /**
+     * Class to maintain reference to current worker thread under separate
+     * synchronization control.
+     */
+    private static class ThreadVar {
+
+        private Thread thread;
+
+        ThreadVar(Thread t) {
+            thread = t;
+        }
+
+        synchronized void clear() {
+            thread = null;
+        }
+
+        synchronized Thread get() {
+            return thread;
+        }
+    }
+
+    /**
+     * Get the value produced by the worker thread, or null if it hasn't been
+     * constructed yet.
+     *
+     * @return a {@link java.lang.Object} object.
+     */
+    protected synchronized Object getValue() {
+        return value;
+    }
+
+    /**
+     * Set the value produced by worker thread
+     */
+    private synchronized void setValue(Object x) {
+        value = x;
     }
 }

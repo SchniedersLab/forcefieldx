@@ -80,6 +80,7 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
     private long threadTime = 0;
     private RendererCache.ViewModel viewModel = null;
     private List<BranchGroup> newShapes = null;
+
     /**
      * <p>
      * Constructor for ROLSP.</p>

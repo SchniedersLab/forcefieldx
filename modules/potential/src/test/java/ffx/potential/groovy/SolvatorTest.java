@@ -37,8 +37,21 @@
  */
 package ffx.potential.groovy;
 
-import ffx.utilities.BaseFFXTest;
-import groovy.lang.Binding;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.MapConfiguration;
 import org.apache.commons.io.FileUtils;
@@ -49,66 +62,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import ffx.utilities.BaseFFXTest;
 
-import ffx.potential.groovy.Solvator;
-
-import static org.junit.Assert.*;
+import groovy.lang.Binding;
 
 @RunWith(Parameterized.class)
 public class SolvatorTest extends BaseFFXTest {
-
-    @Parameterized.Parameters
-    public static Collection<Object[]> data(){
-        return Arrays.asList(new Object[][]{
-                {
-                        "Solvator Help Message Test",
-                        SolvatorTestMode.HELP,
-                        "", null, null, null,
-                        new String[]{}, new String[]{}, new String[]{"-h"}
-                },
-                {
-                        "Aspartate Pure Water Solvation",
-                        SolvatorTestMode.SOLVATE,
-                        "ffx/potential/structures/capAsp.xyz",
-                        "ffx/potential/structures/capAsp.pureWater.pdb",
-                        "ffx/potential/structures/watertiny.xyz",
-                        null,
-                        new String[]{"-b", "2.5", "-p", "8.0", "-s", "42"},
-                        new String[]{},
-                        new String[]{}
-                },
-                {
-                        "Aspartate Neutralizing NaCl (+200 mM) Solvation",
-                        SolvatorTestMode.SOLVATE,
-                        "ffx/potential/structures/capAsp.xyz",
-                        "ffx/potential/structures/capAsp.neutNaCl.pdb",
-                        "ffx/potential/structures/watertiny.xyz",
-                        "ffx/potential/structures/nacl.pdb",
-                        new String[]{"-b", "2.5", "-p", "8.0", "-s", "42"},
-                        new String[]{},
-                        new String[]{}
-                },
-                {
-                        "Aspartate Charged NaCl (200 mM) Solvation",
-                        SolvatorTestMode.SOLVATE,
-                        "ffx/potential/structures/capAsp.xyz",
-                        "ffx/potential/structures/capAsp.chargedNaCl.pdb",
-                        "ffx/potential/structures/watertiny.xyz",
-                        "ffx/potential/structures/naclCharged.pdb",
-                        new String[]{"-b", "2.5", "-p", "8.0", "-s", "42"},
-                        new String[]{},
-                        new String[]{}
-                }
-        });
-    }
 
     /**
      * Set of default options, such as "-d", "0.5" to specify a half-femtosecond timestep.
@@ -129,9 +92,6 @@ public class SolvatorTest extends BaseFFXTest {
         DEFAULT_OPTIONS = Collections.unmodifiableMap(optMap);
     }
 
-    Solvator solvator;
-    Binding binding;
-
     private final String info;
     private final SolvatorTestMode mode;
     private final File solvatedTestFile;
@@ -141,10 +101,10 @@ public class SolvatorTest extends BaseFFXTest {
      */
     private final Configuration algorithmConfig;
     private final List<String> flags;
-
     private final File tempDir;
     private final List<File> copiedFiles = new ArrayList<>();
-
+    Solvator solvator;
+    Binding binding;
     public SolvatorTest(String info, SolvatorTestMode mode, String soluteFile, String solvatedTestFileName,
                         String solventFileName, String ionFileName,
                         String[] options, String[] properties, String[] flagArray) throws IOException {
@@ -244,13 +204,6 @@ public class SolvatorTest extends BaseFFXTest {
         }
     }
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        solvator = new Solvator();
-        solvator.setBinding(binding);
-    }
-
     @After
     public void after() {
         if (mode != SolvatorTestMode.HELP) {
@@ -276,6 +229,58 @@ public class SolvatorTest extends BaseFFXTest {
         }
     }
 
+    @Before
+    public void before() {
+        binding = new Binding();
+        solvator = new Solvator();
+        solvator.setBinding(binding);
+    }
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {
+                        "Solvator Help Message Test",
+                        SolvatorTestMode.HELP,
+                        "", null, null, null,
+                        new String[]{}, new String[]{}, new String[]{"-h"}
+                },
+                {
+                        "Aspartate Pure Water Solvation",
+                        SolvatorTestMode.SOLVATE,
+                        "ffx/potential/structures/capAsp.xyz",
+                        "ffx/potential/structures/capAsp.pureWater.pdb",
+                        "ffx/potential/structures/watertiny.xyz",
+                        null,
+                        new String[]{"-b", "2.5", "-p", "8.0", "-s", "42"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Aspartate Neutralizing NaCl (+200 mM) Solvation",
+                        SolvatorTestMode.SOLVATE,
+                        "ffx/potential/structures/capAsp.xyz",
+                        "ffx/potential/structures/capAsp.neutNaCl.pdb",
+                        "ffx/potential/structures/watertiny.xyz",
+                        "ffx/potential/structures/nacl.pdb",
+                        new String[]{"-b", "2.5", "-p", "8.0", "-s", "42"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Aspartate Charged NaCl (200 mM) Solvation",
+                        SolvatorTestMode.SOLVATE,
+                        "ffx/potential/structures/capAsp.xyz",
+                        "ffx/potential/structures/capAsp.chargedNaCl.pdb",
+                        "ffx/potential/structures/watertiny.xyz",
+                        "ffx/potential/structures/naclCharged.pdb",
+                        new String[]{"-b", "2.5", "-p", "8.0", "-s", "42"},
+                        new String[]{},
+                        new String[]{}
+                }
+        });
+    }
+
     @Test
     public void testSolvator() {
         switch (mode) {
@@ -286,6 +291,15 @@ public class SolvatorTest extends BaseFFXTest {
                 testSolvate();
                 break;
         }
+    }
+
+    @Override
+    public String toString() {
+        return info;
+    }
+
+    private enum SolvatorTestMode {
+        HELP, SOLVATE;
     }
 
     private void testHelp() {
@@ -323,14 +337,5 @@ public class SolvatorTest extends BaseFFXTest {
         } catch (IOException ex) {
             fail(String.format(" Exception %s in attempting to compare expected file %s to written file %s", ex.toString(), solvatedTestFile, written.toString()));
         }
-    }
-
-    @Override
-    public String toString() {
-        return info;
-    }
-
-    private enum SolvatorTestMode {
-        HELP, SOLVATE;
     }
 }

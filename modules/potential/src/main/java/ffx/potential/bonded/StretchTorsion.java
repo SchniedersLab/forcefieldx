@@ -52,11 +52,7 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.StretchTorsionType;
 import ffx.potential.parameters.TorsionType;
-import static ffx.numerics.math.DoubleMath.X;
 import static ffx.numerics.math.DoubleMath.dihedralAngle;
-import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.numerics.math.DoubleMath.dot;
-import static ffx.numerics.math.DoubleMath.length;
 
 /**
  * The StretchTorsion class represents a coupling between a torsional angle and the three

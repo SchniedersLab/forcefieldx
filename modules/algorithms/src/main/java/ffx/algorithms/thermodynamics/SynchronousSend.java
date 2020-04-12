@@ -25,14 +25,13 @@ public class SynchronousSend {
      */
     protected final Comm world;
     /**
-     * Number of processes.
-     */
-    private final int numProc;
-    /**
      * Rank of this process.
      */
     protected final int rank;
-    private boolean independentWalkers = false;
+    /**
+     * Number of processes.
+     */
+    private final int numProc;
     /**
      * The recursionWeights stores the [Lambda, FLambda] weight for each
      * process. Therefore the array is of size [number of Processes][2].
@@ -47,6 +46,7 @@ public class SynchronousSend {
      */
     private final DoubleBuf[] recursionWeightsBuf;
     private final DoubleBuf myRecursionWeightBuf;
+    private boolean independentWalkers = false;
     /**
      * The histograms to update.
      */
@@ -80,19 +80,8 @@ public class SynchronousSend {
         this.independentWalkers = independentWalkers;
     }
 
-    /**
-     * Update the synchronous communication histograms.
-     *
-     * @param histograms         Histograms in use.
-     * @param rankToHistogramMap Map from rank to histogram.
-     */
-    public void setHistograms(Histogram[] histograms, int[] rankToHistogramMap) {
-        this.histograms = histograms;
-        this.rankToHistogramMap = rankToHistogramMap;
-    }
-
-    public void setIndependentWalkers(boolean independentWalkers) {
-        this.independentWalkers = independentWalkers;
+    public int getHistogramIndex() {
+        return rankToHistogramMap[rank];
     }
 
     /**
@@ -157,6 +146,21 @@ public class SynchronousSend {
     }
 
     /**
+     * Update the synchronous communication histograms.
+     *
+     * @param histograms         Histograms in use.
+     * @param rankToHistogramMap Map from rank to histogram.
+     */
+    public void setHistograms(Histogram[] histograms, int[] rankToHistogramMap) {
+        this.histograms = histograms;
+        this.rankToHistogramMap = rankToHistogramMap;
+    }
+
+    public void setIndependentWalkers(boolean independentWalkers) {
+        this.independentWalkers = independentWalkers;
+    }
+
+    /**
      * Update the map of rank-to-histogram.
      *
      * @param updatedRankToHisto Updated rank-to-histogram mappings.
@@ -164,9 +168,5 @@ public class SynchronousSend {
     public void updateRanks(int[] updatedRankToHisto) {
         assert updatedRankToHisto.length == rankToHistogramMap.length;
         System.arraycopy(updatedRankToHisto, 0, rankToHistogramMap, 0, rankToHistogramMap.length);
-    }
-
-    public int getHistogramIndex() {
-        return rankToHistogramMap[rank];
     }
 }

@@ -97,32 +97,6 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
     }
 
     /**
-     * <p>
-     * minimize</p>
-     *
-     * @param m             The number of previous steps used to estimate the Hessian.
-     * @param maxIterations The maximum number of minimization steps.
-     * @param eps           The minimization convergence criteria.
-     * @return a {@link ffx.numerics.Potential} object.
-     */
-    public Potential minimize(int m, double eps, int maxIterations) {
-        super.minimize(m, eps, maxIterations);
-
-        crystal = molecularAssembly.getCrystal();
-        logger.info("\n Final lattice parameters" + crystal);
-
-        return potential;
-    }
-
-    /**
-     * Print out the partial derivatives of the Energy with respect to
-     * components of the 3 vectors that define the primitive cell.
-     */
-    public void printTensor() {
-        computeStressTensor(true);
-    }
-
-    /**
      * <p>computeStressTensor.</p>
      *
      * @param verbose a boolean.
@@ -352,6 +326,32 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
         molecularAssembly.setFractionalMode(currentFractionalMode);
         crystal.setCheckRestrictions(currentCheckRestrictions);
 
+    }
+
+    /**
+     * <p>
+     * minimize</p>
+     *
+     * @param m             The number of previous steps used to estimate the Hessian.
+     * @param maxIterations The maximum number of minimization steps.
+     * @param eps           The minimization convergence criteria.
+     * @return a {@link ffx.numerics.Potential} object.
+     */
+    public Potential minimize(int m, double eps, int maxIterations) {
+        super.minimize(m, eps, maxIterations);
+
+        crystal = molecularAssembly.getCrystal();
+        logger.info("\n Final lattice parameters" + crystal);
+
+        return potential;
+    }
+
+    /**
+     * Print out the partial derivatives of the Energy with respect to
+     * components of the 3 vectors that define the primitive cell.
+     */
+    public void printTensor() {
+        computeStressTensor(true);
     }
 
     /**

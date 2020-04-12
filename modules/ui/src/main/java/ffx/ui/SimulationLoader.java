@@ -143,6 +143,31 @@ public class SimulationLoader implements ActionListener {
 
     /**
      * <p>
+     * isConnected</p>
+     *
+     * @return a boolean.
+     */
+    public boolean isConnected() {
+        return client != null && client.isConnected();
+    }
+
+    /**
+     * <p>
+     * release</p>
+     */
+    public void release() {
+        finished = true;
+        if (timer != null) {
+            timer.stop();
+        }
+        if (client != null) {
+            client.release();
+        }
+        mainPanel.getMainMenu().setConnect(true);
+    }
+
+    /**
+     * <p>
      * connect</p>
      *
      * @return a boolean.
@@ -190,15 +215,7 @@ public class SimulationLoader implements ActionListener {
         return system;
     }
 
-    /**
-     * <p>
-     * isConnected</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isConnected() {
-        return client != null && client.isConnected();
-    }
+    // Release the simulation
 
     /**
      * <p>
@@ -221,23 +238,6 @@ public class SimulationLoader implements ActionListener {
             release();
         }
         return finished;
-    }
-
-    // Release the simulation
-
-    /**
-     * <p>
-     * release</p>
-     */
-    public void release() {
-        finished = true;
-        if (timer != null) {
-            timer.stop();
-        }
-        if (client != null) {
-            client.release();
-        }
-        mainPanel.getMainMenu().setConnect(true);
     }
 
     private void update() {

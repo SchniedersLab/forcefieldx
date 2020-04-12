@@ -64,15 +64,13 @@ import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
  */
 public class RowRegion extends ParallelRegion {
 
+    public int buff = 3;
+    public boolean[][] select;
+    protected RowLoop[] rowLoop;
+    protected double[][][] coordinates;
     int nAtoms;
     int nSymm;
     private int gX, gY, gZ;
-    public int buff = 3;
-    public boolean[][] select;
-
-    protected RowLoop[] rowLoop;
-    protected double[][][] coordinates;
-
     private DoubleBuffer gridBuffer;
     private GridInitLoop[] gridInitLoop;
     private double initValue = 0.0;
@@ -121,91 +119,14 @@ public class RowRegion extends ParallelRegion {
     }
 
     /**
-     * <p>Setter for the field <code>crystal</code>.</p>
-     *
-     * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param gX      a int.
-     * @param gY      a int.
-     * @param gZ      a int.
+     * {@inheritDoc}
      */
-    public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
-        //this.crystal = crystal.getUnitCell();
-        this.gX = gX;
-        this.gY = gY;
-        this.gZ = gZ;
-        gridSize = gX * gY * gZ * 2;
-    }
-
-    /**
-     * <p>zFromRowIndex.</p>
-     *
-     * @param i a int.
-     * @return a int.
-     */
-    public int zFromRowIndex(int i) {
-        return i / gY;
-    }
-
-    /**
-     * <p>yFromRowIndex.</p>
-     *
-     * @param i a int.
-     * @return a int.
-     */
-    public int yFromRowIndex(int i) {
-        return i % gY;
-    }
-
-    /**
-     * <p>rowIndexForYZ.</p>
-     *
-     * @param giy a int.
-     * @param giz a int.
-     * @return a int.
-     */
-    public int rowIndexForYZ(int giy, int giz) {
-        return giy + gY * giz;
-    }
-
-    /**
-     * <p>Setter for the field <code>atoms</code>.</p>
-     *
-     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    public void setAtoms(Atom[] atoms) {
-        nAtoms = atoms.length;
-        select = new boolean[nSymm][nAtoms];
-        for (int i = 0; i < nSymm; i++) {
-            fill(select[i], true);
+    @Override
+    public void finish() {
+        if (rebuildList) {
+            rowLoop[0].saveZYValues(zyAtListBuild);
         }
-
-    }
-
-    /**
-     * <p>getNatoms.</p>
-     *
-     * @return a int.
-     */
-    public int getNatoms() {
-        return nAtoms;
-    }
-
-    /**
-     * <p>Setter for the field <code>gridBuffer</code>.</p>
-     *
-     * @param grid a {@link java.nio.DoubleBuffer} object.
-     */
-    void setGridBuffer(DoubleBuffer grid) {
-        gridBuffer = grid;
-    }
-
-    /**
-     * <p>getNsymm.</p>
-     *
-     * @return a int.
-     */
-    public int getNsymm() {
-        return nSymm;
+        rebuildList = false;
     }
 
     /**
@@ -218,23 +139,32 @@ public class RowRegion extends ParallelRegion {
     }
 
     /**
-     * {@inheritDoc}
+     * <p>getNatoms.</p>
+     *
+     * @return a int.
      */
-    @Override
-    public void start() {
-        selectAtoms();
-        rebuildList = (rebuildList || rowLoop[0].checkList(zyAtListBuild, buff));
+    public int getNatoms() {
+        return nAtoms;
     }
 
     /**
-     * {@inheritDoc}
+     * <p>getNsymm.</p>
+     *
+     * @return a int.
      */
-    @Override
-    public void finish() {
-        if (rebuildList) {
-            rowLoop[0].saveZYValues(zyAtListBuild);
-        }
-        rebuildList = false;
+    public int getNsymm() {
+        return nSymm;
+    }
+
+    /**
+     * <p>rowIndexForYZ.</p>
+     *
+     * @param giy a int.
+     * @param giz a int.
+     * @return a int.
+     */
+    public int rowIndexForYZ(int giy, int giz) {
+        return giy + gY * giz;
     }
 
     /**
@@ -256,13 +186,44 @@ public class RowRegion extends ParallelRegion {
     }
 
     /**
-     * <p>
-     * Setter for the field <code>initValue</code>.</p>
-     *
-     * @param initValue a double.
+     * Select atoms that should be included. The default is to include all
+     * atoms, which is set up in the constructor. This function should be
+     * over-ridden by subclasses that want finer control.
      */
-    public void setInitValue(double initValue) {
-        this.initValue = initValue;
+    public void selectAtoms() {
+        for (int i = 0; i < nSymm; i++) {
+            fill(select[i], true);
+        }
+    }
+
+    /**
+     * <p>Setter for the field <code>atoms</code>.</p>
+     *
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     */
+    public void setAtoms(Atom[] atoms) {
+        nAtoms = atoms.length;
+        select = new boolean[nSymm][nAtoms];
+        for (int i = 0; i < nSymm; i++) {
+            fill(select[i], true);
+        }
+
+    }
+
+    /**
+     * <p>Setter for the field <code>crystal</code>.</p>
+     *
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param gX      a int.
+     * @param gY      a int.
+     * @param gZ      a int.
+     */
+    public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
+        //this.crystal = crystal.getUnitCell();
+        this.gX = gX;
+        this.gY = gY;
+        this.gZ = gZ;
+        gridSize = gX * gY * gZ * 2;
     }
 
     /**
@@ -275,14 +236,42 @@ public class RowRegion extends ParallelRegion {
     }
 
     /**
-     * Select atoms that should be included. The default is to include all
-     * atoms, which is set up in the constructor. This function should be
-     * over-ridden by subclasses that want finer control.
+     * <p>
+     * Setter for the field <code>initValue</code>.</p>
+     *
+     * @param initValue a double.
      */
-    public void selectAtoms() {
-        for (int i = 0; i < nSymm; i++) {
-            fill(select[i], true);
-        }
+    public void setInitValue(double initValue) {
+        this.initValue = initValue;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void start() {
+        selectAtoms();
+        rebuildList = (rebuildList || rowLoop[0].checkList(zyAtListBuild, buff));
+    }
+
+    /**
+     * <p>yFromRowIndex.</p>
+     *
+     * @param i a int.
+     * @return a int.
+     */
+    public int yFromRowIndex(int i) {
+        return i % gY;
+    }
+
+    /**
+     * <p>zFromRowIndex.</p>
+     *
+     * @param i a int.
+     * @return a int.
+     */
+    public int zFromRowIndex(int i) {
+        return i / gY;
     }
 
     private class GridInitLoop extends IntegerForLoop {
@@ -291,11 +280,6 @@ public class RowRegion extends ParallelRegion {
         // Extra padding to avert cache interference.
         long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
-        @Override
-        public IntegerSchedule schedule() {
-            return schedule;
-        }
 
         @Override
         public void run(int lb, int ub) {
@@ -308,6 +292,20 @@ public class RowRegion extends ParallelRegion {
             }
 
         }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return schedule;
+        }
+    }
+
+    /**
+     * <p>Setter for the field <code>gridBuffer</code>.</p>
+     *
+     * @param grid a {@link java.nio.DoubleBuffer} object.
+     */
+    void setGridBuffer(DoubleBuffer grid) {
+        gridBuffer = grid;
     }
 
 }

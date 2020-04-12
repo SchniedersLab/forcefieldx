@@ -92,31 +92,10 @@ public class BulkSolventList extends ParallelRegion {
      */
     private final int nAtoms;
     /**
-     * Reduced coordinates for each symmetry copy. [nsymm][3][natom]
-     */
-    private double[][][] coordinates;
-    /**
      * The selected atoms. [nsymm][natom]
      */
     private final SharedBooleanArray[] sharedSelect;
-    private boolean[][] selected;
-    /**
-     * Number of selected atoms.
-     */
-    private int nSelected;
     private final int nEdgeA, nEdgeB, nEdgeC;
-    /**
-     * The number of divisions along the A-axis.
-     */
-    private int nA;
-    /**
-     * The number of divisions along the B-axis.
-     */
-    private int nB;
-    /**
-     * The number of divisions along the C-Axis.
-     */
-    private int nC;
     /**
      * The number of cells in one plane (nDivisions^2).
      */
@@ -179,9 +158,30 @@ public class BulkSolventList extends ParallelRegion {
      * A Verlet list loop for each thread.
      */
     private final SelectionListLoop[] selectionListLoop;
+    private final double toSeconds = 1.0e-9;
+    /**
+     * Reduced coordinates for each symmetry copy. [nsymm][3][natom]
+     */
+    private double[][][] coordinates;
+    private boolean[][] selected;
+    /**
+     * Number of selected atoms.
+     */
+    private int nSelected;
+    /**
+     * The number of divisions along the A-axis.
+     */
+    private int nA;
+    /**
+     * The number of divisions along the B-axis.
+     */
+    private int nB;
+    /**
+     * The number of divisions along the C-Axis.
+     */
+    private int nC;
     private long time;
     private long cellTime, selectTime, totalTime;
-    private final double toSeconds = 1.0e-9;
 
     /**
      * Constructor for the NeighborList class.
@@ -275,6 +275,185 @@ public class BulkSolventList extends ParallelRegion {
 
         if (log) {
             log();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This is method should not be called; it is invoked by Parallel Java.
+     * <p>
+     * since 0.1
+     */
+    @Override
+    public void finish() {
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format("Parallel Neighbor List: %10.3f seconds",
+                    (System.nanoTime() - time) * 1e-9));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This is method should not be called; it is invoked by Parallel Java.
+     *
+     * @since 1.0
+     */
+    @Override
+    public void run() {
+
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This is method should not be called; it is invoked by Parallel Java.
+     *
+     * @since 1.0
+     */
+    @Override
+    public void start() {
+        time = System.nanoTime();
+    }
+
+    /**
+     * The SelectionListLoop class encapsulates thread local variables and
+     * methods for selecting atoms based on a spatial decomposition of the unit
+     * cell.
+     *
+     * @author Michael J. Schnieders
+     * @since 1.0
+     */
+    private class SelectionListLoop extends IntegerForLoop {
+
+        private final IntegerSchedule schedule;
+        private int iSymm;
+        private int atomIndex;
+        private double[][] xyz;
+        private SharedBooleanArray select;
+        // Extra padding to avert cache interference.
+        private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+        private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+        public SelectionListLoop() {
+            super();
+            schedule = IntegerSchedule.dynamic(10);
+        }
+
+        @Override
+        public void run(final int lb, final int ub) {
+            for (iSymm = 1; iSymm < nSymm; iSymm++) {
+                select = sharedSelect[iSymm];
+                // Loop over all atoms.
+                for (atomIndex = lb; atomIndex <= ub; atomIndex++) {
+                    final int a = cellA[atomIndex];
+                    final int b = cellB[atomIndex];
+                    final int c = cellC[atomIndex];
+
+                    int aStart = a - nEdgeA;
+                    int aStop = a + nEdgeA;
+                    int bStart = b - nEdgeB;
+                    int bStop = b + nEdgeB;
+                    int cStart = c - nEdgeC;
+                    int cStop = c + nEdgeC;
+
+                    /*
+                     * If the number of divisions is 1 in any direction then set
+                     * the loop limits to the current cell value.
+                     */
+                    if (nA == 1) {
+                        aStart = a;
+                        aStop = a;
+                    }
+                    if (nB == 1) {
+                        bStart = b;
+                        bStop = b;
+                    }
+                    if (nC == 1) {
+                        cStart = c;
+                        cStop = c;
+                    }
+
+                    // Check atoms in symmetry mate cells.
+                    for (int ai = aStart; ai <= aStop; ai++) {
+                        for (int bi = bStart; bi <= bStop; bi++) {
+                            for (int ci = cStart; ci <= cStop; ci++) {
+                                selectAsymmetricAtoms(image(ai, bi, ci));
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return schedule;
+        }
+
+        @Override
+        public void start() {
+            xyz = coordinates[0];
+        }
+
+        /**
+         * If the index is >= to nX, it is mapped back into the periodic unit
+         * cell by subtracting nX. If the index is < 0, it is mapped into the
+         * periodic unit cell by adding nX. The Neighbor list algorithm never
+         * requires multiple additions or subtractions of nX.
+         *
+         * @param i The index along the a-axis.
+         * @param j The index along the b-axis.
+         * @param k The index along the c-axis.
+         * @return The pointer into the 1D cell array.
+         */
+        private int image(int i, int j, int k) {
+            if (i >= nA) {
+                i -= nA;
+            } else if (i < 0) {
+                i += nA;
+            }
+            if (j >= nB) {
+                j -= nB;
+            } else if (j < 0) {
+                j += nB;
+            }
+            if (k >= nC) {
+                k -= nC;
+            } else if (k < 0) {
+                k += nC;
+            }
+            return i + j * nA + k * nAB;
+        }
+
+        private void selectAsymmetricAtoms(final int pairCellIndex) {
+            final double xi = xyz[0][atomIndex];
+            final double yi = xyz[1][atomIndex];
+            final double zi = xyz[2][atomIndex];
+            final int[] pairList = cellList[iSymm];
+            int start = cellStart[iSymm][pairCellIndex];
+            final int pairStop = start + cellCount[iSymm][pairCellIndex];
+            final double[][] pair = coordinates[iSymm];
+            // Loop over atoms in the pair cell.
+            for (int j = start; j < pairStop; j++) {
+                final int aj = pairList[j];
+                // If this atom is already selected, continue.
+                if (select.get(aj)) {
+                    continue;
+                }
+                final double xj = pair[0][aj];
+                final double yj = pair[1][aj];
+                final double zj = pair[2][aj];
+                final double xr = xi - xj;
+                final double yr = yi - yj;
+                final double zr = zi - zj;
+                final double d2 = crystal.image(xr, yr, zr);
+                if (d2 <= cutoff2) {
+                    select.set(aj, true);
+                }
+            }
         }
     }
 
@@ -403,185 +582,6 @@ public class BulkSolventList extends ParallelRegion {
                 select[i] = shared.get(i);
                 if (select[i]) {
                     nSelected++;
-                }
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This is method should not be called; it is invoked by Parallel Java.
-     *
-     * @since 1.0
-     */
-    @Override
-    public void start() {
-        time = System.nanoTime();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This is method should not be called; it is invoked by Parallel Java.
-     *
-     * @since 1.0
-     */
-    @Override
-    public void run() {
-
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This is method should not be called; it is invoked by Parallel Java.
-     * <p>
-     * since 0.1
-     */
-    @Override
-    public void finish() {
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(format("Parallel Neighbor List: %10.3f seconds",
-                    (System.nanoTime() - time) * 1e-9));
-        }
-    }
-
-    /**
-     * The SelectionListLoop class encapsulates thread local variables and
-     * methods for selecting atoms based on a spatial decomposition of the unit
-     * cell.
-     *
-     * @author Michael J. Schnieders
-     * @since 1.0
-     */
-    private class SelectionListLoop extends IntegerForLoop {
-
-        private int iSymm;
-        private int atomIndex;
-        private double[][] xyz;
-        private SharedBooleanArray select;
-        private final IntegerSchedule schedule;
-        // Extra padding to avert cache interference.
-        private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-        private long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
-        public SelectionListLoop() {
-            super();
-            schedule = IntegerSchedule.dynamic(10);
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return schedule;
-        }
-
-        @Override
-        public void start() {
-            xyz = coordinates[0];
-        }
-
-        @Override
-        public void run(final int lb, final int ub) {
-            for (iSymm = 1; iSymm < nSymm; iSymm++) {
-                select = sharedSelect[iSymm];
-                // Loop over all atoms.
-                for (atomIndex = lb; atomIndex <= ub; atomIndex++) {
-                    final int a = cellA[atomIndex];
-                    final int b = cellB[atomIndex];
-                    final int c = cellC[atomIndex];
-
-                    int aStart = a - nEdgeA;
-                    int aStop = a + nEdgeA;
-                    int bStart = b - nEdgeB;
-                    int bStop = b + nEdgeB;
-                    int cStart = c - nEdgeC;
-                    int cStop = c + nEdgeC;
-
-                    /*
-                     * If the number of divisions is 1 in any direction then set
-                     * the loop limits to the current cell value.
-                     */
-                    if (nA == 1) {
-                        aStart = a;
-                        aStop = a;
-                    }
-                    if (nB == 1) {
-                        bStart = b;
-                        bStop = b;
-                    }
-                    if (nC == 1) {
-                        cStart = c;
-                        cStop = c;
-                    }
-
-                    // Check atoms in symmetry mate cells.
-                    for (int ai = aStart; ai <= aStop; ai++) {
-                        for (int bi = bStart; bi <= bStop; bi++) {
-                            for (int ci = cStart; ci <= cStop; ci++) {
-                                selectAsymmetricAtoms(image(ai, bi, ci));
-                            }
-                        }
-                    }
-
-                }
-            }
-        }
-
-        /**
-         * If the index is >= to nX, it is mapped back into the periodic unit
-         * cell by subtracting nX. If the index is < 0, it is mapped into the
-         * periodic unit cell by adding nX. The Neighbor list algorithm never
-         * requires multiple additions or subtractions of nX.
-         *
-         * @param i The index along the a-axis.
-         * @param j The index along the b-axis.
-         * @param k The index along the c-axis.
-         * @return The pointer into the 1D cell array.
-         */
-        private int image(int i, int j, int k) {
-            if (i >= nA) {
-                i -= nA;
-            } else if (i < 0) {
-                i += nA;
-            }
-            if (j >= nB) {
-                j -= nB;
-            } else if (j < 0) {
-                j += nB;
-            }
-            if (k >= nC) {
-                k -= nC;
-            } else if (k < 0) {
-                k += nC;
-            }
-            return i + j * nA + k * nAB;
-        }
-
-        private void selectAsymmetricAtoms(final int pairCellIndex) {
-            final double xi = xyz[0][atomIndex];
-            final double yi = xyz[1][atomIndex];
-            final double zi = xyz[2][atomIndex];
-            final int[] pairList = cellList[iSymm];
-            int start = cellStart[iSymm][pairCellIndex];
-            final int pairStop = start + cellCount[iSymm][pairCellIndex];
-            final double[][] pair = coordinates[iSymm];
-            // Loop over atoms in the pair cell.
-            for (int j = start; j < pairStop; j++) {
-                final int aj = pairList[j];
-                // If this atom is already selected, continue.
-                if (select.get(aj)) {
-                    continue;
-                }
-                final double xj = pair[0][aj];
-                final double yj = pair[1][aj];
-                final double zj = pair[2][aj];
-                final double xr = xi - xj;
-                final double yr = yi - yj;
-                final double zr = zi - zj;
-                final double d2 = crystal.image(xr, yr, zr);
-                if (d2 <= cutoff2) {
-                    select.set(aj, true);
                 }
             }
         }

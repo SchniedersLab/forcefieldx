@@ -65,14 +65,10 @@ public class SpatialDensityRegion extends ParallelRegion {
      * Constant <code>logger</code>
      */
     protected static final Logger logger = Logger.getLogger(SpatialDensityRegion.class.getName());
-    /**
-     * Basis size.
-     */
-    private int basisSize;
-    /**
-     * Minimum amount of work.
-     */
-    private int minWork;
+    public final int nThreads;
+    protected final int nSymm;
+    public int[] actualCount;
+    public int nAtoms;
     /**
      * The number of divisions along the A-axis.
      */
@@ -86,6 +82,47 @@ public class SpatialDensityRegion extends ParallelRegion {
      */
     protected int nC;
     /**
+     * Number of octant work cells with at least one atom (actualWork is less
+     * than or equal to nWork).
+     */
+    protected int actualWork;
+    protected double[][][] coordinates;
+    protected boolean[][] select;
+    protected Crystal crystal;
+    protected SpatialDensityLoop[] spatialDensityLoop;
+    /**
+     * The A index of each octant (0..nA - 1) that has atoms.
+     */
+    int[] actualA;
+    /**
+     * The B index of each octant (0..nB - 1) that has atoms.
+     */
+    int[] actualB;
+    /**
+     * The C index of each octant (0..nC - 1) that has atoms.
+     */
+    int[] actualC;
+    /**
+     * The list of atoms in each cell. [nsymm][natom] = atom index
+     */
+    int[][] cellList;
+    /**
+     * The number of atoms in each cell. [nsymm][ncell]
+     */
+    int[][] cellCount;
+    /**
+     * The index of the first atom in each cell. [nsymm][ncell]
+     */
+    int[][] cellStart;
+    /**
+     * Basis size.
+     */
+    private int basisSize;
+    /**
+     * Minimum amount of work.
+     */
+    private int minWork;
+    /**
      * The number of cells in one plane (nDivisions^2).
      */
     private int nAB;
@@ -97,12 +134,6 @@ public class SpatialDensityRegion extends ParallelRegion {
      * Number of octant work cells.
      */
     private int nWork;
-    /**
-     * Number of octant work cells with at least one atom (actualWork is less
-     * than or equal to nWork).
-     */
-    protected int actualWork;
-    public int[] actualCount;
     /**
      * A temporary array that holds the index of the cell each atom is assigned
      * to.
@@ -121,48 +152,17 @@ public class SpatialDensityRegion extends ParallelRegion {
      */
     private int[] workC;
     /**
-     * The A index of each octant (0..nA - 1) that has atoms.
-     */
-    int[] actualA;
-    /**
-     * The B index of each octant (0..nB - 1) that has atoms.
-     */
-    int[] actualB;
-    /**
-     * The C index of each octant (0..nC - 1) that has atoms.
-     */
-    int[] actualC;
-    /**
-     * The list of atoms in each cell. [nsymm][natom] = atom index
-     */
-    int[][] cellList;
-    /**
      * The offset of each atom from the start of the cell. The first atom atom
      * in the cell has 0 offset. [nsymm][natom] = offset of the atom
      */
     private int[][] cellOffset;
-    /**
-     * The number of atoms in each cell. [nsymm][ncell]
-     */
-    int[][] cellCount;
-    /**
-     * The index of the first atom in each cell. [nsymm][ncell]
-     */
-    int[][] cellStart;
-    protected final int nSymm;
-    protected double[][][] coordinates;
-    protected boolean[][] select;
     private double[] xf;
     private double[] yf;
     private double[] zf;
-    protected Crystal crystal;
-    public int nAtoms;
-    public final int nThreads;
     private int gridSize;
     private double[] grid = null;
     private DoubleBuffer gridBuffer;
     private double initValue = 0.0;
-    protected SpatialDensityLoop[] spatialDensityLoop;
     private GridInitLoop gridInitLoop;
 
     /**
@@ -225,6 +225,150 @@ public class SpatialDensityRegion extends ParallelRegion {
     }
 
     /**
+     * Assign asymmetric and symmetry mate atoms to cells. This is very fast;
+     * there is little to be gained from parallelizing it at this point.
+     */
+    public void assignAtomsToCells() {
+        // Call the selectAtoms method of subclasses.
+        selectAtoms();
+
+        for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+            final int[] cellIndexs = cellIndex[iSymm];
+            final int[] cellCounts = cellCount[iSymm];
+            final int[] cellStarts = cellStart[iSymm];
+            final int[] cellLists = cellList[iSymm];
+            final int[] cellOffsets = cellOffset[iSymm];
+            final boolean[] selected = select[iSymm];
+
+            // Zero out the cell counts.
+            for (int i = 0; i < nCells; i++) {
+                cellCounts[i] = 0;
+            }
+
+            // Convert to fractional coordinates.
+            final double[][] xyz = coordinates[iSymm];
+            final double[] x = xyz[0];
+            final double[] y = xyz[1];
+            final double[] z = xyz[2];
+            crystal.toFractionalCoordinates(nAtoms, x, y, z, xf, yf, zf);
+
+            // Assign each atom to a cell using fractional coordinates.
+            for (int i = 0; i < nAtoms; i++) {
+                if (!selected[i]) {
+                    continue;
+                }
+
+                double xu = xf[i];
+                double yu = yf[i];
+                double zu = zf[i];
+
+                // Move the atom into the range 0.0 <= x < 1.0
+                while (xu >= 1.0) {
+                    xu -= 1.0;
+                }
+                while (xu < 0.0) {
+                    xu += 1.0;
+                }
+                while (yu >= 1.0) {
+                    yu -= 1.0;
+                }
+                while (yu < 0.0) {
+                    yu += 1.0;
+                }
+                while (zu >= 1.0) {
+                    zu -= 1.0;
+                }
+                while (zu < 0.0) {
+                    zu += 1.0;
+                }
+
+                // The cell indices of this atom.
+                int a = (int) floor(xu * nA);
+                int b = (int) floor(yu * nB);
+                int c = (int) floor(zu * nC);
+
+                // Check to make sure a, b and c are less than nA, nB and nC, respectively.
+                if (a >= nA) {
+                    a = nA - 1;
+                }
+                if (b >= nB) {
+                    b = nB - 1;
+                }
+                if (c >= nC) {
+                    c = nC - 1;
+                }
+
+                // The cell index of this atom.
+                final int index = a + b * nA + c * nAB;
+                cellIndexs[i] = index;
+
+                // The offset of this atom from the beginning of the cell.
+                cellOffsets[i] = cellCounts[index]++;
+            }
+
+            // Define the starting indices.
+            cellStarts[0] = 0;
+            for (int i = 1; i < nCells; i++) {
+                final int i1 = i - 1;
+                cellStarts[i] = cellStarts[i1] + cellCounts[i1];
+            }
+
+            // Move atom locations into a list ordered by cell.
+            for (int i = 0; i < nAtoms; i++) {
+                if (!selected[i]) {
+                    continue;
+                }
+                final int index = cellIndexs[i];
+                cellLists[cellStarts[index]++] = i;
+            }
+
+            // Redefine the starting indices again.
+            cellStarts[0] = 0;
+            for (int i = 1; i < nCells; i++) {
+                final int i1 = i - 1;
+                cellStarts[i] = cellStarts[i1] + cellCounts[i1];
+            }
+        }
+
+        // Loop over work chunks and get rid of empty chunks.
+        actualWork = 0;
+        for (int icell = 0; icell < nWork; icell++) {
+            int ia = workA[icell];
+            int ib = workB[icell];
+            int ic = workC[icell];
+            int ii = count(ia, ib, ic);
+            // Fractional chunks along the C-axis.
+            if (nC > 1) {
+                ii += count(ia, ib, ic + 1);
+                // Fractional chunks along the B-axis.
+                if (nB > 1) {
+                    ii += count(ia, ib + 1, ic);
+                    ii += count(ia, ib + 1, ic + 1);
+                    // Fractional chunks along the A-axis.
+                    if (nA > 1) {
+                        ii += count(ia + 1, ib, ic);
+                        ii += count(ia + 1, ib, ic + 1);
+                        ii += count(ia + 1, ib + 1, ic);
+                        ii += count(ia + 1, ib + 1, ic + 1);
+                    }
+                }
+            }
+
+            // If there is work in this chunk, include it.
+            if (ii > 0) {
+                actualA[actualWork] = ia;
+                actualB[actualWork] = ib;
+                actualC[actualWork] = ic;
+                actualCount[actualWork++] = ii;
+            }
+        }
+
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.finest(format(" Empty chunks: %d out of %d.", nWork - actualWork, nWork));
+        }
+    }
+
+    /**
      * <p>
      * Getter for the field <code>grid</code>.</p>
      *
@@ -235,15 +379,6 @@ public class SpatialDensityRegion extends ParallelRegion {
     }
 
     /**
-     * <p>Setter for the field <code>gridBuffer</code>.</p>
-     *
-     * @param grid a {@link java.nio.DoubleBuffer} object.
-     */
-    void setGridBuffer(DoubleBuffer grid) {
-        gridBuffer = grid;
-    }
-
-    /**
      * <p>
      * getNsymm</p>
      *
@@ -251,6 +386,64 @@ public class SpatialDensityRegion extends ParallelRegion {
      */
     public int getNsymm() {
         return nSymm;
+    }
+
+    /**
+     * <p>
+     * index</p>
+     *
+     * @param ia a int.
+     * @param ib a int.
+     * @param ic a int.
+     * @return a int.
+     */
+    public int index(int ia, int ib, int ic) {
+        return ia + ib * nA + ic * nAB;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void run() {
+        int ti = getThreadIndex();
+        int actualWork1 = actualWork - 1;
+        SpatialDensityLoop loop = spatialDensityLoop[ti];
+
+        // This lets the same SpatialDensityLoops be used with different SpatialDensityRegions.
+        loop.setNsymm(nSymm);
+
+        try {
+            execute(0, gridSize - 1, gridInitLoop);
+            execute(0, actualWork1, loop.setOctant(0));
+            // Fractional chunks along the C-axis.
+            if (nC > 1) {
+                execute(0, actualWork1, loop.setOctant(1));
+                // Fractional chunks along the B-axis.
+                if (nB > 1) {
+                    execute(0, actualWork1, loop.setOctant(2));
+                    execute(0, actualWork1, loop.setOctant(3));
+                    // Fractional chunks along the A-axis.
+                    if (nA > 1) {
+                        execute(0, actualWork1, loop.setOctant(4));
+                        execute(0, actualWork1, loop.setOctant(5));
+                        execute(0, actualWork1, loop.setOctant(6));
+                        execute(0, actualWork1, loop.setOctant(7));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            String message = " Exception in SpatialDensityRegion.";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    /**
+     * Select atoms that should be assigned to cells. The default is to include
+     * all atoms, which is set up in the constructor. This function should be
+     * over-ridden by subclasses that want finer control.
+     */
+    public void selectAtoms() {
     }
 
     /**
@@ -400,17 +593,22 @@ public class SpatialDensityRegion extends ParallelRegion {
         spatialDensityLoop = loops;
     }
 
+    /**
+     * <p>
+     * Setter for the field <code>initValue</code>.</p>
+     *
+     * @param initValue a double.
+     */
+    public void setInitValue(double initValue) {
+        this.initValue = initValue;
+    }
+
     private class GridInitLoop extends IntegerForLoop {
 
         private final IntegerSchedule schedule = IntegerSchedule.fixed();
         // Extra padding to avert cache interference.
         long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
-        @Override
-        public IntegerSchedule schedule() {
-            return schedule;
-        }
 
         @Override
         public void run(int lb, int ub) {
@@ -422,205 +620,20 @@ public class SpatialDensityRegion extends ParallelRegion {
                 }
             }
         }
+
+        @Override
+        public IntegerSchedule schedule() {
+            return schedule;
+        }
     }
 
     /**
-     * <p>
-     * Setter for the field <code>initValue</code>.</p>
+     * <p>Setter for the field <code>gridBuffer</code>.</p>
      *
-     * @param initValue a double.
+     * @param grid a {@link java.nio.DoubleBuffer} object.
      */
-    public void setInitValue(double initValue) {
-        this.initValue = initValue;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void run() {
-        int ti = getThreadIndex();
-        int actualWork1 = actualWork - 1;
-        SpatialDensityLoop loop = spatialDensityLoop[ti];
-
-        // This lets the same SpatialDensityLoops be used with different SpatialDensityRegions.
-        loop.setNsymm(nSymm);
-
-        try {
-            execute(0, gridSize - 1, gridInitLoop);
-            execute(0, actualWork1, loop.setOctant(0));
-            // Fractional chunks along the C-axis.
-            if (nC > 1) {
-                execute(0, actualWork1, loop.setOctant(1));
-                // Fractional chunks along the B-axis.
-                if (nB > 1) {
-                    execute(0, actualWork1, loop.setOctant(2));
-                    execute(0, actualWork1, loop.setOctant(3));
-                    // Fractional chunks along the A-axis.
-                    if (nA > 1) {
-                        execute(0, actualWork1, loop.setOctant(4));
-                        execute(0, actualWork1, loop.setOctant(5));
-                        execute(0, actualWork1, loop.setOctant(6));
-                        execute(0, actualWork1, loop.setOctant(7));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            String message = " Exception in SpatialDensityRegion.";
-            logger.log(Level.SEVERE, message, e);
-        }
-    }
-
-    /**
-     * Select atoms that should be assigned to cells. The default is to include
-     * all atoms, which is set up in the constructor. This function should be
-     * over-ridden by subclasses that want finer control.
-     */
-    public void selectAtoms() {
-    }
-
-    /**
-     * Assign asymmetric and symmetry mate atoms to cells. This is very fast;
-     * there is little to be gained from parallelizing it at this point.
-     */
-    public void assignAtomsToCells() {
-        // Call the selectAtoms method of subclasses.
-        selectAtoms();
-
-        for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-            final int[] cellIndexs = cellIndex[iSymm];
-            final int[] cellCounts = cellCount[iSymm];
-            final int[] cellStarts = cellStart[iSymm];
-            final int[] cellLists = cellList[iSymm];
-            final int[] cellOffsets = cellOffset[iSymm];
-            final boolean[] selected = select[iSymm];
-
-            // Zero out the cell counts.
-            for (int i = 0; i < nCells; i++) {
-                cellCounts[i] = 0;
-            }
-
-            // Convert to fractional coordinates.
-            final double[][] xyz = coordinates[iSymm];
-            final double[] x = xyz[0];
-            final double[] y = xyz[1];
-            final double[] z = xyz[2];
-            crystal.toFractionalCoordinates(nAtoms, x, y, z, xf, yf, zf);
-
-            // Assign each atom to a cell using fractional coordinates.
-            for (int i = 0; i < nAtoms; i++) {
-                if (!selected[i]) {
-                    continue;
-                }
-
-                double xu = xf[i];
-                double yu = yf[i];
-                double zu = zf[i];
-
-                // Move the atom into the range 0.0 <= x < 1.0
-                while (xu >= 1.0) {
-                    xu -= 1.0;
-                }
-                while (xu < 0.0) {
-                    xu += 1.0;
-                }
-                while (yu >= 1.0) {
-                    yu -= 1.0;
-                }
-                while (yu < 0.0) {
-                    yu += 1.0;
-                }
-                while (zu >= 1.0) {
-                    zu -= 1.0;
-                }
-                while (zu < 0.0) {
-                    zu += 1.0;
-                }
-
-                // The cell indices of this atom.
-                int a = (int) floor(xu * nA);
-                int b = (int) floor(yu * nB);
-                int c = (int) floor(zu * nC);
-
-                // Check to make sure a, b and c are less than nA, nB and nC, respectively.
-                if (a >= nA) {
-                    a = nA - 1;
-                }
-                if (b >= nB) {
-                    b = nB - 1;
-                }
-                if (c >= nC) {
-                    c = nC - 1;
-                }
-
-                // The cell index of this atom.
-                final int index = a + b * nA + c * nAB;
-                cellIndexs[i] = index;
-
-                // The offset of this atom from the beginning of the cell.
-                cellOffsets[i] = cellCounts[index]++;
-            }
-
-            // Define the starting indices.
-            cellStarts[0] = 0;
-            for (int i = 1; i < nCells; i++) {
-                final int i1 = i - 1;
-                cellStarts[i] = cellStarts[i1] + cellCounts[i1];
-            }
-
-            // Move atom locations into a list ordered by cell.
-            for (int i = 0; i < nAtoms; i++) {
-                if (!selected[i]) {
-                    continue;
-                }
-                final int index = cellIndexs[i];
-                cellLists[cellStarts[index]++] = i;
-            }
-
-            // Redefine the starting indices again.
-            cellStarts[0] = 0;
-            for (int i = 1; i < nCells; i++) {
-                final int i1 = i - 1;
-                cellStarts[i] = cellStarts[i1] + cellCounts[i1];
-            }
-        }
-
-        // Loop over work chunks and get rid of empty chunks.
-        actualWork = 0;
-        for (int icell = 0; icell < nWork; icell++) {
-            int ia = workA[icell];
-            int ib = workB[icell];
-            int ic = workC[icell];
-            int ii = count(ia, ib, ic);
-            // Fractional chunks along the C-axis.
-            if (nC > 1) {
-                ii += count(ia, ib, ic + 1);
-                // Fractional chunks along the B-axis.
-                if (nB > 1) {
-                    ii += count(ia, ib + 1, ic);
-                    ii += count(ia, ib + 1, ic + 1);
-                    // Fractional chunks along the A-axis.
-                    if (nA > 1) {
-                        ii += count(ia + 1, ib, ic);
-                        ii += count(ia + 1, ib, ic + 1);
-                        ii += count(ia + 1, ib + 1, ic);
-                        ii += count(ia + 1, ib + 1, ic + 1);
-                    }
-                }
-            }
-
-            // If there is work in this chunk, include it.
-            if (ii > 0) {
-                actualA[actualWork] = ia;
-                actualB[actualWork] = ib;
-                actualC[actualWork] = ic;
-                actualCount[actualWork++] = ii;
-            }
-        }
-
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.finest(format(" Empty chunks: %d out of %d.", nWork - actualWork, nWork));
-        }
+    void setGridBuffer(DoubleBuffer grid) {
+        gridBuffer = grid;
     }
 
     private int count(int ia, int ib, int ic) {
@@ -632,18 +645,5 @@ public class SpatialDensityRegion extends ParallelRegion {
             count += (stop - start);
         }
         return count;
-    }
-
-    /**
-     * <p>
-     * index</p>
-     *
-     * @param ia a int.
-     * @param ib a int.
-     * @param ic a int.
-     * @return a int.
-     */
-    public int index(int ia, int ib, int ic) {
-        return ia + ib * nA + ic * nAB;
     }
 }

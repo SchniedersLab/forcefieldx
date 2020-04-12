@@ -93,7 +93,7 @@ public class NamingUtils {
         }
         // May have to get position.
         String residueType = residue.getName().toUpperCase();
-        ArrayList<Atom> resAtoms = residue.getAtomList();
+        List<Atom> resAtoms = residue.getAtomList();
         for (Atom atom : resAtoms) {
             if (atom == null) {
                 continue;
@@ -114,11 +114,11 @@ public class NamingUtils {
         }
         // Ensures proper hydrogen assignment; for example, Gln should have HB2,
         // HB3 instead of HB1, HB2.
-        ArrayList<Atom> betas;
-        ArrayList<Atom> gammas;
-        ArrayList<Atom> deltas;
-        ArrayList<Atom> epsilons;
-        ArrayList<Atom> zetas;
+        List<Atom> betas;
+        List<Atom> gammas;
+        List<Atom> deltas;
+        List<Atom> epsilons;
+        List<Atom> zetas;
         String atomName;
         Atom OH;
         Atom HH;
@@ -126,7 +126,7 @@ public class NamingUtils {
         Atom HD2;
         switch (getAminoAcid(residueType)) {
             case GLY:
-                ArrayList<Atom> alphas = new ArrayList<>();
+                List<Atom> alphas = new ArrayList<>();
                 for (Atom atom : resAtoms) {
                     if (atom.getName().toUpperCase().contains("HA")) {
                         alphas.add(atom);
@@ -150,7 +150,7 @@ public class NamingUtils {
                 renameBetaHydrogens(residue, betas, 23);
                 break;
             case ILE:
-                ArrayList<Atom> ileAtoms = new ArrayList<>();
+                List<Atom> ileAtoms = new ArrayList<>();
                 for (Atom atom : resAtoms) {
                     if (atom.getName().toUpperCase().contains("HG1")) {
                         ileAtoms.add(atom);
@@ -400,7 +400,7 @@ public class NamingUtils {
                 break;
             case ASN:
                 betas = new ArrayList<>();
-                ArrayList<Atom> HD2s = new ArrayList<>();
+                List<Atom> HD2s = new ArrayList<>();
                 for (Atom atom : resAtoms) {
                     atomName = atom.getName().toUpperCase();
                     if (atomName.contains("HB")) {
@@ -531,7 +531,7 @@ public class NamingUtils {
                 gammas = new ArrayList<>();
                 deltas = new ArrayList<>();
                 Atom HE = (Atom) residue.getAtomNode("HE");
-                ArrayList<Atom> HHn = new ArrayList<>();
+                List<Atom> HHn = new ArrayList<>();
                 for (Atom atom : resAtoms) {
                     atomName = atom.getName().toUpperCase();
                     if (atomName.contains("HB")) {

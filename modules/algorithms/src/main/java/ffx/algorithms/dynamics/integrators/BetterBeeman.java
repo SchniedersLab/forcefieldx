@@ -72,21 +72,6 @@ public class BetterBeeman extends Integrator {
     /**
      * {@inheritDoc}
      * <p>
-     * Store the current atom positions, then find new atom positions and
-     * half-step velocities via Beeman recursion.
-     */
-    @Override
-    public void preForce(Potential potential) {
-        for (int i = 0; i < nVariables; i++) {
-            double temp = 5.0 * a[i] - aPrevious[i];
-            x[i] += v[i] * dt + temp * dt2_8;
-            v[i] += temp * dt_8;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Use Newton's second law to get the next acceleration and find the
      * full-step velocities using the Beeman recusion.
      */
@@ -96,6 +81,21 @@ public class BetterBeeman extends Integrator {
         for (int i = 0; i < nVariables; i++) {
             a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
             v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Store the current atom positions, then find new atom positions and
+     * half-step velocities via Beeman recursion.
+     */
+    @Override
+    public void preForce(Potential potential) {
+        for (int i = 0; i < nVariables; i++) {
+            double temp = 5.0 * a[i] - aPrevious[i];
+            x[i] += v[i] * dt + temp * dt2_8;
+            v[i] += temp * dt_8;
         }
     }
 

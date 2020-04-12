@@ -60,7 +60,6 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig;
 import ffx.potential.parameters.MultipoleType;
 import ffx.utilities.Constants;
-
 import static ffx.potential.extended.ExtConstants.RNG;
 import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
 import static ffx.potential.parameters.MultipoleType.zeroM;
@@ -82,32 +81,16 @@ public abstract class ExtendedVariable {
      */
     protected static final Logger logger = Logger.getLogger(ExtendedVariable.class.getName());
     public final int esvIndex;
-
-    /* Lambda and derivative variables. */
-    private double lambda = 1.0;                    // ESVs travel on {0,1}
-    private double theta;                           // Propagates lambda particle via "lambda=sin(theta)^2"
-    private double halfThetaVelocity = 0.0;         // from OST, start theta with zero velocity
-
-    private StringBuilder SB = new StringBuilder();
     /**
      * Magnitude of the discretization bias in kcal/mol.
      */
     private final double discrBiasMag;
-    /**
-     * Discretization bias and its (chain rule) derivative.
-     */
-    private double discrBias, dDiscrBiasdL;
-    /**
-     * Switched lambda value and its (chain rule) derivative.
-     */
-    private double lSwitch, dlSwitch;
     /**
      * Sigmoidal switching function. Maps lambda -> S(lambda) which has a
      * flatter deriv near zero/unity. Properties: {S(0)=0, S(1)=1, dS(0)=0,
      * dS(1)=0, S(1-L)=1-S(L)}.
      */
     private final MultiplicativeSwitch switchingFunction;
-
     /* Atom lists and scaled terms                  */
     private final Residue residueForeground;              // resOne*lamedh + resZero*(1-lamedh)
     private final Residue residueBackground;
@@ -117,15 +100,27 @@ public abstract class ExtendedVariable {
     private final List<Atom> atomsShared;           // all foreground atoms except titrating hydrogens
     private final List<Atom> atomsUnshared;         // titrating (and thus foreground) atoms
     private final int moleculeNumber;
-
-    /* Bonded energy and derivative handling        */
-    private List<BondedTerm> bondedFg, bondedBg;    // valence terms for each side; mola won't see zro by default
-    private MSNode termNode;                        // modified to contain all applicable bonded terms
     private final SharedDouble bondedDeriv = new SharedDouble();    // bonded dUdL reduction target
     private final HashMap<Class<? extends BondedTerm>, SharedDouble> fgBondedDerivDecomp;    // foreground dUdL by term
     private final HashMap<Class<? extends BondedTerm>, SharedDouble> bgBondedDerivDecomp;    // background dUdL by term
     private final HashMap<Atom, Atom> fg2bg = new HashMap<>();       // maps multipole end points of this ESV's lambda path
     private final ExtendedSystemConfig config;
+    /* Lambda and derivative variables. */
+    private double lambda = 1.0;                    // ESVs travel on {0,1}
+    private double theta;                           // Propagates lambda particle via "lambda=sin(theta)^2"
+    private double halfThetaVelocity = 0.0;         // from OST, start theta with zero velocity
+    private StringBuilder SB = new StringBuilder();
+    /**
+     * Discretization bias and its (chain rule) derivative.
+     */
+    private double discrBias, dDiscrBiasdL;
+    /**
+     * Switched lambda value and its (chain rule) derivative.
+     */
+    private double lSwitch, dlSwitch;
+    /* Bonded energy and derivative handling        */
+    private List<BondedTerm> bondedFg, bondedBg;    // valence terms for each side; mola won't see zro by default
+    private MSNode termNode;                        // modified to contain all applicable bonded terms
 
     /**
      * Prefer ExtendedSystem::populate to manual ESV creation.
@@ -230,6 +225,86 @@ public abstract class ExtendedVariable {
     }
 
     /**
+     * List all the atoms and bonded terms associated with each end state.
+     */
+    public final void describe() {
+        SB.append(format(" %s", this.toString()));
+        SB.append(format("   %-50s %-50s", "Shared Atoms", "(Background)"));
+        for (int i = 0; i < atomsShared.size(); i++) {
+            Atom ai = atomsShared.get(i);
+            SB.append(format("     %-50s %-50s",
+                    ai.describe(Atom.Descriptions.Default).trim(),
+                    fg2bg.get(ai).describe(Atom.Descriptions.Trim)));
+        }
+        SB.append(format("   Unshared Atoms"));
+        for (Atom atom : atomsUnshared) {
+            SB.append(format("%s", atom));
+        }
+        SB.append(format("   %-50s %-50s", "Bonded Terms", "(Background)"));
+        MSNode extendedNode = termNode.getChildList().stream()
+                .filter(node -> node.toString().contains("Extended")).findAny().orElse(null);
+        for (MSNode term : termNode.getChildList()) {
+            if (term == extendedNode) {
+                continue;
+            }
+            MSNode background = (extendedNode == null) ? null
+                    : extendedNode.getChildList().stream()
+                    .filter(node -> node.toString()
+                            .startsWith(term.toString().substring(0, term.toString().indexOf("("))))
+                    .findAny().orElse(null);
+            String bgTermString = (background != null) ? background.toString() : "";
+            SB.append(format("     %-50s %-50s", term.toString(), bgTermString));
+        }
+        logger.info(SB.toString());
+    }
+
+    /**
+     * <p>Getter for the field <code>esvIndex</code>.</p>
+     *
+     * @return a int.
+     */
+    public final int getEsvIndex() {
+        return esvIndex;
+    }
+
+    /**
+     * The unswitched lambda value, ie input to S(L).
+     *
+     * @return a double.
+     */
+    public final double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * Should only be called by ExtendedSystem since an updateListeners() call
+     * is required afterwards to notify VdW and PME.
+     *
+     * @param lambda a double.
+     */
+    protected void setLambda(double lambda) {
+        setLambda(lambda, true);
+    }
+
+    /**
+     * <p>getName.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getName() {
+        return String.format("Esv%d", esvIndex);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return String.format("%s (%4.2f)",
+                this.getName(), getLambda());
+    }
+
+    /**
      * Should include at least the discretization bias; add any type-specific
      * biases (eg pH).
      *
@@ -279,16 +354,6 @@ public abstract class ExtendedVariable {
 
         double sinTheta = sin(theta);
         setLambda(sinTheta * sinTheta);
-    }
-
-    /**
-     * Should only be called by ExtendedSystem since an updateListeners() call
-     * is required afterwards to notify VdW and PME.
-     *
-     * @param lambda a double.
-     */
-    protected void setLambda(double lambda) {
-        setLambda(lambda, true);
     }
 
     private void setLambda(double lambda, boolean updateComponents) {
@@ -391,15 +456,6 @@ public abstract class ExtendedVariable {
     }
 
     /**
-     * The unswitched lambda value, ie input to S(L).
-     *
-     * @return a double.
-     */
-    public final double getLambda() {
-        return lambda;
-    }
-
-    /**
      * <p>getLambdaSwitch.</p>
      *
      * @return a double.
@@ -415,33 +471,6 @@ public abstract class ExtendedVariable {
      */
     protected final double getSwitchDeriv() {
         return (config.allowLambdaSwitch) ? dlSwitch : 1.0;        // dS(L)dL
-    }
-
-    /**
-     * <p>Getter for the field <code>esvIndex</code>.</p>
-     *
-     * @return a int.
-     */
-    public final int getEsvIndex() {
-        return esvIndex;
-    }
-
-    /**
-     * <p>getName.</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String getName() {
-        return String.format("Esv%d", esvIndex);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return String.format("%s (%4.2f)",
-                this.getName(), getLambda());
     }
 
     /**
@@ -470,40 +499,6 @@ public abstract class ExtendedVariable {
      */
     protected Atom getBackgroundForAtom(Atom foreground) {
         return fg2bg.get(foreground);
-    }
-
-    /**
-     * List all the atoms and bonded terms associated with each end state.
-     */
-    public final void describe() {
-        SB.append(format(" %s", this.toString()));
-        SB.append(format("   %-50s %-50s", "Shared Atoms", "(Background)"));
-        for (int i = 0; i < atomsShared.size(); i++) {
-            Atom ai = atomsShared.get(i);
-            SB.append(format("     %-50s %-50s",
-                    ai.describe(Atom.Descriptions.Default).trim(),
-                    fg2bg.get(ai).describe(Atom.Descriptions.Trim)));
-        }
-        SB.append(format("   Unshared Atoms"));
-        for (Atom atom : atomsUnshared) {
-            SB.append(format("%s", atom));
-        }
-        SB.append(format("   %-50s %-50s", "Bonded Terms", "(Background)"));
-        MSNode extendedNode = termNode.getChildList().stream()
-                .filter(node -> node.toString().contains("Extended")).findAny().orElse(null);
-        for (MSNode term : termNode.getChildList()) {
-            if (term == extendedNode) {
-                continue;
-            }
-            MSNode background = (extendedNode == null) ? null
-                    : extendedNode.getChildList().stream()
-                    .filter(node -> node.toString()
-                            .startsWith(term.toString().substring(0, term.toString().indexOf("("))))
-                    .findAny().orElse(null);
-            String bgTermString = (background != null) ? background.toString() : "";
-            SB.append(format("     %-50s %-50s", term.toString(), bgTermString));
-        }
-        logger.info(SB.toString());
     }
 
     /**

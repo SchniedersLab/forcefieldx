@@ -59,15 +59,6 @@ public class ComplexTest {
     private final double[] data;
     private final double[] expected;
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                // This test will fail without the factor 7 {"Test n = 21", 21, true},
-                {"Test n = 22", 22, false},
-                {"Test n = 120", 120, true}
-        });
-    }
-
     public ComplexTest(String info, int n, boolean preferred) {
         this.info = info;
         this.n = n;
@@ -82,13 +73,13 @@ public class ComplexTest {
         }
     }
 
-    /**
-     * Test of preferredDimension method, of class Complex.
-     */
-    @Test
-    public void testPreferredDimension() {
-        boolean result = Complex.preferredDimension(n);
-        assertEquals(info, preferred, result);
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                // This test will fail without the factor 7 {"Test n = 21", 21, true},
+                {"Test n = 22", 22, false},
+                {"Test n = 120", 120, true}
+        });
     }
 
     /**
@@ -108,5 +99,14 @@ public class ComplexTest {
             double actual = data[i * 2];
             assertEquals(info, orig, actual, tolerance);
         }
+    }
+
+    /**
+     * Test of preferredDimension method, of class Complex.
+     */
+    @Test
+    public void testPreferredDimension() {
+        boolean result = Complex.preferredDimension(n);
+        assertEquals(info, preferred, result);
     }
 }

@@ -104,28 +104,43 @@ public class PhMD implements MonteCarloListener {
     private static final boolean CAUTIOUS = true;
 
     private static final double NS_TO_SEC = 0.000000001;
-    private long startTime;
-    private StringBuilder discountLogger;
-    /**
-     * The MolecularAssembly.
-     */
-    private final MolecularAssembly molecularAssembly;
-    /**
-     * The MolecularDynamics object controlling the simulation.
-     */
-    private MolecularDynamics molecularDynamics;
-    /**
-     * The MD thermostat.
-     */
-    private final Thermostat thermostat;
     /**
      * Boltzmann's constant is kcal/mol/Kelvin.
      */
     private static final double BOLTZMANN = 0.0019872041;
     /**
+     * The MolecularAssembly.
+     */
+    private final MolecularAssembly molecularAssembly;
+    /**
+     * The MD thermostat.
+     */
+    private final Thermostat thermostat;
+    /**
      * Simulation pH.
      */
     private final double pH;
+    /**
+     * Everyone's favorite.
+     */
+    private final Random rng = new Random();
+    /**
+     * The forcefield being used. Needed by MultiResidue constructor.
+     */
+    private final ForceField forceField;
+    /**
+     * The ForceFieldEnergy object being used by MD. Needed by MultiResidue
+     * constructor and for reinitializing after a chemical change.
+     */
+    private final ForceFieldEnergy forceFieldEnergy;
+    private final TitrationConfig titrationConfig;
+    private final Distribution distribution;
+    private long startTime;
+    private StringBuilder discountLogger;
+    /**
+     * The MolecularDynamics object controlling the simulation.
+     */
+    private MolecularDynamics molecularDynamics;
     /**
      * The current MD step.
      */
@@ -159,19 +174,6 @@ public class PhMD implements MonteCarloListener {
      */
     private HashMap<Residue, List<Titration>> titrationMap = new HashMap<>();
     /**
-     * Everyone's favorite.
-     */
-    private final Random rng = new Random();
-    /**
-     * The forcefield being used. Needed by MultiResidue constructor.
-     */
-    private final ForceField forceField;
-    /**
-     * The ForceFieldEnergy object being used by MD. Needed by MultiResidue
-     * constructor and for reinitializing after a chemical change.
-     */
-    private final ForceFieldEnergy forceFieldEnergy;
-    /**
      * Snapshot index for the [num] portion of filename above.
      */
     private int snapshotIndex = 0;
@@ -179,17 +181,9 @@ public class PhMD implements MonteCarloListener {
      * Target of the most recently accepted move.
      */
     private Residue previousTarget;
-
     private ExtendedSystem esvSystem;
     private Object[] mdOptions;
     private RotamerLibrary library;
-    private final TitrationConfig titrationConfig;
-
-    private final Distribution distribution;
-
-    public enum Distribution {
-        DISCRETE, CONTINUOUS;
-    }
 
     /**
      * Construct a Monte-Carlo protonation state switching mechanism.
@@ -233,12 +227,242 @@ public class PhMD implements MonteCarloListener {
     }
 
     /**
+     * Get the current MC acceptance rate.
+     *
+     * @return the acceptance rate.
+     */
+    public double getAcceptanceRate() {
+        // Intentional integer division.
+        int numTries = stepCount / mcStepFrequency;
+        return (double) numMovesAccepted / numTries;
+    }
+
+    /**
+     * <p>launch.</p>
+     *
+     * @param md              a {@link MolecularDynamics} object.
+     * @param mcStepFrequency a int.
+     * @param timeStep        a double.
+     * @param printInterval   a double.
+     * @param saveInterval    a double.
+     * @param temperature     a double.
+     * @param initVelocities  a boolean.
+     * @param dyn             a {@link java.io.File} object.
+     */
+    public void launch(MolecularDynamics md, int mcStepFrequency, double timeStep,
+                       double printInterval, double saveInterval,
+                       double temperature, boolean initVelocities, File dyn) {
+        this.molecularDynamics = md;
+        this.mcStepFrequency = mcStepFrequency;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The primary driver. Called by the MD engine at each dynamics step.
+     */
+    @Override
+    public boolean mcUpdate(double temperature) {
+        startTime = System.nanoTime();
+        if (thermostat.getCurrentTemperature() > titrationConfig.meltdownTemperature) {
+            meltdown();
+        }
+
+        if (thermostat.getCurrentTemperature() > titrationConfig.warningTemperature) {
+            Atom[] atoms = molecularAssembly.getAtomArray();
+            logger.info(format(" System heating! Dumping atomic velocities for %d D.o.F.:", forceFieldEnergy.getNumberOfVariables()));
+            double[] velocity = new double[3];
+            for (Atom atom : atoms) {
+                atom.getVelocity(velocity);
+                logger.info(format(" %s: %s", atom.describe(Atom.Descriptions.Trim), Arrays.toString(velocity)));
+            }
+        }
+        esvSystem.setTemperature(temperature);
+
+        propagateInactiveResidues(titratingMultis);
+        stepCount++;
+
+        // Decide on the type of step to be taken.
+        StepType stepType;
+        if (stepCount % mcStepFrequency == 0 && stepCount % rotamerStepFrequency == 0) {
+            stepType = StepType.COMBO;
+        } else if (stepCount % mcStepFrequency == 0) {
+            stepType = StepType.TITRATE;
+        } else if (stepCount % rotamerStepFrequency == 0) {
+            stepType = StepType.ROTAMER;
+        } else {
+            // Not yet time for an MC step, return to MD.
+            if (titrationConfig.logTimings) {
+                long took = System.nanoTime() - startTime;
+                logger.info(String.format(" CpHMD propagation time: %.6f", took * NS_TO_SEC));
+            }
+            return false;
+        }
+
+        logger.info(format("TitratingMultis: %d", titratingMultis.size()));
+
+        // Randomly choose a target titratable residue to attempt protonation switch.
+        int random = (titrationConfig.titrateTermini)
+                ? rng.nextInt(titratingMultis.size() + titratingTermini.size())
+                : rng.nextInt(titratingMultis.size());
+
+        if (random >= titratingMultis.size()) {
+            Residue target = titratingTermini.get(random - titratingMultis.size());
+            boolean accepted = tryTerminusTitration((MultiTerminus) target);
+            snapshotIndex++;
+            if (accepted) {
+                molecularDynamics.reInit();
+                previousTarget = target;
+            }
+            return accepted;
+        }
+        MultiResidue targetMulti = titratingMultis.get(random);
+
+        // Check whether rotamer moves are possible for the selected residue.
+        Residue targetMultiActive = targetMulti.getActive();
+        Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers(library);
+        if (targetMultiRotamers == null || targetMultiRotamers.length <= 1) {
+            if (stepType == StepType.ROTAMER) {
+                return false;
+            } else if (stepType == StepType.COMBO) {
+                stepType = StepType.TITRATE;
+            }
+        }
+
+        // Perform the MC move.
+        boolean accepted;
+        switch (stepType) {
+            case TITRATE:
+                accepted = tryTitrationStep(targetMulti);
+                break;
+            case ROTAMER:
+                accepted = (titrationConfig.useConformationalBias)
+                        ? tryCBMCStep(targetMulti)
+                        : tryRotamerStep(targetMulti);
+                break;
+            case COMBO:
+                accepted = (titrationConfig.useConformationalBias)
+                        ? tryCBMCStep(targetMulti) || tryTitrationStep(targetMulti)
+                        : tryComboStep(targetMulti);
+                break;
+            default:
+                accepted = false;
+                throw new IllegalStateException();
+        }
+
+        snapshotIndex++;
+        if (accepted) {
+            previousTarget = targetMulti;
+        }
+        if (titrationConfig.logTimings) {
+            long took = System.nanoTime() - startTime;
+            logger.info(String.format(" CpHMD step time:        %.6f", took * NS_TO_SEC));
+        }
+        return accepted;
+    }
+
+    /**
+     * <p>setDynamicsLauncher.</p>
+     *
+     * @param opt an array of {@link java.lang.Object} objects.
+     */
+    public void setDynamicsLauncher(Object[] opt) {
+        this.mdOptions = opt;
+    }
+
+    /**
      * <p>Setter for the field <code>rotamerStepFrequency</code>.</p>
      *
      * @param frequency a int.
      */
     public void setRotamerStepFrequency(int frequency) {
         this.rotamerStepFrequency = (frequency <= 0) ? Integer.MAX_VALUE : frequency;
+    }
+
+    public enum Distribution {
+        DISCRETE, CONTINUOUS;
+    }
+
+    private enum StepType {
+        TITRATE, ROTAMER, COMBO, CONTINUOUS_DYNAMICS;
+    }
+
+    public class DynamicsLauncher {
+        private final int nSteps;
+        private final boolean initVelocities;
+        private final double timeStep, print, save, restart, temperature;
+        private final String fileType;
+        private final File dynFile;
+
+        public DynamicsLauncher(MolecularDynamics md, Object[] opt) {
+            molecularDynamics = md;
+            nSteps = (int) opt[0];
+            timeStep = (double) opt[1];
+            print = (double) opt[2];
+            save = (double) opt[3];
+            restart = (double) opt[4];
+            initVelocities = (boolean) opt[5];
+            fileType = (String) opt[6];
+            temperature = (double) opt[7];
+            dynFile = (File) opt[8];
+        }
+
+        public DynamicsLauncher(MolecularDynamics md,
+                                int nSteps, double timeStep,
+                                double print, double save,
+                                double temperature, boolean initVelocities,
+                                String fileType, double restart,
+                                File dynFile) {
+            molecularDynamics = md;
+            this.nSteps = nSteps;
+            this.initVelocities = initVelocities;
+            this.timeStep = timeStep;
+            this.print = print;
+            this.save = save;
+            this.restart = restart;
+            this.temperature = temperature;
+            this.fileType = fileType;
+            this.dynFile = dynFile;
+        }
+
+        public DynamicsLauncher(MolecularDynamics md,
+                                int nSteps, double timeStep,
+                                double print, double save,
+                                double temperature, boolean initVelocities,
+                                File dynFile) {
+            molecularDynamics = md;
+            this.nSteps = nSteps;
+            this.initVelocities = initVelocities;
+            this.timeStep = timeStep;
+            this.print = print;
+            this.save = save;
+            this.restart = 0.1;
+            this.temperature = temperature;
+            this.fileType = "PDB";
+            this.dynFile = dynFile;
+        }
+
+        public void launch() {
+            launch(nSteps);
+        }
+
+        public void launch(int nSteps) {
+            /* For reference:
+            molDyn.init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
+            molDyn.dynamic(nSteps, timeStep,
+                  printInterval, saveInterval,
+                  temperature, initVelocities,
+                  fileType, restartFrequency, dyn);   */
+            discountLogger.append(format("    dynamic launcher parameters: %d %g %g %g %g %s %g\n",
+                    mdOptions[0], mdOptions[1], mdOptions[2], mdOptions[3],
+                    mdOptions[4], mdOptions[5], mdOptions[7]));
+//            discountLogger.append(format("    terminating current md...\n"));
+//            log();
+//            molDyn.terminate();
+            discountLogger.append(format("    launching new md process...\n"));
+            log();
+            molecularDynamics.dynamic(nSteps, timeStep, print, save, temperature, initVelocities, fileType, restart, dynFile);
+        }
     }
 
     private void readyup() {
@@ -378,139 +602,6 @@ public class PhMD implements MonteCarloListener {
         if (initMolDyn) {
             molecularDynamics.reInit();
         }
-    }
-
-    /**
-     * <p>setDynamicsLauncher.</p>
-     *
-     * @param opt an array of {@link java.lang.Object} objects.
-     */
-    public void setDynamicsLauncher(Object[] opt) {
-        this.mdOptions = opt;
-    }
-
-    /**
-     * <p>launch.</p>
-     *
-     * @param md              a {@link MolecularDynamics} object.
-     * @param mcStepFrequency a int.
-     * @param timeStep        a double.
-     * @param printInterval   a double.
-     * @param saveInterval    a double.
-     * @param temperature     a double.
-     * @param initVelocities  a boolean.
-     * @param dyn             a {@link java.io.File} object.
-     */
-    public void launch(MolecularDynamics md, int mcStepFrequency, double timeStep,
-                       double printInterval, double saveInterval,
-                       double temperature, boolean initVelocities, File dyn) {
-        this.molecularDynamics = md;
-        this.mcStepFrequency = mcStepFrequency;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The primary driver. Called by the MD engine at each dynamics step.
-     */
-    @Override
-    public boolean mcUpdate(double temperature) {
-        startTime = System.nanoTime();
-        if (thermostat.getCurrentTemperature() > titrationConfig.meltdownTemperature) {
-            meltdown();
-        }
-
-        if (thermostat.getCurrentTemperature() > titrationConfig.warningTemperature) {
-            Atom[] atoms = molecularAssembly.getAtomArray();
-            logger.info(format(" System heating! Dumping atomic velocities for %d D.o.F.:", forceFieldEnergy.getNumberOfVariables()));
-            double[] velocity = new double[3];
-            for (Atom atom : atoms) {
-                atom.getVelocity(velocity);
-                logger.info(format(" %s: %s", atom.describe(Atom.Descriptions.Trim), Arrays.toString(velocity)));
-            }
-        }
-        esvSystem.setTemperature(temperature);
-
-        propagateInactiveResidues(titratingMultis);
-        stepCount++;
-
-        // Decide on the type of step to be taken.
-        StepType stepType;
-        if (stepCount % mcStepFrequency == 0 && stepCount % rotamerStepFrequency == 0) {
-            stepType = StepType.COMBO;
-        } else if (stepCount % mcStepFrequency == 0) {
-            stepType = StepType.TITRATE;
-        } else if (stepCount % rotamerStepFrequency == 0) {
-            stepType = StepType.ROTAMER;
-        } else {
-            // Not yet time for an MC step, return to MD.
-            if (titrationConfig.logTimings) {
-                long took = System.nanoTime() - startTime;
-                logger.info(String.format(" CpHMD propagation time: %.6f", took * NS_TO_SEC));
-            }
-            return false;
-        }
-
-        logger.info(format("TitratingMultis: %d", titratingMultis.size()));
-
-        // Randomly choose a target titratable residue to attempt protonation switch.
-        int random = (titrationConfig.titrateTermini)
-                ? rng.nextInt(titratingMultis.size() + titratingTermini.size())
-                : rng.nextInt(titratingMultis.size());
-
-        if (random >= titratingMultis.size()) {
-            Residue target = titratingTermini.get(random - titratingMultis.size());
-            boolean accepted = tryTerminusTitration((MultiTerminus) target);
-            snapshotIndex++;
-            if (accepted) {
-                molecularDynamics.reInit();
-                previousTarget = target;
-            }
-            return accepted;
-        }
-        MultiResidue targetMulti = titratingMultis.get(random);
-
-        // Check whether rotamer moves are possible for the selected residue.
-        Residue targetMultiActive = targetMulti.getActive();
-        Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers(library);
-        if (targetMultiRotamers == null || targetMultiRotamers.length <= 1) {
-            if (stepType == StepType.ROTAMER) {
-                return false;
-            } else if (stepType == StepType.COMBO) {
-                stepType = StepType.TITRATE;
-            }
-        }
-
-        // Perform the MC move.
-        boolean accepted;
-        switch (stepType) {
-            case TITRATE:
-                accepted = tryTitrationStep(targetMulti);
-                break;
-            case ROTAMER:
-                accepted = (titrationConfig.useConformationalBias)
-                        ? tryCBMCStep(targetMulti)
-                        : tryRotamerStep(targetMulti);
-                break;
-            case COMBO:
-                accepted = (titrationConfig.useConformationalBias)
-                        ? tryCBMCStep(targetMulti) || tryTitrationStep(targetMulti)
-                        : tryComboStep(targetMulti);
-                break;
-            default:
-                accepted = false;
-                throw new IllegalStateException();
-        }
-
-        snapshotIndex++;
-        if (accepted) {
-            previousTarget = targetMulti;
-        }
-        if (titrationConfig.logTimings) {
-            long took = System.nanoTime() - startTime;
-            logger.info(String.format(" CpHMD step time:        %.6f", took * NS_TO_SEC));
-        }
-        return accepted;
     }
 
     private void log() {
@@ -802,7 +893,7 @@ public class PhMD implements MonteCarloListener {
 
         // Save coordinates so we can return to them if move is rejected.
         Residue residue = targetMulti.getActive();
-        ArrayList<Atom> atoms = residue.getAtomList();
+        List<Atom> atoms = residue.getAtomList();
         ResidueState origState = residue.storeState();
         double chi[] = new double[4];
         RotamerLibrary.measureAARotamer(residue, chi, false);
@@ -889,7 +980,7 @@ public class PhMD implements MonteCarloListener {
 
         // Change rotamer state, but first save coordinates so we can return to them if rejected.
         Residue residue = targetMulti.getActive();
-        ArrayList<Atom> atoms = residue.getAtomList();
+        List<Atom> atoms = residue.getAtomList();
         ResidueState origState = residue.storeState();
         double chi[] = new double[4];
         RotamerLibrary.measureAARotamer(residue, chi, false);
@@ -984,17 +1075,6 @@ public class PhMD implements MonteCarloListener {
     }
 
     /**
-     * Get the current MC acceptance rate.
-     *
-     * @return the acceptance rate.
-     */
-    public double getAcceptanceRate() {
-        // Intentional integer division.
-        int numTries = stepCount / mcStepFrequency;
-        return (double) numMovesAccepted / numTries;
-    }
-
-    /**
      * Calculates the electrostatic energy at the current state.
      *
      * @return Energy of the current state.
@@ -1058,88 +1138,6 @@ public class PhMD implements MonteCarloListener {
             PDBFilter afterWriter = new PDBFilter(afterFile, molecularAssembly, null, null);
             afterWriter.writeFile(afterFile, false);
         }
-    }
-
-    public class DynamicsLauncher {
-        private final int nSteps;
-        private final boolean initVelocities;
-        private final double timeStep, print, save, restart, temperature;
-        private final String fileType;
-        private final File dynFile;
-
-        public DynamicsLauncher(MolecularDynamics md, Object[] opt) {
-            molecularDynamics = md;
-            nSteps = (int) opt[0];
-            timeStep = (double) opt[1];
-            print = (double) opt[2];
-            save = (double) opt[3];
-            restart = (double) opt[4];
-            initVelocities = (boolean) opt[5];
-            fileType = (String) opt[6];
-            temperature = (double) opt[7];
-            dynFile = (File) opt[8];
-        }
-
-        public DynamicsLauncher(MolecularDynamics md,
-                                int nSteps, double timeStep,
-                                double print, double save,
-                                double temperature, boolean initVelocities,
-                                String fileType, double restart,
-                                File dynFile) {
-            molecularDynamics = md;
-            this.nSteps = nSteps;
-            this.initVelocities = initVelocities;
-            this.timeStep = timeStep;
-            this.print = print;
-            this.save = save;
-            this.restart = restart;
-            this.temperature = temperature;
-            this.fileType = fileType;
-            this.dynFile = dynFile;
-        }
-
-        public DynamicsLauncher(MolecularDynamics md,
-                                int nSteps, double timeStep,
-                                double print, double save,
-                                double temperature, boolean initVelocities,
-                                File dynFile) {
-            molecularDynamics = md;
-            this.nSteps = nSteps;
-            this.initVelocities = initVelocities;
-            this.timeStep = timeStep;
-            this.print = print;
-            this.save = save;
-            this.restart = 0.1;
-            this.temperature = temperature;
-            this.fileType = "PDB";
-            this.dynFile = dynFile;
-        }
-
-        public void launch() {
-            launch(nSteps);
-        }
-
-        public void launch(int nSteps) {
-            /* For reference:
-            molDyn.init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
-            molDyn.dynamic(nSteps, timeStep,
-                  printInterval, saveInterval,
-                  temperature, initVelocities,
-                  fileType, restartFrequency, dyn);   */
-            discountLogger.append(format("    dynamic launcher parameters: %d %g %g %g %g %s %g\n",
-                    mdOptions[0], mdOptions[1], mdOptions[2], mdOptions[3],
-                    mdOptions[4], mdOptions[5], mdOptions[7]));
-//            discountLogger.append(format("    terminating current md...\n"));
-//            log();
-//            molDyn.terminate();
-            discountLogger.append(format("    launching new md process...\n"));
-            log();
-            molecularDynamics.dynamic(nSteps, timeStep, print, save, temperature, initVelocities, fileType, restart, dynFile);
-        }
-    }
-
-    private enum StepType {
-        TITRATE, ROTAMER, COMBO, CONTINUOUS_DYNAMICS;
     }
 
 }

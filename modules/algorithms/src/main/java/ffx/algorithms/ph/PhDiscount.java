@@ -83,21 +83,16 @@ import static ffx.utilities.Constants.NS2SEC;
  */
 public class PhDiscount implements MonteCarloListener {
     private static final Logger logger = Logger.getLogger(PhDiscount.class.getName());
-
+    /* Debug */
+    private static final String[] keyPrefixes = new String[]{"phmd", "esv", "md", "ffe", "sys", "db", "sdl"};
     private final TitrationConfig titrationConfig;
     private final MolecularAssembly molecularAssembly;
     private final ForceFieldEnergy forceFieldEnergy;
     private final MolecularDynamics molecularDynamics;
     private final Thermostat thermostat;
     private final String originalFilename;
-    private List<MultiResidue> titratingMultiResidues = new ArrayList<>();
-
     private final Random rng = new Random();
-    private int snapshotIndex = 0;
-
     private final ExtendedSystem esvSystem;
-    private int numESVs;
-
     /* Original parameters to MolecularDynamics constructor; necessary for relaunch. */
     private final double dt;
     private final double printInterval;
@@ -106,9 +101,9 @@ public class PhDiscount implements MonteCarloListener {
     private final String fileType;
     private final double writeRestartInterval;
     private final File dynLoader;
-
-    /* Debug */
-    private static final String[] keyPrefixes = new String[]{"phmd", "esv", "md", "ffe", "sys", "db", "sdl"};
+    private List<MultiResidue> titratingMultiResidues = new ArrayList<>();
+    private int snapshotIndex = 0;
+    private int numESVs;
 
     /**
      * Construct a "Discrete-Continuous" Monte-Carlo titration engine.
@@ -153,18 +148,6 @@ public class PhDiscount implements MonteCarloListener {
         forceFieldEnergy.reInit();
         molecularDynamics.reInit();
         molecularDynamics.setMonteCarloListener(this, MonteCarloNotification.EACH_STEP);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Update the position of background atoms at each step, lest bonded term energies become inconsistent.
-     */
-    @Override
-    public boolean mcUpdate(double temperature) {
-        esvSystem.setTemperature(temperature);
-        propagateInactiveResidues(titratingMultiResidues, true);
-        return true;
     }
 
     /**
@@ -217,6 +200,18 @@ public class PhDiscount implements MonteCarloListener {
         /* Profit{!,?,.} */
         logger.info(format(" (Summary) DISCOUNT pHMD completed %d physical steps and %d moves, of which %d were accepted.",
                 physicalSteps, movesAttempted, movesAccepted));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Update the position of background atoms at each step, lest bonded term energies become inconsistent.
+     */
+    @Override
+    public boolean mcUpdate(double temperature) {
+        esvSystem.setTemperature(temperature);
+        propagateInactiveResidues(titratingMultiResidues, true);
+        return true;
     }
 
     /**

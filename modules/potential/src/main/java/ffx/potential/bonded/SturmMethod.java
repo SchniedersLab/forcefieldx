@@ -40,6 +40,7 @@ package ffx.potential.bonded;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -212,7 +213,7 @@ public class SturmMethod {
     public File writePDBBackbone(double[][] r_n, double[][] r_a, double[][] r_c, int stt_res, int end_res, MolecularAssembly molAss, int counter, boolean writeFile) {
 
         Polymer[] newChain = molAss.getChains();
-        ArrayList<Atom> backBoneAtoms;
+        List<Atom> backBoneAtoms;
         double[] xyz_n = new double[3];
         double[] xyz_a = new double[3];
         double[] xyz_c = new double[3];
@@ -224,7 +225,7 @@ public class SturmMethod {
         xyz_o[4][1] = 0.0;
         xyz_o[4][2] = 0.0;
 
-        ArrayList<Atom> OAtoms = new ArrayList<>();
+        List<Atom> OAtoms = new ArrayList<>();
 
         for (int i = stt_res + 1; i < end_res; i++) {
             Residue newResidue = newChain[0].getResidue(i);
@@ -264,7 +265,7 @@ public class SturmMethod {
                 }
             }
 
-            ArrayList<Atom> sideChainAtoms = newResidue.getSideChainAtoms();
+            List<Atom> sideChainAtoms = newResidue.getSideChainAtoms();
             for (Atom sideChainAtom : sideChainAtoms) {
                 newResidue.deleteAtom(sideChainAtom);
             }

@@ -51,16 +51,16 @@ import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import static ffx.crystal.Crystal.quad_form;
-import static ffx.numerics.math.ScalarMath.b2u;
-import static ffx.numerics.math.MatrixMath.determinant3;
-import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.MatrixMath.determinant3;
 import static ffx.numerics.math.MatrixMath.mat3Inverse;
 import static ffx.numerics.math.MatrixMath.mat3Mat3;
-import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.MatrixMath.scalarMat3Mat3;
-import static ffx.numerics.math.ScalarMath.u2b;
 import static ffx.numerics.math.MatrixMath.vec3Mat3;
+import static ffx.numerics.math.ScalarMath.b2u;
+import static ffx.numerics.math.ScalarMath.u2b;
 
 /**
  * This implementation uses the coefficients from International Tables, Vol. C,
@@ -202,9 +202,6 @@ public final class NeutronFormFactor implements FormFactor {
     }
 
     private final Atom atom;
-    private double uadd;
-    private double occ;
-    private boolean hasAnisou;
     private final double[] xyz = new double[3];
     private final double[] dxyz = new double[3];
     private final double[] a = new double[2];
@@ -217,6 +214,9 @@ public final class NeutronFormFactor implements FormFactor {
     private final double[] gradu = new double[6];
     private final double[] resv = new double[3];
     private final double[][] resm = new double[3][3];
+    private double uadd;
+    private double occ;
+    private boolean hasAnisou;
     private double[] uaniso = null;
 
     /**
@@ -283,19 +283,14 @@ public final class NeutronFormFactor implements FormFactor {
 
     /**
      * <p>
-     * getFormFactorIndex</p>
+     * f</p>
      *
-     * @param atom a {@link java.lang.String} object.
-     * @return a int.
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @return a double.
      */
-    public static int getFormFactorIndex(String atom) {
-        double[][] ffactor;
-        ffactor = getFormFactor(atom);
-        if (ffactor != null) {
-            return (int) ffactor[0][0];
-        } else {
-            return -1;
-        }
+    public double f(HKL hkl) {
+        double sum = a[0] * exp(-twopi2 * quad_form(hkl, u[0]));
+        return occ * sum;
     }
 
     /**
@@ -317,34 +312,19 @@ public final class NeutronFormFactor implements FormFactor {
 
     /**
      * <p>
-     * getFormFactor</p>
+     * getFormFactorIndex</p>
      *
      * @param atom a {@link java.lang.String} object.
-     * @return an array of double.
+     * @return a int.
      */
-    private static double[][] getFormFactor(String atom) {
-        double[][] ffactor = null;
-
-        if (formfactors.containsKey(atom)) {
-            ffactor = formfactors.get(atom);
+    public static int getFormFactorIndex(String atom) {
+        double[][] ffactor;
+        ffactor = getFormFactor(atom);
+        if (ffactor != null) {
+            return (int) ffactor[0][0];
         } else {
-            String message = "Form factor for atom: " + atom + " not found!";
-            logger.severe(message);
+            return -1;
         }
-
-        return ffactor;
-    }
-
-    /**
-     * <p>
-     * f</p>
-     *
-     * @param hkl a {@link ffx.crystal.HKL} object.
-     * @return a double.
-     */
-    public double f(HKL hkl) {
-        double sum = a[0] * exp(-twopi2 * quad_form(hkl, u[0]));
-        return occ * sum;
     }
 
     /**
@@ -550,5 +530,25 @@ public final class NeutronFormFactor implements FormFactor {
         ainv[0] = a[0] / sqrt(det);
         det = determinant3(uinv[0]);
         binv[0] = pow(det, 0.33333333333);
+    }
+
+    /**
+     * <p>
+     * getFormFactor</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return an array of double.
+     */
+    private static double[][] getFormFactor(String atom) {
+        double[][] ffactor = null;
+
+        if (formfactors.containsKey(atom)) {
+            ffactor = formfactors.get(atom);
+        } else {
+            String message = "Form factor for atom: " + atom + " not found!";
+            logger.severe(message);
+        }
+
+        return ffactor;
     }
 }

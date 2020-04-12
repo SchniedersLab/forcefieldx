@@ -464,11 +464,11 @@ public class Residue extends MSGroup implements Comparable<Residue> {
      * Returns a list of backbone atoms; for our purposes, nucleic acid backbone
      * atoms are those of the nucleobase.
      *
-     * @return ArrayList of backbone (or nucleobase) atoms.
+     * @return List of backbone (or nucleobase) atoms.
      */
-    public ArrayList<Atom> getBackboneAtoms() {
-        ArrayList<Atom> atoms = getAtomList();
-        ArrayList<Atom> ret;
+    public List<Atom> getBackboneAtoms() {
+        List<Atom> atoms = getAtomList();
+        List<Atom> ret;
         switch (residueType) {
             case NA:
                 ret = new ArrayList<>(atoms);
@@ -851,11 +851,11 @@ public class Residue extends MSGroup implements Comparable<Residue> {
      * Returns a list of side chain atoms; for our purposes, nucleic acid side
      * chain atoms are the sugar and the phosphate.
      *
-     * @return ArrayList of side chain (or nucleic backbone) atoms.
+     * @return List of side chain (or nucleic backbone) atoms.
      */
-    public ArrayList<Atom> getSideChainAtoms() {
-        ArrayList<Atom> atoms = getAtomList();
-        ArrayList<Atom> ret;
+    public List<Atom> getSideChainAtoms() {
+        List<Atom> atoms = getAtomList();
+        List<Atom> ret;
         switch (residueType) {
             case NA:
                 ret = new ArrayList<>();

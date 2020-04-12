@@ -75,6 +75,7 @@ public class ClusterStructures {
 
     private static final Logger logger = Logger.getLogger(ClusterStructures.class.getName());
     private final AlgorithmFunctions utils;
+    private final Path pwdPath;
     private File[] files;
     private Structure[] structureCache;
     private ClusterDistanceFunction distFunction = ClusterDistanceFunction.RMSD;
@@ -82,12 +83,10 @@ public class ClusterStructures {
     private int numClusters = 0; // Over-rides rmsdCutoff if > 0.
     private int cacheSize = 1000;
     private int cacheStart = 0; // First structure to be cached.
-
     private int nFiles;
     private double rmsdCutoff = 1.0;
     private boolean copyFiles = true;
     private boolean parallel = true;
-    private final Path pwdPath;
     private String outputPrefix = "ffx_cluster_";
     private File[] outputDirectories;
     private Path[] outputPaths;
@@ -116,138 +115,6 @@ public class ClusterStructures {
         this(utils);
         this.files = files;
         nFiles = files.length;
-    }
-
-    /**
-     * <p>Setter for the field <code>files</code>.</p>
-     *
-     * @param files an array of {@link java.io.File} objects.
-     */
-    public void setFiles(File[] files) {
-        this.files = files;
-        nFiles = files.length;
-    }
-
-    /**
-     * <p>Setter for the field <code>numClusters</code>.</p>
-     *
-     * @param numClusters a int.
-     */
-    public void setNumClusters(int numClusters) {
-        this.numClusters = numClusters;
-    }
-
-    /**
-     * <p>setDistanceFunction.</p>
-     *
-     * @param distFunction a {@link ClusterStructures.ClusterDistanceFunction} object.
-     */
-    public void setDistanceFunction(ClusterDistanceFunction distFunction) {
-        this.distFunction = distFunction;
-    }
-
-    /**
-     * <p>Setter for the field <code>algorithm</code>.</p>
-     *
-     * @param algorithm a {@link ClusterStructures.ClustAlg} object.
-     */
-    public void setAlgorithm(ClustAlg algorithm) {
-        this.algorithm = algorithm;
-    }
-
-    /**
-     * <p>setOutputDirectoryPrefix.</p>
-     *
-     * @param prefix a {@link java.lang.String} object.
-     */
-    public void setOutputDirectoryPrefix(String prefix) {
-        this.outputPrefix = prefix;
-    }
-
-    /**
-     * <p>Setter for the field <code>copyFiles</code>.</p>
-     *
-     * @param copyFiles a boolean.
-     */
-    public void setCopyFiles(boolean copyFiles) {
-        this.copyFiles = copyFiles;
-    }
-
-    /**
-     * <p>setClusterParallel.</p>
-     *
-     * @param parallel a boolean.
-     */
-    public void setClusterParallel(boolean parallel) {
-        this.parallel = parallel;
-    }
-
-    /**
-     * <p>Setter for the field <code>cacheSize</code>.</p>
-     *
-     * @param cacheSize a int.
-     */
-    public void setCacheSize(int cacheSize) {
-        this.cacheSize = cacheSize;
-    }
-
-    /**
-     * <p>Setter for the field <code>rmsdCutoff</code>.</p>
-     *
-     * @param rmsdCutoff a double.
-     */
-    public void setRmsdCutoff(double rmsdCutoff) {
-        this.rmsdCutoff = rmsdCutoff;
-    }
-
-    /**
-     * Generate directories to output cluster info
-     *
-     * @param nClusters Number of directories to generate.
-     */
-    private void generateOutputDirectories(int nClusters) {
-        File outDir = new File(String.format("%s%d", outputPrefix, 1));
-        Path relPath = pwdPath;
-        outputDirectories = new File[nClusters];
-        outputPaths = new Path[nClusters];
-        if (outDir.exists()) {
-            for (int i = 2; i < 1000; i++) {
-                outDir = new File(String.format("ffx_clusters_%d", i));
-                if (!outDir.exists()) {
-                    outDir.mkdir();
-                    Path outPath = generatePath(outDir);
-                    relPath = pwdPath.relativize(outPath);
-                    break;
-                }
-            }
-            if (outDir.exists()) {
-                logger.severe(" Could not make output directories for clustering: all directory names taken.");
-            }
-        }
-        for (int i = 1; i <= nClusters; i++) {
-            String namei = String.format("%s%s_%d", relPath.toString(), outputPrefix, i);
-            File diri = new File(namei);
-            diri.mkdirs();
-            outputDirectories[i - 1] = diri;
-            outputPaths[i - 1] = pwdPath.relativize(generatePath(diri));
-        }
-    }
-
-    /**
-     * Gets the specified structure, either from the array of stored Structures,
-     * or by reading from disk (depending on array size).
-     *
-     * @param index  Structure index
-     * @param reader PDB file reader to use
-     * @return the corresponding Structure
-     * @throws IOException If the PDBFileReader encounters an error
-     */
-    private Structure accessStructure(int index, PDBFileReader reader) throws IOException {
-        if (index < cacheStart) {
-            return reader.getStructure(files[index]);
-        } else {
-            return structureCache[index - cacheStart];
-        }
     }
 
     /**
@@ -315,6 +182,196 @@ public class ClusterStructures {
             }
         }
         return clusters;
+    }
+
+    /**
+     * Utility method which attempts to generate a file Path using the canonical
+     * path string, else uses the absolute path.
+     *
+     * @param file To find path of
+     * @return Canonical or absolute path.
+     */
+    public static Path generatePath(File file) {
+        Path path;
+        try {
+            path = Paths.get(file.getCanonicalPath());
+        } catch (IOException ex) {
+            path = Paths.get(file.getAbsolutePath());
+        }
+        return path;
+    }
+
+    /**
+     * <p>Setter for the field <code>algorithm</code>.</p>
+     *
+     * @param algorithm a {@link ClusterStructures.ClustAlg} object.
+     */
+    public void setAlgorithm(ClustAlg algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    /**
+     * <p>Setter for the field <code>cacheSize</code>.</p>
+     *
+     * @param cacheSize a int.
+     */
+    public void setCacheSize(int cacheSize) {
+        this.cacheSize = cacheSize;
+    }
+
+    /**
+     * <p>setClusterParallel.</p>
+     *
+     * @param parallel a boolean.
+     */
+    public void setClusterParallel(boolean parallel) {
+        this.parallel = parallel;
+    }
+
+    /**
+     * <p>Setter for the field <code>copyFiles</code>.</p>
+     *
+     * @param copyFiles a boolean.
+     */
+    public void setCopyFiles(boolean copyFiles) {
+        this.copyFiles = copyFiles;
+    }
+
+    /**
+     * <p>setDistanceFunction.</p>
+     *
+     * @param distFunction a {@link ClusterStructures.ClusterDistanceFunction} object.
+     */
+    public void setDistanceFunction(ClusterDistanceFunction distFunction) {
+        this.distFunction = distFunction;
+    }
+
+    /**
+     * <p>Setter for the field <code>files</code>.</p>
+     *
+     * @param files an array of {@link java.io.File} objects.
+     */
+    public void setFiles(File[] files) {
+        this.files = files;
+        nFiles = files.length;
+    }
+
+    /**
+     * <p>Setter for the field <code>numClusters</code>.</p>
+     *
+     * @param numClusters a int.
+     */
+    public void setNumClusters(int numClusters) {
+        this.numClusters = numClusters;
+    }
+
+    /**
+     * <p>setOutputDirectoryPrefix.</p>
+     *
+     * @param prefix a {@link java.lang.String} object.
+     */
+    public void setOutputDirectoryPrefix(String prefix) {
+        this.outputPrefix = prefix;
+    }
+
+    /**
+     * <p>Setter for the field <code>rmsdCutoff</code>.</p>
+     *
+     * @param rmsdCutoff a double.
+     */
+    public void setRmsdCutoff(double rmsdCutoff) {
+        this.rmsdCutoff = rmsdCutoff;
+    }
+
+    public enum ClusterDistanceFunction {
+
+        RMSD, CA_RMSD, DIHEDRALS, BACKBONE_DIHEDRALS
+    }
+
+    public enum ClustAlg {
+
+        /**
+         * All algorithms start with each point a cluster, and then join the
+         * closest clusters together until everything is one cluster. SLINK is
+         * Single Linkage; cluster-cluster distance is defined by the nearest
+         * two points. This is vulnerable to chaining; two clusters might be
+         * joined by a handful of intermediate points. CLINK is Complete
+         * Linkage; CLINK uses the greatest distance between points in two
+         * clusters. AV_LINK (average link) is the UPGMA (Unweighted Pair Group
+         * Method with Arithmetic Mean) function, which takes the mean distance
+         * between points in a cluster.
+         * <p>
+         * Makes me wonder if there's a WPGMA algorithm which does weight one
+         * way or the other, or perhaps a RPGMA RMSD-like algorithm.
+         */
+        SLINK {
+            @Override
+            public String toString() {
+                return "single linkage";
+            }
+        },
+        AV_LINK {
+            @Override
+            public String toString() {
+                return "average linkage (UPGMA)";
+            }
+        },
+        CLINK {
+            @Override
+            public String toString() {
+                return "complete linkage";
+            }
+        };
+    }
+
+    /**
+     * Generate directories to output cluster info
+     *
+     * @param nClusters Number of directories to generate.
+     */
+    private void generateOutputDirectories(int nClusters) {
+        File outDir = new File(String.format("%s%d", outputPrefix, 1));
+        Path relPath = pwdPath;
+        outputDirectories = new File[nClusters];
+        outputPaths = new Path[nClusters];
+        if (outDir.exists()) {
+            for (int i = 2; i < 1000; i++) {
+                outDir = new File(String.format("ffx_clusters_%d", i));
+                if (!outDir.exists()) {
+                    outDir.mkdir();
+                    Path outPath = generatePath(outDir);
+                    relPath = pwdPath.relativize(outPath);
+                    break;
+                }
+            }
+            if (outDir.exists()) {
+                logger.severe(" Could not make output directories for clustering: all directory names taken.");
+            }
+        }
+        for (int i = 1; i <= nClusters; i++) {
+            String namei = String.format("%s%s_%d", relPath.toString(), outputPrefix, i);
+            File diri = new File(namei);
+            diri.mkdirs();
+            outputDirectories[i - 1] = diri;
+            outputPaths[i - 1] = pwdPath.relativize(generatePath(diri));
+        }
+    }
+
+    /**
+     * Gets the specified structure, either from the array of stored Structures,
+     * or by reading from disk (depending on array size).
+     *
+     * @param index  Structure index
+     * @param reader PDB file reader to use
+     * @return the corresponding Structure
+     * @throws IOException If the PDBFileReader encounters an error
+     */
+    private Structure accessStructure(int index, PDBFileReader reader) throws IOException {
+        if (index < cacheStart) {
+            return reader.getStructure(files[index]);
+        } else {
+            return structureCache[index - cacheStart];
+        }
     }
 
     /**
@@ -481,64 +538,6 @@ public class ClusterStructures {
             }
             return clusters;
         }
-    }
-
-    /**
-     * Utility method which attempts to generate a file Path using the canonical
-     * path string, else uses the absolute path.
-     *
-     * @param file To find path of
-     * @return Canonical or absolute path.
-     */
-    public static Path generatePath(File file) {
-        Path path;
-        try {
-            path = Paths.get(file.getCanonicalPath());
-        } catch (IOException ex) {
-            path = Paths.get(file.getAbsolutePath());
-        }
-        return path;
-    }
-
-    public enum ClusterDistanceFunction {
-
-        RMSD, CA_RMSD, DIHEDRALS, BACKBONE_DIHEDRALS
-    }
-
-    public enum ClustAlg {
-
-        /**
-         * All algorithms start with each point a cluster, and then join the
-         * closest clusters together until everything is one cluster. SLINK is
-         * Single Linkage; cluster-cluster distance is defined by the nearest
-         * two points. This is vulnerable to chaining; two clusters might be
-         * joined by a handful of intermediate points. CLINK is Complete
-         * Linkage; CLINK uses the greatest distance between points in two
-         * clusters. AV_LINK (average link) is the UPGMA (Unweighted Pair Group
-         * Method with Arithmetic Mean) function, which takes the mean distance
-         * between points in a cluster.
-         * <p>
-         * Makes me wonder if there's a WPGMA algorithm which does weight one
-         * way or the other, or perhaps a RPGMA RMSD-like algorithm.
-         */
-        SLINK {
-            @Override
-            public String toString() {
-                return "single linkage";
-            }
-        },
-        AV_LINK {
-            @Override
-            public String toString() {
-                return "average linkage (UPGMA)";
-            }
-        },
-        CLINK {
-            @Override
-            public String toString() {
-                return "complete linkage";
-            }
-        };
     }
 
     // Copyright license for hierarchical-clustering-java

@@ -1,15 +1,5 @@
 package ffx.potential.constraint;
 
-import ffx.numerics.Constraint;
-import ffx.potential.bonded.Angle;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import org.apache.commons.math3.linear.OpenMapRealMatrix;
-import org.apache.commons.math3.linear.QRDecomposition;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVectorPreservingVisitor;
-import org.apache.commons.math3.util.FastMath;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -18,9 +8,21 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
-public class CcmaConstraint implements Constraint {
-    private static final Logger logger = Logger.getLogger(CcmaConstraint.class.getName());
+import org.apache.commons.math3.linear.OpenMapRealMatrix;
+import org.apache.commons.math3.linear.QRDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVectorPreservingVisitor;
+import org.apache.commons.math3.util.FastMath;
 
+import ffx.numerics.Constraint;
+import ffx.potential.bonded.Angle;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+
+public class CcmaConstraint implements Constraint {
+    public static final double DEFAULT_CCMA_NONZERO_CUTOFF = 0.01;
+    private static final Logger logger = Logger.getLogger(CcmaConstraint.class.getName());
+    private static final int DEFAULT_MAX_ITERS = 150;
     // Might be slightly more elegant to have "component constraint" objects.
     // This is how OpenMM does it, though, and arrays are likely more performative.
     private final int[] atoms1;
@@ -28,36 +30,10 @@ public class CcmaConstraint implements Constraint {
     private final double[] lengths;
     private final int nConstraints;
     private final int[] uniqueIndices;
-    private static final int DEFAULT_MAX_ITERS = 150;
     private final int maxIters = DEFAULT_MAX_ITERS;
-    public static final double DEFAULT_CCMA_NONZERO_CUTOFF = 0.01;
     private final double elementCutoff = DEFAULT_CCMA_NONZERO_CUTOFF;
     private final double[] reducedMasses;
     private final RealMatrix kInvSparse;
-
-    /**
-     * Constructs a set of bond length Constraints to be satisfied using the Constaint
-     * Constraint Matrix Approximation, a parallelizable stable numeric method.
-     * <p>
-     * The nonzeroCutoff field specifies how large an element of K-1 needs to be to
-     * be kept; smaller elements (indicating weak constraint-constraint couplings)
-     * are set to zero to make K-1 sparse and thus keep CCMA tractable.
-     * <p>
-     * The constrainedAngles will constrain both component bonds and the triangle-closing distance.
-     * The constrainedBonds list should not include any bonds included in the constrained angles.
-     *
-     * @param constrainedBonds Bonds to be constrained, not included in constrainedAngles
-     * @param constrainedAngles Angles to be constrained indirectly (by constructing a rigid triangle).
-     * @param allAtoms All Atoms of the system, including unconstrained Atoms.
-     * @param masses All masses of the system, including unconstrained atom masses.
-     * @param nonzeroCutoff CCMA parameter defining how sparse/dense K-1 should be.
-     */
-    public static CcmaConstraint ccmaFactory(List<Bond> constrainedBonds, List<Angle> constrainedAngles, final Atom[] allAtoms, final double[] masses, double nonzeroCutoff) {
-        CcmaConstraint newC = new CcmaConstraint(constrainedBonds, constrainedAngles, allAtoms, masses, nonzeroCutoff);
-        constrainedBonds.forEach((Bond b) -> b.setConstraint(newC));
-        constrainedAngles.forEach((Angle a) -> a.setConstraint(newC));
-        return newC;
-    }
 
     /**
      * Constructs a set of bond length Constraints to be satisfied using the Constaint
@@ -72,11 +48,11 @@ public class CcmaConstraint implements Constraint {
      * The constrainedAngles will constrain both component bonds and the triangle-closing distance.
      * The constrainedBonds list should not include any bonds included in the constrained angles.
      *
-     * @param constrainedBonds Bonds to be constrained, not included in constrainedAngles
+     * @param constrainedBonds  Bonds to be constrained, not included in constrainedAngles
      * @param constrainedAngles Angles to be constrained indirectly (by constructing a rigid triangle).
-     * @param allAtoms All Atoms of the system, including unconstrained Atoms.
-     * @param masses All masses of the system, including unconstrained atom masses.
-     * @param nonzeroCutoff CCMA parameter defining how sparse/dense K-1 should be.
+     * @param allAtoms          All Atoms of the system, including unconstrained Atoms.
+     * @param masses            All masses of the system, including unconstrained atom masses.
+     * @param nonzeroCutoff     CCMA parameter defining how sparse/dense K-1 should be.
      */
     private CcmaConstraint(List<Bond> constrainedBonds, List<Angle> constrainedAngles, final Atom[] allAtoms, final double[] masses, double nonzeroCutoff) {
         long time = -System.nanoTime();
@@ -102,7 +78,7 @@ public class CcmaConstraint implements Constraint {
         logger.info(" Lengths: " + Arrays.toString(lengths));*/
 
         for (int i = 0; i < nAngles; i++) {
-            int iAng = nBonds + (3*i);
+            int iAng = nBonds + (3 * i);
             Angle ai = constrainedAngles.get(i);
             Atom center = ai.getCentralAtom();
             Bond b1 = ai.getBond(0);
@@ -155,15 +131,15 @@ public class CcmaConstraint implements Constraint {
             atomsToConstraints.get(atoms2[i]).add(i);
         }
 
-        logger.info(String.format(" Initial CCMA setup: %10.6g sec", 1.0E-9*(time + System.nanoTime())));
+        logger.info(String.format(" Initial CCMA setup: %10.6g sec", 1.0E-9 * (time + System.nanoTime())));
         long subTime = -System.nanoTime();
 
         for (int i = 0; i < nConstraints; i++) {
             int atomi0 = atoms1[i];
             int atomi1 = atoms2[i];
             // DO YOU HAVE ANY IDEA HOW LONG IT TOOK FOR ME TO REALIZE MASSES WERE XYZ-INDEXED?
-            double invMassI0 = 1.0 / masses[atomi0*3];
-            double invMassI1 = 1.0 / masses[atomi1*3];
+            double invMassI0 = 1.0 / masses[atomi0 * 3];
+            double invMassI1 = 1.0 / masses[atomi1 * 3];
             double sumInv = invMassI0 + invMassI1;
 
             // Indices of all Constraints that involve either atomi0 or atomi1.
@@ -224,8 +200,8 @@ public class CcmaConstraint implements Constraint {
                         double dac = lengths[constraintK];
 
                         // Apply the Law of Cosines to find the angle defined by the a-b b-c a-c lengths.
-                        double angle = (dab*dab)+(dbc*dbc)-(dac*dac);
-                        angle /= (2*dab*dbc);
+                        double angle = (dab * dab) + (dbc * dbc) - (dac * dac);
+                        angle /= (2 * dab * dbc);
                         // The angle is formally the cosine of its current value, but all we need is that cosine.
                         double coupling = scale * angle;
                         kSparse.setEntry(i, j, coupling);
@@ -254,7 +230,7 @@ public class CcmaConstraint implements Constraint {
         }
 
         subTime += System.nanoTime();
-        logger.info(String.format(" Time to construct K as a sparse matrix: %10.6g sec", 1.0E-9*subTime));
+        logger.info(String.format(" Time to construct K as a sparse matrix: %10.6g sec", 1.0E-9 * subTime));
 
         // K is constructed. Invert it.
         // TODO: Find a fast way to invert sparse matrices, since this is at least O(n^2).
@@ -262,13 +238,13 @@ public class CcmaConstraint implements Constraint {
         QRDecomposition qrd = new QRDecomposition(kSparse);
         RealMatrix kInvDense = qrd.getSolver().getInverse();
         subTime += System.nanoTime();
-        logger.info(String.format(" Time to invert K: %10.6g sec", 1.0E-9*subTime));
+        logger.info(String.format(" Time to invert K: %10.6g sec", 1.0E-9 * subTime));
         subTime = -System.nanoTime();
 
         kInvSparse = new OpenMapRealMatrix(nConstraints, nConstraints);
         IntStream.range(0, nConstraints).
                 //parallel(). // I have no idea if OpenMapRealMatrix is thread-safe.
-                forEach((int i) -> {
+                        forEach((int i) -> {
                     double[] rowI = kInvDense.getRow(i);
                     for (int j = 0; j < nConstraints; j++) {
                         double val = rowI[j];
@@ -304,11 +280,6 @@ public class CcmaConstraint implements Constraint {
     }
 
     @Override
-    public int[] constrainedAtomIndices() {
-        return Arrays.copyOf(uniqueIndices, uniqueIndices.length);
-    }
-
-    @Override
     public void applyConstraintToStep(double[] xPrior, double[] xNew, double[] masses, double tol) {
         applyConstraints(xPrior, xNew, masses, false, tol);
     }
@@ -319,14 +290,82 @@ public class CcmaConstraint implements Constraint {
     }
 
     /**
+     * Constructs a set of bond length Constraints to be satisfied using the Constaint
+     * Constraint Matrix Approximation, a parallelizable stable numeric method.
+     * <p>
+     * The nonzeroCutoff field specifies how large an element of K-1 needs to be to
+     * be kept; smaller elements (indicating weak constraint-constraint couplings)
+     * are set to zero to make K-1 sparse and thus keep CCMA tractable.
+     * <p>
+     * The constrainedAngles will constrain both component bonds and the triangle-closing distance.
+     * The constrainedBonds list should not include any bonds included in the constrained angles.
+     *
+     * @param constrainedBonds  Bonds to be constrained, not included in constrainedAngles
+     * @param constrainedAngles Angles to be constrained indirectly (by constructing a rigid triangle).
+     * @param allAtoms          All Atoms of the system, including unconstrained Atoms.
+     * @param masses            All masses of the system, including unconstrained atom masses.
+     * @param nonzeroCutoff     CCMA parameter defining how sparse/dense K-1 should be.
+     */
+    public static CcmaConstraint ccmaFactory(List<Bond> constrainedBonds, List<Angle> constrainedAngles, final Atom[] allAtoms, final double[] masses, double nonzeroCutoff) {
+        CcmaConstraint newC = new CcmaConstraint(constrainedBonds, constrainedAngles, allAtoms, masses, nonzeroCutoff);
+        constrainedBonds.forEach((Bond b) -> b.setConstraint(newC));
+        constrainedAngles.forEach((Angle a) -> a.setConstraint(newC));
+        return newC;
+    }
+
+    @Override
+    public int[] constrainedAtomIndices() {
+        return Arrays.copyOf(uniqueIndices, uniqueIndices.length);
+    }
+
+    @Override
+    public boolean constraintSatisfied(double[] x, double tol) {
+        return false;
+    }
+
+    @Override
+    public boolean constraintSatisfied(double[] x, double[] v, double xTol, double vTol) {
+        return false;
+    }
+
+    @Override
+    public int getNumDegreesFrozen() {
+        return nConstraints;
+    }
+
+    private class MatrixWalker implements RealVectorPreservingVisitor {
+        private final double[] constraintDelta; // DO NOT MODIFY.
+        private double sum = 0.0;
+
+        MatrixWalker(final double[] cDelta) {
+            constraintDelta = cDelta;
+        }
+
+        @Override
+        public double end() {
+            return sum;
+        }
+
+        @Override
+        public void start(int dimension, int start, int end) {
+
+        }
+
+        @Override
+        public void visit(int index, double value) {
+            sum += (value * constraintDelta[index]);
+        }
+    }
+
+    /**
      * Much of the math for applying to coordinates/velocities is the same. As such, OpenMM just
      * uses a single driver method with a flag to indicate velocities or positions.
      *
-     * @param xPrior Either pre-step coordinates (positions) or current coordinates (velocities)
-     * @param output Output vector, either constrained coordinates or velocities
-     * @param masses Masses of all particles
+     * @param xPrior     Either pre-step coordinates (positions) or current coordinates (velocities)
+     * @param output     Output vector, either constrained coordinates or velocities
+     * @param masses     Masses of all particles
      * @param constrainV Whether to apply constraints to velocities, or to coordinates.
-     * @param tol Numerical tolerance.
+     * @param tol        Numerical tolerance.
      */
     private void applyConstraints(double[] xPrior, double[] output, double[] masses, boolean constrainV, double tol) {
         if (xPrior == output) {
@@ -424,44 +463,5 @@ public class CcmaConstraint implements Constraint {
         }
         time += System.nanoTime();
         logger.info(String.format(" Application of CCMA constraint: %10.4g sec", (time * 1.0E-9)));*/
-    }
-
-    private class MatrixWalker implements RealVectorPreservingVisitor {
-        private double sum = 0.0;
-        private final double[] constraintDelta; // DO NOT MODIFY.
-
-        MatrixWalker(final double[] cDelta) {
-            constraintDelta = cDelta;
-        }
-
-        @Override
-        public void start(int dimension, int start, int end) {
-
-        }
-
-        @Override
-        public void visit(int index, double value) {
-            sum += (value * constraintDelta[index]);
-        }
-
-        @Override
-        public double end() {
-            return sum;
-        }
-    }
-
-    @Override
-    public int getNumDegreesFrozen() {
-        return nConstraints;
-    }
-
-    @Override
-    public boolean constraintSatisfied(double[] x, double tol) {
-        return false;
-    }
-
-    @Override
-    public boolean constraintSatisfied(double[] x, double[] v, double xTol, double vTol) {
-        return false;
     }
 }

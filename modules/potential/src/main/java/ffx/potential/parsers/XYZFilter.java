@@ -113,6 +113,95 @@ public class XYZFilter extends SystemFilter {
     }
 
     /**
+     * <p>
+     * close</p>
+     */
+    public void close() {
+        if (bufferedReader != null) {
+            try {
+                bufferedReader.close();
+            } catch (Exception e) {
+                String message = format("Exception closing file %s.",
+                        activeMolecularAssembly.getFile());
+                logger.log(Level.WARNING, message, e);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void closeReader() {
+        if (bufferedReader != null) {
+            try {
+                bufferedReader.close();
+            } catch (IOException ex) {
+                logger.warning(format(" Exception in closing XYZ filter: %s", ex.toString()));
+            }
+        }
+    }
+
+    @Override
+    public int countNumModels() {
+        File xyzFile = activeMolecularAssembly.getFile();
+        int nAtoms = activeMolecularAssembly.getAtomArray().length;
+        Pattern crystInfoPattern = Pattern.compile("^ *(?:[0-9]+\\.[0-9]+ +){3}(?:-?[0-9]+\\.[0-9]+ +){2}(?:-?[0-9]+\\.[0-9]+) *$");
+
+        try (BufferedReader br = new BufferedReader(new FileReader(xyzFile))) {
+            String line = br.readLine();
+            int nSnaps = 0;
+            // For each header line, will read either X or X+1 lines, where X is the number of atoms.
+            while (line != null) {
+                assert Integer.parseInt(line.trim().split("\\s+")[0]) == nAtoms;
+                // Read either the crystal information *or* the first line of the snapshot.
+                line = br.readLine();
+                Matcher m = crystInfoPattern.matcher(line);
+                if (m.matches()) {
+                    // If this is crystal information, move onto the first line of the snapshot.
+                    br.readLine();
+                }
+                // Read lines 2-X of the XYZ.
+                for (int i = 1; i < nAtoms; i++) {
+                    br.readLine();
+                }
+
+                ++nSnaps;
+                line = br.readLine();
+            }
+            return nSnaps;
+        } catch (Exception ex) {
+            logger.log(Level.WARNING, String.format(" Exception reading trajectory file %s: %s", xyzFile, ex));
+            return 1;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public OptionalDouble getLastReadLambda() {
+        String[] toks = remarkLine.split("\\s+");
+        int nToks = toks.length;
+        for (int i = 0; i < (nToks - 1); i++) {
+            if (toks[i].equals("Lambda:")) {
+                return OptionalDouble.of(Double.parseDouble(toks[i + 1]));
+            }
+        }
+        return OptionalDouble.empty();
+    }
+
+    @Override
+    public String[] getRemarkLines() {
+        return new String[]{remarkLine};
+    }
+
+    @Override
+    public int getSnapshot() {
+        return snapShot;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Parse the XYZ File
@@ -304,45 +393,6 @@ public class XYZFilter extends SystemFilter {
         return false;
     }
 
-    @Override
-    public int getSnapshot() {
-        return snapShot;
-    }
-
-    @Override
-    public int countNumModels() {
-        File xyzFile = activeMolecularAssembly.getFile();
-        int nAtoms = activeMolecularAssembly.getAtomArray().length;
-        Pattern crystInfoPattern = Pattern.compile("^ *(?:[0-9]+\\.[0-9]+ +){3}(?:-?[0-9]+\\.[0-9]+ +){2}(?:-?[0-9]+\\.[0-9]+) *$");
-
-        try (BufferedReader br = new BufferedReader(new FileReader(xyzFile))) {
-            String line = br.readLine();
-            int nSnaps = 0;
-            // For each header line, will read either X or X+1 lines, where X is the number of atoms.
-            while (line != null) {
-                assert Integer.parseInt(line.trim().split("\\s+")[0]) == nAtoms;
-                // Read either the crystal information *or* the first line of the snapshot.
-                line = br.readLine();
-                Matcher m = crystInfoPattern.matcher(line);
-                if (m.matches()) {
-                    // If this is crystal information, move onto the first line of the snapshot.
-                    br.readLine();
-                }
-                // Read lines 2-X of the XYZ.
-                for (int i = 1; i < nAtoms; i++) {
-                    br.readLine();
-                }
-
-                ++nSnaps;
-                line = br.readLine();
-            }
-            return nSnaps;
-        } catch (Exception ex) {
-            logger.log(Level.WARNING, String.format(" Exception reading trajectory file %s: %s", xyzFile, ex));
-            return 1;
-        }
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -458,6 +508,70 @@ public class XYZFilter extends SystemFilter {
         return false;
     }
 
+    /**
+     * <p>
+     * readOnto</p>
+     *
+     * @param newFile   a {@link java.io.File} object.
+     * @param oldSystem a {@link ffx.potential.MolecularAssembly} object.
+     * @return a boolean.
+     */
+    public static boolean readOnto(File newFile, MolecularAssembly oldSystem) {
+        if (newFile == null || !newFile.exists() || oldSystem == null) {
+            return false;
+        }
+        try {
+            FileReader fr = new FileReader(newFile);
+            BufferedReader br = new BufferedReader(fr);
+            String data = br.readLine();
+            if (data == null) {
+                return false;
+            }
+            String[] tokens = data.trim().split(" +");
+            int num_atoms = Integer.parseInt(tokens[0]);
+            if (num_atoms != oldSystem.getAtomList().size()) {
+                return false;
+            }
+
+            br.mark(10000);
+            data = br.readLine();
+            if (!readPBC(data, oldSystem)) {
+                br.reset();
+            }
+
+            double[][] d = new double[num_atoms][3];
+            for (int i = 0; i < num_atoms; i++) {
+                if (!br.ready()) {
+                    return false;
+                }
+                data = br.readLine();
+                if (data == null) {
+                    logger.warning(format(" Check atom %d.", (i + 1)));
+                    return false;
+                }
+                tokens = data.trim().split(" +");
+                if (tokens.length < 6) {
+                    logger.warning(format(" Check atom %d.", (i + 1)));
+                    return false;
+                }
+                d[i][0] = parseDouble(tokens[2]);
+                d[i][1] = parseDouble(tokens[3]);
+                d[i][2] = parseDouble(tokens[4]);
+            }
+            List<Atom> atoms = oldSystem.getAtomList();
+            for (Atom a : atoms) {
+                int index = a.getIndex() - 1;
+                a.setXYZ(d[index]);
+            }
+            oldSystem.center();
+            oldSystem.setFile(newFile);
+            br.close();
+            fr.close();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -506,7 +620,7 @@ public class XYZFilter extends SystemFilter {
             StringBuilder line;
             StringBuilder[] lines = new StringBuilder[numberOfAtoms];
             // XYZ File Atom Lines
-            ArrayList<Atom> atoms = activeMolecularAssembly.getAtomList();
+            List<Atom> atoms = activeMolecularAssembly.getAtomList();
             Vector3d offset = activeMolecularAssembly.getOffset();
             for (Atom a : atoms) {
                 if (vdwH) {
@@ -651,101 +765,6 @@ public class XYZFilter extends SystemFilter {
         return true;
     }
 
-    /**
-     * <p>
-     * readOnto</p>
-     *
-     * @param newFile   a {@link java.io.File} object.
-     * @param oldSystem a {@link ffx.potential.MolecularAssembly} object.
-     * @return a boolean.
-     */
-    public static boolean readOnto(File newFile, MolecularAssembly oldSystem) {
-        if (newFile == null || !newFile.exists() || oldSystem == null) {
-            return false;
-        }
-        try {
-            FileReader fr = new FileReader(newFile);
-            BufferedReader br = new BufferedReader(fr);
-            String data = br.readLine();
-            if (data == null) {
-                return false;
-            }
-            String[] tokens = data.trim().split(" +");
-            int num_atoms = Integer.parseInt(tokens[0]);
-            if (num_atoms != oldSystem.getAtomList().size()) {
-                return false;
-            }
-
-            br.mark(10000);
-            data = br.readLine();
-            if (!readPBC(data, oldSystem)) {
-                br.reset();
-            }
-
-            double[][] d = new double[num_atoms][3];
-            for (int i = 0; i < num_atoms; i++) {
-                if (!br.ready()) {
-                    return false;
-                }
-                data = br.readLine();
-                if (data == null) {
-                    logger.warning(format(" Check atom %d.", (i + 1)));
-                    return false;
-                }
-                tokens = data.trim().split(" +");
-                if (tokens.length < 6) {
-                    logger.warning(format(" Check atom %d.", (i + 1)));
-                    return false;
-                }
-                d[i][0] = parseDouble(tokens[2]);
-                d[i][1] = parseDouble(tokens[3]);
-                d[i][2] = parseDouble(tokens[4]);
-            }
-            ArrayList<Atom> atoms = oldSystem.getAtomList();
-            for (Atom a : atoms) {
-                int index = a.getIndex() - 1;
-                a.setXYZ(d[index]);
-            }
-            oldSystem.center();
-            oldSystem.setFile(newFile);
-            br.close();
-            fr.close();
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void closeReader() {
-        if (bufferedReader != null) {
-            try {
-                bufferedReader.close();
-            } catch (IOException ex) {
-                logger.warning(format(" Exception in closing XYZ filter: %s", ex.toString()));
-            }
-        }
-    }
-
-    /**
-     * <p>
-     * close</p>
-     */
-    public void close() {
-        if (bufferedReader != null) {
-            try {
-                bufferedReader.close();
-            } catch (Exception e) {
-                String message = format("Exception closing file %s.",
-                        activeMolecularAssembly.getFile());
-                logger.log(Level.WARNING, message, e);
-            }
-        }
-    }
-
     private static boolean firstTokenIsInteger(String data) {
         if (data == null) {
             return false;
@@ -801,25 +820,5 @@ public class XYZFilter extends SystemFilter {
             }
         }
         return true;
-    }
-
-    @Override
-    public String[] getRemarkLines() {
-        return new String[]{remarkLine};
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public OptionalDouble getLastReadLambda() {
-        String[] toks = remarkLine.split("\\s+");
-        int nToks = toks.length;
-        for (int i = 0; i < (nToks - 1); i++) {
-            if (toks[i].equals("Lambda:")) {
-                return OptionalDouble.of(Double.parseDouble(toks[i+1]));
-            }
-        }
-        return OptionalDouble.empty();
     }
 }

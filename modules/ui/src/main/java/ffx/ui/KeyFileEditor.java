@@ -61,18 +61,6 @@ public final class KeyFileEditor extends JFrame {
 
     /**
      * <p>
-     * main</p>
-     *
-     * @param args an array of {@link java.lang.String} objects.
-     */
-    public static void main(String[] args) {
-        KeyFileEditor editor = new KeyFileEditor();
-        editor.setVisible(true);
-    }
-
-
-    /**
-     * <p>
      * Constructor for KeyFileEditor.</p>
      */
     private KeyFileEditor() {
@@ -93,6 +81,17 @@ public final class KeyFileEditor extends JFrame {
                 System.exit(0);
             }
         });
+    }
+
+    /**
+     * <p>
+     * main</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
+    public static void main(String[] args) {
+        KeyFileEditor editor = new KeyFileEditor();
+        editor.setVisible(true);
     }
 
     private void close() {

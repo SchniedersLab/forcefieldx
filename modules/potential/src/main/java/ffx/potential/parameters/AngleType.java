@@ -62,27 +62,6 @@ import static ffx.potential.parameters.ForceField.ForceFieldType.ANGLEP;
 public final class AngleType extends BaseType implements Comparator<String> {
 
     /**
-     * A Logger for the AngleType class.
-     */
-    private static final Logger logger = Logger.getLogger(AngleType.class.getName());
-
-    /**
-     * Angle function types include harmonic or sextic.
-     */
-    public enum AngleFunction {
-
-        HARMONIC, SEXTIC
-    }
-
-    /**
-     * Angle modes include Normal or In-Plane
-     */
-    public enum AngleMode {
-
-        NORMAL, IN_PLANE
-    }
-
-    /**
      * Cubic coefficient in angle bending potential.
      */
     public static final double cubic = -0.014;
@@ -102,6 +81,10 @@ public final class AngleType extends BaseType implements Comparator<String> {
      * Convert angle bending energy to kcal/mole.
      */
     public static final double units = 1.0 / pow(180.0 / PI, 2.0);
+    /**
+     * A Logger for the AngleType class.
+     */
+    private static final Logger logger = Logger.getLogger(AngleType.class.getName());
     /**
      * Atom classes that for this Angle type.
      */
@@ -123,7 +106,6 @@ public final class AngleType extends BaseType implements Comparator<String> {
      * The angle function in use.
      */
     public AngleFunction angleFunction;
-
     /**
      * The default AngleType constructor defines use of the Sextic AngleFunction.
      *
@@ -134,7 +116,6 @@ public final class AngleType extends BaseType implements Comparator<String> {
     public AngleType(int[] atomClasses, double forceConstant, double[] angle) {
         this(atomClasses, forceConstant, angle, AngleMode.NORMAL);
     }
-
     /**
      * <p>
      * Constructor for In-Plane AngleType.</p>
@@ -172,82 +153,6 @@ public final class AngleType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * Set the AngleFunction.
-     *
-     * @param angleFunction the AngleFunction.
-     */
-    public void setAngleFunction(AngleFunction angleFunction) {
-        this.angleFunction = angleFunction;
-    }
-
-    /**
-     * <p>
-     * incrementClasses</p>
-     *
-     * @param increment a int.
-     */
-    public void incrementClasses(int increment) {
-        for (int i = 0; i < atomClasses.length; i++) {
-            atomClasses[i] += increment;
-        }
-        setKey(sortKey(atomClasses));
-    }
-
-    /**
-     * Remap new atom classes to known internal ones.
-     *
-     * @param typeMap a lookup between new atom types and known atom types.
-     * @return a {@link ffx.potential.parameters.AngleType} object.
-     */
-    public AngleType patchClasses(HashMap<AtomType, AtomType> typeMap) {
-        int count = 0;
-        int len = atomClasses.length;
-
-        // Look for new AngleTypes that contain 1 or 2 mapped atom classes.
-        for (AtomType newType : typeMap.keySet()) {
-            for (int atomClass : atomClasses) {
-                if (atomClass == newType.atomClass) {
-                    count++;
-                }
-            }
-        }
-
-        // If found, create a new AngleType that bridges to known classes.
-        if (count == 1 || count == 2) {
-            int[] newClasses = Arrays.copyOf(atomClasses, len);
-            for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < len; i++) {
-                    if (atomClasses[i] == newType.atomClass) {
-                        AtomType knownType = typeMap.get(newType);
-                        newClasses[i] = knownType.atomClass;
-                    }
-                }
-            }
-            return new AngleType(newClasses, forceConstant, angle, angleMode, angleFunction);
-        }
-
-        return null;
-    }
-
-    /**
-     * This method sorts the atom classes as: min, c[1], max
-     *
-     * @param c atomClasses
-     * @return lookup key
-     */
-    public static String sortKey(int[] c) {
-        if (c == null || c.length != 3) {
-            return null;
-        }
-        if (c[0] > c[2]) {
-            int temp = c[0];
-            c[0] = c[2];
-            c[2] = temp;
-        }
-        return c[0] + " " + c[1] + " " + c[2];
-    }
-
-    /**
      * Average two AngleType instances. The atom classes that define the new
      * type must be supplied.
      *
@@ -279,6 +184,69 @@ public final class AngleType extends BaseType implements Comparator<String> {
         }
 
         return new AngleType(atomClasses, forceConstant, angle, angleMode, angleFunction);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compare(String key1, String key2) {
+        String[] keys1 = key1.split(" ");
+        String[] keys2 = key2.split(" ");
+        int[] c1 = new int[3];
+        int[] c2 = new int[3];
+        for (int i = 0; i < 3; i++) {
+            c1[i] = Integer.parseInt(keys1[i]);
+            c2[i] = Integer.parseInt(keys2[i]);
+        }
+
+        if (c1[1] < c2[1]) {
+            return -1;
+        } else if (c1[1] > c2[1]) {
+            return 1;
+        } else if (c1[0] < c2[0]) {
+            return -1;
+        } else if (c1[0] > c2[0]) {
+            return 1;
+        } else if (c1[2] < c2[2]) {
+            return -1;
+        } else if (c1[2] > c2[2]) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AngleType angleType = (AngleType) o;
+        return Arrays.equals(atomClasses, angleType.atomClasses);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(atomClasses);
+    }
+
+    /**
+     * <p>
+     * incrementClasses</p>
+     *
+     * @param increment a int.
+     */
+    public void incrementClasses(int increment) {
+        for (int i = 0; i < atomClasses.length; i++) {
+            atomClasses[i] += increment;
+        }
+        setKey(sortKey(atomClasses));
     }
 
     /**
@@ -356,6 +324,69 @@ public final class AngleType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * Remap new atom classes to known internal ones.
+     *
+     * @param typeMap a lookup between new atom types and known atom types.
+     * @return a {@link ffx.potential.parameters.AngleType} object.
+     */
+    public AngleType patchClasses(HashMap<AtomType, AtomType> typeMap) {
+        int count = 0;
+        int len = atomClasses.length;
+
+        // Look for new AngleTypes that contain 1 or 2 mapped atom classes.
+        for (AtomType newType : typeMap.keySet()) {
+            for (int atomClass : atomClasses) {
+                if (atomClass == newType.atomClass) {
+                    count++;
+                }
+            }
+        }
+
+        // If found, create a new AngleType that bridges to known classes.
+        if (count == 1 || count == 2) {
+            int[] newClasses = Arrays.copyOf(atomClasses, len);
+            for (AtomType newType : typeMap.keySet()) {
+                for (int i = 0; i < len; i++) {
+                    if (atomClasses[i] == newType.atomClass) {
+                        AtomType knownType = typeMap.get(newType);
+                        newClasses[i] = knownType.atomClass;
+                    }
+                }
+            }
+            return new AngleType(newClasses, forceConstant, angle, angleMode, angleFunction);
+        }
+
+        return null;
+    }
+
+    /**
+     * Set the AngleFunction.
+     *
+     * @param angleFunction the AngleFunction.
+     */
+    public void setAngleFunction(AngleFunction angleFunction) {
+        this.angleFunction = angleFunction;
+    }
+
+    /**
+     * This method sorts the atom classes as: min, c[1], max
+     *
+     * @param c atomClasses
+     * @return lookup key
+     */
+    public static String sortKey(int[] c) {
+        if (c == null || c.length != 3) {
+            return null;
+        }
+        if (c[0] > c[2]) {
+            int temp = c[0];
+            c[0] = c[2];
+            c[2] = temp;
+        }
+        return c[0] + " " + c[1] + " " + c[2];
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted Angle bending string.
@@ -379,52 +410,18 @@ public final class AngleType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * {@inheritDoc}
+     * Angle function types include harmonic or sextic.
      */
-    @Override
-    public int compare(String key1, String key2) {
-        String[] keys1 = key1.split(" ");
-        String[] keys2 = key2.split(" ");
-        int[] c1 = new int[3];
-        int[] c2 = new int[3];
-        for (int i = 0; i < 3; i++) {
-            c1[i] = Integer.parseInt(keys1[i]);
-            c2[i] = Integer.parseInt(keys2[i]);
-        }
+    public enum AngleFunction {
 
-        if (c1[1] < c2[1]) {
-            return -1;
-        } else if (c1[1] > c2[1]) {
-            return 1;
-        } else if (c1[0] < c2[0]) {
-            return -1;
-        } else if (c1[0] > c2[0]) {
-            return 1;
-        } else if (c1[2] < c2[2]) {
-            return -1;
-        } else if (c1[2] > c2[2]) {
-            return 1;
-        }
-
-        return 0;
+        HARMONIC, SEXTIC
     }
 
     /**
-     * {@inheritDoc}
+     * Angle modes include Normal or In-Plane
      */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        AngleType angleType = (AngleType) o;
-        return Arrays.equals(atomClasses, angleType.atomClasses);
-    }
+    public enum AngleMode {
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(atomClasses);
+        NORMAL, IN_PLANE
     }
 }

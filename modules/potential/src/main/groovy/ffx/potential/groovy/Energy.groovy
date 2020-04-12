@@ -70,6 +70,13 @@ import picocli.CommandLine.Parameters
 class Energy extends PotentialScript {
 
     /**
+     * -m or --moments print out electrostatic moments.
+     */
+    @Option(names = ['-m', '--moments'], paramLabel = "false", defaultValue = "false",
+            description = 'Print out electrostatic moments.')
+    private boolean moments = false
+
+    /**
      * -g or --gradient to print out gradients.
      */
     @Option(names = ['-g', '--gradient'], paramLabel = "false", defaultValue = "false",
@@ -161,7 +168,7 @@ class Energy extends PotentialScript {
         }
 
         String filename = activeAssembly.getFile().getAbsolutePath()
-        logger.info(" Running Energy on " + filename)
+        logger.info("\n Running Energy on " + filename + "\n")
 
         forceFieldEnergy = activeAssembly.getPotentialEnergy()
         Atom[] atoms = activeAssembly.getAtomArray()
@@ -200,6 +207,11 @@ class Energy extends PotentialScript {
             energy = forceFieldEnergy.energy(x, true)
         }
 
+        if (moments) {
+            Atom[] activeAtoms = activeAssembly.getActiveAtomArray()
+            forceFieldEnergy.getPmeNode().computeMoments(activeAtoms, false)
+        }
+
         SystemFilter systemFilter = potentialFunctions.getFilter()
 
         if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
@@ -212,9 +224,7 @@ class Energy extends PotentialScript {
             // Making the MinMax priority queue that will expel the largest entry when it reaches its maximum size N/
             MinMaxPriorityQueue<StateContainer> lowestEnergyQueue = null
             if (fl > 0) {
-                lowestEnergyQueue = MinMaxPriorityQueue
-                        .maximumSize(numSnaps)
-                        .create()
+                lowestEnergyQueue = MinMaxPriorityQueue.maximumSize(numSnaps).create()
                 lowestEnergyQueue.add(new StateContainer(assemblyState, lowestEnergy))
             }
 
@@ -234,6 +244,12 @@ class Energy extends PotentialScript {
                 if (fl > 0) {
                     lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), energy))
                 }
+
+                if (moments) {
+                    Atom[] activeAtoms = activeAssembly.getActiveAtomArray()
+                    forceFieldEnergy.getPmeNode().computeMoments(activeAtoms, false)
+                }
+
             }
 
             if (fl > 0) {

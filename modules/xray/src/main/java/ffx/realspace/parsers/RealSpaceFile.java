@@ -153,15 +153,6 @@ public class RealSpaceFile {
     }
 
     /**
-     * Return the weight of this dataset.
-     *
-     * @return weight The weight (wA).
-     */
-    public double getWeight() {
-        return weight;
-    }
-
-    /**
      * <p>Getter for the field <code>filename</code>.</p>
      *
      * @return the filename
@@ -177,5 +168,14 @@ public class RealSpaceFile {
      */
     public RealSpaceFileFilter getRealSpaceFileFilter() {
         return realSpaceFileFilter;
+    }
+
+    /**
+     * Return the weight of this dataset.
+     *
+     * @return weight The weight (wA).
+     */
+    public double getWeight() {
+        return weight;
     }
 }

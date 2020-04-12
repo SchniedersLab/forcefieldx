@@ -54,13 +54,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(Parameterized.class)
 public class Real3DTest {
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32}", 32, 32, 32},
-                {"Test nx=32, ny=45, nz=21}", 32, 45, 21}
-        });
-    }
-
     private final String info;
     private final int nx;
     private final int ny;
@@ -83,6 +76,13 @@ public class Real3DTest {
         recip = new double[tot];
     }
 
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32}", 32, 32, 32},
+                {"Test nx=32, ny=45, nz=21}", 32, 45, 21}
+        });
+    }
+
     @Before
     public void setUp() {
         Random random = new Random();
@@ -102,13 +102,13 @@ public class Real3DTest {
     }
 
     /**
-     * Test of the fft and ifft methods, of class Real3D.
+     * Test of convolution method, of class Real3D.
      */
     @Test
-    public void testFft() {
+    public void testConvolution() {
         Real3D real3D = new Real3D(nx, ny, nz);
-        real3D.fft(data);
-        real3D.ifft(data);
+        real3D.setRecip(recip);
+        real3D.convolution(data);
         int paddedIndex = 0;
         int index = 0;
         for (int z = 0; z < nz; z++) {
@@ -124,13 +124,13 @@ public class Real3DTest {
     }
 
     /**
-     * Test of convolution method, of class Real3D.
+     * Test of the fft and ifft methods, of class Real3D.
      */
     @Test
-    public void testConvolution() {
+    public void testFft() {
         Real3D real3D = new Real3D(nx, ny, nz);
-        real3D.setRecip(recip);
-        real3D.convolution(data);
+        real3D.fft(data);
+        real3D.ifft(data);
         int paddedIndex = 0;
         int index = 0;
         for (int z = 0; z < nz; z++) {

@@ -78,7 +78,7 @@ public class UIFileOpener implements FileOpener {
      * Constructor for UIFileOpener.</p>
      *
      * @param systemFilter a {@link ffx.potential.parsers.SystemFilter} object.
-     * @param mainPanel a {@link ffx.ui.MainPanel} object.
+     * @param mainPanel    a {@link ffx.ui.MainPanel} object.
      */
     UIFileOpener(SystemFilter systemFilter, MainPanel mainPanel) {
         this.systemFilter = systemFilter;
@@ -89,6 +89,76 @@ public class UIFileOpener implements FileOpener {
                     "true")) {
                 gc = true;
             }
+        }
+    }
+
+    /**
+     * Returns all MolecularAssemblys in the user interface hierarchy.
+     *
+     * @return All MolecularAssembly objects stored by the hierarchy.
+     * @throws NullPointerException If hierarchy has a null or empty list of
+     *                              assemblies.
+     */
+    @Override
+    public MolecularAssembly[] getAllAssemblies() throws NullPointerException {
+        MolecularAssembly[] assemblies = mainPanel.getHierarchy().getSystems();
+        if (assemblies == null) {
+            throw new NullPointerException(" FFX hierarchy has a null list of assemblies.");
+        } else if (assemblies.length == 0) {
+            throw new NullPointerException(" FFX hierarchy has an empty list of assemblies.");
+        } else {
+            return assemblies;
+        }
+    }
+
+    /**
+     * Returns the properties of all FFXSystems in the hierarchy.
+     *
+     * @return Properties for all systems.
+     */
+    @Override
+    public CompositeConfiguration[] getAllProperties() {
+        FFXSystem[] allSystems = mainPanel.getHierarchy().getSystems();
+        int numSystems = allSystems.length;
+        CompositeConfiguration[] allProperties = new CompositeConfiguration[numSystems];
+        for (int i = 0; i < numSystems; i++) {
+            allProperties[i] = allSystems[i].getProperties();
+        }
+        return allProperties;
+    }
+
+    /**
+     * Returns the active MolecularAssembly from the user interface hierarchy.
+     *
+     * @return Active MolecularAssembly
+     * @throws NullPointerException If no active MolecularAssembly
+     */
+    @Override
+    public MolecularAssembly getAssembly() throws NullPointerException {
+        MolecularAssembly assembly = mainPanel.getHierarchy().getActive();
+        if (assembly == null) {
+            throw new NullPointerException(" FFX hierarchy does not have an active assembly.");
+        }
+        return assembly;
+    }
+
+    /**
+     * Returns the properties of the hierarchy's active FFXSystem.
+     *
+     * @return Active properties
+     */
+    @Override
+    public CompositeConfiguration getProperties() {
+        return mainPanel.getHierarchy().getActive().getProperties();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void run() {
+        if (mainPanel != null && systemFilter != null) {
+            open();
         }
     }
 
@@ -167,76 +237,6 @@ public class UIFileOpener implements FileOpener {
         mainPanel.setCursor(Cursor.getDefaultCursor());
         if (timer) {
             stopTimer(ffxSystem);
-        }
-    }
-
-    /**
-     * Returns the active MolecularAssembly from the user interface hierarchy.
-     *
-     * @return Active MolecularAssembly
-     * @throws NullPointerException If no active MolecularAssembly
-     */
-    @Override
-    public MolecularAssembly getAssembly() throws NullPointerException {
-        MolecularAssembly assembly = mainPanel.getHierarchy().getActive();
-        if (assembly == null) {
-            throw new NullPointerException(" FFX hierarchy does not have an active assembly.");
-        }
-        return assembly;
-    }
-
-    /**
-     * Returns all MolecularAssemblys in the user interface hierarchy.
-     *
-     * @return All MolecularAssembly objects stored by the hierarchy.
-     * @throws NullPointerException If hierarchy has a null or empty list of
-     * assemblies.
-     */
-    @Override
-    public MolecularAssembly[] getAllAssemblies() throws NullPointerException {
-        MolecularAssembly[] assemblies = mainPanel.getHierarchy().getSystems();
-        if (assemblies == null) {
-            throw new NullPointerException(" FFX hierarchy has a null list of assemblies.");
-        } else if (assemblies.length == 0) {
-            throw new NullPointerException(" FFX hierarchy has an empty list of assemblies.");
-        } else {
-            return assemblies;
-        }
-    }
-
-    /**
-     * Returns the properties of the hierarchy's active FFXSystem.
-     *
-     * @return Active properties
-     */
-    @Override
-    public CompositeConfiguration getProperties() {
-        return mainPanel.getHierarchy().getActive().getProperties();
-    }
-
-    /**
-     * Returns the properties of all FFXSystems in the hierarchy.
-     *
-     * @return Properties for all systems.
-     */
-    @Override
-    public CompositeConfiguration[] getAllProperties() {
-        FFXSystem[] allSystems = mainPanel.getHierarchy().getSystems();
-        int numSystems = allSystems.length;
-        CompositeConfiguration[] allProperties = new CompositeConfiguration[numSystems];
-        for (int i = 0; i < numSystems; i++) {
-            allProperties[i] = allSystems[i].getProperties();
-        }
-        return allProperties;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void run() {
-        if (mainPanel != null && systemFilter != null) {
-            open();
         }
     }
 

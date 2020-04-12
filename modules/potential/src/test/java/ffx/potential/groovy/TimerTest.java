@@ -37,12 +37,9 @@
  */
 package ffx.potential.groovy;
 
-import ffx.numerics.Potential;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import ffx.potential.groovy.Timer;
 
 import groovy.lang.Binding;
 
@@ -54,6 +51,12 @@ public class TimerTest {
     Binding binding;
     Timer timer;
 
+    @After
+    public void after() {
+        timer.destroyPotentials();
+        System.gc();
+    }
+
     @Before
     public void before() {
         binding = new Binding();
@@ -61,16 +64,11 @@ public class TimerTest {
         timer.setBinding(binding);
     }
 
-    @After
-    public void after() {
-        timer.destroyPotentials();
-        System.gc();
-    }
-
     @Test
-    public void testTimerHelp() {
+    public void testTimer() {
         // Set-up the input arguments for the Biotype script.
-        String[] args = {"-h"};
+        String[] args = {"-n", "2", "-v", "-g",
+                "src/main/java/ffx/potential/structures/ubiquitin.xyz"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
@@ -78,10 +76,9 @@ public class TimerTest {
     }
 
     @Test
-    public void testTimer() {
+    public void testTimerHelp() {
         // Set-up the input arguments for the Biotype script.
-        String[] args = {"-n", "2", "-v", "-g",
-                "src/main/java/ffx/potential/structures/ubiquitin.xyz"};
+        String[] args = {"-h"};
         binding.setVariable("args", args);
 
         // Evaluate the script.

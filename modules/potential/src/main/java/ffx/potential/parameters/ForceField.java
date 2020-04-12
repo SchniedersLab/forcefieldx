@@ -917,19 +917,6 @@ public class ForceField {
 
     /**
      * <p>
-     * toStringBuffer</p>
-     */
-    public StringBuffer toStringBuffer() {
-        StringBuffer sb = new StringBuffer();
-        for (ForceFieldType s : forceFieldTypes.keySet()) {
-            ForceFieldType type = ForceFieldType.valueOf(s.toString());
-            sb.append(toString(type));
-        }
-        return sb;
-    }
-
-    /**
-     * <p>
      * print</p>
      */
     public void print() {
@@ -1162,6 +1149,23 @@ public class ForceField {
         } else {
             return key + " is not defined.";
         }
+    }
+
+    /**
+     * <p>
+     * toStringBuffer</p>
+     */
+    public StringBuffer toStringBuffer() {
+        StringBuffer sb = new StringBuffer();
+        for (ForceFieldType s : forceFieldTypes.keySet()) {
+            ForceFieldType type = ForceFieldType.valueOf(s.toString());
+            sb.append(toString(type));
+        }
+        return sb;
+    }
+
+    public enum ELEC_FORM {
+        PAM, FIXED_CHARGE
     }
 
     /**

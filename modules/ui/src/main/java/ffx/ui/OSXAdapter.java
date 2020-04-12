@@ -68,15 +68,6 @@ public class OSXAdapter implements MRJAboutHandler, MRJOpenDocumentHandler,
         MRJApplicationUtils.registerQuitHandler(this);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this).toString();
-    }
-
-
     @Override
     public void handleAbout() {
         if (mainPanel != null) {
@@ -95,18 +86,18 @@ public class OSXAdapter implements MRJAboutHandler, MRJOpenDocumentHandler,
     }
 
     @Override
+    public void handlePrefs() {
+        if (mainPanel != null) {
+            mainPanel.getGraphics3D().preferences();
+        }
+    }
+
+    @Override
     public void handleQuit() {
         if (mainPanel != null) {
             mainPanel.exit();
         } else {
             System.exit(-1);
-        }
-    }
-
-    @Override
-    public void handlePrefs() {
-        if (mainPanel != null) {
-            mainPanel.getGraphics3D().preferences();
         }
     }
 
@@ -131,5 +122,13 @@ public class OSXAdapter implements MRJAboutHandler, MRJOpenDocumentHandler,
         System.setProperty("apple.awt.showGrowBox", "true");
         System.setProperty("apple.awt.textantialiasing", "true");
 
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this).toString();
     }
 }

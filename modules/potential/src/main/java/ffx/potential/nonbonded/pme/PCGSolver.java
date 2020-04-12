@@ -60,10 +60,8 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.MultipoleType;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
-
 import static ffx.numerics.special.Erf.erfc;
 
 /**
@@ -82,7 +80,19 @@ public class PCGSolver {
     private final PCGIterRegion1 pcgIterRegion1;
     private final PCGIterRegion2 pcgIterRegion2;
     private final double poleps;
-
+    private final int preconditionerListSize = 50;
+    public double preconditionerCutoff;
+    public double preconditionerEwald = 0.0;
+    /**
+     * Neighbor lists, without atoms beyond the preconditioner cutoff.
+     * [nSymm][nAtoms][nIncludedNeighbors]
+     */
+    int[][][] preconditionerLists;
+    /**
+     * Number of neighboring atoms within the preconditioner cutoff.
+     * [nSymm][nAtoms]
+     */
+    int[][] preconditionerCounts;
     /**
      * Residual vector.
      */
@@ -115,21 +125,6 @@ public class PCGSolver {
      * Work vector for the chain-rule dipoles.
      */
     private double[][] vecCR;
-
-    /**
-     * Neighbor lists, without atoms beyond the preconditioner cutoff.
-     * [nSymm][nAtoms][nIncludedNeighbors]
-     */
-    int[][][] preconditionerLists;
-    /**
-     * Number of neighboring atoms within the preconditioner cutoff.
-     * [nSymm][nAtoms]
-     */
-    int[][] preconditionerCounts;
-    public double preconditionerCutoff;
-    public double preconditionerEwald = 0.0;
-    private final int preconditionerListSize = 50;
-
     /**
      * An ordered array of atoms in the system.
      */
@@ -226,6 +221,17 @@ public class PCGSolver {
     }
 
     /**
+     * Allocate storage for pre-conditioner neighbor list.
+     *
+     * @param nSymm  Number of symmetry operators.
+     * @param nAtoms Number of atoms.
+     */
+    public void allocateLists(int nSymm, int nAtoms) {
+        preconditionerLists = new int[nSymm][nAtoms][preconditionerListSize];
+        preconditionerCounts = new int[nSymm][nAtoms];
+    }
+
+    /**
      * Allocate PCG vectors.
      *
      * @param nAtoms The number of atoms.
@@ -241,17 +247,6 @@ public class PCGSolver {
             vec = new double[3][nAtoms];
             vecCR = new double[3][nAtoms];
         }
-    }
-
-    /**
-     * Allocate storage for pre-conditioner neighbor list.
-     *
-     * @param nSymm  Number of symmetry operators.
-     * @param nAtoms Number of atoms.
-     */
-    public void allocateLists(int nSymm, int nAtoms) {
-        preconditionerLists = new int[nSymm][nAtoms][preconditionerListSize];
-        preconditionerCounts = new int[nSymm][nAtoms];
     }
 
     public void init(Atom[] atoms, double[][][] coordinates, double[] polarizability,
@@ -453,11 +448,6 @@ public class PCGSolver {
         private class PCGInitLoop extends IntegerForLoop {
 
             @Override
-            public IntegerSchedule schedule() {
-                return IntegerSchedule.fixed();
-            }
-
-            @Override
             public void run(int lb, int ub) throws Exception {
                 for (int i = lb; i <= ub; i++) {
                     // Set initial conjugate gradient residual (a field).
@@ -494,6 +484,11 @@ public class PCGSolver {
                     inducedDipoleCR[0][i][2] = polar * rsdCR[2][i];
                 }
             }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
         }
     }
 
@@ -522,11 +517,6 @@ public class PCGSolver {
         }
 
         private class PCGInitLoop extends IntegerForLoop {
-
-            @Override
-            public IntegerSchedule schedule() {
-                return IntegerSchedule.fixed();
-            }
 
             @Override
             public void run(int lb, int ub) throws Exception {
@@ -558,6 +548,11 @@ public class PCGSolver {
                     conjCR[2][i] = rsdPreCR[2][i];
                 }
             }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
         }
     }
 
@@ -588,14 +583,6 @@ public class PCGSolver {
         }
 
         @Override
-        public void start() {
-            dotShared.set(0.0);
-            dotCRShared.set(0.0);
-            sumShared.set(0.0);
-            sumCRShared.set(0.0);
-        }
-
-        @Override
         public void run() throws Exception {
             try {
                 int ti = getThreadIndex();
@@ -622,25 +609,20 @@ public class PCGSolver {
 
         }
 
+        @Override
+        public void start() {
+            dotShared.set(0.0);
+            dotCRShared.set(0.0);
+            sumShared.set(0.0);
+            sumCRShared.set(0.0);
+        }
+
         private class PCGIterLoop1 extends IntegerForLoop {
 
             public double dot;
             public double dotCR;
             public double sum;
             public double sumCR;
-
-            @Override
-            public IntegerSchedule schedule() {
-                return IntegerSchedule.fixed();
-            }
-
-            @Override
-            public void start() {
-                dot = 0.0;
-                dotCR = 0.0;
-                sum = 0.0;
-                sumCR = 0.0;
-            }
 
             @Override
             public void finish() {
@@ -699,14 +681,22 @@ public class PCGSolver {
                 }
 
             }
-        }
-
-        private class PCGIterLoop2 extends IntegerForLoop {
 
             @Override
             public IntegerSchedule schedule() {
                 return IntegerSchedule.fixed();
             }
+
+            @Override
+            public void start() {
+                dot = 0.0;
+                dotCR = 0.0;
+                sum = 0.0;
+                sumCR = 0.0;
+            }
+        }
+
+        private class PCGIterLoop2 extends IntegerForLoop {
 
             @Override
             public void run(int lb, int ub) throws Exception {
@@ -740,6 +730,11 @@ public class PCGSolver {
                     inducedDipoleCR[0][i][2] = polar * rsdCR[2][i];
                 }
             }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
         }
     }
 
@@ -772,20 +767,6 @@ public class PCGSolver {
         }
 
         @Override
-        public void start() {
-            dotShared.set(0.0);
-            dotCRShared.set(0.0);
-            epsShared.set(0.0);
-            epsCRShared.set(0.0);
-            if (sum == 0.0) {
-                sum = 1.0;
-            }
-            if (sumCR == 0.0) {
-                sumCR = 1.0;
-            }
-        }
-
-        @Override
         public void run() throws Exception {
             try {
                 int ti = getThreadIndex();
@@ -802,21 +783,24 @@ public class PCGSolver {
             }
         }
 
+        @Override
+        public void start() {
+            dotShared.set(0.0);
+            dotCRShared.set(0.0);
+            epsShared.set(0.0);
+            epsCRShared.set(0.0);
+            if (sum == 0.0) {
+                sum = 1.0;
+            }
+            if (sumCR == 0.0) {
+                sumCR = 1.0;
+            }
+        }
+
         private class PCGIterLoop1 extends IntegerForLoop {
 
             public double dot;
             public double dotCR;
-
-            @Override
-            public IntegerSchedule schedule() {
-                return IntegerSchedule.fixed();
-            }
-
-            @Override
-            public void start() {
-                dot = 0.0;
-                dotCR = 0.0;
-            }
 
             @Override
             public void finish() {
@@ -853,12 +837,6 @@ public class PCGSolver {
                             + rsdCR[2][i] * rsdPreCR[2][i];
                 }
             }
-        }
-
-        private class PCGIterLoop2 extends IntegerForLoop {
-
-            public double eps;
-            public double epsCR;
 
             @Override
             public IntegerSchedule schedule() {
@@ -867,9 +845,15 @@ public class PCGSolver {
 
             @Override
             public void start() {
-                eps = 0.0;
-                epsCR = 0.0;
+                dot = 0.0;
+                dotCR = 0.0;
             }
+        }
+
+        private class PCGIterLoop2 extends IntegerForLoop {
+
+            public double eps;
+            public double epsCR;
 
             @Override
             public void finish() {
@@ -896,6 +880,17 @@ public class PCGSolver {
                             + rsdCR[1][i] * rsdCR[1][i]
                             + rsdCR[2][i] * rsdCR[2][i];
                 }
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
+
+            @Override
+            public void start() {
+                eps = 0.0;
+                epsCR = 0.0;
             }
         }
     }
@@ -933,22 +928,6 @@ public class PCGSolver {
             private double[][] ind, indCR;
 
             InducedPreconditionerFieldLoop() {
-            }
-
-            @Override
-            public IntegerSchedule schedule() {
-                return realSpaceSchedule;
-            }
-
-            @Override
-            public void start() {
-                threadID = getThreadIndex();
-                realSpaceSCFTime[threadID] -= System.nanoTime();
-                x = coordinates[0][0];
-                y = coordinates[0][1];
-                z = coordinates[0][2];
-                ind = inducedDipole[0];
-                indCR = inducedDipoleCR[0];
             }
 
             @Override
@@ -1245,6 +1224,22 @@ public class PCGSolver {
                         fieldCR.add(threadID, i, px, py, pz);
                     }
                 }
+            }
+
+            @Override
+            public IntegerSchedule schedule() {
+                return realSpaceSchedule;
+            }
+
+            @Override
+            public void start() {
+                threadID = getThreadIndex();
+                realSpaceSCFTime[threadID] -= System.nanoTime();
+                x = coordinates[0][0];
+                y = coordinates[0][1];
+                z = coordinates[0][2];
+                ind = inducedDipole[0];
+                indCR = inducedDipoleCR[0];
             }
         }
     }

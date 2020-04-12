@@ -41,9 +41,9 @@
 <!DOCTYPE FFXCommands>
 <FFXCommands>
     <properties>
-        <author email="michael-schnieders@uiowa.edu" />
+        <author email="michael-schnieders@uiowa.edu"/>
         <title>Force Field X Modeling Commands</title>
-        <meta name="Modeling Commands" />
+        <meta name="Modeling Commands"/>
     </properties>
     <Command name="md"
              fileType="XYZ PDB"
@@ -78,55 +78,55 @@
             <Value name="XYZ"/>
         </Option>
         <Option
-            name="Integrator"
-            flag="i"
-            description="Choose the integration algorithm."
-            gui="RADIOBUTTONS"
-            default="Beeman"
+                name="Integrator"
+                flag="i"
+                description="Choose the integration algorithm."
+                gui="RADIOBUTTONS"
+                default="Beeman"
         >
             <Value name="Beeman"/>
             <Value name="RESPA"/>
             <Value name="Stochastic"/>
         </Option>
         <Option
-            name="Logging"
-            flag="l"
-            description="Interval to log thermodynamics (psec)."
-            gui="TEXTFIELD"
-            default="0.01"
-            lowerLimit="0.001"
+                name="Logging"
+                flag="l"
+                description="Interval to log thermodynamics (psec)."
+                gui="TEXTFIELD"
+                default="0.01"
+                lowerLimit="0.001"
         />
         <Option
-            name="Steps"
-            flag="n"
-            description="Number of molecular/stochastic dynamics time steps."
-            gui="TEXTFIELD"
-            default="1000000"
-            lowerLimit="1"
+                name="Steps"
+                flag="n"
+                description="Number of molecular/stochastic dynamics time steps."
+                gui="TEXTFIELD"
+                default="1000000"
+                lowerLimit="1"
         />
         <Option
-            name="Restart"
-            flag="s"
-            description="Interval to write out the restart file (psec)."
-            gui="TEXTFIELD"
-            default="1.0"
-            lowerLimit="0.001"
+                name="Restart"
+                flag="s"
+                description="Interval to write out the restart file (psec)."
+                gui="TEXTFIELD"
+                default="1.0"
+                lowerLimit="0.001"
         />
         <Option
-            name="Temperature"
-            flag="t"
-            description="Temperature in degrees Kelvin."
-            gui="TEXTFIELD"
-            default="298.15"
-            lowerLimit="0.1"
+                name="Temperature"
+                flag="t"
+                description="Temperature in degrees Kelvin."
+                gui="TEXTFIELD"
+                default="298.15"
+                lowerLimit="0.1"
         />
         <Option
-            name="Snapshots"
-            flag="w"
-            description="Interval to write out coordinates (psec)."
-            gui="TEXTFIELD"
-            default="0.1"
-            lowerLimit="0.001"
+                name="Snapshots"
+                flag="w"
+                description="Interval to write out coordinates (psec)."
+                gui="TEXTFIELD"
+                default="0.1"
+                lowerLimit="0.001"
         />
     </Command>
     <Command name="minimize"
@@ -134,11 +134,11 @@
              fileType="XYZ PDB"
              action="NONE">
         <Option
-            name="Convergence Criteria"
-            flag="e"
-            description="RMS gradient convergence criteria."
-            gui="TEXTFIELD"
-            default="1.0"/>
+                name="Convergence Criteria"
+                flag="e"
+                description="RMS gradient convergence criteria."
+                gui="TEXTFIELD"
+                default="1.0"/>
     </Command>
 
     <Command name="energy"
@@ -247,7 +247,7 @@
 
         <Option name="Three Stage"
                 flag="t"
-                description= "Set to perform refinement in 3 stages: coordinates, bfactors, then occupancies."
+                description="Set to perform refinement in 3 stages: coordinates, bfactors, then occupancies."
                 gui="CHECKBOXES"/>
     </Command>
 
@@ -475,7 +475,7 @@
                 description="Polarization model."
                 flag="p"
                 gui="RADIOBUTTONS"
-                default = "mutual">
+                default="mutual">
             <Value name="none"/>
             <Value name="direct"/>
             <Value name="mutual"/>
@@ -515,7 +515,7 @@
                 description="Polarization model."
                 flag="p"
                 gui="RADIOBUTTONS"
-                default = "mutual">
+                default="mutual">
             <Value name="none"/>
             <Value name="direct"/>
             <Value name="mutual"/>
@@ -583,7 +583,7 @@
                 description="Polarization model."
                 flag="p"
                 gui="RADIOBUTTONS"
-                default = "mutual">
+                default="mutual">
             <Value name="none"/>
             <Value name="direct"/>
             <Value name="mutual"/>
@@ -603,62 +603,62 @@
     </Command>
 
     <Command
-        name="Protein"
-        description="A program for automated building of peptide and protein structures.
+            name="Protein"
+            description="A program for automated building of peptide and protein structures.
  Upon input of an amino acid sequence with optional phi/psi/omega/chi angles, D/L chirality,
  etc., the program builds internal and Cartesian coordinates. Standard bond lengths and angles are
  assumed for the peptide. The program will optionally convert the structure to a cyclic peptide, or
  add either or both N- and C-terminal capping groups. Atom type numbers are automatically assigned
  for the specified force field. The final coordinates and a sequence file are produced as the output."
-        fileType="ANY"
-        action="LOADXYZ"
+            fileType="ANY"
+            action="LOADXYZ"
     >
         <Option
-            name="File Name"
-            description="Enter name to be used for output file"
-            gui="TEXTFIELD"
-            default="protein"
+                name="File Name"
+                description="Enter name to be used for output file"
+                gui="TEXTFIELD"
+                default="protein"
         />
         <Option
-            name="Title"
-            description="Enter title"
-            gui="TEXTFIELD"
-            default="Protein built with TINKER/Force Field Xplorer"
+                name="Title"
+                description="Enter title"
+                gui="TEXTFIELD"
+                default="Protein built with TINKER/Force Field Xplorer"
         />
         <Option
-            name="N-CAP"
-            description="The allowed N-Cap Residues are Acetyl=ACE or Formyl=FOR"
-            gui="RADIOBUTTONS"
-            default="ACE"
+                name="N-CAP"
+                description="The allowed N-Cap Residues are Acetyl=ACE or Formyl=FOR"
+                gui="RADIOBUTTONS"
+                default="ACE"
         >
-            <Value name="ACE" />
-            <Value name="FOR" />
-            <Value name="NONE" />
+            <Value name="ACE"/>
+            <Value name="FOR"/>
+            <Value name="NONE"/>
         </Option>
         <Option
-            name="Sequence"
-            description="3 Letter Code, Phi/Psi/Omega (3F), Chi Angles (4F),
+                name="Sequence"
+                description="3 Letter Code, Phi/Psi/Omega (3F), Chi Angles (4F),
  Disulfide Partner if a CYS (I), and D/L Chirality as desired (A1)"
-            gui="PROTEIN"
+                gui="PROTEIN"
         />
         <Option
-            name="C-CAP"
-            description="Possible C-Cap Residues are N-MethylAmide=NME or Amide=NH2"
-            gui="RADIOBUTTONS"
-            default="NH2"
+                name="C-CAP"
+                description="Possible C-Cap Residues are N-MethylAmide=NME or Amide=NH2"
+                gui="RADIOBUTTONS"
+                default="NH2"
         >
-            <Value name="NME" />
-            <Value name="NH2" />
-            <Value name="NONE" />
+            <Value name="NME"/>
+            <Value name="NH2"/>
+            <Value name="NONE"/>
         </Option>
         <Option
-            name="Cyclize"
-            description="Cyclize the Polypeptide Chain"
-            gui="RADIOBUTTONS"
-            default="N"
+                name="Cyclize"
+                description="Cyclize the Polypeptide Chain"
+                gui="RADIOBUTTONS"
+                default="N"
         >
-            <Value name="Y" />
-            <Value name="N" />
+            <Value name="Y"/>
+            <Value name="N"/>
         </Option>
     </Command>
 </FFXCommands>

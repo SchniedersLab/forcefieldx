@@ -44,9 +44,9 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.ConstantSwitch;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.parameters.BondType;
-import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.scale;
+import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.potential.parameters.BondType.units;
 
 /**

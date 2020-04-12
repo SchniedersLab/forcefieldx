@@ -54,13 +54,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(Parameterized.class)
 public class Complex3DTest {
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32}", 32, 32, 32},
-                {"Test nx=32, ny=45, nz=21}", 32, 45, 21}
-        });
-    }
-
     private final String info;
     private final int nx;
     private final int ny;
@@ -82,6 +75,13 @@ public class Complex3DTest {
         recip = new double[tot];
     }
 
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32}", 32, 32, 32},
+                {"Test nx=32, ny=45, nz=21}", 32, 45, 21}
+        });
+    }
+
     @Before
     public void setUp() {
         Random random = new Random();
@@ -95,13 +95,13 @@ public class Complex3DTest {
     }
 
     /**
-     * Test of the fft and ifft methods, of class Complex3D.
+     * Test of convolution method, of class Complex3D.
      */
     @Test
-    public void testFft() {
+    public void testConvolution() {
         Complex3D complex3D = new Complex3D(nx, ny, nz);
-        complex3D.fft(data);
-        complex3D.ifft(data);
+        complex3D.setRecip(recip);
+        complex3D.convolution(data);
         for (int i = 0; i < tot; i++) {
             int index = i * 2;
             double actual = data[index] / tot;
@@ -111,13 +111,13 @@ public class Complex3DTest {
     }
 
     /**
-     * Test of convolution method, of class Complex3D.
+     * Test of the fft and ifft methods, of class Complex3D.
      */
     @Test
-    public void testConvolution() {
+    public void testFft() {
         Complex3D complex3D = new Complex3D(nx, ny, nz);
-        complex3D.setRecip(recip);
-        complex3D.convolution(data);
+        complex3D.fft(data);
+        complex3D.ifft(data);
         for (int i = 0; i < tot; i++) {
             int index = i * 2;
             double actual = data[index] / tot;

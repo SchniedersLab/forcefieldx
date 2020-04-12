@@ -60,6 +60,15 @@ public class ErfTest {
      * using 1.0e-16.
      */
     private static final double tolerance = 1.0e-15;
+    private final String info;
+    private final double x;
+    private final double expected;
+
+    public ErfTest(String info, double x, double expected) {
+        this.info = info;
+        this.x = x;
+        this.expected = expected;
+    }
 
     /**
      * The expected values were found to 20 decimal points of precision using
@@ -74,16 +83,6 @@ public class ErfTest {
                 {"Test 4.0; at the second branch point.", 4.0e0, 1.0e0 - 1.5417257900280018852e-8},
                 {"Test 5.0; above the second branch point.", 5.0e0, 1.0e0 - 1.5374597944280348502e-12}
         });
-    }
-
-    private final String info;
-    private final double x;
-    private final double expected;
-
-    public ErfTest(String info, double x, double expected) {
-        this.info = info;
-        this.x = x;
-        this.expected = expected;
     }
 
     /**

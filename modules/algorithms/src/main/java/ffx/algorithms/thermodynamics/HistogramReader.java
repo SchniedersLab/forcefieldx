@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -58,6 +57,10 @@ import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 public class HistogramReader extends BufferedReader {
 
     private static final Logger logger = Logger.getLogger(HistogramReader.class.getName());
+    /**
+     * Private reference to the Histogram instance, if any.
+     */
+    private final Histogram histogram;
     private double temperature;
     private double thetaMass;
     private double thetaFriction;
@@ -71,15 +74,10 @@ public class HistogramReader extends BufferedReader {
     private int temperingFlag;
     private double[][] counts;
 
-    /**
-     * Private reference to the Histogram instance, if any.
-     */
-    private final Histogram histogram;
-
     public HistogramReader(Reader reader) {
         this(null, reader);
     }
-    
+
     /**
      * Constructor.
      *
@@ -89,6 +87,38 @@ public class HistogramReader extends BufferedReader {
     public HistogramReader(Histogram histogram, Reader reader) {
         super(reader);
         this.histogram = histogram;
+    }
+
+    public int getBiasCutoff() {
+        return biasCutoff;
+    }
+
+    public double getBiasMag() {
+        return biasMag;
+    }
+
+    public int getCountInterval() {
+        return countInterval;
+    }
+
+    public double getDFLambda() {
+        return dFL;
+    }
+
+    public int getLambdaBins() {
+        return lambdaBins;
+    }
+
+    public double getTemperature() {
+        return temperature;
+    }
+
+    public double getThetaFriction() {
+        return thetaFriction;
+    }
+
+    public double getThetaMass() {
+        return thetaMass;
     }
 
     /**
@@ -129,38 +159,6 @@ public class HistogramReader extends BufferedReader {
             String histoName = histogram == null ? "unknown file" : histogram.toString();
             logger.warning(format(" Failed to close histogram reader for %s", histoName));
         }
-    }
-
-    public int getLambdaBins() {
-        return lambdaBins;
-    }
-
-    public double getTemperature() {
-        return temperature;
-    }
-
-    public double getThetaMass() {
-        return thetaMass;
-    }
-
-    public double getThetaFriction() {
-        return thetaFriction;
-    }
-
-    public double getBiasMag() {
-        return biasMag;
-    }
-
-    public int getBiasCutoff() {
-        return biasCutoff;
-    }
-
-    public int getCountInterval() {
-        return countInterval;
-    }
-
-    public double getDFLambda() {
-        return dFL;
     }
 
     /**

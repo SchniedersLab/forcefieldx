@@ -98,6 +98,18 @@ public class MouseZoom extends MouseBehavior {
     }
 
     /**
+     * Set the y-axis movement multipler with factor.
+     *
+     * <p>
+     * setFactor</p>
+     *
+     * @param factor a double.
+     */
+    public void setFactor(double factor) {
+        zFactor = factor;
+    }
+
+    /**
      * <p>
      * initialize</p>
      */
@@ -107,16 +119,6 @@ public class MouseZoom extends MouseBehavior {
             zFactor *= -1;
             invert = true;
         }
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>mouseButton</code>.</p>
-     *
-     * @param button a int.
-     */
-    public void setMouseButton(int button) {
-        mouseButton = button;
     }
 
     /**
@@ -178,15 +180,13 @@ public class MouseZoom extends MouseBehavior {
     }
 
     /**
-     * Set the y-axis movement multipler with factor.
-     *
      * <p>
-     * setFactor</p>
+     * Setter for the field <code>mouseButton</code>.</p>
      *
-     * @param factor a double.
+     * @param button a int.
      */
-    public void setFactor(double factor) {
-        zFactor = factor;
+    public void setMouseButton(int button) {
+        mouseButton = button;
     }
 
     /**

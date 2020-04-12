@@ -51,6 +51,6 @@ import ffx.numerics.spline.UniformBSplineTest;
  */
 @RunWith(Suite.class)
 @SuiteClasses({ErfTest.class, SquareRootTest.class,
-    MultipoleTensorTest.class, UniformBSplineTest.class})
+        MultipoleTensorTest.class, UniformBSplineTest.class})
 public class NumericsTestSuite {
 }

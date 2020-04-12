@@ -44,65 +44,31 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 public class Superpose {
 
     /**
-     * Move the center of mass for both sets of atoms to the origin.
+     * Minimize the RMS distance between two sets of atoms using quaternions and
+     * a pre-calculated rotation matrix; overlaps x2 onto x1.
      *
-     * @param x1    Cartesian coordinates of the first system.
-     * @param mass1 The mass of each particle in the first system.
-     * @param x2    Cartesian coordinates of the second system.
-     * @param mass2 The mass of each particle in the second system.
+     * @param x2  Cartesian coordinates of the second system. Modified in-place.
+     * @param rot A pre-calculated rotation matrix.
      */
-    public static void translate(double[] x1, double[] mass1, double[] x2, double[] mass2) {
-        // Move the first set of atoms.
-        translate(x1, mass1);
-        // Move the second set of atoms.
-        translate(x2, mass2);
-    }
+    public static void applyRotation(double[] x2, double[][] rot) {
+        int n = x2.length / 3;
 
-    /**
-     * Move the center of mass for a set of atoms to the origin.
-     *
-     * @param x    Cartesian coordinates of the system; modified in-place.
-     * @param mass The mass of each particle in the system.
-     */
-    private static void translate(double[] x, final double[] mass) {
-        double[] translation = calculateTranslation(x, mass);
-        applyTranslation(x, translation);
-    }
-
-    /**
-     * Calculate a translation matrix [dx,dy,dz] to return a molecular system's
-     * center of mass to the origin.
-     *
-     * @param x Coordinates of the system.
-     * @param mass Mass of each atom.
-     * @return Translation to the origin.
-     */
-    public static double[] calculateTranslation(double[] x, final double[] mass) {
-        double xmid = 0.0;
-        double ymid = 0.0;
-        double zmid = 0.0;
-        double norm = 0.0;
-        int n = x.length / 3;
-
+        // Rotate second molecule to best fit with first molecule
         for (int i = 0; i < n; i++) {
-            int k = 3 * i;
-            double weigh = mass[i];
-            xmid = xmid + x[k] * weigh;
-            ymid = ymid + x[k + 1] * weigh;
-            zmid = zmid + x[k + 2] * weigh;
-            norm = norm + weigh;
+            int k = i * 3;
+            double xrot = x2[k] * rot[0][0] + x2[k + 1] * rot[0][1] + x2[k + 2] * rot[0][2];
+            double yrot = x2[k] * rot[1][0] + x2[k + 1] * rot[1][1] + x2[k + 2] * rot[1][2];
+            double zrot = x2[k] * rot[2][0] + x2[k + 1] * rot[2][1] + x2[k + 2] * rot[2][2];
+            x2[k] = xrot;
+            x2[k + 1] = yrot;
+            x2[k + 2] = zrot;
         }
-        xmid = xmid / norm;
-        ymid = ymid / norm;
-        zmid = zmid / norm;
-
-        return new double[]{xmid, ymid, zmid};
     }
 
     /**
      * Apply a translation matrix [dx,dy,dz] to a molecular system.
      *
-     * @param x Coordinates to move; modified in-place.
+     * @param x           Coordinates to move; modified in-place.
      * @param translation Translation matrix.
      */
     public static void applyTranslation(double[] x, final double[] translation) {
@@ -113,18 +79,6 @@ public class Superpose {
                 x[i3 + j] -= translation[j];
             }
         }
-    }
-
-    /**
-     * Minimize the RMS distance between two sets of atoms using quaternions.
-     *
-     * @param x1   Cartesian coordinates of the first system. Unmodified.
-     * @param x2   Cartesian coordinates of the second system. Modified in-place.
-     * @param mass The mass of each particle in the system.
-     */
-    public static void rotate(double[] x1, double[] x2, double[] mass) {
-        double[][] rotation = calculateRotation(x1, x2, mass);
-        applyRotation(x2, rotation);
     }
 
     /**
@@ -209,25 +163,33 @@ public class Superpose {
     }
 
     /**
-     * Minimize the RMS distance between two sets of atoms using quaternions and
-     * a pre-calculated rotation matrix; overlaps x2 onto x1.
+     * Calculate a translation matrix [dx,dy,dz] to return a molecular system's
+     * center of mass to the origin.
      *
-     * @param x2   Cartesian coordinates of the second system. Modified in-place.
-     * @param rot  A pre-calculated rotation matrix.
+     * @param x    Coordinates of the system.
+     * @param mass Mass of each atom.
+     * @return Translation to the origin.
      */
-    public static void applyRotation(double[] x2, double[][] rot) {
-        int n = x2.length / 3;
+    public static double[] calculateTranslation(double[] x, final double[] mass) {
+        double xmid = 0.0;
+        double ymid = 0.0;
+        double zmid = 0.0;
+        double norm = 0.0;
+        int n = x.length / 3;
 
-        // Rotate second molecule to best fit with first molecule
         for (int i = 0; i < n; i++) {
-            int k = i * 3;
-            double xrot = x2[k] * rot[0][0] + x2[k + 1] * rot[0][1] + x2[k + 2] * rot[0][2];
-            double yrot = x2[k] * rot[1][0] + x2[k + 1] * rot[1][1] + x2[k + 2] * rot[1][2];
-            double zrot = x2[k] * rot[2][0] + x2[k + 1] * rot[2][1] + x2[k + 2] * rot[2][2];
-            x2[k] = xrot;
-            x2[k + 1] = yrot;
-            x2[k + 2] = zrot;
+            int k = 3 * i;
+            double weigh = mass[i];
+            xmid = xmid + x[k] * weigh;
+            ymid = ymid + x[k + 1] * weigh;
+            zmid = zmid + x[k + 2] * weigh;
+            norm = norm + weigh;
         }
+        xmid = xmid / norm;
+        ymid = ymid / norm;
+        zmid = zmid / norm;
+
+        return new double[]{xmid, ymid, zmid};
     }
 
     /**
@@ -254,6 +216,44 @@ public class Superpose {
             rmsfit = rmsfit + rmsterm;
         }
         return sqrt(rmsfit / norm);
+    }
+
+    /**
+     * Minimize the RMS distance between two sets of atoms using quaternions.
+     *
+     * @param x1   Cartesian coordinates of the first system. Unmodified.
+     * @param x2   Cartesian coordinates of the second system. Modified in-place.
+     * @param mass The mass of each particle in the system.
+     */
+    public static void rotate(double[] x1, double[] x2, double[] mass) {
+        double[][] rotation = calculateRotation(x1, x2, mass);
+        applyRotation(x2, rotation);
+    }
+
+    /**
+     * Move the center of mass for both sets of atoms to the origin.
+     *
+     * @param x1    Cartesian coordinates of the first system.
+     * @param mass1 The mass of each particle in the first system.
+     * @param x2    Cartesian coordinates of the second system.
+     * @param mass2 The mass of each particle in the second system.
+     */
+    public static void translate(double[] x1, double[] mass1, double[] x2, double[] mass2) {
+        // Move the first set of atoms.
+        translate(x1, mass1);
+        // Move the second set of atoms.
+        translate(x2, mass2);
+    }
+
+    /**
+     * Move the center of mass for a set of atoms to the origin.
+     *
+     * @param x    Cartesian coordinates of the system; modified in-place.
+     * @param mass The mass of each particle in the system.
+     */
+    private static void translate(double[] x, final double[] mass) {
+        double[] translation = calculateTranslation(x, mass);
+        applyTranslation(x, translation);
     }
 
 }

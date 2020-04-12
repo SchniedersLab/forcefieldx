@@ -74,7 +74,27 @@ import static ffx.utilities.Constants.dWater;
 public class PermanentGKFieldRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(PermanentGKFieldRegion.class.getName());
-
+    /**
+     * Constant factor used with quadrupoles.
+     */
+    private static final double oneThird = 1.0 / 3.0;
+    /**
+     * Empirical constant that controls the GK cross-term.
+     */
+    private final double gkc;
+    /**
+     * Kirkwood monopole reaction field constant.
+     */
+    private final double fc;
+    /**
+     * Kirkwood dipole reaction field constant.
+     */
+    private final double fd;
+    /**
+     * Kirkwood quadrupole reaction field constant.
+     */
+    private final double fq;
+    private final PermanentGKFieldLoop[] permanentGKFieldLoop;
     /**
      * An ordered array of atoms in the system.
      */
@@ -111,23 +131,6 @@ public class PermanentGKFieldRegion extends ParallelRegion {
      * Atomic GK field array.
      */
     private AtomicDoubleArray3D sharedGKField;
-    /**
-     * Empirical constant that controls the GK cross-term.
-     */
-    private final double gkc;
-    /**
-     * Kirkwood monopole reaction field constant.
-     */
-    private final double fc;
-    /**
-     * Kirkwood dipole reaction field constant.
-     */
-    private final double fd;
-    /**
-     * Kirkwood quadrupole reaction field constant.
-     */
-    private final double fq;
-    private final PermanentGKFieldLoop[] permanentGKFieldLoop;
 
     public PermanentGKFieldRegion(int nt, ForceField forceField) {
 
@@ -178,13 +181,13 @@ public class PermanentGKFieldRegion extends ParallelRegion {
      */
     private class PermanentGKFieldLoop extends IntegerForLoop {
 
-        private int threadID;
         private final double[][] a;
         private final double[] gc;
         private final double[] gux, guy, guz;
         private final double[] gqxx, gqyy, gqzz;
         private final double[] gqxy, gqxz, gqyz;
         private final double[] dx_local;
+        private int threadID;
         private double xi, yi, zi;
         private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
         private double rbi;
@@ -452,9 +455,4 @@ public class PermanentGKFieldRegion extends ParallelRegion {
             sharedGKField.add(threadID, k, fkx, fky, fkz);
         }
     }
-
-    /**
-     * Constant factor used with quadrupoles.
-     */
-    private static final double oneThird = 1.0 / 3.0;
 }

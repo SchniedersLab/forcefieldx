@@ -88,31 +88,7 @@ import static ffx.utilities.Constants.R;
 public class RosenbluthChiAllMove implements MCMove {
 
     private static final Logger logger = Logger.getLogger(RosenbluthChiAllMove.class.getName());
-
-    /**
-     * Mode of the RosenbluthChiAllMove instance.
-     */
-    public enum MODE {
-        EXPENSIVE, CHEAP, CTRL_ALL;
-    }
-
-    /**
-     * Provides lookup values that make true the inequality: uTorsion + offset
-     * .ge. 0.0
-     */
-    private enum TORSION_OFFSET_AMPRO13 {
-        LYS0(1.610000), LYD0(1.610000),
-        LYS1(0.939033), LYD1(0.939033),
-        LYS2(1.000000), LYD2(1.000000),
-        LYS3(0.800000), LYD3(0.800000);
-
-        public final double offset;
-
-        TORSION_OFFSET_AMPRO13(double offset) {
-            this.offset = offset;
-        }
-    }
-
+    private static int numAccepted = 0;
     /**
      * MolecularAssembly to operate on.
      */
@@ -126,13 +102,29 @@ public class RosenbluthChiAllMove implements MCMove {
      */
     private final ResidueState origState;
     /**
-     * Proposed rotamer move.
-     */
-    private Rotamer proposedMove;
-    /**
      * Force field energy to use.
      */
     private final ForceFieldEnergy forceFieldEnergy;
+    private final double beta;
+    private final int testSetSize;
+    private final ThreadLocalRandom rand = ThreadLocalRandom.current();
+    private final StringBuilder report = new StringBuilder();
+    private final boolean[] doChi = new boolean[4];
+    private final MODE mode;
+    private final boolean torsionSampling;
+    private final double CATASTROPHE_THRESHOLD = -10000;
+    /**
+     * Convert nanoseconds to milliseconds.
+     */
+    private final double NS_TO_MS = 0.000001;
+    /**
+     * Final energy.
+     */
+    double finalEnergy = 0.0;
+    /**
+     * Proposed rotamer move.
+     */
+    private Rotamer proposedMove;
     /**
      * PDBFilter to write out results.
      */
@@ -141,30 +133,15 @@ public class RosenbluthChiAllMove implements MCMove {
      * Write out snapshots.
      */
     private SnapshotWriter snapshotWriter = null;
-
     private double Wn = 0.0;
     private double Wo = 0.0;
-    private final double beta;
-    private final int testSetSize;
-    private final ThreadLocalRandom rand = ThreadLocalRandom.current();
-    private final StringBuilder report = new StringBuilder();
-
     private int moveNumber;
-    private final boolean[] doChi = new boolean[4];
     private double[] proposedChis = new double[4];
     private boolean accepted = false;
-    private static int numAccepted = 0;
-    private final MODE mode;
-    private final boolean torsionSampling;
-    private final double CATASTROPHE_THRESHOLD = -10000;
     /**
      * Original energy.
      */
     private double origEnergy;
-    /**
-     * Final energy.
-     */
-    double finalEnergy = 0.0;
     /**
      * Start time.
      */
@@ -173,11 +150,6 @@ public class RosenbluthChiAllMove implements MCMove {
      * End time.
      */
     private long endTime;
-    /**
-     * Convert nanoseconds to milliseconds.
-     */
-    private final double NS_TO_MS = 0.000001;
-
     private boolean verbose;
     private boolean randInts;
     private boolean noSnaps;
@@ -275,6 +247,153 @@ public class RosenbluthChiAllMove implements MCMove {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>mode</code>.</p>
+     *
+     * @return a {@link ffx.algorithms.mc.RosenbluthChiAllMove.MODE} object.
+     */
+    public MODE getMode() {
+        return mode;
+    }
+
+    /**
+     * <p>getWn.</p>
+     *
+     * @return a double.
+     */
+    public double getWn() {
+        return Wn;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Performs the move associated with this MCMove. Also updates chi values in
+     * associated Torsion objects.
+     */
+    @Override
+    public void move() {
+        RotamerLibrary.applyRotamer(target, proposedMove);
+        updateAll();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Reverts the last applied move() call.
+     */
+    @Override
+    public void revertMove() {
+        target.revertState(origState);
+        updateAll();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return format("Rosenbluth Rotamer Move:\n   Res:   %s\n   Rota: %s",
+                target.toString(), proposedMove.toString());
+    }
+
+    /**
+     * Mode of the RosenbluthChiAllMove instance.
+     */
+    public enum MODE {
+        EXPENSIVE, CHEAP, CTRL_ALL;
+    }
+
+    /**
+     * Provides lookup values that make true the inequality: uTorsion + offset
+     * .ge. 0.0
+     */
+    private enum TORSION_OFFSET_AMPRO13 {
+        LYS0(1.610000), LYD0(1.610000),
+        LYS1(0.939033), LYD1(0.939033),
+        LYS2(1.000000), LYD2(1.000000),
+        LYS3(0.800000), LYD3(0.800000);
+
+        public final double offset;
+
+        TORSION_OFFSET_AMPRO13(double offset) {
+            this.offset = offset;
+        }
+    }
+
+    private class TrialSet {
+
+        public final Rotamer rotamer[];
+        public final double uDep[];
+        public final double uExt[];
+        public final double theta[];
+
+        public TrialSet(int setSize) {
+            rotamer = new Rotamer[setSize];
+            uDep = new double[setSize];
+            uExt = new double[setSize];
+            theta = new double[setSize];
+        }
+
+        public double prodExtBolt() {
+            double prod = 0.0;
+            for (int i = 0; i < uExt.length; i++) {
+                prod *= FastMath.exp(-beta * uExt[i]);
+            }
+            return prod;
+        }
+
+        // We need to SUM over "members of the test set" i.e. ONLY do this for different TRIALS (b1 ... bn)
+        // AND THEN We want to MULTIPLY over "segments in the polymer chain" i.e. ONLY do prod over different CHIS
+        public double sumExtBolt() {
+            double sum = 0.0;
+            for (int i = 0; i < uExt.length; i++) {
+                sum += FastMath.exp(-beta * uExt[i]);
+            }
+            return sum;
+        }
+    }
+
+    private class BackBondedList {
+
+        public final Bond bond;
+        public final Angle angle;
+        public final Torsion torsion;
+
+        public BackBondedList(Bond bond, Angle angle, Torsion tors) {
+            this.bond = bond;
+            this.angle = angle;
+            this.torsion = tors;
+        }
+    }
+
+    private class SnapshotWriter {
+
+        private final MolecularAssembly mola;
+        private final PDBFilter filter;
+        private final boolean interleaving;
+
+        private SnapshotWriter(MolecularAssembly mola, boolean interleaving) {
+            this.mola = mola;
+            this.interleaving = interleaving;
+            this.filter = new PDBFilter(mola.getFile(), mola, null, null);
+            this.filter.setLogWrites(false);
+        }
+
+        private void write(String suffix, boolean append) {
+            String filename = FilenameUtils.removeExtension(mola.getFile().toString()) + "." + suffix + "-" + moveNumber;
+            if (interleaving) {
+                filename = mola.getFile().getAbsolutePath();
+                if (!filename.contains("dyn")) {
+                    filename = FilenameUtils.removeExtension(filename) + "_dyn.pdb";
+                }
+            }
+            File file = new File(filename);
+            filter.setLogWrites(false);
+            filter.writeFile(file, append);
+        }
+    }
+
     private void write() {
         if (noSnaps) {
             return;
@@ -288,15 +407,6 @@ public class RosenbluthChiAllMove implements MCMove {
         }
         File file = new File(filename);
         writer.writeFile(file, false);
-    }
-
-    /**
-     * <p>getWn.</p>
-     *
-     * @return a double.
-     */
-    public double getWn() {
-        return Wn;
     }
 
     /**
@@ -721,29 +831,6 @@ public class RosenbluthChiAllMove implements MCMove {
         return createRotamer(AminoAcid3.valueOf(res.getName()), chi);
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Performs the move associated with this MCMove. Also updates chi values in
-     * associated Torsion objects.
-     */
-    @Override
-    public void move() {
-        RotamerLibrary.applyRotamer(target, proposedMove);
-        updateAll();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Reverts the last applied move() call.
-     */
-    @Override
-    public void revertMove() {
-        target.revertState(origState);
-        updateAll();
-    }
-
     private void updateAll() {
         updateBonds();
         updateAngles();
@@ -766,15 +853,6 @@ public class RosenbluthChiAllMove implements MCMove {
         for (Torsion torsion : target.getTorsionList()) {
             torsion.update();
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return format("Rosenbluth Rotamer Move:\n   Res:   %s\n   Rota: %s",
-                target.toString(), proposedMove.toString());
     }
 
     private double totalEnergy() {
@@ -998,15 +1076,6 @@ public class RosenbluthChiAllMove implements MCMove {
     }
 
     /**
-     * <p>Getter for the field <code>mode</code>.</p>
-     *
-     * @return a {@link ffx.algorithms.mc.RosenbluthChiAllMove.MODE} object.
-     */
-    public MODE getMode() {
-        return mode;
-    }
-
-    /**
      * Collects data for plot of uTors vs. theta.
      * This is for finding the appropriate offset to add to each uTors such that the minimum is zero.
      *
@@ -1110,7 +1179,6 @@ public class RosenbluthChiAllMove implements MCMove {
         }
 
 
-
         if (torsionSampling) {
             try {
                 File output = new File("torsionSampler.log");
@@ -1137,7 +1205,7 @@ public class RosenbluthChiAllMove implements MCMove {
             logger.severe("Yeah that ain't a lysine.");
         }
         double[] chi = new double[4];
-        ArrayList<Torsion> torsions = residue.getTorsionList();
+        List<Torsion> torsions = residue.getTorsionList();
         Atom N = (Atom) residue.getAtomNode("N");
         Atom CA = (Atom) residue.getAtomNode("CA");
         Atom CB = (Atom) residue.getAtomNode("CB");
@@ -1177,79 +1245,6 @@ public class RosenbluthChiAllMove implements MCMove {
             }
         }
         return chi;
-    }
-
-    private class TrialSet {
-
-        public final Rotamer rotamer[];
-        public final double uDep[];
-        public final double uExt[];
-        public final double theta[];
-
-        public TrialSet(int setSize) {
-            rotamer = new Rotamer[setSize];
-            uDep = new double[setSize];
-            uExt = new double[setSize];
-            theta = new double[setSize];
-        }
-
-        public double prodExtBolt() {
-            double prod = 0.0;
-            for (int i = 0; i < uExt.length; i++) {
-                prod *= FastMath.exp(-beta * uExt[i]);
-            }
-            return prod;
-        }
-
-        // We need to SUM over "members of the test set" i.e. ONLY do this for different TRIALS (b1 ... bn)
-        // AND THEN We want to MULTIPLY over "segments in the polymer chain" i.e. ONLY do prod over different CHIS
-        public double sumExtBolt() {
-            double sum = 0.0;
-            for (int i = 0; i < uExt.length; i++) {
-                sum += FastMath.exp(-beta * uExt[i]);
-            }
-            return sum;
-        }
-    }
-
-    private class BackBondedList {
-
-        public final Bond bond;
-        public final Angle angle;
-        public final Torsion torsion;
-
-        public BackBondedList(Bond bond, Angle angle, Torsion tors) {
-            this.bond = bond;
-            this.angle = angle;
-            this.torsion = tors;
-        }
-    }
-
-    private class SnapshotWriter {
-
-        private final MolecularAssembly mola;
-        private final PDBFilter filter;
-        private final boolean interleaving;
-
-        private SnapshotWriter(MolecularAssembly mola, boolean interleaving) {
-            this.mola = mola;
-            this.interleaving = interleaving;
-            this.filter = new PDBFilter(mola.getFile(), mola, null, null);
-            this.filter.setLogWrites(false);
-        }
-
-        private void write(String suffix, boolean append) {
-            String filename = FilenameUtils.removeExtension(mola.getFile().toString()) + "." + suffix + "-" + moveNumber;
-            if (interleaving) {
-                filename = mola.getFile().getAbsolutePath();
-                if (!filename.contains("dyn")) {
-                    filename = FilenameUtils.removeExtension(filename) + "_dyn.pdb";
-                }
-            }
-            File file = new File(filename);
-            filter.setLogWrites(false);
-            filter.writeFile(file, append);
-        }
     }
 
 }

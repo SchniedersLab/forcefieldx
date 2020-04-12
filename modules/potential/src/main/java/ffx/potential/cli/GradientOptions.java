@@ -44,7 +44,6 @@ import picocli.CommandLine.Option;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class GradientOptions {
 

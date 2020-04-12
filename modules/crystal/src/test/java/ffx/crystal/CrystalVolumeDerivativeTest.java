@@ -54,6 +54,22 @@ import static org.junit.Assert.assertEquals;
 @RunWith(Parameterized.class)
 public class CrystalVolumeDerivativeTest {
 
+    private final String info;
+    private final Crystal crystal;
+    /**
+     * Finite-Difference parameters.
+     */
+    private double eps = 0.00001;
+    private double epsD = Math.toDegrees(eps);
+    private double eps2 = 2.0 * eps;
+    private double tolerance = eps * 10.0;
+    public CrystalVolumeDerivativeTest(
+            String info, double a, double b, double c,
+            double alpha, double beta, double gamma, String sg) {
+        this.info = info;
+        this.crystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
+    }
+
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
@@ -73,24 +89,6 @@ public class CrystalVolumeDerivativeTest {
                         108.99, 108.99, 49.40, 90.0, 90.0, 120.0, "P3"}
         });
     }
-
-    private final String info;
-    private final Crystal crystal;
-
-    public CrystalVolumeDerivativeTest(
-            String info, double a, double b, double c,
-            double alpha, double beta, double gamma, String sg) {
-        this.info = info;
-        this.crystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
-    }
-
-    /**
-     * Finite-Difference parameters.
-     */
-    private double eps = 0.00001;
-    private double epsD = Math.toDegrees(eps);
-    private double eps2 = 2.0 * eps;
-    private double tolerance = eps * 10.0;
 
     @Test
     public void finiteDifferenceTest() {

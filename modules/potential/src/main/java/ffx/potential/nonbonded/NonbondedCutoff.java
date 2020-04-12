@@ -42,35 +42,8 @@ package ffx.potential.nonbonded;
  * cutoffs.
  *
  * @author Michael J. Schnieders
- *
  */
 public class NonbondedCutoff {
-
-    /**
-     * Non-bonded Cutoff constructor.
-     *
-     * @param off All vdW interactions are 0 at the distance <code>off</code>.
-     * @param cut At the distance <code>cut</code>, a multiplicative switch
-     * begins to be applied.
-     * @param buff A buffer added to the cut-off distance <code>off</code> to
-     * define neighbors included when collecting Verlet lists.
-     */
-    public NonbondedCutoff(double off, double cut, double buff) {
-        this.cut = cut;
-        this.cut2 = cut * cut;
-        this.off = off;
-        this.off2 = off * off;
-        this.buff = buff;
-    }
-
-    /**
-     * Returns a NonbondedCutoff that does not cut off anything.
-     *
-     * @return No-cutoff cutoff.
-     */
-    public static NonbondedCutoff noCutoffFactory() {
-        return new NonbondedCutoff(Double.MAX_VALUE, Double.MAX_VALUE, 0.0);
-    }
 
     /**
      * At the distance "cut", a multiplicative switch begins to be applied.
@@ -93,5 +66,30 @@ public class NonbondedCutoff {
      * neighbors included when collecting Verlet lists.
      */
     public final double buff;
+    /**
+     * Non-bonded Cutoff constructor.
+     *
+     * @param off  All vdW interactions are 0 at the distance <code>off</code>.
+     * @param cut  At the distance <code>cut</code>, a multiplicative switch
+     *             begins to be applied.
+     * @param buff A buffer added to the cut-off distance <code>off</code> to
+     *             define neighbors included when collecting Verlet lists.
+     */
+    public NonbondedCutoff(double off, double cut, double buff) {
+        this.cut = cut;
+        this.cut2 = cut * cut;
+        this.off = off;
+        this.off2 = off * off;
+        this.buff = buff;
+    }
+
+    /**
+     * Returns a NonbondedCutoff that does not cut off anything.
+     *
+     * @return No-cutoff cutoff.
+     */
+    public static NonbondedCutoff noCutoffFactory() {
+        return new NonbondedCutoff(Double.MAX_VALUE, Double.MAX_VALUE, 0.0);
+    }
 
 }

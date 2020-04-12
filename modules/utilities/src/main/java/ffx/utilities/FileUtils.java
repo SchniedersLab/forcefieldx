@@ -45,7 +45,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import static java.lang.String.format;
 
 /**
@@ -99,7 +98,7 @@ public class FileUtils {
      * Constructs a relative path from the present working directory to a file.
      *
      * @param fi Construct a relative path to File fi.
-     * @return   Relative path to fi.
+     * @return Relative path to fi.
      */
     public static Path relativePathTo(File fi) {
         File pwd = new File(".");

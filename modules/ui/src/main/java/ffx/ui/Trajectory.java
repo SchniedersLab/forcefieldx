@@ -86,6 +86,101 @@ public class Trajectory implements ActionListener {
         setFrame(cycle);
     }
 
+    /**
+     * <p>
+     * getFSystem</p>
+     *
+     * @return a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public MolecularAssembly getFSystem() {
+        return molecularSystem;
+    }
+
+    /**
+     * <p>
+     * getFrame</p>
+     *
+     * @return a int.
+     */
+    public int getFrame() {
+        return molecularSystem.getCurrentCycle();
+    }
+
+    /**
+     * <p>
+     * setFrame</p>
+     *
+     * @param f a int.
+     */
+    public void setFrame(int f) {
+        if (molecularSystem != null) {
+            molecularSystem.setCurrentCycle(f);
+            mainPanel.getGraphics3D().updateScene(molecularSystem, true, false,
+                    null, false, null);
+            mainPanel.getHierarchy().updateStatus();
+        }
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>oscillate</code>.</p>
+     *
+     * @return a boolean.
+     */
+    public boolean getOscillate() {
+        return oscillate;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>oscillate</code>.</p>
+     *
+     * @param o a boolean.
+     */
+    void setOscillate(boolean o) {
+        oscillate = o;
+    }
+
+    /**
+     * <p>
+     * getRate</p>
+     *
+     * @return a int.
+     */
+    public int getRate() {
+        return desiredspeed;
+    }
+
+    /**
+     * <p>
+     * setRate</p>
+     *
+     * @param s a int.
+     */
+    public void setRate(int s) {
+        if (s > 0 && s <= 100) {
+            desiredspeed = s;
+            delay = 1000 / s;
+            timer.setDelay(delay);
+        }
+    }
+
+    /**
+     * <p>
+     * start</p>
+     */
+    public void start() {
+        timer.start();
+    }
+
+    /**
+     * <p>
+     * stop</p>
+     */
+    public void stop() {
+        timer.stop();
+    }
+
     private int advance(int adv) {
         if (molecularSystem != null) {
             cycle = molecularSystem.getCurrentCycle();
@@ -129,99 +224,12 @@ public class Trajectory implements ActionListener {
 
     /**
      * <p>
-     * getFrame</p>
-     *
-     * @return a int.
-     */
-    public int getFrame() {
-        return molecularSystem.getCurrentCycle();
-    }
-
-    /**
-     * <p>
-     * getFSystem</p>
-     *
-     * @return a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public MolecularAssembly getFSystem() {
-        return molecularSystem;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>oscillate</code>.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean getOscillate() {
-        return oscillate;
-    }
-
-    /**
-     * <p>
-     * getRate</p>
-     *
-     * @return a int.
-     */
-    public int getRate() {
-        return desiredspeed;
-    }
-
-    /**
-     * <p>
      * Getter for the field <code>skip</code>.</p>
      *
      * @return a int.
      */
     int getSkip() {
         return skip;
-    }
-
-    /**
-     * <p>
-     * rewind</p>
-     */
-    void rewind() {
-        setFrame(1);
-    }
-
-    /**
-     * <p>
-     * setFrame</p>
-     *
-     * @param f a int.
-     */
-    public void setFrame(int f) {
-        if (molecularSystem != null) {
-            molecularSystem.setCurrentCycle(f);
-            mainPanel.getGraphics3D().updateScene(molecularSystem, true, false,
-                    null, false, null);
-            mainPanel.getHierarchy().updateStatus();
-        }
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>oscillate</code>.</p>
-     *
-     * @param o a boolean.
-     */
-    void setOscillate(boolean o) {
-        oscillate = o;
-    }
-
-    /**
-     * <p>
-     * setRate</p>
-     *
-     * @param s a int.
-     */
-    public void setRate(int s) {
-        if (s > 0 && s <= 100) {
-            desiredspeed = s;
-            delay = 1000 / s;
-            timer.setDelay(delay);
-        }
     }
 
     /**
@@ -239,17 +247,9 @@ public class Trajectory implements ActionListener {
 
     /**
      * <p>
-     * start</p>
+     * rewind</p>
      */
-    public void start() {
-        timer.start();
-    }
-
-    /**
-     * <p>
-     * stop</p>
-     */
-    public void stop() {
-        timer.stop();
+    void rewind() {
+        setFrame(1);
     }
 }

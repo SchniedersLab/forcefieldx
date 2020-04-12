@@ -84,28 +84,6 @@ public class CoordShakeMove implements MCMove {
     }
 
     /**
-     * <p>Setter for the field <code>sigma</code>.</p>
-     *
-     * @param sigma a double.
-     */
-    public void setSigma(double sigma) {
-        this.sigma = sigma;
-        dist = new NormalDistribution(0, sigma);
-    }
-
-    /**
-     * <p>Setter for the field <code>atoms</code>.</p>
-     *
-     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    public void setAtoms(Atom[] atoms) {
-        int nAtoms = atoms.length;
-        this.atoms = new Atom[nAtoms];
-        arraycopy(atoms, 0, this.atoms, 0, nAtoms);
-        originalCoords = ResidueState.storeAtomicCoordinates(atoms);
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -128,6 +106,28 @@ public class CoordShakeMove implements MCMove {
     @Override
     public void revertMove() {
         ResidueState.revertAtomicCoordinates(atoms, originalCoords);
+    }
+
+    /**
+     * <p>Setter for the field <code>atoms</code>.</p>
+     *
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     */
+    public void setAtoms(Atom[] atoms) {
+        int nAtoms = atoms.length;
+        this.atoms = new Atom[nAtoms];
+        arraycopy(atoms, 0, this.atoms, 0, nAtoms);
+        originalCoords = ResidueState.storeAtomicCoordinates(atoms);
+    }
+
+    /**
+     * <p>Setter for the field <code>sigma</code>.</p>
+     *
+     * @param sigma a double.
+     */
+    public void setSigma(double sigma) {
+        this.sigma = sigma;
+        dist = new NormalDistribution(0, sigma);
     }
 
     /**

@@ -49,7 +49,6 @@ import java.util.logging.Logger;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class FFXLocale {
 
@@ -74,7 +73,7 @@ public class FFXLocale {
      * Constructor for FFXLocale.</p>
      *
      * @param language a {@link java.lang.String} object.
-     * @param country a {@link java.lang.String} object.
+     * @param country  a {@link java.lang.String} object.
      */
     public FFXLocale(String language, String country) {
         setLocale(language, country);
@@ -113,22 +112,12 @@ public class FFXLocale {
         }
     }
 
-    private void loadHashtable() {
-        reverseLookUp.clear();
-        Enumeration<String> e = ffxLabels.getKeys();
-        while (e.hasMoreElements()) {
-            String key = e.nextElement();
-            String value = getValue(key);
-            reverseLookUp.put(value, key);
-        }
-    }
-
     /**
      * <p>
      * setLocale</p>
      *
      * @param language a {@link java.lang.String} object.
-     * @param country a {@link java.lang.String} object.
+     * @param country  a {@link java.lang.String} object.
      * @return a boolean.
      */
     public boolean setLocale(String language, String country) {
@@ -143,5 +132,15 @@ public class FFXLocale {
         loadHashtable();
         currentLocale = locale;
         return true;
+    }
+
+    private void loadHashtable() {
+        reverseLookUp.clear();
+        Enumeration<String> e = ffxLabels.getKeys();
+        while (e.hasMoreElements()) {
+            String key = e.nextElement();
+            String value = getValue(key);
+            reverseLookUp.put(value, key);
+        }
     }
 }

@@ -106,7 +106,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     private final double[] tempA;
     private final double[] tempB;
-
+    private final EnergyRegion region;
     private STATE state = STATE.BOTH;
     private double lambda;
     private double totalEnergy;
@@ -114,11 +114,8 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     private double energyB;
     private double dEdL, dEdL_A, dEdL_B;
     private double d2EdL2, d2EdL2_A, d2EdL2_B;
-
     private boolean inParallel = false;
     private ParallelTeam team;
-    private final EnergyRegion region;
-
     /**
      * Scaling and de-scaling will be applied inside DualTopologyEnergy.
      */
@@ -289,6 +286,492 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * Returns true if both dual topologies are zero at the ends.
+     */
+    @Override
+    public boolean dEdLZeroAtEnds() {
+        if (!dualTopA.dEdLZeroAtEnds() || !dualTopB.dEdLZeroAtEnds()) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean destroy() {
+        boolean dtADestroy = dualTopA.destroy();
+        boolean dtBDestroy = dualTopB.destroy();
+        try {
+            if (team != null) {
+                team.shutdown();
+            }
+            return dtADestroy && dtBDestroy;
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception in shutting down QuadTopologyEnergy: %s", ex));
+            logger.info(Utilities.stackTraceToString(ex));
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energy(double[] x) {
+        return energy(x, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energy(double[] x, boolean verbose) {
+        region.setX(x);
+        region.setVerbose(verbose);
+        try {
+            team.execute(region);
+        } catch (Exception ex) {
+            throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
+        }
+
+        if (verbose) {
+            logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
+        }
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        return energyAndGradient(x, g, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g, boolean verbose) {
+        assert Arrays.stream(x).allMatch(Double::isFinite);
+        region.setX(x);
+        region.setG(g);
+        region.setVerbose(verbose);
+        try {
+            team.execute(region);
+        } catch (Exception ex) {
+            throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
+        }
+
+        if (verbose) {
+            logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
+        }
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        doublesFrom(acceleration, dualTopA.getAcceleration(tempA), dualTopB.getAcceleration(tempB));
+        return acceleration;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] x) {
+        dualTopA.getCoordinates(xA);
+        dualTopB.getCoordinates(xB);
+        doublesFrom(x, xA, xB);
+        return x;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Crystal getCrystal() {
+        return dualTopA.getCrystal();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCrystal(Crystal crystal) {
+        dualTopA.setCrystal(crystal);
+        dualTopB.setCrystal(crystal);
+    }
+
+    /**
+     * Returns the first component DualTopologyEnergy.
+     *
+     * @return Dual topology A.
+     */
+    public DualTopologyEnergy getDualTopA() {
+        return dualTopA;
+    }
+
+    /**
+     * Returns the second component DualTopologyEnergy.
+     *
+     * @return Dual topology B.
+     */
+    public DualTopologyEnergy getDualTopB() {
+        return dualTopB;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnergyTermState(STATE state) {
+        this.state = state;
+        dualTopA.setEnergyTermState(state);
+        dualTopB.setEnergyTermState(state);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setLambda(double lambda) {
+        if (!Double.isFinite(lambda) || lambda > 1.0 || lambda < 0.0) {
+            throw new ArithmeticException(String.format(" Attempted to set invalid lambda value of %10.6g", lambda));
+        }
+        this.lambda = lambda;
+        dualTopA.setLambda(lambda);
+        dualTopB.setLambda(lambda);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getMass() {
+        return mass;
+    }
+
+    /**
+     * Returns number of shared variables.
+     *
+     * @return Shared variables
+     */
+    public int getNumSharedVariables() {
+        return nShared;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfVariables() {
+        return nVarTot;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        doublesFrom(previousAcceleration, dualTopA.getPreviousAcceleration(tempA), dualTopB.getPreviousAcceleration(tempB));
+        return previousAcceleration;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return scaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        this.scaling = scaling;
+        if (scaling != null) {
+            double[] scaleA = new double[nVarA];
+            double[] scaleB = new double[nVarB];
+            doublesTo(scaling, scaleA, scaleB);
+            dualTopA.setScaling(scaleA);
+            dualTopB.setScaling(scaleB);
+        } else {
+            dualTopA.setScaling(null);
+            dualTopB.setScaling(null);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTotalEnergy() {
+        return totalEnergy;
+    }
+
+    @Override
+    public List<Potential> getUnderlyingPotentials() {
+        List<Potential> under = new ArrayList<>(6);
+        under.add(dualTopA);
+        under.add(dualTopB);
+        under.addAll(dualTopA.getUnderlyingPotentials());
+        under.addAll(dualTopB.getUnderlyingPotentials());
+        return under;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        if (types == null) {
+            VARIABLE_TYPE[] typesA = dualTopA.getVariableTypes();
+            VARIABLE_TYPE[] typesB = dualTopB.getVariableTypes();
+            if (typesA != null && typesB != null) {
+                types = new VARIABLE_TYPE[nVarTot];
+                copyFrom(types, dualTopA.getVariableTypes(), dualTopB.getVariableTypes());
+            } else {
+                logger.fine(" Variable types array remaining null due to null "
+                        + "variable types in either A or B dual topology");
+            }
+        }
+        return types;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        doublesFrom(velocity, dualTopA.getVelocity(tempA), dualTopB.getVelocity(tempB));
+        return velocity;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        return d2EdL2;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getdEdL() {
+        return dEdL;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getdEdXdL(double[] g) {
+        dualTopA.getdEdXdL(tempA);
+        dualTopB.getdEdXdL(tempB);
+        addDoublesFrom(g, tempA, tempB);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        doublesTo(acceleration, tempA, tempB);
+        dualTopA.setVelocity(tempA);
+        dualTopB.setVelocity(tempB);
+    }
+
+    /**
+     * <p>setParallel.</p>
+     *
+     * @param parallel a boolean.
+     */
+    public void setParallel(boolean parallel) {
+        this.inParallel = parallel;
+        if (team != null) {
+            try {
+                team.shutdown();
+            } catch (Exception e) {
+                logger.severe(String.format(" Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s", e.toString()));
+            }
+        }
+        team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        doublesTo(previousAcceleration, tempA, tempB);
+        dualTopA.setPreviousAcceleration(tempA);
+        dualTopB.setPreviousAcceleration(tempB);
+    }
+
+    /**
+     * Sets the printOnFailure flag; if override is true, over-rides any
+     * existing property. Essentially sets the default value of printOnFailure
+     * for an algorithm. For example, rotamer optimization will generally run
+     * into force field issues in the normal course of execution as it tries
+     * unphysical self and pair configurations, so the algorithm should not
+     * print out a large number of error PDBs.
+     *
+     * @param onFail   To set
+     * @param override Override properties
+     */
+    public void setPrintOnFailure(boolean onFail, boolean override) {
+        dualTopA.setPrintOnFailure(onFail, override);
+        dualTopB.setPrintOnFailure(onFail, override);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        doublesTo(velocity, tempA, tempB);
+        dualTopA.setVelocity(tempA);
+        dualTopB.setVelocity(tempB);
+    }
+
+    private class EnergyRegion extends ParallelRegion {
+
+        private final EnergyASection sectA;
+        private final EnergyBSection sectB;
+        private double[] x;
+        private double[] g;
+        private boolean gradient = false;
+
+        EnergyRegion() {
+            sectA = new EnergyASection();
+            sectB = new EnergyBSection();
+        }
+
+        @Override
+        public void finish() {
+            totalEnergy = energyA + energyB;
+            if (gradient) {
+                addDoublesFrom(g, gA, gB);
+                dEdL = dEdL_A + dEdL_B;
+                d2EdL2 = d2EdL2_A + d2EdL2_B;
+            }
+            gradient = false;
+        }
+
+        @Override
+        public void run() throws Exception {
+            execute(sectA, sectB);
+        }
+
+        public void setG(double[] g) {
+            this.g = g;
+            setGradient(true);
+        }
+
+        public void setGradient(boolean gradient) {
+            this.gradient = gradient;
+            sectA.setGradient(gradient);
+            sectB.setGradient(gradient);
+        }
+
+        public void setVerbose(boolean verbose) {
+            sectA.setVerbose(verbose);
+            sectB.setVerbose(verbose);
+        }
+
+        public void setX(double[] x) {
+            this.x = x;
+        }
+
+        @Override
+        public void start() {
+            doublesTo(x, xA, xB);
+        }
+    }
+
+    private class EnergyASection extends ParallelSection {
+
+        private boolean verbose = false;
+        private boolean gradient = false;
+
+        @Override
+        public void run() throws Exception {
+            if (gradient) {
+                energyA = dualTopA.energyAndGradient(xA, gA, verbose);
+                dEdL_A = linterA.getdEdL();
+                d2EdL2_A = linterA.getd2EdL2();
+            } else {
+                energyA = dualTopA.energy(xA, verbose);
+            }
+            this.verbose = false;
+            this.gradient = false;
+        }
+
+        public void setGradient(boolean gradient) {
+            this.gradient = gradient;
+        }
+
+        public void setVerbose(boolean verbose) {
+            this.verbose = verbose;
+        }
+    }
+
+    private class EnergyBSection extends ParallelSection {
+
+        private boolean verbose = false;
+        private boolean gradient = false;
+
+        @Override
+        public void run() throws Exception {
+            if (gradient) {
+                energyB = dualTopB.energyAndGradient(xB, gB, verbose);
+                dEdL_B = linterB.getdEdL();
+                d2EdL2_B = linterB.getd2EdL2();
+            } else {
+                energyB = dualTopB.energy(xB, verbose);
+            }
+            this.verbose = false;
+            this.gradient = false;
+        }
+
+        public void setGradient(boolean gradient) {
+            this.gradient = gradient;
+        }
+
+        public void setVerbose(boolean verbose) {
+            this.verbose = verbose;
+        }
+    }
+
+    /**
      * Copies from object arrays of length nVarA and nVarB to an object array of
      * length nVarTot; asserts objects in common indices are equal. Should not
      * be used when the result of the common indices should be f(A,B)
@@ -404,493 +887,6 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         for (int i = 0; i < nVarB; i++) {
             to[indexBToGlobal[i]] += fromB[i];
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energy(double[] x) {
-        return energy(x, false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energy(double[] x, boolean verbose) {
-        region.setX(x);
-        region.setVerbose(verbose);
-        try {
-            team.execute(region);
-        } catch (Exception ex) {
-            throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
-        }
-
-        if (verbose) {
-            logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
-        }
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energyAndGradient(double[] x, double[] g) {
-        return energyAndGradient(x, g, false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energyAndGradient(double[] x, double[] g, boolean verbose) {
-        assert Arrays.stream(x).allMatch(Double::isFinite);
-        region.setX(x);
-        region.setG(g);
-        region.setVerbose(verbose);
-        try {
-            team.execute(region);
-        } catch (Exception ex) {
-            throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
-        }
-
-        if (verbose) {
-            logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
-        }
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setScaling(double[] scaling) {
-        this.scaling = scaling;
-        if (scaling != null) {
-            double[] scaleA = new double[nVarA];
-            double[] scaleB = new double[nVarB];
-            doublesTo(scaling, scaleA, scaleB);
-            dualTopA.setScaling(scaleA);
-            dualTopB.setScaling(scaleB);
-        } else {
-            dualTopA.setScaling(null);
-            dualTopB.setScaling(null);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return scaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] x) {
-        dualTopA.getCoordinates(xA);
-        dualTopB.getCoordinates(xB);
-        doublesFrom(x, xA, xB);
-        return x;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getMass() {
-        return mass;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getTotalEnergy() {
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNumberOfVariables() {
-        return nVarTot;
-    }
-
-    /**
-     * Returns number of shared variables.
-     *
-     * @return Shared variables
-     */
-    public int getNumSharedVariables() {
-        return nShared;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public VARIABLE_TYPE[] getVariableTypes() {
-        if (types == null) {
-            VARIABLE_TYPE[] typesA = dualTopA.getVariableTypes();
-            VARIABLE_TYPE[] typesB = dualTopB.getVariableTypes();
-            if (typesA != null && typesB != null) {
-                types = new VARIABLE_TYPE[nVarTot];
-                copyFrom(types, dualTopA.getVariableTypes(), dualTopB.getVariableTypes());
-            } else {
-                logger.fine(" Variable types array remaining null due to null "
-                        + "variable types in either A or B dual topology");
-            }
-        }
-        return types;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        doublesTo(velocity, tempA, tempB);
-        dualTopA.setVelocity(tempA);
-        dualTopB.setVelocity(tempB);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        doublesTo(acceleration, tempA, tempB);
-        dualTopA.setVelocity(tempA);
-        dualTopB.setVelocity(tempB);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        doublesTo(previousAcceleration, tempA, tempB);
-        dualTopA.setPreviousAcceleration(tempA);
-        dualTopB.setPreviousAcceleration(tempB);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getVelocity(double[] velocity) {
-        doublesFrom(velocity, dualTopA.getVelocity(tempA), dualTopB.getVelocity(tempB));
-        return velocity;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        doublesFrom(acceleration, dualTopA.getAcceleration(tempA), dualTopB.getAcceleration(tempB));
-        return acceleration;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        doublesFrom(previousAcceleration, dualTopA.getPreviousAcceleration(tempA), dualTopB.getPreviousAcceleration(tempB));
-        return previousAcceleration;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setEnergyTermState(STATE state) {
-        this.state = state;
-        dualTopA.setEnergyTermState(state);
-        dualTopB.setEnergyTermState(state);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public STATE getEnergyTermState() {
-        return state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setLambda(double lambda) {
-        if (!Double.isFinite(lambda) || lambda > 1.0 || lambda < 0.0) {
-            throw new ArithmeticException(String.format(" Attempted to set invalid lambda value of %10.6g", lambda));
-        }
-        this.lambda = lambda;
-        dualTopA.setLambda(lambda);
-        dualTopB.setLambda(lambda);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getLambda() {
-        return lambda;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getdEdL() {
-        return dEdL;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns true if both dual topologies are zero at the ends.
-     */
-    @Override
-    public boolean dEdLZeroAtEnds() {
-        if (!dualTopA.dEdLZeroAtEnds() || !dualTopB.dEdLZeroAtEnds()) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdL2() {
-        return d2EdL2;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void getdEdXdL(double[] g) {
-        dualTopA.getdEdXdL(tempA);
-        dualTopB.getdEdXdL(tempB);
-        addDoublesFrom(g, tempA, tempB);
-    }
-
-    /**
-     * <p>setParallel.</p>
-     *
-     * @param parallel a boolean.
-     */
-    public void setParallel(boolean parallel) {
-        this.inParallel = parallel;
-        if (team != null) {
-            try {
-                team.shutdown();
-            } catch (Exception e) {
-                logger.severe(String.format(" Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s", e.toString()));
-            }
-        }
-        team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Crystal getCrystal() {
-        return dualTopA.getCrystal();
-    }
-
-    /**
-     * Returns the first component DualTopologyEnergy.
-     *
-     * @return Dual topology A.
-     */
-    public DualTopologyEnergy getDualTopA() {
-        return dualTopA;
-    }
-
-    /**
-     * Returns the second component DualTopologyEnergy.
-     *
-     * @return Dual topology B.
-     */
-    public DualTopologyEnergy getDualTopB() {
-        return dualTopB;
-    }
-
-    @Override
-    public List<Potential> getUnderlyingPotentials() {
-        List<Potential> under = new ArrayList<>(6);
-        under.add(dualTopA);
-        under.add(dualTopB);
-        under.addAll(dualTopA.getUnderlyingPotentials());
-        under.addAll(dualTopB.getUnderlyingPotentials());
-        return under;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setCrystal(Crystal crystal) {
-        dualTopA.setCrystal(crystal);
-        dualTopB.setCrystal(crystal);
-    }
-
-    /**
-     * Sets the printOnFailure flag; if override is true, over-rides any
-     * existing property. Essentially sets the default value of printOnFailure
-     * for an algorithm. For example, rotamer optimization will generally run
-     * into force field issues in the normal course of execution as it tries
-     * unphysical self and pair configurations, so the algorithm should not
-     * print out a large number of error PDBs.
-     *
-     * @param onFail   To set
-     * @param override Override properties
-     */
-    public void setPrintOnFailure(boolean onFail, boolean override) {
-        dualTopA.setPrintOnFailure(onFail, override);
-        dualTopB.setPrintOnFailure(onFail, override);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        boolean dtADestroy = dualTopA.destroy();
-        boolean dtBDestroy = dualTopB.destroy();
-        try {
-            if (team != null) {
-                team.shutdown();
-            }
-            return dtADestroy && dtBDestroy;
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception in shutting down QuadTopologyEnergy: %s", ex));
-            logger.info(Utilities.stackTraceToString(ex));
-            return false;
-        }
-    }
-
-    private class EnergyRegion extends ParallelRegion {
-
-        private double[] x;
-        private double[] g;
-        private boolean gradient = false;
-
-        private final EnergyASection sectA;
-        private final EnergyBSection sectB;
-
-        EnergyRegion() {
-            sectA = new EnergyASection();
-            sectB = new EnergyBSection();
-        }
-
-        public void setX(double[] x) {
-            this.x = x;
-        }
-
-        public void setG(double[] g) {
-            this.g = g;
-            setGradient(true);
-        }
-
-        public void setVerbose(boolean verbose) {
-            sectA.setVerbose(verbose);
-            sectB.setVerbose(verbose);
-        }
-
-        public void setGradient(boolean gradient) {
-            this.gradient = gradient;
-            sectA.setGradient(gradient);
-            sectB.setGradient(gradient);
-        }
-
-        @Override
-        public void start() {
-            doublesTo(x, xA, xB);
-        }
-
-        @Override
-        public void run() throws Exception {
-            execute(sectA, sectB);
-        }
-
-        @Override
-        public void finish() {
-            totalEnergy = energyA + energyB;
-            if (gradient) {
-                addDoublesFrom(g, gA, gB);
-                dEdL = dEdL_A + dEdL_B;
-                d2EdL2 = d2EdL2_A + d2EdL2_B;
-            }
-            gradient = false;
-        }
-    }
-
-    private class EnergyASection extends ParallelSection {
-
-        private boolean verbose = false;
-        private boolean gradient = false;
-
-        @Override
-        public void run() throws Exception {
-            if (gradient) {
-                energyA = dualTopA.energyAndGradient(xA, gA, verbose);
-                dEdL_A = linterA.getdEdL();
-                d2EdL2_A = linterA.getd2EdL2();
-            } else {
-                energyA = dualTopA.energy(xA, verbose);
-            }
-            this.verbose = false;
-            this.gradient = false;
-        }
-
-        public void setVerbose(boolean verbose) {
-            this.verbose = verbose;
-        }
-
-        public void setGradient(boolean gradient) {
-            this.gradient = gradient;
-        }
-    }
-
-    private class EnergyBSection extends ParallelSection {
-
-        private boolean verbose = false;
-        private boolean gradient = false;
-
-        @Override
-        public void run() throws Exception {
-            if (gradient) {
-                energyB = dualTopB.energyAndGradient(xB, gB, verbose);
-                dEdL_B = linterB.getdEdL();
-                d2EdL2_B = linterB.getd2EdL2();
-            } else {
-                energyB = dualTopB.energy(xB, verbose);
-            }
-            this.verbose = false;
-            this.gradient = false;
-        }
-
-        public void setVerbose(boolean verbose) {
-            this.verbose = verbose;
-        }
-
-        public void setGradient(boolean gradient) {
-            this.gradient = gradient;
         }
     }
 }

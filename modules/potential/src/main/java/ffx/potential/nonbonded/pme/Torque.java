@@ -9,12 +9,12 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import static ffx.numerics.math.DoubleMath.X;
-import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.numerics.math.DoubleMath.dot;
-import static ffx.numerics.math.DoubleMath.normalize;
-import static ffx.numerics.math.DoubleMath.length;
-import static ffx.numerics.math.DoubleMath.scale;
 import static ffx.numerics.math.DoubleMath.add;
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.normalize;
+import static ffx.numerics.math.DoubleMath.scale;
+import static ffx.numerics.math.DoubleMath.sub;
 
 
 public class Torque {

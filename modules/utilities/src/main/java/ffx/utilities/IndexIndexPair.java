@@ -63,24 +63,6 @@ public class IndexIndexPair implements Comparable {
     }
 
     /**
-     * <p>Getter for the field <code>sortedIndex</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getSortedIndex() {
-        return sortedIndex;
-    }
-
-    /**
-     * <p>Getter for the field <code>referenceIndex</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getReferenceIndex() {
-        return referenceIndex;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -94,5 +76,23 @@ public class IndexIndexPair implements Comparable {
         IndexIndexPair other = (IndexIndexPair) o;
 
         return Integer.compare(sortedIndex, other.sortedIndex);
+    }
+
+    /**
+     * <p>Getter for the field <code>referenceIndex</code>.</p>
+     *
+     * @return a int.
+     */
+    public int getReferenceIndex() {
+        return referenceIndex;
+    }
+
+    /**
+     * <p>Getter for the field <code>sortedIndex</code>.</p>
+     *
+     * @return a int.
+     */
+    public int getSortedIndex() {
+        return sortedIndex;
     }
 }

@@ -43,7 +43,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -54,9 +53,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * CCP4MapWriter class.</p>
  *
  * @author Timothy D. Fenn
- *
- * @see
- * <ul>
+ * @see <ul>
  * <li>
  * <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map
  * format</a>
@@ -77,7 +74,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * </a>
  * </li>
  * </ul>
- *
  * @since 1.0
  */
 public class CCP4MapWriter {
@@ -92,10 +88,10 @@ public class CCP4MapWriter {
     /**
      * construct mapwriter object
      *
-     * @param extx slices in x
-     * @param exty slices in y
-     * @param extz slices in z
-     * @param crystal {@link Crystal} object
+     * @param extx     slices in x
+     * @param exty     slices in y
+     * @param extz     slices in z
+     * @param crystal  {@link Crystal} object
      * @param filename output filename
      */
     public CCP4MapWriter(int extx, int exty, int extz, Crystal crystal, String filename) {
@@ -117,20 +113,20 @@ public class CCP4MapWriter {
      * <p>
      * Constructor for CCP4MapWriter.</p>
      *
-     * @param orix a int.
-     * @param oriy a int.
-     * @param oriz a int.
-     * @param extx a int.
-     * @param exty a int.
-     * @param extz a int.
-     * @param nx a int.
-     * @param ny a int.
-     * @param nz a int.
-     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param orix     a int.
+     * @param oriy     a int.
+     * @param oriz     a int.
+     * @param extx     a int.
+     * @param exty     a int.
+     * @param extz     a int.
+     * @param nx       a int.
+     * @param ny       a int.
+     * @param nz       a int.
+     * @param crystal  a {@link ffx.crystal.Crystal} object.
      * @param filename a {@link java.lang.String} object.
      */
     public CCP4MapWriter(int orix, int oriy, int oriz, int extx, int exty, int extz,
-            int nx, int ny, int nz, Crystal crystal, String filename) {
+                         int nx, int ny, int nz, Crystal crystal, String filename) {
         this.orix = orix;
         this.oriy = oriy;
         this.oriz = oriz;

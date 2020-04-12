@@ -128,6 +128,14 @@ public abstract class FunctionDataCurve implements DataSet {
     }
 
     /**
+     * Evaluates the function at x.
+     *
+     * @param x x
+     * @return f(x)
+     */
+    public abstract double fX(double x);
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -165,6 +173,14 @@ public abstract class FunctionDataCurve implements DataSet {
     }
 
     /**
+     * Analytical integral at a point.
+     *
+     * @param x Point
+     * @return Exact finite integral of 0 to this point
+     */
+    public abstract double integralAt(double x);
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -184,30 +200,6 @@ public abstract class FunctionDataCurve implements DataSet {
      * {@inheritDoc}
      */
     @Override
-    public double upperBound() {
-        return ub;
-    }
-
-    /**
-     * Evaluates the function at x.
-     *
-     * @param x x
-     * @return f(x)
-     */
-    public abstract double fX(double x);
-
-    /**
-     * Analytical integral at a point.
-     *
-     * @param x Point
-     * @return Exact finite integral of 0 to this point
-     */
-    public abstract double integralAt(double x);
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(format("Function f(x) curve with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
         if (halfWidthEnd) {
@@ -215,6 +207,14 @@ public abstract class FunctionDataCurve implements DataSet {
         }
         sb.append(".");
         return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double upperBound() {
+        return ub;
     }
 
     /**

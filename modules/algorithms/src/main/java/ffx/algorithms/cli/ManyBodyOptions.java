@@ -70,8 +70,6 @@ public class ManyBodyOptions {
 
     private static final Logger logger = Logger.getLogger(ManyBodyOptions.class.getName());
 
-    // Parameters for algorithms.
-
     /**
      * -L or --library Choose either Ponder and Richards (1) or Richardson (2)
      * rotamer library.
@@ -332,6 +330,37 @@ public class ManyBodyOptions {
     private int forceResiduesEnd;
 
     /**
+     * Gets the algorithm number.
+     *
+     * @return Integer representing the algorithm being run (i.e. global, box
+     * optimization, window, etc.)
+     */
+    public int getAlgorithmNumber() {
+        return algorithm;
+    }
+
+    public double getApproximate() {
+        return rotamerOptimization.getApproximate();
+    }
+
+    /**
+     * Gets the restart file created during rotamer optimization.
+     *
+     * @return The restart file.
+     */
+    public File getRestartFile() {
+        return rotamerOptimization.getRestartFile();
+    }
+
+    public RotamerLibrary getRotamerLibrary() {
+        return rLib;
+    }
+
+    public boolean getUsingOriginalCoordinates() {
+        return !noOriginal;
+    }
+
+    /**
      * <p>initRotamerOptimization.</p>
      *
      * @param rotamerOptimization a {@link RotamerOptimization} object.
@@ -376,6 +405,174 @@ public class ManyBodyOptions {
         setRotOptProperties();
     }
 
+    public void setOriginalCoordinates(boolean useOrig) {
+        noOriginal = !useOrig;
+    }
+
+    /**
+     * <p>setResidues.</p>
+     *
+     * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public void setResidues(MolecularAssembly activeAssembly) {
+        List<String> resList = new ArrayList<>();
+        addListResidues(resList);
+
+        int counter = 1;
+        if (algorithm != 5) {
+            if (allStartResID > 0) {
+                List<Residue> residueList = new ArrayList<>();
+                Polymer[] polymers = activeAssembly.getChains();
+                for (Polymer polymer : polymers) {
+                    List<Residue> residues = polymer.getResidues();
+                    for (Residue residue : residues) {
+                        Rotamer[] rotamers = residue.getRotamers(rLib);
+                        if (rotamers != null) {
+                            int nrot = rotamers.length;
+                            if (nrot == 1) {
+                                RotamerLibrary.applyRotamer(residue, rotamers[0]);
+                            }
+                            if (counter >= allStartResID) {
+                                residueList.add(residue);
+                            }
+                        } else if (!forceResidues.equalsIgnoreCase("none")) {
+                            if (counter >= allStartResID && counter >= forceResiduesStart
+                                    && counter <= forceResiduesEnd) {
+                                residueList.add(residue);
+                            }
+                        }
+                        counter++;
+                    }
+                }
+                rotamerOptimization.setResidues(residueList);
+            } else if (!listResidues.equalsIgnoreCase("none")) {
+                List<Residue> residueList = new ArrayList<>();
+                Polymer[] polymers = activeAssembly.getChains();
+                int n = 0;
+                for (String s : resList) {
+                    Character chainID = s.charAt(0);
+                    int i = Integer.parseInt(s.substring(1));
+                    for (Polymer p : polymers) {
+                        if (p.getChainID() == chainID) {
+                            List<Residue> rs = p.getResidues();
+                            for (Residue r : rs) {
+                                if (r.getResidueNumber() == i) {
+                                    residueList.add(r);
+                                    Rotamer[] rotamers = r.getRotamers(rLib);
+                                    if (rotamers != null) {
+                                        n++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                rotamerOptimization.setResiduesIgnoreNull(residueList);
+                if (n < 1) {
+                    return;
+                }
+            } else if (!chain.equalsIgnoreCase("-1")) {
+                rotamerOptimization.setResidues(chain, start, finish);
+            } else {
+                rotamerOptimization.setResidues(start, finish);
+            }
+        } else {
+            List<Residue> residueList = new ArrayList<>();
+            Polymer[] polymers = activeAssembly.getChains();
+
+            CompositeConfiguration properties = activeAssembly.getProperties();
+            boolean ignoreNA = properties.getBoolean("ignoreNA", false);
+
+            if (!listResidues.equalsIgnoreCase("none")) {
+                int n = 0;
+                for (String s : resList) {
+                    Character chainID = s.charAt(0);
+                    int i = Integer.parseInt(s.substring(1));
+                    for (Polymer p : polymers) {
+                        if (p.getChainID() == chainID) {
+                            List<Residue> rs = p.getResidues();
+                            for (Residue r : rs) {
+                                if (ignoreNA && r.getResidueType() == ResidueType.NA) {
+                                    continue;
+                                }
+                                if (r.getResidueNumber() == i) {
+                                    residueList.add(r);
+                                    Rotamer[] rotamers = r.getRotamers(rLib);
+                                    if (rotamers != null) {
+                                        n++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                rotamerOptimization.setResiduesIgnoreNull(residueList);
+                if (n < 1) {
+                    return;
+                }
+            } else {
+                for (Polymer p : polymers) {
+                    List<Residue> rs = p.getResidues();
+                    for (Residue r : rs) {
+                        if (ignoreNA && r.getResidueType() == ResidueType.NA) {
+                            continue;
+                        }
+                        Rotamer[] rotamers = r.getRotamers(rLib);
+                        if (rotamers != null) {
+                            int nrot = rotamers.length;
+                            if (nrot == 1) {
+                                RotamerLibrary.applyRotamer(r, rotamers[0]);
+                            } else if (nrot > 1) {
+                                residueList.add(r);
+                            }
+                        }
+                        counter++;
+                    }
+                }
+
+//            boolean ignoreNA = false;
+//            String ignoreNAProp = System.getProperty("ignoreNA");
+//            if (ignoreNAProp != null && ignoreNAProp.equalsIgnoreCase("true")) {
+//                ignoreNA = true;
+//            }
+//            List<Residue> residueList = new ArrayList<>();
+//            Polymer[] polymers = activeAssembly.getChains();
+//            int nPolymers = polymers.length;
+//            for (int p = 0; p < nPolymers; p++) {
+//                Polymer polymer = polymers[p];
+//                List<Residue> residues = polymer.getResidues();
+//
+//                System.out.print("\nresidues:\n");
+//
+//                int nResidues = residues.size();
+//                for (int i = 0; i < nResidues; i++) {
+//                    Residue residue = residues.get(i);
+//
+//                    System.out.print(residue+"\n");
+//
+//                    if (ignoreNA && residue.getResidueType() == ResidueType.NA) {
+//                        continue;
+//                    }
+//                    Rotamer[] rotamers = residue.getRotamers(rLib);
+//                    if (rotamers != null) {
+//                        int nrot = rotamers.length;
+//                        if (nrot == 1) {
+//                            RotamerLibrary.applyRotamer(residue, rotamers[0]);
+//                        } else if (nrot > 1) {
+//                            residueList.add(residue);
+//                        }
+//                    }
+//                    counter++;
+//                }
+            }
+            rotamerOptimization.setResidues(residueList);
+            rotamerOptimization.setBoxStart(boxStart);
+            if (finish > 0) {
+                rotamerOptimization.setBoxEnd(boxEnd);
+            }
+        }
+    }
+
     /**
      * This method sets the algorithm by default. If no parameters are given,
      * the default algorithm value 0. When the default algorithm is 0, a
@@ -398,7 +595,7 @@ public class ManyBodyOptions {
             Polymer[] polymers = activeAssembly.getChains();
             int nResidues = 0;
             for (Polymer polymer : polymers) {
-                ArrayList<Residue> residues = polymer.getResidues();
+                List<Residue> residues = polymer.getResidues();
                 nResidues = residues.size() + nResidues;
             }
             if (nResidues > 100) {
@@ -620,170 +817,6 @@ public class ManyBodyOptions {
     }
 
     /**
-     * <p>setResidues.</p>
-     *
-     * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void setResidues(MolecularAssembly activeAssembly) {
-        List<String> resList = new ArrayList<>();
-        addListResidues(resList);
-
-        int counter = 1;
-        if (algorithm != 5) {
-            if (allStartResID > 0) {
-                ArrayList<Residue> residueList = new ArrayList<Residue>();
-                Polymer[] polymers = activeAssembly.getChains();
-                for (Polymer polymer : polymers) {
-                    ArrayList<Residue> residues = polymer.getResidues();
-                    for (Residue residue : residues) {
-                        Rotamer[] rotamers = residue.getRotamers(rLib);
-                        if (rotamers != null) {
-                            int nrot = rotamers.length;
-                            if (nrot == 1) {
-                                RotamerLibrary.applyRotamer(residue, rotamers[0]);
-                            }
-                            if (counter >= allStartResID) {
-                                residueList.add(residue);
-                            }
-                        } else if (!forceResidues.equalsIgnoreCase("none")) {
-                            if (counter >= allStartResID && counter >= forceResiduesStart
-                                    && counter <= forceResiduesEnd) {
-                                residueList.add(residue);
-                            }
-                        }
-                        counter++;
-                    }
-                }
-                rotamerOptimization.setResidues(residueList);
-            } else if (!listResidues.equalsIgnoreCase("none")) {
-                ArrayList<Residue> residueList = new ArrayList<>();
-                Polymer[] polymers = activeAssembly.getChains();
-                int n = 0;
-                for (String s : resList) {
-                    Character chainID = s.charAt(0);
-                    int i = Integer.parseInt(s.substring(1));
-                    for (Polymer p : polymers) {
-                        if (p.getChainID() == chainID) {
-                            List<Residue> rs = p.getResidues();
-                            for (Residue r : rs) {
-                                if (r.getResidueNumber() == i) {
-                                    residueList.add(r);
-                                    Rotamer[] rotamers = r.getRotamers(rLib);
-                                    if (rotamers != null) {
-                                        n++;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                rotamerOptimization.setResiduesIgnoreNull(residueList);
-                if (n < 1) {
-                    return;
-                }
-            } else if (!chain.equalsIgnoreCase("-1")) {
-                rotamerOptimization.setResidues(chain, start, finish);
-            } else {
-                rotamerOptimization.setResidues(start, finish);
-            }
-        } else {
-            ArrayList<Residue> residueList = new ArrayList<>();
-            Polymer[] polymers = activeAssembly.getChains();
-
-            CompositeConfiguration properties = activeAssembly.getProperties();
-            boolean ignoreNA = properties.getBoolean("ignoreNA", false);
-
-            if (!listResidues.equalsIgnoreCase("none")) {
-                int n = 0;
-                for (String s : resList) {
-                    Character chainID = s.charAt(0);
-                    int i = Integer.parseInt(s.substring(1));
-                    for (Polymer p : polymers) {
-                        if (p.getChainID() == chainID) {
-                            List<Residue> rs = p.getResidues();
-                            for (Residue r : rs) {
-                                if (ignoreNA && r.getResidueType() == ResidueType.NA) {
-                                    continue;
-                                }
-                                if (r.getResidueNumber() == i) {
-                                    residueList.add(r);
-                                    Rotamer[] rotamers = r.getRotamers(rLib);
-                                    if (rotamers != null) {
-                                        n++;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                rotamerOptimization.setResiduesIgnoreNull(residueList);
-                if (n < 1) {
-                    return;
-                }
-            } else {
-                for (Polymer p : polymers) {
-                    ArrayList<Residue> rs = p.getResidues();
-                    for (Residue r : rs) {
-                        if (ignoreNA && r.getResidueType() == ResidueType.NA) {
-                            continue;
-                        }
-                        Rotamer[] rotamers = r.getRotamers(rLib);
-                        if (rotamers != null) {
-                            int nrot = rotamers.length;
-                            if (nrot == 1) {
-                                RotamerLibrary.applyRotamer(r, rotamers[0]);
-                            } else if (nrot > 1) {
-                                residueList.add(r);
-                            }
-                        }
-                        counter++;
-                    }
-                }
-
-//            boolean ignoreNA = false;
-//            String ignoreNAProp = System.getProperty("ignoreNA");
-//            if (ignoreNAProp != null && ignoreNAProp.equalsIgnoreCase("true")) {
-//                ignoreNA = true;
-//            }
-//            ArrayList<Residue> residueList = new ArrayList<>();
-//            Polymer[] polymers = activeAssembly.getChains();
-//            int nPolymers = polymers.length;
-//            for (int p = 0; p < nPolymers; p++) {
-//                Polymer polymer = polymers[p];
-//                ArrayList<Residue> residues = polymer.getResidues();
-//
-//                System.out.print("\nresidues:\n");
-//
-//                int nResidues = residues.size();
-//                for (int i = 0; i < nResidues; i++) {
-//                    Residue residue = residues.get(i);
-//
-//                    System.out.print(residue+"\n");
-//
-//                    if (ignoreNA && residue.getResidueType() == ResidueType.NA) {
-//                        continue;
-//                    }
-//                    Rotamer[] rotamers = residue.getRotamers(rLib);
-//                    if (rotamers != null) {
-//                        int nrot = rotamers.length;
-//                        if (nrot == 1) {
-//                            RotamerLibrary.applyRotamer(residue, rotamers[0]);
-//                        } else if (nrot > 1) {
-//                            residueList.add(residue);
-//                        }
-//                    }
-//                    counter++;
-//                }
-            }
-            rotamerOptimization.setResidues(residueList);
-            rotamerOptimization.setBoxStart(boxStart);
-            if (finish > 0) {
-                rotamerOptimization.setBoxEnd(boxEnd);
-            }
-        }
-    }
-
-    /**
      * Sets the standard values for properties in rotamer optimization.
      */
     private void setRotOptProperties() {
@@ -825,41 +858,6 @@ public class ManyBodyOptions {
             rotamerOptimization.setNumXYZBoxes(numXYZBoxes);
             rotamerOptimization.setBoxInclusionCriterion(boxInclusionCriterion);
         }
-    }
-
-    /**
-     * Gets the restart file created during rotamer optimization.
-     *
-     * @return The restart file.
-     */
-    public File getRestartFile() {
-        return rotamerOptimization.getRestartFile();
-    }
-
-    /**
-     * Gets the algorithm number.
-     *
-     * @return Integer representing the algorithm being run (i.e. global, box
-     * optimization, window, etc.)
-     */
-    public int getAlgorithmNumber() {
-        return algorithm;
-    }
-
-    public boolean getUsingOriginalCoordinates() {
-        return !noOriginal;
-    }
-
-    public void setOriginalCoordinates(boolean useOrig) {
-        noOriginal = !useOrig;
-    }
-
-    public RotamerLibrary getRotamerLibrary() {
-        return rLib;
-    }
-    
-    public double getApproximate(){
-        return rotamerOptimization.getApproximate();
     }
 
 //    /**
@@ -921,7 +919,7 @@ public class ManyBodyOptions {
      * if(!manyBody.titrationOptimization.equalsIgnoreCase("none"))
      *
      * {
-     * ArrayList<Residue> titrating = new ArrayList<>(); for (String s :
+     * List<Residue> titrating = new ArrayList<>(); for (String s :
      * titrationOptimizationList) { Character chainID = s.charAt(0); int num =
      * Integer.parseInt(s.substring(1)); for (int i = 0; i < residueList.size();
      * i++) { Residue res = residueList.get(i); if (res.getChainID() == chainID

@@ -67,37 +67,28 @@ import ffx.potential.parsers.PDBFilter;
  */
 public class GenerateRotamers {
     private static final Logger logger = Logger.getLogger(GenerateRotamers.class.getName());
-
+    private static final Pattern atRangePatt = Pattern.compile("(\\d+)-(\\d+)");
     private final Residue residue;
     private final int nChi;
     private final double[] currentChi;
-
     private final File outFile;
     private final MolecularAssembly mola;
     private final AlgorithmListener listener;
     private final RotamerLibrary library;
-
     private final Potential potential;
     private double[] x;
-
     private AminoAcid3 baselineAAres;
     private Rotamer[] baselineRotamers;
-
     private double incr = 10.0; // Degrees to rotate each torsion by.
     private boolean aroundLibrary = false;
     private double width = 180.0; // Left 180 + right 180 = 360 degree coverage.
-
     private int startDepth = 0;
     private int endDepth;
-
     private boolean print = false; // If true, log energy at each torsion.
     private int nEval = 0;
-
     private boolean writeVideo = false;
     private File videoFile;
     private PDBFilter videoFilter;
-
-    private static final Pattern atRangePatt = Pattern.compile("(\\d+)-(\\d+)");
 
     /**
      * Intended to create rotamer sets for nonstandard amino acids.
@@ -156,6 +147,27 @@ public class GenerateRotamers {
     }
 
     /**
+     * Accessory method for more simplistic saving of specific torsion states.
+     *
+     * @param torSets an array of {@link java.lang.String} objects.
+     */
+    public void applyAndSaveTorsions(String[] torSets) {
+        for (String torSet : torSets) {
+            String[] torsions = torSet.split(",");
+            double[] values = new double[nChi * 2];
+            Arrays.fill(values, 0.0);
+            for (int i = 0; i < (Math.min(torsions.length, nChi)); i++) {
+                double chival = Double.parseDouble(torsions[i]);
+                currentChi[i] = chival;
+                values[2 * i] = chival;
+            }
+            Rotamer newRot = generateRotamer(values);
+            RotamerLibrary.applyRotamer(residue, newRot);
+            writeSnapshot();
+        }
+    }
+
+    /**
      * Sets a standard amino acid to be the baseline for rotamer generation. For
      * example, use TYR as a baseline for phosphotyrosine.
      *
@@ -175,15 +187,6 @@ public class GenerateRotamers {
     }
 
     /**
-     * Sets algorithm to log all torsions/energies (not just to file).
-     *
-     * @param print a boolean.
-     */
-    public void setPrint(boolean print) {
-        this.print = print;
-    }
-
-    /**
      * Set which torsions to work on. Negative end values set the final depth
      * to be the total number of torsions.
      *
@@ -196,58 +199,6 @@ public class GenerateRotamers {
             endDepth = nChi - 1;
         } else {
             endDepth = end;
-        }
-    }
-
-    /**
-     * Sets the width around each torsion to search (+/-, so 10 degree width will
-     * search a 20 degree arc).
-     *
-     * @param width a double.
-     */
-    public void setSearchWidth(double width) {
-        this.width = width;
-    }
-
-    /**
-     * Sets the angle to change torsions by.
-     *
-     * @param incr a double.
-     */
-    public void setIncrement(double incr) {
-        this.incr = incr;
-    }
-
-    /**
-     * Null file indicates to not write a video.
-     *
-     * @param videoFile Filename for video or null
-     */
-    public void setVideo(String videoFile) {
-        if (videoFile != null) {
-            File vidFile = new File(videoFile);
-            if (vidFile.exists()) {
-                for (int i = 0; i < 1000; i++) {
-                    vidFile = new File(String.format("%s_%d", videoFile, i));
-                    if (!vidFile.exists()) {
-                        this.videoFile = vidFile;
-                        writeVideo = true;
-                        videoFilter = new PDBFilter(this.videoFile, mola, mola.getForceField(), null);
-                        videoFilter.setLogWrites(false);
-                        break;
-                    }
-                }
-                if (vidFile.exists()) {
-                    logger.warning(String.format(" Could not version video file %s", videoFile));
-                }
-            } else {
-                this.videoFile = vidFile;
-                writeVideo = true;
-                videoFilter = new PDBFilter(this.videoFile, mola, mola.getForceField(), null);
-                videoFilter.setLogWrites(false);
-            }
-        } else {
-            writeVideo = false;
         }
     }
 
@@ -302,6 +253,67 @@ public class GenerateRotamers {
                     logger.info(String.format(" Discarding inactive atoms input %s", tok));
                 }
             }
+        }
+    }
+
+    /**
+     * Sets the angle to change torsions by.
+     *
+     * @param incr a double.
+     */
+    public void setIncrement(double incr) {
+        this.incr = incr;
+    }
+
+    /**
+     * Sets algorithm to log all torsions/energies (not just to file).
+     *
+     * @param print a boolean.
+     */
+    public void setPrint(boolean print) {
+        this.print = print;
+    }
+
+    /**
+     * Sets the width around each torsion to search (+/-, so 10 degree width will
+     * search a 20 degree arc).
+     *
+     * @param width a double.
+     */
+    public void setSearchWidth(double width) {
+        this.width = width;
+    }
+
+    /**
+     * Null file indicates to not write a video.
+     *
+     * @param videoFile Filename for video or null
+     */
+    public void setVideo(String videoFile) {
+        if (videoFile != null) {
+            File vidFile = new File(videoFile);
+            if (vidFile.exists()) {
+                for (int i = 0; i < 1000; i++) {
+                    vidFile = new File(String.format("%s_%d", videoFile, i));
+                    if (!vidFile.exists()) {
+                        this.videoFile = vidFile;
+                        writeVideo = true;
+                        videoFilter = new PDBFilter(this.videoFile, mola, mola.getForceField(), null);
+                        videoFilter.setLogWrites(false);
+                        break;
+                    }
+                }
+                if (vidFile.exists()) {
+                    logger.warning(String.format(" Could not version video file %s", videoFile));
+                }
+            } else {
+                this.videoFile = vidFile;
+                writeVideo = true;
+                videoFilter = new PDBFilter(this.videoFile, mola, mola.getForceField(), null);
+                videoFilter.setLogWrites(false);
+            }
+        } else {
+            writeVideo = false;
         }
     }
 
@@ -459,27 +471,6 @@ public class GenerateRotamers {
             sb.append(String.format(",%8f", currentChi[i]));
         }
         return sb.toString();
-    }
-
-    /**
-     * Accessory method for more simplistic saving of specific torsion states.
-     *
-     * @param torSets an array of {@link java.lang.String} objects.
-     */
-    public void applyAndSaveTorsions(String[] torSets) {
-        for (String torSet : torSets) {
-            String[] torsions = torSet.split(",");
-            double[] values = new double[nChi * 2];
-            Arrays.fill(values, 0.0);
-            for (int i = 0; i < (Math.min(torsions.length, nChi)); i++) {
-                double chival = Double.parseDouble(torsions[i]);
-                currentChi[i] = chival;
-                values[2 * i] = chival;
-            }
-            Rotamer newRot = generateRotamer(values);
-            RotamerLibrary.applyRotamer(residue, newRot);
-            writeSnapshot();
-        }
     }
 
     /**

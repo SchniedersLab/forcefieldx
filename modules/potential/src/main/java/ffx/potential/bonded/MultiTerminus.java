@@ -93,6 +93,7 @@ public class MultiTerminus extends Residue {
     private Bond bondHO;
     private List<ROLS> rolsH3 = new ArrayList<>();
     private List<ROLS> rolsHO = new ArrayList<>();
+
     /**
      * <p>Constructor for MultiTerminus.</p>
      *
@@ -517,7 +518,7 @@ public class MultiTerminus extends Residue {
      * Useful for locating backbone atom nodes that share a name with side-chain atoms.
      */
     private Atom getBBAtom(String name) {
-        ArrayList<Atom> list = this.getAtomList();
+        List<Atom> list = this.getAtomList();
         for (Atom atom : list) {
             if (atom.getName().equals(name)) {
 //                logger.info(" Found: " + atom.getName());
@@ -641,10 +642,10 @@ public class MultiTerminus extends Residue {
      */
     private void updateGeometry() {
         // Update atom references to local geometry.
-        ArrayList<Atom> atoms = this.getAtomList();
-        ArrayList<Bond> bonds = this.getBondList();
-        ArrayList<Angle> angles = this.getAngleList();
-        ArrayList<Torsion> torsions = this.getTorsionList();
+        List<Atom> atoms = this.getAtomList();
+        List<Bond> bonds = this.getBondList();
+        List<Angle> angles = this.getAngleList();
+        List<Torsion> torsions = this.getTorsionList();
 
         for (Atom atom : atoms) {
             atom.clearGeometry();

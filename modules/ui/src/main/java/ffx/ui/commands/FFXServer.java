@@ -52,7 +52,6 @@ import java.util.logging.Logger;
  * Clients to connect.
  *
  * @author Michael J. Schnieders
- *
  */
 public class FFXServer implements Runnable {
 
@@ -81,6 +80,106 @@ public class FFXServer implements Runnable {
      */
     public FFXServer(SimulationDefinition s) {
         system = s;
+    }
+
+    /**
+     * <p>
+     * isAlive</p>
+     *
+     * @return a boolean.
+     */
+    public boolean isAlive() {
+        if (thread == null) {
+            return false;
+        } else if (thread.isAlive()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * <p>
+     * loadUpdate</p>
+     *
+     * @param u a {@link ffx.ui.commands.SimulationUpdate} object.
+     */
+    public void loadUpdate(SimulationUpdate u) {
+        update = u;
+    }
+
+    /**
+     * <p>
+     * needUpdate</p>
+     *
+     * @return a boolean.
+     */
+    public boolean needUpdate() {
+        if (clients.size() == 0) {
+            sleepTime = 100;
+            return false;
+        }
+        if (request != true) {
+            return false;
+        }
+        sleepTime = 1;
+        return true;
+    }
+
+    /**
+     * <p>
+     * run</p>
+     */
+    public void run() {
+        startServer();
+        while (!shutdown) {
+            accept();
+            send();
+            try {
+                Thread.sleep(sleepTime);
+            } catch (Exception e) {
+                // What to do here ??
+                logger.severe("Server: thread sleep interrupted\n");
+            }
+            if (init) {
+                cycle++;
+                if (cycle >= 10) {
+                    init = false;
+                    serverTimeout = 1;
+                }
+            }
+        }
+        accept();
+        send();
+        closeServer();
+    }
+
+    /**
+     * <p>
+     * setUpdated</p>
+     */
+    public void setUpdated() {
+        request = false;
+    }
+
+    /**
+     * <p>
+     * start</p>
+     */
+    public void start() {
+        if (thread == null || !thread.isAlive()) {
+            thread = new Thread(this);
+            thread.setPriority(Thread.MAX_PRIORITY);
+            thread.start();
+        }
+    }
+
+    /**
+     * <p>
+     * stop</p>
+     */
+    public void stop() {
+        shutdown = true;
     }
 
     private void accept() {
@@ -166,22 +265,6 @@ public class FFXServer implements Runnable {
         }
     }
 
-    /**
-     * <p>
-     * isAlive</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isAlive() {
-        if (thread == null) {
-            return false;
-        } else if (thread.isAlive()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private void lastUpdate(int index) {
         try {
             ObjectOutputStream oout = outputs.get(index);
@@ -209,62 +292,6 @@ public class FFXServer implements Runnable {
         } catch (Exception e) {
             logger.severe("" + e);
         }
-    }
-
-    /**
-     * <p>
-     * loadUpdate</p>
-     *
-     * @param u a {@link ffx.ui.commands.SimulationUpdate} object.
-     */
-    public void loadUpdate(SimulationUpdate u) {
-        update = u;
-    }
-
-    /**
-     * <p>
-     * needUpdate</p>
-     *
-     * @return a boolean.
-     */
-    public boolean needUpdate() {
-        if (clients.size() == 0) {
-            sleepTime = 100;
-            return false;
-        }
-        if (request != true) {
-            return false;
-        }
-        sleepTime = 1;
-        return true;
-    }
-
-    /**
-     * <p>
-     * run</p>
-     */
-    public void run() {
-        startServer();
-        while (!shutdown) {
-            accept();
-            send();
-            try {
-                Thread.sleep(sleepTime);
-            } catch (Exception e) {
-                // What to do here ??
-                logger.severe("Server: thread sleep interrupted\n");
-            }
-            if (init) {
-                cycle++;
-                if (cycle >= 10) {
-                    init = false;
-                    serverTimeout = 1;
-                }
-            }
-        }
-        accept();
-        send();
-        closeServer();
     }
 
     private void send() {
@@ -335,26 +362,6 @@ public class FFXServer implements Runnable {
         }
     }
 
-    /**
-     * <p>
-     * setUpdated</p>
-     */
-    public void setUpdated() {
-        request = false;
-    }
-
-    /**
-     * <p>
-     * start</p>
-     */
-    public void start() {
-        if (thread == null || !thread.isAlive()) {
-            thread = new Thread(this);
-            thread.setPriority(Thread.MAX_PRIORITY);
-            thread.start();
-        }
-    }
-
     private void startServer() {
         try {
             server = new ServerSocket();
@@ -376,13 +383,5 @@ public class FFXServer implements Runnable {
                 "FFX Server Address: " + server.getLocalSocketAddress());
         // JOptionPane.showMessageDialog(null, server.getLocalSocketAddress(),
         // "Server Address", JOptionPane.ERROR_MESSAGE);
-    }
-
-    /**
-     * <p>
-     * stop</p>
-     */
-    public void stop() {
-        shutdown = true;
     }
 }

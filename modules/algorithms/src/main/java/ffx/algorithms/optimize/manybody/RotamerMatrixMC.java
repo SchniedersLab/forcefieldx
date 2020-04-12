@@ -49,12 +49,12 @@ import ffx.potential.bonded.Residue;
  */
 public class RotamerMatrixMC extends BoltzmannMC {
 
-    private RotamerOptimization rotamerOptimization;
-    private boolean useFullAMOEBAEnergy;
     private final int[] currentRots;
     private final int[] oldRots;
     private final int nRes;
     private final Residue[] residues;
+    private RotamerOptimization rotamerOptimization;
+    private boolean useFullAMOEBAEnergy;
 
 
     /**

@@ -38,7 +38,6 @@
 package ffx.potential.utils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -50,8 +49,6 @@ import org.apache.commons.io.FilenameUtils;
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
@@ -73,11 +70,11 @@ import ffx.potential.parsers.XYZFilter;
 public class PotentialsUtils implements PotentialsFunctions {
 
     private static final Logger logger = Logger.getLogger(PotentialsUtils.class.getName());
+    private static final Logger potLog = Logger.getLogger("");
+    private static Level levelBak = null;
     private final long initTime;
     private long interTime;
     private SystemFilter lastFilter;
-    private static final Logger potLog = Logger.getLogger("");
-    private static Level levelBak = null;
 
     /**
      * <p>Constructor for PotentialsUtils.</p>
@@ -90,17 +87,58 @@ public class PotentialsUtils implements PotentialsFunctions {
     /**
      * {@inheritDoc}
      * <p>
-     * Logs time since this interface was created and the last time this method
-     * was called.
+     * Shuts down parallel teams in the force field of the provided
+     * MolecularAssembly. Kaminsky's ParallelTeamThreads' run() methods are
+     * infinite loops, and because running threads are always GC roots, it is
+     * necessary to send them a signal to shut down to enable garbage
+     * collection.
      */
     @Override
-    public double time() {
-        long currTime = System.nanoTime();
-        logger.info(format(" Time since interface established: %f", (currTime - initTime) * 1.0E-9));
-        double elapsed = (currTime - interTime) * 1.0E-9;
-        interTime = currTime;
-        logger.info(format(" Time since last timer call: %f", elapsed));
-        return elapsed;
+    public void close(MolecularAssembly assembly) {
+        assembly.destroy();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Shuts down parallel teams in the force fields of the provided
+     * MolecularAssemblys.
+     */
+    @Override
+    public void closeAll(MolecularAssembly[] assemblies) {
+        for (MolecularAssembly assembly : assemblies) {
+            assembly.destroy();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Evaluates the energy of a MolecularAssembly and returns its
+     * ForceFieldEnergy object.
+     */
+    @Override
+    public ForceFieldEnergy energy(MolecularAssembly assembly) {
+        if (assembly == null) {
+            logger.info(" Molecular assembly was null - skipping energy");
+            return null;
+        } else {
+            ForceFieldEnergy energy = assembly.getPotentialEnergy();
+            if (energy == null) {
+                energy = ForceFieldEnergy.energyFactory(assembly);
+                assembly.setPotential(energy);
+            }
+            energy.energy(false, true);
+            return energy;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public SystemFilter getFilter() {
+        return lastFilter;
     }
 
     /**
@@ -111,35 +149,6 @@ public class PotentialsUtils implements PotentialsFunctions {
     @Override
     public boolean isLocal() {
         return true;
-    }
-
-    /**
-     * <p>setSilentPotential.</p>
-     *
-     * @param silent a boolean.
-     */
-    void setSilentPotential(boolean silent) {
-        if (silent && potLog.isLoggable(Level.INFO) && levelBak == null) {
-            levelBak = potLog.getLevel();
-            potLog.setLevel(Level.WARNING);
-        }
-        if (!silent && levelBak != null) {
-            potLog.setLevel(levelBak);
-            levelBak = null;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Opens a file and returns all created MolecularAssembly objects.
-     */
-    @Override
-    public MolecularAssembly[] openAll(String file) {
-        PotentialsFileOpener opener = new PotentialsFileOpener(file);
-        opener.run();
-        lastFilter = opener.getFilter();
-        return opener.getAllAssemblies();
     }
 
     /**
@@ -173,35 +182,32 @@ public class PotentialsUtils implements PotentialsFunctions {
     }
 
     /**
-     * Mutates file on-the-fly as it is being opened.
-     * Used to open files for pHMD in fully-protonated form.
-     *
-     * @param file      a {@link java.io.File} object.
-     * @param mutations a {@link java.util.List} object.
-     * @return a {@link ffx.potential.MolecularAssembly} object.
+     * {@inheritDoc}
+     * <p>
+     * Opens an array of files and returns all created MolecularAssembly
+     * objects, setting any underlying Potential to use a certain number of
+     * threads.
      */
-    public MolecularAssembly openWithMutations(File file, List<Mutation> mutations) {
-        PotentialsFileOpener opener = new PotentialsFileOpener(file);
-        opener.setMutations(mutations);
+    @Override
+    public MolecularAssembly[] open(String[] files, int nThreads) {
+        PotentialsFileOpener opener = new PotentialsFileOpener(files);
+        opener.setNThreads(nThreads);
         opener.run();
         lastFilter = opener.getFilter();
-        if (opener.getAllAssemblies().length > 1) {
-            logger.log(Level.WARNING, "Found multiple assemblies in file {0}, opening first.", file.getName());
-        }
-        return opener.getAssembly();
+        return opener.getAllAssemblies();
     }
 
     /**
-     * Open one filename string without printing all the header material.
-     *
-     * @param filename a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.MolecularAssembly} object.
+     * {@inheritDoc}
+     * <p>
+     * Opens a file and returns all created MolecularAssembly objects.
      */
-    public MolecularAssembly openQuietly(String filename) {
-        setSilentPotential(true);
-        MolecularAssembly mola = open(filename);
-        setSilentPotential(false);
-        return mola;
+    @Override
+    public MolecularAssembly[] openAll(String file) {
+        PotentialsFileOpener opener = new PotentialsFileOpener(file);
+        opener.run();
+        lastFilter = opener.getFilter();
+        return opener.getAllAssemblies();
     }
 
     /**
@@ -234,45 +240,55 @@ public class PotentialsUtils implements PotentialsFunctions {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Opens an array of files and returns all created MolecularAssembly
-     * objects, setting any underlying Potential to use a certain number of
-     * threads.
+     * Open one filename string without printing all the header material.
+     *
+     * @param filename a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.MolecularAssembly} object.
      */
-    @Override
-    public MolecularAssembly[] open(String[] files, int nThreads) {
-        PotentialsFileOpener opener = new PotentialsFileOpener(files);
-        opener.setNThreads(nThreads);
+    public MolecularAssembly openQuietly(String filename) {
+        setSilentPotential(true);
+        MolecularAssembly mola = open(filename);
+        setSilentPotential(false);
+        return mola;
+    }
+
+    /**
+     * Mutates file on-the-fly as it is being opened.
+     * Used to open files for pHMD in fully-protonated form.
+     *
+     * @param file      a {@link java.io.File} object.
+     * @param mutations a {@link java.util.List} object.
+     * @return a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public MolecularAssembly openWithMutations(File file, List<Mutation> mutations) {
+        PotentialsFileOpener opener = new PotentialsFileOpener(file);
+        opener.setMutations(mutations);
         opener.run();
         lastFilter = opener.getFilter();
-        return opener.getAllAssemblies();
+        if (opener.getAllAssemblies().length > 1) {
+            logger.log(Level.WARNING, "Found multiple assemblies in file {0}, opening first.", file.getName());
+        }
+        return opener.getAssembly();
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Shuts down parallel teams in the force field of the provided
-     * MolecularAssembly. Kaminsky's ParallelTeamThreads' run() methods are
-     * infinite loops, and because running threads are always GC roots, it is
-     * necessary to send them a signal to shut down to enable garbage
-     * collection.
+     * Returns the energy of a MolecularAssembly in kcal/mol (as a double) and
+     * prints the energy evaluation
      */
     @Override
-    public void close(MolecularAssembly assembly) {
-        assembly.destroy();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Shuts down parallel teams in the force fields of the provided
-     * MolecularAssemblys.
-     */
-    @Override
-    public void closeAll(MolecularAssembly[] assemblies) {
-        for (MolecularAssembly assembly : assemblies) {
-            assembly.destroy();
+    public double returnEnergy(MolecularAssembly assembly) {
+        if (assembly == null) {
+            logger.info(" Molecular assembly was null - skipping energy");
+            return 0.0;
+        } else {
+            ForceFieldEnergy energy = assembly.getPotentialEnergy();
+            if (energy == null) {
+                energy = ForceFieldEnergy.energyFactory(assembly);
+                assembly.setPotential(energy);
+            }
+            return energy.energy(false, true);
         }
     }
 
@@ -284,26 +300,6 @@ public class PotentialsUtils implements PotentialsFunctions {
     @Override
     public void save(MolecularAssembly assembly, File file) {
         saveAsXYZ(assembly, file);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Saves the current state of a MolecularAssembly to an XYZ file.
-     */
-    @Override
-    public void saveAsXYZ(MolecularAssembly assembly, File file) {
-        if (assembly == null) {
-            logger.info(" Assembly to save was null.");
-        } else if (file == null) {
-            logger.info(" No valid file provided to save assembly to.");
-        } else {
-            XYZFilter xyzFilter = new XYZFilter(file, assembly, null, null);
-            if (!xyzFilter.writeFile(file, false)) {
-                logger.info(format(" Save failed for %s", assembly.toString()));
-            }
-            lastFilter = xyzFilter;
-        }
     }
 
     /**
@@ -363,6 +359,47 @@ public class PotentialsUtils implements PotentialsFunctions {
                 logger.info(format(" Save failed for %s", assembly.toString()));
             }
             lastFilter = pdbFilter;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Saves the current state of an array of MolecularAssemblys to a PDB file.
+     */
+    @Override
+    public void saveAsPDB(MolecularAssembly[] assemblies, File file) {
+        if (assemblies == null) {
+            logger.info(" Null array of molecular assemblies to write.");
+        } else if (assemblies.length == 0) {
+            logger.info(" Zero-length array of molecular assemblies to write.");
+        } else if (file == null) {
+            logger.info(" No valid file to write to.");
+        } else {
+            PDBFilter pdbFilter = new PDBFilter(file,
+                    Arrays.asList(assemblies), null, null);
+            pdbFilter.writeFile(file, false);
+            lastFilter = pdbFilter;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Saves the current state of a MolecularAssembly to an XYZ file.
+     */
+    @Override
+    public void saveAsXYZ(MolecularAssembly assembly, File file) {
+        if (assembly == null) {
+            logger.info(" Assembly to save was null.");
+        } else if (file == null) {
+            logger.info(" No valid file provided to save assembly to.");
+        } else {
+            XYZFilter xyzFilter = new XYZFilter(file, assembly, null, null);
+            if (!xyzFilter.writeFile(file, false)) {
+                logger.info(format(" Save failed for %s", assembly.toString()));
+            }
+            lastFilter = xyzFilter;
         }
     }
 
@@ -434,73 +471,33 @@ public class PotentialsUtils implements PotentialsFunctions {
     /**
      * {@inheritDoc}
      * <p>
-     * Saves the current state of an array of MolecularAssemblys to a PDB file.
+     * Logs time since this interface was created and the last time this method
+     * was called.
      */
     @Override
-    public void saveAsPDB(MolecularAssembly[] assemblies, File file) {
-        if (assemblies == null) {
-            logger.info(" Null array of molecular assemblies to write.");
-        } else if (assemblies.length == 0) {
-            logger.info(" Zero-length array of molecular assemblies to write.");
-        } else if (file == null) {
-            logger.info(" No valid file to write to.");
-        } else {
-            PDBFilter pdbFilter = new PDBFilter(file,
-                    Arrays.asList(assemblies), null, null);
-            pdbFilter.writeFile(file, false);
-            lastFilter = pdbFilter;
-        }
+    public double time() {
+        long currTime = System.nanoTime();
+        logger.info(format(" Time since interface established: %f", (currTime - initTime) * 1.0E-9));
+        double elapsed = (currTime - interTime) * 1.0E-9;
+        interTime = currTime;
+        logger.info(format(" Time since last timer call: %f", elapsed));
+        return elapsed;
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Evaluates the energy of a MolecularAssembly and returns its
-     * ForceFieldEnergy object.
+     * <p>setSilentPotential.</p>
+     *
+     * @param silent a boolean.
      */
-    @Override
-    public ForceFieldEnergy energy(MolecularAssembly assembly) {
-        if (assembly == null) {
-            logger.info(" Molecular assembly was null - skipping energy");
-            return null;
-        } else {
-            ForceFieldEnergy energy = assembly.getPotentialEnergy();
-            if (energy == null) {
-                energy = ForceFieldEnergy.energyFactory(assembly);
-                assembly.setPotential(energy);
-            }
-            energy.energy(false, true);
-            return energy;
+    void setSilentPotential(boolean silent) {
+        if (silent && potLog.isLoggable(Level.INFO) && levelBak == null) {
+            levelBak = potLog.getLevel();
+            potLog.setLevel(Level.WARNING);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns the energy of a MolecularAssembly in kcal/mol (as a double) and
-     * prints the energy evaluation
-     */
-    @Override
-    public double returnEnergy(MolecularAssembly assembly) {
-        if (assembly == null) {
-            logger.info(" Molecular assembly was null - skipping energy");
-            return 0.0;
-        } else {
-            ForceFieldEnergy energy = assembly.getPotentialEnergy();
-            if (energy == null) {
-                energy = ForceFieldEnergy.energyFactory(assembly);
-                assembly.setPotential(energy);
-            }
-            return energy.energy(false, true);
+        if (!silent && levelBak != null) {
+            potLog.setLevel(levelBak);
+            levelBak = null;
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public SystemFilter getFilter() {
-        return lastFilter;
     }
 
 }

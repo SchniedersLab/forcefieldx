@@ -81,58 +81,12 @@ public class BoxOptCell {
     }
 
     /**
-     * Returns an array of the Residues contained within the cell.
-     *
-     * @return Array of Residues.
-     */
-    public Residue[] getResidues() {
-        return (Residue[]) residues.toArray();
-    }
-
-    /**
-     * Returns a copy of the ArrayList of residues.
-     *
-     * @return ArrayList of Residues in the cell.
-     */
-    public ArrayList<Residue> getResiduesAsList() {
-        return new ArrayList<>(residues);
-    }
-
-    /**
      * Add a residue to the box.
      *
      * @param residue Residue to be added.
      */
     public void addResidue(Residue residue) {
         residues.add(residue);
-    }
-
-    /**
-     * Returns the x, y, and z indices of this box.
-     *
-     * @return Box indices.
-     */
-    public int[] getXYZIndex() {
-        int[] returnedIndices = new int[3];
-        System.arraycopy(indexXYZ, 0, returnedIndices, 0, returnedIndices.length);
-        return returnedIndices;
-    }
-
-    /**
-     * Returns the linear index of this Box.
-     *
-     * @return Linear index.
-     */
-    public int getLinearIndex() {
-        return linearIndex;
-    }
-
-    /**
-     * Sorts residues in the box.
-     */
-    public void sortBoxResidues() {
-        Comparator comparator = Comparator.comparing(Residue::getChainID).thenComparingInt(Residue::getResidueNumber);
-        residues.sort(comparator);
     }
 
     /**
@@ -158,6 +112,61 @@ public class BoxOptCell {
     }
 
     /**
+     * Checks if an Atom would be contained inside this cell.
+     *
+     * @param atom    Atom to check.
+     * @param crystal A Crystal.
+     * @param symOp   A symmetry operator to apply.
+     * @return If contained.
+     */
+    public boolean atomInsideCell(Atom atom, Crystal crystal, SymOp symOp) {
+        double[] atXYZ = new double[3];
+        atXYZ = atom.getXYZ(atXYZ);
+        crystal.toFractionalCoordinates(atXYZ, atXYZ);
+        NeighborList.moveValuesBetweenZeroAndOne(atXYZ);
+        crystal.applyFracSymOp(atXYZ, atXYZ, symOp);
+        return checkIfContained(atXYZ);
+    }
+
+    /**
+     * Returns the linear index of this Box.
+     *
+     * @return Linear index.
+     */
+    public int getLinearIndex() {
+        return linearIndex;
+    }
+
+    /**
+     * Returns an array of the Residues contained within the cell.
+     *
+     * @return Array of Residues.
+     */
+    public Residue[] getResidues() {
+        return (Residue[]) residues.toArray();
+    }
+
+    /**
+     * Returns a copy of the ArrayList of residues.
+     *
+     * @return ArrayList of Residues in the cell.
+     */
+    public ArrayList<Residue> getResiduesAsList() {
+        return new ArrayList<>(residues);
+    }
+
+    /**
+     * Returns the x, y, and z indices of this box.
+     *
+     * @return Box indices.
+     */
+    public int[] getXYZIndex() {
+        int[] returnedIndices = new int[3];
+        System.arraycopy(indexXYZ, 0, returnedIndices, 0, returnedIndices.length);
+        return returnedIndices;
+    }
+
+    /**
      * Checks if a Residue is inside this BoxOptCell.
      *
      * @param residue      Residue to check.
@@ -173,20 +182,11 @@ public class BoxOptCell {
     }
 
     /**
-     * Checks if an Atom would be contained inside this cell.
-     *
-     * @param atom    Atom to check.
-     * @param crystal A Crystal.
-     * @param symOp   A symmetry operator to apply.
-     * @return If contained.
+     * Sorts residues in the box.
      */
-    public boolean atomInsideCell(Atom atom, Crystal crystal, SymOp symOp) {
-        double[] atXYZ = new double[3];
-        atXYZ = atom.getXYZ(atXYZ);
-        crystal.toFractionalCoordinates(atXYZ, atXYZ);
-        NeighborList.moveValuesBetweenZeroAndOne(atXYZ);
-        crystal.applyFracSymOp(atXYZ, atXYZ, symOp);
-        return checkIfContained(atXYZ);
+    public void sortBoxResidues() {
+        Comparator comparator = Comparator.comparing(Residue::getChainID).thenComparingInt(Residue::getResidueNumber);
+        residues.sort(comparator);
     }
 
     /**

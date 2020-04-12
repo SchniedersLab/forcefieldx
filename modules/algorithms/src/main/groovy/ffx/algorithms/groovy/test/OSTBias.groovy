@@ -37,15 +37,15 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
-import ffx.algorithms.cli.OSTOptions
-import ffx.numerics.switching.PowerSwitch
 import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
 import groovy.cli.picocli.CliBuilder
 
+import ffx.algorithms.cli.OSTOptions
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
+import ffx.numerics.switching.PowerSwitch
 import ffx.potential.DualTopologyEnergy
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Atom

@@ -91,50 +91,22 @@ public class SimulationMessage implements Serializable {
 
     /**
      * <p>
-     * Getter for the field <code>step</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getStep() {
-        return step;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>time</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getTime() {
-        return time;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>type</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getType() {
-        return type;
-    }
-
-    /**
-     * <p>
-     * print</p>
-     */
-    public void print() {
-        System.out.println(toString());
-    }
-
-    /**
-     * <p>
      * Setter for the field <code>message</code>.</p>
      *
      * @param m a int.
      */
     public void setMessage(int m) {
         message = m;
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>step</code>.</p>
+     *
+     * @return a int.
+     */
+    public int getStep() {
+        return step;
     }
 
     /**
@@ -149,6 +121,16 @@ public class SimulationMessage implements Serializable {
 
     /**
      * <p>
+     * Getter for the field <code>time</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getTime() {
+        return time;
+    }
+
+    /**
+     * <p>
      * Setter for the field <code>time</code>.</p>
      *
      * @param t a double.
@@ -159,12 +141,30 @@ public class SimulationMessage implements Serializable {
 
     /**
      * <p>
+     * Getter for the field <code>type</code>.</p>
+     *
+     * @return a int.
+     */
+    public int getType() {
+        return type;
+    }
+
+    /**
+     * <p>
      * Setter for the field <code>type</code>.</p>
      *
      * @param t a int.
      */
     public void setType(int t) {
         type = t;
+    }
+
+    /**
+     * <p>
+     * print</p>
+     */
+    public void print() {
+        System.out.println(toString());
     }
 
     /**

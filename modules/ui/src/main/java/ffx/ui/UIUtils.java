@@ -73,6 +73,56 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     }
 
     @Override
+    public void close(MolecularAssembly assembly) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
+        mainPanel.closeWait();
+        if (origSys.isPresent()) {
+            switchBack(origSys.get());
+        }
+    }
+
+    @Override
+    public void closeAll(MolecularAssembly[] assemblies) {
+        mainPanel.closeAll();
+    }
+
+    @Override
+    public ForceFieldEnergy energy(MolecularAssembly assembly) {
+        // TODO: Determine why this only runs energy on the last opened assembly, not the passed assembly.
+        Optional<FFXSystem> origSys = switchTo(assembly);
+        ForceFieldEnergy ffe = modelingShell.energy();
+        if (origSys.isPresent()) {
+            switchBack(origSys.get());
+        }
+        return ffe;
+    }
+
+    @Override
+    public MolecularAssembly getActiveAssembly() {
+        return mainPanel.getHierarchy().getActive();
+    }
+
+    @Override
+    public List<String> getArguments() {
+        return modelingShell.getArgs();
+    }
+
+    @Override
+    public AlgorithmListener getDefaultListener() {
+        return modelingShell;
+    }
+
+    @Override
+    public SystemFilter getFilter() {
+        return lastFilter;
+    }
+
+    @Override
+    public boolean isLocal() {
+        return false;
+    }
+
+    @Override
     public void md(MolecularAssembly assembly, int nStep, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
         Optional<FFXSystem> origSys = switchTo(assembly);
         modelingShell.md(nStep, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
@@ -93,8 +143,20 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     }
 
     @Override
-    public boolean isLocal() {
-        return false;
+    public FFXSystem[] open(String[] files, int nThreads) {
+        FFXSystem[] systems = mainPanel.openWait(files, nThreads);
+        lastFilter = mainPanel.getFilter();
+        return systems;
+    }
+
+    @Override
+    public FFXSystem open(String file) {
+        FFXSystem[] systems = mainPanel.openWait(file);
+        lastFilter = mainPanel.getFilter();
+        if (systems == null) {
+            return null;
+        }
+        return systems[0];
     }
 
     @Override
@@ -119,54 +181,18 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     }
 
     @Override
-    public FFXSystem[] open(String[] files, int nThreads) {
-        FFXSystem[] systems = mainPanel.openWait(files, nThreads);
-        lastFilter = mainPanel.getFilter();
-        return systems;
-    }
-
-    @Override
-    public FFXSystem open(String file) {
-        FFXSystem[] systems = mainPanel.openWait(file);
-        lastFilter = mainPanel.getFilter();
-        if (systems == null) {
-            return null;
-        }
-        return systems[0];
-    }
-
-    @Override
-    public void close(MolecularAssembly assembly) {
+    public double returnEnergy(MolecularAssembly assembly) {
         Optional<FFXSystem> origSys = switchTo(assembly);
-        mainPanel.closeWait();
+        double e = modelingShell.returnEnergy();
         if (origSys.isPresent()) {
             switchBack(origSys.get());
         }
-    }
-
-    @Override
-    public void closeAll(MolecularAssembly[] assemblies) {
-        mainPanel.closeAll();
-    }
-
-    @Override
-    public double time() {
-        return modelingShell.time();
+        return e;
     }
 
     @Override
     public void save(MolecularAssembly assembly, File file) {
         saveAsXYZ(assembly, file);
-    }
-
-    @Override
-    public void saveAsXYZ(MolecularAssembly assembly, File file) {
-        Optional<FFXSystem> origSys = switchTo(assembly);
-        mainPanel.saveAsXYZ(file);
-        lastFilter = mainPanel.getFilter();
-        if (origSys.isPresent()) {
-            switchBack(origSys.get());
-        }
     }
 
     @Override
@@ -197,6 +223,47 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
         if (origSys.isPresent()) {
             switchBack(origSys.get());
         }
+    }
+
+    @Override
+    public void saveAsPDB(MolecularAssembly[] assemblies, File file) {
+        mainPanel.saveAsPDB(assemblies, file);
+        lastFilter = mainPanel.getFilter();
+    }
+
+    @Override
+    public void saveAsXYZ(MolecularAssembly assembly, File file) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
+        mainPanel.saveAsXYZ(file);
+        lastFilter = mainPanel.getFilter();
+        if (origSys.isPresent()) {
+            switchBack(origSys.get());
+        }
+    }
+
+    @Override
+    public void savePDBSymMates(MolecularAssembly assembly, File file) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
+        mainPanel.savePDBSymMates(file, "_symMate");
+        lastFilter = mainPanel.getFilter();
+        if (origSys.isPresent()) {
+            switchBack(origSys.get());
+        }
+    }
+
+    @Override
+    public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
+        mainPanel.savePDBSymMates(file, suffix);
+        lastFilter = mainPanel.getFilter();
+        if (origSys.isPresent()) {
+            switchBack(origSys.get());
+        }
+    }
+
+    @Override
+    public double time() {
+        return modelingShell.time();
     }
 
     /**
@@ -240,72 +307,5 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
             Hierarchy hierarchy = mainPanel.getHierarchy();
             hierarchy.setActive(origSystem);
         }
-    }
-
-    @Override
-    public void saveAsPDB(MolecularAssembly[] assemblies, File file) {
-        mainPanel.saveAsPDB(assemblies, file);
-        lastFilter = mainPanel.getFilter();
-    }
-
-    @Override
-    public void savePDBSymMates(MolecularAssembly assembly, File file) {
-        Optional<FFXSystem> origSys = switchTo(assembly);
-        mainPanel.savePDBSymMates(file, "_symMate");
-        lastFilter = mainPanel.getFilter();
-        if (origSys.isPresent()) {
-            switchBack(origSys.get());
-        }
-    }
-
-    @Override
-    public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix) {
-        Optional<FFXSystem> origSys = switchTo(assembly);
-        mainPanel.savePDBSymMates(file, suffix);
-        lastFilter = mainPanel.getFilter();
-        if (origSys.isPresent()) {
-            switchBack(origSys.get());
-        }
-    }
-
-    @Override
-    public ForceFieldEnergy energy(MolecularAssembly assembly) {
-        // TODO: Determine why this only runs energy on the last opened assembly, not the passed assembly.
-        Optional<FFXSystem> origSys = switchTo(assembly);
-        ForceFieldEnergy ffe = modelingShell.energy();
-        if (origSys.isPresent()) {
-            switchBack(origSys.get());
-        }
-        return ffe;
-    }
-
-    @Override
-    public double returnEnergy(MolecularAssembly assembly) {
-        Optional<FFXSystem> origSys = switchTo(assembly);
-        double e = modelingShell.returnEnergy();
-        if (origSys.isPresent()) {
-            switchBack(origSys.get());
-        }
-        return e;
-    }
-
-    @Override
-    public SystemFilter getFilter() {
-        return lastFilter;
-    }
-
-    @Override
-    public MolecularAssembly getActiveAssembly() {
-        return mainPanel.getHierarchy().getActive();
-    }
-
-    @Override
-    public AlgorithmListener getDefaultListener() {
-        return modelingShell;
-    }
-
-    @Override
-    public List<String> getArguments() {
-        return modelingShell.getArgs();
     }
 }

@@ -49,16 +49,11 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.numerics.math.DoubleMath;
 import ffx.potential.parameters.AngleTorsionType;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
-import static ffx.numerics.math.DoubleMath.X;
 import static ffx.numerics.math.DoubleMath.dihedralAngle;
-import static ffx.numerics.math.DoubleMath.dot;
-import static ffx.numerics.math.DoubleMath.length;
-import static ffx.numerics.math.DoubleMath.sub;
 
 /**
  * The AngleTorsion class represents an angle torsion coupling between four bonded atoms.

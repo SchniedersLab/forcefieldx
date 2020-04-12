@@ -29,7 +29,7 @@ public class OctreeCell {
     /**
      * Array of child indices, length 8
      */
-    private int[] children = new int[]{0,0,0,0,0,0,0,0};
+    private int[] children = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
     /**
      * Parent cell index
      */
@@ -50,99 +50,136 @@ public class OctreeCell {
     /**
      * Multipole array, length 10
      */
-    private double[] multipole = new double[]{0,0,0,0,0,0,0,0,0,0};
+    private double[] multipole = new double[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 
-    public OctreeCell(int nCritical){
+    public OctreeCell(int nCritical) {
         setnCritical(nCritical);
     }
 
-    public void setnCritical(int nCrit){
-        this.nCritical = nCrit;
-    }
-
-    /**
-     * Returns cell radius
-     * @return
-     */
-    public double getR(){ return this.r; }
-    /**
-     * Sets cell radius
-     * @param r
-     */
-    public void setR(double r){ this.r = r; }
-    /**
-     * Gets x coordinate of center of cell
-     * @return
-     */
-    public double getX(){ return this.x; }
-    /**
-     * Sets x coordinate of center of cell
-     * @param x
-     */
-    public void setX(double x){ this.x = x; }
-    /**
-     * Gets y coordinate of center of cell
-     * @return
-     */
-    public double getY(){ return this.y; }
-    /**
-     * Sets y coordinate of center of cell
-     * @param y
-     */
-    public void setY(double y){ this.y = y; }
-    /**
-     * Gets z coordinate of center of cell
-     * @return
-     */
-    public double getZ(){ return this.z; }
-    /**
-     * Sets z coordinate of center of cell
-     * @param z
-     */
-    public void setZ(double z){ this.z = z; }
-
-    public void setParentIndex(int p){
-        this.parentIndex = p;
-    }
-
-    public void setChildren(int octant, int c){
-        this.children[octant] = c;
-    }
-
-    public int getChildAtIndex(int octant){
-        return children[octant];
-    }
-
-    public int getnChild(){
-        return this.nChild;
-    }
-
-    public void setnChild(int num){
-        this.nChild = num;
-    }
-
-    public int getNumLeaves(){ return this.numLeaves; }
-    public void setNumLeaves(int num){ this.numLeaves = num; }
-
-    public void setLeaf(int index, int leaf){
-        this.leaves.set(index,leaf);
-    }
-    public int getLeavesValueAtIndex(int index){
-        return this.leaves.get(index);
-    }
-
-    public double[] getMultipole(){
-        return this.multipole;
-    }
-
-    public void addToMultipole(double[] calculatedMultipole){
-        for(int i = 0; i < 10; i++){
+    public void addToMultipole(double[] calculatedMultipole) {
+        for (int i = 0; i < 10; i++) {
             this.multipole[i] += calculatedMultipole[i];
         }
     }
 
-    public int getParentIndex(){
+    public int getChildAtIndex(int octant) {
+        return children[octant];
+    }
+
+    public int getLeavesValueAtIndex(int index) {
+        return this.leaves.get(index);
+    }
+
+    public double[] getMultipole() {
+        return this.multipole;
+    }
+
+    public int getNumLeaves() {
+        return this.numLeaves;
+    }
+
+    public void setNumLeaves(int num) {
+        this.numLeaves = num;
+    }
+
+    public int getParentIndex() {
         return this.parentIndex;
+    }
+
+    public void setParentIndex(int p) {
+        this.parentIndex = p;
+    }
+
+    /**
+     * Returns cell radius
+     *
+     * @return
+     */
+    public double getR() {
+        return this.r;
+    }
+
+    /**
+     * Sets cell radius
+     *
+     * @param r
+     */
+    public void setR(double r) {
+        this.r = r;
+    }
+
+    /**
+     * Gets x coordinate of center of cell
+     *
+     * @return
+     */
+    public double getX() {
+        return this.x;
+    }
+
+    /**
+     * Sets x coordinate of center of cell
+     *
+     * @param x
+     */
+    public void setX(double x) {
+        this.x = x;
+    }
+
+    /**
+     * Gets y coordinate of center of cell
+     *
+     * @return
+     */
+    public double getY() {
+        return this.y;
+    }
+
+    /**
+     * Sets y coordinate of center of cell
+     *
+     * @param y
+     */
+    public void setY(double y) {
+        this.y = y;
+    }
+
+    /**
+     * Gets z coordinate of center of cell
+     *
+     * @return
+     */
+    public double getZ() {
+        return this.z;
+    }
+
+    /**
+     * Sets z coordinate of center of cell
+     *
+     * @param z
+     */
+    public void setZ(double z) {
+        this.z = z;
+    }
+
+    public int getnChild() {
+        return this.nChild;
+    }
+
+    public void setnChild(int num) {
+        this.nChild = num;
+    }
+
+    public void setChildren(int octant, int c) {
+        this.children[octant] = c;
+    }
+
+    public void setLeaf(int index, int leaf) {
+        this.leaves.set(index, leaf);
+    }
+
+    public void setnCritical(int nCrit) {
+        this.nCritical = nCrit;
     }
 }

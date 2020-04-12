@@ -81,12 +81,14 @@ import ffx.potential.nonbonded.pme.ReduceRegion;
 import ffx.potential.nonbonded.pme.SORRegion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ELEC_FORM;
 import ffx.potential.parameters.ForceField.ForceFieldType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
 import static ffx.numerics.special.Erf.erfc;
+import static ffx.potential.parameters.ForceField.ELEC_FORM.PAM;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.MultipoleType.assignMultipole;
 import static ffx.potential.parameters.MultipoleType.t000;
@@ -1215,7 +1217,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         public final double intra14Scale;
 
         public ScaleParameters(ForceField forceField) {
-            if (elecForm == ELEC_FORM.PAM) {
+            if (elecForm == PAM) {
                 m12scale = forceField.getDouble("MPOLE_12_SCALE", 0.0);
                 m13scale = forceField.getDouble("MPOLE_13_SCALE", 0.0);
                 m14scale = forceField.getDouble("MPOLE_14_SCALE", 0.4);
@@ -2122,21 +2124,26 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         assignMultipoles();
 
         // Assign polarization groups.
-        assignPolarizationGroups();
+        if (elecForm == PAM) {
+            assignPolarizationGroups();
+        }
 
         // Fill the thole, inverse polarization damping and polarizability arrays.
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
-            PolarizeType polarizeType = ai.getPolarizeType();
-            int index = ai.getIndex() - 1;
-            thole[index] = polarizeType.thole;
-            ipdamp[index] = polarizeType.pdamp;
-            if (!(ipdamp[index] > 0.0)) {
-                ipdamp[index] = Double.POSITIVE_INFINITY;
-            } else {
-                ipdamp[index] = 1.0 / ipdamp[index];
+
+            if (elecForm == PAM) {
+                PolarizeType polarizeType = ai.getPolarizeType();
+                int index = ai.getIndex() - 1;
+                thole[index] = polarizeType.thole;
+                ipdamp[index] = polarizeType.pdamp;
+                if (!(ipdamp[index] > 0.0)) {
+                    ipdamp[index] = Double.POSITIVE_INFINITY;
+                } else {
+                    ipdamp[index] = 1.0 / ipdamp[index];
+                }
+                polarizability[index] = polarizeType.polarizability;
             }
-            polarizability[index] = polarizeType.polarizability;
 
             // Collect 1-2 interactions.
             List<Atom> n12 = ai.get12List();
@@ -3039,8 +3046,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             return;
         }
 
-        // logger.info(" PME Assign Multipoles");
-
         if (forceField.getForceFieldTypeCount(ForceFieldType.MULTIPOLE) < 1
                 && forceField.getForceFieldTypeCount(ForceFieldType.CHARGE) < 1) {
             String message = "Force field has no permanent electrostatic types.\n";
@@ -3054,7 +3059,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            if (!assignMultipole(atom, forceField, localMultipole[i], i, axisAtom, frame)) {
+
+            if (!assignMultipole(elecForm, atom, forceField, localMultipole[i], i, axisAtom, frame)) {
                 logger.info(format("No MultipoleType could be assigned:\n %s --> %s", atom, atom.getAtomType()));
                 StringBuilder sb = new StringBuilder();
                 List<Bond> bonds = atom.getBonds();
@@ -3074,16 +3080,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 }
                 logger.log(Level.SEVERE, sb.toString());
             }
-//            else {
-//                // logger.info(" Atom: " + atom.toString());
-//                logger.info(format(" %d  %s", i, atom.getMultipoleType().toString()));
-//                List<Bond> bonds = atom.getBonds();
-//                for (Bond b : bonds) {
-//                    Atom a2 = b.get1_2(atom);
-//                    AtomType aType2 = a2.getAtomType();
-//                    logger.info(format("\n  %s --> %s", a2, aType2));
-//                }
-//            }
         }
 
         // Check for multipoles that were not assigned correctly.

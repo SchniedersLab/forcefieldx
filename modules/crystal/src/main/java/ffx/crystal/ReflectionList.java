@@ -78,10 +78,6 @@ public class ReflectionList {
      */
     public final Resolution resolution;
     /**
-     * For binning reflections based on resolution
-     */
-    public int nbins = 10;
-    /**
      * String to HKL look-up.
      */
     final HashMap<String, HKL> hklmap = new HashMap<>();
@@ -89,6 +85,10 @@ public class ReflectionList {
      * The Laue System.
      */
     private final SpaceGroup.LaueSystem laueSystem;
+    /**
+     * For binning reflections based on resolution
+     */
+    public int nbins = 10;
     /**
      * Histogram.
      */
@@ -207,32 +207,6 @@ public class ReflectionList {
     }
 
     /**
-     * Get the maximum resolution.
-     * @return Maximum resolution
-     */
-    public double getMaxResolution() {
-        return maxResolution;
-    }
-
-    /**
-     * Get the minimum resolution.
-     * @return Minimum resolution
-     */
-    public double getMinResolution() {
-        return minResolution;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return " Reflection list with " + this.hkllist.size()
-                + " reflections, spacegroup " + this.spaceGroup.shortName
-                + " resolution limit: " + resolution.resolutionLimit();
-    }
-
-    /**
      * <p>
      * findSymHKL</p>
      *
@@ -275,6 +249,85 @@ public class ReflectionList {
 
     /**
      * <p>
+     * getHKL</p>
+     *
+     * @param h a int.
+     * @param k a int.
+     * @param l a int.
+     * @return a {@link ffx.crystal.HKL} object.
+     */
+    public HKL getHKL(int h, int k, int l) {
+        String s = ("" + h + "_" + k + "_" + l);
+        return hklmap.get(s);
+    }
+
+    /**
+     * <p>
+     * getHKL</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @return a {@link ffx.crystal.HKL} object.
+     */
+    public HKL getHKL(HKL hkl) {
+        return getHKL(hkl.h(), hkl.k(), hkl.l());
+    }
+
+    /**
+     * Get the maximum resolution.
+     *
+     * @return Maximum resolution
+     */
+    public double getMaxResolution() {
+        return maxResolution;
+    }
+
+    /**
+     * Get the minimum resolution.
+     *
+     * @return Minimum resolution
+     */
+    public double getMinResolution() {
+        return minResolution;
+    }
+
+    /**
+     * <p>
+     * hasHKL</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @return a boolean.
+     */
+    public boolean hasHKL(HKL hkl) {
+        return hasHKL(hkl.h(), hkl.k(), hkl.l());
+    }
+
+    /**
+     * <p>
+     * ordinal</p>
+     *
+     * @param s a double.
+     * @return a double.
+     */
+    public double ordinal(double s) {
+        double r = (s - minResolution) / (maxResolution - minResolution);
+        r = min(r, 0.999) * 1000.0;
+        int i = (int) r;
+        r -= floor(r);
+        return ((1.0 - r) * hist[i] + r * hist[i + 1]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return " Reflection list with " + this.hkllist.size()
+                + " reflections, spacegroup " + this.spaceGroup.shortName
+                + " resolution limit: " + resolution.resolutionLimit();
+    }
+
+    /**
+     * <p>
      * findSymHKL</p>
      *
      * @param hkl       a {@link ffx.crystal.HKL} object.
@@ -312,31 +365,6 @@ public class ReflectionList {
 
     /**
      * <p>
-     * getHKL</p>
-     *
-     * @param h a int.
-     * @param k a int.
-     * @param l a int.
-     * @return a {@link ffx.crystal.HKL} object.
-     */
-    public HKL getHKL(int h, int k, int l) {
-        String s = ("" + h + "_" + k + "_" + l);
-        return hklmap.get(s);
-    }
-
-    /**
-     * <p>
-     * getHKL</p>
-     *
-     * @param hkl a {@link ffx.crystal.HKL} object.
-     * @return a {@link ffx.crystal.HKL} object.
-     */
-    public HKL getHKL(HKL hkl) {
-        return getHKL(hkl.h(), hkl.k(), hkl.l());
-    }
-
-    /**
-     * <p>
      * hasHKL</p>
      *
      * @param h a int.
@@ -347,17 +375,6 @@ public class ReflectionList {
     private boolean hasHKL(int h, int k, int l) {
         String s = ("" + h + "_" + k + "_" + l);
         return hklmap.containsKey(s);
-    }
-
-    /**
-     * <p>
-     * hasHKL</p>
-     *
-     * @param hkl a {@link ffx.crystal.HKL} object.
-     * @return a boolean.
-     */
-    public boolean hasHKL(HKL hkl) {
-        return hasHKL(hkl.h(), hkl.k(), hkl.l());
     }
 
     private void getepsilon(HKL hkl) {
@@ -389,21 +406,6 @@ public class ReflectionList {
 
         hkl.epsilon(epsilon);
         hkl.allowed(allowed);
-    }
-
-    /**
-     * <p>
-     * ordinal</p>
-     *
-     * @param s a double.
-     * @return a double.
-     */
-    public double ordinal(double s) {
-        double r = (s - minResolution) / (maxResolution - minResolution);
-        r = min(r, 0.999) * 1000.0;
-        int i = (int) r;
-        r -= floor(r);
-        return ((1.0 - r) * hist[i] + r * hist[i + 1]);
     }
 
     private void setResolutionBins() {

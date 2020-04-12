@@ -37,6 +37,8 @@
 //******************************************************************************
 package ffx.algorithms.cli;
 
+import java.util.logging.Logger;
+
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.integrators.Integrator;
@@ -45,12 +47,10 @@ import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
-
 import ffx.potential.cli.WriteoutOptions;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
-
-import java.util.logging.Logger;
 
 /**
  * Represents command line options for scripts that calculate thermodynamics.
@@ -61,6 +61,15 @@ import java.util.logging.Logger;
  */
 public class DynamicsOptions {
 
+    private static final Logger logger = Logger.getLogger(DynamicsOptions.class.getName());
+    /**
+     * Thermostat.
+     */
+    public ThermostatEnum thermostat;
+    /**
+     * Integrator.
+     */
+    public IntegratorEnum integrator;
     /**
      * -d or --dt sets the timestep in femtoseconds (default of 1.0). A value of
      * 2.0 is possible for the RESPA integrator.
@@ -68,7 +77,6 @@ public class DynamicsOptions {
     @Option(names = {"-d", "--dt"}, paramLabel = "1.0",
             description = "Time discretization step in femtoseconds.")
     double dt = 1.0;
-
     /**
      * -b or --thermostat sets the desired thermostat: current choices are
      * Adiabatic, Berendsen, or Bussi.
@@ -76,7 +84,6 @@ public class DynamicsOptions {
     @Option(names = {"-b", "--thermostat"}, paramLabel = "Bussi",
             description = "Thermostat: [Adiabatic / Berendsen / Bussi].")
     String thermostatString = "BUSSI";
-
     /**
      * -i or --integrator sets the desired integrator: current choices are
      * Beeman, RESPA, Stochastic (i.e. Langevin dynamics) or Verlet.
@@ -84,7 +91,6 @@ public class DynamicsOptions {
     @Option(names = {"-i", "--integrator"}, paramLabel = "Verlet",
             description = "Integrator: [Beeman / Respa / Stochastic / Verlet].")
     String integratorString = "Verlet";
-
     /**
      * -r or --report sets the thermodynamics reporting frequency in picoseconds
      * (0.1 psec default).
@@ -92,7 +98,6 @@ public class DynamicsOptions {
     @Option(names = {"-r", "--report"}, paramLabel = "0.25",
             description = "Interval in psec to report thermodynamics (psec).")
     double report = 0.25;
-
     /**
      * -w or --write sets snapshot save frequency in picoseconds (1.0 psec
      * default).
@@ -100,14 +105,12 @@ public class DynamicsOptions {
     @Option(names = {"-w", "--write"}, paramLabel = "10.0",
             description = "Interval in psec to write out coordinates (psec).")
     double write = 10.0;
-
     /**
      * -t or --temperature sets the simulation temperature (Kelvin).
      */
     @Option(names = {"-t", "--temperature"}, paramLabel = "298.15",
             description = "Temperature (Kelvin).")
     double temp = 298.15;
-
     /**
      * -n or --steps sets the number of molecular dynamics steps (default is 1
      * nsec).
@@ -115,21 +118,24 @@ public class DynamicsOptions {
     @Option(names = {"-n", "--numberOfSteps"}, paramLabel = "1000000",
             description = "Number of molecular dynamics steps.")
     long steps = 1000000;
-
+    /**
+     * -z or --trajSteps Number of steps for each OpenMM MD cycle.
+     */
+    @CommandLine.Option(names = {"-z", "--trajSteps"}, paramLabel = "100",
+            description = "Number of steps per MD cycle (--mdE = OpenMM only).")
+    int trajSteps = 100;
     /**
      * -o or --optimize saves low-energy snapshots discovered (only for single topology simulations).
      */
     @CommandLine.Option(names = {"-o", "--optimize"},
             description = "Optimize and save low-energy snapshots.")
     private boolean optimize = false;
-
     /**
      * -k or --checkpoint sets the restart save frequency in picoseconds (1.0 psec default).
      */
     @CommandLine.Option(names = {"-k", "--checkpoint"}, paramLabel = "1.0",
             description = "Interval in psec to write out restart files (.dyn, .his, etc).")
     private double checkpoint = 1.0;
-
     /**
      * --mdE or --molecularDynamicsEngine over-rides the default engine choice for
      * integrating the equations of motion
@@ -137,42 +143,24 @@ public class DynamicsOptions {
     @CommandLine.Option(names = {"--mdE", "--molecularDynamicsEngine"}, paramLabel = "FFX",
             description = "Use FFX or OpenMM to integrate dynamics.")
     private String engineString = null;
-
-    /**
-     * -z or --trajSteps Number of steps for each OpenMM MD cycle.
-     */
-    @CommandLine.Option(names = {"-z", "--trajSteps"}, paramLabel = "100",
-            description = "Number of steps per MD cycle (--mdE = OpenMM only).")
-    int trajSteps = 100;
-
-    private static final Logger logger = Logger.getLogger(DynamicsOptions.class.getName());
-
-    /**
-     * Thermostat.
-     */
-    public ThermostatEnum thermostat;
-
-    /**
-     * Integrator.
-     */
-    public IntegratorEnum integrator;
-
     private MolecularDynamics.DynamicsEngine engine = null;
 
     /**
-     * Parse the thermostat and integrator.
+     * <p>Getter for the field <code>checkpoint</code>.</p>
+     *
+     * @return Restart file interval in picoseconds.
      */
-    public void init() {
-        thermostat = Thermostat.parseThermostat(thermostatString);
-        integrator = Integrator.parseIntegrator(integratorString);
-        if (engineString != null) {
-            try {
-                engine = MolecularDynamics.DynamicsEngine.valueOf(engineString.toUpperCase());
-            } catch (Exception ex) {
-                logger.warning(String.format(" Could not parse %s as a valid dynamics engine! Defaulting to the Platform-recommended engine.", engineString));
-                engine = null;
-            }
-        }
+    public double getCheckpoint() {
+        return checkpoint;
+    }
+
+    /**
+     * <p>Getter for the field <code>dt</code>.</p>
+     *
+     * @return Timestep in femtoseconds.
+     */
+    public double getDt() {
+        return dt;
     }
 
     /**
@@ -201,50 +189,6 @@ public class DynamicsOptions {
         return molDyn;
     }
 
-    /**
-     * <p>Getter for the field <code>temp</code>.</p>
-     *
-     * @return Temperature in Kelvins.
-     */
-    public double getTemp() {
-        return temp;
-    }
-
-    /**
-     * <p>Getter for the field <code>dt</code>.</p>
-     *
-     * @return Timestep in femtoseconds.
-     */
-    public double getDt() {
-        return dt;
-    }
-
-    /**
-     * <p>Getter for the field <code>report</code>.</p>
-     *
-     * @return Thermodynamics logging interval in picoseconds.
-     */
-    public double getReport() {
-        return report;
-    }
-
-    /**
-     * <p>Getter for the field <code>checkpoint</code>.</p>
-     *
-     * @return Restart file interval in picoseconds.
-     */
-    public double getCheckpoint() {
-        return checkpoint;
-    }
-
-    /**
-     * Write/snapshot appending interval.
-     * @return Interval between appending snapshots in psec.
-     */
-    public double getSnapshotInterval() {
-        return write;
-    }
-
     public long getNumSteps() {
         return steps;
     }
@@ -259,7 +203,51 @@ public class DynamicsOptions {
     }
 
     /**
+     * <p>Getter for the field <code>report</code>.</p>
+     *
+     * @return Thermodynamics logging interval in picoseconds.
+     */
+    public double getReport() {
+        return report;
+    }
+
+    /**
+     * Write/snapshot appending interval.
+     *
+     * @return Interval between appending snapshots in psec.
+     */
+    public double getSnapshotInterval() {
+        return write;
+    }
+
+    /**
+     * <p>Getter for the field <code>temp</code>.</p>
+     *
+     * @return Temperature in Kelvins.
+     */
+    public double getTemp() {
+        return temp;
+    }
+
+    /**
+     * Parse the thermostat and integrator.
+     */
+    public void init() {
+        thermostat = Thermostat.parseThermostat(thermostatString);
+        integrator = Integrator.parseIntegrator(integratorString);
+        if (engineString != null) {
+            try {
+                engine = MolecularDynamics.DynamicsEngine.valueOf(engineString.toUpperCase());
+            } catch (Exception ex) {
+                logger.warning(String.format(" Could not parse %s as a valid dynamics engine! Defaulting to the Platform-recommended engine.", engineString));
+                engine = null;
+            }
+        }
+    }
+
+    /**
      * Re-sets the thermostat; intended for MC-OST going to ADIABATIC.
+     *
      * @param thermo Thermostat to replace the requested one with.
      */
     public void setThermostat(ThermostatEnum thermo) {

@@ -65,7 +65,7 @@ public interface AtomicDoubleArray {
     void alloc(int size);
 
     static AtomicDoubleArray atomicDoubleArrayFactory(AtomicDoubleArrayImpl atomicDoubleArrayImpl,
-                                                              int threads, int size) {
+                                                      int threads, int size) {
         switch (atomicDoubleArrayImpl) {
             case ADDER:
                 return new AdderDoubleArray(size);
@@ -117,8 +117,8 @@ public interface AtomicDoubleArray {
      * Reset the double array to Zero using a ParallelTeam.
      *
      * @param parallelTeam ParallelTeam.
-     * @param lb       a int.
-     * @param ub       a int.
+     * @param lb           a int.
+     * @param ub           a int.
      */
     void reset(ParallelTeam parallelTeam, int lb, int ub);
 

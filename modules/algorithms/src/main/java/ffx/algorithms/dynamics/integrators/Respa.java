@@ -114,6 +114,19 @@ public class Respa extends Integrator {
     /**
      * {@inheritDoc}
      * <p>
+     * The Respa full-step integration operation.
+     */
+    @Override
+    public void postForce(double[] gradient) {
+        for (int i = 0; i < nVariables; i++) {
+            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
+            v[i] += a[i] * dt_2;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Performs the inner RESPA loop via position Verlet.
      */
     @Override
@@ -159,16 +172,19 @@ public class Respa extends Integrator {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * The Respa full-step integration operation.
+     * Set inner Respa number of time steps.
+     *
+     * @param n Number of inner time steps (must be greater than or equal to 2).
      */
-    @Override
-    public void postForce(double[] gradient) {
-        for (int i = 0; i < nVariables; i++) {
-            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
-            v[i] += a[i] * dt_2;
+    public void setInnerTimeSteps(int n) {
+        if (n < 2) {
+            n = 2;
         }
+
+        innerSteps = n;
+
+        // Update inner time step
+        setTimeStep(dt);
     }
 
     /**
@@ -190,21 +206,5 @@ public class Respa extends Integrator {
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(format(" Time step set at %f (psec) and inner time step set at %f (psec) \n", this.dt, innerTimeStep));
         }
-    }
-
-    /**
-     * Set inner Respa number of time steps.
-     *
-     * @param n Number of inner time steps (must be greater than or equal to 2).
-     */
-    public void setInnerTimeSteps(int n) {
-        if (n < 2) {
-            n = 2;
-        }
-
-        innerSteps = n;
-
-        // Update inner time step
-        setTimeStep(dt);
     }
 }

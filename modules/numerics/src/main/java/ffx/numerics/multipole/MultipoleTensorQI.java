@@ -39,10 +39,10 @@ package ffx.numerics.multipole;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.normalize;
 import static ffx.numerics.math.DoubleMath.scale;
+import static ffx.numerics.math.DoubleMath.sub;
 
 /**
  * The MultipoleTensor class computes derivatives of 1/|<b>r</b>| via recursion
@@ -77,72 +77,19 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     /**
-     * Specific to QI; sets transform to rotate multipoles to (and from)
-     * quasi-internal frame.
+     * {@inheritDoc}
      */
-    private void setQIRotationMatrix(double dx, double dy, double dz) {
-
-        double[] zAxis = {dx, dy, dz};
-        double[] xAxis = {dx, dy, dz};
-        if (dy != 0.0 || dz != 0.0) {
-            xAxis[0] += 1.0;
-        } else {
-            xAxis[1] += 1.0;
-        }
-
-        normalize(zAxis, zAxis);
-        ir02 = zAxis[0];
-        ir12 = zAxis[1];
-        ir22 = zAxis[2];
-
-        double dot = dot(xAxis, zAxis);
-        scale(zAxis, dot, zAxis);
-        sub(xAxis, zAxis, xAxis);
-        normalize(xAxis, xAxis);
-
-        ir00 = xAxis[0];
-        ir10 = xAxis[1];
-        ir20 = xAxis[2];
-        ir01 = ir20 * ir12 - ir10 * ir22;
-        ir11 = ir00 * ir22 - ir20 * ir02;
-        ir21 = ir10 * ir02 - ir00 * ir12;
-
-        // Set the forward elements as the transpose of the inverse matrix.
-        r00 = ir00;
-        r11 = ir11;
-        r22 = ir22;
-        r01 = ir10;
-        r02 = ir20;
-        r10 = ir01;
-        r12 = ir21;
-        r20 = ir02;
-        r21 = ir12;
+    @Override
+    public double getd2EdZ2() {
+        return d2EdZ2;
     }
 
-    private void inducedIFieldForTorque() {
-        E000 = -szi * R001;
-        E100 = -sxi * R200;
-        E010 = -syi * R020;
-        E001 = -szi * R002;
-        E200 = -szi * R201;
-        E020 = -szi * R021;
-        E002 = -szi * R003;
-        E110 = 0.0;
-        E101 = -sxi * R201;
-        E011 = -syi * R021;
-    }
-
-    private void inducedKFieldForTorque() {
-        E000 = szk * R001;
-        E100 = sxk * R200;
-        E010 = syk * R020;
-        E001 = szk * R002;
-        E200 = szk * R201;
-        E020 = szk * R021;
-        E002 = szk * R003;
-        E110 = 0.0;
-        E101 = sxk * R201;
-        E011 = syk * R021;
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getdEdZ() {
+        return dEdZ;
     }
 
     /**
@@ -250,19 +197,72 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     /**
-     * {@inheritDoc}
+     * Specific to QI; sets transform to rotate multipoles to (and from)
+     * quasi-internal frame.
      */
-    @Override
-    public double getdEdZ() {
-        return dEdZ;
+    private void setQIRotationMatrix(double dx, double dy, double dz) {
+
+        double[] zAxis = {dx, dy, dz};
+        double[] xAxis = {dx, dy, dz};
+        if (dy != 0.0 || dz != 0.0) {
+            xAxis[0] += 1.0;
+        } else {
+            xAxis[1] += 1.0;
+        }
+
+        normalize(zAxis, zAxis);
+        ir02 = zAxis[0];
+        ir12 = zAxis[1];
+        ir22 = zAxis[2];
+
+        double dot = dot(xAxis, zAxis);
+        scale(zAxis, dot, zAxis);
+        sub(xAxis, zAxis, xAxis);
+        normalize(xAxis, xAxis);
+
+        ir00 = xAxis[0];
+        ir10 = xAxis[1];
+        ir20 = xAxis[2];
+        ir01 = ir20 * ir12 - ir10 * ir22;
+        ir11 = ir00 * ir22 - ir20 * ir02;
+        ir21 = ir10 * ir02 - ir00 * ir12;
+
+        // Set the forward elements as the transpose of the inverse matrix.
+        r00 = ir00;
+        r11 = ir11;
+        r22 = ir22;
+        r01 = ir10;
+        r02 = ir20;
+        r10 = ir01;
+        r12 = ir21;
+        r20 = ir02;
+        r21 = ir12;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdZ2() {
-        return d2EdZ2;
+    private void inducedIFieldForTorque() {
+        E000 = -szi * R001;
+        E100 = -sxi * R200;
+        E010 = -syi * R020;
+        E001 = -szi * R002;
+        E200 = -szi * R201;
+        E020 = -szi * R021;
+        E002 = -szi * R003;
+        E110 = 0.0;
+        E101 = -sxi * R201;
+        E011 = -syi * R021;
+    }
+
+    private void inducedKFieldForTorque() {
+        E000 = szk * R001;
+        E100 = sxk * R200;
+        E010 = syk * R020;
+        E001 = szk * R002;
+        E200 = szk * R201;
+        E020 = szk * R021;
+        E002 = szk * R003;
+        E110 = 0.0;
+        E101 = sxk * R201;
+        E011 = syk * R021;
     }
 
     /**

@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.xray;
 
-import java.util.logging.Logger;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
@@ -52,11 +51,11 @@ import edu.rit.util.Range;
  */
 public class GradientSchedule extends IntegerSchedule {
 
+    private final int[] lowerBounds;
+    private final int nAtoms;
     private int nThreads;
     private boolean[] threadDone;
     private Range[] ranges;
-    private final int[] lowerBounds;
-    private final int nAtoms;
     private int[] weights;
 
     /**
@@ -74,12 +73,25 @@ public class GradientSchedule extends IntegerSchedule {
     }
 
     /**
-     * <p>updateWeights.</p>
+     * <p>Getter for the field <code>lowerBounds</code>.</p>
      *
-     * @param weights an array of {@link int} objects.
+     * @return an array of {@link int} objects.
      */
-    void updateWeights(int[] weights) {
-        this.weights = weights;
+    public int[] getLowerBounds() {
+        int[] boundsToReturn = new int[nThreads];
+        arraycopy(lowerBounds, 1, boundsToReturn, 0, nThreads);
+        return boundsToReturn;
+    }
+
+    /**
+     * <p>getThreadWeights.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
+    public int[] getThreadWeights() {
+        int[] weightsToReturn = new int[nThreads];
+        arraycopy(weights, 0, weightsToReturn, 0, nThreads);
+        return weightsToReturn;
     }
 
     /**
@@ -88,6 +100,18 @@ public class GradientSchedule extends IntegerSchedule {
     @Override
     public boolean isFixedSchedule() {
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Range next(int threadID) {
+        if (!threadDone[threadID]) {
+            threadDone[threadID] = true;
+            return ranges[threadID];
+        }
+        return null;
     }
 
     /**
@@ -110,15 +134,12 @@ public class GradientSchedule extends IntegerSchedule {
     }
 
     /**
-     * {@inheritDoc}
+     * <p>updateWeights.</p>
+     *
+     * @param weights an array of {@link int} objects.
      */
-    @Override
-    public Range next(int threadID) {
-        if (!threadDone[threadID]) {
-            threadDone[threadID] = true;
-            return ranges[threadID];
-        }
-        return null;
+    void updateWeights(int[] weights) {
+        this.weights = weights;
     }
 
     private int totalWeight() {
@@ -186,27 +207,5 @@ public class GradientSchedule extends IntegerSchedule {
         for (int it = lastThread; it < nThreads; it++) {
             ranges[it] = null;
         }
-    }
-
-    /**
-     * <p>getThreadWeights.</p>
-     *
-     * @return an array of {@link int} objects.
-     */
-    public int[] getThreadWeights() {
-        int[] weightsToReturn = new int[nThreads];
-        arraycopy(weights, 0, weightsToReturn, 0, nThreads);
-        return weightsToReturn;
-    }
-
-    /**
-     * <p>Getter for the field <code>lowerBounds</code>.</p>
-     *
-     * @return an array of {@link int} objects.
-     */
-    public int[] getLowerBounds() {
-        int[] boundsToReturn = new int[nThreads];
-        arraycopy(lowerBounds, 1, boundsToReturn, 0, nThreads);
-        return boundsToReturn;
     }
 }

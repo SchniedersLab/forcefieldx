@@ -5,7 +5,7 @@ package ffx.potential.nonbonded.octree;
  * Object class for Octree method presented in the Fast Multipole Method (FMM) tutorial from the Barba Group:
  * https://github.com/barbagroup/FMM_tutorial
  */
-public class OctreeParticle extends OctreePoint{
+public class OctreeParticle extends OctreePoint {
 
     /**
      * Charge of particle
@@ -21,27 +21,27 @@ public class OctreeParticle extends OctreePoint{
      */
     private double phi = 0.0;
 
-    public OctreeParticle(double[] coords, double domain,double q) {
+    public OctreeParticle(double[] coords, double domain, double q) {
         super(coords, domain);
 
         setCharge(q);
         addToPhi(phi);
     }
 
-    @Override
-    public void setDomain(double domain) {
-        this.domain = domain;
+    public void addToPhi(double phi) {
+        this.phi += phi;
     }
 
-    public double getCharge(){
+    public double getCharge() {
         return this.q;
     }
 
-    public void setCharge(double q){
+    public void setCharge(double q) {
         this.q = q;
     }
 
-    public void addToPhi(double phi){
-        this.phi += phi;
+    @Override
+    public void setDomain(double domain) {
+        this.domain = domain;
     }
 }

@@ -63,14 +63,6 @@ import static ffx.crystal.Crystal.invressq;
  */
 public class SplineEnergy implements Potential {
 
-    public interface Type {
-
-        int FOFC = 1;
-        int F1F2 = 2;
-        int FCTOESQ = 3;
-        int FOTOESQ = 4;
-    }
-
     private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
     private final ReflectionList reflectionList;
     private final ReflectionSpline spline;
@@ -80,8 +72,8 @@ public class SplineEnergy implements Potential {
     private final DiffractionRefinementData refinementData;
     private final double[][] fc;
     private final double[][] fo;
-    private double[] optimizationScaling = null;
     private final ComplexNumber fct = new ComplexNumber();
+    private double[] optimizationScaling = null;
     private double totalEnergy;
     private STATE state = STATE.BOTH;
 
@@ -95,7 +87,7 @@ public class SplineEnergy implements Potential {
      * @param type           a int.
      */
     SplineEnergy(ReflectionList reflectionList,
-                        DiffractionRefinementData refinementData, int nParams, int type) {
+                 DiffractionRefinementData refinementData, int nParams, int type) {
         this.reflectionList = reflectionList;
         this.crystal = reflectionList.crystal;
         this.refinementData = refinementData;
@@ -106,6 +98,163 @@ public class SplineEnergy implements Potential {
         // initialize params
         this.spline = new ReflectionSpline(reflectionList, nParams);
         this.nParams = nParams;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean destroy() {
+        // Should be handled upstream.
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energy(double[] x) {
+        unscaleCoordinates(x);
+        double sum = target(x, null, false, false);
+        scaleCoordinates(x);
+        return sum;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        unscaleCoordinates(x);
+        double sum = target(x, g, true, false);
+        scaleCoordinatesAndGradient(x, g);
+        return sum;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnergyTermState(STATE state) {
+        this.state = state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getMass() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfVariables() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return optimizationScaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        if (scaling != null && scaling.length == nParams) {
+            optimizationScaling = scaling;
+        } else {
+            optimizationScaling = null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTotalEnergy() {
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Return a reference to each variables type.
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     /**
@@ -245,161 +394,12 @@ public class SplineEnergy implements Potential {
         return sum / sumfo;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energy(double[] x) {
-        unscaleCoordinates(x);
-        double sum = target(x, null, false, false);
-        scaleCoordinates(x);
-        return sum;
-    }
+    public interface Type {
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energyAndGradient(double[] x, double[] g) {
-        unscaleCoordinates(x);
-        double sum = target(x, g, true, false);
-        scaleCoordinatesAndGradient(x, g);
-        return sum;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setScaling(double[] scaling) {
-        if (scaling != null && scaling.length == nParams) {
-            optimizationScaling = scaling;
-        } else {
-            optimizationScaling = null;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return optimizationScaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getMass() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getTotalEnergy() {
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNumberOfVariables() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Return a reference to each variables type.
-     */
-    @Override
-    public VARIABLE_TYPE[] getVariableTypes() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public STATE getEnergyTermState() {
-        return state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setEnergyTermState(STATE state) {
-        this.state = state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] parameters) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        // Should be handled upstream.
-        return true;
+        int FOFC = 1;
+        int F1F2 = 2;
+        int FCTOESQ = 3;
+        int FOTOESQ = 4;
     }
 
 }

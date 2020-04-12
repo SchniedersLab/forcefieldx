@@ -60,6 +60,7 @@ import groovy.lang.Binding;
 @RunWith(Parameterized.class)
 public class DynamicsBeemanBerendsenTest extends PJDependentTest {
 
+    private static final Logger logger = Logger.getLogger(DynamicsBeemanBerendsenTest.class.getName());
     private String info;
     private String filename;
     private double endKineticEnergy;
@@ -67,11 +68,31 @@ public class DynamicsBeemanBerendsenTest extends PJDependentTest {
     private double endTotalEnergy;
     private double endTemperature;
     private double tolerance = 0.1;
-
     private Binding binding;
     private Dynamics dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsBeemanBerendsenTest.class.getName());
+    public DynamicsBeemanBerendsenTest(String info, String filename, double endKineticEnergy, double endPotentialEnergy,
+                                       double endTotalEnergy, double endTemperature) {
+        this.info = info;
+        this.filename = filename;
+        this.endKineticEnergy = endKineticEnergy;
+        this.endPotentialEnergy = endPotentialEnergy;
+        this.endTotalEnergy = endTotalEnergy;
+        this.endTemperature = endTemperature;
+    }
+
+    @After
+    public void after() {
+        dynamics.destroyPotentials();
+        System.gc();
+    }
+
+    @Before
+    public void before() {
+        binding = new Binding();
+        dynamics = new Dynamics();
+        dynamics.setBinding(binding);
+    }
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -86,29 +107,6 @@ public class DynamicsBeemanBerendsenTest extends PJDependentTest {
                 }
 
         });
-    }
-
-    public DynamicsBeemanBerendsenTest(String info, String filename, double endKineticEnergy, double endPotentialEnergy,
-                                       double endTotalEnergy, double endTemperature) {
-        this.info = info;
-        this.filename = filename;
-        this.endKineticEnergy = endKineticEnergy;
-        this.endPotentialEnergy = endPotentialEnergy;
-        this.endTotalEnergy = endTotalEnergy;
-        this.endTemperature = endTemperature;
-    }
-
-    @Before
-    public void before() {
-        binding = new Binding();
-        dynamics = new Dynamics();
-        dynamics.setBinding(binding);
-    }
-
-    @After
-    public void after() {
-        dynamics.destroyPotentials();
-        System.gc();
     }
 
     @Test

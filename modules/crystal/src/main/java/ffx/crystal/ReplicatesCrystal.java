@@ -70,6 +70,10 @@ public class ReplicatesCrystal extends Crystal {
      */
     private final Crystal unitCell;
     /**
+     * The cut-off distance in Angstroms.
+     */
+    private final double cutOff;
+    /**
      * The number of replicates along the a-axis.
      */
     private int l;
@@ -81,10 +85,6 @@ public class ReplicatesCrystal extends Crystal {
      * The number of replicates along the c-axis.
      */
     private int n;
-    /**
-     * The cut-off distance in Angstroms.
-     */
-    private final double cutOff;
 
     /**
      * Constructor for a ReplicatesCrystal.
@@ -116,6 +116,104 @@ public class ReplicatesCrystal extends Crystal {
           on the asymmetric unit.
          */
         updateReplicateOperators();
+    }
+
+    /**
+     * Change the cell parameters for the base unit cell, which is followed by
+     * an update of the ReplicateCrystal parameters and possibly the number of
+     * replicated cells.
+     *
+     * @param a     The length of the a-axis for the base unit cell (in Angstroms).
+     * @param b     The length of the b-axis for the base unit cell (in Angstroms).
+     * @param c     The length of the c-axis for the base unit cell (in Angstroms).
+     * @param alpha The angle between the b-axis and c-axis (in Degrees).
+     * @param beta  The angle between the a-axis and c-axis (in Degrees).
+     * @param gamma The angle between the a-axis and b-axis (in Degrees).
+     * @return True is returned if the unit cell and replicates cell are updated
+     * successfully.
+     */
+    @Override
+    public boolean changeUnitCellParameters(double a, double b, double c, double alpha, double beta, double gamma) {
+
+        // First, update the parameters of the unit cell.
+        if (unitCell.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
+
+            // Then, update the parameters of the ReplicatesCrystal and possibly the number of replicates.
+            return updateReplicatesDimensions();
+        }
+        return false;
+    }
+
+    /**
+     * Two crystals are equal only if all unit cell parameters are exactly the same.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ReplicatesCrystal replicatesCrystal = (ReplicatesCrystal) o;
+        return (Objects.equals(unitCell, replicatesCrystal.unitCell) &&
+                a == replicatesCrystal.a &&
+                b == replicatesCrystal.b &&
+                c == replicatesCrystal.c &&
+                alpha == replicatesCrystal.alpha &&
+                beta == replicatesCrystal.beta &&
+                gamma == replicatesCrystal.gamma &&
+                spaceGroup.number == replicatesCrystal.spaceGroup.number &&
+                spaceGroup.symOps.size() == replicatesCrystal.spaceGroup.symOps.size());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean getCheckRestrictions() {
+        return unitCell.getCheckRestrictions();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCheckRestrictions(boolean checkRestrictions) {
+        this.checkRestrictions = checkRestrictions;
+        unitCell.setCheckRestrictions(checkRestrictions);
+    }
+
+    /**
+     * Return the density of the ReplicatesCrystal.
+     *
+     * @param mass The mass of the ReplicatesCrystal.
+     * @return The density.
+     */
+    public double getDensity(double mass) {
+        return unitCell.getDensity(mass);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the unit cell for this ReplicatesCrystal. This is useful for the
+     * reciprocal space portion of PME that operates on the unit cell even
+     * though the real space cutoff requires a ReplicatesCrystal.
+     */
+    @Override
+    public Crystal getUnitCell() {
+        return unitCell;
+    }
+
+    /**
+     * Update the ReplicatesCrystal using random parameters with the target density.
+     *
+     * @param density Target density.
+     * @param mass    Mass of the ReplicatesCrystal.
+     */
+    public boolean randomParameters(double density, double mass) {
+        boolean succeed = unitCell.randomParameters(density, mass);
+        if (succeed) {
+            updateReplicatesDimensions();
+        }
+        return succeed;
     }
 
     /**
@@ -158,16 +256,6 @@ public class ReplicatesCrystal extends Crystal {
     }
 
     /**
-     * Return the density of the ReplicatesCrystal.
-     *
-     * @param mass The mass of the ReplicatesCrystal.
-     * @return The density.
-     */
-    public double getDensity(double mass) {
-        return unitCell.getDensity(mass);
-    }
-
-    /**
      * Update the ReplicatesCrystal dimensions to the target density.
      *
      * @param density Target density.
@@ -176,94 +264,6 @@ public class ReplicatesCrystal extends Crystal {
     public void setDensity(double density, double mass) {
         unitCell.setDensity(density, mass);
         updateReplicatesDimensions();
-    }
-
-    /**
-     * Update the ReplicatesCrystal using random parameters with the target density.
-     *
-     * @param density Target density.
-     * @param mass    Mass of the ReplicatesCrystal.
-     */
-    public boolean randomParameters(double density, double mass) {
-        boolean succeed = unitCell.randomParameters(density, mass);
-        if (succeed) {
-            updateReplicatesDimensions();
-        }
-        return succeed;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setCheckRestrictions(boolean checkRestrictions) {
-        this.checkRestrictions = checkRestrictions;
-        unitCell.setCheckRestrictions(checkRestrictions);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean getCheckRestrictions() {
-        return unitCell.getCheckRestrictions();
-    }
-
-    /**
-     * Two crystals are equal only if all unit cell parameters are exactly the same.
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ReplicatesCrystal replicatesCrystal = (ReplicatesCrystal) o;
-        return (Objects.equals(unitCell, replicatesCrystal.unitCell) &&
-                a == replicatesCrystal.a &&
-                b == replicatesCrystal.b &&
-                c == replicatesCrystal.c &&
-                alpha == replicatesCrystal.alpha &&
-                beta == replicatesCrystal.beta &&
-                gamma == replicatesCrystal.gamma &&
-                spaceGroup.number == replicatesCrystal.spaceGroup.number &&
-                spaceGroup.symOps.size() == replicatesCrystal.spaceGroup.symOps.size());
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns the unit cell for this ReplicatesCrystal. This is useful for the
-     * reciprocal space portion of PME that operates on the unit cell even
-     * though the real space cutoff requires a ReplicatesCrystal.
-     */
-    @Override
-    public Crystal getUnitCell() {
-        return unitCell;
-    }
-
-    /**
-     * Change the cell parameters for the base unit cell, which is followed by
-     * an update of the ReplicateCrystal parameters and possibly the number of
-     * replicated cells.
-     *
-     * @param a     The length of the a-axis for the base unit cell (in Angstroms).
-     * @param b     The length of the b-axis for the base unit cell (in Angstroms).
-     * @param c     The length of the c-axis for the base unit cell (in Angstroms).
-     * @param alpha The angle between the b-axis and c-axis (in Degrees).
-     * @param beta  The angle between the a-axis and c-axis (in Degrees).
-     * @param gamma The angle between the a-axis and b-axis (in Degrees).
-     * @return True is returned if the unit cell and replicates cell are updated
-     * successfully.
-     */
-    @Override
-    public boolean changeUnitCellParameters(double a, double b, double c, double alpha, double beta, double gamma) {
-
-        // First, update the parameters of the unit cell.
-        if (unitCell.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
-
-            // Then, update the parameters of the ReplicatesCrystal and possibly the number of replicates.
-            return updateReplicatesDimensions();
-        }
-        return false;
     }
 
     /**

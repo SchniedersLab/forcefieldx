@@ -62,27 +62,17 @@ public class MinimizeTest extends PJDependentTest {
     Binding binding;
     Minimize minimize;
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        minimize = new Minimize();
-        minimize.setBinding(binding);
-    }
-
     @After
     public void after() {
         minimize.destroyPotentials();
         System.gc();
     }
 
-    @Test
-    public void testMinimizeHelp() {
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        minimize.run();
+    @Before
+    public void before() {
+        binding = new Binding();
+        minimize = new Minimize();
+        minimize.setBinding(binding);
     }
 
     /**
@@ -107,7 +97,7 @@ public class MinimizeTest extends PJDependentTest {
         double expectedTotalPotential = -277.6200456888939;
 
         double actualTotalPotential = minimize.getPotentials().get(minimize.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals( expectedTotalPotential, actualTotalPotential, 1E-8);
+        Assert.assertEquals(expectedTotalPotential, actualTotalPotential, 1E-8);
 
         // Delete all created directories and files.
         try {
@@ -116,6 +106,16 @@ public class MinimizeTest extends PJDependentTest {
             System.out.println(e.toString());
             Assert.fail(" Exception deleting files created by MinimizeTest.");
         }
+    }
+
+    @Test
+    public void testMinimizeHelp() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"-h"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        minimize.run();
     }
 
     /**

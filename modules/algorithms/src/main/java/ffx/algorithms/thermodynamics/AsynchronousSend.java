@@ -60,11 +60,6 @@ import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 class AsynchronousSend extends Thread {
 
     private static final Logger logger = Logger.getLogger(AsynchronousSend.class.getName());
-
-    /**
-     * Private reference to the Histogram instance.
-     */
-    private Histogram histogram;
     /**
      * Storage to send a recursion count.
      */
@@ -93,6 +88,10 @@ class AsynchronousSend extends Thread {
      * Number of processes.
      */
     private final int numProc = world.size();
+    /**
+     * Private reference to the Histogram instance.
+     */
+    private Histogram histogram;
 
     /**
      * Constructor for a thread to asynchronously receive recursion counts.
@@ -107,31 +106,6 @@ class AsynchronousSend extends Thread {
         // Receive.
         recursionCount = new double[4];
         recursionCountBuf = DoubleBuf.buffer(recursionCount);
-    }
-
-    /**
-     * Send an OST count to all other processes.
-     *
-     * @param lambda Current value of lambda.
-     * @param dUdL   Current value of dU/dL.
-     */
-    public void send(double lambda, double dUdL, double temperingWeight) {
-        myRecursionWeight[0] = rank;
-        myRecursionWeight[1] = lambda;
-        myRecursionWeight[2] = dUdL;
-        myRecursionWeight[3] = temperingWeight;
-
-        histogram.setLastReceivedLambda(lambda);
-        histogram.setLastReceiveddUdL(dUdL);
-
-        for (int i = 0; i < numProc; i++) {
-            try {
-                world.send(i, myRecursionWeightBuf);
-            } catch (Exception ex) {
-                String message = " Asynchronous Multiwalker OST send failed.";
-                logger.log(Level.SEVERE, message, ex);
-            }
-        }
     }
 
     /**
@@ -189,6 +163,31 @@ class AsynchronousSend extends Thread {
                 logger.log(Level.FINE, " CountReceiveThread was interrupted; ceasing execution.");
                 // No pending message receipt, so no warning.
                 break;
+            }
+        }
+    }
+
+    /**
+     * Send an OST count to all other processes.
+     *
+     * @param lambda Current value of lambda.
+     * @param dUdL   Current value of dU/dL.
+     */
+    public void send(double lambda, double dUdL, double temperingWeight) {
+        myRecursionWeight[0] = rank;
+        myRecursionWeight[1] = lambda;
+        myRecursionWeight[2] = dUdL;
+        myRecursionWeight[3] = temperingWeight;
+
+        histogram.setLastReceivedLambda(lambda);
+        histogram.setLastReceiveddUdL(dUdL);
+
+        for (int i = 0; i < numProc; i++) {
+            try {
+                world.send(i, myRecursionWeightBuf);
+            } catch (Exception ex) {
+                String message = " Asynchronous Multiwalker OST send failed.";
+                logger.log(Level.SEVERE, message, ex);
             }
         }
     }

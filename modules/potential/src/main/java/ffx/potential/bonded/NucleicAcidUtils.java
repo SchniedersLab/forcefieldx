@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -246,7 +245,7 @@ public class NucleicAcidUtils {
      * @throws ffx.potential.bonded.BondedUtils.MissingAtomTypeException  if any.
      */
     public static void assignNucleicAcidAtomTypes(List<Residue> residues,
-                                                  ForceField forceField, ArrayList<Bond> bondList)
+                                                  ForceField forceField, List<Bond> bondList)
             throws MissingHeavyAtomException, MissingAtomTypeException {
 
         // A reference to the O3* atom of the previous base.
@@ -570,7 +569,7 @@ public class NucleicAcidUtils {
      */
     private static void assignNucleicAcidBaseAtomTypes(
             NucleicAcid3 nucleicAcid, Residue residue, Atom C1s,
-            Atom O4s, Atom C2s, ForceField forceField, ArrayList<Bond> bondList)
+            Atom O4s, Atom C2s, ForceField forceField, List<Bond> bondList)
             throws MissingHeavyAtomException {
         double glyco = 0;
         switch (nucleicAcid) {
@@ -643,11 +642,11 @@ public class NucleicAcidUtils {
      * @param C2s        a {@link ffx.potential.bonded.Atom} object.
      * @param glyco      a double.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     private static Residue buildADE(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
-                                    ForceField forceField, ArrayList<Bond> bondList) {
+                                    ForceField forceField, List<Bond> bondList) {
         Atom N9 = buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1017, forceField, bondList);
         Atom C8 = buildHeavy(residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco + 180.0, 0, 1021, forceField, bondList);
         Atom N7 = buildHeavy(residue, "N7", C8, 1.30, N9, 113.8, C1s, 180.0, 0, 1020, forceField, bondList);
@@ -676,11 +675,11 @@ public class NucleicAcidUtils {
      * @param C2s        a {@link ffx.potential.bonded.Atom} object.
      * @param glyco      a double.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     private static Residue buildCYT(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
-                                    ForceField forceField, ArrayList<Bond> bondList) {
+                                    ForceField forceField, List<Bond> bondList) {
         Atom N1 = buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1078, forceField, bondList);
         Atom C2 = buildHeavy(residue, "C2", N1, 1.37, C1s, 117.8, O4s, glyco + 180, 0, 1079, forceField, bondList);
         Atom O2 = buildHeavy(residue, "O2", C2, 1.24, N1, 118.9, C1s, 0.0, 0, 1084, forceField, bondList);
@@ -706,11 +705,11 @@ public class NucleicAcidUtils {
      * @param C2s        a {@link ffx.potential.bonded.Atom} object.
      * @param glyco      a double.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     private static Residue buildDAD(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
-                                    ForceField forceField, ArrayList<Bond> bondList) {
+                                    ForceField forceField, List<Bond> bondList) {
 
         Atom N9 = buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1132, forceField, bondList);
         Atom C8 = buildHeavy(residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco + 180, 0, 1136, forceField, bondList);
@@ -740,11 +739,11 @@ public class NucleicAcidUtils {
      * @param C2s        a {@link ffx.potential.bonded.Atom} object.
      * @param glyco      a double.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     private static Residue buildDCY(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
-                                    ForceField forceField, ArrayList<Bond> bondList) {
+                                    ForceField forceField, List<Bond> bondList) {
 
         Atom N1 = buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1191, forceField, bondList);
         Atom C2 = buildHeavy(residue, "C2", N1, 1.37, C1s, 117.8, O4s, glyco, 0, 1192, forceField, bondList);
@@ -771,11 +770,11 @@ public class NucleicAcidUtils {
      * @param C2s        a {@link ffx.potential.bonded.Atom} object.
      * @param glyco      a double.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     private static Residue buildDGU(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
-                                    ForceField forceField, ArrayList<Bond> bondList) {
+                                    ForceField forceField, List<Bond> bondList) {
 
         Atom N9 = buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1161, forceField, bondList);
         Atom C8 = buildHeavy(residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco + 180, 0, 1165, forceField, bondList);
@@ -806,11 +805,11 @@ public class NucleicAcidUtils {
      * @param C2s        a {@link ffx.potential.bonded.Atom} object.
      * @param glyco      a double.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     private static Residue buildDTY(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
-                                    ForceField forceField, ArrayList<Bond> bondList) {
+                                    ForceField forceField, List<Bond> bondList) {
         Atom N1 = buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1218, forceField, bondList);
         Atom C2 = buildHeavy(residue, "C2", N1, 1.37, C1s, 117.1, O4s, glyco, 0, 1219, forceField, bondList);
         Atom O2 = buildHeavy(residue, "O2", C2, 1.22, N1, 122.9, C1s, 0.0, 0, 1224, forceField, bondList);
@@ -838,11 +837,11 @@ public class NucleicAcidUtils {
      * @param C2s        a {@link ffx.potential.bonded.Atom} object.
      * @param glyco      a double.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     private static Residue buildGUA(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
-                                    ForceField forceField, ArrayList<Bond> bondList) {
+                                    ForceField forceField, List<Bond> bondList) {
         Atom N9 = buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1047, forceField, bondList);
         Atom C8 = buildHeavy(residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco + 180, 0, 1051, forceField, bondList);
         Atom N7 = buildHeavy(residue, "N7", C8, 1.31, N9, 114.0, C1s, 180.0, 0, 1050, forceField, bondList);
@@ -869,12 +868,12 @@ public class NucleicAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param C1s        a {@link ffx.potential.bonded.Atom} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     private static Residue buildH2U(Residue residue, Atom C1s, ForceField forceField,
-                                    ArrayList<Bond> bondList) throws MissingHeavyAtomException {
+                                    List<Bond> bondList) throws MissingHeavyAtomException {
 
         Atom N1 = buildHeavy(residue, "N1", C1s, 1350, forceField, bondList);
         Atom C2 = buildHeavy(residue, "C2", N1, 1351, forceField, bondList);
@@ -899,12 +898,12 @@ public class NucleicAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param C1s        a {@link ffx.potential.bonded.Atom} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     private static Residue buildM1MA(Residue residue, Atom C1s, ForceField forceField,
-                                     ArrayList<Bond> bondList) throws MissingHeavyAtomException {
+                                     List<Bond> bondList) throws MissingHeavyAtomException {
         Atom N9 = buildHeavy(residue, "N9", C1s, 1605, forceField, bondList);
         Atom C8 = buildHeavy(residue, "C8", N9, 1609, forceField, bondList);
         Atom N7 = buildHeavy(residue, "N7", C8, 1608, forceField, bondList);
@@ -935,12 +934,12 @@ public class NucleicAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param C1s        a {@link ffx.potential.bonded.Atom} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     private static Residue buildM2G(Residue residue, Atom C1s, ForceField forceField,
-                                    ArrayList<Bond> bondList) throws MissingHeavyAtomException {
+                                    List<Bond> bondList) throws MissingHeavyAtomException {
         Atom N9 = buildHeavy(residue, "N9", C1s, 1379, forceField, bondList);
         Atom C8 = buildHeavy(residue, "C8", N9, 1383, forceField, bondList);
         Atom N7 = buildHeavy(residue, "N7", C8, 1382, forceField, bondList);
@@ -973,12 +972,12 @@ public class NucleicAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param C1s        a {@link ffx.potential.bonded.Atom} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     private static Residue buildM2MG(Residue residue, Atom C1s, ForceField forceField,
-                                     ArrayList<Bond> bondList) throws MissingHeavyAtomException {
+                                     List<Bond> bondList) throws MissingHeavyAtomException {
         Atom N9 = buildHeavy(residue, "N9", C1s, 1316, forceField, bondList);
         Atom C8 = buildHeavy(residue, "C8", N9, 1320, forceField, bondList);
         Atom N7 = buildHeavy(residue, "N7", C8, 1319, forceField, bondList);
@@ -1008,12 +1007,12 @@ public class NucleicAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param C1s        a {@link ffx.potential.bonded.Atom} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     private static Residue buildM5MC(Residue residue, Atom C1s, ForceField forceField,
-                                     ArrayList<Bond> bondList) throws MissingHeavyAtomException {
+                                     List<Bond> bondList) throws MissingHeavyAtomException {
         Atom N1 = buildHeavy(residue, "N1", C1s, 1508, forceField, bondList);
         Atom C2 = buildHeavy(residue, "C2", N1, 1509, forceField, bondList);
         Atom O2 = buildHeavy(residue, "O2", C2, 1514, forceField, bondList);
@@ -1039,12 +1038,12 @@ public class NucleicAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param C1s        a {@link ffx.potential.bonded.Atom} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     private static Residue buildM5MU(Residue residue, Atom C1s, ForceField forceField,
-                                     ArrayList<Bond> bondList) throws MissingHeavyAtomException {
+                                     List<Bond> bondList) throws MissingHeavyAtomException {
 
         Atom N1 = buildHeavy(residue, "N1", C1s, 1575, forceField, bondList);
         Atom C2 = buildHeavy(residue, "C2", N1, 1576, forceField, bondList);
@@ -1070,12 +1069,12 @@ public class NucleicAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param C1s        a {@link ffx.potential.bonded.Atom} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     private static Residue buildM7MG(Residue residue, Atom C1s, ForceField forceField,
-                                     ArrayList<Bond> bondList) throws MissingHeavyAtomException {
+                                     List<Bond> bondList) throws MissingHeavyAtomException {
         Atom N9 = buildHeavy(residue, "N9", C1s, 1539, forceField, bondList);
         Atom C8 = buildHeavy(residue, "C8", N9, 1543, forceField, bondList);
         Atom N7 = buildHeavy(residue, "N7", C8, 1542, forceField, bondList);
@@ -1110,11 +1109,11 @@ public class NucleicAcidUtils {
      * @param C2s        a {@link ffx.potential.bonded.Atom} object.
      * @param glyco      a double.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     private static Residue buildOMC(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
-                                    ForceField forceField, ArrayList<Bond> bondList) {
+                                    ForceField forceField, List<Bond> bondList) {
         return buildCYT(residue, C1s, O4s, C2s, glyco, forceField, bondList);
     }
 
@@ -1127,11 +1126,11 @@ public class NucleicAcidUtils {
      * @param C2s        a {@link ffx.potential.bonded.Atom} object.
      * @param glyco      a double.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     private static Residue buildOMG(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
-                                    ForceField forceField, ArrayList<Bond> bondList) {
+                                    ForceField forceField, List<Bond> bondList) {
         return buildGUA(residue, C1s, O4s, C2s, glyco, forceField, bondList);
     }
 
@@ -1148,7 +1147,7 @@ public class NucleicAcidUtils {
      * @throws MissingHeavyAtomException Thrown if a needed heavy atom is missing.
      */
     private static void buildOP3(Residue residue, Atom phosphate, int aType,
-                                 ForceField forceField, ArrayList<Bond> bondList, Residue adjacentResidue,
+                                 ForceField forceField, List<Bond> bondList, Residue adjacentResidue,
                                  boolean at5prime) throws MissingHeavyAtomException {
         Atom P = null;
         Atom OP1 = null;
@@ -1267,12 +1266,12 @@ public class NucleicAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param C1s        a {@link ffx.potential.bonded.Atom} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     private static Residue buildPSU(Residue residue, Atom C1s, ForceField forceField,
-                                    ArrayList<Bond> bondList) throws MissingHeavyAtomException {
+                                    List<Bond> bondList) throws MissingHeavyAtomException {
         // C1s bonds to C5 in PsuedoUridine
         Atom C5 = buildHeavy(residue, "C5", C1s, 1485, forceField, bondList);
         Atom C6 = buildHeavy(residue, "C6", C5, 1486, forceField, bondList);
@@ -1314,11 +1313,11 @@ public class NucleicAcidUtils {
      * @param C2s        a {@link ffx.potential.bonded.Atom} object.
      * @param glyco      a double.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
     private static Residue buildURI(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
-                                    ForceField forceField, ArrayList<Bond> bondList) {
+                                    ForceField forceField, List<Bond> bondList) {
         Atom N1 = buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1106, forceField, bondList);
         Atom C2 = buildHeavy(residue, "C2", N1, 1.38, C1s, 117.1, O4s, glyco, 0, 1107, forceField, bondList);
         Atom O2 = buildHeavy(residue, "O2", C2, 1.22, N1, 123.2, C1s, 0.0, 0, 1112, forceField, bondList);
@@ -1341,12 +1340,12 @@ public class NucleicAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param C1s        a {@link ffx.potential.bonded.Atom} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param bondList   a {@link java.util.List} object.
      * @return a {@link ffx.potential.bonded.Residue} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     private static Residue buildYYG(Residue residue, Atom C1s, ForceField forceField,
-                                    ArrayList<Bond> bondList) throws MissingHeavyAtomException {
+                                    List<Bond> bondList) throws MissingHeavyAtomException {
         Atom N9 = buildHeavy(residue, "N9", C1s, 1640, forceField, bondList);
         Atom C8 = buildHeavy(residue, "C8", N9, 1644, forceField, bondList);
         Atom N7 = buildHeavy(residue, "N7", C8, 1643, forceField, bondList);

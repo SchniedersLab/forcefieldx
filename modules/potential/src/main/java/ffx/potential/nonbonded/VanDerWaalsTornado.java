@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.nonbonded;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,10 +45,8 @@ import static java.util.Arrays.fill;
 
 import ffx.crystal.Crystal;
 import ffx.numerics.tornado.FFXTornado;
-import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
@@ -313,6 +310,17 @@ public class VanDerWaalsTornado extends VanDerWaals {
     }
 
     /**
+     * <p>Setter for the field <code>atoms</code>.</p>
+     *
+     * @param atoms an array of {@link Atom} objects.
+     */
+    public void setAtoms(Atom[] atoms) {
+        this.atoms = atoms;
+        this.nAtoms = atoms.length;
+        initAtomArrays();
+    }
+
+    /**
      * If the crystal being passed in is not equal to the current crystal, then
      * some Van der Waals data structures may need to updated. If
      * <code>nSymm</code> has changed, update arrays dimensioned by nSymm.
@@ -339,17 +347,6 @@ public class VanDerWaalsTornado extends VanDerWaals {
         sb.append(format("   Switch Start:                         %6.3f (A)\n", vdwTaper));
         sb.append(format("   Cut-Off:                              %6.3f (A)\n", vdwCutoff));
         return sb.toString();
-    }
-
-    /**
-     * <p>Setter for the field <code>atoms</code>.</p>
-     *
-     * @param atoms an array of {@link Atom} objects.
-     */
-    public void setAtoms(Atom[] atoms) {
-        this.atoms = atoms;
-        this.nAtoms = atoms.length;
-        initAtomArrays();
     }
 
     /**

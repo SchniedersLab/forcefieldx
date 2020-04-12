@@ -74,12 +74,12 @@ import ffx.ui.behaviors.MouseBehaviorCallback;
  */
 public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
 
+    public Matrix3d matrix = new Matrix3d();
     private ViewingPlatform viewingPlatform;
     private BranchGroup axisBranchGroup = new BranchGroup();
     private TransformGroup axisTransformGroup = new TransformGroup();
     private Transform3D axisTransform3D = new Transform3D();
     private Vector3d axisVector3d = new Vector3d(-0.7, -0.6, -1.25);
-    public Matrix3d matrix = new Matrix3d();
 
     /**
      * <p>
@@ -116,6 +116,33 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         axisTransform3D.setScale(0.015);
         axisTransform3D.setTranslation(axisVector3d);
         axisTransformGroup.setTransform(axisTransform3D);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void transformChanged(int type, Transform3D viewTransform) {
+        viewTransform.get(matrix);
+        matrix.invert();
+        viewTransform.set(matrix);
+        axisTransform3D.set(viewTransform);
+        axisTransform3D.setTranslation(axisVector3d);
+        axisTransform3D.setScale(0.015);
+        axisTransformGroup.setTransform(axisTransform3D);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void transformClicked(int type, Transform3D transform) {
+        transformChanged(type, transform);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void transformDoubleClicked(int type, Transform3D transform) {
+        transformChanged(type, transform);
     }
 
     /**
@@ -245,32 +272,5 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         } else if (!b && axisBranchGroup.isLive()) {
             axisBranchGroup.detach();
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void transformChanged(int type, Transform3D viewTransform) {
-        viewTransform.get(matrix);
-        matrix.invert();
-        viewTransform.set(matrix);
-        axisTransform3D.set(viewTransform);
-        axisTransform3D.setTranslation(axisVector3d);
-        axisTransform3D.setScale(0.015);
-        axisTransformGroup.setTransform(axisTransform3D);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void transformClicked(int type, Transform3D transform) {
-        transformChanged(type, transform);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void transformDoubleClicked(int type, Transform3D transform) {
-        transformChanged(type, transform);
     }
 }

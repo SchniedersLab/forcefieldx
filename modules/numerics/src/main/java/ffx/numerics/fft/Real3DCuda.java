@@ -90,7 +90,6 @@ import static jcuda.jcufft.JCufft.cufftSetCompatibilityMode;
  * Compute a 3D Convolution using Java wrappers to the CUDA Driver API.
  *
  * @author Michal J. Schnieders
- *
  * @since 1.0
  */
 @SuppressWarnings("deprecation")
@@ -108,10 +107,10 @@ public class Real3DCuda implements Runnable {
     /**
      * Initialize the 3D FFT for complex 3D matrix.
      *
-     * @param nX X-dimension.
-     * @param nY Y-dimension.
-     * @param nZ Z-dimension.
-     * @param data an array of float.
+     * @param nX    X-dimension.
+     * @param nY    Y-dimension.
+     * @param nZ    Z-dimension.
+     * @param data  an array of float.
      * @param recip an array of float.
      */
     public Real3DCuda(int nX, int nY, int nZ, float[] data, float[] recip) {

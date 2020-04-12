@@ -62,12 +62,14 @@ public class DoubleIndexPair implements Comparable<DoubleIndexPair> {
     }
 
     /**
-     * <p>Getter for the field <code>index</code>.</p>
-     *
-     * @return a int.
+     * {@inheritDoc}
      */
-    public int getIndex() {
-        return index;
+    @Override
+    public int compareTo(DoubleIndexPair o) {
+        if (o == null) {
+            return 0;
+        }
+        return Double.compare(doubleValue, o.doubleValue);
     }
 
     /**
@@ -80,13 +82,11 @@ public class DoubleIndexPair implements Comparable<DoubleIndexPair> {
     }
 
     /**
-     * {@inheritDoc}
+     * <p>Getter for the field <code>index</code>.</p>
+     *
+     * @return a int.
      */
-    @Override
-    public int compareTo(DoubleIndexPair o) {
-        if (o == null) {
-            return 0;
-        }
-        return Double.compare(doubleValue, o.doubleValue);
+    public int getIndex() {
+        return index;
     }
 }

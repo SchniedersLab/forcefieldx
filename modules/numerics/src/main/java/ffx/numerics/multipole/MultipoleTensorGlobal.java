@@ -69,6 +69,26 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Meaningful only for QI.
+     */
+    @Override
+    public double getd2EdZ2() {
+        return 0.0;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Meaningful only for QI.
+     */
+    @Override
+    public double getdEdZ() {
+        return 0.0;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public double multipoleEnergy(double[] Fi, double[] Ti, double[] Tk) {
@@ -151,26 +171,6 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         Fi[2] -= dotMultipoleI();
 
         return energy;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Meaningful only for QI.
-     */
-    @Override
-    public double getdEdZ() {
-        return 0.0;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Meaningful only for QI.
-     */
-    @Override
-    public double getd2EdZ2() {
-        return 0.0;
     }
 
     /**

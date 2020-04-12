@@ -64,109 +64,6 @@ import static java.lang.String.format;
  */
 public class SquareRoot {
 
-    /**
-     * This class only presents static methods.
-     */
-    private SquareRoot() {
-    }
-
-    /**
-     * Compute the inverse square root <code>1.0/sqrt(x2)</code> of the of the
-     * input value x2 using a look-up table and two iterations of Newton's
-     * method for finding roots of an equation.
-     *
-     * @param x2 Input value.
-     * @return the inverse square root ( 1 / sqrt(x2) ).
-     */
-    public static double isqrt(double x2) {
-
-        assert (x2 > 0);
-
-        int xBits = floatToRawIntBits((float) x2);
-        int exp = expAddress(xBits);
-        int fract = fractAddress(xBits);
-        int result = expTable[exp] | fracTable[fract];
-        float lu = intBitsToFloat(result);
-
-        /* First iteration of Newton's method for finding roots of an equation. */
-        double y = (half * lu * (three - ((x2 * lu) * lu)));
-
-        /* 5 Flops */
-        // return y;
-
-        /* Second iteration of Newton's method. */
-        double y2 = (half * y * (three - ((x2 * y) * y)));
-
-        /* 10 Flops */
-        return y2;
-
-    }
-
-    /**
-     * <p>main.</p>
-     *
-     * @param args an array of {@link java.lang.String} objects.
-     */
-    public static void main(String[] args) {
-        for (int j = 0; j < 10; j++) {
-            Random random = new Random(1);
-            double sum = 0.0;
-            long time = -System.nanoTime();
-            for (int i = 0; i < 10000000; i++) {
-                sum += isqrt(random.nextDouble());
-            }
-            time += System.nanoTime();
-            System.out.println(format(" Software sum was    %16.8f in %16.8f seconds.", sum, 1.0e-9 * time));
-
-            random = new Random(1);
-            sum = 0.0;
-            time = -System.nanoTime();
-            for (int i = 0; i < 10000000; i++) {
-                sum += 1.0 / Math.sqrt(random.nextDouble());
-            }
-            time += System.nanoTime();
-            System.out.println(format(" 1/Math.sqrt sum was %16.8f in %16.8f seconds.", sum, 1.0e-9 * time));
-        }
-    }
-
-    /**
-     * Compute the square root of the input value x. The method calls
-     * <code>isqrt</code> and then multiples by the input
-     * <code>sqrt(x2) = x2 * isqrt(x2)</code>.
-     *
-     * @param x2 input value to take the square root of.
-     * @return the square root of x2.
-     */
-    public static double sqrt(double x2) {
-        assert (x2 > 0);
-        double ix = isqrt(x2);
-        return x2 * ix;
-    }
-
-    /**
-     * The Mask 0x7f800000 selects the Exponent Bits 30-23, which are then
-     * shifted 23 places to the right.
-     *
-     * @param val input parameter
-     * @return shifted exponent bits
-     */
-    private static int expAddress(int val) {
-        return ((val) & 0x7f800000) >> 23;
-    }
-
-    /**
-     * The Mask 0x00800000 selects the least significant Exponent bit and the
-     * Mask 0x007fffff selects the Mantissa Bits 22-0, which are then shifted 12
-     * places to the right. The shift of 12 comes from the Exponent shift (23)
-     * minus the significant part of the the mantissa (11).
-     *
-     * @param val input parameter
-     * @return shifted mantissa
-     */
-    private static int fractAddress(int val) {
-        return ((val) & (0x007fffff | 0x00800000)) >> 12;
-    }
-
     private static final double half = 0.5;
     private static final double three = 3.0;
     /**
@@ -755,5 +652,108 @@ public class SquareRoot {
             0x355fba, 0x355a09, 0x355459, 0x354eaa, 0x3548fb, 0x35434d, 0x353d9f, 0x3537f2,
             0x353245, 0x352c99, 0x3526ee, 0x352143, 0x351b98, 0x3515ee, 0x351045, 0x350a9c
     };
+
+    /**
+     * This class only presents static methods.
+     */
+    private SquareRoot() {
+    }
+
+    /**
+     * Compute the inverse square root <code>1.0/sqrt(x2)</code> of the of the
+     * input value x2 using a look-up table and two iterations of Newton's
+     * method for finding roots of an equation.
+     *
+     * @param x2 Input value.
+     * @return the inverse square root ( 1 / sqrt(x2) ).
+     */
+    public static double isqrt(double x2) {
+
+        assert (x2 > 0);
+
+        int xBits = floatToRawIntBits((float) x2);
+        int exp = expAddress(xBits);
+        int fract = fractAddress(xBits);
+        int result = expTable[exp] | fracTable[fract];
+        float lu = intBitsToFloat(result);
+
+        /* First iteration of Newton's method for finding roots of an equation. */
+        double y = (half * lu * (three - ((x2 * lu) * lu)));
+
+        /* 5 Flops */
+        // return y;
+
+        /* Second iteration of Newton's method. */
+        double y2 = (half * y * (three - ((x2 * y) * y)));
+
+        /* 10 Flops */
+        return y2;
+
+    }
+
+    /**
+     * <p>main.</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
+    public static void main(String[] args) {
+        for (int j = 0; j < 10; j++) {
+            Random random = new Random(1);
+            double sum = 0.0;
+            long time = -System.nanoTime();
+            for (int i = 0; i < 10000000; i++) {
+                sum += isqrt(random.nextDouble());
+            }
+            time += System.nanoTime();
+            System.out.println(format(" Software sum was    %16.8f in %16.8f seconds.", sum, 1.0e-9 * time));
+
+            random = new Random(1);
+            sum = 0.0;
+            time = -System.nanoTime();
+            for (int i = 0; i < 10000000; i++) {
+                sum += 1.0 / Math.sqrt(random.nextDouble());
+            }
+            time += System.nanoTime();
+            System.out.println(format(" 1/Math.sqrt sum was %16.8f in %16.8f seconds.", sum, 1.0e-9 * time));
+        }
+    }
+
+    /**
+     * Compute the square root of the input value x. The method calls
+     * <code>isqrt</code> and then multiples by the input
+     * <code>sqrt(x2) = x2 * isqrt(x2)</code>.
+     *
+     * @param x2 input value to take the square root of.
+     * @return the square root of x2.
+     */
+    public static double sqrt(double x2) {
+        assert (x2 > 0);
+        double ix = isqrt(x2);
+        return x2 * ix;
+    }
+
+    /**
+     * The Mask 0x7f800000 selects the Exponent Bits 30-23, which are then
+     * shifted 23 places to the right.
+     *
+     * @param val input parameter
+     * @return shifted exponent bits
+     */
+    private static int expAddress(int val) {
+        return ((val) & 0x7f800000) >> 23;
+    }
+
+    /**
+     * The Mask 0x00800000 selects the least significant Exponent bit and the
+     * Mask 0x007fffff selects the Mantissa Bits 22-0, which are then shifted 12
+     * places to the right. The shift of 12 comes from the Exponent shift (23)
+     * minus the significant part of the the mantissa (11).
+     *
+     * @param val input parameter
+     * @return shifted mantissa
+     */
+    private static int fractAddress(int val) {
+        return ((val) & (0x007fffff | 0x00800000)) >> 12;
+    }
 
 }

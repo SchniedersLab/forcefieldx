@@ -70,6 +70,20 @@ public class GoldsteinPairRegion extends ParallelRegion {
         goldsteinRotamerPairLoop = new GoldsteinRotamerPairLoop[nThreads];
     }
 
+    public void finish() {
+        for (GoldsteinRotamerPairLoop rotamerPairLoop : goldsteinRotamerPairLoop) {
+            blockedResidues.addAll(rotamerPairLoop.blockedResidues);
+        }
+    }
+
+    public ArrayList<Residue> getMissedResidues() {
+        return blockedResidues;
+    }
+
+    public double getSumOverK() {
+        return sharedSumOverK.get();
+    }
+
     /**
      * Initializes a ParallelRegion to attempt the elimination
      * of riA,rjC by riB,rjD.
@@ -103,25 +117,6 @@ public class GoldsteinPairRegion extends ParallelRegion {
         nK = possK.length;
     }
 
-    public double getSumOverK() {
-        return sharedSumOverK.get();
-    }
-
-    public ArrayList<Residue> getMissedResidues() {
-        return blockedResidues;
-    }
-
-    public void start() {
-        sharedSumOverK.set(0.0);
-        blockedResidues = new ArrayList<>();
-    }
-
-    public void finish() {
-        for (GoldsteinRotamerPairLoop rotamerPairLoop : goldsteinRotamerPairLoop) {
-            blockedResidues.addAll(rotamerPairLoop.blockedResidues);
-        }
-    }
-
     @Override
     public void run() {
         int threadID = getThreadIndex();
@@ -135,16 +130,15 @@ public class GoldsteinPairRegion extends ParallelRegion {
         }
     }
 
+    public void start() {
+        sharedSumOverK.set(0.0);
+        blockedResidues = new ArrayList<>();
+    }
+
     private class GoldsteinRotamerPairLoop extends IntegerForLoop {
 
         double sumOverK;
         ArrayList<Residue> blockedResidues;
-
-        @Override
-        public void start() {
-            sumOverK = 0.0;
-            blockedResidues = new ArrayList<>();
-        }
 
         @Override
         public void finish() {
@@ -165,6 +159,12 @@ public class GoldsteinPairRegion extends ParallelRegion {
             } else {
                 rotamerOptimization.logIfMaster(format(" Skipping %d to %d because we cannot eliminate", lb, ub), Level.FINE);
             }
+        }
+
+        @Override
+        public void start() {
+            sumOverK = 0.0;
+            blockedResidues = new ArrayList<>();
         }
     }
 }

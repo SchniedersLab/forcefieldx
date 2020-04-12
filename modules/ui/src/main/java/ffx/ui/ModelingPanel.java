@@ -116,6 +116,38 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
 
     private final MainPanel mainPanel;
     /**
+     * File Types for this Command
+     */
+    private final ArrayList<FileType> commandFileTypes = new ArrayList<>();
+    /**
+     * Executing Commands
+     */
+    private final ArrayList<Thread> executingCommands = new ArrayList<>();
+    /**
+     * Log Settings
+     */
+    private final JComboBox<String> logSettings = new JComboBox<>();
+    private final ArrayList<JLabel> conditionals = new ArrayList<>();
+    /**
+     * Nucleic Acid and Protein builder components.
+     */
+    private final JComboBox<String> acidComboBox = new JComboBox<>();
+    private final JTextField acidTextField = new JTextField();
+    private final JTextArea acidTextArea = new JTextArea();
+    /**
+     * Reused FlowLayout.
+     */
+    private final FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
+    /**
+     * Reused BorderLayout.
+     */
+    private final BorderLayout borderLayout = new BorderLayout();
+    /**
+     * Reused EtchedBorder.
+     */
+    private final Border etchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+    private final JTextField sizer = new JTextField(20);
+    /**
      * Active System
      */
     private FFXSystem activeSystem = null;
@@ -128,21 +160,9 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
      */
     private String activeCommand = null;
     /**
-     * File Types for this Command
-     */
-    private final ArrayList<FileType> commandFileTypes = new ArrayList<>();
-    /**
      * Actions to take for this Command when it finishes
      */
     private String commandActions = "NONE";
-    /**
-     * Executing Commands
-     */
-    private final ArrayList<Thread> executingCommands = new ArrayList<>();
-    /**
-     * Log Settings
-     */
-    private final JComboBox<String> logSettings = new JComboBox<>();
     /**
      * Commands for supported file types
      */
@@ -169,36 +189,15 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
     private JScrollPane descriptScrollPane;
     private JTextArea descriptTextArea;
     private JCheckBoxMenuItem descriptCheckBox;
-    private final ArrayList<JLabel> conditionals = new ArrayList<>();
     /**
      * Command input is formed in the commandTextArea, then exported to an input
      * file.
      */
     private JTextArea commandTextArea;
-    /**
-     * Nucleic Acid and Protein builder components.
-     */
-    private final JComboBox<String> acidComboBox = new JComboBox<>();
-    private final JTextField acidTextField = new JTextField();
-    private final JTextArea acidTextArea = new JTextArea();
     private JComboBox<String> conformationComboBox;
     private JScrollPane acidScrollPane = null;
     private JPanel aminoPanel = null;
     private JPanel nucleicPanel = null;
-    /**
-     * Reused FlowLayout.
-     */
-    private final FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
-    /**
-     * Reused BorderLayout.
-     */
-    private final BorderLayout borderLayout = new BorderLayout();
-    /**
-     * Reused EtchedBorder.
-     */
-    private final Border etchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
-    private final JTextField sizer = new JTextField(20);
-
     private JButton jbLaunch;
     private JButton jbStop;
     private Thread ffxThread = null;
@@ -266,6 +265,169 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
                     logger.log(Level.WARNING, "ModelingPanel ActionCommand not recognized: {0}", evt);
                     break;
             }
+        }
+    }
+
+    /**
+     * Launch the TINKER command specified by the ModelingPanel
+     *
+     * @return a {@link ffx.ui.FFXExec} object.
+     */
+    public FFXExec executeCommand() {
+        FFXSystem s = mainPanel.getHierarchy().getActive();
+        String dir = MainPanel.getPWD().getAbsolutePath();
+        if (s != null) {
+            File f = s.getFile();
+            if (f != null) {
+                dir = f.getParent();
+            }
+        }
+        return launch(statusLabel.getText(), dir);
+    }
+
+    /**
+     * <p>
+     * getAvailableCommands</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
+    public ArrayList<String> getAvailableCommands() {
+        ArrayList<String> availableCommands = new ArrayList<>();
+        for (int i = 0; i < currentCommandBox.getItemCount(); i++) {
+            availableCommands.add(currentCommandBox.getItemAt(i));
+        }
+        return availableCommands;
+    }
+
+    /**
+     * @return a {@link java.lang.String} object.
+     */
+    public String getCommand() {
+        return activeCommand;
+    }
+
+    /**
+     * Get an ArrayList of executing jobs
+     *
+     * @return an ArrayList containing Thread objects
+     */
+    public ArrayList<Thread> getModelingJobs() {
+        return executingCommands;
+    }
+
+    /**
+     * Mouse events are used to trigger status bar updates.
+     * <p>
+     * {@inheritDoc}
+     */
+    @Override
+    public void mouseClicked(MouseEvent evt) {
+        statusLabel.setText("  " + createCommandInput());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void mouseEntered(MouseEvent evt) {
+        mouseClicked(evt);
+    }
+
+    // *********************************************************************
+    // Modeling Command Configuration
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void mouseExited(MouseEvent evt) {
+        mouseClicked(evt);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void mousePressed(MouseEvent evt) {
+        mouseClicked(evt);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void mouseReleased(MouseEvent evt) {
+        mouseClicked(evt);
+    }
+
+    /**
+     * Selected.
+     */
+    public void selected() {
+        loadLogSettings();
+        setDivider(descriptCheckBox.isSelected());
+        validate();
+        repaint();
+    }
+
+    /**
+     * <p>
+     * setCommand</p>
+     *
+     * @param command a {@link java.lang.String} object.
+     * @return a boolean.
+     */
+    public boolean setCommand(String command) {
+        if (command == null) {
+            return false;
+        }
+        command = command.toLowerCase();
+        command = command.replaceFirst(command.substring(0, 1), command.toUpperCase().substring(0, 1));
+        currentCommandBox.setSelectedItem(command);
+        mainPanel.setPanel(MainPanel.MODELING);
+        return currentCommandBox.getSelectedItem().equals(command);
+    }
+
+    /**
+     * @param mode a {@link java.lang.String} object.
+     */
+    public void setLogMode(String mode) {
+        mode = mode.toUpperCase();
+        for (int i = 0; i < logSettings.getItemCount(); i++) {
+            String logType = (String) logSettings.getItemAt(i);
+            if (logType.toUpperCase().startsWith(mode)) {
+                logSettings.setSelectedIndex(i);
+                break;
+            }
+        }
+        loadLogSettings();
+    }
+
+    /**
+     * <p>
+     * toString</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    @Override
+    public String toString() {
+        return "Modeling Panel";
+    }
+
+    private class FFXLauncher implements Runnable {
+
+        List<String> argList;
+        File scriptFile;
+
+        FFXLauncher(List<String> argList, File scriptFile) {
+            this.argList = argList;
+            this.scriptFile = scriptFile;
+        }
+
+        @Override
+        public void run() {
+            mainPanel.getModelingShell().setArgList(argList);
+            mainPanel.open(scriptFile, null);
         }
     }
 
@@ -553,23 +715,6 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
         return commandLineParams.toString();
     }
 
-    /**
-     * Launch the TINKER command specified by the ModelingPanel
-     *
-     * @return a {@link ffx.ui.FFXExec} object.
-     */
-    public FFXExec executeCommand() {
-        FFXSystem s = mainPanel.getHierarchy().getActive();
-        String dir = MainPanel.getPWD().getAbsolutePath();
-        if (s != null) {
-            File f = s.getFile();
-            if (f != null) {
-                dir = f.getParent();
-            }
-        }
-        return launch(statusLabel.getText(), dir);
-    }
-
     private JPanel getAminoAcidPanel() {
         if (aminoPanel != null) {
             return aminoPanel;
@@ -593,30 +738,6 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
         return aminoPanel;
     }
 
-    /**
-     * <p>
-     * getAvailableCommands</p>
-     *
-     * @return a {@link java.util.ArrayList} object.
-     */
-    public ArrayList<String> getAvailableCommands() {
-        ArrayList<String> availableCommands = new ArrayList<>();
-        for (int i = 0; i < currentCommandBox.getItemCount(); i++) {
-            availableCommands.add(currentCommandBox.getItemAt(i));
-        }
-        return availableCommands;
-    }
-
-    // *********************************************************************
-    // Modeling Command Configuration
-
-    /**
-     * @return a {@link java.lang.String} object.
-     */
-    public String getCommand() {
-        return activeCommand;
-    }
-
     private String getLogString(File currentLog) {
         String currentMode = (String) logSettings.getSelectedItem();
         if (currentMode.startsWith("Create")) {
@@ -627,15 +748,6 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
         } else {
             return " > \"" + currentLog.getAbsolutePath() + "\"";
         }
-    }
-
-    /**
-     * Get an ArrayList of executing jobs
-     *
-     * @return an ArrayList containing Thread objects
-     */
-    public ArrayList<Thread> getModelingJobs() {
-        return executingCommands;
     }
 
     private JPanel getNucleicAcidPanel() {
@@ -892,23 +1004,6 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
         jbStop.setEnabled(!enable);
     }
 
-    private class FFXLauncher implements Runnable {
-
-        List<String> argList;
-        File scriptFile;
-
-        FFXLauncher(List<String> argList, File scriptFile) {
-            this.argList = argList;
-            this.scriptFile = scriptFile;
-        }
-
-        @Override
-        public void run() {
-            mainPanel.getModelingShell().setArgList(argList);
-            mainPanel.open(scriptFile, null);
-        }
-    }
-
     /**
      * Launch the active command on the active system in the specified
      * directory.
@@ -1146,6 +1241,9 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
             loadCommand();
         }
     }
+
+    // *********************************************************************
+    // Initialization code and misc. methods.
 
     private void loadCommand() {
         synchronized (this) {
@@ -1577,48 +1675,6 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
     }
 
     /**
-     * Mouse events are used to trigger status bar updates.
-     * <p>
-     * {@inheritDoc}
-     */
-    @Override
-    public void mouseClicked(MouseEvent evt) {
-        statusLabel.setText("  " + createCommandInput());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void mouseEntered(MouseEvent evt) {
-        mouseClicked(evt);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void mouseExited(MouseEvent evt) {
-        mouseClicked(evt);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void mousePressed(MouseEvent evt) {
-        mouseClicked(evt);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void mouseReleased(MouseEvent evt) {
-        mouseClicked(evt);
-    }
-
-    /**
      * If a TINKER END file exists for the active system & command, remove it.
      */
     private void removeEnd() {
@@ -1656,35 +1712,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
     }
 
     // *********************************************************************
-    // Initialization code and misc. methods.
-
-    /**
-     * Selected.
-     */
-    public void selected() {
-        loadLogSettings();
-        setDivider(descriptCheckBox.isSelected());
-        validate();
-        repaint();
-    }
-
-    /**
-     * <p>
-     * setCommand</p>
-     *
-     * @param command a {@link java.lang.String} object.
-     * @return a boolean.
-     */
-    public boolean setCommand(String command) {
-        if (command == null) {
-            return false;
-        }
-        command = command.toLowerCase();
-        command = command.replaceFirst(command.substring(0, 1), command.toUpperCase().substring(0, 1));
-        currentCommandBox.setSelectedItem(command);
-        mainPanel.setPanel(MainPanel.MODELING);
-        return currentCommandBox.getSelectedItem().equals(command);
-    }
+    // Logging Configuation
 
     /**
      * Set the description divider location
@@ -1709,24 +1737,6 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
             ModelingShell modelingShell = mainPanel.getModelingShell();
             modelingShell.doInterrupt();
         }
-    }
-
-    // *********************************************************************
-    // Logging Configuation
-
-    /**
-     * @param mode a {@link java.lang.String} object.
-     */
-    public void setLogMode(String mode) {
-        mode = mode.toUpperCase();
-        for (int i = 0; i < logSettings.getItemCount(); i++) {
-            String logType = (String) logSettings.getItemAt(i);
-            if (logType.toUpperCase().startsWith(mode)) {
-                logSettings.setSelectedIndex(i);
-                break;
-            }
-        }
-        loadLogSettings();
     }
 
     /**
@@ -1757,16 +1767,5 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
                 loadLogSettings();
             }
         }
-    }
-
-    /**
-     * <p>
-     * toString</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    @Override
-    public String toString() {
-        return "Modeling Panel";
     }
 }

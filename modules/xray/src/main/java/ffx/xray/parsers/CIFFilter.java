@@ -74,23 +74,6 @@ public class CIFFilter implements DiffractionFileFilter {
     private int rFree = -1;
     private int nAll, nObs;
 
-    private enum Header {
-
-        d_resolution_high, number_all, number_obs, length_a, length_b, length_c,
-        angle_alpha, angle_beta, angle_gamma, Int_Tables_number,
-        space_group_name_H_M, crystal_id, wavelength_id, scale_group_code,
-        status, index_h, index_k, index_l, F_meas, F_meas_au, F_meas_sigma,
-        F_meas_sigma_au, intensity_meas, intensity_sigma, NOVALUE;
-
-        public static Header toHeader(String str) {
-            try {
-                return valueOf(str.replace('-', '_'));
-            } catch (Exception ex) {
-                return NOVALUE;
-            }
-        }
-    }
-
     /**
      * Constructor.
      */
@@ -572,5 +555,22 @@ public class CIFFilter implements DiffractionFileFilter {
             refinementData.generateRFree();
         }
         return true;
+    }
+
+    private enum Header {
+
+        d_resolution_high, number_all, number_obs, length_a, length_b, length_c,
+        angle_alpha, angle_beta, angle_gamma, Int_Tables_number,
+        space_group_name_H_M, crystal_id, wavelength_id, scale_group_code,
+        status, index_h, index_k, index_l, F_meas, F_meas_au, F_meas_sigma,
+        F_meas_sigma_au, intensity_meas, intensity_sigma, NOVALUE;
+
+        public static Header toHeader(String str) {
+            try {
+                return valueOf(str.replace('-', '_'));
+            } catch (Exception ex) {
+                return NOVALUE;
+            }
+        }
     }
 }

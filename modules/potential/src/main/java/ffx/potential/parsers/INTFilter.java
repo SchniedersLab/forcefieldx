@@ -47,7 +47,6 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 
@@ -99,6 +98,14 @@ public class INTFilter extends SystemFilter {
                      ForceField forceField, CompositeConfiguration properties) {
         super(file, molecularAssembly, forceField, properties);
         fileType = FileType.INT;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void closeReader() {
+        logger.fine(" Reading trajectories not yet supported for INTFilter");
     }
 
     /**
@@ -323,22 +330,6 @@ public class INTFilter extends SystemFilter {
      * {@inheritDoc}
      */
     @Override
-    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean readNext() {
-        return readNext(false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public boolean readNext(boolean resetPosition) {
         return false;
     }
@@ -355,7 +346,15 @@ public class INTFilter extends SystemFilter {
      * {@inheritDoc}
      */
     @Override
-    public void closeReader() {
-        logger.fine(" Reading trajectories not yet supported for INTFilter");
+    public boolean readNext() {
+        return readNext(false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
+        return false;
     }
 }

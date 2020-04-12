@@ -59,26 +59,22 @@ public final class SoluteType extends BaseType implements Comparator<String> {
      * A Logger for the SoluteType class.
      */
     private static final Logger logger = Logger.getLogger(SoluteType.class.getName());
-
-    /**
-     * Atom type for this solute type.
-     */
-    private int atomType;
-
     /**
      * Solute atomic diameter for GK.
      */
     public double diameter;
-
     /**
      * Solute atomic diameter for ddCOSMO / PB.
      */
     public double pbDiameter;
-
     /**
      * Optional SMARTS description.
      */
     public String description;
+    /**
+     * Atom type for this solute type.
+     */
+    private int atomType;
 
     /**
      * <p>Constructor for SoluteType.</p>
@@ -98,10 +94,10 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     /**
      * <p>Constructor for SoluteType.</p>
      *
-     * @param atomType   Atom type.
+     * @param atomType    Atom type.
      * @param description Smarts descrption.
-     * @param diameter   Diameter for GK continuum electrostatics.
-     * @param pbDiameter Diameter for ddCOSMO / PB continuum electrostatics.
+     * @param diameter    Diameter for GK continuum electrostatics.
+     * @param pbDiameter  Diameter for ddCOSMO / PB continuum electrostatics.
      */
     public SoluteType(int atomType, String description, double diameter, double pbDiameter) {
         this(atomType, diameter, pbDiameter);
@@ -109,14 +105,32 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>
-     * incrementType</p>
-     *
-     * @param increment a int.
+     * {@inheritDoc}
      */
-    void incrementType(int increment) {
-        atomType += increment;
-        setKey(Integer.toString(atomType));
+    @Override
+    public int compare(String key1, String key2) {
+        int type1 = parseInt(key1);
+        int type2 = parseInt(key2);
+        return Integer.compare(type1, type2);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SoluteType soluteType = (SoluteType) o;
+        return soluteType.atomType == this.atomType;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(atomType);
     }
 
     /**
@@ -166,31 +180,13 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * {@inheritDoc}
+     * <p>
+     * incrementType</p>
+     *
+     * @param increment a int.
      */
-    @Override
-    public int compare(String key1, String key2) {
-        int type1 = parseInt(key1);
-        int type2 = parseInt(key2);
-        return Integer.compare(type1, type2);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SoluteType soluteType = (SoluteType) o;
-        return soluteType.atomType == this.atomType;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(atomType);
+    void incrementType(int increment) {
+        atomType += increment;
+        setKey(Integer.toString(atomType));
     }
 }

@@ -52,10 +52,6 @@ import ffx.potential.bonded.RotamerLibrary;
  */
 public class RotamerMatrixMove implements MCMove {
 
-    private RotamerOptimization rotamerOptimization;
-    private EliminatedRotamers eR;
-    private boolean monteCarloTesting;
-
     private final boolean useAllElims;
     /**
      * CurrentRots should point to the same array as being used in the
@@ -66,6 +62,9 @@ public class RotamerMatrixMove implements MCMove {
     private final List<Integer> allowedRes;
     private final List<List<Integer>> allowedRots;
     private final int nAllowed;
+    private RotamerOptimization rotamerOptimization;
+    private EliminatedRotamers eR;
+    private boolean monteCarloTesting;
     /**
      * When we take a step, we need to remember which rotamer of which
      * residue was changed.

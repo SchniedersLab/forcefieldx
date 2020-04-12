@@ -51,12 +51,12 @@ import edu.rit.util.Range;
  */
 public class RowSchedule extends IntegerSchedule {
 
-    private int nThreads;
-    private boolean[] threadDone;
-    private Range[] ranges;
     private final int[] lowerBounds;
     private final int fftZ;
     private final int fftY;
+    private int nThreads;
+    private boolean[] threadDone;
+    private Range[] ranges;
     private int[] weights;
 
     /**
@@ -76,20 +76,23 @@ public class RowSchedule extends IntegerSchedule {
     }
 
     /**
-     * <p>updateWeights.</p>
-     *
-     * @param weights an array of {@link int} objects.
+     * {@inheritDoc}
      */
-    void updateWeights(int[] weights) {
-        this.weights = weights;
+    @Override
+    public boolean isFixedSchedule() {
+        return true;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean isFixedSchedule() {
-        return true;
+    public Range next(int threadID) {
+        if (!threadDone[threadID]) {
+            threadDone[threadID] = true;
+            return ranges[threadID];
+        }
+        return null;
     }
 
     /**
@@ -112,15 +115,12 @@ public class RowSchedule extends IntegerSchedule {
     }
 
     /**
-     * {@inheritDoc}
+     * <p>updateWeights.</p>
+     *
+     * @param weights an array of {@link int} objects.
      */
-    @Override
-    public Range next(int threadID) {
-        if (!threadDone[threadID]) {
-            threadDone[threadID] = true;
-            return ranges[threadID];
-        }
-        return null;
+    void updateWeights(int[] weights) {
+        this.weights = weights;
     }
 
     private int totalWeight() {
