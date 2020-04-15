@@ -51,28 +51,28 @@ public class TimerOptions {
      */
     @Option(names = {"-n", "--iterations"}, paramLabel = "5",
             description = "Number of iterations.")
-    private int iterations = 5;
+    public int iterations = 5;
 
     /**
      * --nt or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
      */
     @Option(names = {"--nt", "--threads"}, paramLabel = "0",
             description = "Number of SMP threads (0 specifies use of all CPU cores).")
-    private int threads = 0;
+    public int threads = 0;
 
     /**
      * -g or --noGradient to ignore computation of the atomic coordinates noGradient
      */
     @Option(names = {"-g", "--noGradient"},
             description = "Ignore computation of the atomic coordinates noGradient.")
-    private boolean noGradient = false;
+    public boolean noGradient = false;
 
     /**
      * -v or --verbose to suppress printing of the energy for each iteration
      */
     @Option(names = {"-v", "--verbose"},
             description = "Print the energy for each iteration.")
-    private boolean verbose = false;
+    public boolean verbose = false;
 
     /**
      * <p>Getter for the field <code>iterations</code>.</p>

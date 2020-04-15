@@ -45,6 +45,8 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import static java.lang.Double.parseDouble;
+import static java.lang.String.format;
 
 import ffx.numerics.Potential;
 import ffx.numerics.switching.MultiplicativeSwitch;
@@ -73,39 +75,19 @@ public class TopologyOptions {
     public static final Logger logger = Logger.getLogger(TopologyOptions.class.getName());
 
     /**
-     * -s2 or --start2 defines the first softcored atom for the second topology.
+     * --ac2 or --alchemicalAtoms2 Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]."
      */
-    @Option(names = {"--s2", "--start2"}, paramLabel = "0",
-            description = "Starting ligand atom for 2nd topology")
-    int s2 = 0;
+    @Option(names = {"--ac2", "--alchemicalAtoms2"}, paramLabel = "<selection>", defaultValue = "",
+            description = "Specify alchemical atoms for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
+    String alchemicalAtoms2;
+
 
     /**
-     * -f2 or --final2 defines the last softcored atom for the second topology.
+     * --uc2 or --unchargedAtoms2 Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N]."
      */
-    @Option(names = {"--f2", "--final2"}, paramLabel = "-1",
-            description = "Final ligand atom for the 2nd topology")
-    int f2 = -1;
-
-    /**
-     * --la2 or -ligAtoms2 allows for multiple ranges and/or singletons of ligand atoms in the second topology, separated by periods.
-     */
-    @Option(names = {"--la2", "--ligAtoms2"}, paramLabel = "-1",
-            description = "Period-separated ranges of 2nd toplogy ligand atoms (e.g. 40-50.72-83)")
-    String ligAt2 = null;
-
-    /**
-     * -es2 or --noElecStart2 defines the first atom of the second topology to have no electrostatics.
-     */
-    @Option(names = {"--es2", "--noElecStart2"}, paramLabel = "1",
-            description = "Starting no-electrostatics atom for 2nd topology")
-    int es2 = 1;
-
-    /**
-     * -ef2 or --noElecFinal2 defines the last atom of the second topology to have no electrostatics.
-     */
-    @Option(names = {"--ef2", "--noElecFinal2"}, paramLabel = "-1",
-            description = "Final no-electrostatics atom for 2nd topology")
-    int ef2 = -1;
+    @Option(names = {"--uc2", "--unchargedAtoms2"}, paramLabel = "<selection>", defaultValue = "",
+            description = "Specify atoms without electrostatics for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
+    String unchargedAtoms2;
 
     /**
      * -np or --nParallel sets the number of topologies to evaluate in parallel; currently 1, 2, or 4.
@@ -115,30 +97,32 @@ public class TopologyOptions {
     int nPar = 1;
 
     /**
-     * -uaA or -unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated ranges or singletons.
+     * --uaA or --unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated ranges or singletons.
      */
     @Option(names = {"--uaA", "--unsharedA"}, paramLabel = "-1",
-            description = "Unshared atoms in the A dual topology (period-separated hyphenated ranges)")
+            description = "Unshared atoms in the A dual topology (e.g. 1-24.32-65).")
     String unsharedA = null;
 
     /**
-     * -uaB or -unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated ranges or singletons.
+     * --uaB or --unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated ranges or singletons.
      */
     @Option(names = {"--uaB", "--unsharedB"}, paramLabel = "-1",
-            description = "Unshared atoms in the B dual topology (period-separated hyphenated ranges)")
+            description = "Unshared atoms in the B dual topology (e.g. 1-24.32-65).")
     String unsharedB = null;
 
     /**
-     * -sf or --switchingFunction sets the switching function to be used by
-     * dual topologies; TRIG produces the function sin^2(pi/2*lambda)*E1(lambda)
-     * + cos^2(pi/2*lambda)*E2(1-lambda), MULT uses a 5"th-order polynomial
-     * switching function with zero first and second derivatives at the end
-     * (same function as used for van der Waals switch), and a number uses
-     * the original function, of l^beta*E1(lambda) + (1-lambda)^beta*E2(1-lambda).
+     * -sf or --switchingFunction
      * <p>
-     * All of these are generalizations of Udt = f(l)*E1(l) +
-     * f(1-l)*E2(1-lambda), where f(l) is a continuous switching function
-     * such that f(0) = 0, f(1) = 1, and 0 <= f(l) <= 1 for lambda 0-1.
+     * Sets the switching function to be used by dual topologies.
+     * <p>
+     * <ul> TRIG produces the function
+     * sin^2(pi/2*lambda)*E1(lambda) + cos^2(pi/2*lambda)*E2(1-lambda) </ul>
+     * <ul> MULT uses a 5th-order polynomial switching function with zero first and second derivatives at the end
+     * (same function as used for van der Waals switch) </ul>
+     * <ul> A number uses the original function, of l^beta*E1(lambda) + (1-lambda)^beta*E2(1-lambda). </ul>
+     * <p>
+     * All of these are generalizations of <code>Udt = f(l)*E1(l) + f(1-l)*E2(1-lambda)</code>,
+     * where f(l) is a continuous switching function such that f(0) = 0, f(1) = 1, and 0 <= f(l) <= 1 for lambda 0-1.
      * The trigonometric switch can be restated thusly, since
      * cos^2(pi/2*lambda) is identical to sin^2(pi/2*(1-lambda)), f(1-l).
      */
@@ -170,7 +154,6 @@ public class TopologyOptions {
             uniqueA = Collections.emptyList();
             uniqueB = Collections.emptyList();
         }
-
         return getTopology(assemblies, sf, uniqueA, uniqueB, numPar, sb);
     }
 
@@ -184,11 +167,11 @@ public class TopologyOptions {
     public int getNumParallel(int threadsAvail, int nArgs) {
         int numParallel = nPar;
         if (threadsAvail % numParallel != 0) {
-            logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d reverting to sequential",
+            logger.warning(format(" Number of threads available %d not evenly divisible by np %d reverting to sequential",
                     threadsAvail, numParallel));
             numParallel = 1;
         } else if (nArgs % numParallel != 0) {
-            logger.warning(String.format(" Number of topologies %d not evenly divisible by np %d reverting to sequential",
+            logger.warning(format(" Number of topologies %d not evenly divisible by np %d reverting to sequential",
                     nArgs, numParallel));
             numParallel = 1;
         }
@@ -205,11 +188,6 @@ public class TopologyOptions {
         if (!lambdaFunction.equalsIgnoreCase("1.0")) {
             String lf = lambdaFunction.toUpperCase();
             switch (lf) {
-                // TODO implement the following RegEx case.
-//                case ~/^-?[0-9]*\.?[0-9]+/:
-//                    double exp = Double.parseDouble(lf);
-//                    sf = new ffx.numerics.PowerSwitch(1.0, exp);
-//                    break;
                 case "TRIG":
                     sf = new SquaredTrigSwitch(false);
                     break;
@@ -218,11 +196,10 @@ public class TopologyOptions {
                     break;
                 default:
                     try {
-                        double beta = Double.parseDouble(lf);
+                        double beta = parseDouble(lf);
                         sf = new PowerSwitch(1.0, beta);
                     } catch (NumberFormatException ex) {
-                        logger.warning(String.format("Argument to option -sf %s could not be properly parsed; using default linear switch",
-                                lambdaFunction));
+                        logger.warning(format("Argument to option -sf %s could not be properly parsed; using default linear switch", lambdaFunction));
                         sf = new PowerSwitch(1.0, 1.0);
                     }
             }
@@ -243,12 +220,9 @@ public class TopologyOptions {
      * @param sb          A StringBuilder for logging.
      * @return The Potential for the Topology.
      */
-    public Potential getTopology(MolecularAssembly[] topologies,
-                                 UnivariateSwitchingFunction sf,
-                                 List<Integer> uniqueA, List<Integer> uniqueB,
-                                 int numParallel, StringBuilder sb) {
+    public Potential getTopology(MolecularAssembly[] topologies, UnivariateSwitchingFunction sf,
+                                 List<Integer> uniqueA, List<Integer> uniqueB, int numParallel, StringBuilder sb) {
         Potential potential = null;
-
         switch (topologies.length) {
             case 1:
                 sb.append("single topology ");
@@ -295,23 +269,23 @@ public class TopologyOptions {
      * @return A sorted List of Integers.
      */
     public List<Integer> getUniqueAtoms(MolecularAssembly assembly, String label, String unshared) {
-        if (unshared != null && !unshared.isEmpty()) {
+        if (!unshared.isEmpty()) {
             logger.info(" Finding unique atoms for dual topology " + label);
             Set<Integer> indices = new HashSet<>();
             String[] toks = unshared.split("\\.");
             Atom[] atoms1 = assembly.getAtomArray();
             for (String range : toks) {
-                Matcher m = AlchemicalOptions.rangeregex.matcher(range);
+                Matcher m = AlchemicalOptions.rangeRegEx.matcher(range);
                 if (m.find()) {
                     int rangeStart = Integer.parseInt(m.group(1));
                     int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                     if (rangeStart > rangeEnd) {
-                        logger.severe(String.format(" Range %s was invalid start was greater than end", range));
+                        logger.severe(format(" Range %s was invalid start was greater than end", range));
                     }
-                    logger.info(String.format(" Range %s for %s, start %d end %d", range, label, rangeStart, rangeEnd));
-                    logger.fine(String.format(" First atom in range: %s", atoms1[rangeStart - 1]));
+                    logger.info(format(" Range %s for %s, start %d end %d", range, label, rangeStart, rangeEnd));
+                    logger.fine(format(" First atom in range: %s", atoms1[rangeStart - 1]));
                     if (rangeEnd > rangeStart) {
-                        logger.fine(String.format(" Last atom in range: %s", atoms1[rangeEnd - 1]));
+                        logger.fine(format(" Last atom in range: %s", atoms1[rangeEnd - 1]));
                     }
                     for (int i = rangeStart; i <= rangeEnd; i++) {
                         indices.add(i - 1);
@@ -324,10 +298,10 @@ public class TopologyOptions {
                 Atom ai = atoms1[i];
                 if (indices.contains(i)) {
                     if (ai.applyLambda()) {
-                        logger.warning(String.format(
+                        logger.warning(format(
                                 " Ranges defined in %s should not overlap with ligand atoms they are assumed to not be shared.", label));
                     } else {
-                        logger.fine(String.format(" Unshared %s: %d variables %d-%d", label, i, counter, counter + 2));
+                        logger.fine(format(" Unshared %s: %d variables %d-%d", label, i, counter, counter + 2));
                         for (int j = 0; j < 3; j++) {
                             adjustedIndices.add(counter + j);
                         }
@@ -369,7 +343,9 @@ public class TopologyOptions {
      * @return Presence of softcore Atoms.
      */
     public boolean hasSoftcore() {
-        return ((ligAt2 != null && ligAt2.length() > 0) || s2 > 0);
+        return (alchemicalAtoms2 != null &&
+                !alchemicalAtoms2.equalsIgnoreCase("NONE") &&
+                !alchemicalAtoms2.equalsIgnoreCase(""));
     }
 
     /**
@@ -378,7 +354,7 @@ public class TopologyOptions {
      * @param topology a {@link ffx.potential.MolecularAssembly} object.
      */
     public void setSecondSystemAlchemistry(MolecularAssembly topology) {
-        AlchemicalOptions.setAlchemicalAtoms(topology, s2, f2, ligAt2);
+        AlchemicalOptions.setAlchemicalAtoms(topology, alchemicalAtoms2);
     }
 
     /**
@@ -387,6 +363,6 @@ public class TopologyOptions {
      * @param topology a {@link ffx.potential.MolecularAssembly} object.
      */
     public void setSecondSystemUnchargedAtoms(MolecularAssembly topology) {
-        AlchemicalOptions.setUnchargedAtoms(topology, es2, ef2);
+        AlchemicalOptions.setUnchargedAtoms(topology, unchargedAtoms2);
     }
 }

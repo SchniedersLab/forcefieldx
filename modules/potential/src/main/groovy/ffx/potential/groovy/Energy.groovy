@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import java.util.logging.Level
 import static java.lang.String.format
 
 import com.google.common.collect.MinMaxPriorityQueue
@@ -50,12 +49,14 @@ import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
 
 import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
@@ -69,6 +70,9 @@ import picocli.CommandLine.Parameters
 @Command(description = " Compute the force field potential energy.", name = "ffxc Energy")
 class Energy extends PotentialScript {
 
+    @Mixin
+    AtomSelectionOptions atomSelectionOptions
+
     /**
      * -m or --moments print out electrostatic moments.
      */
@@ -80,29 +84,15 @@ class Energy extends PotentialScript {
      * -g or --gradient to print out gradients.
      */
     @Option(names = ['-g', '--gradient'], paramLabel = "false", defaultValue = "false",
-            description = 'Print out atomic gradients as well as energy.')
+            description = 'Compute the atomic gradient as well as energy.')
     private boolean gradient = false
-
-    /**
-     * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
-     */
-    @Option(names = ['--es1', '--noElecStart1'], paramLabel = "1", defaultValue = "1",
-            description = 'Starting no-electrostatics atom for 1st topology.')
-    private int es1 = 1
 
     /**
      * * --fl or --findLowest Return the n lowest energy structures from an ARC or PDB file.
      */
     @Option(names = ['--fl', '--findLowest'], paramLabel = "0", defaultValue = "0",
-            description = 'Return the n lowest energy structures from an ARC or PDB file.')
+            description = 'Return the n lowest energies from an ARC/PDB file.')
     private int fl = 0
-
-    /**
-     * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
-     */
-    @Option(names = ['--ef1', '--noElecFinal1'], paramLabel = "-1", defaultValue = "-1",
-            description = 'Final no-electrostatics atom for 1st topology.')
-    private int ef1 = -1
 
     /**
      * -v or --verbose enables printing out all energy components for multi-snapshot files (
@@ -168,28 +158,12 @@ class Energy extends PotentialScript {
         }
 
         String filename = activeAssembly.getFile().getAbsolutePath()
-        logger.info("\n Running Energy on " + filename + "\n")
+        logger.info("\n Running Energy on " + filename)
+
+        // Apply atom selections
+        atomSelectionOptions.setActiveAtoms(activeAssembly)
 
         forceFieldEnergy = activeAssembly.getPotentialEnergy()
-        Atom[] atoms = activeAssembly.getAtomArray()
-
-        // Apply the no electrostatics atom selection
-        int noElecStart = es1
-        noElecStart = (noElecStart < 1) ? 1 : noElecStart
-
-        int noElecStop = ef1
-        noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop
-
-        if (noElecStart <= noElecStop) {
-            logger.info(format(" Disabling electrostatics for atoms %d (%s) to %d (%s).",
-                    noElecStart, atoms[noElecStart - 1], noElecStop, atoms[noElecStop - 1]))
-        }
-        for (int i = noElecStart; i <= noElecStop; i++) {
-            Atom ai = atoms[i - 1]
-            ai.setElectrostatics(false)
-            ai.print(Level.FINE)
-        }
-
         int nVars = forceFieldEnergy.getNumberOfVariables()
         double[] x = new double[nVars]
         forceFieldEnergy.getCoordinates(x)

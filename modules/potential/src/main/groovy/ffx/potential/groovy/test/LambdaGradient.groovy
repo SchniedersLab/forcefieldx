@@ -37,6 +37,12 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
+import java.util.stream.IntStream
+import static java.lang.String.format
+
+import static org.apache.commons.math3.util.FastMath.abs
+import static org.apache.commons.math3.util.FastMath.sqrt
+
 import edu.rit.pj.ParallelTeam
 
 import ffx.numerics.Potential
@@ -47,6 +53,7 @@ import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.GradientOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.TopologyOptions
+import static ffx.utilities.StringUtils.parseAtomRanges
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -72,7 +79,6 @@ class LambdaGradient extends PotentialScript {
 
     @Mixin
     private GradientOptions gradientOptions
-
 
     /**
      * --ls or --lambdaScan Scan lambda values.
@@ -163,9 +169,7 @@ class LambdaGradient extends PotentialScript {
 
         List<MolecularAssembly> topologyList = new ArrayList<>(4)
 
-        /**
-         * Read in files.
-         */
+        // Read in files.
         if (!arguments || arguments.isEmpty()) {
             MolecularAssembly mola = potentialFunctions.getActiveAssembly()
             if (mola == null) {
@@ -176,7 +180,7 @@ class LambdaGradient extends PotentialScript {
             arguments.add(mola.getFile().getName())
             topologyList.add(alchemical.processFile(topology, mola, 0))
         } else {
-            logger.info(String.format(" Initializing %d topologies...", nArgs))
+            logger.info(format(" Initializing %d topologies...", nArgs))
             for (int i = 0; i < nArgs; i++) {
                 topologyList.add(alchemical.openFile(potentialFunctions, topology, threadsPer, arguments.get(i), i))
             }
@@ -194,7 +198,7 @@ class LambdaGradient extends PotentialScript {
 
         logger.info(sb.toString())
 
-        LambdaInterface linter = (LambdaInterface) potential
+        LambdaInterface lambdaInterface = (LambdaInterface) potential
 
         // Reset the number of variables for the case of dual topology.
         int n = potential.getNumberOfVariables()
@@ -203,40 +207,46 @@ class LambdaGradient extends PotentialScript {
         double[] lambdaGrad = new double[n]
         double[][] lambdaGradFD = new double[2][n]
 
-        // Number of independent atoms.
+        // Number of active atoms.
         assert (n % 3 == 0)
         int nAtoms = (int) (n / 3)
 
         // Compute the Lambda = 0.0 energy.
         double lambda = 0.0
-        linter.setLambda(lambda)
+        lambdaInterface.setLambda(lambda)
         potential.getCoordinates(x)
 
         e0 = potential.energyAndGradient(x, gradient)
-        double dEdL = linter.getdEdL()
-        logger.info(String.format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e0, dEdL))
+        double dEdL = lambdaInterface.getdEdL()
+        logger.info(format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e0, dEdL))
 
         // Scan intermediate lambda values.
         if (lambdaScan) {
             for (int i = 1; i <= 9; i++) {
                 lambda = i * 0.1
-                linter.setLambda(lambda)
+                lambdaInterface.setLambda(lambda)
                 double e = potential.energyAndGradient(x, gradient)
-                dEdL = linter.getdEdL()
-                logger.info(String.format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e, dEdL))
+                dEdL = lambdaInterface.getdEdL()
+                logger.info(format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e, dEdL))
             }
         }
 
         // Compute the Lambda = 1.0 energy.
         lambda = 1.0
-        linter.setLambda(lambda)
+        lambdaInterface.setLambda(lambda)
         e1 = potential.energyAndGradient(x, gradient)
-        dEdL = linter.getdEdL()
-        logger.info(String.format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e1, dEdL))
-        logger.info(String.format(" E(1)-E(0): %12.6f.\n", e1 - e0))
+        dEdL = lambdaInterface.getdEdL()
+        logger.info(format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e1, dEdL))
+        logger.info(format(" E(1)-E(0): %12.6f.\n", e1 - e0))
 
         // Finite-difference step size.
-        double width = 2.0 * gradientOptions.dx
+        double step = gradientOptions.dx
+        double width = 2.0 * step
+        logger.info(" Finite-difference step size:\t" + step)
+
+        // Print out the energy for each step.
+        boolean print = gradientOptions.verbose
+        logger.info(" Verbose printing:\t\t" + print + "\n")
 
         // Error tolerence
         double errTol = gradientOptions.tolerance
@@ -251,59 +261,56 @@ class LambdaGradient extends PotentialScript {
 
             lambda = alchemical.initialLambda - lambdaMoveSize + lambdaMoveSize * j
 
-            if (lambda - gradientOptions.dx < 0.0) {
-                continue
-            }
-            if (lambda + gradientOptions.dx > 1.0) {
+            if (lambda - gradientOptions.dx < 0.0 || lambda + gradientOptions.dx > 1.0) {
                 continue
             }
 
-            logger.info(String.format(" Current lambda value %6.4f", lambda))
-            linter.setLambda(lambda)
+            logger.info(format(" Current lambda value %6.4f", lambda))
+            lambdaInterface.setLambda(lambda)
 
             // Calculate the energy, dE/dX, dE/dL, d2E/dL2 and dE/dL/dX
             double e = potential.energyAndGradient(x, gradient)
 
             // Analytic dEdL, d2E/dL2 and dE/dL/dX
-            dEdL = linter.getdEdL()
+            dEdL = lambdaInterface.getdEdL()
 
-            double d2EdL2 = linter.getd2EdL2()
+            double d2EdL2 = lambdaInterface.getd2EdL2()
             for (int i = 0; i < n; i++) {
                 lambdaGrad[i] = 0.0
             }
-            linter.getdEdXdL(lambdaGrad)
+            lambdaInterface.getdEdXdL(lambdaGrad)
 
             // Calculate the finite-difference dEdLambda, d2EdLambda2 and dEdLambdadX
-            linter.setLambda(lambda + gradientOptions.dx)
+            lambdaInterface.setLambda(lambda + gradientOptions.dx)
             double lp = potential.energyAndGradient(x, lambdaGradFD[0])
-            double dedlp = linter.getdEdL()
-            linter.setLambda(lambda - gradientOptions.dx)
+            double dedlp = lambdaInterface.getdEdL()
+            lambdaInterface.setLambda(lambda - gradientOptions.dx)
             double lm = potential.energyAndGradient(x, lambdaGradFD[1])
-            double dedlm = linter.getdEdL()
+            double dedlm = lambdaInterface.getdEdL()
 
             double dEdLFD = (lp - lm) / width
             double d2EdL2FD = (dedlp - dedlm) / width
 
-            double err = Math.abs(dEdLFD - dEdL)
+            double err = abs(dEdLFD - dEdL)
             if (err < errTol) {
-                logger.info(String.format(" dE/dL passed:   %10.6f", err))
+                logger.info(format(" dE/dL passed:   %10.6f", err))
             } else {
-                logger.info(String.format(" dE/dL failed: %10.6f", err))
+                logger.info(format(" dE/dL failed: %10.6f", err))
                 ndEdLFailures++
             }
-            logger.info(String.format(" Numeric:   %15.8f", dEdLFD))
-            logger.info(String.format(" Analytic:  %15.8f", dEdL))
+            logger.info(format(" Numeric:   %15.8f", dEdLFD))
+            logger.info(format(" Analytic:  %15.8f", dEdL))
 
             if (!skipSecondDerivatives) {
-                err = Math.abs(d2EdL2FD - d2EdL2)
+                err = abs(d2EdL2FD - d2EdL2)
                 if (err < errTol) {
-                    logger.info(String.format(" d2E/dL2 passed: %10.6f", err))
+                    logger.info(format(" d2E/dL2 passed: %10.6f", err))
                 } else {
-                    logger.info(String.format(" d2E/dL2 failed: %10.6f", err))
+                    logger.info(format(" d2E/dL2 failed: %10.6f", err))
                     nd2EdL2Failures++
                 }
-                logger.info(String.format(" Numeric:   %15.8f", d2EdL2FD))
-                logger.info(String.format(" Analytic:  %15.8f", d2EdL2))
+                logger.info(format(" Numeric:   %15.8f", d2EdL2FD))
+                logger.info(format(" Analytic:  %15.8f", d2EdL2))
 
                 double rmsError = 0
                 for (int i = 0; i < nAtoms; i++) {
@@ -322,55 +329,51 @@ class LambdaGradient extends PotentialScript {
 
                     double error = eX * eX + eY * eY + eZ * eZ
                     rmsError += error
-                    error = Math.sqrt(error)
+                    error = sqrt(error)
                     if (error < errTol) {
-                        logger.fine(String.format(" dE/dX/dL for Atom %d passed: %10.6f", i + 1, error))
+                        logger.fine(format(" dE/dX/dL for degree of freedom %d passed: %10.6f", i + 1, error))
                     } else {
-                        logger.info(String.format(" dE/dX/dL for Atom %d failed: %10.6f", i + 1, error))
-                        logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa, dYa, dZa))
-                        logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ))
+                        logger.info(format(" dE/dX/dL for degree of freedom %d failed: %10.6f", i + 1, error))
+                        logger.info(format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa, dYa, dZa))
+                        logger.info(format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ))
                         ndEdXdLFailures++
                         jd2EdXdLFailures++
                     }
                 }
-                rmsError = Math.sqrt(rmsError / nAtoms)
+                rmsError = sqrt(rmsError / nAtoms)
                 if (ndEdXdLFailures == 0) {
-                    logger.info(String.format(" dE/dX/dL passed for all atoms: RMS error %15.8f", rmsError))
+                    logger.info(format(" dE/dX/dL passed for all degrees of freedom: RMS error %15.8f", rmsError))
                 } else {
-                    logger.info(String.format(" dE/dX/dL failed for %d of %d atoms: RMS error %15.8f", jd2EdXdLFailures, nAtoms, rmsError))
+                    logger.info(format(" dE/dX/dL failed for %d of %d atoms: RMS error %15.8f", jd2EdXdLFailures, nAtoms, rmsError))
                 }
                 logger.info("")
             }
         }
 
-        boolean loopPrint = gradientOptions.verbose
-        linter.setLambda(alchemical.initialLambda)
+        lambdaInterface.setLambda(alchemical.initialLambda)
         potential.getCoordinates(x)
-        potential.energyAndGradient(x, gradient, loopPrint)
+        potential.energyAndGradient(x, gradient, print)
 
         if (!skipAtomGradients) {
-            logger.info(String.format(" Checking Cartesian coordinate gradient."))
             double[] numeric = new double[3]
             double avLen = 0.0
             double avGrad = 0.0
 
-            double step = gradientOptions.dx
-
-            // First atom to test.
-            int atomID = gradientOptions.atomID - 1
-            if (atomID < 0 || atomID >= nAtoms) {
-                atomID = 0
+            // Collect atoms to test.
+            List<Integer> degreesOfFreedomToTest
+            if (gradientOptions.gradientAtoms.equalsIgnoreCase("NONE")) {
+                logger.info(" The gradient of no atoms will be evaluated.")
+                return this
+            } else if (gradientOptions.gradientAtoms.equalsIgnoreCase("ALL")) {
+                logger.info(" Checking gradient for all active atoms.\n")
+                degreesOfFreedomToTest = new ArrayList<>()
+                IntStream.range(0, nAtoms).forEach(val -> degreesOfFreedomToTest.add(val))
+            } else {
+                degreesOfFreedomToTest = parseAtomRanges(" Gradient atoms", gradientOptions.gradientAtoms, nAtoms)
+                logger.info(" Checking gradient for active atoms in the range: " + gradientOptions.gradientAtoms + "\n")
             }
-            logger.info("\n First atom to test:\t\t" + (atomID + 1))
 
-            // Last atom to test.
-            int lastAtomID = gradientOptions.lastAtomID - 1
-            if (lastAtomID < atomID || lastAtomID >= nAtoms) {
-                lastAtomID = nAtoms - 1
-            }
-            logger.info("\n Last atom to test:\t\t" + (lastAtomID + 1))
-
-            for (int i = atomID; i <= lastAtomID; i++) {
+            for (int i : degreesOfFreedomToTest) {
                 int i3 = i * 3
                 int i0 = i3 + 0
                 int i1 = i3 + 1
@@ -379,27 +382,27 @@ class LambdaGradient extends PotentialScript {
                 // Find numeric dX
                 double orig = x[i0]
                 x[i0] = x[i0] + step
-                double e = potential.energyAndGradient(x, lambdaGradFD[0], loopPrint)
+                double e = potential.energyAndGradient(x, lambdaGradFD[0], print)
                 x[i0] = orig - step
-                e -= potential.energyAndGradient(x, lambdaGradFD[1], loopPrint)
+                e -= potential.energyAndGradient(x, lambdaGradFD[1], print)
                 x[i0] = orig
                 numeric[0] = e / width
 
                 // Find numeric dY
                 orig = x[i1]
                 x[i1] = x[i1] + step
-                e = potential.energyAndGradient(x, lambdaGradFD[0], loopPrint)
+                e = potential.energyAndGradient(x, lambdaGradFD[0], print)
                 x[i1] = orig - step
-                e -= potential.energyAndGradient(x, lambdaGradFD[1], loopPrint)
+                e -= potential.energyAndGradient(x, lambdaGradFD[1], print)
                 x[i1] = orig
                 numeric[1] = e / width
 
                 // Find numeric dZ
                 orig = x[i2]
                 x[i2] = x[i2] + step
-                e = potential.energyAndGradient(x, lambdaGradFD[0], loopPrint)
+                e = potential.energyAndGradient(x, lambdaGradFD[0], print)
                 x[i2] = orig - step
-                e -= potential.energyAndGradient(x, lambdaGradFD[1], loopPrint)
+                e -= potential.energyAndGradient(x, lambdaGradFD[1], print)
                 x[i2] = orig
                 numeric[2] = e / width
 
@@ -414,37 +417,37 @@ class LambdaGradient extends PotentialScript {
                 avGrad += grad2
 
                 if (len > errTol) {
-                    logger.info(String.format(" Atom %d failed: %10.6f.", i + 1, len)
-                            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
-                            + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]))
+                    logger.info(format(" Degree of freedom %d failed: %10.6f.", i + 1, len)
+                            + format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
+                            + format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]))
                     ++ndEdXFailures
                 } else {
-                    logger.info(String.format(" Atom %d passed: %10.6f.", i + 1, len)
-                            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
-                            + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
+                    logger.info(format(" Degree of freedom %d passed: %10.6f.", i + 1, len)
+                            + format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
+                            + format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
                 }
 
                 if (grad2 > expGrad) {
-                    logger.info(String.format(" Atom %d has an unusually large gradient: %10.6f", i + 1, grad2))
+                    logger.info(format(" Degree of freedom %d has an unusually large gradient: %10.6f", i + 1, grad2))
                 }
                 logger.info("\n")
             }
 
             avLen = avLen / nAtoms
-            avLen = Math.sqrt(avLen)
+            avLen = sqrt(avLen)
             if (avLen > errTol) {
-                logger.info(String.format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, errTol))
+                logger.info(format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, errTol))
             } else {
-                logger.info(String.format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, errTol))
+                logger.info(format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, errTol))
             }
-            logger.info(String.format(" Number of atoms failing gradient test: %d", ndEdXFailures))
+            logger.info(format(" Number of atoms failing gradient test: %d", ndEdXFailures))
 
             avGrad = avGrad / nAtoms
-            avGrad = Math.sqrt(avGrad)
+            avGrad = sqrt(avGrad)
             if (avGrad > expGrad) {
-                logger.info(String.format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad))
+                logger.info(format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad))
             } else {
-                logger.info(String.format(" RMS gradient: %10.6f", avGrad))
+                logger.info(format(" RMS gradient: %10.6f", avGrad))
             }
         } else {
             logger.info(" Skipping atomic dU/dX gradients.")

@@ -135,8 +135,9 @@ public class InitializationRegion extends ParallelRegion {
             if (lambdaTerm) {
                 for (int i = lb; i <= ub; i++) {
                     if (!atoms[i].applyLambda()) {
-                        logger.info(format(" Atom %s is not alchemical.", atoms[i].toString()));
-                        logger.severe(" Alchemical GK calculations require all atoms to be alchemical.");
+                        logger.warning(format(" Atom %s is not alchemical.", atoms[i].toString()));
+                        logger.warning(" Alchemical GK calculations require all atoms to be alchemical.");
+                        break;
                     }
                 }
             }

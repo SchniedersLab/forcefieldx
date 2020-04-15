@@ -49,6 +49,7 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.MolecularAssembly.FractionalMode
 import ffx.potential.XtalEnergy
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
@@ -71,6 +72,9 @@ class CrystalMin extends AlgorithmsScript {
 
     @Mixin
     MinimizeOptions minimizeOptions
+
+    @Mixin
+    AtomSelectionOptions atomSelectionOptions
 
     /**
      * -c or --coords to cycle between lattice and coordinate optimization until both satisfy the convergence criteria.
@@ -121,6 +125,8 @@ class CrystalMin extends AlgorithmsScript {
 
         logger.info("\n Running CrystalMinimize on " + modelFilename)
         logger.info("\n RMS gradient convergence criteria: " + minimizeOptions.eps)
+
+        atomSelectionOptions.setActiveAtoms(activeAssembly)
 
         ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
         xtalEnergy = new XtalEnergy(forceFieldEnergy, activeAssembly)

@@ -42,7 +42,7 @@ import java.io.File;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 /**
  * Represents command line options for scripts that periodically write out structures.
@@ -56,9 +56,9 @@ public class WriteoutOptions {
     /**
      * -F or --fileFormat Choose the file type to write [PDB/XYZ].
      */
-    @CommandLine.Option(names = {"-F", "--fileFormat"}, paramLabel = "XYZ",
+    @Option(names = {"-F", "--fileFormat"}, paramLabel = "XYZ", defaultValue = "XYZ",
             description = "Choose file type to write [PDB/XYZ].")
-    private String fileType = "XYZ";
+    public String fileType = "XYZ";
 
     /**
      * <p>Getter for the field <code>fileType</code>.</p>
@@ -72,24 +72,22 @@ public class WriteoutOptions {
     /**
      * Saves a single-snapshot file to either .xyz or .pdb, depending on the value of fileType.
      *
-     * @param baseFileName Basic file name without extension.
-     * @param pFuncts      A PotentialFunctions object.
-     * @param ma           MolecularAssembly to save.
+     * @param baseFileName        Basic file name without extension.
+     * @param potentialsFunctions A PotentialFunctions object.
+     * @param molecularAssembly   MolecularAssembly to save.
      * @return File written to.
      */
-    public File saveFile(String baseFileName, PotentialsFunctions pFuncts, MolecularAssembly ma) {
+    public File saveFile(String baseFileName, PotentialsFunctions potentialsFunctions, MolecularAssembly molecularAssembly) {
         String outFileName = baseFileName;
         File outFile;
         if (fileType.equalsIgnoreCase("XYZ")) {
             outFileName = outFileName + ".xyz";
-            outFile = pFuncts.versionFile(new File(outFileName));
-
-            pFuncts.saveAsXYZ(ma, outFile);
+            outFile = potentialsFunctions.versionFile(new File(outFileName));
+            potentialsFunctions.saveAsXYZ(molecularAssembly, outFile);
         } else {
             outFileName = outFileName + ".pdb";
-            outFile = pFuncts.versionFile(new File(outFileName));
-
-            pFuncts.saveAsPDB(ma, outFile);
+            outFile = potentialsFunctions.versionFile(new File(outFileName));
+            potentialsFunctions.saveAsPDB(molecularAssembly, outFile);
         }
         return outFile;
     }
@@ -110,11 +108,11 @@ public class WriteoutOptions {
         }
 
         static Extensions nameToExt(String name) {
-            switch (name.toLowerCase()) {
-                case "pdb":
+            switch (name.toUpperCase()) {
+                case "PDB":
                     return PDB;
-                case "xyz":
-                case "arc":
+                case "XYZ":
+                case "ARC":
                 default:
                     return XYZ;
             }

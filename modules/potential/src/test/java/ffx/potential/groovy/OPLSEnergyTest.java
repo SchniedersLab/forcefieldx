@@ -45,6 +45,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.random;
 import static org.junit.Assert.assertEquals;
 
 import ffx.potential.ForceFieldEnergy;
@@ -80,6 +82,7 @@ public class OPLSEnergyTest extends BaseFFXTest {
     private Energy energy;
     private Gradient gradient;
     private LambdaGradient lambdaGradient;
+
     public OPLSEnergyTest(String info, String filename, int nAtoms,
                           double bondEnergy, int nBonds,
                           double angleEnergy, int nAngles,
@@ -178,7 +181,7 @@ public class OPLSEnergyTest extends BaseFFXTest {
     @Test
     public void testEnergy() {
         logger.info(" Testing energy for " + info);
-        // Set-up the input arguments for the Biotype script.
+        // Set-up the input arguments for the Energy script.
         String[] args = {"src/main/java/" + filename};
         binding.setVariable("args", args);
 
@@ -213,11 +216,10 @@ public class OPLSEnergyTest extends BaseFFXTest {
     public void testGradient() {
         logger.info(" Testing Cartesian gradient(s) for " + info);
         // Choose a random atom to test.
-        int atomID = (int) Math.floor(Math.random() * nAtoms);
+        int atomID = (int) floor(random() * nAtoms) + 1;
         double stepSize = 1.0e-5;
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"-a", Integer.toString(atomID),
-                "--la", Integer.toString(atomID),
+        // Set-up the input arguments for the Gradient script.
+        String[] args = {"--ga", Integer.toString(atomID),
                 "--dx", Double.toString(stepSize),
                 "src/main/java/" + filename};
         binding.setVariable("args", args);
@@ -234,15 +236,13 @@ public class OPLSEnergyTest extends BaseFFXTest {
     public void testLambdaGradient() {
         logger.info(" Testing lambda gradient(s) for " + info);
         // Choose a random atom to test dEdX gradient.
-        int atomID = (int) Math.floor(Math.random() * nAtoms);
+        int atomID = (int) floor(random() * nAtoms) + 1;
         double stepSize = 1.0e-5;
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"-a", Integer.toString(atomID),
-                "--la", Integer.toString(atomID),
+        // Set-up the input arguments for the LambdaGradient script.
+        String[] args = {"--ga", Integer.toString(atomID),
                 "--dx", Double.toString(stepSize),
                 "--tol", Double.toString(tolerance),
-                "--s1", "1",
-                "--f1", Integer.toString(nAtoms),
+                "--ac", "1" + "-" + nAtoms,
                 "-l", "0.5",
                 "src/main/java/" + filename};
         binding.setVariable("args", args);

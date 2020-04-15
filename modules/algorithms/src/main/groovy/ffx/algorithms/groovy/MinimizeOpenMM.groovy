@@ -45,6 +45,7 @@ import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
 
@@ -62,6 +63,9 @@ import picocli.CommandLine.Parameters
  */
 @Command(description = " Run OpenMM Accelerated L-BFGS minimization on a system.", name = "ffxc MinimizeOpenMM")
 class MinimizeOpenMM extends AlgorithmsScript {
+
+    @Mixin
+    AtomSelectionOptions atomSelectionOptions
 
     @Mixin
     MinimizeOptions minimizeOptions
@@ -100,6 +104,8 @@ class MinimizeOpenMM extends AlgorithmsScript {
             logger.info(helpString())
             return null
         }
+
+        atomSelectionOptions.setActiveAtoms(activeAssembly)
 
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
 

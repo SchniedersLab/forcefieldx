@@ -50,6 +50,7 @@ import ffx.algorithms.dynamics.ReplicaExchange
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.WriteoutOptions
 
 import picocli.CommandLine.Command
@@ -69,6 +70,9 @@ class Dynamics extends AlgorithmsScript {
 
     @Mixin
     DynamicsOptions dynamics
+
+    @Mixin
+    AtomSelectionOptions atomSelectionOptions
 
     @Mixin
     BarostatOptions barostatOpt
@@ -125,6 +129,8 @@ class Dynamics extends AlgorithmsScript {
         } else {
             modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
+
+        atomSelectionOptions.setActiveAtoms(activeAssembly)
 
         File structureFile = new File(FilenameUtils.normalize(modelFilename))
         structureFile = new File(structureFile.getAbsolutePath())

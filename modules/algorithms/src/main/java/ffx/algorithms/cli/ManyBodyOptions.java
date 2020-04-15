@@ -93,7 +93,7 @@ public class ManyBodyOptions {
      */
     @Option(names = {"-a", "--algorithm"}, paramLabel = "0",
             description = "Algorithm: default automatic settings (0), independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5)")
-    int algorithm = 0;
+    public int algorithm = 0;
 
     /**
      * --dee or --deadEnd Use dead-end elimination criteria instead of Goldstein

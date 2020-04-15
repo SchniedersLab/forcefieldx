@@ -49,7 +49,6 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.WriteoutOptions;
 
-import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
 /**
@@ -70,79 +69,90 @@ public class DynamicsOptions {
      * Integrator.
      */
     public IntegratorEnum integrator;
+
     /**
      * -d or --dt sets the timestep in femtoseconds (default of 1.0). A value of
      * 2.0 is possible for the RESPA integrator.
      */
     @Option(names = {"-d", "--dt"}, paramLabel = "1.0",
             description = "Time discretization step in femtoseconds.")
-    double dt = 1.0;
+    public double dt = 1.0;
+
     /**
      * -b or --thermostat sets the desired thermostat: current choices are
      * Adiabatic, Berendsen, or Bussi.
      */
     @Option(names = {"-b", "--thermostat"}, paramLabel = "Bussi",
             description = "Thermostat: [Adiabatic / Berendsen / Bussi].")
-    String thermostatString = "BUSSI";
+    public String thermostatString = "BUSSI";
+
     /**
      * -i or --integrator sets the desired integrator: current choices are
      * Beeman, RESPA, Stochastic (i.e. Langevin dynamics) or Verlet.
      */
     @Option(names = {"-i", "--integrator"}, paramLabel = "Verlet",
             description = "Integrator: [Beeman / Respa / Stochastic / Verlet].")
-    String integratorString = "Verlet";
+    public String integratorString = "Verlet";
+
     /**
      * -r or --report sets the thermodynamics reporting frequency in picoseconds
      * (0.1 psec default).
      */
     @Option(names = {"-r", "--report"}, paramLabel = "0.25",
             description = "Interval in psec to report thermodynamics (psec).")
-    double report = 0.25;
+    public double report = 0.25;
+
     /**
      * -w or --write sets snapshot save frequency in picoseconds (1.0 psec
      * default).
      */
     @Option(names = {"-w", "--write"}, paramLabel = "10.0",
             description = "Interval in psec to write out coordinates (psec).")
-    double write = 10.0;
+    public double write = 10.0;
+
     /**
      * -t or --temperature sets the simulation temperature (Kelvin).
      */
     @Option(names = {"-t", "--temperature"}, paramLabel = "298.15",
             description = "Temperature (Kelvin).")
-    double temp = 298.15;
+    public double temp = 298.15;
+
     /**
      * -n or --steps sets the number of molecular dynamics steps (default is 1
      * nsec).
      */
     @Option(names = {"-n", "--numberOfSteps"}, paramLabel = "1000000",
             description = "Number of molecular dynamics steps.")
-    long steps = 1000000;
+    public long steps = 1000000;
+
     /**
      * -z or --trajSteps Number of steps for each OpenMM MD cycle.
      */
-    @CommandLine.Option(names = {"-z", "--trajSteps"}, paramLabel = "100",
+    @Option(names = {"-z", "--trajSteps"}, paramLabel = "100",
             description = "Number of steps per MD cycle (--mdE = OpenMM only).")
-    int trajSteps = 100;
+    public int trajSteps = 100;
+
     /**
      * -o or --optimize saves low-energy snapshots discovered (only for single topology simulations).
      */
-    @CommandLine.Option(names = {"-o", "--optimize"},
+    @Option(names = {"-o", "--optimize"},
             description = "Optimize and save low-energy snapshots.")
-    private boolean optimize = false;
+    public boolean optimize = false;
+
     /**
      * -k or --checkpoint sets the restart save frequency in picoseconds (1.0 psec default).
      */
-    @CommandLine.Option(names = {"-k", "--checkpoint"}, paramLabel = "1.0",
+    @Option(names = {"-k", "--checkpoint"}, paramLabel = "1.0",
             description = "Interval in psec to write out restart files (.dyn, .his, etc).")
-    private double checkpoint = 1.0;
+    public double checkpoint = 1.0;
+
     /**
      * --mdE or --molecularDynamicsEngine over-rides the default engine choice for
      * integrating the equations of motion
      */
-    @CommandLine.Option(names = {"--mdE", "--molecularDynamicsEngine"}, paramLabel = "FFX",
+    @Option(names = {"--mdE", "--molecularDynamicsEngine"}, paramLabel = "FFX",
             description = "Use FFX or OpenMM to integrate dynamics.")
-    private String engineString = null;
+    public String engineString = null;
     private MolecularDynamics.DynamicsEngine engine = null;
 
     /**

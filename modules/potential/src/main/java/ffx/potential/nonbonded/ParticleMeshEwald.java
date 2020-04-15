@@ -231,12 +231,12 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
         double[] xcm = new double[n];
         double[] ycm = new double[n];
         double[] zcm = new double[n];
-        int index = 0;
+        int k = 0;
         for (Atom atom : activeAtoms) {
-            xcm[index] = atom.getX() - xmid;
-            ycm[index] = atom.getY() - ymid;
-            zcm[index] = atom.getZ() - zmid;
-            index++;
+            xcm[k] = atom.getX() - xmid;
+            ycm[k] = atom.getY() - ymid;
+            zcm[k] = atom.getZ() - zmid;
+            k++;
         }
 
         if (forceEnergy) {
@@ -244,6 +244,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
         }
 
         // Account for charge, dipoles and induced dipoles.
+        k = 0;
         for (Atom atom : activeAtoms) {
             int i = atom.getIndex() - 1;
             double[] globalMultipolei = globalMultipole[0][i];
@@ -258,18 +259,19 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
             var uiz = inducedDipolei[2];
 
             netchg += ci;
-            xdpl += xcm[i] * ci + dix + uix;
-            ydpl += ycm[i] * ci + diy + uiy;
-            zdpl += zcm[i] * ci + diz + uiz;
-            xxqdp += xcm[i] * xcm[i] * ci + 2.0 * xcm[i] * (dix + uix);
-            xyqdp += xcm[i] * ycm[i] * ci + xcm[i] * (diy + uiy) + ycm[i] * (dix + uix);
-            xzqdp += xcm[i] * zcm[i] * ci + xcm[i] * (diz + uiz) + zcm[i] * (dix + uix);
-            yxqdp += ycm[i] * xcm[i] * ci + ycm[i] * (dix + uix) + xcm[i] * (diy + uiy);
-            yyqdp += ycm[i] * ycm[i] * ci + 2.0 * ycm[i] * (diy + uiy);
-            yzqdp += ycm[i] * zcm[i] * ci + ycm[i] * (diz + uiz) + zcm[i] * (diy + uiy);
-            zxqdp += zcm[i] * xcm[i] * ci + zcm[i] * (dix + uix) + xcm[i] * (diz + uiz);
-            zyqdp += zcm[i] * ycm[i] * ci + zcm[i] * (diy + uiy) + ycm[i] * (diz + uiz);
-            zzqdp += zcm[i] * zcm[i] * ci + 2.0 * zcm[i] * (diz + uiz);
+            xdpl += xcm[k] * ci + dix + uix;
+            ydpl += ycm[k] * ci + diy + uiy;
+            zdpl += zcm[k] * ci + diz + uiz;
+            xxqdp += xcm[k] * xcm[k] * ci + 2.0 * xcm[k] * (dix + uix);
+            xyqdp += xcm[k] * ycm[k] * ci + xcm[k] * (diy + uiy) + ycm[k] * (dix + uix);
+            xzqdp += xcm[k] * zcm[k] * ci + xcm[k] * (diz + uiz) + zcm[k] * (dix + uix);
+            yxqdp += ycm[k] * xcm[k] * ci + ycm[k] * (dix + uix) + xcm[k] * (diy + uiy);
+            yyqdp += ycm[k] * ycm[k] * ci + 2.0 * ycm[k] * (diy + uiy);
+            yzqdp += ycm[k] * zcm[k] * ci + ycm[k] * (diz + uiz) + zcm[k] * (diy + uiy);
+            zxqdp += zcm[k] * xcm[k] * ci + zcm[k] * (dix + uix) + xcm[k] * (diz + uiz);
+            zyqdp += zcm[k] * ycm[k] * ci + zcm[k] * (diy + uiy) + ycm[k] * (diz + uiz);
+            zzqdp += zcm[k] * zcm[k] * ci + 2.0 * zcm[k] * (diz + uiz);
+            k++;
         }
 
         // Convert the quadrupole from traced to traceless form.

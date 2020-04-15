@@ -3,6 +3,8 @@ package ffx.potential.groovy;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.random;
 import static org.junit.Assert.assertEquals;
 
 import ffx.potential.groovy.test.Gradient;
@@ -269,7 +271,10 @@ public class VolumeTest {
         System.setProperty("gkterm", "true");
         System.setProperty("cavmodel", "gauss-disp");
 
-        String[] args = {"-a", "100", "--la", "100", "src/main/java/ffx/potential/structures/crambin.xyz"};
+        // Choose a random atom to test.
+        int atomID = (int) floor(random() * 642) + 1;
+
+        String[] args = {"--ga", Integer.toString(atomID), "src/main/java/ffx/potential/structures/crambin.xyz"};
         binding.setVariable("args", args);
 
         // Evaluate the script
@@ -277,7 +282,7 @@ public class VolumeTest {
 
         System.clearProperty("gkterm");
         System.clearProperty("cavmodel");
-        assertEquals("Ethylbenzene gradient failures: ", 0, gradient.nFailures);
+        assertEquals("Crambin gradient failures: ", 0, gradient.nFailures);
         gradient.destroyPotentials();
         System.gc();
     }

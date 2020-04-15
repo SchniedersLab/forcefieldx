@@ -45,6 +45,7 @@ import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.WriteoutOptions
 
 import picocli.CommandLine.Command
@@ -63,6 +64,9 @@ class Anneal extends AlgorithmsScript {
 
     @Mixin
     DynamicsOptions dynamics
+
+    @Mixin
+    AtomSelectionOptions atomSelectionOptions
 
     @Mixin
     AnnealOptions anneal
@@ -102,6 +106,8 @@ class Anneal extends AlgorithmsScript {
             logger.info(helpString())
             return null
         }
+
+        atomSelectionOptions.setActiveAtoms(activeAssembly)
 
         modelFilename = activeAssembly.getFile().getAbsolutePath()
 

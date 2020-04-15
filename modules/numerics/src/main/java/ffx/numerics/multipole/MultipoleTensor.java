@@ -65,6 +65,10 @@ import static ffx.numerics.special.Erf.erfc;
 public abstract class MultipoleTensor {
 
     /**
+     * Logger for the MultipoleTensor class.
+     */
+    private static final Logger logger = Logger.getLogger(MultipoleTensor.class.getName());
+    /**
      * Constant <code>recycleTensors=false</code>
      */
     public static final boolean recycleTensors = false;
@@ -76,7 +80,6 @@ public abstract class MultipoleTensor {
      * Constant <code>twoThirds=2.0 / 3.0</code>
      */
     protected static final double twoThirds = 2.0 / 3.0;
-    private static final Logger logger = Logger.getLogger(MultipoleTensor.class.getName());
     /**
      * Constant <code>threeFifths=3.0 / 5.0</code>
      */

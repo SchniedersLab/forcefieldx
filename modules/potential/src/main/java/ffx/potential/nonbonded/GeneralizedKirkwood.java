@@ -408,6 +408,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Forces all atoms to be considered during Born radius updates.
      */
     private boolean nativeEnvironmentApproximation;
+
     /**
      * <p>
      * Constructor for GeneralizedKirkwood.</p>

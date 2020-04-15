@@ -42,6 +42,7 @@ import org.apache.commons.io.FilenameUtils
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.potential.MolecularAssembly
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.realspace.RealSpaceData
 import ffx.realspace.cli.RealSpaceOptions
 import ffx.realspace.parsers.RealSpaceFile
@@ -67,13 +68,16 @@ class Minimize extends AlgorithmsScript {
     @Mixin
     RealSpaceOptions realSpaceOptions
 
+    @Mixin
+    AtomSelectionOptions atomSelectionOptions
+
     /**
      * One or more filenames.
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
-    private MolecularAssembly[] assemblies;
-    private RealSpaceData realspaceData;
+    private MolecularAssembly[] assemblies
+    private RealSpaceData realspaceData
 
     @Override
     Minimize run() {
@@ -82,51 +86,51 @@ class Minimize extends AlgorithmsScript {
             return this
         }
 
-        realSpaceOptions.init();
-
-        String modelfilename
+        String modelFilename
         if (filenames != null && filenames.size() > 0) {
             activeAssembly = algorithmFunctions.open(filenames.get(0))
-            modelfilename = filenames.get(0)
+            modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
             return this
         } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath()
+            modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
-        assemblies = [activeAssembly] as MolecularAssembly[];
+        assemblies = [activeAssembly] as MolecularAssembly[]
 
-        logger.info("\n Running Real Space Minimization on " + modelfilename)
+        logger.info("\n Running Real Space Minimization on " + modelFilename)
 
-        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies);
+        // Set atom (in)active selections.
+        atomSelectionOptions.setActiveAtoms(activeAssembly)
 
-        realspaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
-                activeAssembly.getParallelTeam(),
-                mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
+        RealSpaceFile[] mapFiles = realSpaceOptions.processData(filenames, activeAssembly).toArray(new RealSpaceFile[0])
+        realspaceData = new RealSpaceData(assemblies, activeAssembly.getProperties(), activeAssembly.getParallelTeam(), mapFiles)
 
-        algorithmFunctions.energy(assemblies[0])
-
-        // Suffix to append to output data
-        String suffix = "_refine"
+        // Beginning target function.
+        algorithmFunctions.energy(activeAssembly)
 
         RefinementMinimize refinementMinimize = new RefinementMinimize(realspaceData, realSpaceOptions.refinementMode)
 
         double eps = minimizeOptions.eps
-        double maxiter = minimizeOptions.iterations
+        int maxiter = minimizeOptions.iterations
         if (eps < 0.0) {
             eps = 1.0
         }
 
         if (maxiter < Integer.MAX_VALUE) {
-            logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps, maxiter));
+            logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps, maxiter))
         } else {
-            logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps));
+            logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps))
         }
 
         refinementMinimize.minimize(eps, maxiter)
 
+        // Final target function.
         algorithmFunctions.energy(activeAssembly)
-        algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
+
+        // Suffix to append to output data
+        String suffix = "_refine"
+        algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelFilename) + suffix + ".pdb"))
 
         return this
     }

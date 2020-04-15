@@ -49,6 +49,7 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
@@ -70,6 +71,9 @@ class Minimize extends AlgorithmsScript {
 
     @Mixin
     MinimizeOptions minimizeOptions
+
+    @Mixin
+    AtomSelectionOptions atomSelectionOptions
 
     @Mixin
     AlchemicalOptions alchemical
@@ -150,7 +154,7 @@ class Minimize extends AlgorithmsScript {
         MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
         if (topologies.length == 1) {
-            alchemical.setActiveAtoms(topologies[0])
+            atomSelectionOptions.setActiveAtoms(topologies[0])
         }
 
         // Configure the potential to test.
@@ -161,7 +165,6 @@ class Minimize extends AlgorithmsScript {
 
         LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null
         linter?.setLambda(lambda)
-
 
         SystemFilter systemFilter = algorithmFunctions.getFilter()
 

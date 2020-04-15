@@ -84,7 +84,7 @@ public class ScalarMath {
     public static long doubleFactorial(long n) {
         if (n < -1) {
             throw new RuntimeException("Underflow error in doubleFactorial");
-        } else if (n == 0 || n == 1 || n == -1) {
+        } else if (n == -1 || n == 0 || n == 1) {
             return 1;
         } else {
             return n * doubleFactorial(n - 2);

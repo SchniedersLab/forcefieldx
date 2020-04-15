@@ -45,6 +45,7 @@ import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.WriteoutOptions
 import ffx.realspace.cli.RealSpaceOptions
 import ffx.xray.RefinementEnergy
@@ -64,16 +65,19 @@ import picocli.CommandLine.Parameters
 class Anneal extends AlgorithmsScript {
 
     @Mixin
+    AnnealOptions annealOptions
+
+    @Mixin
+    AtomSelectionOptions atomSelectionOptions
+
+    @Mixin
+    DynamicsOptions dynamicsOptions
+
+    @Mixin
     RealSpaceOptions realSpaceOptions
 
     @Mixin
-    DynamicsOptions dynamics
-
-    @Mixin
-    WriteoutOptions writeout;
-
-    @Mixin
-    AnnealOptions anneal
+    WriteoutOptions writeoutOptions
 
     /**
      * One or more filenames.
@@ -81,10 +85,7 @@ class Anneal extends AlgorithmsScript {
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
 
-    private SimulatedAnnealing simulatedAnnealing = null;
-
-    private Potential potential;
-    private RefinementEnergy refinementEnergy;
+    private RefinementEnergy refinementEnergy
 
     @Override
     Anneal run() {
@@ -93,21 +94,27 @@ class Anneal extends AlgorithmsScript {
             return this
         }
 
-        dynamics.init()
+        dynamicsOptions.init()
 
         String modelFilename
-        MolecularAssembly[] assemblies;
         if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
+            activeAssembly = algorithmFunctions.open(filenames.get(0))
+            modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return
+            return this
+        } else {
+            modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
-
-        modelFilename = activeAssembly.getFile().getAbsolutePath();
+        MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
 
         logger.info("\n Running simulated annealing on on real-space target including " + modelFilename + "\n")
+
+        // Set atom (in)active selections.
+        atomSelectionOptions.setActiveAtoms(activeAssembly)
+
+        // Construct the real space potential.
+        Potential potential = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
 
         // Restart File
         File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
@@ -115,19 +122,16 @@ class Anneal extends AlgorithmsScript {
             dyn = null
         }
 
-        // Primary difference between realspace.Anneal and regular Anneal is this line.
-        potential = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, activeAssembly, algorithmFunctions);
-
-        simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly,
+        SimulatedAnnealing simulatedAnnealing = annealOptions.createAnnealer(dynamicsOptions, activeAssembly,
                 potential, activeAssembly.getProperties(),
-                algorithmListener, dyn);
+                algorithmListener, dyn)
 
-        simulatedAnnealing.setPrintInterval(dynamics.report);
-        simulatedAnnealing.setSaveFrequency(dynamics.write);
-        simulatedAnnealing.setRestartFrequency(dynamics.checkpoint)
-        simulatedAnnealing.setTrajectorySteps(dynamics.trajSteps);
+        simulatedAnnealing.setPrintInterval(dynamicsOptions.report)
+        simulatedAnnealing.setSaveFrequency(dynamicsOptions.write)
+        simulatedAnnealing.setRestartFrequency(dynamicsOptions.checkpoint)
+        simulatedAnnealing.setTrajectorySteps(dynamicsOptions.trajSteps)
 
-        simulatedAnnealing.anneal();
+        simulatedAnnealing.anneal()
 
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
@@ -137,13 +141,13 @@ class Anneal extends AlgorithmsScript {
         String fileName = FilenameUtils.getName(modelFilename)
         fileName = FilenameUtils.removeExtension(fileName)
 
-        writeout.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly);
+        writeoutOptions.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly)
 
         return this
     }
 
     @Override
     List<Potential> getPotentials() {
-        return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy);
+        return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy)
     }
 }

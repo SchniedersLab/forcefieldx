@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.realspace.groovy
+package ffx.realspace.groovy.test
 
 import java.util.logging.Logger
 
@@ -57,9 +57,7 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MSNode
-import ffx.realspace.RealSpaceData
 import ffx.realspace.cli.RealSpaceOptions
-import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementEnergy
 
 import picocli.CommandLine.Command
@@ -148,23 +146,21 @@ class Alchemical extends AlgorithmsScript {
         dynamicsOptions.init()
         System.setProperty("lambdaterm", "true")
 
-        String modelfilename
-        MolecularAssembly[] assemblies
+        String modelFilename
         if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
+            activeAssembly = algorithmFunctions.open(filenames.get(0))
+            modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return
+            return this
         } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath()
-            assemblies = { activeAssembly }
+            modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
+        MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
 
-        logger.info("\n Running Alchemical Changes on " + modelfilename)
+        logger.info("\n Running Alchemical Changes on " + modelFilename)
 
-        File structureFile = new File(FilenameUtils.normalize(modelfilename))
+        File structureFile = new File(FilenameUtils.normalize(modelFilename))
         structureFile = new File(structureFile.getAbsolutePath())
         String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
         File histogramRestart = new File(baseFilename + ".his")
@@ -217,7 +213,7 @@ class Alchemical extends AlgorithmsScript {
         ArrayList<MSNode> ions = assemblies[0].getIons()
         ArrayList<MSNode> waters = assemblies[0].getWaters()
 
-//      Consider the option of creating a composite lambda gradient from vapor phase to crystal phase
+        // Consider the option of creating a composite lambda gradient from vapor phase to crystal phase
         if (!onlyWaters) {
             logger.info("Doing ions.")
             if (ions == null || ions.size() == 0) {
@@ -289,12 +285,8 @@ class Alchemical extends AlgorithmsScript {
             }
         }
 
-        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
+        RefinementEnergy refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
 
-        RealSpaceData realSpaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
-                activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
-
-        RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, realSpaceOptions.refinementMode, null)
         refinementEnergy.setLambda(lambda)
 
         boolean asynchronous = true

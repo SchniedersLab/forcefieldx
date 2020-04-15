@@ -45,7 +45,7 @@ import org.junit.Test;
 
 import ffx.algorithms.misc.PJDependentTest;
 import ffx.realspace.cli.RealSpaceOptions;
-import ffx.realspace.groovy.Alchemical;
+import ffx.realspace.groovy.test.Alchemical;
 
 import groovy.lang.Binding;
 

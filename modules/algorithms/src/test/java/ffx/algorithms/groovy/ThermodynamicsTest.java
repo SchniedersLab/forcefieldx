@@ -162,11 +162,7 @@ public class ThermodynamicsTest extends PJDependentTest {
         }
         DEFAULT_PROPERTIES = Collections.unmodifiableMap(propMap);
 
-        Map<String, Boolean> flags = new HashMap<>();
-        flags.put("--rn", false);
-        flags.put("-y", false);
-        flags.put("-h", false);
-        DEFAULT_FLAGS = Collections.unmodifiableMap(flags);
+        DEFAULT_FLAGS = Map.of("--rn", false, "-y", false, "-h", false);
     }
 
     private final String info;
@@ -449,7 +445,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                         "Acetamide Implicit Solvation Free Energy: -10.5 kcal/mol",
                         new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
                         ThermoTestMode.FREE, false, -9.2, 1.0, null, null, null, null, null, null,
-                        new String[]{"-C", "10", "--s1", "1", "--f1", "9", "-d", "1.0",
+                        new String[]{"-C", "10", "--ac", "1-9", "-d", "1.0",
                                 "-n", "20000", "-w", "5", "--bM", "0.25", "--tp", "2.0"},
                         new String[]{"randomseed", "42"}, new String[]{}
                 },
@@ -531,7 +527,9 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {-3.436718115423787E-5, -5.538585353903613E-6, -1.2948732912576588E-5}},
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[12][3]},
-                        new String[]{"-l", "0.5", "--sf", "TRIG", "--uaA", "329-345.857-972.1008-1022.1204.1208-1213", "--uaB", "329-345.857-972.1008-1022.1204.1208-1213"}, new String[]{"disable-neighbor-updates", "true"}, new String[]{}
+                        new String[]{"-l", "0.5", "--sf", "TRIG",
+                                "--uaA", "329-345.857-972.1008-1022.1204.1208-1213",
+                                "--uaB", "329-345.857-972.1008-1022.1204.1208-1213"}, new String[]{"disable-neighbor-updates", "true"}, new String[]{}
                 },
                 {
                         // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the ions, and some water.
@@ -571,7 +569,9 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {3.214626465908195E-17, -1.2066294994525673E-16, 2.2612900090378923E-16}},
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[12][3]},
-                        new String[]{"-l", "1.0", "--sf", "TRIG", "--uaA", "329-345.857-972.1008-1022.1204.1208-1213", "--uaB", "329-345.857-972.1008-1022.1204.1208-1213"}, new String[]{"disable-neighbor-updates", "true"}, new String[]{}
+                        new String[]{"-l", "1.0", "--sf", "TRIG",
+                                "--uaA", "329-345.857-972.1008-1022.1204.1208-1213",
+                                "--uaB", "329-345.857-972.1008-1022.1204.1208-1213"}, new String[]{"disable-neighbor-updates", "true"}, new String[]{}
                 },
                 {
                         // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the ions, and some water.
@@ -717,7 +717,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {45.94772906403098, -33.29064549875034, 6.401008301641785}},
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[7][3]},
-                        new String[]{"-l", "0.0", "--la1", "1-3", "--la2", "1"},
+                        new String[]{"-l", "0.0", "--ac", "1-3", "--ac2", "1"},
                         new String[]{},
                         new String[]{}
                 },
@@ -747,7 +747,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {-3.9762008391856365, -19.684869938173087, 3.4734701633955916}},
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[7][3]},
-                        new String[]{"-l", "0.1", "--la1", "1-3", "--la2", "1"},
+                        new String[]{"-l", "0.1", "--ac", "1-3", "--ac2", "1"},
                         new String[]{},
                         new String[]{}
                 },
@@ -777,7 +777,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {-13.606860493017741, -7.026604599323282, 1.006581478055631}},
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[7][3]},
-                        new String[]{"-l", "0.25", "--la1", "1-3", "--la2", "1"},
+                        new String[]{"-l", "0.25", "--ac", "1-3", "--ac2", "1"},
                         new String[]{},
                         new String[]{}
                 },
@@ -807,7 +807,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {-3.1906844150123317, -1.5369018977200506, 0.16524619704337926}},
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[7][3]},
-                        new String[]{"-l", "0.4", "--la1", "1-3", "--la2", "1"},
+                        new String[]{"-l", "0.4", "--ac", "1-3", "--ac2", "1"},
                         new String[]{},
                         new String[]{}
                 },
@@ -837,7 +837,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {-0.8524954538377344, -0.24413245666460826, 0.008290175300342928}},
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[7][3]},
-                        new String[]{"-l", "0.5", "--la1", "1-3", "--la2", "1"},
+                        new String[]{"-l", "0.5", "--ac", "1-3", "--ac2", "1"},
                         new String[]{},
                         new String[]{}
                 },
@@ -867,7 +867,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {-0.21961103396608955, 0.02162837189470477, -0.009506552851734766}},
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[7][3]},
-                        new String[]{"-l", "0.6", "--la1", "1-3", "--la2", "1"},
+                        new String[]{"-l", "0.6", "--ac", "1-3", "--ac2", "1"},
                         new String[]{},
                         new String[]{}
                 },
@@ -897,7 +897,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {-0.033232949450470756, 0.003190852991440346, -0.0013213153097627725}},
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[7][3]},
-                        new String[]{"-l", "0.75", "--la1", "1-3", "--la2", "1"},
+                        new String[]{"-l", "0.75", "--ac", "1-3", "--ac2", "1"},
                         new String[]{},
                         new String[]{}
                 },
@@ -927,7 +927,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {-0.001072855594543585, 8.733802493437212E-5, -3.0297796539917875E-5}},
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[7][3]},
-                        new String[]{"-l", "0.9", "--la1", "1-3", "--la2", "1"},
+                        new String[]{"-l", "0.9", "--ac", "1-3", "--ac2", "1"},
                         new String[]{},
                         new String[]{}
                 },
@@ -957,7 +957,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {0.0, 0.0, 0.0}},
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[7][3]},
-                        new String[]{"-l", "1.0", "--la1", "1-3", "--la2", "1"},
+                        new String[]{"-l", "1.0", "--ac", "1-3", "--ac2", "1"},
                         new String[]{},
                         new String[]{}
                 },
@@ -965,7 +965,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                         "Water-Sodium to Water Dimer Free Energy Test",
                         new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
                         ThermoTestMode.FREE, true, 16.0, 16.0, null, null, null, null, null, null,
-                        new String[]{"-d", "1.0", "-l", "0.5", "--la1", "1-3", "--la2", "1", "-n", "20000", "-Q", "5000", "-k", "20.0", "-w", "20.0", "-r", "5.0", "-C", "10"},
+                        new String[]{"-d", "1.0", "-l", "0.5", "--ac", "1-3", "--ac2", "1", "-n", "20000", "-Q", "5000", "-k", "20.0", "-w", "20.0", "-r", "5.0", "-C", "10"},
                         new String[]{"disable-neighbor-updates", "true", "lambda-bin-width", "0.025", "flambda-bin-width", "5.0", "randomseed", "2019"},
                         new String[]{}
                 },

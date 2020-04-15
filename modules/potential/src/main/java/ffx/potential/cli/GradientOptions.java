@@ -48,45 +48,31 @@ import picocli.CommandLine.Option;
 public class GradientOptions {
 
     /**
-     * -d or --dx to set the finite-difference step size.
+     * -d or --dx Finite-difference step size.
      */
-    @Option(names = {"-d", "--dx"}, paramLabel = "1.0e-5",
-            description = "The finite-difference step size.")
-    private double dx = 1.0e-5;
+    @Option(names = {"-d", "--dx"}, defaultValue = "1.0e-5", paramLabel = "1.0e-5 Å",
+            description = "Finite-difference step size.")
+    public double dx;
 
     /**
-     * -d or --dx to set the finite-difference step size.
+     * --tol or --tolerance Gradient error tolerance (kcal/mol/Å).
      */
-    @Option(names = {"--tol", "--tolerance"}, paramLabel = "1.0e-3",
-            description = "The analytic vs. finite-difference gradient error tolerance.")
-    private double tolerance = 1.0e-3;
+    @Option(names = {"--tol", "--tolerance"}, defaultValue = "1.0e-3", paramLabel = "1.0e-3 kcal/mol/Å",
+            description = "Gradient error tolerance.")
+    public double tolerance;
 
     /**
-     * -a or --atomID to set the first atom to test.
+     * --ga or --gradientAtoms Ranges of atoms to test [ALL, NONE, Range(s): 1-3,6-N].
      */
-    @Option(names = {"-a", "--atomID"}, paramLabel = "1",
-            description = "The first atom to test (default is Atom 1)")
-    private int atomID = 1;
-
-    /**
-     * --la or --lastAtomID to set the last atom to test.
-     */
-    @Option(names = {"--la", "--lastAtomID"}, paramLabel = "-1",
-            description = "The last atom to test (default is to test all Atoms, unless a first atom is specified).")
-    private int lastAtomID = -1;
+    @Option(names = {"--ga", "--gradientAtoms"}, paramLabel = "ALL", defaultValue = "ALL",
+            description = "Ranges of atoms to test [ALL, NONE, Range(s): 1-3,6-N].")
+    public String gradientAtoms;
 
     /**
      * -v or --verbose is a flag to print out energy at each step.
      */
     @Option(names = {"-v", "--verbose"}, paramLabel = "false", description = "Print out the energy for each step.")
-    private boolean verbose = false;
+    public boolean verbose = false;
 
-    /**
-     * <p>Getter for the field <code>verbose</code>.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean getVerbose() {
-        return verbose;
-    }
+
 }

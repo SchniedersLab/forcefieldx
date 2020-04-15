@@ -37,9 +37,8 @@
 //******************************************************************************
 package ffx.potential.cli;
 
-import java.util.logging.Level;
+import java.util.List;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static java.lang.String.format;
 
@@ -47,6 +46,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsFunctions;
+import static ffx.utilities.StringUtils.parseAtomRanges;
 
 import picocli.CommandLine.Option;
 
@@ -66,10 +66,8 @@ public class AlchemicalOptions {
 
     /**
      * A regular expression used to parse ranges of atoms.
-     * <p>
-     * Constant <code>rangeregex</code>
      */
-    public static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
+    public static final Pattern rangeRegEx = Pattern.compile("([0-9]+)-?([0-9]+)?");
 
     /**
      * -l or --lambda sets the initial lambda value.
@@ -79,53 +77,18 @@ public class AlchemicalOptions {
     double initialLambda = -1.0;
 
     /**
-     * -s1 or --start1 defines the first softcored atom for the first topology.
+     * --ac or --alchemicalAtoms Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]."
      */
-    @Option(names = {"--s1", "--start1"}, paramLabel = "0",
-            description = "Starting ligand atom for 1st topology.")
-    int s1 = 0;
+    @Option(names = {"--ac", "--alchemicalAtoms"}, paramLabel = "<selection>", defaultValue = "",
+            description = "Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N].")
+    String alchemicalAtoms;
 
     /**
-     * -f1 or --final1 defines the last softcored atom for the first topology.
+     * --uc or --unchargedAtoms Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N]."
      */
-    @Option(names = {"--f1", "--final1"}, paramLabel = "-1",
-            description = "Final ligand atom for the 1st topology.")
-    int f1 = -1;
-
-    /**
-     * --la1 or -ligAtoms1 allows for multiple ranges and/or singletons of ligand atoms in the first topology, separated by periods.
-     */
-    @Option(names = {"--la1", "--ligAtoms1"}, paramLabel = "-1",
-            description = "Period-separated ranges of 1st topology ligand atoms (e.g. 40-50.72-83).")
-    String ligAt1 = null;
-
-    /**
-     * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
-     */
-    @Option(names = {"--es1", "--noElecStart1"}, paramLabel = "1",
-            description = "Starting no-electrostatics atom for 1st topology.")
-    int es1 = 1;
-
-    /**
-     * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
-     */
-    @Option(names = {"--ef1", "--noElecFinal1"}, paramLabel = "-1",
-            description = "Final no-electrostatics atom for 1st topology.")
-    int ef1 = -1;
-
-    /**
-     * -as or --activeStart starts an active set of atoms for single-topology lambda gradients.
-     */
-    @Option(names = {"--as", "--activeStart"}, paramLabel = "1",
-            description = "Starting active atom (single-topology only).")
-    int actStart = 1;
-
-    /**
-     * -af or --activeFinal ends an active set of atoms for single-topology lambda gradients.
-     */
-    @Option(names = {"--af", "--activeFinal"}, paramLabel = "-1",
-            description = "Final active atom (single-topology only).")
-    int actFinal = -1;
+    @Option(names = {"--uc", "--unchargedAtoms"}, paramLabel = "<selection>", defaultValue = "",
+            description = "Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N].")
+    String unchargedAtoms;
 
     /**
      * Gets the initial value of lambda.
@@ -188,7 +151,9 @@ public class AlchemicalOptions {
      * @return Presence of softcore Atoms.
      */
     public boolean hasSoftcore() {
-        return ((ligAt1 != null && ligAt1.length() > 0) || s1 > 0);
+        return (alchemicalAtoms != null &&
+                !alchemicalAtoms.equalsIgnoreCase("NONE") &&
+                !alchemicalAtoms.equalsIgnoreCase(""));
     }
 
     /**
@@ -240,70 +205,48 @@ public class AlchemicalOptions {
     }
 
     /**
-     * Set active atoms for a MolecularAssembly.
-     *
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void setActiveAtoms(MolecularAssembly molecularAssembly) {
-        Atom[] atoms = molecularAssembly.getAtomArray();
-        if (actFinal > 0) {
-            // Apply active atom selection
-            int nAtoms = atoms.length;
-            if (actFinal > actStart && actStart > 0 && actFinal <= nAtoms) {
-                // Make all atoms inactive.
-                for (int i = 1; i <= nAtoms; i++) {
-                    Atom ai = atoms[i - 1];
-                    ai.setActive(false);
-                }
-                // Make requested atoms active.
-                for (int i = actStart; i <= actFinal; i++) {
-                    Atom ai = atoms[i - 1];
-                    ai.setActive(true);
-                }
-            }
-        }
-    }
-
-    /**
      * Sets the alchemical atoms for a MolecularAssembly.
      *
      * @param assembly Assembly to which the atoms belong.
-     * @param start    First atom to set lambda for.
-     * @param fin      Last atom to set lambda for.
-     * @param ligAt    Additional ranges of atoms to set lambda for.
      */
-    public static void setAlchemicalAtoms(MolecularAssembly assembly, int start, int fin, String ligAt) {
+    public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms) {
+        if (alchemicalAtoms == null || alchemicalAtoms.equalsIgnoreCase("")) {
+            // Empty or null string -- no changes to alchemical atoms.
+            logger.info(" Empty alchemical selection.");
+            return;
+        }
+
         Atom[] atoms = assembly.getAtomArray();
-        if (start > 0) {
-            logger.info(format(" Setting atoms %d (%s) to %d (%s) as alchemical", start, atoms[start - 1], fin, atoms[fin - 1]));
-            for (int i = start; i <= fin; i++) {
-                Atom ai = atoms[i - 1];
-                ai.setApplyLambda(true);
-                ai.print(Level.FINE);
+
+        // No alchemical are atoms.
+        if (alchemicalAtoms.equalsIgnoreCase("NONE")) {
+            for (Atom atom : atoms) {
+                atom.setApplyLambda(false);
             }
+            logger.info(" No atoms are alchemical \n");
+            return;
         }
-        if (ligAt != null) {
-            String[] ranges = ligAt.split("\\.");
-            for (String range : ranges) {
-                Matcher m = rangeregex.matcher(range);
-                if (m.find()) {
-                    int rangeStart = Integer.parseInt(m.group(1));
-                    int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
-                    if (rangeStart > rangeEnd) {
-                        logger.severe(format(" Range %s was invalid; start was greater than end", range));
-                    }
-                    logger.info(format(" Setting atoms %d (%s) to %d (%s) as alchemical", rangeStart, atoms[rangeStart - 1], rangeEnd, atoms[rangeEnd - 1]));
-                    // Don't need to worry about negative numbers; rangeregex just won't match.
-                    for (int i = rangeStart; i <= rangeEnd; i++) {
-                        Atom ai = atoms[i - 1];
-                        ai.setApplyLambda(true);
-                        ai.print(Level.FINE);
-                    }
-                } else {
-                    logger.warning(format(" Could not recognize %s as a valid range; skipping", range));
-                }
+
+        // All atoms are alchemical.
+        if (alchemicalAtoms.equalsIgnoreCase("ALL")) {
+            for (Atom atom : atoms) {
+                atom.setApplyLambda(true);
             }
+            logger.info(" All atoms are alchemical \n");
+            return;
         }
+
+        // A range(s) of atoms are alchemical.
+        int nAtoms = atoms.length;
+        for (Atom atom : atoms) {
+            atom.setApplyLambda(false);
+        }
+        List<Integer> alchemicalAtomRanges = parseAtomRanges(" Alchemical atoms", alchemicalAtoms, nAtoms);
+        for (int i : alchemicalAtomRanges) {
+            atoms[i].setApplyLambda(true);
+        }
+        logger.info(" Alchemical atoms set to: " + alchemicalAtoms + "\n");
+
     }
 
     /**
@@ -312,7 +255,7 @@ public class AlchemicalOptions {
      * @param topology a {@link ffx.potential.MolecularAssembly} object.
      */
     public void setFirstSystemAlchemistry(MolecularAssembly topology) {
-        setAlchemicalAtoms(topology, s1, f1, ligAt1);
+        setAlchemicalAtoms(topology, alchemicalAtoms);
     }
 
     /**
@@ -321,30 +264,51 @@ public class AlchemicalOptions {
      * @param topology a {@link ffx.potential.MolecularAssembly} object.
      */
     public void setFirstSystemUnchargedAtoms(MolecularAssembly topology) {
-        setUnchargedAtoms(topology, es1, ef1);
+        setUnchargedAtoms(topology, unchargedAtoms);
     }
 
     /**
-     * Set uncharged atoms for a MolecularAssembly.
+     * Sets the alchemical atoms for a MolecularAssembly.
      *
-     * @param assembly Assembly to decharge on.
-     * @param eStart   First atom to decharge.
-     * @param eEnd     Last atom to decharge.
+     * @param assembly Assembly to which the atoms belong.
      */
-    public static void setUnchargedAtoms(MolecularAssembly assembly, int eStart, int eEnd) {
-        Atom[] atoms = assembly.getAtomArray();
-        // Apply the no electrostatics atom selection
-        int noElecStart = eStart;
-        noElecStart = (noElecStart < 1) ? 1 : noElecStart;
-
-        int noElecStop = eEnd;
-        noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
-
-        for (int i = noElecStart; i <= noElecStop; i++) {
-            Atom ai = atoms[i - 1];
-            ai.setElectrostatics(false);
-            // ai.print();
+    public static void setUnchargedAtoms(MolecularAssembly assembly, String unchargedAtoms) {
+        if (unchargedAtoms == null || unchargedAtoms.equalsIgnoreCase("")) {
+            // Empty or null string -- no changes to uncharged atoms.
+            return;
         }
+
+        Atom[] atoms = assembly.getAtomArray();
+
+        // No alchemical are atoms.
+        if (unchargedAtoms.equalsIgnoreCase("NONE")) {
+            for (Atom atom : atoms) {
+                atom.setElectrostatics(false);
+            }
+            logger.info(" No atoms are uncharged.\n");
+            return;
+        }
+
+        // All atoms are alchemical.
+        if (unchargedAtoms.equalsIgnoreCase("ALL")) {
+            for (Atom atom : atoms) {
+                atom.setElectrostatics(true);
+            }
+            logger.info(" All atoms are uncharged.\n");
+            return;
+        }
+
+        // A range(s) of atoms are uncharged.
+        int nAtoms = atoms.length;
+        for (Atom atom : atoms) {
+            atom.setElectrostatics(true);
+        }
+        List<Integer> unchargedAtomRanges = parseAtomRanges(" Uncharged atoms", unchargedAtoms, nAtoms);
+        for (int i : unchargedAtomRanges) {
+            atoms[i].setElectrostatics(false);
+        }
+        logger.info(" Uncharged atoms set to: " + unchargedAtoms + "\n");
+
     }
 
 }

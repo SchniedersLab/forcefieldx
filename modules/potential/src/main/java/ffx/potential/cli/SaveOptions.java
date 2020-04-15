@@ -37,6 +37,8 @@
 //******************************************************************************
 package ffx.potential.cli;
 
+import static java.lang.System.arraycopy;
+
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 
@@ -50,11 +52,13 @@ import picocli.CommandLine.Option;
  * @since 1.0
  */
 public class SaveOptions {
+
     /**
-     * -c or --constrain is a flag to print out energy at each step.
+     * -c or --constrain Apply geometric constraints before saving.
      */
-    @Option(names = {"-c", "--constrain"}, paramLabel = "false", description = "Apply geometric constraints before saving.")
-    private boolean constrain = false;
+    @Option(names = {"-c", "--constrain"}, paramLabel = "false", defaultValue = "false",
+            description = "Apply geometric constraints before saving.")
+    public boolean constrain = false;
 
     private double[] x;
     private double[] outputX;
@@ -62,28 +66,28 @@ public class SaveOptions {
     /**
      * Performs key operations prior to saving to disc, such as application of geometric constraints.
      *
-     * @param mola A MolecularAssembly.
+     * @param molecularAssembly A MolecularAssembly.
      */
-    public void preSaveOperations(MolecularAssembly mola) {
-        preSaveOperations(mola.getPotentialEnergy());
+    public void preSaveOperations(MolecularAssembly molecularAssembly) {
+        preSaveOperations(molecularAssembly.getPotentialEnergy());
     }
 
     /**
      * Performs key operations prior to saving to disc, such as application of geometric constraints.
      *
-     * @param ffe A ForceFieldEnergy.
+     * @param forceFieldEnergy A ForceFieldEnergy.
      */
-    public void preSaveOperations(ForceFieldEnergy ffe) {
+    public void preSaveOperations(ForceFieldEnergy forceFieldEnergy) {
         if (constrain) {
-            int nVars = ffe.getNumberOfVariables();
+            int nVars = forceFieldEnergy.getNumberOfVariables();
             if (x == null) {
                 x = new double[nVars];
                 outputX = new double[nVars];
             }
-            x = ffe.getCoordinates(x);
-            System.arraycopy(x, 0, outputX, 0, nVars);
-            ffe.applyAllConstraintPositions(x, outputX);
-            ffe.setCoordinates(outputX);
+            x = forceFieldEnergy.getCoordinates(x);
+            arraycopy(x, 0, outputX, 0, nVars);
+            forceFieldEnergy.applyAllConstraintPositions(x, outputX);
+            forceFieldEnergy.setCoordinates(outputX);
         }
     }
 }

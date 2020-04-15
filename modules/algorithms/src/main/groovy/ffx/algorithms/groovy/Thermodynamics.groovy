@@ -164,7 +164,6 @@ class Thermodynamics extends AlgorithmsScript {
             System.setProperty("lambdaterm", "true")
         }
 
-
         // Relative free energies via the DualTopologyEnergy class require different
         // default OST parameters than absolute free energies.
         if (nArgs >= 2) {

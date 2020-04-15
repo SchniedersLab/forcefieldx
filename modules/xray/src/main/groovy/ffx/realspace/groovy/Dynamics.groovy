@@ -44,11 +44,10 @@ import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
-import ffx.realspace.RealSpaceData
+import ffx.potential.cli.AtomSelectionOptions
+import ffx.potential.cli.WriteoutOptions
 import ffx.realspace.cli.RealSpaceOptions
-import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementEnergy
-import ffx.xray.RefinementMinimize.RefinementMode
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -65,17 +64,23 @@ import picocli.CommandLine.Parameters
 class Dynamics extends AlgorithmsScript {
 
     @Mixin
+    AtomSelectionOptions atomSelectionOptions
+
+    @Mixin
     DynamicsOptions dynamicsOptions
 
     @Mixin
     RealSpaceOptions realSpaceOptions
+
+    @Mixin
+    WriteoutOptions writeoutOptions
 
     /**
      * One or more filenames.
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
-    private RefinementEnergy refinementEnergy;
+    private RefinementEnergy refinementEnergy
 
     @Override
     Dynamics run() {
@@ -86,39 +91,31 @@ class Dynamics extends AlgorithmsScript {
 
         dynamicsOptions.init()
 
-        String modelfilename
-        MolecularAssembly[] assemblies
+        String modelFilename
         if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
+            activeAssembly = algorithmFunctions.open(filenames.get(0))
+            modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
             return this
         } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath()
-            assemblies = { activeAssembly }
+            modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
+        MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
 
-        logger.info("\n Running Real Space Dynamics on " + modelfilename)
+        logger.info("\n Running Real Space Dynamics on " + modelFilename)
 
-        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
+        atomSelectionOptions.setActiveAtoms(activeAssembly)
 
-        RealSpaceData realspacedata = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
-                activeAssembly.getParallelTeam(),
-                mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
-
-        algorithmFunctions.energy(assemblies[0])
-
-        refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES)
+        refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
 
         // Restart File
-        File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn")
+        File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
         if (!dyn.exists()) {
             dyn = null
         }
 
-        MolecularDynamics molDyn = dynamicsOptions.getDynamics(activeAssembly, refinementEnergy, activeAssembly.getProperties())
+        MolecularDynamics molDyn = dynamicsOptions.getDynamics(writeoutOptions, refinementEnergy, activeAssembly, algorithmListener)
         refinementEnergy.setThermostat(molDyn.getThermostat())
 
         // Reset velocities (ignored if a restart file is given)

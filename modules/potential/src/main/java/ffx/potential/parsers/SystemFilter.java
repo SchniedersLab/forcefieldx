@@ -62,7 +62,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.parameters.ForceField;
-import static ffx.utilities.StringUtils.parseAtNumArg;
+import static ffx.utilities.StringUtils.parseAtomRange;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.
@@ -221,6 +221,8 @@ public abstract class SystemFilter {
      * Automatically sets atom-specific flags, particularly nouse and inactive,
      * and apply harmonic restraints. Intended to be called at the end of
      * readFile() implementations.
+     * <p>
+     * Supported syntax: "(\\d+)-(\\d+)"
      */
     public void applyAtomProperties() {
         /*
@@ -235,7 +237,7 @@ public abstract class SystemFilter {
             String[] toks = nouseKey.split("\\s+");
             for (String tok : toks) {
                 try {
-                    List<Integer> nouseRange = parseAtNumArg("nouse", tok, nmolaAtoms);
+                    List<Integer> nouseRange = parseAtomRange("nouse", tok, nmolaAtoms);
                     for (int j : nouseRange) {
                         molaAtoms[j].setUse(false);
                     }
@@ -256,15 +258,35 @@ public abstract class SystemFilter {
             }
         }
 
-        String[] inactiveKeys = properties.getStringArray("inactive");
-        for (String inactiveKey : inactiveKeys) {
-            try {
-                List<Integer> inactiveRange = parseAtNumArg("inactive", inactiveKey, nmolaAtoms);
-                for (int i : inactiveRange) {
-                    molaAtoms[i].setActive(false);
+        if (properties.containsKey("active")) {
+            for (Atom atom : molaAtoms) {
+                atom.setActive(false);
+            }
+            String[] activeKeys = properties.getStringArray("active");
+            for (String inactiveKey : activeKeys) {
+                try {
+                    List<Integer> inactiveRange = parseAtomRange("inactive", inactiveKey, nmolaAtoms);
+                    for (int i : inactiveRange) {
+                        molaAtoms[i].setActive(false);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    logger.log(Level.INFO, ex.getLocalizedMessage());
                 }
-            } catch (IllegalArgumentException ex) {
-                logger.log(Level.INFO, ex.getLocalizedMessage());
+            }
+        } else if (properties.containsKey("inactive")) {
+            for (Atom atom : molaAtoms) {
+                atom.setActive(true);
+            }
+            String[] inactiveKeys = properties.getStringArray("inactive");
+            for (String inactiveKey : inactiveKeys) {
+                try {
+                    List<Integer> inactiveRange = parseAtomRange("inactive", inactiveKey, nmolaAtoms);
+                    for (int i : inactiveRange) {
+                        molaAtoms[i].setActive(false);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    logger.log(Level.INFO, ex.getLocalizedMessage());
+                }
             }
         }
 
@@ -304,7 +326,7 @@ public abstract class SystemFilter {
 
             for (int i = 1; i < toks.length; i++) {
                 try {
-                    List<Integer> restrRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
+                    List<Integer> restrRange = parseAtomRange("restraint", toks[i], nmolaAtoms);
                     for (int j : restrRange) {
                         restraintAtoms.add(molaAtoms[j]);
                     }
@@ -326,7 +348,7 @@ public abstract class SystemFilter {
                 }
             }
             if (!restraintAtoms.isEmpty()) {
-                Atom[] ats = restraintAtoms.toArray(new Atom[restraintAtoms.size()]);
+                Atom[] ats = restraintAtoms.toArray(new Atom[0]);
                 coordRestraints.add(new CoordRestraint(ats, forceField, true, forceconst));
             } else {
                 logger.warning(format(" Empty or unparseable restraint argument %s", coordRestraint));
@@ -407,7 +429,7 @@ public abstract class SystemFilter {
             String[] toks = noE.split("\\s+");
             for (String tok : toks) {
                 try {
-                    List<Integer> noERange = parseAtNumArg("noElectro", tok, nmolaAtoms);
+                    List<Integer> noERange = parseAtomRange("noElectro", tok, nmolaAtoms);
                     for (int i : noERange) {
                         molaAtoms[i].setElectrostatics(false);
                     }

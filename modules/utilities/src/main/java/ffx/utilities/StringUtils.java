@@ -52,7 +52,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,6 +61,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import static java.lang.Integer.parseUnsignedInt;
 import static java.lang.String.format;
 
 import org.apache.commons.math3.util.FastMath;
@@ -77,8 +77,7 @@ public class StringUtils {
 
     public static final String STANDARD_WATER_NAME = "HOH";
     private static final Logger logger = Logger.getLogger(StringUtils.class.getName());
-    private static final Set<String> waterNames =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList("HOH", "DOD", "WAT", "TIP", "TIP3", "TIP4", "MOL")));
+    private static final Set<String> waterNames = Set.of("HOH", "DOD", "WAT", "TIP", "TIP3", "TIP4", "MOL");
     private static final Map<String, String> ionNames;
     private static final Pattern intRangePattern = Pattern.compile("(\\d+)-(\\d+)");
 
@@ -365,31 +364,32 @@ public class StringUtils {
     }
 
     /**
-     * Parses a numerical argument for an atom-specific flag. Intended to reduce
-     * the amount of repetitive code in applyAtomProperties by parsing and
-     * checking for validity, and then returning the appropriate range. Input
-     * should be 1-indexed (user end), output 0-indexed.
+     * Parses a numerical argument for an atom-specific flag.
+     * <p>
+     * Parses, checks validity, and then returns the appropriate range.
+     * <p>
+     * Input should be 1-indexed (user end), output 0-indexed.
      *
-     * @param keyType Type of key
-     * @param st      Input string
-     * @param nAtoms  Number of atoms in the MolecularAssembly
+     * @param keyType   Type of key
+     * @param atomRange Input string
+     * @param nAtoms    Number of atoms in the MolecularAssembly
      * @return A List of selected atoms.
      * @throws java.lang.IllegalArgumentException if an invalid argument
      */
-    public static List<Integer> parseAtNumArg(String keyType, String st, int nAtoms) throws IllegalArgumentException {
-        Matcher m = intRangePattern.matcher(st);
+    public static List<Integer> parseAtomRange(String keyType, String atomRange, int nAtoms) throws IllegalArgumentException {
+        Matcher m = intRangePattern.matcher(atomRange);
         if (m.matches()) {
             int start = Integer.parseInt(m.group(1)) - 1;
             int end = Integer.parseInt(m.group(2)) - 1;
             if (start > end) {
-                throw new IllegalArgumentException(format(" %s input %s not valid: start > end.", keyType, st));
+                throw new IllegalArgumentException(format(" %s input %s not valid: start > end.", keyType, atomRange));
             } else if (start < 0) {
-                throw new IllegalArgumentException(format(" %s input %s not valid: atoms should be indexed starting from 1.", keyType, st));
+                throw new IllegalArgumentException(format(" %s input %s not valid: atoms should be indexed starting from 1.", keyType, atomRange));
             } else if (start >= nAtoms) {
-                throw new IllegalArgumentException(format(" %s input %s not valid: atom range is out of bounds for assembly of length %d.", keyType, st, nAtoms));
+                throw new IllegalArgumentException(format(" %s input %s not valid: atom range is out of bounds for assembly of length %d.", keyType, atomRange, nAtoms));
             } else {
                 if (end >= nAtoms) {
-                    logger.log(Level.INFO, format(" Truncating range %s to end of valid range %d.", st, nAtoms));
+                    logger.log(Level.INFO, format(" Truncating range %s to end of valid range %d.", atomRange, nAtoms));
                     end = nAtoms - 1;
                 }
                 List<Integer> selectedAtoms = new ArrayList<>();
@@ -400,20 +400,52 @@ public class StringUtils {
             }
         } else {
             try {
-                int atNum = Integer.parseUnsignedInt(st) - 1;
+                int atNum = parseUnsignedInt(atomRange) - 1;
                 if (atNum < 0 || atNum >= nAtoms) {
-                    throw new IllegalArgumentException(format(" %s numerical argument %s out-of-bounds for range 1 to %d", keyType, st, nAtoms));
+                    throw new IllegalArgumentException(format(" %s numerical argument %s out-of-bounds for range 1 to %d", keyType, atomRange, nAtoms));
                 }
                 List<Integer> selectedAtoms = new ArrayList<>();
                 selectedAtoms.add(atNum);
                 return selectedAtoms;
             } catch (NumberFormatException ex) {
                 // Try to parse as a Tinker style range.
-                List<String> tokens = Arrays.asList(st.split("\\s+"));
+                List<String> tokens = Arrays.asList(atomRange.split("\\s+"));
                 List<Integer> range = parseTinkerAtomList(tokens, -1, -1);
                 return range;
             }
         }
+    }
+
+    /**
+     * Parses a list of atom ranges for a per atom flag.
+     * <p>
+     * Parses, checks validity, and then returns a list with the index of selected atoms.
+     * <p>
+     * Input should be 1-indexed (user end) and the output 0-indexed.
+     *
+     * @param keyType    Type of key
+     * @param atomRanges Input string
+     * @param nAtoms     Number of atoms in the MolecularAssembly
+     * @return A List of selected atoms.
+     * @throws java.lang.IllegalArgumentException if an invalid argument
+     */
+    public static List<Integer> parseAtomRanges(String keyType, String atomRanges, int nAtoms) throws IllegalArgumentException {
+        List<Integer> atomList = new ArrayList<>();
+        // Replace "n" and "N" with the number of atoms.
+        String n = Integer.toString(nAtoms);
+        atomRanges = atomRanges.toUpperCase().replace("N", n);
+        // Split on periods (.), commas (,) or semicolons(;).
+        String[] ranges = Arrays.stream(atomRanges.split("\\.|,|;")).map(String::trim).toArray(String[]::new);
+        for (String range : ranges) {
+            List<Integer> list = parseAtomRange(keyType, range, nAtoms);
+            // Avoid adding duplicates.
+            for (int i : list) {
+                if (!atomList.contains(i)) {
+                    atomList.add(i);
+                }
+            }
+        }
+        return atomList;
     }
 
     /**

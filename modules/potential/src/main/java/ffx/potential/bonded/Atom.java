@@ -49,6 +49,7 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
+import static java.util.Objects.hash;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.jogamp.java3d.Appearance;
@@ -103,9 +104,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Constant <code>hybridTable</code>
      */
     private static final Map<String, Integer> hybridTable;
-    // *************************************************************************
-    // Java3D methods and variables for visualization of this Atom.
-    // The current ViewModel
     private static final Point3d point3d = new Point3d();
     private static final Point2d point2d = new Point2d();
     /**
@@ -440,7 +438,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private double formFactorWidth2 = formFactorWidth * formFactorWidth;
     private int formFactorIndex = -1;
     private ArrayList<Vector3d> trajectory;
-    // Molecular Mechanics Info
     private AtomType atomType = null;
     private MultipoleType multipoleType = null;
     private PolarizeType polarizeType = null;
@@ -455,19 +452,19 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private int moleculeNumber = 0;
     private ViewModel viewModel = ViewModel.INVISIBLE;
     private ViewModel polygonType = ViewModel.FILL;
-    // Java3D Scenegraph Objects
     private Shape3D sphere;
     private BranchGroup branchGroup;
     private TransformGroup transformGroup;
     private Transform3D transform3D;
-    // Appearance and Coloring
     private Appearance appearance;
     private Color3f currentCol, previousCol;
     private Color3f userColor = RendererCache.userColor;
     private int detail = RendererCache.detail;
     private double radius = RendererCache.radius;
     private double scale = 1.0;
-    // "stale" is True if this Atom's J3D transforms need to be updated before making it visible
+    /**
+     * "stale" is True if this Atom's J3D transforms need to be updated before making it visible
+     */
     private boolean stale = false;
     /* Extended System handling */
     private MultipoleType esvMultipole;
@@ -2086,13 +2083,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(resName, resSeq, getName(), segID);
-        // return Objects.hash(resName, resSeq, getName());
-
-//        int hash = hash(SEED, resName);
-//        hash = hash(hash, resSeq);
-//        hash = hash(hash, getName());
-//        return hash(hash, segID);
+        return hash(resName, resSeq, getName(), segID);
     }
 
     /**

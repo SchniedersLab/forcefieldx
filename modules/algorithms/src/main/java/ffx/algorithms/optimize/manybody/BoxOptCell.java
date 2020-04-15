@@ -185,7 +185,7 @@ public class BoxOptCell {
      * Sorts residues in the box.
      */
     public void sortBoxResidues() {
-        Comparator comparator = Comparator.comparing(Residue::getChainID).thenComparingInt(Residue::getResidueNumber);
+        Comparator<Residue> comparator = Comparator.comparing(Residue::getChainID).thenComparingInt(Residue::getResidueNumber);
         residues.sort(comparator);
     }
 

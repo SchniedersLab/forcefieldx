@@ -101,7 +101,7 @@
                 <executions>
                     <execution>
                         <id>copy-jar</id>
-                        <phase>deploy</phase>
+                        <phase>install</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>

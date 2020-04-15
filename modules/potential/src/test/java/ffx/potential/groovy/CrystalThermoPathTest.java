@@ -67,7 +67,7 @@ public class CrystalThermoPathTest extends PotentialScript {
     @Before
     public void before() {
         binding = new Binding();
-        lambdaGradient = new ffx.potential.groovy.test.LambdaGradient();
+        lambdaGradient = new LambdaGradient();
         lambdaGradient.setBinding(binding);
     }
 
@@ -77,9 +77,7 @@ public class CrystalThermoPathTest extends PotentialScript {
     @Test
     public void testLambdaGradient() {
 
-        String[] args = {"--s1", "1",
-                "--f1", "26",
-                "src/main/java/ffx/potential/structures/phenacetin.xyz"};
+        String[] args = {"--ac", "1-26", "src/main/java/ffx/potential/structures/phenacetin.xyz"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
@@ -116,9 +114,7 @@ public class CrystalThermoPathTest extends PotentialScript {
     @Test
     public void testLambdaGradientIntermolecularSoftcore() {
 
-        String[] args = {"--s1", "1",
-                "--f1", "44",
-                "src/main/java/ffx/potential/structures/ethylparaben.xyz"};
+        String[] args = {"--ac", "1-44", "src/main/java/ffx/potential/structures/ethylparaben.xyz"};
         binding.setVariable("args", args);
 
         // Evaluate the script.

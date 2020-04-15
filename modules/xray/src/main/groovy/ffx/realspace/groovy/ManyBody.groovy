@@ -49,11 +49,8 @@ import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
-import ffx.realspace.RealSpaceData
 import ffx.realspace.cli.RealSpaceOptions
-import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementEnergy
-import ffx.xray.RefinementMinimize
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -70,7 +67,7 @@ import picocli.CommandLine.Parameters
 class ManyBody extends AlgorithmsScript {
 
     @Mixin
-    RealSpaceOptions realSpace
+    private RealSpaceOptions realSpace
 
     @Mixin
     ManyBodyOptions manyBody
@@ -80,7 +77,7 @@ class ManyBody extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
-    private RefinementEnergy refinementEnergy;
+    private RefinementEnergy refinementEnergy
 
     @Override
     ManyBody run() {
@@ -89,32 +86,25 @@ class ManyBody extends AlgorithmsScript {
             return this
         }
 
-        String filename
-        MolecularAssembly[] assemblies
+        String modelFilename
         if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
-            filename = filenames.get(0)
+            activeAssembly = algorithmFunctions.open(filenames.get(0))
+            modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
             return this
         } else {
-            filename = activeAssembly.getFile().getAbsolutePath()
+            modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
+        MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
 
         CompositeConfiguration properties = activeAssembly.getProperties();
         if (!properties.containsKey("gk-suppressWarnings")) {
             properties.setProperty("gk-suppressWarnings", "true")
         }
-
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
 
-        List<RealSpaceFile> mapFiles = realSpace.processData(filenames, assemblies)
-        RealSpaceData realSpaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
-                activeAssembly.getParallelTeam(), mapFiles.toArray(new RealSpaceFile[0]))
-
-        refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMinimize.RefinementMode.COORDINATES, null);
-
+        refinementEnergy = realSpace.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
         RotamerOptimization rotamerOptimization = new RotamerOptimization(
                 activeAssembly, refinementEnergy, algorithmListener)
 
@@ -152,16 +142,14 @@ class ManyBody extends AlgorithmsScript {
 
             algorithmFunctions.energy(activeAssembly)
 
-            String ext = FilenameUtils.getExtension(filename);
-            filename = FilenameUtils.removeExtension(filename);
+            String ext = FilenameUtils.getExtension(modelFilename);
+            modelFilename = FilenameUtils.removeExtension(modelFilename);
             if (ext.toUpperCase().contains("XYZ")) {
-                algorithmFunctions.saveAsXYZ(assemblies, new File(filename + ".xyz"))
+                algorithmFunctions.saveAsXYZ(assemblies[0], new File(modelFilename + ".xyz"))
             } else {
-                algorithmFunctions.saveAsPDB(assemblies, new File(filename + ".pdb"))
+                algorithmFunctions.saveAsPDB(assemblies, new File(modelFilename + ".pdb"))
             }
         }
-
-        // manyBody.saveEliminatedRotamers()
 
         return this
     }
