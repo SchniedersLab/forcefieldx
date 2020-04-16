@@ -564,7 +564,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
   /**
    * Set the number of counts.
    *
-   * @param counts
+   * @param counts Number of counts.
    */
   public void setEnergyCount(long counts) {
     this.energyCount = counts;
@@ -917,9 +917,13 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * <p>The default doOptimization = false.
      */
     private boolean doOptimization = false;
-    /** Reset unit cell parameters, molecular orientation and translation. */
-    private boolean doUnitCellReset = false;
-    /** Holds the lowest potential energy coordinates. */
+    /**
+     * Reset unit cell parameters, molecular orientation and translation.
+     */
+    private boolean doUnitCellReset;
+    /**
+     * Holds the lowest potential energy coordinates.
+     */
     private double[] optimumCoords;
     /**
      * The lowest energy found via optimizations.
@@ -1128,21 +1132,38 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
    */
   public class Histogram {
 
-    /** If realBiasMagnitude is 0, temporarily set biasMag to this for some calculations. */
-    private static final double PSEUDO_BIAS_MAGNITUDE = 0.01;
+    /**
+     * If "realBiasMagnitude" is 0, temporarily set biasMag to this value to calculate the the
+     * ensemble average dU/dL.
+     *
+     * <p>Any value that does not overflow/underflow double precision summations of the count
+     * matrix will give identical results. For example, values of 1.0e-20, 1.0 and 1.0e20 were
+     * tested and found to give identical results.
+     *
+     * <p>Thus, a value of 1.0 is good choice.
+     */
+    private static final double PSEUDO_BIAS_MAGNITUDE = 1.0;
     /**
      * Temperature in Kelvin.
      *
      * <p>The default is 298.15.
      */
     protected final double temperature;
-    /** Time step in picoseconds. */
+    /**
+     * Time step in picoseconds.
+     */
     protected final double dt;
-    /** Parallel Java world communicator. */
+    /**
+     * Parallel Java world communicator.
+     */
     protected final Comm world;
-    /** Rank of this process. */
+    /**
+     * Rank of this process.
+     */
     protected final int rank;
-    /** If true, use discrete lambda values instead of continuous lambda values. */
+    /**
+     * If true, use discrete lambda values instead of continuous lambda values.
+     */
     final boolean discreteLambda;
     /**
      * Width of a lambda bin, or the distance between discrete lambda values.
@@ -1654,7 +1675,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
               maxBias = kernel - offset;
             }
 
-            double weight = exp(kernel * beta);
+            double weight;
+            if (biasMagZero) {
+              // The weight is just the kernel value for no 2D bias.
+              weight = kernel;
+            } else {
+              // The Boltzmann weight based on temperature and the 2D bias height.
+              weight = exp(kernel * beta);
+            }
             partitionFunction += weight;
 
             double currentFLambda = minFLambda + jFL * dFL + dFL_2;
@@ -2063,7 +2091,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           double deltaFL2 = deltaFL * deltaFL;
           double weight = mirrorFactor * rc;
           if (weight > 0) {
-            // TODO: should special logic be applied for a biasMag of 0?
             double e = weight * biasMag * L2exp * exp(-deltaFL2 * invFLs2);
             sum += e;
           }
