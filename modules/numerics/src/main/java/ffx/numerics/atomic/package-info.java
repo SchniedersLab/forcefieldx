@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,10 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 
 /**
- * The Atomic package has implementations of a double array that can be safely operated on by multiple threads.
+ * The Atomic package has implementations of a double array that can be safely operated on by
+ * multiple threads.
  *
  * @author Michael J. Schnieders
  * @since 1.0

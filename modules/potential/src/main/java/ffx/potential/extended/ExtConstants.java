@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,54 +34,40 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.extended;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.utilities.Constants;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 /**
- * <p>ExtConstants class.</p>
+ * ExtConstants class.
  *
  * @author Stephen LuCore
  * @since 1.0
  */
 public class ExtConstants {
 
-    /**
-     * Constant <code>titratableHydrogenNames</code>
-     */
-    public static final List<String> titratableHydrogenNames
-            = Arrays.asList("HH", "HG", "HE2", "HD1", "HE2", "HD2", "HZ3");
-    /**
-     * Constant <code>backboneNames</code>
-     */
-    public static final List<String> backboneNames = Arrays.asList("N", "CA", "C", "O", "HA", "H");
-    /**
-     * Constant <code>beta=1 / Boltzmann</code>
-     */
-    public static final double beta = 1 / Constants.R;
-    /**
-     * Random force conversion to kcal/mol/A; formerly randomForce.
-     */
-    public static final double forceToKcal = sqrt(4.184) / 10e9;
-    /**
-     * Random force conversion to (kcal/mol/A)^2; formerly randomForce2.
-     */
-    public static final double forceToKcalSquared = forceToKcal * forceToKcal;
-    /**
-     * Conversion from natural to base ten.
-     */
-    public static final double log10 = Math.log(10);
-    /**
-     * Propagation occurs on master thread only; otherwise use (multiple,
-     * unshared) ThreadLocalRandoms.
-     */
-    public static final Random RNG = new Random();
-
+  /** Constant <code>titratableHydrogenNames</code> */
+  public static final List<String> titratableHydrogenNames =
+      Arrays.asList("HH", "HG", "HE2", "HD1", "HE2", "HD2", "HZ3");
+  /** Constant <code>backboneNames</code> */
+  public static final List<String> backboneNames = Arrays.asList("N", "CA", "C", "O", "HA", "H");
+  /** Constant <code>beta=1 / Boltzmann</code> */
+  public static final double beta = 1 / Constants.R;
+  /** Random force conversion to kcal/mol/A; formerly randomForce. */
+  public static final double forceToKcal = sqrt(4.184) / 10e9;
+  /** Random force conversion to (kcal/mol/A)^2; formerly randomForce2. */
+  public static final double forceToKcalSquared = forceToKcal * forceToKcal;
+  /** Conversion from natural to base ten. */
+  public static final double log10 = Math.log(10);
+  /**
+   * Propagation occurs on master thread only; otherwise use (multiple, unshared)
+   * ThreadLocalRandoms.
+   */
+  public static final Random RNG = new Random();
 }

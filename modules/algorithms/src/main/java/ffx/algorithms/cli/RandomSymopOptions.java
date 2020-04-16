@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,10 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.cli;
 
 import ffx.potential.MolecularAssembly;
-
 import picocli.CommandLine.Option;
 
 /**
@@ -50,31 +49,38 @@ import picocli.CommandLine.Option;
  */
 public class RandomSymopOptions {
 
-    /**
-     * --rsym or --randomSymOp Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp).
-     */
-    @Option(names = {"--rsym", "--randomSymOp"}, paramLabel = "-1.0",
-            description = "Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp)")
-    double symScalar = -1.0;
+  /**
+   * --rsym or --randomSymOp Apply a random SymOp with translation range -X/2 .. X/2 (0 for random
+   * placement in the unit cell, negative for no SymOp).
+   */
+  @Option(
+      names = {"--rsym", "--randomSymOp"},
+      paramLabel = "-1.0",
+      description =
+          "Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp)")
+  double symScalar = -1.0;
 
-    /**
-     * --ruc or --randomUnitCell random unit cell axes will be used achieve the specified density (g/cc) (no default density).
-     */
-    @Option(names = {"--ruc", "--randomUnitCell"}, paramLabel = "-1.0",
-            description = "Apply random unit cell axes to achieve the specified density (g/cc).")
-    double ucDensity = -1.0;
+  /**
+   * --ruc or --randomUnitCell random unit cell axes will be used achieve the specified density
+   * (g/cc) (no default density).
+   */
+  @Option(
+      names = {"--ruc", "--randomUnitCell"},
+      paramLabel = "-1.0",
+      description = "Apply random unit cell axes to achieve the specified density (g/cc).")
+  double ucDensity = -1.0;
 
-    /**
-     * <p>randomize.</p>
-     *
-     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void randomize(MolecularAssembly assembly) {
-        if (symScalar >= 0) {
-            assembly.applyRandomSymOp(symScalar);
-        }
-        if (ucDensity > 0) {
-            assembly.applyRandomDensity(ucDensity);
-        }
+  /**
+   * randomize.
+   *
+   * @param assembly a {@link ffx.potential.MolecularAssembly} object.
+   */
+  public void randomize(MolecularAssembly assembly) {
+    if (symScalar >= 0) {
+      assembly.applyRandomSymOp(symScalar);
     }
+    if (ucDensity > 0) {
+      assembly.applyRandomDensity(ucDensity);
+    }
+  }
 }

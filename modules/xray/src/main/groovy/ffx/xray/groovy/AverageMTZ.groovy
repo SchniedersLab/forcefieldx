@@ -40,7 +40,6 @@ package ffx.xray.groovy
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.xray.parsers.MTZFilter
-
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -55,58 +54,58 @@ import picocli.CommandLine.Parameters
 @Command(description = " Average two MTZ files.", name = "ffxc xray.AverageMTZ")
 class AverageMTZ extends AlgorithmsScript {
 
-    /**
-     * -i or --iteration the current moving average iteration
-     */
-    @Option(names = ['-i', '--iterations'], paramLabel = '1',
-            description = 'The current moving average iteration (use 1 for a "normal" average of two files).')
-    int iteration = 1
+  /**
+   * -i or --iteration the current moving average iteration
+   */
+  @Option(names = ['-i', '--iterations'], paramLabel = '1',
+      description = 'The current moving average iteration (use 1 for a "normal" average of two files).')
+  int iteration = 1
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "2", paramLabel = "MTZ", description = "Two diffraction input files.")
-    private List<String> filenames
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "2", paramLabel = "MTZ", description = "Two diffraction input files.")
+  private List<String> filenames
 
-    @Override
-    AverageMTZ run() {
+  @Override
+  AverageMTZ run() {
 
-        if (!init()) {
-            return
-        }
-
-        String mtzfile1
-        String mtzfile2
-
-        if (filenames != null && filenames.size() > 1) {
-            // Read in command line.
-            mtzfile1 = filenames.get(0)
-            mtzfile2 = filenames.get(1)
-        } else {
-            helpString()
-            return this
-        }
-
-        File file1 = new File(mtzfile1)
-        if (!file1.exists()) {
-            println("File: " + mtzfile1 + " not found!")
-            return this
-        }
-
-        File file2 = new File(mtzfile2)
-        if (!file2.exists()) {
-            println("File: " + mtzfile2 + " not found!")
-            return this
-        }
-
-        MTZFilter mtzfilter = new MTZFilter()
-        mtzfilter.averageFcs(file1, file2, mtzfilter.getReflectionList(file1), iteration, null)
-
-        return this
+    if (!init()) {
+      return
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        return new ArrayList<>()
+    String mtzfile1
+    String mtzfile2
+
+    if (filenames != null && filenames.size() > 1) {
+      // Read in command line.
+      mtzfile1 = filenames.get(0)
+      mtzfile2 = filenames.get(1)
+    } else {
+      helpString()
+      return this
     }
+
+    File file1 = new File(mtzfile1)
+    if (!file1.exists()) {
+      println("File: " + mtzfile1 + " not found!")
+      return this
+    }
+
+    File file2 = new File(mtzfile2)
+    if (!file2.exists()) {
+      println("File: " + mtzfile2 + " not found!")
+      return this
+    }
+
+    MTZFilter mtzfilter = new MTZFilter()
+    mtzfilter.averageFcs(file1, file2, mtzfilter.getReflectionList(file1), iteration, null)
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    return new ArrayList<>()
+  }
 }

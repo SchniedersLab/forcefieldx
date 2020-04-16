@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,69 +34,70 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms;
-
-import java.io.File;
 
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
+import java.io.File;
 
 /**
- * <p>
- * AlgorithmFunctions, on top of the core functionality of PotentialsFunctions, describes
- * additional functionality such as molecular dynamics and L-BFGS local optimization.
+ * AlgorithmFunctions, on top of the core functionality of PotentialsFunctions, describes additional
+ * functionality such as molecular dynamics and L-BFGS local optimization.
  *
- * <p>
- * This is implemented in two locations: UIUtils in the User Interfaces package, and in
+ * <p>This is implemented in two locations: UIUtils in the User Interfaces package, and in
  * AlgorithmsUtils in the Algorithm package.
  *
- * <p>
- * The UIUtils implementation is the default for Force Field X; on top of the core
- * functionality, it also updates the FFX graphical user interface and tree structure.
+ * <p>The UIUtils implementation is the default for Force Field X; on top of the core functionality,
+ * it also updates the FFX graphical user interface and tree structure.
  *
- * <p>
- * The AlgorithmUtils implementation lacks the extra functionality of the UIUtils
- * implementation, and simply accomplishes the required task. This is used by our tests, and is
- * also potentially useful for third parties who would like to use FFX without its GUI.
+ * <p>The AlgorithmUtils implementation lacks the extra functionality of the UIUtils implementation,
+ * and simply accomplishes the required task. This is used by our tests, and is also potentially
+ * useful for third parties who would like to use FFX without its GUI.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public interface AlgorithmFunctions extends PotentialsFunctions {
 
-    /**
-     * Returns a default Listener if available (null by default).
-     *
-     * @return An AlgorithmListener or null.
-     */
-    default AlgorithmListener getDefaultListener() {
-        return null;
-    }
+  /**
+   * Returns a default Listener if available (null by default).
+   *
+   * @return An AlgorithmListener or null.
+   */
+  default AlgorithmListener getDefaultListener() {
+    return null;
+  }
 
-    /**
-     * Runs molecular dynamics on an assembly.
-     *
-     * @param assembly       a {@link ffx.potential.MolecularAssembly} object.
-     * @param nStep          Timesteps
-     * @param timeStep       Time per step
-     * @param printInterval  a double.
-     * @param saveInterval   a double.
-     * @param temperature    a double.
-     * @param initVelocities Initialize velocities from Maxwell-Boltzmann distribution
-     * @param dyn            Dynamics file
-     */
-    void md(MolecularAssembly assembly, int nStep, double timeStep,
-            double printInterval, double saveInterval, double temperature,
-            boolean initVelocities, File dyn);
+  /**
+   * Runs molecular dynamics on an assembly.
+   *
+   * @param assembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param nStep Timesteps
+   * @param timeStep Time per step
+   * @param printInterval a double.
+   * @param saveInterval a double.
+   * @param temperature a double.
+   * @param initVelocities Initialize velocities from Maxwell-Boltzmann distribution
+   * @param dyn Dynamics file
+   */
+  void md(
+      MolecularAssembly assembly,
+      int nStep,
+      double timeStep,
+      double printInterval,
+      double saveInterval,
+      double temperature,
+      boolean initVelocities,
+      File dyn);
 
-    /**
-     * Relax the coordinates of a MolecularAssembly and minimize its potential energy
-     *
-     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
-     * @param eps      RMS gradient convergence criteria
-     * @return A <code>Potential</code>
-     */
-    Potential minimize(MolecularAssembly assembly, double eps);
+  /**
+   * Relax the coordinates of a MolecularAssembly and minimize its potential energy
+   *
+   * @param assembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param eps RMS gradient convergence criteria
+   * @return A <code>Potential</code>
+   */
+  Potential minimize(MolecularAssembly assembly, double eps);
 }

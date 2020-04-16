@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.optimize.anneal;
 
 /**
@@ -45,88 +45,89 @@ package ffx.algorithms.optimize.anneal;
  * @since 1.0
  */
 public class LinearAnnealSchedule implements AnnealingSchedule {
-    private final int nWindows;
-    private final double tHigh;
-    private final double tLow;
-    private final double dTemp;
-    private final String description;
+  private final int nWindows;
+  private final double tHigh;
+  private final double tLow;
+  private final double dTemp;
+  private final String description;
 
-    /**
-     * Creates an exponential annealing schedule that decays as
-     * tHigh-(n*(tHigh-tLow)).
-     *
-     * @param nWindows Number of windows.
-     * @param tLow     Low temperature bound.
-     * @param tHigh    High temperature bound.
-     */
-    public LinearAnnealSchedule(int nWindows, double tLow, double tHigh) {
-        assert nWindows > 1;
-        assert tLow < tHigh;
-        assert tLow >= 0;
-        assert Double.isFinite(tHigh);
+  /**
+   * Creates an exponential annealing schedule that decays as tHigh-(n*(tHigh-tLow)).
+   *
+   * @param nWindows Number of windows.
+   * @param tLow Low temperature bound.
+   * @param tHigh High temperature bound.
+   */
+  public LinearAnnealSchedule(int nWindows, double tLow, double tHigh) {
+    assert nWindows > 1;
+    assert tLow < tHigh;
+    assert tLow >= 0;
+    assert Double.isFinite(tHigh);
 
-        this.nWindows = nWindows;
-        this.tHigh = tHigh;
-        this.tLow = tLow;
-        dTemp = (tLow - tHigh) / (nWindows - 1);
+    this.nWindows = nWindows;
+    this.tHigh = tHigh;
+    this.tLow = tLow;
+    dTemp = (tLow - tHigh) / (nWindows - 1);
 
-        description = String.format("Linear annealing schedule with %d windows, " +
-                        "initial temperature %12.7g K, final temperature %12.7g K, dT/window %12.7g K",
-                nWindows, tHigh, tLow, dTemp);
+    description =
+        String.format(
+            "Linear annealing schedule with %d windows, "
+                + "initial temperature %12.7g K, final temperature %12.7g K, dT/window %12.7g K",
+            nWindows, tHigh, tLow, dTemp);
+  }
+
+  @Override
+  public double getHighTemp() {
+    return tHigh;
+  }
+
+  @Override
+  public double getLowTemp() {
+    return tLow;
+  }
+
+  @Override
+  public int getNumWindows() {
+    return nWindows;
+  }
+
+  @Override
+  public double getTemperature(int i) {
+    assert i >= 0 && i < nWindows;
+    return tHigh + (dTemp * i);
+  }
+
+  @Override
+  public double[] getTemperatures() {
+    double[] temps = new double[nWindows];
+    for (int i = 0; i < nWindows; i++) {
+      temps[i] = getTemperature(i);
     }
+    return temps;
+  }
 
-    @Override
-    public double getHighTemp() {
-        return tHigh;
-    }
+  @Override
+  public double maxWindowLength() {
+    return 1.0;
+  }
 
-    @Override
-    public double getLowTemp() {
-        return tLow;
-    }
+  @Override
+  public double minWindowLength() {
+    return 1.0;
+  }
 
-    @Override
-    public int getNumWindows() {
-        return nWindows;
-    }
+  @Override
+  public String toString() {
+    return description;
+  }
 
-    @Override
-    public double getTemperature(int i) {
-        assert i >= 0 && i < nWindows;
-        return tHigh + (dTemp * i);
-    }
+  @Override
+  public double totalWindowLength() {
+    return nWindows;
+  }
 
-    @Override
-    public double[] getTemperatures() {
-        double[] temps = new double[nWindows];
-        for (int i = 0; i < nWindows; i++) {
-            temps[i] = getTemperature(i);
-        }
-        return temps;
-    }
-
-    @Override
-    public double maxWindowLength() {
-        return 1.0;
-    }
-
-    @Override
-    public double minWindowLength() {
-        return 1.0;
-    }
-
-    @Override
-    public String toString() {
-        return description;
-    }
-
-    @Override
-    public double totalWindowLength() {
-        return nWindows;
-    }
-
-    @Override
-    public double windowLength(int window) {
-        return 1.0;
-    }
+  @Override
+  public double windowLength(int window) {
+    return 1.0;
+  }
 }

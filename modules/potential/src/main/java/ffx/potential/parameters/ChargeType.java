@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,14 +34,14 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parameters;
 
-import java.util.Comparator;
+import static ffx.potential.parameters.ForceField.ForceFieldType.CHARGE;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
-import static ffx.potential.parameters.ForceField.ForceFieldType.CHARGE;
+import java.util.Comparator;
 
 /**
  * The ChargeType class defines a partial atomic charge type.
@@ -51,72 +51,63 @@ import static ffx.potential.parameters.ForceField.ForceFieldType.CHARGE;
  */
 public final class ChargeType extends BaseType implements Comparator<String> {
 
-    /**
-     * Partial atomic charge in units of electrons.
-     */
-    public final double charge;
-    /**
-     * The atom type that uses this charge parameter.
-     */
-    public int atomType;
+  /** Partial atomic charge in units of electrons. */
+  public final double charge;
+  /** The atom type that uses this charge parameter. */
+  public int atomType;
 
-    /**
-     * ChargeType constructor.
-     *
-     * @param atomType int
-     * @param charge   double
-     */
-    public ChargeType(int atomType, double charge) {
-        super(CHARGE, "" + atomType);
-        this.atomType = atomType;
-        this.charge = charge;
+  /**
+   * ChargeType constructor.
+   *
+   * @param atomType int
+   * @param charge double
+   */
+  public ChargeType(int atomType, double charge) {
+    super(CHARGE, "" + atomType);
+    this.atomType = atomType;
+    this.charge = charge;
+  }
+
+  /**
+   * Average two ChargeType instances. The atom type that defines the new type must be supplied.
+   *
+   * @param chargeType1 a {@link ffx.potential.parameters.ChargeType} object.
+   * @param chargeType2 a {@link ffx.potential.parameters.ChargeType} object.
+   * @param atomType a int.
+   * @return a {@link ffx.potential.parameters.ChargeType} object.
+   */
+  public static ChargeType average(ChargeType chargeType1, ChargeType chargeType2, int atomType) {
+    if (chargeType1 == null || chargeType2 == null) {
+      return null;
     }
+    double charge = (chargeType1.charge + chargeType2.charge) / 2.0;
+    return new ChargeType(atomType, charge);
+  }
 
-    /**
-     * Average two ChargeType instances. The atom type that defines the
-     * new type must be supplied.
-     *
-     * @param chargeType1 a {@link ffx.potential.parameters.ChargeType} object.
-     * @param chargeType2 a {@link ffx.potential.parameters.ChargeType} object.
-     * @param atomType    a int.
-     * @return a {@link ffx.potential.parameters.ChargeType} object.
-     */
-    public static ChargeType average(ChargeType chargeType1, ChargeType chargeType2, int atomType) {
-        if (chargeType1 == null || chargeType2 == null) {
-            return null;
-        }
-        double charge = (chargeType1.charge + chargeType2.charge) / 2.0;
-        return new ChargeType(atomType, charge);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public int compare(String s1, String s2) {
+    int t1 = parseInt(s1);
+    int t2 = parseInt(s2);
+    return Integer.compare(t1, t2);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compare(String s1, String s2) {
-        int t1 = parseInt(s1);
-        int t2 = parseInt(s2);
-        return Integer.compare(t1, t2);
-    }
+  /**
+   * incrementType
+   *
+   * @param increment a int.
+   */
+  public void incrementType(int increment) {
+    this.atomType += increment;
+  }
 
-    /**
-     * <p>
-     * incrementType</p>
-     *
-     * @param increment a int.
-     */
-    public void incrementType(int increment) {
-        this.atomType += increment;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Nicely formatted Charge type.
-     */
-    @Override
-    public String toString() {
-        return format("charge  %5d  % 7.5f", atomType, charge);
-    }
-
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Nicely formatted Charge type.
+   */
+  @Override
+  public String toString() {
+    return format("charge  %5d  % 7.5f", atomType, charge);
+  }
 }

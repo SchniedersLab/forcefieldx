@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,8 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.commands;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Vector;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
@@ -48,6 +43,10 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parsers.SystemFilter;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Vector;
 
 /**
  * The SimulationFilter class parses system data sent by FFXServer to FFXClient.
@@ -56,105 +55,106 @@ import ffx.potential.parsers.SystemFilter;
  */
 public final class SimulationFilter extends SystemFilter {
 
-    SimulationDefinition system;
-    Hashtable<Integer, AtomType> atomTypes = new Hashtable<Integer, AtomType>();
+  SimulationDefinition system;
+  Hashtable<Integer, AtomType> atomTypes = new Hashtable<Integer, AtomType>();
 
-    /**
-     * <p>
-     * Constructor for SimulationFilter.</p>
-     *
-     * @param sys a {@link ffx.ui.commands.SimulationDefinition} object.
-     * @param m   a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public SimulationFilter(SimulationDefinition sys, MolecularAssembly m) {
-        super(new File(""), m, null, null);
-        system = sys;
-        fileType = FileType.SIM;
-        fileRead = false;
-    }
+  /**
+   * Constructor for SimulationFilter.
+   *
+   * @param sys a {@link ffx.ui.commands.SimulationDefinition} object.
+   * @param m a {@link ffx.potential.MolecularAssembly} object.
+   */
+  public SimulationFilter(SimulationDefinition sys, MolecularAssembly m) {
+    super(new File(""), m, null, null);
+    system = sys;
+    fileType = FileType.SIM;
+    fileRead = false;
+  }
 
-    @Override
-    public void closeReader() {
-        //logger.fine(" Reading trajectories not yet supported for MergeFilter");
-        // No logger set for SimulationFilter.
-    }
+  @Override
+  public void closeReader() {
+    // logger.fine(" Reading trajectories not yet supported for MergeFilter");
+    // No logger set for SimulationFilter.
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean readFile() {
-        // Create Molecular Mechanics Data Objects from the SimulationDefinition
-        // information
-        for (int i = 0; i < system.numatoms; i++) {
-            AtomType atomType = atomTypes.get(system.types[i]);
-            if (atomType == null) {
-                atomType = new AtomType(system.types[i], -1, system.name[i],
-                        system.story[i], system.atomic[i], system.mass[i], 0);
-                atomTypes.put(system.types[i], atomType);
-            }
-        }
-        atomList = new ArrayList<Atom>();
-        Vector<Integer> bonds1 = new Vector<Integer>();
-        Vector<Integer> bonds2 = new Vector<Integer>();
-        double d[] = new double[3];
-        int b[] = new int[4];
-        for (int i = 0; i < system.numatoms; i++) {
-            d[0] = system.coordinates[0][i];
-            d[1] = system.coordinates[1][i];
-            d[2] = system.coordinates[2][i];
-            String s = new String("" + system.types[i]);
-            AtomType atomType = atomTypes.get(s);
-            Atom a = new Atom(i + 1, new String("" + atomType.type), atomType,
-                    d);
-            atomList.add(a);
-            int b1 = i + 1;
-            b[0] = system.connectivity[0][i];
-            b[1] = system.connectivity[1][i];
-            b[2] = system.connectivity[2][i];
-            b[3] = system.connectivity[3][i];
-            int j = 0;
-            while (j < 4 && b[j] != 0) {
-                int b2 = b[j];
-                bonds1.add(b1);
-                bonds2.add(b2);
-                j++;
-            }
-        }
-        bondList = new ArrayList<Bond>();
-        for (int i = 0; i < bonds1.size(); i++) {
-            int a1 = bonds1.get(i);
-            int a2 = bonds2.get(i);
-            if (a1 < a2) {
-                Atom atom1 = atomList.get(a1 - 1);
-                Atom atom2 = atomList.get(a2 - 1);
-                bondList.add(new Bond(atom1, atom2));
-            }
-        }
-        setFileRead(true);
-        return true;
+  /** {@inheritDoc} */
+  @Override
+  public boolean readFile() {
+    // Create Molecular Mechanics Data Objects from the SimulationDefinition
+    // information
+    for (int i = 0; i < system.numatoms; i++) {
+      AtomType atomType = atomTypes.get(system.types[i]);
+      if (atomType == null) {
+        atomType =
+            new AtomType(
+                system.types[i],
+                -1,
+                system.name[i],
+                system.story[i],
+                system.atomic[i],
+                system.mass[i],
+                0);
+        atomTypes.put(system.types[i], atomType);
+      }
     }
+    atomList = new ArrayList<Atom>();
+    Vector<Integer> bonds1 = new Vector<Integer>();
+    Vector<Integer> bonds2 = new Vector<Integer>();
+    double d[] = new double[3];
+    int b[] = new int[4];
+    for (int i = 0; i < system.numatoms; i++) {
+      d[0] = system.coordinates[0][i];
+      d[1] = system.coordinates[1][i];
+      d[2] = system.coordinates[2][i];
+      String s = new String("" + system.types[i]);
+      AtomType atomType = atomTypes.get(s);
+      Atom a = new Atom(i + 1, new String("" + atomType.type), atomType, d);
+      atomList.add(a);
+      int b1 = i + 1;
+      b[0] = system.connectivity[0][i];
+      b[1] = system.connectivity[1][i];
+      b[2] = system.connectivity[2][i];
+      b[3] = system.connectivity[3][i];
+      int j = 0;
+      while (j < 4 && b[j] != 0) {
+        int b2 = b[j];
+        bonds1.add(b1);
+        bonds2.add(b2);
+        j++;
+      }
+    }
+    bondList = new ArrayList<Bond>();
+    for (int i = 0; i < bonds1.size(); i++) {
+      int a1 = bonds1.get(i);
+      int a2 = bonds2.get(i);
+      if (a1 < a2) {
+        Atom atom1 = atomList.get(a1 - 1);
+        Atom atom2 = atomList.get(a2 - 1);
+        bondList.add(new Bond(atom1, atom2));
+      }
+    }
+    setFileRead(true);
+    return true;
+  }
 
-    @Override
-    public boolean readNext(boolean resetPosition) {
-        return false;
-    }
+  @Override
+  public boolean readNext(boolean resetPosition) {
+    return false;
+  }
 
-    @Override
-    public boolean readNext(boolean resetPosition, boolean print) {
-        return false;
-    }
+  @Override
+  public boolean readNext(boolean resetPosition, boolean print) {
+    return false;
+  }
 
-    @Override
-    public boolean readNext() {
-        return readNext(false);
-    }
+  @Override
+  public boolean readNext() {
+    return readNext(false);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
-        return false;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
+    return false;
+  }
 }

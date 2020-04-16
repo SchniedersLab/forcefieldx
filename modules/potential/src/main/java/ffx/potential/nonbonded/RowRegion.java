@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,278 +34,271 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.nonbonded;
 
-import java.nio.DoubleBuffer;
-import java.util.logging.Level;
+import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
-
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
+import java.nio.DoubleBuffer;
+import java.util.logging.Level;
 
 /**
  * The RowRegion class is used to parallelize placing onto a 3D grid
- * <p>
- * 1) Multipoles using B-splines or
- * <p>
- * 2) Diffraction form factors.
- * <p>
- * Each "row" of 3D grid (i.e. fixed values of the z and y-coordinates) is
- * operated on by only a single thread to logically enforce atomic updates of
- * grid magnitudes.
+ *
+ * <p>1) Multipoles using B-splines or
+ *
+ * <p>2) Diffraction form factors.
+ *
+ * <p>Each "row" of 3D grid (i.e. fixed values of the z and y-coordinates) is operated on by only a
+ * single thread to logically enforce atomic updates of grid magnitudes.
  *
  * @author Armin Avdic
  */
 public class RowRegion extends ParallelRegion {
 
-    public int buff = 3;
-    public boolean[][] select;
-    protected RowLoop[] rowLoop;
-    protected double[][][] coordinates;
-    int nAtoms;
-    int nSymm;
-    private int gX, gY, gZ;
-    private DoubleBuffer gridBuffer;
-    private GridInitLoop[] gridInitLoop;
-    private double initValue = 0.0;
-    private int gridSize;
-    private double[] grid;
-    private boolean rebuildList;
-    private int[][][] zyAtListBuild;
+  public int buff = 3;
+  public boolean[][] select;
+  protected RowLoop[] rowLoop;
+  protected double[][][] coordinates;
+  int nAtoms;
+  int nSymm;
+  private int gX, gY, gZ;
+  private DoubleBuffer gridBuffer;
+  private GridInitLoop[] gridInitLoop;
+  private double initValue = 0.0;
+  private int gridSize;
+  private double[] grid;
+  private boolean rebuildList;
+  private int[][][] zyAtListBuild;
 
-    /**
-     * <p>Constructor for RowRegion.</p>
-     *
-     * @param gX          a int.
-     * @param gY          a int.
-     * @param gZ          a int.
-     * @param grid        an array of {@link double} objects.
-     * @param nSymm       a int.
-     * @param threadCount a int.
-     * @param atoms       an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param coordinates an array of {@link double} objects.
-     */
-    public RowRegion(int gX, int gY, int gZ, double[] grid,
-                     int nSymm, int threadCount,
-                     Atom[] atoms, double[][][] coordinates) {
-        this.nAtoms = atoms.length;
-        this.gX = gX;
-        this.gY = gY;
-        this.gZ = gZ;
-        gridSize = gX * gY * gZ * 2;
-        this.nSymm = nSymm;
-        this.coordinates = coordinates;
-        this.grid = grid;
-        if (grid != null) {
-            gridBuffer = DoubleBuffer.wrap(grid);
-        }
-        rowLoop = new RowLoop[threadCount];
-        gridInitLoop = new GridInitLoop[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            gridInitLoop[i] = new GridInitLoop();
-        }
-        select = new boolean[nSymm][nAtoms];
-        for (int i = 0; i < nSymm; i++) {
-            fill(select[i], true);
-        }
-        zyAtListBuild = new int[nSymm][nAtoms][2];
-        rebuildList = true;
+  /**
+   * Constructor for RowRegion.
+   *
+   * @param gX a int.
+   * @param gY a int.
+   * @param gZ a int.
+   * @param grid an array of {@link double} objects.
+   * @param nSymm a int.
+   * @param threadCount a int.
+   * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+   * @param coordinates an array of {@link double} objects.
+   */
+  public RowRegion(
+      int gX,
+      int gY,
+      int gZ,
+      double[] grid,
+      int nSymm,
+      int threadCount,
+      Atom[] atoms,
+      double[][][] coordinates) {
+    this.nAtoms = atoms.length;
+    this.gX = gX;
+    this.gY = gY;
+    this.gZ = gZ;
+    gridSize = gX * gY * gZ * 2;
+    this.nSymm = nSymm;
+    this.coordinates = coordinates;
+    this.grid = grid;
+    if (grid != null) {
+      gridBuffer = DoubleBuffer.wrap(grid);
     }
+    rowLoop = new RowLoop[threadCount];
+    gridInitLoop = new GridInitLoop[threadCount];
+    for (int i = 0; i < threadCount; i++) {
+      gridInitLoop[i] = new GridInitLoop();
+    }
+    select = new boolean[nSymm][nAtoms];
+    for (int i = 0; i < nSymm; i++) {
+      fill(select[i], true);
+    }
+    zyAtListBuild = new int[nSymm][nAtoms][2];
+    rebuildList = true;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
+  /** {@inheritDoc} */
+  @Override
+  public void finish() {
+    if (rebuildList) {
+      rowLoop[0].saveZYValues(zyAtListBuild);
+    }
+    rebuildList = false;
+  }
+
+  /**
+   * Getter for the field <code>grid</code>.
+   *
+   * @return an array of {@link double} objects.
+   */
+  public double[] getGrid() {
+    return grid;
+  }
+
+  /**
+   * getNatoms.
+   *
+   * @return a int.
+   */
+  public int getNatoms() {
+    return nAtoms;
+  }
+
+  /**
+   * getNsymm.
+   *
+   * @return a int.
+   */
+  public int getNsymm() {
+    return nSymm;
+  }
+
+  /**
+   * rowIndexForYZ.
+   *
+   * @param giy a int.
+   * @param giz a int.
+   * @return a int.
+   */
+  public int rowIndexForYZ(int giy, int giz) {
+    return giy + gY * giz;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void run() throws Exception {
+    int threadIndex = getThreadIndex();
+    RowLoop loop = rowLoop[threadIndex];
+    // This lets the same SpatialDensityLoops be used with different SpatialDensityRegions.
+    loop.setNsymm(nSymm);
+    try {
+      execute(0, gridSize - 1, gridInitLoop[threadIndex]);
+      execute(0, (gY * gZ) - 1, loop);
+    } catch (Exception e) {
+      String message = " Exception in RowRegion.";
+      logger.log(Level.SEVERE, message, e);
+    }
+  }
+
+  /**
+   * Select atoms that should be included. The default is to include all atoms, which is set up in
+   * the constructor. This function should be over-ridden by subclasses that want finer control.
+   */
+  public void selectAtoms() {
+    for (int i = 0; i < nSymm; i++) {
+      fill(select[i], true);
+    }
+  }
+
+  /**
+   * Setter for the field <code>atoms</code>.
+   *
+   * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+   */
+  public void setAtoms(Atom[] atoms) {
+    nAtoms = atoms.length;
+    select = new boolean[nSymm][nAtoms];
+    for (int i = 0; i < nSymm; i++) {
+      fill(select[i], true);
+    }
+  }
+
+  /**
+   * Setter for the field <code>crystal</code>.
+   *
+   * @param crystal a {@link ffx.crystal.Crystal} object.
+   * @param gX a int.
+   * @param gY a int.
+   * @param gZ a int.
+   */
+  public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
+    // this.crystal = crystal.getUnitCell();
+    this.gX = gX;
+    this.gY = gY;
+    this.gZ = gZ;
+    gridSize = gX * gY * gZ * 2;
+  }
+
+  /**
+   * setDensityLoop.
+   *
+   * @param loops an array of {@link ffx.potential.nonbonded.RowLoop} objects.
+   */
+  public void setDensityLoop(RowLoop[] loops) {
+    rowLoop = loops;
+  }
+
+  /**
+   * Setter for the field <code>initValue</code>.
+   *
+   * @param initValue a double.
+   */
+  public void setInitValue(double initValue) {
+    this.initValue = initValue;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void start() {
+    selectAtoms();
+    rebuildList = (rebuildList || rowLoop[0].checkList(zyAtListBuild, buff));
+  }
+
+  /**
+   * yFromRowIndex.
+   *
+   * @param i a int.
+   * @return a int.
+   */
+  public int yFromRowIndex(int i) {
+    return i % gY;
+  }
+
+  /**
+   * zFromRowIndex.
+   *
+   * @param i a int.
+   * @return a int.
+   */
+  public int zFromRowIndex(int i) {
+    return i / gY;
+  }
+
+  /**
+   * Setter for the field <code>gridBuffer</code>.
+   *
+   * @param grid a {@link java.nio.DoubleBuffer} object.
+   */
+  void setGridBuffer(DoubleBuffer grid) {
+    gridBuffer = grid;
+  }
+
+  private class GridInitLoop extends IntegerForLoop {
+
+    private final IntegerSchedule schedule = IntegerSchedule.fixed();
+    // Extra padding to avert cache interference.
+    long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+    long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
     @Override
-    public void finish() {
-        if (rebuildList) {
-            rowLoop[0].saveZYValues(zyAtListBuild);
+    public void run(int lb, int ub) {
+      if (gridBuffer != null) {
+        // if (grid != null) {
+        for (int i = lb; i <= ub; i++) {
+          // grid[i] = initValue;
+          gridBuffer.put(i, initValue);
         }
-        rebuildList = false;
+      }
     }
 
-    /**
-     * <p>Getter for the field <code>grid</code>.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    public double[] getGrid() {
-        return grid;
-    }
-
-    /**
-     * <p>getNatoms.</p>
-     *
-     * @return a int.
-     */
-    public int getNatoms() {
-        return nAtoms;
-    }
-
-    /**
-     * <p>getNsymm.</p>
-     *
-     * @return a int.
-     */
-    public int getNsymm() {
-        return nSymm;
-    }
-
-    /**
-     * <p>rowIndexForYZ.</p>
-     *
-     * @param giy a int.
-     * @param giz a int.
-     * @return a int.
-     */
-    public int rowIndexForYZ(int giy, int giz) {
-        return giy + gY * giz;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void run() throws Exception {
-        int threadIndex = getThreadIndex();
-        RowLoop loop = rowLoop[threadIndex];
-        // This lets the same SpatialDensityLoops be used with different SpatialDensityRegions.
-        loop.setNsymm(nSymm);
-        try {
-            execute(0, gridSize - 1, gridInitLoop[threadIndex]);
-            execute(0, (gY * gZ) - 1, loop);
-        } catch (Exception e) {
-            String message = " Exception in RowRegion.";
-            logger.log(Level.SEVERE, message, e);
-        }
+    public IntegerSchedule schedule() {
+      return schedule;
     }
-
-    /**
-     * Select atoms that should be included. The default is to include all
-     * atoms, which is set up in the constructor. This function should be
-     * over-ridden by subclasses that want finer control.
-     */
-    public void selectAtoms() {
-        for (int i = 0; i < nSymm; i++) {
-            fill(select[i], true);
-        }
-    }
-
-    /**
-     * <p>Setter for the field <code>atoms</code>.</p>
-     *
-     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    public void setAtoms(Atom[] atoms) {
-        nAtoms = atoms.length;
-        select = new boolean[nSymm][nAtoms];
-        for (int i = 0; i < nSymm; i++) {
-            fill(select[i], true);
-        }
-
-    }
-
-    /**
-     * <p>Setter for the field <code>crystal</code>.</p>
-     *
-     * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param gX      a int.
-     * @param gY      a int.
-     * @param gZ      a int.
-     */
-    public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
-        //this.crystal = crystal.getUnitCell();
-        this.gX = gX;
-        this.gY = gY;
-        this.gZ = gZ;
-        gridSize = gX * gY * gZ * 2;
-    }
-
-    /**
-     * <p>setDensityLoop.</p>
-     *
-     * @param loops an array of {@link ffx.potential.nonbonded.RowLoop} objects.
-     */
-    public void setDensityLoop(RowLoop[] loops) {
-        rowLoop = loops;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>initValue</code>.</p>
-     *
-     * @param initValue a double.
-     */
-    public void setInitValue(double initValue) {
-        this.initValue = initValue;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void start() {
-        selectAtoms();
-        rebuildList = (rebuildList || rowLoop[0].checkList(zyAtListBuild, buff));
-    }
-
-    /**
-     * <p>yFromRowIndex.</p>
-     *
-     * @param i a int.
-     * @return a int.
-     */
-    public int yFromRowIndex(int i) {
-        return i % gY;
-    }
-
-    /**
-     * <p>zFromRowIndex.</p>
-     *
-     * @param i a int.
-     * @return a int.
-     */
-    public int zFromRowIndex(int i) {
-        return i / gY;
-    }
-
-    private class GridInitLoop extends IntegerForLoop {
-
-        private final IntegerSchedule schedule = IntegerSchedule.fixed();
-        // Extra padding to avert cache interference.
-        long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-        long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
-        @Override
-        public void run(int lb, int ub) {
-            if (gridBuffer != null) {
-                //if (grid != null) {
-                for (int i = lb; i <= ub; i++) {
-                    //grid[i] = initValue;
-                    gridBuffer.put(i, initValue);
-                }
-            }
-
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return schedule;
-        }
-    }
-
-    /**
-     * <p>Setter for the field <code>gridBuffer</code>.</p>
-     *
-     * @param grid a {@link java.nio.DoubleBuffer} object.
-     */
-    void setGridBuffer(DoubleBuffer grid) {
-        gridBuffer = grid;
-    }
-
+  }
 }

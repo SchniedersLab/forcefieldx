@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,28 +34,28 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
 
 /**
- * <p>DataFilter interface.</p>
+ * DataFilter interface.
  *
  * @author Jacob Litman
  */
 public interface DataFilter {
 
-    /**
-     * <p>accept.</p>
-     *
-     * @param ob a {@link java.lang.Object} object.
-     * @return a boolean.
-     */
-    boolean accept(Object ob);
+  /**
+   * accept.
+   *
+   * @param ob a {@link java.lang.Object} object.
+   * @return a boolean.
+   */
+  boolean accept(Object ob);
 
-    /**
-     * <p>getDescription.</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    String getDescription();
+  /**
+   * getDescription.
+   *
+   * @return a {@link java.lang.String} object.
+   */
+  String getDescription();
 }

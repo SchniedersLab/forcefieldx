@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,12 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.nonbonded;
-
-import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.util.Range;
+import java.util.logging.Logger;
 
 /**
  * A fixed schedule that balances pairwise work across threads.
@@ -50,132 +49,126 @@ import edu.rit.util.Range;
  */
 public class PairwiseSchedule extends IntegerSchedule {
 
-    private static final Logger logger = Logger.getLogger(PairwiseSchedule.class.getName());
-    private final int nThreads;
-    private final Range[] ranges;
-    private final boolean[] threadDone;
-    private int nAtoms;
-    private int threadOffset;
+  private static final Logger logger = Logger.getLogger(PairwiseSchedule.class.getName());
+  private final int nThreads;
+  private final Range[] ranges;
+  private final boolean[] threadDone;
+  private int nAtoms;
+  private int threadOffset;
 
-    /**
-     * <p>
-     * Constructor for PairwiseSchedule.</p>
-     *
-     * @param nThreads a int.
-     * @param nAtoms   a int.
-     * @param ranges   an array of {@link edu.rit.util.Range} objects.
-     */
-    public PairwiseSchedule(int nThreads, int nAtoms, Range[] ranges) {
-        this.nAtoms = nAtoms;
-        this.nThreads = nThreads;
-        threadOffset = 0;
-        this.ranges = ranges;
-        threadDone = new boolean[nThreads];
+  /**
+   * Constructor for PairwiseSchedule.
+   *
+   * @param nThreads a int.
+   * @param nAtoms a int.
+   * @param ranges an array of {@link edu.rit.util.Range} objects.
+   */
+  public PairwiseSchedule(int nThreads, int nAtoms, Range[] ranges) {
+    this.nAtoms = nAtoms;
+    this.nThreads = nThreads;
+    threadOffset = 0;
+    this.ranges = ranges;
+    threadDone = new boolean[nThreads];
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This is a fixed schedule.
+   */
+  @Override
+  public boolean isFixedSchedule() {
+    return true;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Range next(int threadID) {
+    if (!threadDone[threadID]) {
+      threadDone[threadID] = true;
+      return ranges[threadID];
     }
+    return null;
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This is a fixed schedule.
-     */
-    @Override
-    public boolean isFixedSchedule() {
-        return true;
+  /**
+   * setAtoms.
+   *
+   * @param nAtoms a int.
+   */
+  public void setAtoms(int nAtoms) {
+    this.nAtoms = nAtoms;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void start(int nThreads, Range chunkRange) {
+    assert (nThreads == this.nThreads);
+    assert (chunkRange.lb() == 0);
+    assert (chunkRange.ub() == nAtoms - 1);
+
+    for (int i = 0; i < nThreads; i++) {
+      threadDone[i] = false;
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Range next(int threadID) {
-        if (!threadDone[threadID]) {
-            threadDone[threadID] = true;
-            return ranges[threadID];
+  /**
+   * updateRanges
+   *
+   * @param totalInteractions a int.
+   * @param atomsWithInteractions the number of chunks of interactions.
+   * @param listCount an array of int.
+   */
+  void updateRanges(int totalInteractions, int atomsWithInteractions, int[] listCount) {
+    int id = 0;
+    int goal = totalInteractions / (nThreads + threadOffset);
+    int num = 0;
+    int start = 0;
+    for (int i = 0; i < nAtoms; i++) {
+      num += listCount[i];
+      if (num >= goal) {
+
+        // Last thread gets the remaining atoms.
+        if (id == nThreads - 1) {
+          ranges[id] = new Range(start, nAtoms - 1);
+          break;
         }
-        return null;
-    }
 
-    /**
-     * <p>setAtoms.</p>
-     *
-     * @param nAtoms a int.
-     */
-    public void setAtoms(int nAtoms) {
-        this.nAtoms = nAtoms;
-    }
+        ranges[id] = new Range(start, i);
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void start(int nThreads, Range chunkRange) {
-        assert (nThreads == this.nThreads);
-        assert (chunkRange.lb() == 0);
-        assert (chunkRange.ub() == nAtoms - 1);
+        // Zero out the interaction counter.
+        num = 0;
+        // Next thread.
+        id++;
+        // Next range starts at i+1.
+        start = i + 1;
 
-        for (int i = 0; i < nThreads; i++) {
-            threadDone[i] = false;
+        // Out of atoms. Threads remaining get a null range.
+        if (start == nAtoms) {
+          if (atomsWithInteractions > nThreads + threadOffset + 1) {
+            threadOffset++;
+            updateRanges(totalInteractions, atomsWithInteractions, listCount);
+            break;
+          }
+          for (int j = id; j < nThreads; j++) {
+            ranges[j] = null;
+          }
+          break;
         }
-    }
+      } else if (i == nAtoms - 1) {
 
-    /**
-     * <p>
-     * updateRanges</p>
-     *
-     * @param totalInteractions     a int.
-     * @param atomsWithInteractions the number of chunks of interactions.
-     * @param listCount             an array of int.
-     */
-    void updateRanges(int totalInteractions, int atomsWithInteractions, int[] listCount) {
-        int id = 0;
-        int goal = totalInteractions / (nThreads + threadOffset);
-        int num = 0;
-        int start = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            num += listCount[i];
-            if (num >= goal) {
-
-                // Last thread gets the remaining atoms.
-                if (id == nThreads - 1) {
-                    ranges[id] = new Range(start, nAtoms - 1);
-                    break;
-                }
-
-                ranges[id] = new Range(start, i);
-
-                // Zero out the interaction counter.
-                num = 0;
-                // Next thread.
-                id++;
-                // Next range starts at i+1.
-                start = i + 1;
-
-                // Out of atoms. Threads remaining get a null range.
-                if (start == nAtoms) {
-                    if (atomsWithInteractions > nThreads + threadOffset + 1) {
-                        threadOffset++;
-                        updateRanges(totalInteractions, atomsWithInteractions, listCount);
-                        break;
-                    }
-                    for (int j = id; j < nThreads; j++) {
-                        ranges[j] = null;
-                    }
-                    break;
-                }
-            } else if (i == nAtoms - 1) {
-
-                // Last atom without reaching goal for current thread.
-                if (id < nThreads - 1 && atomsWithInteractions > nThreads + threadOffset + 1) {
-                    threadOffset++;
-                    updateRanges(totalInteractions, atomsWithInteractions, listCount);
-                    break;
-                }
-                ranges[id] = new Range(start, nAtoms - 1);
-                for (int j = id + 1; j < nThreads; j++) {
-                    ranges[j] = null;
-                }
-            }
+        // Last atom without reaching goal for current thread.
+        if (id < nThreads - 1 && atomsWithInteractions > nThreads + threadOffset + 1) {
+          threadOffset++;
+          updateRanges(totalInteractions, atomsWithInteractions, listCount);
+          break;
         }
-        threadOffset = 0;
+        ranges[id] = new Range(start, nAtoms - 1);
+        for (int j = id + 1; j < nThreads; j++) {
+          ranges[j] = null;
+        }
+      }
     }
+    threadOffset = 0;
+  }
 }

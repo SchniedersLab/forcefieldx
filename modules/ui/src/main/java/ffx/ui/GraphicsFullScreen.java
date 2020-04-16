@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui;
 
 import java.awt.Frame;
@@ -49,87 +49,71 @@ import java.awt.event.KeyListener;
  */
 public class GraphicsFullScreen extends Window implements KeyListener {
 
-    private boolean fullScreen = false;
+  private boolean fullScreen = false;
 
-    /**
-     * <p>
-     * Constructor for GraphicsFullScreen.</p>
-     *
-     * @param f        a {@link java.awt.Frame} object.
-     * @param graphics a {@link ffx.ui.GraphicsCanvas} object.
+  /**
+   * Constructor for GraphicsFullScreen.
+   *
+   * @param f a {@link java.awt.Frame} object.
+   * @param graphics a {@link ffx.ui.GraphicsCanvas} object.
+   */
+  public GraphicsFullScreen(Frame f, GraphicsCanvas graphics) {
+    super(f);
+    /*
+     * setLayout(new BorderLayout()); screenSize =
+     * Toolkit.getDefaultToolkit().getScreenSize(); setSize(screenSize);
+     * fullScreenCanvas = new Canvas3D(graphics.getGraphicsConfiguration());
+     * fullScreenCanvas.stopRenderer();
+     * graphics.getView().addCanvas3D(fullScreenCanvas);
+     * addKeyListener(this); fullScreenCanvas.addKeyListener(this);
+     * setFocusable(true); fullScreenCanvas.setFocusable(true);
+     * add(fullScreenCanvas, BorderLayout.CENTER);
      */
-    public GraphicsFullScreen(Frame f, GraphicsCanvas graphics) {
-        super(f);
-        /*
-         * setLayout(new BorderLayout()); screenSize =
-         * Toolkit.getDefaultToolkit().getScreenSize(); setSize(screenSize);
-         * fullScreenCanvas = new Canvas3D(graphics.getGraphicsConfiguration());
-         * fullScreenCanvas.stopRenderer();
-         * graphics.getView().addCanvas3D(fullScreenCanvas);
-         * addKeyListener(this); fullScreenCanvas.addKeyListener(this);
-         * setFocusable(true); fullScreenCanvas.setFocusable(true);
-         * add(fullScreenCanvas, BorderLayout.CENTER);
-         */
-    }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void keyPressed(KeyEvent evt) {
-        if (evt.getKeyCode() == KeyEvent.VK_ESCAPE) {
-            exitFullScreen();
-        } else if (evt.getKeyChar() == 'e') {
-            exitFullScreen();
-        } else if (evt.getKeyChar() == 'x') {
-            exitFullScreen();
-        }
+  /** {@inheritDoc} */
+  public void keyPressed(KeyEvent evt) {
+    if (evt.getKeyCode() == KeyEvent.VK_ESCAPE) {
+      exitFullScreen();
+    } else if (evt.getKeyChar() == 'e') {
+      exitFullScreen();
+    } else if (evt.getKeyChar() == 'x') {
+      exitFullScreen();
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void keyReleased(KeyEvent evt) {
-        keyPressed(evt);
-    }
+  /** {@inheritDoc} */
+  public void keyReleased(KeyEvent evt) {
+    keyPressed(evt);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void keyTyped(KeyEvent evt) {
-        keyPressed(evt);
-    }
+  /** {@inheritDoc} */
+  public void keyTyped(KeyEvent evt) {
+    keyPressed(evt);
+  }
 
-    /**
-     * <p>
-     * toggleFullScreen</p>
-     */
-    public void toggleFullScreen() {
-        if (fullScreen) {
-            exitFullScreen();
-        } else {
-            enterFullScreen();
-        }
+  /** toggleFullScreen */
+  public void toggleFullScreen() {
+    if (fullScreen) {
+      exitFullScreen();
+    } else {
+      enterFullScreen();
     }
+  }
 
-    /**
-     * <p>
-     * enterFullScreen</p>
+  /** enterFullScreen */
+  void enterFullScreen() {
+    /*
+     * if (fullScreen) { return; } fullScreenCanvas.startRenderer();
+     * setVisible(true); fullScreenCanvas.requestFocus(); fullScreen = true;
      */
-    void enterFullScreen() {
-        /*
-         * if (fullScreen) { return; } fullScreenCanvas.startRenderer();
-         * setVisible(true); fullScreenCanvas.requestFocus(); fullScreen = true;
-         */
-    }
+  }
 
-    /**
-     * <p>
-     * exitFullScreen</p>
+  /** exitFullScreen */
+  private void exitFullScreen() {
+    /*
+     * if (!fullScreen) { return; } setVisible(false);
+     * fullScreenCanvas.stopRenderer(); fullScreen = false;
      */
-    private void exitFullScreen() {
-        /*
-         * if (!fullScreen) { return; } setVisible(false);
-         * fullScreenCanvas.stopRenderer(); fullScreen = false;
-         */
-    }
+  }
 }

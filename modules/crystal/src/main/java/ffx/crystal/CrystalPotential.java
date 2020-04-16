@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,23 +34,21 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.crystal;
 
 import ffx.numerics.Potential;
 
 /**
- * The CrystalPotential interface extends Potential to provide
- * methods that change the periodic boundary conditions and symmetry via a
- * Crystal instance.
+ * The CrystalPotential interface extends Potential to provide methods that change the periodic
+ * boundary conditions and symmetry via a Crystal instance.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public interface CrystalPotential extends Potential {
 
-    Crystal getCrystal();
+  Crystal getCrystal();
 
-    void setCrystal(Crystal crystal);
-
+  void setCrystal(Crystal crystal);
 }

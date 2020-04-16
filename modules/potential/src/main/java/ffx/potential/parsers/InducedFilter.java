@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,17 +34,16 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
 
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.List;
 import java.util.logging.Logger;
-
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
 
 /**
  * The InducedFilter class parses TINKER Induced Dipole (*.*U) files.
@@ -54,68 +53,66 @@ import ffx.potential.bonded.Atom;
  */
 public class InducedFilter {
 
-    private static final Logger logger = Logger.getLogger(InducedFilter.class.getName());
-    File file;
-    private MolecularAssembly molecularAssembly;
+  private static final Logger logger = Logger.getLogger(InducedFilter.class.getName());
+  File file;
+  private MolecularAssembly molecularAssembly;
 
-    /**
-     * <p>
-     * Constructor for InducedFilter.</p>
-     *
-     * @param s a {@link ffx.potential.MolecularAssembly} object.
-     * @param f a {@link java.io.File} object.
-     */
-    public InducedFilter(MolecularAssembly s, File f) {
-        molecularAssembly = s;
-        file = f;
-    }
+  /**
+   * Constructor for InducedFilter.
+   *
+   * @param s a {@link ffx.potential.MolecularAssembly} object.
+   * @param f a {@link java.io.File} object.
+   */
+  public InducedFilter(MolecularAssembly s, File f) {
+    molecularAssembly = s;
+    file = f;
+  }
 
-    /**
-     * <p>
-     * read</p>
-     *
-     * @return a boolean.
-     */
-    public boolean read() {
-        if (!file.exists() || !file.canRead()) {
-            return false;
-        }
-        try {
-            FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr);
-            String data = br.readLine();
-            String[] tokens = data.trim().split(" +");
-            if (tokens.length == 0) {
-                return false;
-            }
-            int numatoms = Integer.parseInt(tokens[0]);
-            if (numatoms != molecularAssembly.getAtomList().size()) {
-                return false;
-            }
-            // Read the Induced Dipoles
-            double[][] x = new double[numatoms][3];
-            for (int i = 0; i < numatoms; i++) {
-                data = br.readLine().trim();
-                tokens = data.split(" +");
-                if (tokens.length != 5) {
-                    return false;
-                }
-                x[i][0] = Double.parseDouble(tokens[2]);
-                x[i][1] = Double.parseDouble(tokens[3]);
-                x[i][2] = Double.parseDouble(tokens[4]);
-            }
-            List<Atom> atoms = molecularAssembly.getAtomList();
-            double max = 0.0d;
-            for (Atom a : atoms) {
-                int j = a.getIndex() - 1;
-                //a.setInducedDipole(-x[j][0], -x[j][1], -x[j][2]);
-            }
-            logger.warning("Max Induced: " + max);
-            br.close();
-            fr.close();
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
+  /**
+   * read
+   *
+   * @return a boolean.
+   */
+  public boolean read() {
+    if (!file.exists() || !file.canRead()) {
+      return false;
     }
+    try {
+      FileReader fr = new FileReader(file);
+      BufferedReader br = new BufferedReader(fr);
+      String data = br.readLine();
+      String[] tokens = data.trim().split(" +");
+      if (tokens.length == 0) {
+        return false;
+      }
+      int numatoms = Integer.parseInt(tokens[0]);
+      if (numatoms != molecularAssembly.getAtomList().size()) {
+        return false;
+      }
+      // Read the Induced Dipoles
+      double[][] x = new double[numatoms][3];
+      for (int i = 0; i < numatoms; i++) {
+        data = br.readLine().trim();
+        tokens = data.split(" +");
+        if (tokens.length != 5) {
+          return false;
+        }
+        x[i][0] = Double.parseDouble(tokens[2]);
+        x[i][1] = Double.parseDouble(tokens[3]);
+        x[i][2] = Double.parseDouble(tokens[4]);
+      }
+      List<Atom> atoms = molecularAssembly.getAtomList();
+      double max = 0.0d;
+      for (Atom a : atoms) {
+        int j = a.getIndex() - 1;
+        // a.setInducedDipole(-x[j][0], -x[j][1], -x[j][2]);
+      }
+      logger.warning("Max Induced: " + max);
+      br.close();
+      fr.close();
+    } catch (Exception e) {
+      return false;
+    }
+    return true;
+  }
 }

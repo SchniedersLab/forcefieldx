@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 
 /**
- * The Algorithms package has support for local and global optimization, molecular dynamics simulations,
- * and calculation of free energy differences.
+ * The Algorithms package has support for local and global optimization, molecular dynamics
+ * simulations, and calculation of free energy differences.
  *
  * @since 1.0
  */

@@ -42,7 +42,6 @@ import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.PotentialScript
-
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -58,134 +57,136 @@ import picocli.CommandLine.Parameters
 @Command(description = " Compute the energy after shaking coordinates.", name = "ffxc CoordShakeEnergy")
 class CoordShakeEnergy extends PotentialScript {
 
-    /**
-     * -d or --deltaX to set the distance by which the coordinates should be moved. Applies a constant offset in x,
-     * reverts, in y, reverts, then z, and reverts again.
-     */
-    @Option(names = ['-d', '--deltaX'], paramLabel = "1.0",
-            description = 'Distance to move coordinates (applies to all equally)')
-    double dX = 1.0
+  /**
+   * -d or --deltaX to set the distance by which the coordinates should be moved. Applies a constant offset in x,
+   * reverts, in y, reverts, then z, and reverts again.
+   */
+  @Option(names = ['-d', '--deltaX'], paramLabel = "1.0",
+      description = 'Distance to move coordinates (applies to all equally)')
+  double dX = 1.0
 
-    /**
-     * -l or --lambda sets the lambda value to evaluate at.
-     */
-    @Option(names = ['-l', '--lambda'], paramLabel = "-1",
-            description = 'Lambda value (-1 indicates no lambda dependence).')
-    double initialLambda = -1
+  /**
+   * -l or --lambda sets the lambda value to evaluate at.
+   */
+  @Option(names = ['-l', '--lambda'], paramLabel = "-1",
+      description = 'Lambda value (-1 indicates no lambda dependence).')
+  double initialLambda = -1
 
-    /**
-     * -s or --start sets the first atom to move.
-     */
-    @Option(names = ['-s', '--start'], paramLabel = '1',
-            description = 'Starting atom to test')
-    int start = 1
+  /**
+   * -s or --start sets the first atom to move.
+   */
+  @Option(names = ['-s', '--start'], paramLabel = '1',
+      description = 'Starting atom to test')
+  int start = 1
 
-    /**
-     * -f or --final sets the last atom to move.
-     */
-    @Option(names = ['-f', '--final'], paramLabel = '-1',
-            description = 'Last atom to test (-1 indicates last atom in the system).')
-    int last = -1
+  /**
+   * -f or --final sets the last atom to move.
+   */
+  @Option(names = ['-f', '--final'], paramLabel = '-1',
+      description = 'Last atom to test (-1 indicates last atom in the system).')
+  int last = -1
 
-    /**
-     * The final argument(s) should be one or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "file", description = 'The atomic coordinate file in PDB or XYZ format.')
-    List<String> filenames = null
+  /**
+   * The final argument(s) should be one or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "file", description = 'The atomic coordinate file in PDB or XYZ format.')
+  List<String> filenames = null
 
-    Double energy = 0.0
+  Double energy = 0.0
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    CoordShakeEnergy run() {
+  /**
+   * Execute the script.
+   */
+  @Override
+  CoordShakeEnergy run() {
 
-        if (!init()) {
-            return null
-        }
-
-        if (filenames != null && filenames.size() == 1) {
-            activeAssembly = potentialFunctions.open(filenames.get(0))
-        } else if (activeAssembly == null || filenames.size() != 1) {
-            logger.info(helpString())
-            return null
-        }
-
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
-
-        logger.info("\n Running CoordShakeEnergy on " + modelFilename)
-
-        // Turn on computation of lambda derivatives if softcore atoms exist or a single topology has lambda specified.
-        boolean lambdaTerm = initialLambda >= 0.0
-        if (lambdaTerm) {
-            System.setProperty("lambdaterm", "true")
-        }
-        if (initialLambda < 0.0 || initialLambda > 1.0) {
-            initialLambda = 0.0
-        }
-
-        Potential thePotential = activeAssembly.getPotentialEnergy()
-
-        if (lambdaTerm) {
-            ((LambdaInterface) thePotential).setLambda(initialLambda)
-        }
-
-        def eFunct
-        if (thePotential instanceof ForceFieldEnergyOpenMM) {
-            ForceFieldEnergyOpenMM ommE = (ForceFieldEnergyOpenMM) thePotential
-            eFunct = { double[] coords -> return (ommE.energyFFX(coords, true) - ommE.energy(coords, true)) }
-        } else {
-            eFunct = { double[] coords -> return thePotential.energy(coords, true) }
-        }
-
-        logger.info(" Starting energy: ")
-        double[] x = thePotential.getCoordinates()
-        eFunct(x)
-
-        Atom[] atoms = activeAssembly.getAtomArray()
-
-        def axes = ["X", "Y", "Z"]
-        double[] atomXYZ = new double[3]
-        int firstAt = start - 1
-        int lastAt = last
-        if (lastAt < 0 || lastAt > atoms.length) {
-            lastAt = atoms.length
-        }
-
-        for (int i = 0; i < 3; i++) {
-            logger.info(String.format(" Moving atoms +1 unit in %s", axes[i]))
-            for (int j = firstAt; j < lastAt; j++) {
-                Atom atom = atoms[j]
-                atom.getXYZ(atomXYZ)
-                atomXYZ[i] += dX
-                atom.setXYZ(atomXYZ)
-            }
-            thePotential.getCoordinates(x)
-            eFunct(x)
-
-            logger.info(String.format(" Moving atoms -1 unit in %s", axes[i]))
-            for (int j = firstAt; j < lastAt; j++) {
-                Atom atom = atoms[j]
-                atom.getXYZ(atomXYZ)
-                atomXYZ[i] -= (2.0 * dX)
-                atom.setXYZ(atomXYZ)
-            }
-            thePotential.getCoordinates(x)
-            eFunct(x)
-
-            for (int j = firstAt; j < lastAt; j++) {
-                Atom atom = atoms[j]
-                atom.getXYZ(atomXYZ)
-                atomXYZ[i] += dX
-                atom.setXYZ(atomXYZ)
-            }
-        }
-
-        logger.info(" After movement (may have small rounding errors): ")
-        thePotential.getCoordinates(x)
-        eFunct(x)
-
-        return this
+    if (!init()) {
+      return null
     }
+
+    if (filenames != null && filenames.size() == 1) {
+      activeAssembly = potentialFunctions.open(filenames.get(0))
+    } else if (activeAssembly == null || filenames.size() != 1) {
+      logger.info(helpString())
+      return null
+    }
+
+    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Running CoordShakeEnergy on " + modelFilename)
+
+    // Turn on computation of lambda derivatives if softcore atoms exist or a single topology has lambda specified.
+    boolean lambdaTerm = initialLambda >= 0.0
+    if (lambdaTerm) {
+      System.setProperty("lambdaterm", "true")
+    }
+    if (initialLambda < 0.0 || initialLambda > 1.0) {
+      initialLambda = 0.0
+    }
+
+    Potential thePotential = activeAssembly.getPotentialEnergy()
+
+    if (lambdaTerm) {
+      ((LambdaInterface) thePotential).setLambda(initialLambda)
+    }
+
+    def eFunct
+    if (thePotential instanceof ForceFieldEnergyOpenMM) {
+      ForceFieldEnergyOpenMM ommE = (ForceFieldEnergyOpenMM) thePotential
+      eFunct = {double[] coords -> return (ommE.energyFFX(coords, true) - ommE.energy(coords, true))
+      }
+    } else {
+      eFunct = {double[] coords -> return thePotential.energy(coords, true)
+      }
+    }
+
+    logger.info(" Starting energy: ")
+    double[] x = thePotential.getCoordinates()
+    eFunct(x)
+
+    Atom[] atoms = activeAssembly.getAtomArray()
+
+    def axes = ["X", "Y", "Z"]
+    double[] atomXYZ = new double[3]
+    int firstAt = start - 1
+    int lastAt = last
+    if (lastAt < 0 || lastAt > atoms.length) {
+      lastAt = atoms.length
+    }
+
+    for (int i = 0; i < 3; i++) {
+      logger.info(String.format(" Moving atoms +1 unit in %s", axes[i]))
+      for (int j = firstAt; j < lastAt; j++) {
+        Atom atom = atoms[j]
+        atom.getXYZ(atomXYZ)
+        atomXYZ[i] += dX
+        atom.setXYZ(atomXYZ)
+      }
+      thePotential.getCoordinates(x)
+      eFunct(x)
+
+      logger.info(String.format(" Moving atoms -1 unit in %s", axes[i]))
+      for (int j = firstAt; j < lastAt; j++) {
+        Atom atom = atoms[j]
+        atom.getXYZ(atomXYZ)
+        atomXYZ[i] -= (2.0 * dX)
+        atom.setXYZ(atomXYZ)
+      }
+      thePotential.getCoordinates(x)
+      eFunct(x)
+
+      for (int j = firstAt; j < lastAt; j++) {
+        Atom atom = atoms[j]
+        atom.getXYZ(atomXYZ)
+        atomXYZ[i] += dX
+        atom.setXYZ(atomXYZ)
+      }
+    }
+
+    logger.info(" After movement (may have small rounding errors): ")
+    thePotential.getCoordinates(x)
+    eFunct(x)
+
+    return this
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 
 /**
- * The Parameters package stores force field atom types, bond types, etc,
- * and keywords that define the potential.
+ * The Parameters package stores force field atom types, bond types, etc, and keywords that define
+ * the potential.
  *
  * @author Michael J. Schnieders
  * @since 1.0

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,78 +34,78 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.dynamics.thermostats;
 
-import java.util.Collections;
-import java.util.List;
 import static java.lang.String.format;
 
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
 import ffx.utilities.Constants;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * The Adiabatic thermostat is for NVE simulations and does not alter particle
- * velocities.
+ * The Adiabatic thermostat is for NVE simulations and does not alter particle velocities.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class Adiabatic extends Thermostat {
 
-    /**
-     * <p>
-     * Constructor for Adiabatic.</p>
-     *
-     * @param n    Number of degrees of freedom.
-     * @param x    Atomic coordinates.
-     * @param v    Velocities.
-     * @param mass Mass of each degrees of freedom.
-     * @param type the VARIABLE_TYPE of each variable.
-     */
-    public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type) {
-        this(n, x, v, mass, type, Collections.emptyList());
-    }
+  /**
+   * Constructor for Adiabatic.
+   *
+   * @param n Number of degrees of freedom.
+   * @param x Atomic coordinates.
+   * @param v Velocities.
+   * @param mass Mass of each degrees of freedom.
+   * @param type the VARIABLE_TYPE of each variable.
+   */
+  public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type) {
+    this(n, x, v, mass, type, Collections.emptyList());
+  }
 
-    public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type, List<Constraint> constraints) {
-        super(n, x, v, mass, type, 1.0, constraints);
-        this.name = ThermostatEnum.ADIABATIC;
-    }
+  public Adiabatic(
+      int n,
+      double[] x,
+      double[] v,
+      double[] mass,
+      VARIABLE_TYPE[] type,
+      List<Constraint> constraints) {
+    super(n, x, v, mass, type, 1.0, constraints);
+    this.name = ThermostatEnum.ADIABATIC;
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * No full-step velocity modifications are made.
-     */
-    @Override
-    public void fullStep(double dt) {
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>No full-step velocity modifications are made.
+   */
+  @Override
+  public void fullStep(double dt) {}
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * No half-step velocity modifications are made.
-     */
-    @Override
-    public void halfStep(double dt) {
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>No half-step velocity modifications are made.
+   */
+  @Override
+  public void halfStep(double dt) {}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setTargetTemperature(double t) {
-        targetTemperature = t;
-        kT = t * Constants.kB;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void setTargetTemperature(double t) {
+    targetTemperature = t;
+    kT = t * Constants.kB;
+  }
 
-    /**
-     * Add Thermostat details to the kinetic energy and temperature details.
-     *
-     * @return Description of the thermostat, kinetic energy and temperature.
-     */
-    public String toThermostatString() {
-        return format("\n Adiabatic Thermostat\n%s", super.toString());
-    }
+  /**
+   * Add Thermostat details to the kinetic energy and temperature details.
+   *
+   * @return Description of the thermostat, kinetic energy and temperature.
+   */
+  public String toThermostatString() {
+    return format("\n Adiabatic Thermostat\n%s", super.toString());
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,80 +34,77 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.switching;
 
 import ffx.numerics.func1d.UnivariateDiffFunction;
 
 /**
- * A UnivariateSwitchingFunction describes a function of a single value (often
- * lambda), where f(lb) = 0, f(ub) = 1, and df(x)/dx &gt;= 0 for all x lb-ub.
- * <p>
- * Additionally, its often useful for switching functions to have zero first and second derivatives
- * at the lower and upper bound.
- * <p>
- * A number of methods exist to check for various properties of a switching
- * function; these will often be implemented as simple return-boolean methods.
+ * A UnivariateSwitchingFunction describes a function of a single value (often lambda), where f(lb)
+ * = 0, f(ub) = 1, and df(x)/dx &gt;= 0 for all x lb-ub.
+ *
+ * <p>Additionally, its often useful for switching functions to have zero first and second
+ * derivatives at the lower and upper bound.
+ *
+ * <p>A number of methods exist to check for various properties of a switching function; these will
+ * often be implemented as simple return-boolean methods.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public interface UnivariateSwitchingFunction extends UnivariateDiffFunction {
 
-    /**
-     * Remains 0 below the lower bound, and 1 above the upper bound (i.e.
-     * a multiplicative switch).
-     *
-     * @return df(x)/dx is zero outside range lb-ub.
-     */
-    boolean constantOutsideBounds();
+  /**
+   * Remains 0 below the lower bound, and 1 above the upper bound (i.e. a multiplicative switch).
+   *
+   * @return df(x)/dx is zero outside range lb-ub.
+   */
+  boolean constantOutsideBounds();
 
-    /**
-     * The highest-order derivative that is zero at the bounds.
-     *
-     * @return Maximum order zero derivative at bounds.
-     */
-    int getHighestOrderZeroDerivative();
+  /**
+   * The highest-order derivative that is zero at the bounds.
+   *
+   * @return Maximum order zero derivative at bounds.
+   */
+  int getHighestOrderZeroDerivative();
 
-    /**
-     * Gets the one bound, where f(x) becomes one.
-     *
-     * @return One bound
-     */
-    double getOneBound();
+  /**
+   * Gets the one bound, where f(x) becomes one.
+   *
+   * @return One bound
+   */
+  double getOneBound();
 
-    /**
-     * Gets the zero bound, where f(x) becomes zero.
-     *
-     * @return Zero bound
-     */
-    double getZeroBound();
+  /**
+   * Gets the zero bound, where f(x) becomes zero.
+   *
+   * @return Zero bound
+   */
+  double getZeroBound();
 
-    /**
-     * Returns the highest-order, guaranteed-zero derivative at the zero bound.
-     *
-     * @return a int.
-     */
-    default int highestOrderZeroDerivativeAtZeroBound() {
-        return getHighestOrderZeroDerivative();
-    }
+  /**
+   * Returns the highest-order, guaranteed-zero derivative at the zero bound.
+   *
+   * @return a int.
+   */
+  default int highestOrderZeroDerivativeAtZeroBound() {
+    return getHighestOrderZeroDerivative();
+  }
 
-    /**
-     * True if f(lb + delta) + f(ub - delta) = 1 for all delta between 0 and
-     * (ub - lb). For example, a power switch with beta 1 is symmetric to unity,
-     * as f(l) + f(1-l) = 1, but beta 2 produces a non-unity result, where
-     * f(0.5) + f(0.5) = 0.5.
-     *
-     * @return If symmetry produces unity result.
-     */
-    boolean symmetricToUnity();
+  /**
+   * True if f(lb + delta) + f(ub - delta) = 1 for all delta between 0 and (ub - lb). For example, a
+   * power switch with beta 1 is symmetric to unity, as f(l) + f(1-l) = 1, but beta 2 produces a
+   * non-unity result, where f(0.5) + f(0.5) = 0.5.
+   *
+   * @return If symmetry produces unity result.
+   */
+  boolean symmetricToUnity();
 
-    /**
-     * Remains in the range 0-1 outside the bounds. Implied to be true if
-     * constantOutsideBounds is true.
-     *
-     * @return min(f ( x)) = 0 and max(f(x)) = 1.
-     */
-    boolean validOutsideBounds();
-
+  /**
+   * Remains in the range 0-1 outside the bounds. Implied to be true if constantOutsideBounds is
+   * true.
+   *
+   * @return min(f ( x)) = 0 and max(f(x)) = 1.
+   */
+  boolean validOutsideBounds();
 }

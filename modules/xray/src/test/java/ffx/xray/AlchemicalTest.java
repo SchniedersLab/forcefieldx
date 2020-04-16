@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,61 +34,63 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray;
-
-import java.util.logging.Logger;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import ffx.algorithms.misc.PJDependentTest;
 import ffx.realspace.cli.RealSpaceOptions;
 import ffx.realspace.groovy.test.Alchemical;
-
 import groovy.lang.Binding;
+import java.util.logging.Logger;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-/**
- * Test the Energy script.
- */
+/** Test the Energy script. */
 public class AlchemicalTest extends PJDependentTest {
 
-    private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
+  private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
 
-    Binding binding;
-    Alchemical alchemical;
+  Binding binding;
+  Alchemical alchemical;
 
-    @After
-    public void after() {
-        alchemical.destroyPotentials();
-    }
+  @After
+  public void after() {
+    alchemical.destroyPotentials();
+  }
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        alchemical = new Alchemical();
-        alchemical.setBinding(binding);
-    }
+  @Before
+  public void before() {
+    binding = new Binding();
+    alchemical = new Alchemical();
+    alchemical.setBinding(binding);
+  }
 
-    @Test
-    public void testAlchemical() {
+  @Test
+  public void testAlchemical() {
 
-        // Set-up the input arguments for the Alchemical script.
-        String[] args = {"-N", "-n", "10", "-r", "0.01", "src/main/java/ffx/xray/structures/5zck.pdb",
-                "src/main/java/ffx/xray/structures/5zck_ffx_2fofc.map"};
-        binding.setVariable("args", args);
+    // Set-up the input arguments for the Alchemical script.
+    String[] args = {
+      "-N",
+      "-n",
+      "10",
+      "-r",
+      "0.01",
+      "src/main/java/ffx/xray/structures/5zck.pdb",
+      "src/main/java/ffx/xray/structures/5zck_ffx_2fofc.map"
+    };
+    binding.setVariable("args", args);
 
-        alchemical.run();
-    }
+    alchemical.run();
+  }
 
-    @Test
-    public void testAlchemicalHelp() {
-        // Set-up the input arguments for the Alchemical script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
+  @Test
+  public void testAlchemicalHelp() {
+    // Set-up the input arguments for the Alchemical script.
+    String[] args = {"-h"};
+    binding.setVariable("args", args);
 
-        // Evaluate the script.
-        alchemical.run();
-    }
+    // Evaluate the script.
+    alchemical.run();
+  }
 }

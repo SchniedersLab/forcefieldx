@@ -37,10 +37,6 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
-import org.apache.commons.io.FilenameUtils
-
-import groovy.cli.picocli.CliBuilder
-
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.integrators.Integrator
 import ffx.algorithms.dynamics.integrators.IntegratorEnum
@@ -49,6 +45,8 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum
 import ffx.algorithms.mc.MonteCarloListener
 import ffx.algorithms.mc.RosenbluthCBMC
 import ffx.potential.bonded.Residue
+import groovy.cli.picocli.CliBuilder
+import org.apache.commons.io.FilenameUtils
 
 // Number of molecular dynamics steps
 int nSteps = 1000000;
@@ -95,12 +93,15 @@ boolean bias = true;
 // Create the command line parser.
 def cli = new CliBuilder(usage: ' ffxc test.rosenMC [options] <filename>');
 cli.h(longOpt: 'help', 'Print this message.');
-cli.b(longOpt: 'thermostat', args: 1, argName: 'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
+cli.b(longOpt: 'thermostat', args: 1, argName: 'Berendsen',
+    'Thermostat: [Adiabatic / Berendsen / Bussi]');
 cli.d(longOpt: 'dt', args: 1, argName: '1.0', 'Time discretization (fsec).');
-cli.i(longOpt: 'integrate', args: 1, argName: 'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
+cli.i(longOpt: 'integrate', args: 1, argName: 'Beeman',
+    'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
 cli.l(longOpt: 'log', args: 1, argName: '0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt: 'steps', args: 1, argName: '1000000', 'Number of molecular dynamics steps.');
-cli.p(longOpt: 'polarization', args: 1, argName: 'Mutual', 'Polarization: [None / Direct / Mutual]');
+cli.p(longOpt: 'polarization', args: 1, argName: 'Mutual',
+    'Polarization: [None / Direct / Mutual]');
 cli.t(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degrees Kelvin.');
 cli.w(longOpt: 'save', args: 1, argName: '0.1', 'Interval to write out coordinates (psec).');
 cli.s(longOpt: 'restart', args: 1, argName: '0.1', 'Interval to write out restart file (psec).');
@@ -108,135 +109,139 @@ cli.f(longOpt: 'file', args: 1, argName: 'PDB', 'Choose file type to write to [P
 cli.rmcR(longOpt: 'residue', args: 1, argName: '1', 'RRMC target residue number.');
 cli.rmcF(longOpt: 'mcFreq', args: 1, argName: '50', 'RRMC frequency.');
 cli.rmcK(longOpt: 'trialSetSize', args: 1, argName: '10', 'Size of RRMC trial sets.');
-cli.rmcW(longOpt: 'writeSnapshots', args: 1, argName: 'false', 'Output PDBs of trial sets and orig/proposed conformations.');
-cli.rmcD(longOpt: 'dynamics', args: 1, argName: 'false', 'Skip molecular dynamics; do only Monte Carlo moves.')
+cli.rmcW(longOpt: 'writeSnapshots', args: 1, argName: 'false',
+    'Output PDBs of trial sets and orig/proposed conformations.');
+cli.rmcD(longOpt: 'dynamics', args: 1, argName: 'false',
+    'Skip molecular dynamics; do only Monte Carlo moves.')
 cli.rmcB(longOpt: 'bias', args: 1, argName: 'true', 'For validation. Skips biasing.');
 def options = cli.parse(args);
 
 if (options.h) {
-    return cli.usage();
+  return cli.usage();
 }
 
 if (options.rmcB) {
-    bias = Boolean.parseBoolean(options.rmcB);
+  bias = Boolean.parseBoolean(options.rmcB);
 }
 
 if (options.rmcD) {
-    dynamics = Boolean.parseBoolean(options.rmcD);
+  dynamics = Boolean.parseBoolean(options.rmcD);
 }
 
 // Load the number of molecular dynamics steps.
 if (options.n) {
-    nSteps = Integer.parseInt(options.n);
+  nSteps = Integer.parseInt(options.n);
 }
 
 // Write dyn interval in picoseconds
 if (options.s) {
-    restartFrequency = Double.parseDouble(options.s);
+  restartFrequency = Double.parseDouble(options.s);
 }
 
 //
 if (options.f) {
-    fileType = options.f.toUpperCase();
+  fileType = options.f.toUpperCase();
 }
 // Load the time steps in femtoseconds.
 if (options.d) {
-    timeStep = Double.parseDouble(options.d);
+  timeStep = Double.parseDouble(options.d);
 }
 
 // Report interval in picoseconds.
 if (options.l) {
-    printInterval = Double.parseDouble(options.l);
+  printInterval = Double.parseDouble(options.l);
 }
 
 // Write snapshot interval in picoseconds.
 if (options.w) {
-    saveInterval = Double.parseDouble(options.w);
+  saveInterval = Double.parseDouble(options.w);
 }
 
 // Temperature in degrees Kelvin.
 if (options.t) {
-    temperature = Double.parseDouble(options.t);
+  temperature = Double.parseDouble(options.t);
 }
 
 if (options.p) {
-    System.setProperty("polarization", options.p);
+  System.setProperty("polarization", options.p);
 }
 
 if (options.b) {
-    thermostat = Thermostat.parseThermostat(options.b)
+  thermostat = Thermostat.parseThermostat(options.b)
 }
 
 if (options.i) {
-    integrator = Integrator.parseIntegrator(options.i)
+  integrator = Integrator.parseIntegrator(options.i)
 }
 
 if (options.rmcR) {
-    resNum = Integer.parseInt(options.rmcR);
+  resNum = Integer.parseInt(options.rmcR);
 }
 
 if (options.rmcF) {
-    mcFrequency = Integer.parseInt(options.rmcF);
+  mcFrequency = Integer.parseInt(options.rmcF);
 }
 
 if (options.rmcK) {
-    trialSetSize = Integer.parseInt(options.rmcK);
+  trialSetSize = Integer.parseInt(options.rmcK);
 }
 
 if (options.rmcW) {
-    writeSnapshots = Boolean.parseBoolean(options.rmcW);
+  writeSnapshots = Boolean.parseBoolean(options.rmcW);
 }
 
 List<String> arguments = options.arguments();
 String modelfilename = null;
 if (arguments != null && arguments.size() > 0) {
-    // Read in command line.
-    modelfilename = arguments.get(0);
-    open(modelfilename);
+  // Read in command line.
+  modelfilename = arguments.get(0);
+  open(modelfilename);
 } else if (active == null) {
-    return cli.usage();
+  return cli.usage();
 } else {
-    modelfilename = active.getFile();
+  modelfilename = active.getFile();
 }
 
 // Restart File
 File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
 if (!dyn.exists()) {
-    dyn = null;
+  dyn = null;
 }
 
 if (!dynamics) {
-    int numAccepted = 0;
-    logger.info("\n Running CBMC on " + modelfilename);
-    System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
-    mcFrequency = 1;
-    targets.add(active.getChains()[0].getResidues().get(resNum));
-    MonteCarloListener rrmc = new RosenbluthCBMC(active, active.getPotentialEnergy(), null,
-            targets, mcFrequency, trialSetSize, writeSnapshots);
-    while (numAccepted < nSteps) {
-        if (bias) {
-            boolean accepted = rrmc.cbmcStep();
-            if (accepted) {
-                numAccepted++;
-            }
-        } else {
-            boolean accepted = rrmc.controlStep();
-            if (accepted) {
-                numAccepted++;
-            }
-        }
+  int numAccepted = 0;
+  logger.info("\n Running CBMC on " + modelfilename);
+  System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
+  mcFrequency = 1;
+  targets.add(active.getChains()[0].getResidues().get(resNum));
+  MonteCarloListener rrmc = new RosenbluthCBMC(active, active.getPotentialEnergy(), null,
+      targets, mcFrequency, trialSetSize, writeSnapshots);
+  while (numAccepted < nSteps) {
+    if (bias) {
+      boolean accepted = rrmc.cbmcStep();
+      if (accepted) {
+        numAccepted++;
+      }
+    } else {
+      boolean accepted = rrmc.controlStep();
+      if (accepted) {
+        numAccepted++;
+      }
     }
-    return;
+  }
+  return;
 }
 
 logger.info("\n Running dynamics with CBMC on " + modelfilename);
-MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), sh, thermostat, integrator);
+MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(),
+    active.getProperties(), sh, thermostat, integrator);
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 
 targets.add(active.getChains()[0].getResidues().get(resNum));
-MonteCarloListener rrmc = new RosenbluthCBMC(active, active.getPotentialEnergy(), molDyn.getThermostat(),
-        targets, mcFrequency, trialSetSize, writeSnapshots);
+MonteCarloListener rrmc = new RosenbluthCBMC(active, active.getPotentialEnergy(),
+    molDyn.getThermostat(),
+    targets, mcFrequency, trialSetSize, writeSnapshots);
 molDyn.addMCListener(rrmc);
 
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,78 +34,77 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
-import ffx.numerics.Potential;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 
+import ffx.numerics.Potential;
+
 /**
- * Integrate Newton's equations of motion using a Beeman multistep recursion
- * formula; the actual coefficients are Brooks' "Better Beeman" values.
+ * Integrate Newton's equations of motion using a Beeman multistep recursion formula; the actual
+ * coefficients are Brooks' "Better Beeman" values.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class BetterBeeman extends Integrator {
 
-    private double dt2_8;
-    private double dt_8;
+  private double dt2_8;
+  private double dt_8;
 
-    /**
-     * Constructor for BetterBeeman.
-     *
-     * @param nVariables number of Variables.
-     * @param x          Cartesian coordinates (Angstroms).
-     * @param v          Velocities.
-     * @param a          Accelerations.
-     * @param aPrevious  Previous Accelerations.
-     * @param mass       Mass.
-     */
-    public BetterBeeman(int nVariables, double[] x, double[] v, double[] a,
-                        double[] aPrevious, double[] mass) {
-        super(nVariables, x, v, a, aPrevious, mass);
-        dt_8 = 0.125 * dt;
-        dt2_8 = dt * dt_8;
-    }
+  /**
+   * Constructor for BetterBeeman.
+   *
+   * @param nVariables number of Variables.
+   * @param x Cartesian coordinates (Angstroms).
+   * @param v Velocities.
+   * @param a Accelerations.
+   * @param aPrevious Previous Accelerations.
+   * @param mass Mass.
+   */
+  public BetterBeeman(
+      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
+    super(nVariables, x, v, a, aPrevious, mass);
+    dt_8 = 0.125 * dt;
+    dt2_8 = dt * dt_8;
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Use Newton's second law to get the next acceleration and find the
-     * full-step velocities using the Beeman recusion.
-     */
-    @Override
-    public void postForce(double[] gradient) {
-        copyAccelerationToPrevious();
-        for (int i = 0; i < nVariables; i++) {
-            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
-            v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
-        }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Use Newton's second law to get the next acceleration and find the full-step velocities using
+   * the Beeman recusion.
+   */
+  @Override
+  public void postForce(double[] gradient) {
+    copyAccelerationToPrevious();
+    for (int i = 0; i < nVariables; i++) {
+      a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
+      v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Store the current atom positions, then find new atom positions and
-     * half-step velocities via Beeman recursion.
-     */
-    @Override
-    public void preForce(Potential potential) {
-        for (int i = 0; i < nVariables; i++) {
-            double temp = 5.0 * a[i] - aPrevious[i];
-            x[i] += v[i] * dt + temp * dt2_8;
-            v[i] += temp * dt_8;
-        }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Store the current atom positions, then find new atom positions and half-step velocities via
+   * Beeman recursion.
+   */
+  @Override
+  public void preForce(Potential potential) {
+    for (int i = 0; i < nVariables; i++) {
+      double temp = 5.0 * a[i] - aPrevious[i];
+      x[i] += v[i] * dt + temp * dt2_8;
+      v[i] += temp * dt_8;
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setTimeStep(double dt) {
-        this.dt = dt;
-        dt_8 = 0.125 * dt;
-        dt2_8 = dt * dt_8;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void setTimeStep(double dt) {
+    this.dt = dt;
+    dt_8 = 0.125 * dt;
+    dt2_8 = dt * dt_8;
+  }
 }

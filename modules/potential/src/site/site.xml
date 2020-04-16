@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <project
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        name="Potential" xmlns="http://maven.apache.org/DECORATION/1.7.0"
-        xsi:schemaLocation="http://maven.apache.org/DECORATION/1.7.0 http://maven.apache.org/xsd/decoration-1.7.0.xsd">
-    <body>
-        <menu name="Potential">
-            <item name="Introduction" href="/index.html"/>
-            <item name="Examples" href="/examples.html"/>
-            <item name="Publications" href="/publications.html"/>
-        </menu>
-    </body>
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  name="Potential" xmlns="http://maven.apache.org/DECORATION/1.7.0"
+  xsi:schemaLocation="http://maven.apache.org/DECORATION/1.7.0 http://maven.apache.org/xsd/decoration-1.7.0.xsd">
+  <body>
+    <menu name="Potential">
+      <item href="/index.html" name="Introduction"/>
+      <item href="/examples.html" name="Examples"/>
+      <item href="/publications.html" name="Publications"/>
+    </menu>
+  </body>
 </project>

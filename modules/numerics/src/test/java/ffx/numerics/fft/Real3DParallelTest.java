@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,121 +34,115 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.fft;
 
+import static org.junit.Assert.assertEquals;
+
+import edu.rit.pj.ParallelTeam;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.assertEquals;
 
-import edu.rit.pj.ParallelTeam;
-
-/**
- * @author Michael J. Schnieders
- */
+/** @author Michael J. Schnieders */
 @RunWith(Parameterized.class)
 public class Real3DParallelTest {
 
-    private final String info;
-    private final int nx;
-    private final int ny;
-    private final int nz;
-    private final int tot;
-    private final double[] data;
-    private final double[] expected;
-    private final double[] recip;
-    private final ParallelTeam parallelTeam;
-    private final double tolerance = 1.0e-14;
+  private final String info;
+  private final int nx;
+  private final int ny;
+  private final int nz;
+  private final int tot;
+  private final double[] data;
+  private final double[] expected;
+  private final double[] recip;
+  private final ParallelTeam parallelTeam;
+  private final double tolerance = 1.0e-14;
 
-    public Real3DParallelTest(String info, int nx, int ny, int nz, int nCPUs) {
-        this.info = info;
-        this.nx = nx;
-        this.ny = ny;
-        this.nz = nz;
-        tot = nx * ny * nz;
-        int paddedTot = (nx + 2) * ny * nz;
-        data = new double[paddedTot * 2];
-        expected = new double[tot];
-        recip = new double[tot];
-        parallelTeam = new ParallelTeam(nCPUs);
-    }
+  public Real3DParallelTest(String info, int nx, int ny, int nz, int nCPUs) {
+    this.info = info;
+    this.nx = nx;
+    this.ny = ny;
+    this.nz = nz;
+    tot = nx * ny * nz;
+    int paddedTot = (nx + 2) * ny * nz;
+    data = new double[paddedTot * 2];
+    expected = new double[tot];
+    recip = new double[tot];
+    parallelTeam = new ParallelTeam(nCPUs);
+  }
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32, nCPUs=1}", 32, 32, 32, 1},
-                {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
-                {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
-                {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
+  @Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+          {"Test nx=32, ny=32, nz=32, nCPUs=1}", 32, 32, 32, 1},
+          {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
+          {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
+          {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
         });
-    }
+  }
 
-    @Before
-    public void setUp() {
-        Random random = new Random();
-        int paddedIndex = 0;
-        int index = 0;
-        for (int z = 0; z < nz; z++) {
-            for (int y = 0; y < ny; y++) {
-                for (int x = 0; x < nx; x++) {
-                    double r = random.nextDouble();
-                    data[paddedIndex++] = r;
-                    expected[index] = r;
-                    recip[index++] = 1.0e0;
-                }
-                paddedIndex += 2;
-            }
+  @Before
+  public void setUp() {
+    Random random = new Random();
+    int paddedIndex = 0;
+    int index = 0;
+    for (int z = 0; z < nz; z++) {
+      for (int y = 0; y < ny; y++) {
+        for (int x = 0; x < nx; x++) {
+          double r = random.nextDouble();
+          data[paddedIndex++] = r;
+          expected[index] = r;
+          recip[index++] = 1.0e0;
         }
+        paddedIndex += 2;
+      }
     }
+  }
 
-    /**
-     * Test of convolution method, of class Real3DParallel.
-     */
-    @Test
-    public void testConvolution() {
-        Real3DParallel real3D = new Real3DParallel(nx, ny, nz, parallelTeam);
-        real3D.setRecip(recip);
-        real3D.convolution(data);
-        int paddedIndex = 0;
-        int index = 0;
-        for (int z = 0; z < nz; z++) {
-            for (int y = 0; y < ny; y++) {
-                for (int x = 0; x < nx; x++) {
-                    double actual = data[paddedIndex++] / tot;
-                    double orig = expected[index++];
-                    assertEquals(info, orig, actual, tolerance);
-                }
-                paddedIndex += 2;
-            }
+  /** Test of convolution method, of class Real3DParallel. */
+  @Test
+  public void testConvolution() {
+    Real3DParallel real3D = new Real3DParallel(nx, ny, nz, parallelTeam);
+    real3D.setRecip(recip);
+    real3D.convolution(data);
+    int paddedIndex = 0;
+    int index = 0;
+    for (int z = 0; z < nz; z++) {
+      for (int y = 0; y < ny; y++) {
+        for (int x = 0; x < nx; x++) {
+          double actual = data[paddedIndex++] / tot;
+          double orig = expected[index++];
+          assertEquals(info, orig, actual, tolerance);
         }
+        paddedIndex += 2;
+      }
     }
+  }
 
-    /**
-     * Test of the fft and ifft methods, of class Real3DParallel.
-     */
-    @Test
-    public void testFft() {
-        Real3DParallel real3D = new Real3DParallel(nx, ny, nz, parallelTeam);
-        real3D.fft(data);
-        real3D.ifft(data);
-        int paddedIndex = 0;
-        int index = 0;
-        for (int z = 0; z < nz; z++) {
-            for (int y = 0; y < ny; y++) {
-                for (int x = 0; x < nx; x++) {
-                    double actual = data[paddedIndex++] / tot;
-                    double orig = expected[index++];
-                    assertEquals(info, orig, actual, tolerance);
-                }
-                paddedIndex += 2;
-            }
+  /** Test of the fft and ifft methods, of class Real3DParallel. */
+  @Test
+  public void testFft() {
+    Real3DParallel real3D = new Real3DParallel(nx, ny, nz, parallelTeam);
+    real3D.fft(data);
+    real3D.ifft(data);
+    int paddedIndex = 0;
+    int index = 0;
+    for (int z = 0; z < nz; z++) {
+      for (int y = 0; y < ny; y++) {
+        for (int x = 0; x < nx; x++) {
+          double actual = data[paddedIndex++] / tot;
+          double orig = expected[index++];
+          assertEquals(info, orig, actual, tolerance);
         }
+        paddedIndex += 2;
+      }
     }
-
+  }
 }

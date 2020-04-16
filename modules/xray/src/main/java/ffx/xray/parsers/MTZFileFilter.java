@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,14 +34,13 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray.parsers;
-
-import javax.swing.filechooser.FileFilter;
 
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import javax.swing.filechooser.FileFilter;
 
 /**
  * The MTZFileFilter class is used to choose CCP4 MTZ files
@@ -51,61 +50,57 @@ import java.io.FileInputStream;
  */
 public final class MTZFileFilter extends FileFilter {
 
-    /**
-     * Default Constructor.
-     */
-    public MTZFileFilter() {
+  /** Default Constructor. */
+  public MTZFileFilter() {}
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This method determines whether or not the file parameter is an *.mtz file or not, returning
+   * true if it is (true is also returned for any directory)
+   */
+  @Override
+  public boolean accept(File file) {
+    if (file.isDirectory()) {
+      return true;
     }
+    String fileName = file.getName().toLowerCase();
+    return fileName.endsWith(".mtz");
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method determines whether or not the file parameter is an *.mtz file
-     * or not, returning true if it is (true is also returned for any directory)
-     */
-    @Override
-    public boolean accept(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String fileName = file.getName().toLowerCase();
-        return fileName.endsWith(".mtz");
+  /**
+   * acceptDeep
+   *
+   * @param file a {@link java.io.File} object.
+   * @return a boolean.
+   */
+  public boolean acceptDeep(File file) {
+    try {
+      if (file == null || file.isDirectory() || !file.canRead()) {
+        return false;
+      }
+      FileInputStream fileInputStream = new FileInputStream(file);
+      DataInputStream dataInputStream = new DataInputStream(fileInputStream);
+
+      byte[] bytes = new byte[80];
+      int offset = 0;
+
+      // Is this an MTZ file?
+      dataInputStream.read(bytes, offset, 4);
+      String mtzstr = new String(bytes);
+      return mtzstr.trim().equals("MTZ");
+    } catch (Exception e) {
+      return true;
     }
+  }
 
-    /**
-     * <p>
-     * acceptDeep</p>
-     *
-     * @param file a {@link java.io.File} object.
-     * @return a boolean.
-     */
-    public boolean acceptDeep(File file) {
-        try {
-            if (file == null || file.isDirectory() || !file.canRead()) {
-                return false;
-            }
-            FileInputStream fileInputStream = new FileInputStream(file);
-            DataInputStream dataInputStream = new DataInputStream(fileInputStream);
-
-            byte[] bytes = new byte[80];
-            int offset = 0;
-
-            // Is this an MTZ file?
-            dataInputStream.read(bytes, offset, 4);
-            String mtzstr = new String(bytes);
-            return mtzstr.trim().equals("MTZ");
-        } catch (Exception e) {
-            return true;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Provides a description of this FileFilter.
-     */
-    @Override
-    public String getDescription() {
-        return "CCP4 MTZ Reflection Files: *.mtz";
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Provides a description of this FileFilter.
+   */
+  @Override
+  public String getDescription() {
+    return "CCP4 MTZ Reflection Files: *.mtz";
+  }
 }

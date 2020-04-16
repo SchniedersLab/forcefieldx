@@ -40,7 +40,6 @@ package ffx.xray.groovy
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.xray.parsers.MTZFilter
-
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
@@ -54,39 +53,39 @@ import picocli.CommandLine.Parameters
 @Command(description = " Write out information on an MTZ file.", name = "ffxc xray.MTZInfo")
 class MTZInfo extends AlgorithmsScript {
 
-    /**
-     * An MTZ filename.
-     */
-    @Parameters(arity = "1", paramLabel = "MTZ", description = "An MTZ diffraction file.")
-    private String filename = null;
+  /**
+   * An MTZ filename.
+   */
+  @Parameters(arity = "1", paramLabel = "MTZ", description = "An MTZ diffraction file.")
+  private String filename = null;
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    MTZInfo run() {
+  /**
+   * Execute the script.
+   */
+  @Override
+  MTZInfo run() {
 
-        if (!init()) {
-            return this
-        }
-
-        logger.info("\n Running MTZInfo on " + filename)
-
-        File file = new File(filename)
-        if (!file.exists()) {
-            println(" File " + filename + " was not found.")
-            return this
-        }
-
-        MTZFilter mtzFilter = new MTZFilter()
-        mtzFilter.getReflectionList(file)
-        mtzFilter.printHeader()
-
-        return this
+    if (!init()) {
+      return this
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        return Collections.emptyList()
+    logger.info("\n Running MTZInfo on " + filename)
+
+    File file = new File(filename)
+    if (!file.exists()) {
+      println(" File " + filename + " was not found.")
+      return this
     }
+
+    MTZFilter mtzFilter = new MTZFilter()
+    mtzFilter.getReflectionList(file)
+    mtzFilter.printHeader()
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    return Collections.emptyList()
+  }
 }

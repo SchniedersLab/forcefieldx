@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.estimator;
 
 /**
@@ -46,39 +46,39 @@ package ffx.numerics.estimator;
  * @since 1.0
  */
 public interface StatisticalEstimator {
-    /**
-     * Gets the free energy change per bin/window.
-     *
-     * @return Individual bin/window free energy changes.
-     */
-    double[] getBinEnergies();
+  /**
+   * Gets the free energy change per bin/window.
+   *
+   * @return Individual bin/window free energy changes.
+   */
+  double[] getBinEnergies();
 
-    /**
-     * Gets the uncertainty in free energy associated with each bin/window.
-     *
-     * @return Individual bin/window uncertainties.
-     */
-    double[] getBinUncertainties();
+  /**
+   * Gets the uncertainty in free energy associated with each bin/window.
+   *
+   * @return Individual bin/window uncertainties.
+   */
+  double[] getBinUncertainties();
 
-    /**
-     * Returns the estimated free energy (usually in kcal/mol).
-     *
-     * @return Free energy estimate.
-     */
-    double getFreeEnergy();
+  /**
+   * Returns the estimated free energy (usually in kcal/mol).
+   *
+   * @return Free energy estimate.
+   */
+  double getFreeEnergy();
 
-    /**
-     * Returns the uncertainty in the free energy estimate.
-     *
-     * @return Uncertainty in the free energy estimate.
-     */
-    double getUncertainty();
+  /**
+   * Returns the uncertainty in the free energy estimate.
+   *
+   * @return Uncertainty in the free energy estimate.
+   */
+  double getUncertainty();
 
-    /**
-     * Returns the number of windows (BAR, etc), bins (WHAM, etc), or other
-     * subvalues used to compute free energy.
-     *
-     * @return Total number of subvalues used to compute free energy.
-     */
-    int numberOfBins();
+  /**
+   * Returns the number of windows (BAR, etc), bins (WHAM, etc), or other subvalues used to compute
+   * free energy.
+   *
+   * @return Total number of subvalues used to compute free energy.
+   */
+  int numberOfBins();
 }

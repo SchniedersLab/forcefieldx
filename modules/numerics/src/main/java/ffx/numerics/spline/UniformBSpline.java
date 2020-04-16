@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,208 +34,203 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.spline;
+
+import static java.lang.String.format;
 
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.lang.String.format;
 
 /**
  * Static methods to generate and differentiate uniform b-Splines.
  *
  * @author Michael J. Schnieders
- * @see <ul>
- * <li>
- * <a href="http://www.springer.com/mathematics/analysis/book/978-0-387-95366-3"
- * target="_blank">
- * C. de Boor, A Practical Guide to Splines. (Springer, New York, 2001)
- * </a>
- * </li>
- * <li>
- * <a href="http://www.wikipedia.org/wiki/B-spline" target="_blank">b-Splines at
- * Wikipedia</a>
- * </li>
- * <li>
- * <a href="http://mathworld.wolfram.com/B-Spline.html"
- * target="_blank">b-Splines at MathWorld</a>
- * </li>
- * </ul>
+ * @see
+ *     <ul>
+ *       <li><a href="http://www.springer.com/mathematics/analysis/book/978-0-387-95366-3"
+ *           target="_blank"> C. de Boor, A Practical Guide to Splines. (Springer, New York, 2001)
+ *           </a>
+ *       <li><a href="http://www.wikipedia.org/wiki/B-spline" target="_blank">b-Splines at
+ *           Wikipedia</a>
+ *       <li><a href="http://mathworld.wolfram.com/B-Spline.html" target="_blank">b-Splines at
+ *           MathWorld</a>
+ *     </ul>
+ *
  * @since 1.0
  */
 public class UniformBSpline {
 
-    private static final Logger logger = Logger.getLogger(UniformBSpline.class.getName());
+  private static final Logger logger = Logger.getLogger(UniformBSpline.class.getName());
 
-    /**
-     * Do not allow instantiation of UniformBSpline. All methods are static.
-     */
-    private UniformBSpline() {
+  /** Do not allow instantiation of UniformBSpline. All methods are static. */
+  private UniformBSpline() {}
+
+  /**
+   * Generate uniform b-Spline coefficients.
+   *
+   * @param x A double in the range [0.0, 1.0].
+   * @param order b-Spline order (degree + 1).
+   * @param coefficients b-Spline coefficients (n coefficients for order n).
+   * @since 1.0
+   */
+  public static void bSpline(final double x, final int order, final double[] coefficients) {
+
+    // Initialization to get to a linear b-Spline (degree 1).
+    coefficients[0] = 1.0 - x;
+    coefficients[1] = x;
+
+    // Apply b-Spline recursion to desired degree.
+    for (int k = 2; k < order; k++) {
+      bSplineRecursion(x, k, coefficients, coefficients);
+    }
+  }
+
+  /**
+   * Generate uniform b-Spline coefficients and their derivatives.
+   *
+   * @param x A double in the range [0.0, 1.0].
+   * @param order b-Spline order (degree + 1).
+   * @param deriveOrder Derivative order. <br>
+   *     0 = no derivative. <br>
+   *     1 = 1rst derivative. <br>
+   *     It must not be greater than the b-Spline degree (order - 1). <br>
+   *     The method is currently limited to deriveOrder .LE. 5. <br>
+   * @param coefficients The b-Spline coefficient array of size [order][deriveOrder + 1].
+   * @param work A work array of size [order][order].
+   * @since 1.0
+   */
+  public static void bSplineDerivatives(
+      final double x,
+      final int order,
+      final int deriveOrder,
+      final double[][] coefficients,
+      final double[][] work) {
+
+    assert (deriveOrder <= order - 1 && deriveOrder <= 5);
+
+    for (int k = 0; k < order; k++) {
+      Arrays.fill(work[k], 0.0);
     }
 
-    /**
-     * Generate uniform b-Spline coefficients.
-     *
-     * @param x            A double in the range [0.0, 1.0].
-     * @param order        b-Spline order (degree + 1).
-     * @param coefficients b-Spline coefficients (n coefficients for order n).
-     * @since 1.0
-     */
-    public static void bSpline(final double x, final int order,
-                               final double[] coefficients) {
+    // Initialization to get to 2nd order.
+    work[1][0] = 1.0 - x;
+    work[1][1] = x;
 
-        // Initialization to get to a linear b-Spline (degree 1).
-        coefficients[0] = 1.0 - x;
-        coefficients[1] = x;
+    // Perform one pass to get to 3rd order.
+    work[2][0] = 0.5 * (1.0 - x) * work[1][0];
+    work[2][1] = 0.5 * ((x + 1.0) * work[1][0] + (2.0 - x) * work[1][1]);
+    work[2][2] = 0.5 * x * work[1][1];
 
-        // Apply b-Spline recursion to desired degree.
-        for (int k = 2; k < order; k++) {
-            bSplineRecursion(x, k, coefficients, coefficients);
-        }
+    // Compute standard B-spline recursion to desired order.
+    for (int k = 3; k < order; k++) {
+      bSplineRecursion(x, k, work[k - 1], work[k]);
     }
 
-    /**
-     * Generate uniform b-Spline coefficients and their derivatives.
-     *
-     * @param x            A double in the range [0.0, 1.0].
-     * @param order        b-Spline order (degree + 1).
-     * @param deriveOrder  Derivative order.
-     *                     <br>
-     *                     0 = no derivative.
-     *                     <br>
-     *                     1 = 1rst derivative.
-     *                     <br> It must not be greater than the b-Spline degree (order - 1).
-     *                     <br>
-     *                     The method is currently limited to deriveOrder .LE. 5.
-     *                     <br>
-     * @param coefficients The b-Spline coefficient array of size
-     *                     [order][deriveOrder + 1].
-     * @param work         A work array of size [order][order].
-     * @since 1.0
-     */
-    public static void bSplineDerivatives(final double x, final int order,
-                                          final int deriveOrder, final double[][] coefficients,
-                                          final double[][] work) {
-
-        assert (deriveOrder <= order - 1 && deriveOrder <= 5);
-
-        for (int k = 0; k < order; k++) {
-            Arrays.fill(work[k], 0.0);
-        }
-
-        // Initialization to get to 2nd order.
-        work[1][0] = 1.0 - x;
-        work[1][1] = x;
-
-        // Perform one pass to get to 3rd order.
-        work[2][0] = 0.5 * (1.0 - x) * work[1][0];
-        work[2][1] = 0.5 * ((x + 1.0) * work[1][0] + (2.0 - x) * work[1][1]);
-        work[2][2] = 0.5 * x * work[1][1];
-
-        // Compute standard B-spline recursion to desired order.
-        for (int k = 3; k < order; k++) {
-            bSplineRecursion(x, k, work[k - 1], work[k]);
-        }
-
-        int o1 = order - 1;
-        // do derivatives
-        try {
-            if (deriveOrder > 0) {
-                int o2 = order - 2;
-                bSplineDiff(work[o2], o1);
-                if (deriveOrder > 1) {
-                    int o3 = order - 3;
-                    bSplineDiff(work[o3], o2);
-                    bSplineDiff(work[o3], o1);
-                    if (deriveOrder > 2) {
-                        int o4 = order - 4;
-                        bSplineDiff(work[o4], o3);
-                        bSplineDiff(work[o4], o2);
-                        bSplineDiff(work[o4], o1);
-                        if (deriveOrder > 3) {
-                            int o5 = order - 5;
-                            bSplineDiff(work[o5], o4);
-                            bSplineDiff(work[o5], o3);
-                            bSplineDiff(work[o5], o2);
-                            bSplineDiff(work[o5], o1);
-                            if (deriveOrder > 4) {
-                                int o6 = order - 6;
-                                bSplineDiff(work[o6], o5);
-                                bSplineDiff(work[o6], o4);
-                                bSplineDiff(work[o6], o3);
-                                bSplineDiff(work[o6], o2);
-                                bSplineDiff(work[o6], o1);
-                                if (deriveOrder > 5) {
-                                    throw new Exception(" Unsupported option: dr_ord > 5");
-                                }
-                            }
-                        }
-                    }
+    int o1 = order - 1;
+    // do derivatives
+    try {
+      if (deriveOrder > 0) {
+        int o2 = order - 2;
+        bSplineDiff(work[o2], o1);
+        if (deriveOrder > 1) {
+          int o3 = order - 3;
+          bSplineDiff(work[o3], o2);
+          bSplineDiff(work[o3], o1);
+          if (deriveOrder > 2) {
+            int o4 = order - 4;
+            bSplineDiff(work[o4], o3);
+            bSplineDiff(work[o4], o2);
+            bSplineDiff(work[o4], o1);
+            if (deriveOrder > 3) {
+              int o5 = order - 5;
+              bSplineDiff(work[o5], o4);
+              bSplineDiff(work[o5], o3);
+              bSplineDiff(work[o5], o2);
+              bSplineDiff(work[o5], o1);
+              if (deriveOrder > 4) {
+                int o6 = order - 6;
+                bSplineDiff(work[o6], o5);
+                bSplineDiff(work[o6], o4);
+                bSplineDiff(work[o6], o3);
+                bSplineDiff(work[o6], o2);
+                bSplineDiff(work[o6], o1);
+                if (deriveOrder > 5) {
+                  throw new Exception(" Unsupported option: dr_ord > 5");
                 }
+              }
             }
-        } catch (Exception e) {
-            // Index out of bounds if deriveOrder is too high for order.
+          }
         }
-
-        int deriveOrder1 = deriveOrder + 1;
-        for (int k = 0; k < order; k++) {
-            double[] tk = coefficients[k];
-            try {
-                for (int j = 0; j < deriveOrder1; j++) {
-                    tk[j] = work[o1 - j][k];
-                }
-            } catch (Exception e) {
-                // Index out of bounds if deriveOrder is too high for order.
-            }
-        }
+      }
+    } catch (Exception e) {
+      // Index out of bounds if deriveOrder is too high for order.
     }
 
-    /**
-     * Differentiate a uniform b-Spline in place.
-     *
-     * @param coefficients B-Spline coefficients.
-     * @param order        B-Spline order.
-     * @since 1.0
-     */
-    private static void bSplineDiff(final double[] coefficients, final int order) {
-        final int order1 = order - 1;
-        coefficients[order] = coefficients[order1];
-        for (int i = order1; i > 0; i--) {
-            coefficients[i] = coefficients[i - 1] - coefficients[i];
+    int deriveOrder1 = deriveOrder + 1;
+    for (int k = 0; k < order; k++) {
+      double[] tk = coefficients[k];
+      try {
+        for (int j = 0; j < deriveOrder1; j++) {
+          tk[j] = work[o1 - j][k];
         }
-        coefficients[0] = -coefficients[0];
+      } catch (Exception e) {
+        // Index out of bounds if deriveOrder is too high for order.
+      }
     }
+  }
 
-    /**
-     * Uniform b-Spline recursion.
-     *
-     * @param x               A double in the range [0.0, 1.0].
-     * @param order           Current b-Spline order.
-     * @param coefficients    Current b-Spline coefficients.
-     * @param newCoefficients New b-Spline coefficients for order + 1.
-     * @since 1.0
-     */
-    private static void bSplineRecursion(final double x, final int order,
-                                         final double[] coefficients, final double[] newCoefficients) {
-        // The logging statement below prevents a bug in the GraalVM JIT that perhaps
-        // is involved with in-lining or un-rolling this method.
-        final double div = 1.0 / (double) order;
-        final double k1mw = order + (1.0 - x);
-        final int km1 = order - 1;
-        newCoefficients[order] = div * x * coefficients[km1];
-        for (int i = 1; i < order; i++) {
-            final int kmi = order - i;
-            final int km1i = km1 - i;
-            final double x1 = x + (double) i;
-            final double k1mwi = k1mw - (double) i;
-            newCoefficients[kmi] = div * (x1 * coefficients[km1i] + k1mwi * coefficients[kmi]);
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.finest(format(" BSR %16.8f %16.8f %16.8f %16.8f %16.8f",
-                        div, x1, coefficients[km1i], k1mwi, coefficients[kmi]));
-            }
-        }
-        double oneX = 1.0 - x;
-        newCoefficients[0] = div * oneX * coefficients[0];
+  /**
+   * Differentiate a uniform b-Spline in place.
+   *
+   * @param coefficients B-Spline coefficients.
+   * @param order B-Spline order.
+   * @since 1.0
+   */
+  private static void bSplineDiff(final double[] coefficients, final int order) {
+    final int order1 = order - 1;
+    coefficients[order] = coefficients[order1];
+    for (int i = order1; i > 0; i--) {
+      coefficients[i] = coefficients[i - 1] - coefficients[i];
     }
+    coefficients[0] = -coefficients[0];
+  }
+
+  /**
+   * Uniform b-Spline recursion.
+   *
+   * @param x A double in the range [0.0, 1.0].
+   * @param order Current b-Spline order.
+   * @param coefficients Current b-Spline coefficients.
+   * @param newCoefficients New b-Spline coefficients for order + 1.
+   * @since 1.0
+   */
+  private static void bSplineRecursion(
+      final double x,
+      final int order,
+      final double[] coefficients,
+      final double[] newCoefficients) {
+    // The logging statement below prevents a bug in the GraalVM JIT that perhaps
+    // is involved with in-lining or un-rolling this method.
+    final double div = 1.0 / (double) order;
+    final double k1mw = order + (1.0 - x);
+    final int km1 = order - 1;
+    newCoefficients[order] = div * x * coefficients[km1];
+    for (int i = 1; i < order; i++) {
+      final int kmi = order - i;
+      final int km1i = km1 - i;
+      final double x1 = x + (double) i;
+      final double k1mwi = k1mw - (double) i;
+      newCoefficients[kmi] = div * (x1 * coefficients[km1i] + k1mwi * coefficients[kmi]);
+      if (logger.isLoggable(Level.FINEST)) {
+        logger.finest(
+            format(
+                " BSR %16.8f %16.8f %16.8f %16.8f %16.8f",
+                div, x1, coefficients[km1i], k1mwi, coefficients[kmi]));
+      }
+    }
+    double oneX = 1.0 - x;
+    newCoefficients[0] = div * oneX * coefficients[0];
+  }
 }

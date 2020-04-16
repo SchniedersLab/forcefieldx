@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,16 +34,15 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.cli;
 
-import java.util.List;
-import java.util.logging.Logger;
+import static ffx.utilities.StringUtils.parseAtomRanges;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import static ffx.utilities.StringUtils.parseAtomRanges;
-
+import java.util.List;
+import java.util.logging.Logger;
 import picocli.CommandLine.Option;
 
 /**
@@ -54,109 +53,110 @@ import picocli.CommandLine.Option;
  */
 public class AtomSelectionOptions {
 
-    private static final Logger logger = Logger.getLogger(AtomSelectionOptions.class.getName());
+  private static final Logger logger = Logger.getLogger(AtomSelectionOptions.class.getName());
 
-    /**
-     * --aa or --activeAtoms Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N].
-     */
-    @Option(names = {"--aa", "--active"}, paramLabel = "<selection>", defaultValue = "",
-            description = "Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N].")
-    public String activeAtoms;
+  /** --aa or --activeAtoms Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N]. */
+  @Option(
+      names = {"--aa", "--active"},
+      paramLabel = "<selection>",
+      defaultValue = "",
+      description = "Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N].")
+  public String activeAtoms;
 
-    /**
-     * --ia or --inactiveAtoms Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N].
-     */
-    @Option(names = {"--ia", "--inactive"}, paramLabel = "<selection>", defaultValue = "",
-            description = "Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N].")
-    public String inactiveAtoms;
+  /** --ia or --inactiveAtoms Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N]. */
+  @Option(
+      names = {"--ia", "--inactive"},
+      paramLabel = "<selection>",
+      defaultValue = "",
+      description = "Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N].")
+  public String inactiveAtoms;
 
-    /**
-     * Set active atoms for a MolecularAssembly.
-     *
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void setActiveAtoms(MolecularAssembly molecularAssembly) {
-        // First, evaluate the inactive atom selection.
-        setInactive(molecularAssembly);
+  /**
+   * Set active atoms for a MolecularAssembly.
+   *
+   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+   */
+  public void setActiveAtoms(MolecularAssembly molecularAssembly) {
+    // First, evaluate the inactive atom selection.
+    setInactive(molecularAssembly);
 
-        // Second, evaluate the active atom selection, which takes precedence over the inactive flag.
-        setActive(molecularAssembly);
+    // Second, evaluate the active atom selection, which takes precedence over the inactive flag.
+    setActive(molecularAssembly);
+  }
+
+  private void setInactive(MolecularAssembly assembly) {
+    if (inactiveAtoms == null || inactiveAtoms.equalsIgnoreCase("")) {
+      // Empty or null string -- no changes to alchemical atoms.
+      return;
     }
 
-    private void setInactive(MolecularAssembly assembly) {
-        if (inactiveAtoms == null || inactiveAtoms.equalsIgnoreCase("")) {
-            // Empty or null string -- no changes to alchemical atoms.
-            return;
-        }
+    Atom[] atoms = assembly.getAtomArray();
 
-        Atom[] atoms = assembly.getAtomArray();
-
-        // No atoms are inactive.
-        if (inactiveAtoms.equalsIgnoreCase("NONE")) {
-            for (Atom atom : atoms) {
-                atom.setActive(true);
-            }
-            logger.info(" No atoms are inactive.\n");
-            return;
-        }
-
-        // All atoms are inactive.
-        if (inactiveAtoms.equalsIgnoreCase("ALL")) {
-            for (Atom atom : atoms) {
-                atom.setActive(false);
-            }
-            logger.info(" All atoms are inactive.\n");
-            return;
-        }
-
-        // A range(s) of atoms are inactive.
-        int nAtoms = atoms.length;
-        for (Atom atom : atoms) {
-            atom.setActive(true);
-        }
-        List<Integer> inactiveAtomRanges = parseAtomRanges(" Inactive atoms", inactiveAtoms, nAtoms);
-        for (int i : inactiveAtomRanges) {
-            atoms[i].setActive(false);
-        }
-        logger.info(" Inactive atoms set to: " + inactiveAtoms + "\n");
+    // No atoms are inactive.
+    if (inactiveAtoms.equalsIgnoreCase("NONE")) {
+      for (Atom atom : atoms) {
+        atom.setActive(true);
+      }
+      logger.info(" No atoms are inactive.\n");
+      return;
     }
 
-    private void setActive(MolecularAssembly assembly) {
-        if (activeAtoms == null || activeAtoms.equalsIgnoreCase("")) {
-            // Empty or null string -- no changes to alchemical atoms.
-            return;
-        }
-
-        Atom[] atoms = assembly.getAtomArray();
-
-        // No active are atoms.
-        if (activeAtoms.equalsIgnoreCase("NONE")) {
-            for (Atom atom : atoms) {
-                atom.setActive(false);
-            }
-            logger.info(" No atoms are active.\n");
-            return;
-        }
-
-        // All atoms are active.
-        if (activeAtoms.equalsIgnoreCase("ALL")) {
-            for (Atom atom : atoms) {
-                atom.setActive(true);
-            }
-            logger.info(" All atoms are active.\n");
-            return;
-        }
-
-        // A range(s) of atoms are active.
-        int nAtoms = atoms.length;
-        for (Atom atom : atoms) {
-            atom.setActive(false);
-        }
-        List<Integer> activeAtomRanges = parseAtomRanges(" Active atoms", activeAtoms, nAtoms);
-        for (int i : activeAtomRanges) {
-            atoms[i].setActive(true);
-        }
-        logger.info(" Active atoms set to: " + activeAtoms + "\n");
+    // All atoms are inactive.
+    if (inactiveAtoms.equalsIgnoreCase("ALL")) {
+      for (Atom atom : atoms) {
+        atom.setActive(false);
+      }
+      logger.info(" All atoms are inactive.\n");
+      return;
     }
 
+    // A range(s) of atoms are inactive.
+    int nAtoms = atoms.length;
+    for (Atom atom : atoms) {
+      atom.setActive(true);
+    }
+    List<Integer> inactiveAtomRanges = parseAtomRanges(" Inactive atoms", inactiveAtoms, nAtoms);
+    for (int i : inactiveAtomRanges) {
+      atoms[i].setActive(false);
+    }
+    logger.info(" Inactive atoms set to: " + inactiveAtoms + "\n");
+  }
+
+  private void setActive(MolecularAssembly assembly) {
+    if (activeAtoms == null || activeAtoms.equalsIgnoreCase("")) {
+      // Empty or null string -- no changes to alchemical atoms.
+      return;
+    }
+
+    Atom[] atoms = assembly.getAtomArray();
+
+    // No active are atoms.
+    if (activeAtoms.equalsIgnoreCase("NONE")) {
+      for (Atom atom : atoms) {
+        atom.setActive(false);
+      }
+      logger.info(" No atoms are active.\n");
+      return;
+    }
+
+    // All atoms are active.
+    if (activeAtoms.equalsIgnoreCase("ALL")) {
+      for (Atom atom : atoms) {
+        atom.setActive(true);
+      }
+      logger.info(" All atoms are active.\n");
+      return;
+    }
+
+    // A range(s) of atoms are active.
+    int nAtoms = atoms.length;
+    for (Atom atom : atoms) {
+      atom.setActive(false);
+    }
+    List<Integer> activeAtomRanges = parseAtomRanges(" Active atoms", activeAtoms, nAtoms);
+    for (int i : activeAtomRanges) {
+      atoms[i].setActive(true);
+    }
+    logger.info(" Active atoms set to: " + activeAtoms + "\n");
+  }
 }

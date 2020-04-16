@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,18 +34,12 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray;
 
-import java.io.File;
-import java.util.List;
-
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 import edu.rit.pj.ParallelTeam;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
@@ -59,138 +53,123 @@ import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.Keyword;
+import java.io.File;
+import java.util.List;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.junit.Test;
 
-/**
- * @author Timothy D. Fenn
- */
+/** @author Timothy D. Fenn */
 public class CrystalReciprocalSpaceTest {
 
-    /**
-     * Test of permanent method, of class CrystalReciprocalSpace.
-     */
-    @Test
-    public void test1N7SPermanent() {
-        String filename = "ffx/xray/structures/1N7S.pdb";
+  /** Test of permanent method, of class CrystalReciprocalSpace. */
+  @Test
+  public void test1N7SPermanent() {
+    String filename = "ffx/xray/structures/1N7S.pdb";
 
-        // load the structure
-        ClassLoader cl = this.getClass().getClassLoader();
-        File structure = new File(cl.getResource(filename).getPath());
-        PotentialsUtils potutil = new PotentialsUtils();
-        MolecularAssembly mola = potutil.open(structure);
-        CompositeConfiguration properties = mola.getProperties();
+    // load the structure
+    ClassLoader cl = this.getClass().getClassLoader();
+    File structure = new File(cl.getResource(filename).getPath());
+    PotentialsUtils potutil = new PotentialsUtils();
+    MolecularAssembly mola = potutil.open(structure);
+    CompositeConfiguration properties = mola.getProperties();
 
-        Crystal crystal = new Crystal(39.767, 51.750, 132.938,
-                90.00, 90.00, 90.00, "P212121");
-        Resolution resolution = new Resolution(1.45);
+    Crystal crystal = new Crystal(39.767, 51.750, 132.938, 90.00, 90.00, 90.00, "P212121");
+    Resolution resolution = new Resolution(1.45);
 
-        ReflectionList reflectionList = new ReflectionList(crystal, resolution);
-        DiffractionRefinementData refinementData = new DiffractionRefinementData(properties,
-                reflectionList);
+    ReflectionList reflectionList = new ReflectionList(crystal, resolution);
+    DiffractionRefinementData refinementData =
+        new DiffractionRefinementData(properties, reflectionList);
 
-        mola.finalize(true, mola.getForceField());
-        List<Atom> atomList = mola.getAtomList();
-        Atom[] atomArray = atomList.toArray(new Atom[0]);
+    mola.finalize(true, mola.getForceField());
+    List<Atom> atomList = mola.getAtomList();
+    Atom[] atomArray = atomList.toArray(new Atom[0]);
 
-        // set up FFT and run it
-        ParallelTeam parallelTeam = new ParallelTeam();
-        CrystalReciprocalSpace crs
-                = new CrystalReciprocalSpace(reflectionList, atomArray,
-                parallelTeam, parallelTeam);
-        crs.computeAtomicDensity(refinementData.fc);
+    // set up FFT and run it
+    ParallelTeam parallelTeam = new ParallelTeam();
+    CrystalReciprocalSpace crs =
+        new CrystalReciprocalSpace(reflectionList, atomArray, parallelTeam, parallelTeam);
+    crs.computeAtomicDensity(refinementData.fc);
 
-        // tests
-        ComplexNumber b = new ComplexNumber(-828.584, -922.704);
-        HKL hkl = reflectionList.getHKL(1, 1, 4);
-        ComplexNumber a = refinementData.getFc(hkl.index());
-        System.out.println("1 1 4: " + a.toString() + " | "
-                + b.toString() + " | "
-                + a.divides(b).toString());
+    // tests
+    ComplexNumber b = new ComplexNumber(-828.584, -922.704);
+    HKL hkl = reflectionList.getHKL(1, 1, 4);
+    ComplexNumber a = refinementData.getFc(hkl.index());
+    System.out.println(
+        "1 1 4: " + a.toString() + " | " + b.toString() + " | " + a.divides(b).toString());
 
-        assertEquals("1 1 4 reflection should be correct",
-                -753.4722104328415, a.re(), 0.0001);
-        assertEquals("1 1 4 reflection should be correct",
-                -1012.1341308707798, a.im(), 0.0001);
+    assertEquals("1 1 4 reflection should be correct", -753.4722104328415, a.re(), 0.0001);
+    assertEquals("1 1 4 reflection should be correct", -1012.1341308707798, a.im(), 0.0001);
 
-        b.re(-70.4582);
-        b.im(-486.142);
-        hkl = reflectionList.getHKL(2, 1, 10);
-        a = refinementData.getFc(hkl.index());
-        System.out.println("2 1 10: " + a.toString() + " | "
-                + b.toString() + " | "
-                + a.divides(b).toString());
+    b.re(-70.4582);
+    b.im(-486.142);
+    hkl = reflectionList.getHKL(2, 1, 10);
+    a = refinementData.getFc(hkl.index());
+    System.out.println(
+        "2 1 10: " + a.toString() + " | " + b.toString() + " | " + a.divides(b).toString());
 
-        assertEquals("2 1 10 reflection should be correct",
-                -69.3966088405437, a.re(), 0.0001);
-        assertEquals("2 1 10 reflection should be correct",
-                -412.0147625765327, a.im(), 0.0001);
-    }
+    assertEquals("2 1 10 reflection should be correct", -69.3966088405437, a.re(), 0.0001);
+    assertEquals("2 1 10 reflection should be correct", -412.0147625765327, a.im(), 0.0001);
+  }
 
-    @Test
-    public void test1NSFPermanent() {
-        String filename = "ffx/xray/structures/1NSF.pdb";
-        int index = filename.lastIndexOf(".");
-        String name = filename.substring(0, index);
+  @Test
+  public void test1NSFPermanent() {
+    String filename = "ffx/xray/structures/1NSF.pdb";
+    int index = filename.lastIndexOf(".");
+    String name = filename.substring(0, index);
 
-        // load the structure
-        ClassLoader cl = this.getClass().getClassLoader();
-        File structure = new File(cl.getResource(filename).getPath());
+    // load the structure
+    ClassLoader cl = this.getClass().getClassLoader();
+    File structure = new File(cl.getResource(filename).getPath());
 
-        // load any properties associated with it
-        CompositeConfiguration properties = Keyword.loadProperties(structure);
-        Crystal crystal = new Crystal(115.996, 115.996, 44.13, 90.0, 90.0, 120.0, "P6");
-        Resolution resolution = new Resolution(1.89631);
+    // load any properties associated with it
+    CompositeConfiguration properties = Keyword.loadProperties(structure);
+    Crystal crystal = new Crystal(115.996, 115.996, 44.13, 90.0, 90.0, 120.0, "P6");
+    Resolution resolution = new Resolution(1.89631);
 
-        ReflectionList reflectionList = new ReflectionList(crystal, resolution);
-        DiffractionRefinementData refinementData = new DiffractionRefinementData(properties,
-                reflectionList);
+    ReflectionList reflectionList = new ReflectionList(crystal, resolution);
+    DiffractionRefinementData refinementData =
+        new DiffractionRefinementData(properties, reflectionList);
 
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
-        ForceField forceField = forceFieldFilter.parse();
+    ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
+    ForceField forceField = forceFieldFilter.parse();
 
-        // associate molecular assembly with the structure, set up forcefield
-        MolecularAssembly molecularAssembly = new MolecularAssembly(name);
-        molecularAssembly.setFile(structure);
-        molecularAssembly.setForceField(forceField);
-        PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);
-        pdbFile.readFile();
-        pdbFile.applyAtomProperties();
-        molecularAssembly.finalize(true, forceField);
-        ForceFieldEnergy.energyFactory(molecularAssembly, pdbFile.getCoordRestraints());
+    // associate molecular assembly with the structure, set up forcefield
+    MolecularAssembly molecularAssembly = new MolecularAssembly(name);
+    molecularAssembly.setFile(structure);
+    molecularAssembly.setForceField(forceField);
+    PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);
+    pdbFile.readFile();
+    pdbFile.applyAtomProperties();
+    molecularAssembly.finalize(true, forceField);
+    ForceFieldEnergy.energyFactory(molecularAssembly, pdbFile.getCoordRestraints());
 
-        List<Atom> atomList = molecularAssembly.getAtomList();
-        Atom[] atomArray = atomList.toArray(new Atom[0]);
+    List<Atom> atomList = molecularAssembly.getAtomList();
+    Atom[] atomArray = atomList.toArray(new Atom[0]);
 
-        // set up FFT and run it
-        ParallelTeam parallelTeam = new ParallelTeam();
-        CrystalReciprocalSpace crs
-                = new CrystalReciprocalSpace(reflectionList, atomArray,
-                parallelTeam, parallelTeam);
-        crs.computeAtomicDensity(refinementData.fc);
+    // set up FFT and run it
+    ParallelTeam parallelTeam = new ParallelTeam();
+    CrystalReciprocalSpace crs =
+        new CrystalReciprocalSpace(reflectionList, atomArray, parallelTeam, parallelTeam);
+    crs.computeAtomicDensity(refinementData.fc);
 
-        // tests
-        ComplexNumber b = new ComplexNumber(-496.999, 431.817);
-        HKL hkl = reflectionList.getHKL(1, 9, 4);
-        ComplexNumber a = refinementData.getFc(hkl.index());
-        System.out.println("1 9 4: " + a.toString() + " | "
-                + b.toString() + " | "
-                + a.divides(b).toString());
+    // tests
+    ComplexNumber b = new ComplexNumber(-496.999, 431.817);
+    HKL hkl = reflectionList.getHKL(1, 9, 4);
+    ComplexNumber a = refinementData.getFc(hkl.index());
+    System.out.println(
+        "1 9 4: " + a.toString() + " | " + b.toString() + " | " + a.divides(b).toString());
 
-        assertEquals("1 9 4 reflection should be correct",
-                -493.7799429881329, a.re(), 0.0001);
-        assertEquals("1 9 4 reflection should be correct",
-                460.7022632345927, a.im(), 0.0001);
+    assertEquals("1 9 4 reflection should be correct", -493.7799429881329, a.re(), 0.0001);
+    assertEquals("1 9 4 reflection should be correct", 460.7022632345927, a.im(), 0.0001);
 
-        b.re(-129.767);
-        b.im(-76.9812);
-        hkl = reflectionList.getHKL(5, 26, 8);
-        a = refinementData.getFc(hkl.index());
-        System.out.println("5 26 8: " + a.toString() + " | "
-                + b.toString() + " | "
-                + a.divides(b).toString());
+    b.re(-129.767);
+    b.im(-76.9812);
+    hkl = reflectionList.getHKL(5, 26, 8);
+    a = refinementData.getFc(hkl.index());
+    System.out.println(
+        "5 26 8: " + a.toString() + " | " + b.toString() + " | " + a.divides(b).toString());
 
-        assertEquals("5 26 8 reflection should be correct",
-                -123.05535567943379, a.re(), 0.0001);
-        assertEquals("5 26 8 reflection should be correct",
-                -74.59007322382718, a.im(), 0.0001);
-    }
+    assertEquals("5 26 8 reflection should be correct", -123.05535567943379, a.re(), 0.0001);
+    assertEquals("5 26 8 reflection should be correct", -74.59007322382718, a.im(), 0.0001);
+  }
 }

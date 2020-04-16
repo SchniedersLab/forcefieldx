@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,64 +34,62 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.utilities;
 
 /**
- * This Error is sometimes thrown when logger.severe is called, giving the program
- * one last chance to try to catch the issue; the response to this catch should
- * be to close down the current file or algorithm and move on to the next. The
- * intent is to create a distinct class for Groovy/Java to catch, because the
- * intent of an Error is that it is not caught unless you know exactly how to
+ * This Error is sometimes thrown when logger.severe is called, giving the program one last chance
+ * to try to catch the issue; the response to this catch should be to close down the current file or
+ * algorithm and move on to the next. The intent is to create a distinct class for Groovy/Java to
+ * catch, because the intent of an Error is that it is not caught unless you know exactly how to
  * deal with it.
  *
  * @author Jacob M. Litman
  */
 public class LoggerSevereError extends Error {
-    /**
-     * <p>Constructor for LoggerSevereError.</p>
-     */
-    public LoggerSevereError() {
-        super();
-    }
+  /** Constructor for LoggerSevereError. */
+  public LoggerSevereError() {
+    super();
+  }
 
-    /**
-     * <p>Constructor for LoggerSevereError.</p>
-     *
-     * @param message a {@link java.lang.String} object.
-     */
-    public LoggerSevereError(String message) {
-        super(message);
-    }
+  /**
+   * Constructor for LoggerSevereError.
+   *
+   * @param message a {@link java.lang.String} object.
+   */
+  public LoggerSevereError(String message) {
+    super(message);
+  }
 
-    /**
-     * <p>Constructor for LoggerSevereError.</p>
-     *
-     * @param message a {@link java.lang.String} object.
-     * @param cause   a {@link java.lang.Throwable} object.
-     */
-    public LoggerSevereError(String message, Throwable cause) {
-        super(message, cause);
-    }
+  /**
+   * Constructor for LoggerSevereError.
+   *
+   * @param message a {@link java.lang.String} object.
+   * @param cause a {@link java.lang.Throwable} object.
+   */
+  public LoggerSevereError(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-    /**
-     * <p>Constructor for LoggerSevereError.</p>
-     *
-     * @param message            a {@link java.lang.String} object.
-     * @param cause              a {@link java.lang.Throwable} object.
-     * @param enableSuppression  a boolean.
-     * @param writableStackTrace a boolean.
-     */
-    public LoggerSevereError(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
+  /**
+   * Constructor for LoggerSevereError.
+   *
+   * @param message a {@link java.lang.String} object.
+   * @param cause a {@link java.lang.Throwable} object.
+   * @param enableSuppression a boolean.
+   * @param writableStackTrace a boolean.
+   */
+  public LoggerSevereError(
+      String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    super(message, cause, enableSuppression, writableStackTrace);
+  }
 
-    /**
-     * <p>Constructor for LoggerSevereError.</p>
-     *
-     * @param cause a {@link java.lang.Throwable} object.
-     */
-    public LoggerSevereError(Throwable cause) {
-        super(cause);
-    }
+  /**
+   * Constructor for LoggerSevereError.
+   *
+   * @param cause a {@link java.lang.Throwable} object.
+   */
+  public LoggerSevereError(Throwable cause) {
+    super(cause);
+  }
 }

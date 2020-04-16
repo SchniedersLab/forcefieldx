@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.commands;
 
 import java.io.ObjectInputStream;
@@ -48,340 +48,319 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 /**
- * The FFXServer is launched by an FFX instance to allow Force Field X
- * Clients to connect.
+ * The FFXServer is launched by an FFX instance to allow Force Field X Clients to connect.
  *
  * @author Michael J. Schnieders
  */
 public class FFXServer implements Runnable {
 
-    private static final Logger logger = Logger.getLogger(FFXServer.class.getName());
-    private static SimulationMessage closing = new SimulationMessage(SimulationMessage.CLOSING);
-    private ServerSocket server;
-    private int serverPort = 2000;
-    private int serverTimeout = 100;
-    private Thread thread;
-    private int sleepTime = 1;
-    private boolean init = true;
-    private int cycle = 0;
-    private boolean shutdown = false;
-    private boolean request = false;
-    private Vector<Socket> clients = new Vector<Socket>();
-    private Vector<ObjectOutputStream> outputs = new Vector<ObjectOutputStream>();
-    private Vector<ObjectInputStream> inputs = new Vector<ObjectInputStream>();
-    private SimulationDefinition system = null;
-    private SimulationUpdate update = null;
+  private static final Logger logger = Logger.getLogger(FFXServer.class.getName());
+  private static SimulationMessage closing = new SimulationMessage(SimulationMessage.CLOSING);
+  private ServerSocket server;
+  private int serverPort = 2000;
+  private int serverTimeout = 100;
+  private Thread thread;
+  private int sleepTime = 1;
+  private boolean init = true;
+  private int cycle = 0;
+  private boolean shutdown = false;
+  private boolean request = false;
+  private Vector<Socket> clients = new Vector<Socket>();
+  private Vector<ObjectOutputStream> outputs = new Vector<ObjectOutputStream>();
+  private Vector<ObjectInputStream> inputs = new Vector<ObjectInputStream>();
+  private SimulationDefinition system = null;
+  private SimulationUpdate update = null;
 
-    /**
-     * <p>
-     * Constructor for FFXServer.</p>
-     *
-     * @param s a {@link ffx.ui.commands.SimulationDefinition} object.
-     */
-    public FFXServer(SimulationDefinition s) {
-        system = s;
+  /**
+   * Constructor for FFXServer.
+   *
+   * @param s a {@link ffx.ui.commands.SimulationDefinition} object.
+   */
+  public FFXServer(SimulationDefinition s) {
+    system = s;
+  }
+
+  /**
+   * isAlive
+   *
+   * @return a boolean.
+   */
+  public boolean isAlive() {
+    if (thread == null) {
+      return false;
+    } else if (thread.isAlive()) {
+      return true;
+    } else {
+      return false;
     }
+  }
 
-    /**
-     * <p>
-     * isAlive</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isAlive() {
-        if (thread == null) {
-            return false;
-        } else if (thread.isAlive()) {
-            return true;
-        } else {
-            return false;
+  /**
+   * loadUpdate
+   *
+   * @param u a {@link ffx.ui.commands.SimulationUpdate} object.
+   */
+  public void loadUpdate(SimulationUpdate u) {
+    update = u;
+  }
+
+  /**
+   * needUpdate
+   *
+   * @return a boolean.
+   */
+  public boolean needUpdate() {
+    if (clients.size() == 0) {
+      sleepTime = 100;
+      return false;
+    }
+    if (request != true) {
+      return false;
+    }
+    sleepTime = 1;
+    return true;
+  }
+
+  /** run */
+  public void run() {
+    startServer();
+    while (!shutdown) {
+      accept();
+      send();
+      try {
+        Thread.sleep(sleepTime);
+      } catch (Exception e) {
+        // What to do here ??
+        logger.severe("Server: thread sleep interrupted\n");
+      }
+      if (init) {
+        cycle++;
+        if (cycle >= 10) {
+          init = false;
+          serverTimeout = 1;
         }
+      }
     }
+    accept();
+    send();
+    closeServer();
+  }
 
-    /**
-     * <p>
-     * loadUpdate</p>
-     *
-     * @param u a {@link ffx.ui.commands.SimulationUpdate} object.
-     */
-    public void loadUpdate(SimulationUpdate u) {
-        update = u;
+  /** setUpdated */
+  public void setUpdated() {
+    request = false;
+  }
+
+  /** start */
+  public void start() {
+    if (thread == null || !thread.isAlive()) {
+      thread = new Thread(this);
+      thread.setPriority(Thread.MAX_PRIORITY);
+      thread.start();
     }
+  }
 
-    /**
-     * <p>
-     * needUpdate</p>
-     *
-     * @return a boolean.
-     */
-    public boolean needUpdate() {
-        if (clients.size() == 0) {
-            sleepTime = 100;
-            return false;
+  /** stop */
+  public void stop() {
+    shutdown = true;
+  }
+
+  private void accept() {
+    Socket client = null;
+    ObjectOutputStream oout = null;
+    ObjectInputStream oin = null;
+    if (server != null) {
+      try {
+        client = server.accept();
+        if (client != null && client.isConnected()) {
+          client.setTcpNoDelay(true);
+          clients.add(client);
+          oout = new ObjectOutputStream(client.getOutputStream());
+          outputs.add(oout);
+          oin = new ObjectInputStream(client.getInputStream());
+          inputs.add(oin);
+          Logger.getLogger("ffx").info("Client connected\n" + client.toString());
         }
-        if (request != true) {
-            return false;
+      } catch (Exception e) {
+        if (client != null) {
+          clients.remove(client);
         }
-        sleepTime = 1;
-        return true;
-    }
-
-    /**
-     * <p>
-     * run</p>
-     */
-    public void run() {
-        startServer();
-        while (!shutdown) {
-            accept();
-            send();
-            try {
-                Thread.sleep(sleepTime);
-            } catch (Exception e) {
-                // What to do here ??
-                logger.severe("Server: thread sleep interrupted\n");
-            }
-            if (init) {
-                cycle++;
-                if (cycle >= 10) {
-                    init = false;
-                    serverTimeout = 1;
-                }
-            }
+        if (oout != null) {
+          outputs.remove(oout);
         }
-        accept();
-        send();
-        closeServer();
-    }
-
-    /**
-     * <p>
-     * setUpdated</p>
-     */
-    public void setUpdated() {
-        request = false;
-    }
-
-    /**
-     * <p>
-     * start</p>
-     */
-    public void start() {
-        if (thread == null || !thread.isAlive()) {
-            thread = new Thread(this);
-            thread.setPriority(Thread.MAX_PRIORITY);
-            thread.start();
+        if (oin != null) {
+          inputs.remove(oin);
         }
+      }
     }
+  }
 
-    /**
-     * <p>
-     * stop</p>
-     */
-    public void stop() {
-        shutdown = true;
-    }
-
-    private void accept() {
-        Socket client = null;
-        ObjectOutputStream oout = null;
-        ObjectInputStream oin = null;
-        if (server != null) {
-            try {
-                client = server.accept();
-                if (client != null && client.isConnected()) {
-                    client.setTcpNoDelay(true);
-                    clients.add(client);
-                    oout = new ObjectOutputStream(client.getOutputStream());
-                    outputs.add(oout);
-                    oin = new ObjectInputStream(client.getInputStream());
-                    inputs.add(oin);
-                    Logger.getLogger("ffx").info(
-                            "Client connected\n" + client.toString());
-                }
-            } catch (Exception e) {
-                if (client != null) {
-                    clients.remove(client);
-                }
-                if (oout != null) {
-                    outputs.remove(oout);
-                }
-                if (oin != null) {
-                    inputs.remove(oin);
-                }
-            }
+  private void closeClient(int index) {
+    Socket client = clients.get(index);
+    ObjectOutputStream oout = outputs.get(index);
+    ObjectInputStream oin = inputs.get(index);
+    try {
+      oout.reset();
+      oout.writeObject(closing);
+      oout.flush();
+    } catch (Exception e) {
+      try {
+        outputs.remove(index);
+        inputs.remove(index);
+        clients.remove(index);
+        if (oout != null) {
+          oout.close();
         }
+        if (oin != null) {
+          oin.close();
+        }
+        if (client != null) {
+          client.close();
+        }
+      } catch (Exception ex) {
+        return;
+      }
     }
+  }
 
-    private void closeClient(int index) {
-        Socket client = clients.get(index);
-        ObjectOutputStream oout = outputs.get(index);
-        ObjectInputStream oin = inputs.get(index);
+  private void closeServer() {
+    for (int i = 0; i < clients.size(); i++) {
+      lastUpdate(i);
+    }
+    while (!clients.isEmpty()) {
+      closeClient(0);
+      try {
+        synchronized (this) {
+          wait(10);
+        }
+      } catch (Exception e) {
+        Logger.getLogger("ffx").severe(e.toString());
+      }
+    }
+    try {
+      if (server != null) {
+        server.close();
+        server = null;
+      }
+    } catch (Exception e) {
+      return;
+    }
+  }
+
+  private void lastUpdate(int index) {
+    try {
+      ObjectOutputStream oout = outputs.get(index);
+      Socket client = clients.get(index);
+      if (client != null && client.isConnected() && oout != null) {
+        SimulationMessage last = new SimulationMessage(SimulationMessage.SYSTEM);
+        if (system != null) {
+          oout.reset();
+          oout.writeObject(last);
+          oout.writeObject(system);
+          oout.flush();
+        }
+        if (update != null) {
+          oout.reset();
+          last.setMessage(SimulationMessage.UPDATE);
+          oout.writeObject(last);
+          oout.writeObject(update);
+          oout.flush();
+        }
+        last.setMessage(SimulationMessage.CLOSING);
+        oout.reset();
+        oout.writeObject(last);
+        oout.flush();
+      }
+    } catch (Exception e) {
+      logger.severe("" + e);
+    }
+  }
+
+  private void send() {
+    if (system == null) {
+      return;
+    }
+    if (clients.size() == 0) {
+      return;
+    }
+    ObjectOutputStream oout;
+    ObjectInputStream oin;
+    Socket client;
+    ListIterator<ObjectOutputStream> lout;
+    ListIterator<ObjectInputStream> lin;
+    ListIterator<Socket> lclient;
+    Vector<Socket> closed = new Vector<Socket>();
+    for (lout = outputs.listIterator(),
+            lin = inputs.listIterator(),
+            lclient = clients.listIterator();
+        lout.hasNext(); ) {
+      oout = lout.next();
+      oin = lin.next();
+      client = lclient.next();
+      if (!client.isConnected() || client.isClosed()) {
+        closed.add(client);
+      } else {
         try {
-            oout.reset();
-            oout.writeObject(closing);
-            oout.flush();
-        } catch (Exception e) {
-            try {
-                outputs.remove(index);
-                inputs.remove(index);
-                clients.remove(index);
-                if (oout != null) {
-                    oout.close();
-                }
-                if (oin != null) {
-                    oin.close();
-                }
-                if (client != null) {
-                    client.close();
-                }
-            } catch (Exception ex) {
-                return;
-            }
-        }
-    }
-
-    private void closeServer() {
-        for (int i = 0; i < clients.size(); i++) {
-            lastUpdate(i);
-        }
-        while (!clients.isEmpty()) {
-            closeClient(0);
-            try {
-                synchronized (this) {
-                    wait(10);
-                }
-            } catch (Exception e) {
-                Logger.getLogger("ffx").severe(e.toString());
-            }
-        }
-        try {
-            if (server != null) {
-                server.close();
-                server = null;
-            }
-        } catch (Exception e) {
-            return;
-        }
-    }
-
-    private void lastUpdate(int index) {
-        try {
-            ObjectOutputStream oout = outputs.get(index);
-            Socket client = clients.get(index);
-            if (client != null && client.isConnected() && oout != null) {
-                SimulationMessage last = new SimulationMessage(SimulationMessage.SYSTEM);
-                if (system != null) {
-                    oout.reset();
-                    oout.writeObject(last);
-                    oout.writeObject(system);
-                    oout.flush();
-                }
-                if (update != null) {
-                    oout.reset();
-                    last.setMessage(SimulationMessage.UPDATE);
-                    oout.writeObject(last);
-                    oout.writeObject(update);
-                    oout.flush();
-                }
-                last.setMessage(SimulationMessage.CLOSING);
-                oout.reset();
-                oout.writeObject(last);
-                oout.flush();
-            }
-        } catch (Exception e) {
-            logger.severe("" + e);
-        }
-    }
-
-    private void send() {
-        if (system == null) {
-            return;
-        }
-        if (clients.size() == 0) {
-            return;
-        }
-        ObjectOutputStream oout;
-        ObjectInputStream oin;
-        Socket client;
-        ListIterator<ObjectOutputStream> lout;
-        ListIterator<ObjectInputStream> lin;
-        ListIterator<Socket> lclient;
-        Vector<Socket> closed = new Vector<Socket>();
-        for (lout = outputs.listIterator(), lin = inputs.listIterator(), lclient = clients
-                .listIterator(); lout.hasNext(); ) {
-            oout = lout.next();
-            oin = lin.next();
-            client = lclient.next();
-            if (!client.isConnected() || client.isClosed()) {
+          SimulationMessage message = null;
+          while (oin != null && client.getInputStream().available() > 0) {
+            Object o = oin.readObject();
+            if (o instanceof SimulationMessage) {
+              message = (SimulationMessage) o;
+              if (message.getMessage() == SimulationMessage.CLOSING) {
                 closed.add(client);
-            } else {
-                try {
-                    SimulationMessage message = null;
-                    while (oin != null
-                            && client.getInputStream().available() > 0) {
-                        Object o = oin.readObject();
-                        if (o instanceof SimulationMessage) {
-                            message = (SimulationMessage) o;
-                            if (message.getMessage() == SimulationMessage.CLOSING) {
-                                closed.add(client);
-                                message = null;
-                                break;
-                            }
-                        }
-                    }
-                    if (message != null) {
-                        if (message.getMessage() == SimulationMessage.SYSTEM) {
-                            synchronized (system) {
-                                oout.reset();
-                                oout.writeObject(message);
-                                oout.writeObject(system);
-                                oout.flush();
-                            }
-                        } else if (message.getMessage() == SimulationMessage.UPDATE) {
-                            request = true;
-                            if (update != null && update.isNewer(message)) {
-                                synchronized (update) {
-                                    // logger.info("Sending Update");
-                                    oout.reset();
-                                    oout.writeObject(message);
-                                    oout.writeObject(update);
-                                    oout.flush();
-                                }
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    closed.add(client);
+                message = null;
+                break;
+              }
+            }
+          }
+          if (message != null) {
+            if (message.getMessage() == SimulationMessage.SYSTEM) {
+              synchronized (system) {
+                oout.reset();
+                oout.writeObject(message);
+                oout.writeObject(system);
+                oout.flush();
+              }
+            } else if (message.getMessage() == SimulationMessage.UPDATE) {
+              request = true;
+              if (update != null && update.isNewer(message)) {
+                synchronized (update) {
+                  // logger.info("Sending Update");
+                  oout.reset();
+                  oout.writeObject(message);
+                  oout.writeObject(update);
+                  oout.flush();
                 }
+              }
             }
-        }
-        for (Socket s : closed) {
-            int index = closed.indexOf(s);
-            closeClient(index);
-        }
-    }
-
-    private void startServer() {
-        try {
-            server = new ServerSocket();
-            server.setSoTimeout(serverTimeout);
-            server.setReuseAddress(true);
-            server.bind(new InetSocketAddress(InetAddress.getLocalHost(),
-                    serverPort));
+          }
         } catch (Exception e) {
-            try {
-                server.bind(new InetSocketAddress(InetAddress.getByName(null),
-                        serverPort));
-            } catch (Exception ex) {
-                Logger.getLogger("ffx").severe(
-                        "SERVER -- Could not start\n" + e.toString());
-                return;
-            }
+          closed.add(client);
         }
-        Logger.getLogger("ffx").info(
-                "FFX Server Address: " + server.getLocalSocketAddress());
-        // JOptionPane.showMessageDialog(null, server.getLocalSocketAddress(),
-        // "Server Address", JOptionPane.ERROR_MESSAGE);
+      }
     }
+    for (Socket s : closed) {
+      int index = closed.indexOf(s);
+      closeClient(index);
+    }
+  }
+
+  private void startServer() {
+    try {
+      server = new ServerSocket();
+      server.setSoTimeout(serverTimeout);
+      server.setReuseAddress(true);
+      server.bind(new InetSocketAddress(InetAddress.getLocalHost(), serverPort));
+    } catch (Exception e) {
+      try {
+        server.bind(new InetSocketAddress(InetAddress.getByName(null), serverPort));
+      } catch (Exception ex) {
+        Logger.getLogger("ffx").severe("SERVER -- Could not start\n" + e.toString());
+        return;
+      }
+    }
+    Logger.getLogger("ffx").info("FFX Server Address: " + server.getLocalSocketAddress());
+    // JOptionPane.showMessageDialog(null, server.getLocalSocketAddress(),
+    // "Server Address", JOptionPane.ERROR_MESSAGE);
+  }
 }

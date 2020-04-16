@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,107 +34,100 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
-
-import javax.swing.filechooser.FileFilter;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-
+import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 /**
- * The INTFileFilter class is used to choose TINKER Internal Coordinate (*.INT)
- * files.
+ * The INTFileFilter class is used to choose TINKER Internal Coordinate (*.INT) files.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public final class INTFileFilter extends FileFilter {
 
-    /**
-     * Default Constructor.
-     */
-    public INTFileFilter() {
-    }
+  /** Default Constructor. */
+  public INTFileFilter() {}
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method return <code>true</code> if the file is a directory or
-     * matches the extension for TINKER internal coordinates (*.INT).
-     */
-    @Override
-    public boolean accept(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String ext = FilenameUtils.getExtension(file.getName());
-        return ext.toUpperCase().startsWith("INT");
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This method return <code>true</code> if the file is a directory or matches the extension for
+   * TINKER internal coordinates (*.INT).
+   */
+  @Override
+  public boolean accept(File file) {
+    if (file.isDirectory()) {
+      return true;
     }
+    String ext = FilenameUtils.getExtension(file.getName());
+    return ext.toUpperCase().startsWith("INT");
+  }
 
-    /**
-     * <p>
-     * acceptDeep</p>
-     *
-     * @param parm a {@link java.io.File} object.
-     * @return a boolean.
-     */
-    public boolean acceptDeep(File parm) {
-        try {
-            if (parm == null || parm.isDirectory() || !parm.canRead()) {
-                return false;
-            }
-            FileReader fr = new FileReader(parm);
-            BufferedReader br = new BufferedReader(fr);
-            if (!br.ready()) {
-                // Empty File?
-                return false;
-            }
-            // If the first token is not an integer this file is not
-            // an Internal Coordinates File.
-            String rawdata = br.readLine();
-            String[] header = rawdata.trim().split(" +");
-            if (header.length == 0) {
-                return false;
-            }
-            try {
-                Integer.parseInt(header[0]);
-            } catch (Exception e) {
-                return false;
-            }
-            // If the the first Atom line does not begin with an integer and
-            // contain three tokens, it is not an internal coordinate file.
-            String firstAtom = br.readLine();
-            if (firstAtom == null) {
-                return false;
-            }
-            br.close();
-            fr.close();
-            String[] data = firstAtom.trim().split(" +");
-            if (data.length != 3) {
-                return false;
-            }
-            try {
-                Integer.parseInt(data[0]);
-            } catch (Exception e) {
-                return false;
-            }
-            return true;
-        } catch (Exception e) {
-            return true;
-        }
+  /**
+   * acceptDeep
+   *
+   * @param parm a {@link java.io.File} object.
+   * @return a boolean.
+   */
+  public boolean acceptDeep(File parm) {
+    try {
+      if (parm == null || parm.isDirectory() || !parm.canRead()) {
+        return false;
+      }
+      FileReader fr = new FileReader(parm);
+      BufferedReader br = new BufferedReader(fr);
+      if (!br.ready()) {
+        // Empty File?
+        return false;
+      }
+      // If the first token is not an integer this file is not
+      // an Internal Coordinates File.
+      String rawdata = br.readLine();
+      String[] header = rawdata.trim().split(" +");
+      if (header.length == 0) {
+        return false;
+      }
+      try {
+        Integer.parseInt(header[0]);
+      } catch (Exception e) {
+        return false;
+      }
+      // If the the first Atom line does not begin with an integer and
+      // contain three tokens, it is not an internal coordinate file.
+      String firstAtom = br.readLine();
+      if (firstAtom == null) {
+        return false;
+      }
+      br.close();
+      fr.close();
+      String[] data = firstAtom.trim().split(" +");
+      if (data.length != 3) {
+        return false;
+      }
+      try {
+        Integer.parseInt(data[0]);
+      } catch (Exception e) {
+        return false;
+      }
+      return true;
+    } catch (Exception e) {
+      return true;
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Provides a description of the INTFileFilter.
-     */
-    @Override
-    public String getDescription() {
-        return "TINKER Internal Coordinates (*.INT)";
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Provides a description of the INTFileFilter.
+   */
+  @Override
+  public String getDescription() {
+    return "TINKER Internal Coordinates (*.INT)";
+  }
 }

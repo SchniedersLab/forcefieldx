@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,12 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 import java.io.PrintWriter;
 import java.io.Writer;
-
-import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 
 /**
  * Write out the Histogram.
@@ -50,44 +49,40 @@ import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
  */
 class HistogramWriter extends PrintWriter {
 
-    /**
-     * Private reference to the Histogram instance.
-     */
-    private Histogram histogram;
+  /** Private reference to the Histogram instance. */
+  private Histogram histogram;
 
-    /**
-     * Constructor.
-     *
-     * @param histogram The Histogram instance.
-     * @param writer    The Writer to use.
-     */
-    HistogramWriter(Histogram histogram, Writer writer) {
-        super(writer);
-        this.histogram = histogram;
-    }
+  /**
+   * Constructor.
+   *
+   * @param histogram The Histogram instance.
+   * @param writer The Writer to use.
+   */
+  HistogramWriter(Histogram histogram, Writer writer) {
+    super(writer);
+    this.histogram = histogram;
+  }
 
-    /**
-     * Write the Histogram file.
-     */
-    void writeHistogramFile() {
-        printf("Temperature     %15.3f\n", histogram.temperature);
-        printf("Lambda-Mass     %15.8e\n", histogram.thetaMass);
-        printf("Lambda-Friction %15.8e\n", histogram.thetaFriction);
-        printf("Bias-Mag        %15.8e\n", histogram.getBiasMagnitude());
-        printf("Bias-Cutoff     %15d\n", histogram.biasCutoff);
-        printf("Count-Interval  %15d\n", histogram.countInterval);
-        printf("Lambda-Bins     %15d\n", histogram.lambdaBins);
-        printf("FLambda-Bins    %15d\n", histogram.FLambdaBins);
-        printf("Flambda-Min     %15.8e\n", histogram.minFLambda);
-        printf("Flambda-Width   %15.8e\n", histogram.dFL);
-        int flag = 1; // Legacy of the old tempering scheme.
-        printf("Tempering       %15d\n", flag);
-        for (int i = 0; i < histogram.lambdaBins; i++) {
-            printf("%g", histogram.getRecursionKernelValue(i, 0));
-            for (int j = 1; j < histogram.FLambdaBins; j++) {
-                printf(" %g", histogram.getRecursionKernelValue(i, j));
-            }
-            println();
-        }
+  /** Write the Histogram file. */
+  void writeHistogramFile() {
+    printf("Temperature     %15.3f\n", histogram.temperature);
+    printf("Lambda-Mass     %15.8e\n", histogram.thetaMass);
+    printf("Lambda-Friction %15.8e\n", histogram.thetaFriction);
+    printf("Bias-Mag        %15.8e\n", histogram.getBiasMagnitude());
+    printf("Bias-Cutoff     %15d\n", histogram.biasCutoff);
+    printf("Count-Interval  %15d\n", histogram.countInterval);
+    printf("Lambda-Bins     %15d\n", histogram.lambdaBins);
+    printf("FLambda-Bins    %15d\n", histogram.FLambdaBins);
+    printf("Flambda-Min     %15.8e\n", histogram.minFLambda);
+    printf("Flambda-Width   %15.8e\n", histogram.dFL);
+    int flag = 1; // Legacy of the old tempering scheme.
+    printf("Tempering       %15d\n", flag);
+    for (int i = 0; i < histogram.lambdaBins; i++) {
+      printf("%g", histogram.getRecursionKernelValue(i, 0));
+      for (int j = 1; j < histogram.FLambdaBins; j++) {
+        printf(" %g", histogram.getRecursionKernelValue(i, j));
+      }
+      println();
     }
+  }
 }

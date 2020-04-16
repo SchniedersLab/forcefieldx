@@ -37,17 +37,15 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import java.util.stream.Collectors
-
-import org.apache.commons.io.FilenameUtils
-
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The MoveIntoUnitCell script moves the center of mass of each molecule into the unit cell.
@@ -59,99 +57,103 @@ import picocli.CommandLine.Parameters
 @Command(description = " Move all molecules into the unit cell.", name = "ffxc MoveIntoUnitCell")
 class MoveIntoUnitCell extends PotentialScript {
 
-    /**
-     * The final argument(s) should be one or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files",
-            description = 'The atomic coordinate file in PDB or XYZ format.')
+  /**
+   * The final argument(s) should be one or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files",
+      description = 'The atomic coordinate file in PDB or XYZ format.')
 
-    List<String> filenames = null
-    MolecularAssembly[] assemblies = null
+  List<String> filenames = null
+  MolecularAssembly[] assemblies = null
 
-    public double[][] origCoordinates = null
-    public double[][] unitCellCoordinates = null
+  public double[][] origCoordinates = null
+  public double[][] unitCellCoordinates = null
 
-    private File baseDir = null
+  private File baseDir = null
 
-    void setBaseDir(File baseDir) {
-        this.baseDir = baseDir
+  void setBaseDir(File baseDir) {
+    this.baseDir = baseDir
+  }
+
+  /**
+   * Execute the script.
+   */
+  @Override
+  MoveIntoUnitCell run() {
+
+    if (!init()) {
+      return null
     }
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    MoveIntoUnitCell run() {
-
-        if (!init()) {
-            return null
-        }
-
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.openAll(filenames.get(0))
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return null
-        } else {
-            assemblies = [activeAssembly]
-        }
-
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
-        logger.info("\n Moving molecular centers of mass into the unit cell for " + modelFilename + "\n")
-
-        // Loop over each system.
-        for (int i = 0; i < assemblies.length; i++) {
-            MolecularAssembly molecularAssembly = assemblies[i]
-
-            Atom[] atoms = molecularAssembly.getAtomArray()
-            int n = atoms.length
-            origCoordinates = new double[n][3]
-            unitCellCoordinates = new double[n][3]
-            int index = 0
-            for (Atom atom : atoms) {
-                origCoordinates[index][0] = atom.getX()
-                origCoordinates[index][1] = atom.getY()
-                origCoordinates[index++][2] = atom.getZ()
-            }
-            molecularAssembly.moveAllIntoUnitCell()
-            index = 0
-            for (Atom atom : atoms) {
-                unitCellCoordinates[index][0] = atom.getX()
-                unitCellCoordinates[index][1] = atom.getY()
-                unitCellCoordinates[index++][2] = atom.getZ()
-            }
-        }
-
-        File saveDir = baseDir
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-
-        String dirName = saveDir.toString() + File.separator
-        String fileName = FilenameUtils.getName(modelFilename)
-        String ext = FilenameUtils.getExtension(fileName)
-        fileName = FilenameUtils.removeExtension(fileName)
-
-        if (ext.toUpperCase().contains("XYZ")) {
-            potentialFunctions.saveAsXYZ(assemblies[0], new File(dirName + fileName + ".xyz"))
-        } else {
-            potentialFunctions.saveAsPDB(assemblies, new File(dirName + fileName + ".pdb"))
-        }
-
-        return this
+    if (filenames != null && filenames.size() > 0) {
+      assemblies = potentialFunctions.openAll(filenames.get(0))
+      activeAssembly = assemblies[0]
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return null
+    } else {
+      assemblies = [activeAssembly]
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        if (assemblies == null) {
-            return new ArrayList<Potential>()
-        } else {
-            return Arrays.stream(assemblies).
-                    filter { a -> a != null }.
-                    map { a -> a.getPotentialEnergy() }.
-                    filter { e -> e != null }.
-                    collect(Collectors.toList())
-        }
+    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+    logger.
+        info("\n Moving molecular centers of mass into the unit cell for " + modelFilename + "\n")
+
+    // Loop over each system.
+    for (int i = 0; i < assemblies.length; i++) {
+      MolecularAssembly molecularAssembly = assemblies[i]
+
+      Atom[] atoms = molecularAssembly.getAtomArray()
+      int n = atoms.length
+      origCoordinates = new double[n][3]
+      unitCellCoordinates = new double[n][3]
+      int index = 0
+      for (Atom atom : atoms) {
+        origCoordinates[index][0] = atom.getX()
+        origCoordinates[index][1] = atom.getY()
+        origCoordinates[index++][2] = atom.getZ()
+      }
+      molecularAssembly.moveAllIntoUnitCell()
+      index = 0
+      for (Atom atom : atoms) {
+        unitCellCoordinates[index][0] = atom.getX()
+        unitCellCoordinates[index][1] = atom.getY()
+        unitCellCoordinates[index++][2] = atom.getZ()
+      }
     }
+
+    File saveDir = baseDir
+    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+    }
+
+    String dirName = saveDir.toString() + File.separator
+    String fileName = FilenameUtils.getName(modelFilename)
+    String ext = FilenameUtils.getExtension(fileName)
+    fileName = FilenameUtils.removeExtension(fileName)
+
+    if (ext.toUpperCase().contains("XYZ")) {
+      potentialFunctions.saveAsXYZ(assemblies[0], new File(dirName + fileName + ".xyz"))
+    } else {
+      potentialFunctions.saveAsPDB(assemblies, new File(dirName + fileName + ".pdb"))
+    }
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    if (assemblies == null) {
+      return new ArrayList<Potential>()
+    } else {
+      return Arrays.stream(assemblies).
+          filter {a -> a != null
+          }.
+          map {a -> a.getPotentialEnergy()
+          }.
+          filter {e -> e != null
+          }.
+          collect(Collectors.toList())
+    }
+  }
 }

@@ -37,12 +37,10 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import org.apache.commons.io.FilenameUtils
-
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
@@ -57,57 +55,57 @@ import picocli.CommandLine.Parameters
 @Command(description = " Expand the system to P1 and then save it.", name = "ffxc SaveAsP1")
 class SaveAsP1 extends PotentialScript {
 
-    @CommandLine.Mixin
-    SaveOptions saveOptions
+  @CommandLine.Mixin
+  SaveOptions saveOptions
 
-    /**
-     * The final argument(s) should be one or more filenames.
-     */
-    @Parameters(arity = "1", paramLabel = "files",
-            description = 'The atomic coordinate file in PDB or XYZ format.')
-    List<String> filenames = null
+  /**
+   * The final argument(s) should be one or more filenames.
+   */
+  @Parameters(arity = "1", paramLabel = "files",
+      description = 'The atomic coordinate file in PDB or XYZ format.')
+  List<String> filenames = null
 
-    private File baseDir = null
+  private File baseDir = null
 
-    void setBaseDir(File baseDir) {
-        this.baseDir = baseDir
+  void setBaseDir(File baseDir) {
+    this.baseDir = baseDir
+  }
+
+  /**
+   * Execute the script.
+   */
+  @Override
+  SaveAsP1 run() {
+    if (!init()) {
+      return null
     }
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    SaveAsP1 run() {
-        if (!init()) {
-            return null
-        }
-
-        MolecularAssembly[] assemblies
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.openAll(filenames.get(0))
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return null
-        }
-
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
-        logger.info("\n Expanding to P1 for " + modelFilename)
-
-        File saveDir = baseDir
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-
-        String fileName = FilenameUtils.getName(modelFilename)
-        String dirName = saveDir.getAbsolutePath()
-        File saveLocation = new File(dirName + File.separator + fileName)
-
-        logger.info(" Saving P1 file to: " + saveLocation)
-
-        saveOptions.preSaveOperations(activeAssembly)
-        potentialFunctions.saveAsP1(activeAssembly, saveLocation)
-
-        return this
+    MolecularAssembly[] assemblies
+    if (filenames != null && filenames.size() > 0) {
+      assemblies = potentialFunctions.openAll(filenames.get(0))
+      activeAssembly = assemblies[0]
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return null
     }
+
+    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+    logger.info("\n Expanding to P1 for " + modelFilename)
+
+    File saveDir = baseDir
+    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+    }
+
+    String fileName = FilenameUtils.getName(modelFilename)
+    String dirName = saveDir.getAbsolutePath()
+    File saveLocation = new File(dirName + File.separator + fileName)
+
+    logger.info(" Saving P1 file to: " + saveLocation)
+
+    saveOptions.preSaveOperations(activeAssembly)
+    potentialFunctions.saveAsP1(activeAssembly, saveLocation)
+
+    return this
+  }
 }

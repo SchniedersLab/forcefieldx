@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,102 +34,92 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray;
+
+import static ffx.numerics.math.DoubleMath.sub;
 
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.numerics.math.DoubleMath.sub;
 
 /**
- * <p>
- * SolventBinaryFormFactor class.</p>
+ * SolventBinaryFormFactor class.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public final class SolventBinaryFormFactor implements FormFactor {
 
-    private final double[] xyz = new double[3];
-    private final double[] dxyz = new double[3];
-    private final double probeRad;
+  private final double[] xyz = new double[3];
+  private final double[] dxyz = new double[3];
+  private final double probeRad;
 
-    /**
-     * <p>
-     * Constructor for SolventBinaryFormFactor.</p>
-     *
-     * @param atom     a {@link ffx.potential.bonded.Atom} object.
-     * @param probeRad a double.
-     */
-    public SolventBinaryFormFactor(Atom atom, double probeRad) {
-        this(atom, probeRad, atom.getXYZ(null));
+  /**
+   * Constructor for SolventBinaryFormFactor.
+   *
+   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @param probeRad a double.
+   */
+  public SolventBinaryFormFactor(Atom atom, double probeRad) {
+    this(atom, probeRad, atom.getXYZ(null));
+  }
+
+  /**
+   * Constructor for SolventBinaryFormFactor.
+   *
+   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @param probeRad a double.
+   * @param xyz an array of double.
+   */
+  public SolventBinaryFormFactor(Atom atom, double probeRad, double[] xyz) {
+    this.probeRad = probeRad;
+
+    update(xyz);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double rho(double f, double lambda, double[] xyz) {
+    sub(this.xyz, xyz, dxyz);
+    return rho(f, lambda, DoubleMath.length(dxyz));
+  }
+
+  /**
+   * rho
+   *
+   * @param f a double.
+   * @param lambda a double.
+   * @param ri a double.
+   * @return a double.
+   */
+  public double rho(double f, double lambda, double ri) {
+    if (ri <= probeRad) {
+      return 0.0;
+    } else {
+      return f;
     }
+  }
 
-    /**
-     * <p>
-     * Constructor for SolventBinaryFormFactor.</p>
-     *
-     * @param atom     a {@link ffx.potential.bonded.Atom} object.
-     * @param probeRad a double.
-     * @param xyz      an array of double.
-     */
-    public SolventBinaryFormFactor(Atom atom, double probeRad, double[] xyz) {
-        this.probeRad = probeRad;
+  /**
+   * Derivatives are zero or infinite for the binary model.
+   *
+   * <p>{@inheritDoc}
+   */
+  @Override
+  public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {}
 
-        update(xyz);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void update(double[] xyz) {
+    update(xyz, 0.0);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double rho(double f, double lambda, double[] xyz) {
-        sub(this.xyz, xyz, dxyz);
-        return rho(f, lambda, DoubleMath.length(dxyz));
-    }
-
-    /**
-     * <p>
-     * rho</p>
-     *
-     * @param f      a double.
-     * @param lambda a double.
-     * @param ri     a double.
-     * @return a double.
-     */
-    public double rho(double f, double lambda, double ri) {
-        if (ri <= probeRad) {
-            return 0.0;
-        } else {
-            return f;
-        }
-    }
-
-    /**
-     * Derivatives are zero or infinite for the binary model.
-     * <p>
-     * {@inheritDoc}
-     */
-    @Override
-    public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void update(double[] xyz) {
-        update(xyz, 0.0);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void update(double[] xyz, double badd) {
-        this.xyz[0] = xyz[0];
-        this.xyz[1] = xyz[1];
-        this.xyz[2] = xyz[2];
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void update(double[] xyz, double badd) {
+    this.xyz[0] = xyz[0];
+    this.xyz[1] = xyz[1];
+    this.xyz[2] = xyz[2];
+  }
 }

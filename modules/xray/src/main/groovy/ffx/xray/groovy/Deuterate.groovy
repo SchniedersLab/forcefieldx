@@ -37,15 +37,13 @@
 //******************************************************************************
 package ffx.xray.groovy
 
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MSNode
 import ffx.potential.bonded.Molecule
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
@@ -59,66 +57,67 @@ import picocli.CommandLine.Parameters
 @Command(description = " Deuterate exchangable hydrogen of the PDB model.", name = "ffxc Deuterate")
 class Deuterate extends AlgorithmsScript {
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
-    private List<String> filenames
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
+  private List<String> filenames
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    Deuterate run() {
+  /**
+   * Execute the script.
+   */
+  @Override
+  Deuterate run() {
 
-        if (!init()) {
-            return this
-        }
-
-        MolecularAssembly[] assemblies
-        String modelfilename
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.openAll(filenames.get(0))
-            activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath()
-        }
-
-        logger.info("\n Running xray.Deuterate on " + modelfilename)
-
-        for (int i = 0; i < assemblies.length; i++) {
-            Atom[] atoms = assemblies[i].getAtomArray()
-            for (Atom a : atoms) {
-                if (a.getAtomicNumber() == 1) {
-                    Atom b = a.getBonds().get(0).get1_2(a)
-
-                    // Criteria for converting H to D
-                    if (b.getAtomicNumber() == 7
-                            || b.getAtomicNumber() == 8) {
-                        String name = a.getName().replaceFirst("H", "D")
-                        a.setName(name)
-                    }
-                }
-            }
-
-            ArrayList<MSNode> waters = assemblies[i].getWaters()
-            for (MSNode node : waters) {
-                Molecule water = (Molecule) node
-                water.setName("DOD")
-            }
-        }
-
-        algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + "_deuterate.pdb"))
-
-        return this
+    if (!init()) {
+      return this
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        return Collections.emptyList()
+    MolecularAssembly[] assemblies
+    String modelfilename
+    if (filenames != null && filenames.size() > 0) {
+      assemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = assemblies[0]
+      modelfilename = filenames.get(0)
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
+    } else {
+      modelfilename = activeAssembly.getFile().getAbsolutePath()
     }
+
+    logger.info("\n Running xray.Deuterate on " + modelfilename)
+
+    for (int i = 0; i < assemblies.length; i++) {
+      Atom[] atoms = assemblies[i].getAtomArray()
+      for (Atom a : atoms) {
+        if (a.getAtomicNumber() == 1) {
+          Atom b = a.getBonds().get(0).get1_2(a)
+
+          // Criteria for converting H to D
+          if (b.getAtomicNumber() == 7
+              || b.getAtomicNumber() == 8) {
+            String name = a.getName().replaceFirst("H", "D")
+            a.setName(name)
+          }
+        }
+      }
+
+      ArrayList<MSNode> waters = assemblies[i].getWaters()
+      for (MSNode node : waters) {
+        Molecule water = (Molecule) node
+        water.setName("DOD")
+      }
+    }
+
+    algorithmFunctions.saveAsPDB(assemblies,
+        new File(FilenameUtils.removeExtension(modelfilename) + "_deuterate.pdb"))
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    return Collections.emptyList()
+  }
 }

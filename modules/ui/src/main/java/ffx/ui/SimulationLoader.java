@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,259 +34,245 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui;
-
-import javax.swing.Timer;
-
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.net.InetSocketAddress;
-import java.util.List;
 
 import ffx.potential.bonded.Atom;
 import ffx.ui.commands.FFXClient;
 import ffx.ui.commands.SimulationFilter;
 import ffx.ui.commands.SimulationUpdate;
 import ffx.utilities.Keyword;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.net.InetSocketAddress;
+import java.util.List;
+import javax.swing.Timer;
 
 /**
- * This SimulationLoader class oversees loading information from an executing
- * FFX instance program this instance of Force Field X.
+ * This SimulationLoader class oversees loading information from an executing FFX instance program
+ * this instance of Force Field X.
  *
  * @author Michael J. Schnieders
  */
 public class SimulationLoader implements ActionListener {
-    // The client monitors a socket based connection to an executing TINKER
-    // program.
+  // The client monitors a socket based connection to an executing TINKER
+  // program.
 
-    private FFXClient client;
-    private SimulationFilter simulationFilter;
-    private InetSocketAddress address;
-    // If the TINKER program was launched from the GUI,
-    // the job Thread will be alive until the program exits.
-    private Thread job = null;
-    // Once the simulation is finished, this flag will be true.
-    private boolean finished = false;
-    private MainPanel mainPanel;
-    private FFXSystem system;
-    private SimulationUpdate tinkerUpdate = null;
-    private boolean firstUpdate = true;
-    private Timer timer;
-    private double time = 0.0;
-    private int step = 0;
+  private FFXClient client;
+  private SimulationFilter simulationFilter;
+  private InetSocketAddress address;
+  // If the TINKER program was launched from the GUI,
+  // the job Thread will be alive until the program exits.
+  private Thread job = null;
+  // Once the simulation is finished, this flag will be true.
+  private boolean finished = false;
+  private MainPanel mainPanel;
+  private FFXSystem system;
+  private SimulationUpdate tinkerUpdate = null;
+  private boolean firstUpdate = true;
+  private Timer timer;
+  private double time = 0.0;
+  private int step = 0;
 
-    // Constructor
+  // Constructor
 
-    /**
-     * <p>
-     * Constructor for SimulationLoader.</p>
-     *
-     * @param s a {@link ffx.ui.FFXSystem} object.
-     * @param j a {@link java.lang.Thread} object.
-     * @param f a {@link ffx.ui.MainPanel} object.
-     * @param a a {@link java.net.InetSocketAddress} object.
-     */
-    public SimulationLoader(FFXSystem s, Thread j, MainPanel f,
-                            InetSocketAddress a) {
-        system = s;
-        job = j;
-        mainPanel = f;
-        address = a;
-        if (address == null) {
-            finished = true;
-        }
+  /**
+   * Constructor for SimulationLoader.
+   *
+   * @param s a {@link ffx.ui.FFXSystem} object.
+   * @param j a {@link java.lang.Thread} object.
+   * @param f a {@link ffx.ui.MainPanel} object.
+   * @param a a {@link java.net.InetSocketAddress} object.
+   */
+  public SimulationLoader(FFXSystem s, Thread j, MainPanel f, InetSocketAddress a) {
+    system = s;
+    job = j;
+    mainPanel = f;
+    address = a;
+    if (address == null) {
+      finished = true;
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        // Check if we're connected to a TINKER Server.
-        if (!connect()) {
-            return;
-        }
-        // Check if we need to initialize the Simulation System.
-        if (system == null) {
-            ffx.ui.commands.SimulationDefinition sys = client.getSystem();
-            if (sys != null) {
-                if (simulationFilter == null) {
-                    if (system == null) {
-                        system = new FFXSystem(new File("Simulation"),
-                                "Simulation", Keyword.loadProperties(null));
-                    }
-                    simulationFilter = new SimulationFilter(sys, system);
-                    UIFileOpener openFile = new UIFileOpener(simulationFilter,
-                            mainPanel);
-                    // The reader thread contains a SimulationFilter instance that will read a
-                    // simulation into the FFX.
-                    Thread reader = new Thread(openFile);
-                    reader.start();
-                } else if (simulationFilter.fileRead()) {
-                    system = (FFXSystem) simulationFilter.getActiveMolecularSystem();
-                    simulationFilter = null;
-                }
-            }
-        } // A Simulation System exists, attempt to Update it.
-        else {
-            if (tinkerUpdate == null || tinkerUpdate.read) {
-                tinkerUpdate = client.getUpdate();
-            }
-            if (tinkerUpdate != null && !tinkerUpdate.read
-                    && !mainPanel.getGraphics3D().isSceneRendering()) {
-                update();
-            }
-        }
+  /** {@inheritDoc} */
+  @Override
+  public void actionPerformed(ActionEvent e) {
+    // Check if we're connected to a TINKER Server.
+    if (!connect()) {
+      return;
     }
-
-    /**
-     * <p>
-     * isConnected</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isConnected() {
-        return client != null && client.isConnected();
-    }
-
-    /**
-     * <p>
-     * release</p>
-     */
-    public void release() {
-        finished = true;
-        if (timer != null) {
-            timer.stop();
+    // Check if we need to initialize the Simulation System.
+    if (system == null) {
+      ffx.ui.commands.SimulationDefinition sys = client.getSystem();
+      if (sys != null) {
+        if (simulationFilter == null) {
+          if (system == null) {
+            system =
+                new FFXSystem(new File("Simulation"), "Simulation", Keyword.loadProperties(null));
+          }
+          simulationFilter = new SimulationFilter(sys, system);
+          UIFileOpener openFile = new UIFileOpener(simulationFilter, mainPanel);
+          // The reader thread contains a SimulationFilter instance that will read a
+          // simulation into the FFX.
+          Thread reader = new Thread(openFile);
+          reader.start();
+        } else if (simulationFilter.fileRead()) {
+          system = (FFXSystem) simulationFilter.getActiveMolecularSystem();
+          simulationFilter = null;
         }
-        if (client != null) {
-            client.release();
-        }
-        mainPanel.getMainMenu().setConnect(true);
-    }
-
-    /**
-     * <p>
-     * connect</p>
-     *
-     * @return a boolean.
-     */
-    boolean connect() {
-        if (isFinished()) {
-            return false;
-        }
-        if (isConnected()) {
-            return true;
-        }
-        // Create a timer to regularly wake up this SimulationLoader.
-        int delay = 10;
-        if (timer == null) {
-            timer = new Timer(delay, this);
-            timer.setCoalesce(true);
-            timer.setDelay(10);
-            timer.start();
-        }
-        // Create the FFXClient to monitor messages to/from TINKER.
-        if (client == null) {
-            client = new FFXClient(address);
-        }
-        // Try to connect.
-        client.connect();
-        // If connected, change to our "steady-state" timer delay.
-        if (client.isConnected()) {
-            timer.setDelay(delay);
-            return true;
-        }
-        // The FFXClient and the Timer are set up, but a TINKER simulation
-        // has not responded yet. This connect method will be called again
-        // through "actionPerformed" when
-        // the timer wakes up.
-        return false;
-    }
-
-    /**
-     * <p>
-     * getFSystem</p>
-     *
-     * @return a {@link ffx.ui.FFXSystem} object.
-     */
-    FFXSystem getFSystem() {
-        return system;
-    }
-
-    // Release the simulation
-
-    /**
-     * <p>
-     * isFinished</p>
-     *
-     * @return a boolean.
-     */
-    boolean isFinished() {
-        if (client != null && client.isClosed()) {
-            finished = true;
-        }
-        if (job != null && !job.isAlive()) {
-            finished = true;
-        }
-        if (finished) {
-            if (timer != null) {
-                timer.stop();
-            }
-            update();
-            release();
-        }
-        return finished;
-    }
-
-    private void update() {
-        if (system.isStale()) {
-            return;
-        }
-        if (tinkerUpdate == null || tinkerUpdate.read) {
-            return;
-        }
-        // Sanity check - FFX and TINKER should agree on the number of atoms.
-        List<Atom> atoms = system.getAtomList();
-        int n = atoms.size();
-        if (tinkerUpdate.numatoms != n) {
-            finished = true;
-            return;
-        }
-        // This is either an MD Run.
-        if (tinkerUpdate.type == ffx.ui.commands.SimulationUpdate.SIMULATION) {
-            if (tinkerUpdate.time == time) {
-                tinkerUpdate.read = true;
-                return;
-            }
-            time = tinkerUpdate.time;
-        } else if (tinkerUpdate.type == ffx.ui.commands.SimulationUpdate.OPTIMIZATION) {
-            if (tinkerUpdate.step == step) {
-                tinkerUpdate.read = true;
-                return;
-            }
-            step = tinkerUpdate.step;
-        }
-        // Reset the Maximum Magnitude Values, such that they will be consistent
-        // with this frame of the simulation after the update.
-        double[] d = new double[3];
-        for (Atom a : atoms) {
-            int index = a.getIndex() - 1;
-            d[0] = tinkerUpdate.coordinates[0][index];
-            d[1] = tinkerUpdate.coordinates[1][index];
-            d[2] = tinkerUpdate.coordinates[2][index];
-            a.moveTo(d);
-        }
-        if (firstUpdate) {
-            system.center();
-            firstUpdate = false;
-        }
-        mainPanel.getGraphics3D().updateScene(system, true, false, null, false,
-                null);
-        mainPanel.getHierarchy().updateStatus();
-        mainPanel.getHierarchy().repaint();
-        tinkerUpdate.read = true;
+      }
+    } // A Simulation System exists, attempt to Update it.
+    else {
+      if (tinkerUpdate == null || tinkerUpdate.read) {
         tinkerUpdate = client.getUpdate();
+      }
+      if (tinkerUpdate != null
+          && !tinkerUpdate.read
+          && !mainPanel.getGraphics3D().isSceneRendering()) {
+        update();
+      }
     }
+  }
+
+  /**
+   * isConnected
+   *
+   * @return a boolean.
+   */
+  public boolean isConnected() {
+    return client != null && client.isConnected();
+  }
+
+  /** release */
+  public void release() {
+    finished = true;
+    if (timer != null) {
+      timer.stop();
+    }
+    if (client != null) {
+      client.release();
+    }
+    mainPanel.getMainMenu().setConnect(true);
+  }
+
+  /**
+   * connect
+   *
+   * @return a boolean.
+   */
+  boolean connect() {
+    if (isFinished()) {
+      return false;
+    }
+    if (isConnected()) {
+      return true;
+    }
+    // Create a timer to regularly wake up this SimulationLoader.
+    int delay = 10;
+    if (timer == null) {
+      timer = new Timer(delay, this);
+      timer.setCoalesce(true);
+      timer.setDelay(10);
+      timer.start();
+    }
+    // Create the FFXClient to monitor messages to/from TINKER.
+    if (client == null) {
+      client = new FFXClient(address);
+    }
+    // Try to connect.
+    client.connect();
+    // If connected, change to our "steady-state" timer delay.
+    if (client.isConnected()) {
+      timer.setDelay(delay);
+      return true;
+    }
+    // The FFXClient and the Timer are set up, but a TINKER simulation
+    // has not responded yet. This connect method will be called again
+    // through "actionPerformed" when
+    // the timer wakes up.
+    return false;
+  }
+
+  /**
+   * getFSystem
+   *
+   * @return a {@link ffx.ui.FFXSystem} object.
+   */
+  FFXSystem getFSystem() {
+    return system;
+  }
+
+  // Release the simulation
+
+  /**
+   * isFinished
+   *
+   * @return a boolean.
+   */
+  boolean isFinished() {
+    if (client != null && client.isClosed()) {
+      finished = true;
+    }
+    if (job != null && !job.isAlive()) {
+      finished = true;
+    }
+    if (finished) {
+      if (timer != null) {
+        timer.stop();
+      }
+      update();
+      release();
+    }
+    return finished;
+  }
+
+  private void update() {
+    if (system.isStale()) {
+      return;
+    }
+    if (tinkerUpdate == null || tinkerUpdate.read) {
+      return;
+    }
+    // Sanity check - FFX and TINKER should agree on the number of atoms.
+    List<Atom> atoms = system.getAtomList();
+    int n = atoms.size();
+    if (tinkerUpdate.numatoms != n) {
+      finished = true;
+      return;
+    }
+    // This is either an MD Run.
+    if (tinkerUpdate.type == ffx.ui.commands.SimulationUpdate.SIMULATION) {
+      if (tinkerUpdate.time == time) {
+        tinkerUpdate.read = true;
+        return;
+      }
+      time = tinkerUpdate.time;
+    } else if (tinkerUpdate.type == ffx.ui.commands.SimulationUpdate.OPTIMIZATION) {
+      if (tinkerUpdate.step == step) {
+        tinkerUpdate.read = true;
+        return;
+      }
+      step = tinkerUpdate.step;
+    }
+    // Reset the Maximum Magnitude Values, such that they will be consistent
+    // with this frame of the simulation after the update.
+    double[] d = new double[3];
+    for (Atom a : atoms) {
+      int index = a.getIndex() - 1;
+      d[0] = tinkerUpdate.coordinates[0][index];
+      d[1] = tinkerUpdate.coordinates[1][index];
+      d[2] = tinkerUpdate.coordinates[2][index];
+      a.moveTo(d);
+    }
+    if (firstUpdate) {
+      system.center();
+      firstUpdate = false;
+    }
+    mainPanel.getGraphics3D().updateScene(system, true, false, null, false, null);
+    mainPanel.getHierarchy().updateStatus();
+    mainPanel.getHierarchy().repaint();
+    tinkerUpdate.read = true;
+    tinkerUpdate = client.getUpdate();
+  }
 }

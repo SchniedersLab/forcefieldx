@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.commands;
 
 import java.io.InputStream;
@@ -46,228 +46,211 @@ import java.net.Socket;
 import java.util.logging.Logger;
 
 /**
- * The FFXClient class encapsulates a socket connection to an FFXServer
- * started by an executing FFX instance. FFXSystem and FFXUpdate objects
- * are sent by the FFXServer to the FFXClient on request.
+ * The FFXClient class encapsulates a socket connection to an FFXServer started by an executing FFX
+ * instance. FFXSystem and FFXUpdate objects are sent by the FFXServer to the FFXClient on request.
  *
  * @author Michael J. Schnieders
  */
 public class FFXClient {
 
-    private static final Logger logger = Logger.getLogger(FFXClient.class.getName());
-    private Socket client; // Socket connection to the server
-    private InetSocketAddress address; // Server address
-    private InputStream in; // Input from the server
-    private ObjectInputStream oin; // Input form the server
-    private OutputStream out; // Output to the server
-    private ObjectOutputStream oout; // Output to the server
-    private SimulationDefinition system; // Tinker system definition
-    private SimulationUpdate update; // Tinker update information
-    private SimulationMessage message; // Message Passed Between Client & Server
-    // Various connection status variables
-    private int retryCount = 0; // Count of Client attempts to Connect
-    private int retryLimit = 10000; // Maximum number of retries
-    private boolean connectionMade = false; // True when a connection has been
-    // made
-    // closed is True if the server closes an open connection
-    // or if the retryLimit is reached
-    private boolean closed = false;
+  private static final Logger logger = Logger.getLogger(FFXClient.class.getName());
+  private Socket client; // Socket connection to the server
+  private InetSocketAddress address; // Server address
+  private InputStream in; // Input from the server
+  private ObjectInputStream oin; // Input form the server
+  private OutputStream out; // Output to the server
+  private ObjectOutputStream oout; // Output to the server
+  private SimulationDefinition system; // Tinker system definition
+  private SimulationUpdate update; // Tinker update information
+  private SimulationMessage message; // Message Passed Between Client & Server
+  // Various connection status variables
+  private int retryCount = 0; // Count of Client attempts to Connect
+  private int retryLimit = 10000; // Maximum number of retries
+  private boolean connectionMade = false; // True when a connection has been
+  // made
+  // closed is True if the server closes an open connection
+  // or if the retryLimit is reached
+  private boolean closed = false;
 
-    /**
-     * <p>
-     * Constructor for FFXClient.</p>
-     */
-    public FFXClient() {
-        address = new InetSocketAddress(2000);
+  /** Constructor for FFXClient. */
+  public FFXClient() {
+    address = new InetSocketAddress(2000);
+  }
+
+  /**
+   * Constructor for FFXClient.
+   *
+   * @param a a {@link java.net.InetSocketAddress} object.
+   */
+  public FFXClient(InetSocketAddress a) {
+    address = a;
+  }
+
+  /**
+   * Constructor for FFXClient.
+   *
+   * @param port a int.
+   */
+  public FFXClient(int port) {
+    address = new InetSocketAddress(port);
+  }
+
+  /**
+   * Attempts to connect to a Tinker FServer. If this FClient is already connected, the connection
+   * will be closed.
+   */
+  public void connect() {
+    if (client != null && client.isConnected()) {
+      release();
     }
-
-    /**
-     * <p>
-     * Constructor for FFXClient.</p>
-     *
-     * @param a a {@link java.net.InetSocketAddress} object.
-     */
-    public FFXClient(InetSocketAddress a) {
-        address = a;
+    closed = false;
+    client = new Socket();
+    try {
+      client.connect(address, 100);
+      client.setTcpNoDelay(true);
+      out = client.getOutputStream();
+      oout = new ObjectOutputStream(out);
+      in = client.getInputStream();
+      oin = new ObjectInputStream(in);
+      connectionMade = true;
+      logger.info("Connected to FFX Server: " + client);
+    } catch (Exception e) {
+      client = null;
+    } finally {
+      if (client == null || !client.isConnected()) {
+        release();
+      }
     }
+  }
 
-    /**
-     * <p>
-     * Constructor for FFXClient.</p>
-     *
-     * @param port a int.
-     */
-    public FFXClient(int port) {
-        address = new InetSocketAddress(port);
+  /**
+   * Getter for the field <code>system</code>.
+   *
+   * @return a {@link ffx.ui.commands.SimulationDefinition} object.
+   */
+  public SimulationDefinition getSystem() {
+    readSocket();
+    return system;
+  }
+
+  /**
+   * Getter for the field <code>update</code>.
+   *
+   * @return a {@link ffx.ui.commands.SimulationUpdate} object.
+   */
+  public SimulationUpdate getUpdate() {
+    readSocket();
+    return update;
+  }
+
+  /**
+   * isClosed
+   *
+   * @return a boolean.
+   */
+  public boolean isClosed() {
+    return closed;
+  }
+
+  /**
+   * isConnected
+   *
+   * @return a boolean.
+   */
+  public boolean isConnected() {
+    if (client != null && client.isConnected()) {
+      return true;
     }
+    return false;
+  }
 
-    /**
-     * Attempts to connect to a Tinker FServer. If this FClient is already
-     * connected, the connection will be closed.
-     */
-    public void connect() {
-        if (client != null && client.isConnected()) {
-            release();
-        }
-        closed = false;
-        client = new Socket();
-        try {
-            client.connect(address, 100);
-            client.setTcpNoDelay(true);
-            out = client.getOutputStream();
-            oout = new ObjectOutputStream(out);
-            in = client.getInputStream();
-            oin = new ObjectInputStream(in);
-            connectionMade = true;
-            logger.info("Connected to FFX Server: " + client);
-        } catch (Exception e) {
-            client = null;
-        } finally {
-            if (client == null || !client.isConnected()) {
-                release();
-            }
-        }
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>system</code>.</p>
-     *
-     * @return a {@link ffx.ui.commands.SimulationDefinition} object.
-     */
-    public SimulationDefinition getSystem() {
-        readSocket();
-        return system;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>update</code>.</p>
-     *
-     * @return a {@link ffx.ui.commands.SimulationUpdate} object.
-     */
-    public SimulationUpdate getUpdate() {
-        readSocket();
-        return update;
-    }
-
-    /**
-     * <p>
-     * isClosed</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isClosed() {
-        return closed;
-    }
-
-    /**
-     * <p>
-     * isConnected</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isConnected() {
-        if (client != null && client.isConnected()) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * <p>
-     * readSocket</p>
-     */
-    public void readSocket() {
-        try {
-            while (oin != null && in.available() > 0) {
-                Object o = oin.readObject();
-                if (o instanceof SimulationMessage) {
-                    message = (SimulationMessage) o;
-                    // logger.info(message.toString());
-                    if (message.getMessage() == SimulationMessage.SYSTEM) {
-                        system = (SimulationDefinition) oin.readObject();
-                        system.read = false;
-                    } else if (message.getMessage() == SimulationMessage.UPDATE) {
-                        update = (SimulationUpdate) oin.readObject();
-                        update.read = false;
-                    } else if (message.getMessage() == SimulationMessage.CLOSING) {
-                        closed = true;
-                        release();
-                    }
-                }
-            }
-            if (system == null) {
-                message = new SimulationMessage(SimulationMessage.SYSTEM);
-                oout.reset();
-                oout.writeObject(message);
-                oout.flush();
-            } else if (update == null || update.read) {
-                message = new SimulationMessage(SimulationMessage.UPDATE);
-                if (update != null) {
-                    if (update.type == SimulationUpdate.SIMULATION) {
-                        message.setTime(update.time);
-                    } else {
-                        message.setStep(update.step);
-                    }
-                }
-                oout.reset();
-                oout.writeObject(message);
-                oout.flush();
-            }
-        } catch (Exception e) {
-            logger.warning("Exception reading data from FFX\n"
-                    + e.toString());
-            release();
-        }
-    }
-
-    /**
-     * <p>
-     * release</p>
-     */
-    public void release() {
-        if (client == null) {
-            return;
-        }
-        retryCount++;
-        if (retryCount > retryLimit || connectionMade) {
+  /** readSocket */
+  public void readSocket() {
+    try {
+      while (oin != null && in.available() > 0) {
+        Object o = oin.readObject();
+        if (o instanceof SimulationMessage) {
+          message = (SimulationMessage) o;
+          // logger.info(message.toString());
+          if (message.getMessage() == SimulationMessage.SYSTEM) {
+            system = (SimulationDefinition) oin.readObject();
+            system.read = false;
+          } else if (message.getMessage() == SimulationMessage.UPDATE) {
+            update = (SimulationUpdate) oin.readObject();
+            update.read = false;
+          } else if (message.getMessage() == SimulationMessage.CLOSING) {
             closed = true;
+            release();
+          }
         }
-        if (client != null && client.isConnected() && oout != null) {
-            try {
-                SimulationMessage close = new SimulationMessage(SimulationMessage.CLOSING);
-                oout.reset();
-                oout.writeObject(close);
-                oout.flush();
-            } catch (Exception e) {
-                oout = null;
-            }
+      }
+      if (system == null) {
+        message = new SimulationMessage(SimulationMessage.SYSTEM);
+        oout.reset();
+        oout.writeObject(message);
+        oout.flush();
+      } else if (update == null || update.read) {
+        message = new SimulationMessage(SimulationMessage.UPDATE);
+        if (update != null) {
+          if (update.type == SimulationUpdate.SIMULATION) {
+            message.setTime(update.time);
+          } else {
+            message.setStep(update.step);
+          }
         }
-        try {
-            if (oin != null) {
-                oin.close();
-            }
-            if (in != null) {
-                in.close();
-            }
-            if (oout != null) {
-                oout.close();
-            }
-            if (out != null) {
-                out.close();
-            }
-            if (client != null) {
-                client.close();
-            }
-        } catch (Exception e) {
-            client = null;
-        } finally {
-            in = null;
-            oin = null;
-            out = null;
-            oout = null;
-            client = null;
-        }
+        oout.reset();
+        oout.writeObject(message);
+        oout.flush();
+      }
+    } catch (Exception e) {
+      logger.warning("Exception reading data from FFX\n" + e.toString());
+      release();
     }
+  }
+
+  /** release */
+  public void release() {
+    if (client == null) {
+      return;
+    }
+    retryCount++;
+    if (retryCount > retryLimit || connectionMade) {
+      closed = true;
+    }
+    if (client != null && client.isConnected() && oout != null) {
+      try {
+        SimulationMessage close = new SimulationMessage(SimulationMessage.CLOSING);
+        oout.reset();
+        oout.writeObject(close);
+        oout.flush();
+      } catch (Exception e) {
+        oout = null;
+      }
+    }
+    try {
+      if (oin != null) {
+        oin.close();
+      }
+      if (in != null) {
+        in.close();
+      }
+      if (oout != null) {
+        oout.close();
+      }
+      if (out != null) {
+        out.close();
+      }
+      if (client != null) {
+        client.close();
+      }
+    } catch (Exception e) {
+      client = null;
+    } finally {
+      in = null;
+      oin = null;
+      out = null;
+      oout = null;
+      client = null;
+    }
+  }
 }

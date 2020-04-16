@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,14 +34,13 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui;
-
-import javax.swing.JPanel;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridLayout;
+import javax.swing.JPanel;
 
 /**
  * The GraphicsPanel class contains the 3D Canvas and its status box.
@@ -50,37 +49,34 @@ import java.awt.GridLayout;
  */
 public class GraphicsPanel extends JPanel {
 
-    private GraphicsCanvas graphicsCanvas;
+  private GraphicsCanvas graphicsCanvas;
 
-    /**
-     * <p>
-     * Constructor for GraphicsPanel.</p>
-     *
-     * @param graphicsCanvas a {@link ffx.ui.GraphicsCanvas} object.
-     * @param statusPanel    a {@link javax.swing.JPanel} object.
-     */
-    public GraphicsPanel(GraphicsCanvas graphicsCanvas, JPanel statusPanel) {
-        super();
-        setLayout(new BorderLayout());
-        if (graphicsCanvas != null) {
-            JPanel canvasPanel = new JPanel(new GridLayout(1, 1));
-            canvasPanel.add(graphicsCanvas);
-            add(canvasPanel, BorderLayout.CENTER);
-        } else {
-            setBackground(Color.BLACK);
-        }
-        add(statusPanel, BorderLayout.SOUTH);
-        this.graphicsCanvas = graphicsCanvas;
+  /**
+   * Constructor for GraphicsPanel.
+   *
+   * @param graphicsCanvas a {@link ffx.ui.GraphicsCanvas} object.
+   * @param statusPanel a {@link javax.swing.JPanel} object.
+   */
+  public GraphicsPanel(GraphicsCanvas graphicsCanvas, JPanel statusPanel) {
+    super();
+    setLayout(new BorderLayout());
+    if (graphicsCanvas != null) {
+      JPanel canvasPanel = new JPanel(new GridLayout(1, 1));
+      canvasPanel.add(graphicsCanvas);
+      add(canvasPanel, BorderLayout.CENTER);
+    } else {
+      setBackground(Color.BLACK);
     }
+    add(statusPanel, BorderLayout.SOUTH);
+    this.graphicsCanvas = graphicsCanvas;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVisible(boolean v) {
-        super.setVisible(v);
-        if (graphicsCanvas != null) {
-            graphicsCanvas.setVisible(v);
-        }
+  /** {@inheritDoc} */
+  @Override
+  public void setVisible(boolean v) {
+    super.setVisible(v);
+    if (graphicsCanvas != null) {
+      graphicsCanvas.setVisible(v);
     }
+  }
 }

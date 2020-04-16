@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,118 +34,112 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
 
-import javax.swing.filechooser.FileFilter;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-
+import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 /**
- * The XYZFileFilter class is used to choose a TINKER Cartesian Coordinate
- * (*.XYZ) file.
+ * The XYZFileFilter class is used to choose a TINKER Cartesian Coordinate (*.XYZ) file.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public final class XYZFileFilter extends FileFilter {
 
-    /**
-     * Public Constructor.
-     */
-    public XYZFileFilter() {
-    }
+  /** Public Constructor. */
+  public XYZFileFilter() {}
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method return <code>true</code> if the file is a directory or TINKER
-     * Cartesian coordinate (*.XYZ) file.
-     */
-    @Override
-    public boolean accept(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String ext = FilenameUtils.getExtension(file.getName());
-        return ext.toUpperCase().startsWith("XYZ");
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This method return <code>true</code> if the file is a directory or TINKER Cartesian
+   * coordinate (*.XYZ) file.
+   */
+  @Override
+  public boolean accept(File file) {
+    if (file.isDirectory()) {
+      return true;
     }
+    String ext = FilenameUtils.getExtension(file.getName());
+    return ext.toUpperCase().startsWith("XYZ");
+  }
 
-    /**
-     * <p>
-     * acceptDeep</p>
-     *
-     * @param file a {@link java.io.File} object.
-     * @return a boolean.
-     */
-    public boolean acceptDeep(File file) {
+  /**
+   * acceptDeep
+   *
+   * @param file a {@link java.io.File} object.
+   * @return a boolean.
+   */
+  public boolean acceptDeep(File file) {
+    try {
+      if (file == null || file.isDirectory() || !file.canRead()) {
+        return false;
+      }
+      FileReader fr = new FileReader(file);
+      BufferedReader br = new BufferedReader(fr);
+      if (!br.ready()) {
+        return false;
+      }
+      /*
+       If the first token is not an integer this file is not a TINKER
+       Cartesian Coordinate File.
+      */
+      String rawdata = br.readLine();
+      String[] header = rawdata.trim().split(" +");
+      if (header.length == 0) {
+        return false;
+      }
+      try {
+        parseInt(header[0]);
+      } catch (Exception e) {
+        return false;
+      }
+      /*
+       If the the first line does not begin with an integer (an Atom Line)
+       or a double (a unit cell parameter line) and contain at least
+       six tokens, this is not a TINKER cartesian coordinate file.
+      */
+      String firstAtom = br.readLine();
+      if (firstAtom == null) {
+        return false;
+      }
+      br.close();
+      fr.close();
+      String[] data = firstAtom.trim().split(" +");
+      if (data.length < 6) {
+        return false;
+      }
+      try {
+        parseInt(data[0]);
+      } catch (NumberFormatException e) {
         try {
-            if (file == null || file.isDirectory() || !file.canRead()) {
-                return false;
-            }
-            FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr);
-            if (!br.ready()) {
-                return false;
-            }
-            /*
-              If the first token is not an integer this file is not a TINKER
-              Cartesian Coordinate File.
-             */
-            String rawdata = br.readLine();
-            String[] header = rawdata.trim().split(" +");
-            if (header.length == 0) {
-                return false;
-            }
-            try {
-                parseInt(header[0]);
-            } catch (Exception e) {
-                return false;
-            }
-            /*
-              If the the first line does not begin with an integer (an Atom Line)
-              or a double (a unit cell parameter line) and contain at least
-              six tokens, this is not a TINKER cartesian coordinate file.
-             */
-            String firstAtom = br.readLine();
-            if (firstAtom == null) {
-                return false;
-            }
-            br.close();
-            fr.close();
-            String[] data = firstAtom.trim().split(" +");
-            if (data.length < 6) {
-                return false;
-            }
-            try {
-                parseInt(data[0]);
-            } catch (NumberFormatException e) {
-                try {
-                    parseDouble(data[0]);
-                } catch (NumberFormatException e2) {
-                    return false;
-                }
-            }
-            return true;
-        } catch (IOException e) {
-            return true;
+          parseDouble(data[0]);
+        } catch (NumberFormatException e2) {
+          return false;
         }
+      }
+      return true;
+    } catch (IOException e) {
+      return true;
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Provides a description of the XYZFileFilter.
-     */
-    @Override
-    public String getDescription() {
-        return "TINKER Cartesian Coordinates (*.XYZ)";
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Provides a description of the XYZFileFilter.
+   */
+  @Override
+  public String getDescription() {
+    return "TINKER Cartesian Coordinates (*.XYZ)";
+  }
 }

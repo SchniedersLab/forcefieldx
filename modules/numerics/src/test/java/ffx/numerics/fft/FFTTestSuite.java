@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,18 +34,21 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.fft;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-/**
- * FFTTestSuite collects all Unit tests from the ffx.numerics.fft package.
- */
+/** FFTTestSuite collects all Unit tests from the ffx.numerics.fft package. */
 @RunWith(Suite.class)
-@SuiteClasses({ComplexTest.class, Complex3DTest.class, Complex3DParallelTest.class,
-        RealTest.class, Real3DTest.class, Real3DParallelTest.class})
-public class FFTTestSuite {
-}
+@SuiteClasses({
+  ComplexTest.class,
+  Complex3DTest.class,
+  Complex3DParallelTest.class,
+  RealTest.class,
+  Real3DTest.class,
+  Real3DParallelTest.class
+})
+public class FFTTestSuite {}

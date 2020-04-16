@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,19 +34,17 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.estimator;
 
 import static java.util.Arrays.stream;
-
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
- * The BootstrappableEstimator interface describes a StatisticalEstimator
- * which can use bootstrap sampling as an additional method of calculating
- * free energy and uncertainty. These will generally perform non-bootstrap
- * estimation on construction, with estimateDG(true) called to reset the
- * dG and uncertainty estimates using bootstrapping.
+ * The BootstrappableEstimator interface describes a StatisticalEstimator which can use bootstrap
+ * sampling as an additional method of calculating free energy and uncertainty. These will generally
+ * perform non-bootstrap estimation on construction, with estimateDG(true) called to reset the dG
+ * and uncertainty estimates using bootstrapping.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -54,47 +52,45 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public interface BootstrappableEstimator extends StatisticalEstimator {
 
-    /**
-     * Return a copy of this Estimator. Each implementation should specify its own type as the
-     * return type. Intended to make parallelization of bootstrapping easy.
-     *
-     * @return A copy of this Estimator.
-     */
-    BootstrappableEstimator copyEstimator();
+  /**
+   * Return a copy of this Estimator. Each implementation should specify its own type as the return
+   * type. Intended to make parallelization of bootstrapping easy.
+   *
+   * @return A copy of this Estimator.
+   */
+  BootstrappableEstimator copyEstimator();
 
-    /**
-     * Re-calculates free energy.
-     *
-     * @param randomSamples Whether to draw random samples w/ replacement (one bootstrap trial).
-     */
-    void estimateDG(final boolean randomSamples);
+  /**
+   * Re-calculates free energy.
+   *
+   * @param randomSamples Whether to draw random samples w/ replacement (one bootstrap trial).
+   */
+  void estimateDG(final boolean randomSamples);
 
-    /**
-     * Re-calculates free energy without bootstrapping.
-     */
-    void estimateDG();
+  /** Re-calculates free energy without bootstrapping. */
+  void estimateDG();
 
-    /**
-     * Obtains bootstrap free energy. Default implementation sums by-bin free energies.
-     * <p>
-     * May be over-ridden by non-sequential estimators like MBAR.
-     *
-     * @param fe By-bin bootstrap results.
-     * @return Overall free energy change.
-     */
-    default double sumBootstrapResults(double[] fe) {
-        return stream(fe).sum();
-    }
+  /**
+   * Obtains bootstrap free energy. Default implementation sums by-bin free energies.
+   *
+   * <p>May be over-ridden by non-sequential estimators like MBAR.
+   *
+   * @param fe By-bin bootstrap results.
+   * @return Overall free energy change.
+   */
+  default double sumBootstrapResults(double[] fe) {
+    return stream(fe).sum();
+  }
 
-    /**
-     * Obtains bootstrap uncertainty. Default implementation is square root of summed variances.
-     * <p>
-     * May be over-ridden by non-sequential estimators like MBAR.
-     *
-     * @param var Variance (not uncertainty) in by-bin bootstrap results.
-     * @return Overall uncertainty.
-     */
-    default double sumBootstrapUncertainty(double[] var) {
-        return sqrt(stream(var).sum());
-    }
+  /**
+   * Obtains bootstrap uncertainty. Default implementation is square root of summed variances.
+   *
+   * <p>May be over-ridden by non-sequential estimators like MBAR.
+   *
+   * @param var Variance (not uncertainty) in by-bin bootstrap results.
+   * @return Overall uncertainty.
+   */
+  default double sumBootstrapUncertainty(double[] var) {
+    return sqrt(stream(var).sum());
+  }
 }

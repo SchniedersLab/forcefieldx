@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,27 +34,26 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms;
 
 import ffx.potential.MolecularAssembly;
 
 /**
- * The AlgorithmListener will be notified at regular intervals during an
- * algorithm. This interface is useful for updating the user interface or
- * terminating the algorithm.
+ * The AlgorithmListener will be notified at regular intervals during an algorithm. This interface
+ * is useful for updating the user interface or terminating the algorithm.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public interface AlgorithmListener {
 
-    /**
-     * After a successful step or interval of an algorithm, this method of the
-     * listener will be called.
-     *
-     * @param active The system the algorithm is operating on.
-     * @return A return of <code>true</code> indicates the algorithm continues.
-     */
-    boolean algorithmUpdate(MolecularAssembly active);
+  /**
+   * After a successful step or interval of an algorithm, this method of the listener will be
+   * called.
+   *
+   * @param active The system the algorithm is operating on.
+   * @return A return of <code>true</code> indicates the algorithm continues.
+   */
+  boolean algorithmUpdate(MolecularAssembly active);
 }

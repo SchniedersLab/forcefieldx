@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,15 +34,14 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 import java.io.BufferedReader;
 import java.io.Reader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 
 /**
  * Read in the current value of Lambda, its velocity and the number of counts.
@@ -52,64 +51,64 @@ import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
  */
 public class LambdaReader extends BufferedReader {
 
-    private static final Logger logger = Logger.getLogger(LambdaReader.class.getName());
-    private double lambda;
-    private double halfThetaVel;
-    private int nSteps = 0;
-    private int histoIndex = 0;
-    private boolean resetEnergyCount = false;
+  private static final Logger logger = Logger.getLogger(LambdaReader.class.getName());
+  private double lambda;
+  private double halfThetaVel;
+  private int nSteps = 0;
+  private int histoIndex = 0;
+  private boolean resetEnergyCount = false;
 
-    /**
-     * Constructor.
-     *
-     * @param reader The Reader to use.
-     */
-    public LambdaReader(Reader reader) {
-        super(reader);
-    }
+  /**
+   * Constructor.
+   *
+   * @param reader The Reader to use.
+   */
+  public LambdaReader(Reader reader) {
+    super(reader);
+  }
 
-    /**
-     * Get the index of the histogram associated with this lambda file.
-     *
-     * @return Associated histogram index.
-     */
-    public int getHistogramIndex() {
-        return histoIndex;
-    }
+  /**
+   * Get the index of the histogram associated with this lambda file.
+   *
+   * @return Associated histogram index.
+   */
+  public int getHistogramIndex() {
+    return histoIndex;
+  }
 
-    /**
-     * Read the Lambda restart file.
-     *
-     * @param resetEnergyCount Flag to indicate if the energy count should be read in.
-     */
-    public void readLambdaFile(boolean resetEnergyCount) {
-        this.resetEnergyCount = resetEnergyCount;
-        try {
-            lambda = Double.parseDouble(readLine().split(" +")[1]);
-            halfThetaVel = Double.parseDouble(readLine().split(" +")[1]);
-            for (int i = 0; i < 2; i++) {
-                String line = readLine();
-                if (line == null) {
-                    break;
-                }
-                if (line.startsWith("Steps-Taken")) {
-                    nSteps = Integer.parseInt(line.split(" +")[1]);
-                } else if (line.startsWith("Histogram")) {
-                    histoIndex = Integer.parseInt(line.split(" +")[1]);
-                }
-            }
-        } catch (Exception e) {
-            String message = " Invalid OST Lambda file.";
-            logger.log(Level.SEVERE, message, e);
+  /**
+   * Read the Lambda restart file.
+   *
+   * @param resetEnergyCount Flag to indicate if the energy count should be read in.
+   */
+  public void readLambdaFile(boolean resetEnergyCount) {
+    this.resetEnergyCount = resetEnergyCount;
+    try {
+      lambda = Double.parseDouble(readLine().split(" +")[1]);
+      halfThetaVel = Double.parseDouble(readLine().split(" +")[1]);
+      for (int i = 0; i < 2; i++) {
+        String line = readLine();
+        if (line == null) {
+          break;
         }
-    }
-
-    void setVariables(OrthogonalSpaceTempering ost) {
-        ost.setLambda(lambda);
-        Histogram histo = ost.getHistogram();
-        histo.setHalfThetaVelocity(halfThetaVel);
-        if (!resetEnergyCount && nSteps > 0) {
-            ost.setEnergyCount(nSteps);
+        if (line.startsWith("Steps-Taken")) {
+          nSteps = Integer.parseInt(line.split(" +")[1]);
+        } else if (line.startsWith("Histogram")) {
+          histoIndex = Integer.parseInt(line.split(" +")[1]);
         }
+      }
+    } catch (Exception e) {
+      String message = " Invalid OST Lambda file.";
+      logger.log(Level.SEVERE, message, e);
     }
+  }
+
+  void setVariables(OrthogonalSpaceTempering ost) {
+    ost.setLambda(lambda);
+    Histogram histo = ost.getHistogram();
+    histo.setHalfThetaVelocity(halfThetaVel);
+    if (!resetEnergyCount && nSteps > 0) {
+      ost.setEnergyCount(nSteps);
+    }
+  }
 }

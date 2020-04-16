@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,16 +34,9 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static java.lang.String.format;
 
 import edu.rit.mp.DoubleBuf;
@@ -52,267 +45,275 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.MultipleParallelException;
 import edu.rit.pj.WorkerIntegerForLoop;
 import edu.rit.pj.WorkerRegion;
-
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-/**
- * Compute residue self-energy values in parallel across nodes.
- */
+/** Compute residue self-energy values in parallel across nodes. */
 public class SelfEnergyRegion extends WorkerRegion {
 
-    private static final Logger logger = Logger.getLogger(SelfEnergyRegion.class.getName());
-    private final Residue[] residues;
-    private final RotamerOptimization rO;
-    private final EnergyExpansion eE;
-    private final EliminatedRotamers eR;
-    /**
-     * RotamerLibrary instance.
-     */
-    private final RotamerLibrary library;
-    /**
-     * Map of self-energy values to compute.
-     */
-    private final Map<Integer, Integer[]> selfEnergyMap;
-    /**
-     * Writes energies to restart file.
-     */
-    private final BufferedWriter energyWriter;
-    /**
-     * World Parallel Java communicator.
-     */
-    private final Comm world;
-    /**
-     * Number of Parallel Java processes.
-     */
-    private final int numProc;
-    /**
-     * Flag to prune clashes.
-     */
-    private final boolean pruneClashes;
-    /**
-     * Flag to indicate if this is the master process.
-     */
-    private final boolean master;
-    /**
-     * Rank of this process.
-     */
-    private final int rank;
-    /**
-     * Flag to indicate verbose logging.
-     */
-    private final boolean verbose;
-    /**
-     * If true, write out an energy restart file.
-     */
-    private final boolean writeEnergyRestart;
-    /**
-     * Sets whether files should be printed; true for standalone applications,
-     * false for some applications which use rotamer optimization as part of a
-     * larger process.
-     */
-    private final boolean printFiles;
-    private Set<Integer> keySet;
+  private static final Logger logger = Logger.getLogger(SelfEnergyRegion.class.getName());
+  private final Residue[] residues;
+  private final RotamerOptimization rO;
+  private final EnergyExpansion eE;
+  private final EliminatedRotamers eR;
+  /** RotamerLibrary instance. */
+  private final RotamerLibrary library;
+  /** Map of self-energy values to compute. */
+  private final Map<Integer, Integer[]> selfEnergyMap;
+  /** Writes energies to restart file. */
+  private final BufferedWriter energyWriter;
+  /** World Parallel Java communicator. */
+  private final Comm world;
+  /** Number of Parallel Java processes. */
+  private final int numProc;
+  /** Flag to prune clashes. */
+  private final boolean pruneClashes;
+  /** Flag to indicate if this is the master process. */
+  private final boolean master;
+  /** Rank of this process. */
+  private final int rank;
+  /** Flag to indicate verbose logging. */
+  private final boolean verbose;
+  /** If true, write out an energy restart file. */
+  private final boolean writeEnergyRestart;
+  /**
+   * Sets whether files should be printed; true for standalone applications, false for some
+   * applications which use rotamer optimization as part of a larger process.
+   */
+  private final boolean printFiles;
 
-    public SelfEnergyRegion(RotamerOptimization rO, EnergyExpansion eE, EliminatedRotamers eR,
-                            Residue[] residues, RotamerLibrary library, BufferedWriter energyWriter,
-                            Comm world, int numProc, boolean pruneClashes, boolean master,
-                            int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
-        this.rO = rO;
-        this.eE = eE;
-        this.eR = eR;
-        this.residues = residues;
-        this.library = library;
-        this.energyWriter = energyWriter;
-        this.world = world;
-        this.numProc = numProc;
-        this.pruneClashes = pruneClashes;
-        this.master = master;
-        this.rank = rank;
-        this.verbose = verbose;
-        this.writeEnergyRestart = writeEnergyRestart;
-        this.printFiles = printFiles;
+  private Set<Integer> keySet;
 
-        this.selfEnergyMap = eE.getSelfEnergyMap();
-        logger.info(format(" Number of self energies to calculate: %d", selfEnergyMap.size()));
+  public SelfEnergyRegion(
+      RotamerOptimization rO,
+      EnergyExpansion eE,
+      EliminatedRotamers eR,
+      Residue[] residues,
+      RotamerLibrary library,
+      BufferedWriter energyWriter,
+      Comm world,
+      int numProc,
+      boolean pruneClashes,
+      boolean master,
+      int rank,
+      boolean verbose,
+      boolean writeEnergyRestart,
+      boolean printFiles) {
+    this.rO = rO;
+    this.eE = eE;
+    this.eR = eR;
+    this.residues = residues;
+    this.library = library;
+    this.energyWriter = energyWriter;
+    this.world = world;
+    this.numProc = numProc;
+    this.pruneClashes = pruneClashes;
+    this.master = master;
+    this.rank = rank;
+    this.verbose = verbose;
+    this.writeEnergyRestart = writeEnergyRestart;
+    this.printFiles = printFiles;
+
+    this.selfEnergyMap = eE.getSelfEnergyMap();
+    logger.info(format(" Number of self energies to calculate: %d", selfEnergyMap.size()));
+  }
+
+  @Override
+  public void finish() {
+    // Pre-Prune if self-energy is Double.NaN.
+    eR.prePruneSelves(residues);
+
+    // Prune clashes for all singles (not just the ones this node did).
+    if (pruneClashes) {
+      eR.pruneSingleClashes(residues);
+    }
+
+    // Print what we've got so far.
+    if (master && verbose) {
+      for (int i = 0; i < residues.length; i++) {
+        Residue residue = residues[i];
+        Rotamer[] rotamers = residue.getRotamers(library);
+        for (int ri = 0; ri < rotamers.length; ri++) {
+          logger.info(
+              format(
+                  " Self energy %8s %-2d: %s",
+                  residues[i].toFormattedString(false, true),
+                  ri,
+                  rO.formatEnergy(eE.getSelf(i, ri))));
+        }
+      }
+    }
+  }
+
+  @Override
+  public void run() throws Exception {
+    if (!keySet.isEmpty()) {
+      try {
+        execute(0, keySet.size() - 1, new SelfEnergyLoop());
+      } catch (MultipleParallelException mpx) {
+        Collection<Throwable> subErrors = mpx.getExceptionMap().values();
+        logger.info(
+            format(
+                " MultipleParallelException caught: %s\n Stack trace:\n%s",
+                mpx, Utilities.stackTraceToString(mpx)));
+        for (Throwable subError : subErrors) {
+          logger.info(
+              format(
+                  " Exception %s\n Stack trace:\n%s",
+                  subError, Utilities.stackTraceToString(subError)));
+        }
+        throw mpx; // Or logger.severe.
+      } catch (Throwable t) {
+        Throwable cause = t.getCause();
+        logger.info(
+            format(" Throwable caught: %s\n Stack trace:\n%s", t, Utilities.stackTraceToString(t)));
+        if (cause != null) {
+          logger.info(
+              format(" Cause: %s\n Stack trace:\n%s", cause, Utilities.stackTraceToString(cause)));
+        }
+        throw t;
+      }
+    }
+  }
+
+  @Override
+  public void start() {
+
+    int numSelf = selfEnergyMap.size();
+    int remainder = numSelf % numProc;
+    // Set padded residue and rotamer to less than zero.
+    Integer[] padding = {-1, -1};
+
+    int padKey = numSelf;
+    while (remainder != 0) {
+      selfEnergyMap.put(padKey++, padding);
+      remainder = selfEnergyMap.size() % numProc;
+    }
+
+    numSelf = selfEnergyMap.size();
+    if (numSelf % numProc != 0) {
+      logger.severe(" Logic error padding self energies.");
+    }
+
+    // Load the keySet of self energies.
+    keySet = selfEnergyMap.keySet();
+
+    // Compute backbone energy.
+    double backboneEnergy = 0.0;
+    try {
+      backboneEnergy = rO.computeBackboneEnergy(residues);
+    } catch (ArithmeticException ex) {
+      logger.severe(format(" Error in calculation of backbone energy %s", ex.getMessage()));
+    }
+    rO.logIfMaster(format(" Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
+
+    eE.setBackboneEnergy(backboneEnergy);
+  }
+
+  private class SelfEnergyLoop extends WorkerIntegerForLoop {
+
+    DoubleBuf[] resultBuffer;
+    DoubleBuf myBuffer;
+
+    SelfEnergyLoop() {
+      resultBuffer = new DoubleBuf[numProc];
+      for (int i = 0; i < numProc; i++) {
+        resultBuffer[i] = DoubleBuf.buffer(new double[3]);
+      }
+      myBuffer = resultBuffer[rank];
     }
 
     @Override
-    public void finish() {
-        // Pre-Prune if self-energy is Double.NaN.
-        eR.prePruneSelves(residues);
+    public void run(int lb, int ub) {
+      for (int key = lb; key <= ub; key++) {
+        Integer[] job = selfEnergyMap.get(key);
+        int i = job[0];
+        int ri = job[1];
+        // Initialize result.
+        myBuffer.put(0, i);
+        myBuffer.put(1, ri);
+        myBuffer.put(2, 0.0);
 
-        // Prune clashes for all singles (not just the ones this node did).
-        if (pruneClashes) {
-            eR.pruneSingleClashes(residues);
-        }
-
-        // Print what we've got so far.
-        if (master && verbose) {
-            for (int i = 0; i < residues.length; i++) {
-                Residue residue = residues[i];
-                Rotamer[] rotamers = residue.getRotamers(library);
-                for (int ri = 0; ri < rotamers.length; ri++) {
-                    logger.info(format(" Self energy %8s %-2d: %s",
-                            residues[i].toFormattedString(false, true),
-                            ri, rO.formatEnergy(
-                                    eE.getSelf(i, ri))));
-                }
-            }
-        }
-    }
-
-    @Override
-    public void run() throws Exception {
-        if (!keySet.isEmpty()) {
+        if (i >= 0 && ri >= 0) {
+          if (!eR.check(i, ri)) {
+            long time = -System.nanoTime();
+            double selfEnergy;
             try {
-                execute(0, keySet.size() - 1, new SelfEnergyLoop());
-            } catch (MultipleParallelException mpx) {
-                Collection<Throwable> subErrors = mpx.getExceptionMap().values();
-                logger.info(format(" MultipleParallelException caught: %s\n Stack trace:\n%s",
-                        mpx, Utilities.stackTraceToString(mpx)));
-                for (Throwable subError : subErrors) {
-                    logger.info(format(" Exception %s\n Stack trace:\n%s",
-                            subError, Utilities.stackTraceToString(subError)));
-                }
-                throw mpx; // Or logger.severe.
-            } catch (Throwable t) {
-                Throwable cause = t.getCause();
-                logger.info(format(" Throwable caught: %s\n Stack trace:\n%s",
-                        t, Utilities.stackTraceToString(t)));
-                if (cause != null) {
-                    logger.info(format(" Cause: %s\n Stack trace:\n%s",
-                            cause, Utilities.stackTraceToString(cause)));
-                }
-                throw t;
+              selfEnergy = eE.computeSelfEnergy(residues, i, ri);
+              time += System.nanoTime();
+              logger.info(
+                  format(
+                      " Self %8s %-2d: %s in %6.4f (sec).",
+                      residues[i].toFormattedString(false, true),
+                      ri,
+                      rO.formatEnergy(selfEnergy),
+                      time * 1.0e-9));
+            } catch (ArithmeticException ex) {
+              selfEnergy = Double.NaN;
+              time += System.nanoTime();
+              logger.info(
+                  format(
+                      " Self %8s %-2d:\t    pruned in %6.4f (sec).",
+                      residues[i].toFormattedString(false, true), ri, time * 1.0e-9));
             }
+            myBuffer.put(2, selfEnergy);
+          }
+        } else {
+          // allGather parallel command below requires resultBuffer
+          // to have no null elements. Therefore, the padded energies that
+          // enter this else statement must be given an energy of 0.
+          myBuffer.put(2, 0.0);
         }
+
+        // All to All communication
+        if (numProc > 1) {
+          try {
+            world.allGather(myBuffer, resultBuffer);
+          } catch (Exception e) {
+            logger.log(Level.SEVERE, " Exception communicating self energies.", e);
+          }
+        }
+
+        // Process the self energy received from each process.
+        for (DoubleBuf doubleBuf : resultBuffer) {
+          int resi = (int) doubleBuf.get(0);
+          int roti = (int) doubleBuf.get(1);
+          double energy = doubleBuf.get(2);
+          // Skip for padded result.
+          if (resi >= 0 && roti >= 0) {
+            if (Double.isNaN(energy)) {
+              logger.info(" Rotamer  eliminated: " + resi + ", " + roti);
+              eR.eliminateRotamer(residues, resi, roti, false);
+            }
+            eE.setSelf(resi, roti, energy);
+            if (rank == 0 && writeEnergyRestart && printFiles) {
+              try {
+                energyWriter.append(format("Self %d %d: %16.8f", resi, roti, energy));
+                energyWriter.newLine();
+                energyWriter.flush();
+              } catch (IOException ex) {
+                logger.log(Level.SEVERE, " Exception writing energy restart file.", ex);
+              }
+            }
+          }
+        }
+      }
     }
 
     @Override
-    public void start() {
-
-        int numSelf = selfEnergyMap.size();
-        int remainder = numSelf % numProc;
-        // Set padded residue and rotamer to less than zero.
-        Integer[] padding = {-1, -1};
-
-        int padKey = numSelf;
-        while (remainder != 0) {
-            selfEnergyMap.put(padKey++, padding);
-            remainder = selfEnergyMap.size() % numProc;
-        }
-
-        numSelf = selfEnergyMap.size();
-        if (numSelf % numProc != 0) {
-            logger.severe(" Logic error padding self energies.");
-        }
-
-        // Load the keySet of self energies.
-        keySet = selfEnergyMap.keySet();
-
-        // Compute backbone energy.
-        double backboneEnergy = 0.0;
-        try {
-            backboneEnergy = rO.computeBackboneEnergy(residues);
-        } catch (ArithmeticException ex) {
-            logger.severe(format(" Error in calculation of backbone energy %s", ex.getMessage()));
-        }
-        rO.logIfMaster(format(" Backbone energy:  %s\n",
-                rO.formatEnergy(backboneEnergy)));
-
-        eE.setBackboneEnergy(backboneEnergy);
+    public IntegerSchedule schedule() {
+      // The schedule must be fixed.
+      return IntegerSchedule.fixed();
     }
-
-    private class SelfEnergyLoop extends WorkerIntegerForLoop {
-
-        DoubleBuf[] resultBuffer;
-        DoubleBuf myBuffer;
-
-        SelfEnergyLoop() {
-            resultBuffer = new DoubleBuf[numProc];
-            for (int i = 0; i < numProc; i++) {
-                resultBuffer[i] = DoubleBuf.buffer(new double[3]);
-            }
-            myBuffer = resultBuffer[rank];
-        }
-
-        @Override
-        public void run(int lb, int ub) {
-            for (int key = lb; key <= ub; key++) {
-                Integer[] job = selfEnergyMap.get(key);
-                int i = job[0];
-                int ri = job[1];
-                // Initialize result.
-                myBuffer.put(0, i);
-                myBuffer.put(1, ri);
-                myBuffer.put(2, 0.0);
-
-                if (i >= 0 && ri >= 0) {
-                    if (!eR.check(i, ri)) {
-                        long time = -System.nanoTime();
-                        double selfEnergy;
-                        try {
-                            selfEnergy = eE.computeSelfEnergy(residues, i, ri);
-                            time += System.nanoTime();
-                            logger.info(format(" Self %8s %-2d: %s in %6.4f (sec).", residues[i].toFormattedString(false, true), ri,
-                                    rO.formatEnergy(selfEnergy), time * 1.0e-9));
-                        } catch (ArithmeticException ex) {
-                            selfEnergy = Double.NaN;
-                            time += System.nanoTime();
-                            logger.info(format(" Self %8s %-2d:\t    pruned in %6.4f (sec).", residues[i].toFormattedString(false, true), ri, time * 1.0e-9));
-                        }
-                        myBuffer.put(2, selfEnergy);
-                    }
-                } else {
-                    // allGather parallel command below requires resultBuffer
-                    // to have no null elements. Therefore, the padded energies that
-                    // enter this else statement must be given an energy of 0.
-                    myBuffer.put(2, 0.0);
-                }
-
-                // All to All communication
-                if (numProc > 1) {
-                    try {
-                        world.allGather(myBuffer, resultBuffer);
-                    } catch (Exception e) {
-                        logger.log(Level.SEVERE, " Exception communicating self energies.", e);
-                    }
-                }
-
-                // Process the self energy received from each process.
-                for (DoubleBuf doubleBuf : resultBuffer) {
-                    int resi = (int) doubleBuf.get(0);
-                    int roti = (int) doubleBuf.get(1);
-                    double energy = doubleBuf.get(2);
-                    // Skip for padded result.
-                    if (resi >= 0 && roti >= 0) {
-                        if (Double.isNaN(energy)) {
-                            logger.info(" Rotamer  eliminated: " + resi + ", " + roti);
-                            eR.eliminateRotamer(residues, resi, roti, false);
-                        }
-                        eE.setSelf(resi, roti, energy);
-                        if (rank == 0 && writeEnergyRestart && printFiles) {
-                            try {
-                                energyWriter.append(format("Self %d %d: %16.8f", resi, roti, energy));
-                                energyWriter.newLine();
-                                energyWriter.flush();
-                            } catch (IOException ex) {
-                                logger.log(Level.SEVERE, " Exception writing energy restart file.", ex);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            // The schedule must be fixed.
-            return IntegerSchedule.fixed();
-        }
-    }
+  }
 }

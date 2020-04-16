@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,137 +34,121 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.atomic;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDoubleArray;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * PJDoubleArray implements the AtomicDoubleArray interface using the Parallel
- * Java class SharedDoubleArray.
- * <p>
- * SharedDoubleArray is multiple thread safe and uses lock-free atomic
- * compare-and-set.
- * <p>
- * Note: Class SharedDoubleArray is implemented using class
- * java.util.concurrent.atomic.AtomicLongArray. Each double array element is
- * stored as a long whose bit pattern is the same as the double value.
+ * PJDoubleArray implements the AtomicDoubleArray interface using the Parallel Java class
+ * SharedDoubleArray.
+ *
+ * <p>SharedDoubleArray is multiple thread safe and uses lock-free atomic compare-and-set.
+ *
+ * <p>Note: Class SharedDoubleArray is implemented using class
+ * java.util.concurrent.atomic.AtomicLongArray. Each double array element is stored as a long whose
+ * bit pattern is the same as the double value.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class PJDoubleArray implements AtomicDoubleArray {
 
-    private static final Logger logger = Logger.getLogger(PJDoubleArray.class.getName());
+  private static final Logger logger = Logger.getLogger(PJDoubleArray.class.getName());
 
-    private SharedDoubleArray array;
+  private SharedDoubleArray array;
 
-    /**
-     * <p>Constructor for PJDoubleArray.</p>
-     *
-     * @param size a int.
-     */
-    public PJDoubleArray(int size) {
-        array = new SharedDoubleArray(size);
+  /**
+   * Constructor for PJDoubleArray.
+   *
+   * @param size a int.
+   */
+  public PJDoubleArray(int size) {
+    array = new SharedDoubleArray(size);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void add(int threadID, int index, double value) {
+    array.getAndAdd(index, value);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void alloc(int size) {
+    if (array.length() < size) {
+      array = new SharedDoubleArray(size);
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void add(int threadID, int index, double value) {
-        array.getAndAdd(index, value);
+  /** {@inheritDoc} */
+  @Override
+  public double get(int index) {
+    return array.get(index);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Reduction is handled atomically by the PJ SharedDoubleArray.
+   */
+  @Override
+  public void reduce(int lb, int ub) {
+    // Nothing to do.
+  }
+
+  /** {@inheritDoc} Reduction is handled atomically by the PJ SharedDoubleArray. */
+  @Override
+  public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
+    // Nothing to do.
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void reset(int threadID, int lb, int ub) {
+    for (int i = lb; i <= ub; i++) {
+      array.set(i, 0.0);
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void alloc(int size) {
-        if (array.length() < size) {
-            array = new SharedDoubleArray(size);
-        }
+  /** {@inheritDoc} */
+  @Override
+  public void reset(ParallelTeam parallelTeam, int lb, int ub) {
+    try {
+      parallelTeam.execute(
+          new ParallelRegion() {
+            @Override
+            public void run() throws Exception {
+              execute(
+                  lb,
+                  ub,
+                  new IntegerForLoop() {
+                    @Override
+                    public void run(int first, int last) {
+                      reset(getThreadIndex(), first, last);
+                    }
+                  });
+            }
+          });
+    } catch (Exception e) {
+      logger.log(Level.WARNING, " Exception resetting an PJDoubleArray", e);
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double get(int index) {
-        return array.get(index);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void set(int threadID, int index, double value) {
+    array.getAndSet(index, value);
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Reduction is handled atomically by the PJ SharedDoubleArray.
-     */
-    @Override
-    public void reduce(int lb, int ub) {
-        // Nothing to do.
-    }
-
-    /**
-     * {@inheritDoc}
-     * Reduction is handled atomically by the PJ SharedDoubleArray.
-     */
-    @Override
-    public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
-        // Nothing to do.
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void reset(int threadID, int lb, int ub) {
-        for (int i = lb; i <= ub; i++) {
-            array.set(i, 0.0);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void reset(ParallelTeam parallelTeam, int lb, int ub) {
-        try {
-            parallelTeam.execute(new ParallelRegion() {
-                @Override
-                public void run() throws Exception {
-                    execute(lb, ub, new IntegerForLoop() {
-                        @Override
-                        public void run(int first, int last) {
-                            reset(getThreadIndex(), first, last);
-                        }
-                    });
-                }
-            });
-        } catch (Exception e) {
-            logger.log(Level.WARNING, " Exception resetting an PJDoubleArray", e);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void set(int threadID, int index, double value) {
-        array.getAndSet(index, value);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void sub(int threadID, int index, double value) {
-        array.getAndAdd(index, -value);
-    }
-
+  /** {@inheritDoc} */
+  @Override
+  public void sub(int threadID, int index, double value) {
+    array.getAndAdd(index, -value);
+  }
 }

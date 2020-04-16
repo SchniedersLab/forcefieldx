@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,98 +34,116 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.groovy;
 
+import static org.junit.Assert.assertEquals;
+
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.misc.PJDependentTest;
+import groovy.lang.Binding;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Logger;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.misc.PJDependentTest;
-
-import groovy.lang.Binding;
-
-/**
- * @author Hernan V Bernabe
- */
+/** @author Hernan V Bernabe */
 @RunWith(Parameterized.class)
 public class DynamicsBeemanBerendsenTest extends PJDependentTest {
 
-    private static final Logger logger = Logger.getLogger(DynamicsBeemanBerendsenTest.class.getName());
-    private String info;
-    private String filename;
-    private double endKineticEnergy;
-    private double endPotentialEnergy;
-    private double endTotalEnergy;
-    private double endTemperature;
-    private double tolerance = 0.1;
-    private Binding binding;
-    private Dynamics dynamics;
+  private static final Logger logger =
+      Logger.getLogger(DynamicsBeemanBerendsenTest.class.getName());
+  private String info;
+  private String filename;
+  private double endKineticEnergy;
+  private double endPotentialEnergy;
+  private double endTotalEnergy;
+  private double endTemperature;
+  private double tolerance = 0.1;
+  private Binding binding;
+  private Dynamics dynamics;
 
-    public DynamicsBeemanBerendsenTest(String info, String filename, double endKineticEnergy, double endPotentialEnergy,
-                                       double endTotalEnergy, double endTemperature) {
-        this.info = info;
-        this.filename = filename;
-        this.endKineticEnergy = endKineticEnergy;
-        this.endPotentialEnergy = endPotentialEnergy;
-        this.endTotalEnergy = endTotalEnergy;
-        this.endTemperature = endTemperature;
-    }
+  public DynamicsBeemanBerendsenTest(
+      String info,
+      String filename,
+      double endKineticEnergy,
+      double endPotentialEnergy,
+      double endTotalEnergy,
+      double endTemperature) {
+    this.info = info;
+    this.filename = filename;
+    this.endKineticEnergy = endKineticEnergy;
+    this.endPotentialEnergy = endPotentialEnergy;
+    this.endTotalEnergy = endTotalEnergy;
+    this.endTemperature = endTemperature;
+  }
 
-    @After
-    public void after() {
-        dynamics.destroyPotentials();
-        System.gc();
-    }
-
-    @Before
-    public void before() {
-        binding = new Binding();
-        dynamics = new Dynamics();
-        dynamics.setBinding(binding);
-    }
-
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {
-                        "Acetamide with BetterBeeman Integrator and Berendsen Thermostat", // info
-                        "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
-                        4.8087, // endKineticEnergy
-                        -29.7186, // endPotentialEnergy
-                        -24.9099, // endTotalEnergy
-                        201.65 // End temperature
-                }
-
+  @Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+          {
+            "Acetamide with BetterBeeman Integrator and Berendsen Thermostat", // info
+            "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
+            4.8087, // endKineticEnergy
+            -29.7186, // endPotentialEnergy
+            -24.9099, // endTotalEnergy
+            201.65 // End temperature
+          }
         });
-    }
+  }
 
-    @Test
-    public void testDynamicsBeemanBerendsen() {
+  @After
+  public void after() {
+    dynamics.destroyPotentials();
+    System.gc();
+  }
 
-        // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "Beeman", "-b", "Berendsen", "-r", "0.001", "src/main/java/" + filename};
-        binding.setVariable("args", args);
+  @Before
+  public void before() {
+    binding = new Binding();
+    dynamics = new Dynamics();
+    dynamics.setBinding(binding);
+  }
 
-        // Evaluate the script.
-        dynamics.run();
+  @Test
+  public void testDynamicsBeemanBerendsen() {
 
-        MolecularDynamics molDyn = dynamics.getMolecularDynamics();
+    // Set-up the input arguments for the script.
+    String[] args = {
+      "-n",
+      "10",
+      "-t",
+      "298.15",
+      "-i",
+      "Beeman",
+      "-b",
+      "Berendsen",
+      "-r",
+      "0.001",
+      "src/main/java/" + filename
+    };
+    binding.setVariable("args", args);
 
-        // Assert that end energies are within the tolerance for the dynamics trajectory
-        assertEquals(info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
-        assertEquals(info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(), tolerance);
-        assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
-        assertEquals(info + " Final temperature", endTemperature, molDyn.getTemperature(), tolerance);
-    }
+    // Evaluate the script.
+    dynamics.run();
 
+    MolecularDynamics molDyn = dynamics.getMolecularDynamics();
+
+    // Assert that end energies are within the tolerance for the dynamics trajectory
+    assertEquals(
+        info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
+    assertEquals(
+        info + " Final potential energy",
+        endPotentialEnergy,
+        molDyn.getPotentialEnergy(),
+        tolerance);
+    assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
+    assertEquals(info + " Final temperature", endTemperature, molDyn.getTemperature(), tolerance);
+  }
 }

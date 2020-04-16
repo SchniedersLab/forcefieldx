@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,52 +34,46 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
 
-import javax.swing.filechooser.FileFilter;
-
 import java.io.File;
-
+import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 /**
- * The InducedFileFilter class is used to choose a TINKER induced dipole (*.IND)
- * file.
+ * The InducedFileFilter class is used to choose a TINKER induced dipole (*.IND) file.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public final class InducedFileFilter extends FileFilter {
 
-    /**
-     * Default Constructor.
-     */
-    public InducedFileFilter() {
-    }
+  /** Default Constructor. */
+  public InducedFileFilter() {}
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method return <code>true</code> if the file is a directory or
-     * matches the extension for TINKER induced dipole (*.*U) file.
-     */
-    @Override
-    public boolean accept(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String ext = FilenameUtils.getExtension(file.getName());
-        return ext.toUpperCase().endsWith("U");
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This method return <code>true</code> if the file is a directory or matches the extension for
+   * TINKER induced dipole (*.*U) file.
+   */
+  @Override
+  public boolean accept(File file) {
+    if (file.isDirectory()) {
+      return true;
     }
+    String ext = FilenameUtils.getExtension(file.getName());
+    return ext.toUpperCase().endsWith("U");
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Provides a description of the InducedFileFilter.
-     */
-    @Override
-    public String getDescription() {
-        return "TINKER Induced Dipole Files (*.*U)";
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Provides a description of the InducedFileFilter.
+   */
+  @Override
+  public String getDescription() {
+    return "TINKER Induced Dipole Files (*.*U)";
+  }
 }

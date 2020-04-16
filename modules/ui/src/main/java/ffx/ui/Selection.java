@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,110 +34,107 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui;
 
+import ffx.potential.bonded.MSNode;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
-import ffx.potential.bonded.MSNode;
-
 /**
- * The Selection class will be used to make recursive multiscale selections,
- * however its implementation is not yet complete.
+ * The Selection class will be used to make recursive multiscale selections, however its
+ * implementation is not yet complete.
  *
  * @author Michael J. Schnieders
  */
 public class Selection {
 
-    MSNode m;
-    private Class scale;
-    private String criteria;
-    private ArrayList<MSNode> selected;
-    private Selection(MSNode m, Class scale, String criteria) {
-        this.scale = scale;
-        this.criteria = criteria;
-        this.m = m;
-        selected = new ArrayList<>();
-    }
-    private Selection(MSNode m, String scale, String criteria) {
-        try {
-            this.scale = Class.forName(scale);
-        } catch (Exception e) {
-            this.scale = null;
-        }
-        this.criteria = criteria;
-        this.m = m;
-        selected = new ArrayList<>();
-    }
+  MSNode m;
+  private Class scale;
+  private String criteria;
+  private ArrayList<MSNode> selected;
 
-    /**
-     * <p>
-     * and</p>
-     *
-     * @param scale    a {@link java.lang.Class} object.
-     * @param criteria a {@link java.lang.String} object.
-     * @return a {@link ffx.ui.Selection} object.
-     */
-    public Selection and(Class scale, String criteria) {
-        this.scale = scale;
-        this.criteria = criteria;
-        evaluate();
-        return this;
-    }
+  private Selection(MSNode m, Class scale, String criteria) {
+    this.scale = scale;
+    this.criteria = criteria;
+    this.m = m;
+    selected = new ArrayList<>();
+  }
 
-    /**
-     * <p>
-     * or</p>
-     *
-     * @param scale    a {@link java.lang.Class} object.
-     * @param criteria a {@link java.lang.String} object.
-     * @return a {@link ffx.ui.Selection} object.
-     */
-    public Selection or(Class scale, String criteria) {
-        this.scale = scale;
-        this.criteria = criteria;
-        evaluate();
-        return this;
+  private Selection(MSNode m, String scale, String criteria) {
+    try {
+      this.scale = Class.forName(scale);
+    } catch (Exception e) {
+      this.scale = null;
     }
+    this.criteria = criteria;
+    this.m = m;
+    selected = new ArrayList<>();
+  }
 
-    /**
-     * <p>
-     * select</p>
-     *
-     * @param m        a {@link ffx.potential.bonded.MSNode} object.
-     * @param scale    a {@link java.lang.Class} object.
-     * @param criteria a {@link java.lang.String} object.
-     * @return a {@link ffx.ui.Selection} object.
-     */
-    public static Selection select(MSNode m, Class scale, String criteria) {
-        Selection s = new Selection(m, scale, criteria);
-        s.evaluate();
-        return s;
-    }
+  /**
+   * select
+   *
+   * @param m a {@link ffx.potential.bonded.MSNode} object.
+   * @param scale a {@link java.lang.Class} object.
+   * @param criteria a {@link java.lang.String} object.
+   * @return a {@link ffx.ui.Selection} object.
+   */
+  public static Selection select(MSNode m, Class scale, String criteria) {
+    Selection s = new Selection(m, scale, criteria);
+    s.evaluate();
+    return s;
+  }
 
-    /**
-     * <p>
-     * select</p>
-     *
-     * @param m        a {@link ffx.potential.bonded.MSNode} object.
-     * @param scale    a {@link java.lang.String} object.
-     * @param criteria a {@link java.lang.String} object.
-     * @return a {@link ffx.ui.Selection} object.
-     */
-    public static Selection select(MSNode m, String scale, String criteria) {
-        Selection s = new Selection(m, scale, criteria);
-        s.evaluate();
-        return s;
-    }
+  /**
+   * select
+   *
+   * @param m a {@link ffx.potential.bonded.MSNode} object.
+   * @param scale a {@link java.lang.String} object.
+   * @param criteria a {@link java.lang.String} object.
+   * @return a {@link ffx.ui.Selection} object.
+   */
+  public static Selection select(MSNode m, String scale, String criteria) {
+    Selection s = new Selection(m, scale, criteria);
+    s.evaluate();
+    return s;
+  }
 
-    private void evaluate() {
-        Enumeration e = m.depthFirstEnumeration();
-        while (e.hasMoreElements()) {
-            MSNode n = (MSNode) e.nextElement();
-            if (scale.isInstance(n)) {
-                selected.add(n);
-            }
-        }
+  /**
+   * and
+   *
+   * @param scale a {@link java.lang.Class} object.
+   * @param criteria a {@link java.lang.String} object.
+   * @return a {@link ffx.ui.Selection} object.
+   */
+  public Selection and(Class scale, String criteria) {
+    this.scale = scale;
+    this.criteria = criteria;
+    evaluate();
+    return this;
+  }
+
+  /**
+   * or
+   *
+   * @param scale a {@link java.lang.Class} object.
+   * @param criteria a {@link java.lang.String} object.
+   * @return a {@link ffx.ui.Selection} object.
+   */
+  public Selection or(Class scale, String criteria) {
+    this.scale = scale;
+    this.criteria = criteria;
+    evaluate();
+    return this;
+  }
+
+  private void evaluate() {
+    Enumeration e = m.depthFirstEnumeration();
+    while (e.hasMoreElements()) {
+      MSNode n = (MSNode) e.nextElement();
+      if (scale.isInstance(n)) {
+        selected.add(n);
+      }
     }
+  }
 }

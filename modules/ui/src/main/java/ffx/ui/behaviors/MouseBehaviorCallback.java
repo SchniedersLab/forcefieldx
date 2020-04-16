@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,72 +34,57 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.behaviors;
 
 import org.jogamp.java3d.Transform3D;
 
 /**
- * The MouseBehaviorCallback interface is implemented by classes that want to
- * receive callbacks when transforms are updated.
- * <p>
- * Classes implementing this interface that are registered with one of the
- * MouseBehaviors will be called every time the behavior updates the
- * Transform @param type will be one of ROTATE, TRANSLATE or ZOOM
+ * The MouseBehaviorCallback interface is implemented by classes that want to receive callbacks when
+ * transforms are updated.
+ *
+ * <p>Classes implementing this interface that are registered with one of the MouseBehaviors will be
+ * called every time the behavior updates the Transform @param type will be one of ROTATE, TRANSLATE
+ * or ZOOM
  *
  * @author Michael J. Schnieders
  */
 public interface MouseBehaviorCallback {
 
-    /**
-     * Constant <code>ROTATE=0</code>
-     */
-    int ROTATE = 0;
-    /**
-     * Constant <code>TRANSLATE=1</code>
-     */
-    int TRANSLATE = 1;
-    /**
-     * Constant <code>ZOOM=2</code>
-     */
-    int ZOOM = 2;
-    /**
-     * Constant <code>SELECTION=4</code>
-     */
-    int SELECTION = 4;
-    /**
-     * Constant <code>PROPERTIES=5</code>
-     */
-    int PROPERTIES = 5;
-    /**
-     * Constant <code>ORBIT=6</code>
-     */
-    int ORBIT = 6;
+  /** Constant <code>ROTATE=0</code> */
+  int ROTATE = 0;
+  /** Constant <code>TRANSLATE=1</code> */
+  int TRANSLATE = 1;
+  /** Constant <code>ZOOM=2</code> */
+  int ZOOM = 2;
+  /** Constant <code>SELECTION=4</code> */
+  int SELECTION = 4;
+  /** Constant <code>PROPERTIES=5</code> */
+  int PROPERTIES = 5;
+  /** Constant <code>ORBIT=6</code> */
+  int ORBIT = 6;
 
-    /**
-     * <p>
-     * transformChanged</p>
-     *
-     * @param type      a int.
-     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
-     */
-    void transformChanged(int type, Transform3D transform);
+  /**
+   * transformChanged
+   *
+   * @param type a int.
+   * @param transform a {@link org.jogamp.java3d.Transform3D} object.
+   */
+  void transformChanged(int type, Transform3D transform);
 
-    /**
-     * <p>
-     * transformClicked</p>
-     *
-     * @param type      a int.
-     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
-     */
-    void transformClicked(int type, Transform3D transform);
+  /**
+   * transformClicked
+   *
+   * @param type a int.
+   * @param transform a {@link org.jogamp.java3d.Transform3D} object.
+   */
+  void transformClicked(int type, Transform3D transform);
 
-    /**
-     * <p>
-     * transformDoubleClicked</p>
-     *
-     * @param type      a int.
-     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
-     */
-    void transformDoubleClicked(int type, Transform3D transform);
+  /**
+   * transformDoubleClicked
+   *
+   * @param type a int.
+   * @param transform a {@link org.jogamp.java3d.Transform3D} object.
+   */
+  void transformDoubleClicked(int type, Transform3D transform);
 }

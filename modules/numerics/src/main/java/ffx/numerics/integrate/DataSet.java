@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,72 +34,72 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.integrate;
 
 /**
- * A DataSet represents a set of points along a single dimension, and is able
- * to be numerically integrated.
+ * A DataSet represents a set of points along a single dimension, and is able to be numerically
+ * integrated.
  *
  * @author Jacob M. Litman
  */
 public interface DataSet {
 
-    /**
-     * Separation between points along x; should be uniform.
-     *
-     * @return a double.
-     */
-    double binWidth();
+  /**
+   * Separation between points along x; should be uniform.
+   *
+   * @return a double.
+   */
+  double binWidth();
 
-    /**
-     * Returns copy of the array of points f(x) to integrate (y-axis).
-     *
-     * @return an array of {@link double} objects.
-     */
-    double[] getAllFxPoints();
+  /**
+   * Returns copy of the array of points f(x) to integrate (y-axis).
+   *
+   * @return an array of {@link double} objects.
+   */
+  double[] getAllFxPoints();
 
-    /**
-     * Point f(x) at index.
-     *
-     * @param index a int.
-     * @return a double.
-     */
-    double getFxPoint(int index);
+  /**
+   * Point f(x) at index.
+   *
+   * @param index a int.
+   * @return a double.
+   */
+  double getFxPoint(int index);
 
-    /**
-     * Returns copy of the array of points x (x-axis).
-     *
-     * @return an array of {@link double} objects.
-     */
-    double[] getX();
+  /**
+   * Returns copy of the array of points x (x-axis).
+   *
+   * @return an array of {@link double} objects.
+   */
+  double[] getX();
 
-    /**
-     * Does this data set have half-width start/end bins. Intended for OST,
-     * where the first and last bins are half the regular width.
-     *
-     * @return a boolean.
-     */
-    boolean halfWidthEnds();
+  /**
+   * Does this data set have half-width start/end bins. Intended for OST, where the first and last
+   * bins are half the regular width.
+   *
+   * @return a boolean.
+   */
+  boolean halfWidthEnds();
 
-    /**
-     * Lower bound of the points along x.
-     *
-     * @return a double.
-     */
-    double lowerBound();
+  /**
+   * Lower bound of the points along x.
+   *
+   * @return a double.
+   */
+  double lowerBound();
 
-    /**
-     * Number of points along x.
-     *
-     * @return a int.
-     */
-    int numPoints();
+  /**
+   * Number of points along x.
+   *
+   * @return a int.
+   */
+  int numPoints();
 
-    /**
-     * Upper bound of the points along x.
-     *
-     * @return a double.
-     */
-    double upperBound();
+  /**
+   * Upper bound of the points along x.
+   *
+   * @return a double.
+   */
+  double upperBound();
 }

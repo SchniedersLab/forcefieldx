@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,113 +34,106 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueState;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * The AssemblyState class stores the chemical and coordinate state of a Molecular
- * Assembly. Not robust to any chemical perturbation except for mutation of
- * MultiResidues.
+ * The AssemblyState class stores the chemical and coordinate state of a Molecular Assembly. Not
+ * robust to any chemical perturbation except for mutation of MultiResidues.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
  */
 public class AssemblyState {
-    private final MolecularAssembly mola;
-    private final Residue[] residues;
-    private final ResidueState[] resStates;
-    private final Atom[] otherAtoms;
-    private final double[][] otherCoords;
+  private final MolecularAssembly mola;
+  private final Residue[] residues;
+  private final ResidueState[] resStates;
+  private final Atom[] otherAtoms;
+  private final double[][] otherCoords;
 
-    /**
-     * Construct a snapshot of a MolecularAssembly. Currently accounts for the
-     * coordinates of all entities, and the chemical state of MultiResidues. Does
-     * not include velocities, etc.
-     *
-     * @param assembly To store state of.
-     */
-    public AssemblyState(MolecularAssembly assembly) {
-        mola = assembly;
+  /**
+   * Construct a snapshot of a MolecularAssembly. Currently accounts for the coordinates of all
+   * entities, and the chemical state of MultiResidues. Does not include velocities, etc.
+   *
+   * @param assembly To store state of.
+   */
+  public AssemblyState(MolecularAssembly assembly) {
+    mola = assembly;
 
-        List<Residue> residueList = mola.getResidueList();
-        List<Residue> copyResList = new ArrayList<>(residueList);
-        // Remove all Residue nodes, including subnodes of a MultiResidue, from otherNodeList.
-        List<MSNode> otherNodeList = mola.getNodeList();
-        otherNodeList.removeAll(residueList);
+    List<Residue> residueList = mola.getResidueList();
+    List<Residue> copyResList = new ArrayList<>(residueList);
+    // Remove all Residue nodes, including subnodes of a MultiResidue, from otherNodeList.
+    List<MSNode> otherNodeList = mola.getNodeList();
+    otherNodeList.removeAll(residueList);
 
-        // Remove any Residue nodes which are beneath a MultiResidue.
-        for (Residue res : copyResList) {
-            if (res instanceof MultiResidue) {
-                List<Residue> subResidues = ((MultiResidue) res).getConsideredResidues();
-                residueList.removeAll(subResidues);
-            }
-        }
-
-        residues = residueList.toArray(new Residue[0]);
-        resStates = ResidueState.storeAllCoordinates(residues);
-
-        List<Atom> otherAtomList = new ArrayList<>();
-        for (MSNode node : otherNodeList) {
-            otherAtomList.addAll(node.getAtomList());
-        }
-        int nOtherAtoms = otherAtomList.size();
-        otherAtoms = new Atom[nOtherAtoms];
-        otherAtomList.toArray(otherAtoms);
-        otherCoords = ResidueState.storeAtomicCoordinates(otherAtoms);
+    // Remove any Residue nodes which are beneath a MultiResidue.
+    for (Residue res : copyResList) {
+      if (res instanceof MultiResidue) {
+        List<Residue> subResidues = ((MultiResidue) res).getConsideredResidues();
+        residueList.removeAll(subResidues);
+      }
     }
 
-    /**
-     * <p>
-     * Copies an AssemblyState. Note: side effects possible if they occur between
-     * applying the state to be copied and reverting to the pre-method-call state.
-     * </p>
-     *
-     * @param state AssemblyState to copy.
-     * @return A copied AssemblyState.
-     */
-    public static AssemblyState copyState(AssemblyState state) {
-        MolecularAssembly assembly = state.getMolecularAssembly();
-        AssemblyState orig = new AssemblyState(assembly);
-        state.revertState();
-        AssemblyState copiedState = new AssemblyState(assembly);
-        orig.revertState();
-        return copiedState;
+    residues = residueList.toArray(new Residue[0]);
+    resStates = ResidueState.storeAllCoordinates(residues);
+
+    List<Atom> otherAtomList = new ArrayList<>();
+    for (MSNode node : otherNodeList) {
+      otherAtomList.addAll(node.getAtomList());
+    }
+    int nOtherAtoms = otherAtomList.size();
+    otherAtoms = new Atom[nOtherAtoms];
+    otherAtomList.toArray(otherAtoms);
+    otherCoords = ResidueState.storeAtomicCoordinates(otherAtoms);
+  }
+
+  /**
+   * Copies an AssemblyState. Note: side effects possible if they occur between applying the state
+   * to be copied and reverting to the pre-method-call state.
+   *
+   * @param state AssemblyState to copy.
+   * @return A copied AssemblyState.
+   */
+  public static AssemblyState copyState(AssemblyState state) {
+    MolecularAssembly assembly = state.getMolecularAssembly();
+    AssemblyState orig = new AssemblyState(assembly);
+    state.revertState();
+    AssemblyState copiedState = new AssemblyState(assembly);
+    orig.revertState();
+    return copiedState;
+  }
+
+  /**
+   * Returns the MolecularAssembly associated with this AssemblyState.
+   *
+   * @return The associated MolecularAssembly.
+   */
+  public MolecularAssembly getMolecularAssembly() {
+    return mola;
+  }
+
+  /**
+   * Revert the state of the associated MolecularAssembly, assuming no chemical changes were made
+   * except to MultiResidues.
+   */
+  public void revertState() {
+    int nResidues = residues.length;
+    for (int i = 0; i < nResidues; i++) {
+      residues[i].revertState(resStates[i]);
     }
 
-    /**
-     * <p>
-     * Returns the MolecularAssembly associated with this AssemblyState.
-     * </p>
-     *
-     * @return The associated MolecularAssembly.
-     */
-    public MolecularAssembly getMolecularAssembly() {
-        return mola;
+    int nOthers = otherAtoms.length;
+    for (int i = 0; i < nOthers; i++) {
+      otherAtoms[i].setXYZ(otherCoords[i]);
     }
-
-    /**
-     * Revert the state of the associated MolecularAssembly, assuming no chemical
-     * changes were made except to MultiResidues.
-     */
-    public void revertState() {
-        int nResidues = residues.length;
-        for (int i = 0; i < nResidues; i++) {
-            residues[i].revertState(resStates[i]);
-        }
-
-        int nOthers = otherAtoms.length;
-        for (int i = 0; i < nOthers; i++) {
-            otherAtoms[i].setXYZ(otherCoords[i]);
-        }
-    }
+  }
 }

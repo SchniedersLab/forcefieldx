@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
 
-import javax.swing.filechooser.FileFilter;
-
 import java.io.File;
-
+import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -51,34 +49,31 @@ import org.apache.commons.io.FilenameUtils;
  */
 public final class PDBMLFileFilter extends FileFilter {
 
-    /**
-     * Public Constructor.
-     */
-    public PDBMLFileFilter() {
-    }
+  /** Public Constructor. */
+  public PDBMLFileFilter() {}
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method return <code>true</code> if the file is a directory or
-     * Protein Databank XML File (*.XML).
-     */
-    @Override
-    public boolean accept(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String ext = FilenameUtils.getExtension(file.getName());
-        return ext.toUpperCase().startsWith("XML");
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This method return <code>true</code> if the file is a directory or Protein Databank XML File
+   * (*.XML).
+   */
+  @Override
+  public boolean accept(File file) {
+    if (file.isDirectory()) {
+      return true;
     }
+    String ext = FilenameUtils.getExtension(file.getName());
+    return ext.toUpperCase().startsWith("XML");
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Provides a description of the PDBMLFileFilter.
-     */
-    @Override
-    public String getDescription() {
-        return "Protein Databank XML (*.XML)";
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Provides a description of the PDBMLFileFilter.
+   */
+  @Override
+  public String getDescription() {
+    return "Protein Databank XML (*.XML)";
+  }
 }

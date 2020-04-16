@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,12 +34,16 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.groovy;
 
+import static org.junit.Assert.assertEquals;
+
+import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
+import ffx.algorithms.misc.PJDependentTest;
+import groovy.lang.Binding;
 import java.util.Arrays;
 import java.util.Collection;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -47,93 +51,117 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
-import ffx.algorithms.misc.PJDependentTest;
-
-import groovy.lang.Binding;
-
-/**
- * @author Hernan V Bernabe
- */
+/** @author Hernan V Bernabe */
 @RunWith(Parameterized.class)
 public class DynamicsOpenMMStochasticTest extends PJDependentTest {
 
-    private String info;
-    private String filename;
-    private double endKineticEnergy;
-    private double endPotentialEnergy;
-    private double endTotalEnergy;
-    private double tolerance = 5.0;
-    private boolean ffxOpenMM;
+  private String info;
+  private String filename;
+  private double endKineticEnergy;
+  private double endPotentialEnergy;
+  private double endTotalEnergy;
+  private double tolerance = 5.0;
+  private boolean ffxOpenMM;
 
-    private Binding binding;
-    private Dynamics dynamics;
+  private Binding binding;
+  private Dynamics dynamics;
 
-    public DynamicsOpenMMStochasticTest(String info, String filename, double endKineticEnergy, double endPotentialEnergy,
-                                        double endTotalEnergy) {
+  public DynamicsOpenMMStochasticTest(
+      String info,
+      String filename,
+      double endKineticEnergy,
+      double endPotentialEnergy,
+      double endTotalEnergy) {
 
-        this.info = info;
-        this.filename = filename;
-        this.endKineticEnergy = endKineticEnergy;
-        this.endPotentialEnergy = endPotentialEnergy;
-        this.endTotalEnergy = endTotalEnergy;
-    }
+    this.info = info;
+    this.filename = filename;
+    this.endKineticEnergy = endKineticEnergy;
+    this.endPotentialEnergy = endPotentialEnergy;
+    this.endTotalEnergy = endTotalEnergy;
+  }
 
-    @AfterClass
-    public static void afterClass() {
-        System.clearProperty("platform");
-        PJDependentTest.afterClass();
-    }
+  @AfterClass
+  public static void afterClass() {
+    System.clearProperty("platform");
+    PJDependentTest.afterClass();
+  }
 
-    @Before
-    public void before() {
-        binding = new Binding();
-        dynamics = new Dynamics();
-        dynamics.setBinding(binding);
-    }
+  @BeforeClass
+  public static void beforeClass() {
+    System.setProperty("platform", "omm");
+    PJDependentTest.beforeClass();
+  }
 
-    @BeforeClass
-    public static void beforeClass() {
-        System.setProperty("platform", "omm");
-        PJDependentTest.beforeClass();
-    }
-
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {
-                        "System OpenMM Stochastic",
-                        "ffx/algorithms/structures/waterbox_eq.xyz",
-                        11785.5305, -36464.2741, -24678.7436
-                }
+  @Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+          {
+            "System OpenMM Stochastic",
+            "ffx/algorithms/structures/waterbox_eq.xyz",
+            11785.5305,
+            -36464.2741,
+            -24678.7436
+          }
         });
+  }
+
+  @Before
+  public void before() {
+    binding = new Binding();
+    dynamics = new Dynamics();
+    dynamics.setBinding(binding);
+  }
+
+  @Test
+  public void testDynamicsOpenMMStochastic() {
+
+    if (!ffxOpenMM) {
+      return;
     }
 
-    @Test
-    public void testDynamicsOpenMMStochastic() {
+    // Set-up the input arguments for the script.
+    String[] args = {
+      "-n",
+      "10",
+      "-z",
+      "1",
+      "-t",
+      "298.15",
+      "-i",
+      "Stochastic",
+      "-b",
+      "Adiabatic",
+      "-r",
+      "0.001",
+      "src/main/java/",
+      "--mdE",
+      "OpenMM" + filename
+    };
+    binding.setVariable("args", args);
 
-        if (!ffxOpenMM) {
-            return;
-        }
+    // Evaluate script
+    dynamics.run();
 
-        // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-z", "1", "-t", "298.15", "-i", "Stochastic", "-b", "Adiabatic", "-r", "0.001", "src/main/java/", "--mdE", "OpenMM" + filename};
-        binding.setVariable("args", args);
+    MolecularDynamicsOpenMM molDynOpenMM =
+        (MolecularDynamicsOpenMM) dynamics.getMolecularDynamics();
 
-        // Evaluate script
-        dynamics.run();
-
-        MolecularDynamicsOpenMM molDynOpenMM = (MolecularDynamicsOpenMM) dynamics.getMolecularDynamics();
-
-        // Assert that the end energies are within the threshold for the dynamics trajectory.
-        assertEquals(info + "End kinetic energy for OpenMM Langevin(Stochastic) integrator",
-                endKineticEnergy, molDynOpenMM.getKineticEnergy(), tolerance);
-        assertEquals(info + "End potential energy for OpenMM Langevin(Stochastic) integrator",
-                endPotentialEnergy, molDynOpenMM.getPotentialEnergy(), tolerance);
-        assertEquals(info + "End total energy for OpenMM Langevin(Stochastic) integrator",
-                endTotalEnergy, molDynOpenMM.getTotalEnergy(), tolerance);
-    }
-
+    // Assert that the end energies are within the threshold for the dynamics trajectory.
+    assertEquals(
+        info + "End kinetic energy for OpenMM Langevin(Stochastic) integrator",
+        endKineticEnergy,
+        molDynOpenMM.getKineticEnergy(),
+        tolerance);
+    assertEquals(
+        info + "End potential energy for OpenMM Langevin(Stochastic) integrator",
+        endPotentialEnergy,
+        molDynOpenMM.getPotentialEnergy(),
+        tolerance);
+    assertEquals(
+        info + "End total energy for OpenMM Langevin(Stochastic) integrator",
+        endTotalEnergy,
+        molDynOpenMM.getTotalEnergy(),
+        tolerance);
+  }
 }

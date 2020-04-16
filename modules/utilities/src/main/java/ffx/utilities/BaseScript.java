@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,137 +34,131 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.utilities;
 
+import static picocli.CommandLine.usage;
+
+import groovy.lang.Binding;
+import groovy.lang.Script;
 import java.awt.GraphicsEnvironment;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import groovy.lang.Binding;
-import groovy.lang.Script;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParseResult;
-import static picocli.CommandLine.usage;
 
 /**
- * <p>BaseScript class.</p>
+ * BaseScript class.
  *
  * @author Michael J. Schnieders
  */
 public class BaseScript extends Script {
 
-    /**
-     * The logger for this class.
-     */
-    protected static final Logger logger = Logger.getLogger(BaseScript.class.getName());
+  /** The logger for this class. */
+  protected static final Logger logger = Logger.getLogger(BaseScript.class.getName());
 
-    /**
-     * Unix shells are able to evaluate PicoCLI ANSI color codes, but right now the FFX GUI Shell does not.
-     * <p>
-     * In a headless environment, color will be ON for command line help, but OFF for the GUI.
-     */
-    public final Ansi color;
+  /**
+   * Unix shells are able to evaluate PicoCLI ANSI color codes, but right now the FFX GUI Shell does
+   * not.
+   *
+   * <p>In a headless environment, color will be ON for command line help, but OFF for the GUI.
+   */
+  public final Ansi color;
 
-    /**
-     * The Groovy Binding contains defined variables, closures, etc.
-     */
-    public Binding context;
+  /** The Groovy Binding contains defined variables, closures, etc. */
+  public Binding context;
 
-    /**
-     * The array of args passed into the Script.
-     */
-    public String[] args;
+  /** The array of args passed into the Script. */
+  public String[] args;
 
-    /**
-     * Parse Result.
-     */
-    public ParseResult parseResult = null;
+  /** Parse Result. */
+  public ParseResult parseResult = null;
 
-    /**
-     * -V or --version Prints the FFX version and exits.
-     */
-    @Option(names = {"-V", "--version"}, versionHelp = true, description = "Print the Force Field X version and exit.")
-    public boolean version = false;
+  /** -V or --version Prints the FFX version and exits. */
+  @Option(
+      names = {"-V", "--version"},
+      versionHelp = true,
+      description = "Print the Force Field X version and exit.")
+  public boolean version = false;
 
-    /**
-     * -h or --help Prints a help message.
-     */
-    @Option(names = {"-h", "--help"}, usageHelp = true, description = "Print command help and exit.")
-    public boolean help = false;
+  /** -h or --help Prints a help message. */
+  @Option(
+      names = {"-h", "--help"},
+      usageHelp = true,
+      description = "Print command help and exit.")
+  public boolean help = false;
 
-    /**
-     * Default constructor for an FFX Script.
-     */
-    public BaseScript() {
-        if (GraphicsEnvironment.isHeadless()) {
-            color = Ansi.ON;
-        } else {
-            color = Ansi.OFF;
-        }
+  /** Default constructor for an FFX Script. */
+  public BaseScript() {
+    if (GraphicsEnvironment.isHeadless()) {
+      color = Ansi.ON;
+    } else {
+      color = Ansi.OFF;
+    }
+  }
+
+  /**
+   * Default help information.
+   *
+   * @return String describing how to use this command.
+   */
+  public String helpString() {
+    try {
+      StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream());
+      usage(this, sos, color);
+      return " " + sos.toString();
+    } catch (UnsupportedEncodingException e) {
+      logger.log(Level.WARNING, e.toString());
+      return null;
+    }
+  }
+
+  /**
+   * Initialize this Script based on the specified command line arguments.
+   *
+   * @return boolean Returns true if the script should continue and false to exit.
+   */
+  public boolean init() {
+    context = getBinding();
+    args = (String[]) context.getProperty("args");
+
+    CommandLine commandLine = new CommandLine(this);
+    try {
+      parseResult = commandLine.parseArgs(args);
+    } catch (CommandLine.UnmatchedArgumentException uae) {
+      logger.warning(
+          " The usual source of this exception is when long-form arguments (such as --uaA) are only preceded by one dash (such as -uaA, which is an error).");
+      throw uae;
     }
 
-    /**
-     * Default help information.
-     *
-     * @return String describing how to use this command.
-     */
-    public String helpString() {
-        try {
-            StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream());
-            usage(this, sos, color);
-            return " " + sos.toString();
-        } catch (UnsupportedEncodingException e) {
-            logger.log(Level.WARNING, e.toString());
-            return null;
-        }
+    // Print help info exit.
+    if (help) {
+      logger.info(helpString());
+      return false;
     }
 
-    /**
-     * Initialize this Script based on the specified command line arguments.
-     *
-     * @return boolean Returns true if the script should continue and false to exit.
-     */
-    public boolean init() {
-        context = getBinding();
-        args = (String[]) context.getProperty("args");
-
-        CommandLine commandLine = new CommandLine(this);
-        try {
-            parseResult = commandLine.parseArgs(args);
-        } catch (CommandLine.UnmatchedArgumentException uae) {
-            logger.warning(" The usual source of this exception is when long-form arguments (such as --uaA) are only preceded by one dash (such as -uaA, which is an error).");
-            throw uae;
-        }
-
-        // Print help info exit.
-        if (help) {
-            logger.info(helpString());
-            return false;
-        }
-
-        // Version info is printed by default.
-        if (version) {
-            // This should not be reached, due to the FFX Main class handling the "-V, --version" flag and exiting.
-            return false;
-        }
-
-        return true;
+    // Version info is printed by default.
+    if (version) {
+      // This should not be reached, due to the FFX Main class handling the "-V, --version" flag and
+      // exiting.
+      return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Execute the script.
-     */
-    @Override
-    public BaseScript run() {
-        logger.info(helpString());
-        return this;
-    }
+    return true;
+  }
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Execute the script.
+   */
+  @Override
+  public BaseScript run() {
+    logger.info(helpString());
+    return this;
+  }
 }

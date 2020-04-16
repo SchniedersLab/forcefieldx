@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,177 +34,177 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.math;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
- * The RunningStatistics class uses online, stable algorithms to calculate summary
- * statistics from a source of doubles, including mean, variance, standard deviation,
- * max, min, sum, and count.
- * <p>
- * This is intended for accuracy and numerical stability,
- * not necessarily for performance (e.g. using Kahan summation).
- * <p>
- * This is effectively a dynamic version of SummaryStatistics.
+ * The RunningStatistics class uses online, stable algorithms to calculate summary statistics from a
+ * source of doubles, including mean, variance, standard deviation, max, min, sum, and count.
+ *
+ * <p>This is intended for accuracy and numerical stability, not necessarily for performance (e.g.
+ * using Kahan summation).
+ *
+ * <p>This is effectively a dynamic version of SummaryStatistics.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
  */
 public class RunningStatistics {
-    private double meanAcc = 0;
-    private double varAcc = 0;
-    private double minAcc = Double.MAX_VALUE;
-    private double maxAcc = Double.MIN_VALUE;
-    private double sumAcc = 0;
-    private double comp = 0;
-    private double weightAcc = 0;
-    private long count = 0;
-    private long dof = -1;
+  private double meanAcc = 0;
+  private double varAcc = 0;
+  private double minAcc = Double.MAX_VALUE;
+  private double maxAcc = Double.MIN_VALUE;
+  private double sumAcc = 0;
+  private double comp = 0;
+  private double weightAcc = 0;
+  private long count = 0;
+  private long dof = -1;
 
-    /**
-     * Constructs new running statistics accumulator.
-     */
-    public RunningStatistics() {
-        // Empty constructor; all variables are initialized at definition.
+  /** Constructs new running statistics accumulator. */
+  public RunningStatistics() {
+    // Empty constructor; all variables are initialized at definition.
+  }
+
+  /**
+   * Add a value and update key variables.
+   *
+   * @param val Value to add.
+   */
+  public void addValue(double val) {
+    addValue(val, 1.0);
+  }
+
+  /**
+   * Add a value and update key variables.
+   *
+   * @param val Value to add.
+   * @param weight Weight to give the value.
+   */
+  public void addValue(double val, double weight) {
+    assert Double.isFinite(val);
+    assert Double.isFinite(weight);
+    assert weight > 0.0;
+    ++count;
+    ++dof;
+    double priorMean = meanAcc;
+    weightAcc += weight;
+    double y = val - comp;
+    double t = sumAcc + y;
+    comp = (t - sumAcc) - y;
+    sumAcc = t;
+
+    minAcc = Math.min(minAcc, val);
+    maxAcc = Math.max(maxAcc, val);
+    double invCount = 1.0 / weightAcc;
+    meanAcc += ((val - meanAcc) * invCount);
+    varAcc += ((val - priorMean) * (val - meanAcc)) * weight;
+    if (Double.isNaN(varAcc)) {
+      throw new IllegalArgumentException(
+          String.format(
+              " Val %.5f w/ wt %.3f resulted in NaN varAcc; current state %s",
+              val, weight, new SummaryStatistics(this).toString()));
     }
+  }
 
-    /**
-     * Add a value and update key variables.
-     *
-     * @param val Value to add.
-     */
-    public void addValue(double val) {
-        addValue(val, 1.0);
-    }
+  /**
+   * Get the count.
+   *
+   * @return Returns the count.
+   */
+  public long getCount() {
+    return count;
+  }
 
-    /**
-     * Add a value and update key variables.
-     *
-     * @param val    Value to add.
-     * @param weight Weight to give the value.
-     */
-    public void addValue(double val, double weight) {
-        assert Double.isFinite(val);
-        assert Double.isFinite(weight);
-        assert weight > 0.0;
-        ++count;
-        ++dof;
-        double priorMean = meanAcc;
-        weightAcc += weight;
-        double y = val - comp;
-        double t = sumAcc + y;
-        comp = (t - sumAcc) - y;
-        sumAcc = t;
+  /**
+   * Get the DOF.
+   *
+   * @return Returns DOF.
+   */
+  public long getDOF() {
+    return dof;
+  }
 
-        minAcc = Math.min(minAcc, val);
-        maxAcc = Math.max(maxAcc, val);
-        double invCount = 1.0 / weightAcc;
-        meanAcc += ((val - meanAcc) * invCount);
-        varAcc += ((val - priorMean) * (val - meanAcc)) * weight;
-        if (Double.isNaN(varAcc)) {
-            throw new IllegalArgumentException(String.format(" Val %.5f w/ wt %.3f resulted in NaN varAcc; current state %s", val, weight, new SummaryStatistics(this).toString()));
-        }
-    }
+  /**
+   * Get the max.
+   *
+   * @return Returns the max.
+   */
+  public double getMax() {
+    return maxAcc;
+  }
 
-    /**
-     * Get the count.
-     *
-     * @return Returns the count.
-     */
-    public long getCount() {
-        return count;
-    }
+  /**
+   * Gets the mean as of the last value added.
+   *
+   * @return Current running mean.
+   */
+  public double getMean() {
+    return meanAcc;
+  }
 
-    /**
-     * Get the DOF.
-     *
-     * @return Returns DOF.
-     */
-    public long getDOF() {
-        return dof;
-    }
+  /**
+   * Get the min.
+   *
+   * @return Returns the min.
+   */
+  public double getMin() {
+    return minAcc;
+  }
 
-    /**
-     * Get the max.
-     *
-     * @return Returns the max.
-     */
-    public double getMax() {
-        return maxAcc;
-    }
+  /**
+   * Get the population standard deviations.
+   *
+   * @return The population standard deviation.
+   */
+  public double getPopulationStandardDeviation() {
+    return sqrt(getPopulationVariance());
+  }
 
-    /**
-     * Gets the mean as of the last value added.
-     *
-     * @return Current running mean.
-     */
-    public double getMean() {
-        return meanAcc;
-    }
+  /**
+   * Get the population variance.
+   *
+   * @return Returns the population variance.
+   */
+  public double getPopulationVariance() {
+    return varAcc / ((double) count);
+  }
 
-    /**
-     * Get the min.
-     *
-     * @return Returns the min.
-     */
-    public double getMin() {
-        return minAcc;
-    }
+  /**
+   * Get the standard deviation.
+   *
+   * @return Returns the standard deviation.
+   */
+  public double getStandardDeviation() {
+    return sqrt(getVariance());
+  }
 
-    /**
-     * Get the population standard deviations.
-     *
-     * @return The population standard deviation.
-     */
-    public double getPopulationStandardDeviation() {
-        return sqrt(getPopulationVariance());
-    }
+  /**
+   * Get the sum.
+   *
+   * @return Returns the sum.
+   */
+  public double getSum() {
+    return sumAcc;
+  }
 
-    /**
-     * Get the population variance.
-     *
-     * @return Returns the population variance.
-     */
-    public double getPopulationVariance() {
-        return varAcc / ((double) count);
-    }
+  /**
+   * Get the variance.
+   *
+   * @return Returns the variance.
+   */
+  public double getVariance() {
+    return varAcc / ((double) dof);
+  }
 
-    /**
-     * Get the standard deviation.
-     *
-     * @return Returns the standard deviation.
-     */
-    public double getStandardDeviation() {
-        return sqrt(getVariance());
-    }
-
-    /**
-     * Get the sum.
-     *
-     * @return Returns the sum.
-     */
-    public double getSum() {
-        return sumAcc;
-    }
-
-    /**
-     * Get the variance.
-     *
-     * @return Returns the variance.
-     */
-    public double getVariance() {
-        return varAcc / ((double) dof);
-    }
-
-    /**
-     * Get the weight.
-     *
-     * @return Returns the weight.
-     */
-    public double getWeight() {
-        return weightAcc;
-    }
+  /**
+   * Get the weight.
+   *
+   * @return Returns the weight.
+   */
+  public double getWeight() {
+    return weightAcc;
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,52 +34,47 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
 
-import javax.swing.filechooser.FileFilter;
-
 import java.io.File;
-
+import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 /**
- * The KeyFileFilter class is used to choose a Force Field X keyword (*.KEY) or
- * property (*.properties) file.
+ * The KeyFileFilter class is used to choose a Force Field X keyword (*.KEY) or property
+ * (*.properties) file.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public final class KeyFileFilter extends FileFilter {
 
-    /**
-     * Default Constructor.
-     */
-    public KeyFileFilter() {
-    }
+  /** Default Constructor. */
+  public KeyFileFilter() {}
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method return <code>true</code> if the file is a directory or Force
-     * Field X script (*.FFX).
-     */
-    @Override
-    public boolean accept(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String ext = FilenameUtils.getExtension(file.getName()).toUpperCase();
-        return ext.startsWith("KEY") || ext.startsWith("PRM") || ext.startsWith("PROPERTIES");
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This method return <code>true</code> if the file is a directory or Force Field X script
+   * (*.FFX).
+   */
+  @Override
+  public boolean accept(File file) {
+    if (file.isDirectory()) {
+      return true;
     }
+    String ext = FilenameUtils.getExtension(file.getName()).toUpperCase();
+    return ext.startsWith("KEY") || ext.startsWith("PRM") || ext.startsWith("PROPERTIES");
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Provides a description of the KeyFileFilter.
-     */
-    @Override
-    public String getDescription() {
-        return "Force Field X Properties (*.KEY, *.PRM, *.PROPERTIES)";
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Provides a description of the KeyFileFilter.
+   */
+  @Override
+  public String getDescription() {
+    return "Force Field X Properties (*.KEY, *.PRM, *.PROPERTIES)";
+  }
 }

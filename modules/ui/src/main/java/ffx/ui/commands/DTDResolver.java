@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,47 +34,42 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.commands;
 
 import java.net.URL;
 import java.util.logging.Logger;
-
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 
 /**
- * The DTDResolver class just points the DOM DocumentBuilder to the XML Document
- * Type Definition (DTD) files.
+ * The DTDResolver class just points the DOM DocumentBuilder to the XML Document Type Definition
+ * (DTD) files.
  *
  * @author Michael J. Schnieders
  */
 public class DTDResolver implements EntityResolver {
 
-    private static final Logger logger = Logger.getLogger(DTDResolver.class.getName());
+  private static final Logger logger = Logger.getLogger(DTDResolver.class.getName());
 
-    /**
-     * {@inheritDoc}
-     */
-    public InputSource resolveEntity(String publicId, String systemId) {
-        if (systemId.lastIndexOf("keywords.dtd") >= 0) {
-            URL keyURL = getClass().getClassLoader().getResource(
-                    "ffx/xml/keywords.dtd");
-            try {
-                return new InputSource(keyURL.openStream());
-            } catch (Exception e) {
-                logger.warning("" + e);
-                return null;
-            }
-        } else if (systemId.lastIndexOf("commands.dtd") >= 0) {
-            URL commandURL = getClass().getClassLoader().getResource(
-                    "ffx/xml/commands.dtd");
-            try {
-                return new InputSource(commandURL.openStream());
-            } catch (Exception e) {
-                return null;
-            }
-        }
+  /** {@inheritDoc} */
+  public InputSource resolveEntity(String publicId, String systemId) {
+    if (systemId.lastIndexOf("keywords.dtd") >= 0) {
+      URL keyURL = getClass().getClassLoader().getResource("ffx/xml/keywords.dtd");
+      try {
+        return new InputSource(keyURL.openStream());
+      } catch (Exception e) {
+        logger.warning("" + e);
         return null;
+      }
+    } else if (systemId.lastIndexOf("commands.dtd") >= 0) {
+      URL commandURL = getClass().getClassLoader().getResource("ffx/xml/commands.dtd");
+      try {
+        return new InputSource(commandURL.openStream());
+      } catch (Exception e) {
+        return null;
+      }
     }
+    return null;
+  }
 }

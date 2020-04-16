@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,17 +34,17 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.spline;
+
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collection;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Parameterized test of the UniformBSpline class.
@@ -55,85 +55,87 @@ import static org.junit.Assert.assertEquals;
 @RunWith(Parameterized.class)
 public class UniformBSplineTest {
 
-    private static double tolerance = 1.0e-6;
-    private final String info;
-    private final int order;
-    private final double x;
-    private final double[] coefficients;
-    private final double[] expected;
-    private final double[] expectedDiff;
-    private final int deriveOrder;
-    private final double[][] theta;
-    private final double[][] bSplineWork;
+  private static double tolerance = 1.0e-6;
+  private final String info;
+  private final int order;
+  private final double x;
+  private final double[] coefficients;
+  private final double[] expected;
+  private final double[] expectedDiff;
+  private final int deriveOrder;
+  private final double[][] theta;
+  private final double[][] bSplineWork;
 
-    /**
-     * Parameterized test of the UniformBSpline class.
-     *
-     * @param info
-     * @param order
-     * @param x
-     * @param expected
-     * @param expectedDiff
-     * @since 1.0
-     */
-    public UniformBSplineTest(String info, int order, double x, double[] expected, double[] expectedDiff) {
-        this.info = info;
-        this.order = order;
-        this.x = x;
-        this.expected = expected;
-        this.expectedDiff = expectedDiff;
+  /**
+   * Parameterized test of the UniformBSpline class.
+   *
+   * @param info
+   * @param order
+   * @param x
+   * @param expected
+   * @param expectedDiff
+   * @since 1.0
+   */
+  public UniformBSplineTest(
+      String info, int order, double x, double[] expected, double[] expectedDiff) {
+    this.info = info;
+    this.order = order;
+    this.x = x;
+    this.expected = expected;
+    this.expectedDiff = expectedDiff;
 
-        deriveOrder = order - 1;
-        coefficients = new double[order];
-        theta = new double[order][deriveOrder + 1];
-        bSplineWork = new double[order][order];
-    }
+    deriveOrder = order - 1;
+    coefficients = new double[order];
+    theta = new double[order][deriveOrder + 1];
+    bSplineWork = new double[order][order];
+  }
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        // Order 5, x = 0.00
-        double[] c1 = {0.0416666e0, 0.4583333e0, 0.4583333e0, 0.0416666e0, 0.0000000e0};
-        double[] d1 = {-0.1666667e0, -0.5000000e0, 0.5000000e0, 0.1666667e0, 0.0000000e0};
-        // Order 5, x = 0.25
-        double[] c2 = {0.0131836e0, 0.3248700e0, 0.5608720e0, 0.1009110e0, 0.0001627e0};
-        double[] d2 = {-0.0703125e0, -0.5416670e0, 0.2968750e0, 0.3125000e0, 0.0026042e0};
-        // Order 5, x = 0.50
-        double[] c3 = {0.0026041e0, 0.1979167e0, 0.5989583e0, 0.1979167e0, 0.0026041e0};
-        double[] d3 = {-0.0208333e0, -0.4583333e0, 0.0000000e0, 0.4583333e0, 0.0208333e0};
+  @Parameters
+  public static Collection<Object[]> data() {
+    // Order 5, x = 0.00
+    double[] c1 = {0.0416666e0, 0.4583333e0, 0.4583333e0, 0.0416666e0, 0.0000000e0};
+    double[] d1 = {-0.1666667e0, -0.5000000e0, 0.5000000e0, 0.1666667e0, 0.0000000e0};
+    // Order 5, x = 0.25
+    double[] c2 = {0.0131836e0, 0.3248700e0, 0.5608720e0, 0.1009110e0, 0.0001627e0};
+    double[] d2 = {-0.0703125e0, -0.5416670e0, 0.2968750e0, 0.3125000e0, 0.0026042e0};
+    // Order 5, x = 0.50
+    double[] c3 = {0.0026041e0, 0.1979167e0, 0.5989583e0, 0.1979167e0, 0.0026041e0};
+    double[] d3 = {-0.0208333e0, -0.4583333e0, 0.0000000e0, 0.4583333e0, 0.0208333e0};
 
-        return Arrays.asList(new Object[][]{
-                {"Order 5, x = 0.00", 5, 0.00e0, c1, d1},
-                {"Order 5, x = 0.25", 5, 0.25e0, c2, d2},
-                {"Order 5, x = 0.50", 5, 0.50e0, c3, d3}
+    return Arrays.asList(
+        new Object[][] {
+          {"Order 5, x = 0.00", 5, 0.00e0, c1, d1},
+          {"Order 5, x = 0.25", 5, 0.25e0, c2, d2},
+          {"Order 5, x = 0.50", 5, 0.50e0, c3, d3}
         });
-    }
+  }
 
-    /**
-     * Test of bSpline method, of class UniformBSpline.
-     *
-     * @since 1.0
-     */
-    @Test
-    public void testBSpline() {
-        UniformBSpline.bSpline(x, order, coefficients);
-        for (int i = 0; i < order; i++) {
-            assertEquals(info, expected[i], coefficients[i], tolerance);
-        }
+  /**
+   * Test of bSpline method, of class UniformBSpline.
+   *
+   * @since 1.0
+   */
+  @Test
+  public void testBSpline() {
+    UniformBSpline.bSpline(x, order, coefficients);
+    for (int i = 0; i < order; i++) {
+      assertEquals(info, expected[i], coefficients[i], tolerance);
     }
+  }
 
-    /**
-     * Test of bSplineDerivatives method, of class UniformBSpline.
-     *
-     * @since 1.0
-     */
-    @Test
-    public void testBSplineDerivatives() {
-        UniformBSpline.bSplineDerivatives(x, order, deriveOrder, theta, bSplineWork);
-        for (int i = 0; i < order; i++) {
-            double actual = theta[i][0];
-            assertEquals(info, expected[i], actual, tolerance);
-            actual = theta[i][1];
-            assertEquals(info, expectedDiff[i], actual, tolerance);
-        }
+  /**
+   * Test of bSplineDerivatives method, of class UniformBSpline.
+   *
+   * @since 1.0
+   */
+  @Test
+  public void testBSplineDerivatives() {
+    UniformBSpline.bSplineDerivatives(x, order, deriveOrder, theta, bSplineWork);
+    for (int i = 0; i < order; i++) {
+      double actual = theta[i][0];
+      assertEquals(info, expected[i], actual, tolerance);
+      actual = theta[i][1];
+      assertEquals(info, expectedDiff[i], actual, tolerance);
     }
+  }
 }

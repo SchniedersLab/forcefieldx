@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,138 +34,120 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.atomic;
-
-import java.util.concurrent.atomic.DoubleAdder;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
+import java.util.concurrent.atomic.DoubleAdder;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * AdderDoubleArray implements the AtomicDoubleArray interface using an array of
- * <code>java.util.concurrent.atomic.DoubleAdder</code>.
+ * AdderDoubleArray implements the AtomicDoubleArray interface using an array of <code>
+ * java.util.concurrent.atomic.DoubleAdder</code>.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class AdderDoubleArray implements AtomicDoubleArray {
 
-    private static final Logger logger = Logger.getLogger(AdderDoubleArray.class.getName());
+  private static final Logger logger = Logger.getLogger(AdderDoubleArray.class.getName());
 
-    /**
-     * Atomic operations are handled by an Array of DoubleAdder instances.
-     */
-    private DoubleAdder[] array;
+  /** Atomic operations are handled by an Array of DoubleAdder instances. */
+  private DoubleAdder[] array;
 
-    /**
-     * Construct an AdderDoubleArray.
-     *
-     * @param size Size of the array.
-     */
-    public AdderDoubleArray(int size) {
-        array = new DoubleAdder[size];
-        for (int i = 0; i < size; i++) {
-            array[i] = new DoubleAdder();
-        }
+  /**
+   * Construct an AdderDoubleArray.
+   *
+   * @param size Size of the array.
+   */
+  public AdderDoubleArray(int size) {
+    array = new DoubleAdder[size];
+    for (int i = 0; i < size; i++) {
+      array[i] = new DoubleAdder();
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void add(int threadID, int index, double value) {
-        array[index].add(value);
+  /** {@inheritDoc} */
+  @Override
+  public void add(int threadID, int index, double value) {
+    array[index].add(value);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void alloc(int size) {
+    if (array.length < size) {
+      array = new DoubleAdder[size];
+      for (int i = 0; i < size; i++) {
+        array[i] = new DoubleAdder();
+      }
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void alloc(int size) {
-        if (array.length < size) {
-            array = new DoubleAdder[size];
-            for (int i = 0; i < size; i++) {
-                array[i] = new DoubleAdder();
+  /** {@inheritDoc} */
+  @Override
+  public double get(int index) {
+    return array[index].sum();
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void reduce(int lb, int ub) {
+    // Nothing to do.
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
+    // Nothing to do.
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void reset(int threadID, int lb, int ub) {
+    for (int i = lb; i <= ub; i++) {
+      array[i].reset();
+      array[i].add(0.0);
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void reset(ParallelTeam parallelTeam, int lb, int ub) {
+    try {
+      parallelTeam.execute(
+          new ParallelRegion() {
+            @Override
+            public void run() throws Exception {
+              execute(
+                  lb,
+                  ub,
+                  new IntegerForLoop() {
+                    @Override
+                    public void run(int first, int last) {
+                      reset(getThreadIndex(), first, last);
+                    }
+                  });
             }
-        }
+          });
+    } catch (Exception e) {
+      logger.log(Level.WARNING, " Exception resetting an AdderDoubleArray", e);
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double get(int index) {
-        return array[index].sum();
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void set(int threadID, int index, double value) {
+    array[index].reset();
+    array[index].add(value);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void reduce(int lb, int ub) {
-        // Nothing to do.
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
-        // Nothing to do.
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void reset(int threadID, int lb, int ub) {
-        for (int i = lb; i <= ub; i++) {
-            array[i].reset();
-            array[i].add(0.0);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void reset(ParallelTeam parallelTeam, int lb, int ub) {
-        try {
-            parallelTeam.execute(new ParallelRegion() {
-                @Override
-                public void run() throws Exception {
-                    execute(lb, ub, new IntegerForLoop() {
-                        @Override
-                        public void run(int first, int last) {
-                            reset(getThreadIndex(), first, last);
-                        }
-                    });
-                }
-            });
-        } catch (Exception e) {
-            logger.log(Level.WARNING, " Exception resetting an AdderDoubleArray", e);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void set(int threadID, int index, double value) {
-        array[index].reset();
-        array[index].add(value);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void sub(int threadID, int index, double value) {
-        array[index].add(-value);
-    }
-
+  /** {@inheritDoc} */
+  @Override
+  public void sub(int threadID, int index, double value) {
+    array[index].add(-value);
+  }
 }

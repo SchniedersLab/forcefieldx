@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,41 +34,38 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.realspace.parsers;
-
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.realspace.RealSpaceRefinementData;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
- * <p>
- * RealSpaceFileFilter interface.</p>
+ * RealSpaceFileFilter interface.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public interface RealSpaceFileFilter {
 
-    /**
-     * <p>
-     * getCrystal</p>
-     *
-     * @param filename   A {@link java.lang.String} object.
-     * @param properties A {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @return A {@link ffx.crystal.Crystal} object.
-     */
-    Crystal getCrystal(String filename, CompositeConfiguration properties);
+  /**
+   * getCrystal
+   *
+   * @param filename A {@link java.lang.String} object.
+   * @param properties A {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @return A {@link ffx.crystal.Crystal} object.
+   */
+  Crystal getCrystal(String filename, CompositeConfiguration properties);
 
-    /**
-     * Read in a Real Space file.
-     *
-     * @param filename       File to read in.
-     * @param refinementData The {@link ffx.realspace.RealSpaceRefinementData} object to fill in.
-     * @param properties     System properties.
-     * @return True if read in properly.
-     */
-    boolean readFile(String filename, RealSpaceRefinementData refinementData,
-                     CompositeConfiguration properties);
+  /**
+   * Read in a Real Space file.
+   *
+   * @param filename File to read in.
+   * @param refinementData The {@link ffx.realspace.RealSpaceRefinementData} object to fill in.
+   * @param properties System properties.
+   * @return True if read in properly.
+   */
+  boolean readFile(
+      String filename, RealSpaceRefinementData refinementData, CompositeConfiguration properties);
 }

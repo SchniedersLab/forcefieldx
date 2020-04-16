@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.realspace.groovy
 
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
@@ -49,7 +47,7 @@ import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.WriteoutOptions
 import ffx.realspace.cli.RealSpaceOptions
 import ffx.xray.RefinementEnergy
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -64,90 +62,95 @@ import picocli.CommandLine.Parameters
 @Command(description = " Simulated annealing on a Real Space target.", name = "ffxc realspace.Anneal")
 class Anneal extends AlgorithmsScript {
 
-    @Mixin
-    AnnealOptions annealOptions
+  @Mixin
+  AnnealOptions annealOptions
 
-    @Mixin
-    AtomSelectionOptions atomSelectionOptions
+  @Mixin
+  AtomSelectionOptions atomSelectionOptions
 
-    @Mixin
-    DynamicsOptions dynamicsOptions
+  @Mixin
+  DynamicsOptions dynamicsOptions
 
-    @Mixin
-    RealSpaceOptions realSpaceOptions
+  @Mixin
+  RealSpaceOptions realSpaceOptions
 
-    @Mixin
-    WriteoutOptions writeoutOptions
+  @Mixin
+  WriteoutOptions writeoutOptions
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
-    private List<String> filenames
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
+  private List<String> filenames
 
-    private RefinementEnergy refinementEnergy
+  private RefinementEnergy refinementEnergy
 
-    @Override
-    Anneal run() {
+  @Override
+  Anneal run() {
 
-        if (!init()) {
-            return this
-        }
-
-        dynamicsOptions.init()
-
-        String modelFilename
-        if (filenames != null && filenames.size() > 0) {
-            activeAssembly = algorithmFunctions.open(filenames.get(0))
-            modelFilename = filenames.get(0)
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        } else {
-            modelFilename = activeAssembly.getFile().getAbsolutePath()
-        }
-        MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
-
-        logger.info("\n Running simulated annealing on on real-space target including " + modelFilename + "\n")
-
-        // Set atom (in)active selections.
-        atomSelectionOptions.setActiveAtoms(activeAssembly)
-
-        // Construct the real space potential.
-        Potential potential = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
-
-        // Restart File
-        File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
-        if (!dyn.exists()) {
-            dyn = null
-        }
-
-        SimulatedAnnealing simulatedAnnealing = annealOptions.createAnnealer(dynamicsOptions, activeAssembly,
-                potential, activeAssembly.getProperties(),
-                algorithmListener, dyn)
-
-        simulatedAnnealing.setPrintInterval(dynamicsOptions.report)
-        simulatedAnnealing.setSaveFrequency(dynamicsOptions.write)
-        simulatedAnnealing.setRestartFrequency(dynamicsOptions.checkpoint)
-        simulatedAnnealing.setTrajectorySteps(dynamicsOptions.trajSteps)
-
-        simulatedAnnealing.anneal()
-
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-
-        String dirName = saveDir.toString() + File.separator
-        String fileName = FilenameUtils.getName(modelFilename)
-        fileName = FilenameUtils.removeExtension(fileName)
-
-        writeoutOptions.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly)
-
-        return this
+    if (!init()) {
+      return this
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy)
+    dynamicsOptions.init()
+
+    String modelFilename
+    if (filenames != null && filenames.size() > 0) {
+      activeAssembly = algorithmFunctions.open(filenames.get(0))
+      modelFilename = filenames.get(0)
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
+    } else {
+      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
+    MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
+
+    logger.info(
+        "\n Running simulated annealing on on real-space target including " + modelFilename + "\n")
+
+    // Set atom (in)active selections.
+    atomSelectionOptions.setActiveAtoms(activeAssembly)
+
+    // Construct the real space potential.
+    Potential potential =
+        realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
+
+    // Restart File
+    File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+    if (!dyn.exists()) {
+      dyn = null
+    }
+
+    SimulatedAnnealing simulatedAnnealing =
+        annealOptions.createAnnealer(dynamicsOptions, activeAssembly,
+            potential, activeAssembly.getProperties(),
+            algorithmListener, dyn)
+
+    simulatedAnnealing.setPrintInterval(dynamicsOptions.report)
+    simulatedAnnealing.setSaveFrequency(dynamicsOptions.write)
+    simulatedAnnealing.setRestartFrequency(dynamicsOptions.checkpoint)
+    simulatedAnnealing.setTrajectorySteps(dynamicsOptions.trajSteps)
+
+    simulatedAnnealing.anneal()
+
+    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+    }
+
+    String dirName = saveDir.toString() + File.separator
+    String fileName = FilenameUtils.getName(modelFilename)
+    fileName = FilenameUtils.removeExtension(fileName)
+
+    writeoutOptions.
+        saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly)
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    return
+    refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy)
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,77 +34,77 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import java.util.Arrays;
 import static java.lang.System.arraycopy;
 
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
+import java.util.Arrays;
 
-/**
- * Monte Carlo driver for DEE-MC.
- */
+/** Monte Carlo driver for DEE-MC. */
 public class RotamerMatrixMC extends BoltzmannMC {
 
-    private final int[] currentRots;
-    private final int[] oldRots;
-    private final int nRes;
-    private final Residue[] residues;
-    private RotamerOptimization rotamerOptimization;
-    private boolean useFullAMOEBAEnergy;
+  private final int[] currentRots;
+  private final int[] oldRots;
+  private final int nRes;
+  private final Residue[] residues;
+  private RotamerOptimization rotamerOptimization;
+  private boolean useFullAMOEBAEnergy;
 
+  /**
+   * The Rotamers array must be the same array as passed to any MCMove objects used (and not a
+   * copy).
+   *
+   * @param rotamers
+   * @param residues
+   */
+  public RotamerMatrixMC(
+      int[] rotamers,
+      Residue[] residues,
+      boolean useFullAMOEBAEnergy,
+      RotamerOptimization rotamerOptimization) {
+    currentRots = rotamers; // This is intentional.
+    nRes = rotamers.length;
+    oldRots = new int[nRes];
+    arraycopy(rotamers, 0, oldRots, 0, nRes);
+    this.residues = residues;
+    this.useFullAMOEBAEnergy = useFullAMOEBAEnergy;
+    this.rotamerOptimization = rotamerOptimization;
+  }
 
-    /**
-     * The Rotamers array must be the same array as passed to any MCMove
-     * objects used (and not a copy).
-     *
-     * @param rotamers
-     * @param residues
-     */
-    public RotamerMatrixMC(int[] rotamers, Residue[] residues, boolean useFullAMOEBAEnergy,
-                           RotamerOptimization rotamerOptimization) {
-        currentRots = rotamers; // This is intentional.
-        nRes = rotamers.length;
-        oldRots = new int[nRes];
-        arraycopy(rotamers, 0, oldRots, 0, nRes);
-        this.residues = residues;
-        this.useFullAMOEBAEnergy = useFullAMOEBAEnergy;
-        this.rotamerOptimization = rotamerOptimization;
+  @Override
+  public void revertStep() {
+    arraycopy(oldRots, 0, currentRots, 0, nRes);
+  }
+
+  /**
+   * If useFullAMOEBAEnergy is set to true, explicitly evaluates energy, else computes energy from
+   * the rotamer energy matrices.
+   *
+   * @return Energy at the current state
+   */
+  @Override
+  protected double currentEnergy() {
+    try {
+      try {
+        return useFullAMOEBAEnergy
+            ? rotamerOptimization.currentEnergyWrapper(Arrays.asList(residues))
+            : rotamerOptimization.computeEnergy(residues, currentRots, false);
+      } catch (ArithmeticException ex) {
+        return 1E100;
+      }
+    } catch (NullPointerException ex) {
+      // If using the rotamer energy matrix, and there is some missing
+      // energy term, just return a default, very large energy.
+      return 1e100;
     }
+  }
 
-    @Override
-    public void revertStep() {
-        arraycopy(oldRots, 0, currentRots, 0, nRes);
-    }
-
-    /**
-     * If useFullAMOEBAEnergy is set to true, explicitly evaluates energy,
-     * else computes energy from the rotamer energy matrices.
-     *
-     * @return Energy at the current state
-     */
-    @Override
-    protected double currentEnergy() {
-        try {
-            try {
-                return useFullAMOEBAEnergy ?
-                        rotamerOptimization.currentEnergyWrapper(Arrays.asList(residues))
-                        : rotamerOptimization.computeEnergy(residues, currentRots, false);
-            } catch (ArithmeticException ex) {
-                return 1E100;
-            }
-        } catch (NullPointerException ex) {
-            // If using the rotamer energy matrix, and there is some missing
-            // energy term, just return a default, very large energy.
-            return 1e100;
-        }
-    }
-
-    @Override
-    protected void storeState() {
-        arraycopy(currentRots, 0, oldRots, 0, nRes);
-    }
+  @Override
+  protected void storeState() {
+    arraycopy(currentRots, 0, oldRots, 0, nRes);
+  }
 }

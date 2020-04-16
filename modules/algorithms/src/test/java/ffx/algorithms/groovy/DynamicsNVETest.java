@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,108 +34,126 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.groovy;
 
+import static org.junit.Assert.assertEquals;
+
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.misc.PJDependentTest;
+import groovy.lang.Binding;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Logger;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.misc.PJDependentTest;
-
-import groovy.lang.Binding;
-
-/**
- * @author Hernan V Bernabe
- */
+/** @author Hernan V Bernabe */
 @RunWith(Parameterized.class)
 public class DynamicsNVETest extends PJDependentTest {
 
-    private static final Logger logger = Logger.getLogger(DynamicsNVETest.class.getName());
-    private String info;
-    private String filename;
-    private double startingTotalEnergy;
-    private double endKineticEnergy;
-    private double endPotentialEnergy;
-    private double endTotalEnergy;
-    private double tolerance = 0.1;
-    private boolean alwaysFail = false;
-    private Binding binding;
-    private Dynamics dynamics;
+  private static final Logger logger = Logger.getLogger(DynamicsNVETest.class.getName());
+  private String info;
+  private String filename;
+  private double startingTotalEnergy;
+  private double endKineticEnergy;
+  private double endPotentialEnergy;
+  private double endTotalEnergy;
+  private double tolerance = 0.1;
+  private boolean alwaysFail = false;
+  private Binding binding;
+  private Dynamics dynamics;
 
-    public DynamicsNVETest(String info, String filename, double startingTotalEnergy, double endKineticEnergy,
-                           double endPotentialEnergy, double endTotalEnergy) {
-        this.info = info;
-        this.filename = filename;
-        this.startingTotalEnergy = startingTotalEnergy;
-        this.endKineticEnergy = endKineticEnergy;
-        this.endPotentialEnergy = endPotentialEnergy;
-        this.endTotalEnergy = endTotalEnergy;
-    }
+  public DynamicsNVETest(
+      String info,
+      String filename,
+      double startingTotalEnergy,
+      double endKineticEnergy,
+      double endPotentialEnergy,
+      double endTotalEnergy) {
+    this.info = info;
+    this.filename = filename;
+    this.startingTotalEnergy = startingTotalEnergy;
+    this.endKineticEnergy = endKineticEnergy;
+    this.endPotentialEnergy = endPotentialEnergy;
+    this.endTotalEnergy = endTotalEnergy;
+  }
 
-    @After
-    public void after() {
-        dynamics.destroyPotentials();
-        System.gc();
-    }
-
-    @Before
-    public void before() {
-        binding = new Binding();
-        dynamics = new Dynamics();
-        dynamics.setBinding(binding);
-
-    }
-
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {
-                        "Acetamide Peptide NVE", // info
-                        "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
-                        -25.1958, // startingTotalEnergy
-                        4.5625, // endKineticEnergy
-                        -29.8043, // endPotentialEnergy
-                        -25.2418 // endTotalEnergy
-                }
+  @Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+          {
+            "Acetamide Peptide NVE", // info
+            "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
+            -25.1958, // startingTotalEnergy
+            4.5625, // endKineticEnergy
+            -29.8043, // endPotentialEnergy
+            -25.2418 // endTotalEnergy
+          }
         });
-    }
+  }
 
-    @Test
-    public void testDynamicsHelp() {
-        // Set-up the input arguments for the script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
+  @After
+  public void after() {
+    dynamics.destroyPotentials();
+    System.gc();
+  }
 
-        // Evaluate the script.
-        dynamics.run();
-    }
+  @Before
+  public void before() {
+    binding = new Binding();
+    dynamics = new Dynamics();
+    dynamics.setBinding(binding);
+  }
 
-    @Test
-    public void testDynamicsNVE() {
+  @Test
+  public void testDynamicsHelp() {
+    // Set-up the input arguments for the script.
+    String[] args = {"-h"};
+    binding.setVariable("args", args);
 
-        // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "VelocityVerlet", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
-        binding.setVariable("args", args);
+    // Evaluate the script.
+    dynamics.run();
+  }
 
-        // Evaluate the script.
-        dynamics.run();
+  @Test
+  public void testDynamicsNVE() {
 
-        MolecularDynamics molDyn = dynamics.getMolecularDynamics();
+    // Set-up the input arguments for the script.
+    String[] args = {
+      "-n",
+      "10",
+      "-t",
+      "298.15",
+      "-i",
+      "VelocityVerlet",
+      "-b",
+      "Adiabatic",
+      "-r",
+      "0.001",
+      "src/main/java/" + filename
+    };
+    binding.setVariable("args", args);
 
-        // Assert that energy is conserved at the end of the dynamics trajectory.
-        assertEquals(info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
-        assertEquals(info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(), tolerance);
-        assertEquals(info + " Final total energy", startingTotalEnergy, molDyn.getTotalEnergy(), tolerance);
-    }
+    // Evaluate the script.
+    dynamics.run();
 
+    MolecularDynamics molDyn = dynamics.getMolecularDynamics();
+
+    // Assert that energy is conserved at the end of the dynamics trajectory.
+    assertEquals(
+        info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
+    assertEquals(
+        info + " Final potential energy",
+        endPotentialEnergy,
+        molDyn.getPotentialEnergy(),
+        tolerance);
+    assertEquals(
+        info + " Final total energy", startingTotalEnergy, molDyn.getTotalEnergy(), tolerance);
+  }
 }

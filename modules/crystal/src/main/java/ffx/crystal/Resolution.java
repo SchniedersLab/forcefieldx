@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,124 +34,116 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.crystal;
 
-import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.abs;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 /**
- * The Resolution class encapsulates the sampling limits and resolution limits
- * for a given crystal and/or data set.
+ * The Resolution class encapsulates the sampling limits and resolution limits for a given crystal
+ * and/or data set.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public class Resolution {
 
-    public final double sampling;
-    public final double resolution;
-    private final double inverseResSq;
+  public final double sampling;
+  public final double resolution;
+  private final double inverseResSq;
 
-    /**
-     * <p>
-     * Constructor for Resolution.</p>
-     *
-     * @param resolution a double.
-     * @param sampling   a double.
-     */
-    public Resolution(double resolution, double sampling) {
-        this.resolution = resolution;
-        this.inverseResSq = 1.0 / (resolution * resolution);
-        this.sampling = sampling;
+  /**
+   * Constructor for Resolution.
+   *
+   * @param resolution a double.
+   * @param sampling a double.
+   */
+  public Resolution(double resolution, double sampling) {
+    this.resolution = resolution;
+    this.inverseResSq = 1.0 / (resolution * resolution);
+    this.sampling = sampling;
+  }
+
+  /**
+   * Constructor for Resolution.
+   *
+   * @param resolution a double.
+   */
+  public Resolution(double resolution) {
+    this(resolution, 1.0 / 1.5);
+  }
+
+  /**
+   * checkProperties
+   *
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @return a {@link ffx.crystal.Resolution} object.
+   */
+  public static Resolution checkProperties(CompositeConfiguration properties) {
+    double resolution = properties.getDouble("resolution", -1.0);
+    double sampling = properties.getDouble("sampling", 0.6);
+
+    if (resolution < 0.0) {
+      return null;
     }
 
-    /**
-     * <p>
-     * Constructor for Resolution.</p>
-     *
-     * @param resolution a double.
-     */
-    public Resolution(double resolution) {
-        this(resolution, 1.0 / 1.5);
+    return new Resolution(resolution, sampling);
+  }
+
+  /**
+   * inInverseResSqRange
+   *
+   * @param res a double.
+   * @return a boolean.
+   */
+  public boolean inInverseResSqRange(double res) {
+    if (abs(res - this.inverseResSq) < 1e-8) {
+      return true;
+    } else {
+      return res < this.inverseResSq;
     }
+  }
 
-    /**
-     * <p>
-     * checkProperties</p>
-     *
-     * @param properties a
-     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @return a {@link ffx.crystal.Resolution} object.
-     */
-    public static Resolution checkProperties(CompositeConfiguration properties) {
-        double resolution = properties.getDouble("resolution", -1.0);
-        double sampling = properties.getDouble("sampling", 0.6);
-
-        if (resolution < 0.0) {
-            return null;
-        }
-
-        return new Resolution(resolution, sampling);
+  /**
+   * inResolutionRange
+   *
+   * @param res a double.
+   * @return a boolean.
+   */
+  public boolean inResolutionRange(double res) {
+    if (abs(res - this.resolution) < 1e-8) {
+      return true;
+    } else {
+      return res > this.resolution;
     }
+  }
 
-    /**
-     * <p>
-     * inInverseResSqRange</p>
-     *
-     * @param res a double.
-     * @return a boolean.
-     */
-    public boolean inInverseResSqRange(double res) {
-        if (abs(res - this.inverseResSq) < 1e-8) {
-            return true;
-        } else {
-            return res < this.inverseResSq;
-        }
-    }
+  /**
+   * inverseResSqLimit
+   *
+   * @return a double.
+   */
+  public double inverseResSqLimit() {
+    return inverseResSq;
+  }
 
-    /**
-     * <p>
-     * inResolutionRange</p>
-     *
-     * @param res a double.
-     * @return a boolean.
-     */
-    public boolean inResolutionRange(double res) {
-        if (abs(res - this.resolution) < 1e-8) {
-            return true;
-        } else {
-            return res > this.resolution;
-        }
-    }
+  /**
+   * resolutionLimit
+   *
+   * @return a double.
+   */
+  public double resolutionLimit() {
+    return resolution;
+  }
 
-    /**
-     * <p>
-     * inverseResSqLimit</p>
-     *
-     * @return a double.
-     */
-    public double inverseResSqLimit() {
-        return inverseResSq;
-    }
-
-    /**
-     * <p>
-     * resolutionLimit</p>
-     *
-     * @return a double.
-     */
-    public double resolutionLimit() {
-        return resolution;
-    }
-
-    /**
-     * <p>
-     * samplingLimit</p>
-     *
-     * @return a double.
-     */
-    public double samplingLimit() {
-        return sampling;
-    }
+  /**
+   * samplingLimit
+   *
+   * @return a double.
+   */
+  public double samplingLimit() {
+    return sampling;
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,23 +34,21 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms;
 
 /**
- * Algorithms that can be gracefully terminated early should implement this
- * interface.
+ * Algorithms that can be gracefully terminated early should implement this interface.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public interface Terminatable {
 
-    /**
-     * This should be implemented as a blocking interrupt; when the method
-     * returns the <code>Terminatable</code> algorithm has reached a clean
-     * termination point. For example, between minimize or molecular dynamics
-     * steps.
-     */
-    void terminate();
+  /**
+   * This should be implemented as a blocking interrupt; when the method returns the <code>
+   * Terminatable</code> algorithm has reached a clean termination point. For example, between
+   * minimize or molecular dynamics steps.
+   */
+  void terminate();
 }

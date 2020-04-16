@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,12 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.integrate;
 
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
-
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 
@@ -50,89 +49,79 @@ import static org.apache.commons.math3.util.FastMath.sin;
  */
 public class CosineWave extends FunctionDataCurve {
 
-    /**
-     * Magnitude.
-     */
-    private final double a;
-    /**
-     * Periodicity.
-     */
-    private final double n;
-    /**
-     * Inverse periodicity.
-     */
-    private final double nInverse;
+  /** Magnitude. */
+  private final double a;
+  /** Periodicity. */
+  private final double n;
+  /** Inverse periodicity. */
+  private final double nInverse;
 
-    /**
-     * Constructs f(x) = a*cos(nx).
-     *
-     * @param x an array of {@link double} objects.
-     * @param a the magnitude.
-     * @param n the periodicity.
-     */
-    public CosineWave(double[] x, double a, double n) {
-        this(x, false, a, n);
+  /**
+   * Constructs f(x) = a*cos(nx).
+   *
+   * @param x an array of {@link double} objects.
+   * @param a the magnitude.
+   * @param n the periodicity.
+   */
+  public CosineWave(double[] x, double a, double n) {
+    this(x, false, a, n);
+  }
+
+  /**
+   * Constructs f(x) = a*cos(nx).
+   *
+   * @param x an array of {@link double} objects.
+   * @param halfWidthEnds Use half-width start and end bins.
+   * @param a the magnitude.
+   * @param n the periodicity.
+   */
+  public CosineWave(double[] x, boolean halfWidthEnds, double a, double n) {
+    int npoints = x.length;
+    points = new double[npoints];
+    this.a = a;
+    this.n = n;
+    nInverse = 1.0 / n;
+    this.halfWidthEnd = halfWidthEnds;
+
+    for (int i = 0; i < points.length; i++) {
+      points[i] = cosAt(x[i]);
+    }
+    lb = x[0];
+    ub = x[npoints - 1];
+    assertXIntegrity(x);
+    this.x = new double[x.length];
+    arraycopy(x, 0, this.x, 0, x.length);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double fX(double x) {
+    return cosAt(x);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double integralAt(double x) {
+    return a * nInverse * sin(n * x);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("Cosine wave f(x) = ");
+    sb.append(a).append("*cos(").append(n).append("x)");
+    sb.append(
+        format(
+            " with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
+    if (halfWidthEnd) {
+      sb.append(" and half-width start/end bins");
     }
 
-    /**
-     * Constructs f(x) = a*cos(nx).
-     *
-     * @param x             an array of {@link double} objects.
-     * @param halfWidthEnds Use half-width start and end bins.
-     * @param a             the magnitude.
-     * @param n             the periodicity.
-     */
-    public CosineWave(double[] x, boolean halfWidthEnds, double a, double n) {
-        int npoints = x.length;
-        points = new double[npoints];
-        this.a = a;
-        this.n = n;
-        nInverse = 1.0 / n;
-        this.halfWidthEnd = halfWidthEnds;
+    return sb.toString();
+  }
 
-        for (int i = 0; i < points.length; i++) {
-            points[i] = cosAt(x[i]);
-        }
-        lb = x[0];
-        ub = x[npoints - 1];
-        assertXIntegrity(x);
-        this.x = new double[x.length];
-        arraycopy(x, 0, this.x, 0, x.length);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double fX(double x) {
-        return cosAt(x);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double integralAt(double x) {
-        return a * nInverse * sin(n * x);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("Cosine wave f(x) = ");
-        sb.append(a).append("*cos(").append(n).append("x)");
-        sb.append(format(" with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
-        if (halfWidthEnd) {
-            sb.append(" and half-width start/end bins");
-        }
-
-        return sb.toString();
-    }
-
-    // Private, non-overrideable method for use in the constructor.
-    private double cosAt(double x) {
-        return a * cos(n * x);
-    }
+  // Private, non-overrideable method for use in the constructor.
+  private double cosAt(double x) {
+    return a * cos(n * x);
+  }
 }

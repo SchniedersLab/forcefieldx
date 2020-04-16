@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,113 +34,101 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray;
 
+import static ffx.numerics.math.DoubleMath.length2;
+import static ffx.numerics.math.DoubleMath.sub;
 import static org.apache.commons.math3.util.FastMath.exp;
 
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.numerics.math.DoubleMath.length2;
-import static ffx.numerics.math.DoubleMath.sub;
 
 /**
- * <p>
- * SolventGaussFormFactor class.</p>
+ * SolventGaussFormFactor class.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public final class SolventGaussFormFactor implements FormFactor {
 
-    private final Atom atom;
-    private final double[] xyz = new double[3];
-    private final double[] dxyz = new double[3];
-    private final double[] g = new double[3];
-    private final double isd2;
+  private final Atom atom;
+  private final double[] xyz = new double[3];
+  private final double[] dxyz = new double[3];
+  private final double[] g = new double[3];
+  private final double isd2;
 
-    /**
-     * <p>
-     * Constructor for SolventGaussFormFactor.</p>
-     *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @param sd   a double.
-     */
-    public SolventGaussFormFactor(Atom atom, double sd) {
-        this(atom, sd, atom.getXYZ(null));
-    }
+  /**
+   * Constructor for SolventGaussFormFactor.
+   *
+   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @param sd a double.
+   */
+  public SolventGaussFormFactor(Atom atom, double sd) {
+    this(atom, sd, atom.getXYZ(null));
+  }
 
-    /**
-     * <p>
-     * Constructor for SolventGaussFormFactor.</p>
-     *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @param sd   a double.
-     * @param xyz  an array of double.
-     */
-    public SolventGaussFormFactor(Atom atom, double sd, double[] xyz) {
-        this.atom = atom;
-        isd2 = 1.0 / (sd * sd);
-        update(xyz);
-    }
+  /**
+   * Constructor for SolventGaussFormFactor.
+   *
+   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @param sd a double.
+   * @param xyz an array of double.
+   */
+  public SolventGaussFormFactor(Atom atom, double sd, double[] xyz) {
+    this.atom = atom;
+    isd2 = 1.0 / (sd * sd);
+    update(xyz);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double rho(double f, double lambda, double[] xyz) {
-        sub(this.xyz, xyz, dxyz);
-        return rho(f, lambda, length2(dxyz));
-    }
+  /** {@inheritDoc} */
+  @Override
+  public double rho(double f, double lambda, double[] xyz) {
+    sub(this.xyz, xyz, dxyz);
+    return rho(f, lambda, length2(dxyz));
+  }
 
-    /**
-     * <p>
-     * rho</p>
-     *
-     * @param f      a double.
-     * @param lambda a double.
-     * @param rsq    a double.
-     * @return a double.
-     */
-    public double rho(double f, double lambda, double rsq) {
-        return f + exp(-rsq * isd2);
-    }
+  /**
+   * rho
+   *
+   * @param f a double.
+   * @param lambda a double.
+   * @param rsq a double.
+   * @return a double.
+   */
+  public double rho(double f, double lambda, double rsq) {
+    return f + exp(-rsq * isd2);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
-        if (refinementmode == RefinementMode.BFACTORS
-                || refinementmode == RefinementMode.OCCUPANCIES
-                || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES) {
-            return;
-        }
-        sub(this.xyz, xyz, dxyz);
-        double r2 = length2(dxyz);
-        double rho = exp(-r2 * isd2);
-        double prefactor = -dfc * 2.0 * rho * isd2;
-        g[0] = prefactor * dxyz[0];
-        g[1] = prefactor * dxyz[1];
-        g[2] = prefactor * dxyz[2];
-        atom.addToXYZGradient(g[0], g[1], g[2]);
+  /** {@inheritDoc} */
+  @Override
+  public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
+    if (refinementmode == RefinementMode.BFACTORS
+        || refinementmode == RefinementMode.OCCUPANCIES
+        || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES) {
+      return;
     }
+    sub(this.xyz, xyz, dxyz);
+    double r2 = length2(dxyz);
+    double rho = exp(-r2 * isd2);
+    double prefactor = -dfc * 2.0 * rho * isd2;
+    g[0] = prefactor * dxyz[0];
+    g[1] = prefactor * dxyz[1];
+    g[2] = prefactor * dxyz[2];
+    atom.addToXYZGradient(g[0], g[1], g[2]);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void update(double[] xyz) {
-        update(xyz, 0.0);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void update(double[] xyz) {
+    update(xyz, 0.0);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void update(double[] xyz, double badd) {
-        this.xyz[0] = xyz[0];
-        this.xyz[1] = xyz[1];
-        this.xyz[2] = xyz[2];
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void update(double[] xyz, double badd) {
+    this.xyz[0] = xyz[0];
+    this.xyz[1] = xyz[1];
+    this.xyz[2] = xyz[2];
+  }
 }

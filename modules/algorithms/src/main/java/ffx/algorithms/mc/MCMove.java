@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,12 +34,12 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.mc;
 
 /**
- * The MCMove interface defines the basic functionality of a Monte Carlo move;
- * that it can apply its move and revert it.
+ * The MCMove interface defines the basic functionality of a Monte Carlo move; that it can apply its
+ * move and revert it.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -47,15 +47,12 @@ package ffx.algorithms.mc;
  */
 public interface MCMove {
 
-    /**
-     * Performs the move associated with this MCMove.
-     */
-    void move();
+  /** Performs the move associated with this MCMove. */
+  void move();
 
-    /**
-     * Reverts the last applied move() call. Returns the same energy change as
-     * described above (with the same sign).
-     */
-    void revertMove();
-
+  /**
+   * Reverts the last applied move() call. Returns the same energy change as described above (with
+   * the same sign).
+   */
+  void revertMove();
 }

@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.realspace.groovy
 
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
@@ -48,7 +46,7 @@ import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.WriteoutOptions
 import ffx.realspace.cli.RealSpaceOptions
 import ffx.xray.RefinementEnergy
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -63,71 +61,73 @@ import picocli.CommandLine.Parameters
 @Command(description = " Molecular dynamics on a Real Space target.", name = "ffxc realspace.Dynamics")
 class Dynamics extends AlgorithmsScript {
 
-    @Mixin
-    AtomSelectionOptions atomSelectionOptions
+  @Mixin
+  AtomSelectionOptions atomSelectionOptions
 
-    @Mixin
-    DynamicsOptions dynamicsOptions
+  @Mixin
+  DynamicsOptions dynamicsOptions
 
-    @Mixin
-    RealSpaceOptions realSpaceOptions
+  @Mixin
+  RealSpaceOptions realSpaceOptions
 
-    @Mixin
-    WriteoutOptions writeoutOptions
+  @Mixin
+  WriteoutOptions writeoutOptions
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
-    private List<String> filenames
-    private RefinementEnergy refinementEnergy
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
+  private List<String> filenames
+  private RefinementEnergy refinementEnergy
 
-    @Override
-    Dynamics run() {
+  @Override
+  Dynamics run() {
 
-        if (!init()) {
-            return this
-        }
-
-        dynamicsOptions.init()
-
-        String modelFilename
-        if (filenames != null && filenames.size() > 0) {
-            activeAssembly = algorithmFunctions.open(filenames.get(0))
-            modelFilename = filenames.get(0)
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        } else {
-            modelFilename = activeAssembly.getFile().getAbsolutePath()
-        }
-        MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
-
-        logger.info("\n Running Real Space Dynamics on " + modelFilename)
-
-        atomSelectionOptions.setActiveAtoms(activeAssembly)
-
-        refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
-
-        // Restart File
-        File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
-        if (!dyn.exists()) {
-            dyn = null
-        }
-
-        MolecularDynamics molDyn = dynamicsOptions.getDynamics(writeoutOptions, refinementEnergy, activeAssembly, algorithmListener)
-        refinementEnergy.setThermostat(molDyn.getThermostat())
-
-        // Reset velocities (ignored if a restart file is given)
-        boolean initVelocities = true
-        molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,
-                dynamicsOptions.write, dynamicsOptions.temp, initVelocities, dyn)
-
-        return this
+    if (!init()) {
+      return this
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy);
+    dynamicsOptions.init()
+
+    String modelFilename
+    if (filenames != null && filenames.size() > 0) {
+      activeAssembly = algorithmFunctions.open(filenames.get(0))
+      modelFilename = filenames.get(0)
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
+    } else {
+      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
+    MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
+
+    logger.info("\n Running Real Space Dynamics on " + modelFilename)
+
+    atomSelectionOptions.setActiveAtoms(activeAssembly)
+
+    refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
+
+    // Restart File
+    File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+    if (!dyn.exists()) {
+      dyn = null
+    }
+
+    MolecularDynamics molDyn = dynamicsOptions.
+        getDynamics(writeoutOptions, refinementEnergy, activeAssembly, algorithmListener)
+    refinementEnergy.setThermostat(molDyn.getThermostat())
+
+    // Reset velocities (ignored if a restart file is given)
+    boolean initVelocities = true
+    molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,
+        dynamicsOptions.write, dynamicsOptions.temp, initVelocities, dyn)
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    return refinementEnergy == null ? Collections.emptyList() :
+        Collections.singletonList(refinementEnergy);
+  }
 }

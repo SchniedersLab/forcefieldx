@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,8 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.bonded;
-
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,7 +43,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
-
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Canvas3D;
 import org.jogamp.java3d.J3DGraphics2D;
@@ -63,620 +61,579 @@ import org.jogamp.vecmath.Color3f;
 @SuppressWarnings("CloneableImplementsClone")
 public class MSNode extends DefaultMutableTreeNode implements ROLS {
 
-    /**
-     * The multiscale level of this node.
-     */
-    private final int MultiScaleLevel;
-    /**
-     * True if this node is selected.
-     */
-    protected boolean selected = false;
-    /**
-     * The name of this node.
-     */
-    private String name;
-    /**
-     * Total mass of this node and its children.
-     */
-    private double totalMass;
+  /** The multiscale level of this node. */
+  private final int MultiScaleLevel;
+  /** True if this node is selected. */
+  protected boolean selected = false;
+  /** The name of this node. */
+  private String name;
+  /** Total mass of this node and its children. */
+  private double totalMass;
 
-    /**
-     * Default MSNode Constructor
-     */
-    public MSNode() {
-        name = "";
-        MultiScaleLevel = ROLS.MaxLengthScale;
+  /** Default MSNode Constructor */
+  public MSNode() {
+    name = "";
+    MultiScaleLevel = ROLS.MaxLengthScale;
+  }
+
+  /**
+   * Constructs a MSNode with the name n.
+   *
+   * @param n a {@link java.lang.String} object.
+   */
+  public MSNode(String n) {
+    name = n;
+    MultiScaleLevel = ROLS.MaxLengthScale;
+  }
+
+  /**
+   * Constructor for MSNode.
+   *
+   * @param n a {@link java.lang.String} object.
+   * @param multiScaleLevel a int.
+   */
+  public MSNode(String n, int multiScaleLevel) {
+    this.name = n;
+    this.MultiScaleLevel = multiScaleLevel;
+  }
+
+  /**
+   * If <code>this</code> MSNode or any MSNode below it <code>equals</code> the argument, that
+   * MSNode is returned.
+   *
+   * @param msNode a {@link ffx.potential.bonded.MSNode} object.
+   * @return a {@link ffx.potential.bonded.MSNode} object.
+   */
+  public MSNode contains(MSNode msNode) {
+    @SuppressWarnings("unchecked")
+    Enumeration<TreeNode> e = depthFirstEnumeration();
+    List<TreeNode> list = Collections.list(e);
+    for (TreeNode node : list) {
+      if (node.equals(msNode)) {
+        return (MSNode) node;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * destroy
+   *
+   * @return a boolean.
+   */
+  public boolean destroy() {
+    if (getParent() != null) {
+      removeFromParent();
+    }
+    name = null;
+    selected = false;
+    return true;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void drawLabel(Canvas3D graphics, J3DGraphics2D g2d, Node node) {
+    if (!isSelected()) {
+      return;
+    }
+    MSNode dataNode;
+    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+      dataNode = (MSNode) e.nextElement();
+      dataNode.drawLabel(graphics, g2d, node);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>MSNode equality := same class and same name. Consider replacing with a
+   * Comparator&lt;MSNode&gt; for cases where non-reference equality is desired.
+   */
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    MSNode msNode = (MSNode) o;
+    return Objects.equals(name, msNode.getName());
+  }
+
+  /**
+   * Returns an List of all Angles below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<Angle> getAngleList() {
+    return getList(Angle.class, new ArrayList<>());
+  }
+
+  /**
+   * Returns an List of all AngleTorsions below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<AngleTorsion> getAngleTorsionList() {
+    return getList(AngleTorsion.class, new ArrayList<>());
+  }
+
+  /**
+   * Returns an List of all Atoms below the present MSNode.
+   *
+   * @return a new {@link java.util.List} object.
+   */
+  public List<Atom> getAtomList() {
+    @SuppressWarnings("unchecked")
+    Enumeration<TreeNode> e = depthFirstEnumeration();
+    List<TreeNode> list = Collections.list(e);
+    List<Atom> arrayList = new ArrayList<>();
+    for (TreeNode node : list) {
+      if (node instanceof Atom) {
+        arrayList.add((Atom) node);
+      }
     }
 
-    /**
-     * Constructs a MSNode with the name n.
-     *
-     * @param n a {@link java.lang.String} object.
-     */
-    public MSNode(String n) {
-        name = n;
-        MultiScaleLevel = ROLS.MaxLengthScale;
+    Collections.sort(arrayList);
+    return arrayList;
+  }
+
+  /**
+   * getAtomList.
+   *
+   * @param originalOrder a boolean.
+   * @return a {@link java.util.List} object.
+   */
+  public List<Atom> getAtomList(boolean originalOrder) {
+    // As of now, for generic MSNode objects, atoms remain in their original
+    // order. It is presently only a concern for MultiResidue.
+    return getAtomList();
+  }
+
+  /**
+   * Returns an List of all Bonds below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<Bond> getBondList() {
+    return getList(Bond.class, new ArrayList<>());
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double[] getCenter(boolean w) {
+    double[] Rc = {0, 0, 0};
+    double sum = 0, mass = 1;
+    List<Atom> atomList = getAtomList();
+    for (Atom a : atomList) {
+      if (w) {
+        mass = a.getMass();
+        sum += mass;
+      }
+      Rc[0] += mass * a.getX();
+      Rc[1] += mass * a.getY();
+      Rc[2] += mass * a.getZ();
     }
-
-    /**
-     * <p>
-     * Constructor for MSNode.</p>
-     *
-     * @param n               a {@link java.lang.String} object.
-     * @param multiScaleLevel a int.
-     */
-    public MSNode(String n, int multiScaleLevel) {
-        this.name = n;
-        this.MultiScaleLevel = multiScaleLevel;
+    if (!w) {
+      sum = atomList.size();
     }
-
-    /**
-     * If <code>this</code> MSNode or any MSNode below it <code>equals</code>
-     * the argument, that MSNode is returned.
-     *
-     * @param msNode a {@link ffx.potential.bonded.MSNode} object.
-     * @return a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public MSNode contains(MSNode msNode) {
-        @SuppressWarnings("unchecked")
-        Enumeration<TreeNode> e = depthFirstEnumeration();
-        List<TreeNode> list = Collections.list(e);
-        for (TreeNode node : list) {
-            if (node.equals(msNode)) {
-                return (MSNode) node;
-            }
-        }
-        return null;
+    for (int i = 0; i < 3; i++) {
+      Rc[i] /= sum;
     }
+    return Rc;
+  }
 
-    /**
-     * <p>
-     * destroy</p>
-     *
-     * @return a boolean.
-     */
-    public boolean destroy() {
-        if (getParent() != null) {
-            removeFromParent();
-        }
-        name = null;
-        selected = false;
-        return true;
+  /**
+   * Returns an List of the MSNode's Children (instead of using an Enumeration).
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<MSNode> getChildList() {
+    List<MSNode> l = new ArrayList<>();
+    Enumeration<?> e = children();
+    while (e.hasMoreElements()) {
+      l.add((MSNode) e.nextElement());
     }
+    return l;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void drawLabel(Canvas3D graphics, J3DGraphics2D g2d, Node node) {
-        if (!isSelected()) {
-            return;
-        }
-        MSNode dataNode;
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            dataNode = (MSNode) e.nextElement();
-            dataNode.drawLabel(graphics, g2d, node);
-        }
+  /**
+   * Request all descendants of the given type; returned list will automatically conform to any
+   * superclass thereof.
+   *
+   * @param c a {@link java.lang.Class} object.
+   * @param <U> a U object.
+   * @param <T> a T object.
+   * @return a {@link java.util.List} object.
+   */
+  public <U extends MSNode, T extends U> List<U> getDescendants(Class<T> c) {
+    List<U> nodes = new ArrayList<>();
+    castDescendants(c, nodes);
+    return nodes;
+  }
+
+  /**
+   * getExtent
+   *
+   * @return a double.
+   */
+  public double getExtent() {
+    double extent = 0.0;
+    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+      MSNode node = (MSNode) e.nextElement();
+      double temp = node.getExtent();
+      if (temp > extent) {
+        extent = temp;
+      }
     }
+    return extent;
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * MSNode equality := same class and same name.
-     * Consider replacing with a Comparator&lt;MSNode&gt; for cases where
-     * non-reference equality is desired.
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        MSNode msNode = (MSNode) o;
-        return Objects.equals(name, msNode.getName());
+  /**
+   * Returns an List of all ImproperTorsions below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<ImproperTorsion> getImproperTorsionList() {
+    return getList(ImproperTorsion.class, new ArrayList<>());
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public <T> List<T> getList(Class<T> c, List<T> nodes) {
+    if (c.isInstance(this)) {
+      nodes.add(c.cast(this));
     }
-
-    /**
-     * Returns an List of all Angles below the present MSNode.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<Angle> getAngleList() {
-        return getList(Angle.class, new ArrayList<>());
+    if (isLeaf() || !canBeChild(c)) {
+      return nodes;
     }
-
-    /**
-     * Returns an List of all AngleTorsions below the present MSNode.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<AngleTorsion> getAngleTorsionList() {
-        return getList(AngleTorsion.class, new ArrayList<>());
+    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+      MSNode node = (MSNode) e.nextElement();
+      node.getList(c, nodes);
     }
+    return nodes;
+  }
 
-    /**
-     * Returns an List of all Atoms below the present MSNode.
-     *
-     * @return a new {@link java.util.List} object.
-     */
-    public List<Atom> getAtomList() {
-        @SuppressWarnings("unchecked")
-        Enumeration<TreeNode> e = depthFirstEnumeration();
-        List<TreeNode> list = Collections.list(e);
-        List<Atom> arrayList = new ArrayList<>();
-        for (TreeNode node : list) {
-            if (node instanceof Atom) {
-                arrayList.add((Atom) node);
-            }
-        }
-
-        Collections.sort(arrayList);
-        return arrayList;
+  /** {@inheritDoc} */
+  @Override
+  public <T> long getMSCount(Class<T> c, long count) {
+    if (c.isInstance(this)) {
+      count++;
     }
-
-    /**
-     * <p>getAtomList.</p>
-     *
-     * @param originalOrder a boolean.
-     * @return a {@link java.util.List} object.
-     */
-    public List<Atom> getAtomList(boolean originalOrder) {
-        // As of now, for generic MSNode objects, atoms remain in their original
-        // order. It is presently only a concern for MultiResidue.
-        return getAtomList();
+    if (!canBeChild(c)) {
+      return count;
     }
-
-    /**
-     * Returns an List of all Bonds below the present MSNode.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<Bond> getBondList() {
-        return getList(Bond.class, new ArrayList<>());
+    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+      MSNode node = (MSNode) e.nextElement();
+      count += node.getMSCount(c, count);
     }
+    return count;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCenter(boolean w) {
-        double[] Rc = {0, 0, 0};
-        double sum = 0, mass = 1;
-        List<Atom> atomList = getAtomList();
-        for (Atom a : atomList) {
-            if (w) {
-                mass = a.getMass();
-                sum += mass;
-            }
-            Rc[0] += mass * a.getX();
-            Rc[1] += mass * a.getY();
-            Rc[2] += mass * a.getZ();
-        }
-        if (!w) {
-            sum = atomList.size();
-        }
-        for (int i = 0; i < 3; i++) {
-            Rc[i] /= sum;
-        }
-        return Rc;
+  /** {@inheritDoc} */
+  @Override
+  public <T> T getMSNode(Class<T> c) {
+    TreeNode[] nodes = getPath();
+    for (TreeNode n : nodes) {
+      if (c.isInstance(n)) {
+        return c.cast(n);
+      }
     }
+    return null;
+  }
 
-    /**
-     * Returns an List of the MSNode's Children (instead of using an
-     * Enumeration).
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<MSNode> getChildList() {
-        List<MSNode> l = new ArrayList<>();
-        Enumeration<?> e = children();
-        while (e.hasMoreElements()) {
-            l.add((MSNode) e.nextElement());
-        }
-        return l;
+  /** {@inheritDoc} */
+  @Override
+  public double getMW() {
+    double weight = 0.0;
+    for (Atom atom : getAtomList()) {
+      weight += atom.getMass();
     }
+    return weight;
+  }
 
-    /**
-     * Request all descendants of the given type; returned list will automatically
-     * conform to any superclass thereof.
-     *
-     * @param c   a {@link java.lang.Class} object.
-     * @param <U> a U object.
-     * @param <T> a T object.
-     * @return a {@link java.util.List} object.
-     */
-    public <U extends MSNode, T extends U> List<U> getDescendants(Class<T> c) {
-        List<U> nodes = new ArrayList<>();
-        castDescendants(c, nodes);
-        return nodes;
+  /**
+   * getMultiScaleLevel
+   *
+   * @return a int.
+   */
+  public int getMultiScaleLevel() {
+    return MultiScaleLevel;
+  }
+
+  /**
+   * Returns the name of this MSNode.
+   *
+   * @return a {@link java.lang.String} object.
+   */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * Sets the name of this NodeObect to n.
+   *
+   * @param n a {@link java.lang.String} object.
+   */
+  public void setName(String n) {
+    name = n;
+  }
+
+  /**
+   * Returns an List of all Out-of-Plane Bends below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<OutOfPlaneBend> getOutOfPlaneBendList() {
+    return getList(OutOfPlaneBend.class, new ArrayList<>());
+  }
+
+  /**
+   * Returns an List of all Pi-Orbital Torsions below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<PiOrbitalTorsion> getPiOrbitalTorsionList() {
+    return getList(PiOrbitalTorsion.class, new ArrayList<>());
+  }
+
+  /**
+   * Returns an List of all Stretch-Bends below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<StretchBend> getStretchBendList() {
+    return getList(StretchBend.class, new ArrayList<>());
+  }
+
+  /**
+   * Returns an List of all StretchTorsions below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<StretchTorsion> getStretchTorsionList() {
+    return getList(StretchTorsion.class, new ArrayList<>());
+  }
+
+  /**
+   * Returns an List of all Torsions below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<Torsion> getTorsionList() {
+    return getList(Torsion.class, new ArrayList<>());
+  }
+
+  /**
+   * Returns an List of all Torsion-Torsions below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<TorsionTorsion> getTorsionTorsionList() {
+    return getList(TorsionTorsion.class, new ArrayList<>());
+  }
+
+  /**
+   * Returns the total mass of all atoms in the MolecularAssembly, calculating the mass if it has
+   * not already been done, defaulting to simple addition.
+   *
+   * @return Total mass of atoms in system.
+   */
+  public double getTotalMass() {
+    if (totalMass == 0.0) {
+      return getTotalMass(true, false);
     }
+    return totalMass;
+  }
 
-    /**
-     * <p>
-     * getExtent</p>
-     *
-     * @return a double.
-     */
-    public double getExtent() {
-        double extent = 0.0;
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            MSNode node = (MSNode) e.nextElement();
-            double temp = node.getExtent();
-            if (temp > extent) {
-                extent = temp;
-            }
-        }
-        return extent;
+  /**
+   * Returns an List of all Urey-Bradleys below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
+  public List<UreyBradley> getUreyBradleyList() {
+    return getList(UreyBradley.class, new ArrayList<>());
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public int hashCode() {
+    return Objects.hash(name);
+  }
+
+  /**
+   * isSelected
+   *
+   * @return a boolean.
+   */
+  public boolean isSelected() {
+    return selected;
+  }
+
+  /**
+   * Setter for the field <code>selected</code>.
+   *
+   * @param b a boolean.
+   */
+  public void setSelected(boolean b) {
+    selected = b;
+    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+      MSNode node = (MSNode) e.nextElement();
+      node.setSelected(b);
     }
+  }
 
-    /**
-     * Returns an List of all ImproperTorsions below the present MSNode.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<ImproperTorsion> getImproperTorsionList() {
-        return getList(ImproperTorsion.class, new ArrayList<>());
+  /** Prints the MSNode's name */
+  public void print() {
+    System.out.println(name);
+  }
+
+  /**
+   * removeChild.
+   *
+   * @param child a {@link ffx.potential.bonded.MSNode} object.
+   */
+  public void removeChild(MSNode child) {
+    if (child != null && child.getParent() == this) {
+      remove(child);
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public <T> List<T> getList(Class<T> c, List<T> nodes) {
-        if (c.isInstance(this)) {
-            nodes.add(c.cast(this));
-        }
-        if (isLeaf() || !canBeChild(c)) {
-            return nodes;
-        }
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            MSNode node = (MSNode) e.nextElement();
-            node.getList(c, nodes);
-        }
-        return nodes;
+  /** {@inheritDoc} */
+  @Override
+  public void setColor(RendererCache.ColorModel colorModel, Color3f color, Material mat) {
+    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+      MSNode node = (MSNode) e.nextElement();
+      node.setColor(colorModel, color, mat);
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public <T> long getMSCount(Class<T> c, long count) {
-        if (c.isInstance(this)) {
-            count++;
-        }
-        if (!canBeChild(c)) {
-            return count;
-        }
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            MSNode node = (MSNode) e.nextElement();
-            count += node.getMSCount(c, count);
-        }
-        return count;
+  /** {@inheritDoc} */
+  @Override
+  public void setView(RendererCache.ViewModel viewModel, List<BranchGroup> newShapes) {
+    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+      MSNode node = (MSNode) e.nextElement();
+      node.setView(viewModel, newShapes);
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public <T> T getMSNode(Class<T> c) {
-        TreeNode[] nodes = getPath();
-        for (TreeNode n : nodes) {
-            if (c.isInstance(n)) {
-                return c.cast(n);
-            }
-        }
-        return null;
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Overidden toString method returns the MSNode's name
+   */
+  @Override
+  public String toString() {
+    return name;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void update() {
+    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+      MSNode node = (MSNode) e.nextElement();
+      node.update();
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getMW() {
-        double weight = 0.0;
-        for (Atom atom : getAtomList()) {
-            weight += atom.getMass();
-        }
-        return weight;
+  /**
+   * Returns a ListIterator containing this MSNode's children.
+   *
+   * @return a {@link java.util.ListIterator} object.
+   */
+  ListIterator<MSNode> getChildListIterator() {
+    return getChildList().listIterator();
+  }
+
+  /**
+   * @param c a {@link java.lang.Class} object.
+   * @param nodes Nodes
+   * @param <U> a U object.
+   * @param <T> a T object.
+   */
+  private <U extends MSNode, T extends U> void castDescendants(Class<T> c, List<U> nodes) {
+    if (c.isInstance(this)) {
+      nodes.add(c.cast(this));
     }
-
-    /**
-     * <p>
-     * getMultiScaleLevel</p>
-     *
-     * @return a int.
-     */
-    public int getMultiScaleLevel() {
-        return MultiScaleLevel;
+    if (isLeaf()) {
+      return;
     }
-
-    /**
-     * Returns the name of this MSNode.
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String getName() {
-        return name;
+    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+      MSNode node = (MSNode) e.nextElement();
+      node.castDescendants(c, nodes);
     }
+  }
 
-    /**
-     * Sets the name of this NodeObect to n.
-     *
-     * @param n a {@link java.lang.String} object.
-     */
-    public void setName(String n) {
-        name = n;
+  /**
+   * Calculates the total mass of all atoms in the MolecularAssembly, using either a simple addition
+   * or the Kahan summation algorithm. The simple algorithm is a standard loop to add up the masses.
+   *
+   * @param recalculate Force recalculation
+   * @param useKahan Use Kahan or simple addition algorithms
+   * @return Total mass of all atoms in system.
+   */
+  private double getTotalMass(boolean recalculate, boolean useKahan) {
+    if (recalculate) {
+      List<Atom> atoms = getAtomList();
+      if (atoms.isEmpty()) {
+        totalMass = 0.0;
+      } else if (useKahan) {
+        totalMass = kahanSumMasses(atoms);
+      } else {
+        totalMass = sumMasses(atoms);
+      }
     }
+    return totalMass;
+  }
 
-    /**
-     * Returns an List of all Out-of-Plane Bends below the present MSNode.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<OutOfPlaneBend> getOutOfPlaneBendList() {
-        return getList(OutOfPlaneBend.class, new ArrayList<>());
+  /**
+   * Iterative summation of atomic masses.
+   *
+   * @param atoms List of atoms.
+   * @return Mass of atoms.
+   */
+  private double sumMasses(List<Atom> atoms) {
+    double sumMasses = 0.0;
+    for (Atom atom : atoms) {
+      sumMasses += atom.getMass();
     }
+    return sumMasses;
+  }
 
-    /**
-     * Returns an List of all Pi-Orbital Torsions below the present MSNode.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<PiOrbitalTorsion> getPiOrbitalTorsionList() {
-        return getList(PiOrbitalTorsion.class, new ArrayList<>());
+  /**
+   * Implements the Kahan algorithm to very accurately sum the masses of all the atoms provided,
+   * minimizing rounding error.
+   *
+   * @param atoms Atoms to sum the mass of.
+   * @return Total mass.
+   */
+  private double kahanSumMasses(List<Atom> atoms) {
+    double sum = 0.0;
+    double comp = 0.0; // Running compensation
+    for (Atom atom : atoms) {
+      double atomMass = atom.getMass() - comp;
+      double temp = sum + atomMass;
+      comp = (temp - sum) - atomMass;
+      sum = temp;
     }
+    return sum;
+  }
 
-    /**
-     * Returns an List of all Stretch-Bends below the present MSNode.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<StretchBend> getStretchBendList() {
-        return getList(StretchBend.class, new ArrayList<>());
+  /**
+   * Returns true if Class c can be below this Class in the Hierarchy
+   *
+   * @param c Class
+   * @return boolean
+   */
+  private boolean canBeChild(Class<?> c) {
+    try {
+      int multiScaleLevel = c.getDeclaredField("MultiScaleLevel").getInt(null);
+      if (multiScaleLevel >= this.MultiScaleLevel) {
+        return false;
+      }
+    } catch (NoSuchFieldException
+        | SecurityException
+        | IllegalArgumentException
+        | IllegalAccessException e) {
+      return true;
     }
-
-    /**
-     * Returns an List of all StretchTorsions below the present MSNode.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<StretchTorsion> getStretchTorsionList() {
-        return getList(StretchTorsion.class, new ArrayList<>());
-    }
-
-    /**
-     * Returns an List of all Torsions below the present MSNode.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<Torsion> getTorsionList() {
-        return getList(Torsion.class, new ArrayList<>());
-    }
-
-    /**
-     * Returns an List of all Torsion-Torsions below the present MSNode.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<TorsionTorsion> getTorsionTorsionList() {
-        return getList(TorsionTorsion.class, new ArrayList<>());
-    }
-
-    /**
-     * Returns the total mass of all atoms in the MolecularAssembly, calculating
-     * the mass if it has not already been done, defaulting to simple addition.
-     *
-     * @return Total mass of atoms in system.
-     */
-    public double getTotalMass() {
-        if (totalMass == 0.0) {
-            return getTotalMass(true, false);
-        }
-        return totalMass;
-    }
-
-    /**
-     * Returns an List of all Urey-Bradleys below the present MSNode.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<UreyBradley> getUreyBradleyList() {
-        return getList(UreyBradley.class, new ArrayList<>());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(name);
-    }
-
-    /**
-     * <p>
-     * isSelected</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isSelected() {
-        return selected;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>selected</code>.</p>
-     *
-     * @param b a boolean.
-     */
-    public void setSelected(boolean b) {
-        selected = b;
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            MSNode node = (MSNode) e.nextElement();
-            node.setSelected(b);
-        }
-    }
-
-    /**
-     * Prints the MSNode's name
-     */
-    public void print() {
-        System.out.println(name);
-    }
-
-    /**
-     * <p>removeChild.</p>
-     *
-     * @param child a {@link ffx.potential.bonded.MSNode} object.
-     */
-    public void removeChild(MSNode child) {
-        if (child != null && child.getParent() == this) {
-            remove(child);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setColor(RendererCache.ColorModel colorModel, Color3f color,
-                         Material mat) {
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            MSNode node = (MSNode) e.nextElement();
-            node.setColor(colorModel, color, mat);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setView(RendererCache.ViewModel viewModel,
-                        List<BranchGroup> newShapes) {
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            MSNode node = (MSNode) e.nextElement();
-            node.setView(viewModel, newShapes);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Overidden toString method returns the MSNode's name
-     */
-    @Override
-    public String toString() {
-        return name;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void update() {
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            MSNode node = (MSNode) e.nextElement();
-            node.update();
-        }
-    }
-
-    /**
-     * Returns a ListIterator containing this MSNode's children.
-     *
-     * @return a {@link java.util.ListIterator} object.
-     */
-    ListIterator<MSNode> getChildListIterator() {
-        return getChildList().listIterator();
-    }
-
-    /**
-     * @param c     a {@link java.lang.Class} object.
-     * @param nodes Nodes
-     * @param <U>   a U object.
-     * @param <T>   a T object.
-     */
-    private <U extends MSNode, T extends U> void castDescendants(Class<T> c, List<U> nodes) {
-        if (c.isInstance(this)) {
-            nodes.add(c.cast(this));
-        }
-        if (isLeaf()) {
-            return;
-        }
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            MSNode node = (MSNode) e.nextElement();
-            node.castDescendants(c, nodes);
-        }
-    }
-
-    /**
-     * Calculates the total mass of all atoms in the MolecularAssembly, using
-     * either a simple addition or the Kahan summation algorithm. The simple
-     * algorithm is a standard loop to add up the masses.
-     *
-     * @param recalculate Force recalculation
-     * @param useKahan    Use Kahan or simple addition algorithms
-     * @return Total mass of all atoms in system.
-     */
-    private double getTotalMass(boolean recalculate, boolean useKahan) {
-        if (recalculate) {
-            List<Atom> atoms = getAtomList();
-            if (atoms.isEmpty()) {
-                totalMass = 0.0;
-            } else if (useKahan) {
-                totalMass = kahanSumMasses(atoms);
-            } else {
-                totalMass = sumMasses(atoms);
-            }
-        }
-        return totalMass;
-    }
-
-    /**
-     * Iterative summation of atomic masses.
-     *
-     * @param atoms List of atoms.
-     * @return Mass of atoms.
-     */
-    private double sumMasses(List<Atom> atoms) {
-        double sumMasses = 0.0;
-        for (Atom atom : atoms) {
-            sumMasses += atom.getMass();
-        }
-        return sumMasses;
-    }
-
-    /**
-     * Implements the Kahan algorithm to very accurately sum the masses of all
-     * the atoms provided, minimizing rounding error.
-     *
-     * @param atoms Atoms to sum the mass of.
-     * @return Total mass.
-     */
-    private double kahanSumMasses(List<Atom> atoms) {
-        double sum = 0.0;
-        double comp = 0.0; // Running compensation
-        for (Atom atom : atoms) {
-            double atomMass = atom.getMass() - comp;
-            double temp = sum + atomMass;
-            comp = (temp - sum) - atomMass;
-            sum = temp;
-        }
-        return sum;
-    }
-
-    /**
-     * Returns true if Class c can be below this Class in the Hierarchy
-     *
-     * @param c Class
-     * @return boolean
-     */
-    private boolean canBeChild(Class<?> c) {
-        try {
-            int multiScaleLevel = c.getDeclaredField("MultiScaleLevel").getInt(null);
-            if (multiScaleLevel >= this.MultiScaleLevel) {
-                return false;
-            }
-        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            return true;
-        }
-        return true;
-    }
-
+    return true;
+  }
 }

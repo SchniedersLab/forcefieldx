@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,27 +34,25 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t100;
 import static org.apache.commons.math3.util.FastMath.max;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
-
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
 import ffx.potential.parameters.ForceField;
-import static ffx.potential.parameters.MultipoleType.t001;
-import static ffx.potential.parameters.MultipoleType.t010;
-import static ffx.potential.parameters.MultipoleType.t100;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Parallel successive over-relaxation (SOR) solver for the self-consistent field.
@@ -64,190 +62,193 @@ import static ffx.potential.parameters.MultipoleType.t100;
  */
 public class SORRegion extends ParallelRegion {
 
-    private static final Logger logger = Logger.getLogger(SORRegion.class.getName());
-    private final int maxThreads;
-    private final double polsor;
-    private final SORLoop[] sorLoop;
-    private final SharedDouble sharedEps;
-    private final SharedDouble sharedEpsCR;
-    /**
-     * Dimensions of [nsymm][nAtoms][3]
-     */
-    public double[][][] inducedDipole;
-    public double[][][] inducedDipoleCR;
-    /**
-     * Direct induced dipoles.
-     */
-    public double[][] directDipole;
-    public double[][] directDipoleCR;
-    /**
-     * An ordered array of atoms in the system.
-     */
-    private Atom[] atoms;
-    private double[] polarizability;
-    private double[][] cartesianDipolePhi;
-    private double[][] cartesianDipolePhiCR;
-    /**
-     * Field array.
-     */
-    private AtomicDoubleArray3D field;
-    /**
-     * Chain rule field array.
-     */
-    private AtomicDoubleArray3D fieldCR;
-    /**
-     * Flag to indicate use of generalized Kirkwood.
-     */
-    private boolean generalizedKirkwoodTerm;
-    private GeneralizedKirkwood generalizedKirkwood;
-    private double aewald;
-    private double aewald3;
+  private static final Logger logger = Logger.getLogger(SORRegion.class.getName());
+  private final int maxThreads;
+  private final double polsor;
+  private final SORLoop[] sorLoop;
+  private final SharedDouble sharedEps;
+  private final SharedDouble sharedEpsCR;
+  /** Dimensions of [nsymm][nAtoms][3] */
+  public double[][][] inducedDipole;
 
-    public SORRegion(int nt, ForceField forceField) {
-        maxThreads = nt;
-        sorLoop = new SORLoop[nt];
-        sharedEps = new SharedDouble();
-        sharedEpsCR = new SharedDouble();
-        polsor = forceField.getDouble("POLAR_SOR", 0.70);
+  public double[][][] inducedDipoleCR;
+  /** Direct induced dipoles. */
+  public double[][] directDipole;
+
+  public double[][] directDipoleCR;
+  /** An ordered array of atoms in the system. */
+  private Atom[] atoms;
+
+  private double[] polarizability;
+  private double[][] cartesianDipolePhi;
+  private double[][] cartesianDipolePhiCR;
+  /** Field array. */
+  private AtomicDoubleArray3D field;
+  /** Chain rule field array. */
+  private AtomicDoubleArray3D fieldCR;
+  /** Flag to indicate use of generalized Kirkwood. */
+  private boolean generalizedKirkwoodTerm;
+
+  private GeneralizedKirkwood generalizedKirkwood;
+  private double aewald;
+  private double aewald3;
+
+  public SORRegion(int nt, ForceField forceField) {
+    maxThreads = nt;
+    sorLoop = new SORLoop[nt];
+    sharedEps = new SharedDouble();
+    sharedEpsCR = new SharedDouble();
+    polsor = forceField.getDouble("POLAR_SOR", 0.70);
+  }
+
+  public double getEps() {
+    double eps = sharedEps.get();
+    double epsCR = sharedEpsCR.get();
+    return max(eps, epsCR);
+  }
+
+  public double getSOR() {
+    return polsor;
+  }
+
+  public void init(
+      Atom[] atoms,
+      double[] polarizability,
+      double[][][] inducedDipole,
+      double[][][] inducedDipoleCR,
+      double[][] directDipole,
+      double[][] directDipoleCR,
+      double[][] cartesianDipolePhi,
+      double[][] cartesianDipolePhiCR,
+      AtomicDoubleArray3D field,
+      AtomicDoubleArray3D fieldCR,
+      boolean generalizedKirkwoodTerm,
+      GeneralizedKirkwood generalizedKirkwood,
+      EwaldParameters ewaldParameters) {
+    this.atoms = atoms;
+    this.polarizability = polarizability;
+    this.inducedDipole = inducedDipole;
+    this.inducedDipoleCR = inducedDipoleCR;
+    this.directDipole = directDipole;
+    this.directDipoleCR = directDipoleCR;
+    this.cartesianDipolePhi = cartesianDipolePhi;
+    this.cartesianDipolePhiCR = cartesianDipolePhiCR;
+    this.field = field;
+    this.fieldCR = fieldCR;
+    this.generalizedKirkwoodTerm = generalizedKirkwoodTerm;
+    this.generalizedKirkwood = generalizedKirkwood;
+    this.aewald = ewaldParameters.aewald;
+    this.aewald3 = ewaldParameters.aewald3;
+  }
+
+  @Override
+  public void run() throws Exception {
+    try {
+      int ti = getThreadIndex();
+      if (sorLoop[ti] == null) {
+        sorLoop[ti] = new SORLoop();
+      }
+      int nAtoms = atoms.length;
+      execute(0, nAtoms - 1, sorLoop[ti]);
+    } catch (RuntimeException ex) {
+      logger.warning(
+          "Fatal exception computing the mutual induced dipoles in thread " + getThreadIndex());
+      throw ex;
+    } catch (Exception e) {
+      String message =
+          "Fatal exception computing the mutual induced dipoles in thread "
+              + getThreadIndex()
+              + "\n";
+      logger.log(Level.SEVERE, message, e);
     }
+  }
 
-    public double getEps() {
-        double eps = sharedEps.get();
-        double epsCR = sharedEpsCR.get();
-        return max(eps, epsCR);
-    }
+  @Override
+  public void start() {
+    sharedEps.set(0.0);
+    sharedEpsCR.set(0.0);
+  }
 
-    public double getSOR() {
-        return polsor;
-    }
+  private class SORLoop extends IntegerForLoop {
 
-    public void init(Atom[] atoms, double[] polarizability,
-                     double[][][] inducedDipole, double[][][] inducedDipoleCR,
-                     double[][] directDipole, double[][] directDipoleCR,
-                     double[][] cartesianDipolePhi, double[][] cartesianDipolePhiCR,
-                     AtomicDoubleArray3D field, AtomicDoubleArray3D fieldCR, boolean generalizedKirkwoodTerm,
-                     GeneralizedKirkwood generalizedKirkwood, EwaldParameters ewaldParameters) {
-        this.atoms = atoms;
-        this.polarizability = polarizability;
-        this.inducedDipole = inducedDipole;
-        this.inducedDipoleCR = inducedDipoleCR;
-        this.directDipole = directDipole;
-        this.directDipoleCR = directDipoleCR;
-        this.cartesianDipolePhi = cartesianDipolePhi;
-        this.cartesianDipolePhiCR = cartesianDipolePhiCR;
-        this.field = field;
-        this.fieldCR = fieldCR;
-        this.generalizedKirkwoodTerm = generalizedKirkwoodTerm;
-        this.generalizedKirkwood = generalizedKirkwood;
-        this.aewald = ewaldParameters.aewald;
-        this.aewald3 = ewaldParameters.aewald3;
+    private double eps, epsCR;
+
+    @Override
+    public void finish() {
+      sharedEps.addAndGet(eps);
+      sharedEpsCR.addAndGet(epsCR);
     }
 
     @Override
-    public void run() throws Exception {
-        try {
-            int ti = getThreadIndex();
-            if (sorLoop[ti] == null) {
-                sorLoop[ti] = new SORLoop();
-            }
-            int nAtoms = atoms.length;
-            execute(0, nAtoms - 1, sorLoop[ti]);
-        } catch (RuntimeException ex) {
-            logger.warning("Fatal exception computing the mutual induced dipoles in thread " + getThreadIndex());
-            throw ex;
-        } catch (Exception e) {
-            String message = "Fatal exception computing the mutual induced dipoles in thread " + getThreadIndex() + "\n";
-            logger.log(Level.SEVERE, message, e);
+    public void run(int lb, int ub) throws Exception {
+      int threadID = getThreadIndex();
+      final double[][] induced0 = inducedDipole[0];
+      final double[][] inducedCR0 = inducedDipoleCR[0];
+      if (aewald > 0.0) {
+        // Add the self and reciprocal space fields to the real space field.
+        for (int i = lb; i <= ub; i++) {
+          double[] dipolei = induced0[i];
+          double[] dipoleCRi = inducedCR0[i];
+          final double[] phii = cartesianDipolePhi[i];
+          final double[] phiCRi = cartesianDipolePhiCR[i];
+          double fx = aewald3 * dipolei[0] - phii[t100];
+          double fy = aewald3 * dipolei[1] - phii[t010];
+          double fz = aewald3 * dipolei[2] - phii[t001];
+          double fxCR = aewald3 * dipoleCRi[0] - phiCRi[t100];
+          double fyCR = aewald3 * dipoleCRi[1] - phiCRi[t010];
+          double fzCR = aewald3 * dipoleCRi[2] - phiCRi[t001];
+          field.add(threadID, i, fx, fy, fz);
+          fieldCR.add(threadID, i, fxCR, fyCR, fzCR);
         }
+      }
 
+      if (generalizedKirkwoodTerm) {
+        AtomicDoubleArray3D fieldGK = generalizedKirkwood.getFieldGK();
+        AtomicDoubleArray3D fieldGKCR = generalizedKirkwood.getFieldGKCR();
+        // Add the GK reaction field to the intra-molecular field.
+        for (int i = lb; i <= ub; i++) {
+          field.add(threadID, i, fieldGK.getX(i), fieldGK.getY(i), fieldGK.getZ(i));
+          fieldCR.add(threadID, i, fieldGKCR.getX(i), fieldGKCR.getY(i), fieldGKCR.getZ(i));
+        }
+      }
+
+      // Reduce the real space field.
+      field.reduce(lb, ub);
+      fieldCR.reduce(lb, ub);
+
+      // Apply Successive Over-Relaxation (SOR).
+      for (int i = lb; i <= ub; i++) {
+        final double[] ind = induced0[i];
+        final double[] indCR = inducedCR0[i];
+        final double[] direct = directDipole[i];
+        final double[] directCR = directDipoleCR[i];
+        final double polar = polarizability[i];
+        for (int j = 0; j < 3; j++) {
+          double previous = ind[j];
+          double mutual = polar * field.get(j, i);
+          ind[j] = direct[j] + mutual;
+          double delta = polsor * (ind[j] - previous);
+          ind[j] = previous + delta;
+          eps += delta * delta;
+          previous = indCR[j];
+          mutual = polar * fieldCR.get(j, i);
+          indCR[j] = directCR[j] + mutual;
+          delta = polsor * (indCR[j] - previous);
+          indCR[j] = previous + delta;
+          epsCR += delta * delta;
+        }
+      }
+    }
+
+    @Override
+    public IntegerSchedule schedule() {
+      return IntegerSchedule.fixed();
     }
 
     @Override
     public void start() {
-        sharedEps.set(0.0);
-        sharedEpsCR.set(0.0);
+      eps = 0.0;
+      epsCR = 0.0;
     }
-
-    private class SORLoop extends IntegerForLoop {
-
-        private double eps, epsCR;
-
-        @Override
-        public void finish() {
-            sharedEps.addAndGet(eps);
-            sharedEpsCR.addAndGet(epsCR);
-        }
-
-        @Override
-        public void run(int lb, int ub) throws Exception {
-            int threadID = getThreadIndex();
-            final double[][] induced0 = inducedDipole[0];
-            final double[][] inducedCR0 = inducedDipoleCR[0];
-            if (aewald > 0.0) {
-                // Add the self and reciprocal space fields to the real space field.
-                for (int i = lb; i <= ub; i++) {
-                    double[] dipolei = induced0[i];
-                    double[] dipoleCRi = inducedCR0[i];
-                    final double[] phii = cartesianDipolePhi[i];
-                    final double[] phiCRi = cartesianDipolePhiCR[i];
-                    double fx = aewald3 * dipolei[0] - phii[t100];
-                    double fy = aewald3 * dipolei[1] - phii[t010];
-                    double fz = aewald3 * dipolei[2] - phii[t001];
-                    double fxCR = aewald3 * dipoleCRi[0] - phiCRi[t100];
-                    double fyCR = aewald3 * dipoleCRi[1] - phiCRi[t010];
-                    double fzCR = aewald3 * dipoleCRi[2] - phiCRi[t001];
-                    field.add(threadID, i, fx, fy, fz);
-                    fieldCR.add(threadID, i, fxCR, fyCR, fzCR);
-                }
-            }
-
-            if (generalizedKirkwoodTerm) {
-                AtomicDoubleArray3D fieldGK = generalizedKirkwood.getFieldGK();
-                AtomicDoubleArray3D fieldGKCR = generalizedKirkwood.getFieldGKCR();
-                // Add the GK reaction field to the intra-molecular field.
-                for (int i = lb; i <= ub; i++) {
-                    field.add(threadID, i, fieldGK.getX(i), fieldGK.getY(i), fieldGK.getZ(i));
-                    fieldCR.add(threadID, i, fieldGKCR.getX(i), fieldGKCR.getY(i), fieldGKCR.getZ(i));
-                }
-            }
-
-            // Reduce the real space field.
-            field.reduce(lb, ub);
-            fieldCR.reduce(lb, ub);
-
-            // Apply Successive Over-Relaxation (SOR).
-            for (int i = lb; i <= ub; i++) {
-                final double[] ind = induced0[i];
-                final double[] indCR = inducedCR0[i];
-                final double[] direct = directDipole[i];
-                final double[] directCR = directDipoleCR[i];
-                final double polar = polarizability[i];
-                for (int j = 0; j < 3; j++) {
-                    double previous = ind[j];
-                    double mutual = polar * field.get(j, i);
-                    ind[j] = direct[j] + mutual;
-                    double delta = polsor * (ind[j] - previous);
-                    ind[j] = previous + delta;
-                    eps += delta * delta;
-                    previous = indCR[j];
-                    mutual = polar * fieldCR.get(j, i);
-                    indCR[j] = directCR[j] + mutual;
-                    delta = polsor * (indCR[j] - previous);
-                    indCR[j] = previous + delta;
-                    epsCR += delta * delta;
-                }
-            }
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
-
-        @Override
-        public void start() {
-            eps = 0.0;
-            epsCR = 0.0;
-        }
-    }
+  }
 }

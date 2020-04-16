@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,242 +34,239 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
-import java.util.Random;
-
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static ffx.utilities.Constants.kB;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Potential;
-import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
-import static ffx.utilities.Constants.kB;
+import java.util.Random;
 
 /**
  * Stochastic dynamics time step via a velocity Verlet integration algorithm.
- * <p>
- * M. P. Allen, "Brownian Dynamics Simulation of a Chemical Reaction in
- * Solution", Molecular Physics, 40, 1073-1087 (1980)
- * <p>
- * F. Guarnieri and W. C. Still, "A Rapidly Convergent Simulation Method:
- * Mixed Monte Carlo/Stochastic Dynamics", Journal of Computational Chemistry,
- * 15, 1302-1310 (1994)
+ *
+ * <p>M. P. Allen, "Brownian Dynamics Simulation of a Chemical Reaction in Solution", Molecular
+ * Physics, 40, 1073-1087 (1980)
+ *
+ * <p>F. Guarnieri and W. C. Still, "A Rapidly Convergent Simulation Method: Mixed Monte
+ * Carlo/Stochastic Dynamics", Journal of Computational Chemistry, 15, 1302-1310 (1994)
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class Stochastic extends Integrator {
 
-    /**
-     * Friction coefficient.
-     */
-    private final double friction;
-    /**
-     * Random number generator.
-     */
-    private final Random random;
-    /**
-     * Per degree of freedom friction.
-     */
-    private double[] vFriction;
-    /**
-     * Per degree of freedom random velocity change.
-     */
-    private double[] vRandom;
-    /**
-     * Inverse friction coefficient.
-     */
-    private double inverseFriction;
-    /**
-     * Friction coefficient multiplied by time step.
-     */
-    private double fdt;
-    /**
-     * Exp(-fdt).
-     */
-    private double efdt;
-    /**
-     * Simulation temperature.
-     */
-    private double temperature;
+  /** Friction coefficient. */
+  private final double friction;
+  /** Random number generator. */
+  private final Random random;
+  /** Per degree of freedom friction. */
+  private double[] vFriction;
+  /** Per degree of freedom random velocity change. */
+  private double[] vRandom;
+  /** Inverse friction coefficient. */
+  private double inverseFriction;
+  /** Friction coefficient multiplied by time step. */
+  private double fdt;
+  /** Exp(-fdt). */
+  private double efdt;
+  /** Simulation temperature. */
+  private double temperature;
 
-    /**
-     * Constructor for Stochastic Dynamics.
-     *
-     * @param friction   Friction coefficient.
-     * @param nVariables Number of variables.
-     * @param x          Variables current value.
-     * @param v          Current velocities.
-     * @param a          Current accelerations.
-     * @param mass       Mass of the variables.
-     */
-    public Stochastic(double friction, int nVariables, double[] x,
-                      double[] v, double[] a, double[] mass) {
-        super(nVariables, x, v, a, mass);
-        this.friction = friction;
-        if (friction >= 0) {
-            inverseFriction = 1.0 / friction;
+  /**
+   * Constructor for Stochastic Dynamics.
+   *
+   * @param friction Friction coefficient.
+   * @param nVariables Number of variables.
+   * @param x Variables current value.
+   * @param v Current velocities.
+   * @param a Current accelerations.
+   * @param mass Mass of the variables.
+   */
+  public Stochastic(
+      double friction, int nVariables, double[] x, double[] v, double[] a, double[] mass) {
+    super(nVariables, x, v, a, mass);
+    this.friction = friction;
+    if (friction >= 0) {
+      inverseFriction = 1.0 / friction;
+    } else {
+      inverseFriction = Double.POSITIVE_INFINITY;
+    }
+    vFriction = new double[nVariables];
+    vRandom = new double[nVariables];
+    fdt = friction * dt;
+    efdt = exp(-fdt);
+    temperature = 298.15;
+    random = new Random();
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Use Newton's second law to get the next acceleration and find the full-step velocities using
+   * the Verlet recursion.
+   */
+  @Override
+  public void postForce(double[] gradient) {
+    copyAccelerationToPrevious();
+    for (int i = 0; i < nVariables; i++) {
+      a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
+      v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Set the frictional and random coefficients, store the current atom positions, then find new
+   * atom positions and half-step velocities via Verlet recursion.
+   */
+  @Override
+  public void preForce(Potential potential) {
+    for (int i = 0; i < nVariables; i++) {
+      double m = mass[i];
+      double pfric;
+      double afric;
+      double prand;
+      if (fdt <= 0.0) {
+        // In the limit of no friction, SD recovers normal molecular dynamics.
+        pfric = 1.0;
+        vFriction[i] = dt;
+        afric = 0.5 * dt * dt;
+        prand = 0.0;
+        vRandom[i] = 0.0;
+      } else {
+        double pterm;
+        double vterm;
+        double rho;
+        if (fdt >= 0.05) {
+          // Analytical expressions when the friction coefficient is large.
+          pfric = efdt;
+          vFriction[i] = (1.0 - efdt) * inverseFriction;
+          afric = (dt - vFriction[i]) * inverseFriction;
+          pterm = 2.0 * fdt - 3.0 + (4.0 - efdt) * efdt;
+          vterm = 1.0 - efdt * efdt;
+          rho = (1.0 - efdt) * (1.0 - efdt) / sqrt(pterm * vterm);
         } else {
-            inverseFriction = Double.POSITIVE_INFINITY;
+          // Use a series expansions when friction coefficient is small.
+          double fdt2 = fdt * fdt;
+          double fdt3 = fdt * fdt2;
+          double fdt4 = fdt * fdt3;
+          double fdt5 = fdt * fdt4;
+          double fdt6 = fdt * fdt5;
+          double fdt7 = fdt * fdt6;
+          double fdt8 = fdt * fdt7;
+          double fdt9 = fdt * fdt8;
+          afric =
+              (fdt2 / 2.0
+                      - fdt3 / 6.0
+                      + fdt4 / 24.0
+                      - fdt5 / 120.0
+                      + fdt6 / 720.0
+                      - fdt7 / 5040.0
+                      + fdt8 / 40320.0
+                      - fdt9 / 362880.0)
+                  / (friction * friction);
+          vFriction[i] = dt - friction * afric;
+          pfric = 1.0 - friction * vFriction[i];
+          pterm =
+              2.0 * fdt3 / 3.0
+                  - fdt4 / 2.0
+                  + 7.0 * fdt5 / 30.0
+                  - fdt6 / 12.0
+                  + 31.0 * fdt7 / 1260.0
+                  - fdt8 / 160.0
+                  + 127.0 * fdt9 / 90720.0;
+          vterm =
+              2.0 * fdt
+                  - 2.0 * fdt2
+                  + 4.0 * fdt3 / 3.0
+                  - 2.0 * fdt4 / 3.0
+                  + 4.0 * fdt5 / 15.0
+                  - 4.0 * fdt6 / 45.0
+                  + 8.0 * fdt7 / 315.0
+                  - 2.0 * fdt8 / 315.0
+                  + 4.0 * fdt9 / 2835.0;
+          rho =
+              sqrt(3.0)
+                  * (0.5
+                      - fdt / 16.0
+                      - 17.0 * fdt2 / 1280.0
+                      + 17.0 * fdt3 / 6144.0
+                      + 40967.0 * fdt4 / 34406400.0
+                      - 57203.0 * fdt5 / 275251200.0
+                      - 1429487.0 * fdt6 / 13212057600.0
+                      + 1877509.0 * fdt7 / 105696460800.0);
         }
-        vFriction = new double[nVariables];
-        vRandom = new double[nVariables];
-        fdt = friction * dt;
-        efdt = exp(-fdt);
-        temperature = 298.15;
-        random = new Random();
+        // Compute random terms to thermostat the nonzero friction case.
+        double ktm = kB * temperature / m;
+        double psig = sqrt(ktm * pterm) / friction;
+        double vsig = sqrt(ktm * vterm);
+        double rhoc = sqrt(1.0 - rho * rho);
+        double pnorm = random.nextGaussian();
+        double vnorm = random.nextGaussian();
+        prand = psig * pnorm;
+        vRandom[i] = vsig * (rho * pnorm + rhoc * vnorm);
+      }
+
+      // Store the current atom positions,
+      // then find new atom positions and half-step velocities via Verlet recursion.
+      x[i] += (v[i] * vFriction[i] + a[i] * afric + prand);
+      v[i] = v[i] * pfric + 0.5 * a[i] * vFriction[i];
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Use Newton's second law to get the next acceleration and find the
-     * full-step velocities using the Verlet recursion.
-     */
-    @Override
-    public void postForce(double[] gradient) {
-        copyAccelerationToPrevious();
-        for (int i = 0; i < nVariables; i++) {
-            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
-            v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
-        }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Update the integrator to be consistent with chemical perturbations. This overrides the
+   * default implementation so that the vFriction and vRandom arrays can be resized.
+   */
+  @Override
+  public void setNumberOfVariables(
+      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
+    super.setNumberOfVariables(nVariables, x, v, a, aPrevious, mass);
+    if (nVariables > vFriction.length) {
+      vFriction = new double[nVariables];
+      vRandom = new double[nVariables];
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Set the frictional and random coefficients, store the current atom
-     * positions, then find new atom positions and half-step velocities via
-     * Verlet recursion.
-     */
-    @Override
-    public void preForce(Potential potential) {
-        for (int i = 0; i < nVariables; i++) {
-            double m = mass[i];
-            double pfric;
-            double afric;
-            double prand;
-            if (fdt <= 0.0) {
-                // In the limit of no friction, SD recovers normal molecular dynamics.
-                pfric = 1.0;
-                vFriction[i] = dt;
-                afric = 0.5 * dt * dt;
-                prand = 0.0;
-                vRandom[i] = 0.0;
-            } else {
-                double pterm;
-                double vterm;
-                double rho;
-                if (fdt >= 0.05) {
-                    // Analytical expressions when the friction coefficient is large.
-                    pfric = efdt;
-                    vFriction[i] = (1.0 - efdt) * inverseFriction;
-                    afric = (dt - vFriction[i]) * inverseFriction;
-                    pterm = 2.0 * fdt - 3.0 + (4.0 - efdt) * efdt;
-                    vterm = 1.0 - efdt * efdt;
-                    rho = (1.0 - efdt) * (1.0 - efdt) / sqrt(pterm * vterm);
-                } else {
-                    // Use a series expansions when friction coefficient is small.
-                    double fdt2 = fdt * fdt;
-                    double fdt3 = fdt * fdt2;
-                    double fdt4 = fdt * fdt3;
-                    double fdt5 = fdt * fdt4;
-                    double fdt6 = fdt * fdt5;
-                    double fdt7 = fdt * fdt6;
-                    double fdt8 = fdt * fdt7;
-                    double fdt9 = fdt * fdt8;
-                    afric = (fdt2 / 2.0 - fdt3 / 6.0 + fdt4 / 24.0
-                            - fdt5 / 120.0 + fdt6 / 720.0
-                            - fdt7 / 5040.0 + fdt8 / 40320.0
-                            - fdt9 / 362880.0) / (friction * friction);
-                    vFriction[i] = dt - friction * afric;
-                    pfric = 1.0 - friction * vFriction[i];
-                    pterm = 2.0 * fdt3 / 3.0 - fdt4 / 2.0
-                            + 7.0 * fdt5 / 30.0 - fdt6 / 12.0
-                            + 31.0 * fdt7 / 1260.0 - fdt8 / 160.0
-                            + 127.0 * fdt9 / 90720.0;
-                    vterm = 2.0 * fdt - 2.0 * fdt2 + 4.0 * fdt3 / 3.0
-                            - 2.0 * fdt4 / 3.0 + 4.0 * fdt5 / 15.0
-                            - 4.0 * fdt6 / 45.0 + 8.0 * fdt7 / 315.0
-                            - 2.0 * fdt8 / 315.0 + 4.0 * fdt9 / 2835.0;
-                    rho = sqrt(3.0) * (0.5 - fdt / 16.0
-                            - 17.0 * fdt2 / 1280.0
-                            + 17.0 * fdt3 / 6144.0
-                            + 40967.0 * fdt4 / 34406400.0
-                            - 57203.0 * fdt5 / 275251200.0
-                            - 1429487.0 * fdt6 / 13212057600.0
-                            + 1877509.0 * fdt7 / 105696460800.0);
-                }
-                // Compute random terms to thermostat the nonzero friction case.
-                double ktm = kB * temperature / m;
-                double psig = sqrt(ktm * pterm) / friction;
-                double vsig = sqrt(ktm * vterm);
-                double rhoc = sqrt(1.0 - rho * rho);
-                double pnorm = random.nextGaussian();
-                double vnorm = random.nextGaussian();
-                prand = psig * pnorm;
-                vRandom[i] = vsig * (rho * pnorm + rhoc * vnorm);
-            }
+  /**
+   * Initialize the Random number generator used to apply random forces to the particles.
+   *
+   * @param seed Random number generator seed.
+   */
+  public void setRandomSeed(long seed) {
+    random.setSeed(seed);
+  }
 
-            // Store the current atom positions,
-            // then find new atom positions and half-step velocities via Verlet recursion.
-            x[i] += (v[i] * vFriction[i] + a[i] * afric + prand);
-            v[i] = v[i] * pfric + 0.5 * a[i] * vFriction[i];
-        }
+  /**
+   * Setter for the field <code>temperature</code>.
+   *
+   * @param temperature a double.
+   */
+  public void setTemperature(double temperature) {
+    this.temperature = temperature;
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Set the stochastic dynamics time-step.
+   */
+  @Override
+  public void setTimeStep(double dt) {
+    this.dt = dt;
+    fdt = friction * dt;
+    efdt = exp(-fdt);
+    if (friction >= 0) {
+      inverseFriction = 1.0 / friction;
+    } else {
+      inverseFriction = Double.POSITIVE_INFINITY;
     }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Update the integrator to be consistent with chemical perturbations. This
-     * overrides the default implementation so that the vFriction and vRandom arrays
-     * can be resized.
-     */
-    @Override
-    public void setNumberOfVariables(int nVariables, double[] x, double[] v,
-                                     double[] a, double[] aPrevious, double[] mass) {
-        super.setNumberOfVariables(nVariables, x, v, a, aPrevious, mass);
-        if (nVariables > vFriction.length) {
-            vFriction = new double[nVariables];
-            vRandom = new double[nVariables];
-        }
-    }
-
-    /**
-     * Initialize the Random number generator used to apply random forces to the
-     * particles.
-     *
-     * @param seed Random number generator seed.
-     */
-    public void setRandomSeed(long seed) {
-        random.setSeed(seed);
-    }
-
-    /**
-     * <p>Setter for the field <code>temperature</code>.</p>
-     *
-     * @param temperature a double.
-     */
-    public void setTemperature(double temperature) {
-        this.temperature = temperature;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Set the stochastic dynamics time-step.
-     */
-    @Override
-    public void setTimeStep(double dt) {
-        this.dt = dt;
-        fdt = friction * dt;
-        efdt = exp(-fdt);
-        if (friction >= 0) {
-            inverseFriction = 1.0 / friction;
-        } else {
-            inverseFriction = Double.POSITIVE_INFINITY;
-        }
-    }
-
+  }
 }

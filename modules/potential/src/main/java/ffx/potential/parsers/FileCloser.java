@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,27 +34,24 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
 
 /**
- * The FileCloser interface returns a Runnable object which removes any
- * higher-level references to a MolecularAssembly object (highly implementation-
- * specific). UIFileCloser removes it from the Hierarchy, while
- * PotentialsFileCloser does exactly nothing, because that does not depend on a
+ * The FileCloser interface returns a Runnable object which removes any higher-level references to a
+ * MolecularAssembly object (highly implementation- specific). UIFileCloser removes it from the
+ * Hierarchy, while PotentialsFileCloser does exactly nothing, because that does not depend on a
  * higher-level structure.
- * <p>
- * Also legacy code whose functions could probably be wrapped directly into
- * implementations of PotentialsFunctions.
+ *
+ * <p>Also legacy code whose functions could probably be wrapped directly into implementations of
+ * PotentialsFunctions.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public interface FileCloser extends Runnable {
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    void run();
+  /** {@inheritDoc} */
+  @Override
+  void run();
 }

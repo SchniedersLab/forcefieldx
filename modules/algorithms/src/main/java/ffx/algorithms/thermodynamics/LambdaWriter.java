@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,12 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 import java.io.PrintWriter;
 import java.io.Writer;
-
-import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 
 /**
  * Write out the current value of Lambda, its velocity and the number of counts.
@@ -50,30 +49,26 @@ import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
  */
 class LambdaWriter extends PrintWriter {
 
-    /**
-     * Private reference to the OST instance.
-     */
-    private OrthogonalSpaceTempering orthogonalSpaceTempering;
+  /** Private reference to the OST instance. */
+  private OrthogonalSpaceTempering orthogonalSpaceTempering;
 
-    /**
-     * Constructor.
-     *
-     * @param orthogonalSpaceTempering The parent OrthogonalSpaceTempering instance.
-     * @param writer                   The Writer to use.
-     */
-    LambdaWriter(OrthogonalSpaceTempering orthogonalSpaceTempering, Writer writer) {
-        super(writer);
-        this.orthogonalSpaceTempering = orthogonalSpaceTempering;
-    }
+  /**
+   * Constructor.
+   *
+   * @param orthogonalSpaceTempering The parent OrthogonalSpaceTempering instance.
+   * @param writer The Writer to use.
+   */
+  LambdaWriter(OrthogonalSpaceTempering orthogonalSpaceTempering, Writer writer) {
+    super(writer);
+    this.orthogonalSpaceTempering = orthogonalSpaceTempering;
+  }
 
-    /**
-     * Write the Lambda restart file.
-     */
-    void writeLambdaFile() {
-        Histogram histogram = orthogonalSpaceTempering.getHistogram();
-        printf("Lambda          %15.8f\n", orthogonalSpaceTempering.lambda);
-        printf("Lambda-Velocity %15.8e\n", histogram.halfThetaVelocity);
-        printf("Steps-Taken     %15d\n", orthogonalSpaceTempering.energyCount);
-        printf("Histogram       %15d\n", orthogonalSpaceTempering.getHistogram().getHistogramIndex());
-    }
+  /** Write the Lambda restart file. */
+  void writeLambdaFile() {
+    Histogram histogram = orthogonalSpaceTempering.getHistogram();
+    printf("Lambda          %15.8f\n", orthogonalSpaceTempering.lambda);
+    printf("Lambda-Velocity %15.8e\n", histogram.halfThetaVelocity);
+    printf("Steps-Taken     %15d\n", orthogonalSpaceTempering.energyCount);
+    printf("Histogram       %15d\n", orthogonalSpaceTempering.getHistogram().getHistogramIndex());
+  }
 }

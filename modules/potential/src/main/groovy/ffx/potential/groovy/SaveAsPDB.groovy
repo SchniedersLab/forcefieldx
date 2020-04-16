@@ -37,15 +37,13 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import org.apache.commons.io.FilenameUtils
-
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
@@ -60,91 +58,94 @@ import picocli.CommandLine.Parameters
 @Command(description = " Save the system as a PDB file.", name = "ffxc SaveAsPDB")
 class SaveAsPDB extends PotentialScript {
 
-    @CommandLine.Mixin
-    SaveOptions saveOptions
+  @CommandLine.Mixin
+  SaveOptions saveOptions
 
-    /**
-     * The final argument(s) should be one or more filenames.
-     */
-    @Parameters(arity = "1", paramLabel = "files",
-            description = 'The atomic coordinate file in PDB or XYZ format.')
-    List<String> filenames = null
+  /**
+   * The final argument(s) should be one or more filenames.
+   */
+  @Parameters(arity = "1", paramLabel = "files",
+      description = 'The atomic coordinate file in PDB or XYZ format.')
+  List<String> filenames = null
 
-    private File baseDir = null
+  private File baseDir = null
 
-    void setBaseDir(File baseDir) {
-        this.baseDir = baseDir
+  void setBaseDir(File baseDir) {
+    this.baseDir = baseDir
+  }
+
+  /**
+   * Execute the script.
+   */
+  @Override
+  SaveAsPDB run() {
+
+    if (!init()) {
+      return null
     }
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    SaveAsPDB run() {
-
-        if (!init()) {
-            return null
-        }
-
-        SystemFilter openFilter = null
-        if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-            openFilter = potentialFunctions.getFilter()
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return null
-        }
-
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
-
-        logger.info("\n Saving PDB for " + modelFilename)
-
-        File saveDir = baseDir
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-        String dirName = saveDir.toString() + File.separator
-        String fileName = FilenameUtils.getName(modelFilename)
-        fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
-        File modelFile = new File(dirName + fileName)
-        File saveFile = potentialFunctions.versionFile(modelFile)
-
-        PDBFilter saveFilter
-
-        int numModels = openFilter.countNumModels()
-        if (numModels > 1) {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(saveFile))
-            bw.write("MODEL        1\n")
-            bw.flush()
-            saveOptions.preSaveOperations(activeAssembly)
-            potentialFunctions.saveAsPDB(activeAssembly, saveFile, false, true)
-            bw.close()
-        } else {
-            saveOptions.preSaveOperations(activeAssembly)
-            potentialFunctions.saveAsPDB(activeAssembly, saveFile)
-        }
-        try {
-            saveFilter = (PDBFilter) potentialFunctions.getFilter()
-        } catch (Throwable t) {
-            logger.info(String.format(" The type of %s is %s", potentialFunctions.getFilter(), potentialFunctions.getFilter().class.getName()))
-            throw t
-        }
-
-        //If SaveAsPDB is run on an arc file, iterate through the models in the arc file and save each as a pdb file.
-        if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter) && numModels > 1) {
-            saveFilter.setModelNumbering(1)
-            try {
-                while (openFilter.readNext(false)) {
-                    saveFile.append("ENDMDL\n")
-                    saveOptions.preSaveOperations(activeAssembly)
-                    saveFilter.writeFile(saveFile, true, true, false)
-                }
-            } catch (Exception e) {
-                // Do nothing.
-            }
-            saveFile.append("END\n")
-        }
-        return this
+    SystemFilter openFilter = null
+    if (filenames != null && filenames.size() > 0) {
+      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
+      openFilter = potentialFunctions.getFilter()
+      activeAssembly = assemblies[0]
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return null
     }
+
+    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Saving PDB for " + modelFilename)
+
+    File saveDir = baseDir
+    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+    }
+    String dirName = saveDir.toString() + File.separator
+    String fileName = FilenameUtils.getName(modelFilename)
+    fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
+    File modelFile = new File(dirName + fileName)
+    File saveFile = potentialFunctions.versionFile(modelFile)
+
+    PDBFilter saveFilter
+
+    int numModels = openFilter.countNumModels()
+    if (numModels > 1) {
+      BufferedWriter bw = new BufferedWriter(new FileWriter(saveFile))
+      bw.write("MODEL        1\n")
+      bw.flush()
+      saveOptions.preSaveOperations(activeAssembly)
+      potentialFunctions.saveAsPDB(activeAssembly, saveFile, false, true)
+      bw.close()
+    } else {
+      saveOptions.preSaveOperations(activeAssembly)
+      potentialFunctions.saveAsPDB(activeAssembly, saveFile)
+    }
+    try {
+      saveFilter = (PDBFilter) potentialFunctions.getFilter()
+    } catch (Throwable t) {
+      logger.info(String.format(" The type of %s is %s", potentialFunctions.getFilter(),
+          potentialFunctions.getFilter().class.getName()))
+      throw t
+    }
+
+    //If SaveAsPDB is run on an arc file, iterate through the models in the arc file and save each as a pdb file.
+    if (
+    openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter) &&
+        numModels > 1) {
+      saveFilter.setModelNumbering(1)
+      try {
+        while (openFilter.readNext(false)) {
+          saveFile.append("ENDMDL\n")
+          saveOptions.preSaveOperations(activeAssembly)
+          saveFilter.writeFile(saveFile, true, true, false)
+        }
+      } catch (Exception e) {
+        // Do nothing.
+      }
+      saveFile.append("END\n")
+    }
+    return this
+  }
 }

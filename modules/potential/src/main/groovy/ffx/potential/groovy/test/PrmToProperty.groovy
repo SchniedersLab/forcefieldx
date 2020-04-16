@@ -37,13 +37,11 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import org.apache.commons.configuration2.CompositeConfiguration
-
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.ForceFieldFilter
 import ffx.utilities.Keyword
-
+import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -58,61 +56,61 @@ import picocli.CommandLine.Parameters
 @Command(description = "PrmToProperty converts a TINKER *.prm file to Java properties.", name = "ffxc PrmToProperty")
 class PrmToProperty extends PotentialScript {
 
-    /**
-     * -t or --tinker Remove line continuation characters from multi-line force field types (i.e. Tinker prm format).
-     */
-    @Option(names = ['-t', '--tinker'], paramLabel = "false", defaultValue = "false",
-            description = 'Remove line continuation characters from multi-line force field types (i.e. Tinker prm format).')
-    private boolean tinker = false
+  /**
+   * -t or --tinker Remove line continuation characters from multi-line force field types (i.e. Tinker prm format).
+   */
+  @Option(names = ['-t', '--tinker'], paramLabel = "false", defaultValue = "false",
+      description = 'Remove line continuation characters from multi-line force field types (i.e. Tinker prm format).')
+  private boolean tinker = false
 
-    /**
-     * The final argument(s) should be one or more filenames.
-     */
-    @Parameters(arity = "1", paramLabel = "files",
-            description = 'TINKER *.prm file(s).')
-    private List<String> filenames = null
+  /**
+   * The final argument(s) should be one or more filenames.
+   */
+  @Parameters(arity = "1", paramLabel = "files",
+      description = 'TINKER *.prm file(s).')
+  private List<String> filenames = null
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    PrmToProperty run() {
+  /**
+   * Execute the script.
+   */
+  @Override
+  PrmToProperty run() {
 
-        if (!init()) {
-            return null
-        }
-
-        if (filenames == null || filenames.size() < 1) {
-            logger.info(helpString())
-            return null
-        }
-
-        // Read in the command line file.
-        String prmName = filenames.get(0)
-        CompositeConfiguration properties = Keyword.loadProperties(null)
-        properties.setProperty("parameters", prmName)
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties)
-
-        ForceField forceField = forceFieldFilter.parse()
-
-        for (String filename : filenames) {
-            properties = Keyword.loadProperties(null)
-            properties.setProperty("parameters", filename)
-            forceFieldFilter = new ForceFieldFilter(properties)
-            ForceField forceField2 = forceFieldFilter.parse()
-            forceField.append(forceField2)
-        }
-
-        if (forceField != null) {
-            StringBuffer sb = forceField.toStringBuffer();
-            if (tinker) {
-                String string = sb.toString()
-                logger.info(string.replace('\\', ' '))
-            } else {
-                logger.info(sb.toString())
-            }
-        }
-
-        return this
+    if (!init()) {
+      return null
     }
+
+    if (filenames == null || filenames.size() < 1) {
+      logger.info(helpString())
+      return null
+    }
+
+    // Read in the command line file.
+    String prmName = filenames.get(0)
+    CompositeConfiguration properties = Keyword.loadProperties(null)
+    properties.setProperty("parameters", prmName)
+    ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties)
+
+    ForceField forceField = forceFieldFilter.parse()
+
+    for (String filename : filenames) {
+      properties = Keyword.loadProperties(null)
+      properties.setProperty("parameters", filename)
+      forceFieldFilter = new ForceFieldFilter(properties)
+      ForceField forceField2 = forceFieldFilter.parse()
+      forceField.append(forceField2)
+    }
+
+    if (forceField != null) {
+      StringBuffer sb = forceField.toStringBuffer();
+      if (tinker) {
+        String string = sb.toString()
+        logger.info(string.replace('\\', ' '))
+      } else {
+        logger.info(sb.toString())
+      }
+    }
+
+    return this
+  }
 }

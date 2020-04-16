@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,52 +34,46 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
 
-import javax.swing.filechooser.FileFilter;
-
 import java.io.File;
-
+import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 /**
- * The ForceFieldFileFilter class is used to choose a TINKER Parameter file
- * (*.PRM).
+ * The ForceFieldFileFilter class is used to choose a TINKER Parameter file (*.PRM).
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public final class ForceFieldFileFilter extends FileFilter {
 
-    /**
-     * Default Constructor
-     */
-    public ForceFieldFileFilter() {
-    }
+  /** Default Constructor */
+  public ForceFieldFileFilter() {}
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method return <code>true</code> if the file is a directory or TINKER
-     * Parameter file (*.PRM).
-     */
-    @Override
-    public boolean accept(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String ext = FilenameUtils.getExtension(file.getName());
-        return ext.toUpperCase().startsWith("PRM");
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This method return <code>true</code> if the file is a directory or TINKER Parameter file
+   * (*.PRM).
+   */
+  @Override
+  public boolean accept(File file) {
+    if (file.isDirectory()) {
+      return true;
     }
+    String ext = FilenameUtils.getExtension(file.getName());
+    return ext.toUpperCase().startsWith("PRM");
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Provides a description of this FileFilter
-     */
-    @Override
-    public String getDescription() {
-        return "TINKER Parameters (*.PRM)";
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Provides a description of this FileFilter
+   */
+  @Override
+  public String getDescription() {
+    return "TINKER Parameters (*.PRM)";
+  }
 }

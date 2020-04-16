@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
 
-import javax.swing.filechooser.FileFilter;
-
 import java.io.File;
-
+import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -51,34 +49,31 @@ import org.apache.commons.io.FilenameUtils;
  */
 public final class FFXFileFilter extends FileFilter {
 
-    /**
-     * Default Constructor.
-     */
-    public FFXFileFilter() {
-    }
+  /** Default Constructor. */
+  public FFXFileFilter() {}
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method return <code>true</code> if the file is a directory or Force
-     * Field X script (*.FFX).
-     */
-    @Override
-    public boolean accept(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String ext = FilenameUtils.getExtension(file.getName());
-        return ext.toUpperCase().startsWith("FFX");
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This method return <code>true</code> if the file is a directory or Force Field X script
+   * (*.FFX).
+   */
+  @Override
+  public boolean accept(File file) {
+    if (file.isDirectory()) {
+      return true;
     }
+    String ext = FilenameUtils.getExtension(file.getName());
+    return ext.toUpperCase().startsWith("FFX");
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Provides a description of the FFXFileFilter.
-     */
-    @Override
-    public String getDescription() {
-        return "Force Field X Script (*.FFX)";
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Provides a description of the FFXFileFilter.
+   */
+  @Override
+  public String getDescription() {
+    return "Force Field X Script (*.FFX)";
+  }
 }

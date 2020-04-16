@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,117 +34,114 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.atomic;
 
 import edu.rit.pj.ParallelTeam;
 
 /**
- * This interface abstracts away the implementation of maintaining a 1D double
- * array that is operated on by multiple threads.
+ * This interface abstracts away the implementation of maintaining a 1D double array that is
+ * operated on by multiple threads.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public interface AtomicDoubleArray {
 
-    /**
-     * Add value to the double array at the specified index.
-     *
-     * @param threadID a int.
-     * @param index    a int.
-     * @param value    a double.
-     */
-    void add(int threadID, int index, double value);
-
-    /**
-     * Ensure the AtomicDoubleArray instance is greater than or equal to size.
-     *
-     * @param size a int.
-     */
-    void alloc(int size);
-
-    static AtomicDoubleArray atomicDoubleArrayFactory(AtomicDoubleArrayImpl atomicDoubleArrayImpl,
-                                                      int threads, int size) {
-        switch (atomicDoubleArrayImpl) {
-            case ADDER:
-                return new AdderDoubleArray(size);
-            case PJ:
-                return new PJDoubleArray(size);
-            case MULTI:
-            default:
-                return new MultiDoubleArray(threads, size);
-        }
+  static AtomicDoubleArray atomicDoubleArrayFactory(
+      AtomicDoubleArrayImpl atomicDoubleArrayImpl, int threads, int size) {
+    switch (atomicDoubleArrayImpl) {
+      case ADDER:
+        return new AdderDoubleArray(size);
+      case PJ:
+        return new PJDoubleArray(size);
+      case MULTI:
+      default:
+        return new MultiDoubleArray(threads, size);
     }
+  }
 
-    /**
-     * Get the value of the array at the specified index (usually subsequent to
-     * calling the <code>reduce</code> method.
-     *
-     * @param index a int.
-     * @return a double.
-     */
-    double get(int index);
+  /**
+   * Add value to the double array at the specified index.
+   *
+   * @param threadID a int.
+   * @param index a int.
+   * @param value a double.
+   */
+  void add(int threadID, int index, double value);
 
-    /**
-     * Perform reduction between the given lower bound (lb) and upper bound (up)
-     * if necessary.
-     *
-     * @param lb a int.
-     * @param ub a int.
-     */
-    void reduce(int lb, int ub);
+  /**
+   * Ensure the AtomicDoubleArray instance is greater than or equal to size.
+   *
+   * @param size a int.
+   */
+  void alloc(int size);
 
-    /**
-     * Perform reduction between the given lower bound (lb) and upper bound (up)
-     * usign a ParallelTeam.
-     *
-     * @param lb a int.
-     * @param ub a int.
-     */
-    void reduce(ParallelTeam parallelTeam, int lb, int ub);
+  /**
+   * Get the value of the array at the specified index (usually subsequent to calling the <code>
+   * reduce</code> method.
+   *
+   * @param index a int.
+   * @return a double.
+   */
+  double get(int index);
 
-    /**
-     * Reset the double array to Zero.
-     *
-     * @param threadID a int.
-     * @param lb       a int.
-     * @param ub       a int.
-     */
-    void reset(int threadID, int lb, int ub);
+  /**
+   * Perform reduction between the given lower bound (lb) and upper bound (up) if necessary.
+   *
+   * @param lb a int.
+   * @param ub a int.
+   */
+  void reduce(int lb, int ub);
 
-    /**
-     * Reset the double array to Zero using a ParallelTeam.
-     *
-     * @param parallelTeam ParallelTeam.
-     * @param lb           a int.
-     * @param ub           a int.
-     */
-    void reset(ParallelTeam parallelTeam, int lb, int ub);
+  /**
+   * Perform reduction between the given lower bound (lb) and upper bound (up) usign a ParallelTeam.
+   *
+   * @param lb a int.
+   * @param ub a int.
+   */
+  void reduce(ParallelTeam parallelTeam, int lb, int ub);
 
-    /**
-     * Set the double array at the specified index to the given value.
-     *
-     * @param threadID a int.
-     * @param index    a int.
-     * @param value    a double.
-     */
-    void set(int threadID, int index, double value);
+  /**
+   * Reset the double array to Zero.
+   *
+   * @param threadID a int.
+   * @param lb a int.
+   * @param ub a int.
+   */
+  void reset(int threadID, int lb, int ub);
 
-    /**
-     * Subtract value to the double array at the specified index.
-     *
-     * @param threadID a int.
-     * @param index    a int.
-     * @param value    a double.
-     */
-    void sub(int threadID, int index, double value);
+  /**
+   * Reset the double array to Zero using a ParallelTeam.
+   *
+   * @param parallelTeam ParallelTeam.
+   * @param lb a int.
+   * @param ub a int.
+   */
+  void reset(ParallelTeam parallelTeam, int lb, int ub);
 
-    /**
-     * AtomicDoubleArray implementations (ADDER, MULTI, PJ).
-     */
-    enum AtomicDoubleArrayImpl {
-        ADDER, MULTI, PJ
-    }
+  /**
+   * Set the double array at the specified index to the given value.
+   *
+   * @param threadID a int.
+   * @param index a int.
+   * @param value a double.
+   */
+  void set(int threadID, int index, double value);
 
+  /**
+   * Subtract value to the double array at the specified index.
+   *
+   * @param threadID a int.
+   * @param index a int.
+   * @param value a double.
+   */
+  void sub(int threadID, int index, double value);
+
+  /** AtomicDoubleArray implementations (ADDER, MULTI, PJ). */
+  enum AtomicDoubleArrayImpl {
+    ADDER,
+    MULTI,
+    PJ
+  }
 }

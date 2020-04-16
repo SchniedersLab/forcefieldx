@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,40 +34,39 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.nonbonded;
 
 /**
- * By implementing the MaskingInterface interface, interaction pairs can be
- * excluded during {@link ffx.potential.nonbonded.NeighborList} construction.
- * <p>
- * During non-bonded calculations, the interactions between bonded atoms (1-2,
- * 1-3 or 1-4, for example) may be masked to zero. The interaction energy
- * between excluded atoms is described by the bonded energy terms.
+ * By implementing the MaskingInterface interface, interaction pairs can be excluded during {@link
+ * ffx.potential.nonbonded.NeighborList} construction.
+ *
+ * <p>During non-bonded calculations, the interactions between bonded atoms (1-2, 1-3 or 1-4, for
+ * example) may be masked to zero. The interaction energy between excluded atoms is described by the
+ * bonded energy terms.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public interface MaskingInterface {
 
-    /**
-     * Interactions with atom i that should not be included in the NeighborList
-     * should be set to 0.
-     *
-     * @param i     The atom whose masking rules should be applied.
-     * @param is14  True if atom i and the current atom are 1-4 to each other.
-     * @param masks One or more masking arrays.
-     * @since 1.0
-     */
-    void applyMask(final int i, final boolean[] is14, final double[]... masks);
+  /**
+   * Interactions with atom i that should not be included in the NeighborList should be set to 0.
+   *
+   * @param i The atom whose masking rules should be applied.
+   * @param is14 True if atom i and the current atom are 1-4 to each other.
+   * @param masks One or more masking arrays.
+   * @since 1.0
+   */
+  void applyMask(final int i, final boolean[] is14, final double[]... masks);
 
-    /**
-     * After calling removeMask, all entries in the mask array should be 1 and is14 array false.
-     *
-     * @param i     The atom whose masking rules should be removed.
-     * @param is14  True if atom i and the current atom are 1-4 to each other.
-     * @param masks One or more masking arrays.
-     * @since 1.0
-     */
-    void removeMask(final int i, final boolean[] is14, final double[]... masks);
+  /**
+   * After calling removeMask, all entries in the mask array should be 1 and is14 array false.
+   *
+   * @param i The atom whose masking rules should be removed.
+   * @param is14 True if atom i and the current atom are 1-4 to each other.
+   * @param masks One or more masking arrays.
+   * @since 1.0
+   */
+  void removeMask(final int i, final boolean[] is14, final double[]... masks);
 }

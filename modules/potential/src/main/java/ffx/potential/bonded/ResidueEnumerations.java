@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,139 +34,229 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.bonded;
 
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * <p>ResidueEnumerations class.</p>
+ * ResidueEnumerations class.
  *
  * @author Ava M. Lynn
  * @since 1.0
  */
 public class ResidueEnumerations {
 
-    /**
-     * Constant <code>aminoAcidList</code>
-     */
-    public static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
-    /**
-     * List of values from the AminoAcid1 enum.
-     */
-    public static final List<AminoAcid1> aminoAcid1List = Arrays.asList(AminoAcid1.values());
-    /**
-     * Constant <code>nucleicAcidList</code>
-     */
-    public static final List<NucleicAcid3> nucleicAcidList = Arrays.asList(NucleicAcid3.values());
-    /**
-     * Constant <code>aminoAcidHeavyAtoms</code>
-     */
-    public static final int[] aminoAcidHeavyAtoms = {
-            4, 5, 7, 8, 8, 6, 7, 6, 6, 6,
-            7, 11, 12, 12, 14, 10, 10, 10, 8, 8,
-            8, 9, 9, 9, 8, 9, 9, 11, 8, 6,
-            8, 0, 0, 0, 0, 0, 0, 0
-    };
+  /** Constant <code>aminoAcidList</code> */
+  public static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
+  /** List of values from the AminoAcid1 enum. */
+  public static final List<AminoAcid1> aminoAcid1List = Arrays.asList(AminoAcid1.values());
+  /** Constant <code>nucleicAcidList</code> */
+  public static final List<NucleicAcid3> nucleicAcidList = Arrays.asList(NucleicAcid3.values());
+  /** Constant <code>aminoAcidHeavyAtoms</code> */
+  public static final int[] aminoAcidHeavyAtoms = {
+    4, 5, 7, 8, 8, 6, 7, 6, 6, 6,
+    7, 11, 12, 12, 14, 10, 10, 10, 8, 8,
+    8, 9, 9, 9, 8, 9, 9, 11, 8, 6,
+    8, 0, 0, 0, 0, 0, 0, 0
+  };
 
-    /**
-     * <p>getAminoAcid.</p>
-     *
-     * @param residueName a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
-     */
-    public static AminoAcid3 getAminoAcid(String residueName) {
-        for (AminoAcid3 aminoAcid : aminoAcidList) {
-            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
-                return aminoAcid;
-            }
-        }
-        return AminoAcid3.UNK;
+  /**
+   * getAminoAcid.
+   *
+   * @param residueName a {@link java.lang.String} object.
+   * @return a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+   */
+  public static AminoAcid3 getAminoAcid(String residueName) {
+    for (AminoAcid3 aminoAcid : aminoAcidList) {
+      if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+        return aminoAcid;
+      }
+    }
+    return AminoAcid3.UNK;
+  }
+
+  /**
+   * This method takes a one letter amino acid code and converts it to a three letter amino acid
+   * code. This method relies on the AminoAcid1 and AminoAcid3 enums having amino acids in exactly
+   * the same order.
+   *
+   * @param residueName The one letter amino acid code.
+   * @return The three letter amino acid code.
+   */
+  public static AminoAcid3 getAminoAcid3From1(String residueName) {
+    for (AminoAcid1 aminoAcid : aminoAcid1List) {
+      if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+        int position = AminoAcid1.valueOf(residueName).ordinal();
+        AminoAcid3 aminoAcid3 = AminoAcid3.values()[position];
+        return aminoAcid3;
+      }
+    }
+    return AminoAcid3.UNK;
+  }
+
+  /**
+   * getAminoAcidNumber.
+   *
+   * @param residueName a {@link java.lang.String} object.
+   * @return a int.
+   */
+  public static int getAminoAcidNumber(String residueName) {
+    int aminoAcidNumber = -1;
+    for (AminoAcid3 aminoAcid : aminoAcidList) {
+      aminoAcidNumber++;
+      if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+        break;
+      }
+    }
+    return aminoAcidNumber;
+  }
+
+  /** Single letter amino acid codes (need to */
+  public enum AminoAcid1 {
+    G,
+    A,
+    V,
+    L,
+    I,
+    S,
+    T,
+    C,
+    X,
+    c,
+    P,
+    F,
+    Y,
+    y,
+    W,
+    H,
+    U,
+    Z,
+    D,
+    d,
+    N,
+    E,
+    e,
+    Q,
+    M,
+    K,
+    k,
+    R,
+    O,
+    B,
+    J,
+    t,
+    f,
+    a,
+    o,
+    n,
+    m,
+    x
+  }
+
+  public enum AminoAcid3 {
+    GLY,
+    ALA,
+    VAL,
+    LEU,
+    ILE,
+    SER,
+    THR,
+    CYS(true, false),
+    CYX,
+    CYD(true, true),
+    PRO,
+    PHE,
+    TYR(true, false),
+    TYD(true, true),
+    TRP,
+    HIS(true, false),
+    HID(true, true),
+    HIE(true, true),
+    ASP(true, false),
+    ASH(true, true),
+    ASN,
+    GLU(true, false),
+    GLH(true, true),
+    GLN,
+    MET,
+    LYS(true, false),
+    LYD(true, true),
+    ARG,
+    ORN,
+    AIB,
+    PCA,
+    H2N,
+    FOR,
+    ACE,
+    COH,
+    NH2,
+    NME,
+    UNK;
+
+    public final boolean isTitratable;
+    public final boolean nonstandardProtonation;
+
+    AminoAcid3() {
+      isTitratable = false;
+      nonstandardProtonation = false;
     }
 
-    /**
-     * This method takes a one letter amino acid code and converts it to a three letter amino acid code. This method
-     * relies on the AminoAcid1 and AminoAcid3 enums having amino acids in exactly the same order.
-     *
-     * @param residueName The one letter amino acid code.
-     * @return The three letter amino acid code.
-     */
-    public static AminoAcid3 getAminoAcid3From1(String residueName) {
-        for (AminoAcid1 aminoAcid : aminoAcid1List) {
-            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
-                int position = AminoAcid1.valueOf(residueName).ordinal();
-                AminoAcid3 aminoAcid3 = AminoAcid3.values()[position];
-                return aminoAcid3;
-            }
-        }
-        return AminoAcid3.UNK;
+    AminoAcid3(boolean titr, boolean nonstd) {
+      isTitratable = titr;
+      nonstandardProtonation = nonstd;
+      if (nonstandardProtonation && !isTitratable) {
+        throw new IllegalArgumentException(
+            String.format(
+                " Amino acid class %s cannot be both nonstandard and non-titratable!", this));
+      }
     }
+  }
 
-    /**
-     * <p>getAminoAcidNumber.</p>
-     *
-     * @param residueName a {@link java.lang.String} object.
-     * @return a int.
-     */
-    public static int getAminoAcidNumber(String residueName) {
-        int aminoAcidNumber = -1;
-        for (AminoAcid3 aminoAcid : aminoAcidList) {
-            aminoAcidNumber++;
-            if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
-                break;
-            }
-        }
-        return aminoAcidNumber;
-    }
+  public enum NucleicAcid1 {
+    A,
+    G,
+    C,
+    U,
+    D,
+    B,
+    I,
+    T,
+    O,
+    W,
+    H,
+    X
+  }
 
-    /**
-     * Single letter amino acid codes (need to
-     */
-    public enum AminoAcid1 {
-
-        G, A, V, L, I, S, T, C, X, c,
-        P, F, Y, y, W, H, U, Z, D, d,
-        N, E, e, Q, M, K, k, R, O, B,
-        J, t, f, a, o, n, m, x
-    }
-
-    public enum AminoAcid3 {
-
-        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS(true, false), CYX, CYD(true, true),
-        PRO, PHE, TYR(true, false), TYD(true, true), TRP, HIS(true, false), HID(true, true), HIE(true, true), ASP(true, false), ASH(true, true),
-        ASN, GLU(true, false), GLH(true, true), GLN, MET, LYS(true, false), LYD(true, true), ARG, ORN, AIB,
-        PCA, H2N, FOR, ACE, COH, NH2, NME, UNK;
-
-        public final boolean isTitratable;
-        public final boolean nonstandardProtonation;
-
-        AminoAcid3() {
-            isTitratable = false;
-            nonstandardProtonation = false;
-        }
-
-        AminoAcid3(boolean titr, boolean nonstd) {
-            isTitratable = titr;
-            nonstandardProtonation = nonstd;
-            if (nonstandardProtonation && !isTitratable) {
-                throw new IllegalArgumentException(String.format(" Amino acid class %s cannot be both nonstandard and non-titratable!", this));
-            }
-        }
-    }
-
-    public enum NucleicAcid1 {
-
-        A, G, C, U, D, B, I, T, O, W, H, X
-    }
-
-    /**
-     * Since enumeration values must start with a letter, an 'M' is added to
-     * modified bases whose IUPAC name starts with an integer.
-     */
-    public enum NucleicAcid3 {
-
-        ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG,
-        H2U, M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
-    }
+  /**
+   * Since enumeration values must start with a letter, an 'M' is added to modified bases whose
+   * IUPAC name starts with an integer.
+   */
+  public enum NucleicAcid3 {
+    ADE,
+    GUA,
+    CYT,
+    URI,
+    DAD,
+    DGU,
+    DCY,
+    DTY,
+    THY,
+    MP1,
+    DP2,
+    TP3,
+    UNK,
+    M2MG,
+    H2U,
+    M2G,
+    OMC,
+    OMG,
+    PSU,
+    M5MC,
+    M7MG,
+    M5MU,
+    M1MA,
+    YYG
+  }
 }

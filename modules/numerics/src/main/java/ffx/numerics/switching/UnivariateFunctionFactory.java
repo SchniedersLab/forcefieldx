@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,14 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.switching;
 
-import java.util.Arrays;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Double.parseDouble;
 import static java.util.Arrays.copyOfRange;
+
+import java.util.Arrays;
 
 /**
  * Static class responsible for parsing String arrays into univariate switching functions.
@@ -50,113 +51,112 @@ import static java.util.Arrays.copyOfRange;
  */
 public class UnivariateFunctionFactory {
 
-    /**
-     * Static only class.
-     */
-    private UnivariateFunctionFactory() {
-    }
+  /** Static only class. */
+  private UnivariateFunctionFactory() {}
 
-    /**
-     * Parse an array of Strings terminating in the description of a univariate switching function.
-     *
-     * @param toks   Array of Strings, terminating with the description of a function.
-     * @param offset Index of the first relevant token.
-     * @return A parsed univariate switching function.
-     */
-    public static UnivariateSwitchingFunction parseUSF(String[] toks, int offset) {
-        return parseUSF(copyOfRange(toks, offset, toks.length));
-    }
+  /**
+   * Parse an array of Strings terminating in the description of a univariate switching function.
+   *
+   * @param toks Array of Strings, terminating with the description of a function.
+   * @param offset Index of the first relevant token.
+   * @return A parsed univariate switching function.
+   */
+  public static UnivariateSwitchingFunction parseUSF(String[] toks, int offset) {
+    return parseUSF(copyOfRange(toks, offset, toks.length));
+  }
 
-    /**
-     * Parse an array of Strings describing a univariate switching function.
-     *
-     * @param toks Descriptive Strings.
-     * @return A parsed univariate switching function.
-     */
-    public static UnivariateSwitchingFunction parseUSF(String[] toks) {
-        String selectionString = toks[0].toUpperCase().replaceAll("-", "").
-                replaceAll("_", "").replaceAll(" ", "");
-        switch (selectionString) {
-            case "BELL":
-            case "BELLCURVE":
-            case "BELLCURVESWITCH":
-                return parseBell(toks);
-            case "CONSTANT":
-            case "NONE":
-            case "FLAT":
-                return new ConstantSwitch();
-            case "LINEARDERIVATIVE":
-                return new LinearDerivativeSwitch();
-            case "MULTIPLICATIVE":
-            case "PENTICHERMITE":
-                return parseMultiplicative(toks);
-            case "POWER":
-                return parsePower(toks);
-            case "LINEAR":
-                return parseSpecificPow(1.0, toks);
-            case "QUADRATIC":
-                return parseSpecificPow(2.0, toks);
-            case "CUBIC":
-                return parseSpecificPow(3.0, toks);
-            case "TRIGONOMETRIC":
-            case "TRIG":
-            case "SINSQUARED":
-                return parseTrig(toks);
-            default:
-                throw new IllegalArgumentException(String.format(" Could not parse %s as a valid univariate switching function!", Arrays.toString(toks)));
-        }
+  /**
+   * Parse an array of Strings describing a univariate switching function.
+   *
+   * @param toks Descriptive Strings.
+   * @return A parsed univariate switching function.
+   */
+  public static UnivariateSwitchingFunction parseUSF(String[] toks) {
+    String selectionString =
+        toks[0].toUpperCase().replaceAll("-", "").replaceAll("_", "").replaceAll(" ", "");
+    switch (selectionString) {
+      case "BELL":
+      case "BELLCURVE":
+      case "BELLCURVESWITCH":
+        return parseBell(toks);
+      case "CONSTANT":
+      case "NONE":
+      case "FLAT":
+        return new ConstantSwitch();
+      case "LINEARDERIVATIVE":
+        return new LinearDerivativeSwitch();
+      case "MULTIPLICATIVE":
+      case "PENTICHERMITE":
+        return parseMultiplicative(toks);
+      case "POWER":
+        return parsePower(toks);
+      case "LINEAR":
+        return parseSpecificPow(1.0, toks);
+      case "QUADRATIC":
+        return parseSpecificPow(2.0, toks);
+      case "CUBIC":
+        return parseSpecificPow(3.0, toks);
+      case "TRIGONOMETRIC":
+      case "TRIG":
+      case "SINSQUARED":
+        return parseTrig(toks);
+      default:
+        throw new IllegalArgumentException(
+            String.format(
+                " Could not parse %s as a valid univariate switching function!",
+                Arrays.toString(toks)));
     }
+  }
 
-    private static BellCurveSwitch parseBell(String[] toks) {
-        double midpoint = 0.5;
-        if (toks.length > 2) {
-            midpoint = parseDouble(toks[1]);
-        }
-        double width = 1.0;
-        if (toks.length > 3) {
-            width = parseDouble(toks[2]);
-        }
-        return new BellCurveSwitch(midpoint, width);
+  private static BellCurveSwitch parseBell(String[] toks) {
+    double midpoint = 0.5;
+    if (toks.length > 2) {
+      midpoint = parseDouble(toks[1]);
     }
-
-    private static MultiplicativeSwitch parseMultiplicative(String[] toks) {
-        if (toks.length > 3) {
-            return new MultiplicativeSwitch(parseDouble(toks[2]), parseDouble(toks[1]));
-        } else {
-            return new MultiplicativeSwitch();
-        }
-
+    double width = 1.0;
+    if (toks.length > 3) {
+      width = parseDouble(toks[2]);
     }
+    return new BellCurveSwitch(midpoint, width);
+  }
 
-    private static PowerSwitch parsePower(String[] toks) {
-        double pow = 1.0;
-        if (toks.length > 1) {
-            pow = parseDouble(toks[1]);
-        }
-        double alpha = 1.0;
-        if (toks.length > 2) {
-            alpha = parseDouble(toks[2]);
-        }
-        return new PowerSwitch(alpha, pow);
+  private static MultiplicativeSwitch parseMultiplicative(String[] toks) {
+    if (toks.length > 3) {
+      return new MultiplicativeSwitch(parseDouble(toks[2]), parseDouble(toks[1]));
+    } else {
+      return new MultiplicativeSwitch();
     }
+  }
 
-    private static PowerSwitch parseSpecificPow(double pow, String[] toks) {
-        double alpha = 1.0;
-        if (toks.length > 1) {
-            alpha = parseDouble(toks[1]);
-        }
-        return new PowerSwitch(alpha, pow);
+  private static PowerSwitch parsePower(String[] toks) {
+    double pow = 1.0;
+    if (toks.length > 1) {
+      pow = parseDouble(toks[1]);
     }
+    double alpha = 1.0;
+    if (toks.length > 2) {
+      alpha = parseDouble(toks[2]);
+    }
+    return new PowerSwitch(alpha, pow);
+  }
 
-    private static SquaredTrigSwitch parseTrig(String[] toks) {
-        boolean trig = false;
-        if (toks.length > 1) {
-            trig = parseBoolean(toks[1]);
-        }
-        if (toks.length > 2) {
-            return new SquaredTrigSwitch(parseDouble(toks[2]), trig);
-        } else {
-            return new SquaredTrigSwitch(trig);
-        }
+  private static PowerSwitch parseSpecificPow(double pow, String[] toks) {
+    double alpha = 1.0;
+    if (toks.length > 1) {
+      alpha = parseDouble(toks[1]);
     }
+    return new PowerSwitch(alpha, pow);
+  }
+
+  private static SquaredTrigSwitch parseTrig(String[] toks) {
+    boolean trig = false;
+    if (toks.length > 1) {
+      trig = parseBoolean(toks[1]);
+    }
+    if (toks.length > 2) {
+      return new SquaredTrigSwitch(parseDouble(toks[2]), trig);
+    } else {
+      return new SquaredTrigSwitch(trig);
+    }
+  }
 }

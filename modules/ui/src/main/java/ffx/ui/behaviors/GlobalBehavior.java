@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.behaviors;
 
 import org.jogamp.java3d.Canvas3D;
@@ -44,109 +44,98 @@ import org.jogamp.vecmath.Matrix3d;
 import org.jogamp.vecmath.Vector3d;
 
 /**
- * The GlobalBehavior class allows mouse control over camera position, adding a
- * few functions to the OrbitBehavior class.
+ * The GlobalBehavior class allows mouse control over camera position, adding a few functions to the
+ * OrbitBehavior class.
  *
  * @author Michael J. Schnieders
  */
 public class GlobalBehavior extends OrbitBehavior {
 
-    private Transform3D trans3D = new Transform3D();
-    private Matrix3d homeQuat = new Matrix3d();
-    private Vector3d homeTrans = new Vector3d(0.0, 0.0, 2.0);
-    private Vector3d trans = new Vector3d();
-    private MouseBehaviorCallback navigation = null;
-    private boolean first = false;
+  private Transform3D trans3D = new Transform3D();
+  private Matrix3d homeQuat = new Matrix3d();
+  private Vector3d homeTrans = new Vector3d(0.0, 0.0, 2.0);
+  private Vector3d trans = new Vector3d();
+  private MouseBehaviorCallback navigation = null;
+  private boolean first = false;
 
-    /**
-     * <p>
-     * Constructor for GlobalBehavior.</p>
-     */
-    public GlobalBehavior() {
-        super();
-    }
+  /** Constructor for GlobalBehavior. */
+  public GlobalBehavior() {
+    super();
+  }
 
-    /**
-     * <p>
-     * Constructor for GlobalBehavior.</p>
-     *
-     * @param canvas a {@link org.jogamp.java3d.Canvas3D} object.
-     */
-    public GlobalBehavior(Canvas3D canvas) {
-        super(canvas, OrbitBehavior.MOUSE_MOTION_LISTENER);
-        trans3D.setTranslation(homeTrans);
-        setHomeTransform(trans3D);
-        setReverseRotate(true);
-        setReverseTranslate(true);
-        setRotFactors(2.0, 2.0);
-        setProportionalZoom(true);
-        setEnable(false);
-        homeQuat.setIdentity();
-    }
+  /**
+   * Constructor for GlobalBehavior.
+   *
+   * @param canvas a {@link org.jogamp.java3d.Canvas3D} object.
+   */
+  public GlobalBehavior(Canvas3D canvas) {
+    super(canvas, OrbitBehavior.MOUSE_MOTION_LISTENER);
+    trans3D.setTranslation(homeTrans);
+    setHomeTransform(trans3D);
+    setReverseRotate(true);
+    setReverseTranslate(true);
+    setRotFactors(2.0, 2.0);
+    setProportionalZoom(true);
+    setEnable(false);
+    homeQuat.setIdentity();
+  }
 
-    /**
-     * <p>
-     * centerView</p>
-     *
-     * @param resetRotation    a boolean.
-     * @param resetTranslation a boolean.
-     */
-    public void centerView(boolean resetRotation, boolean resetTranslation) {
-        if (!resetRotation && !resetTranslation) {
-            return;
-        }
-        vp.getViewPlatformTransform().getTransform(trans3D);
-        trans3D.get(trans);
-        if (resetRotation) {
-            trans3D.set(homeQuat);
-            trans3D.setTranslation(homeTrans);
-        }
-        if (resetTranslation) {
-            trans3D.setTranslation(homeTrans);
-        }
-        setHomeTransform(trans3D);
-        goHome();
-        if (resetRotation) {
-            navigation.transformChanged(MouseBehaviorCallback.ORBIT, trans3D);
-        }
+  /**
+   * centerView
+   *
+   * @param resetRotation a boolean.
+   * @param resetTranslation a boolean.
+   */
+  public void centerView(boolean resetRotation, boolean resetTranslation) {
+    if (!resetRotation && !resetTranslation) {
+      return;
     }
+    vp.getViewPlatformTransform().getTransform(trans3D);
+    trans3D.get(trans);
+    if (resetRotation) {
+      trans3D.set(homeQuat);
+      trans3D.setTranslation(homeTrans);
+    }
+    if (resetTranslation) {
+      trans3D.setTranslation(homeTrans);
+    }
+    setHomeTransform(trans3D);
+    goHome();
+    if (resetRotation) {
+      navigation.transformChanged(MouseBehaviorCallback.ORBIT, trans3D);
+    }
+  }
 
-    /**
-     * <p>
-     * integrateTransforms</p>
-     */
-    public void integrateTransforms() {
-        // The "first" flag allows the mouse motion to be reset
-        // (ie. dx = x - x_last where x_last is wrong initially)
-        if (first) {
-            vp.getViewPlatformTransform().getTransform(trans3D);
-        }
-        super.integrateTransforms();
-        if (first) {
-            first = false;
-            vp.getViewPlatformTransform().setTransform(trans3D);
-        }
-        vp.getViewPlatformTransform().getTransform(trans3D);
-        navigation.transformChanged(MouseBehaviorCallback.ORBIT, trans3D);
+  /** integrateTransforms */
+  public void integrateTransforms() {
+    // The "first" flag allows the mouse motion to be reset
+    // (ie. dx = x - x_last where x_last is wrong initially)
+    if (first) {
+      vp.getViewPlatformTransform().getTransform(trans3D);
     }
+    super.integrateTransforms();
+    if (first) {
+      first = false;
+      vp.getViewPlatformTransform().setTransform(trans3D);
+    }
+    vp.getViewPlatformTransform().getTransform(trans3D);
+    navigation.transformChanged(MouseBehaviorCallback.ORBIT, trans3D);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void setEnable(boolean b) {
-        super.setEnable(b);
-        if (b) {
-            first = true;
-        }
+  /** {@inheritDoc} */
+  public void setEnable(boolean b) {
+    super.setEnable(b);
+    if (b) {
+      first = true;
     }
+  }
 
-    /**
-     * <p>
-     * setUpCallback</p>
-     *
-     * @param m a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
-     */
-    public void setUpCallback(MouseBehaviorCallback m) {
-        navigation = m;
-    }
+  /**
+   * setUpCallback
+   *
+   * @param m a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
+   */
+  public void setUpCallback(MouseBehaviorCallback m) {
+    navigation = m;
+  }
 }

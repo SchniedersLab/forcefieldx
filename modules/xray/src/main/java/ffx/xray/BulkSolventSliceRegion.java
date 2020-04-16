@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,81 +34,82 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.ParallelTeam;
-
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.SliceRegion;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * This class implements a spatial decomposition based on partitioning a grid
- * into octants. The over-ridden "selectAtoms" method selects atoms that are not
- * in the asymmetric unit, but are within the supplied cutoff radius.
+ * This class implements a spatial decomposition based on partitioning a grid into octants. The
+ * over-ridden "selectAtoms" method selects atoms that are not in the asymmetric unit, but are
+ * within the supplied cutoff radius.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class BulkSolventSliceRegion extends SliceRegion {
 
-    /**
-     * Constant <code>logger</code>
-     */
-    protected static final Logger logger = Logger.getLogger(BulkSolventSliceRegion.class.getName());
+  /** Constant <code>logger</code> */
+  protected static final Logger logger = Logger.getLogger(BulkSolventSliceRegion.class.getName());
 
-    private final BulkSolventList bulkSolventList;
-    private final int gZ;
+  private final BulkSolventList bulkSolventList;
+  private final int gZ;
 
-    /**
-     * <p>
-     * Constructor for BulkSolventDensityRegion.</p>
-     *
-     * @param gX           a int.
-     * @param gY           a int.
-     * @param gZ           a int.
-     * @param grid         an array of double.
-     * @param nSymm        a int.
-     * @param threadCount  a int.
-     * @param crystal      a {@link ffx.crystal.Crystal} object.
-     * @param atoms        an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param coordinates  an array of double.
-     * @param cutoff       a double.
-     * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
-     */
-    public BulkSolventSliceRegion(int gX, int gY, int gZ, double[] grid, int nSymm, int threadCount,
-                                  Crystal crystal, Atom[] atoms, double[][][] coordinates, double cutoff,
-                                  ParallelTeam parallelTeam) {
-        super(gX, gY, gZ, grid, nSymm, threadCount, atoms, coordinates);
-        this.gZ = gZ;
-        // Asymmetric unit atoms never selected by this class.
-        fill(select[0], false);
-        bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);
+  /**
+   * Constructor for BulkSolventDensityRegion.
+   *
+   * @param gX a int.
+   * @param gY a int.
+   * @param gZ a int.
+   * @param grid an array of double.
+   * @param nSymm a int.
+   * @param threadCount a int.
+   * @param crystal a {@link ffx.crystal.Crystal} object.
+   * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+   * @param coordinates an array of double.
+   * @param cutoff a double.
+   * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
+   */
+  public BulkSolventSliceRegion(
+      int gX,
+      int gY,
+      int gZ,
+      double[] grid,
+      int nSymm,
+      int threadCount,
+      Crystal crystal,
+      Atom[] atoms,
+      double[][][] coordinates,
+      double cutoff,
+      ParallelTeam parallelTeam) {
+    super(gX, gY, gZ, grid, nSymm, threadCount, atoms, coordinates);
+    this.gZ = gZ;
+    // Asymmetric unit atoms never selected by this class.
+    fill(select[0], false);
+    bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void run() {
+    try {
+      execute(0, gZ - 1, sliceLoop[getThreadIndex()]);
+    } catch (Exception e) {
+      String message = " Exception in BulkSolventSliceRegion.";
+      logger.log(Level.SEVERE, message, e);
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void run() {
-        try {
-            execute(0, gZ - 1, sliceLoop[getThreadIndex()]);
-        } catch (Exception e) {
-            String message = " Exception in BulkSolventSliceRegion.";
-            logger.log(Level.SEVERE, message, e);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void selectAtoms() {
-        bulkSolventList.buildList(coordinates, select, false);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void selectAtoms() {
+    bulkSolventList.buildList(coordinates, select, false);
+  }
 }

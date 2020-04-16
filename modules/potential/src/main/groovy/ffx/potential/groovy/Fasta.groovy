@@ -37,18 +37,16 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import static java.lang.String.format
-
+import ffx.potential.cli.PotentialScript
 import org.apache.commons.io.FilenameUtils
 import org.biojava.nbio.core.sequence.ProteinSequence
 import org.biojava.nbio.core.sequence.io.FastaReaderHelper
 import org.biojava.nbio.core.sequence.io.FastaWriterHelper
-
-import ffx.potential.cli.PotentialScript
-
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import static java.lang.String.format
 
 /**
  * Fasta outputs a sub-sequence from a FASTA file.
@@ -61,92 +59,93 @@ import picocli.CommandLine.Parameters
 @Command(description = " Fasta outputs a sub-sequence from a FASTA file.", name = "ffxc Fasta")
 class Fasta extends PotentialScript {
 
-    /**
-     * -f or --firstResidue defines the first Fasta residue to keep (index of the first residue is 1).
-     */
-    @Option(names = ['-f', '--firstResidue'], paramLabel = "1", defaultValue = "1",
-            description = 'Define the first Fasta residue to keep (index of the first residue is 1).')
-    private int firstResidue = 1
+  /**
+   * -f or --firstResidue defines the first Fasta residue to keep (index of the first residue is 1).
+   */
+  @Option(names = ['-f', '--firstResidue'], paramLabel = "1", defaultValue = "1",
+      description = 'Define the first Fasta residue to keep (index of the first residue is 1).')
+  private int firstResidue = 1
 
-    /**
-     * -l or --lastResidue defines the last Fasta residue to keep (index of the last residue is n).
-     */
-    @Option(names = ['-l', '--lastResidue'], paramLabel = "-1", defaultValue = "-1",
-            description = 'Define the last Fasta residue to keep (index of the last residue is n).')
-    private int lastResidue = -1
+  /**
+   * -l or --lastResidue defines the last Fasta residue to keep (index of the last residue is n).
+   */
+  @Option(names = ['-l', '--lastResidue'], paramLabel = "-1", defaultValue = "-1",
+      description = 'Define the last Fasta residue to keep (index of the last residue is n).')
+  private int lastResidue = -1
 
-    /**
-     * The final argument should be an Fasta file.
-     */
-    @Parameters(arity = "1", paramLabel = "Fasta file",
-            description = 'FASTA file.')
-    List<String> filenames = null
+  /**
+   * The final argument should be an Fasta file.
+   */
+  @Parameters(arity = "1", paramLabel = "Fasta file",
+      description = 'FASTA file.')
+  List<String> filenames = null
 
-    private File baseDir = null
+  private File baseDir = null
 
-    private ProteinSequence proteinSequence
+  private ProteinSequence proteinSequence
 
-    void setBaseDir(File baseDir) {
-        this.baseDir = baseDir
+  void setBaseDir(File baseDir) {
+    this.baseDir = baseDir
+  }
+
+  /**
+   * Execute the script.
+   */
+  @Override
+  Fasta run() {
+
+    if (!init()) {
+      return null
     }
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    Fasta run() {
-
-        if (!init()) {
-            return null
-        }
-
-        if (filenames === null || filenames.size() == 0) {
-            logger.info(helpString())
-            return null
-        }
-
-        String fastaName = filenames.get(0)
-
-        logger.info("\n Opening FASTA " + fastaName)
-
-        File fastaFile = new File(fastaName)
-        LinkedHashMap<String, ProteinSequence> fastaData = FastaReaderHelper.readFastaProteinSequence(fastaFile)
-        ProteinSequence sequence = fastaData.values()[0]
-        String seq = sequence.sequenceAsString
-        int length = seq.length()
-        logger.info(format("\n %s of length: %d\n %s", sequence.getOriginalHeader(), length, seq))
-
-        if (firstResidue < 1 || firstResidue > length) {
-            firstResidue = 1
-        }
-        if (lastResidue < firstResidue || lastResidue > length) {
-            lastResidue = length
-        }
-
-        proteinSequence = new ProteinSequence(seq.substring(firstResidue - 1, lastResidue))
-        proteinSequence.setOriginalHeader(sequence.getOriginalHeader())
-        length = proteinSequence.length
-        logger.info(format("\n New sequence from residue %d to residue %d is of length %d: \n %s",
-                firstResidue, lastResidue, length, proteinSequence.toString()))
-
-        File saveDir = baseDir
-        fastaName = fastaFile.getAbsolutePath()
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(fastaName))
-        }
-        String dirName = saveDir.toString() + File.separator
-        String fileName = FilenameUtils.getName(fastaName)
-        fileName = FilenameUtils.removeExtension(fileName) + ".fasta"
-        File modelFile = new File(dirName + fileName)
-        File saveFile = potentialFunctions.versionFile(modelFile)
-
-        Collection<ProteinSequence> proteinSequenceCollection = new ArrayList<>()
-        proteinSequenceCollection.add(proteinSequence)
-
-        logger.info(format("\n Saving new Fasta file to: %s", saveFile.getAbsolutePath()))
-        FastaWriterHelper.writeProteinSequence(saveFile, proteinSequenceCollection)
-
-        return this
+    if (filenames === null || filenames.size() == 0) {
+      logger.info(helpString())
+      return null
     }
+
+    String fastaName = filenames.get(0)
+
+    logger.info("\n Opening FASTA " + fastaName)
+
+    File fastaFile = new File(fastaName)
+    LinkedHashMap<String, ProteinSequence> fastaData =
+        FastaReaderHelper.readFastaProteinSequence(fastaFile)
+    ProteinSequence sequence = fastaData.values()[0]
+    String seq = sequence.sequenceAsString
+    int length = seq.length()
+    logger.info(format("\n %s of length: %d\n %s", sequence.getOriginalHeader(), length, seq))
+
+    if (firstResidue < 1 || firstResidue > length) {
+      firstResidue = 1
+    }
+    if (lastResidue < firstResidue || lastResidue > length) {
+      lastResidue = length
+    }
+
+    proteinSequence = new ProteinSequence(seq.substring(firstResidue - 1, lastResidue))
+    proteinSequence.setOriginalHeader(sequence.getOriginalHeader())
+    length = proteinSequence.length
+    logger.info(format("\n New sequence from residue %d to residue %d is of length %d: \n %s",
+        firstResidue, lastResidue, length, proteinSequence.toString()))
+
+    File saveDir = baseDir
+    fastaName = fastaFile.getAbsolutePath()
+    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+      saveDir = new File(FilenameUtils.getFullPath(fastaName))
+    }
+    String dirName = saveDir.toString() + File.separator
+    String fileName = FilenameUtils.getName(fastaName)
+    fileName = FilenameUtils.removeExtension(fileName) + ".fasta"
+    File modelFile = new File(dirName + fileName)
+    File saveFile = potentialFunctions.versionFile(modelFile)
+
+    Collection<ProteinSequence> proteinSequenceCollection = new ArrayList<>()
+    proteinSequenceCollection.add(proteinSequence)
+
+    logger.info(format("\n Saving new Fasta file to: %s", saveFile.getAbsolutePath()))
+    FastaWriterHelper.writeProteinSequence(saveFile, proteinSequenceCollection)
+
+    return this
+  }
 
 }

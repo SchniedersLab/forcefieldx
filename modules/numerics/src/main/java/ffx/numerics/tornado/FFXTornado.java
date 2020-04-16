@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,102 +34,115 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.tornado;
 
-import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import java.util.logging.Logger;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
-/**
- * Utility Routines to use the TornadoVM
- */
+/** Utility Routines to use the TornadoVM */
 public class FFXTornado {
 
-    private static final Logger logger = Logger.getLogger(FFXTornado.class.getName());
+  private static final Logger logger = Logger.getLogger(FFXTornado.class.getName());
 
-    /**
-     * Get the default Tornado Device.
-     *
-     * @return The default TornadoDevice instance.
-     */
-    public static TornadoDevice getDevice() {
-        return TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-    }
+  /**
+   * Get the default Tornado Device.
+   *
+   * @return The default TornadoDevice instance.
+   */
+  public static TornadoDevice getDevice() {
+    return TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+  }
 
-    /**
-     * Get the Tornado Device using specified driver and device index.
-     *
-     * @param driverIndex Driver index.
-     * @param deviceIndex Device index.
-     * @return The TornadoDevice instance.
-     */
-    public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
-        return TornadoRuntime.createDevice(driverIndex, deviceIndex);
-    }
+  /**
+   * Get the Tornado Device using specified driver and device index.
+   *
+   * @param driverIndex Driver index.
+   * @param deviceIndex Device index.
+   * @return The TornadoDevice instance.
+   */
+  public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
+    return TornadoRuntime.createDevice(driverIndex, deviceIndex);
+  }
 
-    /**
-     * Get the specified Tornado Device.
-     *
-     * @param deviceID The device ID.
-     * @return The TornadoDevice instance.
-     */
-    public static TornadoDevice getDevice(int deviceID) {
-        int n = 0;
-        int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
-        for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-            TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
-            for (int deviceIndex = 0; deviceIndex < driver.getDeviceCount(); deviceIndex++) {
-                if (n == deviceID) {
-                    TornadoRuntime.setProperty("devices", driverIndex + ":" + deviceIndex);
-                    return TornadoRuntime.createDevice(driverIndex, deviceIndex);
-                }
-                n++;
-            }
+  /**
+   * Get the specified Tornado Device.
+   *
+   * @param deviceID The device ID.
+   * @return The TornadoDevice instance.
+   */
+  public static TornadoDevice getDevice(int deviceID) {
+    int n = 0;
+    int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
+    for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
+      TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
+      for (int deviceIndex = 0; deviceIndex < driver.getDeviceCount(); deviceIndex++) {
+        if (n == deviceID) {
+          TornadoRuntime.setProperty("devices", driverIndex + ":" + deviceIndex);
+          return TornadoRuntime.createDevice(driverIndex, deviceIndex);
         }
-        return null;
+        n++;
+      }
     }
+    return null;
+  }
 
-    /**
-     * Get all TornadoDevice instances.
-     *
-     * @return A List of TornadoDevice instances.
-     */
-    public static int getNumberOfDevices() {
-        int n = 0;
-        int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
-        for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-            TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
-            int count = driver.getDeviceCount();
-            n += count;
-        }
-        return n;
+  /**
+   * Get all TornadoDevice instances.
+   *
+   * @return A List of TornadoDevice instances.
+   */
+  public static int getNumberOfDevices() {
+    int n = 0;
+    int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
+    for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
+      TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
+      int count = driver.getDeviceCount();
+      n += count;
     }
+    return n;
+  }
 
-    /**
-     * List details about the passed TornadoDevice instance.
-     *
-     * @param device The TornadoDevice instance.
-     */
-    public static void logDevice(TornadoDevice device) {
-        TornadoTargetDevice tornadoTargetDevice = device.getDevice();
-        long[] workItemSize = tornadoTargetDevice.getDeviceMaxWorkItemSizes();
-//        logger.info(format("\n Device Name:         %s", tornadoTargetDevice.getDeviceName()));
-//        logger.info(format(" Compute Units:       %s", tornadoTargetDevice.getDeviceMaxComputeUnits()));
-//        logger.info(format(" Max Work Item Sizes: [%d, %d, %d]", workItemSize[0], workItemSize[1], workItemSize[2]));
-//        logger.info(format(" Clock Frequency:     %6d Ghz", tornadoTargetDevice.getDeviceMaxClockFrequency()));
-//        logger.info(format(" Global Memory:       %6d MB", tornadoTargetDevice.getDeviceGlobalMemorySize() / 1024 / 1024));
-//        logger.info(format(" Local Memory:        %6d KB", tornadoTargetDevice.getDeviceLocalMemorySize() / 1024));
-        System.out.println(format("\n Device Name:         %s", tornadoTargetDevice.getDeviceName()));
-        System.out.println(format(" Compute Units:       %s", tornadoTargetDevice.getDeviceMaxComputeUnits()));
-        System.out.println(format(" Max Work Item Sizes: [%d, %d, %d]", workItemSize[0], workItemSize[1], workItemSize[2]));
-        System.out.println(format(" Clock Frequency:     %6d Ghz", tornadoTargetDevice.getDeviceMaxClockFrequency()));
-        System.out.println(format(" Global Memory:       %6d MB", tornadoTargetDevice.getDeviceGlobalMemorySize() / 1024 / 1024));
-        System.out.println(format(" Local Memory:        %6d KB", tornadoTargetDevice.getDeviceLocalMemorySize() / 1024));
-    }
-
+  /**
+   * List details about the passed TornadoDevice instance.
+   *
+   * @param device The TornadoDevice instance.
+   */
+  public static void logDevice(TornadoDevice device) {
+    TornadoTargetDevice tornadoTargetDevice = device.getDevice();
+    long[] workItemSize = tornadoTargetDevice.getDeviceMaxWorkItemSizes();
+    //        logger.info(format("\n Device Name:         %s",
+    // tornadoTargetDevice.getDeviceName()));
+    //        logger.info(format(" Compute Units:       %s",
+    // tornadoTargetDevice.getDeviceMaxComputeUnits()));
+    //        logger.info(format(" Max Work Item Sizes: [%d, %d, %d]", workItemSize[0],
+    // workItemSize[1], workItemSize[2]));
+    //        logger.info(format(" Clock Frequency:     %6d Ghz",
+    // tornadoTargetDevice.getDeviceMaxClockFrequency()));
+    //        logger.info(format(" Global Memory:       %6d MB",
+    // tornadoTargetDevice.getDeviceGlobalMemorySize() / 1024 / 1024));
+    //        logger.info(format(" Local Memory:        %6d KB",
+    // tornadoTargetDevice.getDeviceLocalMemorySize() / 1024));
+    System.out.println(format("\n Device Name:         %s", tornadoTargetDevice.getDeviceName()));
+    System.out.println(
+        format(" Compute Units:       %s", tornadoTargetDevice.getDeviceMaxComputeUnits()));
+    System.out.println(
+        format(
+            " Max Work Item Sizes: [%d, %d, %d]",
+            workItemSize[0], workItemSize[1], workItemSize[2]));
+    System.out.println(
+        format(" Clock Frequency:     %6d Ghz", tornadoTargetDevice.getDeviceMaxClockFrequency()));
+    System.out.println(
+        format(
+            " Global Memory:       %6d MB",
+            tornadoTargetDevice.getDeviceGlobalMemorySize() / 1024 / 1024));
+    System.out.println(
+        format(
+            " Local Memory:        %6d KB", tornadoTargetDevice.getDeviceLocalMemorySize() / 1024));
+  }
 }

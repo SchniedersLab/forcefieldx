@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,107 +34,111 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx;
 
+import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
+import static java.lang.String.format;
+
+import ffx.ui.LogHandler;
+import ffx.ui.MainPanel;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
 import java.util.logging.Logger;
-import static java.lang.String.format;
-
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import ffx.ui.LogHandler;
-import ffx.ui.MainPanel;
-import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
-
 /**
- * The HeadlessMain class is the entry point to the command line version of
- * Force Field X.
+ * The HeadlessMain class is the entry point to the command line version of Force Field X.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class HeadlessMain {
 
-    private static final Logger logger = Logger.getLogger(HeadlessMain.class.getName());
-    /**
-     * This is the main application container for both the GUI and CLI.
-     */
-    public MainPanel mainPanel;
+  private static final Logger logger = Logger.getLogger(HeadlessMain.class.getName());
+  /** This is the main application container for both the GUI and CLI. */
+  public MainPanel mainPanel;
 
-    /**
-     * Complete initializations.
-     *
-     * @param commandLineFile The command line file.
-     * @param argList         The command line argument list.
-     * @param logHandler      The FFX log handler.
-     */
-    HeadlessMain(File commandLineFile, List<String> argList, LogHandler logHandler) {
+  /**
+   * Complete initializations.
+   *
+   * @param commandLineFile The command line file.
+   * @param argList The command line argument list.
+   * @param logHandler The FFX log handler.
+   */
+  HeadlessMain(File commandLineFile, List<String> argList, LogHandler logHandler) {
 
-        // Construct the MainPanel, set it's LogHandler, and initialize then it.
-        mainPanel = new MainPanel();
-        logHandler.setMainPanel(mainPanel);
-        mainPanel.initialize();
+    // Construct the MainPanel, set it's LogHandler, and initialize then it.
+    mainPanel = new MainPanel();
+    logHandler.setMainPanel(mainPanel);
+    mainPanel.initialize();
 
-        // Open the supplied script file.
-        if (commandLineFile != null) {
-            if (!commandLineFile.exists()) {
-                // See if the commandLineFile is an embedded script.
-                String name = commandLineFile.getName();
-                name = name.replace('.', '/');
-                String pathName = "ffx/scripts/" + name;
-                ClassLoader loader = getClass().getClassLoader();
-                URL embeddedScript = loader.getResource(pathName + ".ffx");
-                if (embeddedScript == null) {
-                    embeddedScript = loader.getResource(pathName + ".groovy");
-                }
-
-                // One last check, flipping the case of the first character of the script.
-                if (embeddedScript == null) {
-                    logger.warning(String.format(" File %s not found; attempting to find script with different capitalization", name));
-                    char firstChar = name.charAt(0);
-                    if (Character.isUpperCase(firstChar)) {
-                        name = String.format("%c%s", Character.toLowerCase(firstChar), name.substring(1));
-                    } else {
-                        name = String.format("%c%s", Character.toUpperCase(firstChar), name.substring(1));
-                    }
-                    pathName = "ffx/scripts/" + name;
-                    embeddedScript = loader.getResource(pathName + ".ffx");
-                }
-                if (embeddedScript == null) {
-                    embeddedScript = loader.getResource(pathName + ".groovy");
-                }
-
-                if (embeddedScript != null) {
-                    try {
-                        commandLineFile = new File(copyInputStreamToTmpFile(embeddedScript.openStream(),
-                                "ffx", commandLineFile.getName(), "groovy"));
-                    } catch (Exception e) {
-                        logger.warning("Exception extracting embedded script "
-                                + embeddedScript.toString() + "\n" + e.toString());
-                    }
-                }
-            }
-            if (commandLineFile.exists()) {
-                mainPanel.getModelingShell().setArgList(argList);
-                mainPanel.open(commandLineFile, null);
-            } else {
-                logger.warning(format("%s was not found.", commandLineFile.toString()));
-            }
+    // Open the supplied script file.
+    if (commandLineFile != null) {
+      if (!commandLineFile.exists()) {
+        // See if the commandLineFile is an embedded script.
+        String name = commandLineFile.getName();
+        name = name.replace('.', '/');
+        String pathName = "ffx/scripts/" + name;
+        ClassLoader loader = getClass().getClassLoader();
+        URL embeddedScript = loader.getResource(pathName + ".ffx");
+        if (embeddedScript == null) {
+          embeddedScript = loader.getResource(pathName + ".groovy");
         }
-    }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Commons.Lang Style toString.
-     */
-    @Override
-    public String toString() {
-        ToStringBuilder toStringBuilder = new ToStringBuilder(this).append("Logger: " + logger.getName());
-        return toStringBuilder.toString();
-    }
+        // One last check, flipping the case of the first character of the script.
+        if (embeddedScript == null) {
+          logger.warning(
+              String.format(
+                  " File %s not found; attempting to find script with different capitalization",
+                  name));
+          char firstChar = name.charAt(0);
+          if (Character.isUpperCase(firstChar)) {
+            name = String.format("%c%s", Character.toLowerCase(firstChar), name.substring(1));
+          } else {
+            name = String.format("%c%s", Character.toUpperCase(firstChar), name.substring(1));
+          }
+          pathName = "ffx/scripts/" + name;
+          embeddedScript = loader.getResource(pathName + ".ffx");
+        }
+        if (embeddedScript == null) {
+          embeddedScript = loader.getResource(pathName + ".groovy");
+        }
 
+        if (embeddedScript != null) {
+          try {
+            commandLineFile =
+                new File(
+                    copyInputStreamToTmpFile(
+                        embeddedScript.openStream(), "ffx", commandLineFile.getName(), "groovy"));
+          } catch (Exception e) {
+            logger.warning(
+                "Exception extracting embedded script "
+                    + embeddedScript.toString()
+                    + "\n"
+                    + e.toString());
+          }
+        }
+      }
+      if (commandLineFile.exists()) {
+        mainPanel.getModelingShell().setArgList(argList);
+        mainPanel.open(commandLineFile, null);
+      } else {
+        logger.warning(format("%s was not found.", commandLineFile.toString()));
+      }
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Commons.Lang Style toString.
+   */
+  @Override
+  public String toString() {
+    ToStringBuilder toStringBuilder =
+        new ToStringBuilder(this).append("Logger: " + logger.getName());
+    return toStringBuilder.toString();
+  }
 }

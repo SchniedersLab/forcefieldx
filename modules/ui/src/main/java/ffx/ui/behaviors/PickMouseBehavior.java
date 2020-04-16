@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,12 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.behaviors;
 
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
 import java.util.Iterator;
-
 import org.jogamp.java3d.Behavior;
 import org.jogamp.java3d.Bounds;
 import org.jogamp.java3d.BranchGroup;
@@ -58,98 +57,93 @@ import org.jogamp.java3d.utils.picking.PickCanvas;
  */
 public abstract class PickMouseBehavior extends Behavior {
 
-    static int count = 0;
-    protected PickCanvas pickCanvas;
-    protected WakeupCriterion[] conditions;
-    protected WakeupOr wakeupCondition;
-    protected boolean buttonPress = false;
-    protected boolean shiftButton = false;
-    protected boolean controlButton = false;
-    protected TransformGroup currGrp;
-    protected MouseEvent mevent;
+  static int count = 0;
+  protected PickCanvas pickCanvas;
+  protected WakeupCriterion[] conditions;
+  protected WakeupOr wakeupCondition;
+  protected boolean buttonPress = false;
+  protected boolean shiftButton = false;
+  protected boolean controlButton = false;
+  protected TransformGroup currGrp;
+  protected MouseEvent mevent;
 
-    /**
-     * Creates a PickMouseBehavior given current canvas, root of the tree to
-     * operate on, and the bounds.
-     *
-     * @param canvas a {@link org.jogamp.java3d.Canvas3D} object.
-     * @param root   a {@link org.jogamp.java3d.BranchGroup} object.
-     * @param bounds a {@link org.jogamp.java3d.Bounds} object.
-     */
-    public PickMouseBehavior(Canvas3D canvas, BranchGroup root, Bounds bounds) {
-        super();
-        setSchedulingBounds(bounds);
-        currGrp = new TransformGroup();
-        currGrp.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        currGrp.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-        root.addChild(currGrp);
-        pickCanvas = new PickCanvas(canvas, root);
-        pickCanvas.setMode(PickCanvas.GEOMETRY);
-        pickCanvas.setTolerance(10.0f);
+  /**
+   * Creates a PickMouseBehavior given current canvas, root of the tree to operate on, and the
+   * bounds.
+   *
+   * @param canvas a {@link org.jogamp.java3d.Canvas3D} object.
+   * @param root a {@link org.jogamp.java3d.BranchGroup} object.
+   * @param bounds a {@link org.jogamp.java3d.Bounds} object.
+   */
+  public PickMouseBehavior(Canvas3D canvas, BranchGroup root, Bounds bounds) {
+    super();
+    setSchedulingBounds(bounds);
+    currGrp = new TransformGroup();
+    currGrp.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+    currGrp.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+    root.addChild(currGrp);
+    pickCanvas = new PickCanvas(canvas, root);
+    pickCanvas.setMode(PickCanvas.GEOMETRY);
+    pickCanvas.setTolerance(10.0f);
+  }
+
+  /** initialize */
+  public void initialize() {
+    conditions = new WakeupCriterion[1];
+    // conditions[0] = new WakeupOnAWTEvent(Event.MOUSE_DOWN);
+    conditions[0] = new WakeupOnAWTEvent(AWTEvent.MOUSE_EVENT_MASK);
+    wakeupCondition = new WakeupOr(conditions);
+    wakeupOn(wakeupCondition);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void processStimulus(Iterator<WakeupCriterion> criteria) {
+    AWTEvent[] evt = null;
+    while (criteria.hasNext()) {
+      WakeupCriterion wakeup = criteria.next();
+      if (wakeup instanceof WakeupOnAWTEvent) {
+        evt = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+      }
     }
-
-    /**
-     * <p>
-     * initialize</p>
-     */
-    public void initialize() {
-        conditions = new WakeupCriterion[1];
-        // conditions[0] = new WakeupOnAWTEvent(Event.MOUSE_DOWN);
-        conditions[0] = new WakeupOnAWTEvent(AWTEvent.MOUSE_EVENT_MASK);
-        wakeupCondition = new WakeupOr(conditions);
-        wakeupOn(wakeupCondition);
+    int xpos = 0, ypos = 0;
+    if (evt != null && evt[0] instanceof MouseEvent) {
+      mevent = (MouseEvent) evt[0];
+      processMouseEvent((MouseEvent) evt[0]);
+      xpos = mevent.getPoint().x;
+      ypos = mevent.getPoint().y;
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void processStimulus(Iterator<WakeupCriterion> criteria) {
-        AWTEvent[] evt = null;
-        while (criteria.hasNext()) {
-            WakeupCriterion wakeup = criteria.next();
-            if (wakeup instanceof WakeupOnAWTEvent) {
-                evt = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
-            }
-        }
-        int xpos = 0, ypos = 0;
-        if (evt != null && evt[0] instanceof MouseEvent) {
-            mevent = (MouseEvent) evt[0];
-            processMouseEvent((MouseEvent) evt[0]);
-            xpos = mevent.getPoint().x;
-            ypos = mevent.getPoint().y;
-        }
-        if (buttonPress) {
-            updateScene(xpos, ypos);
-        }
-        wakeupOn(wakeupCondition);
+    if (buttonPress) {
+      updateScene(xpos, ypos);
     }
+    wakeupOn(wakeupCondition);
+  }
 
-    /**
-     * <p>
-     * setTolerance</p>
-     *
-     * @param tol a float.
-     */
-    public void setTolerance(float tol) {
-        if (pickCanvas != null) {
-            pickCanvas.setTolerance(tol);
-        }
+  /**
+   * setTolerance
+   *
+   * @param tol a float.
+   */
+  public void setTolerance(float tol) {
+    if (pickCanvas != null) {
+      pickCanvas.setTolerance(tol);
     }
+  }
 
-    /**
-     * Subclasses shall implement this update function.
-     *
-     * @param xpos a int.
-     * @param ypos a int.
-     */
-    public abstract void updateScene(int xpos, int ypos);
+  /**
+   * Subclasses shall implement this update function.
+   *
+   * @param xpos a int.
+   * @param ypos a int.
+   */
+  public abstract void updateScene(int xpos, int ypos);
 
-    private void processMouseEvent(MouseEvent evt) {
-        buttonPress = evt.getID() == MouseEvent.MOUSE_PRESSED
-                | evt.getID() == MouseEvent.MOUSE_CLICKED
-                | evt.getID() == MouseEvent.MOUSE_RELEASED;
-        controlButton = evt.isControlDown();
-        shiftButton = evt.isShiftDown();
-    }
+  private void processMouseEvent(MouseEvent evt) {
+    buttonPress =
+        evt.getID() == MouseEvent.MOUSE_PRESSED
+            | evt.getID() == MouseEvent.MOUSE_CLICKED
+            | evt.getID() == MouseEvent.MOUSE_RELEASED;
+    controlButton = evt.isControlDown();
+    shiftButton = evt.isShiftDown();
+  }
 }

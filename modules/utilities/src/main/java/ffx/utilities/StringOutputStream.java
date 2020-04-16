@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.utilities;
 
 import java.io.ByteArrayOutputStream;
@@ -43,59 +43,58 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 /**
- * <p>StringOutputStream class.</p>
+ * StringOutputStream class.
  *
  * @author Michael J. Schnieders
  */
 public class StringOutputStream extends PrintStream {
 
-    ByteArrayOutputStream byteArrayOutputStream;
-    Charset charset;
+  ByteArrayOutputStream byteArrayOutputStream;
+  Charset charset;
 
-    /**
-     * <p>Constructor for StringOutputStream.</p>
-     *
-     * @param byteArrayOutputStream a {@link java.io.ByteArrayOutputStream} object.
-     * @throws java.io.UnsupportedEncodingException if any.
-     */
-    public StringOutputStream(ByteArrayOutputStream byteArrayOutputStream) throws UnsupportedEncodingException {
-        super(byteArrayOutputStream, true, Charset.defaultCharset().displayName());
-        this.byteArrayOutputStream = byteArrayOutputStream;
-        charset = Charset.defaultCharset();
+  /**
+   * Constructor for StringOutputStream.
+   *
+   * @param byteArrayOutputStream a {@link java.io.ByteArrayOutputStream} object.
+   * @throws java.io.UnsupportedEncodingException if any.
+   */
+  public StringOutputStream(ByteArrayOutputStream byteArrayOutputStream)
+      throws UnsupportedEncodingException {
+    super(byteArrayOutputStream, true, Charset.defaultCharset().displayName());
+    this.byteArrayOutputStream = byteArrayOutputStream;
+    charset = Charset.defaultCharset();
+  }
+
+  /**
+   * Constructor for StringOutputStream.
+   *
+   * @param byteArrayOutputStream a {@link java.io.ByteArrayOutputStream} object.
+   * @param charset a {@link java.nio.charset.Charset} object.
+   * @throws java.io.UnsupportedEncodingException if any.
+   */
+  public StringOutputStream(ByteArrayOutputStream byteArrayOutputStream, Charset charset)
+      throws UnsupportedEncodingException {
+    super(byteArrayOutputStream, true, charset.displayName());
+    this.byteArrayOutputStream = byteArrayOutputStream;
+    this.charset = charset;
+  }
+
+  /** close. */
+  public void close() {
+    super.close();
+    try {
+      byteArrayOutputStream.close();
+    } catch (Exception e) {
+      //
     }
+  }
 
-    /**
-     * <p>Constructor for StringOutputStream.</p>
-     *
-     * @param byteArrayOutputStream a {@link java.io.ByteArrayOutputStream} object.
-     * @param charset               a {@link java.nio.charset.Charset} object.
-     * @throws java.io.UnsupportedEncodingException if any.
-     */
-    public StringOutputStream(ByteArrayOutputStream byteArrayOutputStream, Charset charset) throws UnsupportedEncodingException {
-        super(byteArrayOutputStream, true, charset.displayName());
-        this.byteArrayOutputStream = byteArrayOutputStream;
-        this.charset = charset;
-    }
-
-    /**
-     * <p>close.</p>
-     */
-    public void close() {
-        super.close();
-        try {
-            byteArrayOutputStream.close();
-        } catch (Exception e) {
-            //
-        }
-    }
-
-    /**
-     * <p>toString.</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String toString() {
-        return new String(byteArrayOutputStream.toByteArray(), charset);
-    }
-
+  /**
+   * toString.
+   *
+   * @return a {@link java.lang.String} object.
+   */
+  public String toString() {
+    return new String(byteArrayOutputStream.toByteArray(), charset);
+  }
 }

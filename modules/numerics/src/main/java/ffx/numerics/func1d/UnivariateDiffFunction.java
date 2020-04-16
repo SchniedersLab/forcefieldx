@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,53 +34,52 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.func1d;
 
 /**
- * A UnivariateDiffFunction describes a function of a single value (often
- * lambda). Generally, it should be at least twice differentiable.
+ * A UnivariateDiffFunction describes a function of a single value (often lambda). Generally, it
+ * should be at least twice differentiable.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public interface UnivariateDiffFunction {
 
-    /**
-     * First derivative at a point.
-     *
-     * @param x a double.
-     * @return f'(x)
-     * @throws java.lang.IllegalArgumentException If f'(x) is undefined at x.
-     */
-    double firstDerivative(double x) throws IllegalArgumentException;
+  /**
+   * First derivative at a point.
+   *
+   * @param x a double.
+   * @return f'(x)
+   * @throws java.lang.IllegalArgumentException If f'(x) is undefined at x.
+   */
+  double firstDerivative(double x) throws IllegalArgumentException;
 
-    /**
-     * N'th order derivative at a point. Should be relatively optional for any
-     * order above 2.
-     *
-     * @param x     a double.
-     * @param order Derivative order (&gt;= 1)
-     * @return d^nf(x)/dx^n
-     * @throws java.lang.IllegalArgumentException If derivative undefined at x.
-     */
-    double nthDerivative(double x, int order) throws IllegalArgumentException;
+  /**
+   * N'th order derivative at a point. Should be relatively optional for any order above 2.
+   *
+   * @param x a double.
+   * @param order Derivative order (&gt;= 1)
+   * @return d^nf(x)/dx^n
+   * @throws java.lang.IllegalArgumentException If derivative undefined at x.
+   */
+  double nthDerivative(double x, int order) throws IllegalArgumentException;
 
-    /**
-     * Second derivative at a point.
-     *
-     * @param x a double.
-     * @return f''(x)
-     * @throws java.lang.IllegalArgumentException If f''(x) is undefined at x.
-     */
-    double secondDerivative(double x) throws IllegalArgumentException;
+  /**
+   * Second derivative at a point.
+   *
+   * @param x a double.
+   * @return f''(x)
+   * @throws java.lang.IllegalArgumentException If f''(x) is undefined at x.
+   */
+  double secondDerivative(double x) throws IllegalArgumentException;
 
-    /**
-     * Value at a point
-     *
-     * @param x a double.
-     * @return f(x)
-     * @throws java.lang.IllegalArgumentException If f(x) is undefined at x.
-     */
-    double valueAt(double x) throws IllegalArgumentException;
+  /**
+   * Value at a point
+   *
+   * @param x a double.
+   * @return f(x)
+   * @throws java.lang.IllegalArgumentException If f(x) is undefined at x.
+   */
+  double valueAt(double x) throws IllegalArgumentException;
 }

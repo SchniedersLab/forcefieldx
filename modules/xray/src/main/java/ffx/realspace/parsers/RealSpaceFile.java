@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,9 +34,13 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.realspace.parsers;
 
+import static org.apache.commons.io.FilenameUtils.isExtension;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
+
+import ffx.potential.MolecularAssembly;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -44,138 +48,132 @@ import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.apache.commons.io.FilenameUtils.isExtension;
-import static org.apache.commons.io.FilenameUtils.removeExtension;
-
-import ffx.potential.MolecularAssembly;
-
 /**
- * <p>
- * RealSpaceFile class.</p>
+ * RealSpaceFile class.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public class RealSpaceFile {
 
-    private static final Logger logger = Logger.getLogger(RealSpaceFile.class.getName());
+  private static final Logger logger = Logger.getLogger(RealSpaceFile.class.getName());
 
-    private final String filename;
-    private final double weight;
-    private final RealSpaceFileFilter realSpaceFileFilter;
+  private final String filename;
+  private final double weight;
+  private final RealSpaceFileFilter realSpaceFileFilter;
 
-    /**
-     * Read in a Real Space density file and set weight set to 1.0.
-     *
-     * @param filename file name to read in
-     */
-    public RealSpaceFile(String filename) {
-        this(filename, 1.0);
+  /**
+   * Read in a Real Space density file and set weight set to 1.0.
+   *
+   * @param filename file name to read in
+   */
+  public RealSpaceFile(String filename) {
+    this(filename, 1.0);
+  }
+
+  /**
+   * Read in a Real Space density file.
+   *
+   * @param fileName file name to read in
+   * @param weight the weight of the data
+   */
+  public RealSpaceFile(String fileName, double weight) {
+    File tmp = new File(fileName);
+    if (!tmp.exists()) {
+      logger.severe(" Data file: " + fileName + " not found!");
     }
 
-    /**
-     * Read in a Real Space density file.
-     *
-     * @param fileName file name to read in
-     * @param weight   the weight of the data
-     */
-    public RealSpaceFile(String fileName, double weight) {
-        File tmp = new File(fileName);
-        if (!tmp.exists()) {
-            logger.severe(" Data file: " + fileName + " not found!");
-        }
-
-        if (isExtension(fileName, "map")) {
-            realSpaceFileFilter = new CCP4MapFilter();
-        } else {
-            realSpaceFileFilter = null;
-        }
-
-        this.filename = fileName;
-        this.weight = weight;
+    if (isExtension(fileName, "map")) {
+      realSpaceFileFilter = new CCP4MapFilter();
+    } else {
+      realSpaceFileFilter = null;
     }
 
-    /**
-     * Read in a Real Space density file based on the molecular assembly
-     * filename, using a weight of 1.0 and neutron value of false.
-     *
-     * @param assembly {@link ffx.potential.MolecularAssembly} from which a
-     *                 filename will be determined.
-     */
-    public RealSpaceFile(MolecularAssembly[] assembly) {
-        this(assembly[0], 1.0);
+    this.filename = fileName;
+    this.weight = weight;
+  }
+
+  /**
+   * Read in a Real Space density file based on the molecular assembly filename, using a weight of
+   * 1.0 and neutron value of false.
+   *
+   * @param assembly {@link ffx.potential.MolecularAssembly} from which a filename will be
+   *     determined.
+   */
+  public RealSpaceFile(MolecularAssembly[] assembly) {
+    this(assembly[0], 1.0);
+  }
+
+  /**
+   * Read in a Real Space density file based on the molecular assembly filename, using a weight of
+   * 1.0.
+   *
+   * @param assembly {@link ffx.potential.MolecularAssembly} from which a filename will be
+   *     determined.
+   */
+  public RealSpaceFile(MolecularAssembly assembly) {
+    this(assembly, 1.0);
+  }
+
+  /**
+   * Read in a Real Space density file based on the molecular assembly filename, using a weight of
+   * 1.0.
+   *
+   * @param assembly {@link ffx.potential.MolecularAssembly} from which a filename will be
+   *     determined
+   * @param weight the weight of the data
+   */
+  public RealSpaceFile(MolecularAssembly assembly, double weight) {
+    String name = removeExtension(assembly.getFile().getPath());
+
+    File tmp = new File(name + ".map");
+    if (tmp.exists()) {
+      logger.info(" Data file: " + tmp.getName());
+      realSpaceFileFilter = new CCP4MapFilter();
+    } else {
+      logger.severe(" No input data was found.");
+      realSpaceFileFilter = null;
     }
 
-    /**
-     * Read in a Real Space density file based on the molecular assembly
-     * filename, using a weight of 1.0.
-     *
-     * @param assembly {@link ffx.potential.MolecularAssembly} from which a
-     *                 filename will be determined.
-     */
-    public RealSpaceFile(MolecularAssembly assembly) {
-        this(assembly, 1.0);
+    String filenameHolder;
+    try {
+      Path filePath = Paths.get(tmp.getCanonicalPath());
+      Path pwdPath = Paths.get(new File("").getCanonicalPath());
+      filenameHolder = pwdPath.relativize(filePath).toString();
+    } catch (IOException e) {
+      String message =
+          " Relative path to provided data file could not be resolved: using map file name instead.";
+      logger.log(Level.WARNING, message, e);
+      filenameHolder = tmp.getName();
     }
+    this.filename = filenameHolder;
+    this.weight = weight;
+  }
 
-    /**
-     * Read in a Real Space density file based on the molecular assembly
-     * filename, using a weight of 1.0.
-     *
-     * @param assembly {@link ffx.potential.MolecularAssembly} from which a
-     *                 filename will be determined
-     * @param weight   the weight of the data
-     */
-    public RealSpaceFile(MolecularAssembly assembly, double weight) {
-        String name = removeExtension(assembly.getFile().getPath());
+  /**
+   * Getter for the field <code>filename</code>.
+   *
+   * @return the filename
+   */
+  public String getFilename() {
+    return filename;
+  }
 
-        File tmp = new File(name + ".map");
-        if (tmp.exists()) {
-            logger.info(" Data file: " + tmp.getName());
-            realSpaceFileFilter = new CCP4MapFilter();
-        } else {
-            logger.severe(" No input data was found.");
-            realSpaceFileFilter = null;
-        }
+  /**
+   * Getter for the field <code>realSpaceFileFilter</code>.
+   *
+   * @return the realSpaceFileFilter
+   */
+  public RealSpaceFileFilter getRealSpaceFileFilter() {
+    return realSpaceFileFilter;
+  }
 
-        String filenameHolder;
-        try {
-            Path filePath = Paths.get(tmp.getCanonicalPath());
-            Path pwdPath = Paths.get(new File("").getCanonicalPath());
-            filenameHolder = pwdPath.relativize(filePath).toString();
-        } catch (IOException e) {
-            String message
-                    = " Relative path to provided data file could not be resolved: using map file name instead.";
-            logger.log(Level.WARNING, message, e);
-            filenameHolder = tmp.getName();
-        }
-        this.filename = filenameHolder;
-        this.weight = weight;
-    }
-
-    /**
-     * <p>Getter for the field <code>filename</code>.</p>
-     *
-     * @return the filename
-     */
-    public String getFilename() {
-        return filename;
-    }
-
-    /**
-     * <p>Getter for the field <code>realSpaceFileFilter</code>.</p>
-     *
-     * @return the realSpaceFileFilter
-     */
-    public RealSpaceFileFilter getRealSpaceFileFilter() {
-        return realSpaceFileFilter;
-    }
-
-    /**
-     * Return the weight of this dataset.
-     *
-     * @return weight The weight (wA).
-     */
-    public double getWeight() {
-        return weight;
-    }
+  /**
+   * Return the weight of this dataset.
+   *
+   * @return weight The weight (wA).
+   */
+  public double getWeight() {
+    return weight;
+  }
 }

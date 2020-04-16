@@ -37,18 +37,16 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import java.util.stream.Collectors
-
-import org.apache.commons.io.FilenameUtils
-
 import ffx.crystal.Crystal
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The Cart2Frac script converts Cartesian coordinates to Fractional.
@@ -60,104 +58,107 @@ import picocli.CommandLine.Parameters
 @Command(description = " Convert Cartesian coordinates to fractional.", name = "ffxc Cart2Frac")
 class Cart2Frac extends PotentialScript {
 
-    /**
-     * The final argument(s) should be one or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files",
-            description = 'The atomic coordinate file in PDB or XYZ format.')
-    List<String> filenames = null
-    private MolecularAssembly[] assemblies
+  /**
+   * The final argument(s) should be one or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files",
+      description = 'The atomic coordinate file in PDB or XYZ format.')
+  List<String> filenames = null
+  private MolecularAssembly[] assemblies
 
-    public double[][] cartCoordinates = null
-    public double[][] fracCoordinates = null
+  public double[][] cartCoordinates = null
+  public double[][] fracCoordinates = null
 
-    private File baseDir = null
+  private File baseDir = null
 
-    void setBaseDir(File baseDir) {
-        this.baseDir = baseDir
+  void setBaseDir(File baseDir) {
+    this.baseDir = baseDir
+  }
+
+  /**
+   * Execute the script.
+   */
+  @Override
+  Cart2Frac run() {
+
+    if (!init()) {
+      return null
     }
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    Cart2Frac run() {
-
-        if (!init()) {
-            return null
-        }
-
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.openAll(filenames.get(0))
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return null
-        } else {
-            assemblies = [activeAssembly]
-        }
-
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
-        logger.info("\n Converting from Cartesian to fractional coordinates for " + modelFilename)
-
-        // Loop over each system.
-        for (int i = 0; i < assemblies.length; i++) {
-            def system = assemblies[i]
-            Crystal crystal = system.getCrystal().getUnitCell()
-
-            List<Atom> atoms = system.getAtomList()
-            fracCoordinates = new double[atoms.size()][3]
-            cartCoordinates = new double[atoms.size()][3]
-
-            double[] frac = new double[3]
-            double[] cart = new double[3]
-
-            int index = 0
-            for (Atom atom in atoms) {
-                atom.getXYZ(cart)
-                crystal.toFractionalCoordinates(cart, frac)
-                atom.moveTo(frac)
-
-                cartCoordinates[index][0] = cart[0]
-                cartCoordinates[index][1] = cart[1]
-                cartCoordinates[index][2] = cart[2]
-
-                fracCoordinates[index][0] = frac[0]
-                fracCoordinates[index][1] = frac[1]
-                fracCoordinates[index++][2] = frac[2]
-            }
-        }
-
-        File saveDir = baseDir
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-
-        String fileName = FilenameUtils.getName(modelFilename)
-        String ext = FilenameUtils.getExtension(fileName)
-        fileName = FilenameUtils.removeExtension(fileName)
-
-        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
-
-        if (ext.toUpperCase().contains("XYZ")) {
-            potentialFunctions.saveAsXYZ(assemblies[0], new File(dirName + fileName + ".xyz"))
-        } else {
-            potentialFunctions.saveAsPDB(assemblies, new File(dirName + fileName + ".pdb"))
-        }
-
-        return this
+    if (filenames != null && filenames.size() > 0) {
+      assemblies = potentialFunctions.openAll(filenames.get(0))
+      activeAssembly = assemblies[0]
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return null
+    } else {
+      assemblies = [activeAssembly]
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        if (assemblies == null) {
-            return new ArrayList<Potential>()
-        } else {
-            return Arrays.stream(assemblies).
-                    filter { a -> a != null }.
-                    map { a -> a.getPotentialEnergy() }.
-                    filter { e -> e != null }.
-                    collect(Collectors.toList())
-        }
+    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+    logger.info("\n Converting from Cartesian to fractional coordinates for " + modelFilename)
+
+    // Loop over each system.
+    for (int i = 0; i < assemblies.length; i++) {
+      def system = assemblies[i]
+      Crystal crystal = system.getCrystal().getUnitCell()
+
+      List<Atom> atoms = system.getAtomList()
+      fracCoordinates = new double[atoms.size()][3]
+      cartCoordinates = new double[atoms.size()][3]
+
+      double[] frac = new double[3]
+      double[] cart = new double[3]
+
+      int index = 0
+      for (Atom atom in atoms) {
+        atom.getXYZ(cart)
+        crystal.toFractionalCoordinates(cart, frac)
+        atom.moveTo(frac)
+
+        cartCoordinates[index][0] = cart[0]
+        cartCoordinates[index][1] = cart[1]
+        cartCoordinates[index][2] = cart[2]
+
+        fracCoordinates[index][0] = frac[0]
+        fracCoordinates[index][1] = frac[1]
+        fracCoordinates[index++][2] = frac[2]
+      }
     }
+
+    File saveDir = baseDir
+    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+    }
+
+    String fileName = FilenameUtils.getName(modelFilename)
+    String ext = FilenameUtils.getExtension(fileName)
+    fileName = FilenameUtils.removeExtension(fileName)
+
+    String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
+
+    if (ext.toUpperCase().contains("XYZ")) {
+      potentialFunctions.saveAsXYZ(assemblies[0], new File(dirName + fileName + ".xyz"))
+    } else {
+      potentialFunctions.saveAsPDB(assemblies, new File(dirName + fileName + ".pdb"))
+    }
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    if (assemblies == null) {
+      return new ArrayList<Potential>()
+    } else {
+      return Arrays.stream(assemblies).
+          filter {a -> a != null
+          }.
+          map {a -> a.getPotentialEnergy()
+          }.
+          filter {e -> e != null
+          }.
+          collect(Collectors.toList())
+    }
+  }
 }

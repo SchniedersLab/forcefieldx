@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,250 +34,243 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.nonbonded;
 
-import java.nio.DoubleBuffer;
-import java.util.logging.Level;
+import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
-
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
+import java.nio.DoubleBuffer;
+import java.util.logging.Level;
 
 /**
  * The SliceLoop class is used to parallelize placing onto a 3D grid
- * <p>
- * 1) Multipoles using B-splines or
- * <p>
- * 2) Diffraction form factors.
- * <p>
- * Each "slice" of the grid (i.e. a fixed value of the z-coordinate) is operated
- * on by only a single thread to logically enforce atomic updates of grid
- * magnitudes.
+ *
+ * <p>1) Multipoles using B-splines or
+ *
+ * <p>2) Diffraction form factors.
+ *
+ * <p>Each "slice" of the grid (i.e. a fixed value of the z-coordinate) is operated on by only a
+ * single thread to logically enforce atomic updates of grid magnitudes.
  *
  * @author Armin Avdic
  */
 public class SliceRegion extends ParallelRegion {
 
+  public int buff = 3;
+  public boolean[][] select;
+  protected SliceLoop[] sliceLoop;
+  protected double[][][] coordinates;
+  int nAtoms;
+  int nSymm;
+  private int gX, gY, gZ;
+  private DoubleBuffer gridBuffer;
+  private GridInitLoop[] gridInitLoop;
+  private double initValue = 0.0;
+  private int gridSize;
+  private double[] grid;
+  private boolean rebuildList;
+  private int[][] zAtListBuild;
 
-    public int buff = 3;
-    public boolean[][] select;
-    protected SliceLoop[] sliceLoop;
-    protected double[][][] coordinates;
-    int nAtoms;
-    int nSymm;
-    private int gX, gY, gZ;
-    private DoubleBuffer gridBuffer;
-    private GridInitLoop[] gridInitLoop;
-    private double initValue = 0.0;
-    private int gridSize;
-    private double[] grid;
-    private boolean rebuildList;
-    private int[][] zAtListBuild;
-
-    /**
-     * <p>Constructor for SliceRegion.</p>
-     *
-     * @param gX          a int.
-     * @param gY          a int.
-     * @param gZ          a int.
-     * @param grid        an array of {@link double} objects.
-     * @param nSymm       a int.
-     * @param threadCount a int.
-     * @param atoms       an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param coordinates an array of {@link double} objects.
-     */
-    public SliceRegion(int gX, int gY, int gZ, double[] grid,
-                       int nSymm, int threadCount,
-                       Atom[] atoms, double[][][] coordinates) {
-        this.nAtoms = atoms.length;
-        this.gX = gX;
-        this.gY = gY;
-        this.gZ = gZ;
-        gridSize = gX * gY * gZ * 2;
-        this.nSymm = nSymm;
-        this.coordinates = coordinates;
-        this.grid = grid;
-        if (grid != null) {
-            gridBuffer = DoubleBuffer.wrap(grid);
-        }
-        sliceLoop = new SliceLoop[threadCount];
-        gridInitLoop = new GridInitLoop[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            gridInitLoop[i] = new GridInitLoop();
-        }
-        select = new boolean[nSymm][nAtoms];
-        for (int i = 0; i < nSymm; i++) {
-            fill(select[i], true);
-        }
-        zAtListBuild = new int[nSymm][nAtoms];
-        rebuildList = true;
+  /**
+   * Constructor for SliceRegion.
+   *
+   * @param gX a int.
+   * @param gY a int.
+   * @param gZ a int.
+   * @param grid an array of {@link double} objects.
+   * @param nSymm a int.
+   * @param threadCount a int.
+   * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+   * @param coordinates an array of {@link double} objects.
+   */
+  public SliceRegion(
+      int gX,
+      int gY,
+      int gZ,
+      double[] grid,
+      int nSymm,
+      int threadCount,
+      Atom[] atoms,
+      double[][][] coordinates) {
+    this.nAtoms = atoms.length;
+    this.gX = gX;
+    this.gY = gY;
+    this.gZ = gZ;
+    gridSize = gX * gY * gZ * 2;
+    this.nSymm = nSymm;
+    this.coordinates = coordinates;
+    this.grid = grid;
+    if (grid != null) {
+      gridBuffer = DoubleBuffer.wrap(grid);
     }
+    sliceLoop = new SliceLoop[threadCount];
+    gridInitLoop = new GridInitLoop[threadCount];
+    for (int i = 0; i < threadCount; i++) {
+      gridInitLoop[i] = new GridInitLoop();
+    }
+    select = new boolean[nSymm][nAtoms];
+    for (int i = 0; i < nSymm; i++) {
+      fill(select[i], true);
+    }
+    zAtListBuild = new int[nSymm][nAtoms];
+    rebuildList = true;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
+  /** {@inheritDoc} */
+  @Override
+  public void finish() {
+    if (rebuildList) {
+      sliceLoop[0].saveZValues(zAtListBuild);
+    }
+    rebuildList = false;
+  }
+
+  /**
+   * Getter for the field <code>grid</code>.
+   *
+   * @return an array of {@link double} objects.
+   */
+  public double[] getGrid() {
+    return grid;
+  }
+
+  /**
+   * getNatoms.
+   *
+   * @return a int.
+   */
+  public int getNatoms() {
+    return nAtoms;
+  }
+
+  /**
+   * getNsymm.
+   *
+   * @return a int.
+   */
+  public int getNsymm() {
+    return nSymm;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void run() throws Exception {
+    int threadIndex = getThreadIndex();
+    SliceLoop loop = sliceLoop[threadIndex];
+    // This lets the same SpatialDensityLoops be used with different SpatialDensityRegions.
+    loop.setNsymm(nSymm);
+    loop.setRebuildList(rebuildList);
+    try {
+      execute(0, gridSize - 1, gridInitLoop[threadIndex]);
+      execute(0, gZ - 1, loop);
+    } catch (Exception e) {
+      String message = " Exception in SliceRegion.";
+      logger.log(Level.SEVERE, message, e);
+    }
+  }
+
+  /**
+   * Select atoms that should be included. The default is to include all atoms, which is set up in
+   * the constructor. This function should be over-ridden by subclasses that want finer control.
+   */
+  public void selectAtoms() {
+    for (int i = 0; i < nSymm; i++) {
+      fill(select[i], true);
+    }
+  }
+
+  /**
+   * Setter for the field <code>atoms</code>.
+   *
+   * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+   */
+  public void setAtoms(Atom[] atoms) {
+    nAtoms = atoms.length;
+    select = new boolean[nSymm][nAtoms];
+    zAtListBuild = new int[nSymm][nAtoms];
+    for (int i = 0; i < nSymm; i++) {
+      fill(select[i], true);
+    }
+    rebuildList = true;
+  }
+
+  /**
+   * Setter for the field <code>crystal</code>.
+   *
+   * @param crystal a {@link ffx.crystal.Crystal} object.
+   * @param gX a int.
+   * @param gY a int.
+   * @param gZ a int.
+   */
+  public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
+    // this.crystal = crystal.getUnitCell();
+    this.gX = gX;
+    this.gY = gY;
+    this.gZ = gZ;
+    gridSize = gX * gY * gZ * 2;
+  }
+
+  /**
+   * setDensityLoop.
+   *
+   * @param loops an array of {@link ffx.potential.nonbonded.SliceLoop} objects.
+   */
+  public void setDensityLoop(SliceLoop[] loops) {
+    sliceLoop = loops;
+  }
+
+  /**
+   * Setter for the field <code>initValue</code>.
+   *
+   * @param initValue a double.
+   */
+  public void setInitValue(double initValue) {
+    this.initValue = initValue;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void start() {
+    selectAtoms();
+    rebuildList = (rebuildList || sliceLoop[0].checkList(zAtListBuild, buff));
+  }
+
+  /**
+   * Setter for the field <code>gridBuffer</code>.
+   *
+   * @param grid a {@link java.nio.DoubleBuffer} object.
+   */
+  void setGridBuffer(DoubleBuffer grid) {
+    gridBuffer = grid;
+  }
+
+  private class GridInitLoop extends IntegerForLoop {
+
+    private final IntegerSchedule schedule = IntegerSchedule.fixed();
+    // Extra padding to avert cache interference.
+    long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+    long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
     @Override
-    public void finish() {
-        if (rebuildList) {
-            sliceLoop[0].saveZValues(zAtListBuild);
+    public void run(int lb, int ub) {
+      if (gridBuffer != null) {
+        // if (grid != null) {
+        for (int i = lb; i <= ub; i++) {
+          // grid[i] = initValue;
+          gridBuffer.put(i, initValue);
         }
-        rebuildList = false;
+      }
     }
 
-    /**
-     * <p>Getter for the field <code>grid</code>.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    public double[] getGrid() {
-        return grid;
-    }
-
-    /**
-     * <p>getNatoms.</p>
-     *
-     * @return a int.
-     */
-    public int getNatoms() {
-        return nAtoms;
-    }
-
-    /**
-     * <p>getNsymm.</p>
-     *
-     * @return a int.
-     */
-    public int getNsymm() {
-        return nSymm;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void run() throws Exception {
-        int threadIndex = getThreadIndex();
-        SliceLoop loop = sliceLoop[threadIndex];
-        // This lets the same SpatialDensityLoops be used with different SpatialDensityRegions.
-        loop.setNsymm(nSymm);
-        loop.setRebuildList(rebuildList);
-        try {
-            execute(0, gridSize - 1, gridInitLoop[threadIndex]);
-            execute(0, gZ - 1, loop);
-        } catch (Exception e) {
-            String message = " Exception in SliceRegion.";
-            logger.log(Level.SEVERE, message, e);
-        }
+    public IntegerSchedule schedule() {
+      return schedule;
     }
-
-    /**
-     * Select atoms that should be included. The default is to include all
-     * atoms, which is set up in the constructor. This function should be
-     * over-ridden by subclasses that want finer control.
-     */
-    public void selectAtoms() {
-        for (int i = 0; i < nSymm; i++) {
-            fill(select[i], true);
-        }
-    }
-
-    /**
-     * <p>Setter for the field <code>atoms</code>.</p>
-     *
-     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    public void setAtoms(Atom[] atoms) {
-        nAtoms = atoms.length;
-        select = new boolean[nSymm][nAtoms];
-        zAtListBuild = new int[nSymm][nAtoms];
-        for (int i = 0; i < nSymm; i++) {
-            fill(select[i], true);
-        }
-        rebuildList = true;
-    }
-
-    /**
-     * <p>Setter for the field <code>crystal</code>.</p>
-     *
-     * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param gX      a int.
-     * @param gY      a int.
-     * @param gZ      a int.
-     */
-    public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
-        // this.crystal = crystal.getUnitCell();
-        this.gX = gX;
-        this.gY = gY;
-        this.gZ = gZ;
-        gridSize = gX * gY * gZ * 2;
-    }
-
-    /**
-     * <p>setDensityLoop.</p>
-     *
-     * @param loops an array of {@link ffx.potential.nonbonded.SliceLoop} objects.
-     */
-    public void setDensityLoop(SliceLoop[] loops) {
-        sliceLoop = loops;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>initValue</code>.</p>
-     *
-     * @param initValue a double.
-     */
-    public void setInitValue(double initValue) {
-        this.initValue = initValue;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void start() {
-        selectAtoms();
-        rebuildList = (rebuildList || sliceLoop[0].checkList(zAtListBuild, buff));
-    }
-
-    private class GridInitLoop extends IntegerForLoop {
-
-        private final IntegerSchedule schedule = IntegerSchedule.fixed();
-        // Extra padding to avert cache interference.
-        long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-        long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
-        @Override
-        public void run(int lb, int ub) {
-            if (gridBuffer != null) {
-                //if (grid != null) {
-                for (int i = lb; i <= ub; i++) {
-                    //grid[i] = initValue;
-                    gridBuffer.put(i, initValue);
-                }
-            }
-
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return schedule;
-        }
-    }
-
-    /**
-     * <p>Setter for the field <code>gridBuffer</code>.</p>
-     *
-     * @param grid a {@link java.nio.DoubleBuffer} object.
-     */
-    void setGridBuffer(DoubleBuffer grid) {
-        gridBuffer = grid;
-    }
-
+  }
 }

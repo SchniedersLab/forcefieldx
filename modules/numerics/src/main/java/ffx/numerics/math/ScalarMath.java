@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.math;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -49,127 +49,118 @@ import static org.apache.commons.math3.util.FastMath.exp;
  */
 public class ScalarMath {
 
-    private static final double eightPi2 = 8.0 * PI * PI;
+  private static final double eightPi2 = 8.0 * PI * PI;
 
-    /**
-     * <p>
-     * b2u</p>
-     *
-     * @param b a double.
-     * @return a double.
-     */
-    public static double b2u(double b) {
-        return b / eightPi2;
-    }
+  /**
+   * b2u
+   *
+   * @param b a double.
+   * @return a double.
+   */
+  public static double b2u(double b) {
+    return b / eightPi2;
+  }
 
-    /**
-     * <p>
-     * binomial</p>
-     *
-     * @param n a long.
-     * @param k a long.
-     * @return Returns the binomial of (n,k).
-     */
-    public static long binomial(long n, long k) {
-        return factorial(n) / (factorial(n - k) * factorial(k));
-    }
+  /**
+   * binomial
+   *
+   * @param n a long.
+   * @param k a long.
+   * @return Returns the binomial of (n,k).
+   */
+  public static long binomial(long n, long k) {
+    return factorial(n) / (factorial(n - k) * factorial(k));
+  }
 
-    /**
-     * Returns n!! Precondition: n .GE. -1 Returning 1 for -1 input is analogous
-     * to Maple behavior.
-     *
-     * @param n long.
-     * @return Returns the n!!.
-     */
-    public static long doubleFactorial(long n) {
-        if (n < -1) {
-            throw new RuntimeException("Underflow error in doubleFactorial");
-        } else if (n == -1 || n == 0 || n == 1) {
-            return 1;
-        } else {
-            return n * doubleFactorial(n - 2);
-        }
+  /**
+   * Returns n!! Precondition: n .GE. -1 Returning 1 for -1 input is analogous to Maple behavior.
+   *
+   * @param n long.
+   * @return Returns the n!!.
+   */
+  public static long doubleFactorial(long n) {
+    if (n < -1) {
+      throw new RuntimeException("Underflow error in doubleFactorial");
+    } else if (n == -1 || n == 0 || n == 1) {
+      return 1;
+    } else {
+      return n * doubleFactorial(n - 2);
     }
+  }
 
-    /**
-     * Returns n!
-     * <br>
-     * Precondition: n .GE. 0 and n .LE. 20
-     * <br>
-     * Max long = 9223372036854775807
-     * <br>
-     * 20! = 2432902008176640000 is ok.
-     * <br>
-     * 21! returns an overflow: -4249290049419214848
-     *
-     * @param n long.
-     * @return Returns n!.
-     */
-    public static long factorial(long n) {
-        if (n < 0) {
-            throw new RuntimeException("Underflow error in factorial");
-        } else if (n > 20) {
-            throw new RuntimeException("Overflow error in factorial");
-        } else if (n == 0) {
-            return 1;
-        } else {
-            return n * factorial(n - 1);
-        }
+  /**
+   * Returns n! <br>
+   * Precondition: n .GE. 0 and n .LE. 20 <br>
+   * Max long = 9223372036854775807 <br>
+   * 20! = 2432902008176640000 is ok. <br>
+   * 21! returns an overflow: -4249290049419214848
+   *
+   * @param n long.
+   * @return Returns n!.
+   */
+  public static long factorial(long n) {
+    if (n < 0) {
+      throw new RuntimeException("Underflow error in factorial");
+    } else if (n > 20) {
+      throw new RuntimeException("Overflow error in factorial");
+    } else if (n == 0) {
+      return 1;
+    } else {
+      return n * factorial(n - 1);
     }
+  }
 
-    /**
-     * Compute 1.0 / (1.0 + exp(x)).
-     *
-     * @param x Input.
-     * @return Returns 1.0 / (1.0 + exp(x)).
-     */
-    public static double fermiFunction(double x) {
-        return 1.0 / (1.0 + exp(x));
-    }
+  /**
+   * Compute 1.0 / (1.0 + exp(x)).
+   *
+   * @param x Input.
+   * @return Returns 1.0 / (1.0 + exp(x)).
+   */
+  public static double fermiFunction(double x) {
+    return 1.0 / (1.0 + exp(x));
+  }
 
-    /**
-     * This is an atypical mod function used by crystallography methods.
-     *
-     * <p>
-     * mod</p>
-     *
-     * @param a Value to mod.
-     * @param b Value to mod by.
-     * @return Positive a % b.
-     */
-    public static double mod(double a, double b) {
-        var res = a % b;
-        if (res < 0.0) {
-            res += b;
-        }
-        return res;
+  /**
+   * This is an atypical mod function used by crystallography methods.
+   *
+   * <p>mod
+   *
+   * @param a Value to mod.
+   * @param b Value to mod by.
+   * @return Positive a % b.
+   */
+  public static double mod(double a, double b) {
+    var res = a % b;
+    if (res < 0.0) {
+      res += b;
     }
+    return res;
+  }
 
-    /**
-     * Atypical mod function used to move a value into the range lb &lt;= value &lt; ub,
-     * assuming the domain is periodic with a period of (ub - lb).
-     *
-     * @param value Value to move between bounds.
-     * @param lb    Lower bound.
-     * @param ub    Upper bound.
-     * @return Returns periodic copy of value, in the range lb &lt;= value &lt; ub.
-     */
-    public static double modToRange(double value, double lb, double ub) {
-        value -= lb;
-        var range = ub - lb;
-        value = mod(value, range);
-        value += lb;
-        return value;
-    }
+  /**
+   * Atypical mod function used to move a value into the range lb &lt;= value &lt; ub, assuming the
+   * domain is periodic with a period of (ub - lb).
+   *
+   * @param value Value to move between bounds.
+   * @param lb Lower bound.
+   * @param ub Upper bound.
+   * @return Returns periodic copy of value, in the range lb &lt;= value &lt; ub.
+   */
+  public static double modToRange(double value, double lb, double ub) {
+    value -= lb;
+    var range = ub - lb;
+    value = mod(value, range);
+    value += lb;
+    return value;
+  }
 
-    /**
-     * <p>
-     * u2b</p>
-     *
-     * @param u a double.
-     * @return a double.
-     */
-    public static double u2b(double u) {
-        return u * eightPi2;
-    }
+  /**
+   * u2b
+   *
+   * @param u a double.
+   * @return a double.
+   */
+  public static double u2b(double u) {
+    return u * eightPi2;
+  }
 }

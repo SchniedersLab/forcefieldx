@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,59 +34,56 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.utilities;
 
 /**
- * <p>
- * DoubleIndexPair class.</p>
+ * DoubleIndexPair class.
  *
  * @author Jacob M. Litman
  * @since 1.0
  */
 public class DoubleIndexPair implements Comparable<DoubleIndexPair> {
 
-    private final int index;
-    private final double doubleValue;
+  private final int index;
+  private final double doubleValue;
 
-    /**
-     * Allows sorting of floating-point values while retaining knowledge of
-     * where that value was in some original list or array.
-     *
-     * @param index       the original index of this double.
-     * @param doubleValue the double value.
-     */
-    public DoubleIndexPair(int index, double doubleValue) {
-        this.index = index;
-        this.doubleValue = doubleValue;
-    }
+  /**
+   * Allows sorting of floating-point values while retaining knowledge of where that value was in
+   * some original list or array.
+   *
+   * @param index the original index of this double.
+   * @param doubleValue the double value.
+   */
+  public DoubleIndexPair(int index, double doubleValue) {
+    this.index = index;
+    this.doubleValue = doubleValue;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compareTo(DoubleIndexPair o) {
-        if (o == null) {
-            return 0;
-        }
-        return Double.compare(doubleValue, o.doubleValue);
+  /** {@inheritDoc} */
+  @Override
+  public int compareTo(DoubleIndexPair o) {
+    if (o == null) {
+      return 0;
     }
+    return Double.compare(doubleValue, o.doubleValue);
+  }
 
-    /**
-     * <p>Getter for the field <code>doubleValue</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getDoubleValue() {
-        return doubleValue;
-    }
+  /**
+   * Getter for the field <code>doubleValue</code>.
+   *
+   * @return a double.
+   */
+  public double getDoubleValue() {
+    return doubleValue;
+  }
 
-    /**
-     * <p>Getter for the field <code>index</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getIndex() {
-        return index;
-    }
+  /**
+   * Getter for the field <code>index</code>.
+   *
+   * @return a int.
+   */
+  public int getIndex() {
+    return index;
+  }
 }

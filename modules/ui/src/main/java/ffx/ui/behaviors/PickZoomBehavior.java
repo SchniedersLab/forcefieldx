@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,10 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.behaviors;
 
 import java.awt.event.MouseEvent;
-
 import org.jogamp.java3d.Bounds;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Canvas3D;
@@ -47,120 +46,108 @@ import org.jogamp.java3d.TransformGroup;
 import org.jogamp.java3d.utils.picking.PickResult;
 
 /**
- * The PickZoomBehavior class implements a scaling behavior on a picked
- * scenegraph object.
+ * The PickZoomBehavior class implements a scaling behavior on a picked scenegraph object.
  *
  * @author Michael J. Schnieders
  */
-public class PickZoomBehavior extends PickMouseBehavior implements
-        MouseBehaviorCallback {
+public class PickZoomBehavior extends PickMouseBehavior implements MouseBehaviorCallback {
 
-    public MouseZoom zoom;
-    private PickingCallback callback = null;
-    private TransformGroup currentTG;
+  public MouseZoom zoom;
+  private PickingCallback callback = null;
+  private TransformGroup currentTG;
 
-    /**
-     * <p>
-     * Constructor for PickZoomBehavior.</p>
-     *
-     * @param root     a {@link org.jogamp.java3d.BranchGroup} object.
-     * @param canvas   a {@link org.jogamp.java3d.Canvas3D} object.
-     * @param bounds   a {@link org.jogamp.java3d.Bounds} object.
-     * @param VPTG     a {@link org.jogamp.java3d.TransformGroup} object.
-     * @param pickMode a int.
-     */
-    public PickZoomBehavior(BranchGroup root, Canvas3D canvas, Bounds bounds,
-                            TransformGroup VPTG, int pickMode) {
-        super(canvas, root, bounds);
-        zoom = new MouseZoom(MouseBehavior.MANUAL_WAKEUP, VPTG);
-        currGrp.addChild(zoom);
-        setSchedulingBounds(bounds);
-        pickCanvas.setMode(pickMode);
+  /**
+   * Constructor for PickZoomBehavior.
+   *
+   * @param root a {@link org.jogamp.java3d.BranchGroup} object.
+   * @param canvas a {@link org.jogamp.java3d.Canvas3D} object.
+   * @param bounds a {@link org.jogamp.java3d.Bounds} object.
+   * @param VPTG a {@link org.jogamp.java3d.TransformGroup} object.
+   * @param pickMode a int.
+   */
+  public PickZoomBehavior(
+      BranchGroup root, Canvas3D canvas, Bounds bounds, TransformGroup VPTG, int pickMode) {
+    super(canvas, root, bounds);
+    zoom = new MouseZoom(MouseBehavior.MANUAL_WAKEUP, VPTG);
+    currGrp.addChild(zoom);
+    setSchedulingBounds(bounds);
+    pickCanvas.setMode(pickMode);
+  }
+
+  /**
+   * Return the pickMode component of this PickTranslateBehavior.
+   *
+   * @return a int.
+   */
+  public int getPickMode() {
+    return pickCanvas.getMode();
+  }
+
+  /**
+   * Sets the pickMode component of this PickTranslateBehavior to the value of the passed
+   * pickMode. @param pickMode the pickMode to be copied.
+   *
+   * @param pickMode a int.
+   */
+  public void setPickMode(int pickMode) {
+    pickCanvas.setMode(pickMode);
+  }
+
+  /**
+   * Register the class @param callback to be called each time the picked object moves.
+   *
+   * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
+   */
+  public void setupCallback(PickingCallback c) {
+    callback = c;
+    if (callback == null) {
+      zoom.setupCallback(null);
+    } else {
+      zoom.setupCallback(this);
     }
+  }
 
-    /**
-     * Return the pickMode component of this PickTranslateBehavior.
-     *
-     * @return a int.
-     */
-    public int getPickMode() {
-        return pickCanvas.getMode();
-    }
+  /** {@inheritDoc} */
+  public void transformChanged(int type, Transform3D transform) {
+    callback.transformChanged(PickingCallback.ZOOM, currentTG);
+  }
 
-    /**
-     * Sets the pickMode component of this PickTranslateBehavior to the value of
-     * the passed pickMode. @param pickMode the pickMode to be copied.
-     *
-     * @param pickMode a int.
-     */
-    public void setPickMode(int pickMode) {
-        pickCanvas.setMode(pickMode);
-    }
+  /** {@inheritDoc} */
+  public void transformClicked(int type, Transform3D transform) {
+    callback.transformClicked(PickingCallback.ZOOM, currentTG);
+  }
 
+  /** {@inheritDoc} */
+  public void transformDoubleClicked(int type, Transform3D transform) {
+    callback.transformDoubleClicked(PickingCallback.ZOOM, currentTG);
+  }
 
-    /**
-     * Register the class @param callback to be called each time the picked
-     * object moves.
-     *
-     * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
-     */
-    public void setupCallback(PickingCallback c) {
-        callback = c;
-        if (callback == null) {
-            zoom.setupCallback(null);
-        } else {
-            zoom.setupCallback(this);
+  /**
+   * Update the scene to manipulate any nodes. This is not meant to be called * by users. Behavior
+   * automatically calls this. You can call this only if * you know what you are doing.
+   *
+   * @param xpos Current mouse X pos.
+   * @param ypos Current mouse Y pos.
+   */
+  public void updateScene(int xpos, int ypos) {
+    if ((mevent.getModifiersEx() & MouseEvent.BUTTON3) == MouseEvent.BUTTON3) {
+      pickCanvas.setShapeLocation(xpos, ypos);
+      PickResult r = pickCanvas.pickClosest();
+      if (r != null) {
+        TransformGroup tg = (TransformGroup) r.getNode(PickResult.TRANSFORM_GROUP);
+        if ((tg != null)
+            && (tg.getCapability(TransformGroup.ALLOW_TRANSFORM_READ))
+            && (tg.getCapability(TransformGroup.ALLOW_TRANSFORM_WRITE))) {
+          zoom.setTransformGroup(tg);
+          zoom.wakeup();
+          currentTG = tg;
+          if (callback != null) {
+            callback.transformClicked(PickingCallback.ZOOM, currentTG);
+          }
+        } else if (callback != null) {
+          callback.transformChanged(PickingCallback.NO_PICK, null);
         }
+      }
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void transformChanged(int type, Transform3D transform) {
-        callback.transformChanged(PickingCallback.ZOOM, currentTG);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void transformClicked(int type, Transform3D transform) {
-        callback.transformClicked(PickingCallback.ZOOM, currentTG);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void transformDoubleClicked(int type, Transform3D transform) {
-        callback.transformDoubleClicked(PickingCallback.ZOOM, currentTG);
-    }
-
-    /**
-     * Update the scene to manipulate any nodes. This is not meant to be called
-     * * by users. Behavior automatically calls this. You can call this only if
-     * * you know what you are doing.
-     *
-     * @param xpos Current mouse X pos.
-     * @param ypos Current mouse Y pos.
-     */
-    public void updateScene(int xpos, int ypos) {
-        if ((mevent.getModifiersEx() & MouseEvent.BUTTON3) == MouseEvent.BUTTON3) {
-            pickCanvas.setShapeLocation(xpos, ypos);
-            PickResult r = pickCanvas.pickClosest();
-            if (r != null) {
-                TransformGroup tg = (TransformGroup) r.getNode(PickResult.TRANSFORM_GROUP);
-                if ((tg != null)
-                        && (tg.getCapability(TransformGroup.ALLOW_TRANSFORM_READ))
-                        && (tg.getCapability(TransformGroup.ALLOW_TRANSFORM_WRITE))) {
-                    zoom.setTransformGroup(tg);
-                    zoom.wakeup();
-                    currentTG = tg;
-                    if (callback != null) {
-                        callback.transformClicked(PickingCallback.ZOOM, currentTG);
-                    }
-                } else if (callback != null) {
-                    callback.transformChanged(PickingCallback.NO_PICK, null);
-                }
-            }
-        }
-    }
+  }
 }

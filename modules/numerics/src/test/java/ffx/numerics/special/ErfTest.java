@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,72 +34,67 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.special;
 
 import java.util.Arrays;
 import java.util.Collection;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/**
- * @author Michael J. Schnieders
- */
+/** @author Michael J. Schnieders */
 @RunWith(Parameterized.class)
 public class ErfTest {
 
-    /**
-     * Java double precision follows the IEEE 754 Binary Floating-Point
-     * Arithmetic standard. Each double consumes 8 bytes of storage and offers
-     * 52 binary digits of precision (14-15 decimal digits). This implementation
-     * of Erf passes for a tolerance of 1.0e-15 and (as one might expect) fails
-     * using 1.0e-16.
-     */
-    private static final double tolerance = 1.0e-15;
-    private final String info;
-    private final double x;
-    private final double expected;
+  /**
+   * Java double precision follows the IEEE 754 Binary Floating-Point Arithmetic standard. Each
+   * double consumes 8 bytes of storage and offers 52 binary digits of precision (14-15 decimal
+   * digits). This implementation of Erf passes for a tolerance of 1.0e-15 and (as one might expect)
+   * fails using 1.0e-16.
+   */
+  private static final double tolerance = 1.0e-15;
 
-    public ErfTest(String info, double x, double expected) {
-        this.info = info;
-        this.x = x;
-        this.expected = expected;
-    }
+  private final String info;
+  private final double x;
+  private final double expected;
 
-    /**
-     * The expected values were found to 20 decimal points of precision using
-     * Mathematica: Erf[SetPrecision[x, 20]] Erfc[SetPrecision[x, 20]]
-     */
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{{"Test 0.0", 0.0e0, 0.0e0},
-                {"Test 0.1; below the first branch point.", 0.1e0, 0.1124629160182848984e0},
-                {"Test 0.46875; at the first branch point.", 0.46875e0, 0.4926134732179379916e0},
-                {"Test 1.0; between the branch points.", 1.0e0, 0.842700792949714869e0},
-                {"Test 4.0; at the second branch point.", 4.0e0, 1.0e0 - 1.5417257900280018852e-8},
-                {"Test 5.0; above the second branch point.", 5.0e0, 1.0e0 - 1.5374597944280348502e-12}
+  public ErfTest(String info, double x, double expected) {
+    this.info = info;
+    this.x = x;
+    this.expected = expected;
+  }
+
+  /**
+   * The expected values were found to 20 decimal points of precision using Mathematica:
+   * Erf[SetPrecision[x, 20]] Erfc[SetPrecision[x, 20]]
+   */
+  @Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+          {"Test 0.0", 0.0e0, 0.0e0},
+          {"Test 0.1; below the first branch point.", 0.1e0, 0.1124629160182848984e0},
+          {"Test 0.46875; at the first branch point.", 0.46875e0, 0.4926134732179379916e0},
+          {"Test 1.0; between the branch points.", 1.0e0, 0.842700792949714869e0},
+          {"Test 4.0; at the second branch point.", 4.0e0, 1.0e0 - 1.5417257900280018852e-8},
+          {"Test 5.0; above the second branch point.", 5.0e0, 1.0e0 - 1.5374597944280348502e-12}
         });
-    }
+  }
 
-    /**
-     * Test of erf method, of class Erf.
-     */
-    @Test
-    public void testErf() {
-        double actual = Erf.erf(x);
-        Assert.assertEquals(info, expected, actual, tolerance);
-    }
+  /** Test of erf method, of class Erf. */
+  @Test
+  public void testErf() {
+    double actual = Erf.erf(x);
+    Assert.assertEquals(info, expected, actual, tolerance);
+  }
 
-    /**
-     * Test of erfc method, of class Erf.
-     */
-    @Test
-    public void testErfc() {
-        double actual = Erf.erfc(x);
-        Assert.assertEquals(info, 1.0 - expected, actual, tolerance);
-    }
+  /** Test of erfc method, of class Erf. */
+  @Test
+  public void testErfc() {
+    double actual = Erf.erfc(x);
+    Assert.assertEquals(info, 1.0 - expected, actual, tolerance);
+  }
 }

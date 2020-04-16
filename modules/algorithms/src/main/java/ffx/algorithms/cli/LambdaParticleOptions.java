@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,48 +34,48 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.cli;
 
 import picocli.CommandLine;
 
 /**
- * Represents command line options for scripts that utilize a mobile lambda
- * particle, such as Thermodynamics.
+ * Represents command line options for scripts that utilize a mobile lambda particle, such as
+ * Thermodynamics.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
  */
 public class LambdaParticleOptions {
-    /**
-     * -m or --lambdaMass to set the mass of the lambda particle.
-     */
-    @CommandLine.Option(names = {"--lm", "--lambdaMass"}, paramLabel = "1.0E-18",
-            description = "Mass of the lambda particle.")
-    private double lambdaMass = 1.0E-18;
-    /**
-     * -x or --lambdaFriction to set friction on the lambda particle
-     */
-    @CommandLine.Option(names = {"--lf", "--lambdaFriction"}, paramLabel = "1.0E-18",
-            description = "Friction on the lambda particle.")
-    private double lambdaFriction = 1.0E-18;
+  /** -m or --lambdaMass to set the mass of the lambda particle. */
+  @CommandLine.Option(
+      names = {"--lm", "--lambdaMass"},
+      paramLabel = "1.0E-18",
+      description = "Mass of the lambda particle.")
+  private double lambdaMass = 1.0E-18;
+  /** -x or --lambdaFriction to set friction on the lambda particle */
+  @CommandLine.Option(
+      names = {"--lf", "--lambdaFriction"},
+      paramLabel = "1.0E-18",
+      description = "Friction on the lambda particle.")
+  private double lambdaFriction = 1.0E-18;
 
-    /**
-     * <p>Getter for the field <code>lambdaFriction</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getLambdaFriction() {
-        return lambdaFriction;
-    }
+  /**
+   * Getter for the field <code>lambdaFriction</code>.
+   *
+   * @return a double.
+   */
+  public double getLambdaFriction() {
+    return lambdaFriction;
+  }
 
-    /**
-     * <p>Getter for the field <code>lambdaMass</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getLambdaMass() {
-        return lambdaMass;
-    }
+  /**
+   * Getter for the field <code>lambdaMass</code>.
+   *
+   * @return a double.
+   */
+  public double getLambdaMass() {
+    return lambdaMass;
+  }
 }

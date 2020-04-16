@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,20 +34,19 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
-
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
-import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Parallel computation of the polarization energy as sum over atomic contributions (-1/2 u.E).
@@ -57,110 +56,111 @@ import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
  */
 public class PolarizationEnergyRegion extends ParallelRegion {
 
-    private static final Logger logger = Logger.getLogger(PolarizationEnergyRegion.class.getName());
-    private final double electric;
-    private final PolarizationEnergyLoop[] polarizationLoop;
-    private final SharedDouble polarizationEnergy = new SharedDouble();
-    /**
-     * An ordered array of atoms in the system.
-     */
-    private Atom[] atoms;
-    private double[] polarizability;
-    /**
-     * Dimensions of [nsymm][nAtoms][3]
-     */
-    private double[][][] inducedDipole;
-    /**
-     * Direct induced dipoles.
-     */
-    private double[][] directDipoleCR;
-    private double polarizationScale;
+  private static final Logger logger = Logger.getLogger(PolarizationEnergyRegion.class.getName());
+  private final double electric;
+  private final PolarizationEnergyLoop[] polarizationLoop;
+  private final SharedDouble polarizationEnergy = new SharedDouble();
+  /** An ordered array of atoms in the system. */
+  private Atom[] atoms;
 
-    public PolarizationEnergyRegion(int nt, ForceField forceField) {
-        electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
-        polarizationLoop = new PolarizationEnergyLoop[nt];
+  private double[] polarizability;
+  /** Dimensions of [nsymm][nAtoms][3] */
+  private double[][][] inducedDipole;
+  /** Direct induced dipoles. */
+  private double[][] directDipoleCR;
+
+  private double polarizationScale;
+
+  public PolarizationEnergyRegion(int nt, ForceField forceField) {
+    electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
+    polarizationLoop = new PolarizationEnergyLoop[nt];
+  }
+
+  @Override
+  public void finish() {
+    double energy = polarizationEnergy.get();
+    polarizationEnergy.set(energy * polarizationScale * electric);
+  }
+
+  /**
+   * Return the final polarization energy.
+   *
+   * @return The polarization energy.
+   */
+  public double getPolarizationEnergy() {
+    return polarizationEnergy.get();
+  }
+
+  /**
+   * Set the current polarization energy.
+   *
+   * @param energy Value to set the polarization energy to.
+   */
+  public void setPolarizationEnergy(double energy) {
+    polarizationEnergy.set(energy);
+  }
+
+  public void init(
+      Atom[] atoms,
+      double[] polarizability,
+      double[][][] inducedDipole,
+      double[][] directDipoleCR,
+      double polarizationScale) {
+    this.atoms = atoms;
+    this.polarizability = polarizability;
+    this.inducedDipole = inducedDipole;
+    this.directDipoleCR = directDipoleCR;
+    this.polarizationScale = polarizationScale;
+  }
+
+  @Override
+  public void run() throws Exception {
+    try {
+      int ti = getThreadIndex();
+      if (polarizationLoop[ti] == null) {
+        polarizationLoop[ti] = new PolarizationEnergyLoop();
+      }
+      int nAtoms = atoms.length;
+      execute(0, nAtoms - 1, polarizationLoop[ti]);
+    } catch (RuntimeException ex) {
+      logger.warning(
+          "Runtime exception computing polarization energy in thread " + getThreadIndex());
+      throw ex;
+    } catch (Exception e) {
+      String message =
+          "Fatal exception computing polarization energy in thread " + getThreadIndex() + "\n";
+      logger.log(Level.SEVERE, message, e);
+    }
+  }
+
+  @Override
+  public void start() {
+    polarizationEnergy.set(0.0);
+  }
+
+  private class PolarizationEnergyLoop extends IntegerForLoop {
+
+    @Override
+    public void run(int lb, int ub) throws Exception {
+      double energy = 0.0;
+      for (int i = lb; i <= ub; i++) {
+        if (polarizability[i] == 0.0) {
+          continue;
+        }
+        double uix = inducedDipole[0][i][0];
+        double uiy = inducedDipole[0][i][1];
+        double uiz = inducedDipole[0][i][2];
+        double pix = directDipoleCR[i][0];
+        double piy = directDipoleCR[i][1];
+        double piz = directDipoleCR[i][2];
+        energy += (uix * pix + uiy * piy + uiz * piz) / polarizability[i];
+      }
+      polarizationEnergy.addAndGet(-0.5 * energy);
     }
 
     @Override
-    public void finish() {
-        double energy = polarizationEnergy.get();
-        polarizationEnergy.set(energy * polarizationScale * electric);
+    public IntegerSchedule schedule() {
+      return IntegerSchedule.fixed();
     }
-
-    /**
-     * Return the final polarization energy.
-     *
-     * @return The polarization energy.
-     */
-    public double getPolarizationEnergy() {
-        return polarizationEnergy.get();
-    }
-
-    /**
-     * Set the current polarization energy.
-     *
-     * @param energy Value to set the polarization energy to.
-     */
-    public void setPolarizationEnergy(double energy) {
-        polarizationEnergy.set(energy);
-    }
-
-    public void init(Atom[] atoms, double[] polarizability,
-                     double[][][] inducedDipole, double[][] directDipoleCR,
-                     double polarizationScale) {
-        this.atoms = atoms;
-        this.polarizability = polarizability;
-        this.inducedDipole = inducedDipole;
-        this.directDipoleCR = directDipoleCR;
-        this.polarizationScale = polarizationScale;
-    }
-
-    @Override
-    public void run() throws Exception {
-        try {
-            int ti = getThreadIndex();
-            if (polarizationLoop[ti] == null) {
-                polarizationLoop[ti] = new PolarizationEnergyLoop();
-            }
-            int nAtoms = atoms.length;
-            execute(0, nAtoms - 1, polarizationLoop[ti]);
-        } catch (RuntimeException ex) {
-            logger.warning("Runtime exception computing polarization energy in thread " + getThreadIndex());
-            throw ex;
-        } catch (Exception e) {
-            String message = "Fatal exception computing polarization energy in thread " + getThreadIndex() + "\n";
-            logger.log(Level.SEVERE, message, e);
-        }
-    }
-
-    @Override
-    public void start() {
-        polarizationEnergy.set(0.0);
-    }
-
-    private class PolarizationEnergyLoop extends IntegerForLoop {
-
-        @Override
-        public void run(int lb, int ub) throws Exception {
-            double energy = 0.0;
-            for (int i = lb; i <= ub; i++) {
-                if (polarizability[i] == 0.0) {
-                    continue;
-                }
-                double uix = inducedDipole[0][i][0];
-                double uiy = inducedDipole[0][i][1];
-                double uiz = inducedDipole[0][i][2];
-                double pix = directDipoleCR[i][0];
-                double piy = directDipoleCR[i][1];
-                double piz = directDipoleCR[i][2];
-                energy += (uix * pix + uiy * piy + uiz * piz) / polarizability[i];
-            }
-            polarizationEnergy.addAndGet(-0.5 * energy);
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
-    }
+  }
 }

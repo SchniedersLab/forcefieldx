@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,117 +34,113 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.optimize.manybody;
-
-import java.util.Arrays;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
-
 import ffx.potential.bonded.Residue;
+import java.util.Arrays;
 
 public class EnergyRegion extends ParallelRegion {
 
-    private EnergyExpansion eE;
-    /**
-     * Flag to control use of 3-body terms.
-     */
-    private boolean threeBodyTerm;
+  private EnergyExpansion eE;
+  /** Flag to control use of 3-body terms. */
+  private boolean threeBodyTerm;
 
-    private SharedDouble self;
-    private SharedDouble twoBody;
-    private SharedDouble threeBody;
-    private EnergyLoop[] energyLoops;
-    private Residue[] residues;
-    private int[] rotamers;
-    private int nResidues;
+  private SharedDouble self;
+  private SharedDouble twoBody;
+  private SharedDouble threeBody;
+  private EnergyLoop[] energyLoops;
+  private Residue[] residues;
+  private int[] rotamers;
+  private int nResidues;
 
-    public EnergyRegion(int nThreads) {
-        self = new SharedDouble();
-        twoBody = new SharedDouble();
-        threeBody = new SharedDouble();
-        energyLoops = new EnergyLoop[nThreads];
+  public EnergyRegion(int nThreads) {
+    self = new SharedDouble();
+    twoBody = new SharedDouble();
+    threeBody = new SharedDouble();
+    energyLoops = new EnergyLoop[nThreads];
+  }
+
+  public double getSelf() {
+    return self.get();
+  }
+
+  public double getThreeBody() {
+    return threeBody.get();
+  }
+
+  public double getTwoBody() {
+    return twoBody.get();
+  }
+
+  public void init(EnergyExpansion eE, Residue[] residues, int[] rotamers, boolean threeBodyTerm) {
+    this.eE = eE;
+    this.rotamers = rotamers;
+    this.nResidues = residues.length;
+    this.residues = Arrays.copyOf(residues, nResidues);
+    this.threeBodyTerm = threeBodyTerm;
+  }
+
+  @Override
+  public void run() throws Exception {
+    int threadID = getThreadIndex();
+    if (energyLoops[threadID] == null) {
+      energyLoops[threadID] = new EnergyLoop();
     }
+    execute(0, nResidues - 1, energyLoops[threadID]);
+  }
 
-    public double getSelf() {
-        return self.get();
-    }
+  public void start() {
+    self.set(0.0);
+    twoBody.set(0.0);
+    threeBody.set(0.0);
+  }
 
-    public double getThreeBody() {
-        return threeBody.get();
-    }
+  private class EnergyLoop extends IntegerForLoop {
 
-    public double getTwoBody() {
-        return twoBody.get();
-    }
+    private double selfSum;
+    private double pairSum;
+    private double threeBodySum;
 
-    public void init(EnergyExpansion eE, Residue[] residues, int[] rotamers, boolean threeBodyTerm) {
-        this.eE = eE;
-        this.rotamers = rotamers;
-        this.nResidues = residues.length;
-        this.residues = Arrays.copyOf(residues, nResidues);
-        this.threeBodyTerm = threeBodyTerm;
+    @Override
+    public void finish() {
+      self.addAndGet(selfSum);
+      twoBody.addAndGet(pairSum);
+      threeBody.addAndGet(threeBodySum);
     }
 
     @Override
-    public void run() throws Exception {
-        int threadID = getThreadIndex();
-        if (energyLoops[threadID] == null) {
-            energyLoops[threadID] = new EnergyLoop();
-        }
-        execute(0, nResidues - 1, energyLoops[threadID]);
-    }
-
-    public void start() {
-        self.set(0.0);
-        twoBody.set(0.0);
-        threeBody.set(0.0);
-    }
-
-    private class EnergyLoop extends IntegerForLoop {
-
-        private double selfSum;
-        private double pairSum;
-        private double threeBodySum;
-
-        @Override
-        public void finish() {
-            self.addAndGet(selfSum);
-            twoBody.addAndGet(pairSum);
-            threeBody.addAndGet(threeBodySum);
-        }
-
-        @Override
-        public void run(int lb, int ub) {
-            for (int a = lb; a <= ub; a++) {
-                int ai = rotamers[a];
-                selfSum += eE.getSelf(a, ai);
-                for (int b = a + 1; b < nResidues; b++) {
-                    int bi = rotamers[b];
-                    pairSum += eE.get2Body(a, ai, b, bi);
-                    if (threeBodyTerm) {
-                        for (int c = b + 1; c < nResidues; c++) {
-                            int ci = rotamers[c];
-                            threeBodySum += eE.get3Body(residues, a, ai, b, bi, c, ci);
-                        }
-                    }
-                }
+    public void run(int lb, int ub) {
+      for (int a = lb; a <= ub; a++) {
+        int ai = rotamers[a];
+        selfSum += eE.getSelf(a, ai);
+        for (int b = a + 1; b < nResidues; b++) {
+          int bi = rotamers[b];
+          pairSum += eE.get2Body(a, ai, b, bi);
+          if (threeBodyTerm) {
+            for (int c = b + 1; c < nResidues; c++) {
+              int ci = rotamers[c];
+              threeBodySum += eE.get3Body(residues, a, ai, b, bi, c, ci);
             }
+          }
         }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.dynamic();
-        }
-
-        @Override
-        public void start() {
-            selfSum = 0.0;
-            pairSum = 0.0;
-            threeBodySum = 0.0;
-        }
+      }
     }
+
+    @Override
+    public IntegerSchedule schedule() {
+      return IntegerSchedule.dynamic();
+    }
+
+    @Override
+    public void start() {
+      selfSum = 0.0;
+      pairSum = 0.0;
+      threeBodySum = 0.0;
+    }
+  }
 }

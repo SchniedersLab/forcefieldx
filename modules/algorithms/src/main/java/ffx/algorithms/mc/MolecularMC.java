@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,21 +34,20 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.mc;
 
-import java.util.logging.Logger;
 import static java.lang.String.format;
 
 import ffx.numerics.Potential;
 import ffx.potential.AssemblyState;
 import ffx.potential.MolecularAssembly;
+import java.util.logging.Logger;
 
 /**
- * The MolecularMC class is a framework to take Monte Carlo steps on a molecular
- * system. It does not implement an MC algorithm, nor does it implement move
- * sets; it is used to evaluate a single MC step with movements defined by
- * implementations of MCMove.
+ * The MolecularMC class is a framework to take Monte Carlo steps on a molecular system. It does not
+ * implement an MC algorithm, nor does it implement move sets; it is used to evaluate a single MC
+ * step with movements defined by implementations of MCMove.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -56,115 +55,100 @@ import ffx.potential.MolecularAssembly;
  */
 public class MolecularMC extends BoltzmannMC {
 
-    private static final Logger logger = Logger.getLogger(MolecularMC.class.getName());
+  private static final Logger logger = Logger.getLogger(MolecularMC.class.getName());
 
-    /**
-     * The MolecularAssembly to operate on.
-     */
-    private final MolecularAssembly molecularAssembly;
+  /** The MolecularAssembly to operate on. */
+  private final MolecularAssembly molecularAssembly;
 
-    /**
-     * The potential energy for the molecular assembly.
-     */
-    private final Potential potential;
+  /** The potential energy for the molecular assembly. */
+  private final Potential potential;
 
-    /**
-     * Atomic coordinates.
-     */
-    private double[] x;
+  /** Atomic coordinates. */
+  private double[] x;
 
-    /**
-     * Initial state of the MolecularAssembly.
-     */
-    private AssemblyState initialState;
+  /** Initial state of the MolecularAssembly. */
+  private AssemblyState initialState;
 
-    /**
-     * Constructs a DefaultMC instance with a molecular assembly and its
-     * PotentialEnergy. Fancy footwork will be required if we ever need to use
-     * multiple assemblies at once.
-     *
-     * @param molecularAssembly MolecularAssembly to operate on.
-     */
-    public MolecularMC(MolecularAssembly molecularAssembly) {
-        this(molecularAssembly, molecularAssembly.getPotentialEnergy());
+  /**
+   * Constructs a DefaultMC instance with a molecular assembly and its PotentialEnergy. Fancy
+   * footwork will be required if we ever need to use multiple assemblies at once.
+   *
+   * @param molecularAssembly MolecularAssembly to operate on.
+   */
+  public MolecularMC(MolecularAssembly molecularAssembly) {
+    this(molecularAssembly, molecularAssembly.getPotentialEnergy());
+  }
+
+  /**
+   * Constructs a DefaultMC instance with a molecular assembly and a specific Potential.
+   *
+   * @param molecularAssembly MolecularAssembly to operate on.
+   * @param potential a {@link ffx.numerics.Potential} object.
+   */
+  public MolecularMC(MolecularAssembly molecularAssembly, Potential potential) {
+    this.molecularAssembly = molecularAssembly;
+    this.potential = potential;
+  }
+
+  /**
+   * Returns the associated MolecularAssembly.
+   *
+   * @return MolecularAssembly
+   */
+  public MolecularAssembly getMolecularAssembly() {
+    return molecularAssembly;
+  }
+
+  /**
+   * Returns the associated Potential.
+   *
+   * @return Potential.
+   */
+  public Potential getPotential() {
+    return potential;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void revertStep() {
+    initialState.revertState();
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    StringBuilder sb =
+        new StringBuilder("Default Metropolis Monte Carlo implementation\nTemperature: ");
+    sb.append(getTemperature());
+    sb.append(format("\ne1: %10.6f   e2: %10.6f\nMolecular Assembly", getE1(), getE2()));
+    sb.append(molecularAssembly.toString()).append("\nPotential: ").append(potential.toString());
+    return sb.toString();
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Calculates the energy at the current state; identical to RotamerOptimization method of same
+   * name.
+   */
+  @Override
+  protected double currentEnergy() {
+    if (x == null) {
+      int nVar = potential.getNumberOfVariables();
+      x = new double[nVar * 3];
     }
-
-    /**
-     * Constructs a DefaultMC instance with a molecular assembly and a specific
-     * Potential.
-     *
-     * @param molecularAssembly MolecularAssembly to operate on.
-     * @param potential         a {@link ffx.numerics.Potential} object.
-     */
-    public MolecularMC(MolecularAssembly molecularAssembly, Potential potential) {
-        this.molecularAssembly = molecularAssembly;
-        this.potential = potential;
+    try {
+      potential.getCoordinates(x);
+      return potential.energy(x);
+    } catch (ArithmeticException ex) {
+      logger.warning(ex.getMessage());
+      return 1e100;
     }
+  }
 
-    /**
-     * Returns the associated MolecularAssembly.
-     *
-     * @return MolecularAssembly
-     */
-    public MolecularAssembly getMolecularAssembly() {
-        return molecularAssembly;
-    }
-
-    /**
-     * Returns the associated Potential.
-     *
-     * @return Potential.
-     */
-    public Potential getPotential() {
-        return potential;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void revertStep() {
-        initialState.revertState();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("Default Metropolis Monte Carlo implementation\nTemperature: ");
-        sb.append(getTemperature());
-        sb.append(format("\ne1: %10.6f   e2: %10.6f\nMolecular Assembly", getE1(), getE2()));
-        sb.append(molecularAssembly.toString()).append("\nPotential: ").append(potential.toString());
-        return sb.toString();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Calculates the energy at the current state; identical to
-     * RotamerOptimization method of same name.
-     */
-    @Override
-    protected double currentEnergy() {
-        if (x == null) {
-            int nVar = potential.getNumberOfVariables();
-            x = new double[nVar * 3];
-        }
-        try {
-            potential.getCoordinates(x);
-            return potential.energy(x);
-        } catch (ArithmeticException ex) {
-            logger.warning(ex.getMessage());
-            return 1e100;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void storeState() {
-        initialState = new AssemblyState(molecularAssembly);
-    }
+  /** {@inheritDoc} */
+  @Override
+  protected void storeState() {
+    initialState = new AssemblyState(molecularAssembly);
+  }
 }

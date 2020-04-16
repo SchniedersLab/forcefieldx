@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
 /**
@@ -43,18 +43,17 @@ package ffx.algorithms.dynamics.integrators;
  * @author Michael J. Schnieders
  */
 public enum IntegratorEnum {
+  BEEMAN(false, true),
+  RESPA(true, true),
+  STOCHASTIC(false, false),
+  VELOCITYVERLET(true, true),
+  VERLET(true, true);
 
-    BEEMAN(false, true), RESPA(true, true),
-    STOCHASTIC(false, false), VELOCITYVERLET(true, true),
-    VERLET(true, true);
+  public final boolean knownReversible;
+  public final boolean knownDeterministic;
 
-    public final boolean knownReversible;
-    public final boolean knownDeterministic;
-
-    IntegratorEnum(boolean reversible, boolean deterministic) {
-        knownReversible = reversible;
-        knownDeterministic = deterministic;
-    }
+  IntegratorEnum(boolean reversible, boolean deterministic) {
+    knownReversible = reversible;
+    knownDeterministic = deterministic;
+  }
 }
-
-

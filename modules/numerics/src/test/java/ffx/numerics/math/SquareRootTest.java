@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,71 +34,64 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.math;
+
+import static java.lang.Math.sqrt;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collection;
-import static java.lang.Math.sqrt;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.assertEquals;
 
-/**
- * @author Michael J. Schnieders
- */
+/** @author Michael J. Schnieders */
 @RunWith(Parameterized.class)
 public class SquareRootTest {
 
-    private static final double tolerance = 1.0e-13;
-    private final String info;
-    private final double x;
+  private static final double tolerance = 1.0e-13;
+  private final String info;
+  private final double x;
 
-    public SquareRootTest(String info, double x) {
-        this.info = info;
-        this.x = x;
+  public SquareRootTest(String info, double x) {
+    this.info = info;
+    this.x = x;
+  }
+
+  /** The expected values are found using java.lang.Math.sqrt. */
+  @Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+          {"Test 1.0e-2", 1.0e-2},
+          {"Test 1.0e-1", 1.0e-1},
+          {"Test 1.0e0", 1.0e0},
+          {"Test 1.0e1", 1.0e1},
+          {"Test 1.0e2", 1.0e2},
+        });
+  }
+
+  /** Test inverse sqrt method, of class InverseSqrt. */
+  @Test
+  public void testInverseSqrt() {
+    for (int i = 0; i < 100; i++) {
+      double increment = i * x / 10.0;
+      double actual = SquareRoot.isqrt(x + increment);
+      double expected = 1.0 / sqrt(x + increment);
+      assertEquals(info + " + " + increment, expected, actual, tolerance);
     }
+  }
 
-    /**
-     * The expected values are found using java.lang.Math.sqrt.
-     */
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {"Test 1.0e-2", 1.0e-2},
-                {"Test 1.0e-1", 1.0e-1},
-                {"Test 1.0e0", 1.0e0},
-                {"Test 1.0e1", 1.0e1},
-                {"Test 1.0e2", 1.0e2},});
+  /** Test sqrt method, of class InverseSqrt. */
+  @Test
+  public void testSqrt() {
+    for (int i = 0; i < 1000; i++) {
+      double increment = i * x / 100.0;
+      double actual = SquareRoot.sqrt(x + increment);
+      double expected = sqrt(x + increment);
+      assertEquals(info + " + " + increment, expected, actual, tolerance);
     }
-
-    /**
-     * Test inverse sqrt method, of class InverseSqrt.
-     */
-    @Test
-    public void testInverseSqrt() {
-        for (int i = 0; i < 100; i++) {
-            double increment = i * x / 10.0;
-            double actual = SquareRoot.isqrt(x + increment);
-            double expected = 1.0 / sqrt(x + increment);
-            assertEquals(info + " + " + increment, expected, actual, tolerance);
-        }
-    }
-
-    /**
-     * Test sqrt method, of class InverseSqrt.
-     */
-    @Test
-    public void testSqrt() {
-        for (int i = 0; i < 1000; i++) {
-            double increment = i * x / 100.0;
-            double actual = SquareRoot.sqrt(x + increment);
-            double expected = sqrt(x + increment);
-            assertEquals(info + " + " + increment, expected, actual, tolerance);
-        }
-    }
-
+  }
 }

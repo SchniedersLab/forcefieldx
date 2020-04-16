@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,33 +34,31 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.utils;
 
 import static java.lang.String.format;
 
 /**
- * <p>SystemTemperatureException class.</p>
+ * SystemTemperatureException class.
  *
  * @author Stephen D. LuCore
  */
 public class SystemTemperatureException extends RuntimeException {
-    private final double temperature;
+  private final double temperature;
 
-    /**
-     * <p>Constructor for SystemTemperatureException.</p>
-     *
-     * @param temperature a double.
-     */
-    public SystemTemperatureException(double temperature) {
-        this.temperature = temperature;
-    }
+  /**
+   * Constructor for SystemTemperatureException.
+   *
+   * @param temperature a double.
+   */
+  public SystemTemperatureException(double temperature) {
+    this.temperature = temperature;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getMessage() {
-        return format(" System unstable due to high temperature: %6.2f", temperature);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public String getMessage() {
+    return format(" System unstable due to high temperature: %6.2f", temperature);
+  }
 }

@@ -37,13 +37,7 @@
 //******************************************************************************
 package ffx.xray.groovy
 
-import java.util.logging.Logger
-
-import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
-
 import edu.rit.pj.Comm
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
@@ -63,11 +57,14 @@ import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize.RefinementMode
 import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
-
+import org.apache.commons.configuration2.CompositeConfiguration
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import java.util.logging.Logger
 
 /**
  * The Alchemical Changes script.
@@ -80,271 +77,281 @@ import picocli.CommandLine.Parameters
 @Command(description = " Simulated annealing on an X-ray target.", name = "ffxc xray.Alchemical")
 class Alchemical extends AlgorithmsScript {
 
-    @Mixin
-    DynamicsOptions dynamicsOptions
+  @Mixin
+  DynamicsOptions dynamicsOptions
 
-    @Mixin
-    XrayOptions xrayOptions
+  @Mixin
+  XrayOptions xrayOptions
 
-    private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
-    /**
-     * -I or --onlyions sets whether or not ion positions are optimized (default is false; must set at least one of either '-W' or '-I') (only one type of ion is chosen).
-     */
-    @Option(names = ["-I", "--onlyions"], paramLabel = 'false',
-            description = 'Set to only optimize ions (of a single type).')
-    boolean onlyIons = false
+  private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
+  /**
+   * -I or --onlyions sets whether or not ion positions are optimized (default is false; must set at least one of either '-W' or '-I') (only one type of ion is chosen).
+   */
+  @Option(names = ["-I", "--onlyions"], paramLabel = 'false',
+      description = 'Set to only optimize ions (of a single type).')
+  boolean onlyIons = false
 
-    /**
-     * --itype or --iontype Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.
-     */
-    @Option(names = ["--itype", "--iontype"], paramLabel = 'null',
-            description = 'Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
-    String[] iontype = null
+  /**
+   * --itype or --iontype Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.
+   */
+  @Option(names = ["--itype", "--iontype"], paramLabel = 'null',
+      description = 'Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
+  String[] iontype = null
 
-    /**
-     * -N or --neutralize Adds more of the selected ion in order to neutralize the crystal's charge.
-     */
-    @Option(names = ["-N", "--neutralize"], paramLabel = 'false',
-            description = 'Neutralize the crystal\'s charge by adding more of the selected ion')
-    boolean neutralize = false
+  /**
+   * -N or --neutralize Adds more of the selected ion in order to neutralize the crystal's charge.
+   */
+  @Option(names = ["-N", "--neutralize"], paramLabel = 'false',
+      description = 'Neutralize the crystal\'s charge by adding more of the selected ion')
+  boolean neutralize = false
 
-    /**
-     * -W or --onlywaters sets whether or not water positions are optimized (default is false; must set at least one of either '-W' or '-I').
-     */
-    @Option(names = ["-W", "--onlywaters"], paramLabel = 'false',
-            description = 'Set to only optimize waters.')
-    boolean onlyWaters = false
-    /**
-     * The refinement mode to use.
-     */
-    RefinementMode refinementMode = RefinementMode.COORDINATES
+  /**
+   * -W or --onlywaters sets whether or not water positions are optimized (default is false; must set at least one of either '-W' or '-I').
+   */
+  @Option(names = ["-W", "--onlywaters"], paramLabel = 'false',
+      description = 'Set to only optimize waters.')
+  boolean onlyWaters = false
+  /**
+   * The refinement mode to use.
+   */
+  RefinementMode refinementMode = RefinementMode.COORDINATES
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
-    private List<String> filenames
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
+  private List<String> filenames
 
-    // Value of Lambda.
-    double lambda = 1.0
+  // Value of Lambda.
+  double lambda = 1.0
 
-    // ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
-    ThermostatEnum thermostat = ThermostatEnum.ADIABATIC
+  // ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
+  ThermostatEnum thermostat = ThermostatEnum.ADIABATIC
 
-    // IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC ]
-    IntegratorEnum integrator = IntegratorEnum.STOCHASTIC
+  // IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC ]
+  IntegratorEnum integrator = IntegratorEnum.STOCHASTIC
 
-    // File type of coordinate snapshots to write out.
-    String fileType = "PDB"
+  // File type of coordinate snapshots to write out.
+  String fileType = "PDB"
 
-    // OST
-    boolean runOST = true
+  // OST
+  boolean runOST = true
 
-    // Reset velocities (ignored if a restart file is given)
-    boolean initVelocities = true
+  // Reset velocities (ignored if a restart file is given)
+  boolean initVelocities = true
 
-    private OrthogonalSpaceTempering orthogonalSpaceTempering;
+  private OrthogonalSpaceTempering orthogonalSpaceTempering;
 
-    @Override
-    Alchemical run() {
+  @Override
+  Alchemical run() {
 
-        if (!init()) {
-            return this
-        }
-        dynamicsOptions.init()
-        xrayOptions.init()
-        System.setProperty("lambdaterm", "true")
+    if (!init()) {
+      return this
+    }
+    dynamicsOptions.init()
+    xrayOptions.init()
+    System.setProperty("lambdaterm", "true")
 
-        String modelfilename
-        MolecularAssembly[] assemblies
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return
-        } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath()
-            assemblies = { activeAssembly }
-        }
+    String modelfilename
+    MolecularAssembly[] assemblies
+    if (filenames != null && filenames.size() > 0) {
+      assemblies = algorithmFunctions.open(filenames.get(0))
+      activeAssembly = assemblies[0]
+      modelfilename = filenames.get(0)
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return
+    } else {
+      modelfilename = activeAssembly.getFile().getAbsolutePath()
+      assemblies = {
+        activeAssembly
+      }
+    }
 
-        logger.info("\n Running Alchemical Changes on " + modelfilename)
+    logger.info("\n Running Alchemical Changes on " + modelfilename)
 
-        File structureFile = new File(FilenameUtils.normalize(modelfilename))
-        structureFile = new File(structureFile.getAbsolutePath())
-        String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
-        File histogramRestart = new File(baseFilename + ".his")
-        File lambdaRestart = new File(baseFilename + ".lam")
-        File dyn = new File(baseFilename + ".dyn")
+    File structureFile = new File(FilenameUtils.normalize(modelfilename))
+    structureFile = new File(structureFile.getAbsolutePath())
+    String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
+    File histogramRestart = new File(baseFilename + ".his")
+    File lambdaRestart = new File(baseFilename + ".lam")
+    File dyn = new File(baseFilename + ".dyn")
 
-        Comm world = Comm.world()
-        int size = world.size()
-        int rank = 0
-        double[] energyArray = new double[world.size()]
-        for (int i = 0; i < world.size(); i++) {
-            energyArray[i] = Double.MAX_VALUE
-        }
+    Comm world = Comm.world()
+    int size = world.size()
+    int rank = 0
+    double[] energyArray = new double[world.size()]
+    for (int i = 0; i < world.size(); i++) {
+      energyArray[i] = Double.MAX_VALUE
+    }
 
-        // For a multi-process job, try to get the restart files from rank sub-directories.
-        if (size > 1) {
-            rank = world.rank()
-            File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
-            if (!rankDirectory.exists()) {
-                rankDirectory.mkdir()
-            }
-            lambdaRestart = new File(rankDirectory.getPath() + File.separator + baseFilename + ".lam")
-            dyn = new File(rankDirectory.getPath() + File.separator + baseFilename + ".dyn")
-            structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName())
-        }
-        if (!dyn.exists()) {
-            dyn = null
-        }
+    // For a multi-process job, try to get the restart files from rank sub-directories.
+    if (size > 1) {
+      rank = world.rank()
+      File rankDirectory = new File(
+          structureFile.getParent() + File.separator + Integer.toString(rank))
+      if (!rankDirectory.exists()) {
+        rankDirectory.mkdir()
+      }
+      lambdaRestart = new File(rankDirectory.getPath() + File.separator + baseFilename + ".lam")
+      dyn = new File(rankDirectory.getPath() + File.separator + baseFilename + ".dyn")
+      structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName())
+    }
+    if (!dyn.exists()) {
+      dyn = null
+    }
 
-        // Set built atoms active/use flags to true (false for other atoms).
-        Atom[] atoms = activeAssembly.getAtomArray()
+    // Set built atoms active/use flags to true (false for other atoms).
+    Atom[] atoms = activeAssembly.getAtomArray()
 
-        // Get a reference to the first system's ForceFieldEnergy.
-        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
-        forceFieldEnergy.setPrintOnFailure(false, false)
+    // Get a reference to the first system's ForceFieldEnergy.
+    ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+    forceFieldEnergy.setPrintOnFailure(false, false)
 
-        // Configure all atoms to:
-        // 1) be used in the potential
-        // 2) be inactive (i.e. cannot move)
-        // 3) not be controlled by the lambda state variable.
-        for (int i = 0; i <= atoms.length; i++) {
-            Atom ai = atoms[i - 1]
-            ai.setUse(true)
-            ai.setActive(false)
-            ai.setApplyLambda(false)
-        }
+    // Configure all atoms to:
+    // 1) be used in the potential
+    // 2) be inactive (i.e. cannot move)
+    // 3) not be controlled by the lambda state variable.
+    for (int i = 0; i <= atoms.length; i++) {
+      Atom ai = atoms[i - 1]
+      ai.setUse(true)
+      ai.setActive(false)
+      ai.setApplyLambda(false)
+    }
 
-        double crystalCharge = activeAssembly.getCharge(true)
-        logger.info(" Overall crystal charge: " + crystalCharge)
-        ArrayList<MSNode> ions = assemblies[0].getIons()
-        ArrayList<MSNode> waters = assemblies[0].getWaters()
+    double crystalCharge = activeAssembly.getCharge(true)
+    logger.info(" Overall crystal charge: " + crystalCharge)
+    ArrayList<MSNode> ions = assemblies[0].getIons()
+    ArrayList<MSNode> waters = assemblies[0].getWaters()
 
 //      Consider the option of creating a composite lambda gradient from vapor phase to crystal phase
-        if (!onlyWaters) {
-            logger.info("Doing ions.")
-            if (ions == null || ions.size() == 0) {
-                logger.info("\n Please add an ion to the PDB file to scan with.")
-                return
+    if (!onlyWaters) {
+      logger.info("Doing ions.")
+      if (ions == null || ions.size() == 0) {
+        logger.info("\n Please add an ion to the PDB file to scan with.")
+        return
+      }
+      for (MSNode msNode : ions) {
+        try {
+          logger.info("Selecting ion.")
+          if (msNode.getAtomList().name == ionType) {
+            logger.info("Ion has been selected.")
+            for (Atom atom : msNode.getAtomList()) {
+              System.out.println("Activating ions")
+              atom.setUse(true)
+              atom.setActive(true)
+              atom.setApplyLambda(true)
+              logger.info(" Alchemical atom: " + atom.toString())
             }
-            for (MSNode msNode : ions) {
-                try {
-                    logger.info("Selecting ion.")
-                    if (msNode.getAtomList().name == ionType) {
-                        logger.info("Ion has been selected.")
-                        for (Atom atom : msNode.getAtomList()) {
-                            System.out.println("Activating ions")
-                            atom.setUse(true)
-                            atom.setActive(true)
-                            atom.setApplyLambda(true)
-                            logger.info(" Alchemical atom: " + atom.toString())
-                        }
-                    }
-                } catch (MissingPropertyException e) {
-                    logger.info("Ion has not been selected.")
-                    if (neutralize) {
-                        logger.info("Neutralizing crystal.")
-                        double ionCharge = 0
-                        for (Atom atom : msNode.getAtomList()) {
-                            ionCharge += atom.multipoleType.getCharge()
-                        }
-                        logger.info("Ion charge is: " + ionCharge.toString())
-                        int numIons = (int) -1 * (Math.ceil(crystalCharge / ionCharge))
-                        if (numIons > 0) {
-                            logger.info(numIons + " " + msNode.getAtomList().name
-                                    + " ions needed to neutralize the crystal.")
-                            ionType = msNode.getAtomList().name
-                            for (Atom atom : msNode.getAtomList()) {
-                                atom.setUse(true)
-                                atom.setActive(true)
-                                atom.setApplyLambda(true)
-                                logger.info(" Alchemical atom: " + atom.toString())
-                            }
-                        }
-                    } else {
-                        ionType = msNode.getAtomList().name
-                        for (Atom atom : msNode.getAtomList()) {
-                            atom.setUse(true)
-                            atom.setActive(true)
-                            atom.setApplyLambda(true)
-                            logger.info(" Alchemical atom: " + atom.toString())
-                        }
-                    }
-                }
+          }
+        } catch (MissingPropertyException e) {
+          logger.info("Ion has not been selected.")
+          if (neutralize) {
+            logger.info("Neutralizing crystal.")
+            double ionCharge = 0
+            for (Atom atom : msNode.getAtomList()) {
+              ionCharge += atom.multipoleType.getCharge()
             }
-        }
-
-        // Lambdize waters for position optimization, if this option was set to true
-        if (onlyWaters) {
-            for (MSNode msNode : waters) {
-                for (Atom atom : msNode.getAtomList()) {
-                    // Scan with the last ion in the file.
-                    atom.setUse(true)
-                    atom.setActive(true)
-                    atom.setApplyLambda(true)
-                    logger.info(" Water atom:      " + atom.toString())
-                }
+            logger.info("Ion charge is: " + ionCharge.toString())
+            int numIons = (int) -1 * (Math.ceil(crystalCharge / ionCharge))
+            if (numIons > 0) {
+              logger.info(numIons + " " + msNode.getAtomList().name
+                  + " ions needed to neutralize the crystal.")
+              ionType = msNode.getAtomList().name
+              for (Atom atom : msNode.getAtomList()) {
+                atom.setUse(true)
+                atom.setActive(true)
+                atom.setApplyLambda(true)
+                logger.info(" Alchemical atom: " + atom.toString())
+              }
             }
+          } else {
+            ionType = msNode.getAtomList().name
+            for (Atom atom : msNode.getAtomList()) {
+              atom.setUse(true)
+              atom.setActive(true)
+              atom.setApplyLambda(true)
+              logger.info(" Alchemical atom: " + atom.toString())
+            }
+          }
         }
-
-        // Load parsed X-ray properties.
-        CompositeConfiguration properties = assemblies[0].getProperties()
-        xrayOptions.setProperties(parseResult, properties)
-
-        // Set up diffraction data (can be multiple files)
-        List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
-        DiffractionData diffractionData = new DiffractionData(assemblies, properties,
-                xrayOptions.solventModel, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
-
-        diffractionData.scaleBulkFit()
-        diffractionData.printStats()
-
-        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
-        double[] x = new double[refinementEnergy.getNumberOfVariables()]
-        x = refinementEnergy.getCoordinates(x)
-        refinementEnergy.energy(x, true)
-
-        refinementEnergy.setLambda(lambda)
-
-        boolean asynchronous = true
-
-        CompositeConfiguration props = assemblies[0].getProperties()
-        HistogramSettings hOps = new HistogramSettings(histogramRestart, lambdaRestart.toString(), props)
-        OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(refinementEnergy, refinementEnergy, lambdaRestart,
-                hOps, props, dynamicsOptions.getTemp(), dynamicsOptions.getDt(), dynamicsOptions.getReport(),
-                dynamicsOptions.getCheckpoint(), asynchronous, true, algorithmListener);
-
-
-        orthogonalSpaceTempering.setLambda(lambda);
-        orthogonalSpaceTempering.getOptimizationParameters().setOptimization(true, activeAssembly);
-        // Create the MolecularDynamics instance.
-        MolecularDynamics molDyn = new MolecularDynamics(assemblies[0], orthogonalSpaceTempering, props,
-                null, thermostat, integrator)
-
-        algorithmFunctions.energy(assemblies[0])
-
-        molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temp, true,
-                fileType, dynamicsOptions.write, dyn)
-
-        logger.info(" Searching for low energy coordinates")
-        OptimizationParameters opt = orthogonalSpaceTempering.getOptimizationParameters();
-        double[] lowEnergyCoordinates = opt.getOptimumCoordinates()
-        double currentOSTOptimum = opt.getOptimumEnergy()
-        if (lowEnergyCoordinates != null) {
-            forceFieldEnergy.setCoordinates(lowEnergyCoordinates)
-        } else {
-            logger.info(" OST stage did not succeed in finding a minimum.")
-        }
-
-        return this
+      }
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        return orthogonalSpaceTempering == null ? Collections.emptyList() : Collections.singletonList(orthogonalSpaceTempering);
+    // Lambdize waters for position optimization, if this option was set to true
+    if (onlyWaters) {
+      for (MSNode msNode : waters) {
+        for (Atom atom : msNode.getAtomList()) {
+          // Scan with the last ion in the file.
+          atom.setUse(true)
+          atom.setActive(true)
+          atom.setApplyLambda(true)
+          logger.info(" Water atom:      " + atom.toString())
+        }
+      }
     }
+
+    // Load parsed X-ray properties.
+    CompositeConfiguration properties = assemblies[0].getProperties()
+    xrayOptions.setProperties(parseResult, properties)
+
+    // Set up diffraction data (can be multiple files)
+    List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
+    DiffractionData diffractionData = new DiffractionData(assemblies, properties,
+        xrayOptions.solventModel,
+        diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
+
+    diffractionData.scaleBulkFit()
+    diffractionData.printStats()
+
+    RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData,
+        xrayOptions.refinementMode)
+    double[] x = new double[refinementEnergy.getNumberOfVariables()]
+    x = refinementEnergy.getCoordinates(x)
+    refinementEnergy.energy(x, true)
+
+    refinementEnergy.setLambda(lambda)
+
+    boolean asynchronous = true
+
+    CompositeConfiguration props = assemblies[0].getProperties()
+    HistogramSettings hOps = new HistogramSettings(histogramRestart, lambdaRestart.toString(),
+        props)
+    OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(
+        refinementEnergy, refinementEnergy, lambdaRestart,
+        hOps, props, dynamicsOptions.getTemp(), dynamicsOptions.getDt(),
+        dynamicsOptions.getReport(),
+        dynamicsOptions.getCheckpoint(), asynchronous, true, algorithmListener);
+
+
+    orthogonalSpaceTempering.setLambda(lambda);
+    orthogonalSpaceTempering.getOptimizationParameters().setOptimization(true, activeAssembly);
+    // Create the MolecularDynamics instance.
+    MolecularDynamics molDyn = new MolecularDynamics(assemblies[0], orthogonalSpaceTempering, props,
+        null, thermostat, integrator)
+
+    algorithmFunctions.energy(assemblies[0])
+
+    molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,
+        dynamicsOptions.write, dynamicsOptions.temp, true,
+        fileType, dynamicsOptions.write, dyn)
+
+    logger.info(" Searching for low energy coordinates")
+    OptimizationParameters opt = orthogonalSpaceTempering.getOptimizationParameters();
+    double[] lowEnergyCoordinates = opt.getOptimumCoordinates()
+    double currentOSTOptimum = opt.getOptimumEnergy()
+    if (lowEnergyCoordinates != null) {
+      forceFieldEnergy.setCoordinates(lowEnergyCoordinates)
+    } else {
+      logger.info(" OST stage did not succeed in finding a minimum.")
+    }
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    return orthogonalSpaceTempering == null ? Collections.emptyList() :
+        Collections.singletonList(orthogonalSpaceTempering);
+  }
 }

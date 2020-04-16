@@ -1156,6 +1156,7 @@
         <properties.version>1.0.0</properties.version>
         <!-- Clover Plugin -->
         <clover.version>4.3.1</clover.version>
+        <fmt.version>2.9</fmt.version>
     </properties>
     <dependencies>
         <dependency>

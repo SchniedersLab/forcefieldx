@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,12 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.integrate;
 
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
-
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 
@@ -50,89 +49,79 @@ import static org.apache.commons.math3.util.FastMath.sin;
  */
 public class SinWave extends FunctionDataCurve {
 
-    /**
-     * Magnitude.
-     */
-    private final double a;
-    /**
-     * Periodicity.
-     */
-    private final double n;
-    /**
-     * Inverse periodicity.
-     */
-    private final double nInverse;
+  /** Magnitude. */
+  private final double a;
+  /** Periodicity. */
+  private final double n;
+  /** Inverse periodicity. */
+  private final double nInverse;
 
-    /**
-     * Constructs f(x) = a*sin(nx).
-     *
-     * @param x an array of {@link double} objects.
-     * @param a magnitude.
-     * @param n periodicity.
-     */
-    public SinWave(double[] x, double a, double n) {
-        this(x, false, a, n);
+  /**
+   * Constructs f(x) = a*sin(nx).
+   *
+   * @param x an array of {@link double} objects.
+   * @param a magnitude.
+   * @param n periodicity.
+   */
+  public SinWave(double[] x, double a, double n) {
+    this(x, false, a, n);
+  }
+
+  /**
+   * Constructs f(x) = a*sin(nx).
+   *
+   * @param x an array of {@link double} objects.
+   * @param halfWidthEnds Use half-width start and end bins.
+   * @param a magnitude.
+   * @param n periodicity.
+   */
+  public SinWave(double[] x, boolean halfWidthEnds, double a, double n) {
+    int npoints = x.length;
+    points = new double[npoints];
+    this.a = a;
+    this.n = n;
+    nInverse = 1.0 / n;
+    this.halfWidthEnd = halfWidthEnds;
+
+    for (int i = 0; i < points.length; i++) {
+      points[i] = sinAt(x[i]);
+    }
+    lb = x[0];
+    ub = x[npoints - 1];
+    assertXIntegrity(x);
+    this.x = new double[x.length];
+    arraycopy(x, 0, this.x, 0, x.length);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double fX(double x) {
+    return sinAt(x);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double integralAt(double x) {
+    return -1 * a * nInverse * cos(n * x);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("Sine wave f(x) = ");
+    sb.append(a).append("*sin(").append(n).append("x)");
+    sb.append(
+        format(
+            " with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
+    if (halfWidthEnd) {
+      sb.append(" and half-width start/end bins");
     }
 
-    /**
-     * Constructs f(x) = a*sin(nx).
-     *
-     * @param x             an array of {@link double} objects.
-     * @param halfWidthEnds Use half-width start and end bins.
-     * @param a             magnitude.
-     * @param n             periodicity.
-     */
-    public SinWave(double[] x, boolean halfWidthEnds, double a, double n) {
-        int npoints = x.length;
-        points = new double[npoints];
-        this.a = a;
-        this.n = n;
-        nInverse = 1.0 / n;
-        this.halfWidthEnd = halfWidthEnds;
+    return sb.toString();
+  }
 
-        for (int i = 0; i < points.length; i++) {
-            points[i] = sinAt(x[i]);
-        }
-        lb = x[0];
-        ub = x[npoints - 1];
-        assertXIntegrity(x);
-        this.x = new double[x.length];
-        arraycopy(x, 0, this.x, 0, x.length);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double fX(double x) {
-        return sinAt(x);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double integralAt(double x) {
-        return -1 * a * nInverse * cos(n * x);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("Sine wave f(x) = ");
-        sb.append(a).append("*sin(").append(n).append("x)");
-        sb.append(format(" with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
-        if (halfWidthEnd) {
-            sb.append(" and half-width start/end bins");
-        }
-
-        return sb.toString();
-    }
-
-    // Private, non-overrideable method for use in the constructor.
-    private double sinAt(double x) {
-        return a * sin(n * x);
-    }
+  // Private, non-overrideable method for use in the constructor.
+  private double sinAt(double x) {
+    return a * sin(n * x);
+  }
 }

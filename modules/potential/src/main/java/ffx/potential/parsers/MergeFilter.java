@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,85 +34,71 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
-
-import java.io.File;
-import java.util.ArrayList;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import java.io.File;
+import java.util.ArrayList;
 
 /**
- * The MergeFilter class allows Force Field X to treat merging of Systems just
- * like opening a file from a hard disk or socket.
+ * The MergeFilter class allows Force Field X to treat merging of Systems just like opening a file
+ * from a hard disk or socket.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class MergeFilter extends SystemFilter {
 
-    /**
-     * <p>
-     * Constructor for MergeFilter.</p>
-     *
-     * @param f a {@link ffx.potential.MolecularAssembly} object.
-     * @param a a {@link java.util.ArrayList} object.
-     * @param b a {@link java.util.ArrayList} object.
-     */
-    public MergeFilter(MolecularAssembly f, ArrayList<Atom> a, ArrayList<Bond> b) {
-        super(new File(""), f, null, null);
-        atomList = a;
-        bondList = b;
-    }
+  /**
+   * Constructor for MergeFilter.
+   *
+   * @param f a {@link ffx.potential.MolecularAssembly} object.
+   * @param a a {@link java.util.ArrayList} object.
+   * @param b a {@link java.util.ArrayList} object.
+   */
+  public MergeFilter(MolecularAssembly f, ArrayList<Atom> a, ArrayList<Bond> b) {
+    super(new File(""), f, null, null);
+    atomList = a;
+    bondList = b;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void closeReader() {
-        //logger.fine(" Reading trajectories not yet supported for MergeFilter");
-        // No logger set for MergeFilter.
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void closeReader() {
+    // logger.fine(" Reading trajectories not yet supported for MergeFilter");
+    // No logger set for MergeFilter.
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean readFile() {
-        return true;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean readFile() {
+    return true;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean readNext(boolean resetPosition) {
-        return false;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean readNext(boolean resetPosition) {
+    return false;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean readNext(boolean resetPosition, boolean print) {
-        return false;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean readNext(boolean resetPosition, boolean print) {
+    return false;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean readNext() {
-        return readNext(false);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean readNext() {
+    return readNext(false);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
-        return false;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
+    return false;
+  }
 }

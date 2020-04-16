@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,100 +34,94 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.nonbonded;
 
-import java.util.ArrayList;
-
 import edu.rit.pj.IntegerForLoop;
+import java.util.ArrayList;
 
 /**
  * The RowLoop class is used to parallelize placing onto a 3D grid
- * <p>
- * 1) Multipoles using B-splines or
- * <p>
- * 2) Diffraction form factors.
- * <p>
- * Each "row" of the grid (i.e. fixed values of the z and y-coordinates) is
- * operated on by only a single thread to logically enforce atomic updates of
- * grid magnitudes.
+ *
+ * <p>1) Multipoles using B-splines or
+ *
+ * <p>2) Diffraction form factors.
+ *
+ * <p>Each "row" of the grid (i.e. fixed values of the z and y-coordinates) is operated on by only a
+ * single thread to logically enforce atomic updates of grid magnitudes.
  *
  * @author Armin Avdic
  */
 public abstract class RowLoop extends IntegerForLoop {
 
-    protected ArrayList<Integer> buildListA = new ArrayList<>();
-    protected ArrayList<Integer> buildListS = new ArrayList<>();
-    protected RowRegion rowRegion;
-    protected boolean rebuildList = false;
-    private int nAtoms;
-    private int nSymm;
+  protected ArrayList<Integer> buildListA = new ArrayList<>();
+  protected ArrayList<Integer> buildListS = new ArrayList<>();
+  protected RowRegion rowRegion;
+  protected boolean rebuildList = false;
+  private int nAtoms;
+  private int nSymm;
 
-    /**
-     * <p>Constructor for RowLoop.</p>
-     *
-     * @param nAtoms    a int.
-     * @param nSymm     a int.
-     * @param rowRegion a {@link ffx.potential.nonbonded.RowRegion} object.
-     */
-    public RowLoop(int nAtoms, int nSymm, RowRegion rowRegion) {
-        this.nAtoms = nAtoms;
-        this.nSymm = nSymm;
-        this.rowRegion = rowRegion;
-    }
+  /**
+   * Constructor for RowLoop.
+   *
+   * @param nAtoms a int.
+   * @param nSymm a int.
+   * @param rowRegion a {@link ffx.potential.nonbonded.RowRegion} object.
+   */
+  public RowLoop(int nAtoms, int nSymm, RowRegion rowRegion) {
+    this.nAtoms = nAtoms;
+    this.nSymm = nSymm;
+    this.rowRegion = rowRegion;
+  }
 
-    /**
-     * <p>checkList.</p>
-     *
-     * @param zAtListBuild an array of {@link int} objects.
-     * @param buff         a int.
-     * @return a boolean.
-     */
-    public boolean checkList(int[][][] zAtListBuild, int buff) {
-        return false;
-    }
+  /**
+   * checkList.
+   *
+   * @param zAtListBuild an array of {@link int} objects.
+   * @param buff a int.
+   * @return a boolean.
+   */
+  public boolean checkList(int[][][] zAtListBuild, int buff) {
+    return false;
+  }
 
-    /**
-     * Apply electron density "as normal" for an atom, but check that the y and
-     * z indeces are within the supplied bounds (inclusive).
-     *
-     * @param iSymm the SymOp to apply.
-     * @param iAtom the index of the Atom to put onto the grid.
-     * @param lb    the lower bound for the y and z-axes.
-     * @param ub    the upper bound for the y and z-axes.
-     */
-    public abstract void gridDensity(int iSymm, int iAtom, int lb, int ub);
+  /**
+   * Apply electron density "as normal" for an atom, but check that the y and z indeces are within
+   * the supplied bounds (inclusive).
+   *
+   * @param iSymm the SymOp to apply.
+   * @param iAtom the index of the Atom to put onto the grid.
+   * @param lb the lower bound for the y and z-axes.
+   * @param ub the upper bound for the y and z-axes.
+   */
+  public abstract void gridDensity(int iSymm, int iAtom, int lb, int ub);
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void run(int lb, int ub) throws Exception {
-        for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-            for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-                if (rowRegion.select[iSymm][iAtom]) {
-                    gridDensity(iSymm, iAtom, lb, ub);
-                }
-            }
+  /** {@inheritDoc} */
+  @Override
+  public void run(int lb, int ub) throws Exception {
+    for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+      for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+        if (rowRegion.select[iSymm][iAtom]) {
+          gridDensity(iSymm, iAtom, lb, ub);
         }
+      }
     }
+  }
 
-    /**
-     * <p>saveZYValues.</p>
-     *
-     * @param zAtListBuild an array of {@link int} objects.
-     */
-    public void saveZYValues(int[][][] zAtListBuild) {
-    }
+  /**
+   * saveZYValues.
+   *
+   * @param zAtListBuild an array of {@link int} objects.
+   */
+  public void saveZYValues(int[][][] zAtListBuild) {}
 
-    /**
-     * <p>
-     * setNsymm</p>
-     *
-     * @param nSymm a int.
-     */
-    public void setNsymm(int nSymm) {
-        this.nSymm = nSymm;
-        assert (nSymm <= rowRegion.nSymm);
-    }
+  /**
+   * setNsymm
+   *
+   * @param nSymm a int.
+   */
+  public void setNsymm(int nSymm) {
+    this.nSymm = nSymm;
+    assert (nSymm <= rowRegion.nSymm);
+  }
 }

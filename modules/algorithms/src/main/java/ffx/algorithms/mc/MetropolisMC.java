@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,16 +34,16 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.mc;
 
 import java.util.List;
 
 /**
- * The MetropolisMC interface defines the basic methods of a Metropolis Monte
- * Carlo application. Intended to be a framework to allow you to take and revert
- * a single step, and return basic information about the last step taken. Many
- * of the methods will only return a meaningful result after the first step.
+ * The MetropolisMC interface defines the basic methods of a Metropolis Monte Carlo application.
+ * Intended to be a framework to allow you to take and revert a single step, and return basic
+ * information about the last step taken. Many of the methods will only return a meaningful result
+ * after the first step.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -51,106 +51,103 @@ import java.util.List;
  */
 public interface MetropolisMC {
 
-    /**
-     * Returns true if the move from e1 to e2 is accepted. For molecular
-     * systems, this will mean accept if e2 is less than e1, or accept with
-     * probability of exp(-dU/kbT) if e2 is greater than e1.
-     *
-     * @param e1 Initial energy
-     * @param e2 Trial energy
-     * @return If move accepted
-     */
-    boolean evaluateMove(double e1, double e2);
+  /**
+   * Returns true if the move from e1 to e2 is accepted. For molecular systems, this will mean
+   * accept if e2 is less than e1, or accept with probability of exp(-dU/kbT) if e2 is greater than
+   * e1.
+   *
+   * @param e1 Initial energy
+   * @param e2 Trial energy
+   * @return If move accepted
+   */
+  boolean evaluateMove(double e1, double e2);
 
-    /**
-     * If last step taken was a success.
-     *
-     * @return Acceptance of last move
-     */
-    boolean getAccept();
+  /**
+   * If last step taken was a success.
+   *
+   * @return Acceptance of last move
+   */
+  boolean getAccept();
 
-    /**
-     * Return starting energy from last attempted step.
-     *
-     * @return e1
-     */
-    double getE1();
+  /**
+   * Return starting energy from last attempted step.
+   *
+   * @return e1
+   */
+  double getE1();
 
-    /**
-     * Return trial energy from last attempted step.
-     *
-     * @return e2
-     */
-    double getE2();
+  /**
+   * Return trial energy from last attempted step.
+   *
+   * @return e2
+   */
+  double getE2();
 
-    /**
-     * Returns temperature of the Monte Carlo criterion.
-     *
-     * @return temperature
-     */
-    double getTemperature();
+  /**
+   * Returns temperature of the Monte Carlo criterion.
+   *
+   * @return temperature
+   */
+  double getTemperature();
 
-    /**
-     * Sets temperature of Monte Carlo criterion.
-     *
-     * @param temp a double.
-     */
-    void setTemperature(double temp);
+  /**
+   * Sets temperature of Monte Carlo criterion.
+   *
+   * @param temp a double.
+   */
+  void setTemperature(double temp);
 
-    /**
-     * Returns the energy as of the last step taken (not including any extra-
-     * potential energy adjustments).
-     *
-     * @return Last step's energy
-     */
-    double lastEnergy();
+  /**
+   * Returns the energy as of the last step taken (not including any extra- potential energy
+   * adjustments).
+   *
+   * @return Last step's energy
+   */
+  double lastEnergy();
 
-    /**
-     * Calculates the current system energy and performs an MCMove.
-     *
-     * @param move MCMove to perform
-     * @return If move accepted
-     */
-    boolean mcStep(MCMove move);
+  /**
+   * Calculates the current system energy and performs an MCMove.
+   *
+   * @param move MCMove to perform
+   * @return If move accepted
+   */
+  boolean mcStep(MCMove move);
 
-    /**
-     * Performs an MCMove.
-     *
-     * @param move MCMove to perform
-     * @param en1  Initial energy
-     * @return If move accepted
-     */
-    boolean mcStep(MCMove move, double en1);
+  /**
+   * Performs an MCMove.
+   *
+   * @param move MCMove to perform
+   * @param en1 Initial energy
+   * @return If move accepted
+   */
+  boolean mcStep(MCMove move, double en1);
 
-    /**
-     * Calculates the current system energy and performs a series of moves
-     * sequentially as a single hybrid step.
-     *
-     * @param moves MCMoves to perform
-     * @return If move/moves accepted
-     */
-    boolean mcStep(List<MCMove> moves);
+  /**
+   * Calculates the current system energy and performs a series of moves sequentially as a single
+   * hybrid step.
+   *
+   * @param moves MCMoves to perform
+   * @return If move/moves accepted
+   */
+  boolean mcStep(List<MCMove> moves);
 
-    /**
-     * Performs a series of moves sequentially, as a single hybrid step. Should
-     * also work with single-member lists.
-     *
-     * @param moves MCMoves to perform
-     * @param en1   Initial energy
-     * @return If move/moves accepted.
-     */
-    boolean mcStep(List<MCMove> moves, double en1);
+  /**
+   * Performs a series of moves sequentially, as a single hybrid step. Should also work with
+   * single-member lists.
+   *
+   * @param moves MCMoves to perform
+   * @param en1 Initial energy
+   * @return If move/moves accepted.
+   */
+  boolean mcStep(List<MCMove> moves, double en1);
 
-    /**
-     * If possible, reverts the last successful Monte Carlo step taken.
-     */
-    void revertStep();
+  /** If possible, reverts the last successful Monte Carlo step taken. */
+  void revertStep();
 
-    /**
-     * Sets whether the implementation prints its own messages.
-     *
-     * @param print Print energies, accept/reject, etc.
-     */
-    void setPrint(boolean print);
-
+  /**
+   * Sets whether the implementation prints its own messages.
+   *
+   * @param print Print energies, accept/reject, etc.
+   */
+  void setPrint(boolean print);
 }

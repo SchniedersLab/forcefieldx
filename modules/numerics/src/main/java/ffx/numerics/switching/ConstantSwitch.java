@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,126 +34,105 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.switching;
 
 import static java.lang.String.format;
 
 /**
- * The ConstantSwitch returns a constant value for all input values x. This is useful for
- * having a single code path that accomodates both "real" switching behavior and no
- * switching behavior. The default value is 1.0.
+ * The ConstantSwitch returns a constant value for all input values x. This is useful for having a
+ * single code path that accomodates both "real" switching behavior and no switching behavior. The
+ * default value is 1.0.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public class ConstantSwitch implements UnivariateSwitchingFunction {
 
-    private final double val;
+  private final double val;
 
-    /**
-     * Default constructor: constant 1.0 value.
-     */
-    public ConstantSwitch() {
-        this(1.0);
-    }
+  /** Default constructor: constant 1.0 value. */
+  public ConstantSwitch() {
+    this(1.0);
+  }
 
-    /**
-     * Permits specification of a value.
-     *
-     * @param value Value this ConstantSwitch should maintain.
-     */
-    public ConstantSwitch(double value) {
-        this.val = value;
-    }
+  /**
+   * Permits specification of a value.
+   *
+   * @param value Value this ConstantSwitch should maintain.
+   */
+  public ConstantSwitch(double value) {
+    this.val = value;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean constantOutsideBounds() {
-        return true;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean constantOutsideBounds() {
+    return true;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double firstDerivative(double x) {
-        return 0.0;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public double firstDerivative(double x) {
+    return 0.0;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getHighestOrderZeroDerivative() {
-        return 1;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public int getHighestOrderZeroDerivative() {
+    return 1;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getOneBound() {
-        return Double.NaN;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public double getOneBound() {
+    return Double.NaN;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getZeroBound() {
-        return Double.NaN;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public double getZeroBound() {
+    return Double.NaN;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double nthDerivative(double x, int order) throws IllegalArgumentException {
-        if (order < 0) {
-            throw new IllegalArgumentException(format(" Order must be > 0, was %d", order));
-        } else if (order == 0) {
-            return val;
-        }
-        return 0.0;
+  /** {@inheritDoc} */
+  @Override
+  public double nthDerivative(double x, int order) throws IllegalArgumentException {
+    if (order < 0) {
+      throw new IllegalArgumentException(format(" Order must be > 0, was %d", order));
+    } else if (order == 0) {
+      return val;
     }
+    return 0.0;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double secondDerivative(double x) {
-        return 0.0;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public double secondDerivative(double x) {
+    return 0.0;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean symmetricToUnity() {
-        return true;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean symmetricToUnity() {
+    return true;
+  }
 
-    @Override
-    public String toString() {
-        return format("Constant-value f(x) = %f, with no switching behavior (i.e. a dummy switch)", val);
-    }
+  @Override
+  public String toString() {
+    return format(
+        "Constant-value f(x) = %f, with no switching behavior (i.e. a dummy switch)", val);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return false;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean validOutsideBounds() {
+    return false;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        return val;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public double valueAt(double x) throws IllegalArgumentException {
+    return val;
+  }
 }

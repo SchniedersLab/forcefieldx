@@ -37,11 +37,6 @@
 //******************************************************************************
 package ffx.xray.groovy
 
-import java.util.stream.Collectors
-
-import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
@@ -50,10 +45,13 @@ import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
 import ffx.xray.parsers.MTZWriter
 import ffx.xray.parsers.MTZWriter.MTZType
-
+import org.apache.commons.configuration2.CompositeConfiguration
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The X-ray ComputeFc script.
@@ -65,78 +63,83 @@ import picocli.CommandLine.Parameters
 @Command(description = " Write out computed structure factors.", name = "ffxc ComputeFc")
 class ComputeFc extends AlgorithmsScript {
 
-    @Mixin
-    XrayOptions xrayOptions
+  @Mixin
+  XrayOptions xrayOptions
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
-    private List<String> filenames
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
+  private List<String> filenames
 
-    private MolecularAssembly[] assemblies;
-    private DiffractionData diffractiondata;
+  private MolecularAssembly[] assemblies;
+  private DiffractionData diffractiondata;
 
-    @Override
-    ComputeFc run() {
+  @Override
+  ComputeFc run() {
 
-        if (!init()) {
-            return this
-        }
-
-        xrayOptions.init()
-
-        String modelfilename
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.openAll(filenames.get(0))
-            activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath()
-        }
-
-        // Load parsed X-ray properties.
-        CompositeConfiguration properties = activeAssembly.getProperties()
-        xrayOptions.setProperties(parseResult, properties)
-
-        // Set up diffraction data (can be multiple files)
-        List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
-
-        diffractiondata = new DiffractionData(assemblies, assemblies[0].getProperties(),
-                xrayOptions.solventModel, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
-
-        logger.info("\n Running xray.ComputeFc on " + modelfilename)
-
-        // Compute structure factors
-        diffractiondata.computeAtomicDensity()
-
-        // Output Fcs
-        MTZWriter mtzwriter = new MTZWriter(diffractiondata.reflectionlist[0], diffractiondata.refinementdata[0],
-                FilenameUtils.getBaseName(modelfilename) + "_fc.mtz", MTZType.FCONLY)
-
-        mtzwriter.write()
-
-        return this
+    if (!init()) {
+      return this
     }
 
-    @Override
-    public List<Potential> getPotentials() {
-        if (assemblies == null) {
-            return new ArrayList<Potential>();
-        } else {
-            return Arrays.stream(assemblies).
-                    filter { a -> a != null }.
-                    map { a -> a.getPotentialEnergy() }.
-                    filter { e -> e != null }.
-                    collect(Collectors.toList());
-        }
+    xrayOptions.init()
+
+    String modelfilename
+    if (filenames != null && filenames.size() > 0) {
+      assemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = assemblies[0]
+      modelfilename = filenames.get(0)
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
+    } else {
+      modelfilename = activeAssembly.getFile().getAbsolutePath()
     }
 
-    @Override
-    boolean destroyPotentials() {
-        return diffractiondata == null ? true : diffractiondata.destroy();
+    // Load parsed X-ray properties.
+    CompositeConfiguration properties = activeAssembly.getProperties()
+    xrayOptions.setProperties(parseResult, properties)
+
+    // Set up diffraction data (can be multiple files)
+    List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
+
+    diffractiondata = new DiffractionData(assemblies, assemblies[0].getProperties(),
+        xrayOptions.solventModel,
+        diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
+
+    logger.info("\n Running xray.ComputeFc on " + modelfilename)
+
+    // Compute structure factors
+    diffractiondata.computeAtomicDensity()
+
+    // Output Fcs
+    MTZWriter mtzwriter = new MTZWriter(diffractiondata.reflectionlist[0],
+        diffractiondata.refinementdata[0],
+        FilenameUtils.getBaseName(modelfilename) + "_fc.mtz", MTZType.FCONLY)
+
+    mtzwriter.write()
+
+    return this
+  }
+
+  @Override
+  public List<Potential> getPotentials() {
+    if (assemblies == null) {
+      return new ArrayList<Potential>();
+    } else {
+      return Arrays.stream(assemblies).
+          filter {a -> a != null
+          }.
+          map {a -> a.getPotentialEnergy()
+          }.
+          filter {e -> e != null
+          }.
+          collect(Collectors.toList());
     }
+  }
+
+  @Override
+  boolean destroyPotentials() {
+    return diffractiondata == null ? true : diffractiondata.destroy();
+  }
 }

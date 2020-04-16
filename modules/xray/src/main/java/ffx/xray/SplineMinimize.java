@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,9 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static java.lang.System.arraycopy;
 
 import ffx.algorithms.Terminatable;
@@ -47,172 +45,173 @@ import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch.LineSearchResult;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.xray.SplineEnergy.Type;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * <p>
- * SplineMinimize class.</p>
+ * SplineMinimize class.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public class SplineMinimize implements OptimizationListener, Terminatable {
 
-    private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
+  private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
 
-    private final SplineEnergy splineEnergy;
-    private final int n;
-    private final double[] x;
-    private final double[] grad;
-    private final double[] scaling;
-    private boolean done = false;
-    private boolean terminate = false;
-    private double grms;
-    private int nSteps;
+  private final SplineEnergy splineEnergy;
+  private final int n;
+  private final double[] x;
+  private final double[] grad;
+  private final double[] scaling;
+  private boolean done = false;
+  private boolean terminate = false;
+  private double grms;
+  private int nSteps;
 
-    /**
-     * <p>
-     * Constructor for SplineMinimize.</p>
-     *
-     * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
-     * @param x              an array of double.
-     * @param type           a int.
-     */
-    public SplineMinimize(ReflectionList reflectionList,
-                          DiffractionRefinementData refinementData, double[] x, int type) {
-        this.x = x;
-        n = x.length;
-        splineEnergy = new SplineEnergy(reflectionList, refinementData,
-                n, type);
-        grad = new double[n];
-        scaling = new double[n];
-        for (int i = 0; i < n; i++) {
-            if (type == Type.FOTOESQ
-                    || type == Type.FCTOESQ) {
-                x[i] = 0.1;
-            } else {
-                x[i] = 1.0;
-            }
-            scaling[i] = 1.0;
+  /**
+   * Constructor for SplineMinimize.
+   *
+   * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
+   * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
+   * @param x an array of double.
+   * @param type a int.
+   */
+  public SplineMinimize(
+      ReflectionList reflectionList,
+      DiffractionRefinementData refinementData,
+      double[] x,
+      int type) {
+    this.x = x;
+    n = x.length;
+    splineEnergy = new SplineEnergy(reflectionList, refinementData, n, type);
+    grad = new double[n];
+    scaling = new double[n];
+    for (int i = 0; i < n; i++) {
+      if (type == Type.FOTOESQ || type == Type.FCTOESQ) {
+        x[i] = 0.1;
+      } else {
+        x[i] = 1.0;
+      }
+      scaling[i] = 1.0;
+    }
+  }
+
+  /**
+   * getCoordinates.
+   *
+   * @param x an array of {@link double} objects.
+   * @return an array of {@link double} objects.
+   */
+  public double[] getCoordinates(double x[]) {
+    if (x == null) {
+      x = new double[this.x.length];
+    }
+    arraycopy(this.x, 0, x, 0, this.x.length);
+    return x;
+  }
+
+  /**
+   * getNumberOfVariables.
+   *
+   * @return a int.
+   */
+  public int getNumberOfVariables() {
+    return x.length;
+  }
+
+  /**
+   * minimize
+   *
+   * @return a {@link ffx.xray.SplineEnergy} object.
+   */
+  public SplineEnergy minimize() {
+    return minimize(0.5);
+  }
+
+  /**
+   * minimize
+   *
+   * @param eps a double.
+   * @return a {@link ffx.xray.SplineEnergy} object.
+   */
+  public SplineEnergy minimize(double eps) {
+    return minimize(5, eps);
+  }
+
+  /**
+   * minimize
+   *
+   * @param m a int.
+   * @param eps a double.
+   * @return a {@link ffx.xray.SplineEnergy} object.
+   */
+  public SplineEnergy minimize(int m, double eps) {
+
+    splineEnergy.setScaling(scaling);
+
+    double e = splineEnergy.energyAndGradient(x, grad);
+
+    done = false;
+    int status = LBFGS.minimize(n, m, x, e, grad, eps, splineEnergy, this);
+    done = true;
+    switch (status) {
+      case 0:
+        logger.fine(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
+        break;
+      case 1:
+        logger.fine(String.format("\n Optimization terminated at step %d.\n", nSteps));
+        break;
+      default:
+        logger.warning("\n Spline Optimization failed.\n");
+    }
+
+    splineEnergy.setScaling(null);
+
+    return splineEnergy;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public boolean optimizationUpdate(
+      int iter,
+      int nfun,
+      double grms,
+      double xrms,
+      double f,
+      double df,
+      double angle,
+      LineSearchResult info) {
+    this.grms = grms;
+    this.nSteps = iter;
+    if (terminate) {
+      logger.info(" The optimization received a termination request.");
+      // Tell the L-BFGS optimizer to terminate.
+      return false;
+    }
+    return true;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void terminate() {
+    terminate = true;
+    while (!done) {
+      synchronized (this) {
+        try {
+          wait(1);
+        } catch (Exception e) {
+          logger.log(Level.WARNING, "Exception terminating minimization.\n", e);
         }
+      }
     }
+  }
 
-    /**
-     * <p>getCoordinates.</p>
-     *
-     * @param x an array of {@link double} objects.
-     * @return an array of {@link double} objects.
-     */
-    public double[] getCoordinates(double x[]) {
-        if (x == null) {
-            x = new double[this.x.length];
-        }
-        arraycopy(this.x, 0, x, 0, this.x.length);
-        return x;
-    }
-
-    /**
-     * <p>getNumberOfVariables.</p>
-     *
-     * @return a int.
-     */
-    public int getNumberOfVariables() {
-        return x.length;
-    }
-
-    /**
-     * <p>
-     * minimize</p>
-     *
-     * @return a {@link ffx.xray.SplineEnergy} object.
-     */
-    public SplineEnergy minimize() {
-        return minimize(0.5);
-    }
-
-    /**
-     * <p>
-     * minimize</p>
-     *
-     * @param eps a double.
-     * @return a {@link ffx.xray.SplineEnergy} object.
-     */
-    public SplineEnergy minimize(double eps) {
-        return minimize(5, eps);
-    }
-
-    /**
-     * <p>
-     * minimize</p>
-     *
-     * @param m   a int.
-     * @param eps a double.
-     * @return a {@link ffx.xray.SplineEnergy} object.
-     */
-    public SplineEnergy minimize(int m, double eps) {
-
-        splineEnergy.setScaling(scaling);
-
-        double e = splineEnergy.energyAndGradient(x, grad);
-
-        done = false;
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, splineEnergy, this);
-        done = true;
-        switch (status) {
-            case 0:
-                logger.fine(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
-                break;
-            case 1:
-                logger.fine(String.format("\n Optimization terminated at step %d.\n", nSteps));
-                break;
-            default:
-                logger.warning("\n Spline Optimization failed.\n");
-        }
-
-        splineEnergy.setScaling(null);
-
-        return splineEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms,
-                                      double f, double df, double angle, LineSearchResult info) {
-        this.grms = grms;
-        this.nSteps = iter;
-        if (terminate) {
-            logger.info(" The optimization received a termination request.");
-            // Tell the L-BFGS optimizer to terminate.
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void terminate() {
-        terminate = true;
-        while (!done) {
-            synchronized (this) {
-                try {
-                    wait(1);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Exception terminating minimization.\n", e);
-                }
-            }
-        }
-    }
-
-    /**
-     * <p>Getter for the field <code>splineEnergy</code>.</p>
-     *
-     * @return a {@link ffx.xray.SplineEnergy} object.
-     */
-    SplineEnergy getSplineEnergy() {
-        return splineEnergy;
-    }
+  /**
+   * Getter for the field <code>splineEnergy</code>.
+   *
+   * @return a {@link ffx.xray.SplineEnergy} object.
+   */
+  SplineEnergy getSplineEnergy() {
+    return splineEnergy;
+  }
 }

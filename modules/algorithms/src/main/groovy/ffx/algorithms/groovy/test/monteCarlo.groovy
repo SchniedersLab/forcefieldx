@@ -35,18 +35,15 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy.test;
-
-import org.apache.commons.io.FilenameUtils
-
-import groovy.cli.picocli.CliBuilder
+package ffx.algorithms.groovy.test
 
 import edu.rit.pj.Comm
-
 import ffx.algorithms.mc.CoordShakeMove
 import ffx.algorithms.mc.MCMove
 import ffx.algorithms.mc.MolecularMC
 import ffx.potential.AssemblyState
+import groovy.cli.picocli.CliBuilder
+import org.apache.commons.io.FilenameUtils
 
 // Number of Monte Carlo steps
 int nSteps = 1000000;
@@ -78,59 +75,60 @@ cli.t(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degree
 cli.w(longOpt: 'save', args: 1, argName: '0.1', 'Interval to write out coordinates (psec).');
 cli.f(longOpt: 'file', args: 1, argName: 'PDB', 'Choose file type to write to [PDB/XYZ]');
 cli.xf(longOpt: 'xShakeFreq', args: 1, argName: '1', 'Shake coordinates every n steps.');
-cli.xw(longOpt: 'xShakeWidth', args: 1, argName: '0.001', 'Normal distribution width for coordinate shakes.');
+cli.xw(longOpt: 'xShakeWidth', args: 1, argName: '0.001',
+    'Normal distribution width for coordinate shakes.');
 def options = cli.parse(args);
 
 if (options.h) {
-    return cli.usage();
+  return cli.usage();
 }
 
 // Load the number of Monte Carlo steps.
 if (options.n) {
-    nSteps = Integer.parseInt(options.n);
+  nSteps = Integer.parseInt(options.n);
 }
 
 // Set file type to save to.
 if (options.f) {
-    fileType = options.f.toUpperCase();
+  fileType = options.f.toUpperCase();
 }
 
 // Write snapshot interval in picoseconds.
 if (options.w) {
-    saveInterval = Double.parseDouble(options.w);
+  saveInterval = Double.parseDouble(options.w);
 }
 
 // Temperature in degrees Kelvin.
 if (options.t) {
-    temperature = Double.parseDouble(options.t);
+  temperature = Double.parseDouble(options.t);
 }
 
 if (options.xw) {
-    xShakeWidth = Double.parseDouble(options.xw);
+  xShakeWidth = Double.parseDouble(options.xw);
 }
 
 if (options.xf) {
-    xShakeFreq = Integer.parseInt(options.xf);
+  xShakeFreq = Integer.parseInt(options.xf);
 }
 
 List<String> arguments = options.arguments();
 String modelfilename = null;
 if (arguments != null && arguments.size() > 0) {
-    // Read in command line.
-    modelfilename = arguments.get(0);
-    open(modelfilename);
+  // Read in command line.
+  modelfilename = arguments.get(0);
+  open(modelfilename);
 } else if (active == null) {
-    return cli.usage();
+  return cli.usage();
 } else {
-    modelfilename = active.getFile();
+  modelfilename = active.getFile();
 }
 
 boolean master = true;
 if (Comm.world().size() > 1) {
-    int rank = Comm.world().rank();
-    if (rank != 0) {
-        master = false;
-    }
+  int rank = Comm.world().rank();
+  if (rank != 0) {
+    master = false;
+  }
 }
 
 logger.info("\n Running Metropolis Monte Carlo on " + modelfilename);
@@ -150,48 +148,48 @@ double eOpt = Math.min(mc.getE1(), mc.getE2());
 AssemblyState optimum = new AssemblyState(active);
 
 for (int i = 1; i < nSteps; i++) {
-    if (mc.mcStep(moveList) && mc.getE2() < eOpt) {
-        eOpt = mc.getE2();
-        optimum = new AssemblyState(active);
-    }
+  if (mc.mcStep(moveList) && mc.getE2() < eOpt) {
+    eOpt = mc.getE2();
+    optimum = new AssemblyState(active);
+  }
 }
 
 String ext = FilenameUtils.getExtension(modelfilename);
 String basename = FilenameUtils.removeExtension(modelfilename);
 if (master) {
-    String finalFileName = basename + "_fin.pdb";
+  String finalFileName = basename + "_fin.pdb";
 
-    if (fileType.equalsIgnoreCase("PDB")) {
-        logger.info(String.format(" Printing out final structure to file %s", finalFileName));
-        saveAsPDB(new File(finalFileName));
-    } else if (fileType.equalsIgnoreCase("XYZ")) {
-        finalFileName = basename + "_fin.xyz";
-        logger.info(String.format(" Printing out final structure to file %s", finalFileName));
-        saveAsXYZ(new File(finalFileName));
-    } else {
-        logger.info(String.format(" File extension type %s not recognized, saving as PDB", fileType));
-        logger.info(String.format(" Printing out final structure to file %s", finalFileName));
-        saveAsPDB(new File(finalFileName));
-    }
+  if (fileType.equalsIgnoreCase("PDB")) {
+    logger.info(String.format(" Printing out final structure to file %s", finalFileName));
+    saveAsPDB(new File(finalFileName));
+  } else if (fileType.equalsIgnoreCase("XYZ")) {
+    finalFileName = basename + "_fin.xyz";
+    logger.info(String.format(" Printing out final structure to file %s", finalFileName));
+    saveAsXYZ(new File(finalFileName));
+  } else {
+    logger.info(String.format(" File extension type %s not recognized, saving as PDB", fileType));
+    logger.info(String.format(" Printing out final structure to file %s", finalFileName));
+    saveAsPDB(new File(finalFileName));
+  }
 }
 
 logger.info(String.format(" Optimum energy %10.6f", eOpt));
 optimum.revertState();
 
 if (master) {
-    energy();
-    String finalFileName = basename + "_opt.pdb";
+  energy();
+  String finalFileName = basename + "_opt.pdb";
 
-    if (fileType.equalsIgnoreCase("PDB")) {
-        logger.info(String.format(" Printing out optimum structure found to file %s", finalFileName));
-        saveAsPDB(new File(finalFileName));
-    } else if (fileType.equalsIgnoreCase("XYZ")) {
-        finalFileName = basename + "_opt.xyz";
-        logger.info(String.format(" Printing out optimum structure found to file %s", finalFileName));
-        saveAsXYZ(new File(finalFileName));
-    } else {
-        logger.info(String.format(" File extension type %s not recognized, saving as PDB", fileType));
-        logger.info(String.format(" Printing out optimum structure found to file %s", finalFileName));
-        saveAsPDB(new File(finalFileName));
-    }
+  if (fileType.equalsIgnoreCase("PDB")) {
+    logger.info(String.format(" Printing out optimum structure found to file %s", finalFileName));
+    saveAsPDB(new File(finalFileName));
+  } else if (fileType.equalsIgnoreCase("XYZ")) {
+    finalFileName = basename + "_opt.xyz";
+    logger.info(String.format(" Printing out optimum structure found to file %s", finalFileName));
+    saveAsXYZ(new File(finalFileName));
+  } else {
+    logger.info(String.format(" File extension type %s not recognized, saving as PDB", fileType));
+    logger.info(String.format(" Printing out optimum structure found to file %s", finalFileName));
+    saveAsPDB(new File(finalFileName));
+  }
 }

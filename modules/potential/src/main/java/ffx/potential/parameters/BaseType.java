@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,12 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.potential.parameters.ForceField.ForceFieldType;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import ffx.potential.parameters.ForceField.ForceFieldType;
 
 /**
  * All force field types should extend the BaseType class.
@@ -50,109 +49,105 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  */
 public abstract class BaseType {
 
-    private static final Logger logger = Logger.getLogger(BaseType.class.getName());
-    /**
-     * The look-up key for this term, which is usually a concatenation of atom classes or atom types.
-     */
-    protected String key;
-    /**
-     * The ForceFieldType of this term.
-     */
-    ForceFieldType forceFieldType;
+  private static final Logger logger = Logger.getLogger(BaseType.class.getName());
+  /**
+   * The look-up key for this term, which is usually a concatenation of atom classes or atom types.
+   */
+  protected String key;
+  /** The ForceFieldType of this term. */
+  ForceFieldType forceFieldType;
 
-    /**
-     * Public constructor.
-     *
-     * @param forceFieldType a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
-     * @param keys           an array of int.
-     * @since 1.0
-     */
-    public BaseType(ForceFieldType forceFieldType, int[] keys) {
-        this.forceFieldType = forceFieldType;
-        setKey(keys);
+  /**
+   * Public constructor.
+   *
+   * @param forceFieldType a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+   * @param keys an array of int.
+   * @since 1.0
+   */
+  public BaseType(ForceFieldType forceFieldType, int[] keys) {
+    this.forceFieldType = forceFieldType;
+    setKey(keys);
+  }
+
+  /**
+   * Public constructor.
+   *
+   * @param forceFieldType a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+   * @param key a {@link java.lang.String} object.
+   * @since 1.0
+   */
+  public BaseType(ForceFieldType forceFieldType, String key) {
+    this.forceFieldType = forceFieldType;
+    this.key = key;
+  }
+
+  /**
+   * Get the <code>key</code> for this Type.
+   *
+   * @return the key
+   * @since 1.0
+   */
+  public String getKey() {
+    return key;
+  }
+
+  /**
+   * Setter for the field <code>key</code>.
+   *
+   * @param keys an array of int.
+   */
+  public void setKey(int[] keys) {
+    if (keys == null) {
+      key = null;
+      return;
     }
 
-    /**
-     * Public constructor.
-     *
-     * @param forceFieldType a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
-     * @param key            a {@link java.lang.String} object.
-     * @since 1.0
-     */
-    public BaseType(ForceFieldType forceFieldType, String key) {
-        this.forceFieldType = forceFieldType;
-        this.key = key;
+    StringBuilder keyBuffer = new StringBuilder();
+    for (int k : keys) {
+      keyBuffer.append(k);
+      keyBuffer.append(" ");
     }
+    key = keyBuffer.toString().trim();
+  }
 
-    /**
-     * Get the <code>key</code> for this Type.
-     *
-     * @return the key
-     * @since 1.0
-     */
-    public String getKey() {
-        return key;
+  /**
+   * Setter for the field <code>key</code>.
+   *
+   * @param key a {@link java.lang.String} object.
+   */
+  public void setKey(String key) {
+    this.key = key;
+  }
+
+  /**
+   * Log <code>this</code> type.
+   *
+   * @since 1.0
+   */
+  public void log() {
+    if (logger.isLoggable(Level.INFO)) {
+      logger.info(toString());
     }
+  }
 
-    /**
-     * <p>
-     * Setter for the field <code>key</code>.</p>
-     *
-     * @param keys an array of int.
-     */
-    public void setKey(int[] keys) {
-        if (keys == null) {
-            key = null;
-            return;
-        }
+  /**
+   * Print <code>this</code> to System.out.
+   *
+   * @since 1.0
+   */
+  public void print() {
+    System.out.println(toString());
+  }
 
-        StringBuilder keyBuffer = new StringBuilder();
-        for (int k : keys) {
-            keyBuffer.append(k);
-            keyBuffer.append(" ");
-        }
-        key = keyBuffer.toString().trim();
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>key</code>.</p>
-     *
-     * @param key a {@link java.lang.String} object.
-     */
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    /**
-     * Log <code>this</code> type.
-     *
-     * @since 1.0
-     */
-    public void log() {
-        if (logger.isLoggable(Level.INFO)) {
-            logger.info(toString());
-        }
-    }
-
-    /**
-     * Print <code>this</code> to System.out.
-     *
-     * @since 1.0
-     */
-    public void print() {
-        System.out.println(toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Basic toString method.
-     *
-     * @since 1.0
-     */
-    @Override
-    public String toString() {
-        return forceFieldType + " " + key;
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Basic toString method.
+   *
+   * @since 1.0
+   */
+  @Override
+  public String toString() {
+    return forceFieldType + " " + key;
+  }
 }

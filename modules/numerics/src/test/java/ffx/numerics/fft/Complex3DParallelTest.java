@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,101 +34,96 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.fft;
 
+import static org.junit.Assert.assertEquals;
+
+import edu.rit.pj.ParallelTeam;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.assertEquals;
 
-import edu.rit.pj.ParallelTeam;
-
-/**
- * @author Michael J. Schnieders
- */
+/** @author Michael J. Schnieders */
 @RunWith(Parameterized.class)
 public class Complex3DParallelTest {
 
-    private final String info;
-    private final int nx;
-    private final int ny;
-    private final int nz;
-    private final int tot;
-    private final double[] data;
-    private final double[] expected;
-    private final double[] recip;
-    private final ParallelTeam parallelTeam;
-    private final double tolerance = 1.0e-14;
+  private final String info;
+  private final int nx;
+  private final int ny;
+  private final int nz;
+  private final int tot;
+  private final double[] data;
+  private final double[] expected;
+  private final double[] recip;
+  private final ParallelTeam parallelTeam;
+  private final double tolerance = 1.0e-14;
 
-    public Complex3DParallelTest(String info, int nx, int ny, int nz, int nCPUs) {
-        this.info = info;
-        this.nx = nx;
-        this.ny = ny;
-        this.nz = nz;
-        tot = nx * ny * nz;
-        data = new double[tot * 2];
-        expected = new double[tot];
-        recip = new double[tot];
-        parallelTeam = new ParallelTeam(nCPUs);
-    }
+  public Complex3DParallelTest(String info, int nx, int ny, int nz, int nCPUs) {
+    this.info = info;
+    this.nx = nx;
+    this.ny = ny;
+    this.nz = nz;
+    tot = nx * ny * nz;
+    data = new double[tot * 2];
+    expected = new double[tot];
+    recip = new double[tot];
+    parallelTeam = new ParallelTeam(nCPUs);
+  }
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32, nCPUs=1}", 32, 32, 32, 1},
-                {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
-                {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
-                {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
+  @Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+          {"Test nx=32, ny=32, nz=32, nCPUs=1}", 32, 32, 32, 1},
+          {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
+          {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
+          {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
         });
-    }
+  }
 
-    @Before
-    public void setUp() {
-        Random random = new Random();
-        for (int i = 0; i < tot; i++) {
-            int index = i * 2;
-            double r = random.nextDouble();
-            data[index] = r;
-            expected[i] = r;
-            recip[i] = 1.0e0;
-        }
+  @Before
+  public void setUp() {
+    Random random = new Random();
+    for (int i = 0; i < tot; i++) {
+      int index = i * 2;
+      double r = random.nextDouble();
+      data[index] = r;
+      expected[i] = r;
+      recip[i] = 1.0e0;
     }
+  }
 
-    /**
-     * Test of convolution method, of class Complex3D.
-     */
-    @Test
-    public void testConvolution() {
-        Complex3DParallel complex3D = new Complex3DParallel(nx, ny, nz, parallelTeam);
-        complex3D.setRecip(recip);
-        complex3D.convolution(data);
-        for (int i = 0; i < tot; i++) {
-            int index = i * 2;
-            double actual = data[index] / tot;
-            double orig = expected[i];
-            assertEquals(info, orig, actual, tolerance);
-        }
+  /** Test of convolution method, of class Complex3D. */
+  @Test
+  public void testConvolution() {
+    Complex3DParallel complex3D = new Complex3DParallel(nx, ny, nz, parallelTeam);
+    complex3D.setRecip(recip);
+    complex3D.convolution(data);
+    for (int i = 0; i < tot; i++) {
+      int index = i * 2;
+      double actual = data[index] / tot;
+      double orig = expected[i];
+      assertEquals(info, orig, actual, tolerance);
     }
+  }
 
-    /**
-     * Test of the fft and ifft methods, of class Complex3D.
-     */
-    @Test
-    public void testFft() {
-        Complex3DParallel complex3D = new Complex3DParallel(nx, ny, nz, parallelTeam);
-        complex3D.fft(data);
-        complex3D.ifft(data);
-        for (int i = 0; i < tot; i++) {
-            int index = i * 2;
-            double actual = data[index] / tot;
-            double orig = expected[i];
-            assertEquals(info, orig, actual, tolerance);
-        }
+  /** Test of the fft and ifft methods, of class Complex3D. */
+  @Test
+  public void testFft() {
+    Complex3DParallel complex3D = new Complex3DParallel(nx, ny, nz, parallelTeam);
+    complex3D.fft(data);
+    complex3D.ifft(data);
+    for (int i = 0; i < tot; i++) {
+      int index = i * 2;
+      double actual = data[index] / tot;
+      double orig = expected[i];
+      assertEquals(info, orig, actual, tolerance);
     }
+  }
 }

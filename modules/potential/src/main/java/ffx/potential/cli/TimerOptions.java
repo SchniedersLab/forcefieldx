@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,79 +34,81 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.cli;
 
 import picocli.CommandLine.Option;
 
 /**
- * Represents command line options for scripts that perform timings for energy and optionally gradients.
+ * Represents command line options for scripts that perform timings for energy and optionally
+ * gradients.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class TimerOptions {
-    /**
-     * -n or --iterations to set the number of iterations
-     */
-    @Option(names = {"-n", "--iterations"}, paramLabel = "5",
-            description = "Number of iterations.")
-    public int iterations = 5;
+  /** -n or --iterations to set the number of iterations */
+  @Option(
+      names = {"-n", "--iterations"},
+      paramLabel = "5",
+      description = "Number of iterations.")
+  public int iterations = 5;
 
-    /**
-     * --nt or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
-     */
-    @Option(names = {"--nt", "--threads"}, paramLabel = "0",
-            description = "Number of SMP threads (0 specifies use of all CPU cores).")
-    public int threads = 0;
+  /**
+   * --nt or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU
+   * cores)
+   */
+  @Option(
+      names = {"--nt", "--threads"},
+      paramLabel = "0",
+      description = "Number of SMP threads (0 specifies use of all CPU cores).")
+  public int threads = 0;
 
-    /**
-     * -g or --noGradient to ignore computation of the atomic coordinates noGradient
-     */
-    @Option(names = {"-g", "--noGradient"},
-            description = "Ignore computation of the atomic coordinates noGradient.")
-    public boolean noGradient = false;
+  /** -g or --noGradient to ignore computation of the atomic coordinates noGradient */
+  @Option(
+      names = {"-g", "--noGradient"},
+      description = "Ignore computation of the atomic coordinates noGradient.")
+  public boolean noGradient = false;
 
-    /**
-     * -v or --verbose to suppress printing of the energy for each iteration
-     */
-    @Option(names = {"-v", "--verbose"},
-            description = "Print the energy for each iteration.")
-    public boolean verbose = false;
+  /** -v or --verbose to suppress printing of the energy for each iteration */
+  @Option(
+      names = {"-v", "--verbose"},
+      description = "Print the energy for each iteration.")
+  public boolean verbose = false;
 
-    /**
-     * <p>Getter for the field <code>iterations</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getIterations() {
-        return iterations;
-    }
+  /**
+   * Getter for the field <code>iterations</code>.
+   *
+   * @return a int.
+   */
+  public int getIterations() {
+    return iterations;
+  }
 
-    /**
-     * <p>Getter for the field <code>noGradient</code>.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean getNoGradient() {
-        return noGradient;
-    }
+  /**
+   * Getter for the field <code>noGradient</code>.
+   *
+   * @return a boolean.
+   */
+  public boolean getNoGradient() {
+    return noGradient;
+  }
 
-    /**
-     * <p>Getter for the field <code>threads</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getThreads() {
-        return threads;
-    }
+  /**
+   * Getter for the field <code>threads</code>.
+   *
+   * @return a int.
+   */
+  public int getThreads() {
+    return threads;
+  }
 
-    /**
-     * <p>Getter for the field <code>verbose</code>.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean getVerbose() {
-        return verbose;
-    }
+  /**
+   * Getter for the field <code>verbose</code>.
+   *
+   * @return a boolean.
+   */
+  public boolean getVerbose() {
+    return verbose;
+  }
 }

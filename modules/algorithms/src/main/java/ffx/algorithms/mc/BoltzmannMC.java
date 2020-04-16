@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,229 +34,205 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.mc;
+
+import static ffx.utilities.Constants.R;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
-import static org.apache.commons.math3.util.FastMath.exp;
-
-import static ffx.utilities.Constants.R;
-
 /**
- * The BoltzmannMC abstract class is a skeleton for Boltzmann-weighted
- * Metropolis Monte Carlo simulations.
+ * The BoltzmannMC abstract class is a skeleton for Boltzmann-weighted Metropolis Monte Carlo
+ * simulations.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  */
 public abstract class BoltzmannMC implements MetropolisMC {
 
-    /**
-     * Constant <code>logger</code>
-     */
-    private static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
-    protected Random random = new Random();
-    private double temperature = 298.15; // Room temperature (also STP).
-    private double kbTinv = -1.0 / (R * temperature); // Constant factor for Monte Carlo moves (-1/kbT)
-    private boolean print = true;
-    private double e1 = 0.0;
-    private double e2 = 0.0;
-    private double lastE = 0.0;
-    private boolean lastAccept = false;
+  /** Constant <code>logger</code> */
+  private static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
 
-    /**
-     * <p>
-     * Boltzmann-weighted acceptance probability
-     *
-     * @param invKT 1.0 / (Boltzmann constant * temperature)
-     * @param e1    Energy before move
-     * @param e2    Proposed energy
-     * @return Chance of accepting this move
-     */
-    public static double acceptChance(double invKT, double e1, double e2) {
-        return Math.min(exp(invKT * (e2 - e1)), 1.0);
+  protected Random random = new Random();
+  private double temperature = 298.15; // Room temperature (also STP).
+  private double kbTinv =
+      -1.0 / (R * temperature); // Constant factor for Monte Carlo moves (-1/kbT)
+  private boolean print = true;
+  private double e1 = 0.0;
+  private double e2 = 0.0;
+  private double lastE = 0.0;
+  private boolean lastAccept = false;
+
+  /**
+   * Boltzmann-weighted acceptance probability
+   *
+   * @param invKT 1.0 / (Boltzmann constant * temperature)
+   * @param e1 Energy before move
+   * @param e2 Proposed energy
+   * @return Chance of accepting this move
+   */
+  public static double acceptChance(double invKT, double e1, double e2) {
+    return Math.min(exp(invKT * (e2 - e1)), 1.0);
+  }
+
+  /**
+   * Boltzmann-weighted acceptance probability
+   *
+   * @param random Source of randomness
+   * @param invKT 1.0 / (Boltzmann constant * temperature)
+   * @param e1 Energy before move
+   * @param e2 Proposed energy
+   * @return Whether to accept the move.
+   */
+  public static boolean evaluateMove(Random random, double invKT, double e1, double e2) {
+    if (e2 <= e1) {
+      return true;
+    } else {
+      // p(X) = exp(-U(X)/kb*T)
+      double prob = acceptChance(invKT, e1, e2);
+      assert (prob >= 0.0 && prob <= 1.0)
+          : "Probability of a Monte Carlo move up in energy should be 0-1";
+
+      double trial = random.nextDouble();
+      return (trial <= prob);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Criterion for accept/reject a move; intended to be used mostly internally.
+   */
+  @Override
+  public boolean evaluateMove(double e1, double e2) {
+    return evaluateMove(random, kbTinv, e1, e2);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public boolean getAccept() {
+    return lastAccept;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double getE1() {
+    return e1;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double getE2() {
+    return e2;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double getTemperature() {
+    return temperature;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void setTemperature(double temp) {
+    temperature = temp;
+    kbTinv = -1.0 / (R * temperature);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double lastEnergy() {
+    return lastE;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public boolean mcStep(MCMove move) {
+    return mcStep(move, currentEnergy());
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public boolean mcStep(MCMove move, double en1) {
+    List<MCMove> moveList = new ArrayList<>(1);
+    moveList.add(move);
+    return mcStep(moveList, en1);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public boolean mcStep(List<MCMove> moves) {
+    return mcStep(moves, currentEnergy());
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Performs a Boltzmann-weighted Monte Carlo step with an arbitrary list of moves and a defined
+   * starting energy. The list of MCMoves should be of a type with O(1) element access, as the
+   * current implementation utilizes an indexed for loop.
+   */
+  @Override
+  public boolean mcStep(List<MCMove> moves, double en1) {
+    storeState();
+    e1 = en1;
+
+    int nMoves = moves.size();
+    for (MCMove move : moves) {
+      move.move();
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Criterion for accept/reject a move; intended to be used mostly
-     * internally.
-     */
-    @Override
-    public boolean evaluateMove(double e1, double e2) {
-        return evaluateMove(random, kbTinv, e1, e2);
+    lastE = currentEnergy(); // Is reset to e1 if move rejected.
+    e2 = lastE;
+    if (evaluateMove(e1, e2)) {
+      lastAccept = true;
+      if (print) {
+        logger.info(String.format(" Monte Carlo step accepted: e1 -> e2 %10.6f -> %10.6f", e1, e2));
+      }
+      return true;
+    } else {
+      lastAccept = false;
+      for (int i = nMoves - 1; i >= 0; i--) {
+        moves.get(i).revertMove();
+      }
+      lastE = e1;
+      if (print) {
+        logger.info(String.format(" Monte Carlo step rejected: e1 -> e2 %10.6f -> %10.6f", e1, e2));
+      }
+      return false;
     }
+  }
 
-    /**
-     * <p>
-     * Boltzmann-weighted acceptance probability
-     *
-     * @param random Source of randomness
-     * @param invKT  1.0 / (Boltzmann constant * temperature)
-     * @param e1     Energy before move
-     * @param e2     Proposed energy
-     * @return Whether to accept the move.
-     */
-    public static boolean evaluateMove(Random random, double invKT, double e1, double e2) {
-        if (e2 <= e1) {
-            return true;
-        } else {
-            // p(X) = exp(-U(X)/kb*T)
-            double prob = acceptChance(invKT, e1, e2);
-            assert (prob >= 0.0 && prob <= 1.0) : "Probability of a Monte Carlo move up in energy should be 0-1";
+  /** {@inheritDoc} */
+  @Override
+  public void setPrint(boolean print) {
+    this.print = print;
+  }
 
-            double trial = random.nextDouble();
-            return (trial <= prob);
-        }
-    }
+  /**
+   * Set the random seed.
+   *
+   * @param randomseed The seed.
+   */
+  protected void setRandomSeed(int randomseed) {
+    random.setSeed(randomseed);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean getAccept() {
-        return lastAccept;
-    }
+  /**
+   * Must return the current energy of the system.
+   *
+   * @return Current system energy
+   */
+  protected abstract double currentEnergy();
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getE1() {
-        return e1;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getE2() {
-        return e2;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getTemperature() {
-        return temperature;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setTemperature(double temp) {
-        temperature = temp;
-        kbTinv = -1.0 / (R * temperature);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double lastEnergy() {
-        return lastE;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean mcStep(MCMove move) {
-        return mcStep(move, currentEnergy());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean mcStep(MCMove move, double en1) {
-        List<MCMove> moveList = new ArrayList<>(1);
-        moveList.add(move);
-        return mcStep(moveList, en1);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean mcStep(List<MCMove> moves) {
-        return mcStep(moves, currentEnergy());
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Performs a Boltzmann-weighted Monte Carlo step with an arbitrary list of
-     * moves and a defined starting energy. The list of MCMoves should be of a
-     * type with O(1) element access, as the current implementation utilizes an
-     * indexed for loop.
-     */
-    @Override
-    public boolean mcStep(List<MCMove> moves, double en1) {
-        storeState();
-        e1 = en1;
-
-        int nMoves = moves.size();
-        for (MCMove move : moves) {
-            move.move();
-        }
-
-        lastE = currentEnergy(); // Is reset to e1 if move rejected.
-        e2 = lastE;
-        if (evaluateMove(e1, e2)) {
-            lastAccept = true;
-            if (print) {
-                logger.info(String.format(" Monte Carlo step accepted: e1 -> e2 %10.6f -> %10.6f", e1, e2));
-            }
-            return true;
-        } else {
-            lastAccept = false;
-            for (int i = nMoves - 1; i >= 0; i--) {
-                moves.get(i).revertMove();
-            }
-            lastE = e1;
-            if (print) {
-                logger.info(String.format(" Monte Carlo step rejected: e1 -> e2 %10.6f -> %10.6f", e1, e2));
-            }
-            return false;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPrint(boolean print) {
-        this.print = print;
-    }
-
-    /**
-     * Set the random seed.
-     *
-     * @param randomseed The seed.
-     */
-    protected void setRandomSeed(int randomseed) {
-        random.setSeed(randomseed);
-    }
-
-    /**
-     * Must return the current energy of the system.
-     *
-     * @return Current system energy
-     */
-    protected abstract double currentEnergy();
-
-    /**
-     * Store the state for reverting a move. Must be properly implemented for
-     * revertStep() to function properly; otherwise, the implementation of
-     * revertStep() should throw an OperationNotSupportedException.
-     */
-    protected abstract void storeState();
+  /**
+   * Store the state for reverting a move. Must be properly implemented for revertStep() to function
+   * properly; otherwise, the implementation of revertStep() should throw an
+   * OperationNotSupportedException.
+   */
+  protected abstract void storeState();
 }

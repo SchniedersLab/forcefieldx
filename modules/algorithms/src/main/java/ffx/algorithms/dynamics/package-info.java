@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 
 /**
- * The Dynamics package implements molecular and stochastic dynamics using
- * a pure Java code path and via OpenMM.
+ * The Dynamics package implements molecular and stochastic dynamics using a pure Java code path and
+ * via OpenMM.
  *
  * @since 1.0
  */

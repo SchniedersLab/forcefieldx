@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,197 +34,166 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.switching;
 
 import static java.lang.String.format;
-
 import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
- * A PowerSwitch interpolates between 0 and 1 vi f(x) = (ax)^beta, where x must
- * be between 0 and 1/a.
+ * A PowerSwitch interpolates between 0 and 1 vi f(x) = (ax)^beta, where x must be between 0 and
+ * 1/a.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public class PowerSwitch implements UnivariateSwitchingFunction {
 
-    /**
-     * The multiplier a.
-     */
-    private final double a;
-    /**
-     * The power of the switch.
-     */
-    private final double beta;
-    /**
-     * The upper bound of the switch.
-     */
-    private final double ub;
+  /** The multiplier a. */
+  private final double a;
+  /** The power of the switch. */
+  private final double beta;
+  /** The upper bound of the switch. */
+  private final double ub;
 
-    /**
-     * Default Constructor of the PowerSwitch: constructs a linear switch.
-     */
-    public PowerSwitch() {
-        this(1.0, 1.0);
+  /** Default Constructor of the PowerSwitch: constructs a linear switch. */
+  public PowerSwitch() {
+    this(1.0, 1.0);
+  }
+
+  /**
+   * Constructor of the PowerSwitch.
+   *
+   * @param a The upper bound of the switch is 1.0 / a.
+   * @param beta The power of the function f(x) = (ax)^beta,
+   */
+  public PowerSwitch(double a, double beta) {
+    if (a <= 0) {
+      throw new IllegalArgumentException(" The constant a must be > 0");
     }
-
-    /**
-     * Constructor of the PowerSwitch.
-     *
-     * @param a    The upper bound of the switch is 1.0 / a.
-     * @param beta The power of the function f(x) = (ax)^beta,
-     */
-    public PowerSwitch(double a, double beta) {
-        if (a <= 0) {
-            throw new IllegalArgumentException(" The constant a must be > 0");
-        }
-        if (beta == 0) {
-            throw new IllegalArgumentException(" The exponent must be > 0 (preferably >= 1)");
-        }
-        this.a = a;
-        this.beta = beta;
-        ub = 1.0 / a;
+    if (beta == 0) {
+      throw new IllegalArgumentException(" The exponent must be > 0 (preferably >= 1)");
     }
+    this.a = a;
+    this.beta = beta;
+    ub = 1.0 / a;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean constantOutsideBounds() {
-        return false;
+  /** {@inheritDoc} */
+  @Override
+  public boolean constantOutsideBounds() {
+    return false;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double firstDerivative(double x) throws IllegalArgumentException {
+    x *= a;
+    return beta * a * pow(x, beta - 1);
+  }
+
+  /**
+   * Gets the value of beta in f(x) = (a*x)^beta
+   *
+   * @return Exponent of input
+   */
+  public double getExponent() {
+    return beta;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public int getHighestOrderZeroDerivative() {
+    return 0;
+  }
+
+  /**
+   * Gets the value of a in f(x) = (a*x)^beta.
+   *
+   * @return Multiplier of input
+   */
+  public double getMultiplier() {
+    return a;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double getOneBound() {
+    return ub;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double getZeroBound() {
+    return 0;
+  }
+
+  /**
+   * Power switch derivatives can be zero at the zero bound if the exponent is greater than the
+   * derivative order.
+   *
+   * @return the highest order zero derivative at zero bound
+   */
+  @Override
+  public int highestOrderZeroDerivativeAtZeroBound() {
+    return beta >= 1 ? ((int) beta) - 1 : 0;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double nthDerivative(double x, int order) throws IllegalArgumentException {
+    x *= a;
+    if (order < 1) {
+      throw new IllegalArgumentException("Order must be >= 1");
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double firstDerivative(double x) throws IllegalArgumentException {
-        x *= a;
-        return beta * a * pow(x, beta - 1);
-    }
-
-    /**
-     * Gets the value of beta in f(x) = (a*x)^beta
-     *
-     * @return Exponent of input
-     */
-    public double getExponent() {
-        return beta;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getHighestOrderZeroDerivative() {
-        return 0;
-    }
-
-    /**
-     * Gets the value of a in f(x) = (a*x)^beta.
-     *
-     * @return Multiplier of input
-     */
-    public double getMultiplier() {
-        return a;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getOneBound() {
-        return ub;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getZeroBound() {
-        return 0;
-    }
-
-    /**
-     * Power switch derivatives can be zero at the zero bound if the exponent
-     * is greater than the derivative order.
-     *
-     * @return the highest order zero derivative at zero bound
-     */
-    @Override
-    public int highestOrderZeroDerivativeAtZeroBound() {
-        return beta >= 1 ? ((int) beta) - 1 : 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double nthDerivative(double x, int order) throws IllegalArgumentException {
-        x *= a;
-        if (order < 1) {
-            throw new IllegalArgumentException("Order must be >= 1");
-        }
-        switch (order) {
-            case 1:
-                return firstDerivative(x);
-            case 2:
-                return secondDerivative(x);
-            default:
-                double orderDiff = order - beta;
-                if (orderDiff % 1.0 == 0 && orderDiff >= 1.0) {
-                    return 0.0;
-                } else {
-                    double val = pow(x, beta - order);
-                    for (int i = 0; i < order; i++) {
-                        val *= (beta - i) * a;
-                    }
-                    return val;
-                }
+    switch (order) {
+      case 1:
+        return firstDerivative(x);
+      case 2:
+        return secondDerivative(x);
+      default:
+        double orderDiff = order - beta;
+        if (orderDiff % 1.0 == 0 && orderDiff >= 1.0) {
+          return 0.0;
+        } else {
+          double val = pow(x, beta - order);
+          for (int i = 0; i < order; i++) {
+            val *= (beta - i) * a;
+          }
+          return val;
         }
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double secondDerivative(double x) throws IllegalArgumentException {
-        x *= a;
-        return beta == 1.0 ? 0.0 : beta * (beta - 1) * a * a * pow(x, beta - 2);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public double secondDerivative(double x) throws IllegalArgumentException {
+    x *= a;
+    return beta == 1.0 ? 0.0 : beta * (beta - 1) * a * a * pow(x, beta - 2);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean symmetricToUnity() {
-        return (beta == 1.0);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean symmetricToUnity() {
+    return (beta == 1.0);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return format("Power switching function f(x) = (%8.4g * x)^%8.4g", a, beta);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    return format("Power switching function f(x) = (%8.4g * x)^%8.4g", a, beta);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return false;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean validOutsideBounds() {
+    return false;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        x *= a;
-        return pow(x, beta);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public double valueAt(double x) throws IllegalArgumentException {
+    x *= a;
+    return pow(x, beta);
+  }
 }

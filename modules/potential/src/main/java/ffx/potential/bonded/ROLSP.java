@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,143 +34,125 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.bonded;
 
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
-
 import org.jogamp.java3d.BranchGroup;
 
 /**
- * The ROLSP class is used for Proof-Of-Concept Parallel Recusive Over Length
- * Scales (ROLS) Methods (currently only on shared memory systems). Simply
- * Simply inserting a ParallelMSM node into the Hierarchy causes a seperate
- * thread of execution to be created for all operations on nodes below the ROLSP
- * node. This is very preliminary code, but a useful concept for parallelizing
- * ROLS in ffe.lang.
+ * The ROLSP class is used for Proof-Of-Concept Parallel Recusive Over Length Scales (ROLS) Methods
+ * (currently only on shared memory systems). Simply Simply inserting a ParallelMSM node into the
+ * Hierarchy causes a seperate thread of execution to be created for all operations on nodes below
+ * the ROLSP node. This is very preliminary code, but a useful concept for parallelizing ROLS in
+ * ffe.lang.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class ROLSP extends MSNode implements ROLS, Runnable {
 
-    private static final Logger logger = Logger.getLogger(ROLSP.class.getName());
-    /**
-     * Constant <code>GO_PARALLEL=false</code>
-     */
-    public static boolean GO_PARALLEL;
-    /**
-     * Constant <code>parallelNotDone=0</code>
-     */
-    public static int parallelNotDone = 0;
+  private static final Logger logger = Logger.getLogger(ROLSP.class.getName());
+  /** Constant <code>GO_PARALLEL=false</code> */
+  public static boolean GO_PARALLEL;
+  /** Constant <code>parallelNotDone=0</code> */
+  public static int parallelNotDone = 0;
 
-    static {
-        try {
-            GO_PARALLEL = Boolean.parseBoolean(System.getProperty("ffx.lang.parallel", "false"));
-        } catch (Exception e) {
-            GO_PARALLEL = false;
-        }
+  static {
+    try {
+      GO_PARALLEL = Boolean.parseBoolean(System.getProperty("ffx.lang.parallel", "false"));
+    } catch (Exception e) {
+      GO_PARALLEL = false;
     }
+  }
 
-    private PARALLELMETHOD parallelMethod = PARALLELMETHOD.NONE;
-    private long startTime = 0;
-    private long threadTime = 0;
-    private RendererCache.ViewModel viewModel = null;
-    private List<BranchGroup> newShapes = null;
+  private PARALLELMETHOD parallelMethod = PARALLELMETHOD.NONE;
+  private long startTime = 0;
+  private long threadTime = 0;
+  private RendererCache.ViewModel viewModel = null;
+  private List<BranchGroup> newShapes = null;
 
-    /**
-     * <p>
-     * Constructor for ROLSP.</p>
-     */
-    public ROLSP() {
-        super("Parallel Node");
+  /** Constructor for ROLSP. */
+  public ROLSP() {
+    super("Parallel Node");
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Overidden equals method.
+   */
+  @Override
+  public boolean equals(Object o) {
+    return this == o;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public int hashCode() {
+    MSNode child = (MSNode) getChildAt(0);
+    if (child == null) {
+      return Objects.hash("none");
     }
+    return Objects.hash(child.hashCode());
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Overidden equals method.
-     */
-    @Override
-    public boolean equals(Object o) {
-        return this == o;
+  /** {@inheritDoc} */
+  @Override
+  public void run() {
+    switch (parallelMethod) {
+      case SETVIEW:
+        setView(viewModel, newShapes);
+        break;
+      default:
+        return;
     }
+    threadTime = System.currentTimeMillis() - startTime;
+    logger.info("Start Time: " + startTime + " Total Time: " + threadTime);
+    parallelNotDone--;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        MSNode child = (MSNode) getChildAt(0);
-        if (child == null) {
-            return Objects.hash("none");
-        }
-        return Objects.hash(child.hashCode());
+  /** {@inheritDoc} */
+  @Override
+  public void setView(RendererCache.ViewModel viewModel, List<BranchGroup> newShapes) {
+    // Set Up the Parallel setView Method
+    if (parallelMethod == PARALLELMETHOD.NONE) {
+      startTime = System.currentTimeMillis();
+      this.viewModel = viewModel;
+      this.newShapes = newShapes;
+      parallelMethod = PARALLELMETHOD.SETVIEW;
+      Thread thread = new Thread(this);
+      thread.setName(getParent().toString() + ": Parallel setView MSM");
+      thread.setPriority(Thread.MAX_PRIORITY);
+      parallelNotDone++;
+      thread.start();
+    } else if (parallelMethod == PARALLELMETHOD.SETVIEW) {
+      // setView has been called from within the 'run' method of the
+      // "setView" thread
+      for (Enumeration e = children(); e.hasMoreElements(); ) {
+        MSNode node = (MSNode) e.nextElement();
+        node.setView(viewModel, newShapes);
+      }
+      parallelMethod = PARALLELMETHOD.NONE;
+    } else {
+      logger.info(" Parallel setView method called by: " + parallelMethod);
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void run() {
-        switch (parallelMethod) {
-            case SETVIEW:
-                setView(viewModel, newShapes);
-                break;
-            default:
-                return;
-        }
-        threadTime = System.currentTimeMillis() - startTime;
-        logger.info("Start Time: " + startTime + " Total Time: " + threadTime);
-        parallelNotDone--;
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    if (threadTime != 0) {
+      return "Parallel Node " + threadTime + " (msec)";
     }
+    return "Parallel Node";
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setView(RendererCache.ViewModel viewModel,
-                        List<BranchGroup> newShapes) {
-        // Set Up the Parallel setView Method
-        if (parallelMethod == PARALLELMETHOD.NONE) {
-            startTime = System.currentTimeMillis();
-            this.viewModel = viewModel;
-            this.newShapes = newShapes;
-            parallelMethod = PARALLELMETHOD.SETVIEW;
-            Thread thread = new Thread(this);
-            thread.setName(getParent().toString() + ": Parallel setView MSM");
-            thread.setPriority(Thread.MAX_PRIORITY);
-            parallelNotDone++;
-            thread.start();
-        } else if (parallelMethod == PARALLELMETHOD.SETVIEW) {
-            // setView has been called from within the 'run' method of the
-            // "setView" thread
-            for (Enumeration e = children(); e.hasMoreElements(); ) {
-                MSNode node = (MSNode) e.nextElement();
-                node.setView(viewModel, newShapes);
-            }
-            parallelMethod = PARALLELMETHOD.NONE;
-        } else {
-            logger.info(" Parallel setView method called by: " + parallelMethod);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        if (threadTime != 0) {
-            return "Parallel Node " + threadTime + " (msec)";
-        }
-        return "Parallel Node";
-    }
-
-    public enum PARALLELMETHOD {
-
-        SETVIEW, NONE
-    }
+  public enum PARALLELMETHOD {
+    SETVIEW,
+    NONE
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 
 /**
- * The Thermodynamics package computes free energy differences using Orthogonal Space
- * Tempering (OST) sampling via pure Java or OpenMM (via Monte Carlo OST).
+ * The Thermodynamics package computes free energy differences using Orthogonal Space Tempering
+ * (OST) sampling via pure Java or OpenMM (via Monte Carlo OST).
  *
  * @since 1.0
  */

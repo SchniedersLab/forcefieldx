@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.bonded;
 
 /**
@@ -45,39 +45,29 @@ package ffx.potential.bonded;
  */
 public class MSRoot extends MSNode {
 
-    /**
-     * Constant <code>MultiScaleLevel=ROLS.MaxLengthScale</code>
-     */
-    public static final int MultiScaleLevel = ROLS.MaxLengthScale;
+  /** Constant <code>MultiScaleLevel=ROLS.MaxLengthScale</code> */
+  public static final int MultiScaleLevel = ROLS.MaxLengthScale;
 
-    /**
-     * Default MSRoot Constructor
-     */
-    public MSRoot() {
-        super("Structural Heirarchy");
-    }
+  /** Default MSRoot Constructor */
+  public MSRoot() {
+    super("Structural Heirarchy");
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        return this == o;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean equals(Object o) {
+    return this == o;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return 7;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public int hashCode() {
+    return 7;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "Structural Heirarchy";
-    }
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    return "Structural Heirarchy";
+  }
 }

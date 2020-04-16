@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,126 +34,134 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.dynamics.thermostats;
 
-import java.util.Collections;
-import java.util.List;
 import static java.lang.String.format;
-
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Thermostat a molecular dynamics trajectory to an external bath using the
- * Berendsen weak-coupling thermostat.
+ * Thermostat a molecular dynamics trajectory to an external bath using the Berendsen weak-coupling
+ * thermostat.
  *
- * @author Michael J. Schnieders derived from TINKER temperature control by Alan
- * Grossfield and Jay Ponder
- * @see <a href="http://link.aip.org/link/?JCP/81/3684"> H. J. C. Berendsen, J.
- * P. M. Postma, W. F. van Gunsteren, A. DiNola and J. R. Hauk, "Molecular
- * Dynamics with Coupling to an External Bath", Journal of Chemical Physics, 81,
- * 3684-3690 (1984)</a>
+ * @author Michael J. Schnieders derived from TINKER temperature control by Alan Grossfield and Jay
+ *     Ponder
+ * @see <a href="http://link.aip.org/link/?JCP/81/3684">H. J. C. Berendsen, J. P. M. Postma, W. F.
+ *     van Gunsteren, A. DiNola and J. R. Hauk, "Molecular Dynamics with Coupling to an External
+ *     Bath", Journal of Chemical Physics, 81, 3684-3690 (1984)</a>
  */
 public class Berendsen extends Thermostat {
 
-    /**
-     * Berendsen time constant (psec).
-     */
-    private double tau;
+  /** Berendsen time constant (psec). */
+  private double tau;
 
-    /**
-     * <p>
-     * Constructor for Berendsen.</p>
-     *
-     * @param n                 Number of degrees of freedom.
-     * @param x                 Atomic coordinates.
-     * @param v                 Velocities.
-     * @param mass              Mass of each degrees of freedom.
-     * @param type              The VARIABLE_TYPE of each variable.
-     * @param targetTemperature The target temperatures.
-     * @param tau               Berendsen thermostat time constant (psec).
-     */
-    public Berendsen(int n, double[] x, double[] v, double[] mass,
-                     VARIABLE_TYPE[] type, double targetTemperature, double tau) {
-        this(n, x, v, mass, type, targetTemperature, tau, Collections.emptyList());
-    }
+  /**
+   * Constructor for Berendsen.
+   *
+   * @param n Number of degrees of freedom.
+   * @param x Atomic coordinates.
+   * @param v Velocities.
+   * @param mass Mass of each degrees of freedom.
+   * @param type The VARIABLE_TYPE of each variable.
+   * @param targetTemperature The target temperatures.
+   * @param tau Berendsen thermostat time constant (psec).
+   */
+  public Berendsen(
+      int n,
+      double[] x,
+      double[] v,
+      double[] mass,
+      VARIABLE_TYPE[] type,
+      double targetTemperature,
+      double tau) {
+    this(n, x, v, mass, type, targetTemperature, tau, Collections.emptyList());
+  }
 
-    public Berendsen(int n, double[] x, double[] v, double[] mass,
-                     VARIABLE_TYPE[] type, double targetTemperature, double tau, List<Constraint> constraints) {
-        super(n, x, v, mass, type, targetTemperature, constraints);
-        this.name = ThermostatEnum.BERENDSEN;
-        this.tau = tau;
-    }
+  public Berendsen(
+      int n,
+      double[] x,
+      double[] v,
+      double[] mass,
+      VARIABLE_TYPE[] type,
+      double targetTemperature,
+      double tau,
+      List<Constraint> constraints) {
+    super(n, x, v, mass, type, targetTemperature, constraints);
+    this.name = ThermostatEnum.BERENDSEN;
+    this.tau = tau;
+  }
 
-    /**
-     * <p>
-     * Constructor for Berendsen.</p>
-     *
-     * @param n                 Number of degrees of freedom.
-     * @param x                 Atomic coordinates.
-     * @param v                 Velocities.
-     * @param mass              Mass of each degrees of freedom.
-     * @param type              The VARIABLE_TYPE of each variable.
-     * @param targetTemperature The target temperatures.
-     */
-    public Berendsen(int n, double[] x, double[] v, double[] mass,
-                     VARIABLE_TYPE[] type, double targetTemperature) {
-        this(n, x, v, mass, type, targetTemperature, 0.2e0);
-    }
+  /**
+   * Constructor for Berendsen.
+   *
+   * @param n Number of degrees of freedom.
+   * @param x Atomic coordinates.
+   * @param v Velocities.
+   * @param mass Mass of each degrees of freedom.
+   * @param type The VARIABLE_TYPE of each variable.
+   * @param targetTemperature The target temperatures.
+   */
+  public Berendsen(
+      int n,
+      double[] x,
+      double[] v,
+      double[] mass,
+      VARIABLE_TYPE[] type,
+      double targetTemperature) {
+    this(n, x, v, mass, type, targetTemperature, 0.2e0);
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Full step velocity modification.
-     */
-    @Override
-    public void fullStep(double dt) {
-        double ratio = targetTemperature / currentTemperature;
-        double scale = sqrt(1.0 + (dt / tau) * (ratio - 1.0));
-        for (int i = 0; i < nVariables; i++) {
-            v[i] *= scale;
-        }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Full step velocity modification.
+   */
+  @Override
+  public void fullStep(double dt) {
+    double ratio = targetTemperature / currentTemperature;
+    double scale = sqrt(1.0 + (dt / tau) * (ratio - 1.0));
+    for (int i = 0; i < nVariables; i++) {
+      v[i] *= scale;
     }
+  }
 
-    /**
-     * <p>
-     * Getter for the field <code>tau</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getTau() {
-        return tau;
-    }
+  /**
+   * Getter for the field <code>tau</code>.
+   *
+   * @return a double.
+   */
+  public double getTau() {
+    return tau;
+  }
 
-    /**
-     * <p>
-     * Setter for the field <code>tau</code>.</p>
-     *
-     * @param tau a double.
-     */
-    public void setTau(double tau) {
-        this.tau = tau;
-    }
+  /**
+   * Setter for the field <code>tau</code>.
+   *
+   * @param tau a double.
+   */
+  public void setTau(double tau) {
+    this.tau = tau;
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * No velocity modifications are made by the Berendsen method at the
-     * half-step.
-     */
-    @Override
-    public void halfStep(double dt) {
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>No velocity modifications are made by the Berendsen method at the half-step.
+   */
+  @Override
+  public void halfStep(double dt) {}
 
-    /**
-     * Add Thermostat details to the kinetic energy and temperature details.
-     *
-     * @return Description of the thermostat, kinetic energy and temperature.
-     */
-    public String toThermostatString() {
-        return format("\n Berendsen Thermostat (tau = %8.3f psec)\n  %s", tau, super.toString());
-    }
+  /**
+   * Add Thermostat details to the kinetic energy and temperature details.
+   *
+   * @return Description of the thermostat, kinetic energy and temperature.
+   */
+  public String toThermostatString() {
+    return format("\n Berendsen Thermostat (tau = %8.3f psec)\n  %s", tau, super.toString());
+  }
 }

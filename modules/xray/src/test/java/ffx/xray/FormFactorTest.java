@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,63 +34,61 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray;
 
-import org.junit.Before;
-import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.AtomType;
+import org.junit.Before;
+import org.junit.Test;
 
-/**
- * @author Timothy D. Fenn
- */
+/** @author Timothy D. Fenn */
 public class FormFactorTest {
 
-    private XRayFormFactor carbonFormFactor;
+  private XRayFormFactor carbonFormFactor;
 
-    @Before
-    public void setUp() {
-        double[] d = new double[3];
-        double[] anisou = new double[6];
-        anisou[0] = anisou[1] = anisou[2] = 1.0;
-        anisou[3] = anisou[4] = anisou[5] = 0.0;
-        Atom carbon = new Atom(1, "C", 'A', d, "ALA", 1, 'A',
-                1.0, 20.0, "A");
-        AtomType atomType = new AtomType(1, 1, "C", null,
-                6, 12.01, 1);
-        carbon.setAtomType(atomType);
-        carbon.setAltLoc('A');
-        carbon.setAnisou(anisou);
-        carbonFormFactor = new XRayFormFactor(carbon, false);
-    }
+  @Before
+  public void setUp() {
+    double[] d = new double[3];
+    double[] anisou = new double[6];
+    anisou[0] = anisou[1] = anisou[2] = 1.0;
+    anisou[3] = anisou[4] = anisou[5] = 0.0;
+    Atom carbon = new Atom(1, "C", 'A', d, "ALA", 1, 'A', 1.0, 20.0, "A");
+    AtomType atomType = new AtomType(1, 1, "C", null, 6, 12.01, 1);
+    carbon.setAtomType(atomType);
+    carbon.setAltLoc('A');
+    carbon.setAnisou(anisou);
+    carbonFormFactor = new XRayFormFactor(carbon, false);
+  }
 
-    @Test
-    public void testCarbonFF() {
-        assertNotNull(" Carbon form factors should exist",
-                XRayFormFactor.getFormFactor("6"));
-        double[][] formFactor = XRayFormFactor.getFormFactor("6");
+  @Test
+  public void testCarbonFF() {
+    assertNotNull(" Carbon form factors should exist", XRayFormFactor.getFormFactor("6"));
+    double[][] formFactor = XRayFormFactor.getFormFactor("6");
 
-        assertEquals(" Carbon form factors",
-                5, (int) formFactor[0][0]);
-        assertEquals(" Carbon form factors",
-                2.09921, formFactor[1][0], 0.0001);
-        assertEquals(" Carbon form factors",
-                13.18997, formFactor[2][0], 0.0001);
-    }
+    assertEquals(" Carbon form factors", 5, (int) formFactor[0][0]);
+    assertEquals(" Carbon form factors", 2.09921, formFactor[1][0], 0.0001);
+    assertEquals(" Carbon form factors", 13.18997, formFactor[2][0], 0.0001);
+  }
 
-    @Test
-    public void testCarbonfrho() {
-        HKL hkl = new HKL(1, 1, 1);
-        assertEquals("carbon (1 1 1) structure factor should be correct",
-                2.3986e-26, carbonFormFactor.f(hkl), 1e-30);
+  @Test
+  public void testCarbonfrho() {
+    HKL hkl = new HKL(1, 1, 1);
+    assertEquals(
+        "carbon (1 1 1) structure factor should be correct",
+        2.3986e-26,
+        carbonFormFactor.f(hkl),
+        1e-30);
 
-        double[] xyz = {1.0, 1.0, 1.0};
-        assertEquals("carbon (1 1 1) electron density should be correct",
-                0.081937, carbonFormFactor.rho(0.0, 1.0, xyz), 0.000001);
-    }
+    double[] xyz = {1.0, 1.0, 1.0};
+    assertEquals(
+        "carbon (1 1 1) electron density should be correct",
+        0.081937,
+        carbonFormFactor.rho(0.0, 1.0, xyz),
+        0.000001);
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,238 +34,217 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import static java.lang.System.arraycopy;
 
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
- * The Integrator class is responsible for propagation of degrees of freedom
- * through time. Implementations must define their behavior at pre-force and
- * post-force evaluation time points.
+ * The Integrator class is responsible for propagation of degrees of freedom through time.
+ * Implementations must define their behavior at pre-force and post-force evaluation time points.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public abstract class Integrator {
 
-    private static final Logger logger = Logger.getLogger(Integrator.class.getName());
-    /**
-     * Numerical tolerance (as a fraction of bond length) permitted for numerical solutions to constraints.
-     */
-    protected final double constraintTolerance = ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
-    /**
-     * Number of variables.
-     */
-    protected int nVariables;
-    /**
-     * Mass of each degree of freedom.
-     */
-    protected double[] mass;
-    /**
-     * Coordinates for each degree of freedom in Angstroms.
-     */
-    protected double[] x;
-    /**
-     * Velocity of each degree of freedom in Angstroms per picosecond.
-     */
-    protected double[] v;
-    /**
-     * Acceleration of each degree of freedom in Angstroms per square picosecond.
-     */
-    protected double[] a;
-    /**
-     * Time step (psec).
-     */
-    protected double dt;
-    /**
-     * Any geometric constraints to apply during integration.
-     */
-    protected List<Constraint> constraints = new ArrayList<>();
-    /**
-     * If there are constraints present.
-     */
-    protected boolean useConstraints = false;
-    /**
-     * Acceleration of each degree of freedom for the previous step.
-     */
-    double[] aPrevious;
-    /**
-     * Half the time step (psec).
-     */
-    double dt_2;
-    /**
-     * Constructor for Integrator.
-     *
-     * @param nVariables number of Variables.
-     * @param x          Cartesian coordinates (Angstroms).
-     * @param v          Velocities.
-     * @param a          Accelerations.
-     * @param aPrevious  Previous Accelerations.
-     * @param mass       Mass.
-     */
-    public Integrator(int nVariables, double[] x, double[] v, double[] a,
-                      double[] aPrevious, double[] mass) {
-        this.nVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.aPrevious = aPrevious;
-        this.mass = mass;
-        dt = 1.0e-3;
-        dt_2 = dt / 2.0;
+  private static final Logger logger = Logger.getLogger(Integrator.class.getName());
+  /**
+   * Numerical tolerance (as a fraction of bond length) permitted for numerical solutions to
+   * constraints.
+   */
+  protected final double constraintTolerance = ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
+  /** Number of variables. */
+  protected int nVariables;
+  /** Mass of each degree of freedom. */
+  protected double[] mass;
+  /** Coordinates for each degree of freedom in Angstroms. */
+  protected double[] x;
+  /** Velocity of each degree of freedom in Angstroms per picosecond. */
+  protected double[] v;
+  /** Acceleration of each degree of freedom in Angstroms per square picosecond. */
+  protected double[] a;
+  /** Time step (psec). */
+  protected double dt;
+  /** Any geometric constraints to apply during integration. */
+  protected List<Constraint> constraints = new ArrayList<>();
+  /** If there are constraints present. */
+  protected boolean useConstraints = false;
+  /** Acceleration of each degree of freedom for the previous step. */
+  double[] aPrevious;
+  /** Half the time step (psec). */
+  double dt_2;
+  /**
+   * Constructor for Integrator.
+   *
+   * @param nVariables number of Variables.
+   * @param x Cartesian coordinates (Angstroms).
+   * @param v Velocities.
+   * @param a Accelerations.
+   * @param aPrevious Previous Accelerations.
+   * @param mass Mass.
+   */
+  public Integrator(
+      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
+    this.nVariables = nVariables;
+    this.x = x;
+    this.v = v;
+    this.a = a;
+    this.aPrevious = aPrevious;
+    this.mass = mass;
+    dt = 1.0e-3;
+    dt_2 = dt / 2.0;
+  }
+
+  /**
+   * Constructor for Integrator that do not use previous accelerations.
+   *
+   * @param nVariables number of Variables.
+   * @param x Cartesian coordinates (Angstroms).
+   * @param v Velocities.
+   * @param a Accelerations.
+   * @param mass Mass.
+   */
+  public Integrator(int nVariables, double[] x, double[] v, double[] a, double[] mass) {
+    this.nVariables = nVariables;
+    this.x = x;
+    this.v = v;
+    this.a = a;
+    this.mass = mass;
+    this.aPrevious = new double[nVariables];
+    dt = 1.0e-3;
+  }
+
+  /**
+   * Parse an integrator String into an instance of the IntegratorEnum enum.
+   *
+   * @param str Integrator string.
+   * @return Integrator enum.
+   */
+  public static IntegratorEnum parseIntegrator(String str) {
+    try {
+      return IntegratorEnum.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
+    } catch (Exception e) {
+      logger.info(
+          String.format(" Could not parse %s as an integrator; defaulting to Verlet.", str));
+      return IntegratorEnum.VERLET;
     }
+  }
 
-    /**
-     * Constructor for Integrator that do not use previous accelerations.
-     *
-     * @param nVariables number of Variables.
-     * @param x          Cartesian coordinates (Angstroms).
-     * @param v          Velocities.
-     * @param a          Accelerations.
-     * @param mass       Mass.
-     */
-    public Integrator(int nVariables, double[] x, double[] v, double[] a, double[] mass) {
-        this.nVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.mass = mass;
-        this.aPrevious = new double[nVariables];
-        dt = 1.0e-3;
+  /**
+   * Adds a set of Constraints that this Integrator must respect.
+   *
+   * @param addedConstraints Constraints to add.
+   */
+  public void addConstraints(List<Constraint> addedConstraints) {
+    constraints.addAll(addedConstraints);
+    useConstraints = true;
+  }
+
+  /** Copy acceleration to previous acceleration. */
+  public void copyAccelerationToPrevious() {
+    if (aPrevious == null || aPrevious.length < a.length) {
+      aPrevious = new double[a.length];
     }
+    arraycopy(a, 0, aPrevious, 0, nVariables);
+  }
 
-    /**
-     * Adds a set of Constraints that this Integrator must respect.
-     *
-     * @param addedConstraints Constraints to add.
-     */
-    public void addConstraints(List<Constraint> addedConstraints) {
-        constraints.addAll(addedConstraints);
-        useConstraints = true;
-    }
+  /**
+   * Returns a copy of the list of Constraints.
+   *
+   * @return All Constraints this Integrator respects.
+   */
+  public List<Constraint> getConstraints() {
+    return new ArrayList<>(constraints);
+  }
 
-    /**
-     * Copy acceleration to previous acceleration.
-     */
-    public void copyAccelerationToPrevious() {
-        if (aPrevious == null || aPrevious.length < a.length) {
-            aPrevious = new double[a.length];
-        }
-        arraycopy(a, 0, aPrevious, 0, nVariables);
-    }
+  /**
+   * Get the time step.
+   *
+   * @return the time step (psec).
+   */
+  public double getTimeStep() {
+    return dt;
+  }
 
-    /**
-     * Returns a copy of the list of Constraints.
-     *
-     * @return All Constraints this Integrator respects.
-     */
-    public List<Constraint> getConstraints() {
-        return new ArrayList<>(constraints);
-    }
+  /**
+   * Set the time step.
+   *
+   * @param dt the time step (psec).
+   */
+  public abstract void setTimeStep(double dt);
 
-    /**
-     * Get the time step.
-     *
-     * @return the time step (psec).
-     */
-    public double getTimeStep() {
-        return dt;
-    }
+  /**
+   * Integrator post-force evaluation operation.
+   *
+   * @param gradient the gradient for the post-force operation.
+   */
+  public abstract void postForce(double[] gradient);
 
-    /**
-     * Set the time step.
-     *
-     * @param dt the time step (psec).
-     */
-    abstract public void setTimeStep(double dt);
+  /**
+   * Integrator pre-force evaluation operation.
+   *
+   * @param potential the Potential this integrator operates on.
+   */
+  public abstract void preForce(Potential potential);
 
-    /**
-     * Parse an integrator String into an instance of the IntegratorEnum enum.
-     *
-     * @param str Integrator string.
-     * @return Integrator enum.
-     */
-    public static IntegratorEnum parseIntegrator(String str) {
-        try {
-            return IntegratorEnum.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
-        } catch (Exception e) {
-            logger.info(String.format(" Could not parse %s as an integrator; defaulting to Verlet.", str));
-            return IntegratorEnum.VERLET;
-        }
-    }
+  public void removeConstraint(Constraint constraint) {
+    constraints.remove(constraint);
+    useConstraints = !constraints.isEmpty();
+  }
 
-    /**
-     * Integrator post-force evaluation operation.
-     *
-     * @param gradient the gradient for the post-force operation.
-     */
-    abstract public void postForce(double[] gradient);
+  public void removeConstraints(Collection<Constraint> toRemove) {
+    constraints =
+        constraints.stream()
+            .filter((Constraint c) -> !toRemove.contains(c))
+            .collect(Collectors.toList());
+    useConstraints = !constraints.isEmpty();
+  }
 
-    /**
-     * Integrator pre-force evaluation operation.
-     *
-     * @param potential the Potential this integrator operates on.
-     */
-    abstract public void preForce(Potential potential);
+  /**
+   * Update the integrator to be consistent with chemical perturbations.
+   *
+   * @param nVariables the number of variables being integrated.
+   * @param x the current value of each variable.
+   * @param v the current velocity of each variable.
+   * @param a the current acceleration of each variable.
+   * @param aPrevious the previous acceleration of each variable.
+   * @param mass the mass for each variable.
+   */
+  public void setNumberOfVariables(
+      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
+    this.nVariables = nVariables;
+    this.x = x;
+    this.v = v;
+    this.a = a;
+    this.aPrevious = aPrevious;
+    this.mass = mass;
+  }
 
-    public void removeConstraint(Constraint constraint) {
-        constraints.remove(constraint);
-        useConstraints = !constraints.isEmpty();
-    }
-
-    public void removeConstraints(Collection<Constraint> toRemove) {
-        constraints = constraints.stream().
-                filter((Constraint c) -> !toRemove.contains(c)).
-                collect(Collectors.toList());
-        useConstraints = !constraints.isEmpty();
-    }
-
-    /**
-     * Update the integrator to be consistent with chemical perturbations.
-     *
-     * @param nVariables the number of variables being integrated.
-     * @param x          the current value of each variable.
-     * @param v          the current velocity of each variable.
-     * @param a          the current acceleration of each variable.
-     * @param aPrevious  the previous acceleration of each variable.
-     * @param mass       the mass for each variable.
-     */
-    public void setNumberOfVariables(int nVariables, double[] x, double[] v,
-                                     double[] a, double[] aPrevious, double[] mass) {
-        this.nVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.aPrevious = aPrevious;
-        this.mass = mass;
-    }
-
-    /**
-     * Update the integrator to be consistent with chemical perturbations.
-     *
-     * @param nVariables the number of variables being integrated.
-     * @param x          the current value of each variable.
-     * @param v          the current velocity of each variable.
-     * @param a          the current acceleration of each variable.
-     * @param mass       the mass for each variable.
-     */
-    public void setNumberOfVariables(int nVariables, double[] x, double[] v,
-                                     double[] a, double[] mass) {
-        this.nVariables = nVariables;
-        this.x = x;
-        this.v = v;
-        this.a = a;
-        this.mass = mass;
-    }
-
+  /**
+   * Update the integrator to be consistent with chemical perturbations.
+   *
+   * @param nVariables the number of variables being integrated.
+   * @param x the current value of each variable.
+   * @param v the current velocity of each variable.
+   * @param a the current acceleration of each variable.
+   * @param mass the mass for each variable.
+   */
+  public void setNumberOfVariables(
+      int nVariables, double[] x, double[] v, double[] a, double[] mass) {
+    this.nVariables = nVariables;
+    this.x = x;
+    this.v = v;
+    this.a = a;
+    this.mass = mass;
+  }
 }

@@ -37,9 +37,6 @@
 //******************************************************************************
 package ffx.xray.groovy
 
-import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
@@ -49,7 +46,8 @@ import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
 import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
-
+import org.apache.commons.configuration2.CompositeConfiguration
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -64,76 +62,80 @@ import picocli.CommandLine.Parameters
 @Command(description = " Run Dynamics on an X-ray target.", name = "ffxc xray.Dynamics")
 class Dynamics extends AlgorithmsScript {
 
-    @Mixin
-    XrayOptions xrayOptions
+  @Mixin
+  XrayOptions xrayOptions
 
-    @Mixin
-    DynamicsOptions dynamicsOptions
+  @Mixin
+  DynamicsOptions dynamicsOptions
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
-    private List<String> filenames
-    private RefinementEnergy refinementEnergy;
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
+  private List<String> filenames
+  private RefinementEnergy refinementEnergy;
 
-    @Override
-    Dynamics run() {
+  @Override
+  Dynamics run() {
 
-        if (!init()) {
-            return this
-        }
-
-        dynamicsOptions.init()
-        xrayOptions.init()
-
-        String modelfilename
-        MolecularAssembly[] assemblies
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.openAll(filenames.get(0))
-            activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath();
-        }
-
-        logger.info("\n Running xray.Dynamics on " + modelfilename)
-
-        // Load parsed X-ray properties.
-        CompositeConfiguration properties = assemblies[0].getProperties()
-        xrayOptions.setProperties(parseResult, properties)
-
-        // Set up diffraction data (can be multiple files)
-        List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
-        DiffractionData diffractionData = new DiffractionData(assemblies, properties,
-                xrayOptions.solventModel, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
-
-        diffractionData.scaleBulkFit()
-        diffractionData.printStats()
-        algorithmFunctions.energy(assemblies[0])
-
-        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
-
-        // Restart File
-        File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn")
-        if (!dyn.exists()) {
-            dyn = null
-        }
-
-        MolecularDynamics molDyn = dynamicsOptions.getDynamics(refinementEnergy, activeAssembly, algorithmListener)
-        refinementEnergy.setThermostat(molDyn.getThermostat())
-        boolean initVelocities = true
-        molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
-                dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temp, initVelocities, dyn)
-
-        return this
+    if (!init()) {
+      return this
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy);
+    dynamicsOptions.init()
+    xrayOptions.init()
+
+    String modelfilename
+    MolecularAssembly[] assemblies
+    if (filenames != null && filenames.size() > 0) {
+      assemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = assemblies[0]
+      modelfilename = filenames.get(0)
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
+    } else {
+      modelfilename = activeAssembly.getFile().getAbsolutePath();
     }
+
+    logger.info("\n Running xray.Dynamics on " + modelfilename)
+
+    // Load parsed X-ray properties.
+    CompositeConfiguration properties = assemblies[0].getProperties()
+    xrayOptions.setProperties(parseResult, properties)
+
+    // Set up diffraction data (can be multiple files)
+    List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
+    DiffractionData diffractionData = new DiffractionData(assemblies, properties,
+        xrayOptions.solventModel,
+        diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
+
+    diffractionData.scaleBulkFit()
+    diffractionData.printStats()
+    algorithmFunctions.energy(assemblies[0])
+
+    RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData,
+        xrayOptions.refinementMode)
+
+    // Restart File
+    File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn")
+    if (!dyn.exists()) {
+      dyn = null
+    }
+
+    MolecularDynamics molDyn =
+        dynamicsOptions.getDynamics(refinementEnergy, activeAssembly, algorithmListener)
+    refinementEnergy.setThermostat(molDyn.getThermostat())
+    boolean initVelocities = true
+    molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
+        dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temp, initVelocities, dyn)
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    return refinementEnergy == null ? Collections.emptyList() :
+        Collections.singletonList(refinementEnergy);
+  }
 }

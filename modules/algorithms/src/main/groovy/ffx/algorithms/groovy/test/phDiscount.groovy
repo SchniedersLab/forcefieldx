@@ -37,10 +37,6 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
-import org.apache.commons.io.FilenameUtils
-
-import groovy.cli.picocli.CliBuilder
-
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.integrators.Integrator
 import ffx.algorithms.dynamics.integrators.IntegratorEnum
@@ -50,6 +46,8 @@ import ffx.algorithms.ph.PhDiscount
 import ffx.potential.MolecularAssembly
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.extended.TitrationUtils
+import groovy.cli.picocli.CliBuilder
+import org.apache.commons.io.FilenameUtils
 
 // Number of molecular dynamics steps
 int nSteps = 1000000
@@ -101,102 +99,106 @@ cli.h(longOpt: 'help', 'Print this message.');
 cli.d(longOpt: 'dt', args: 1, argName: '1.0', 'Time discretization (fsec).');
 cli.l(longOpt: 'log', args: 1, argName: '0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt: 'steps', args: 1, argName: '1000000', 'Number of molecular dynamics steps.');
-cli.p(longOpt: 'polarization', args: 1, argName: 'Mutual', 'Polarization: [None / Direct / Mutual]');
+cli.p(longOpt: 'polarization', args: 1, argName: 'Mutual',
+    'Polarization: [None / Direct / Mutual]');
 cli.t(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degrees Kelvin.');
 cli.w(longOpt: 'save', args: 1, argName: '0.1', 'Interval to write out coordinates (psec).');
 cli.s(longOpt: 'restart', args: 1, argName: '0.1', 'Interval to write out restart file (psec).');
 cli.f(longOpt: 'file', args: 1, argName: 'PDB', 'Choose file type to write to [PDB/XYZ]');
 cli.rl(longOpt: 'resList', args: 1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
 cli.pH(longOpt: 'pH', args: 1, argName: '7.4', 'Constant simulation pH.');
-cli.mc(longOpt: 'titrationFrequency', args: 1, argName: '100', 'Number of steps between Monte-Carlo proton attempts.')
-cli.mcd(longOpt: 'titrationDuration', args: 1, argName: '100', 'Number of steps for which to run continuous proton dynamics during MC move.');
-cli.mcr(longOpt: 'rotamerMoveRatio', args: 1, argName: '0', 'Number of steps between Monte-Carlo rotamer attempts.')
+cli.mc(longOpt: 'titrationFrequency', args: 1, argName: '100',
+    'Number of steps between Monte-Carlo proton attempts.')
+cli.mcd(longOpt: 'titrationDuration', args: 1, argName: '100',
+    'Number of steps for which to run continuous proton dynamics during MC move.');
+cli.mcr(longOpt: 'rotamerMoveRatio', args: 1, argName: '0',
+    'Number of steps between Monte-Carlo rotamer attempts.')
 cli.cut(longOpt: 'cutoff', args: 1, argName: '1000', 'Value of vdw-cutoff and pme-cutoff.');
 
 def options = cli.parse(args);
 
 if (options.h) {
-    return cli.usage();
+  return cli.usage();
 }
 
 // Required Options
 if (!options.rl) {
-    logger.warning("Must list titrating residues (-rl).");
-    return;
+  logger.warning("Must list titrating residues (-rl).");
+  return;
 } else {
-    def tok = (options.rl).tokenize('.');
-    for (String t : tok) {
-        rlTokens.add(t);
-    }
+  def tok = (options.rl).tokenize('.');
+  for (String t : tok) {
+    rlTokens.add(t);
+  }
 }
 
 if (options.cut) {
-    cutoffs = Double.parseDouble(options.cut);
+  cutoffs = Double.parseDouble(options.cut);
 }
 
 // Suggested Options
 if (!options.pH) {
-    /* DISCOUNT interprets null as 7.4, then issues a warning (in a more readable location). */
-    pH = null;
+  /* DISCOUNT interprets null as 7.4, then issues a warning (in a more readable location). */
+  pH = null;
 } else {
-    pH = Double.parseDouble(options.pH);
+  pH = Double.parseDouble(options.pH);
 }
 
 if (options.rw) {
-    window = Double.parseDouble(options.rw);
+  window = Double.parseDouble(options.rw);
 }
 
 if (options.mc) {
-    moveFrequency = Integer.parseInt(options.mc);
+  moveFrequency = Integer.parseInt(options.mc);
 }
 if (options.mcd) {
-    stepsPerMove = Integer.parseInt(options.mcd);
+  stepsPerMove = Integer.parseInt(options.mcd);
 }
 if (options.n) {
-    nSteps = Integer.parseInt(options.n);
+  nSteps = Integer.parseInt(options.n);
 }
 if (options.s) {
-    restartFrequency = Double.parseDouble(options.s);
+  restartFrequency = Double.parseDouble(options.s);
 }
 if (options.f) {
-    fileType = options.f.toUpperCase();
+  fileType = options.f.toUpperCase();
 }
 if (options.d) {
-    dt = Double.parseDouble(options.d);
+  dt = Double.parseDouble(options.d);
 }
 if (options.l) {
-    printInterval = Double.parseDouble(options.l);
+  printInterval = Double.parseDouble(options.l);
 }
 if (options.w) {
-    saveInterval = Double.parseDouble(options.w);
+  saveInterval = Double.parseDouble(options.w);
 }
 if (options.t) {
-    temperature = Double.parseDouble(options.t);
+  temperature = Double.parseDouble(options.t);
 }
 if (options.p) {
-    System.setProperty("polarization", options.p);
+  System.setProperty("polarization", options.p);
 }
 
 if (options.b) {
-    thermostat = Thermostat.parseThermostat(options.b)
+  thermostat = Thermostat.parseThermostat(options.b)
 }
 
 if (options.mcmd) {
-    mcRunTime = Integer.parseInt(options.mcmd);
+  mcRunTime = Integer.parseInt(options.mcmd);
 }
 if (options.i) {
-    integrator = Integrator.parseIntegrator(options.i)
+  integrator = Integrator.parseIntegrator(options.i)
 }
 
 List<String> arguments = options.arguments();
 if (arguments == null || arguments.size() != 1) {
-    logger.warning("No input file supplied.");
-    return;
+  logger.warning("No input file supplied.");
+  return;
 }
 String filename = arguments.get(0);
 File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
 if (!dyn.exists()) {
-    dyn = null;
+  dyn = null;
 }
 
 TitrationUtils.initDiscountPreloadProperties(cutoffs);
@@ -206,14 +208,15 @@ ExtendedSystem esvSystem = new ExtendedSystem(mola, pH);
 esvSystem.populate(options.rl);
 
 // Create the MolecularDynamics.
-MolecularDynamics molDyn = new MolecularDynamics(mola, mola.getPotentialEnergy(), mola.getProperties(), sh, thermostat, integrator);
+MolecularDynamics molDyn = new MolecularDynamics(mola, mola.getPotentialEnergy(),
+    mola.getProperties(), sh, thermostat, integrator);
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 
 // Create the DISCOuNT object, linking it to the MD.
 PhDiscount phmd = new PhDiscount(mola, esvSystem, molDyn,
-        dt, printInterval, saveInterval, initVelocities,
-        fileType, restartFrequency, dyn);
+    dt, printInterval, saveInterval, initVelocities,
+    fileType, restartFrequency, dyn);
 
 // Launch dynamics through the DISCOuNT controller.
 phmd.dynamic(nSteps, pH, temperature, moveFrequency, stepsPerMove);

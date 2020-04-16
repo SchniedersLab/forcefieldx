@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,10 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.behaviors;
 
 import java.awt.event.MouseEvent;
-
 import org.jogamp.java3d.Bounds;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Canvas3D;
@@ -46,112 +45,102 @@ import org.jogamp.java3d.Transform3D;
 import org.jogamp.java3d.TransformGroup;
 
 /**
- * The PickRotateBehavior class implements a mouse rotate behavior on a picked
- * object.
+ * The PickRotateBehavior class implements a mouse rotate behavior on a picked object.
  *
  * @author Michael J. Schnieders
  */
-public class PickRotateBehavior extends PickMouseBehavior implements
-        MouseBehaviorCallback {
+public class PickRotateBehavior extends PickMouseBehavior implements MouseBehaviorCallback {
 
-    public MouseRotate drag;
-    private PickingCallback callback = null;
-    private TransformGroup currentTG;
+  public MouseRotate drag;
+  private PickingCallback callback = null;
+  private TransformGroup currentTG;
 
-    /**
-     * <p>
-     * Constructor for PickRotateBehavior.</p>
-     *
-     * @param bg       a {@link org.jogamp.java3d.BranchGroup} object.
-     * @param canvas   a {@link org.jogamp.java3d.Canvas3D} object.
-     * @param bounds   a {@link org.jogamp.java3d.Bounds} object.
-     * @param VPTG     a {@link org.jogamp.java3d.TransformGroup} object.
-     * @param pickMode a int.
-     */
-    public PickRotateBehavior(BranchGroup bg, Canvas3D canvas, Bounds bounds,
-                              TransformGroup VPTG, int pickMode) {
-        super(canvas, bg, bounds);
-        drag = new MouseRotate(MouseRotate.MANUAL_WAKEUP, VPTG);
-        drag.setTransformGroup(currGrp);
-        currGrp.addChild(drag);
-        drag.setFactor(0.025);
-        setSchedulingBounds(bounds);
-        drag.setSchedulingBounds(bounds);
-        pickCanvas.setMode(pickMode);
+  /**
+   * Constructor for PickRotateBehavior.
+   *
+   * @param bg a {@link org.jogamp.java3d.BranchGroup} object.
+   * @param canvas a {@link org.jogamp.java3d.Canvas3D} object.
+   * @param bounds a {@link org.jogamp.java3d.Bounds} object.
+   * @param VPTG a {@link org.jogamp.java3d.TransformGroup} object.
+   * @param pickMode a int.
+   */
+  public PickRotateBehavior(
+      BranchGroup bg, Canvas3D canvas, Bounds bounds, TransformGroup VPTG, int pickMode) {
+    super(canvas, bg, bounds);
+    drag = new MouseRotate(MouseRotate.MANUAL_WAKEUP, VPTG);
+    drag.setTransformGroup(currGrp);
+    currGrp.addChild(drag);
+    drag.setFactor(0.025);
+    setSchedulingBounds(bounds);
+    drag.setSchedulingBounds(bounds);
+    pickCanvas.setMode(pickMode);
+  }
+
+  /**
+   * Return the pickMode component of this PickRotateBehavior.
+   *
+   * @return a int.
+   */
+  public int getPickMode() {
+    return pickCanvas.getMode();
+  }
+
+  /**
+   * Sets the pickMode component of this PickRotateBehavior to the value of the passed
+   * pickMode. @param pickMode the pickMode to be copied.
+   *
+   * @param pickMode a int.
+   */
+  public void setPickMode(int pickMode) {
+    pickCanvas.setMode(pickMode);
+  }
+
+  /**
+   * Register the class @param callback to be called each time the picked object moves.
+   *
+   * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
+   */
+  public void setupCallback(PickingCallback c) {
+    callback = c;
+    if (callback == null) {
+      drag.setupCallback(null);
+    } else {
+      drag.setupCallback(this);
     }
+  }
 
-    /**
-     * Return the pickMode component of this PickRotateBehavior.
-     *
-     * @return a int.
-     */
-    public int getPickMode() {
-        return pickCanvas.getMode();
-    }
+  /**
+   * Callback method from MouseRotate This is used when the Picking callback is enabled.
+   * {@inheritDoc}
+   */
+  public void transformChanged(int type, Transform3D transform) {
+    callback.transformChanged(PickingCallback.ROTATE, currentTG);
+  }
 
-    /**
-     * Sets the pickMode component of this PickRotateBehavior to the value of
-     * the passed pickMode. @param pickMode the pickMode to be copied.
-     *
-     * @param pickMode a int.
-     */
-    public void setPickMode(int pickMode) {
-        pickCanvas.setMode(pickMode);
-    }
+  /** {@inheritDoc} */
+  public void transformClicked(int type, Transform3D transform) {
+    callback.transformClicked(PickingCallback.ROTATE, currentTG);
+  }
 
-    /**
-     * Register the class @param callback to be called each time the picked
-     * object moves.
-     *
-     * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
-     */
-    public void setupCallback(PickingCallback c) {
-        callback = c;
-        if (callback == null) {
-            drag.setupCallback(null);
-        } else {
-            drag.setupCallback(this);
-        }
-    }
+  /** {@inheritDoc} */
+  public void transformDoubleClicked(int type, Transform3D transform) {
+    callback.transformDoubleClicked(PickingCallback.ROTATE, currentTG);
+  }
 
-    /**
-     * Callback method from MouseRotate This is used when the Picking callback
-     * is enabled.
-     * {@inheritDoc}
-     */
-    public void transformChanged(int type, Transform3D transform) {
-        callback.transformChanged(PickingCallback.ROTATE, currentTG);
+  /**
+   * Update the scene to manipulate any nodes. This is not meant to be called by users. Behavior
+   * automatically calls this. You can call this only if you know what you are doing.
+   *
+   * @param xpos Current mouse X pos.
+   * @param ypos Current mouse Y pos.
+   */
+  public void updateScene(int xpos, int ypos) {
+    if ((mevent.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) == MouseEvent.BUTTON1_DOWN_MASK) {
+      pickCanvas.setShapeLocation(xpos, ypos);
+      // PickResult r = pickCanvas.pickClosest();
+      if (callback != null) {
+        callback.transformChanged(PickingCallback.NO_PICK, null);
+      }
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void transformClicked(int type, Transform3D transform) {
-        callback.transformClicked(PickingCallback.ROTATE, currentTG);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void transformDoubleClicked(int type, Transform3D transform) {
-        callback.transformDoubleClicked(PickingCallback.ROTATE, currentTG);
-    }
-
-    /**
-     * Update the scene to manipulate any nodes. This is not meant to be called
-     * by users. Behavior automatically calls this. You can call this only if
-     * you know what you are doing.
-     *
-     * @param xpos Current mouse X pos.
-     * @param ypos Current mouse Y pos.
-     */
-    public void updateScene(int xpos, int ypos) {
-        if ((mevent.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) == MouseEvent.BUTTON1_DOWN_MASK) {
-            pickCanvas.setShapeLocation(xpos, ypos);
-            // PickResult r = pickCanvas.pickClosest();
-            if (callback != null) {
-                callback.transformChanged(PickingCallback.NO_PICK, null);
-            }
-        }
-    }
+  }
 }

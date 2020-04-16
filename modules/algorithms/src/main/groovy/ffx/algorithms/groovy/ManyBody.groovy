@@ -38,7 +38,6 @@
 package ffx.algorithms.groovy
 
 import edu.rit.pj.Comm
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
@@ -47,11 +46,11 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
-import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
-
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -63,158 +62,159 @@ import picocli.CommandLine.Parameters
 @Command(description = " Run ManyBody algorithm on a system.", name = "ffxc ManyBody")
 class ManyBody extends AlgorithmsScript {
 
-    @Mixin
-    ManyBodyOptions manyBody
+  @Mixin
+  ManyBodyOptions manyBody
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
-    private List<String> filenames
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
+  private List<String> filenames
 
-    private File baseDir = null
-    boolean testing = null
+  private File baseDir = null
+  boolean testing = null
 
-    ForceFieldEnergy potentialEnergy
+  ForceFieldEnergy potentialEnergy
 
-    boolean monteCarloTesting = false
+  boolean monteCarloTesting = false
 
-    @Override
-    ManyBody run() {
+  @Override
+  ManyBody run() {
 
-        if (!init()) {
-            return null
-        }
-
-        String priorGKwarn = System.getProperty("gk-suppressWarnings")
-        if (priorGKwarn == null || priorGKwarn.isEmpty()) {
-            System.setProperty("gk-suppressWarnings", "true")
-        }
-
-        if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-            activeAssembly = assemblies[0]
-            if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
-                renameAtomsToPDBStandard(activeAssembly)
-            }
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return null
-        }
-
-        activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
-        potentialEnergy = activeAssembly.getPotentialEnergy()
-
-        // End rotamer adding code
-
-        RotamerOptimization rotamerOptimization = new RotamerOptimization(
-                activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
-
-        testing = getTesting()
-        if (testing) {
-            rotamerOptimization.turnRotamerSingleEliminationOff()
-            rotamerOptimization.turnRotamerPairEliminationOff()
-        }
-
-        if (monteCarloTesting) {
-            rotamerOptimization.setMonteCarloTesting(true)
-        }
-        manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
-
-        ArrayList<Residue> residueList = rotamerOptimization.getResidues()
-
-        boolean master = true
-        if (Comm.world().size() > 1) {
-            int rank = Comm.world().rank()
-            if (rank != 0) {
-                master = false
-            }
-        }
-
-        algorithmFunctions.energy(activeAssembly)
-
-        RotamerLibrary.measureRotamers(residueList, false)
-
-        RotamerOptimization.Algorithm algorithm
-        switch (manyBody.getAlgorithmNumber()) {
-            case 1:
-                algorithm = RotamerOptimization.Algorithm.INDEPENDENT
-                break
-            case 2:
-                algorithm = RotamerOptimization.Algorithm.ALL
-                break
-            case 3:
-                algorithm = RotamerOptimization.Algorithm.BRUTE_FORCE
-                break
-            case 4:
-                algorithm = RotamerOptimization.Algorithm.WINDOW
-                break
-            case 5:
-                algorithm = RotamerOptimization.Algorithm.BOX
-                break
-            default:
-                throw new IllegalArgumentException(String.format(" Algorithm choice was %d, not in range 1-5!", manyBody.getAlgorithmNumber()))
-        }
-        rotamerOptimization.optimize(algorithm)
-
-        if (master) {
-            logger.info(" Final Minimum Energy")
-
-            File modelFile = saveDirFile(activeAssembly.getFile())
-            algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
-            algorithmFunctions.energy(activeAssembly)
-        }
-
-        //manyBody.saveEliminatedRotamers();
-
-        if (priorGKwarn == null) {
-            System.clearProperty("gk-suppressWarnings")
-        }
-
-        return this
+    if (!init()) {
+      return null
     }
 
-    /**
-     * Returns the potential energy of the active assembly. Used during testing assertions.
-     * @return potentialEnergy Potential energy of the active assembly.
-     */
-    ForceFieldEnergy getPotential() {
-        return potentialEnergy
+    String priorGKwarn = System.getProperty("gk-suppressWarnings")
+    if (priorGKwarn == null || priorGKwarn.isEmpty()) {
+      System.setProperty("gk-suppressWarnings", "true")
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        List<Potential> potentials
-        if (potentialEnergy == null) {
-            potentials = Collections.emptyList()
-        } else {
-            potentials = Collections.singletonList(potentialEnergy)
-        }
-        return potentials
+    if (filenames != null && filenames.size() > 0) {
+      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
+      activeAssembly = assemblies[0]
+      if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
+        renameAtomsToPDBStandard(activeAssembly)
+      }
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return null
     }
 
-    /**
-     * Set method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
-     * @param testing A boolean flag that turns off elimination criteria for testing purposes.
-     */
-    void setTesting(boolean testing) {
-        this.testing = testing
+    activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
+    potentialEnergy = activeAssembly.getPotentialEnergy()
+
+    // End rotamer adding code
+
+    RotamerOptimization rotamerOptimization = new RotamerOptimization(
+        activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
+
+    testing = getTesting()
+    if (testing) {
+      rotamerOptimization.turnRotamerSingleEliminationOff()
+      rotamerOptimization.turnRotamerPairEliminationOff()
     }
 
-    /**
-     * Get method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
-     * @return testing A boolean flag that turns off elimination criteria for testing purposes.
-     */
-    boolean getTesting() {
-        return testing
+    if (monteCarloTesting) {
+      rotamerOptimization.setMonteCarloTesting(true)
+    }
+    manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
+
+    ArrayList<Residue> residueList = rotamerOptimization.getResidues()
+
+    boolean master = true
+    if (Comm.world().size() > 1) {
+      int rank = Comm.world().rank()
+      if (rank != 0) {
+        master = false
+      }
     }
 
-    /**
-     * Set to true when testing the monte carlo rotamer optimization algorithm. True will trigger the "set seed"
-     * functionality of the pseudo-random number generator in the RotamerOptimization.java class to create a deterministic monte carlo algorithm.
-     * @param bool True ONLY when a deterministic monte carlo approach is desired. False in all other cases.
-     */
-    void setMonteCarloTesting(boolean bool) {
-        this.monteCarloTesting = bool
+    algorithmFunctions.energy(activeAssembly)
+
+    RotamerLibrary.measureRotamers(residueList, false)
+
+    RotamerOptimization.Algorithm algorithm
+    switch (manyBody.getAlgorithmNumber()) {
+      case 1:
+        algorithm = RotamerOptimization.Algorithm.INDEPENDENT
+        break
+      case 2:
+        algorithm = RotamerOptimization.Algorithm.ALL
+        break
+      case 3:
+        algorithm = RotamerOptimization.Algorithm.BRUTE_FORCE
+        break
+      case 4:
+        algorithm = RotamerOptimization.Algorithm.WINDOW
+        break
+      case 5:
+        algorithm = RotamerOptimization.Algorithm.BOX
+        break
+      default:
+        throw new IllegalArgumentException(String.
+            format(" Algorithm choice was %d, not in range 1-5!", manyBody.getAlgorithmNumber()))
     }
+    rotamerOptimization.optimize(algorithm)
+
+    if (master) {
+      logger.info(" Final Minimum Energy")
+
+      File modelFile = saveDirFile(activeAssembly.getFile())
+      algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
+      algorithmFunctions.energy(activeAssembly)
+    }
+
+    //manyBody.saveEliminatedRotamers();
+
+    if (priorGKwarn == null) {
+      System.clearProperty("gk-suppressWarnings")
+    }
+
+    return this
+  }
+
+  /**
+   * Returns the potential energy of the active assembly. Used during testing assertions.
+   * @return potentialEnergy Potential energy of the active assembly.
+   */
+  ForceFieldEnergy getPotential() {
+    return potentialEnergy
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    List<Potential> potentials
+    if (potentialEnergy == null) {
+      potentials = Collections.emptyList()
+    } else {
+      potentials = Collections.singletonList(potentialEnergy)
+    }
+    return potentials
+  }
+
+  /**
+   * Set method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
+   * @param testing A boolean flag that turns off elimination criteria for testing purposes.
+   */
+  void setTesting(boolean testing) {
+    this.testing = testing
+  }
+
+  /**
+   * Get method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
+   * @return testing A boolean flag that turns off elimination criteria for testing purposes.
+   */
+  boolean getTesting() {
+    return testing
+  }
+
+  /**
+   * Set to true when testing the monte carlo rotamer optimization algorithm. True will trigger the "set seed"
+   * functionality of the pseudo-random number generator in the RotamerOptimization.java class to create a deterministic monte carlo algorithm.
+   * @param bool True ONLY when a deterministic monte carlo approach is desired. False in all other cases.
+   */
+  void setMonteCarloTesting(boolean bool) {
+    this.monteCarloTesting = bool
+  }
 }

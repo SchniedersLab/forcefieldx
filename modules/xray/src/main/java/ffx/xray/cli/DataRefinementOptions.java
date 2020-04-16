@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,10 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray.cli;
 
 import ffx.xray.RefinementMinimize;
-
 import picocli.CommandLine;
 
 /**
@@ -49,25 +48,23 @@ import picocli.CommandLine;
  */
 public abstract class DataRefinementOptions {
 
-    /**
-     * The refinement mode to use.
-     */
-    protected RefinementMinimize.RefinementMode refinementMode = RefinementMinimize.RefinementMode.COORDINATES;
+  /** The refinement mode to use. */
+  protected RefinementMinimize.RefinementMode refinementMode =
+      RefinementMinimize.RefinementMode.COORDINATES;
 
-    /**
-     * --wA or --dataWeight The weight of the data (wA).
-     */
-    @CommandLine.Option(names = {"--wA", "--dataWeight"}, paramLabel = "1.0",
-            description = "The weight of the real space data (wA).")
-    protected double wA = 1.0;
+  /** --wA or --dataWeight The weight of the data (wA). */
+  @CommandLine.Option(
+      names = {"--wA", "--dataWeight"},
+      paramLabel = "1.0",
+      description = "The weight of the real space data (wA).")
+  protected double wA = 1.0;
 
-    /**
-     * <p>Getter for the field <code>wA</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getwA() {
-        return wA;
-    }
-
+  /**
+   * Getter for the field <code>wA</code>.
+   *
+   * @return a double.
+   */
+  public double getwA() {
+    return wA;
+  }
 }

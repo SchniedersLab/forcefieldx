@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,77 +34,62 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.behaviors;
 
 import org.jogamp.java3d.TransformGroup;
 
 /**
- * The PickingCallback interface is implemented by classes wishing to recieve
- * notification that a picked object has moved.
+ * The PickingCallback interface is implemented by classes wishing to recieve notification that a
+ * picked object has moved.
  *
  * @author Michael J. Schnieders
  */
 public interface PickingCallback {
 
-    /**
-     * Constant <code>ROTATE=0</code>
-     */
-    int ROTATE = 0;
-    /**
-     * Constant <code>TRANSLATE=1</code>
-     */
-    int TRANSLATE = 1;
-    /**
-     * Constant <code>ZOOM=2</code>
-     */
-    int ZOOM = 2;
-    /**
-     * Constant <code>SELECTION=4</code>
-     */
-    int SELECTION = 4;
-    /**
-     * Constant <code>PROPERTIES=5</code>
-     */
-    int PROPERTIES = 5;
-    /**
-     * Constant <code>ORBIT=6</code>
-     */
-    int ORBIT = 6;
-    /**
-     * The user made a selection but nothing was actually picked
-     * <p>
-     * Constant <code>NO_PICK=3</code>
-     */
-    int NO_PICK = 3;
+  /** Constant <code>ROTATE=0</code> */
+  int ROTATE = 0;
+  /** Constant <code>TRANSLATE=1</code> */
+  int TRANSLATE = 1;
+  /** Constant <code>ZOOM=2</code> */
+  int ZOOM = 2;
+  /** Constant <code>SELECTION=4</code> */
+  int SELECTION = 4;
+  /** Constant <code>PROPERTIES=5</code> */
+  int PROPERTIES = 5;
+  /** Constant <code>ORBIT=6</code> */
+  int ORBIT = 6;
+  /**
+   * The user made a selection but nothing was actually picked
+   *
+   * <p>Constant <code>NO_PICK=3</code>
+   */
+  int NO_PICK = 3;
 
-    /**
-     * Called by the Pick Behavior with which this callback is registered each
-     * time the Picked object is moved.
-     *
-     * <p>
-     * transformChanged</p>
-     *
-     * @param type a int.
-     * @param tg   a {@link org.jogamp.java3d.TransformGroup} object.
-     */
-    void transformChanged(int type, TransformGroup tg);
+  /**
+   * Called by the Pick Behavior with which this callback is registered each time the Picked object
+   * is moved.
+   *
+   * <p>transformChanged
+   *
+   * @param type a int.
+   * @param tg a {@link org.jogamp.java3d.TransformGroup} object.
+   */
+  void transformChanged(int type, TransformGroup tg);
 
-    /**
-     * <p>
-     * transformClicked</p>
-     *
-     * @param type a int.
-     * @param tg   a {@link org.jogamp.java3d.TransformGroup} object.
-     */
-    void transformClicked(int type, TransformGroup tg);
+  /**
+   * transformClicked
+   *
+   * @param type a int.
+   * @param tg a {@link org.jogamp.java3d.TransformGroup} object.
+   */
+  void transformClicked(int type, TransformGroup tg);
 
-    /**
-     * <p>
-     * transformDoubleClicked</p>
-     *
-     * @param type a int.
-     * @param tg   a {@link org.jogamp.java3d.TransformGroup} object.
-     */
-    void transformDoubleClicked(int type, TransformGroup tg);
+  /**
+   * transformDoubleClicked
+   *
+   * @param type a int.
+   * @param tg a {@link org.jogamp.java3d.TransformGroup} object.
+   */
+  void transformDoubleClicked(int type, TransformGroup tg);
 }

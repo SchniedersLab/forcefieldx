@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,9 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static java.lang.String.format;
 
 import ffx.potential.MolecularAssembly;
@@ -48,267 +44,264 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * <p>
- * RefinementModel class.</p>
+ * RefinementModel class.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public class RefinementModel {
 
-    private static final Logger logger = Logger.getLogger(RefinementModel.class.getName());
-    /**
-     * An atom list.
-     */
-    private final List<Atom> totalAtomList;
-    /**
-     * An atom array.
-     */
-    private final Atom[] totalAtomArray;
-    /**
-     * An atom list.
-     */
-    private final List<Atom> activeAtomList;
-    /**
-     * An atom array.
-     */
-    private final Atom[] activeAtomArray;
-    /**
-     * Map between atom in different molecular assemblies.
-     */
-    private final List<Integer>[] xIndex;
-    private final List<List<Residue>> altResidues;
-    private final List<List<Molecule>> altMolecules;
+  private static final Logger logger = Logger.getLogger(RefinementModel.class.getName());
+  /** An atom list. */
+  private final List<Atom> totalAtomList;
+  /** An atom array. */
+  private final Atom[] totalAtomArray;
+  /** An atom list. */
+  private final List<Atom> activeAtomList;
+  /** An atom array. */
+  private final Atom[] activeAtomArray;
+  /** Map between atom in different molecular assemblies. */
+  private final List<Integer>[] xIndex;
 
-    /**
-     * <p>
-     * Constructor for RefinementModel.</p>
-     *
-     * @param assembly an array of {@link ffx.potential.MolecularAssembly} objects.
-     */
-    public RefinementModel(MolecularAssembly[] assembly) {
-        this(assembly, false);
-    }
+  private final List<List<Residue>> altResidues;
+  private final List<List<Molecule>> altMolecules;
 
-    /**
-     * <p>
-     * Constructor for RefinementModel.</p>
-     *
-     * @param assembly     an array of {@link ffx.potential.MolecularAssembly} objects.
-     * @param refinemolocc a boolean.
-     */
-    @SuppressWarnings("unchecked")
-    public RefinementModel(MolecularAssembly[] assembly, boolean refinemolocc) {
-        List<Atom> atomList;
+  /**
+   * Constructor for RefinementModel.
+   *
+   * @param assembly an array of {@link ffx.potential.MolecularAssembly} objects.
+   */
+  public RefinementModel(MolecularAssembly[] assembly) {
+    this(assembly, false);
+  }
 
-        // Build alternate conformer list for occupancy refinement (if necessary).
-        altResidues = new ArrayList<>();
-        altMolecules = new ArrayList<>();
-        List<MSNode> nodeList0 = assembly[0].getNodeList();
-        List<Residue> tempResidues = null;
-        List<Molecule> tempMolecules = null;
-        boolean alternateConformer;
+  /**
+   * Constructor for RefinementModel.
+   *
+   * @param assembly an array of {@link ffx.potential.MolecularAssembly} objects.
+   * @param refinemolocc a boolean.
+   */
+  @SuppressWarnings("unchecked")
+  public RefinementModel(MolecularAssembly[] assembly, boolean refinemolocc) {
+    List<Atom> atomList;
 
-        // By residue/molecule.
-        for (int i = 0; i < nodeList0.size(); i++) {
-            alternateConformer = false;
-            MSNode iNode = nodeList0.get(i);
+    // Build alternate conformer list for occupancy refinement (if necessary).
+    altResidues = new ArrayList<>();
+    altMolecules = new ArrayList<>();
+    List<MSNode> nodeList0 = assembly[0].getNodeList();
+    List<Residue> tempResidues = null;
+    List<Molecule> tempMolecules = null;
+    boolean alternateConformer;
 
-            // First set up alternate residue restraint list.
-            for (Atom a : iNode.getAtomList()) {
-                if (!a.getUse()) {
-                    continue;
-                }
-                if (a.getAltLoc() == null) {
-                    logger.severe(format(" Atom %s has a null alternate location. Likely cause: attempting X-ray refinement from a .xyz file", a));
-                }
-                if (!a.getAltLoc().equals(' ')
-                        || a.getOccupancy() < 1.0) {
-                    if (iNode instanceof Residue) {
-                        tempResidues = new ArrayList<>();
-                        tempResidues.add((Residue) iNode);
-                        altResidues.add(tempResidues);
-                        alternateConformer = true;
-                        break;
-                    } else if (iNode instanceof Molecule) {
-                        if (refinemolocc) {
-                            tempMolecules = new ArrayList<>();
-                            tempMolecules.add((Molecule) iNode);
-                            altMolecules.add(tempMolecules);
-                        }
-                        alternateConformer = true;
-                        break;
-                    }
-                }
-            }
-            if (alternateConformer) {
-                for (int j = 1; j < assembly.length; j++) {
-                    List<MSNode> nlist = assembly[j].getNodeList();
-                    MSNode node = nlist.get(i);
-                    for (Atom a : node.getAtomList()) {
-                        if (!a.getUse()) {
-                            continue;
-                        }
-                        if (!a.getAltLoc().equals(' ')
-                                && !a.getAltLoc().equals('A')) {
-                            if (node instanceof Residue) {
-                                if (tempResidues != null) {
-                                    tempResidues.add((Residue) node);
-                                }
-                                break;
-                            } else if (node instanceof Molecule) {
-                                if (tempMolecules != null) {
-                                    tempMolecules.add((Molecule) node);
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+    // By residue/molecule.
+    for (int i = 0; i < nodeList0.size(); i++) {
+      alternateConformer = false;
+      MSNode iNode = nodeList0.get(i);
+
+      // First set up alternate residue restraint list.
+      for (Atom a : iNode.getAtomList()) {
+        if (!a.getUse()) {
+          continue;
         }
-
-        // For mapping between atoms between different molecular assemblies.
-        xIndex = new List[assembly.length];
-        for (int i = 0; i < assembly.length; i++) {
-            xIndex[i] = new ArrayList<>();
+        if (a.getAltLoc() == null) {
+          logger.severe(
+              format(
+                  " Atom %s has a null alternate location. Likely cause: attempting X-ray refinement from a .xyz file",
+                  a));
         }
-
-        // Create the atomList to be used for SF calculations.
-        totalAtomList = new ArrayList<>();
-
-        // Create the activeAtomList (i.e. atoms that can move).
-        activeAtomList = new ArrayList<>();
-
-        // Root list.
-        atomList = assembly[0].getAtomList();
-        int index = 0;
-        for (Atom a : atomList) {
+        if (!a.getAltLoc().equals(' ') || a.getOccupancy() < 1.0) {
+          if (iNode instanceof Residue) {
+            tempResidues = new ArrayList<>();
+            tempResidues.add((Residue) iNode);
+            altResidues.add(tempResidues);
+            alternateConformer = true;
+            break;
+          } else if (iNode instanceof Molecule) {
+            if (refinemolocc) {
+              tempMolecules = new ArrayList<>();
+              tempMolecules.add((Molecule) iNode);
+              altMolecules.add(tempMolecules);
+            }
+            alternateConformer = true;
+            break;
+          }
+        }
+      }
+      if (alternateConformer) {
+        for (int j = 1; j < assembly.length; j++) {
+          List<MSNode> nlist = assembly[j].getNodeList();
+          MSNode node = nlist.get(i);
+          for (Atom a : node.getAtomList()) {
             if (!a.getUse()) {
-                continue;
+              continue;
             }
-            a.setFormFactorIndex(index);
-            xIndex[0].add(index);
-            index++;
-            totalAtomList.add(a);
-            if (a.isActive()) {
-                activeAtomList.add(a);
-            }
-        }
-
-        // Now add cross references to root and any alternate atoms not in root
-        for (int i = 1; i < assembly.length; i++) {
-            atomList = assembly[i].getAtomList();
-            for (Atom a : atomList) {
-                if (!a.getUse()) {
-                    continue;
+            if (!a.getAltLoc().equals(' ') && !a.getAltLoc().equals('A')) {
+              if (node instanceof Residue) {
+                if (tempResidues != null) {
+                  tempResidues.add((Residue) node);
                 }
-                Atom root = assembly[0].findAtom(a);
-                if (root != null
-                        && root.getAltLoc().equals(a.getAltLoc())) {
-                    xIndex[i].add(root.getFormFactorIndex());
-                    a.setFormFactorIndex(root.getFormFactorIndex());
-                } else {
-                    xIndex[i].add(index);
-                    index++;
-                    totalAtomList.add(a);
-                    if (a.isActive()) {
-                        activeAtomList.add(a);
-                    }
+                break;
+              } else if (node instanceof Molecule) {
+                if (tempMolecules != null) {
+                  tempMolecules.add((Molecule) node);
                 }
+                break;
+              }
             }
+          }
         }
+      }
+    }
 
-        totalAtomArray = totalAtomList.toArray(new Atom[0]);
-        activeAtomArray = activeAtomList.toArray(new Atom[0]);
+    // For mapping between atoms between different molecular assemblies.
+    xIndex = new List[assembly.length];
+    for (int i = 0; i < assembly.length; i++) {
+      xIndex[i] = new ArrayList<>();
+    }
 
-        /*
-          Make sure the occupancy values make sense, otherwise print warnings
-          (since this could destabilize the refinement, should we error out?)
-         */
-        for (List<Residue> list : altResidues) {
-            double tocc = 0.0;
-            for (Residue r : list) {
-                for (Atom a : r.getAtomList()) {
-                    if (a.getOccupancy() < 1.0 || a.getOccupancy() > 1.0) {
-                        tocc += a.getOccupancy();
-                        break;
-                    }
-                }
-            }
-            if (list.size() == 1) {
-                Residue r = list.get(0);
-                logger.log(Level.INFO, "  Residue {0} is a single conformer with non-unity occupancy.\n  Occupancy will be refined independently.\n", r.getChainID() + " " + r.toString());
-            } else if (tocc < 1.0 || tocc > 1.0) {
-                Residue r = list.get(0);
-                logger.log(Level.INFO, "  Residue {0} occupancy does not sum to 1.0.\n  This should be fixed or checked due to possible instability in refinement.\n", r.getChainID() + " " + r.toString());
-            }
+    // Create the atomList to be used for SF calculations.
+    totalAtomList = new ArrayList<>();
 
+    // Create the activeAtomList (i.e. atoms that can move).
+    activeAtomList = new ArrayList<>();
+
+    // Root list.
+    atomList = assembly[0].getAtomList();
+    int index = 0;
+    for (Atom a : atomList) {
+      if (!a.getUse()) {
+        continue;
+      }
+      a.setFormFactorIndex(index);
+      xIndex[0].add(index);
+      index++;
+      totalAtomList.add(a);
+      if (a.isActive()) {
+        activeAtomList.add(a);
+      }
+    }
+
+    // Now add cross references to root and any alternate atoms not in root
+    for (int i = 1; i < assembly.length; i++) {
+      atomList = assembly[i].getAtomList();
+      for (Atom a : atomList) {
+        if (!a.getUse()) {
+          continue;
         }
+        Atom root = assembly[0].findAtom(a);
+        if (root != null && root.getAltLoc().equals(a.getAltLoc())) {
+          xIndex[i].add(root.getFormFactorIndex());
+          a.setFormFactorIndex(root.getFormFactorIndex());
+        } else {
+          xIndex[i].add(index);
+          index++;
+          totalAtomList.add(a);
+          if (a.isActive()) {
+            activeAtomList.add(a);
+          }
+        }
+      }
     }
 
-    /**
-     * <p>Getter for the field <code>activeAtomArray</code>.</p>
-     *
-     * @return the activeAtomArray
-     */
-    public Atom[] getActiveAtomArray() {
-        return activeAtomArray;
-    }
+    totalAtomArray = totalAtomList.toArray(new Atom[0]);
+    activeAtomArray = activeAtomList.toArray(new Atom[0]);
 
-    /**
-     * <p>Getter for the field <code>activeAtomList</code>.</p>
-     *
-     * @return the activeAtomList
-     */
-    public List<Atom> getActiveAtomList() {
-        return activeAtomList;
+    /*
+     Make sure the occupancy values make sense, otherwise print warnings
+     (since this could destabilize the refinement, should we error out?)
+    */
+    for (List<Residue> list : altResidues) {
+      double tocc = 0.0;
+      for (Residue r : list) {
+        for (Atom a : r.getAtomList()) {
+          if (a.getOccupancy() < 1.0 || a.getOccupancy() > 1.0) {
+            tocc += a.getOccupancy();
+            break;
+          }
+        }
+      }
+      if (list.size() == 1) {
+        Residue r = list.get(0);
+        logger.log(
+            Level.INFO,
+            "  Residue {0} is a single conformer with non-unity occupancy.\n  Occupancy will be refined independently.\n",
+            r.getChainID() + " " + r.toString());
+      } else if (tocc < 1.0 || tocc > 1.0) {
+        Residue r = list.get(0);
+        logger.log(
+            Level.INFO,
+            "  Residue {0} occupancy does not sum to 1.0.\n  This should be fixed or checked due to possible instability in refinement.\n",
+            r.getChainID() + " " + r.toString());
+      }
     }
+  }
 
-    /**
-     * <p>Getter for the field <code>altMolecules</code>.</p>
-     *
-     * @return the altMolecules
-     */
-    public List<List<Molecule>> getAltMolecules() {
-        return altMolecules;
-    }
+  /**
+   * Getter for the field <code>activeAtomArray</code>.
+   *
+   * @return the activeAtomArray
+   */
+  public Atom[] getActiveAtomArray() {
+    return activeAtomArray;
+  }
 
-    /**
-     * <p>Getter for the field <code>altResidues</code>.</p>
-     *
-     * @return the altResidues
-     */
-    public List<List<Residue>> getAltResidues() {
-        return altResidues;
-    }
+  /**
+   * Getter for the field <code>activeAtomList</code>.
+   *
+   * @return the activeAtomList
+   */
+  public List<Atom> getActiveAtomList() {
+    return activeAtomList;
+  }
 
-    /**
-     * <p>Getter for the field <code>totalAtomArray</code>.</p>
-     *
-     * @return the totalAtomArray
-     */
-    public Atom[] getTotalAtomArray() {
-        return totalAtomArray;
-    }
+  /**
+   * Getter for the field <code>altMolecules</code>.
+   *
+   * @return the altMolecules
+   */
+  public List<List<Molecule>> getAltMolecules() {
+    return altMolecules;
+  }
 
-    /**
-     * <p>Getter for the field <code>xIndex</code>.</p>
-     *
-     * @return the xIndex
-     */
-    List<Integer>[] getxIndex() {
-        return xIndex;
-    }
+  /**
+   * Getter for the field <code>altResidues</code>.
+   *
+   * @return the altResidues
+   */
+  public List<List<Residue>> getAltResidues() {
+    return altResidues;
+  }
 
-    /**
-     * <p>Getter for the field <code>totalAtomList</code>.</p>
-     *
-     * @return the totalAtomList
-     */
-    List<Atom> getTotalAtomList() {
-        return totalAtomList;
-    }
+  /**
+   * Getter for the field <code>totalAtomArray</code>.
+   *
+   * @return the totalAtomArray
+   */
+  public Atom[] getTotalAtomArray() {
+    return totalAtomArray;
+  }
+
+  /**
+   * Getter for the field <code>xIndex</code>.
+   *
+   * @return the xIndex
+   */
+  List<Integer>[] getxIndex() {
+    return xIndex;
+  }
+
+  /**
+   * Getter for the field <code>totalAtomList</code>.
+   *
+   * @return the totalAtomList
+   */
+  List<Atom> getTotalAtomList() {
+    return totalAtomList;
+  }
 }

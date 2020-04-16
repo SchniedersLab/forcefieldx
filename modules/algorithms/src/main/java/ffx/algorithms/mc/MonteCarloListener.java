@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,28 +34,26 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.mc;
 
 /**
- * The MonteCarloListener will be notified at regular intervals during an
- * MC algorithm. This interface is useful for updating the user interface or
- * terminating the algorithm.
+ * The MonteCarloListener will be notified at regular intervals during an MC algorithm. This
+ * interface is useful for updating the user interface or terminating the algorithm.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public interface MonteCarloListener {
 
-    /**
-     * After a successful step or interval of an algorithm, this method of the
-     * listener will be called.
-     * <p>
-     * Temperature argument is necessary since Potentials package cannot import Thermostat/MD.
-     *
-     * @param temperature The Metropolis Monte Carlo temperature.
-     * @return A return of <code>true</code> indicates the algorithm continues.
-     */
-    boolean mcUpdate(double temperature);
-
+  /**
+   * After a successful step or interval of an algorithm, this method of the listener will be
+   * called.
+   *
+   * <p>Temperature argument is necessary since Potentials package cannot import Thermostat/MD.
+   *
+   * @param temperature The Metropolis Monte Carlo temperature.
+   * @return A return of <code>true</code> indicates the algorithm continues.
+   */
+  boolean mcUpdate(double temperature);
 }

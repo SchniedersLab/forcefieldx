@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,61 +34,56 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
 
+import ffx.potential.MolecularAssembly;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
-import ffx.potential.MolecularAssembly;
-
 /**
- * The FileOpener interface specifies Runnable objects which can return one or
- * more MolecularAssemblies. Implementing classes should not be constructed
- * except by a class implementing PotentialsFunctions; one should pass that
- * class the File to be opened, which constructs an implementation of
- * FileOpener.
- * <p>
- * To some extent, this interface is legacy code of when I was trying to
- * implement the open() methods from MainPanel instead of openWait(); it should
- * be possible to simply wrap the methods into the classes implementing
- * PotentialsFunctions.
+ * The FileOpener interface specifies Runnable objects which can return one or more
+ * MolecularAssemblies. Implementing classes should not be constructed except by a class
+ * implementing PotentialsFunctions; one should pass that class the File to be opened, which
+ * constructs an implementation of FileOpener.
+ *
+ * <p>To some extent, this interface is legacy code of when I was trying to implement the open()
+ * methods from MainPanel instead of openWait(); it should be possible to simply wrap the methods
+ * into the classes implementing PotentialsFunctions.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public interface FileOpener extends Runnable {
 
-    /**
-     * <p>getAllAssemblies.</p>
-     *
-     * @return an array of {@link ffx.potential.MolecularAssembly} objects.
-     */
-    MolecularAssembly[] getAllAssemblies();
+  /**
+   * getAllAssemblies.
+   *
+   * @return an array of {@link ffx.potential.MolecularAssembly} objects.
+   */
+  MolecularAssembly[] getAllAssemblies();
 
-    /**
-     * <p>getAllProperties.</p>
-     *
-     * @return an array of {@link org.apache.commons.configuration2.CompositeConfiguration} objects.
-     */
-    CompositeConfiguration[] getAllProperties();
+  /**
+   * getAllProperties.
+   *
+   * @return an array of {@link org.apache.commons.configuration2.CompositeConfiguration} objects.
+   */
+  CompositeConfiguration[] getAllProperties();
 
-    /**
-     * <p>getAssembly.</p>
-     *
-     * @return a {@link ffx.potential.MolecularAssembly} object.
-     */
-    MolecularAssembly getAssembly();
+  /**
+   * getAssembly.
+   *
+   * @return a {@link ffx.potential.MolecularAssembly} object.
+   */
+  MolecularAssembly getAssembly();
 
-    /**
-     * <p>getProperties.</p>
-     *
-     * @return a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     */
-    CompositeConfiguration getProperties();
+  /**
+   * getProperties.
+   *
+   * @return a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   */
+  CompositeConfiguration getProperties();
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    void run();
+  /** {@inheritDoc} */
+  @Override
+  void run();
 }

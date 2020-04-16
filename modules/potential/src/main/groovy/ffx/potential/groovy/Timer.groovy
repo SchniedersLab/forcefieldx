@@ -42,7 +42,6 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.TimerOptions
-
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -57,89 +56,89 @@ import picocli.CommandLine.Parameters
 @Command(description = " Time energy evaluations.", name = "ffxc Timer")
 class Timer extends PotentialScript {
 
-    /**
-     * Mix in Timing Options.
-     */
-    @Mixin
-    private TimerOptions timer
+  /**
+   * Mix in Timing Options.
+   */
+  @Mixin
+  private TimerOptions timer
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1", paramLabel = "files",
-            description = "XYZ or PDB input files.")
-    private List<String> filenames
-    private ForceFieldEnergy energy = null
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1", paramLabel = "files",
+      description = "XYZ or PDB input files.")
+  private List<String> filenames
+  private ForceFieldEnergy energy = null
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    Timer run() {
+  /**
+   * Execute the script.
+   */
+  @Override
+  Timer run() {
 
-        if (!init()) {
-            return null
-        }
-
-        // Set the number of threads.
-        if (timer.threads > 0) {
-            System.setProperty("pj.nt", Integer.toString(timer.threads))
-        }
-
-        if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return null
-        }
-
-        if (timer.noGradient) {
-            logger.info(" Timing energy for " + activeAssembly.toString())
-        } else {
-            logger.info(" Timing energy and gradient for " + activeAssembly.toString())
-        }
-
-        // The number of iterations.
-        int nEvals = timer.iterations
-
-        energy = activeAssembly.getPotentialEnergy()
-
-        long minTime = Long.MAX_VALUE
-        double sumTime2 = 0.0
-        int halfnEvals = (int) ((nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1) // Halfway point
-        for (int i = 0; i < nEvals; i++) {
-            long time = -System.nanoTime()
-            double e = energy.energy(!timer.noGradient, timer.getVerbose())
-            time += System.nanoTime()
-            if (!timer.getVerbose()) {
-                logger.info(String.format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
-            }
-            minTime = time < minTime ? time : minTime
-            if (i >= (int) (nEvals / 2)) {
-                double time2 = time * 1.0E-9
-                sumTime2 += (time2 * time2)
-            }
-        }
-
-        ++halfnEvals
-        double rmsTime = Math.sqrt(sumTime2 / halfnEvals)
-        logger.info(String.format("\n Minimum time:           %6.3f (sec)", minTime * 1.0E-9))
-        logger.info(String.format(" RMS time (latter half): %6.3f (sec)", rmsTime))
-
-        return this
+    if (!init()) {
+      return null
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        List<Potential> potentials
-        if (energy == null) {
-            potentials = Collections.emptyList()
-        } else {
-            potentials = Collections.singletonList(energy)
-        }
-        return potentials
+    // Set the number of threads.
+    if (timer.threads > 0) {
+      System.setProperty("pj.nt", Integer.toString(timer.threads))
     }
+
+    if (filenames != null && filenames.size() > 0) {
+      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
+      activeAssembly = assemblies[0]
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return null
+    }
+
+    if (timer.noGradient) {
+      logger.info(" Timing energy for " + activeAssembly.toString())
+    } else {
+      logger.info(" Timing energy and gradient for " + activeAssembly.toString())
+    }
+
+    // The number of iterations.
+    int nEvals = timer.iterations
+
+    energy = activeAssembly.getPotentialEnergy()
+
+    long minTime = Long.MAX_VALUE
+    double sumTime2 = 0.0
+    int halfnEvals = (int) ((nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1) // Halfway point
+    for (int i = 0; i < nEvals; i++) {
+      long time = -System.nanoTime()
+      double e = energy.energy(!timer.noGradient, timer.getVerbose())
+      time += System.nanoTime()
+      if (!timer.getVerbose()) {
+        logger.info(String.format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
+      }
+      minTime = time < minTime ? time : minTime
+      if (i >= (int) (nEvals / 2)) {
+        double time2 = time * 1.0E-9
+        sumTime2 += (time2 * time2)
+      }
+    }
+
+    ++halfnEvals
+    double rmsTime = Math.sqrt(sumTime2 / halfnEvals)
+    logger.info(String.format("\n Minimum time:           %6.3f (sec)", minTime * 1.0E-9))
+    logger.info(String.format(" RMS time (latter half): %6.3f (sec)", rmsTime))
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    List<Potential> potentials
+    if (energy == null) {
+      potentials = Collections.emptyList()
+    } else {
+      potentials = Collections.singletonList(energy)
+    }
+    return potentials
+  }
 
 }
 

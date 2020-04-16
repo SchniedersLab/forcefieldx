@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,12 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.fft;
 
 /**
  * Compute the 3D FFT of real, double precision input of arbitrary dimensions.
+ *
  * <p>
  *
  * @author Michal J. Schnieders
@@ -47,171 +48,168 @@ package ffx.numerics.fft;
  */
 public class Real3D {
 
-    private final int nextX, nextY, nextZ;
-    private final int nX, nY, nZ;
-    private final int nX1, nZ2;
-    private final double[] work;
-    private final double[] recip;
-    private final Real fftX;
-    private final Complex fftY, fftZ;
+  private final int nextX, nextY, nextZ;
+  private final int nX, nY, nZ;
+  private final int nX1, nZ2;
+  private final double[] work;
+  private final double[] recip;
+  private final Real fftX;
+  private final Complex fftY, fftZ;
 
-    /**
-     * Initialize the 3D FFT for complex 3D matrix.
-     *
-     * @param nX X-dimension.
-     * @param nY Y-dimension.
-     * @param nZ Z-dimension.
-     */
-    public Real3D(int nX, int nY, int nZ) {
-        int n = nX;
-        this.nX = nX / 2;
-        this.nY = nY;
-        this.nZ = nZ;
-        nX1 = this.nX + 1;
-        nZ2 = 2 * nZ;
-        nextX = 2;
-        nextY = n + 2;
-        nextZ = nextY * nY;
-        work = new double[nZ2];
-        recip = new double[nX1 * nY * nZ];
-        fftX = new Real(n);
-        fftY = new Complex(nY);
-        fftZ = new Complex(nZ);
-    }
+  /**
+   * Initialize the 3D FFT for complex 3D matrix.
+   *
+   * @param nX X-dimension.
+   * @param nY Y-dimension.
+   * @param nZ Z-dimension.
+   */
+  public Real3D(int nX, int nY, int nZ) {
+    int n = nX;
+    this.nX = nX / 2;
+    this.nY = nY;
+    this.nZ = nZ;
+    nX1 = this.nX + 1;
+    nZ2 = 2 * nZ;
+    nextX = 2;
+    nextY = n + 2;
+    nextZ = nextY * nY;
+    work = new double[nZ2];
+    recip = new double[nX1 * nY * nZ];
+    fftX = new Real(n);
+    fftY = new Complex(nY);
+    fftZ = new Complex(nZ);
+  }
 
-    /**
-     * <p>
-     * convolution</p>
-     *
-     * @param input an array of double.
-     */
-    public void convolution(final double[] input) {
-        for (int z = 0; z < nZ; z++) {
-            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-                fftX.fft(input, offset);
-            }
-            for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                fftY.fft(input, offset, nextY);
-            }
-        }
-        for (int index = 0, offset = 0, y = 0; y < nY; y++) {
-            for (int x = 0; x < nX1; x++, offset += nextX) {
-                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
-                    work[i] = input[z];
-                    work[i + 1] = input[z + 1];
-                }
-                fftZ.fft(work, 0, 2);
-                for (int i = 0; i < nZ2; i += 2) {
-                    double r = recip[index++];
-                    work[i] *= r;
-                    work[i + 1] *= r;
-                }
-                fftZ.ifft(work, 0, 2);
-                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
-                    input[z] = work[i];
-                    input[z + 1] = work[i + 1];
-                }
-            }
-        }
-        for (int z = 0; z < nZ; z++) {
-            for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                fftY.ifft(input, offset, nextY);
-            }
-            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-                fftX.ifft(input, offset);
-            }
-        }
-    }
+  /**
+   * iReal3D
+   *
+   * @param i a int.
+   * @param j a int.
+   * @param k a int.
+   * @param nX a int.
+   * @param nY a int.
+   * @return a int.
+   */
+  public static int iReal3D(int i, int j, int k, int nX, int nY) {
+    int xSide = nX + 2;
+    int xySlice = xSide * nY;
+    return i + j * xSide + k * xySlice;
+  }
 
-    /**
-     * Compute the 3D FFT.
-     *
-     * @param input The input array must be of size (nX + 2) * nY * nZ.
-     */
-    public void fft(final double[] input) {
-        for (int z = 0; z < nZ; z++) {
-            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-                fftX.fft(input, offset);
-            }
-            for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                fftY.fft(input, offset, nextY);
-            }
-        }
-        for (int x = 0; x < nX1; x++) {
-            for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
-                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
-                    work[i] = input[z];
-                    work[i + 1] = input[z + 1];
-                }
-                fftZ.fft(work, 0, 2);
-                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
-                    input[z] = work[i];
-                    input[z + 1] = work[i + 1];
-                }
-            }
-        }
+  /**
+   * convolution
+   *
+   * @param input an array of double.
+   */
+  public void convolution(final double[] input) {
+    for (int z = 0; z < nZ; z++) {
+      for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+        fftX.fft(input, offset);
+      }
+      for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+        fftY.fft(input, offset, nextY);
+      }
     }
+    for (int index = 0, offset = 0, y = 0; y < nY; y++) {
+      for (int x = 0; x < nX1; x++, offset += nextX) {
+        for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+          work[i] = input[z];
+          work[i + 1] = input[z + 1];
+        }
+        fftZ.fft(work, 0, 2);
+        for (int i = 0; i < nZ2; i += 2) {
+          double r = recip[index++];
+          work[i] *= r;
+          work[i + 1] *= r;
+        }
+        fftZ.ifft(work, 0, 2);
+        for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+          input[z] = work[i];
+          input[z + 1] = work[i + 1];
+        }
+      }
+    }
+    for (int z = 0; z < nZ; z++) {
+      for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+        fftY.ifft(input, offset, nextY);
+      }
+      for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+        fftX.ifft(input, offset);
+      }
+    }
+  }
 
-    /**
-     * <p>
-     * iReal3D</p>
-     *
-     * @param i  a int.
-     * @param j  a int.
-     * @param k  a int.
-     * @param nX a int.
-     * @param nY a int.
-     * @return a int.
-     */
-    public static int iReal3D(int i, int j, int k, int nX, int nY) {
-        int xSide = nX + 2;
-        int xySlice = xSide * nY;
-        return i + j * xSide + k * xySlice;
+  /**
+   * Compute the 3D FFT.
+   *
+   * @param input The input array must be of size (nX + 2) * nY * nZ.
+   */
+  public void fft(final double[] input) {
+    for (int z = 0; z < nZ; z++) {
+      for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+        fftX.fft(input, offset);
+      }
+      for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+        fftY.fft(input, offset, nextY);
+      }
     }
+    for (int x = 0; x < nX1; x++) {
+      for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
+        for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+          work[i] = input[z];
+          work[i + 1] = input[z + 1];
+        }
+        fftZ.fft(work, 0, 2);
+        for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+          input[z] = work[i];
+          input[z + 1] = work[i + 1];
+        }
+      }
+    }
+  }
 
-    /**
-     * Compute the inverse 3D FFT.
-     *
-     * @param input The input array must be of size (nX + 2) * nY * nZ.
-     */
-    public void ifft(final double[] input) {
-        for (int x = 0; x < nX1; x++) {
-            for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
-                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
-                    work[i] = input[z];
-                    work[i + 1] = input[z + 1];
-                }
-                fftZ.ifft(work, 0, 2);
-                for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
-                    input[z] = work[i];
-                    input[z + 1] = work[i + 1];
-                }
-            }
+  /**
+   * Compute the inverse 3D FFT.
+   *
+   * @param input The input array must be of size (nX + 2) * nY * nZ.
+   */
+  public void ifft(final double[] input) {
+    for (int x = 0; x < nX1; x++) {
+      for (int offset = x * 2, y = 0; y < nY; y++, offset += nextY) {
+        for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+          work[i] = input[z];
+          work[i + 1] = input[z + 1];
         }
-        for (int z = 0; z < nZ; z++) {
-            for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                fftY.ifft(input, offset, nextY);
-            }
-            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-                fftX.ifft(input, offset);
-            }
+        fftZ.ifft(work, 0, 2);
+        for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
+          input[z] = work[i];
+          input[z + 1] = work[i + 1];
         }
+      }
     }
+    for (int z = 0; z < nZ; z++) {
+      for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
+        fftY.ifft(input, offset, nextY);
+      }
+      for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+        fftX.ifft(input, offset);
+      }
+    }
+  }
 
-    /**
-     * <p>
-     * Setter for the field <code>recip</code>.</p>
-     *
-     * @param recip an array of double.
-     */
-    public void setRecip(double[] recip) {
-        // Reorder the reciprocal space data into the order it is needed by the convolution routine.
-        for (int index = 0, offset = 0, y = 0; y < nY; y++) {
-            for (int x = 0; x < nX1; x++, offset += 1) {
-                for (int i = 0, z = offset; i < nZ; i++, z += nX1 * nY) {
-                    this.recip[index++] = recip[z];
-                }
-            }
+  /**
+   * Setter for the field <code>recip</code>.
+   *
+   * @param recip an array of double.
+   */
+  public void setRecip(double[] recip) {
+    // Reorder the reciprocal space data into the order it is needed by the convolution routine.
+    for (int index = 0, offset = 0, y = 0; y < nY; y++) {
+      for (int x = 0; x < nX1; x++, offset += 1) {
+        for (int i = 0, z = offset; i < nZ; i++, z += nX1 * nY) {
+          this.recip[index++] = recip[z];
         }
+      }
     }
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,8 +34,10 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.utilities;
+
+import static java.lang.String.format;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -45,65 +47,64 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import static java.lang.String.format;
 
 /**
- * <p>FileUtils class.</p>
+ * FileUtils class.
  *
  * @author Michael J. Schnieders
  */
 public class FileUtils {
 
-    /**
-     * Returns the file name of a temporary copy of <code>input</code> content.
-     *
-     * @param input  The input stream contents are copied to a temporary file.
-     * @param prefix Temporary file prefix.
-     * @param name   Temporary file name.
-     * @param suffix Temporary file suffix.
-     * @return The temporary file.
-     * @throws java.io.IOException An IOException is thrown if a temporary file could not be created.
-     */
-    public static String copyInputStreamToTmpFile(final InputStream input, String prefix,
-                                                  String name, final String suffix) throws IOException {
-        File tmpFile = null;
+  /**
+   * Returns the file name of a temporary copy of <code>input</code> content.
+   *
+   * @param input The input stream contents are copied to a temporary file.
+   * @param prefix Temporary file prefix.
+   * @param name Temporary file name.
+   * @param suffix Temporary file suffix.
+   * @return The temporary file.
+   * @throws java.io.IOException An IOException is thrown if a temporary file could not be created.
+   */
+  public static String copyInputStreamToTmpFile(
+      final InputStream input, String prefix, String name, final String suffix) throws IOException {
+    File tmpFile = null;
 
-        name = prefix + "." + name + ".";
-        try {
-            tmpFile = File.createTempFile(name, "." + suffix);
-        } catch (IOException e) {
-            System.out.println(format(" Could not extract %s.", name));
-            System.err.println(e.toString());
-            System.exit(-1);
-        }
-
-        tmpFile.deleteOnExit();
-
-        try (OutputStream output = new BufferedOutputStream(new FileOutputStream(tmpFile))) {
-            byte[] buffer = new byte[8192];
-            int size;
-            while ((size = input.read(buffer)) != -1) {
-                output.write(buffer, 0, size);
-            }
-        } finally {
-            if (input != null) {
-                input.close();
-            }
-        }
-
-        return tmpFile.toString();
+    name = prefix + "." + name + ".";
+    try {
+      tmpFile = File.createTempFile(name, "." + suffix);
+    } catch (IOException e) {
+      System.out.println(format(" Could not extract %s.", name));
+      System.err.println(e.toString());
+      System.exit(-1);
     }
 
-    /**
-     * Constructs a relative path from the present working directory to a file.
-     *
-     * @param fi Construct a relative path to File fi.
-     * @return Relative path to fi.
-     */
-    public static Path relativePathTo(File fi) {
-        File pwd = new File(".");
-        Path pwdPath = Paths.get(pwd.getAbsolutePath());
-        Path otherPath = Paths.get(fi.getAbsolutePath());
-        return pwdPath.relativize(otherPath);
+    tmpFile.deleteOnExit();
+
+    try (OutputStream output = new BufferedOutputStream(new FileOutputStream(tmpFile))) {
+      byte[] buffer = new byte[8192];
+      int size;
+      while ((size = input.read(buffer)) != -1) {
+        output.write(buffer, 0, size);
+      }
+    } finally {
+      if (input != null) {
+        input.close();
+      }
     }
+
+    return tmpFile.toString();
+  }
+
+  /**
+   * Constructs a relative path from the present working directory to a file.
+   *
+   * @param fi Construct a relative path to File fi.
+   * @return Relative path to fi.
+   */
+  public static Path relativePathTo(File fi) {
+    File pwd = new File(".");
+    Path pwdPath = Paths.get(pwd.getAbsolutePath());
+    Path otherPath = Paths.get(fi.getAbsolutePath());
+    return pwdPath.relativize(otherPath);
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,22 +34,21 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parameters;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.IMPTORS;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-
-import static org.apache.commons.math3.util.FastMath.cos;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.toRadians;
-
-import static ffx.potential.parameters.ForceField.ForceFieldType.IMPTORS;
 
 /**
  * The ImproperTorsionType class defines an improper torsion.
@@ -59,313 +58,297 @@ import static ffx.potential.parameters.ForceField.ForceFieldType.IMPTORS;
  */
 public final class ImproperTorsionType extends BaseType implements Comparator<String> {
 
-    /**
-     * A Logger for the ImproperTorsionType class.
-     */
-    private static final Logger logger = Logger.getLogger(ImproperTorsionType.class.getName());
+  /** A Logger for the ImproperTorsionType class. */
+  private static final Logger logger = Logger.getLogger(ImproperTorsionType.class.getName());
 
-    /**
-     * Atom classes that for this Improper Torsion angle.
-     */
-    public final int[] atomClasses;
-    /**
-     * Force constant in kcal/mol.
-     */
-    public final double k;
-    /**
-     * Phases in degrees.
-     */
-    public final double phase;
-    /**
-     * Periodicity (should be 2 for an Improper Torsion).
-     */
-    public final int periodicity;
-    /**
-     * Value of cos(toRadians(phase)).
-     */
-    public final double cos;
-    /**
-     * Value of sin(toRadians(phase)).
-     */
-    public final double sin;
+  /** Atom classes that for this Improper Torsion angle. */
+  public final int[] atomClasses;
+  /** Force constant in kcal/mol. */
+  public final double k;
+  /** Phases in degrees. */
+  public final double phase;
+  /** Periodicity (should be 2 for an Improper Torsion). */
+  public final int periodicity;
+  /** Value of cos(toRadians(phase)). */
+  public final double cos;
+  /** Value of sin(toRadians(phase)). */
+  public final double sin;
 
-    /**
-     * TorsionType Constructor.
-     *
-     * @param atomClasses Atom classes.
-     * @param k           Force constant.
-     * @param phase       The phase.
-     * @param periodicity The periodicity.
-     */
-    public ImproperTorsionType(int[] atomClasses, double k, double phase, int periodicity) {
-        super(IMPTORS, sortKey(atomClasses));
-        this.atomClasses = atomClasses;
-        double symm = 1.0;
-        this.periodicity = periodicity;
-        this.k = k / symm;
-        this.phase = phase;
-        cos = cos(toRadians(phase));
-        sin = sin(toRadians(phase));
+  /**
+   * TorsionType Constructor.
+   *
+   * @param atomClasses Atom classes.
+   * @param k Force constant.
+   * @param phase The phase.
+   * @param periodicity The periodicity.
+   */
+  public ImproperTorsionType(int[] atomClasses, double k, double phase, int periodicity) {
+    super(IMPTORS, sortKey(atomClasses));
+    this.atomClasses = atomClasses;
+    double symm = 1.0;
+    this.periodicity = periodicity;
+    this.k = k / symm;
+    this.phase = phase;
+    cos = cos(toRadians(phase));
+    sin = sin(toRadians(phase));
 
-        assert (periodicity == 2);
+    assert (periodicity == 2);
+  }
+
+  /**
+   * Average two ImproperTorsionType instances. The atom classes that define the new type must be
+   * supplied.
+   *
+   * @param improperTorsionType1 a {@link ffx.potential.parameters.ImproperTorsionType} object.
+   * @param improperTorsionType2 a {@link ffx.potential.parameters.ImproperTorsionType} object.
+   * @param atomClasses an array of {@link int} objects.
+   * @return a {@link ffx.potential.parameters.ImproperTorsionType} object.
+   */
+  public static ImproperTorsionType average(
+      ImproperTorsionType improperTorsionType1,
+      ImproperTorsionType improperTorsionType2,
+      int[] atomClasses) {
+
+    if (improperTorsionType1 == null || improperTorsionType2 == null || atomClasses == null) {
+      return null;
     }
 
-    /**
-     * Returns true if the atoms can be assigned this improperTorsionType.
-     *
-     * @param inputClasses          The atom classes will be re-ordered if its member
-     *                              atoms match this ImproperTorsionType. The trigonal atom will not change
-     *                              position.
-     * @param allowInitialWildCards Allow wildcard match to first two classes.
-     * @param allowFinalWildCard    Allow wildcard match for final class.
-     * @return True if this torsionType is assignable to the atom array.
-     */
-    public boolean assigned(int[] inputClasses, boolean allowInitialWildCards, boolean allowFinalWildCard) {
-        // Assign the trigonal atom.
-        if (inputClasses[2] != atomClasses[2]) {
-            return false;
-        }
-
-        // Assign the final atom.
-        if (inputClasses[3] == atomClasses[3] || (atomClasses[3] == 0 && allowFinalWildCard)) {
-            // do nothing.
-        } else if (inputClasses[1] == atomClasses[3]) {
-            int temp = inputClasses[3];
-            inputClasses[3] = inputClasses[1];
-            inputClasses[1] = temp;
-        } else if (inputClasses[0] == atomClasses[3]) {
-            int temp = inputClasses[3];
-            inputClasses[3] = inputClasses[0];
-            inputClasses[0] = temp;
-        } else {
-            return false;
-        }
-
-        // Assign the second atom.
-        if (inputClasses[1] == atomClasses[1] || (atomClasses[1] == 0 && allowInitialWildCards)) {
-            // Do nothing.
-        } else if (inputClasses[0] == atomClasses[1]) {
-            int temp = inputClasses[1];
-            inputClasses[1] = inputClasses[0];
-            inputClasses[0] = temp;
-        } else {
-            return false;
-        }
-
-        // Assign the first atom.
-        return (inputClasses[0] == atomClasses[0] || (atomClasses[0] == 0 && allowInitialWildCards));
+    int periodicity = improperTorsionType1.periodicity;
+    if (periodicity != improperTorsionType2.periodicity) {
+      return null;
     }
 
-    /**
-     * Average two ImproperTorsionType instances. The atom classes that define the
-     * new type must be supplied.
-     *
-     * @param improperTorsionType1 a {@link ffx.potential.parameters.ImproperTorsionType} object.
-     * @param improperTorsionType2 a {@link ffx.potential.parameters.ImproperTorsionType} object.
-     * @param atomClasses          an array of {@link int} objects.
-     * @return a {@link ffx.potential.parameters.ImproperTorsionType} object.
-     */
-    public static ImproperTorsionType average(ImproperTorsionType improperTorsionType1,
-                                              ImproperTorsionType improperTorsionType2, int[] atomClasses) {
+    double forceConstant = (improperTorsionType1.k + improperTorsionType2.k) / 2.0;
+    double phase = (improperTorsionType1.phase + improperTorsionType2.phase) / 2.0;
 
-        if (improperTorsionType1 == null || improperTorsionType2 == null || atomClasses == null) {
-            return null;
-        }
+    return new ImproperTorsionType(atomClasses, forceConstant, phase, periodicity);
+  }
 
-        int periodicity = improperTorsionType1.periodicity;
-        if (periodicity != improperTorsionType2.periodicity) {
-            return null;
-        }
+  /**
+   * Construct an ImproperTorsionType from an input string.
+   *
+   * @param input The overall input String.
+   * @param tokens The input String tokenized.
+   * @return an ImproperTorsionType instance.
+   */
+  public static ImproperTorsionType parse(String input, String[] tokens) {
+    if (tokens.length < 8) {
+      logger.log(Level.WARNING, "Invalid IMPTORS type:\n{0}", input);
+    } else {
+      try {
+        int[] atomClasses = new int[4];
+        atomClasses[0] = parseInt(tokens[1]);
+        atomClasses[1] = parseInt(tokens[2]);
+        atomClasses[2] = parseInt(tokens[3]);
+        atomClasses[3] = parseInt(tokens[4]);
+        double k = parseDouble(tokens[5]);
+        double phase = parseDouble(tokens[6]);
+        int period = parseInt(tokens[7]);
+        return new ImproperTorsionType(atomClasses, k, phase, period);
+      } catch (NumberFormatException e) {
+        String message = "Exception parsing IMPTORS type:\n" + input + "\n";
+        logger.log(Level.SEVERE, message, e);
+      }
+    }
+    return null;
+  }
 
-        double forceConstant = (improperTorsionType1.k + improperTorsionType2.k) / 2.0;
-        double phase = (improperTorsionType1.phase + improperTorsionType2.phase) / 2.0;
+  /**
+   * This method sorts the atom classes for the improper torsion.
+   *
+   * @param c atomClasses
+   * @return lookup key
+   * @since 1.0
+   */
+  public static String sortKey(int[] c) {
+    if (c == null || c.length != 4) {
+      return null;
+    }
+    return c[0] + " " + c[1] + " " + c[2] + " " + c[3];
+  }
 
-        return new ImproperTorsionType(atomClasses, forceConstant, phase, periodicity);
+  /**
+   * Returns true if the atoms can be assigned this improperTorsionType.
+   *
+   * @param inputClasses The atom classes will be re-ordered if its member atoms match this
+   *     ImproperTorsionType. The trigonal atom will not change position.
+   * @param allowInitialWildCards Allow wildcard match to first two classes.
+   * @param allowFinalWildCard Allow wildcard match for final class.
+   * @return True if this torsionType is assignable to the atom array.
+   */
+  public boolean assigned(
+      int[] inputClasses, boolean allowInitialWildCards, boolean allowFinalWildCard) {
+    // Assign the trigonal atom.
+    if (inputClasses[2] != atomClasses[2]) {
+      return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implements the Comparator interface.
-     *
-     * @since 1.0
-     */
-    @Override
-    public int compare(String s1, String s2) {
-        String[] keys1 = s1.split(" ");
-        String[] keys2 = s2.split(" ");
-        int[] c1 = new int[4];
-        int[] c2 = new int[4];
+    // Assign the final atom.
+    if (inputClasses[3] == atomClasses[3] || (atomClasses[3] == 0 && allowFinalWildCard)) {
+      // do nothing.
+    } else if (inputClasses[1] == atomClasses[3]) {
+      int temp = inputClasses[3];
+      inputClasses[3] = inputClasses[1];
+      inputClasses[1] = temp;
+    } else if (inputClasses[0] == atomClasses[3]) {
+      int temp = inputClasses[3];
+      inputClasses[3] = inputClasses[0];
+      inputClasses[0] = temp;
+    } else {
+      return false;
+    }
 
-        for (int i = 0; i < 4; i++) {
-            c1[i] = parseInt(keys1[i]);
-            c2[i] = parseInt(keys2[i]);
+    // Assign the second atom.
+    if (inputClasses[1] == atomClasses[1] || (atomClasses[1] == 0 && allowInitialWildCards)) {
+      // Do nothing.
+    } else if (inputClasses[0] == atomClasses[1]) {
+      int temp = inputClasses[1];
+      inputClasses[1] = inputClasses[0];
+      inputClasses[0] = temp;
+    } else {
+      return false;
+    }
+
+    // Assign the first atom.
+    return (inputClasses[0] == atomClasses[0] || (atomClasses[0] == 0 && allowInitialWildCards));
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Implements the Comparator interface.
+   *
+   * @since 1.0
+   */
+  @Override
+  public int compare(String s1, String s2) {
+    String[] keys1 = s1.split(" ");
+    String[] keys2 = s2.split(" ");
+    int[] c1 = new int[4];
+    int[] c2 = new int[4];
+
+    for (int i = 0; i < 4; i++) {
+      c1[i] = parseInt(keys1[i]);
+      c2[i] = parseInt(keys2[i]);
+    }
+
+    if (c1[2] < c2[2]) {
+      return -1;
+    } else if (c1[2] > c2[2]) {
+      return 1;
+    } else if (c1[0] < c2[0]) {
+      return -1;
+    } else if (c1[0] > c2[0]) {
+      return 1;
+    } else if (c1[1] < c2[1]) {
+      return -1;
+    } else if (c1[1] > c2[1]) {
+      return 1;
+    } else if (c1[3] < c2[3]) {
+      return -1;
+    } else if (c1[3] > c2[3]) {
+      return 1;
+    }
+
+    return 0;
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Override the default <code>equals</code> method.
+   *
+   * @since 1.0
+   */
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ImproperTorsionType improperTorsionType = (ImproperTorsionType) o;
+    return Arrays.equals(atomClasses, improperTorsionType.atomClasses);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Implementation of the <code>hashCode</code> method.
+   *
+   * @since 1.0
+   */
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(atomClasses);
+  }
+
+  /**
+   * incrementClasses
+   *
+   * @param increment a int.
+   */
+  public void incrementClasses(int increment) {
+    for (int i = 0; i < atomClasses.length; i++) {
+      if (atomClasses[i] != 0) {
+        atomClasses[i] += increment;
+      }
+    }
+    setKey(sortKey(atomClasses));
+  }
+
+  /**
+   * Check if this Improper Torsion Type is defined by 1 or more atom classes equal to zero.
+   *
+   * @return True if there are no zero "wildcard" atom classes for this type.
+   */
+  public boolean noZeroClasses() {
+    if (atomClasses[0] != 0 && atomClasses[1] != 0 && atomClasses[3] != 0) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Remap new atom classes to known internal ones.
+   *
+   * @param typeMap a lookup between new atom types and known atom types.
+   */
+  public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+    int count = 0;
+    for (AtomType newType : typeMap.keySet()) {
+      for (int atomClass : atomClasses) {
+        if (atomClass == newType.atomClass) {
+          count++;
         }
-
-        if (c1[2] < c2[2]) {
-            return -1;
-        } else if (c1[2] > c2[2]) {
-            return 1;
-        } else if (c1[0] < c2[0]) {
-            return -1;
-        } else if (c1[0] > c2[0]) {
-            return 1;
-        } else if (c1[1] < c2[1]) {
-            return -1;
-        } else if (c1[1] > c2[1]) {
-            return 1;
-        } else if (c1[3] < c2[3]) {
-            return -1;
-        } else if (c1[3] > c2[3]) {
-            return 1;
-        }
-
-        return 0;
+      }
     }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Override the default <code>equals</code> method.
-     *
-     * @since 1.0
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ImproperTorsionType improperTorsionType = (ImproperTorsionType) o;
-        return Arrays.equals(atomClasses, improperTorsionType.atomClasses);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation of the <code>hashCode</code> method.
-     *
-     * @since 1.0
-     */
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(atomClasses);
-    }
-
-    /**
-     * <p>
-     * incrementClasses</p>
-     *
-     * @param increment a int.
-     */
-    public void incrementClasses(int increment) {
+    if (count > 0 && count < atomClasses.length) {
+      for (AtomType newType : typeMap.keySet()) {
         for (int i = 0; i < atomClasses.length; i++) {
-            if (atomClasses[i] != 0) {
-                atomClasses[i] += increment;
-            }
+          if (atomClasses[i] == newType.atomClass) {
+            AtomType knownType = typeMap.get(newType);
+            atomClasses[i] = knownType.atomClass;
+          }
         }
-        setKey(sortKey(atomClasses));
+      }
+      setKey(sortKey(atomClasses));
     }
+  }
 
-    /**
-     * Check if this Improper Torsion Type is defined by 1 or more atom classes equal to zero.
-     *
-     * @return True if there are no zero "wildcard" atom classes for this type.
-     */
-    public boolean noZeroClasses() {
-        if (atomClasses[0] != 0 && atomClasses[1] != 0 && atomClasses[3] != 0) {
-            return true;
-        }
-
-        return false;
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Nicely formatted Torsion angle.
+   *
+   * @since 1.0
+   */
+  @Override
+  public String toString() {
+    StringBuilder imptorsBuffer = new StringBuilder("imptors");
+    for (int i : atomClasses) {
+      imptorsBuffer.append(String.format(" %5d", i));
     }
+    imptorsBuffer.append(String.format(" %7.3f %7.3f %1d", k, phase, periodicity));
 
-    /**
-     * Construct an ImproperTorsionType from an input string.
-     *
-     * @param input  The overall input String.
-     * @param tokens The input String tokenized.
-     * @return an ImproperTorsionType instance.
-     */
-    public static ImproperTorsionType parse(String input, String[] tokens) {
-        if (tokens.length < 8) {
-            logger.log(Level.WARNING, "Invalid IMPTORS type:\n{0}", input);
-        } else {
-            try {
-                int[] atomClasses = new int[4];
-                atomClasses[0] = parseInt(tokens[1]);
-                atomClasses[1] = parseInt(tokens[2]);
-                atomClasses[2] = parseInt(tokens[3]);
-                atomClasses[3] = parseInt(tokens[4]);
-                double k = parseDouble(tokens[5]);
-                double phase = parseDouble(tokens[6]);
-                int period = parseInt(tokens[7]);
-                return new ImproperTorsionType(atomClasses, k, phase, period);
-            } catch (NumberFormatException e) {
-                String message = "Exception parsing IMPTORS type:\n" + input + "\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Remap new atom classes to known internal ones.
-     *
-     * @param typeMap a lookup between new atom types and known atom types.
-     */
-    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
-        int count = 0;
-        for (AtomType newType : typeMap.keySet()) {
-            for (int atomClass : atomClasses) {
-                if (atomClass == newType.atomClass) {
-                    count++;
-                }
-            }
-        }
-        if (count > 0 && count < atomClasses.length) {
-            for (AtomType newType : typeMap.keySet()) {
-                for (int i = 0; i < atomClasses.length; i++) {
-                    if (atomClasses[i] == newType.atomClass) {
-                        AtomType knownType = typeMap.get(newType);
-                        atomClasses[i] = knownType.atomClass;
-                    }
-                }
-
-            }
-            setKey(sortKey(atomClasses));
-        }
-    }
-
-    /**
-     * This method sorts the atom classes for the improper torsion.
-     *
-     * @param c atomClasses
-     * @return lookup key
-     * @since 1.0
-     */
-    public static String sortKey(int[] c) {
-        if (c == null || c.length != 4) {
-            return null;
-        }
-        return c[0] + " " + c[1] + " " + c[2] + " " + c[3];
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Nicely formatted Torsion angle.
-     *
-     * @since 1.0
-     */
-    @Override
-    public String toString() {
-        StringBuilder imptorsBuffer = new StringBuilder("imptors");
-        for (int i : atomClasses) {
-            imptorsBuffer.append(String.format(" %5d", i));
-        }
-        imptorsBuffer.append(String.format(" %7.3f %7.3f %1d",
-                k, phase, periodicity));
-
-        return imptorsBuffer.toString();
-    }
-
+    return imptorsBuffer.toString();
+  }
 }

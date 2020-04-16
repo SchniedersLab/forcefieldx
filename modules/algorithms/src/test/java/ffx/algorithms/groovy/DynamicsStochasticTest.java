@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,183 +34,240 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.groovy;
 
+import static org.junit.Assert.assertEquals;
+
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.misc.PJDependentTest;
+import groovy.lang.Binding;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Logger;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.misc.PJDependentTest;
-
-import groovy.lang.Binding;
-
-/**
- * @author Hernan V Bernabe
- */
+/** @author Hernan V Bernabe */
 @RunWith(Parameterized.class)
 public class DynamicsStochasticTest extends PJDependentTest {
 
-    private static final Logger logger = Logger.getLogger(DynamicsStochasticTest.class.getName());
-    private String info;
-    private String filename;
-    private double endKineticEnergy;
-    private double endPotentialEnergy;
-    private double endTotalEnergy;
-    private boolean testSeed;
-    private boolean testFriction00;
-    private boolean testFriction01;
-    private double tolerance = 0.1;
-    private Binding binding;
-    private Dynamics dynamics;
+  private static final Logger logger = Logger.getLogger(DynamicsStochasticTest.class.getName());
+  private String info;
+  private String filename;
+  private double endKineticEnergy;
+  private double endPotentialEnergy;
+  private double endTotalEnergy;
+  private boolean testSeed;
+  private boolean testFriction00;
+  private boolean testFriction01;
+  private double tolerance = 0.1;
+  private Binding binding;
+  private Dynamics dynamics;
 
-    public DynamicsStochasticTest(String info, String filename, double endKineticEnergy,
-                                  double endPotentialEnergy, double endTotalEnergy, boolean testSeed, boolean testFriction00, boolean testFriction01) {
+  public DynamicsStochasticTest(
+      String info,
+      String filename,
+      double endKineticEnergy,
+      double endPotentialEnergy,
+      double endTotalEnergy,
+      boolean testSeed,
+      boolean testFriction00,
+      boolean testFriction01) {
 
-        this.info = info;
-        this.filename = filename;
-        this.endKineticEnergy = endKineticEnergy;
-        this.endPotentialEnergy = endPotentialEnergy;
-        this.endTotalEnergy = endTotalEnergy;
-        this.testSeed = testSeed;
-        this.testFriction00 = testFriction00;
-        this.testFriction01 = testFriction01;
-    }
+    this.info = info;
+    this.filename = filename;
+    this.endKineticEnergy = endKineticEnergy;
+    this.endPotentialEnergy = endPotentialEnergy;
+    this.endTotalEnergy = endTotalEnergy;
+    this.testSeed = testSeed;
+    this.testFriction00 = testFriction00;
+    this.testFriction01 = testFriction01;
+  }
 
-    @After
-    public void after() {
-        dynamics.destroyPotentials();
-        System.gc();
-    }
-
-    @Before
-    public void before() {
-        binding = new Binding();
-        dynamics = new Dynamics();
-        dynamics.setBinding(binding);
-    }
-
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {
-                        "Acetamide Peptide Restart and Stochastic Random Seed", // info
-                        "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
-                        6.8546, // endKineticEnergy
-                        -26.9921, // endPotentialEnergy
-                        -20.1375, // endTotalEnergy
-                        true, // testSeed
-                        false, // testFriction00
-                        false, // testFriction01
-                },
-                {
-                        "Acetamide Peptide Restart, Stochastic Random Seed and Friction 0.0", // info
-                        "ffx/algorithms/structures/acetamide_res_stoch.xyz", //filename
-                        4.5625, // endKineticEnergy
-                        -29.8043, // endPotentialEnergy
-                        -25.2418, // endTotalEnergy
-                        false, // testSeed
-                        true, // testFriction00
-                        false // testFriction01
-                },
-                {
-                        "Acetamide Peptide Restart, Stochastic Random Seed and Friction 0.1", // info
-                        "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
-                        4.5743, // endKineticEnergy
-                        -29.7373, // endPotentialEnergy
-                        -25.1630, // endTotalEnergy
-                        false, // testSeed
-                        false, // testFriction00
-                        true // testFriction01
-                }
+  @Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+          {
+            "Acetamide Peptide Restart and Stochastic Random Seed", // info
+            "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
+            6.8546, // endKineticEnergy
+            -26.9921, // endPotentialEnergy
+            -20.1375, // endTotalEnergy
+            true, // testSeed
+            false, // testFriction00
+            false, // testFriction01
+          },
+          {
+            "Acetamide Peptide Restart, Stochastic Random Seed and Friction 0.0", // info
+            "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
+            4.5625, // endKineticEnergy
+            -29.8043, // endPotentialEnergy
+            -25.2418, // endTotalEnergy
+            false, // testSeed
+            true, // testFriction00
+            false // testFriction01
+          },
+          {
+            "Acetamide Peptide Restart, Stochastic Random Seed and Friction 0.1", // info
+            "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
+            4.5743, // endKineticEnergy
+            -29.7373, // endPotentialEnergy
+            -25.1630, // endTotalEnergy
+            false, // testSeed
+            false, // testFriction00
+            true // testFriction01
+          }
         });
+  }
+
+  @After
+  public void after() {
+    dynamics.destroyPotentials();
+    System.gc();
+  }
+
+  @Before
+  public void before() {
+    binding = new Binding();
+    dynamics = new Dynamics();
+    dynamics.setBinding(binding);
+  }
+
+  @Test
+  public void testDynamicsStochasticRandomSeed() {
+
+    if (!testSeed) {
+      return;
     }
 
-    @Test
-    public void testDynamicsStochasticRandomSeed() {
+    // Set-up the input arguments for the script.
+    String[] args = {
+      "-n",
+      "10",
+      "-t",
+      "298.15",
+      "-i",
+      "Stochastic",
+      "-b",
+      "Adiabatic",
+      "-r",
+      "0.001",
+      "src/main/java/" + filename
+    };
+    binding.setVariable("args", args);
 
-        if (!testSeed) {
-            return;
-        }
+    // Evaluate the script.
+    dynamics.run();
 
-        // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "Stochastic", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
-        binding.setVariable("args", args);
+    MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
-        //Evaluate the script.
-        dynamics.run();
+    // Assert that the end energies are the same meaning that the Stochastic integrator works as
+    // intended.
+    assertEquals(
+        info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
+    assertEquals(
+        info + " Final potential energy",
+        endPotentialEnergy,
+        molDyn.getPotentialEnergy(),
+        tolerance);
+    assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
 
-        MolecularDynamics molDyn = dynamics.getMolecularDynamics();
+    // dynamics.destroyPotentials();
+  }
 
-        // Assert that the end energies are the same meaning that the Stochastic integrator works as intended.
-        assertEquals(info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
-        assertEquals(info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(), tolerance);
-        assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
+  @Test
+  public void testDynamicsStochasticRandomSeedFriction0() {
 
-        //dynamics.destroyPotentials();
+    if (!testFriction00) {
+      return;
     }
 
-    @Test
-    public void testDynamicsStochasticRandomSeedFriction0() {
+    // Set-up the input arguments for the script.
+    String[] args = {
+      "-n",
+      "10",
+      "-t",
+      "298.15",
+      "-i",
+      "Stochastic",
+      "-b",
+      "Adiabatic",
+      "-r",
+      "0.001",
+      "src/main/java/" + filename
+    };
+    binding.setVariable("args", args);
 
-        if (!testFriction00) {
-            return;
-        }
+    System.setProperty("friction", "0.0");
 
-        // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "Stochastic", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
-        binding.setVariable("args", args);
+    // Evaluate the script.
+    dynamics.run();
 
-        System.setProperty("friction", "0.0");
+    MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
-        // Evaluate the script.
-        dynamics.run();
+    // Assert that the end energies are the same meaning that the Stochastic integrator works as
+    // intended with friciton 0.0 collisions/picosecond.
+    assertEquals(
+        info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
+    assertEquals(
+        info + " Final potential energy",
+        endPotentialEnergy,
+        molDyn.getPotentialEnergy(),
+        tolerance);
+    assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
 
-        MolecularDynamics molDyn = dynamics.getMolecularDynamics();
+    System.clearProperty("friction");
 
-        // Assert that the end energies are the same meaning that the Stochastic integrator works as intended with friciton 0.0 collisions/picosecond.
-        assertEquals(info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
-        assertEquals(info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(), tolerance);
-        assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
+    // dynamics.destroyPotentials();
+  }
 
-        System.clearProperty("friction");
+  @Test
+  public void testDynamicsStochasticRandomSeedFriction01() {
 
-        //dynamics.destroyPotentials();
+    if (!testFriction01) {
+      return;
     }
 
-    @Test
-    public void testDynamicsStochasticRandomSeedFriction01() {
+    // Set-up the input arguments for the script.
+    String[] args = {
+      "-n",
+      "10",
+      "-t",
+      "298.15",
+      "-i",
+      "Stochastic",
+      "-b",
+      "Adiabatic",
+      "-r",
+      "0.001",
+      "src/main/java/" + filename
+    };
+    binding.setVariable("args", args);
 
-        if (!testFriction01) {
-            return;
-        }
+    System.setProperty("friction", "0.1");
 
-        // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "Stochastic", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
-        binding.setVariable("args", args);
+    // Evaluate the script.
+    dynamics.run();
 
-        System.setProperty("friction", "0.1");
+    MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
-        // Evaluate the script.
-        dynamics.run();
+    // Assert that the end energies are the same meaning that the Stochastic integrator works as
+    // intended with friciton 0.0 collisions/picosecond.
+    assertEquals(
+        info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
+    assertEquals(
+        info + " Final potential energy",
+        endPotentialEnergy,
+        molDyn.getPotentialEnergy(),
+        tolerance);
+    assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
 
-        MolecularDynamics molDyn = dynamics.getMolecularDynamics();
-
-        // Assert that the end energies are the same meaning that the Stochastic integrator works as intended with friciton 0.0 collisions/picosecond.
-        assertEquals(info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
-        assertEquals(info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(), tolerance);
-        assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
-
-        System.clearProperty("friction");
-    }
-
+    System.clearProperty("friction");
+  }
 }

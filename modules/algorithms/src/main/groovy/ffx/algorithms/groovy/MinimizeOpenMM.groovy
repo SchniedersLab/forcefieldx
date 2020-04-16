@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.numerics.Potential
@@ -48,7 +46,7 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -64,119 +62,121 @@ import picocli.CommandLine.Parameters
 @Command(description = " Run OpenMM Accelerated L-BFGS minimization on a system.", name = "ffxc MinimizeOpenMM")
 class MinimizeOpenMM extends AlgorithmsScript {
 
-    @Mixin
-    AtomSelectionOptions atomSelectionOptions
+  @Mixin
+  AtomSelectionOptions atomSelectionOptions
 
-    @Mixin
-    MinimizeOptions minimizeOptions
+  @Mixin
+  MinimizeOptions minimizeOptions
 
-    /**
-     * The final argument(s) should be one or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
+  /**
+   * The final argument(s) should be one or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
 
-    private List<String> filenames
-    private ForceFieldEnergy forceFieldEnergy
+  private List<String> filenames
+  private ForceFieldEnergy forceFieldEnergy
 
-    private File baseDir = null
+  private File baseDir = null
 
-    void setBaseDir(File baseDir) {
-        this.baseDir = baseDir
+  void setBaseDir(File baseDir) {
+    this.baseDir = baseDir
+  }
+
+  @Override
+  MinimizeOpenMM run() {
+
+    if (!init()) {
+      return null
     }
 
-    @Override
-    MinimizeOpenMM run() {
-
-        if (!init()) {
-            return null
-        }
-
-        if (System.getProperty("platform") != null && !System.getProperty("platform").isEmpty()) {
-            System.setProperty("platform", System.getProperty("platform"))
-        } else {
-            System.setProperty("platform", "OMM")
-        }
-
-        if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return null
-        }
-
-        atomSelectionOptions.setActiveAtoms(activeAssembly)
-
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
-
-        forceFieldEnergy = activeAssembly.getPotentialEnergy()
-        switch (forceFieldEnergy.getPlatform()) {
-            case ForceFieldEnergy.Platform.OMM:
-            case ForceFieldEnergy.Platform.OMM_CUDA:
-            case ForceFieldEnergy.Platform.OMM_OPENCL:
-            case ForceFieldEnergy.Platform.OMM_OPTCPU:
-            case ForceFieldEnergy.Platform.OMM_REF:
-                logger.fine(" Platform is appropriate for OpenMM Minimization.")
-                break
-            case ForceFieldEnergy.Platform.FFX:
-            default:
-                logger.severe(String.format(" Platform %s is inappropriate for OpenMM minimization. Please explicitly specify an OpenMM platform.",
-                        forceFieldEnergy.getPlatform()))
-                break
-        }
-
-        if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
-            ffx.algorithms.optimize.MinimizeOpenMM minimizeOpenMM = new ffx.algorithms.optimize.MinimizeOpenMM(activeAssembly)
-            minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)
-
-            if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-                saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-            }
-
-            String dirName = saveDir.toString() + File.separator
-            String fileName = FilenameUtils.getName(modelFilename)
-            String ext = FilenameUtils.getExtension(fileName)
-            fileName = FilenameUtils.removeExtension(fileName)
-
-            File saveFile
-            if (ext.toUpperCase().contains("XYZ")) {
-                saveFile = new File(dirName + fileName + ".xyz")
-                algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
-            } else if (ext.toUpperCase().contains("ARC")) {
-                saveFile = new File(dirName + fileName + ".arc")
-                algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
-            } else {
-                saveFile = new File(dirName + fileName + ".pdb")
-                algorithmFunctions.saveAsPDB(activeAssembly, saveFile)
-            }
-
-            SystemFilter systemFilter = algorithmFunctions.getFilter()
-            saveFile = activeAssembly.getFile()
-
-            if (systemFilter instanceof XYZFilter) {
-                XYZFilter xyzFilter = (XYZFilter) systemFilter
-                while (xyzFilter.readNext()) {
-                    minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)
-                    boolean append = true
-                    xyzFilter.writeFile(saveFile, append)
-                }
-            }
-        } else {
-            logger.severe(" Could not start OpenMM minimization.")
-        }
-
-        return this
+    if (System.getProperty("platform") != null && !System.getProperty("platform").isEmpty()) {
+      System.setProperty("platform", System.getProperty("platform"))
+    } else {
+      System.setProperty("platform", "OMM")
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        List<Potential> potentials
-        if (forceFieldEnergy == null) {
-            potentials = Collections.emptyList()
-        } else {
-            potentials = Collections.singletonList(forceFieldEnergy)
-        }
-        return potentials
+    if (filenames != null && filenames.size() > 0) {
+      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
+      activeAssembly = assemblies[0]
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return null
     }
+
+    atomSelectionOptions.setActiveAtoms(activeAssembly)
+
+    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+
+    forceFieldEnergy = activeAssembly.getPotentialEnergy()
+    switch (forceFieldEnergy.getPlatform()) {
+      case ForceFieldEnergy.Platform.OMM:
+      case ForceFieldEnergy.Platform.OMM_CUDA:
+      case ForceFieldEnergy.Platform.OMM_OPENCL:
+      case ForceFieldEnergy.Platform.OMM_OPTCPU:
+      case ForceFieldEnergy.Platform.OMM_REF:
+        logger.fine(" Platform is appropriate for OpenMM Minimization.")
+        break
+      case ForceFieldEnergy.Platform.FFX:
+      default:
+        logger.severe(String.format(
+            " Platform %s is inappropriate for OpenMM minimization. Please explicitly specify an OpenMM platform.",
+            forceFieldEnergy.getPlatform()))
+        break
+    }
+
+    if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
+      ffx.algorithms.optimize.MinimizeOpenMM minimizeOpenMM = new ffx.algorithms.optimize.MinimizeOpenMM(
+          activeAssembly)
+      minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+
+      if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+        saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+      }
+
+      String dirName = saveDir.toString() + File.separator
+      String fileName = FilenameUtils.getName(modelFilename)
+      String ext = FilenameUtils.getExtension(fileName)
+      fileName = FilenameUtils.removeExtension(fileName)
+
+      File saveFile
+      if (ext.toUpperCase().contains("XYZ")) {
+        saveFile = new File(dirName + fileName + ".xyz")
+        algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
+      } else if (ext.toUpperCase().contains("ARC")) {
+        saveFile = new File(dirName + fileName + ".arc")
+        algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
+      } else {
+        saveFile = new File(dirName + fileName + ".pdb")
+        algorithmFunctions.saveAsPDB(activeAssembly, saveFile)
+      }
+
+      SystemFilter systemFilter = algorithmFunctions.getFilter()
+      saveFile = activeAssembly.getFile()
+
+      if (systemFilter instanceof XYZFilter) {
+        XYZFilter xyzFilter = (XYZFilter) systemFilter
+        while (xyzFilter.readNext()) {
+          minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+          boolean append = true
+          xyzFilter.writeFile(saveFile, append)
+        }
+      }
+    } else {
+      logger.severe(" Could not start OpenMM minimization.")
+    }
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    List<Potential> potentials
+    if (forceFieldEnergy == null) {
+      potentials = Collections.emptyList()
+    } else {
+      potentials = Collections.singletonList(forceFieldEnergy)
+    }
+    return potentials
+  }
 
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,14 +34,13 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.cli;
 
 import static java.lang.System.arraycopy;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-
 import picocli.CommandLine.Option;
 
 /**
@@ -53,41 +52,42 @@ import picocli.CommandLine.Option;
  */
 public class SaveOptions {
 
-    /**
-     * -c or --constrain Apply geometric constraints before saving.
-     */
-    @Option(names = {"-c", "--constrain"}, paramLabel = "false", defaultValue = "false",
-            description = "Apply geometric constraints before saving.")
-    public boolean constrain = false;
+  /** -c or --constrain Apply geometric constraints before saving. */
+  @Option(
+      names = {"-c", "--constrain"},
+      paramLabel = "false",
+      defaultValue = "false",
+      description = "Apply geometric constraints before saving.")
+  public boolean constrain = false;
 
-    private double[] x;
-    private double[] outputX;
+  private double[] x;
+  private double[] outputX;
 
-    /**
-     * Performs key operations prior to saving to disc, such as application of geometric constraints.
-     *
-     * @param molecularAssembly A MolecularAssembly.
-     */
-    public void preSaveOperations(MolecularAssembly molecularAssembly) {
-        preSaveOperations(molecularAssembly.getPotentialEnergy());
+  /**
+   * Performs key operations prior to saving to disc, such as application of geometric constraints.
+   *
+   * @param molecularAssembly A MolecularAssembly.
+   */
+  public void preSaveOperations(MolecularAssembly molecularAssembly) {
+    preSaveOperations(molecularAssembly.getPotentialEnergy());
+  }
+
+  /**
+   * Performs key operations prior to saving to disc, such as application of geometric constraints.
+   *
+   * @param forceFieldEnergy A ForceFieldEnergy.
+   */
+  public void preSaveOperations(ForceFieldEnergy forceFieldEnergy) {
+    if (constrain) {
+      int nVars = forceFieldEnergy.getNumberOfVariables();
+      if (x == null) {
+        x = new double[nVars];
+        outputX = new double[nVars];
+      }
+      x = forceFieldEnergy.getCoordinates(x);
+      arraycopy(x, 0, outputX, 0, nVars);
+      forceFieldEnergy.applyAllConstraintPositions(x, outputX);
+      forceFieldEnergy.setCoordinates(outputX);
     }
-
-    /**
-     * Performs key operations prior to saving to disc, such as application of geometric constraints.
-     *
-     * @param forceFieldEnergy A ForceFieldEnergy.
-     */
-    public void preSaveOperations(ForceFieldEnergy forceFieldEnergy) {
-        if (constrain) {
-            int nVars = forceFieldEnergy.getNumberOfVariables();
-            if (x == null) {
-                x = new double[nVars];
-                outputX = new double[nVars];
-            }
-            x = forceFieldEnergy.getCoordinates(x);
-            arraycopy(x, 0, outputX, 0, nVars);
-            forceFieldEnergy.applyAllConstraintPositions(x, outputX);
-            forceFieldEnergy.setCoordinates(outputX);
-        }
-    }
+  }
 }

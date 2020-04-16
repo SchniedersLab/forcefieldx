@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,22 +34,22 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.crystal;
+
+import static java.lang.String.format;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.lang.String.format;
-
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 
 /**
- * The NCSCrystal class extends Crystal to support non-crystallographic symmetry (NCS).
- * The NCS operators can be obtained from the BIOMT records of a PDB file, and are
- * permuted with the space group symmetry operators.
+ * The NCSCrystal class extends Crystal to support non-crystallographic symmetry (NCS). The NCS
+ * operators can be obtained from the BIOMT records of a PDB file, and are permuted with the space
+ * group symmetry operators.
  *
  * @author Aaron J. Nessler
  * @author Michael J. Schnieders
@@ -57,185 +57,180 @@ import org.apache.commons.math3.linear.RealMatrix;
  */
 public class NCSCrystal extends Crystal {
 
-    /**
-     * The logger.
-     */
-    private static final Logger logger = Logger.getLogger(NCSCrystal.class.getName());
-    /**
-     * The base unit cell for the system being simulated.
-     */
-    private final Crystal unitCell;
-    /**
-     * The non-crystallographic symmetry operators needed to be applied to the unit cell.
-     */
-    private final List<SymOp> NCSsymOps;
+  /** The logger. */
+  private static final Logger logger = Logger.getLogger(NCSCrystal.class.getName());
+  /** The base unit cell for the system being simulated. */
+  private final Crystal unitCell;
+  /** The non-crystallographic symmetry operators needed to be applied to the unit cell. */
+  private final List<SymOp> NCSsymOps;
 
-    /**
-     * Constructor for a NCSCrystal.
-     *
-     * @param unitCell  The base unit cell.
-     * @param NCSsymOps Non-crystallographic symmetry operators applied to the unit cell.
-     * @since 1.0
-     */
-    private NCSCrystal(Crystal unitCell, List<SymOp> NCSsymOps) {
-        super(unitCell.a, unitCell.b, unitCell.c, unitCell.alpha,
-                unitCell.beta, unitCell.gamma, unitCell.spaceGroup.shortName);
-        this.unitCell = unitCell;
-        this.NCSsymOps = NCSsymOps;
+  /**
+   * Constructor for a NCSCrystal.
+   *
+   * @param unitCell The base unit cell.
+   * @param NCSsymOps Non-crystallographic symmetry operators applied to the unit cell.
+   * @since 1.0
+   */
+  private NCSCrystal(Crystal unitCell, List<SymOp> NCSsymOps) {
+    super(
+        unitCell.a,
+        unitCell.b,
+        unitCell.c,
+        unitCell.alpha,
+        unitCell.beta,
+        unitCell.gamma,
+        unitCell.spaceGroup.shortName);
+    this.unitCell = unitCell;
+    this.NCSsymOps = NCSsymOps;
 
-        /*
-          At this point, the NCSCrystal references a SpaceGroup instance
-          that is lacking symmetry operators. This is corrected by generating symmetry
-          operators to fill up the non-crystallographic, which is added to the unit
-          cell based on the asymmetric unit.
-         */
+    /*
+     At this point, the NCSCrystal references a SpaceGroup instance
+     that is lacking symmetry operators. This is corrected by generating symmetry
+     operators to fill up the non-crystallographic, which is added to the unit
+     cell based on the asymmetric unit.
+    */
+    updateNCSOperators();
+  }
+
+  /**
+   * Returns an NCSCrystal by expanding the orignal unit cell with the symmetry operators provided
+   * by the BIOMT records in the PDB files. See REMARK 350.
+   *
+   * @param unitCell The unit cell of the crystal.
+   * @param symOps Symmetry operators for non-crystallographic symmetry
+   * @return A Crystal or NCSCrystal
+   */
+  public static Crystal NCSCrystalFactory(Crystal unitCell, List<SymOp> symOps) {
+
+    if (unitCell == null || unitCell.aperiodic()) {
+      return unitCell;
+    } else {
+      return new NCSCrystal(unitCell, symOps);
+    }
+  }
+
+  /**
+   * Change the cell parameters for the base unit cell, which is followed by an update of the
+   * ReplicateCrystal parameters and possibly the number of replicated cells.
+   *
+   * @param a The length of the a-axis for the base unit cell (in Angstroms).
+   * @param b The length of the b-axis for the base unit cell (in Angstroms).
+   * @param c The length of the c-axis for the base unit cell (in Angstroms).
+   * @param alpha The angle between the b-axis and c-axis (in Degrees).
+   * @param beta The angle between the a-axis and c-axis (in Degrees).
+   * @param gamma The angle between the a-axis and b-axis (in Degrees).
+   * @return True is returned if the unit cell and replicates cell are updated successfully.
+   */
+  @Override
+  public boolean changeUnitCellParameters(
+      double a, double b, double c, double alpha, double beta, double gamma) {
+    // First, update the parameters of the unit cell.
+    if (unitCell.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
+
+      // Then, update the parameters of the NCSCrystal.
+      if (super.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
+        // Finally, update the NCS operators.
         updateNCSOperators();
+        return true;
+      }
     }
+    return false;
+  }
 
-    /**
-     * Returns an NCSCrystal by expanding the orignal unit cell with the symmetry operators provided by the BIOMT
-     * records in the PDB files. See REMARK 350.
-     *
-     * @param unitCell The unit cell of the crystal.
-     * @param symOps   Symmetry operators for non-crystallographic symmetry
-     * @return A Crystal or NCSCrystal
-     */
+  /** Two crystals are equal only if all unit cell parameters are exactly the same. */
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    NCSCrystal ncsCrystal = (NCSCrystal) o;
+    return (Objects.equals(unitCell, ncsCrystal.unitCell)
+        && a == ncsCrystal.a
+        && b == ncsCrystal.b
+        && c == ncsCrystal.c
+        && alpha == ncsCrystal.alpha
+        && beta == ncsCrystal.beta
+        && gamma == ncsCrystal.gamma
+        && spaceGroup.number == ncsCrystal.spaceGroup.number
+        && spaceGroup.symOps.size() == ncsCrystal.spaceGroup.symOps.size());
+  }
 
-    public static Crystal NCSCrystalFactory(Crystal unitCell, List<SymOp> symOps) {
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Returns the unit cell for this NCSCrystal. This is useful for the reciprocal space portion
+   * of PME that operates on the unit cell.
+   */
+  @Override
+  public Crystal getUnitCell() {
+    return unitCell;
+  }
 
-        if (unitCell == null || unitCell.aperiodic()) {
-            return unitCell;
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Include information about the base unit cell and NCS cell.
+   */
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder(unitCell.toString());
+    sb.append("\n\n Non-Crystallographic Cell\n");
+    sb.append(format("  A-axis:                              %8.3f\n", a));
+    sb.append(format("  B-axis:                              %8.3f\n", b));
+    sb.append(format("  C-axis:                              %8.3f\n", c));
+    sb.append(format("  Alpha:                               %8.3f\n", alpha));
+    sb.append(format("  Beta:                                %8.3f\n", beta));
+    sb.append(format("  Gamma:                               %8.3f\n", gamma));
+    sb.append(
+        format("  UnitCell Symmetry Operators:         %8d\n", unitCell.spaceGroup.symOps.size()));
+    sb.append(format("  NCS Symmetry Operators:              %8d\n", NCSsymOps.size()));
+    sb.append(format("  Total Symmetry Operators:            %8d", spaceGroup.getNumberOfSymOps()));
+    return sb.toString();
+  }
+
+  /**
+   * Update the list of symmetry operators to contain the non-crystallographic operations as well.
+   */
+  private void updateNCSOperators() {
+    List<SymOp> symOps = spaceGroup.symOps;
+
+    // First, we remove the existing symmetry operators.
+    symOps.clear();
+
+    /*
+     Symmetry operators are produced that are the combination of the non-crystallographic and the unit cell symmetry operations.
+     Note that the first symOp is still equivalent to the asymmetric unit and the first set of
+     symOps are still equivalent to the unit cell.
+    */
+    int ii = 0;
+    int soRemoved = 0;
+    for (SymOp NCSsymOp : NCSsymOps) {
+      // All UC symOps seem to have collision issues... Use 1st (identity) for now...
+      for (SymOp symOp : unitCell.spaceGroup.symOps) {
+        //            SymOp symOp=unitCell.spaceGroup.symOps.get(0); //Identity matrix is standard
+        // first matrix. (P1)
+        double[] NCSTrans = new double[3];
+        RealMatrix NCS = MatrixUtils.createRealMatrix(NCSsymOp.rot);
+        RealMatrix UC = MatrixUtils.createRealMatrix(symOp.rot);
+        RealMatrix result = NCS.multiply(UC); // Abelian groups order doesnt matter...
+        double[][] NCSRot = result.getData();
+        NCSTrans[0] = symOp.tr[0] + NCSsymOp.tr[0];
+        NCSTrans[1] = symOp.tr[1] + NCSsymOp.tr[1];
+        NCSTrans[2] = symOp.tr[2] + NCSsymOp.tr[2];
+        SymOp NCSSymOp = new SymOp(NCSRot, NCSTrans);
+        if (!symOps.contains(NCSSymOp)) {
+          symOps.add(NCSSymOp);
         } else {
-            return new NCSCrystal(unitCell, symOps);
+          soRemoved++;
         }
-    }
-
-    /**
-     * Change the cell parameters for the base unit cell, which is followed by
-     * an update of the ReplicateCrystal parameters and possibly the number of
-     * replicated cells.
-     *
-     * @param a     The length of the a-axis for the base unit cell (in Angstroms).
-     * @param b     The length of the b-axis for the base unit cell (in Angstroms).
-     * @param c     The length of the c-axis for the base unit cell (in Angstroms).
-     * @param alpha The angle between the b-axis and c-axis (in Degrees).
-     * @param beta  The angle between the a-axis and c-axis (in Degrees).
-     * @param gamma The angle between the a-axis and b-axis (in Degrees).
-     * @return True is returned if the unit cell and replicates cell are updated
-     * successfully.
-     */
-
-    @Override
-    public boolean changeUnitCellParameters(double a, double b, double c,
-                                            double alpha, double beta, double gamma) {
-        // First, update the parameters of the unit cell.
-        if (unitCell.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
-
-            // Then, update the parameters of the NCSCrystal.
-            if (super.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
-                // Finally, update the NCS operators.
-                updateNCSOperators();
-                return true;
-            }
+        if (logger.isLoggable(Level.FINEST)) {
+          logger.finest(format("\n SymOp: %d", ii));
+          logger.finest(NCSSymOp.toString());
         }
-        return false;
+        ii++;
+      }
     }
-
-    /**
-     * Two crystals are equal only if all unit cell parameters are exactly the
-     * same.
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        NCSCrystal ncsCrystal = (NCSCrystal) o;
-        return (Objects.equals(unitCell, ncsCrystal.unitCell) &&
-                a == ncsCrystal.a &&
-                b == ncsCrystal.b &&
-                c == ncsCrystal.c &&
-                alpha == ncsCrystal.alpha &&
-                beta == ncsCrystal.beta &&
-                gamma == ncsCrystal.gamma &&
-                spaceGroup.number == ncsCrystal.spaceGroup.number &&
-                spaceGroup.symOps.size() == ncsCrystal.spaceGroup.symOps.size());
+    if (soRemoved != 0) {
+      logger.warning(format("\n NCS Replicated SymOps Removed: %d", soRemoved));
     }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns the unit cell for this NCSCrystal. This is useful for the
-     * reciprocal space portion of PME that operates on the unit cell.
-     */
-    @Override
-    public Crystal getUnitCell() {
-        return unitCell;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Include information about the base unit cell and NCS cell.
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder(unitCell.toString());
-        sb.append("\n\n Non-Crystallographic Cell\n");
-        sb.append(format("  A-axis:                              %8.3f\n", a));
-        sb.append(format("  B-axis:                              %8.3f\n", b));
-        sb.append(format("  C-axis:                              %8.3f\n", c));
-        sb.append(format("  Alpha:                               %8.3f\n", alpha));
-        sb.append(format("  Beta:                                %8.3f\n", beta));
-        sb.append(format("  Gamma:                               %8.3f\n", gamma));
-        sb.append(format("  UnitCell Symmetry Operators:         %8d\n", unitCell.spaceGroup.symOps.size()));
-        sb.append(format("  NCS Symmetry Operators:              %8d\n", NCSsymOps.size()));
-        sb.append(format("  Total Symmetry Operators:            %8d", spaceGroup.getNumberOfSymOps()));
-        return sb.toString();
-    }
-
-    /**
-     * Update the list of symmetry operators to contain the non-crystallographic operations as well.
-     */
-    private void updateNCSOperators() {
-        List<SymOp> symOps = spaceGroup.symOps;
-
-        // First, we remove the existing symmetry operators.
-        symOps.clear();
-
-        /*
-          Symmetry operators are produced that are the combination of the non-crystallographic and the unit cell symmetry operations.
-          Note that the first symOp is still equivalent to the asymmetric unit and the first set of
-          symOps are still equivalent to the unit cell.
-         */
-        int ii = 0;
-        int soRemoved = 0;
-        for (SymOp NCSsymOp : NCSsymOps) {
-            // All UC symOps seem to have collision issues... Use 1st (identity) for now...
-            for (SymOp symOp : unitCell.spaceGroup.symOps) {
-//            SymOp symOp=unitCell.spaceGroup.symOps.get(0); //Identity matrix is standard first matrix. (P1)
-                double[] NCSTrans = new double[3];
-                RealMatrix NCS = MatrixUtils.createRealMatrix(NCSsymOp.rot);
-                RealMatrix UC = MatrixUtils.createRealMatrix(symOp.rot);
-                RealMatrix result = NCS.multiply(UC); //Abelian groups order doesnt matter...
-                double[][] NCSRot = result.getData();
-                NCSTrans[0] = symOp.tr[0] + NCSsymOp.tr[0];
-                NCSTrans[1] = symOp.tr[1] + NCSsymOp.tr[1];
-                NCSTrans[2] = symOp.tr[2] + NCSsymOp.tr[2];
-                SymOp NCSSymOp = new SymOp(NCSRot, NCSTrans);
-                if (!symOps.contains(NCSSymOp)) {
-                    symOps.add(NCSSymOp);
-                } else {
-                    soRemoved++;
-                }
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.finest(format("\n SymOp: %d", ii));
-                    logger.finest(NCSSymOp.toString());
-                }
-                ii++;
-            }
-        }
-        if (soRemoved != 0) {
-            logger.warning(format("\n NCS Replicated SymOps Removed: %d", soRemoved));
-        }
-    }
+  }
 }

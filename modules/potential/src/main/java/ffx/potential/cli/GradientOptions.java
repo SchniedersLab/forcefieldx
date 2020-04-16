@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.cli;
 
 import picocli.CommandLine.Option;
@@ -47,32 +47,34 @@ import picocli.CommandLine.Option;
  */
 public class GradientOptions {
 
-    /**
-     * -d or --dx Finite-difference step size.
-     */
-    @Option(names = {"-d", "--dx"}, defaultValue = "1.0e-5", paramLabel = "1.0e-5 Å",
-            description = "Finite-difference step size.")
-    public double dx;
+  /** -d or --dx Finite-difference step size. */
+  @Option(
+      names = {"-d", "--dx"},
+      defaultValue = "1.0e-5",
+      paramLabel = "1.0e-5 Å",
+      description = "Finite-difference step size.")
+  public double dx;
 
-    /**
-     * --tol or --tolerance Gradient error tolerance (kcal/mol/Å).
-     */
-    @Option(names = {"--tol", "--tolerance"}, defaultValue = "1.0e-3", paramLabel = "1.0e-3 kcal/mol/Å",
-            description = "Gradient error tolerance.")
-    public double tolerance;
+  /** --tol or --tolerance Gradient error tolerance (kcal/mol/Å). */
+  @Option(
+      names = {"--tol", "--tolerance"},
+      defaultValue = "1.0e-3",
+      paramLabel = "1.0e-3 kcal/mol/Å",
+      description = "Gradient error tolerance.")
+  public double tolerance;
 
-    /**
-     * --ga or --gradientAtoms Ranges of atoms to test [ALL, NONE, Range(s): 1-3,6-N].
-     */
-    @Option(names = {"--ga", "--gradientAtoms"}, paramLabel = "ALL", defaultValue = "ALL",
-            description = "Ranges of atoms to test [ALL, NONE, Range(s): 1-3,6-N].")
-    public String gradientAtoms;
+  /** --ga or --gradientAtoms Ranges of atoms to test [ALL, NONE, Range(s): 1-3,6-N]. */
+  @Option(
+      names = {"--ga", "--gradientAtoms"},
+      paramLabel = "ALL",
+      defaultValue = "ALL",
+      description = "Ranges of atoms to test [ALL, NONE, Range(s): 1-3,6-N].")
+  public String gradientAtoms;
 
-    /**
-     * -v or --verbose is a flag to print out energy at each step.
-     */
-    @Option(names = {"-v", "--verbose"}, paramLabel = "false", description = "Print out the energy for each step.")
-    public boolean verbose = false;
-
-
+  /** -v or --verbose is a flag to print out energy at each step. */
+  @Option(
+      names = {"-v", "--verbose"},
+      paramLabel = "false",
+      description = "Print out the energy for each step.")
+  public boolean verbose = false;
 }

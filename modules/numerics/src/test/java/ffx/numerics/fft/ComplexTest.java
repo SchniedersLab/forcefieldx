@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,79 +34,74 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.fft;
+
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.assertEquals;
 
-/**
- * @author Michael J. Schnieders
- */
+/** @author Michael J. Schnieders */
 @RunWith(Parameterized.class)
 public class ComplexTest {
 
-    private final int n;
-    private final String info;
-    private final boolean preferred;
-    private final double[] data;
-    private final double[] expected;
+  private final int n;
+  private final String info;
+  private final boolean preferred;
+  private final double[] data;
+  private final double[] expected;
 
-    public ComplexTest(String info, int n, boolean preferred) {
-        this.info = info;
-        this.n = n;
-        this.preferred = preferred;
-        data = new double[n * 2];
-        expected = new double[n * 2];
-        Random r = new Random();
-        for (int i = 0; i < n; i++) {
-            double d = r.nextDouble();
-            data[i * 2] = d;
-            expected[i * 2] = d;
-        }
+  public ComplexTest(String info, int n, boolean preferred) {
+    this.info = info;
+    this.n = n;
+    this.preferred = preferred;
+    data = new double[n * 2];
+    expected = new double[n * 2];
+    Random r = new Random();
+    for (int i = 0; i < n; i++) {
+      double d = r.nextDouble();
+      data[i * 2] = d;
+      expected[i * 2] = d;
     }
+  }
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                // This test will fail without the factor 7 {"Test n = 21", 21, true},
-                {"Test n = 22", 22, false},
-                {"Test n = 120", 120, true}
+  @Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+          // This test will fail without the factor 7 {"Test n = 21", 21, true},
+          {"Test n = 22", 22, false},
+          {"Test n = 120", 120, true}
         });
-    }
+  }
 
-    /**
-     * Test of fft method, of class Complex.
-     */
-    @Test
-    public void testFft() {
-        double tolerance = 1.0e-14;
+  /** Test of fft method, of class Complex. */
+  @Test
+  public void testFft() {
+    double tolerance = 1.0e-14;
 
-        int offset = 0;
-        int stride = 2;
-        Complex complex = new Complex(n);
-        complex.fft(data, offset, stride);
-        complex.inverse(data, offset, stride);
-        for (int i = 0; i < n; i++) {
-            double orig = expected[i * 2];
-            double actual = data[i * 2];
-            assertEquals(info, orig, actual, tolerance);
-        }
+    int offset = 0;
+    int stride = 2;
+    Complex complex = new Complex(n);
+    complex.fft(data, offset, stride);
+    complex.inverse(data, offset, stride);
+    for (int i = 0; i < n; i++) {
+      double orig = expected[i * 2];
+      double actual = data[i * 2];
+      assertEquals(info, orig, actual, tolerance);
     }
+  }
 
-    /**
-     * Test of preferredDimension method, of class Complex.
-     */
-    @Test
-    public void testPreferredDimension() {
-        boolean result = Complex.preferredDimension(n);
-        assertEquals(info, preferred, result);
-    }
+  /** Test of preferredDimension method, of class Complex. */
+  @Test
+  public void testPreferredDimension() {
+    boolean result = Complex.preferredDimension(n);
+    assertEquals(info, preferred, result);
+  }
 }

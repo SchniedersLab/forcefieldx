@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,20 +34,19 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.cli;
 
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
+import static ffx.utilities.StringUtils.parseAtomRanges;
 import static java.lang.String.format;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsFunctions;
-import static ffx.utilities.StringUtils.parseAtomRanges;
-
+import java.util.List;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import picocli.CommandLine.Option;
 
 /**
@@ -59,256 +58,260 @@ import picocli.CommandLine.Option;
  */
 public class AlchemicalOptions {
 
-    /**
-     * The logger for this class.
-     */
-    public static final Logger logger = Logger.getLogger(AlchemicalOptions.class.getName());
+  /** The logger for this class. */
+  public static final Logger logger = Logger.getLogger(AlchemicalOptions.class.getName());
 
-    /**
-     * A regular expression used to parse ranges of atoms.
-     */
-    public static final Pattern rangeRegEx = Pattern.compile("([0-9]+)-?([0-9]+)?");
+  /** A regular expression used to parse ranges of atoms. */
+  public static final Pattern rangeRegEx = Pattern.compile("([0-9]+)-?([0-9]+)?");
 
-    /**
-     * -l or --lambda sets the initial lambda value.
-     */
-    @Option(names = {"-l", "--lambda"}, paramLabel = "-1",
-            description = "Initial lambda value.")
-    double initialLambda = -1.0;
+  /** -l or --lambda sets the initial lambda value. */
+  @Option(
+      names = {"-l", "--lambda"},
+      paramLabel = "-1",
+      description = "Initial lambda value.")
+  double initialLambda = -1.0;
 
-    /**
-     * --ac or --alchemicalAtoms Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]."
-     */
-    @Option(names = {"--ac", "--alchemicalAtoms"}, paramLabel = "<selection>", defaultValue = "",
-            description = "Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N].")
-    String alchemicalAtoms;
+  /** --ac or --alchemicalAtoms Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]." */
+  @Option(
+      names = {"--ac", "--alchemicalAtoms"},
+      paramLabel = "<selection>",
+      defaultValue = "",
+      description = "Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N].")
+  String alchemicalAtoms;
 
-    /**
-     * --uc or --unchargedAtoms Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N]."
-     */
-    @Option(names = {"--uc", "--unchargedAtoms"}, paramLabel = "<selection>", defaultValue = "",
-            description = "Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N].")
-    String unchargedAtoms;
+  /**
+   * --uc or --unchargedAtoms Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N]."
+   */
+  @Option(
+      names = {"--uc", "--unchargedAtoms"},
+      paramLabel = "<selection>",
+      defaultValue = "",
+      description = "Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N].")
+  String unchargedAtoms;
 
-    /**
-     * Gets the initial value of lambda.
-     *
-     * @return Initial lambda.
-     */
-    public double getInitialLambda() {
-        return getInitialLambda(false);
+  /**
+   * Sets the alchemical atoms for a MolecularAssembly.
+   *
+   * @param assembly Assembly to which the atoms belong.
+   */
+  public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms) {
+    if (alchemicalAtoms == null || alchemicalAtoms.equalsIgnoreCase("")) {
+      // Empty or null string -- no changes to alchemical atoms.
+      logger.info(" Empty alchemical selection.");
+      return;
     }
 
-    /**
-     * Gets the initial value of lambda.
-     *
-     * @param quiet No logging if quiet.
-     * @return Initial lambda.
-     */
-    public double getInitialLambda(boolean quiet) {
-        return getInitialLambda(1, 0, quiet);
+    Atom[] atoms = assembly.getAtomArray();
+
+    // No alchemical are atoms.
+    if (alchemicalAtoms.equalsIgnoreCase("NONE")) {
+      for (Atom atom : atoms) {
+        atom.setApplyLambda(false);
+      }
+      logger.info(" No atoms are alchemical \n");
+      return;
     }
 
-    /**
-     * Gets the initial value of lambda.
-     *
-     * @param size The number of processes.
-     * @param rank THe rank of this process.
-     * @return Initial lambda.
-     */
-    public double getInitialLambda(int size, int rank) {
-        return getInitialLambda(size, rank, false);
+    // All atoms are alchemical.
+    if (alchemicalAtoms.equalsIgnoreCase("ALL")) {
+      for (Atom atom : atoms) {
+        atom.setApplyLambda(true);
+      }
+      logger.info(" All atoms are alchemical \n");
+      return;
     }
 
-    /**
-     * Gets the initial value of lambda.
-     *
-     * @param size  The number of processes.
-     * @param rank  THe rank of this process.
-     * @param quiet No logging if quiet.
-     * @return Initial lambda.
-     */
-    public double getInitialLambda(int size, int rank, boolean quiet) {
-        if (initialLambda < 0.0 || initialLambda > 1.0) {
-            if (rank == 0 || size < 2) {
-                initialLambda = 0.0;
-                if (!quiet) logger.info(format(" Setting lambda to %5.3f", initialLambda));
-            } else if (rank == size - 1) {
-                initialLambda = 1.0;
-                if (!quiet) logger.info(format(" Setting lambda to %5.3f", initialLambda));
-            } else {
-                double dL = 1.0 / (size - 1);
-                initialLambda = dL * rank;
-                if (!quiet) logger.info(format(" Setting lambda to %5.3f.", initialLambda));
-            }
-        }
-        return initialLambda;
+    // A range(s) of atoms are alchemical.
+    int nAtoms = atoms.length;
+    for (Atom atom : atoms) {
+      atom.setApplyLambda(false);
+    }
+    List<Integer> alchemicalAtomRanges =
+        parseAtomRanges(" Alchemical atoms", alchemicalAtoms, nAtoms);
+    for (int i : alchemicalAtomRanges) {
+      atoms[i].setApplyLambda(true);
+    }
+    logger.info(" Alchemical atoms set to: " + alchemicalAtoms + "\n");
+  }
+
+  /**
+   * Sets the alchemical atoms for a MolecularAssembly.
+   *
+   * @param assembly Assembly to which the atoms belong.
+   */
+  public static void setUnchargedAtoms(MolecularAssembly assembly, String unchargedAtoms) {
+    if (unchargedAtoms == null || unchargedAtoms.equalsIgnoreCase("")) {
+      // Empty or null string -- no changes to uncharged atoms.
+      return;
     }
 
-    /**
-     * If any softcore Atoms have been detected.
-     *
-     * @return Presence of softcore Atoms.
-     */
-    public boolean hasSoftcore() {
-        return (alchemicalAtoms != null &&
-                !alchemicalAtoms.equalsIgnoreCase("NONE") &&
-                !alchemicalAtoms.equalsIgnoreCase(""));
+    Atom[] atoms = assembly.getAtomArray();
+
+    // No alchemical are atoms.
+    if (unchargedAtoms.equalsIgnoreCase("NONE")) {
+      for (Atom atom : atoms) {
+        atom.setElectrostatics(false);
+      }
+      logger.info(" No atoms are uncharged.\n");
+      return;
     }
 
-    /**
-     * Opens a File to a MolecularAssembly for alchemistry.
-     *
-     * @param potentialFunctions A utility object for opening Files into MolecularAssemblys.
-     * @param topOptions         TopologyOptions in case a dual-topology or greater is to be used.
-     * @param threadsPer         Number of threads to be used for this MolecularAssembly.
-     * @param toOpen             The name of the File to be opened.
-     * @param topNum             The index of this topology.
-     * @return The processed MolecularAssembly.
-     */
-    public MolecularAssembly openFile(PotentialsFunctions potentialFunctions, TopologyOptions topOptions, int threadsPer, String toOpen, int topNum) {
-        potentialFunctions.openAll(toOpen, threadsPer);
-        MolecularAssembly mola = potentialFunctions.getActiveAssembly();
-        return processFile(topOptions, mola, topNum);
+    // All atoms are alchemical.
+    if (unchargedAtoms.equalsIgnoreCase("ALL")) {
+      for (Atom atom : atoms) {
+        atom.setElectrostatics(true);
+      }
+      logger.info(" All atoms are uncharged.\n");
+      return;
     }
 
-    /**
-     * Performs processing on a MolecularAssembly for alchemistry.
-     *
-     * @param topOptions TopologyOptions in case a dual-topology or greater is to be used.
-     * @param mola       The MolecularAssembly to be processed.
-     * @param topNum     The index of this topology, 0-indexed.
-     * @return The processed MolecularAssembly.
-     */
-    public MolecularAssembly processFile(TopologyOptions topOptions, MolecularAssembly mola, int topNum) {
+    // A range(s) of atoms are uncharged.
+    int nAtoms = atoms.length;
+    for (Atom atom : atoms) {
+      atom.setElectrostatics(true);
+    }
+    List<Integer> unchargedAtomRanges = parseAtomRanges(" Uncharged atoms", unchargedAtoms, nAtoms);
+    for (int i : unchargedAtomRanges) {
+      atoms[i].setElectrostatics(false);
+    }
+    logger.info(" Uncharged atoms set to: " + unchargedAtoms + "\n");
+  }
 
-        int remainder = (topNum % 2) + 1;
-        switch (remainder) {
-            case 1:
-                setFirstSystemAlchemistry(mola);
-                setFirstSystemUnchargedAtoms(mola);
-                break;
-            case 2:
-                if (topOptions == null) {
-                    throw new IllegalArgumentException(" For >= 2 systems, topOptions must not be empty!");
-                }
-                topOptions.setSecondSystemAlchemistry(mola);
-                topOptions.setSecondSystemUnchargedAtoms(mola);
-                break;
+  /**
+   * Gets the initial value of lambda.
+   *
+   * @return Initial lambda.
+   */
+  public double getInitialLambda() {
+    return getInitialLambda(false);
+  }
+
+  /**
+   * Gets the initial value of lambda.
+   *
+   * @param quiet No logging if quiet.
+   * @return Initial lambda.
+   */
+  public double getInitialLambda(boolean quiet) {
+    return getInitialLambda(1, 0, quiet);
+  }
+
+  /**
+   * Gets the initial value of lambda.
+   *
+   * @param size The number of processes.
+   * @param rank THe rank of this process.
+   * @return Initial lambda.
+   */
+  public double getInitialLambda(int size, int rank) {
+    return getInitialLambda(size, rank, false);
+  }
+
+  /**
+   * Gets the initial value of lambda.
+   *
+   * @param size The number of processes.
+   * @param rank THe rank of this process.
+   * @param quiet No logging if quiet.
+   * @return Initial lambda.
+   */
+  public double getInitialLambda(int size, int rank, boolean quiet) {
+    if (initialLambda < 0.0 || initialLambda > 1.0) {
+      if (rank == 0 || size < 2) {
+        initialLambda = 0.0;
+        if (!quiet) logger.info(format(" Setting lambda to %5.3f", initialLambda));
+      } else if (rank == size - 1) {
+        initialLambda = 1.0;
+        if (!quiet) logger.info(format(" Setting lambda to %5.3f", initialLambda));
+      } else {
+        double dL = 1.0 / (size - 1);
+        initialLambda = dL * rank;
+        if (!quiet) logger.info(format(" Setting lambda to %5.3f.", initialLambda));
+      }
+    }
+    return initialLambda;
+  }
+
+  /**
+   * If any softcore Atoms have been detected.
+   *
+   * @return Presence of softcore Atoms.
+   */
+  public boolean hasSoftcore() {
+    return (alchemicalAtoms != null
+        && !alchemicalAtoms.equalsIgnoreCase("NONE")
+        && !alchemicalAtoms.equalsIgnoreCase(""));
+  }
+
+  /**
+   * Opens a File to a MolecularAssembly for alchemistry.
+   *
+   * @param potentialFunctions A utility object for opening Files into MolecularAssemblys.
+   * @param topOptions TopologyOptions in case a dual-topology or greater is to be used.
+   * @param threadsPer Number of threads to be used for this MolecularAssembly.
+   * @param toOpen The name of the File to be opened.
+   * @param topNum The index of this topology.
+   * @return The processed MolecularAssembly.
+   */
+  public MolecularAssembly openFile(
+      PotentialsFunctions potentialFunctions,
+      TopologyOptions topOptions,
+      int threadsPer,
+      String toOpen,
+      int topNum) {
+    potentialFunctions.openAll(toOpen, threadsPer);
+    MolecularAssembly mola = potentialFunctions.getActiveAssembly();
+    return processFile(topOptions, mola, topNum);
+  }
+
+  /**
+   * Performs processing on a MolecularAssembly for alchemistry.
+   *
+   * @param topOptions TopologyOptions in case a dual-topology or greater is to be used.
+   * @param mola The MolecularAssembly to be processed.
+   * @param topNum The index of this topology, 0-indexed.
+   * @return The processed MolecularAssembly.
+   */
+  public MolecularAssembly processFile(
+      TopologyOptions topOptions, MolecularAssembly mola, int topNum) {
+
+    int remainder = (topNum % 2) + 1;
+    switch (remainder) {
+      case 1:
+        setFirstSystemAlchemistry(mola);
+        setFirstSystemUnchargedAtoms(mola);
+        break;
+      case 2:
+        if (topOptions == null) {
+          throw new IllegalArgumentException(" For >= 2 systems, topOptions must not be empty!");
         }
-
-        // Turn off checks for overlapping atoms, which is expected for lambda=0.
-        ForceFieldEnergy energy = mola.getPotentialEnergy();
-        energy.getCrystal().setSpecialPositionCutoff(0.0);
-
-        return mola;
+        topOptions.setSecondSystemAlchemistry(mola);
+        topOptions.setSecondSystemUnchargedAtoms(mola);
+        break;
     }
 
-    /**
-     * Sets the alchemical atoms for a MolecularAssembly.
-     *
-     * @param assembly Assembly to which the atoms belong.
-     */
-    public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms) {
-        if (alchemicalAtoms == null || alchemicalAtoms.equalsIgnoreCase("")) {
-            // Empty or null string -- no changes to alchemical atoms.
-            logger.info(" Empty alchemical selection.");
-            return;
-        }
+    // Turn off checks for overlapping atoms, which is expected for lambda=0.
+    ForceFieldEnergy energy = mola.getPotentialEnergy();
+    energy.getCrystal().setSpecialPositionCutoff(0.0);
 
-        Atom[] atoms = assembly.getAtomArray();
+    return mola;
+  }
 
-        // No alchemical are atoms.
-        if (alchemicalAtoms.equalsIgnoreCase("NONE")) {
-            for (Atom atom : atoms) {
-                atom.setApplyLambda(false);
-            }
-            logger.info(" No atoms are alchemical \n");
-            return;
-        }
+  /**
+   * Set the alchemical atoms for this molecularAssembly.
+   *
+   * @param topology a {@link ffx.potential.MolecularAssembly} object.
+   */
+  public void setFirstSystemAlchemistry(MolecularAssembly topology) {
+    setAlchemicalAtoms(topology, alchemicalAtoms);
+  }
 
-        // All atoms are alchemical.
-        if (alchemicalAtoms.equalsIgnoreCase("ALL")) {
-            for (Atom atom : atoms) {
-                atom.setApplyLambda(true);
-            }
-            logger.info(" All atoms are alchemical \n");
-            return;
-        }
-
-        // A range(s) of atoms are alchemical.
-        int nAtoms = atoms.length;
-        for (Atom atom : atoms) {
-            atom.setApplyLambda(false);
-        }
-        List<Integer> alchemicalAtomRanges = parseAtomRanges(" Alchemical atoms", alchemicalAtoms, nAtoms);
-        for (int i : alchemicalAtomRanges) {
-            atoms[i].setApplyLambda(true);
-        }
-        logger.info(" Alchemical atoms set to: " + alchemicalAtoms + "\n");
-
-    }
-
-    /**
-     * Set the alchemical atoms for this molecularAssembly.
-     *
-     * @param topology a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void setFirstSystemAlchemistry(MolecularAssembly topology) {
-        setAlchemicalAtoms(topology, alchemicalAtoms);
-    }
-
-    /**
-     * Set uncharged atoms for this molecularAssembly.
-     *
-     * @param topology a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void setFirstSystemUnchargedAtoms(MolecularAssembly topology) {
-        setUnchargedAtoms(topology, unchargedAtoms);
-    }
-
-    /**
-     * Sets the alchemical atoms for a MolecularAssembly.
-     *
-     * @param assembly Assembly to which the atoms belong.
-     */
-    public static void setUnchargedAtoms(MolecularAssembly assembly, String unchargedAtoms) {
-        if (unchargedAtoms == null || unchargedAtoms.equalsIgnoreCase("")) {
-            // Empty or null string -- no changes to uncharged atoms.
-            return;
-        }
-
-        Atom[] atoms = assembly.getAtomArray();
-
-        // No alchemical are atoms.
-        if (unchargedAtoms.equalsIgnoreCase("NONE")) {
-            for (Atom atom : atoms) {
-                atom.setElectrostatics(false);
-            }
-            logger.info(" No atoms are uncharged.\n");
-            return;
-        }
-
-        // All atoms are alchemical.
-        if (unchargedAtoms.equalsIgnoreCase("ALL")) {
-            for (Atom atom : atoms) {
-                atom.setElectrostatics(true);
-            }
-            logger.info(" All atoms are uncharged.\n");
-            return;
-        }
-
-        // A range(s) of atoms are uncharged.
-        int nAtoms = atoms.length;
-        for (Atom atom : atoms) {
-            atom.setElectrostatics(true);
-        }
-        List<Integer> unchargedAtomRanges = parseAtomRanges(" Uncharged atoms", unchargedAtoms, nAtoms);
-        for (int i : unchargedAtomRanges) {
-            atoms[i].setElectrostatics(false);
-        }
-        logger.info(" Uncharged atoms set to: " + unchargedAtoms + "\n");
-
-    }
-
+  /**
+   * Set uncharged atoms for this molecularAssembly.
+   *
+   * @param topology a {@link ffx.potential.MolecularAssembly} object.
+   */
+  public void setFirstSystemUnchargedAtoms(MolecularAssembly topology) {
+    setUnchargedAtoms(topology, unchargedAtoms);
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,118 +34,95 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.switching;
 
 /**
  * A LinearDerivativeSwitch interpolates between 0 and 1 vi f(x) = 2*x - x^2.
- * <p>
- * The derivative is then linear in x: f'(x) = 2 - 2*x
- * <p>
- * Limiting behavior is given by: f(0) = 0, f(1) = 1, f'(0) = 2, f'(1) = 0.
+ *
+ * <p>The derivative is then linear in x: f'(x) = 2 - 2*x
+ *
+ * <p>Limiting behavior is given by: f(0) = 0, f(1) = 1, f'(0) = 2, f'(1) = 0.
  *
  * @author Michael J. Schnieders
  */
 public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
 
-    /**
-     * Constructor for the LinearDerivativeSwitch.
-     */
-    public LinearDerivativeSwitch() {
-    }
+  /** Constructor for the LinearDerivativeSwitch. */
+  public LinearDerivativeSwitch() {}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean constantOutsideBounds() {
-        return false;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean constantOutsideBounds() {
+    return false;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double firstDerivative(double x) throws IllegalArgumentException {
-        return 2.0 - 2.0 * x;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public double firstDerivative(double x) throws IllegalArgumentException {
+    return 2.0 - 2.0 * x;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getHighestOrderZeroDerivative() {
+  /** {@inheritDoc} */
+  @Override
+  public int getHighestOrderZeroDerivative() {
+    return 0;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double getOneBound() {
+    return 1;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double getZeroBound() {
+    return 0;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double nthDerivative(double x, int order) throws IllegalArgumentException {
+    if (order < 1) {
+      throw new IllegalArgumentException("Order must be >= 1");
+    }
+    switch (order) {
+      case 1:
+        return firstDerivative(x);
+      case 2:
+        return secondDerivative(x);
+      default:
         return 0;
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getOneBound() {
-        return 1;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public double secondDerivative(double x) throws IllegalArgumentException {
+    return -2.0;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getZeroBound() {
-        return 0;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean symmetricToUnity() {
+    return false;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double nthDerivative(double x, int order) throws IllegalArgumentException {
-        if (order < 1) {
-            throw new IllegalArgumentException("Order must be >= 1");
-        }
-        switch (order) {
-            case 1:
-                return firstDerivative(x);
-            case 2:
-                return secondDerivative(x);
-            default:
-                return 0;
-        }
-    }
+  @Override
+  public String toString() {
+    return "Polynomial switch of form f(x) = 2x - x^2";
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double secondDerivative(double x) throws IllegalArgumentException {
-        return -2.0;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean validOutsideBounds() {
+    return false;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean symmetricToUnity() {
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return "Polynomial switch of form f(x) = 2x - x^2";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean validOutsideBounds() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double valueAt(double x) throws IllegalArgumentException {
-        return 2 * x - (x * x);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public double valueAt(double x) throws IllegalArgumentException {
+    return 2 * x - (x * x);
+  }
 }

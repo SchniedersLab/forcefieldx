@@ -37,17 +37,17 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import java.util.logging.Level
-import static java.lang.String.format
-
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
-
 import picocli.CommandLine
+
+import java.util.logging.Level
+
+import static java.lang.String.format
 
 /**
  * The Energy script compares the energy of a system with OpenMM versus FFX platforms.
@@ -58,110 +58,111 @@ import picocli.CommandLine
  */
 @CommandLine.Command(description = " Compute energies and gradients with both FFX and OpenMM.", name = "ffxc test.EnergyOpenMM")
 class EnergyOpenMM extends PotentialScript {
-    public double energy = 0.0
-    public ForceFieldEnergy forceFieldEnergy = null
 
-    /**
-     * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
-     */
-    @CommandLine.Option(names = ['--es1', '--noElecStart1'], paramLabel = "1",
-            description = 'Starting no-electrostatics atom for 1st topology')
-    private int es1 = 1
+  public double energy = 0.0
+  public ForceFieldEnergy forceFieldEnergy = null
 
-    /**
-     * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
-     */
-    @CommandLine.Option(names = ['--ef1', '--noElecFinal1'], paramLabel = "-1",
-            description = 'Final no-electrostatics atom for 1st topology')
-    private int ef1 = -1
+  /**
+   * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
+   */
+  @CommandLine.Option(names = ['--es1', '--noElecStart1'], paramLabel = "1",
+      description = 'Starting no-electrostatics atom for 1st topology')
+  private int es1 = 1
 
-    /**
-     * The final argument(s) should be one or more filenames.
-     */
-    @CommandLine.Parameters(arity = "1", paramLabel = "files",
-            description = 'The atomic coordinate file in PDB or XYZ format.')
-    private List<String> filenames = null
+  /**
+   * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
+   */
+  @CommandLine.Option(names = ['--ef1', '--noElecFinal1'], paramLabel = "-1",
+      description = 'Final no-electrostatics atom for 1st topology')
+  private int ef1 = -1
 
-    @Override
-    EnergyOpenMM run() {
-        if (!init()) {
-            return null
-        }
+  /**
+   * The final argument(s) should be one or more filenames.
+   */
+  @CommandLine.Parameters(arity = "1", paramLabel = "files",
+      description = 'The atomic coordinate file in PDB or XYZ format.')
+  private List<String> filenames = null
 
-        if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return null
-        }
-
-        String filename = activeAssembly.getFile().getAbsolutePath()
-        logger.info(" Running Energy on " + filename)
-
-        forceFieldEnergy = activeAssembly.getPotentialEnergy()
-        if (!forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
-            logger.severe(" test.EnergyOpenMM requires use of an OpenMM platform!")
-        }
-        Atom[] atoms = activeAssembly.getAtomArray()
-
-        // Apply the no electrostatics atom selection
-        int noElecStart = es1
-        noElecStart = (noElecStart < 1) ? 1 : noElecStart
-
-        int noElecStop = ef1
-        noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop
-
-        if (noElecStart <= noElecStop) {
-            logger.info(format(" Disabling electrostatics for atoms %d (%s) to %d (%s).",
-                    noElecStart, atoms[noElecStart - 1], noElecStop, atoms[noElecStop - 1]))
-        }
-        for (int i = noElecStart; i <= noElecStop; i++) {
-            Atom ai = atoms[i - 1]
-            ai.setElectrostatics(false)
-            ai.print(Level.FINE)
-        }
-
-        int nVars = forceFieldEnergy.getNumberOfVariables()
-        double[] x = new double[nVars]
-        forceFieldEnergy.getCoordinates(x)
-
-        double[] gFFX = new double[nVars]
-        double[] gOMM = new double[nVars]
-
-        ForceFieldEnergyOpenMM feOMM = (ForceFieldEnergyOpenMM) forceFieldEnergy
-
-        double dE = feOMM.energyAndGradientFFX(x, gFFX, true);
-        dE = dE - feOMM.energyAndGradient(x, gOMM, true);
-        logger.info(format(" Difference in energy: %14.8g kcal/mol", dE))
-        int nActAts = (int) (nVars / 3)
-
-        for (int i = 0; i < nActAts; i++) {
-            double[] dG = new double[3]
-            int i3 = 3 * i
-            double rmse = 0
-            for (int j = 0; j < 3; j++) {
-                dG[j] = gFFX[i3 + j] - gOMM[i3 + j]
-                rmse += (dG[j] * dG[j])
-            }
-            rmse /= 3
-            rmse = Math.sqrt(rmse)
-            Level toPrint = (rmse > 1E-8) ? Level.INFO : Level.FINE
-            logger.log(toPrint, format(" Active atom %d dG RMSE: %14.8g kcal/mol/A", i, rmse))
-        }
-
-        return this
+  @Override
+  EnergyOpenMM run() {
+    if (!init()) {
+      return null
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        List<Potential> potentials
-        if (forceFieldEnergy == null) {
-            potentials = Collections.emptyList()
-        } else {
-            potentials = Collections.singletonList(forceFieldEnergy)
-        }
-        return potentials
+    if (filenames != null && filenames.size() > 0) {
+      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
+      activeAssembly = assemblies[0]
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return null
     }
+
+    String filename = activeAssembly.getFile().getAbsolutePath()
+    logger.info(" Running Energy on " + filename)
+
+    forceFieldEnergy = activeAssembly.getPotentialEnergy()
+    if (!forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
+      logger.severe(" test.EnergyOpenMM requires use of an OpenMM platform!")
+    }
+    Atom[] atoms = activeAssembly.getAtomArray()
+
+    // Apply the no electrostatics atom selection
+    int noElecStart = es1
+    noElecStart = (noElecStart < 1) ? 1 : noElecStart
+
+    int noElecStop = ef1
+    noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop
+
+    if (noElecStart <= noElecStop) {
+      logger.info(format(" Disabling electrostatics for atoms %d (%s) to %d (%s).",
+          noElecStart, atoms[noElecStart - 1], noElecStop, atoms[noElecStop - 1]))
+    }
+    for (int i = noElecStart; i <= noElecStop; i++) {
+      Atom ai = atoms[i - 1]
+      ai.setElectrostatics(false)
+      ai.print(Level.FINE)
+    }
+
+    int nVars = forceFieldEnergy.getNumberOfVariables()
+    double[] x = new double[nVars]
+    forceFieldEnergy.getCoordinates(x)
+
+    double[] gFFX = new double[nVars]
+    double[] gOMM = new double[nVars]
+
+    ForceFieldEnergyOpenMM feOMM = (ForceFieldEnergyOpenMM) forceFieldEnergy
+
+    double dE = feOMM.energyAndGradientFFX(x, gFFX, true);
+    dE = dE - feOMM.energyAndGradient(x, gOMM, true);
+    logger.info(format(" Difference in energy: %14.8g kcal/mol", dE))
+    int nActAts = (int) (nVars / 3)
+
+    for (int i = 0; i < nActAts; i++) {
+      double[] dG = new double[3]
+      int i3 = 3 * i
+      double rmse = 0
+      for (int j = 0; j < 3; j++) {
+        dG[j] = gFFX[i3 + j] - gOMM[i3 + j]
+        rmse += (dG[j] * dG[j])
+      }
+      rmse /= 3
+      rmse = Math.sqrt(rmse)
+      Level toPrint = (rmse > 1E-8) ? Level.INFO : Level.FINE
+      logger.log(toPrint, format(" Active atom %d dG RMSE: %14.8g kcal/mol/A", i, rmse))
+    }
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    List<Potential> potentials
+    if (forceFieldEnergy == null) {
+      potentials = Collections.emptyList()
+    } else {
+      potentials = Collections.singletonList(forceFieldEnergy)
+    }
+    return potentials
+  }
 
 }

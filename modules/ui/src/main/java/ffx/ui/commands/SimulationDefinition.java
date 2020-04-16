@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.commands;
 
 import java.io.Serializable;
@@ -46,58 +46,54 @@ import java.io.Serializable;
  */
 public class SimulationDefinition implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    public boolean read = true;
-    // System definition
-    public int numatoms;
-    public int numkeys;
-    public String file;
-    public String forcefield;
-    public String[] keywords;
-    public double[][] coordinates;
-    public int[][] connectivity;
-    public int[] types;
-    public String[] name;
-    public String[] story;
-    public double[] charge;
-    public double[] mass;
-    public int[] atomic;
+  private static final long serialVersionUID = 1L;
+  public boolean read = true;
+  // System definition
+  public int numatoms;
+  public int numkeys;
+  public String file;
+  public String forcefield;
+  public String[] keywords;
+  public double[][] coordinates;
+  public int[][] connectivity;
+  public int[] types;
+  public String[] name;
+  public String[] story;
+  public double[] charge;
+  public double[] mass;
+  public int[] atomic;
 
-    /**
-     * Constructor that allocates space for a simulation definition.
-     *
-     * @param a The number of atoms
-     * @param k The number of keywords
-     */
-    public SimulationDefinition(int a, int k) {
-        numatoms = a;
-        numkeys = k;
-        keywords = new String[k];
-        coordinates = new double[3][a];
-        connectivity = new int[4][a];
-        types = new int[a];
-        name = new String[a];
-        story = new String[a];
-        charge = new double[a];
-        mass = new double[a];
-        atomic = new int[a];
-    }
+  /**
+   * Constructor that allocates space for a simulation definition.
+   *
+   * @param a The number of atoms
+   * @param k The number of keywords
+   */
+  public SimulationDefinition(int a, int k) {
+    numatoms = a;
+    numkeys = k;
+    keywords = new String[k];
+    coordinates = new double[3][a];
+    connectivity = new int[4][a];
+    types = new int[a];
+    name = new String[a];
+    story = new String[a];
+    charge = new double[a];
+    mass = new double[a];
+    atomic = new int[a];
+  }
 
-    /**
-     * <p>
-     * print</p>
-     */
-    public void print() {
-        System.out.println(this.toString());
-    }
+  /** print */
+  public void print() {
+    System.out.println(this.toString());
+  }
 
-    /**
-     * <p>
-     * toString</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String toString() {
-        return new String("Atoms: " + numatoms + " Keywords: " + numkeys);
-    }
+  /**
+   * toString
+   *
+   * @return a {@link java.lang.String} object.
+   */
+  public String toString() {
+    return new String("Atoms: " + numatoms + " Keywords: " + numkeys);
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,105 +34,96 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.commands;
 
 import java.io.Serializable;
 
 /**
- * The SimulationUpdate class is a serializable wrapper for FFX simulation data that changes during a simulation.
+ * The SimulationUpdate class is a serializable wrapper for FFX simulation data that changes during
+ * a simulation.
  *
  * @author Michael J. Schnieders
  */
 public class SimulationUpdate implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    /**
-     * Constant <code>NONE=0</code>
-     */
-    public static int NONE = 0;
-    /**
-     * Constant <code>SIMULATION=1</code>
-     */
-    public static int SIMULATION = 1;
-    /**
-     * Constant <code>OPTIMIZATION=2</code>
-     */
-    public static int OPTIMIZATION = 2;
-    public boolean read = true;
-    // Type
-    public int type;
-    // Coordinates
-    public int numatoms;
-    public double[][] coordinates = null;
-    // Simulation Data
-    public double time = -0.1d;
-    public double temperature = 0.0d;
-    public double energy = 0.0d;
-    public double potential = 0.0d;
-    public double kinetic = 0.0d;
-    public double intermolecular = 0.0d;
-    public double pressure = 0.0d;
-    public double density = 0.0d;
-    public double[][] velocity = null;
-    public double[][] acceleration = null;
-    // Optimization Data
-    public int step = 0;
-    public double[][] gradients = null;
-    // Amoeba Data
-    public boolean amoeba;
-    public double[][] induced = null;
+  private static final long serialVersionUID = 1L;
+  /** Constant <code>NONE=0</code> */
+  public static int NONE = 0;
+  /** Constant <code>SIMULATION=1</code> */
+  public static int SIMULATION = 1;
+  /** Constant <code>OPTIMIZATION=2</code> */
+  public static int OPTIMIZATION = 2;
 
-    /**
-     * <p>
-     * Constructor for SimulationUpdate.</p>
-     *
-     * @param n a int.
-     * @param t a int.
-     * @param a a boolean.
-     */
-    public SimulationUpdate(int n, int t, boolean a) {
-        numatoms = n;
-        amoeba = a;
-        type = t;
-        coordinates = new double[3][numatoms];
-        if (type == SIMULATION) {
-            velocity = new double[3][numatoms];
-            acceleration = new double[3][numatoms];
-        } else if (type == OPTIMIZATION) {
-            gradients = new double[3][numatoms];
-        }
-        if (amoeba) {
-            induced = new double[3][numatoms];
-        }
-    }
+  public boolean read = true;
+  // Type
+  public int type;
+  // Coordinates
+  public int numatoms;
+  public double[][] coordinates = null;
+  // Simulation Data
+  public double time = -0.1d;
+  public double temperature = 0.0d;
+  public double energy = 0.0d;
+  public double potential = 0.0d;
+  public double kinetic = 0.0d;
+  public double intermolecular = 0.0d;
+  public double pressure = 0.0d;
+  public double density = 0.0d;
+  public double[][] velocity = null;
+  public double[][] acceleration = null;
+  // Optimization Data
+  public int step = 0;
+  public double[][] gradients = null;
+  // Amoeba Data
+  public boolean amoeba;
+  public double[][] induced = null;
 
-    /**
-     * <p>
-     * isNewer</p>
-     *
-     * @param message a {@link ffx.ui.commands.SimulationMessage} object.
-     * @return a boolean.
-     */
-    public boolean isNewer(SimulationMessage message) {
-        if (type == SIMULATION && time > message.getTime()) {
-            return true;
-        }
-        if (type == OPTIMIZATION && step > message.getStep()) {
-            return true;
-        }
-        return false;
+  /**
+   * Constructor for SimulationUpdate.
+   *
+   * @param n a int.
+   * @param t a int.
+   * @param a a boolean.
+   */
+  public SimulationUpdate(int n, int t, boolean a) {
+    numatoms = n;
+    amoeba = a;
+    type = t;
+    coordinates = new double[3][numatoms];
+    if (type == SIMULATION) {
+      velocity = new double[3][numatoms];
+      acceleration = new double[3][numatoms];
+    } else if (type == OPTIMIZATION) {
+      gradients = new double[3][numatoms];
     }
+    if (amoeba) {
+      induced = new double[3][numatoms];
+    }
+  }
 
-    /**
-     * <p>
-     * print</p>
-     */
-    public void print() {
-        if (type == SimulationUpdate.SIMULATION) {
-            System.out.println("Time: " + time + " Energy: " + energy);
-        } else {
-            System.out.println("Step: " + step + " Energy: " + energy);
-        }
+  /**
+   * isNewer
+   *
+   * @param message a {@link ffx.ui.commands.SimulationMessage} object.
+   * @return a boolean.
+   */
+  public boolean isNewer(SimulationMessage message) {
+    if (type == SIMULATION && time > message.getTime()) {
+      return true;
     }
+    if (type == OPTIMIZATION && step > message.getStep()) {
+      return true;
+    }
+    return false;
+  }
+
+  /** print */
+  public void print() {
+    if (type == SimulationUpdate.SIMULATION) {
+      System.out.println("Time: " + time + " Energy: " + energy);
+    } else {
+      System.out.println("Step: " + step + " Energy: " + energy);
+    }
+  }
 }

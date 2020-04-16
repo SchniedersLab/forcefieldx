@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,23 +34,23 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics;
-
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
 
 import ffx.numerics.math.SquareRootTest;
 import ffx.numerics.multipole.MultipoleTensorTest;
 import ffx.numerics.special.ErfTest;
 import ffx.numerics.spline.UniformBSplineTest;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
 
-/**
- * NumericsTestSuite collects all Unit tests from the ffx.numerics package.
- */
+/** NumericsTestSuite collects all Unit tests from the ffx.numerics package. */
 @RunWith(Suite.class)
-@SuiteClasses({ErfTest.class, SquareRootTest.class,
-        MultipoleTensorTest.class, UniformBSplineTest.class})
-public class NumericsTestSuite {
-}
+@SuiteClasses({
+  ErfTest.class,
+  SquareRootTest.class,
+  MultipoleTensorTest.class,
+  UniformBSplineTest.class
+})
+public class NumericsTestSuite {}

@@ -37,21 +37,16 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
-import groovy.cli.picocli.CliBuilder
-
 import ffx.algorithms.AlgorithmFunctions
 import ffx.algorithms.AlgorithmUtils
 import ffx.algorithms.misc.ClusterStructures
 import ffx.algorithms.misc.ClusterStructures.ClustAlg
 import ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction
 import ffx.potential.parsers.PDBFileFilter
-import static ffx.algorithms.misc.ClusterStructures.ClustAlg.AV_LINK
-import static ffx.algorithms.misc.ClusterStructures.ClustAlg.CLINK
-import static ffx.algorithms.misc.ClusterStructures.ClustAlg.SLINK
-import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.BACKBONE_DIHEDRALS
-import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.CA_RMSD
-import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.DIHEDRALS
-import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.RMSD
+import groovy.cli.picocli.CliBuilder
+
+import static ffx.algorithms.misc.ClusterStructures.ClustAlg.*
+import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.*
 
 boolean copyFiles = true
 boolean parallel = true
@@ -66,10 +61,14 @@ double rmsdCutoff = 1.0
 // Create the command line parser.
 def cli = new CliBuilder(usage: ' ffxc test.cluster [options] <pdbfilename>');
 cli.h(longOpt: 'help', 'Print this help message.');
-cli.w(longOpt: 'write', args: 1, argName: 'true', 'Write copies of PDB files to cluster directories.');
-cli.o(longOpt: 'outputDirectories', argName: 'ffx_cluster_', 'Prefix of cluster output directories (followed by number)');
-cli.d(longOpt: 'distanceFunction', argName: '1', 'Cluster based on all-atom RMSD (1), CA RMSD (2), all-torsion RMSD (3), or backbone torsion RMSD (4)');
-cli.a(longOpt: 'algorithm', argName: 'average', 'Make clusters using single, average, or complete linkage (SLINK, UPGMA, CLINK)');
+cli.w(longOpt: 'write', args: 1, argName: 'true',
+    'Write copies of PDB files to cluster directories.');
+cli.o(longOpt: 'outputDirectories', argName: 'ffx_cluster_',
+    'Prefix of cluster output directories (followed by number)');
+cli.d(longOpt: 'distanceFunction', argName: '1',
+    'Cluster based on all-atom RMSD (1), CA RMSD (2), all-torsion RMSD (3), or backbone torsion RMSD (4)');
+cli.a(longOpt: 'algorithm', argName: 'average',
+    'Make clusters using single, average, or complete linkage (SLINK, UPGMA, CLINK)');
 cli.r(longOpt: 'rmsdCutoff', argName: '1.0', 'RMSD at which to separate clusters.');
 cli.n(longOpt: 'numClusters', argName: '0', 'Number of clusters to generate; over-rides distance.');
 cli.p(longOpt: 'parallel', argName: 'true', 'Clusters in parallel.');
@@ -78,89 +77,93 @@ cli.c(longOpt: 'cacheSize', argName: '1000', 'Number of structures to retain in 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() < 1) {
-    logger.info(" The filename can be a directory of files to cluster, a text file of files to cluster, or a file to cluster.");
-    return cli.usage();
+  logger.info(
+      " The filename can be a directory of files to cluster, a text file of files to cluster, or a file to cluster.");
+  return cli.usage();
 }
 
 try {
-    utils = getAlgorithmUtils()
+  utils = getAlgorithmUtils()
 } catch (MissingMethodException ex) {
-    utils = new AlgorithmUtils()
+  utils = new AlgorithmUtils()
 }
 
 if (options.w) {
-    copyFiles = Boolean.parseBoolean(options.w);
+  copyFiles = Boolean.parseBoolean(options.w);
 }
 
 if (options.o) {
-    outputDirectoryName = options.o;
+  outputDirectoryName = options.o;
 }
 
 if (options.c) {
-    cacheSize = Integer.parseInt(options.c);
+  cacheSize = Integer.parseInt(options.c);
 }
 
 if (options.r) {
-    rmsdCutoff = Double.parseDouble(options.r);
+  rmsdCutoff = Double.parseDouble(options.r);
 }
 
 if (options.d) {
-    int value = Integer.parseInt(options.d);
-    switch (value) {
-        case 1:
-            distFunction = RMSD;
-            break;
-        case 2:
-            distFunction = CA_RMSD;
-            break;
-        case 3:
-            distFunction = DIHEDRALS;
-            break;
-        case 4:
-            distFunction = BACKBONE_DIHEDRALS;
-            break;
-        default:
-            logger.warning(String.format(" Invalid selection %d for distance function; must be 1, 2, 3, or 4. Defaulting to average linkage.", value));
-            distFunction = RMSD;
-            break;
-    }
+  int value = Integer.parseInt(options.d);
+  switch (value) {
+    case 1:
+      distFunction = RMSD;
+      break;
+    case 2:
+      distFunction = CA_RMSD;
+      break;
+    case 3:
+      distFunction = DIHEDRALS;
+      break;
+    case 4:
+      distFunction = BACKBONE_DIHEDRALS;
+      break;
+    default:
+      logger.warning(String.format(
+          " Invalid selection %d for distance function; must be 1, 2, 3, or 4. Defaulting to average linkage.",
+          value));
+      distFunction = RMSD;
+      break;
+  }
 }
 
 if (options.a) {
-    String algo = options.a.toUpperCase();
-    switch (algo) {
-        case "SLINK":
-        case "SINGLE":
-        case "SINGLE_LINKAGE":
-            algorithm = SLINK;
-            break;
-        case "AV_LINK":
-        case "AVERAGE":
-        case "UPGMA":
-        case "AVERAGE_LINKAGE":
-            algorithm = AV_LINK;
-            break;
-        case "CLINK":
-        case "COMPLETE":
-        case "COMPLETE_LINKAGE":
-            algorithm = CLINK;
-            break;
-        default:
-            logger.warning(String.format(" Invalid algorithm selection %s; must be SLINK, AV_LINK, or CLINK", algo));
-            break;
-    }
+  String algo = options.a.toUpperCase();
+  switch (algo) {
+    case "SLINK":
+    case "SINGLE":
+    case "SINGLE_LINKAGE":
+      algorithm = SLINK;
+      break;
+    case "AV_LINK":
+    case "AVERAGE":
+    case "UPGMA":
+    case "AVERAGE_LINKAGE":
+      algorithm = AV_LINK;
+      break;
+    case "CLINK":
+    case "COMPLETE":
+    case "COMPLETE_LINKAGE":
+      algorithm = CLINK;
+      break;
+    default:
+      logger.warning(
+          String.format(" Invalid algorithm selection %s; must be SLINK, AV_LINK, or CLINK", algo));
+      break;
+  }
 }
 
 if (options.n) {
-    numClusters = Integer.parseInt(options.n);
+  numClusters = Integer.parseInt(options.n);
 }
 
 if (options.p) {
-    parallel = Boolean.parseBoolean(options.p);
+  parallel = Boolean.parseBoolean(options.p);
 }
 
 if (numClusters < 1 && rmsdCutoff <= 0) {
-    logger.severe(" Invalid options: number of distances and RMSD cutoff are both 0 or less.");
+  logger.severe(" Invalid options: number of distances and RMSD cutoff are both 0 or less.");
 }
 
 PDBFileFilter pdbFilter = new PDBFileFilter();
@@ -170,15 +173,16 @@ List<File> modelFiles = new ArrayList<>()
 String dirname = arguments.get(i);
 File dir = new File(dirname);
 if (!dir.exists() || !dir.isDirectory()) {
-    logger.severe(" Argument was not a directory (preliminary loading system only takes a directory)");
+  logger.
+      severe(" Argument was not a directory (preliminary loading system only takes a directory)");
 }
 File[] allFiles = dir.listFiles();
 for (File file : allFiles) {
-    if (pdbFilter.acceptDeep(file)) {
-        modelFiles.add(file);
-    } else {
-        logger.info(String.format(" File %s not accepted.", file.getName()));
-    }
+  if (pdbFilter.acceptDeep(file)) {
+    modelFiles.add(file);
+  } else {
+    logger.info(String.format(" File %s not accepted.", file.getName()));
+  }
 }
 
 /**

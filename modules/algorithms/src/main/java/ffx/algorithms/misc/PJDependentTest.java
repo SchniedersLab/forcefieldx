@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,43 +34,38 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.misc;
 
+import edu.rit.pj.Comm;
+import ffx.utilities.BaseFFXTest;
 import java.util.logging.Level;
-
 import org.junit.BeforeClass;
 
-import edu.rit.pj.Comm;
-
-import ffx.utilities.BaseFFXTest;
-
 /**
- * <p>Abstract PJDependentTest class.</p>
+ * Abstract PJDependentTest class.
  *
  * @author Michael J. Schnieders
  */
 public abstract class PJDependentTest extends BaseFFXTest {
 
-    /**
-     * <p>beforeClass.</p>
-     */
-    @BeforeClass
-    public static void beforeClass() {
-        BaseFFXTest.beforeClass();
-        // Initialize Parallel Java
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String[] args = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = " Exception starting up the Parallel Java communication layer.";
-                logger.log(Level.WARNING, message, e.toString());
-                message = " Skipping rotamer optimization test.";
-                logger.log(Level.WARNING, message, e.toString());
-            }
-        }
+  /** beforeClass. */
+  @BeforeClass
+  public static void beforeClass() {
+    BaseFFXTest.beforeClass();
+    // Initialize Parallel Java
+    try {
+      Comm.world();
+    } catch (IllegalStateException ise) {
+      try {
+        String[] args = new String[0];
+        Comm.init(args);
+      } catch (Exception e) {
+        String message = " Exception starting up the Parallel Java communication layer.";
+        logger.log(Level.WARNING, message, e.toString());
+        message = " Skipping rotamer optimization test.";
+        logger.log(Level.WARNING, message, e.toString());
+      }
     }
+  }
 }

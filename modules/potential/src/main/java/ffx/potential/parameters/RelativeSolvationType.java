@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,21 +34,20 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parameters;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.RELATIVESOLV;
+import static java.lang.Double.parseDouble;
+import static java.lang.String.format;
 
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.lang.Double.parseDouble;
-import static java.lang.String.format;
-
-import static ffx.potential.parameters.ForceField.ForceFieldType.RELATIVESOLV;
 
 /**
- * A BaseType for relative solvation energies (intended for nonstandard amino
- * acids).
+ * A BaseType for relative solvation energies (intended for nonstandard amino acids).
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -56,106 +55,91 @@ import static ffx.potential.parameters.ForceField.ForceFieldType.RELATIVESOLV;
  */
 public class RelativeSolvationType extends BaseType implements Comparator<String> {
 
-    /**
-     * A Logger for the RelativeSolvationType class.
-     */
-    private static final Logger logger = Logger.getLogger(RelativeSolvationType.class.getName());
+  /** A Logger for the RelativeSolvationType class. */
+  private static final Logger logger = Logger.getLogger(RelativeSolvationType.class.getName());
 
-    /**
-     * The residue name;
-     */
-    private final String resName;
-    /**
-     * THe solvation energy.
-     */
-    private final double solvEnergy;
+  /** The residue name; */
+  private final String resName;
+  /** THe solvation energy. */
+  private final double solvEnergy;
 
-    /**
-     * <p>Constructor for RelativeSolvationType.</p>
-     *
-     * @param resname    a {@link java.lang.String} object.
-     * @param solvEnergy a double.
-     */
-    public RelativeSolvationType(String resname, double solvEnergy) {
-        super(RELATIVESOLV, resname);
-        this.resName = resname;
-        this.solvEnergy = solvEnergy;
+  /**
+   * Constructor for RelativeSolvationType.
+   *
+   * @param resname a {@link java.lang.String} object.
+   * @param solvEnergy a double.
+   */
+  public RelativeSolvationType(String resname, double solvEnergy) {
+    super(RELATIVESOLV, resname);
+    this.resName = resname;
+    this.solvEnergy = solvEnergy;
+  }
+
+  /**
+   * Construct a RelativeSolvationType from an input string.
+   *
+   * @param input The overall input String.
+   * @param tokens The input String tokenized.
+   * @return a RelativeSolvationType instance.
+   */
+  public static RelativeSolvationType parse(String input, String[] tokens) {
+    if (tokens.length < 3) {
+      logger.log(Level.WARNING, "Invalid RELATIVE_SOLVATION type:\n{0}", input);
+      return null;
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compare(String o1, String o2) {
-        return o1.compareTo(o2);
+    String resName = tokens[1];
+    try {
+      double relSolvValue = parseDouble(tokens[2]);
+      return new RelativeSolvationType(resName, relSolvValue);
+    } catch (NumberFormatException ex) {
+      String message = "Exception parsing RELATIVE_SOLVATION type:\n" + input + "\n";
+      logger.log(Level.SEVERE, message, ex);
     }
+    return null;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof RelativeSolvationType) {
-            return ((RelativeSolvationType) o).getResName().equals(resName);
-        }
-        return false;
+  /** {@inheritDoc} */
+  @Override
+  public int compare(String o1, String o2) {
+    return o1.compareTo(o2);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public boolean equals(Object o) {
+    if (o instanceof RelativeSolvationType) {
+      return ((RelativeSolvationType) o).getResName().equals(resName);
     }
+    return false;
+  }
 
-    /**
-     * <p>Getter for the field <code>resName</code>.</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String getResName() {
-        return resName;
-    }
+  /**
+   * Getter for the field <code>resName</code>.
+   *
+   * @return a {@link java.lang.String} object.
+   */
+  public String getResName() {
+    return resName;
+  }
 
-    /**
-     * <p>Getter for the field <code>solvEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getSolvEnergy() {
-        return solvEnergy;
-    }
+  /**
+   * Getter for the field <code>solvEnergy</code>.
+   *
+   * @return a double.
+   */
+  public double getSolvEnergy() {
+    return solvEnergy;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(resName);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public int hashCode() {
+    return Objects.hash(resName);
+  }
 
-    /**
-     * Construct a RelativeSolvationType from an input string.
-     *
-     * @param input  The overall input String.
-     * @param tokens The input String tokenized.
-     * @return a RelativeSolvationType instance.
-     */
-    public static RelativeSolvationType parse(String input, String[] tokens) {
-        if (tokens.length < 3) {
-            logger.log(Level.WARNING, "Invalid RELATIVE_SOLVATION type:\n{0}", input);
-            return null;
-        }
-        String resName = tokens[1];
-        try {
-            double relSolvValue = parseDouble(tokens[2]);
-            return new RelativeSolvationType(resName, relSolvValue);
-        } catch (NumberFormatException ex) {
-            String message = "Exception parsing RELATIVE_SOLVATION type:\n" + input + "\n";
-            logger.log(Level.SEVERE, message, ex);
-        }
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return format("relative solvation %10s %8.5f", resName, solvEnergy);
-    }
-
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    return format("relative solvation %10s %8.5f", resName, solvEnergy);
+  }
 }

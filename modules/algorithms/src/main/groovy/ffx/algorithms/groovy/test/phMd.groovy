@@ -37,10 +37,6 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
-import org.apache.commons.io.FilenameUtils
-
-import groovy.cli.picocli.CliBuilder
-
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.integrators.Integrator
 import ffx.algorithms.dynamics.integrators.IntegratorEnum
@@ -51,6 +47,8 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3
 import ffx.potential.extended.TitrationUtils
+import groovy.cli.picocli.CliBuilder
+import org.apache.commons.io.FilenameUtils
 
 // Number of molecular dynamics steps
 int nSteps = 1000000;
@@ -106,13 +104,17 @@ PhMD.Distribution distribution = PhMD.Distribution.DISCRETE;
 // Holy mother of god.
 def cli = new CliBuilder(usage: ' ffxc test.phMD [options] <filename>');
 cli.h(longOpt: 'help', 'Print this message.');
-cli.d(longOpt: 'distribution', args: 1, argName: 'Discrete', 'Distribution: [DISCRETE / CONTINUOUS]');
-cli.b(longOpt: 'thermostat', args: 1, argName: 'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
+cli.d(longOpt: 'distribution', args: 1, argName: 'Discrete',
+    'Distribution: [DISCRETE / CONTINUOUS]');
+cli.b(longOpt: 'thermostat', args: 1, argName: 'Berendsen',
+    'Thermostat: [Adiabatic / Berendsen / Bussi]');
 cli.dt(longOpt: 'dt', args: 1, argName: '1.0', 'Time discretization (fsec).');
-cli.i(longOpt: 'integrate', args: 1, argName: 'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
+cli.i(longOpt: 'integrate', args: 1, argName: 'Beeman',
+    'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
 cli.l(longOpt: 'log', args: 1, argName: '0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt: 'steps', args: 1, argName: '1000000', 'Number of molecular dynamics steps.');
-cli.p(longOpt: 'polarization', args: 1, argName: 'Mutual', 'Polarization: [None / Direct / Mutual]');
+cli.p(longOpt: 'polarization', args: 1, argName: 'Mutual',
+    'Polarization: [None / Direct / Mutual]');
 cli.t(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degrees Kelvin.');
 cli.w(longOpt: 'save', args: 1, argName: '0.1', 'Interval to write out coordinates (psec).');
 cli.s(longOpt: 'restart', args: 1, argName: '0.1', 'Interval to write out restart file (psec).');
@@ -120,100 +122,102 @@ cli.f(longOpt: 'file', args: 1, argName: 'PDB', 'Choose file type to write to [P
 cli.ra(longOpt: 'resAll', 'Titrate all residues.');
 cli.rl(longOpt: 'resList', args: 1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
 cli.rn(longOpt: 'resName', args: 1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
-cli.rw(longOpt: 'resWindow', args: 1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
+cli.rw(longOpt: 'resWindow', args: 1,
+    'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
 cli.pH(longOpt: 'pH', args: 1, argName: '7.4', 'Constant simulation pH.');
-cli.mc(longOpt: 'mc-frequency', args: 1, argName: '10', '[DISCRETE only] Number of MD steps between Monte-Carlo attempts.')
+cli.mc(longOpt: 'mc-frequency', args: 1, argName: '10',
+    '[DISCRETE only] Number of MD steps between Monte-Carlo attempts.')
 cli.nomd(longOpt: 'no-dynamics', 'Testing; no movement.');
 cli.noref(longOpt: 'no-references', 'Testing; zero out reference energies.')
 
 def options = cli.parse(args);
 if (options.h) {
-    return cli.usage();
+  return cli.usage();
 }
 
 /* Check for missing or inconsistent flags. */
 if ((options.rw && (options.ra || options.rl)) || (options.ra && options.rl)) {
-    return cli.usage();
-    logger.info(" Must specify one of the following: -ra, -rl, or -rw.");
+  return cli.usage();
+  logger.info(" Must specify one of the following: -ra, -rl, or -rw.");
 }
 if (!options.ra && !options.rl && !options.rw && !options.rn) {
-    return cli.usage();
-    logger.info(" Must specify one of the following: -ra, -rl, -rn, or -rw.");
+  return cli.usage();
+  logger.info(" Must specify one of the following: -ra, -rl, -rn, or -rw.");
 }
 if (!options.pH) {
-    return cli.usage();
-    logger.info(" Must specify a solution pH.");
+  return cli.usage();
+  logger.info(" Must specify a solution pH.");
 }
 
 /* Load command-line parameters. */
 if (options.d) {
-    if (options.d.toUpperCase().startsWith("C")) {
-        distribution = PhMD.Distribution.CONTINUOUS;
-    }
+  if (options.d.toUpperCase().startsWith("C")) {
+    distribution = PhMD.Distribution.CONTINUOUS;
+  }
 }
 if (options.noref) {
-    System.setProperty("cphmd-zeroReferences", "true");
+  System.setProperty("cphmd-zeroReferences", "true");
 }
 if (options.tt) {
-    titrateTermini = true;
-    System.setProperty("cphmd-termini", "true");
+  titrateTermini = true;
+  System.setProperty("cphmd-termini", "true");
 }
 if (options.nomd) {
-    dynamics = false;
+  dynamics = false;
 }
 if (options.rw) {
-    window = Double.parseDouble(options.rw);
+  window = Double.parseDouble(options.rw);
 }
 if (options.mc) {
-    mcStepFrequency = Integer.parseInt(options.mc);
+  mcStepFrequency = Integer.parseInt(options.mc);
 }
 if (options.mcr) {
-    rotamerStepFrequency = Integer.parseInt(options.mcr);
+  rotamerStepFrequency = Integer.parseInt(options.mcr);
 }
 if (options.pH) {
-    pH = Double.parseDouble(options.pH);
+  pH = Double.parseDouble(options.pH);
 }
 if (options.n) {
-    nSteps = Integer.parseInt(options.n);
+  nSteps = Integer.parseInt(options.n);
 }
 if (options.s) {
-    restartFrequency = Double.parseDouble(options.s);
+  restartFrequency = Double.parseDouble(options.s);
 }
 if (options.f) {
-    fileType = options.f.toUpperCase();
+  fileType = options.f.toUpperCase();
 }
 if (options.dt) {
-    timeStep = Double.parseDouble(options.dt);
+  timeStep = Double.parseDouble(options.dt);
 }
 if (options.l) {
-    printInterval = Double.parseDouble(options.l);
+  printInterval = Double.parseDouble(options.l);
 }
 if (options.w) {
-    saveInterval = Double.parseDouble(options.w);
+  saveInterval = Double.parseDouble(options.w);
 }
 if (options.t) {
-    temperature = Double.parseDouble(options.t);
+  temperature = Double.parseDouble(options.t);
 }
 if (options.p) {
-    System.setProperty("polarization", options.p);
+  System.setProperty("polarization", options.p);
 }
 
 if (options.b) {
-    thermostat = Thermostat.parseThermostat(options.b)
+  thermostat = Thermostat.parseThermostat(options.b)
 }
 
 if (options.i) {
-    integrator = Integrator.parseIntegrator(options.i)
+  integrator = Integrator.parseIntegrator(options.i)
 }
 
 List<String> arguments = options.arguments();
 if (arguments == null || arguments.size() != 1) {
-    return usage();
+  return usage();
 }
 String filename = arguments.get(0);
 File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
 if (!dyn.exists()) {
-    dyn = null;
+  dyn = null;
 }
 
 /* Setup system properties before loading input file. */
@@ -222,16 +226,17 @@ MolecularAssembly mola = TitrationUtils.openFullyProtonated(new File(filename));
 
 List<Residue> titrating = null;
 if (options.ra) {
-    titrating = TitrationUtils.chooseTitratables(mola);
+  titrating = TitrationUtils.chooseTitratables(mola);
 } else if (options.rl) {
-    titrating = TitrationUtils.chooseTitratables(options.rl, mola);
+  titrating = TitrationUtils.chooseTitratables(options.rl, mola);
 } else if (options.rw) {
-    titrating = TitrationUtils.chooseTitratables(pH, windows, mola);
+  titrating = TitrationUtils.chooseTitratables(pH, windows, mola);
 } else if (options.rn) {
-    titrating = TitrationUtils.chooseTitratables(AminoAcid3.valueOf(options.rn), mola);
+  titrating = TitrationUtils.chooseTitratables(AminoAcid3.valueOf(options.rn), mola);
 }
 
-MolecularDynamics molDyn = new MolecularDynamics(mola, mola.getPotentialEnergy(), mola.getProperties(), sh, thermostat, integrator);
+MolecularDynamics molDyn = new MolecularDynamics(mola, mola.getPotentialEnergy(),
+    mola.getProperties(), sh, thermostat, integrator);
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 
@@ -239,10 +244,10 @@ molDyn.setRestartFrequency(restartFrequency);
 PhMD phmd = new PhMD(distribution, mola, molDyn, titrating, pH, mcStepFrequency);
 
 if (!dynamics) {    // For testing.
-    for (int i = 0; i < nSteps; i++) {
-        phmd.mcUpdate();
-    }
-    return;
+  for (int i = 0; i < nSteps; i++) {
+    phmd.mcUpdate();
+  }
+  return;
 }
 
 // Ready!

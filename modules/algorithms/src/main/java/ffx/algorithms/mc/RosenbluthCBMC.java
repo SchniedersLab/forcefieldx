@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,16 +34,10 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.mc;
 
-import java.io.File;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Logger;
 import static java.lang.String.format;
-
-import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.min;
 
 import ffx.algorithms.dynamics.thermostats.Thermostat;
@@ -52,174 +46,173 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parsers.PDBFilter;
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
+import org.apache.commons.io.FilenameUtils;
 
 /**
- * Conformational Biased Monte Carlo (applied to ALL torsions of a peptide
- * side-chain).
- * <p>
- * This method is described by Frenkel/Smit in "Understanding Molecular
- * Simulation" Chapters 13.2,13.3 This uses the "conformational biasing" method
- * to select whole rotamer transformations that are frequently accepted.
+ * Conformational Biased Monte Carlo (applied to ALL torsions of a peptide side-chain).
+ *
+ * <p>This method is described by Frenkel/Smit in "Understanding Molecular Simulation" Chapters
+ * 13.2,13.3 This uses the "conformational biasing" method to select whole rotamer transformations
+ * that are frequently accepted.
  *
  * @author Stephen D. LuCore
  */
 public class RosenbluthCBMC implements MonteCarloListener {
 
-    private static final Logger logger = Logger.getLogger(RosenbluthCBMC.class.getName());
+  private static final Logger logger = Logger.getLogger(RosenbluthCBMC.class.getName());
 
-    /**
-     * The MolecularAssembly to operate on.
-     */
-    private final MolecularAssembly molecularAssembly;
-    /**
-     * The ForceFieldEnergy in use.
-     */
-    private final ForceFieldEnergy forceFieldEnergy;
-    /**
-     * The temperature in use.
-     */
-    private final double temperature;
-    /**
-     * At each move, one of these residues will be chosen as the target.
-     */
-    private final List<Residue> targets;
-    /**
-     * Number of mcUpdate() calls (e.g. MD steps) between move proposals.
-     */
-    private final int mcFrequency;
-    /**
-     * Size of the trial sets, k.
-     */
-    private final int trialSetSize;
-    /**
-     * Keeps track of calls to mcUpdate (e.g. MD steps).
-     */
-    private int steps = 0;
-    /**
-     * Counters for proposed and accepted moves.
-     */
-    private int numMovesProposed = 0;
-    /**
-     * Writes PDBs of each trial set and original/proposed configurations.
-     */
-    private boolean writeSnapshots;
-    /**
-     * PDBFilter to write out result.
-     */
-    private PDBFilter writer = null;
+  /** The MolecularAssembly to operate on. */
+  private final MolecularAssembly molecularAssembly;
+  /** The ForceFieldEnergy in use. */
+  private final ForceFieldEnergy forceFieldEnergy;
+  /** The temperature in use. */
+  private final double temperature;
+  /** At each move, one of these residues will be chosen as the target. */
+  private final List<Residue> targets;
+  /** Number of mcUpdate() calls (e.g. MD steps) between move proposals. */
+  private final int mcFrequency;
+  /** Size of the trial sets, k. */
+  private final int trialSetSize;
+  /** Keeps track of calls to mcUpdate (e.g. MD steps). */
+  private int steps = 0;
+  /** Counters for proposed and accepted moves. */
+  private int numMovesProposed = 0;
+  /** Writes PDBs of each trial set and original/proposed configurations. */
+  private boolean writeSnapshots;
+  /** PDBFilter to write out result. */
+  private PDBFilter writer = null;
 
-    /**
-     * RRMC constructor.
-     *
-     * @param targets           Residues to undergo RRMC.
-     * @param mcFrequency       Number of MD steps between RRMC proposals.
-     * @param trialSetSize      Larger values cost more but increase acceptance.
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
-     * @param ffe               a {@link ffx.potential.ForceFieldEnergy} object.
-     * @param thermostat        a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
-     * @param writeSnapshots    a boolean.
-     */
-    public RosenbluthCBMC(MolecularAssembly molecularAssembly, ForceFieldEnergy ffe, Thermostat thermostat,
-                          List<Residue> targets, int mcFrequency, int trialSetSize, boolean writeSnapshots) {
-        this.targets = targets;
-        this.mcFrequency = mcFrequency;
-        this.trialSetSize = trialSetSize;
-        this.molecularAssembly = molecularAssembly;
-        this.forceFieldEnergy = ffe;
-        this.writeSnapshots = writeSnapshots;
+  /**
+   * RRMC constructor.
+   *
+   * @param targets Residues to undergo RRMC.
+   * @param mcFrequency Number of MD steps between RRMC proposals.
+   * @param trialSetSize Larger values cost more but increase acceptance.
+   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param ffe a {@link ffx.potential.ForceFieldEnergy} object.
+   * @param thermostat a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
+   * @param writeSnapshots a boolean.
+   */
+  public RosenbluthCBMC(
+      MolecularAssembly molecularAssembly,
+      ForceFieldEnergy ffe,
+      Thermostat thermostat,
+      List<Residue> targets,
+      int mcFrequency,
+      int trialSetSize,
+      boolean writeSnapshots) {
+    this.targets = targets;
+    this.mcFrequency = mcFrequency;
+    this.trialSetSize = trialSetSize;
+    this.molecularAssembly = molecularAssembly;
+    this.forceFieldEnergy = ffe;
+    this.writeSnapshots = writeSnapshots;
 
-        if (thermostat != null) {
-            temperature = thermostat.getTargetTemperature();
-        } else {
-            temperature = 298.15;
-        }
-
-        for (int i = targets.size() - 1; i >= 0; i--) {
-            AminoAcid3 name = AminoAcid3.valueOf(targets.get(i).getName());
-            if (name == AminoAcid3.GLY || name == AminoAcid3.PRO || name == AminoAcid3.ALA) {
-                targets.remove(i);
-            }
-        }
-        if (targets.size() < 1) {
-            logger.severe(" Empty target list for CMBC.");
-        }
+    if (thermostat != null) {
+      temperature = thermostat.getTargetTemperature();
+    } else {
+      temperature = 298.15;
     }
 
-    /**
-     * <p>cbmcStep.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean cbmcStep() {
-        numMovesProposed++;
-        boolean accepted;
+    for (int i = targets.size() - 1; i >= 0; i--) {
+      AminoAcid3 name = AminoAcid3.valueOf(targets.get(i).getName());
+      if (name == AminoAcid3.GLY || name == AminoAcid3.PRO || name == AminoAcid3.ALA) {
+        targets.remove(i);
+      }
+    }
+    if (targets.size() < 1) {
+      logger.severe(" Empty target list for CMBC.");
+    }
+  }
 
-        // Select a target residue.
-        int index = ThreadLocalRandom.current().nextInt(targets.size());
-        Residue target = targets.get(index);
-        RosenbluthChiAllMove cbmcMove = new RosenbluthChiAllMove(
-                molecularAssembly, target, trialSetSize, forceFieldEnergy, temperature,
-                writeSnapshots, numMovesProposed, true);
-        if (cbmcMove.getMode() == RosenbluthChiAllMove.MODE.CHEAP) {
-            return cbmcMove.wasAccepted();
-        }
-        double Wn = cbmcMove.getWn();
-        double Wo = cbmcMove.getWo();
-        double criterion = min(1, Wn / Wo);
-        double rng = ThreadLocalRandom.current().nextDouble();
-        logger.info(format("    rng:    %5.2f", rng));
-        if (rng < criterion) {
-            cbmcMove.move();
-            logger.info(format(" Accepted!  Energy: %.4f\n", cbmcMove.finalEnergy));
-            accepted = true;
-            write();
-        } else {
-            logger.info(" Denied.\n");
-            accepted = false;
-        }
+  /**
+   * cbmcStep.
+   *
+   * @return a boolean.
+   */
+  public boolean cbmcStep() {
+    numMovesProposed++;
+    boolean accepted;
 
-        return accepted;
+    // Select a target residue.
+    int index = ThreadLocalRandom.current().nextInt(targets.size());
+    Residue target = targets.get(index);
+    RosenbluthChiAllMove cbmcMove =
+        new RosenbluthChiAllMove(
+            molecularAssembly,
+            target,
+            trialSetSize,
+            forceFieldEnergy,
+            temperature,
+            writeSnapshots,
+            numMovesProposed,
+            true);
+    if (cbmcMove.getMode() == RosenbluthChiAllMove.MODE.CHEAP) {
+      return cbmcMove.wasAccepted();
+    }
+    double Wn = cbmcMove.getWn();
+    double Wo = cbmcMove.getWo();
+    double criterion = min(1, Wn / Wo);
+    double rng = ThreadLocalRandom.current().nextDouble();
+    logger.info(format("    rng:    %5.2f", rng));
+    if (rng < criterion) {
+      cbmcMove.move();
+      logger.info(format(" Accepted!  Energy: %.4f\n", cbmcMove.finalEnergy));
+      accepted = true;
+      write();
+    } else {
+      logger.info(" Denied.\n");
+      accepted = false;
     }
 
-    /**
-     * <p>controlStep.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean controlStep() {
-        int index = ThreadLocalRandom.current().nextInt(targets.size());
-        Residue target = targets.get(index);
-        RosenbluthChiAllMove cbmcMove = new RosenbluthChiAllMove(
-                molecularAssembly, target, -1, forceFieldEnergy, temperature,
-                false, numMovesProposed, true);
-        return cbmcMove.wasAccepted();
-    }
+    return accepted;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean mcUpdate(double temperature) {
-        steps++;
-        if (steps % mcFrequency == 0) {
-            return cbmcStep();
-        }
-        return false;
-    }
+  /**
+   * controlStep.
+   *
+   * @return a boolean.
+   */
+  public boolean controlStep() {
+    int index = ThreadLocalRandom.current().nextInt(targets.size());
+    Residue target = targets.get(index);
+    RosenbluthChiAllMove cbmcMove =
+        new RosenbluthChiAllMove(
+            molecularAssembly,
+            target,
+            -1,
+            forceFieldEnergy,
+            temperature,
+            false,
+            numMovesProposed,
+            true);
+    return cbmcMove.wasAccepted();
+  }
 
-    /**
-     * Write out a PDB file.
-     */
-    private void write() {
-        if (writer == null) {
-            writer = new PDBFilter(molecularAssembly.getFile(), molecularAssembly, null, null);
-        }
-        String filename = molecularAssembly.getFile().getAbsolutePath();
-        if (!filename.contains("_mc")) {
-            filename = FilenameUtils.removeExtension(filename) + "_mc.pdb";
-        }
-        File file = new File(filename);
-        writer.writeFile(file, false);
+  /** {@inheritDoc} */
+  @Override
+  public boolean mcUpdate(double temperature) {
+    steps++;
+    if (steps % mcFrequency == 0) {
+      return cbmcStep();
     }
+    return false;
+  }
 
+  /** Write out a PDB file. */
+  private void write() {
+    if (writer == null) {
+      writer = new PDBFilter(molecularAssembly.getFile(), molecularAssembly, null, null);
+    }
+    String filename = molecularAssembly.getFile().getAbsolutePath();
+    if (!filename.contains("_mc")) {
+      filename = FilenameUtils.removeExtension(filename) + "_mc.pdb";
+    }
+    File file = new File(filename);
+    writer.writeFile(file, false);
+  }
 }

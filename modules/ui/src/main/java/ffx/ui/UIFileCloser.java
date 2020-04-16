@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui;
 
 /**
@@ -44,23 +44,20 @@ package ffx.ui;
  */
 public final class UIFileCloser implements Runnable {
 
-    private FFXSystem ffxSystem;
+  private FFXSystem ffxSystem;
 
-    /**
-     * <p>
-     * Constructor for FileCloser.</p>
-     *
-     * @param sys a {@link ffx.ui.FFXSystem} object.
-     */
-    public UIFileCloser(FFXSystem sys) {
-        ffxSystem = sys;
-    }
+  /**
+   * Constructor for FileCloser.
+   *
+   * @param sys a {@link ffx.ui.FFXSystem} object.
+   */
+  public UIFileCloser(FFXSystem sys) {
+    ffxSystem = sys;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void run() {
-        ffxSystem.destroy();
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void run() {
+    ffxSystem.destroy();
+  }
 }

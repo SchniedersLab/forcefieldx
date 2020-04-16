@@ -37,15 +37,13 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.OSTOptions
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -60,94 +58,96 @@ import picocli.CommandLine.Parameters
 @Command(description = " Evaluate the Orthogonal Space Histogram.", name = "ffxc Histogram")
 class Histogram extends AlgorithmsScript {
 
-    /**
-     * -p or --pmf Save the histogram, PMF and 2D bias to files.
-     */
-    @Option(names = ['-p', '--pmf'], paramLabel = 'false',
-            description = 'Save the bias histogram to a file.')
-    boolean pmf = false
+  /**
+   * -p or --pmf Save the histogram, PMF and 2D bias to files.
+   */
+  @Option(names = ['-p', '--pmf'], paramLabel = 'false',
+      description = 'Save the bias histogram to a file.')
+  boolean pmf = false
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
-    private List<String> filenames
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
+  private List<String> filenames
 
-    private OrthogonalSpaceTempering orthogonalSpaceTempering
-    private File saveDir = null
+  private OrthogonalSpaceTempering orthogonalSpaceTempering
+  private File saveDir = null
 
-    @Override
-    Histogram run() {
+  @Override
+  Histogram run() {
 
-        if (!init()) {
-            return this
-        }
-
-        String modelFilename
-        if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-            activeAssembly = assemblies[0]
-            modelFilename = filenames.get(0)
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        } else {
-            modelFilename = activeAssembly.getFile().getAbsolutePath()
-        }
-
-        println("\n Evaluating Histogram for " + modelFilename)
-
-        File structureFile = new File(FilenameUtils.normalize(modelFilename))
-        structureFile = new File(structureFile.getAbsolutePath())
-        String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
-        File histogramRestart = new File(baseFilename + ".his")
-        File lambdaRestart = null
-
-        // Get a reference to the active system's ForceFieldEnergy and atom array.
-        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
-
-        // Print the current energy
-        energy.energy(true, true)
-
-        modelFilename = activeAssembly.getFile().getAbsolutePath()
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-
-        orthogonalSpaceTempering = OSTOptions.constructOST(energy, lambdaRestart, histogramRestart, activeAssembly, null, algorithmListener)
-
-        if (pmf) {
-            orthogonalSpaceTempering.setMolecularAssembly(activeAssembly)
-            OrthogonalSpaceTempering.Histogram histogram = orthogonalSpaceTempering.getHistogram()
-            histogram.updateFLambda(false, true)
-            StringBuffer sb = histogram.evaluateTotalPMF()
-
-            String dirName = saveDir.toString() + File.separator
-            String file = dirName + "pmf.txt"
-            logger.info(" Writing " + file)
-            FileWriter fileWriter = new FileWriter(file)
-            fileWriter.write(sb.toString())
-            fileWriter.close()
-
-            sb = histogram.evaluate2DPMF()
-            file = dirName + "pmf.2D.txt"
-            logger.info(" Writing " + file)
-            fileWriter = new FileWriter(file)
-            fileWriter.write(sb.toString())
-            fileWriter.close()
-        }
-        return this
+    if (!init()) {
+      return this
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        List<Potential> potentials
-        if (orthogonalSpaceTempering == null) {
-            potentials = Collections.emptyList()
-        } else {
-            potentials = Collections.singletonList(orthogonalSpaceTempering)
-        }
-        return potentials
+    String modelFilename
+    if (filenames != null && filenames.size() > 0) {
+      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
+      activeAssembly = assemblies[0]
+      modelFilename = filenames.get(0)
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
+    } else {
+      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
+
+    println("\n Evaluating Histogram for " + modelFilename)
+
+    File structureFile = new File(FilenameUtils.normalize(modelFilename))
+    structureFile = new File(structureFile.getAbsolutePath())
+    String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
+    File histogramRestart = new File(baseFilename + ".his")
+    File lambdaRestart = null
+
+    // Get a reference to the active system's ForceFieldEnergy and atom array.
+    ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
+
+    // Print the current energy
+    energy.energy(true, true)
+
+    modelFilename = activeAssembly.getFile().getAbsolutePath()
+    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+    }
+
+    orthogonalSpaceTempering = OSTOptions.
+        constructOST(energy, lambdaRestart, histogramRestart, activeAssembly, null,
+            algorithmListener)
+
+    if (pmf) {
+      orthogonalSpaceTempering.setMolecularAssembly(activeAssembly)
+      OrthogonalSpaceTempering.Histogram histogram = orthogonalSpaceTempering.getHistogram()
+      histogram.updateFLambda(false, true)
+      StringBuffer sb = histogram.evaluateTotalPMF()
+
+      String dirName = saveDir.toString() + File.separator
+      String file = dirName + "pmf.txt"
+      logger.info(" Writing " + file)
+      FileWriter fileWriter = new FileWriter(file)
+      fileWriter.write(sb.toString())
+      fileWriter.close()
+
+      sb = histogram.evaluate2DPMF()
+      file = dirName + "pmf.2D.txt"
+      logger.info(" Writing " + file)
+      fileWriter = new FileWriter(file)
+      fileWriter.write(sb.toString())
+      fileWriter.close()
+    }
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    List<Potential> potentials
+    if (orthogonalSpaceTempering == null) {
+      potentials = Collections.emptyList()
+    } else {
+      potentials = Collections.singletonList(orthogonalSpaceTempering)
+    }
+    return potentials
+  }
 
 }

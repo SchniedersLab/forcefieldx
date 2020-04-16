@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,164 +34,161 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui;
 
+import static ffx.potential.extended.ExtUtils.prop;
+
+import ffx.ui.MainPanel.ExitStatus;
+import ffx.utilities.LoggerSevereError;
 import java.awt.GraphicsEnvironment;
 import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import ffx.ui.MainPanel.ExitStatus;
-import ffx.utilities.LoggerSevereError;
-import static ffx.potential.extended.ExtUtils.prop;
-
 /**
- * The default ConsoleHanlder publishes logging to System.err. This class
- * publishes to System.out, which is normally intercepted by the Force Field X
- * Shell.
- * <p>
- * The formatter used reduces verbosity relative to the default SimpleFormatter.
+ * The default ConsoleHanlder publishes logging to System.err. This class publishes to System.out,
+ * which is normally intercepted by the Force Field X Shell.
+ *
+ * <p>The formatter used reduces verbosity relative to the default SimpleFormatter.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class LogHandler extends Handler {
 
-    private static final boolean headless = GraphicsEnvironment.isHeadless();
-    private static final boolean tryCatchSevere = prop("tryCatchSevere", false);
-    private MainPanel mainPanel = null;
-    private boolean fatal = false;
+  private static final boolean headless = GraphicsEnvironment.isHeadless();
+  private static final boolean tryCatchSevere = prop("tryCatchSevere", false);
+  private MainPanel mainPanel = null;
+  private boolean fatal = false;
 
-    /**
-     * Construct the Force Field X logging handler.
-     *
-     * @since 1.0
-     */
-    public LogHandler() {
+  /**
+   * Construct the Force Field X logging handler.
+   *
+   * @since 1.0
+   */
+  public LogHandler() {
 
-        boolean mpiLogging = true;
-        String logString = System.getProperty("mpiLogging", "true");
-        if (logString.trim().equalsIgnoreCase("false")) {
-            mpiLogging = false;
-        }
-        setFormatter(new LogFormatter(false, mpiLogging));
-        setLevel(Level.ALL);
+    boolean mpiLogging = true;
+    String logString = System.getProperty("mpiLogging", "true");
+    if (logString.trim().equalsIgnoreCase("false")) {
+      mpiLogging = false;
+    }
+    setFormatter(new LogFormatter(false, mpiLogging));
+    setLevel(Level.ALL);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Flush, but do not close System.out or the Shell.
+   *
+   * @since 1.0
+   */
+  @Override
+  public void close() {
+    flush();
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void flush() {
+    System.out.flush();
+    System.err.flush();
+    if (mainPanel.getModelingShell() != null) {
+      // Scroll to visible!
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Publish a LogRecord.
+   *
+   * @since 1.0.
+   */
+  @Override
+  public synchronized void publish(LogRecord record) {
+    if (record.getLevel() == Level.OFF) {
+      if (record.getMessage().toLowerCase().contains("algorithm failure:")) {
+        mainPanel.setExitType(MainPanel.ExitStatus.ALGORITHM_FAILURE);
+      }
+      return;
+    }
+    // Check if the record is loggable and that we have not already encountered a fatal error.
+    if (!isLoggable(record) || fatal) {
+      return;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Flush, but do not close System.out or the Shell.
-     *
-     * @since 1.0
-     */
-    @Override
-    public void close() {
+    String msg;
+    try {
+      msg = getFormatter().format(record);
+    } catch (Exception e) {
+      /*
+       We don't want to throw an exception here, but we report the
+       exception to any registered ErrorManager.
+      */
+      reportError(null, e, ErrorManager.FORMAT_FAILURE);
+      return;
+    }
+    try {
+      if (record.getLevel() == Level.SEVERE) {
+        fatal = true;
+        System.err.println(msg);
+
+        Throwable throwable = record.getThrown();
+        if (throwable != null) {
+          System.err.println(String.format(" Exception %s logged.", throwable));
+        }
+
+        // If tryCatchSevere, and the throwable (if it exists) is not an Error, then...
+        if (tryCatchSevere && (!(throwable instanceof Error))) {
+          System.err.println(" Force Field X may not continue.");
+          System.err.println(" Throwing new error...");
+          fatal = false;
+          if (throwable != null) {
+            throw new LoggerSevereError(throwable);
+          } else {
+            throw new LoggerSevereError(" Unknown exception");
+          }
+        }
+
+        System.err.println(" Force Field X will not continue.");
+        System.err.println(" Shutting down...");
         flush();
+        mainPanel.setExitType(ExitStatus.SEVERE);
+        mainPanel.exit();
+      }
+
+      ModelingShell shell = null;
+      if (mainPanel != null) {
+        shell = mainPanel.getModelingShell();
+      }
+
+      if (!headless && shell != null) {
+        shell.appendOutputNl(msg, shell.getResultStyle());
+      } else {
+        System.out.println(msg);
+      }
+    } catch (Exception e) {
+      /*
+       We don't want to throw an exception here, but we report the
+       exception to any registered ErrorManager.
+      */
+      reportError(null, e, ErrorManager.WRITE_FAILURE);
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void flush() {
-        System.out.flush();
-        System.err.flush();
-        if (mainPanel.getModelingShell() != null) {
-            // Scroll to visible!
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Publish a LogRecord.
-     *
-     * @since 1.0.
-     */
-    @Override
-    public synchronized void publish(LogRecord record) {
-        if (record.getLevel() == Level.OFF) {
-            if (record.getMessage().toLowerCase().contains("algorithm failure:")) {
-                mainPanel.setExitType(MainPanel.ExitStatus.ALGORITHM_FAILURE);
-            }
-            return;
-        }
-        // Check if the record is loggable and that we have not already encountered a fatal error.
-        if (!isLoggable(record) || fatal) {
-            return;
-        }
-
-        String msg;
-        try {
-            msg = getFormatter().format(record);
-        } catch (Exception e) {
-            /*
-              We don't want to throw an exception here, but we report the
-              exception to any registered ErrorManager.
-             */
-            reportError(null, e, ErrorManager.FORMAT_FAILURE);
-            return;
-        }
-        try {
-            if (record.getLevel() == Level.SEVERE) {
-                fatal = true;
-                System.err.println(msg);
-
-                Throwable throwable = record.getThrown();
-                if (throwable != null) {
-                    System.err.println(String.format(" Exception %s logged.", throwable));
-                }
-
-                // If tryCatchSevere, and the throwable (if it exists) is not an Error, then...
-                if (tryCatchSevere && (!(throwable instanceof Error))) {
-                    System.err.println(" Force Field X may not continue.");
-                    System.err.println(" Throwing new error...");
-                    fatal = false;
-                    if (throwable != null) {
-                        throw new LoggerSevereError(throwable);
-                    } else {
-                        throw new LoggerSevereError(" Unknown exception");
-                    }
-                }
-
-                System.err.println(" Force Field X will not continue.");
-                System.err.println(" Shutting down...");
-                flush();
-                mainPanel.setExitType(ExitStatus.SEVERE);
-                mainPanel.exit();
-            }
-
-            ModelingShell shell = null;
-            if (mainPanel != null) {
-                shell = mainPanel.getModelingShell();
-            }
-
-            if (!headless && shell != null) {
-                shell.appendOutputNl(msg, shell.getResultStyle());
-            } else {
-                System.out.println(msg);
-            }
-        } catch (Exception e) {
-            /*
-              We don't want to throw an exception here, but we report the
-              exception to any registered ErrorManager.
-             */
-            reportError(null, e, ErrorManager.WRITE_FAILURE);
-        }
-    }
-
-    /**
-     * A reference to the Force Field X MainPanel container to shut down if we
-     * encounter a fatal (SEVERE) exception. If we are not in Headless mode,
-     * then LogRecords can be published to the ModelingShell.
-     *
-     * @param mainPanel the Force Field X MainPanel.
-     * @since 1.0
-     */
-    public void setMainPanel(MainPanel mainPanel) {
-        this.mainPanel = mainPanel;
-    }
+  /**
+   * A reference to the Force Field X MainPanel container to shut down if we encounter a fatal
+   * (SEVERE) exception. If we are not in Headless mode, then LogRecords can be published to the
+   * ModelingShell.
+   *
+   * @param mainPanel the Force Field X MainPanel.
+   * @since 1.0
+   */
+  public void setMainPanel(MainPanel mainPanel) {
+    this.mainPanel = mainPanel;
+  }
 }

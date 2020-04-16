@@ -41,7 +41,6 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Bond
 import ffx.potential.cli.PotentialScript
-
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
@@ -55,59 +54,60 @@ import picocli.CommandLine.Parameters
 @Command(description = " Print out Biotype records for the atoms in an XYZ file.", name = "ffxc Biotype")
 class Biotype extends PotentialScript {
 
-    @Parameters(arity = "1..*", paramLabel = "files",
-            description = "An XYZ file.")
-    List<String> xyzFile = null
+  @Parameters(arity = "1..*", paramLabel = "files",
+      description = "An XYZ file.")
+  List<String> xyzFile = null
 
-    /**
-     * Result of this script is an array of Biotype strings.
-     */
-    public List<String> biotypes
+  /**
+   * Result of this script is an array of Biotype strings.
+   */
+  public List<String> biotypes
 
-    @Override
-    Biotype run() {
-        if (!init()) {
-            return null
-        }
-
-        if (xyzFile != null && xyzFile.size() > 0) {
-            MolecularAssembly[] assemblies = [potentialFunctions.open(xyzFile.get(0))]
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return null
-        }
-
-        logger.info("\n Running Biotype on " + activeAssembly.toString())
-
-        potentialFunctions.energy(activeAssembly)
-
-        List atoms = activeAssembly.getAtomList()
-        String mol = atoms.get(0).getAtomType().environment
-
-        mol = mol.replaceAll("\"", "").trim()
-        if (mol.length() > 3) {
-            mol = mol.substring(0, 3)
-        }
-
-        // Create a List of bioptype String entries.
-        biotypes = new ArrayList<>()
-
-        int index = 1
-        for (Atom atom : atoms) {
-            StringBuilder sb = new StringBuilder()
-            sb.append(String.format(" biotype %3d %4s \"%s\" %3d", index++, atom.getName(), mol, atom.getAtomType().type))
-            List bonds = atom.getBonds()
-            if (bonds != null) {
-                for (Bond bond : bonds) {
-                    sb.append(String.format(" %4s", bond.get1_2(atom).getName()))
-                }
-            }
-            biotypes.add(sb.toString())
-            logger.info(sb.toString())
-        }
-
-        return this
+  @Override
+  Biotype run() {
+    if (!init()) {
+      return null
     }
+
+    if (xyzFile != null && xyzFile.size() > 0) {
+      MolecularAssembly[] assemblies = [potentialFunctions.open(xyzFile.get(0))]
+      activeAssembly = assemblies[0]
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return null
+    }
+
+    logger.info("\n Running Biotype on " + activeAssembly.toString())
+
+    potentialFunctions.energy(activeAssembly)
+
+    List atoms = activeAssembly.getAtomList()
+    String mol = atoms.get(0).getAtomType().environment
+
+    mol = mol.replaceAll("\"", "").trim()
+    if (mol.length() > 3) {
+      mol = mol.substring(0, 3)
+    }
+
+    // Create a List of bioptype String entries.
+    biotypes = new ArrayList<>()
+
+    int index = 1
+    for (Atom atom : atoms) {
+      StringBuilder sb = new StringBuilder()
+      sb.append(String.format(" biotype %3d %4s \"%s\" %3d", index++, atom.getName(), mol,
+          atom.getAtomType().type))
+      List bonds = atom.getBonds()
+      if (bonds != null) {
+        for (Bond bond : bonds) {
+          sb.append(String.format(" %4s", bond.get1_2(atom).getName()))
+        }
+      }
+      biotypes.add(sb.toString())
+      logger.info(sb.toString())
+    }
+
+    return this
+  }
 
 }

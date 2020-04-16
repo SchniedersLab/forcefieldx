@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,12 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.behaviors;
 
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
 import java.util.Iterator;
-
 import org.jogamp.java3d.Behavior;
 import org.jogamp.java3d.Transform3D;
 import org.jogamp.java3d.TransformGroup;
@@ -54,159 +53,147 @@ import org.jogamp.java3d.WakeupOnAWTEvent;
  */
 public class MouseZoom extends MouseBehavior {
 
-    private double zFactor = 0.0002;
-    private MouseBehaviorCallback callback = null;
-    private int mouseButton = MouseEvent.BUTTON2_DOWN_MASK;
-    private int doneID = 0;
+  private double zFactor = 0.0002;
+  private MouseBehaviorCallback callback = null;
+  private int mouseButton = MouseEvent.BUTTON2_DOWN_MASK;
+  private int doneID = 0;
 
-    /**
-     * <p>
-     * Constructor for MouseZoom.</p>
-     *
-     * @param flags a int.
-     * @param VPTG  a {@link org.jogamp.java3d.TransformGroup} object.
-     */
-    public MouseZoom(int flags, TransformGroup VPTG) {
-        super(flags, VPTG);
+  /**
+   * Constructor for MouseZoom.
+   *
+   * @param flags a int.
+   * @param VPTG a {@link org.jogamp.java3d.TransformGroup} object.
+   */
+  public MouseZoom(int flags, TransformGroup VPTG) {
+    super(flags, VPTG);
+  }
+
+  /**
+   * Constructor for MouseZoom.
+   *
+   * @param flags a int.
+   * @param VPTG a {@link org.jogamp.java3d.TransformGroup} object.
+   * @param behavior a {@link org.jogamp.java3d.Behavior} object.
+   * @param postID a int.
+   * @param dID a int.
+   */
+  public MouseZoom(int flags, TransformGroup VPTG, Behavior behavior, int postID, int dID) {
+    super(flags, VPTG, behavior, postID);
+    doneID = dID;
+  }
+
+  /**
+   * Return the y-axis movement multipler.
+   *
+   * <p>getFactor
+   *
+   * @return a double.
+   */
+  public double getFactor() {
+    return zFactor;
+  }
+
+  /**
+   * Set the y-axis movement multipler with factor.
+   *
+   * <p>setFactor
+   *
+   * @param factor a double.
+   */
+  public void setFactor(double factor) {
+    zFactor = factor;
+  }
+
+  /** initialize */
+  public void initialize() {
+    super.initialize();
+    if ((flags & INVERT_INPUT) == INVERT_INPUT) {
+      zFactor *= -1;
+      invert = true;
     }
+  }
 
-    /**
-     * <p>
-     * Constructor for MouseZoom.</p>
-     *
-     * @param flags    a int.
-     * @param VPTG     a {@link org.jogamp.java3d.TransformGroup} object.
-     * @param behavior a {@link org.jogamp.java3d.Behavior} object.
-     * @param postID   a int.
-     * @param dID      a int.
-     */
-    public MouseZoom(int flags, TransformGroup VPTG, Behavior behavior, int postID, int dID) {
-        super(flags, VPTG, behavior, postID);
-        doneID = dID;
-    }
-
-    /**
-     * Return the y-axis movement multipler.
-     *
-     * <p>
-     * getFactor</p>
-     *
-     * @return a double.
-     */
-    public double getFactor() {
-        return zFactor;
-    }
-
-    /**
-     * Set the y-axis movement multipler with factor.
-     *
-     * <p>
-     * setFactor</p>
-     *
-     * @param factor a double.
-     */
-    public void setFactor(double factor) {
-        zFactor = factor;
-    }
-
-    /**
-     * <p>
-     * initialize</p>
-     */
-    public void initialize() {
-        super.initialize();
-        if ((flags & INVERT_INPUT) == INVERT_INPUT) {
-            zFactor *= -1;
-            invert = true;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void processStimulus(Iterator<WakeupCriterion> criteria) {
-        boolean done = false;
-        while (criteria.hasNext()) {
-            WakeupCriterion wakeup = criteria.next();
-            if (wakeup instanceof WakeupOnAWTEvent) {
-                AWTEvent[] event = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
-                for (AWTEvent awtEvent : event) {
-                    processMouseEvent((MouseEvent) awtEvent);
-                    int id = awtEvent.getID();
-                    MouseEvent mevent = (MouseEvent) awtEvent;
-                    int mod = mevent.getModifiersEx();
-                    boolean middleButton = ((mod & mouseButton) == mouseButton);
-                    if (!middleButton) {
-                        middleButton = ((mod & MouseEvent.ALT_DOWN_MASK) == MouseEvent.ALT_DOWN_MASK);
-                    }
-                    if ((id == MouseEvent.MOUSE_DRAGGED) && middleButton) {
-                        y = ((MouseEvent) awtEvent).getY();
-                        int dy = y - yLast;
-                        if (!reset) {
-                            transformGroup.getTransform(currXform);
-                            double z = (-1.0) * dy * zFactor;
-                            double scale = currXform.getScale() + z;
-                            if (scale > 0) {
-                                currXform.setScale(scale);
-                                transformGroup.setTransform(currXform);
-                                transformChanged(currXform);
-                            }
-                            if (callback != null) {
-                                callback.transformChanged(MouseBehaviorCallback.ZOOM, currXform);
-                            }
-                        } else {
-                            reset = false;
-                        }
-                        xLast = x;
-                        yLast = y;
-                    }
-                    if (id == MouseEvent.MOUSE_PRESSED) {
-                        xLast = ((MouseEvent) awtEvent).getX();
-                        yLast = ((MouseEvent) awtEvent).getY();
-                    } else if (id == MouseEvent.MOUSE_RELEASED) {
-                        done = true;
-                    }
-                }
+  /** {@inheritDoc} */
+  public void processStimulus(Iterator<WakeupCriterion> criteria) {
+    boolean done = false;
+    while (criteria.hasNext()) {
+      WakeupCriterion wakeup = criteria.next();
+      if (wakeup instanceof WakeupOnAWTEvent) {
+        AWTEvent[] event = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+        for (AWTEvent awtEvent : event) {
+          processMouseEvent((MouseEvent) awtEvent);
+          int id = awtEvent.getID();
+          MouseEvent mevent = (MouseEvent) awtEvent;
+          int mod = mevent.getModifiersEx();
+          boolean middleButton = ((mod & mouseButton) == mouseButton);
+          if (!middleButton) {
+            middleButton = ((mod & MouseEvent.ALT_DOWN_MASK) == MouseEvent.ALT_DOWN_MASK);
+          }
+          if ((id == MouseEvent.MOUSE_DRAGGED) && middleButton) {
+            y = ((MouseEvent) awtEvent).getY();
+            int dy = y - yLast;
+            if (!reset) {
+              transformGroup.getTransform(currXform);
+              double z = (-1.0) * dy * zFactor;
+              double scale = currXform.getScale() + z;
+              if (scale > 0) {
+                currXform.setScale(scale);
+                transformGroup.setTransform(currXform);
+                transformChanged(currXform);
+              }
+              if (callback != null) {
+                callback.transformChanged(MouseBehaviorCallback.ZOOM, currXform);
+              }
+            } else {
+              reset = false;
             }
+            xLast = x;
+            yLast = y;
+          }
+          if (id == MouseEvent.MOUSE_PRESSED) {
+            xLast = ((MouseEvent) awtEvent).getX();
+            yLast = ((MouseEvent) awtEvent).getY();
+          } else if (id == MouseEvent.MOUSE_RELEASED) {
+            done = true;
+          }
         }
-        if (!done) {
-            wakeupOn(mouseCriterion);
-        } else {
-            reset = true;
-            mouseButton = MouseEvent.BUTTON2_DOWN_MASK;
-            postId(doneID);
-            wakeupOn(postCriterion);
-        }
+      }
     }
+    if (!done) {
+      wakeupOn(mouseCriterion);
+    } else {
+      reset = true;
+      mouseButton = MouseEvent.BUTTON2_DOWN_MASK;
+      postId(doneID);
+      wakeupOn(postCriterion);
+    }
+  }
 
-    /**
-     * <p>
-     * Setter for the field <code>mouseButton</code>.</p>
-     *
-     * @param button a int.
-     */
-    public void setMouseButton(int button) {
-        mouseButton = button;
-    }
+  /**
+   * Setter for the field <code>mouseButton</code>.
+   *
+   * @param button a int.
+   */
+  public void setMouseButton(int button) {
+    mouseButton = button;
+  }
 
-    /**
-     * The transformChanged method in the callback class will be called every
-     * time the transform is updated.
-     * <p>
-     * setupCallback</p>
-     *
-     * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
-     */
-    public void setupCallback(MouseBehaviorCallback c) {
-        callback = c;
-    }
+  /**
+   * The transformChanged method in the callback class will be called every time the transform is
+   * updated.
+   *
+   * <p>setupCallback
+   *
+   * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
+   */
+  public void setupCallback(MouseBehaviorCallback c) {
+    callback = c;
+  }
 
-    /**
-     * <p>
-     * transformChanged</p>
-     *
-     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
-     */
-    public void transformChanged(Transform3D transform) {
-    }
+  /**
+   * transformChanged
+   *
+   * @param transform a {@link org.jogamp.java3d.Transform3D} object.
+   */
+  public void transformChanged(Transform3D transform) {}
 }

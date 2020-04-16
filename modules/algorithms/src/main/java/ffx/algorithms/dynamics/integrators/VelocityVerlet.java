@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,90 +34,87 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
-import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 
 /**
- * Integrate Newton's equations of motion using a Velocity Verlet multistep
- * recursion formula.
+ * Integrate Newton's equations of motion using a Velocity Verlet multistep recursion formula.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class VelocityVerlet extends Integrator {
 
-    private double[] xPrior;
+  private double[] xPrior;
 
-    /**
-     * Constructor for VelocityVerlet.
-     *
-     * @param nVariables number of Variables.
-     * @param x          Cartesian coordinates (Angstroms).
-     * @param v          Velocities.
-     * @param a          Accelerations.
-     * @param mass       Mass.
-     */
-    public VelocityVerlet(int nVariables, double[] x, double[] v, double[] a,
-                          double[] mass) {
-        super(nVariables, x, v, a, null, mass);
-    }
+  /**
+   * Constructor for VelocityVerlet.
+   *
+   * @param nVariables number of Variables.
+   * @param x Cartesian coordinates (Angstroms).
+   * @param v Velocities.
+   * @param a Accelerations.
+   * @param mass Mass.
+   */
+  public VelocityVerlet(int nVariables, double[] x, double[] v, double[] a, double[] mass) {
+    super(nVariables, x, v, a, null, mass);
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Use Newton's second law to find accelerations and
-     * then full-step velocities.
-     */
-    @Override
-    public void postForce(double[] gradient) {
-        copyAccelerationToPrevious();
-        for (int i = 0; i < nVariables; i++) {
-            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
-            v[i] = v[i] + a[i] * dt_2;
-        }
-        constraints.forEach((Constraint c) -> c.applyConstraintToVelocities(x, v, mass, constraintTolerance));
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Use Newton's second law to find accelerations and then full-step velocities.
+   */
+  @Override
+  public void postForce(double[] gradient) {
+    copyAccelerationToPrevious();
+    for (int i = 0; i < nVariables; i++) {
+      a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
+      v[i] = v[i] + a[i] * dt_2;
     }
+    constraints.forEach(
+        (Constraint c) -> c.applyConstraintToVelocities(x, v, mass, constraintTolerance));
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Find half-step velocities and full-step positions.
-     */
-    @Override
-    public void preForce(Potential potential) {
-        if (useConstraints) {
-            if (xPrior == null) {
-                xPrior = copyOf(x, nVariables);
-            } else {
-                arraycopy(x, 0, xPrior, 0, nVariables);
-            }
-        }
-        for (int i = 0; i < nVariables; i++) {
-            v[i] = v[i] + a[i] * dt_2;
-            x[i] = x[i] + v[i] * dt;
-        }
-        if (useConstraints) {
-            constraints.forEach((Constraint c) -> c.applyConstraintToStep(xPrior, x, mass, constraintTolerance));
-            double velScale = 1.0 / dt;
-            for (int i = 0; i < nVariables; i++) {
-                v[i] = velScale * (x[i] - xPrior[i]);
-            }
-        }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Find half-step velocities and full-step positions.
+   */
+  @Override
+  public void preForce(Potential potential) {
+    if (useConstraints) {
+      if (xPrior == null) {
+        xPrior = copyOf(x, nVariables);
+      } else {
+        arraycopy(x, 0, xPrior, 0, nVariables);
+      }
     }
+    for (int i = 0; i < nVariables; i++) {
+      v[i] = v[i] + a[i] * dt_2;
+      x[i] = x[i] + v[i] * dt;
+    }
+    if (useConstraints) {
+      constraints.forEach(
+          (Constraint c) -> c.applyConstraintToStep(xPrior, x, mass, constraintTolerance));
+      double velScale = 1.0 / dt;
+      for (int i = 0; i < nVariables; i++) {
+        v[i] = velScale * (x[i] - xPrior[i]);
+      }
+    }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setTimeStep(double dt) {
-        this.dt = dt;
-        dt_2 = dt * 0.5;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public void setTimeStep(double dt) {
+    this.dt = dt;
+    dt_2 = dt * 0.5;
+  }
 }

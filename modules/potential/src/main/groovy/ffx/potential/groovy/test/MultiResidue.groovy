@@ -37,16 +37,15 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.Residue.ResidueType
 import ffx.potential.parameters.ForceField
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
+import groovy.cli.Option
+import groovy.cli.Unparsed
+import groovy.cli.picocli.CliBuilder
 
 /**
  * The MultiResidue script evaluates the energy of a MultiResidue system.
@@ -57,119 +56,121 @@ import ffx.potential.utils.PotentialsUtils
  */
 class MultiResidue extends Script {
 
+  /**
+   * Options for the MultiResidue script.
+   * <br>
+   * Usage:
+   * <br>
+   * ffxc test.MultiResidue [options] &lt;filename&gt;
+   */
+  class Options {
     /**
-     * Options for the MultiResidue script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc test.MultiResidue [options] &lt;filename&gt;
+     * -h or --help to print a help message.
      */
-    class Options {
-        /**
-         * -h or --help to print a help message.
-         */
-        @Option(shortName = 'h', description = 'Print this help message.')
-        boolean help
-        /**
-         * -r or --resID to define the residue number (default is 1).
-         */
-        @Option(shortName = 'r', defaultValue = '1', description = 'Residue number.')
-        Integer resID
-        /**
-         * -c or --chain to set the single character chain name (default is \' \').'
-         */
-        @Option(shortName = 'c', defaultValue = ' ', description = 'Single character chain name (default is \' \').')
-        Character chain
-        /**
-         * -n or --name to set the name of residue to switch (default is ALA).
-         */
-        @Option(shortName = 'n', defaultValue = 'ALA', description = 'Name of residue to switch to.')
-        String name
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed
-        List<String> filenames
+    @Option(shortName = 'h', description = 'Print this help message.')
+    boolean help
+    /**
+     * -r or --resID to define the residue number (default is 1).
+     */
+    @Option(shortName = 'r', defaultValue = '1', description = 'Residue number.')
+    Integer resID
+    /**
+     * -c or --chain to set the single character chain name (default is \' \').'
+     */
+    @Option(shortName = 'c', defaultValue = ' ', description = 'Single character chain name (default is \' \').')
+    Character chain
+    /**
+     * -n or --name to set the name of residue to switch (default is ALA).
+     */
+    @Option(shortName = 'n', defaultValue = 'ALA', description = 'Name of residue to switch to.')
+    String name
+    /**
+     * The final argument(s) should be one or more filenames.
+     */
+    @Unparsed
+    List<String> filenames
+  }
+
+  /**
+   * Execute the script.
+   */
+  @Override
+  MultiResidue run() {
+
+    // Create the command line parser.
+    def cli = new CliBuilder(usage: ' ffxc test.MultiResidue [options] <filename>',
+        header: ' Options:')
+    def options = new Options()
+    cli.parseFromInstance(options, args)
+    if (options.help) {
+      cli.usage()
+      return null
     }
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    MultiResidue run() {
-
-        // Create the command line parser.
-        def cli = new CliBuilder(usage: ' ffxc test.MultiResidue [options] <filename>', header: ' Options:')
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-        if (options.help) {
-            cli.usage()
-            return null
-        }
-
-        List<String> arguments = options.filenames
-        String modelFilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-        } else if (active == null) {
-            return cli.usage()
-        } else {
-            modelFilename = active.getFile()
-        }
-
-        logger.info("\n Running MultiResidue on " + modelFilename + "\n")
-
-        // This is an interface specifying the closure-like methods.
-        PotentialsFunctions functions
-        try {
-            // Use a method closure to try to get an instance of UIUtils (the User Interfaces
-            // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsUtils()
-        } catch (MissingMethodException ex) {
-            // If Groovy can't find the appropriate closure, catch the exception and build
-            // an instance of the local implementation.
-            functions = new PotentialsUtils()
-        }
-        // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        ffx.potential.MolecularAssembly[] assemblies = [functions.open(modelFilename)]
-        ForceField forceField = assemblies[0].getForceField()
-        ffx.potential.ForceFieldEnergy forceFieldEnergy = assemblies[0].getPotentialEnergy()
-
-        int resID = options.resID
-        Character chain = options.chain
-        String name = options.name
-
-        ffx.potential.bonded.MultiResidue multiResidue
-        Residue residue
-        Polymer[] polymers = assemblies[0].getChains()
-        for (int i = 0; i < polymers.length; i++) {
-            Polymer polymer = polymers[i]
-            if (chain == polymer.getChainID()) {
-                residue = polymer.getResidue(resID)
-                if (residue != null) {
-                    multiResidue = new ffx.potential.bonded.MultiResidue(residue, forceField, forceFieldEnergy)
-                    polymer.addMultiResidue(multiResidue)
-                }
-            }
-        }
-
-        if (residue == null) {
-            logger.info(" Chain " + chain + " residue " + resID + " was not found.")
-            return
-        }
-
-        ResidueType type = residue.getResidueType()
-        int resNumber = residue.getResidueNumber()
-        multiResidue.addResidue(new Residue(name, resNumber, type))
-
-        int numResidues = multiResidue.getResidueCount()
-        for (int i = 0; i < numResidues; i++) {
-            multiResidue.setActiveResidue(i)
-            logger.info(" Active Residue: " + multiResidue.toString())
-            forceFieldEnergy.energy(true, true)
-        }
-
-        return this
+    List<String> arguments = options.filenames
+    String modelFilename = null
+    if (arguments != null && arguments.size() > 0) {
+      // Read in command line.
+      modelFilename = arguments.get(0)
+    } else if (active == null) {
+      return cli.usage()
+    } else {
+      modelFilename = active.getFile()
     }
+
+    logger.info("\n Running MultiResidue on " + modelFilename + "\n")
+
+    // This is an interface specifying the closure-like methods.
+    PotentialsFunctions functions
+    try {
+      // Use a method closure to try to get an instance of UIUtils (the User Interfaces
+      // implementation, which interfaces with the GUI, etc.).
+      functions = getPotentialsUtils()
+    } catch (MissingMethodException ex) {
+      // If Groovy can't find the appropriate closure, catch the exception and build
+      // an instance of the local implementation.
+      functions = new PotentialsUtils()
+    }
+    // Use PotentialsFunctions methods instead of Groovy method closures to do work.
+    ffx.potential.MolecularAssembly[] assemblies = [functions.open(modelFilename)]
+    ForceField forceField = assemblies[0].getForceField()
+    ffx.potential.ForceFieldEnergy forceFieldEnergy = assemblies[0].getPotentialEnergy()
+
+    int resID = options.resID
+    Character chain = options.chain
+    String name = options.name
+
+    ffx.potential.bonded.MultiResidue multiResidue
+    Residue residue
+    Polymer[] polymers = assemblies[0].getChains()
+    for (int i = 0; i < polymers.length; i++) {
+      Polymer polymer = polymers[i]
+      if (chain == polymer.getChainID()) {
+        residue = polymer.getResidue(resID)
+        if (residue != null) {
+          multiResidue = new ffx.potential.bonded.MultiResidue(residue, forceField,
+              forceFieldEnergy)
+          polymer.addMultiResidue(multiResidue)
+        }
+      }
+    }
+
+    if (residue == null) {
+      logger.info(" Chain " + chain + " residue " + resID + " was not found.")
+      return
+    }
+
+    ResidueType type = residue.getResidueType()
+    int resNumber = residue.getResidueNumber()
+    multiResidue.addResidue(new Residue(name, resNumber, type))
+
+    int numResidues = multiResidue.getResidueCount()
+    for (int i = 0; i < numResidues; i++) {
+      multiResidue.setActiveResidue(i)
+      logger.info(" Active Residue: " + multiResidue.toString())
+      forceFieldEnergy.energy(true, true)
+    }
+
+    return this
+  }
 }

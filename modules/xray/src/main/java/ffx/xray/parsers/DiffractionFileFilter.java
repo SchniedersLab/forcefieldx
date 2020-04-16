@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,63 +34,63 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray.parsers;
-
-import java.io.File;
-
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.xray.DiffractionRefinementData;
+import java.io.File;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
- * <p>
- * DiffractionFileFilter interface.</p>
+ * DiffractionFileFilter interface.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public interface DiffractionFileFilter {
 
-    /**
-     * Get reflection information from a reflection file.
-     *
-     * @param file File to read in.
-     * @return The {@link ffx.crystal.ReflectionList}, or null if not enough information
-     * present in the reflection file.
-     */
-    ReflectionList getReflectionList(File file);
+  /**
+   * Get reflection information from a reflection file.
+   *
+   * @param file File to read in.
+   * @return The {@link ffx.crystal.ReflectionList}, or null if not enough information present in
+   *     the reflection file.
+   */
+  ReflectionList getReflectionList(File file);
 
-    /**
-     * Get reflection information from a reflection file.
-     *
-     * @param file       File to read in.
-     * @param properties System properties.
-     * @return The {@link ffx.crystal.ReflectionList}, or null if not enough information
-     * present in the reflection file.
-     */
-    ReflectionList getReflectionList(File file, CompositeConfiguration properties);
+  /**
+   * Get reflection information from a reflection file.
+   *
+   * @param file File to read in.
+   * @param properties System properties.
+   * @return The {@link ffx.crystal.ReflectionList}, or null if not enough information present in
+   *     the reflection file.
+   */
+  ReflectionList getReflectionList(File file, CompositeConfiguration properties);
 
-    /**
-     * Attempt to determine resolution of reflection file.
-     *
-     * @param file    File to read in.
-     * @param crystal Crystal system to determine resolution information from.
-     * @return The resolution.
-     */
-    double getResolution(File file, Crystal crystal);
+  /**
+   * Attempt to determine resolution of reflection file.
+   *
+   * @param file File to read in.
+   * @param crystal Crystal system to determine resolution information from.
+   * @return The resolution.
+   */
+  double getResolution(File file, Crystal crystal);
 
-    /**
-     * Read in reflection file.
-     *
-     * @param file           File to read in.
-     * @param reflectionList The {@link ffx.crystal.ReflectionList} to find data indices.
-     * @param refinementData The {@link DiffractionRefinementData} object to fill in.
-     * @param properties     System properties.
-     * @return True if read in properly.
-     */
-    boolean readFile(File file, ReflectionList reflectionList,
-                     DiffractionRefinementData refinementData, CompositeConfiguration properties);
+  /**
+   * Read in reflection file.
+   *
+   * @param file File to read in.
+   * @param reflectionList The {@link ffx.crystal.ReflectionList} to find data indices.
+   * @param refinementData The {@link DiffractionRefinementData} object to fill in.
+   * @param properties System properties.
+   * @return True if read in properly.
+   */
+  boolean readFile(
+      File file,
+      ReflectionList reflectionList,
+      DiffractionRefinementData refinementData,
+      CompositeConfiguration properties);
 }

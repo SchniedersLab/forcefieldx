@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,16 +34,15 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.crystal;
-
-import java.util.Objects;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 
+import java.util.Objects;
+
 /**
- * <p>
- * The HKL class represents a single reflection.</p>
+ * The HKL class represents a single reflection.
  *
  * @author Timothy D. Fenn
  * @see ReflectionList
@@ -51,269 +50,246 @@ import static org.apache.commons.math3.util.FastMath.PI;
  */
 public class HKL {
 
-    /**
-     * Constant <code>ndiv=12.0</code>
-     */
-    static final double ndiv = 12.0;
-    protected int h;
-    protected int k;
-    protected int l;
-    protected int epsilon;
-    protected int allowed;
-    protected int bin;
-    protected int index;
+  /** Constant <code>ndiv=12.0</code> */
+  static final double ndiv = 12.0;
 
-    /**
-     * <p>
-     * Constructor for HKL.</p>
-     */
-    public HKL() {
-    }
+  protected int h;
+  protected int k;
+  protected int l;
+  protected int epsilon;
+  protected int allowed;
+  protected int bin;
+  protected int index;
 
-    /**
-     * <p>
-     * Constructor for HKL.</p>
-     *
-     * @param h a int.
-     * @param k a int.
-     * @param l a int.
-     */
-    public HKL(int h, int k, int l) {
-        this.h = h;
-        this.k = k;
-        this.l = l;
-        allowed = 255;
-    }
+  /** Constructor for HKL. */
+  public HKL() {}
 
-    /**
-     * <p>
-     * Constructor for HKL.</p>
-     *
-     * @param h       a int.
-     * @param k       a int.
-     * @param l       a int.
-     * @param eps     a int.
-     * @param allowed a int.
-     */
-    public HKL(int h, int k, int l, int eps, int allowed) {
-        this.h = h;
-        this.k = k;
-        this.l = l;
-        this.epsilon = eps;
-        this.allowed = allowed;
-    }
+  /**
+   * Constructor for HKL.
+   *
+   * @param h a int.
+   * @param k a int.
+   * @param l a int.
+   */
+  public HKL(int h, int k, int l) {
+    this.h = h;
+    this.k = k;
+    this.l = l;
+    allowed = 255;
+  }
 
-    /**
-     * <p>
-     * allowed</p>
-     *
-     * @return a double.
-     */
-    public double allowed() {
-        return ((double) allowed) * (PI / ndiv);
-    }
+  /**
+   * Constructor for HKL.
+   *
+   * @param h a int.
+   * @param k a int.
+   * @param l a int.
+   * @param eps a int.
+   * @param allowed a int.
+   */
+  public HKL(int h, int k, int l, int eps, int allowed) {
+    this.h = h;
+    this.k = k;
+    this.l = l;
+    this.epsilon = eps;
+    this.allowed = allowed;
+  }
 
-    /**
-     * <p>
-     * allowed</p>
-     *
-     * @param allowed a int.
-     */
-    public void allowed(int allowed) {
-        this.allowed = allowed;
-    }
+  /**
+   * neg
+   *
+   * @param hkl a {@link ffx.crystal.HKL} object.
+   * @return a {@link ffx.crystal.HKL} object.
+   */
+  static HKL neg(HKL hkl) {
+    return new HKL(-hkl.h(), -hkl.k(), -hkl.l());
+  }
 
-    /**
-     * <p>
-     * bin</p>
-     *
-     * @return a int.
-     */
-    public int bin() {
-        return bin;
-    }
+  /**
+   * sys_abs
+   *
+   * @param hkl a {@link ffx.crystal.HKL} object.
+   * @return a boolean.
+   */
+  static boolean sys_abs(HKL hkl) {
+    return (hkl.epsilon == 0);
+  }
 
-    /**
-     * <p>
-     * bin</p>
-     *
-     * @param bin a int.
-     */
-    public void bin(int bin) {
-        this.bin = bin;
-    }
+  /**
+   * allowed
+   *
+   * @return a double.
+   */
+  public double allowed() {
+    return ((double) allowed) * (PI / ndiv);
+  }
 
-    /**
-     * <p>
-     * centric</p>
-     *
-     * @return a boolean.
-     */
-    public boolean centric() {
-        return (allowed != 255);
-    }
+  /**
+   * allowed
+   *
+   * @param allowed a int.
+   */
+  public void allowed(int allowed) {
+    this.allowed = allowed;
+  }
 
-    /**
-     * <p>
-     * epsilon</p>
-     *
-     * @return a int.
-     */
-    public int epsilon() {
-        return epsilon;
-    }
+  /**
+   * bin
+   *
+   * @return a int.
+   */
+  public int bin() {
+    return bin;
+  }
 
-    /**
-     * <p>
-     * epsilon</p>
-     *
-     * @param eps a int.
-     */
-    public void epsilon(int eps) {
-        this.epsilon = eps;
-    }
+  /**
+   * bin
+   *
+   * @param bin a int.
+   */
+  public void bin(int bin) {
+    this.bin = bin;
+  }
 
-    /**
-     * <p>
-     * epsilonc</p>
-     *
-     * @return a int.
-     */
-    public int epsilonc() {
-        if (this.centric()) {
-            return 2 * epsilon;
-        } else {
-            return epsilon;
-        }
-    }
+  /**
+   * centric
+   *
+   * @return a boolean.
+   */
+  public boolean centric() {
+    return (allowed != 255);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        HKL hkl = (HKL) o;
-        return (h == hkl.h() && k == hkl.k() && l == hkl.l());
-    }
+  /**
+   * epsilon
+   *
+   * @return a int.
+   */
+  public int epsilon() {
+    return epsilon;
+  }
 
-    /**
-     * <p>
-     * h</p>
-     *
-     * @return a int.
-     */
-    public int h() {
-        return h;
-    }
+  /**
+   * epsilon
+   *
+   * @param eps a int.
+   */
+  public void epsilon(int eps) {
+    this.epsilon = eps;
+  }
 
-    /**
-     * <p>
-     * h</p>
-     *
-     * @param h a int.
-     */
-    public void h(int h) {
-        this.h = h;
+  /**
+   * epsilonc
+   *
+   * @return a int.
+   */
+  public int epsilonc() {
+    if (this.centric()) {
+      return 2 * epsilon;
+    } else {
+      return epsilon;
     }
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(h, k, l);
-    }
+  /** {@inheritDoc} */
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    HKL hkl = (HKL) o;
+    return (h == hkl.h() && k == hkl.k() && l == hkl.l());
+  }
 
-    /**
-     * <p>
-     * index</p>
-     *
-     * @return a int.
-     */
-    public int index() {
-        return index;
-    }
+  /**
+   * h
+   *
+   * @return a int.
+   */
+  public int h() {
+    return h;
+  }
 
-    /**
-     * <p>
-     * index</p>
-     *
-     * @param index a int.
-     */
-    public void index(int index) {
-        this.index = index;
-    }
+  /**
+   * h
+   *
+   * @param h a int.
+   */
+  public void h(int h) {
+    this.h = h;
+  }
 
-    /**
-     * <p>
-     * k</p>
-     *
-     * @return a int.
-     */
-    public int k() {
-        return k;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public int hashCode() {
+    return Objects.hash(h, k, l);
+  }
 
-    /**
-     * <p>
-     * k</p>
-     *
-     * @param k a int.
-     */
-    public void k(int k) {
-        this.k = k;
-    }
+  /**
+   * index
+   *
+   * @return a int.
+   */
+  public int index() {
+    return index;
+  }
 
-    /**
-     * <p>
-     * l</p>
-     *
-     * @return a int.
-     */
-    public int l() {
-        return l;
-    }
+  /**
+   * index
+   *
+   * @param index a int.
+   */
+  public void index(int index) {
+    this.index = index;
+  }
 
-    /**
-     * <p>
-     * l</p>
-     *
-     * @param l a int.
-     */
-    public void l(int l) {
-        this.l = l;
-    }
+  /**
+   * k
+   *
+   * @return a int.
+   */
+  public int k() {
+    return k;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return this.h() + " " + this.k() + " " + this.l()
-                + "(allowed: " + this.allowed + " eps: " + this.epsilon + ") ";
-    }
+  /**
+   * k
+   *
+   * @param k a int.
+   */
+  public void k(int k) {
+    this.k = k;
+  }
 
-    /**
-     * <p>
-     * neg</p>
-     *
-     * @param hkl a {@link ffx.crystal.HKL} object.
-     * @return a {@link ffx.crystal.HKL} object.
-     */
-    static HKL neg(HKL hkl) {
-        return new HKL(-hkl.h(), -hkl.k(), -hkl.l());
-    }
+  /**
+   * l
+   *
+   * @return a int.
+   */
+  public int l() {
+    return l;
+  }
 
-    /**
-     * <p>
-     * sys_abs</p>
-     *
-     * @param hkl a {@link ffx.crystal.HKL} object.
-     * @return a boolean.
-     */
-    static boolean sys_abs(HKL hkl) {
-        return (hkl.epsilon == 0);
-    }
+  /**
+   * l
+   *
+   * @param l a int.
+   */
+  public void l(int l) {
+    this.l = l;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    return this.h()
+        + " "
+        + this.k()
+        + " "
+        + this.l()
+        + "(allowed: "
+        + this.allowed
+        + " eps: "
+        + this.epsilon
+        + ") ";
+  }
 }

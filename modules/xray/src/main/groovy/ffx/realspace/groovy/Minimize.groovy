@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.realspace.groovy
 
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.potential.MolecularAssembly
@@ -47,7 +45,7 @@ import ffx.realspace.RealSpaceData
 import ffx.realspace.cli.RealSpaceOptions
 import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementMinimize
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -62,91 +60,97 @@ import picocli.CommandLine.Parameters
 @Command(description = " Minimization on a Real Space target.", name = "ffxc realspace.Minimize")
 class Minimize extends AlgorithmsScript {
 
-    @Mixin
-    MinimizeOptions minimizeOptions
+  @Mixin
+  MinimizeOptions minimizeOptions
 
-    @Mixin
-    RealSpaceOptions realSpaceOptions
+  @Mixin
+  RealSpaceOptions realSpaceOptions
 
-    @Mixin
-    AtomSelectionOptions atomSelectionOptions
+  @Mixin
+  AtomSelectionOptions atomSelectionOptions
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
-    private List<String> filenames
-    private MolecularAssembly[] assemblies
-    private RealSpaceData realspaceData
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
+  private List<String> filenames
+  private MolecularAssembly[] assemblies
+  private RealSpaceData realspaceData
 
-    @Override
-    Minimize run() {
+  @Override
+  Minimize run() {
 
-        if (!init()) {
-            return this
-        }
-
-        String modelFilename
-        if (filenames != null && filenames.size() > 0) {
-            activeAssembly = algorithmFunctions.open(filenames.get(0))
-            modelFilename = filenames.get(0)
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        } else {
-            modelFilename = activeAssembly.getFile().getAbsolutePath()
-        }
-        assemblies = [activeAssembly] as MolecularAssembly[]
-
-        logger.info("\n Running Real Space Minimization on " + modelFilename)
-
-        // Set atom (in)active selections.
-        atomSelectionOptions.setActiveAtoms(activeAssembly)
-
-        RealSpaceFile[] mapFiles = realSpaceOptions.processData(filenames, activeAssembly).toArray(new RealSpaceFile[0])
-        realspaceData = new RealSpaceData(assemblies, activeAssembly.getProperties(), activeAssembly.getParallelTeam(), mapFiles)
-
-        // Beginning target function.
-        algorithmFunctions.energy(activeAssembly)
-
-        RefinementMinimize refinementMinimize = new RefinementMinimize(realspaceData, realSpaceOptions.refinementMode)
-
-        double eps = minimizeOptions.eps
-        int maxiter = minimizeOptions.iterations
-        if (eps < 0.0) {
-            eps = 1.0
-        }
-
-        if (maxiter < Integer.MAX_VALUE) {
-            logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps, maxiter))
-        } else {
-            logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps))
-        }
-
-        refinementMinimize.minimize(eps, maxiter)
-
-        // Final target function.
-        algorithmFunctions.energy(activeAssembly)
-
-        // Suffix to append to output data
-        String suffix = "_refine"
-        algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelFilename) + suffix + ".pdb"))
-
-        return this
+    if (!init()) {
+      return this
     }
 
-    @Override
-    boolean destroyPotentials() {
-        boolean destroyedSuccess = true
-        if (assemblies != null) {
-            if (realspaceData != null) {
-                destroyedSuccess = realspaceData.destroy()
-            }
-            for (int i = 1; i < assemblies.length; i++) {
-                destroyedSuccess = destroyedSuccess && assemblies[i].getPotentialEnergy().destroy()
-            }
-        }
-        return destroyedSuccess
+    String modelFilename
+    if (filenames != null && filenames.size() > 0) {
+      activeAssembly = algorithmFunctions.open(filenames.get(0))
+      modelFilename = filenames.get(0)
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
+    } else {
+      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
+    assemblies = [activeAssembly] as MolecularAssembly[]
+
+    logger.info("\n Running Real Space Minimization on " + modelFilename)
+
+    // Set atom (in)active selections.
+    atomSelectionOptions.setActiveAtoms(activeAssembly)
+
+    RealSpaceFile[] mapFiles =
+        realSpaceOptions.processData(filenames, activeAssembly).toArray(new RealSpaceFile[0])
+    realspaceData = new RealSpaceData(assemblies, activeAssembly.getProperties(),
+        activeAssembly.getParallelTeam(), mapFiles)
+
+    // Beginning target function.
+    algorithmFunctions.energy(activeAssembly)
+
+    RefinementMinimize refinementMinimize = new RefinementMinimize(realspaceData,
+        realSpaceOptions.refinementMode)
+
+    double eps = minimizeOptions.eps
+    int maxiter = minimizeOptions.iterations
+    if (eps < 0.0) {
+      eps = 1.0
+    }
+
+    if (maxiter < Integer.MAX_VALUE) {
+      logger.info(String.
+          format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps,
+              maxiter))
+    } else {
+      logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps))
+    }
+
+    refinementMinimize.minimize(eps, maxiter)
+
+    // Final target function.
+    algorithmFunctions.energy(activeAssembly)
+
+    // Suffix to append to output data
+    String suffix = "_refine"
+    algorithmFunctions.saveAsPDB(assemblies,
+        new File(FilenameUtils.removeExtension(modelFilename) + suffix + ".pdb"))
+
+    return this
+  }
+
+  @Override
+  boolean destroyPotentials() {
+    boolean destroyedSuccess = true
+    if (assemblies != null) {
+      if (realspaceData != null) {
+        destroyedSuccess = realspaceData.destroy()
+      }
+      for (int i = 1; i < assemblies.length; i++) {
+        destroyedSuccess = destroyedSuccess && assemblies[i].getPotentialEnergy().destroy()
+      }
+    }
+    return destroyedSuccess
+  }
 }
 

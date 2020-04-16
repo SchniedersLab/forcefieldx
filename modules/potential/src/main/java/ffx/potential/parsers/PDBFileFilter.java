@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,17 +34,15 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 
 package ffx.potential.parsers;
-
-import javax.swing.filechooser.FileFilter;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-
+import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -55,82 +53,77 @@ import org.apache.commons.io.FilenameUtils;
  */
 public final class PDBFileFilter extends FileFilter {
 
-    /**
-     * Public Constructor.
-     */
-    public PDBFileFilter() {
-    }
+  /** Public Constructor. */
+  public PDBFileFilter() {}
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method return <code>true</code> if the file is a directory or
-     * Protein Databank File (*.PDB).
-     */
-    @Override
-    public boolean accept(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String ext = FilenameUtils.getExtension(file.getName());
-        return ext.toUpperCase().startsWith("PDB");
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This method return <code>true</code> if the file is a directory or Protein Databank File
+   * (*.PDB).
+   */
+  @Override
+  public boolean accept(File file) {
+    if (file.isDirectory()) {
+      return true;
     }
+    String ext = FilenameUtils.getExtension(file.getName());
+    return ext.toUpperCase().startsWith("PDB");
+  }
 
-    /**
-     * <p>
-     * acceptDeep</p> Accepts a PDB file if it finds at least one parseable ATOM
-     * line.
-     *
-     * @param file a {@link java.io.File} object.
-     * @return Whether a valid PDB file.
-     */
-    public boolean acceptDeep(File file) {
-        try {
-            if (file == null || file.isDirectory() || !file.canRead()) {
-                return false;
-            }
-            try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-                if (!br.ready()) {
-                    return false;
-                }
-                String line = br.readLine();
-                if (line != null) {
-                    line = line.trim();
-                } else {
-                    return false;
-                }
-                while (line != null) {
-                    line = line.trim();
-                    if (line.startsWith("ATOM  ") || line.startsWith("HETATM")) {
-                        try {
-                            Integer.parseInt(line.substring(6, 11).trim());
-                            Integer.parseInt(line.substring(22, 26).trim());
-                            String[] coordOccTempVals = line.substring(30, 66).trim().split(" +");
-                            for (String value : coordOccTempVals) {
-                                Double.parseDouble(value);
-                            }
-                            br.close();
-                            return true;
-                        } catch (NumberFormatException | StringIndexOutOfBoundsException ex) {
-                            // Do nothing.
-                        }
-                    }
-                    line = br.readLine();
-                }
-            }
-        } catch (IOException e) {
-            return false;
-        }
+  /**
+   * acceptDeep Accepts a PDB file if it finds at least one parseable ATOM line.
+   *
+   * @param file a {@link java.io.File} object.
+   * @return Whether a valid PDB file.
+   */
+  public boolean acceptDeep(File file) {
+    try {
+      if (file == null || file.isDirectory() || !file.canRead()) {
         return false;
+      }
+      try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+        if (!br.ready()) {
+          return false;
+        }
+        String line = br.readLine();
+        if (line != null) {
+          line = line.trim();
+        } else {
+          return false;
+        }
+        while (line != null) {
+          line = line.trim();
+          if (line.startsWith("ATOM  ") || line.startsWith("HETATM")) {
+            try {
+              Integer.parseInt(line.substring(6, 11).trim());
+              Integer.parseInt(line.substring(22, 26).trim());
+              String[] coordOccTempVals = line.substring(30, 66).trim().split(" +");
+              for (String value : coordOccTempVals) {
+                Double.parseDouble(value);
+              }
+              br.close();
+              return true;
+            } catch (NumberFormatException | StringIndexOutOfBoundsException ex) {
+              // Do nothing.
+            }
+          }
+          line = br.readLine();
+        }
+      }
+    } catch (IOException e) {
+      return false;
     }
+    return false;
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Provides a description of the PDBFileFilter.
-     */
-    @Override
-    public String getDescription() {
-        return "Protein Databank (*.PDB)";
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Provides a description of the PDBFileFilter.
+   */
+  @Override
+  public String getDescription() {
+    return "Protein Databank (*.PDB)";
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,12 +34,12 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 
 /**
- * Force Field X implements fixed charge and polarizable atomic multipole molecular mechanics potentials,
- * local and global optimization, molecular dynamics, free energy differences, etc,
- * with special support for crystal space groups.
+ * Force Field X implements fixed charge and polarizable atomic multipole molecular mechanics
+ * potentials, local and global optimization, molecular dynamics, free energy differences, etc, with
+ * special support for crystal space groups.
  *
  * @author Michael J. Schnieders
  * @since 1.0

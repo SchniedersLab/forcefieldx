@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,158 +34,162 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.dynamics.thermostats;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
 import static java.lang.String.format;
-
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 /**
- * Thermostat a molecular dynamics trajectory to an external bath using the
- * Bussi, Donadio, and Parrinello method. This method is similar to Berendsen
- * thermostat, but generates a canonical distribution.
+ * Thermostat a molecular dynamics trajectory to an external bath using the Bussi, Donadio, and
+ * Parrinello method. This method is similar to Berendsen thermostat, but generates a canonical
+ * distribution.
  *
  * @author Michael J. Schnieders
- * <p>
- * Derived from TINKER temperature control by Alan Grossfield and Jay Ponder.
- * @see <a href="http://dx.doi.org/10.1016/j.cpc.2008.01.006"> G. Bussi and M.
- * Parrinello, "Stochastic Thermostats: Comparison of Local and Global Schemes",
- * Computer Physics Communications, 179, 26-29 (2008)</a>
+ *     <p>Derived from TINKER temperature control by Alan Grossfield and Jay Ponder.
+ * @see <a href="http://dx.doi.org/10.1016/j.cpc.2008.01.006">G. Bussi and M. Parrinello,
+ *     "Stochastic Thermostats: Comparison of Local and Global Schemes", Computer Physics
+ *     Communications, 179, 26-29 (2008)</a>
  * @since 1.0
  */
 public class Bussi extends Thermostat {
 
-    /**
-     * The random number generator used to perturb velocities.
-     */
-    private final Random bussiRandom;
-    /**
-     * Bussi thermostat time constant (psec).
-     */
-    private double tau;
+  /** The random number generator used to perturb velocities. */
+  private final Random bussiRandom;
+  /** Bussi thermostat time constant (psec). */
+  private double tau;
 
-    /**
-     * <p>
-     * Constructor for Bussi.</p>
-     *
-     * @param n                 Number of degrees of freedom.
-     * @param x                 Atomic coordinates.
-     * @param v                 Velocities.
-     * @param mass              Mass of each degrees of freedom.
-     * @param type              the VARIABLE_TYPE of each variable.
-     * @param targetTemperature The target temperature.
-     * @param tau               Bussi thermostat time constant (psec).
-     */
-    public Bussi(int n, double[] x, double[] v, double[] mass,
-                 VARIABLE_TYPE[] type, double targetTemperature,
-                 double tau) {
-        this(n, x, v, mass, type, targetTemperature, tau, Collections.emptyList());
-    }
+  /**
+   * Constructor for Bussi.
+   *
+   * @param n Number of degrees of freedom.
+   * @param x Atomic coordinates.
+   * @param v Velocities.
+   * @param mass Mass of each degrees of freedom.
+   * @param type the VARIABLE_TYPE of each variable.
+   * @param targetTemperature The target temperature.
+   * @param tau Bussi thermostat time constant (psec).
+   */
+  public Bussi(
+      int n,
+      double[] x,
+      double[] v,
+      double[] mass,
+      VARIABLE_TYPE[] type,
+      double targetTemperature,
+      double tau) {
+    this(n, x, v, mass, type, targetTemperature, tau, Collections.emptyList());
+  }
 
-    public Bussi(int n, double[] x, double[] v, double[] mass,
-                 VARIABLE_TYPE[] type, double targetTemperature,
-                 double tau, List<Constraint> constraints) {
-        super(n, x, v, mass, type, targetTemperature, constraints);
-        this.name = ThermostatEnum.BUSSI;
-        this.tau = tau;
-        this.bussiRandom = new Random();
-    }
+  public Bussi(
+      int n,
+      double[] x,
+      double[] v,
+      double[] mass,
+      VARIABLE_TYPE[] type,
+      double targetTemperature,
+      double tau,
+      List<Constraint> constraints) {
+    super(n, x, v, mass, type, targetTemperature, constraints);
+    this.name = ThermostatEnum.BUSSI;
+    this.tau = tau;
+    this.bussiRandom = new Random();
+  }
 
-    /**
-     * <p>
-     * Constructor for Bussi.</p>
-     *
-     * @param n                 Number of degrees of freedom.
-     * @param x                 Atomic coordinates.
-     * @param v                 Velocities.
-     * @param mass              Mass of each degrees of freedom.
-     * @param type              the VARIABLE_TYPE of each variable.
-     * @param targetTemperature a double.
-     */
-    public Bussi(int n, double[] x, double[] v, double[] mass,
-                 VARIABLE_TYPE[] type, double targetTemperature) {
-        this(n, x, v, mass, type, targetTemperature, 0.2e0);
-    }
+  /**
+   * Constructor for Bussi.
+   *
+   * @param n Number of degrees of freedom.
+   * @param x Atomic coordinates.
+   * @param v Velocities.
+   * @param mass Mass of each degrees of freedom.
+   * @param type the VARIABLE_TYPE of each variable.
+   * @param targetTemperature a double.
+   */
+  public Bussi(
+      int n,
+      double[] x,
+      double[] v,
+      double[] mass,
+      VARIABLE_TYPE[] type,
+      double targetTemperature) {
+    this(n, x, v, mass, type, targetTemperature, 0.2e0);
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Full step velocity modification.
-     */
-    @Override
-    public void fullStep(double dt) {
-        double expTau = exp(-dt / tau);
-        double tempRatio = targetTemperature / currentTemperature;
-        double rate = (1.0 - expTau) * tempRatio / degreesOfFreedom;
-        double r = bussiRandom.nextGaussian();
-        double s = 0.0;
-        for (int i = 0; i < degreesOfFreedom - 1; i++) {
-            double si = bussiRandom.nextGaussian();
-            s += si * si;
-        }
-        double scale = expTau + (s + r * r) * rate + 2.0 * r * sqrt(expTau * rate);
-        scale = sqrt(scale);
-        if (r + sqrt(expTau / rate) < 0.0) {
-            scale = -scale;
-        }
-        for (int i = 0; i < nVariables; i++) {
-            v[i] *= scale;
-        }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Full step velocity modification.
+   */
+  @Override
+  public void fullStep(double dt) {
+    double expTau = exp(-dt / tau);
+    double tempRatio = targetTemperature / currentTemperature;
+    double rate = (1.0 - expTau) * tempRatio / degreesOfFreedom;
+    double r = bussiRandom.nextGaussian();
+    double s = 0.0;
+    for (int i = 0; i < degreesOfFreedom - 1; i++) {
+      double si = bussiRandom.nextGaussian();
+      s += si * si;
     }
+    double scale = expTau + (s + r * r) * rate + 2.0 * r * sqrt(expTau * rate);
+    scale = sqrt(scale);
+    if (r + sqrt(expTau / rate) < 0.0) {
+      scale = -scale;
+    }
+    for (int i = 0; i < nVariables; i++) {
+      v[i] *= scale;
+    }
+  }
 
-    /**
-     * <p>
-     * Getter for the field <code>tau</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getTau() {
-        return tau;
-    }
+  /**
+   * Getter for the field <code>tau</code>.
+   *
+   * @return a double.
+   */
+  public double getTau() {
+    return tau;
+  }
 
-    /**
-     * <p>
-     * Setter for the field <code>tau</code>.</p>
-     *
-     * @param tau a double.
-     */
-    public void setTau(double tau) {
-        this.tau = tau;
-    }
+  /**
+   * Setter for the field <code>tau</code>.
+   *
+   * @param tau a double.
+   */
+  public void setTau(double tau) {
+    this.tau = tau;
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * No velocity modifications are made by the Bussi method at the half-step.
-     */
-    @Override
-    public void halfStep(double dt) {
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>No velocity modifications are made by the Bussi method at the half-step.
+   */
+  @Override
+  public void halfStep(double dt) {}
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Initialize the Random number generator used to apply random forces to the
-     * particles.
-     */
-    public void setRandomSeed(long seed) {
-        bussiRandom.setSeed(seed);
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Initialize the Random number generator used to apply random forces to the particles.
+   */
+  public void setRandomSeed(long seed) {
+    bussiRandom.setSeed(seed);
+  }
 
-    /**
-     * Add Thermostat details to the kinetic energy and temperature details.
-     *
-     * @return Description of the thermostat, kinetic energy and temperature.
-     */
-    public String toThermostatString() {
-        return format("\n Bussi Thermostat (tau = %8.3f psec)\n%s", tau, super.toString());
-    }
+  /**
+   * Add Thermostat details to the kinetic energy and temperature details.
+   *
+   * @return Description of the thermostat, kinetic energy and temperature.
+   */
+  public String toThermostatString() {
+    return format("\n Bussi Thermostat (tau = %8.3f psec)\n%s", tau, super.toString());
+  }
 }

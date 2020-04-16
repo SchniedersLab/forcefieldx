@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,12 +34,8 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.cli;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
@@ -47,6 +43,9 @@ import ffx.algorithms.AlgorithmUtils;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.utilities.BaseScript;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Base class for scripts in the Algorithms package, providing some key functions.
@@ -56,107 +55,101 @@ import ffx.utilities.BaseScript;
  */
 public class AlgorithmsScript extends BaseScript {
 
-    /**
-     * An instance of AlgorithmFunctions passed into the current context.
-     */
-    public AlgorithmFunctions algorithmFunctions;
+  /** An instance of AlgorithmFunctions passed into the current context. */
+  public AlgorithmFunctions algorithmFunctions;
 
-    /**
-     * An active MolecularAssembly passed into the current context or loaded by
-     * the Script from a file argument.
-     */
-    public MolecularAssembly activeAssembly;
+  /**
+   * An active MolecularAssembly passed into the current context or loaded by the Script from a file
+   * argument.
+   */
+  public MolecularAssembly activeAssembly;
 
-    /**
-     * An instance of the AlgorithmListener interface.
-     */
-    public AlgorithmListener algorithmListener;
+  /** An instance of the AlgorithmListener interface. */
+  public AlgorithmListener algorithmListener;
 
-    /**
-     * The directory in which to place output files. Mostly for tests.
-     */
-    protected File saveDir;
+  /** The directory in which to place output files. Mostly for tests. */
+  protected File saveDir;
 
-    /**
-     * Reclaims resources associated with all Potential objects associated with this script.
-     *
-     * @return If all Potentials had resources reclaimed.
-     */
-    public boolean destroyPotentials() {
-        boolean allSucceeded = true;
-        for (Potential potent : getPotentials()) {
-            logger.fine(String.format(" Potential %s is being destroyed. ", potent));
-            allSucceeded = allSucceeded && potent.destroy();
-        }
-        return allSucceeded;
+  /**
+   * Reclaims resources associated with all Potential objects associated with this script.
+   *
+   * @return If all Potentials had resources reclaimed.
+   */
+  public boolean destroyPotentials() {
+    boolean allSucceeded = true;
+    for (Potential potent : getPotentials()) {
+      logger.fine(String.format(" Potential %s is being destroyed. ", potent));
+      allSucceeded = allSucceeded && potent.destroy();
+    }
+    return allSucceeded;
+  }
+
+  /**
+   * Returns a List of all Potential objects associated with this script.
+   *
+   * @return All Potentials. Sometimes empty, never null.
+   */
+  public List<Potential> getPotentials() {
+    List<Potential> plist = new ArrayList<>();
+    if (activeAssembly != null && activeAssembly.getPotentialEnergy() != null) {
+      plist.add(activeAssembly.getPotentialEnergy());
+    }
+    return plist;
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Execute the BaseScript init method, then load algorithm functions.
+   */
+  @Override
+  public boolean init() {
+    if (!super.init()) {
+      return false;
     }
 
-    /**
-     * Returns a List of all Potential objects associated with this script.
-     *
-     * @return All Potentials. Sometimes empty, never null.
-     */
-    public List<Potential> getPotentials() {
-        List<Potential> plist = new ArrayList<>();
-        if (activeAssembly != null && activeAssembly.getPotentialEnergy() != null) {
-            plist.add(activeAssembly.getPotentialEnergy());
-        }
-        return plist;
+    if (context.hasVariable("functions")) {
+      algorithmFunctions = (AlgorithmFunctions) context.getVariable("functions");
+    } else {
+      algorithmFunctions = new AlgorithmUtils();
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Execute the BaseScript init method, then load algorithm functions.
-     */
-    @Override
-    public boolean init() {
-        if (!super.init()) {
-            return false;
-        }
-
-        if (context.hasVariable("functions")) {
-            algorithmFunctions = (AlgorithmFunctions) context.getVariable("functions");
-        } else {
-            algorithmFunctions = new AlgorithmUtils();
-        }
-
-        activeAssembly = null;
-        if (context.hasVariable("active")) {
-            activeAssembly = (MolecularAssembly) context.getVariable("active");
-        }
-
-        algorithmListener = null;
-        if (context.hasVariable("listener")) {
-            algorithmListener = (AlgorithmListener) context.getVariable("listener");
-        }
-
-        return true;
+    activeAssembly = null;
+    if (context.hasVariable("active")) {
+      activeAssembly = (MolecularAssembly) context.getVariable("active");
     }
 
-    /**
-     * Sets the directory this script should save files to. Mostly used for tests.
-     *
-     * @param saveDir Directory to save output to.
-     */
-    public void setSaveDir(File saveDir) {
-        this.saveDir = saveDir;
+    algorithmListener = null;
+    if (context.hasVariable("listener")) {
+      algorithmListener = (AlgorithmListener) context.getVariable("listener");
     }
 
-    /**
-     * Gets a File in the save directory with the same name as the input file. Can just be the original
-     * file if saveDir was never set, which is the case for production runs.'
-     *
-     * @param file File to find a save location for.
-     * @return File to save to
-     */
-    protected File saveDirFile(File file) {
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            return file;
-        } else {
-            String baseName = file.getName();
-            String newName = saveDir.getAbsolutePath() + File.separator + baseName;
-            return new File(newName);
-        }
+    return true;
+  }
+
+  /**
+   * Sets the directory this script should save files to. Mostly used for tests.
+   *
+   * @param saveDir Directory to save output to.
+   */
+  public void setSaveDir(File saveDir) {
+    this.saveDir = saveDir;
+  }
+
+  /**
+   * Gets a File in the save directory with the same name as the input file. Can just be the
+   * original file if saveDir was never set, which is the case for production runs.'
+   *
+   * @param file File to find a save location for.
+   * @return File to save to
+   */
+  protected File saveDirFile(File file) {
+    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+      return file;
+    } else {
+      String baseName = file.getName();
+      String newName = saveDir.getAbsolutePath() + File.separator + baseName;
+      return new File(newName);
     }
+  }
 }

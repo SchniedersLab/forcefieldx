@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,21 +34,19 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.nonbonded.pme;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
-
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Parallel conversion of torques into forces, and then reduce them.
@@ -58,196 +56,185 @@ import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
  */
 public class ReduceRegion extends ParallelRegion {
 
-    private static final Logger logger = Logger.getLogger(ReduceRegion.class.getName());
+  private static final Logger logger = Logger.getLogger(ReduceRegion.class.getName());
 
-    /**
-     * If set to false, multipoles are fixed in their local frame and torques
-     * are zero, which is useful for narrowing down discrepancies between
-     * analytic and finite-difference derivatives(default is true).
-     */
-    private final boolean rotateMultipoles;
-    private final TorqueLoop[] torqueLoop;
-    private final ReduceLoop[] reduceLoop;
-    /**
-     * If lambdaTerm is true, some ligand atom interactions with the environment
-     * are being turned on/off.
-     */
-    private boolean lambdaTerm;
-    /**
-     * If true, compute coordinate gradient.
-     */
-    private boolean gradient;
-    /**
-     * An ordered array of atoms in the system.
-     */
-    private Atom[] atoms;
-    /**
-     * Dimensions of [nsymm][xyz][nAtoms].
-     */
-    private double[][][] coordinates;
-    /**
-     * Multipole frame definition.
-     */
-    private MultipoleFrameDefinition[] frame;
-    /**
-     * Multipole frame defining atoms.
-     */
-    private int[][] axisAtom;
-    /**
-     * Atomic Gradient array.
-     */
-    private AtomicDoubleArray3D grad;
-    /**
-     * Atomic Torque array.
-     */
-    private AtomicDoubleArray3D torque;
-    /**
-     * Partial derivative of the gradient with respect to Lambda.
-     */
-    private AtomicDoubleArray3D lambdaGrad;
-    /**
-     * Partial derivative of the torque with respect to Lambda.
-     */
-    private AtomicDoubleArray3D lambdaTorque;
+  /**
+   * If set to false, multipoles are fixed in their local frame and torques are zero, which is
+   * useful for narrowing down discrepancies between analytic and finite-difference
+   * derivatives(default is true).
+   */
+  private final boolean rotateMultipoles;
 
-    public ReduceRegion(int threadCount, ForceField forceField) {
-        torqueLoop = new TorqueLoop[threadCount];
-        reduceLoop = new ReduceLoop[threadCount];
-        rotateMultipoles = forceField.getBoolean("ROTATE_MULTIPOLES", true);
+  private final TorqueLoop[] torqueLoop;
+  private final ReduceLoop[] reduceLoop;
+  /**
+   * If lambdaTerm is true, some ligand atom interactions with the environment are being turned
+   * on/off.
+   */
+  private boolean lambdaTerm;
+  /** If true, compute coordinate gradient. */
+  private boolean gradient;
+  /** An ordered array of atoms in the system. */
+  private Atom[] atoms;
+  /** Dimensions of [nsymm][xyz][nAtoms]. */
+  private double[][][] coordinates;
+  /** Multipole frame definition. */
+  private MultipoleFrameDefinition[] frame;
+  /** Multipole frame defining atoms. */
+  private int[][] axisAtom;
+  /** Atomic Gradient array. */
+  private AtomicDoubleArray3D grad;
+  /** Atomic Torque array. */
+  private AtomicDoubleArray3D torque;
+  /** Partial derivative of the gradient with respect to Lambda. */
+  private AtomicDoubleArray3D lambdaGrad;
+  /** Partial derivative of the torque with respect to Lambda. */
+  private AtomicDoubleArray3D lambdaTorque;
+
+  public ReduceRegion(int threadCount, ForceField forceField) {
+    torqueLoop = new TorqueLoop[threadCount];
+    reduceLoop = new ReduceLoop[threadCount];
+    rotateMultipoles = forceField.getBoolean("ROTATE_MULTIPOLES", true);
+  }
+
+  /**
+   * Execute the ReduceRegion with the passed ParallelTeam.
+   *
+   * @param parallelTeam The ParallelTeam instance to execute with.
+   */
+  public void excuteWith(ParallelTeam parallelTeam) {
+    try {
+      parallelTeam.execute(this);
+    } catch (Exception e) {
+      String message = "Exception calculating torques.";
+      logger.log(Level.SEVERE, message, e);
     }
+  }
 
-    /**
-     * Execute the ReduceRegion with the passed ParallelTeam.
-     *
-     * @param parallelTeam The ParallelTeam instance to execute with.
-     */
-    public void excuteWith(ParallelTeam parallelTeam) {
-        try {
-            parallelTeam.execute(this);
-        } catch (Exception e) {
-            String message = "Exception calculating torques.";
-            logger.log(Level.SEVERE, message, e);
-        }
+  public void init(
+      boolean lambdaTerm,
+      boolean gradient,
+      Atom[] atoms,
+      double[][][] coordinates,
+      MultipoleFrameDefinition[] frame,
+      int[][] axisAtom,
+      AtomicDoubleArray3D grad,
+      AtomicDoubleArray3D torque,
+      AtomicDoubleArray3D lambdaGrad,
+      AtomicDoubleArray3D lambdaTorque) {
+    this.lambdaTerm = lambdaTerm;
+    this.gradient = gradient;
+    this.atoms = atoms;
+    this.coordinates = coordinates;
+    this.frame = frame;
+    this.axisAtom = axisAtom;
+    this.grad = grad;
+    this.torque = torque;
+    this.lambdaGrad = lambdaGrad;
+    this.lambdaTorque = lambdaTorque;
+  }
+
+  @Override
+  public void run() {
+    int nAtoms = atoms.length;
+    try {
+      int threadIndex = getThreadIndex();
+      if (torqueLoop[threadIndex] == null) {
+        torqueLoop[threadIndex] = new TorqueLoop();
+        reduceLoop[threadIndex] = new ReduceLoop();
+      }
+      if (rotateMultipoles) {
+        execute(0, nAtoms - 1, torqueLoop[threadIndex]);
+      }
+      execute(0, nAtoms - 1, reduceLoop[threadIndex]);
+    } catch (Exception e) {
+      String message = "Fatal exception computing torque in thread " + getThreadIndex() + "\n";
+      logger.log(Level.SEVERE, message, e);
     }
+  }
 
-    public void init(boolean lambdaTerm, boolean gradient,
-                     Atom[] atoms, double[][][] coordinates,
-                     MultipoleFrameDefinition[] frame, int[][] axisAtom,
-                     AtomicDoubleArray3D grad, AtomicDoubleArray3D torque,
-                     AtomicDoubleArray3D lambdaGrad, AtomicDoubleArray3D lambdaTorque) {
-        this.lambdaTerm = lambdaTerm;
-        this.gradient = gradient;
-        this.atoms = atoms;
-        this.coordinates = coordinates;
-        this.frame = frame;
-        this.axisAtom = axisAtom;
-        this.grad = grad;
-        this.torque = torque;
-        this.lambdaGrad = lambdaGrad;
-        this.lambdaTorque = lambdaTorque;
+  private class TorqueLoop extends IntegerForLoop {
+
+    private Torque torques;
+    private int threadID;
+
+    TorqueLoop() {
+      torques = new Torque();
     }
 
     @Override
-    public void run() {
-        int nAtoms = atoms.length;
-        try {
-            int threadIndex = getThreadIndex();
-            if (torqueLoop[threadIndex] == null) {
-                torqueLoop[threadIndex] = new TorqueLoop();
-                reduceLoop[threadIndex] = new ReduceLoop();
+    public void run(int lb, int ub) {
+      if (gradient) {
+        torque.reduce(lb, ub);
+        double[] trq = new double[3];
+        for (int i = lb; i <= ub; i++) {
+          double[][] g = new double[4][3];
+          int[] frameIndex = {-1, -1, -1, -1};
+          trq[0] = torque.getX(i);
+          trq[1] = torque.getY(i);
+          trq[2] = torque.getZ(i);
+          torques.torque(i, 0, trq, frameIndex, g);
+          for (int j = 0; j < 4; j++) {
+            int index = frameIndex[j];
+            if (index >= 0) {
+              double[] gj = g[j];
+              grad.add(threadID, index, gj[0], gj[1], gj[2]);
             }
-            if (rotateMultipoles) {
-                execute(0, nAtoms - 1, torqueLoop[threadIndex]);
-            }
-            execute(0, nAtoms - 1, reduceLoop[threadIndex]);
-        } catch (Exception e) {
-            String message = "Fatal exception computing torque in thread " + getThreadIndex() + "\n";
-            logger.log(Level.SEVERE, message, e);
+          }
         }
+      }
+      if (lambdaTerm) {
+        lambdaTorque.reduce(lb, ub);
+        double[] trq = new double[3];
+        for (int i = lb; i <= ub; i++) {
+          double[][] g = new double[4][3];
+          int[] frameIndex = {-1, -1, -1, -1};
+          trq[0] = lambdaTorque.getX(i);
+          trq[1] = lambdaTorque.getY(i);
+          trq[2] = lambdaTorque.getZ(i);
+          torques.torque(i, 0, trq, frameIndex, g);
+          for (int j = 0; j < 4; j++) {
+            int index = frameIndex[j];
+            if (index >= 0) {
+              double[] gj = g[j];
+              lambdaGrad.add(threadID, index, gj[0], gj[1], gj[2]);
+            }
+          }
+        }
+      }
     }
 
-    private class TorqueLoop extends IntegerForLoop {
-
-        private Torque torques;
-        private int threadID;
-
-        TorqueLoop() {
-            torques = new Torque();
-        }
-
-        @Override
-        public void run(int lb, int ub) {
-            if (gradient) {
-                torque.reduce(lb, ub);
-                double[] trq = new double[3];
-                for (int i = lb; i <= ub; i++) {
-                    double[][] g = new double[4][3];
-                    int[] frameIndex = {-1, -1, -1, -1};
-                    trq[0] = torque.getX(i);
-                    trq[1] = torque.getY(i);
-                    trq[2] = torque.getZ(i);
-                    torques.torque(i, 0, trq, frameIndex, g);
-                    for (int j = 0; j < 4; j++) {
-                        int index = frameIndex[j];
-                        if (index >= 0) {
-                            double[] gj = g[j];
-                            grad.add(threadID, index, gj[0], gj[1], gj[2]);
-                        }
-                    }
-                }
-            }
-            if (lambdaTerm) {
-                lambdaTorque.reduce(lb, ub);
-                double[] trq = new double[3];
-                for (int i = lb; i <= ub; i++) {
-                    double[][] g = new double[4][3];
-                    int[] frameIndex = {-1, -1, -1, -1};
-                    trq[0] = lambdaTorque.getX(i);
-                    trq[1] = lambdaTorque.getY(i);
-                    trq[2] = lambdaTorque.getZ(i);
-                    torques.torque(i, 0, trq, frameIndex, g);
-                    for (int j = 0; j < 4; j++) {
-                        int index = frameIndex[j];
-                        if (index >= 0) {
-                            double[] gj = g[j];
-                            lambdaGrad.add(threadID, index, gj[0], gj[1], gj[2]);
-                        }
-                    }
-                }
-            }
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
-
-        @Override
-        public void start() {
-            threadID = getThreadIndex();
-            torques.init(axisAtom, frame, coordinates);
-        }
+    @Override
+    public IntegerSchedule schedule() {
+      return IntegerSchedule.fixed();
     }
 
-    private class ReduceLoop extends IntegerForLoop {
-
-        @Override
-        public void run(int lb, int ub) throws Exception {
-            if (gradient) {
-                grad.reduce(lb, ub);
-                for (int i = lb; i <= ub; i++) {
-                    Atom ai = atoms[i];
-                    ai.addToXYZGradient(grad.getX(i), grad.getY(i), grad.getZ(i));
-                }
-            }
-            if (lambdaTerm) {
-                lambdaGrad.reduce(lb, ub);
-            }
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
+    @Override
+    public void start() {
+      threadID = getThreadIndex();
+      torques.init(axisAtom, frame, coordinates);
     }
+  }
+
+  private class ReduceLoop extends IntegerForLoop {
+
+    @Override
+    public void run(int lb, int ub) throws Exception {
+      if (gradient) {
+        grad.reduce(lb, ub);
+        for (int i = lb; i <= ub; i++) {
+          Atom ai = atoms[i];
+          ai.addToXYZGradient(grad.getX(i), grad.getY(i), grad.getZ(i));
+        }
+      }
+      if (lambdaTerm) {
+        lambdaGrad.reduce(lb, ub);
+      }
+    }
+
+    @Override
+    public IntegerSchedule schedule() {
+      return IntegerSchedule.fixed();
+    }
+  }
 }

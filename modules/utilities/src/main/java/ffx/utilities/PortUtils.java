@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.utilities;
 
 import java.net.InetAddress;
@@ -48,43 +48,38 @@ import java.net.ServerSocket;
  */
 public class PortUtils {
 
-    /**
-     * The maximum TCP Port (65535).
-     */
-    public static final int MAX_TCP_PORT = 65535;
-    /**
-     * The minimum TCP Port (0).
-     */
-    private static final int MIN_TCP_PORT = 0;
+  /** The maximum TCP Port (65535). */
+  public static final int MAX_TCP_PORT = 65535;
+  /** The minimum TCP Port (0). */
+  private static final int MIN_TCP_PORT = 0;
 
+  /**
+   * Check if a port is available.
+   *
+   * @param port The port id.
+   * @return True if the port is available.
+   */
+  public static boolean isTcpPortAvailable(int port) {
+    try (ServerSocket serverSocket = new ServerSocket()) {
+      // setReuseAddress(false) is required only on OSX, otherwise the code will not work correctly
+      // on that platform
+      serverSocket.setReuseAddress(false);
 
-    /**
-     * Check if a port is available.
-     *
-     * @param port The port id.
-     * @return True if the port is available.
-     */
-    public static boolean isTcpPortAvailable(int port) {
-        try (ServerSocket serverSocket = new ServerSocket()) {
-            // setReuseAddress(false) is required only on OSX, otherwise the code will not work correctly on that platform
-            serverSocket.setReuseAddress(false);
-
-            // Try to bind the port.
-            serverSocket.bind(new InetSocketAddress(InetAddress.getByName("localhost"), port), 1);
-            return true;
-        } catch (Exception ex) {
-            return false;
-        }
+      // Try to bind the port.
+      serverSocket.bind(new InetSocketAddress(InetAddress.getByName("localhost"), port), 1);
+      return true;
+    } catch (Exception ex) {
+      return false;
     }
+  }
 
-    /**
-     * Check if an int matches a valid TCP port (i.e. is a 16-bit unsigned integer).
-     *
-     * @param port A number to check.
-     * @return If port &ge; 0 and &le; 65535
-     */
-    public static boolean tcpPortValid(int port) {
-        return port >= MIN_TCP_PORT && port <= MAX_TCP_PORT;
-    }
-
+  /**
+   * Check if an int matches a valid TCP port (i.e. is a 16-bit unsigned integer).
+   *
+   * @param port A number to check.
+   * @return If port &ge; 0 and &le; 65535
+   */
+  public static boolean tcpPortValid(int port) {
+    return port >= MIN_TCP_PORT && port <= MAX_TCP_PORT;
+  }
 }

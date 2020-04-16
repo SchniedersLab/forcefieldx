@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 
 /**
- * The FFT package implements 1D and 3D FFTs of real or complex valued data,
- * including SMP parallelization of 3D transforms and convolution using the Parallel Java library.
+ * The FFT package implements 1D and 3D FFTs of real or complex valued data, including SMP
+ * parallelization of 3D transforms and convolution using the Parallel Java library.
  *
  * @author Michael J. Schnieders
  * @since 1.0

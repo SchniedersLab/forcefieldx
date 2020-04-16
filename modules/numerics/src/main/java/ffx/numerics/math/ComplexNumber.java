@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,358 +34,332 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.math;
 
-import org.apache.commons.math3.util.FastMath;
 import static org.apache.commons.math3.util.FastMath.atan2;
 import static org.apache.commons.math3.util.FastMath.cosh;
 import static org.apache.commons.math3.util.FastMath.hypot;
 import static org.apache.commons.math3.util.FastMath.sinh;
 
+import org.apache.commons.math3.util.FastMath;
+
 /**
- * <p>
- * ComplexNumber class.</p>
+ * ComplexNumber class.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public class ComplexNumber {
 
-    private double re;
-    private double im;
+  private double re;
+  private double im;
 
-    /**
-     * <p>
-     * Constructor for ComplexNumber.</p>
-     */
-    public ComplexNumber() {
-    }
+  /** Constructor for ComplexNumber. */
+  public ComplexNumber() {}
 
-    /**
-     * <p>
-     * Constructor for ComplexNumber.</p>
-     *
-     * @param real a double.
-     * @param imag a double.
-     */
-    public ComplexNumber(double real, double imag) {
-        re = real;
-        im = imag;
-    }
+  /**
+   * Constructor for ComplexNumber.
+   *
+   * @param real a double.
+   * @param imag a double.
+   */
+  public ComplexNumber(double real, double imag) {
+    re = real;
+    im = imag;
+  }
 
-    /**
-     * <p>
-     * abs</p>
-     *
-     * @return a double.
-     */
-    public double abs() {
-        return hypot(re, im);
-    }
+  /**
+   * Static version of phaseShift.
+   *
+   * @param a a {@link ComplexNumber} object.
+   * @param s a double.
+   * @return a {@link ComplexNumber} object.
+   */
+  public static ComplexNumber phaseShift(ComplexNumber a, double s) {
+    ComplexNumber sc = new ComplexNumber(FastMath.cos(s), FastMath.sin(s));
+    return a.times(sc);
+  }
 
-    /**
-     * Return a new Complex object whose value is the conjugate of this.
-     *
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber conjugate() {
-        return new ComplexNumber(re, -im);
-    }
+  /**
+   * abs
+   *
+   * @return a double.
+   */
+  public double abs() {
+    return hypot(re, im);
+  }
 
-    /**
-     * <p>
-     * conjugateIP</p>
-     */
-    public void conjugateIP() {
-        this.im = -this.im;
-    }
+  /**
+   * Return a new Complex object whose value is the conjugate of this.
+   *
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber conjugate() {
+    return new ComplexNumber(re, -im);
+  }
 
-    /**
-     * <p>
-     * copy</p>
-     *
-     * @param b a {@link ComplexNumber} object.
-     */
-    public void copy(ComplexNumber b) {
-        ComplexNumber a = this;
-        a.re = b.re;
-        a.im = b.im;
-    }
+  /** conjugateIP */
+  public void conjugateIP() {
+    this.im = -this.im;
+  }
 
-    /**
-     * Return a new Complex object whose value is the complex cosine of this.
-     *
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber cos() {
-        return new ComplexNumber(FastMath.cos(re) * cosh(im), -FastMath.sin(re) * sinh(im));
-    }
+  /**
+   * copy
+   *
+   * @param b a {@link ComplexNumber} object.
+   */
+  public void copy(ComplexNumber b) {
+    ComplexNumber a = this;
+    a.re = b.re;
+    a.im = b.im;
+  }
 
-    /**
-     * Return a / b.
-     *
-     * @param b a {@link ComplexNumber} object.
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber divides(ComplexNumber b) {
-        ComplexNumber a = this;
-        return a.times(b.reciprocal());
-    }
+  /**
+   * Return a new Complex object whose value is the complex cosine of this.
+   *
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber cos() {
+    return new ComplexNumber(FastMath.cos(re) * cosh(im), -FastMath.sin(re) * sinh(im));
+  }
 
-    /**
-     * Return a new Complex object whose value is the complex exponential of
-     * this.
-     *
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber exp() {
-        return new ComplexNumber(FastMath.exp(re) * FastMath.cos(im), FastMath.exp(re) * FastMath.sin(im));
-    }
+  /**
+   * Return a / b.
+   *
+   * @param b a {@link ComplexNumber} object.
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber divides(ComplexNumber b) {
+    ComplexNumber a = this;
+    return a.times(b.reciprocal());
+  }
 
-    /**
-     * <p>
-     * im</p>
-     *
-     * @return a double.
-     */
-    public double im() {
-        return im;
-    }
+  /**
+   * Return a new Complex object whose value is the complex exponential of this.
+   *
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber exp() {
+    return new ComplexNumber(
+        FastMath.exp(re) * FastMath.cos(im), FastMath.exp(re) * FastMath.sin(im));
+  }
 
-    /**
-     * <p>
-     * im</p>
-     *
-     * @param im a double.
-     */
-    public void im(double im) {
-        this.im = im;
-    }
+  /**
+   * im
+   *
+   * @return a double.
+   */
+  public double im() {
+    return im;
+  }
 
-    /**
-     * Return a new Complex object whose value is (this - b).
-     *
-     * @param b a {@link ComplexNumber} object.
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber minus(ComplexNumber b) {
-        ComplexNumber a = this;
-        var real = a.re - b.re;
-        var imag = a.im - b.im;
-        return new ComplexNumber(real, imag);
-    }
+  /**
+   * im
+   *
+   * @param im a double.
+   */
+  public void im(double im) {
+    this.im = im;
+  }
 
-    /**
-     * <p>
-     * minusIP</p>
-     *
-     * @param b a {@link ComplexNumber} object.
-     */
-    public void minusIP(ComplexNumber b) {
-        ComplexNumber a = this;
-        a.re -= b.re;
-        a.im -= b.im;
-    }
+  /**
+   * Return a new Complex object whose value is (this - b).
+   *
+   * @param b a {@link ComplexNumber} object.
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber minus(ComplexNumber b) {
+    ComplexNumber a = this;
+    var real = a.re - b.re;
+    var imag = a.im - b.im;
+    return new ComplexNumber(real, imag);
+  }
 
-    /**
-     * <p>
-     * phase</p>
-     *
-     * @return a double.
-     */
-    public double phase() {
-        return atan2(im, re);
-    }
+  /**
+   * minusIP
+   *
+   * @param b a {@link ComplexNumber} object.
+   */
+  public void minusIP(ComplexNumber b) {
+    ComplexNumber a = this;
+    a.re -= b.re;
+    a.im -= b.im;
+  }
 
-    /**
-     * Static version of phaseShift.
-     *
-     * @param a a {@link ComplexNumber} object.
-     * @param s a double.
-     * @return a {@link ComplexNumber} object.
-     */
-    public static ComplexNumber phaseShift(ComplexNumber a, double s) {
-        ComplexNumber sc = new ComplexNumber(FastMath.cos(s), FastMath.sin(s));
-        return a.times(sc);
-    }
+  /**
+   * phase
+   *
+   * @return a double.
+   */
+  public double phase() {
+    return atan2(im, re);
+  }
 
-    /**
-     * <p>
-     * phaseShift</p>
-     *
-     * @param s a double.
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber phaseShift(double s) {
-        ComplexNumber sc = new ComplexNumber(FastMath.cos(s), FastMath.sin(s));
-        return this.times(sc);
-    }
+  /**
+   * phaseShift
+   *
+   * @param s a double.
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber phaseShift(double s) {
+    ComplexNumber sc = new ComplexNumber(FastMath.cos(s), FastMath.sin(s));
+    return this.times(sc);
+  }
 
-    /**
-     * <p>
-     * phaseShiftIP</p>
-     *
-     * @param s a double.
-     */
-    public void phaseShiftIP(double s) {
-        ComplexNumber a = this;
-        var sr = FastMath.cos(s);
-        var si = FastMath.sin(s);
-        var real = a.re * sr - a.im * si;
-        var imag = a.re * si + a.im * sr;
-        a.re = real;
-        a.im = imag;
-    }
+  /**
+   * phaseShiftIP
+   *
+   * @param s a double.
+   */
+  public void phaseShiftIP(double s) {
+    ComplexNumber a = this;
+    var sr = FastMath.cos(s);
+    var si = FastMath.sin(s);
+    var real = a.re * sr - a.im * si;
+    var imag = a.re * si + a.im * sr;
+    a.re = real;
+    a.im = imag;
+  }
 
-    /**
-     * Return a new Complex object whose value is (this + b).
-     *
-     * @param b a {@link ComplexNumber} object.
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber plus(ComplexNumber b) {
-        ComplexNumber a = this;
-        var real = a.re + b.re;
-        var imag = a.im + b.im;
-        return new ComplexNumber(real, imag);
-    }
+  /**
+   * Return a new Complex object whose value is (this + b).
+   *
+   * @param b a {@link ComplexNumber} object.
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber plus(ComplexNumber b) {
+    ComplexNumber a = this;
+    var real = a.re + b.re;
+    var imag = a.im + b.im;
+    return new ComplexNumber(real, imag);
+  }
 
-    /**
-     * <p>
-     * plusIP</p>
-     *
-     * @param b a {@link ComplexNumber} object.
-     */
-    public void plusIP(ComplexNumber b) {
-        ComplexNumber a = this;
-        a.re += b.re;
-        a.im += b.im;
-    }
+  /**
+   * plusIP
+   *
+   * @param b a {@link ComplexNumber} object.
+   */
+  public void plusIP(ComplexNumber b) {
+    ComplexNumber a = this;
+    a.re += b.re;
+    a.im += b.im;
+  }
 
-    /**
-     * <p>
-     * re</p>
-     *
-     * @return a double.
-     */
-    public double re() {
-        return re;
-    }
+  /**
+   * re
+   *
+   * @return a double.
+   */
+  public double re() {
+    return re;
+  }
 
-    /**
-     * <p>
-     * re</p>
-     *
-     * @param re a double.
-     */
-    public void re(double re) {
-        this.re = re;
-    }
+  /**
+   * re
+   *
+   * @param re a double.
+   */
+  public void re(double re) {
+    this.re = re;
+  }
 
-    /**
-     * Return a new Complex object whose value is the reciprocal of this.
-     *
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber reciprocal() {
-        var scale = re * re + im * im;
-        var iScale = 1.0 / scale;
-        return new ComplexNumber(re * iScale, -im * iScale);
-    }
+  /**
+   * Return a new Complex object whose value is the reciprocal of this.
+   *
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber reciprocal() {
+    var scale = re * re + im * im;
+    var iScale = 1.0 / scale;
+    return new ComplexNumber(re * iScale, -im * iScale);
+  }
 
-    /**
-     * <p>
-     * reciprocalIP</p>
-     */
-    public void reciprocalIP() {
-        var scale = re * re + im * im;
-        var iScale = 1.0 / scale;
-        re *= iScale;
-        im *= -iScale;
-    }
+  /** reciprocalIP */
+  public void reciprocalIP() {
+    var scale = re * re + im * im;
+    var iScale = 1.0 / scale;
+    re *= iScale;
+    im *= -iScale;
+  }
 
-    /**
-     * Return a new Complex object whose value is the complex sine of this.
-     *
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber sin() {
-        return new ComplexNumber(FastMath.sin(re) * cosh(im), FastMath.cos(re) * sinh(im));
-    }
+  /**
+   * Return a new Complex object whose value is the complex sine of this.
+   *
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber sin() {
+    return new ComplexNumber(FastMath.sin(re) * cosh(im), FastMath.cos(re) * sinh(im));
+  }
 
-    /**
-     * Return a new Complex object whose value is the complex tangent of this.
-     *
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber tan() {
-        return sin().divides(cos());
-    }
+  /**
+   * Return a new Complex object whose value is the complex tangent of this.
+   *
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber tan() {
+    return sin().divides(cos());
+  }
 
-    /**
-     * Return a new Complex object whose value is (this * b).
-     *
-     * @param b a {@link ComplexNumber} object.
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber times(ComplexNumber b) {
-        ComplexNumber a = this;
-        var real = a.re * b.re - a.im * b.im;
-        var imag = a.re * b.im + a.im * b.re;
-        return new ComplexNumber(real, imag);
-    }
+  /**
+   * Return a new Complex object whose value is (this * b).
+   *
+   * @param b a {@link ComplexNumber} object.
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber times(ComplexNumber b) {
+    ComplexNumber a = this;
+    var real = a.re * b.re - a.im * b.im;
+    var imag = a.re * b.im + a.im * b.re;
+    return new ComplexNumber(real, imag);
+  }
 
-    /**
-     * Return a new object whose value is (this * alpha).
-     *
-     * @param alpha a double.
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber times(double alpha) {
-        return new ComplexNumber(alpha * re, alpha * im);
-    }
+  /**
+   * Return a new object whose value is (this * alpha).
+   *
+   * @param alpha a double.
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber times(double alpha) {
+    return new ComplexNumber(alpha * re, alpha * im);
+  }
 
-    /**
-     * <p>
-     * timesIP</p>
-     *
-     * @param b a {@link ComplexNumber} object.
-     */
-    public void timesIP(ComplexNumber b) {
-        ComplexNumber a = this;
-        var real = a.re * b.re - a.im * b.im;
-        var imag = a.re * b.im + a.im * b.re;
-        a.re = real;
-        a.im = imag;
-    }
+  /**
+   * timesIP
+   *
+   * @param b a {@link ComplexNumber} object.
+   */
+  public void timesIP(ComplexNumber b) {
+    ComplexNumber a = this;
+    var real = a.re * b.re - a.im * b.im;
+    var imag = a.re * b.im + a.im * b.re;
+    a.re = real;
+    a.im = imag;
+  }
 
-    /**
-     * <p>
-     * timesIP</p>
-     *
-     * @param alpha a double.
-     */
-    public void timesIP(double alpha) {
-        ComplexNumber a = this;
-        a.re *= alpha;
-        a.im *= alpha;
-    }
+  /**
+   * timesIP
+   *
+   * @param alpha a double.
+   */
+  public void timesIP(double alpha) {
+    ComplexNumber a = this;
+    a.re *= alpha;
+    a.im *= alpha;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        if (im == 0) {
-            return re + "";
-        }
-        if (re == 0) {
-            return im + "i";
-        }
-        if (im < 0) {
-            return re + " - " + (-im) + "i";
-        }
-        return re + " + " + im + "i";
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    if (im == 0) {
+      return re + "";
     }
+    if (re == 0) {
+      return im + "i";
+    }
+    if (im < 0) {
+      return re + " - " + (-im) + "i";
+    }
+    return re + " + " + im + "i";
+  }
 }

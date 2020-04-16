@@ -1,146 +1,148 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <document
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/XDOC/2.0"
-        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
-    <properties>
-        <title>Potential Examples</title>
-        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
-    </properties>
-    <body>
-        <section name="Potential Examples">
-            <subsection name="Available Force Fields">
-                <p>Force Field X stores AMOEBA force fields internally. The 2009
-                    AMOEBA Biomolecular force field is specified as:
-                </p>
-                <source>forcefield amoeba-bio-2009</source>
-                <p>The following force fields may also be specified. Except where
-                    noted, they have been imported from the TINKER v. 5.1 distribution.
-                </p>
-                <ul>
-                    <li>amoeba-water the 2003 Ren and Ponder AMOEBA water model (water.prm)</li>
-                    <li>amoeba-2004 initial AMOEBA small molecule parameters (amoeba04.prm)</li>
-                    <li>amoeba-2009 2009 update to the AMOEBA small molecule parameters (amoeba09.prm)</li>
-                    <li>amoeba-protein-2004 initial AMOEBA protein force field (amoebapro04.prm)</li>
-                    <li>amoeba-protein-2004-u1 an update to the initial AMOEBA protein force field
-                        based on validation stuides done in the Ren lab
-                    </li>
-                    <li>amoeba-bio-2009 the 2009 update to the AMOEBA protein force field and initial
-                        AMOEBA nucleic acid force field (amoebabio09.prm)
-                    </li>
-                </ul>
-            </subsection>
-            <subsection name="DHFR Example">
-                <p>Force Field X reproduces TINKER v. 5.1 potential energy values to more than 10 significant digits
-                    on large, solvated systems. For example, our test suite includes the classic DHFR bench mark as well
-                    as solvated ubiquitin.
-                </p>
-                <p>The DHFR property file:</p>
-                <source>
-                    forcefield amoeba-bio-2009
-                    a-axis 62.23
-                    b-axis 62.23
-                    c-axis 62.23
-                    alpha 90.00
-                    beta 90.00
-                    gamma 90.00
-                    spacegroup P1
-                    vdw-cutoff 9.00
-                    ewald-cutoff 6.70
-                    ewald-alpha 0.57
-                    pme-order 5
-                    polar-eps 0.01
-                    pme-spacing 1.00
-                </source>
-                <p>Force Field X output from the "energy" script command on DHFR:</p>
-                <source>
-                    Computed Potential Energy
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://maven.apache.org/XDOC/2.0"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <body>
+    <section name="Potential Examples">
+      <subsection name="Available Force Fields">
+        <p>Force Field X stores AMOEBA force fields internally. The 2009
+          AMOEBA Biomolecular force field is specified as:
+        </p>
+        <p>The following force fields may also be specified. Except where
+          noted, they have been imported from the TINKER v. 5.1 distribution.
+        </p>
+        <source>forcefield amoeba-bio-2009</source>
+        <ul>
+          <li>amoeba-water the 2003 Ren and Ponder AMOEBA water model (water.prm)</li>
+          <li>amoeba-2004 initial AMOEBA small molecule parameters (amoeba04.prm)</li>
+          <li>amoeba-2009 2009 update to the AMOEBA small molecule parameters (amoeba09.prm)</li>
+          <li>amoeba-protein-2004 initial AMOEBA protein force field (amoebapro04.prm)</li>
+          <li>amoeba-protein-2004-u1 an update to the initial AMOEBA protein force field
+            based on validation stuides done in the Ren lab
+          </li>
+          <li>amoeba-bio-2009 the 2009 update to the AMOEBA protein force field and initial
+            AMOEBA nucleic acid force field (amoebabio09.prm)
+          </li>
+        </ul>
+      </subsection>
+      <subsection name="DHFR Example">
+        <p>Force Field X reproduces TINKER v. 5.1 potential energy values to more than 10
+          significant digits
+          on large, solvated systems. For example, our test suite includes the classic DHFR bench
+          mark as well
+          as solvated ubiquitin.
+        </p>
+        <p>The DHFR property file:</p>
+        <p>Force Field X output from the "energy" script command on DHFR:</p>
+        <p>The TINKER v. 5.1 analyze output for DHFR:</p>
+        <source>
+          Computed Potential Energy
 
-                    Bond Streching 6423.84579926 16569
-                    Angle Bending 3746.31506290 11584
-                    Stretch-Bend -21.85553039 4031
-                    Urey-Bradley 687.46861123 7023
-                    Out-of-Plane Bend 198.72886589 1566
-                    Torsional Angle 426.23738971 6701
-                    Pi-Orbital Torsion 48.26628393 292
-                    Torsion-Torsion -41.71473465 147
-                    Van der Waals 32646.72296810 3480445
-                    Atomic Multipoles -79415.53874329 1463353
-                    Polarization -32001.56811430 1463353
+          Bond Streching 6423.84579926 16569
+          Angle Bending 3746.31506290 11584
+          Stretch-Bend -21.85553039 4031
+          Urey-Bradley 687.46861123 7023
+          Out-of-Plane Bend 198.72886589 1566
+          Torsional Angle 426.23738971 6701
+          Pi-Orbital Torsion 48.26628393 292
+          Torsion-Torsion -41.71473465 147
+          Van der Waals 32646.72296810 3480445
+          Atomic Multipoles -79415.53874329 1463353
+          Polarization -32001.56811430 1463353
 
-                    Total Potential -67303.09214161 (Kcal/mole)
-                </source>
-                <p>The TINKER v. 5.1 analyze output for DHFR:</p>
-                <source>
-                    Total Potential Energy : -67303.09214149 Kcal/mole
+          Total Potential -67303.09214161 (Kcal/mole)
+        </source>
+        <source>
+          forcefield amoeba-bio-2009
+          a-axis 62.23
+          b-axis 62.23
+          c-axis 62.23
+          alpha 90.00
+          beta 90.00
+          gamma 90.00
+          spacegroup P1
+          vdw-cutoff 9.00
+          ewald-cutoff 6.70
+          ewald-alpha 0.57
+          pme-order 5
+          polar-eps 0.01
+          pme-spacing 1.00
+        </source>
+        <source>
+          Total Potential Energy : -67303.09214149 Kcal/mole
 
-                    Energy Component Breakdown : Kcal/mole Interactions
+          Energy Component Breakdown : Kcal/mole Interactions
 
-                    Bond Stretching 6423.84579926 16569
-                    Angle Bending 3746.31506290 11584
-                    Stretch-Bend -21.85553039 4031
-                    Urey-Bradley 687.46861123 7023
-                    Out-of-Plane Bend 198.72886589 1566
-                    Torsional Angle 426.23738971 6701
-                    Pi-Orbital Torsion 48.26628393 292
-                    Torsion-Torsion -41.71473465 147
-                    Van der Waals 32646.72296821 3480445
-                    Atomic Multipoles -79415.53874328 1463353
-                    Polarization -32001.56811430 1463353
-                </source>
+          Bond Stretching 6423.84579926 16569
+          Angle Bending 3746.31506290 11584
+          Stretch-Bend -21.85553039 4031
+          Urey-Bradley 687.46861123 7023
+          Out-of-Plane Bend 198.72886589 1566
+          Torsional Angle 426.23738971 6701
+          Pi-Orbital Torsion 48.26628393 292
+          Torsion-Torsion -41.71473465 147
+          Van der Waals 32646.72296821 3480445
+          Atomic Multipoles -79415.53874328 1463353
+          Polarization -32001.56811430 1463353
+        </source>
 
-            </subsection>
-            <subsection name="Ubiquitin Example">
-                <p>The Ubituitin property file:</p>
-                <source>
-                    parameters amoeba-bio-2009
-                    a-axis 54.99
-                    b-axis 41.91
-                    c-axis 41.91
-                    spacegroup P1
-                    vdw-cutoff 9.00
-                    ewald-cutoff 6.70
-                    ewald-alpha 0.57
-                    pme-order 5
-                    polar-eps 0.01
-                </source>
-                <p>Force Field X output from the "energy" script command on Ubiquitin:</p>
-                <source>
-                    Computed Potential Energy
+      </subsection>
+      <subsection name="Ubiquitin Example">
+        <p>The Ubituitin property file:</p>
+        <p>Force Field X output from the "energy" script command on Ubiquitin:</p>
+        <p>The TINKER v. 5.1 analyze output for Ubiquitin:</p>
+        <source>
+          Computed Potential Energy
 
-                    Bond Streching 2673.37683484 6908
-                    Angle Bending 1637.34919041 5094
-                    Stretch-Bend -11.04350364 1958
-                    Urey-Bradley 279.64162198 2835
-                    Out-of-Plane Bend 67.64798284 651
-                    Torsional Angle 215.14214012 3297
-                    Pi-Orbital Torsion 24.69060350 106
-                    Torsion-Torsion -29.43681349 71
-                    Van der Waals 13202.86995844 1483768
-                    Atomic Multipoles -33012.66179952 623490
-                    Polarization -12918.82414755 623490
+          Bond Streching 2673.37683484 6908
+          Angle Bending 1637.34919041 5094
+          Stretch-Bend -11.04350364 1958
+          Urey-Bradley 279.64162198 2835
+          Out-of-Plane Bend 67.64798284 651
+          Torsional Angle 215.14214012 3297
+          Pi-Orbital Torsion 24.69060350 106
+          Torsion-Torsion -29.43681349 71
+          Van der Waals 13202.86995844 1483768
+          Atomic Multipoles -33012.66179952 623490
+          Polarization -12918.82414755 623490
 
-                    Total Potential -27871.24793207 (Kcal/mole)
-                </source>
-                <p>The TINKER v. 5.1 analyze output for Ubiquitin:</p>
-                <source>
-                    Total Potential Energy : -27871.24793201 Kcal/mole
+          Total Potential -27871.24793207 (Kcal/mole)
+        </source>
+        <source>
+          parameters amoeba-bio-2009
+          a-axis 54.99
+          b-axis 41.91
+          c-axis 41.91
+          spacegroup P1
+          vdw-cutoff 9.00
+          ewald-cutoff 6.70
+          ewald-alpha 0.57
+          pme-order 5
+          polar-eps 0.01
+        </source>
+        <source>
+          Total Potential Energy : -27871.24793201 Kcal/mole
 
-                    Energy Component Breakdown : Kcal/mole Interactions
+          Energy Component Breakdown : Kcal/mole Interactions
 
-                    Bond Stretching 2673.37683484 6908
-                    Angle Bending 1637.34919041 5094
-                    Stretch-Bend -11.04350364 1958
-                    Urey-Bradley 279.64162198 2835
-                    Out-of-Plane Bend 67.64798284 651
-                    Torsional Angle 215.14214012 3297
-                    Pi-Orbital Torsion 24.69060350 106
-                    Torsion-Torsion -29.43681349 71
-                    Van der Waals 13202.86995849 1483768
-                    Atomic Multipoles -33012.66179952 623490
-                    Polarization -12918.82414755 623490
-                </source>
-            </subsection>
-        </section>
-    </body>
+          Bond Stretching 2673.37683484 6908
+          Angle Bending 1637.34919041 5094
+          Stretch-Bend -11.04350364 1958
+          Urey-Bradley 279.64162198 2835
+          Out-of-Plane Bend 67.64798284 651
+          Torsional Angle 215.14214012 3297
+          Pi-Orbital Torsion 24.69060350 106
+          Torsion-Torsion -29.43681349 71
+          Van der Waals 13202.86995849 1483768
+          Atomic Multipoles -33012.66179952 623490
+          Polarization -12918.82414755 623490
+        </source>
+      </subsection>
+    </section>
+  </body>
+  <properties>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    <title>Potential Examples</title>
+  </properties>
 </document>

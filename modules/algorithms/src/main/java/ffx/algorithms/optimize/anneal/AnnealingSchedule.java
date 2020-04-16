@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.optimize.anneal;
 
 /**
@@ -45,68 +45,71 @@ package ffx.algorithms.optimize.anneal;
  * @since 1.0
  */
 public interface AnnealingSchedule {
-    /**
-     * Gets the starting temperature.
-     *
-     * @return Starting temperature in Kelvin.
-     */
-    double getHighTemp();
+  /**
+   * Gets the starting temperature.
+   *
+   * @return Starting temperature in Kelvin.
+   */
+  double getHighTemp();
 
-    /**
-     * Gets the final temperature.
-     *
-     * @return Final temperature in Kelvin.
-     */
-    double getLowTemp();
+  /**
+   * Gets the final temperature.
+   *
+   * @return Final temperature in Kelvin.
+   */
+  double getLowTemp();
 
-    /**
-     * Gets the number of annealing windows (including repeat windows).
-     *
-     * @return Number of annealing windows.
-     */
-    int getNumWindows();
+  /**
+   * Gets the number of annealing windows (including repeat windows).
+   *
+   * @return Number of annealing windows.
+   */
+  int getNumWindows();
 
-    /**
-     * Get the temperature for annealing step i.
-     *
-     * @param i An annealing step [0-nWindows)
-     * @return Associated temperature.
-     */
-    double getTemperature(int i);
+  /**
+   * Get the temperature for annealing step i.
+   *
+   * @param i An annealing step [0-nWindows)
+   * @return Associated temperature.
+   */
+  double getTemperature(int i);
 
-    /**
-     * Get all temperatures this schedule specifies.
-     *
-     * @return An array of temperatures specified.
-     */
-    double[] getTemperatures();
+  /**
+   * Get all temperatures this schedule specifies.
+   *
+   * @return An array of temperatures specified.
+   */
+  double[] getTemperatures();
 
-    /**
-     * Returns the longest window to be used (normalized to the number of MD steps in a "regular" window).
-     *
-     * @return Maximum normalized window length.
-     */
-    double maxWindowLength();
+  /**
+   * Returns the longest window to be used (normalized to the number of MD steps in a "regular"
+   * window).
+   *
+   * @return Maximum normalized window length.
+   */
+  double maxWindowLength();
 
-    /**
-     * Returns the shortest window to be used (normalized to the number of MD steps in a "regular" window).
-     *
-     * @return Minimum normalized window length.
-     */
-    double minWindowLength();
+  /**
+   * Returns the shortest window to be used (normalized to the number of MD steps in a "regular"
+   * window).
+   *
+   * @return Minimum normalized window length.
+   */
+  double minWindowLength();
 
-    /**
-     * Returns the sum of window lengths to be used (normalized to the number of MD steps in a "regular" window).
-     *
-     * @return Total normalized window length.
-     */
-    double totalWindowLength();
+  /**
+   * Returns the sum of window lengths to be used (normalized to the number of MD steps in a
+   * "regular" window).
+   *
+   * @return Total normalized window length.
+   */
+  double totalWindowLength();
 
-    /**
-     * Get the relative size of a window (normalized to the number of MD steps in a "regular" window).
-     *
-     * @param window Window to check.
-     * @return Normalized length of the window.
-     */
-    double windowLength(int window);
+  /**
+   * Get the relative size of a window (normalized to the number of MD steps in a "regular" window).
+   *
+   * @param window Window to check.
+   * @return Normalized length of the window.
+   */
+  double windowLength(int window);
 }

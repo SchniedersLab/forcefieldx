@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,67 +34,66 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.bonded;
 
 /**
- * The LambdaInterface should be implemented by potential energy terms that can
- * accept a lambda value from [0 .. 1] that defines a twice differentiable path
- * between states 0 and 1.
+ * The LambdaInterface should be implemented by potential energy terms that can accept a lambda
+ * value from [0 .. 1] that defines a twice differentiable path between states 0 and 1.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public interface LambdaInterface {
 
-    /**
-     * Returns true if dUdL is guaranteed to be zero at 0 and 1. Default
-     * implementation is to return false.
-     *
-     * @return True if dUdL is guaranteed 0 at endpoints.
-     */
-    default boolean dEdLZeroAtEnds() {
-        return false;
-    }
+  /**
+   * Returns true if dUdL is guaranteed to be zero at 0 and 1. Default implementation is to return
+   * false.
+   *
+   * @return True if dUdL is guaranteed 0 at endpoints.
+   */
+  default boolean dEdLZeroAtEnds() {
+    return false;
+  }
 
-    /**
-     * Get the current value of the state variable.
-     *
-     * @return state
-     * @since 1.0
-     */
-    double getLambda();
+  /**
+   * Get the current value of the state variable.
+   *
+   * @return state
+   * @since 1.0
+   */
+  double getLambda();
 
-    /**
-     * Set the current value of the state variable. May be ignored if lambda is not being applied.
-     *
-     * @param lambda a double.
-     * @since 1.0
-     */
-    void setLambda(double lambda);
+  /**
+   * Set the current value of the state variable. May be ignored if lambda is not being applied.
+   *
+   * @param lambda a double.
+   * @since 1.0
+   */
+  void setLambda(double lambda);
 
-    /**
-     * Get the 2nd partial derivative of the energy with respect to lambda.
-     *
-     * @return d2EdL2
-     * @since 1.0
-     */
-    double getd2EdL2();
+  /**
+   * Get the 2nd partial derivative of the energy with respect to lambda.
+   *
+   * @return d2EdL2
+   * @since 1.0
+   */
+  double getd2EdL2();
 
-    /**
-     * Get the partial derivative of the energy with respect to lambda.
-     *
-     * @return dEdL
-     * @since 1.0
-     */
-    double getdEdL();
+  /**
+   * Get the partial derivative of the energy with respect to lambda.
+   *
+   * @return dEdL
+   * @since 1.0
+   */
+  double getdEdL();
 
-    /**
-     * Get the gradient of dEdL with respect to each parameter.
-     *
-     * @param gradient - A double array of length the number of parameters in
-     *                 the model (commonly 3 * number of atoms).
-     * @since 1.0
-     */
-    void getdEdXdL(double[] gradient);
+  /**
+   * Get the gradient of dEdL with respect to each parameter.
+   *
+   * @param gradient - A double array of length the number of parameters in the model (commonly 3 *
+   *     number of atoms).
+   * @since 1.0
+   */
+  void getdEdXdL(double[] gradient);
 }

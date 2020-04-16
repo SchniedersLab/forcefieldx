@@ -37,22 +37,20 @@
 //******************************************************************************
 package ffx.xray.groovy
 
-import java.util.stream.Collectors
-
-import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.xray.DiffractionData
 import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
-
+import org.apache.commons.configuration2.CompositeConfiguration
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The X-ray ModelvsData script.
@@ -64,102 +62,106 @@ import picocli.CommandLine.Parameters
 @Command(description = " Compare the PDB model to the diffraction data.", name = "ffxc ModelvsData")
 class ModelvsData extends AlgorithmsScript {
 
-    @Mixin
-    XrayOptions xrayOptions
+  @Mixin
+  XrayOptions xrayOptions
 
-    /**
-     * -m or --maps Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.
-     */
-    @Option(names = ['-p', '--maps'], paramLabel = 'false', description = 'Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.')
-    boolean maps = false
-    /**
-     * -t or --timings Perform FFT timings.
-     */
-    @Option(names = ['-t', '--timings'], paramLabel = 'false', description = 'Perform FFT timings.')
-    boolean timings = false
-    /**
-     * -w or --mtz Write out MTZ containing structure factor coefficients.
-     */
-    @Option(names = ['-w', '--mtz'], paramLabel = 'false',
-            description = 'write out MTZ containing structure factor coefficients.')
-    boolean mtz = false
+  /**
+   * -m or --maps Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.
+   */
+  @Option(names = ['-p', '--maps'], paramLabel = 'false', description = 'Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.')
+  boolean maps = false
+  /**
+   * -t or --timings Perform FFT timings.
+   */
+  @Option(names = ['-t', '--timings'], paramLabel = 'false', description = 'Perform FFT timings.')
+  boolean timings = false
+  /**
+   * -w or --mtz Write out MTZ containing structure factor coefficients.
+   */
+  @Option(names = ['-w', '--mtz'], paramLabel = 'false',
+      description = 'write out MTZ containing structure factor coefficients.')
+  boolean mtz = false
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
-    private List<String> filenames
-    private DiffractionData diffractiondata;
-    private MolecularAssembly[] assemblies;
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
+  private List<String> filenames
+  private DiffractionData diffractiondata;
+  private MolecularAssembly[] assemblies;
 
-    @Override
-    ModelvsData run() {
+  @Override
+  ModelvsData run() {
 
-        if (!init()) {
-            return this
-        }
-
-        xrayOptions.init()
-
-        String modelfilename
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.openAll(filenames.get(0))
-            activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath();
-        }
-
-        logger.info("\n Running xray.ModelvsData on " + modelfilename)
-
-        // Load parsed X-ray properties.
-        CompositeConfiguration properties = activeAssembly.getProperties()
-        xrayOptions.setProperties(parseResult, properties)
-
-        // Set up diffraction data (can be multiple files)
-        List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
-
-        diffractiondata = new DiffractionData(assemblies, properties,
-                xrayOptions.solventModel, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
-
-        diffractiondata.scaleBulkFit()
-        diffractiondata.printStats()
-
-        algorithmFunctions.energy(assemblies[0])
-
-        if (mtz) {
-            diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_ffx.mtz")
-        }
-
-        if (maps) {
-            diffractiondata.writeMaps(FilenameUtils.removeExtension(modelfilename) + "_ffx")
-        }
-
-        if (timings) {
-            diffractiondata.timings()
-        }
-
-        return this
+    if (!init()) {
+      return this
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        if (assemblies == null) {
-            return new ArrayList<Potential>();
-        } else {
-            return Arrays.stream(assemblies).
-                    filter { a -> a != null }.
-                    map { a -> a.getPotentialEnergy() }.
-                    filter { e -> e != null }.
-                    collect(Collectors.toList());
-        }
+    xrayOptions.init()
+
+    String modelfilename
+    if (filenames != null && filenames.size() > 0) {
+      assemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = assemblies[0]
+      modelfilename = filenames.get(0)
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
+    } else {
+      modelfilename = activeAssembly.getFile().getAbsolutePath();
     }
 
-    @Override
-    boolean destroyPotentials() {
-        return diffractiondata == null ? true : diffractiondata.destroy();
+    logger.info("\n Running xray.ModelvsData on " + modelfilename)
+
+    // Load parsed X-ray properties.
+    CompositeConfiguration properties = activeAssembly.getProperties()
+    xrayOptions.setProperties(parseResult, properties)
+
+    // Set up diffraction data (can be multiple files)
+    List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
+
+    diffractiondata = new DiffractionData(assemblies, properties,
+        xrayOptions.solventModel,
+        diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
+
+    diffractiondata.scaleBulkFit()
+    diffractiondata.printStats()
+
+    algorithmFunctions.energy(assemblies[0])
+
+    if (mtz) {
+      diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_ffx.mtz")
     }
+
+    if (maps) {
+      diffractiondata.writeMaps(FilenameUtils.removeExtension(modelfilename) + "_ffx")
+    }
+
+    if (timings) {
+      diffractiondata.timings()
+    }
+
+    return this
+  }
+
+  @Override
+  List<Potential> getPotentials() {
+    if (assemblies == null) {
+      return new ArrayList<Potential>();
+    } else {
+      return Arrays.stream(assemblies).
+          filter {a -> a != null
+          }.
+          map {a -> a.getPotentialEnergy()
+          }.
+          filter {e -> e != null
+          }.
+          collect(Collectors.toList());
+    }
+  }
+
+  @Override
+  boolean destroyPotentials() {
+    return diffractiondata == null ? true : diffractiondata.destroy();
+  }
 }

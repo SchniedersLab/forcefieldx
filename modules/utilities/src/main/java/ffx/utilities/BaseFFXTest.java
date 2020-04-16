@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,97 +34,89 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.utilities;
 
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
 /**
- * <p>Abstract BaseFFXTest class.</p>
+ * Abstract BaseFFXTest class.
  *
  * @author Michael J. Schnieders
  */
 public abstract class BaseFFXTest {
-    public static final boolean ffxCI = System.getProperty("ffx.ci", "false").equalsIgnoreCase("true");
-    public static final boolean ffxOpenMM = System.getProperty("ffx.openMM", "false").equalsIgnoreCase("true");
-    /**
-     * Constant <code>logger</code>
-     */
-    protected static final Logger logger = Logger.getLogger(BaseFFXTest.class.getName());
-    private static final Level origLevel = Logger.getLogger("ffx").getLevel();
-    private static final Level testLevel;
-    private static final Level ffxLevel;
-    private static Properties properties;
+  public static final boolean ffxCI =
+      System.getProperty("ffx.ci", "false").equalsIgnoreCase("true");
+  public static final boolean ffxOpenMM =
+      System.getProperty("ffx.openMM", "false").equalsIgnoreCase("true");
+  /** Constant <code>logger</code> */
+  protected static final Logger logger = Logger.getLogger(BaseFFXTest.class.getName());
 
-    static {
-        Level level;
-        try {
-            level = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
-            level = origLevel;
-        }
-        testLevel = level;
+  private static final Level origLevel = Logger.getLogger("ffx").getLevel();
+  private static final Level testLevel;
+  private static final Level ffxLevel;
+  private static Properties properties;
 
-        try {
-            level = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
-            level = origLevel;
-        }
-        ffxLevel = level;
+  static {
+    Level level;
+    try {
+      level = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
+    } catch (Exception ex) {
+      logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
+      level = origLevel;
     }
+    testLevel = level;
 
-    /**
-     * <p>afterClass.</p>
-     */
-    @AfterClass
-    public static void afterClass() {
-        Logger.getLogger("ffx").setLevel(origLevel);
-        logger.setLevel(origLevel);
+    try {
+      level = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
+    } catch (Exception ex) {
+      logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
+      level = origLevel;
     }
+    ffxLevel = level;
+  }
 
-    /**
-     * <p>afterTest.</p>
-     */
-    @After
-    public void afterTest() {
-        // All properties are set to the values they were at the beginning of the test.
-        System.setProperties(properties);
+  /** afterClass. */
+  @AfterClass
+  public static void afterClass() {
+    Logger.getLogger("ffx").setLevel(origLevel);
+    logger.setLevel(origLevel);
+  }
+
+  /** beforeClass. */
+  @BeforeClass
+  public static void beforeClass() {
+    // Set appropriate logging levels for interior/exterior Loggers.
+    Logger.getLogger("ffx").setLevel(ffxLevel);
+    logger.setLevel(testLevel);
+  }
+
+  /** afterTest. */
+  @After
+  public void afterTest() {
+    // All properties are set to the values they were at the beginning of the test.
+    System.setProperties(properties);
+  }
+
+  /** beforeTest. */
+  @Before
+  public void beforeTest() {
+    // New properties object that will hold the property key-value pairs that were present
+    // at the beginning of the test.
+    properties = new Properties();
+
+    // currentProperties holds the properties at the beginning of the test.
+    Properties currentProperties = System.getProperties();
+
+    // All key-value pairs from currentProperties are stored in the properties object.
+    for (String key : currentProperties.stringPropertyNames()) {
+      properties.setProperty(key, currentProperties.getProperty(key));
     }
-
-    /**
-     * <p>beforeClass.</p>
-     */
-    @BeforeClass
-    public static void beforeClass() {
-        // Set appropriate logging levels for interior/exterior Loggers.
-        Logger.getLogger("ffx").setLevel(ffxLevel);
-        logger.setLevel(testLevel);
-    }
-
-    /**
-     * <p>beforeTest.</p>
-     */
-    @Before
-    public void beforeTest() {
-        // New properties object that will hold the property key-value pairs that were present
-        // at the beginning of the test.
-        properties = new Properties();
-
-        // currentProperties holds the properties at the beginning of the test.
-        Properties currentProperties = System.getProperties();
-
-        // All key-value pairs from currentProperties are stored in the properties object.
-        for (String key : currentProperties.stringPropertyNames()) {
-            properties.setProperty(key, currentProperties.getProperty(key));
-        }
-    }
+  }
 }

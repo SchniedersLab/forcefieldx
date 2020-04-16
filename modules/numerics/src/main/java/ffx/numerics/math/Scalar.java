@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,120 +34,108 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.math;
 
 /**
- * <p>
- * Scalar class.</p>
+ * Scalar class.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public class Scalar {
 
-    private final double[] xyz;
-    private double scalar;
+  private final double[] xyz;
+  private double scalar;
 
-    /**
-     * <p>
-     * Constructor for Scalar.</p>
-     */
-    public Scalar() {
-        xyz = new double[3];
-    }
+  /** Constructor for Scalar. */
+  public Scalar() {
+    xyz = new double[3];
+  }
 
-    /**
-     * <p>
-     * Constructor for Scalar.</p>
-     *
-     * @param xyz    an array of double.
-     * @param scalar a double.
-     */
-    public Scalar(double[] xyz, double scalar) {
-        this(xyz[0], xyz[1], xyz[2], scalar);
-    }
+  /**
+   * Constructor for Scalar.
+   *
+   * @param xyz an array of double.
+   * @param scalar a double.
+   */
+  public Scalar(double[] xyz, double scalar) {
+    this(xyz[0], xyz[1], xyz[2], scalar);
+  }
 
-    /**
-     * <p>
-     * Constructor for Scalar.</p>
-     *
-     * @param xyz    an array of int.
-     * @param scalar a double.
-     */
-    public Scalar(int[] xyz, double scalar) {
-        this((double) xyz[0], (double) xyz[1], (double) xyz[2], scalar);
-    }
+  /**
+   * Constructor for Scalar.
+   *
+   * @param xyz an array of int.
+   * @param scalar a double.
+   */
+  public Scalar(int[] xyz, double scalar) {
+    this((double) xyz[0], (double) xyz[1], (double) xyz[2], scalar);
+  }
 
-    /**
-     * <p>
-     * Constructor for Scalar.</p>
-     *
-     * @param x      a int.
-     * @param y      a int.
-     * @param z      a int.
-     * @param scalar a double.
-     */
-    public Scalar(int x, int y, int z, double scalar) {
-        this((double) x, (double) y, (double) z, scalar);
-    }
+  /**
+   * Constructor for Scalar.
+   *
+   * @param x a int.
+   * @param y a int.
+   * @param z a int.
+   * @param scalar a double.
+   */
+  public Scalar(int x, int y, int z, double scalar) {
+    this((double) x, (double) y, (double) z, scalar);
+  }
 
-    /**
-     * <p>
-     * Constructor for Scalar.</p>
-     *
-     * @param x      a double.
-     * @param y      a double.
-     * @param z      a double.
-     * @param scalar a double.
-     */
-    public Scalar(double x, double y, double z, double scalar) {
-        this();
-        xyz[0] = x;
-        xyz[1] = y;
-        xyz[2] = z;
-        this.scalar = scalar;
-    }
+  /**
+   * Constructor for Scalar.
+   *
+   * @param x a double.
+   * @param y a double.
+   * @param z a double.
+   * @param scalar a double.
+   */
+  public Scalar(double x, double y, double z, double scalar) {
+    this();
+    xyz[0] = x;
+    xyz[1] = y;
+    xyz[2] = z;
+    this.scalar = scalar;
+  }
 
-    /**
-     * <p>
-     * Getter for the field <code>scalar</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getScalar() {
-        return scalar;
-    }
+  /**
+   * Getter for the field <code>scalar</code>.
+   *
+   * @return a double.
+   */
+  public double getScalar() {
+    return scalar;
+  }
 
-    /**
-     * <p>
-     * Setter for the field <code>scalar</code>.</p>
-     *
-     * @param scalar a double.
-     */
-    public void setScalar(double scalar) {
-        this.scalar = scalar;
-    }
+  /**
+   * Setter for the field <code>scalar</code>.
+   *
+   * @param scalar a double.
+   */
+  public void setScalar(double scalar) {
+    this.scalar = scalar;
+  }
 
-    /**
-     * <p>
-     * getXYZ</p>
-     *
-     * @return an array of double.
-     */
-    public double[] getXYZ() {
-        return xyz;
-    }
+  /**
+   * getXYZ
+   *
+   * @return an array of double.
+   */
+  public double[] getXYZ() {
+    return xyz;
+  }
 
-    /**
-     * <p>
-     * setXYZ</p>
-     *
-     * @param xyz an array of double.
-     */
-    public void setXYZ(double[] xyz) {
-        this.xyz[0] = xyz[0];
-        this.xyz[1] = xyz[1];
-        this.xyz[2] = xyz[2];
-    }
+  /**
+   * setXYZ
+   *
+   * @param xyz an array of double.
+   */
+  public void setXYZ(double[] xyz) {
+    this.xyz[0] = xyz[0];
+    this.xyz[1] = xyz[1];
+    this.xyz[2] = xyz[2];
+  }
 }

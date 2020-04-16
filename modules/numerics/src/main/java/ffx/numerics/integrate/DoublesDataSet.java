@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,218 +34,187 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.numerics.integrate;
 
+import static ffx.numerics.integrate.FunctionDataCurve.approxEquals;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
-import static ffx.numerics.integrate.FunctionDataCurve.approxEquals;
-
 /**
- * Descibes a set of x, f(x) obtained by some mechanism; intended for numerical
- * integration.
+ * Descibes a set of x, f(x) obtained by some mechanism; intended for numerical integration.
  *
  * @author Jacob M. Litman
  */
 public class DoublesDataSet implements DataSet {
 
-    /**
-     * An array of input points.
-     */
-    private final double[] x;
-    /**
-     * An array of results f(x).
-     */
-    private final double[] fX;
-    /**
-     * Lower bound.
-     */
-    private final double lb;
-    /**
-     * Upper bound.
-     */
-    private final double ub;
-    /**
-     * Number of data points.
-     */
-    private final int nX;
-    /**
-     * Bin size.
-     */
-    private final double sep;
-    /**
-     * If ends should have 1/2 regular separation.
-     */
-    private final boolean halfWidthEnd;
+  /** An array of input points. */
+  private final double[] x;
+  /** An array of results f(x). */
+  private final double[] fX;
+  /** Lower bound. */
+  private final double lb;
+  /** Upper bound. */
+  private final double ub;
+  /** Number of data points. */
+  private final int nX;
+  /** Bin size. */
+  private final double sep;
+  /** If ends should have 1/2 regular separation. */
+  private final boolean halfWidthEnd;
 
-    /**
-     * Constructs a DataSet from actual data, with no known underlying function (or at least none with an analytically
-     * solved integral). Assumes no half-width end bins (such as found in OST).
-     *
-     * @param x  Points where f(x) is known
-     * @param fX Values/estimates of f(x)
-     */
-    public DoublesDataSet(double[] x, double[] fX) {
-        this(x, fX, false);
+  /**
+   * Constructs a DataSet from actual data, with no known underlying function (or at least none with
+   * an analytically solved integral). Assumes no half-width end bins (such as found in OST).
+   *
+   * @param x Points where f(x) is known
+   * @param fX Values/estimates of f(x)
+   */
+  public DoublesDataSet(double[] x, double[] fX) {
+    this(x, fX, false);
+  }
+
+  /**
+   * Constructs a DataSet from actual data, with no known underlying function (or at least none with
+   * an analytically solved integral).
+   *
+   * @param x Points where f(x) is known
+   * @param fX Values/estimates of f(x)
+   * @param halvedEnds Whether the first and last bins are half-width (such as OST)
+   */
+  public DoublesDataSet(double[] x, double[] fX, boolean halvedEnds) {
+    nX = x.length;
+    assert nX == fX.length;
+
+    this.x = new double[nX];
+    arraycopy(x, 0, this.x, 0, nX);
+
+    this.fX = new double[nX];
+    arraycopy(fX, 0, this.fX, 0, nX);
+
+    lb = x[0];
+    ub = x[nX - 1];
+    // sep = ((ub - lb) / ((double) nX));
+    halfWidthEnd = halvedEnds;
+    double sepDist = ub - lb;
+    sep = halfWidthEnd ? (sepDist / ((double) nX - 2)) : (sepDist / ((double) nX - 1));
+    assertXIntegrity(this.x);
+  }
+
+  /**
+   * Constructs a DataSet from another DataSet, effectively masquerading a test set such as a sine
+   * wave as data from an "unknown" function. Used primarily for testing purposes.
+   *
+   * @param set DataSet to cast
+   */
+  public DoublesDataSet(DataSet set) {
+    nX = set.numPoints();
+
+    this.x = new double[nX];
+    arraycopy(set.getX(), 0, this.x, 0, nX);
+
+    this.fX = new double[nX];
+    arraycopy(set.getAllFxPoints(), 0, this.fX, 0, nX);
+
+    lb = x[0];
+    ub = x[nX - 1];
+    this.halfWidthEnd = set.halfWidthEnds();
+    sep = set.binWidth();
+    // Possibly add assertion for separation distance
+    assertXIntegrity(x);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double binWidth() {
+    return sep;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double[] getAllFxPoints() {
+    double[] pts = new double[nX];
+    arraycopy(fX, 0, pts, 0, nX);
+    return pts;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double getFxPoint(int index) {
+    return fX[index];
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double[] getX() {
+    double[] copyX = new double[x.length];
+    arraycopy(x, 0, copyX, 0, x.length);
+    return copyX;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public boolean halfWidthEnds() {
+    return halfWidthEnd;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double lowerBound() {
+    return lb;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public int numPoints() {
+    return x.length;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    StringBuilder sb =
+        new StringBuilder(
+            format(
+                "Data set with %d points from lower bound %9.3g and upper bound %9.3g",
+                nX, lb, ub));
+    if (halfWidthEnd) {
+      sb.append(" and half-width start/end bins");
     }
+    sb.append(".");
+    return sb.toString();
+  }
 
-    /**
-     * Constructs a DataSet from actual data, with no known underlying function (or at least none with an analytically
-     * solved integral).
-     *
-     * @param x          Points where f(x) is known
-     * @param fX         Values/estimates of f(x)
-     * @param halvedEnds Whether the first and last bins are half-width (such as OST)
-     */
-    public DoublesDataSet(double[] x, double[] fX, boolean halvedEnds) {
-        nX = x.length;
-        assert nX == fX.length;
+  /** {@inheritDoc} */
+  @Override
+  public double upperBound() {
+    return ub;
+  }
 
-        this.x = new double[nX];
-        arraycopy(x, 0, this.x, 0, nX);
+  /**
+   * Used to check that the passed-in x array is composed of equally-spaced points from lb to ub.
+   *
+   * @param x
+   */
+  private void assertXIntegrity(double[] x) {
+    assert ub > lb;
+    if (halfWidthEnd) {
+      assert x.length == nX;
+      assert lb == x[0];
+      assert ub == x[nX - 1];
 
-        this.fX = new double[nX];
-        arraycopy(fX, 0, this.fX, 0, nX);
+      assert approxEquals(x[1], lb + 0.5 * sep);
+      assert approxEquals(x[nX - 2], (ub - 0.5 * sep));
 
-        lb = x[0];
-        ub = x[nX - 1];
-        //sep = ((ub - lb) / ((double) nX));
-        halfWidthEnd = halvedEnds;
-        double sepDist = ub - lb;
-        sep = halfWidthEnd ? (sepDist / ((double) nX - 2)) : (sepDist / ((double) nX - 1));
-        assertXIntegrity(this.x);
+      for (int i = 2; i < (nX - 2); i++) {
+        double target = lb + 0.5 * sep;
+        target += ((i - 1) * sep);
+        assert approxEquals(x[i], target);
+      }
+    } else {
+      for (int i = 0; i < x.length; i++) {
+        assert approxEquals(x[i], x[0] + i * sep);
+      }
     }
-
-    /**
-     * Constructs a DataSet from another DataSet, effectively masquerading a test set such as a sine wave as data from
-     * an "unknown" function. Used primarily for testing purposes.
-     *
-     * @param set DataSet to cast
-     */
-    public DoublesDataSet(DataSet set) {
-        nX = set.numPoints();
-
-        this.x = new double[nX];
-        arraycopy(set.getX(), 0, this.x, 0, nX);
-
-        this.fX = new double[nX];
-        arraycopy(set.getAllFxPoints(), 0, this.fX, 0, nX);
-
-        lb = x[0];
-        ub = x[nX - 1];
-        this.halfWidthEnd = set.halfWidthEnds();
-        sep = set.binWidth();
-        // Possibly add assertion for separation distance
-        assertXIntegrity(x);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double binWidth() {
-        return sep;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAllFxPoints() {
-        double[] pts = new double[nX];
-        arraycopy(fX, 0, pts, 0, nX);
-        return pts;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getFxPoint(int index) {
-        return fX[index];
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getX() {
-        double[] copyX = new double[x.length];
-        arraycopy(x, 0, copyX, 0, x.length);
-        return copyX;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean halfWidthEnds() {
-        return halfWidthEnd;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double lowerBound() {
-        return lb;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int numPoints() {
-        return x.length;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder(format("Data set with %d points from lower bound %9.3g and upper bound %9.3g", nX, lb, ub));
-        if (halfWidthEnd) {
-            sb.append(" and half-width start/end bins");
-        }
-        sb.append(".");
-        return sb.toString();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double upperBound() {
-        return ub;
-    }
-
-    /**
-     * Used to check that the passed-in x array is composed of equally-spaced
-     * points from lb to ub.
-     *
-     * @param x
-     */
-    private void assertXIntegrity(double[] x) {
-        assert ub > lb;
-        if (halfWidthEnd) {
-            assert x.length == nX;
-            assert lb == x[0];
-            assert ub == x[nX - 1];
-
-            assert approxEquals(x[1], lb + 0.5 * sep);
-            assert approxEquals(x[nX - 2], (ub - 0.5 * sep));
-
-            for (int i = 2; i < (nX - 2); i++) {
-                double target = lb + 0.5 * sep;
-                target += ((i - 1) * sep);
-                assert approxEquals(x[i], target);
-            }
-        } else {
-            for (int i = 0; i < x.length; i++) {
-                assert approxEquals(x[i], x[0] + i * sep);
-            }
-        }
-    }
+  }
 }

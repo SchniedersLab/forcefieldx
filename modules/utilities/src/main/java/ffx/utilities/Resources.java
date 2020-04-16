@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,16 +34,16 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.utilities;
 
+import static java.lang.String.format;
+
+import com.sun.management.UnixOperatingSystemMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.lang.String.format;
-
-import com.sun.management.UnixOperatingSystemMXBean;
 
 /**
  * Log resources.
@@ -52,54 +52,55 @@ import com.sun.management.UnixOperatingSystemMXBean;
  */
 public class Resources {
 
-    private static final Logger logger = Logger.getLogger(Resources.class.getName());
+  private static final Logger logger = Logger.getLogger(Resources.class.getName());
 
-    /**
-     * <p>logResources.</p>
-     */
-    public static void logResources() {
-        if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder("\n System Resources\n");
+  /** logResources. */
+  public static void logResources() {
+    if (logger.isLoggable(Level.INFO)) {
+      StringBuilder sb = new StringBuilder("\n System Resources\n");
 
-            Runtime runtime = Runtime.getRuntime();
-            runtime.runFinalization();
-            runtime.gc();
+      Runtime runtime = Runtime.getRuntime();
+      runtime.runFinalization();
+      runtime.gc();
 
-            long MB = 1024 * 1024;
-            OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
+      long MB = 1024 * 1024;
+      OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
 
-            if (os instanceof UnixOperatingSystemMXBean) {
-                UnixOperatingSystemMXBean unixOS = (UnixOperatingSystemMXBean) os;
+      if (os instanceof UnixOperatingSystemMXBean) {
+        UnixOperatingSystemMXBean unixOS = (UnixOperatingSystemMXBean) os;
 
-                // CPU Time and Average System Load.
-                long time = unixOS.getProcessCpuTime();
-                sb.append(format("  Total CPU time:         %6.2f (sec)\n", time * 1.0e-9));
-                double systemLoadAve = unixOS.getSystemLoadAverage();
-                if (systemLoadAve >= 0) {
-                    sb.append(format("  System load average:    %6.2f\n", systemLoadAve));
-                }
-                // File handle use.
-                long open = unixOS.getOpenFileDescriptorCount();
-                long allowed = unixOS.getMaxFileDescriptorCount();
-                sb.append(format("  Open file handles:      %6d of %6d allowed\n",
-                        open, allowed));
-
-                // System Memory.
-                long freePhysical = unixOS.getFreePhysicalMemorySize() / MB;
-                long totalPhysical = unixOS.getTotalPhysicalMemorySize() / MB;
-                long freeSwap = unixOS.getFreeSwapSpaceSize() / MB;
-                long totalSwap = unixOS.getTotalSwapSpaceSize() / MB;
-                sb.append(format("  System memory:          %6d MB free out of %6d MB\n",
-                        freePhysical, totalPhysical));
-                sb.append(format("  System swap space:      %6d MB free out of %6d MB\n",
-                        freeSwap, totalSwap));
-            }
-
-            // JVM Memory.
-            sb.append(format("  JVM memory:             %6d MB free out of %6d MB",
-                    runtime.freeMemory() / MB, runtime.totalMemory() / MB));
-
-            logger.info(sb.toString());
+        // CPU Time and Average System Load.
+        long time = unixOS.getProcessCpuTime();
+        sb.append(format("  Total CPU time:         %6.2f (sec)\n", time * 1.0e-9));
+        double systemLoadAve = unixOS.getSystemLoadAverage();
+        if (systemLoadAve >= 0) {
+          sb.append(format("  System load average:    %6.2f\n", systemLoadAve));
         }
+        // File handle use.
+        long open = unixOS.getOpenFileDescriptorCount();
+        long allowed = unixOS.getMaxFileDescriptorCount();
+        sb.append(format("  Open file handles:      %6d of %6d allowed\n", open, allowed));
+
+        // System Memory.
+        long freePhysical = unixOS.getFreePhysicalMemorySize() / MB;
+        long totalPhysical = unixOS.getTotalPhysicalMemorySize() / MB;
+        long freeSwap = unixOS.getFreeSwapSpaceSize() / MB;
+        long totalSwap = unixOS.getTotalSwapSpaceSize() / MB;
+        sb.append(
+            format(
+                "  System memory:          %6d MB free out of %6d MB\n",
+                freePhysical, totalPhysical));
+        sb.append(
+            format("  System swap space:      %6d MB free out of %6d MB\n", freeSwap, totalSwap));
+      }
+
+      // JVM Memory.
+      sb.append(
+          format(
+              "  JVM memory:             %6d MB free out of %6d MB",
+              runtime.freeMemory() / MB, runtime.totalMemory() / MB));
+
+      logger.info(sb.toString());
     }
+  }
 }

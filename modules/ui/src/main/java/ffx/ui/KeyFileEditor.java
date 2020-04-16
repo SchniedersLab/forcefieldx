@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,74 +34,77 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui;
-
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 import java.awt.Container;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 /**
- * The KeyFileEditor class is a wrapper for the KeywordPanel to create a stand
- * alone Key File Editor (it needs updating).
+ * The KeyFileEditor class is a wrapper for the KeywordPanel to create a stand alone Key File Editor
+ * (it needs updating).
  *
  * @author Michael J. Schnieders
  */
 public final class KeyFileEditor extends JFrame {
 
-    private static final Logger logger = Logger.getLogger(KeyFileEditor.class.getName());
-    private KeywordPanel keywordPanel;
+  private static final Logger logger = Logger.getLogger(KeyFileEditor.class.getName());
+  private KeywordPanel keywordPanel;
 
-    /**
-     * <p>
-     * Constructor for KeyFileEditor.</p>
-     */
-    private KeyFileEditor() {
-        try {
-            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | UnsupportedLookAndFeelException e) {
-            logger.log(Level.WARNING, " Can''t set look and feel: {0}", e);
-        }
-        keywordPanel = new KeywordPanel(null);
-        Container contentPane = getContentPane();
-        contentPane.add(keywordPanel);
-        setTitle("Key File Editor");
-        setSize(800, 800);
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                close();
-                System.exit(0);
-            }
+  /** Constructor for KeyFileEditor. */
+  private KeyFileEditor() {
+    try {
+      UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+    } catch (ClassNotFoundException
+        | IllegalAccessException
+        | InstantiationException
+        | UnsupportedLookAndFeelException e) {
+      logger.log(Level.WARNING, " Can''t set look and feel: {0}", e);
+    }
+    keywordPanel = new KeywordPanel(null);
+    Container contentPane = getContentPane();
+    contentPane.add(keywordPanel);
+    setTitle("Key File Editor");
+    setSize(800, 800);
+    addWindowListener(
+        new WindowAdapter() {
+          @Override
+          public void windowClosing(WindowEvent e) {
+            close();
+            System.exit(0);
+          }
         });
-    }
+  }
 
-    /**
-     * <p>
-     * main</p>
-     *
-     * @param args an array of {@link java.lang.String} objects.
-     */
-    public static void main(String[] args) {
-        KeyFileEditor editor = new KeyFileEditor();
-        editor.setVisible(true);
-    }
+  /**
+   * main
+   *
+   * @param args an array of {@link java.lang.String} objects.
+   */
+  public static void main(String[] args) {
+    KeyFileEditor editor = new KeyFileEditor();
+    editor.setVisible(true);
+  }
 
-    private void close() {
-        if (keywordPanel.isFileOpen()) {
-            int option = JOptionPane.showConfirmDialog(this,
-                    "Save Changes First", "Closing Key Editor",
-                    JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
-            if (option == JOptionPane.YES_OPTION) {
-                keywordPanel.keySave(null);
-            }
-        }
+  private void close() {
+    if (keywordPanel.isFileOpen()) {
+      int option =
+          JOptionPane.showConfirmDialog(
+              this,
+              "Save Changes First",
+              "Closing Key Editor",
+              JOptionPane.YES_NO_OPTION,
+              JOptionPane.INFORMATION_MESSAGE);
+      if (option == JOptionPane.YES_OPTION) {
+        keywordPanel.keySave(null);
+      }
     }
+  }
 }

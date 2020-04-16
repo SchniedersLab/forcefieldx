@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,15 +34,14 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.utilities;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Implements a comparable pair, where a non-comparable T can be compared via
- * a comparable S.
+ * Implements a comparable pair, where a non-comparable T can be compared via a comparable S.
  *
  * @param <T> Some object
  * @param <S> Some indexing, comparable object
@@ -50,60 +49,58 @@ import java.util.List;
  */
 public class ObjectPair<T, S extends Comparable<S>> implements Comparable<ObjectPair<T, S>> {
 
-    private final T val;
-    private final S key;
+  private final T val;
+  private final S key;
 
-    /**
-     * <p>Constructor for ObjectPair.</p>
-     *
-     * @param val a T object.
-     * @param key a S object.
-     */
-    public ObjectPair(T val, S key) {
-        this.val = val;
-        this.key = key;
-    }
+  /**
+   * Constructor for ObjectPair.
+   *
+   * @param val a T object.
+   * @param key a S object.
+   */
+  public ObjectPair(T val, S key) {
+    this.val = val;
+    this.key = key;
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compareTo(ObjectPair<T, S> o) {
-        return key.compareTo(o.getKey());
+  /**
+   * sortAndReturn.
+   *
+   * @param theList a {@link java.util.List} object.
+   * @param <U> a U object.
+   * @param <V> a V object.
+   * @return a {@link java.util.List} object.
+   */
+  public static <U, V extends Comparable<V>> List<U> sortAndReturn(List<ObjectPair<U, V>> theList) {
+    theList.sort(null);
+    List<U> retList = new ArrayList<>(theList.size());
+    for (ObjectPair<U, V> e : theList) {
+      retList.add(e.getVal());
     }
+    return retList;
+  }
 
-    /**
-     * <p>Getter for the field <code>key</code>.</p>
-     *
-     * @return a S object.
-     */
-    public S getKey() {
-        return key;
-    }
+  /** {@inheritDoc} */
+  @Override
+  public int compareTo(ObjectPair<T, S> o) {
+    return key.compareTo(o.getKey());
+  }
 
-    /**
-     * <p>Getter for the field <code>val</code>.</p>
-     *
-     * @return a T object.
-     */
-    public T getVal() {
-        return val;
-    }
+  /**
+   * Getter for the field <code>key</code>.
+   *
+   * @return a S object.
+   */
+  public S getKey() {
+    return key;
+  }
 
-    /**
-     * <p>sortAndReturn.</p>
-     *
-     * @param theList a {@link java.util.List} object.
-     * @param <U>     a U object.
-     * @param <V>     a V object.
-     * @return a {@link java.util.List} object.
-     */
-    public static <U, V extends Comparable<V>> List<U> sortAndReturn(List<ObjectPair<U, V>> theList) {
-        theList.sort(null);
-        List<U> retList = new ArrayList<>(theList.size());
-        for (ObjectPair<U, V> e : theList) {
-            retList.add(e.getVal());
-        }
-        return retList;
-    }
+  /**
+   * Getter for the field <code>val</code>.
+   *
+   * @return a T object.
+   */
+  public T getVal() {
+    return val;
+  }
 }

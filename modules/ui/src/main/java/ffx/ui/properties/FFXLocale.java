@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.properties;
 
 import java.util.Enumeration;
@@ -52,95 +52,87 @@ import java.util.logging.Logger;
  */
 public class FFXLocale {
 
-    private static final Logger logger = Logger.getLogger(FFXLocale.class.getName());
-    private Locale currentLocale;
-    private PropertyResourceBundle ffxLabels;
-    private Hashtable<String, String> reverseLookUp = new Hashtable<String, String>();
+  private static final Logger logger = Logger.getLogger(FFXLocale.class.getName());
+  private Locale currentLocale;
+  private PropertyResourceBundle ffxLabels;
+  private Hashtable<String, String> reverseLookUp = new Hashtable<String, String>();
 
-    /**
-     * <p>
-     * Constructor for FFXLocale.</p>
-     */
-    public FFXLocale() {
-        currentLocale = Locale.getDefault();
-        ffxLabels = (PropertyResourceBundle) ResourceBundle.getBundle(
-                "ffx.ui.properties.StringBundle", currentLocale);
-        loadHashtable();
-    }
+  /** Constructor for FFXLocale. */
+  public FFXLocale() {
+    currentLocale = Locale.getDefault();
+    ffxLabels =
+        (PropertyResourceBundle)
+            ResourceBundle.getBundle("ffx.ui.properties.StringBundle", currentLocale);
+    loadHashtable();
+  }
 
-    /**
-     * <p>
-     * Constructor for FFXLocale.</p>
-     *
-     * @param language a {@link java.lang.String} object.
-     * @param country  a {@link java.lang.String} object.
-     */
-    public FFXLocale(String language, String country) {
-        setLocale(language, country);
-    }
+  /**
+   * Constructor for FFXLocale.
+   *
+   * @param language a {@link java.lang.String} object.
+   * @param country a {@link java.lang.String} object.
+   */
+  public FFXLocale(String language, String country) {
+    setLocale(language, country);
+  }
 
-    /**
-     * <p>
-     * getKey</p>
-     *
-     * @param string a {@link java.lang.String} object.
-     * @return a {@link java.lang.String} object.
-     */
-    public String getKey(String string) {
-        return reverseLookUp.get(string);
-    }
+  /**
+   * getKey
+   *
+   * @param string a {@link java.lang.String} object.
+   * @return a {@link java.lang.String} object.
+   */
+  public String getKey(String string) {
+    return reverseLookUp.get(string);
+  }
 
-    /**
-     * <p>
-     * getValue</p>
-     *
-     * @param key a {@link java.lang.String} object.
-     * @return a {@link java.lang.String} object.
-     */
-    public String getValue(String key) {
-        return ffxLabels.getString(key).trim();
-    }
+  /**
+   * getValue
+   *
+   * @param key a {@link java.lang.String} object.
+   * @return a {@link java.lang.String} object.
+   */
+  public String getValue(String key) {
+    return ffxLabels.getString(key).trim();
+  }
 
-    /**
-     * <p>
-     * list</p>
-     */
-    public void list() {
-        for (String value : reverseLookUp.keySet()) {
-            String key = reverseLookUp.get(value);
-            logger.info("key = " + key + ", " + "value = " + value);
-        }
+  /** list */
+  public void list() {
+    for (String value : reverseLookUp.keySet()) {
+      String key = reverseLookUp.get(value);
+      logger.info("key = " + key + ", " + "value = " + value);
     }
+  }
 
-    /**
-     * <p>
-     * setLocale</p>
-     *
-     * @param language a {@link java.lang.String} object.
-     * @param country  a {@link java.lang.String} object.
-     * @return a boolean.
-     */
-    public boolean setLocale(String language, String country) {
-        Locale locale = new Locale(language, country);
-        try {
-            ffxLabels = (PropertyResourceBundle) ResourceBundle.getBundle(
-                    "ffx.ui.properties.StringBundle", locale);
-        } catch (Exception ex) {
-            Logger.getLogger("ffx").severe("" + ex);
-            return false;
-        }
-        loadHashtable();
-        currentLocale = locale;
-        return true;
+  /**
+   * setLocale
+   *
+   * @param language a {@link java.lang.String} object.
+   * @param country a {@link java.lang.String} object.
+   * @return a boolean.
+   */
+  public boolean setLocale(String language, String country) {
+    Locale locale = new Locale(language, country);
+    try {
+      ffxLabels =
+          (PropertyResourceBundle)
+              ResourceBundle.getBundle("ffx.ui.properties.StringBundle", locale);
+    } catch (Exception ex) {
+      Logger.getLogger("ffx").severe("" + ex);
+      return false;
     }
+    loadHashtable();
+    currentLocale = locale;
+    return true;
+  }
 
-    private void loadHashtable() {
-        reverseLookUp.clear();
-        Enumeration<String> e = ffxLabels.getKeys();
-        while (e.hasMoreElements()) {
-            String key = e.nextElement();
-            String value = getValue(key);
-            reverseLookUp.put(value, key);
-        }
+  private void loadHashtable() {
+    reverseLookUp.clear();
+    Enumeration<String> e = ffxLabels.getKeys();
+    while (e.hasMoreElements()) {
+      String key = e.nextElement();
+      String value = getValue(key);
+      reverseLookUp.put(value, key);
     }
+  }
 }

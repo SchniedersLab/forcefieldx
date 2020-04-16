@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,12 +34,8 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.realspace.cli;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.potential.MolecularAssembly;
@@ -48,7 +44,9 @@ import ffx.realspace.parsers.RealSpaceFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.cli.DataRefinementOptions;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 import picocli.CommandLine.Option;
 
 /**
@@ -60,83 +58,95 @@ import picocli.CommandLine.Option;
  */
 public class RealSpaceOptions extends DataRefinementOptions {
 
-    private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
+  private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
 
-    /**
-     * The refinement mode to use.
-     */
-    public RefinementMode refinementMode = RefinementMode.COORDINATES;
+  /** The refinement mode to use. */
+  public RefinementMode refinementMode = RefinementMode.COORDINATES;
 
-    /**
-     * -X or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
-     */
-    @Option(names = {"-X", "--data"}, arity = "2",
-            description = "Specify input data filename and its weight (wA) (e.g. -X filename 1.0).")
-    String[] data = null;
+  /**
+   * -X or --data Specify input data filename, weight applied to the data (wA) and if the data is
+   * from a neutron experiment.
+   */
+  @Option(
+      names = {"-X", "--data"},
+      arity = "2",
+      description = "Specify input data filename and its weight (wA) (e.g. -X filename 1.0).")
+  String[] data = null;
 
-    /**
-     * Process input to collect Real Space Files.
-     *
-     * @param filenames         Input filenames (first filename is ignored).
-     * @param molecularAssembly Currently open molecularAssembly.
-     * @return a list of Real Space File instances.
-     */
-    public List<RealSpaceFile> processData(List<String> filenames, MolecularAssembly molecularAssembly) {
+  /**
+   * Process input to collect Real Space Files.
+   *
+   * @param filenames Input filenames (first filename is ignored).
+   * @param molecularAssembly Currently open molecularAssembly.
+   * @return a list of Real Space File instances.
+   */
+  public List<RealSpaceFile> processData(
+      List<String> filenames, MolecularAssembly molecularAssembly) {
 
-        logger.info("\n");
+    logger.info("\n");
 
-        // set up real space map data (can be multiple files)
-        List<RealSpaceFile> mapfiles = new ArrayList<>();
-        if (filenames.size() > 1) {
-            RealSpaceFile realspacefile = new RealSpaceFile(filenames.get(1), wA);
-            mapfiles.add(realspacefile);
+    // set up real space map data (can be multiple files)
+    List<RealSpaceFile> mapfiles = new ArrayList<>();
+    if (filenames.size() > 1) {
+      RealSpaceFile realspacefile = new RealSpaceFile(filenames.get(1), wA);
+      mapfiles.add(realspacefile);
+    }
+    if (data != null) {
+      for (int i = 0; i < data.length; i += 2) {
+        double w = wA;
+        if (data.length > i + 1) {
+          try {
+            w = Double.parseDouble(data[i + 1]);
+          } catch (Exception e) {
+            //
+          }
         }
-        if (data != null) {
-            for (int i = 0; i < data.length; i += 2) {
-                double w = wA;
-                if (data.length > i + 1) {
-                    try {
-                        w = Double.parseDouble(data[i + 1]);
-                    } catch (Exception e) {
-                        //
-                    }
-                }
-                RealSpaceFile realspacefile = new RealSpaceFile(data[i], w);
-                mapfiles.add(realspacefile);
-            }
-        }
-
-        if (mapfiles.size() == 0) {
-            RealSpaceFile realspacefile = new RealSpaceFile(molecularAssembly, wA);
-            mapfiles.add(realspacefile);
-        }
-
-        // TODO - write out map files if needed.
-//        DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
-//        DiffractionData diffractionData = new DiffractionData(molecularAssembly, molecularAssembly[0].getProperties(),
-//                SolventModel.POLYNOMIAL, diffractionFile);
-//        diffractionData.scaleBulkFit();
-//        diffractionData.printStats();
-//        String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
-//        diffractionData.writeMaps(mapFileName);
-//        mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
-
-        return mapfiles;
+        RealSpaceFile realspacefile = new RealSpaceFile(data[i], w);
+        mapfiles.add(realspacefile);
+      }
     }
 
-    /**
-     * Process input from opened molecular assemblies to a RefinementEnergy
-     *
-     * @param filenames           All filenames included in the real-space data.
-     * @param molecularAssemblies Array of MolecularAssembly instances.
-     * @param algorithmFunctions  An AlgorithmFunctions object.
-     * @return An assembled RefinementEnergy with real-space energy.
-     */
-    public RefinementEnergy toRealSpaceEnergy(List<String> filenames, MolecularAssembly[] molecularAssemblies, AlgorithmFunctions algorithmFunctions) {
-        RealSpaceFile[] mapFiles = processData(filenames, molecularAssemblies[0]).toArray(new RealSpaceFile[0]);
-        RealSpaceData realspacedata = new RealSpaceData(molecularAssemblies, molecularAssemblies[0].getProperties(),
-                molecularAssemblies[0].getParallelTeam(), mapFiles);
-        algorithmFunctions.energy(molecularAssemblies[0]);
-        return new RefinementEnergy(realspacedata, RefinementMode.COORDINATES);
+    if (mapfiles.size() == 0) {
+      RealSpaceFile realspacefile = new RealSpaceFile(molecularAssembly, wA);
+      mapfiles.add(realspacefile);
     }
+
+    // TODO - write out map files if needed.
+    //        DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
+    //        DiffractionData diffractionData = new DiffractionData(molecularAssembly,
+    // molecularAssembly[0].getProperties(),
+    //                SolventModel.POLYNOMIAL, diffractionFile);
+    //        diffractionData.scaleBulkFit();
+    //        diffractionData.printStats();
+    //        String mapFileName = String.format("%s_ffx_%d",
+    // FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
+    //        diffractionData.writeMaps(mapFileName);
+    //        mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
+
+    return mapfiles;
+  }
+
+  /**
+   * Process input from opened molecular assemblies to a RefinementEnergy
+   *
+   * @param filenames All filenames included in the real-space data.
+   * @param molecularAssemblies Array of MolecularAssembly instances.
+   * @param algorithmFunctions An AlgorithmFunctions object.
+   * @return An assembled RefinementEnergy with real-space energy.
+   */
+  public RefinementEnergy toRealSpaceEnergy(
+      List<String> filenames,
+      MolecularAssembly[] molecularAssemblies,
+      AlgorithmFunctions algorithmFunctions) {
+    RealSpaceFile[] mapFiles =
+        processData(filenames, molecularAssemblies[0]).toArray(new RealSpaceFile[0]);
+    RealSpaceData realspacedata =
+        new RealSpaceData(
+            molecularAssemblies,
+            molecularAssemblies[0].getProperties(),
+            molecularAssemblies[0].getParallelTeam(),
+            mapFiles);
+    algorithmFunctions.energy(molecularAssemblies[0]);
+    return new RefinementEnergy(realspacedata, RefinementMode.COORDINATES);
+  }
 }

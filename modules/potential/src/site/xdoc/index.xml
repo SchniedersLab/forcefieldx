@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <document
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/XDOC/2.0"
-        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
-    <properties>
-        <title>Potential Home Page</title>
-        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
-    </properties>
-    <body>
-        <section name="Potential Introduction">
-            <p>
-                The Potential module computes the potential energy of a
-                molecular system via a classical force field.
-            </p>
-        </section>
-    </body>
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://maven.apache.org/XDOC/2.0"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <body>
+    <section name="Potential Introduction">
+      <p>
+        The Potential module computes the potential energy of a
+        molecular system via a classical force field.
+      </p>
+    </section>
+  </body>
+  <properties>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    <title>Potential Home Page</title>
+  </properties>
 </document>

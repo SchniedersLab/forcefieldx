@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,10 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 
 /**
- * The Potential package implements molecular mechanics force fields with shared memory Parallel Java and via OpenMM.
+ * The Potential package implements molecular mechanics force fields with shared memory Parallel
+ * Java and via OpenMM.
  *
  * @author Michael J. Schnieders
  * @since 1.0

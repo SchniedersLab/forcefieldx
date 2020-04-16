@@ -35,16 +35,14 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy.test;
-
-import org.apache.commons.io.FilenameUtils
-
-import groovy.cli.picocli.CliBuilder
+package ffx.algorithms.groovy.test
 
 import ffx.algorithms.misc.GenerateRotamers
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3
+import groovy.cli.picocli.CliBuilder
+import org.apache.commons.io.FilenameUtils
 
 Residue residue = null;
 int nChi;
@@ -64,24 +62,31 @@ String inactiveAtoms = null;
 // Create the command line parser.
 def cli = new CliBuilder(usage: ' ffxc test.generateRotamers [options] <filename>');
 cli.h(longOpt: 'help', 'Print this help message.');
-cli.r(longOpt: 'residue', args: 1, argName: 'resid', 'Required: Specify residue as ChainNumber (e.g. B71).');
-cli.n(longOpt: 'nChi', args: 1, argName: '1-7', 'Required: Specify number of torsions per rotamer.');
-cli.b(longOpt: 'baseResidue', args: 1, argName: 'aa3', '3-letter code for standard amino acid to start from (or UNK for patch-defined).');
+cli.r(longOpt: 'residue', args: 1, argName: 'resid',
+    'Required: Specify residue as ChainNumber (e.g. B71).');
+cli.n(longOpt: 'nChi', args: 1, argName: '1-7',
+    'Required: Specify number of torsions per rotamer.');
+cli.b(longOpt: 'baseResidue', args: 1, argName: 'aa3',
+    '3-letter code for standard amino acid to start from (or UNK for patch-defined).');
 cli.i(longOpt: 'initialDepth', args: 1, argName: '1', 'First chi to operate on.');
-cli.f(longOpt: 'finalDepth', args: 1, argName: '-1', 'Last chi to operate on (or -1 to optimize to nChi).');
+cli.f(longOpt: 'finalDepth', args: 1, argName: '-1',
+    'Last chi to operate on (or -1 to optimize to nChi).');
 cli.a(longOpt: 'angleIncrement', args: 1, argName: '10', 'Angle in degrees to spin torsions by.');
 cli.w(longOpt: 'width', args: 1, argName: '360.0', 'Total width to scan in degrees.');
 cli.o(longOpt: 'outFile', args: 1, argName: 'file.tor.csv', 'File to print output to.');
-cli.l(longOpt: 'library', args: 1, argName: '2', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
+cli.l(longOpt: 'library', args: 1, argName: '2',
+    'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
 cli.v(longOpt: 'verbose', args: 1, argName: 'false', 'Log rotamer energies to console.');
 cli.vw(longOpt: 'videoWriter', args: 1, argName: 'file', 'Writes video to a file.');
-cli.e(longOpt: 'electrostatics', args: 1, argName: 'a-b,c-d...', 'Turns off electrostatics for atoms a-b, c-d, etc.');
-cli.ia(longOpt: 'inactiveAtoms', args: 1, argName: 'a-b,c-d...', 'Turns off all energy terms for atoms a-b, c-d, etc.');
+cli.e(longOpt: 'electrostatics', args: 1, argName: 'a-b,c-d...',
+    'Turns off electrostatics for atoms a-b, c-d, etc.');
+cli.ia(longOpt: 'inactiveAtoms', args: 1, argName: 'a-b,c-d...',
+    'Turns off all energy terms for atoms a-b, c-d, etc.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() != 1) {
-    return cli.usage();
+  return cli.usage();
 }
 
 // Read in command line.
@@ -93,75 +98,76 @@ String resn = options.r;
 char chain = resn.charAt(0);
 int resIndex = Integer.parseInt(resn.substring(1));
 for (Polymer polymer : active.getChains()) {
-    if (polymer.getChainID() == chain) {
-        for (Residue pres : polymer.getResidues()) {
-            if (pres.getResidueNumber() == resIndex) {
-                residue = pres;
-            }
-        }
+  if (polymer.getChainID() == chain) {
+    for (Residue pres : polymer.getResidues()) {
+      if (pres.getResidueNumber() == resIndex) {
+        residue = pres;
+      }
     }
+  }
 }
 
 if (residue == null) {
-    logger.severe(String.format(" Could not find residue %s", resn));
+  logger.severe(String.format(" Could not find residue %s", resn));
 }
 
 if (options.b) {
-    try {
-        baseResidue = AminoAcid3.valueOf(options.b.toUpperCase());
-        useBase = true;
-    } catch (Exception ex) {
-        logger.warning(String.format(" Could not find residue matching %s", options.b));
-    }
+  try {
+    baseResidue = AminoAcid3.valueOf(options.b.toUpperCase());
+    useBase = true;
+  } catch (Exception ex) {
+    logger.warning(String.format(" Could not find residue matching %s", options.b));
+  }
 }
 
 if (options.i) {
-    initDepth = Integer.parseInt(options.i) - 1;
+  initDepth = Integer.parseInt(options.i) - 1;
 }
 
 if (options.f) {
-    finalDepth = Integer.parseInt(options.f) - 1;
+  finalDepth = Integer.parseInt(options.f) - 1;
 }
 
 if (options.w) {
-    width = Double.parseDouble(options.w) / 2.0;
+  width = Double.parseDouble(options.w) / 2.0;
 }
 
 if (options.a) {
-    incr = Double.parseDouble(options.a);
+  incr = Double.parseDouble(options.a);
 }
 
 if (options.o) {
-    outFile = new File(options.o);
+  outFile = new File(options.o);
 } else {
-    String newName = FilenameUtils.getBaseName(filename);
-    outFile = new File(newName + ".rotout");
+  String newName = FilenameUtils.getBaseName(filename);
+  outFile = new File(newName + ".rotout");
 }
 
 if (options.l) {
-    library = Integer.parseInt(options.l);
+  library = Integer.parseInt(options.l);
 }
 
 if (options.v) {
-    verbose = Boolean.parseBoolean(options.v);
+  verbose = Boolean.parseBoolean(options.v);
 }
 
 if (options.vw) {
-    videoFile = options.vw;
+  videoFile = options.vw;
 }
 
 if (options.e) {
-    electrostatics = options.e;
+  electrostatics = options.e;
 }
 
 if (options.ia) {
-    inactiveAtoms = options.ia;
+  inactiveAtoms = options.ia;
 }
 
-GenerateRotamers genr = new GenerateRotamers(active, active.getPotentialEnergy(), residue, outFile, nChi, sh);
+GenerateRotamers genr = new GenerateRotamers(active, active.getPotentialEnergy(), residue, outFile,
+    nChi, sh);
 genr.setDepth(initDepth, finalDepth);
 if (useBase) {
-    genr.setBaselineAARes(baseResidue);
+  genr.setBaselineAARes(baseResidue);
 }
 genr.setIncrement(incr);
 genr.setSearchWidth(width);

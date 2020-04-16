@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,62 +34,51 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.nonbonded;
 
 /**
- * This class contains fields and methods for maintaining details of non-bonded
- * cutoffs.
+ * This class contains fields and methods for maintaining details of non-bonded cutoffs.
  *
  * @author Michael J. Schnieders
  */
 public class NonbondedCutoff {
 
-    /**
-     * At the distance "cut", a multiplicative switch begins to be applied.
-     */
-    public final double cut;
-    /**
-     * The distance cut squared.
-     */
-    public final double cut2;
-    /**
-     * All vdW interactions are 0 at the distance "off".
-     */
-    public final double off;
-    /**
-     * The distance off squared.
-     */
-    public final double off2;
-    /**
-     * A buffer added to the cut-off distance <code>off</code> to define
-     * neighbors included when collecting Verlet lists.
-     */
-    public final double buff;
-    /**
-     * Non-bonded Cutoff constructor.
-     *
-     * @param off  All vdW interactions are 0 at the distance <code>off</code>.
-     * @param cut  At the distance <code>cut</code>, a multiplicative switch
-     *             begins to be applied.
-     * @param buff A buffer added to the cut-off distance <code>off</code> to
-     *             define neighbors included when collecting Verlet lists.
-     */
-    public NonbondedCutoff(double off, double cut, double buff) {
-        this.cut = cut;
-        this.cut2 = cut * cut;
-        this.off = off;
-        this.off2 = off * off;
-        this.buff = buff;
-    }
+  /** At the distance "cut", a multiplicative switch begins to be applied. */
+  public final double cut;
+  /** The distance cut squared. */
+  public final double cut2;
+  /** All vdW interactions are 0 at the distance "off". */
+  public final double off;
+  /** The distance off squared. */
+  public final double off2;
+  /**
+   * A buffer added to the cut-off distance <code>off</code> to define neighbors included when
+   * collecting Verlet lists.
+   */
+  public final double buff;
+  /**
+   * Non-bonded Cutoff constructor.
+   *
+   * @param off All vdW interactions are 0 at the distance <code>off</code>.
+   * @param cut At the distance <code>cut</code>, a multiplicative switch begins to be applied.
+   * @param buff A buffer added to the cut-off distance <code>off</code> to define neighbors
+   *     included when collecting Verlet lists.
+   */
+  public NonbondedCutoff(double off, double cut, double buff) {
+    this.cut = cut;
+    this.cut2 = cut * cut;
+    this.off = off;
+    this.off2 = off * off;
+    this.buff = buff;
+  }
 
-    /**
-     * Returns a NonbondedCutoff that does not cut off anything.
-     *
-     * @return No-cutoff cutoff.
-     */
-    public static NonbondedCutoff noCutoffFactory() {
-        return new NonbondedCutoff(Double.MAX_VALUE, Double.MAX_VALUE, 0.0);
-    }
-
+  /**
+   * Returns a NonbondedCutoff that does not cut off anything.
+   *
+   * @return No-cutoff cutoff.
+   */
+  public static NonbondedCutoff noCutoffFactory() {
+    return new NonbondedCutoff(Double.MAX_VALUE, Double.MAX_VALUE, 0.0);
+  }
 }

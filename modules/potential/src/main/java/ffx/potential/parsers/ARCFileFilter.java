@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.parsers;
 
-import javax.swing.filechooser.FileFilter;
-
 import java.io.File;
-
+import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -51,34 +49,30 @@ import org.apache.commons.io.FilenameUtils;
  */
 public final class ARCFileFilter extends FileFilter {
 
-    /**
-     * Default Constructor
-     */
-    public ARCFileFilter() {
-    }
+  /** Default Constructor */
+  public ARCFileFilter() {}
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method return <code>true</code> if the file is a directory or TINKER
-     * Archive (*.ARC).
-     */
-    @Override
-    public boolean accept(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String ext = FilenameUtils.getExtension(file.getName());
-        return ext.toUpperCase().startsWith("ARC");
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This method return <code>true</code> if the file is a directory or TINKER Archive (*.ARC).
+   */
+  @Override
+  public boolean accept(File file) {
+    if (file.isDirectory()) {
+      return true;
     }
+    String ext = FilenameUtils.getExtension(file.getName());
+    return ext.toUpperCase().startsWith("ARC");
+  }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Provides a description of this FileFilter
-     */
-    @Override
-    public String getDescription() {
-        return "TINKER Archive (*.ARC)";
-    }
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Provides a description of this FileFilter
+   */
+  @Override
+  public String getDescription() {
+    return "TINKER Archive (*.ARC)";
+  }
 }

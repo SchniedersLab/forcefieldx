@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,727 +34,650 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray;
 
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
-
-import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.ReflectionList;
 import ffx.numerics.math.ComplexNumber;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
- * <p>
- * DiffractionRefinementData class.</p>
+ * DiffractionRefinementData class.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public class DiffractionRefinementData {
 
-    private static final Logger logger = Logger.getLogger(DiffractionRefinementData.class.getName());
-    /**
-     * Number of reflections in the data set.
-     */
-    public final int n;
-    /**
-     * Array of R free flags;
-     */
-    public final int[] freeR;
-    /**
-     * Calculated atomic structure factors.
-     */
-    public final double[][] fc;
-    /**
-     * Calculated bulk solvent structure factors.
-     */
-    public final double[][] fs;
-    /**
-     * Figure of merit and phase.
-     */
-    public final double[][] fomPhi;
-    /**
-     * mFo - DFc coefficients.
-     */
-    public final double[][] foFc1;
-    public final double fSigFCutoff;
-    /**
-     * Number of scale parameters.
-     */
-    final int nScale;
-    /**
-     * 2D array of F/sigF data.
-     */
-    final double[][] fSigF;
-    /**
-     * Scaled sum of Fc and Fs
-     */
-    final double[][] fcTot;
-    /**
-     * 2mFo - DFc coefficients.
-     */
-    final double[][] foFc2;
-    /**
-     * Derivatives with respect to Fc.
-     */
-    final double[][] dFc;
-    /**
-     * Derivatives with respect to Fs.
-     */
-    final double[][] dFs;
-    /**
-     * Number of resolution bins.
-     */
-    final int nBins;
-    /**
-     * Spine scaling coefficients.
-     */
-    public double[] spline;
-    /**
-     * SigmaA coefficient - s.
-     */
-    public double[] sigmaA;
-    /**
-     * SigmaA coefficient - w.
-     */
-    public double[] sigmaW;
-    /**
-     * Duplicated settings - these are also in DiffractionData, but duplicated
-     * here until settings are put in their own class.
-     */
-    public int rFreeFlag;
-    /**
-     * Log Likelihoods.
-     */
-    double llkR, llkF;
-    /**
-     * Reciprocal space reference for structure factor calculations and computing derivatives.
-     */
-    CrystalReciprocalSpace crystalReciprocalSpaceFc;
-    /**
-     * Reciprocal space reference for bulk solvent structure factor calculations and computing derivatives.
-     */
-    CrystalReciprocalSpace crystalReciprocalSpaceFs;
-    /**
-     * Scaled, E-like Fc.
-     */
-    double[] esqFc;
-    /**
-     * Scaled, E-like Fo.
-     */
-    double[] esqFo;
-    /**
-     * Bulk solvent parameters.
-     */
-    double solventA, solventB;
-    /**
-     * bulk solvent scale and Ueq
-     */
-    double bulkSolventK, bulkSolventUeq;
-    /**
-     * Overall model scale.
-     */
-    double modelScaleK;
-    /**
-     * model anisotropic B
-     */
-    double[] modelAnisoB = new double[6];
+  private static final Logger logger = Logger.getLogger(DiffractionRefinementData.class.getName());
+  /** Number of reflections in the data set. */
+  public final int n;
+  /** Array of R free flags; */
+  public final int[] freeR;
+  /** Calculated atomic structure factors. */
+  public final double[][] fc;
+  /** Calculated bulk solvent structure factors. */
+  public final double[][] fs;
+  /** Figure of merit and phase. */
+  public final double[][] fomPhi;
+  /** mFo - DFc coefficients. */
+  public final double[][] foFc1;
 
-    /**
-     * allocate data given a {@link ffx.crystal.ReflectionList}
-     *
-     * @param properties     configuration properties
-     * @param reflectionList {@link ffx.crystal.ReflectionList} to use to allocate data
-     */
-    public DiffractionRefinementData(CompositeConfiguration properties,
-                                     ReflectionList reflectionList) {
+  public final double fSigFCutoff;
+  /** Number of scale parameters. */
+  final int nScale;
+  /** 2D array of F/sigF data. */
+  final double[][] fSigF;
+  /** Scaled sum of Fc and Fs */
+  final double[][] fcTot;
+  /** 2mFo - DFc coefficients. */
+  final double[][] foFc2;
+  /** Derivatives with respect to Fc. */
+  final double[][] dFc;
+  /** Derivatives with respect to Fs. */
+  final double[][] dFs;
+  /** Number of resolution bins. */
+  final int nBins;
+  /** Spine scaling coefficients. */
+  public double[] spline;
+  /** SigmaA coefficient - s. */
+  public double[] sigmaA;
+  /** SigmaA coefficient - w. */
+  public double[] sigmaW;
+  /**
+   * Duplicated settings - these are also in DiffractionData, but duplicated here until settings are
+   * put in their own class.
+   */
+  public int rFreeFlag;
+  /** Log Likelihoods. */
+  double llkR, llkF;
+  /** Reciprocal space reference for structure factor calculations and computing derivatives. */
+  CrystalReciprocalSpace crystalReciprocalSpaceFc;
+  /**
+   * Reciprocal space reference for bulk solvent structure factor calculations and computing
+   * derivatives.
+   */
+  CrystalReciprocalSpace crystalReciprocalSpaceFs;
+  /** Scaled, E-like Fc. */
+  double[] esqFc;
+  /** Scaled, E-like Fo. */
+  double[] esqFo;
+  /** Bulk solvent parameters. */
+  double solventA, solventB;
+  /** bulk solvent scale and Ueq */
+  double bulkSolventK, bulkSolventUeq;
+  /** Overall model scale. */
+  double modelScaleK;
+  /** model anisotropic B */
+  double[] modelAnisoB = new double[6];
 
-        int rflag = -1;
-        if (properties != null) {
-            rflag = properties.getInt("rfreeflag", -1);
-            fSigFCutoff = properties.getDouble("fsigfcutoff", -1.0);
+  /**
+   * allocate data given a {@link ffx.crystal.ReflectionList}
+   *
+   * @param properties configuration properties
+   * @param reflectionList {@link ffx.crystal.ReflectionList} to use to allocate data
+   */
+  public DiffractionRefinementData(
+      CompositeConfiguration properties, ReflectionList reflectionList) {
+
+    int rflag = -1;
+    if (properties != null) {
+      rflag = properties.getInt("rfreeflag", -1);
+      fSigFCutoff = properties.getDouble("fsigfcutoff", -1.0);
+    } else {
+      fSigFCutoff = -1.0;
+    }
+
+    this.n = reflectionList.hkllist.size();
+    this.nScale = reflectionList.crystal.scaleN;
+    this.rFreeFlag = rflag;
+    this.nBins = reflectionList.nbins;
+    fSigF = new double[n][2];
+    freeR = new int[n];
+    fc = new double[n][2];
+    fs = new double[n][2];
+    fcTot = new double[n][2];
+    fomPhi = new double[n][2];
+    foFc2 = new double[n][2];
+    foFc1 = new double[n][2];
+    dFc = new double[n][2];
+    dFs = new double[n][2];
+
+    for (int i = 0; i < n; i++) {
+      fSigF[i][0] = fSigF[i][1] = Double.NaN;
+      fcTot[i][0] = fcTot[i][1] = Double.NaN;
+    }
+
+    spline = new double[nBins * 2];
+    sigmaA = new double[nBins];
+    sigmaW = new double[nBins];
+    esqFc = new double[nBins];
+    esqFo = new double[nBins];
+    for (int i = 0; i < nBins; i++) {
+      spline[i] = spline[i + nBins] = sigmaA[i] = esqFc[i] = esqFo[i] = 1.0;
+      sigmaW[i] = 0.05;
+    }
+
+    // Initial guess for scaling/bulk solvent correction.
+    bulkSolventK = 0.33;
+    bulkSolventUeq = 50.0 / (8.0 * PI * PI);
+    modelScaleK = 0.0;
+  }
+
+  /**
+   * FoFc2F
+   *
+   * @param i a int.
+   * @return a double.
+   */
+  public double FoFc2F(int i) {
+    ComplexNumber c = new ComplexNumber(foFc2[i][0], foFc2[i][1]);
+    return c.abs();
+  }
+
+  /**
+   * FoFc2Phi
+   *
+   * @param i a int.
+   * @return a double.
+   */
+  public double FoFc2Phi(int i) {
+    ComplexNumber c = new ComplexNumber(foFc2[i][0], foFc2[i][1]);
+    return c.phase();
+  }
+
+  /**
+   * get the amplitude of a complex Fc
+   *
+   * @param i reflection to get
+   * @return amplitude of Fc
+   */
+  public double fcF(int i) {
+    ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
+    return c.abs();
+  }
+
+  /**
+   * get the phase of a complex Fc
+   *
+   * @param i reflection to get
+   * @return phase of Fc
+   */
+  public double fcPhi(int i) {
+    ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
+    return c.phase();
+  }
+
+  /**
+   * fcTotF
+   *
+   * @param i a int.
+   * @return a double.
+   */
+  public double fcTotF(int i) {
+    ComplexNumber c = new ComplexNumber(fcTot[i][0], fcTot[i][1]);
+    return c.abs();
+  }
+
+  /**
+   * fcTotPhi
+   *
+   * @param i a int.
+   * @return a double.
+   */
+  public double fcTotPhi(int i) {
+    ComplexNumber c = new ComplexNumber(fcTot[i][0], fcTot[i][1]);
+    return c.phase();
+  }
+
+  /**
+   * foFc1F
+   *
+   * @param i a int.
+   * @return a double.
+   */
+  public double foFc1F(int i) {
+    ComplexNumber c = new ComplexNumber(foFc1[i][0], foFc1[i][1]);
+    return c.abs();
+  }
+
+  /**
+   * foFc1Phi
+   *
+   * @param i a int.
+   * @return a double.
+   */
+  public double foFc1Phi(int i) {
+    ComplexNumber c = new ComplexNumber(foFc1[i][0], foFc1[i][1]);
+    return c.phase();
+  }
+
+  /**
+   * fsF
+   *
+   * @param i a int.
+   * @return a double.
+   */
+  public double fsF(int i) {
+    ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
+    return c.abs();
+  }
+
+  /**
+   * fsPhi
+   *
+   * @param i a int.
+   * @return a double.
+   */
+  public double fsPhi(int i) {
+    ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
+    return c.phase();
+  }
+
+  /**
+   * Generate average F/sigF from anomalous F/sigF.
+   *
+   * @param anomalousFsigF an array of double.
+   */
+  public void generateFsigFfromAnomalousFsigF(double[][] anomalousFsigF) {
+    for (int i = 0; i < n; i++) {
+      if (isNaN(anomalousFsigF[i][0]) && isNaN(anomalousFsigF[i][2])) {
+        // Do Nothing.
+      } else if (isNaN(anomalousFsigF[i][0])) {
+        fSigF[i][0] = anomalousFsigF[i][2];
+        fSigF[i][1] = anomalousFsigF[i][3];
+      } else if (isNaN(anomalousFsigF[i][2])) {
+        fSigF[i][0] = anomalousFsigF[i][0];
+        fSigF[i][1] = anomalousFsigF[i][1];
+      } else {
+        fSigF[i][0] = (anomalousFsigF[i][0] + anomalousFsigF[i][2]) / 2.0;
+        fSigF[i][1] =
+            sqrt(
+                anomalousFsigF[i][1] * anomalousFsigF[i][1]
+                    + anomalousFsigF[i][3] * anomalousFsigF[i][3]);
+      }
+    }
+  }
+
+  /** Mark 5% of reflections for cross validation (R free flags). */
+  public void generateRFree() {
+    Random generator = new Random();
+    int free;
+    int nonfree;
+    int nfree = 0;
+
+    if (rFreeFlag == 0) {
+      free = 0;
+      nonfree = 1;
+    } else {
+      free = 1;
+      nonfree = 0;
+    }
+
+    for (int i = 0; i < n; i++) {
+      if (isNaN(fSigF[i][0])) {
+        freeR[i] = nonfree;
+        continue;
+      }
+
+      int randomi = generator.nextInt(100);
+      if (randomi < 5) {
+        freeR[i] = free;
+        nfree++;
+      } else {
+        freeR[i] = nonfree;
+      }
+    }
+
+    if (logger.isLoggable(Level.INFO)) {
+      logger.info(format(" Assigned %d of %d reflections to the R free set (5%%).\n", nfree, n));
+    }
+  }
+
+  /**
+   * getF
+   *
+   * @param i a int.
+   * @return a double.
+   */
+  public double getF(int i) {
+    return fSigF[i][0];
+  }
+
+  /**
+   * getFSigF
+   *
+   * @param i a int.
+   * @return an array of double.
+   */
+  public double[] getFSigF(int i) {
+    return fSigF[i];
+  }
+
+  /**
+   * getFcTot
+   *
+   * @param i a int.
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber getFcTot(int i) {
+    return new ComplexNumber(fcTot[i][0], fcTot[i][1]);
+  }
+
+  /**
+   * getFoFc1
+   *
+   * @param i a int.
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber getFoFc1(int i) {
+    return new ComplexNumber(foFc1[i][0], foFc1[i][1]);
+  }
+
+  /**
+   * getFoFc1IP
+   *
+   * @param i a int.
+   * @param c a {@link ComplexNumber} object.
+   */
+  public void getFoFc1IP(int i, ComplexNumber c) {
+    c.re(foFc1[i][0]);
+    c.im(foFc1[i][1]);
+  }
+
+  /**
+   * getFoFc2
+   *
+   * @param i a int.
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber getFoFc2(int i) {
+    return new ComplexNumber(foFc2[i][0], foFc2[i][1]);
+  }
+
+  /**
+   * getFoFc2IP
+   *
+   * @param i a int.
+   * @param c a {@link ComplexNumber} object.
+   */
+  public void getFoFc2IP(int i, ComplexNumber c) {
+    c.re(foFc2[i][0]);
+    c.im(foFc2[i][1]);
+  }
+
+  /**
+   * getFreeR
+   *
+   * @param i a int.
+   * @return a int.
+   */
+  public int getFreeR(int i) {
+    return freeR[i];
+  }
+
+  /**
+   * getFs
+   *
+   * @param i a int.
+   * @return a {@link ComplexNumber} object.
+   */
+  public ComplexNumber getFs(int i) {
+    return new ComplexNumber(fs[i][0], fs[i][1]);
+  }
+
+  /**
+   * getSigF
+   *
+   * @param i a int.
+   * @return a double.
+   */
+  public double getSigF(int i) {
+    return fSigF[i][1];
+  }
+
+  /**
+   * Generate amplitudes from intensities.
+   *
+   * <p>This does NOT use French and Wilson caling, but just a simple square root.
+   */
+  public void intensitiesToAmplitudes() {
+    double tmp;
+
+    for (int i = 0; i < n; i++) {
+      if (fSigF[i][0] > 0.0) {
+        tmp = fSigF[i][0];
+        fSigF[i][0] = sqrt(tmp);
+        if (fSigF[i][1] < tmp) {
+          fSigF[i][1] = fSigF[i][0] - sqrt(tmp - fSigF[i][1]);
         } else {
-            fSigFCutoff = -1.0;
+          fSigF[i][1] = fSigF[i][0];
         }
-
-        this.n = reflectionList.hkllist.size();
-        this.nScale = reflectionList.crystal.scaleN;
-        this.rFreeFlag = rflag;
-        this.nBins = reflectionList.nbins;
-        fSigF = new double[n][2];
-        freeR = new int[n];
-        fc = new double[n][2];
-        fs = new double[n][2];
-        fcTot = new double[n][2];
-        fomPhi = new double[n][2];
-        foFc2 = new double[n][2];
-        foFc1 = new double[n][2];
-        dFc = new double[n][2];
-        dFs = new double[n][2];
-
-        for (int i = 0; i < n; i++) {
-            fSigF[i][0] = fSigF[i][1] = Double.NaN;
-            fcTot[i][0] = fcTot[i][1] = Double.NaN;
-        }
-
-        spline = new double[nBins * 2];
-        sigmaA = new double[nBins];
-        sigmaW = new double[nBins];
-        esqFc = new double[nBins];
-        esqFo = new double[nBins];
-        for (int i = 0; i < nBins; i++) {
-            spline[i] = spline[i + nBins] = sigmaA[i] = esqFc[i] = esqFo[i] = 1.0;
-            sigmaW[i] = 0.05;
-        }
-
-        // Initial guess for scaling/bulk solvent correction.
-        bulkSolventK = 0.33;
-        bulkSolventUeq = 50.0 / (8.0 * PI * PI);
-        modelScaleK = 0.0;
+      } else if (!isNaN(fSigF[i][0])) {
+        fSigF[i][0] = 0.0;
+        fSigF[i][1] = 0.0;
+      }
     }
 
-    /**
-     * <p>
-     * FoFc2F</p>
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double FoFc2F(int i) {
-        ComplexNumber c = new ComplexNumber(foFc2[i][0], foFc2[i][1]);
-        return c.abs();
+    if (logger.isLoggable(Level.WARNING)) {
+      StringBuilder sb = new StringBuilder();
+      sb.append("\n Internally converting intensities to amplitudes.\n");
+      sb.append(" This does not use French & Wilson scaling.\n");
+      logger.info(sb.toString());
     }
+  }
 
-    /**
-     * <p>
-     * FoFc2Phi</p>
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double FoFc2Phi(int i) {
-        ComplexNumber c = new ComplexNumber(foFc2[i][0], foFc2[i][1]);
-        return c.phase();
-    }
+  /**
+   * isFreeR
+   *
+   * @param i a int.
+   * @param f a int.
+   * @return a boolean.
+   */
+  public boolean isFreeR(int i, int f) {
+    return (freeR[i] == f);
+  }
 
-    /**
-     * get the amplitude of a complex Fc
-     *
-     * @param i reflection to get
-     * @return amplitude of Fc
-     */
-    public double fcF(int i) {
-        ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
-        return c.abs();
-    }
+  /**
+   * return the current likelihood
+   *
+   * @return the free likelihood (Rfree based)
+   */
+  public double likelihoodFree() {
+    return llkF;
+  }
 
-    /**
-     * get the phase of a complex Fc
-     *
-     * @param i reflection to get
-     * @return phase of Fc
-     */
-    public double fcPhi(int i) {
-        ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
-        return c.phase();
-    }
+  /**
+   * return the current likelihood
+   *
+   * @return the work likelihood (non-Rfree based)
+   */
+  public double likelihoodWork() {
+    return llkR;
+  }
 
-    /**
-     * <p>
-     * fcTotF</p>
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double fcTotF(int i) {
-        ComplexNumber c = new ComplexNumber(fcTot[i][0], fcTot[i][1]);
-        return c.abs();
-    }
+  /**
+   * Set amplitude (F).
+   *
+   * @param i reflection to set
+   * @param f value of F desired
+   */
+  public void setF(int i, double f) {
+    fSigF[i][0] = f;
+  }
 
-    /**
-     * <p>
-     * fcTotPhi</p>
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double fcTotPhi(int i) {
-        ComplexNumber c = new ComplexNumber(fcTot[i][0], fcTot[i][1]);
-        return c.phase();
-    }
+  /**
+   * Set amplitude and sigF.
+   *
+   * @param i reflection to set
+   * @param f value of F desired
+   * @param sigf value of sigF desired
+   */
+  public void setFSigF(int i, double f, double sigf) {
+    fSigF[i][0] = f;
+    fSigF[i][1] = sigf;
+  }
 
-    /**
-     * <p>
-     * foFc1F</p>
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double foFc1F(int i) {
-        ComplexNumber c = new ComplexNumber(foFc1[i][0], foFc1[i][1]);
-        return c.abs();
-    }
+  /**
+   * set complex Fc
+   *
+   * @param i reflection to set
+   * @param c {@link ComplexNumber} to set reflection to
+   */
+  public void setFc(int i, ComplexNumber c) {
+    fc[i][0] = c.re();
+    fc[i][1] = c.im();
+  }
 
-    /**
-     * <p>
-     * foFc1Phi</p>
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double foFc1Phi(int i) {
-        ComplexNumber c = new ComplexNumber(foFc1[i][0], foFc1[i][1]);
-        return c.phase();
-    }
+  /**
+   * setFcTot
+   *
+   * @param i a int.
+   * @param c a {@link ComplexNumber} object.
+   */
+  public void setFcTot(int i, ComplexNumber c) {
+    fcTot[i][0] = c.re();
+    fcTot[i][1] = c.im();
+  }
 
-    /**
-     * <p>
-     * fsF</p>
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double fsF(int i) {
-        ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
-        return c.abs();
-    }
+  /**
+   * setFoFc1
+   *
+   * @param i a int.
+   * @param c a {@link ComplexNumber} object.
+   */
+  public void setFoFc1(int i, ComplexNumber c) {
+    foFc1[i][0] = c.re();
+    foFc1[i][1] = c.im();
+  }
 
-    /**
-     * <p>
-     * fsPhi</p>
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double fsPhi(int i) {
-        ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
-        return c.phase();
-    }
+  /**
+   * setFoFc2
+   *
+   * @param i a int.
+   * @param c a {@link ComplexNumber} object.
+   */
+  public void setFoFc2(int i, ComplexNumber c) {
+    foFc2[i][0] = c.re();
+    foFc2[i][1] = c.im();
+  }
 
-    /**
-     * Generate average F/sigF from anomalous F/sigF.
-     *
-     * @param anomalousFsigF an array of double.
-     */
-    public void generateFsigFfromAnomalousFsigF(double[][] anomalousFsigF) {
-        for (int i = 0; i < n; i++) {
-            if (isNaN(anomalousFsigF[i][0]) && isNaN(anomalousFsigF[i][2])) {
-                // Do Nothing.
-            } else if (isNaN(anomalousFsigF[i][0])) {
-                fSigF[i][0] = anomalousFsigF[i][2];
-                fSigF[i][1] = anomalousFsigF[i][3];
-            } else if (isNaN(anomalousFsigF[i][2])) {
-                fSigF[i][0] = anomalousFsigF[i][0];
-                fSigF[i][1] = anomalousFsigF[i][1];
-            } else {
-                fSigF[i][0] = (anomalousFsigF[i][0] + anomalousFsigF[i][2]) / 2.0;
-                fSigF[i][1] = sqrt(anomalousFsigF[i][1] * anomalousFsigF[i][1]
-                        + anomalousFsigF[i][3] * anomalousFsigF[i][3]);
-            }
-        }
-    }
+  /**
+   * Set FreeR value flag of a reflection.
+   *
+   * @param i reflection to set
+   * @param f FreeR value to set reflection to
+   */
+  public void setFreeR(int i, int f) {
+    freeR[i] = f;
+  }
 
-    /**
-     * Mark 5% of reflections for cross validation (R free flags).
-     */
-    public void generateRFree() {
-        Random generator = new Random();
-        int free;
-        int nonfree;
-        int nfree = 0;
+  /**
+   * Set FreeR value flag.
+   *
+   * @param i If FreeR value is i, it is marked for cross validation.
+   */
+  public void setFreeRFlag(int i) {
+    rFreeFlag = i;
+  }
 
-        if (rFreeFlag == 0) {
-            free = 0;
-            nonfree = 1;
-        } else {
-            free = 1;
-            nonfree = 0;
-        }
+  /**
+   * setFs
+   *
+   * @param i a int.
+   * @param c a {@link ComplexNumber} object.
+   */
+  public void setFs(int i, ComplexNumber c) {
+    fs[i][0] = c.re();
+    fs[i][1] = c.im();
+  }
 
-        for (int i = 0; i < n; i++) {
-            if (isNaN(fSigF[i][0])) {
-                freeR[i] = nonfree;
-                continue;
-            }
+  /**
+   * Set amplitude sigma (sigF).
+   *
+   * @param i reflection to set
+   * @param sigF value of sigF desired
+   */
+  public void setSigF(int i, double sigF) {
+    fSigF[i][1] = sigF;
+  }
 
-            int randomi = generator.nextInt(100);
-            if (randomi < 5) {
-                freeR[i] = free;
-                nfree++;
-            } else {
-                freeR[i] = nonfree;
-            }
-        }
+  /**
+   * setCrystalReciprocalSpace_fc
+   *
+   * @param crystalReciprocalSpace a {@link ffx.xray.CrystalReciprocalSpace} object.
+   */
+  void setCrystalReciprocalSpaceFc(CrystalReciprocalSpace crystalReciprocalSpace) {
+    this.crystalReciprocalSpaceFc = crystalReciprocalSpace;
+  }
 
-        if (logger.isLoggable(Level.INFO)) {
-            logger.info(format(" Assigned %d of %d reflections to the R free set (5%%).\n", nfree, n));
-        }
-    }
+  /**
+   * setCrystalReciprocalSpace_fs
+   *
+   * @param crystalReciprocalSpace a {@link ffx.xray.CrystalReciprocalSpace} object.
+   */
+  void setCrystalReciprocalSpaceFs(CrystalReciprocalSpace crystalReciprocalSpace) {
+    this.crystalReciprocalSpaceFs = crystalReciprocalSpace;
+  }
 
-    /**
-     * <p>
-     * getF</p>
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double getF(int i) {
-        return fSigF[i][0];
-    }
+  /**
+   * isFreeR
+   *
+   * @param i a int.
+   * @return a boolean.
+   */
+  boolean isFreeR(int i) {
+    return (freeR[i] == rFreeFlag);
+  }
 
-    /**
-     * <p>
-     * getFSigF</p>
-     *
-     * @param i a int.
-     * @return an array of double.
-     */
-    public double[] getFSigF(int i) {
-        return fSigF[i];
-    }
+  /**
+   * get the complex number for a Fc reflection
+   *
+   * @param i reflection to get
+   * @return newly allocated {@link ComplexNumber}
+   */
+  ComplexNumber getFc(int i) {
+    return new ComplexNumber(fc[i][0], fc[i][1]);
+  }
 
-    /**
-     * <p>
-     * getFcTot</p>
-     *
-     * @param i a int.
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber getFcTot(int i) {
-        return new ComplexNumber(fcTot[i][0], fcTot[i][1]);
-    }
+  /**
+   * get the complex number for a Fc reflection
+   *
+   * @param i reflection to get
+   * @param c {@link ComplexNumber} to fill
+   */
+  void getFcIP(int i, ComplexNumber c) {
+    c.re(fc[i][0]);
+    c.im(fc[i][1]);
+  }
 
-    /**
-     * <p>
-     * getFoFc1</p>
-     *
-     * @param i a int.
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber getFoFc1(int i) {
-        return new ComplexNumber(foFc1[i][0], foFc1[i][1]);
-    }
+  /**
+   * getFsIP
+   *
+   * @param i a int.
+   * @param c a {@link ComplexNumber} object.
+   */
+  void getFsIP(int i, ComplexNumber c) {
+    c.re(fs[i][0]);
+    c.im(fs[i][1]);
+  }
 
-    /**
-     * <p>
-     * getFoFc1IP</p>
-     *
-     * @param i a int.
-     * @param c a {@link ComplexNumber} object.
-     */
-    public void getFoFc1IP(int i, ComplexNumber c) {
-        c.re(foFc1[i][0]);
-        c.im(foFc1[i][1]);
-    }
-
-    /**
-     * <p>
-     * getFoFc2</p>
-     *
-     * @param i a int.
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber getFoFc2(int i) {
-        return new ComplexNumber(foFc2[i][0], foFc2[i][1]);
-    }
-
-    /**
-     * <p>
-     * getFoFc2IP</p>
-     *
-     * @param i a int.
-     * @param c a {@link ComplexNumber} object.
-     */
-    public void getFoFc2IP(int i, ComplexNumber c) {
-        c.re(foFc2[i][0]);
-        c.im(foFc2[i][1]);
-    }
-
-    /**
-     * <p>
-     * getFreeR</p>
-     *
-     * @param i a int.
-     * @return a int.
-     */
-    public int getFreeR(int i) {
-        return freeR[i];
-    }
-
-    /**
-     * <p>
-     * getFs</p>
-     *
-     * @param i a int.
-     * @return a {@link ComplexNumber} object.
-     */
-    public ComplexNumber getFs(int i) {
-        return new ComplexNumber(fs[i][0], fs[i][1]);
-    }
-
-    /**
-     * <p>
-     * getSigF</p>
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double getSigF(int i) {
-        return fSigF[i][1];
-    }
-
-    /**
-     * Generate amplitudes from intensities.
-     * <p>
-     * This does NOT use French and Wilson caling, but just a simple square root.
-     */
-    public void intensitiesToAmplitudes() {
-        double tmp;
-
-        for (int i = 0; i < n; i++) {
-            if (fSigF[i][0] > 0.0) {
-                tmp = fSigF[i][0];
-                fSigF[i][0] = sqrt(tmp);
-                if (fSigF[i][1] < tmp) {
-                    fSigF[i][1] = fSigF[i][0]
-                            - sqrt(tmp - fSigF[i][1]);
-                } else {
-                    fSigF[i][1] = fSigF[i][0];
-                }
-            } else if (!isNaN(fSigF[i][0])) {
-                fSigF[i][0] = 0.0;
-                fSigF[i][1] = 0.0;
-            }
-        }
-
-        if (logger.isLoggable(Level.WARNING)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("\n Internally converting intensities to amplitudes.\n");
-            sb.append(" This does not use French & Wilson scaling.\n");
-            logger.info(sb.toString());
-        }
-    }
-
-    /**
-     * <p>
-     * isFreeR</p>
-     *
-     * @param i a int.
-     * @param f a int.
-     * @return a boolean.
-     */
-    public boolean isFreeR(int i, int f) {
-        return (freeR[i] == f);
-    }
-
-    /**
-     * return the current likelihood
-     *
-     * @return the free likelihood (Rfree based)
-     */
-    public double likelihoodFree() {
-        return llkF;
-    }
-
-    /**
-     * return the current likelihood
-     *
-     * @return the work likelihood (non-Rfree based)
-     */
-    public double likelihoodWork() {
-        return llkR;
-    }
-
-    /**
-     * Set amplitude (F).
-     *
-     * @param i reflection to set
-     * @param f value of F desired
-     */
-    public void setF(int i, double f) {
-        fSigF[i][0] = f;
-    }
-
-    /**
-     * Set amplitude and sigF.
-     *
-     * @param i    reflection to set
-     * @param f    value of F desired
-     * @param sigf value of sigF desired
-     */
-    public void setFSigF(int i, double f, double sigf) {
-        fSigF[i][0] = f;
-        fSigF[i][1] = sigf;
-    }
-
-    /**
-     * set complex Fc
-     *
-     * @param i reflection to set
-     * @param c {@link ComplexNumber} to set reflection to
-     */
-    public void setFc(int i, ComplexNumber c) {
-        fc[i][0] = c.re();
-        fc[i][1] = c.im();
-    }
-
-    /**
-     * <p>
-     * setFcTot</p>
-     *
-     * @param i a int.
-     * @param c a {@link ComplexNumber} object.
-     */
-    public void setFcTot(int i, ComplexNumber c) {
-        fcTot[i][0] = c.re();
-        fcTot[i][1] = c.im();
-    }
-
-    /**
-     * <p>
-     * setFoFc1</p>
-     *
-     * @param i a int.
-     * @param c a {@link ComplexNumber} object.
-     */
-    public void setFoFc1(int i, ComplexNumber c) {
-        foFc1[i][0] = c.re();
-        foFc1[i][1] = c.im();
-    }
-
-    /**
-     * <p>
-     * setFoFc2</p>
-     *
-     * @param i a int.
-     * @param c a {@link ComplexNumber} object.
-     */
-    public void setFoFc2(int i, ComplexNumber c) {
-        foFc2[i][0] = c.re();
-        foFc2[i][1] = c.im();
-    }
-
-    /**
-     * Set FreeR value flag of a reflection.
-     *
-     * @param i reflection to set
-     * @param f FreeR value to set reflection to
-     */
-    public void setFreeR(int i, int f) {
-        freeR[i] = f;
-    }
-
-    /**
-     * Set FreeR value flag.
-     *
-     * @param i If FreeR value is i, it is marked for cross validation.
-     */
-    public void setFreeRFlag(int i) {
-        rFreeFlag = i;
-    }
-
-    /**
-     * <p>
-     * setFs</p>
-     *
-     * @param i a int.
-     * @param c a {@link ComplexNumber} object.
-     */
-    public void setFs(int i, ComplexNumber c) {
-        fs[i][0] = c.re();
-        fs[i][1] = c.im();
-    }
-
-    /**
-     * Set amplitude sigma (sigF).
-     *
-     * @param i    reflection to set
-     * @param sigF value of sigF desired
-     */
-    public void setSigF(int i, double sigF) {
-        fSigF[i][1] = sigF;
-    }
-
-    /**
-     * <p>
-     * setCrystalReciprocalSpace_fc</p>
-     *
-     * @param crystalReciprocalSpace a {@link ffx.xray.CrystalReciprocalSpace} object.
-     */
-    void setCrystalReciprocalSpaceFc(CrystalReciprocalSpace crystalReciprocalSpace) {
-        this.crystalReciprocalSpaceFc = crystalReciprocalSpace;
-    }
-
-    /**
-     * <p>
-     * setCrystalReciprocalSpace_fs</p>
-     *
-     * @param crystalReciprocalSpace a {@link ffx.xray.CrystalReciprocalSpace} object.
-     */
-    void setCrystalReciprocalSpaceFs(CrystalReciprocalSpace crystalReciprocalSpace) {
-        this.crystalReciprocalSpaceFs = crystalReciprocalSpace;
-    }
-
-    /**
-     * <p>
-     * isFreeR</p>
-     *
-     * @param i a int.
-     * @return a boolean.
-     */
-    boolean isFreeR(int i) {
-        return (freeR[i] == rFreeFlag);
-    }
-
-    /**
-     * get the complex number for a Fc reflection
-     *
-     * @param i reflection to get
-     * @return newly allocated {@link ComplexNumber}
-     */
-    ComplexNumber getFc(int i) {
-        return new ComplexNumber(fc[i][0], fc[i][1]);
-    }
-
-    /**
-     * get the complex number for a Fc reflection
-     *
-     * @param i reflection to get
-     * @param c {@link ComplexNumber} to fill
-     */
-    void getFcIP(int i, ComplexNumber c) {
-        c.re(fc[i][0]);
-        c.im(fc[i][1]);
-    }
-
-    /**
-     * <p>
-     * getFsIP</p>
-     *
-     * @param i a int.
-     * @param c a {@link ComplexNumber} object.
-     */
-    void getFsIP(int i, ComplexNumber c) {
-        c.re(fs[i][0]);
-        c.im(fs[i][1]);
-    }
-
-    /**
-     * <p>
-     * getFcTotIP</p>
-     *
-     * @param i a int.
-     * @param c a {@link ComplexNumber} object.
-     */
-    void getFcTotIP(int i, ComplexNumber c) {
-        c.re(fcTot[i][0]);
-        c.im(fcTot[i][1]);
-    }
+  /**
+   * getFcTotIP
+   *
+   * @param i a int.
+   * @param c a {@link ComplexNumber} object.
+   */
+  void getFcTotIP(int i, ComplexNumber c) {
+    c.re(fcTot[i][0]);
+    c.im(fcTot[i][1]);
+  }
 }

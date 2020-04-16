@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,52 +34,51 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray;
 
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
- * <p>
- * FormFactor interface.</p>
+ * FormFactor interface.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public interface FormFactor {
 
-    /**
-     * Compute the real space density rho
-     *
-     * @param f      the current density to modify
-     * @param lambda the state variable
-     * @param xyz    the requested point for evaluating density
-     * @return the real space density value at xyz
-     */
-    double rho(double f, double lambda, double[] xyz);
+  /**
+   * Compute the real space density rho
+   *
+   * @param f the current density to modify
+   * @param lambda the state variable
+   * @param xyz the requested point for evaluating density
+   * @return the real space density value at xyz
+   */
+  double rho(double f, double lambda, double[] xyz);
 
-    /**
-     * Compute the real space gradient
-     *
-     * @param xyz            the requested point for evaluating gradient
-     * @param dfc            the multiplier to apply to the gradient
-     * @param refinementmode {@link ffx.xray.RefinementMinimize.RefinementMode}
-     *                       determines which gradients will be computed
-     */
-    void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode);
+  /**
+   * Compute the real space gradient
+   *
+   * @param xyz the requested point for evaluating gradient
+   * @param dfc the multiplier to apply to the gradient
+   * @param refinementmode {@link ffx.xray.RefinementMinimize.RefinementMode} determines which
+   *     gradients will be computed
+   */
+  void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode);
 
-    /**
-     * update the coordinates to the current position
-     *
-     * @param xyz an array of double.
-     */
-    void update(double[] xyz);
+  /**
+   * update the coordinates to the current position
+   *
+   * @param xyz an array of double.
+   */
+  void update(double[] xyz);
 
-    /**
-     * update the coordinates to the current position and Badd
-     *
-     * @param xyz  an array of double.
-     * @param badd a double.
-     */
-    void update(double[] xyz, double badd);
+  /**
+   * update the coordinates to the current position and Badd
+   *
+   * @param xyz an array of double.
+   * @param badd a double.
+   */
+  void update(double[] xyz, double badd);
 }

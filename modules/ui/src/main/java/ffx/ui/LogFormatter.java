@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,98 +34,96 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui;
 
+import edu.rit.pj.Comm;
 import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
-import edu.rit.pj.Comm;
-
 /**
- * A minor extension to the SimpleFormatter to reduce verbosity if debugging is
- * not turned on.
+ * A minor extension to the SimpleFormatter to reduce verbosity if debugging is not turned on.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class LogFormatter extends SimpleFormatter {
 
-    private static final int warningLevel = Level.WARNING.intValue();
-    private final boolean debug;
-    private final boolean mpiLogging;
+  private static final int warningLevel = Level.WARNING.intValue();
+  private final boolean debug;
+  private final boolean mpiLogging;
 
-    /**
-     * Constructor for the LogFormatter.
-     *
-     * @param debug      If debug is true, then LogFormatter is equivalent to {@link SimpleFormatter}.
-     * @param mpiLogging Configure for MPI logging.
-     * @since 1.0
-     */
-    LogFormatter(boolean debug, boolean mpiLogging) {
-        this.debug = debug;
-        this.mpiLogging = mpiLogging;
+  /**
+   * Constructor for the LogFormatter.
+   *
+   * @param debug If debug is true, then LogFormatter is equivalent to {@link SimpleFormatter}.
+   * @param mpiLogging Configure for MPI logging.
+   * @since 1.0
+   */
+  LogFormatter(boolean debug, boolean mpiLogging) {
+    this.debug = debug;
+    this.mpiLogging = mpiLogging;
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Unless debugging is turned on or the LogRecord is of level WARNING or greater, just return
+   * the message.
+   *
+   * <p>If more than one process is active, prepend the rank of the process to each line of the
+   * message.
+   *
+   * @since 1.0
+   */
+  @Override
+  public String format(LogRecord record) {
+    String message;
+    if (debug || record.getLevel().intValue() >= warningLevel) {
+      message = super.format(record);
+    } else {
+      message = record.getMessage();
+      Object[] objects = record.getParameters();
+      message = MessageFormat.format(message, objects);
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Unless debugging is turned on or the LogRecord is of level WARNING or
-     * greater, just return the message.
-     * <p>
-     * If more than one process is active, prepend the rank of the process to
-     * each line of the message.
-     *
-     * @since 1.0
-     */
-    @Override
-    public String format(LogRecord record) {
-        String message;
-        if (debug || record.getLevel().intValue() >= warningLevel) {
-            message = super.format(record);
-        } else {
-            message = record.getMessage();
-            Object[] objects = record.getParameters();
-            message = MessageFormat.format(message, objects);
+    try {
+      Comm comm = Comm.world();
+      int size = comm.size();
+      int rank = comm.rank();
+      if (size > 1) {
+        if (mpiLogging) {
+          String[] lines = message.split("\n");
+          message = mpiFormat(size, rank, lines);
+        } else if (rank != 0) {
+          message = null;
         }
-
-        try {
-            Comm comm = Comm.world();
-            int size = comm.size();
-            int rank = comm.rank();
-            if (size > 1) {
-                if (mpiLogging) {
-                    String[] lines = message.split("\n");
-                    message = mpiFormat(size, rank, lines);
-                } else if (rank != 0) {
-                    message = null;
-                }
-            }
-        } catch (Exception e) {
-            // If Comm.world does not exist, do not append the rank.
-        }
-
-        return message;
+      }
+    } catch (Exception e) {
+      // If Comm.world does not exist, do not append the rank.
     }
 
-    /**
-     * Prepend the MPI rank to a line of text to give: " [Rank]line"
-     *
-     * @param size  Number of MPI processes.
-     * @param rank  Rank of this MPI processs.
-     * @param lines The String to format split by new line characters.
-     * @return " [Rank]line"
-     */
-    private String mpiFormat(int size, int rank, String[] lines) {
-        int rankLen = Integer.toString(size - 1).length();
-        String formatString = " [%0" + rankLen + "d]%s";
-        StringBuilder sb = new StringBuilder(String.format(formatString, rank, lines[0]));
-        for (int i = 1; i < lines.length; i++) {
-            sb.append("\n");
-            sb.append(String.format(formatString, rank, lines[i]));
-        }
-        return sb.toString();
+    return message;
+  }
+
+  /**
+   * Prepend the MPI rank to a line of text to give: " [Rank]line"
+   *
+   * @param size Number of MPI processes.
+   * @param rank Rank of this MPI processs.
+   * @param lines The String to format split by new line characters.
+   * @return " [Rank]line"
+   */
+  private String mpiFormat(int size, int rank, String[] lines) {
+    int rankLen = Integer.toString(size - 1).length();
+    String formatString = " [%0" + rankLen + "d]%s";
+    StringBuilder sb = new StringBuilder(String.format(formatString, rank, lines[0]));
+    for (int i = 1; i < lines.length; i++) {
+      sb.append("\n");
+      sb.append(String.format(formatString, rank, lines[i]));
     }
+    return sb.toString();
+  }
 }

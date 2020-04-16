@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,110 +34,97 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.xray;
-
-import java.util.List;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+import java.util.List;
 
 /**
- * <p>
- * DataContainer interface.</p>
+ * DataContainer interface.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public interface DataContainer {
 
-    /**
-     * <p>
-     * getActiveAtomArray</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    Atom[] getActiveAtomArray();
+  /**
+   * getActiveAtomArray
+   *
+   * @return an array of {@link ffx.potential.bonded.Atom} objects.
+   */
+  Atom[] getActiveAtomArray();
 
-    /**
-     * <p>
-     * getAltMolecules</p>
-     *
-     * @return a {@link java.util.List} object.
-     */
-    List<List<Molecule>> getAltMolecules();
+  /**
+   * getAltMolecules
+   *
+   * @return a {@link java.util.List} object.
+   */
+  List<List<Molecule>> getAltMolecules();
 
-    /**
-     * <p>
-     * getAltResidues</p>
-     *
-     * @return a {@link java.util.List} object.
-     */
-    List<List<Residue>> getAltResidues();
+  /**
+   * getAltResidues
+   *
+   * @return a {@link java.util.List} object.
+   */
+  List<List<Residue>> getAltResidues();
 
-    /**
-     * <p>
-     * getAtomArray</p>
-     *
-     * @return an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    Atom[] getAtomArray();
+  /**
+   * getAtomArray
+   *
+   * @return an array of {@link ffx.potential.bonded.Atom} objects.
+   */
+  Atom[] getAtomArray();
 
-    /**
-     * <p>
-     * getMolecularAssemblies</p>
-     *
-     * @return an array of {@link ffx.potential.MolecularAssembly} objects.
-     */
-    MolecularAssembly[] getMolecularAssemblies();
+  /**
+   * getMolecularAssemblies
+   *
+   * @return an array of {@link ffx.potential.MolecularAssembly} objects.
+   */
+  MolecularAssembly[] getMolecularAssemblies();
 
-    /**
-     * <p>
-     * getRefinementModel</p>
-     *
-     * @return a {@link ffx.xray.RefinementModel} object.
-     */
-    RefinementModel getRefinementModel();
+  /**
+   * getRefinementModel
+   *
+   * @return a {@link ffx.xray.RefinementModel} object.
+   */
+  RefinementModel getRefinementModel();
 
-    /**
-     * <p>
-     * getWeight</p>
-     *
-     * @return the current data weight.
-     */
-    double getWeight();
+  /**
+   * getWeight
+   *
+   * @return the current data weight.
+   */
+  double getWeight();
 
-    /**
-     * <p>
-     * setWeight</p>
-     *
-     * @param weight set the overall weight of the data.
-     */
-    void setWeight(double weight);
+  /**
+   * setWeight
+   *
+   * @param weight set the overall weight of the data.
+   */
+  void setWeight(double weight);
 
-    /**
-     * <p>
-     * printEnergyUpdate</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    String printEnergyUpdate();
+  /**
+   * printEnergyUpdate
+   *
+   * @return a {@link java.lang.String} object.
+   */
+  String printEnergyUpdate();
 
-    /**
-     * <p>
-     * printOptimizationHeader</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    String printOptimizationHeader();
+  /**
+   * printOptimizationHeader
+   *
+   * @return a {@link java.lang.String} object.
+   */
+  String printOptimizationHeader();
 
-    /**
-     * <p>
-     * printOptimizationUpdate</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    String printOptimizationUpdate();
+  /**
+   * printOptimizationUpdate
+   *
+   * @return a {@link java.lang.String} object.
+   */
+  String printOptimizationUpdate();
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,7 +34,7 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.bonded;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
@@ -47,44 +47,42 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
  */
 public interface BondedEnergy {
 
-    /**
-     * <p>energy.</p>
-     *
-     * @param gradient a boolean.
-     * @return a double.
-     */
-    default double energy(boolean gradient) {
-        return energy(gradient, 0, null);
-    }
+  /**
+   * energy.
+   *
+   * @param gradient a boolean.
+   * @return a double.
+   */
+  default double energy(boolean gradient) {
+    return energy(gradient, 0, null);
+  }
 
-    /**
-     * <p>energy.</p>
-     *
-     * @param gradient a boolean.
-     * @param threadID a int.
-     * @param grad     a {@link AtomicDoubleArray3D} object.
-     * @return a double.
-     */
-    default double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad) {
-        return energy(gradient, threadID, grad, null);
-    }
+  /**
+   * energy.
+   *
+   * @param gradient a boolean.
+   * @param threadID a int.
+   * @param grad a {@link AtomicDoubleArray3D} object.
+   * @return a double.
+   */
+  default double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad) {
+    return energy(gradient, threadID, grad, null);
+  }
 
-    /**
-     * <p>energy.</p>
-     *
-     * @param gradient   a boolean.
-     * @param threadID   a int.
-     * @param grad       a {@link AtomicDoubleArray3D} object.
-     * @param lambdaGrad a {@link AtomicDoubleArray3D} object.
-     * @return a double.
-     */
-    double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad);
+  /**
+   * energy.
+   *
+   * @param gradient a boolean.
+   * @param threadID a int.
+   * @param grad a {@link AtomicDoubleArray3D} object.
+   * @param lambdaGrad a {@link AtomicDoubleArray3D} object.
+   * @return a double.
+   */
+  double energy(
+      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad);
 
-    /**
-     * <p>update.</p>
-     */
-    default void update() {
-        energy(false);
-    }
-
+  /** update. */
+  default void update() {
+    energy(false);
+  }
 }

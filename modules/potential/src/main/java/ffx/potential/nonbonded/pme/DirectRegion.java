@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,24 +34,23 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t100;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
-
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
-import static ffx.potential.parameters.MultipoleType.t001;
-import static ffx.potential.parameters.MultipoleType.t010;
-import static ffx.potential.parameters.MultipoleType.t100;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Parallel computation of induced dipoles due to the direct field.
@@ -61,160 +60,162 @@ import static ffx.potential.parameters.MultipoleType.t100;
  */
 public class DirectRegion extends ParallelRegion {
 
-    private static final Logger logger = Logger.getLogger(DirectRegion.class.getName());
-    private final DirectLoop[] directLoop;
-    /**
-     * Dimensions of [nsymm][nAtoms][3]
-     */
-    public double[][][] inducedDipole;
-    public double[][][] inducedDipoleCR;
-    /**
-     * Direct induced dipoles.
-     */
-    public double[][] directDipole;
-    public double[][] directDipoleCR;
-    /**
-     * An ordered array of atoms in the system.
-     */
-    private Atom[] atoms;
-    private double[] polarizability;
-    /**
-     * Dimensions of [nsymm][nAtoms][10]
-     */
-    private double[][][] globalMultipole;
-    private double[][] cartMultipolePhi;
-    /**
-     * Field array.
-     */
-    private AtomicDoubleArray3D field;
-    /**
-     * Chain rule field array.
-     */
-    private AtomicDoubleArray3D fieldCR;
-    /**
-     * Flag to indicate use of generalized Kirkwood.
-     */
-    private boolean generalizedKirkwoodTerm;
-    private GeneralizedKirkwood generalizedKirkwood;
-    private double aewald;
-    private double aewald3;
+  private static final Logger logger = Logger.getLogger(DirectRegion.class.getName());
+  private final DirectLoop[] directLoop;
+  /** Dimensions of [nsymm][nAtoms][3] */
+  public double[][][] inducedDipole;
 
-    public DirectRegion(int nt) {
-        directLoop = new DirectLoop[nt];
+  public double[][][] inducedDipoleCR;
+  /** Direct induced dipoles. */
+  public double[][] directDipole;
+
+  public double[][] directDipoleCR;
+  /** An ordered array of atoms in the system. */
+  private Atom[] atoms;
+
+  private double[] polarizability;
+  /** Dimensions of [nsymm][nAtoms][10] */
+  private double[][][] globalMultipole;
+
+  private double[][] cartMultipolePhi;
+  /** Field array. */
+  private AtomicDoubleArray3D field;
+  /** Chain rule field array. */
+  private AtomicDoubleArray3D fieldCR;
+  /** Flag to indicate use of generalized Kirkwood. */
+  private boolean generalizedKirkwoodTerm;
+
+  private GeneralizedKirkwood generalizedKirkwood;
+  private double aewald;
+  private double aewald3;
+
+  public DirectRegion(int nt) {
+    directLoop = new DirectLoop[nt];
+  }
+
+  /**
+   * Execute the DirectRegion with the passed ParallelTeam.
+   *
+   * @param parallelTeam The ParallelTeam instance to execute with.
+   */
+  public void executeWith(ParallelTeam parallelTeam) {
+    try {
+      parallelTeam.execute(this);
+    } catch (Exception e) {
+      String message = " Exception computing direct induced dipoles.\n";
+      logger.log(Level.WARNING, message, e);
     }
+  }
 
-    /**
-     * Execute the DirectRegion with the passed ParallelTeam.
-     *
-     * @param parallelTeam The ParallelTeam instance to execute with.
-     */
-    public void executeWith(ParallelTeam parallelTeam) {
-        try {
-            parallelTeam.execute(this);
-        } catch (Exception e) {
-            String message = " Exception computing direct induced dipoles.\n";
-            logger.log(Level.WARNING, message, e);
+  public void init(
+      Atom[] atoms,
+      double[] polarizability,
+      double[][][] globalMultipole,
+      double[][] cartMultipolePhi,
+      AtomicDoubleArray3D field,
+      AtomicDoubleArray3D fieldCR,
+      boolean generalizedKirkwoodTerm,
+      GeneralizedKirkwood generalizedKirkwood,
+      EwaldParameters ewaldParameters,
+      double[][][] inducedDipole,
+      double[][][] inducedDipoleCR,
+      double[][] directDipole,
+      double[][] directDipoleCR) {
+    // Input
+    this.atoms = atoms;
+    this.polarizability = polarizability;
+    this.globalMultipole = globalMultipole;
+    this.cartMultipolePhi = cartMultipolePhi;
+    this.field = field;
+    this.fieldCR = fieldCR;
+    this.generalizedKirkwoodTerm = generalizedKirkwoodTerm;
+    this.generalizedKirkwood = generalizedKirkwood;
+    this.aewald = ewaldParameters.aewald;
+    this.aewald3 = ewaldParameters.aewald3;
+    // Output
+    this.inducedDipole = inducedDipole;
+    this.inducedDipoleCR = inducedDipoleCR;
+    this.directDipole = directDipole;
+    this.directDipoleCR = directDipoleCR;
+  }
+
+  @Override
+  public void run() throws Exception {
+    int ti = getThreadIndex();
+    if (directLoop[ti] == null) {
+      directLoop[ti] = new DirectLoop();
+    }
+    try {
+      int nAtoms = atoms.length;
+      execute(0, nAtoms - 1, directLoop[ti]);
+    } catch (Exception e) {
+      String message =
+          "Fatal exception computing the direct induced dipoles in thread "
+              + getThreadIndex()
+              + "\n";
+      logger.log(Level.SEVERE, message, e);
+    }
+  }
+
+  private class DirectLoop extends IntegerForLoop {
+
+    @Override
+    public void run(int lb, int ub) throws Exception {
+      int threadID = getThreadIndex();
+      if (aewald > 0.0) {
+        // Add the self and reciprocal space contributions.
+        for (int i = lb; i <= ub; i++) {
+          double[] mpolei = globalMultipole[0][i];
+          double[] phii = cartMultipolePhi[i];
+          double fx = aewald3 * mpolei[t100] - phii[t100];
+          double fy = aewald3 * mpolei[t010] - phii[t010];
+          double fz = aewald3 * mpolei[t001] - phii[t001];
+          field.add(threadID, i, fx, fy, fz);
+          fieldCR.add(threadID, i, fx, fy, fz);
         }
-    }
+      }
+      if (generalizedKirkwoodTerm) {
+        // Set the electric field to the direct field plus the permanent GK reaction field.
+        AtomicDoubleArray3D fieldGK = generalizedKirkwood.getFieldGK();
+        for (int i = lb; i <= ub; i++) {
+          double fx = fieldGK.getX(i);
+          double fy = fieldGK.getY(i);
+          double fz = fieldGK.getZ(i);
+          field.add(threadID, i, fx, fy, fz);
+          fieldCR.add(threadID, i, fx, fy, fz);
+        }
+      }
+      // Reduce the direct field.
+      field.reduce(lb, ub);
+      fieldCR.reduce(lb, ub);
 
-    public void init(Atom[] atoms, double[] polarizability, double[][][] globalMultipole, double[][] cartMultipolePhi,
-                     AtomicDoubleArray3D field, AtomicDoubleArray3D fieldCR,
-                     boolean generalizedKirkwoodTerm, GeneralizedKirkwood generalizedKirkwood,
-                     EwaldParameters ewaldParameters,
-                     double[][][] inducedDipole, double[][][] inducedDipoleCR,
-                     double[][] directDipole, double[][] directDipoleCR) {
-        // Input
-        this.atoms = atoms;
-        this.polarizability = polarizability;
-        this.globalMultipole = globalMultipole;
-        this.cartMultipolePhi = cartMultipolePhi;
-        this.field = field;
-        this.fieldCR = fieldCR;
-        this.generalizedKirkwoodTerm = generalizedKirkwoodTerm;
-        this.generalizedKirkwood = generalizedKirkwood;
-        this.aewald = ewaldParameters.aewald;
-        this.aewald3 = ewaldParameters.aewald3;
-        // Output
-        this.inducedDipole = inducedDipole;
-        this.inducedDipoleCR = inducedDipoleCR;
-        this.directDipole = directDipole;
-        this.directDipoleCR = directDipoleCR;
+      // Set the direct induced dipoles to the polarizability multiplied by the direct field.
+      final double[][] induced0 = inducedDipole[0];
+      final double[][] inducedCR0 = inducedDipoleCR[0];
+      for (int i = lb; i <= ub; i++) {
+        final double polar = polarizability[i];
+        final double[] ind = induced0[i];
+        final double[] directi = directDipole[i];
+        ind[0] = polar * field.getX(i);
+        ind[1] = polar * field.getY(i);
+        ind[2] = polar * field.getZ(i);
+        directi[0] = ind[0];
+        directi[1] = ind[1];
+        directi[2] = ind[2];
+        final double[] indCR = inducedCR0[i];
+        final double[] directCRi = directDipoleCR[i];
+        indCR[0] = polar * fieldCR.getX(i);
+        indCR[1] = polar * fieldCR.getY(i);
+        indCR[2] = polar * fieldCR.getZ(i);
+        directCRi[0] = indCR[0];
+        directCRi[1] = indCR[1];
+        directCRi[2] = indCR[2];
+      }
     }
 
     @Override
-    public void run() throws Exception {
-        int ti = getThreadIndex();
-        if (directLoop[ti] == null) {
-            directLoop[ti] = new DirectLoop();
-        }
-        try {
-            int nAtoms = atoms.length;
-            execute(0, nAtoms - 1, directLoop[ti]);
-        } catch (Exception e) {
-            String message = "Fatal exception computing the direct induced dipoles in thread " + getThreadIndex() + "\n";
-            logger.log(Level.SEVERE, message, e);
-        }
+    public IntegerSchedule schedule() {
+      return IntegerSchedule.fixed();
     }
-
-    private class DirectLoop extends IntegerForLoop {
-
-        @Override
-        public void run(int lb, int ub) throws Exception {
-            int threadID = getThreadIndex();
-            if (aewald > 0.0) {
-                // Add the self and reciprocal space contributions.
-                for (int i = lb; i <= ub; i++) {
-                    double[] mpolei = globalMultipole[0][i];
-                    double[] phii = cartMultipolePhi[i];
-                    double fx = aewald3 * mpolei[t100] - phii[t100];
-                    double fy = aewald3 * mpolei[t010] - phii[t010];
-                    double fz = aewald3 * mpolei[t001] - phii[t001];
-                    field.add(threadID, i, fx, fy, fz);
-                    fieldCR.add(threadID, i, fx, fy, fz);
-                }
-            }
-            if (generalizedKirkwoodTerm) {
-                // Set the electric field to the direct field plus the permanent GK reaction field.
-                AtomicDoubleArray3D fieldGK = generalizedKirkwood.getFieldGK();
-                for (int i = lb; i <= ub; i++) {
-                    double fx = fieldGK.getX(i);
-                    double fy = fieldGK.getY(i);
-                    double fz = fieldGK.getZ(i);
-                    field.add(threadID, i, fx, fy, fz);
-                    fieldCR.add(threadID, i, fx, fy, fz);
-                }
-            }
-            // Reduce the direct field.
-            field.reduce(lb, ub);
-            fieldCR.reduce(lb, ub);
-
-            // Set the direct induced dipoles to the polarizability multiplied by the direct field.
-            final double[][] induced0 = inducedDipole[0];
-            final double[][] inducedCR0 = inducedDipoleCR[0];
-            for (int i = lb; i <= ub; i++) {
-                final double polar = polarizability[i];
-                final double[] ind = induced0[i];
-                final double[] directi = directDipole[i];
-                ind[0] = polar * field.getX(i);
-                ind[1] = polar * field.getY(i);
-                ind[2] = polar * field.getZ(i);
-                directi[0] = ind[0];
-                directi[1] = ind[1];
-                directi[2] = ind[2];
-                final double[] indCR = inducedCR0[i];
-                final double[] directCRi = directDipoleCR[i];
-                indCR[0] = polar * fieldCR.getX(i);
-                indCR[1] = polar * fieldCR.getY(i);
-                indCR[2] = polar * fieldCR.getZ(i);
-                directCRi[0] = indCR[0];
-                directCRi[1] = indCR[1];
-                directCRi[2] = indCR[2];
-            }
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return IntegerSchedule.fixed();
-        }
-    }
+  }
 }

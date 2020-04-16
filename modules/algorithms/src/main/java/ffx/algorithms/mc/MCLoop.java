@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,8 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.mc;
-
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
@@ -52,302 +47,286 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Loop;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
 
 /**
- * <p>MCLoop class.</p>
+ * MCLoop class.
  *
  * @author Armin Avdic
  */
 public class MCLoop implements MonteCarloListener {
 
-    private static final Logger logger = Logger.getLogger(MCLoop.class.getName());
-    /**
-     * Boltzmann's constant is kcal/mol/Kelvin.
-     */
-    private static final double boltzmann = 0.0019872041;
-    /**
-     * The MoleularAssembly.
-     */
-    private final MolecularAssembly molAss;
-    /**
-     * The MD thermostat.
-     */
-    private final ffx.algorithms.dynamics.thermostats.Thermostat thermostat;
-    /**
-     * Energy of the system at initialization.
-     */
-    private final double systemReferenceEnergy;
-    /**
-     * First and last residue numbers of loop.
-     */
-    private final int firstResidue;
-    private final int endResidue;
-    /**
-     * Everyone's favorite.
-     */
-    private final Random rng = new Random();
-    /**
-     * The ForceFieldEnergy object being used by MD.
-     */
-    private final ForceFieldEnergy forceFieldEnergy;
-    /**
-     * KIC generation of loop solutions. See doi:10.1002/jcc.10416
-     */
-    Loop loop;
-    /**
-     * The MolecularDynamics object controlling the simulation.
-     */
-    private MolecularDynamics molDyn;
-    /**
-     * The current MD step.
-     */
-    private int stepCount = 0;
-    /**
-     * Number of simulation steps between MC move attempts.
-     */
-    private int mcStepFrequency;
-    /**
-     * Number of accepted MD moves.
-     */
-    private int numMovesAccepted;
-    /**
-     * Storage for coordinates before MC move.
-     */
-    private double[] oldCoords;
-    /**
-     * Number of KIC iterations per MC move.
-     */
-    private int iterations;
-    /**
-     * List of active atoms.
-     */
-    private Atom[] atoms;
-    /**
-     * The LambdaInterface object being used by OST.
-     */
-    private LambdaInterface lambdaInterface;
-    private boolean skipAlgorithm = false;
+  private static final Logger logger = Logger.getLogger(MCLoop.class.getName());
+  /** Boltzmann's constant is kcal/mol/Kelvin. */
+  private static final double boltzmann = 0.0019872041;
+  /** The MoleularAssembly. */
+  private final MolecularAssembly molAss;
+  /** The MD thermostat. */
+  private final ffx.algorithms.dynamics.thermostats.Thermostat thermostat;
+  /** Energy of the system at initialization. */
+  private final double systemReferenceEnergy;
+  /** First and last residue numbers of loop. */
+  private final int firstResidue;
 
-    /**
-     * Construct a Monte-Carlo loop switching mechanism.
-     *
-     * @param molAss          the molecular assembly
-     * @param mcStepFrequency number of MD steps between switch attempts
-     * @param thermostat      the MD thermostat
-     */
-    MCLoop(MolecularAssembly molAss, int mcStepFrequency, ffx.algorithms.dynamics.thermostats.Thermostat thermostat, int firstResidue, int endResidue) {
-        numMovesAccepted = 0;
+  private final int endResidue;
+  /** Everyone's favorite. */
+  private final Random rng = new Random();
+  /** The ForceFieldEnergy object being used by MD. */
+  private final ForceFieldEnergy forceFieldEnergy;
+  /** KIC generation of loop solutions. See doi:10.1002/jcc.10416 */
+  Loop loop;
+  /** The MolecularDynamics object controlling the simulation. */
+  private MolecularDynamics molDyn;
+  /** The current MD step. */
+  private int stepCount = 0;
+  /** Number of simulation steps between MC move attempts. */
+  private int mcStepFrequency;
+  /** Number of accepted MD moves. */
+  private int numMovesAccepted;
+  /** Storage for coordinates before MC move. */
+  private double[] oldCoords;
+  /** Number of KIC iterations per MC move. */
+  private int iterations;
+  /** List of active atoms. */
+  private Atom[] atoms;
+  /** The LambdaInterface object being used by OST. */
+  private LambdaInterface lambdaInterface;
 
-        this.molAss = molAss;
-        this.atoms = molAss.getAtomArray();
-        this.forceFieldEnergy = molAss.getPotentialEnergy();
-        this.mcStepFrequency = (mcStepFrequency == 0) ? Integer.MAX_VALUE : mcStepFrequency;
-        this.thermostat = thermostat;
-        systemReferenceEnergy = molAss.getPotentialEnergy().energy(false, true);
-        this.firstResidue = firstResidue;
-        this.endResidue = endResidue;
-        this.iterations = 1;
+  private boolean skipAlgorithm = false;
 
-        if ((endResidue - firstResidue) < 3) {
-            logger.info("MCLoop requires at least 3 residues. First and last residues are anchors.");
-            skipAlgorithm = true;
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format(" Running MCLoop:\n"));
-        sb.append(String.format("     mcStepFrequency: %4d\n", mcStepFrequency));
-        sb.append(String.format("     referenceEnergy: %7.2f\n", systemReferenceEnergy));
-        logger.info(sb.toString());
+  /**
+   * Construct a Monte-Carlo loop switching mechanism.
+   *
+   * @param molAss the molecular assembly
+   * @param mcStepFrequency number of MD steps between switch attempts
+   * @param thermostat the MD thermostat
+   */
+  MCLoop(
+      MolecularAssembly molAss,
+      int mcStepFrequency,
+      ffx.algorithms.dynamics.thermostats.Thermostat thermostat,
+      int firstResidue,
+      int endResidue) {
+    numMovesAccepted = 0;
 
-        loop = new Loop(molAss);
+    this.molAss = molAss;
+    this.atoms = molAss.getAtomArray();
+    this.forceFieldEnergy = molAss.getPotentialEnergy();
+    this.mcStepFrequency = (mcStepFrequency == 0) ? Integer.MAX_VALUE : mcStepFrequency;
+    this.thermostat = thermostat;
+    systemReferenceEnergy = molAss.getPotentialEnergy().energy(false, true);
+    this.firstResidue = firstResidue;
+    this.endResidue = endResidue;
+    this.iterations = 1;
+
+    if ((endResidue - firstResidue) < 3) {
+      logger.info("MCLoop requires at least 3 residues. First and last residues are anchors.");
+      skipAlgorithm = true;
+    }
+    StringBuilder sb = new StringBuilder();
+    sb.append(String.format(" Running MCLoop:\n"));
+    sb.append(String.format("     mcStepFrequency: %4d\n", mcStepFrequency));
+    sb.append(String.format("     referenceEnergy: %7.2f\n", systemReferenceEnergy));
+    logger.info(sb.toString());
+
+    loop = new Loop(molAss);
+  }
+
+  /**
+   * addLambdaInterface.
+   *
+   * @param lambdaInterface a {@link ffx.potential.bonded.LambdaInterface} object.
+   */
+  public void addLambdaInterface(LambdaInterface lambdaInterface) {
+    this.lambdaInterface = lambdaInterface;
+  }
+
+  /**
+   * addMolDyn.
+   *
+   * @param molDyn a {@link MolecularDynamics} object.
+   */
+  public void addMolDyn(MolecularDynamics molDyn) {
+    this.molDyn = molDyn;
+  }
+
+  /**
+   * Get the current MC acceptance rate.
+   *
+   * @return the acceptance rate.
+   */
+  public double getAcceptanceRate() {
+    // Intentional integer division.
+    int numTries = stepCount / mcStepFrequency;
+    return (double) numMovesAccepted / numTries;
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>The primary driver. Called by the MD engine at each dynamics step.
+   */
+  @Override
+  public boolean mcUpdate(double temperature) {
+
+    stepCount++;
+    if (skipAlgorithm == true) {
+      return false;
+    }
+    // Decide on the type of step to be taken.
+    if ((stepCount % mcStepFrequency != 0)) {
+      // Not yet time for an MC step, return to MD.
+      return false;
     }
 
-    /**
-     * <p>addLambdaInterface.</p>
-     *
-     * @param lambdaInterface a {@link ffx.potential.bonded.LambdaInterface} object.
-     */
-    public void addLambdaInterface(LambdaInterface lambdaInterface) {
-        this.lambdaInterface = lambdaInterface;
-    }
-
-    /**
-     * <p>addMolDyn.</p>
-     *
-     * @param molDyn a {@link MolecularDynamics} object.
-     */
-    public void addMolDyn(MolecularDynamics molDyn) {
-        this.molDyn = molDyn;
-    }
-
-    /**
-     * Get the current MC acceptance rate.
-     *
-     * @return the acceptance rate.
-     */
-    public double getAcceptanceRate() {
-        // Intentional integer division.
-        int numTries = stepCount / mcStepFrequency;
-        return (double) numMovesAccepted / numTries;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The primary driver. Called by the MD engine at each dynamics step.
-     */
-    @Override
-    public boolean mcUpdate(double temperature) {
-
-        stepCount++;
-        if (skipAlgorithm == true) {
-            return false;
-        }
-        // Decide on the type of step to be taken.
-        if ((stepCount % mcStepFrequency != 0)) {
-            // Not yet time for an MC step, return to MD.
-            return false;
-        }
-
-        if (lambdaInterface != null) {
-            if (lambdaInterface.getLambda() > 0.1) {
-                logger.info(String.format(" KIC procedure skipped (Lambda > 0.1)."));
-                return false;
-            }
-        }
-
-        atoms = molAss.getAtomArray();
-
-        // Randomly choose a target sub portion of loop to KIC.
-        int midResidue;
-        midResidue = ThreadLocalRandom.current().nextInt(firstResidue + 1, endResidue);
-
-        List<double[]> loopSolutions;
-        loopSolutions = loop.generateLoops(midResidue - 1, midResidue + 1);
-
-        for (int i = 1; i < iterations; i++) {
-            //pick random subloop
-            midResidue = ThreadLocalRandom.current().nextInt(firstResidue + 1, endResidue);
-            //pick random solution
-            if (loopSolutions.size() > 0) {
-                List<double[]> tempLoops = loop.generateLoops(midResidue - 1, midResidue + 1, loopSolutions.get(rng.nextInt(loopSolutions.size())));
-                for (double[] tempLoop : tempLoops) {
-                    loopSolutions.add(tempLoop);
-                }
-            } else {
-                loopSolutions = loop.generateLoops(midResidue - 1, midResidue + 1);
-            }
-
-        }
-        int numLoopsFound = loopSolutions.size();
-        // Check whether KIC found alternative loops
-        if (numLoopsFound <= 1) {
-            return false;
-        }
-
-        // Perform the MC move.
-        boolean accepted = tryLoopStep(loopSolutions);
-        return accepted;
-    }
-
-    /**
-     * <p>Setter for the field <code>iterations</code>.</p>
-     *
-     * @param iterations a int.
-     */
-    public void setIterations(int iterations) {
-        this.iterations = iterations;
-    }
-
-    private enum MCOverride {
-        ACCEPT, REJECT, NONE;
-    }
-
-    /**
-     * Perform a loop MC move.
-     *
-     * @param loopSolutions
-     * @return accept/reject
-     */
-    private boolean tryLoopStep(List<double[]> loopSolutions) {
-
-        // Choose from the list of available loops and save current coordinates
-        double[] newCoords = loopSolutions.get(rng.nextInt(loopSolutions.size()));
-        oldCoords = storeActiveCoordinates();
-
-        // Optimize the system.
-        Minimize minimize1 = new Minimize(null, forceFieldEnergy, null);
-        minimize1.minimize();
-        double originalLoopEnergy = forceFieldEnergy.energy(false, true);
-
-        // Perform move and analysis of chosen loop.
-        performLoopMove(newCoords);
-        Minimize minimize2 = new Minimize(null, forceFieldEnergy, null);
-        minimize2.minimize();
-        double newLoopEnergy = forceFieldEnergy.energy(false, true);
-
-        double temperature = thermostat.getCurrentTemperature();
-        double kT = boltzmann * temperature;
-        // Test the MC criterion for a loop move.
-        double dE = Math.abs(originalLoopEnergy - newLoopEnergy);
-        if (newLoopEnergy < originalLoopEnergy) {
-            dE = -dE;
-        }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format(" Assessing possible MC loop move step:\n"));
-        sb.append(String.format("     original loop: %16.8f\n", originalLoopEnergy));
-        sb.append(String.format("     possible loop: %16.8f\n", newLoopEnergy));
-        sb.append(String.format("     -----\n"));
-
-        // Test Monte-Carlo criterion.
-        if (dE < 0) {
-            sb.append(String.format("     Accepted!"));
-            logger.info(sb.toString());
-            numMovesAccepted++;
-            return true;
-        }
-        double criterion = exp(-dE / kT);
-
-        double metropolis = random();
-        sb.append(String.format("     criterion:  %9.4f\n", criterion));
-        sb.append(String.format("     rng:        %9.4f\n", metropolis));
-        if ((metropolis < criterion)) {
-            sb.append(String.format("     Accepted!"));
-            logger.info(sb.toString());
-            numMovesAccepted++;
-            return true;
-        }
-        sb.append(String.format("     Denied."));
-        logger.info(sb.toString());
-
-        // Move was rejected, undo the loop move
-        performLoopMove(oldCoords);
+    if (lambdaInterface != null) {
+      if (lambdaInterface.getLambda() > 0.1) {
+        logger.info(String.format(" KIC procedure skipped (Lambda > 0.1)."));
         return false;
+      }
     }
 
-    /**
-     * Perform the requested coordinate move
-     *
-     * @param newCoordinates
-     */
-    private void performLoopMove(double[] newCoordinates) {
-        int index = 0;
-        for (Atom a : atoms) {
-            double x = newCoordinates[index++];
-            double y = newCoordinates[index++];
-            double z = newCoordinates[index++];
-            a.moveTo(x, y, z);
+    atoms = molAss.getAtomArray();
+
+    // Randomly choose a target sub portion of loop to KIC.
+    int midResidue;
+    midResidue = ThreadLocalRandom.current().nextInt(firstResidue + 1, endResidue);
+
+    List<double[]> loopSolutions;
+    loopSolutions = loop.generateLoops(midResidue - 1, midResidue + 1);
+
+    for (int i = 1; i < iterations; i++) {
+      // pick random subloop
+      midResidue = ThreadLocalRandom.current().nextInt(firstResidue + 1, endResidue);
+      // pick random solution
+      if (loopSolutions.size() > 0) {
+        List<double[]> tempLoops =
+            loop.generateLoops(
+                midResidue - 1,
+                midResidue + 1,
+                loopSolutions.get(rng.nextInt(loopSolutions.size())));
+        for (double[] tempLoop : tempLoops) {
+          loopSolutions.add(tempLoop);
         }
+      } else {
+        loopSolutions = loop.generateLoops(midResidue - 1, midResidue + 1);
+      }
+    }
+    int numLoopsFound = loopSolutions.size();
+    // Check whether KIC found alternative loops
+    if (numLoopsFound <= 1) {
+      return false;
     }
 
-    private double[] storeActiveCoordinates() {
-        double[] coords = new double[atoms.length * 3];
-        int index = 0;
-        for (Atom a : atoms) {
-            coords[index++] = a.getX();
-            coords[index++] = a.getY();
-            coords[index++] = a.getZ();
-        }
-        return coords;
+    // Perform the MC move.
+    boolean accepted = tryLoopStep(loopSolutions);
+    return accepted;
+  }
+
+  /**
+   * Setter for the field <code>iterations</code>.
+   *
+   * @param iterations a int.
+   */
+  public void setIterations(int iterations) {
+    this.iterations = iterations;
+  }
+
+  /**
+   * Perform a loop MC move.
+   *
+   * @param loopSolutions
+   * @return accept/reject
+   */
+  private boolean tryLoopStep(List<double[]> loopSolutions) {
+
+    // Choose from the list of available loops and save current coordinates
+    double[] newCoords = loopSolutions.get(rng.nextInt(loopSolutions.size()));
+    oldCoords = storeActiveCoordinates();
+
+    // Optimize the system.
+    Minimize minimize1 = new Minimize(null, forceFieldEnergy, null);
+    minimize1.minimize();
+    double originalLoopEnergy = forceFieldEnergy.energy(false, true);
+
+    // Perform move and analysis of chosen loop.
+    performLoopMove(newCoords);
+    Minimize minimize2 = new Minimize(null, forceFieldEnergy, null);
+    minimize2.minimize();
+    double newLoopEnergy = forceFieldEnergy.energy(false, true);
+
+    double temperature = thermostat.getCurrentTemperature();
+    double kT = boltzmann * temperature;
+    // Test the MC criterion for a loop move.
+    double dE = Math.abs(originalLoopEnergy - newLoopEnergy);
+    if (newLoopEnergy < originalLoopEnergy) {
+      dE = -dE;
     }
+
+    StringBuilder sb = new StringBuilder();
+    sb.append(String.format(" Assessing possible MC loop move step:\n"));
+    sb.append(String.format("     original loop: %16.8f\n", originalLoopEnergy));
+    sb.append(String.format("     possible loop: %16.8f\n", newLoopEnergy));
+    sb.append(String.format("     -----\n"));
+
+    // Test Monte-Carlo criterion.
+    if (dE < 0) {
+      sb.append(String.format("     Accepted!"));
+      logger.info(sb.toString());
+      numMovesAccepted++;
+      return true;
+    }
+    double criterion = exp(-dE / kT);
+
+    double metropolis = random();
+    sb.append(String.format("     criterion:  %9.4f\n", criterion));
+    sb.append(String.format("     rng:        %9.4f\n", metropolis));
+    if ((metropolis < criterion)) {
+      sb.append(String.format("     Accepted!"));
+      logger.info(sb.toString());
+      numMovesAccepted++;
+      return true;
+    }
+    sb.append(String.format("     Denied."));
+    logger.info(sb.toString());
+
+    // Move was rejected, undo the loop move
+    performLoopMove(oldCoords);
+    return false;
+  }
+
+  /**
+   * Perform the requested coordinate move
+   *
+   * @param newCoordinates
+   */
+  private void performLoopMove(double[] newCoordinates) {
+    int index = 0;
+    for (Atom a : atoms) {
+      double x = newCoordinates[index++];
+      double y = newCoordinates[index++];
+      double z = newCoordinates[index++];
+      a.moveTo(x, y, z);
+    }
+  }
+
+  private double[] storeActiveCoordinates() {
+    double[] coords = new double[atoms.length * 3];
+    int index = 0;
+    for (Atom a : atoms) {
+      coords[index++] = a.getX();
+      coords[index++] = a.getY();
+      coords[index++] = a.getZ();
+    }
+    return coords;
+  }
+
+  private enum MCOverride {
+    ACCEPT,
+    REJECT,
+    NONE;
+  }
 }

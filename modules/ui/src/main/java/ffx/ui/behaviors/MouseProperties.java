@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,13 +34,12 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.behaviors;
 
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
 import java.util.Iterator;
-
 import org.jogamp.java3d.Transform3D;
 import org.jogamp.java3d.TransformGroup;
 import org.jogamp.java3d.WakeupCriterion;
@@ -53,119 +52,110 @@ import org.jogamp.java3d.WakeupOnAWTEvent;
  */
 public class MouseProperties extends MouseBehavior {
 
-    double xAngle, yAngle;
-    double xFactor = .03;
-    double yFactor = .03;
-    // private MouseBehaviorCallback callback = null;
+  double xAngle, yAngle;
+  double xFactor = .03;
+  double yFactor = .03;
+  // private MouseBehaviorCallback callback = null;
 
-    /**
-     * <p>
-     * Constructor for MouseProperties.</p>
-     *
-     * @param flags a int.
-     * @param VPTG  a {@link org.jogamp.java3d.TransformGroup} object.
-     */
-    public MouseProperties(int flags, TransformGroup VPTG) {
-        super(flags, VPTG);
+  /**
+   * Constructor for MouseProperties.
+   *
+   * @param flags a int.
+   * @param VPTG a {@link org.jogamp.java3d.TransformGroup} object.
+   */
+  public MouseProperties(int flags, TransformGroup VPTG) {
+    super(flags, VPTG);
+  }
+
+  /**
+   * Return the x-axis movement multipler.
+   *
+   * @return a double.
+   */
+  public double getXFactor() {
+    return xFactor;
+  }
+
+  /**
+   * Return the y-axis movement multipler.
+   *
+   * @return a double.
+   */
+  public double getYFactor() {
+    return yFactor;
+  }
+
+  /** initialize */
+  public void initialize() {
+    super.initialize();
+    xAngle = 0;
+    yAngle = 0;
+    if ((flags & INVERT_INPUT) == INVERT_INPUT) {
+      invert = true;
+      xFactor *= -1;
+      yFactor *= -1;
     }
+  }
 
-    /**
-     * Return the x-axis movement multipler.
-     *
-     * @return a double.
-     */
-    public double getXFactor() {
-        return xFactor;
-    }
-
-    /**
-     * Return the y-axis movement multipler.
-     *
-     * @return a double.
-     */
-    public double getYFactor() {
-        return yFactor;
-    }
-
-    /**
-     * <p>
-     * initialize</p>
-     */
-    public void initialize() {
-        super.initialize();
-        xAngle = 0;
-        yAngle = 0;
-        if ((flags & INVERT_INPUT) == INVERT_INPUT) {
-            invert = true;
-            xFactor *= -1;
-            yFactor *= -1;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void processStimulus(Iterator<WakeupCriterion> criteria) {
-        while (criteria.hasNext()) {
-            WakeupCriterion wakeup = criteria.next();
-            if (wakeup instanceof WakeupOnAWTEvent) {
-                AWTEvent[] event = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
-                for (AWTEvent awtEvent : event) {
-                    processMouseEvent((MouseEvent) awtEvent);
-                    if (((buttonPress) && ((flags & MANUAL_WAKEUP) == 0))
-                            || ((wakeUp) && ((flags & MANUAL_WAKEUP) != 0))) {
-                        int id = awtEvent.getID();
-                        if ((id == MouseEvent.MOUSE_DRAGGED)) {
-                            xLast = ((MouseEvent) awtEvent).getX();
-                            yLast = ((MouseEvent) awtEvent).getY();
-                        } else if (id == MouseEvent.MOUSE_PRESSED) {
-                            xLast = ((MouseEvent) awtEvent).getX();
-                            yLast = ((MouseEvent) awtEvent).getY();
-                        }
-                    }
-                }
+  /** {@inheritDoc} */
+  public void processStimulus(Iterator<WakeupCriterion> criteria) {
+    while (criteria.hasNext()) {
+      WakeupCriterion wakeup = criteria.next();
+      if (wakeup instanceof WakeupOnAWTEvent) {
+        AWTEvent[] event = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+        for (AWTEvent awtEvent : event) {
+          processMouseEvent((MouseEvent) awtEvent);
+          if (((buttonPress) && ((flags & MANUAL_WAKEUP) == 0))
+              || ((wakeUp) && ((flags & MANUAL_WAKEUP) != 0))) {
+            int id = awtEvent.getID();
+            if ((id == MouseEvent.MOUSE_DRAGGED)) {
+              xLast = ((MouseEvent) awtEvent).getX();
+              yLast = ((MouseEvent) awtEvent).getY();
+            } else if (id == MouseEvent.MOUSE_PRESSED) {
+              xLast = ((MouseEvent) awtEvent).getX();
+              yLast = ((MouseEvent) awtEvent).getY();
             }
+          }
         }
-        wakeupOn(mouseCriterion);
+      }
     }
+    wakeupOn(mouseCriterion);
+  }
 
-    /**
-     * Set the x-axis amd y-axis movement multipler with factor.
-     *
-     * @param factor a double.
-     */
-    public void setFactor(double factor) {
-        xFactor = yFactor = factor;
-    }
+  /**
+   * Set the x-axis amd y-axis movement multipler with factor.
+   *
+   * @param factor a double.
+   */
+  public void setFactor(double factor) {
+    xFactor = yFactor = factor;
+  }
 
-    /**
-     * Set the x-axis amd y-axis movement multipler with xFactor and yFactor
-     * respectively.
-     *
-     * @param xFactor a double.
-     * @param yFactor a double.
-     */
-    public void setFactor(double xFactor, double yFactor) {
-        this.xFactor = xFactor;
-        this.yFactor = yFactor;
-    }
+  /**
+   * Set the x-axis amd y-axis movement multipler with xFactor and yFactor respectively.
+   *
+   * @param xFactor a double.
+   * @param yFactor a double.
+   */
+  public void setFactor(double xFactor, double yFactor) {
+    this.xFactor = xFactor;
+    this.yFactor = yFactor;
+  }
 
-    /**
-     * The transformChanged method in the callback class will be called every
-     * time the transform is updated
-     *
-     * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
-     */
-    public void setupCallback(MouseBehaviorCallback c) {
-        // callback = c;
-    }
+  /**
+   * The transformChanged method in the callback class will be called every time the transform is
+   * updated
+   *
+   * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
+   */
+  public void setupCallback(MouseBehaviorCallback c) {
+    // callback = c;
+  }
 
-    /**
-     * <p>
-     * transformChanged</p>
-     *
-     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
-     */
-    public void transformChanged(Transform3D transform) {
-    }
+  /**
+   * transformChanged
+   *
+   * @param transform a {@link org.jogamp.java3d.Transform3D} object.
+   */
+  public void transformChanged(Transform3D transform) {}
 }

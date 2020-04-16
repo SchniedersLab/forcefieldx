@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,10 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.ui.behaviors;
 
 import java.awt.event.MouseEvent;
-
 import org.jogamp.java3d.Bounds;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Canvas3D;
@@ -47,112 +46,101 @@ import org.jogamp.java3d.TransformGroup;
 import org.jogamp.java3d.utils.picking.PickResult;
 
 /**
- * The PickTranslateBehavior class implements a translation behavior on a picked
- * scenegraph object.
+ * The PickTranslateBehavior class implements a translation behavior on a picked scenegraph object.
  *
  * @author Michael J. Schnieders
  */
-public class PickTranslateBehavior extends PickMouseBehavior implements
-        MouseBehaviorCallback {
+public class PickTranslateBehavior extends PickMouseBehavior implements MouseBehaviorCallback {
 
-    public MouseTranslate translate;
-    private PickingCallback callback = null;
-    private TransformGroup currentTG;
+  public MouseTranslate translate;
+  private PickingCallback callback = null;
+  private TransformGroup currentTG;
 
-    /**
-     * <p>
-     * Constructor for PickTranslateBehavior.</p>
-     *
-     * @param root     a {@link org.jogamp.java3d.BranchGroup} object.
-     * @param canvas   a {@link org.jogamp.java3d.Canvas3D} object.
-     * @param bounds   a {@link org.jogamp.java3d.Bounds} object.
-     * @param VPTG     a {@link org.jogamp.java3d.TransformGroup} object.
-     * @param pickMode a int.
-     */
-    public PickTranslateBehavior(BranchGroup root, Canvas3D canvas,
-                                 Bounds bounds, TransformGroup VPTG, int pickMode) {
-        super(canvas, root, bounds);
-        translate = new MouseTranslate(MouseBehavior.MANUAL_WAKEUP, VPTG);
-        translate.setTransformGroup(currGrp);
-        translate.setFactor(0.1);
-        currGrp.addChild(translate);
-        translate.setSchedulingBounds(bounds);
-        setSchedulingBounds(bounds);
-        pickCanvas.setMode(pickMode);
+  /**
+   * Constructor for PickTranslateBehavior.
+   *
+   * @param root a {@link org.jogamp.java3d.BranchGroup} object.
+   * @param canvas a {@link org.jogamp.java3d.Canvas3D} object.
+   * @param bounds a {@link org.jogamp.java3d.Bounds} object.
+   * @param VPTG a {@link org.jogamp.java3d.TransformGroup} object.
+   * @param pickMode a int.
+   */
+  public PickTranslateBehavior(
+      BranchGroup root, Canvas3D canvas, Bounds bounds, TransformGroup VPTG, int pickMode) {
+    super(canvas, root, bounds);
+    translate = new MouseTranslate(MouseBehavior.MANUAL_WAKEUP, VPTG);
+    translate.setTransformGroup(currGrp);
+    translate.setFactor(0.1);
+    currGrp.addChild(translate);
+    translate.setSchedulingBounds(bounds);
+    setSchedulingBounds(bounds);
+    pickCanvas.setMode(pickMode);
+  }
+
+  /**
+   * Return the pickMode component of this PickTranslateBehavior.
+   *
+   * @return a int.
+   */
+  public int getPickMode() {
+    return pickCanvas.getMode();
+  }
+
+  /**
+   * Sets the pickMode component of this PickTranslateBehavior to the value of the passed
+   * pickMode. @param pickMode the pickMode to be copied.
+   *
+   * @param pickMode a int.
+   */
+  public void setPickMode(int pickMode) {
+    pickCanvas.setMode(pickMode);
+  }
+
+  /**
+   * Register the class @param callback to be called each time the picked object moves
+   *
+   * @param callback a {@link ffx.ui.behaviors.PickingCallback} object.
+   */
+  public void setupCallback(PickingCallback callback) {
+    this.callback = callback;
+    if (callback == null) {
+      translate.setupCallback(null);
+    } else {
+      translate.setupCallback(this);
     }
+  }
 
-    /**
-     * Return the pickMode component of this PickTranslateBehavior.
-     *
-     * @return a int.
-     */
-    public int getPickMode() {
-        return pickCanvas.getMode();
-    }
+  /** {@inheritDoc} */
+  public void transformChanged(int type, Transform3D transform) {
+    callback.transformChanged(PickingCallback.TRANSLATE, currentTG);
+  }
 
-    /**
-     * Sets the pickMode component of this PickTranslateBehavior to the value of
-     * the passed pickMode. @param pickMode the pickMode to be copied.
-     *
-     * @param pickMode a int.
-     */
-    public void setPickMode(int pickMode) {
-        pickCanvas.setMode(pickMode);
-    }
+  /** {@inheritDoc} */
+  public void transformClicked(int type, Transform3D transform) {
+    callback.transformClicked(PickingCallback.TRANSLATE, currentTG);
+  }
 
-    /**
-     * Register the class @param callback to be called each time the picked
-     * object moves
-     *
-     * @param callback a {@link ffx.ui.behaviors.PickingCallback} object.
-     */
-    public void setupCallback(PickingCallback callback) {
-        this.callback = callback;
-        if (callback == null) {
-            translate.setupCallback(null);
-        } else {
-            translate.setupCallback(this);
+  /** {@inheritDoc} */
+  public void transformDoubleClicked(int type, Transform3D transform) {
+    callback.transformDoubleClicked(PickingCallback.TRANSLATE, currentTG);
+  }
+
+  /**
+   * Update the scene to manipulate any nodes. This is not meant to be called by users. Behavior
+   * automatically calls this. You can call this only if you know what you are doing.
+   *
+   * @param xpos Current mouse X pos.
+   * @param ypos Current mouse Y pos.
+   */
+  public void updateScene(int xpos, int ypos) {
+    if ((mevent.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) == MouseEvent.BUTTON3_DOWN_MASK) {
+      pickCanvas.setShapeLocation(xpos, ypos);
+      PickResult r = pickCanvas.pickClosest();
+      if (r != null) {
+        if (callback != null) {
+          callback.transformChanged(PickingCallback.NO_PICK, null);
         }
+      }
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void transformChanged(int type, Transform3D transform) {
-        callback.transformChanged(PickingCallback.TRANSLATE, currentTG);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void transformClicked(int type, Transform3D transform) {
-        callback.transformClicked(PickingCallback.TRANSLATE, currentTG);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void transformDoubleClicked(int type, Transform3D transform) {
-        callback.transformDoubleClicked(PickingCallback.TRANSLATE, currentTG);
-    }
-
-    /**
-     * Update the scene to manipulate any nodes. This is not meant to be called
-     * by users. Behavior automatically calls this. You can call this only if
-     * you know what you are doing.
-     *
-     * @param xpos Current mouse X pos.
-     * @param ypos Current mouse Y pos.
-     */
-    public void updateScene(int xpos, int ypos) {
-        if ((mevent.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) == MouseEvent.BUTTON3_DOWN_MASK) {
-            pickCanvas.setShapeLocation(xpos, ypos);
-            PickResult r = pickCanvas.pickClosest();
-            if (r != null) {
-                if (callback != null) {
-                    callback.transformChanged(PickingCallback.NO_PICK, null);
-                }
-            }
-        }
-    }
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,15 +34,14 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.potential.utils;
 
 /**
- * This Exception class indicates an error in calculating energy or gradients.
- * Expected behavior is that it will be caught by Potential.energy(), resulting
- * in any necessary cleanup. Then, if the causeSevere flag is set true, FFE will
- * issue a logger.severe (resulting in exit); else, FFE will simply rethrow the
- * exception. The default is to rethrow the exception.
+ * This Exception class indicates an error in calculating energy or gradients. Expected behavior is
+ * that it will be caught by Potential.energy(), resulting in any necessary cleanup. Then, if the
+ * causeSevere flag is set true, FFE will issue a logger.severe (resulting in exit); else, FFE will
+ * simply rethrow the exception. The default is to rethrow the exception.
  *
  * @author Jacob Litman
  * @author Michael J. Schnieders
@@ -50,53 +49,51 @@ package ffx.potential.utils;
  */
 public class EnergyException extends ArithmeticException {
 
-    private final boolean causeSevere;
+  private final boolean causeSevere;
 
-    /**
-     * <p>Constructor for EnergyException.</p>
-     */
-    public EnergyException() {
-        super();
-        causeSevere = false;
-    }
+  /** Constructor for EnergyException. */
+  public EnergyException() {
+    super();
+    causeSevere = false;
+  }
 
-    /**
-     * <p>Constructor for EnergyException.</p>
-     *
-     * @param str a {@link java.lang.String} object.
-     */
-    public EnergyException(String str) {
-        super(str);
-        causeSevere = false;
-    }
+  /**
+   * Constructor for EnergyException.
+   *
+   * @param str a {@link java.lang.String} object.
+   */
+  public EnergyException(String str) {
+    super(str);
+    causeSevere = false;
+  }
 
-    /**
-     * <p>Constructor for EnergyException.</p>
-     *
-     * @param causeSevere a boolean.
-     */
-    public EnergyException(boolean causeSevere) {
-        super();
-        this.causeSevere = causeSevere;
-    }
+  /**
+   * Constructor for EnergyException.
+   *
+   * @param causeSevere a boolean.
+   */
+  public EnergyException(boolean causeSevere) {
+    super();
+    this.causeSevere = causeSevere;
+  }
 
-    /**
-     * <p>Constructor for EnergyException.</p>
-     *
-     * @param str         a {@link java.lang.String} object.
-     * @param causeSevere a boolean.
-     */
-    public EnergyException(String str, boolean causeSevere) {
-        super(str);
-        this.causeSevere = causeSevere;
-    }
+  /**
+   * Constructor for EnergyException.
+   *
+   * @param str a {@link java.lang.String} object.
+   * @param causeSevere a boolean.
+   */
+  public EnergyException(String str, boolean causeSevere) {
+    super(str);
+    this.causeSevere = causeSevere;
+  }
 
-    /**
-     * <p>doCauseSevere.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean doCauseSevere() {
-        return causeSevere;
-    }
+  /**
+   * doCauseSevere.
+   *
+   * @return a boolean.
+   */
+  public boolean doCauseSevere() {
+    return causeSevere;
+  }
 }

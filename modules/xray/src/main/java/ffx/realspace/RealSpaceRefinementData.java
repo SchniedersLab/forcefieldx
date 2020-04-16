@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,167 +34,162 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.realspace;
 
 /**
- * <p>
- * RealSpaceRefinementData class.</p>
+ * RealSpaceRefinementData class.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
 public class RealSpaceRefinementData {
 
-    private final int[] origin;
-    private final int[] extent;
-    private final int[] ni;
-    private double[] data;
-    private double densityScore;
-    private boolean periodic;
+  private final int[] origin;
+  private final int[] extent;
+  private final int[] ni;
+  private double[] data;
+  private double densityScore;
+  private boolean periodic;
 
-    /**
-     * <p>
-     * Constructor for RealSpaceRefinementData.</p>
-     */
-    RealSpaceRefinementData() {
-        origin = new int[3];
-        extent = new int[3];
-        ni = new int[3];
-        periodic = false;
-    }
+  /** Constructor for RealSpaceRefinementData. */
+  RealSpaceRefinementData() {
+    origin = new int[3];
+    extent = new int[3];
+    ni = new int[3];
+    periodic = false;
+  }
 
-    /**
-     * <p>Getter for the field <code>data</code>.</p>
-     *
-     * @return the data
-     */
-    public double[] getData() {
-        return data;
-    }
+  /**
+   * Getter for the field <code>data</code>.
+   *
+   * @return the data
+   */
+  public double[] getData() {
+    return data;
+  }
 
-    /**
-     * <p>Setter for the field <code>data</code>.</p>
-     *
-     * @param data the data to set
-     */
-    public void setData(double[] data) {
-        this.data = data;
-    }
+  /**
+   * Setter for the field <code>data</code>.
+   *
+   * @param data the data to set
+   */
+  public void setData(double[] data) {
+    this.data = data;
+  }
 
-    /**
-     * <p>Getter for the field <code>ni</code>.</p>
-     *
-     * @return the ni
-     */
-    public int[] getNi() {
-        return ni;
-    }
+  /**
+   * Getter for the field <code>ni</code>.
+   *
+   * @return the ni
+   */
+  public int[] getNi() {
+    return ni;
+  }
 
-    /**
-     * <p>Getter for the field <code>origin</code>.</p>
-     *
-     * @return the origin
-     */
-    public int[] getOrigin() {
-        return origin;
-    }
+  /**
+   * Getter for the field <code>origin</code>.
+   *
+   * @return the origin
+   */
+  public int[] getOrigin() {
+    return origin;
+  }
 
-    /**
-     * <p>Setter for the field <code>extent</code>.</p>
-     *
-     * @param x a int.
-     * @param y a int.
-     * @param z a int.
-     */
-    public void setExtent(int x, int y, int z) {
-        extent[0] = x;
-        extent[1] = y;
-        extent[2] = z;
-    }
+  /**
+   * Setter for the field <code>extent</code>.
+   *
+   * @param x a int.
+   * @param y a int.
+   * @param z a int.
+   */
+  public void setExtent(int x, int y, int z) {
+    extent[0] = x;
+    extent[1] = y;
+    extent[2] = z;
+  }
 
-    /**
-     * <p>setNI.</p>
-     *
-     * @param x a int.
-     * @param y a int.
-     * @param z a int.
-     */
-    public void setNI(int x, int y, int z) {
-        ni[0] = x;
-        ni[1] = y;
-        ni[2] = z;
-    }
+  /**
+   * setNI.
+   *
+   * @param x a int.
+   * @param y a int.
+   * @param z a int.
+   */
+  public void setNI(int x, int y, int z) {
+    ni[0] = x;
+    ni[1] = y;
+    ni[2] = z;
+  }
 
-    /**
-     * <p>Setter for the field <code>origin</code>.</p>
-     *
-     * @param x a int.
-     * @param y a int.
-     * @param z a int.
-     */
-    public void setOrigin(int x, int y, int z) {
-        origin[0] = x;
-        origin[1] = y;
-        origin[2] = z;
-    }
+  /**
+   * Setter for the field <code>origin</code>.
+   *
+   * @param x a int.
+   * @param y a int.
+   * @param z a int.
+   */
+  public void setOrigin(int x, int y, int z) {
+    origin[0] = x;
+    origin[1] = y;
+    origin[2] = z;
+  }
 
-    /**
-     * <p>
-     * getDataIndex</p>
-     *
-     * @param x a int.
-     * @param y a int.
-     * @param z a int.
-     * @return a double.
-     */
-    double getDataIndex(int x, int y, int z) {
-        int index = x + extent[0] * (y + extent[1] * z);
-        return data[index];
-    }
+  /**
+   * getDataIndex
+   *
+   * @param x a int.
+   * @param y a int.
+   * @param z a int.
+   * @return a double.
+   */
+  double getDataIndex(int x, int y, int z) {
+    int index = x + extent[0] * (y + extent[1] * z);
+    return data[index];
+  }
 
-    /**
-     * <p>Getter for the field <code>extent</code>.</p>
-     *
-     * @return the extent
-     */
-    int[] getExtent() {
-        return extent;
-    }
+  /**
+   * Getter for the field <code>extent</code>.
+   *
+   * @return the extent
+   */
+  int[] getExtent() {
+    return extent;
+  }
 
-    /**
-     * <p>Getter for the field <code>densityScore</code>.</p>
-     *
-     * @return the densityScore
-     */
-    double getDensityScore() {
-        return densityScore;
-    }
+  /**
+   * Getter for the field <code>densityScore</code>.
+   *
+   * @return the densityScore
+   */
+  double getDensityScore() {
+    return densityScore;
+  }
 
-    /**
-     * <p>Setter for the field <code>densityScore</code>.</p>
-     *
-     * @param densityScore the densityScore to set
-     */
-    void setDensityScore(double densityScore) {
-        this.densityScore = densityScore;
-    }
+  /**
+   * Setter for the field <code>densityScore</code>.
+   *
+   * @param densityScore the densityScore to set
+   */
+  void setDensityScore(double densityScore) {
+    this.densityScore = densityScore;
+  }
 
-    /**
-     * <p>isPeriodic.</p>
-     *
-     * @return the periodic
-     */
-    boolean isPeriodic() {
-        return periodic;
-    }
+  /**
+   * isPeriodic.
+   *
+   * @return the periodic
+   */
+  boolean isPeriodic() {
+    return periodic;
+  }
 
-    /**
-     * <p>Setter for the field <code>periodic</code>.</p>
-     *
-     * @param periodic the periodic to set
-     */
-    void setPeriodic(boolean periodic) {
-        this.periodic = periodic;
-    }
+  /**
+   * Setter for the field <code>periodic</code>.
+   *
+   * @param periodic the periodic to set
+   */
+  void setPeriodic(boolean periodic) {
+    this.periodic = periodic;
+  }
 }

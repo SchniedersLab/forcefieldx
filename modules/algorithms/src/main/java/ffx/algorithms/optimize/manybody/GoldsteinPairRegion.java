@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,137 +34,142 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.IntStream;
 import static java.lang.Double.isFinite;
 import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
-
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 public class GoldsteinPairRegion extends ParallelRegion {
 
-    private static final Logger logger = Logger.getLogger(GoldsteinPairRegion.class.getName());
+  private static final Logger logger = Logger.getLogger(GoldsteinPairRegion.class.getName());
 
-    private RotamerOptimization rotamerOptimization;
-    private Residue[] residues;
-    private int i, riA, rjC;
-    private int j, riB, rjD;
-    private int[] possK;
-    private int nK;
-    private GoldsteinRotamerPairLoop[] goldsteinRotamerPairLoop;
-    private SharedDouble sharedSumOverK = new SharedDouble();
-    private ArrayList<Residue> blockedResidues;
+  private RotamerOptimization rotamerOptimization;
+  private Residue[] residues;
+  private int i, riA, rjC;
+  private int j, riB, rjD;
+  private int[] possK;
+  private int nK;
+  private GoldsteinRotamerPairLoop[] goldsteinRotamerPairLoop;
+  private SharedDouble sharedSumOverK = new SharedDouble();
+  private ArrayList<Residue> blockedResidues;
 
-    public GoldsteinPairRegion(int nThreads) {
-        goldsteinRotamerPairLoop = new GoldsteinRotamerPairLoop[nThreads];
+  public GoldsteinPairRegion(int nThreads) {
+    goldsteinRotamerPairLoop = new GoldsteinRotamerPairLoop[nThreads];
+  }
+
+  public void finish() {
+    for (GoldsteinRotamerPairLoop rotamerPairLoop : goldsteinRotamerPairLoop) {
+      blockedResidues.addAll(rotamerPairLoop.blockedResidues);
     }
+  }
 
+  public ArrayList<Residue> getMissedResidues() {
+    return blockedResidues;
+  }
+
+  public double getSumOverK() {
+    return sharedSumOverK.get();
+  }
+
+  /**
+   * Initializes a ParallelRegion to attempt the elimination of riA,rjC by riB,rjD.
+   *
+   * @param residues The residue array.
+   * @param i First residue of the pair.
+   * @param riA First member of the pair to attempt eliminating.
+   * @param riB First member of the pair to try eliminating by.
+   * @param j Second residue of the pair.
+   * @param rjC Second member of the pair to attempt eliminating.
+   * @param rjD Second member of the pair to try eliminating by.
+   * @param bidiResNeighbors All interaction partners of a Residue, including prior residues
+   */
+  public void init(
+      Residue[] residues,
+      int i,
+      int riA,
+      int riB,
+      int j,
+      int rjC,
+      int rjD,
+      int[][] bidiResNeighbors,
+      RotamerOptimization rotamerOptimization) {
+    this.residues = residues;
+    this.i = i;
+    this.riA = riA;
+    this.riB = riB;
+    this.j = j;
+    this.rjC = rjC;
+    this.rjD = rjD;
+    this.rotamerOptimization = rotamerOptimization;
+    int[] nI = bidiResNeighbors[i];
+    int[] nJ = bidiResNeighbors[j];
+    IntStream kStream = IntStream.concat(Arrays.stream(nI), Arrays.stream(nJ));
+    possK = kStream.distinct().filter(k -> (k != i && k != j)).sorted().toArray();
+    nK = possK.length;
+  }
+
+  @Override
+  public void run() {
+    int threadID = getThreadIndex();
+    if (goldsteinRotamerPairLoop[threadID] == null) {
+      goldsteinRotamerPairLoop[threadID] = new GoldsteinRotamerPairLoop();
+    }
+    try {
+      execute(0, nK - 1, goldsteinRotamerPairLoop[threadID]);
+    } catch (Exception e) {
+      logger.log(Level.WARNING, " Exception in GoldsteinPairRegion.", e);
+    }
+  }
+
+  public void start() {
+    sharedSumOverK.set(0.0);
+    blockedResidues = new ArrayList<>();
+  }
+
+  private class GoldsteinRotamerPairLoop extends IntegerForLoop {
+
+    double sumOverK;
+    ArrayList<Residue> blockedResidues;
+
+    @Override
     public void finish() {
-        for (GoldsteinRotamerPairLoop rotamerPairLoop : goldsteinRotamerPairLoop) {
-            blockedResidues.addAll(rotamerPairLoop.blockedResidues);
-        }
-    }
-
-    public ArrayList<Residue> getMissedResidues() {
-        return blockedResidues;
-    }
-
-    public double getSumOverK() {
-        return sharedSumOverK.get();
-    }
-
-    /**
-     * Initializes a ParallelRegion to attempt the elimination
-     * of riA,rjC by riB,rjD.
-     *
-     * @param residues         The residue array.
-     * @param i                First residue of the pair.
-     * @param riA              First member of the pair to attempt eliminating.
-     * @param riB              First member of the pair to try eliminating by.
-     * @param j                Second residue of the pair.
-     * @param rjC              Second member of the pair to attempt eliminating.
-     * @param rjD              Second member of the pair to try eliminating by.
-     * @param bidiResNeighbors All interaction partners of a Residue, including prior residues
-     */
-    public void init(Residue[] residues, int i, int riA, int riB, int j, int rjC, int rjD,
-                     int[][] bidiResNeighbors, RotamerOptimization rotamerOptimization) {
-        this.residues = residues;
-        this.i = i;
-        this.riA = riA;
-        this.riB = riB;
-        this.j = j;
-        this.rjC = rjC;
-        this.rjD = rjD;
-        this.rotamerOptimization = rotamerOptimization;
-        int[] nI = bidiResNeighbors[i];
-        int[] nJ = bidiResNeighbors[j];
-        IntStream kStream = IntStream.concat(Arrays.stream(nI), Arrays.stream(nJ));
-        possK = kStream.distinct().
-                filter(k -> (k != i && k != j)).
-                sorted().
-                toArray();
-        nK = possK.length;
+      sharedSumOverK.addAndGet(sumOverK);
     }
 
     @Override
-    public void run() {
-        int threadID = getThreadIndex();
-        if (goldsteinRotamerPairLoop[threadID] == null) {
-            goldsteinRotamerPairLoop[threadID] = new GoldsteinRotamerPairLoop();
+    public void run(int lb, int ub) throws Exception {
+      if (blockedResidues.isEmpty()) {
+        double locSumOverK =
+            rotamerOptimization.goldsteinPairSumOverK(
+                residues, lb, ub, i, riA, riB, j, rjC, rjD, blockedResidues, possK);
+        // Should be redundant checks.
+        if (isFinite(locSumOverK) && blockedResidues.isEmpty()) {
+          sumOverK += locSumOverK;
+        } else {
+          sumOverK = 0;
         }
-        try {
-            execute(0, nK - 1, goldsteinRotamerPairLoop[threadID]);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, " Exception in GoldsteinPairRegion.", e);
-        }
+      } else {
+        rotamerOptimization.logIfMaster(
+            format(" Skipping %d to %d because we cannot eliminate", lb, ub), Level.FINE);
+      }
     }
 
+    @Override
     public void start() {
-        sharedSumOverK.set(0.0);
-        blockedResidues = new ArrayList<>();
+      sumOverK = 0.0;
+      blockedResidues = new ArrayList<>();
     }
-
-    private class GoldsteinRotamerPairLoop extends IntegerForLoop {
-
-        double sumOverK;
-        ArrayList<Residue> blockedResidues;
-
-        @Override
-        public void finish() {
-            sharedSumOverK.addAndGet(sumOverK);
-        }
-
-        @Override
-        public void run(int lb, int ub) throws Exception {
-            if (blockedResidues.isEmpty()) {
-                double locSumOverK = rotamerOptimization.goldsteinPairSumOverK(
-                        residues, lb, ub, i, riA, riB, j, rjC, rjD, blockedResidues, possK);
-                // Should be redundant checks.
-                if (isFinite(locSumOverK) && blockedResidues.isEmpty()) {
-                    sumOverK += locSumOverK;
-                } else {
-                    sumOverK = 0;
-                }
-            } else {
-                rotamerOptimization.logIfMaster(format(" Skipping %d to %d because we cannot eliminate", lb, ub), Level.FINE);
-            }
-        }
-
-        @Override
-        public void start() {
-            sumOverK = 0.0;
-            blockedResidues = new ArrayList<>();
-        }
-    }
+  }
 }

@@ -1,4 +1,4 @@
-//******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -34,11 +34,11 @@
 // you are not obligated to do so. If you do not wish to do so, delete this
 // exception statement from your version.
 //
-//******************************************************************************
+// ******************************************************************************
 
 /**
- * The Utils package implements core functionality needed for using the Potential package,
- * such as opening and closing structure files, basic force field energy evaluations, etc.
+ * The Utils package implements core functionality needed for using the Potential package, such as
+ * opening and closing structure files, basic force field energy evaluations, etc.
  *
  * @author Michael J. Schnieders
  * @since 1.0
