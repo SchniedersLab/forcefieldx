@@ -37,13 +37,9 @@
 // ******************************************************************************
 package ffx;
 
-import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
-import static java.lang.String.format;
-
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import java.io.File;
-import java.net.URL;
 import java.util.List;
 import java.util.logging.Logger;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -74,59 +70,9 @@ public class HeadlessMain {
     logHandler.setMainPanel(mainPanel);
     mainPanel.initialize();
 
-    // Open the supplied script file.
+    // Run the supplied command or file.
     if (commandLineFile != null) {
-      if (!commandLineFile.exists()) {
-        // See if the commandLineFile is an embedded script.
-        String name = commandLineFile.getName();
-        name = name.replace('.', '/');
-        String pathName = "ffx/scripts/" + name;
-        ClassLoader loader = getClass().getClassLoader();
-        URL embeddedScript = loader.getResource(pathName + ".ffx");
-        if (embeddedScript == null) {
-          embeddedScript = loader.getResource(pathName + ".groovy");
-        }
-
-        // One last check, flipping the case of the first character of the script.
-        if (embeddedScript == null) {
-          logger.warning(
-              String.format(
-                  " File %s not found; attempting to find script with different capitalization",
-                  name));
-          char firstChar = name.charAt(0);
-          if (Character.isUpperCase(firstChar)) {
-            name = String.format("%c%s", Character.toLowerCase(firstChar), name.substring(1));
-          } else {
-            name = String.format("%c%s", Character.toUpperCase(firstChar), name.substring(1));
-          }
-          pathName = "ffx/scripts/" + name;
-          embeddedScript = loader.getResource(pathName + ".ffx");
-        }
-        if (embeddedScript == null) {
-          embeddedScript = loader.getResource(pathName + ".groovy");
-        }
-
-        if (embeddedScript != null) {
-          try {
-            commandLineFile =
-                new File(
-                    copyInputStreamToTmpFile(
-                        embeddedScript.openStream(), "ffx", commandLineFile.getName(), "groovy"));
-          } catch (Exception e) {
-            logger.warning(
-                "Exception extracting embedded script "
-                    + embeddedScript.toString()
-                    + "\n"
-                    + e.toString());
-          }
-        }
-      }
-      if (commandLineFile.exists()) {
-        mainPanel.getModelingShell().setArgList(argList);
-        mainPanel.open(commandLineFile, null);
-      } else {
-        logger.warning(format("%s was not found.", commandLineFile.toString()));
-      }
+      Main.runScript(mainPanel.getModelingShell(), commandLineFile, argList);
     }
   }
 

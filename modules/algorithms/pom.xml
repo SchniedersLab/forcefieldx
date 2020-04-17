@@ -10,7 +10,6 @@
         <version>1.0.0-beta</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>algorithms</artifactId>
     <packaging>jar</packaging>
     <name>Algorithms</name>
@@ -48,6 +47,7 @@
                         <id>compile</id>
                         <phase>compile</phase>
                         <configuration>
+
                             <target>
                                 <taskdef name="groovyc"
                                          classname="org.codehaus.groovy.ant.Groovyc">
@@ -66,34 +66,6 @@
                         <goals>
                             <goal>run</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <!-- Copy scripts into the target/classes directory for inclusion in the jar
-                     using the maven-resources-plugin, instead of using the build/resource pom section,
-                     prevents Intellij from classifying the Groovy source directory as a resource directory.
-                -->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>${resources.version}</version>
-                <executions>
-                    <execution>
-                        <id>jar-scripts</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <encoding>UTF-8</encoding>
-                            <resources>
-                                <resource>
-                                    <directory>src/main/groovy/ffx/algorithms/groovy</directory>
-                                </resource>
-                            </resources>
-                            <outputDirectory>target/classes/ffx/scripts</outputDirectory>
-                            <overwrite>true</overwrite>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -168,6 +140,12 @@
             <artifactId>biojava-structure</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
+            <exclusions>
+                <exclusion>
+                    <artifactId>vecmath</artifactId>
+                    <groupId>java3d</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>edu.uiowa.jopenmm</groupId>

@@ -71,9 +71,9 @@ public abstract class PotentialScript extends BaseScript {
    */
   public boolean destroyPotentials() {
     boolean allSucceeded = true;
-    for (Potential potent : getPotentials()) {
-      if (potent != null) {
-        allSucceeded = allSucceeded && potent.destroy();
+    for (Potential potential : getPotentials()) {
+      if (potential != null) {
+        allSucceeded = allSucceeded && potential.destroy();
       }
     }
     return allSucceeded;
@@ -86,11 +86,11 @@ public abstract class PotentialScript extends BaseScript {
    * @return All Potentials. Sometimes empty, never null.
    */
   public List<Potential> getPotentials() {
-    List<Potential> plist = new ArrayList<>();
+    List<Potential> potentialList = new ArrayList<>();
     if (activeAssembly != null && activeAssembly.getPotentialEnergy() != null) {
-      plist.add(activeAssembly.getPotentialEnergy());
+      potentialList.add(activeAssembly.getPotentialEnergy());
     }
-    return plist;
+    return potentialList;
   }
 
   /**

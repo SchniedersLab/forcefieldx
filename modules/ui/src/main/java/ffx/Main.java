@@ -37,14 +37,16 @@
 // ******************************************************************************
 package ffx;
 
-import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
 import static java.lang.String.format;
 
 import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.Configuration;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
+import ffx.ui.ModelingShell;
 import ffx.ui.OSXAdapter;
+import ffx.utilities.BaseScript;
+import groovy.lang.Script;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
@@ -54,22 +56,16 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -177,36 +173,9 @@ public final class Main extends JFrame {
       e.printStackTrace();
     }
 
-    // Finally, open the supplied file if necessary.
-    if (commandLineFile != null && !commandLineFile.exists()) {
-      // See if the commandLineFile is an embedded script.
-      String name = commandLineFile.getName();
-      name = name.replace('.', '/');
-      String pathName = "ffx/scripts/" + name;
-      ClassLoader loader = getClass().getClassLoader();
-      URL embeddedScript = loader.getResource(pathName + ".ffx");
-      if (embeddedScript == null) {
-        embeddedScript = loader.getResource(pathName + ".groovy");
-      }
-      if (embeddedScript != null) {
-        try {
-          commandLineFile =
-              new File(
-                  copyInputStreamToTmpFile(
-                      embeddedScript.openStream(), "ffx", commandLineFile.getName(), "groovy"));
-        } catch (Exception e) {
-          logger.info(format(" The embedded script %s could not be extracted.", embeddedScript));
-        }
-      }
-    }
-
+    // Run the supplied command or file.
     if (commandLineFile != null) {
-      if (commandLineFile.exists()) {
-        mainPanel.getModelingShell().setArgList(argList);
-        mainPanel.open(commandLineFile, null);
-      } else {
-        logger.warning(format("%s was not found.", commandLineFile.toString()));
-      }
+      runScript(mainPanel.getModelingShell(), commandLineFile, argList);
     }
 
     if (logger.isLoggable(Level.FINE)) {
@@ -287,13 +256,13 @@ public final class Main extends JFrame {
 
   /** Print out help for the command line version of Force Field X. */
   private static void commandLineInterfaceHelp(boolean listTestScripts) {
-    logger.info("\n usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
-    logger.info("\n where commands include:\n");
+    logger.info(" usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
+    logger.info("  where commands include:");
     if (listTestScripts) {
-      Main.listGroovyScripts(false, true);
+      BaseScript.listGroovyScripts(false, true);
       logger.info("\n For help on an experimental or test command use:  ffxc <command> -h\n");
     } else {
-      Main.listGroovyScripts(true, false);
+      BaseScript.listGroovyScripts(true, false);
       logger.info("\n To list experimental & test scripts: ffxc --test");
       logger.info(" For help on a specific command use:  ffxc <command> -h\n");
     }
@@ -365,72 +334,6 @@ public final class Main extends JFrame {
     }
 
     logger.info(sb.toString());
-  }
-
-  /**
-   * List the embedded FFX Groovy Scripts.
-   *
-   * @param logScripts List Scripts.
-   * @param logTestScripts List Test Scripts.
-   */
-  private static void listGroovyScripts(boolean logScripts, boolean logTestScripts) {
-
-    // Find the location of ffx-all.jar
-    ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-    URL scriptURL = classLoader.getResource("ffx/scripts");
-    if (scriptURL == null) {
-      logger.info(" The ffx/scripts resource could not be found by the classloader.");
-      return;
-    }
-
-    String scriptPath = scriptURL.getPath();
-    String ffx = scriptPath.substring(5, scriptURL.getPath().indexOf("!"));
-
-    JarFile jar;
-    try {
-      jar = new JarFile(URLDecoder.decode(ffx, "UTF-8"));
-    } catch (Exception e) {
-      logger.info(" The ffx/scripts resource could not be decoded.");
-      return;
-    }
-
-    // Getting the files into the jar
-    Enumeration<? extends JarEntry> enumeration = jar.entries();
-
-    List<String> scripts = new ArrayList<>();
-    List<String> testScripts = new ArrayList<>();
-    // Iterates into the files in the jar file
-    while (enumeration.hasMoreElements()) {
-      ZipEntry zipEntry = enumeration.nextElement();
-      String className = zipEntry.getName();
-
-      // Find FFX groovy scripts.
-      if (className.startsWith("ffx") && className.endsWith(".groovy")) {
-        className = className.replace(".groovy", "").replace("/", ".");
-        className = className.replace("ffx.scripts.", "");
-        if (className.toUpperCase().contains("TEST")) {
-          testScripts.add(className);
-        } else {
-          scripts.add(className);
-        }
-      }
-    }
-
-    // Sort the scripts alphabetically.
-    Collections.sort(scripts);
-    Collections.sort(testScripts);
-
-    // Log the script names.
-    if (logTestScripts) {
-      for (String script : testScripts) {
-        logger.info(" " + script);
-      }
-    }
-    if (logScripts) {
-      for (String script : scripts) {
-        logger.info(" " + script);
-      }
-    }
   }
 
   /** Process any "-D" command line flags. */
@@ -617,6 +520,20 @@ public final class Main extends JFrame {
     } catch (Exception e) {
       String message = " Exception starting up the Parallel Java communication layer.";
       logger.log(Level.WARNING, message, e.toString());
+    }
+  }
+
+  public static void runScript(ModelingShell shell, File commandLineFile, List<String> argList) {
+    // Attempt to run a supplied script.
+    if (commandLineFile.exists()) {
+      shell.runFFXScript(commandLineFile, argList);
+    } else {
+      // See if the commandLineFile is an embedded script.
+      String name = commandLineFile.getName();
+      Class<? extends Script> ffxScript = BaseScript.getScript(name);
+      if (ffxScript != null) {
+        shell.runFFXScript(ffxScript, argList);
+      }
     }
   }
 

@@ -54,6 +54,8 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.cli.PotentialScript;
 import ffx.potential.utils.PotentialsFunctions;
 import groovy.console.ui.Console;
+import groovy.lang.Binding;
+import groovy.lang.Script;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -127,13 +129,14 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     super();
     this.mainPanel = mainPanel;
     headless = java.awt.GraphicsEnvironment.isHeadless();
-    initContext();
+    initContext(getShell().getContext());
     loadPrefs();
   }
 
   /** after */
   public void after() {
     time = System.nanoTime() - time;
+    scriptRunning = false;
     if (!interrupted) {
       appendOutput(
           String.format("\n Script wall clock time: %6.3f (sec)", time * toSeconds),
@@ -224,18 +227,19 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     time = System.nanoTime();
     subTime = time;
     mainPanel.getModelingPanel().enableLaunch(false);
+    scriptRunning = true;
   }
 
   @Override
   public void clearContext() {
     super.clearContext();
-    initContext();
+    initContext(getShell().getContext());
   }
 
   @Override
   public void clearContext(EventObject evt) {
     super.clearContext(evt);
-    initContext();
+    initContext(getShell().getContext());
   }
 
   /**
@@ -365,7 +369,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         init();
       } else {
         try {
-          SwingUtilities.invokeAndWait(() -> init());
+          SwingUtilities.invokeAndWait(this::init);
         } catch (Exception e) {
           //
         }
@@ -437,30 +441,32 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     }
   }
 
-  /** Initialize access to Force Field X variables and methods from with the Shell. */
-  private void initContext() {
-    setVariable("dat", mainPanel.getHierarchy());
-    setVariable("cmd", mainPanel);
-    setVariable("vis", mainPanel.getGraphics3D());
-    setVariable("sh", this);
-    setVariable("active", mainPanel.getHierarchy().getActive());
-    setVariable("logger", logger);
+  /**
+   * Initialize access to Force Field X variables and methods from with the Shell.
+   */
+  private void initContext(Binding binding) {
+    binding.setVariable("dat", mainPanel.getHierarchy());
+    binding.setVariable("cmd", mainPanel);
+    binding.setVariable("vis", mainPanel.getGraphics3D());
+    binding.setVariable("sh", this);
+    binding.setVariable("active", mainPanel.getHierarchy().getActive());
+    binding.setVariable("logger", logger);
 
     // Timer
-    setVariable("time", new MethodClosure(this, "time"));
+    binding.setVariable("time", new MethodClosure(this, "time"));
 
     // File
-    setVariable("open", new MethodClosure(mainPanel, "openWait"));
-    setVariable("convertWait", new MethodClosure(mainPanel, "convertWait"));
-    setVariable("save", new MethodClosure(mainPanel, "saveAsXYZ"));
-    setVariable("saveAsXYZ", new MethodClosure(mainPanel, "saveAsXYZ"));
-    setVariable("saveAsP1", new MethodClosure(mainPanel, "saveAsP1"));
-    setVariable("saveAsPDB", new MethodClosure(mainPanel, "saveAsPDB"));
-    setVariable("close", new MethodClosure(mainPanel, "closeWait"));
-    setVariable("closeAll", new MethodClosure(mainPanel, "closeAll"));
+    binding.setVariable("open", new MethodClosure(mainPanel, "openWait"));
+    binding.setVariable("convertWait", new MethodClosure(mainPanel, "convertWait"));
+    binding.setVariable("save", new MethodClosure(mainPanel, "saveAsXYZ"));
+    binding.setVariable("saveAsXYZ", new MethodClosure(mainPanel, "saveAsXYZ"));
+    binding.setVariable("saveAsP1", new MethodClosure(mainPanel, "saveAsP1"));
+    binding.setVariable("saveAsPDB", new MethodClosure(mainPanel, "saveAsPDB"));
+    binding.setVariable("close", new MethodClosure(mainPanel, "closeWait"));
+    binding.setVariable("closeAll", new MethodClosure(mainPanel, "closeAll"));
 
     // Select
-    setVariable("select", new MethodClosure(this, "select"));
+    binding.setVariable("select", new MethodClosure(this, "select"));
 
     // Display and View menus.
     if (!headless) {
@@ -469,42 +475,42 @@ public final class ModelingShell extends Console implements AlgorithmListener {
       // Display
       int index = 0;
       for (ViewModel view : ViewModel.values()) {
-        setVariable(view.name(), view);
+        binding.setVariable(view.name(), view);
         index++;
         if (index > 8) {
           break;
         }
       }
-      setVariable("view", new MethodClosure(graphics, "viewWait"));
+      binding.setVariable("view", new MethodClosure(graphics, "viewWait"));
 
       // Color
       index = 0;
       for (ColorModel color : ColorModel.values()) {
-        setVariable(color.name(), color);
+        binding.setVariable(color.name(), color);
         index++;
         if (index > 6) {
           break;
         }
       }
-      setVariable("color", new MethodClosure(graphics, "colorWait"));
+      binding.setVariable("color", new MethodClosure(graphics, "colorWait"));
     }
 
     // Algorithms
-    setVariable("returnEnergy", new MethodClosure(this, "returnEnergy"));
-    setVariable("energy", new MethodClosure(this, "energy"));
-    setVariable("analyze", new MethodClosure(this, "analyze"));
-    setVariable("minimize", new MethodClosure(this, "minimize"));
-    setVariable("minimize_2", new MethodClosure(this, "minimize_2"));
-    setVariable("md", new MethodClosure(this, "md"));
-    setVariable("potential", new MethodClosure(this, "potential"));
-    setVariable("poledit", new MethodClosure(this, "poledit"));
-    setVariable("superpose", new MethodClosure(this, "superpose"));
+    binding.setVariable("returnEnergy", new MethodClosure(this, "returnEnergy"));
+    binding.setVariable("energy", new MethodClosure(this, "energy"));
+    binding.setVariable("analyze", new MethodClosure(this, "analyze"));
+    binding.setVariable("minimize", new MethodClosure(this, "minimize"));
+    binding.setVariable("minimize_2", new MethodClosure(this, "minimize_2"));
+    binding.setVariable("md", new MethodClosure(this, "md"));
+    binding.setVariable("potential", new MethodClosure(this, "potential"));
+    binding.setVariable("poledit", new MethodClosure(this, "poledit"));
+    binding.setVariable("superpose", new MethodClosure(this, "superpose"));
 
     // Obtain UIUtils object
-    setVariable("functions", new UIUtils(this, mainPanel));
+    binding.setVariable("functions", new UIUtils(this, mainPanel));
 
     // Define a listener variable to send updates back to the GUI.
-    setVariable("listener", this);
+    binding.setVariable("listener", this);
   }
 
   /** Update the shell menu items. */
@@ -580,13 +586,12 @@ public final class ModelingShell extends Console implements AlgorithmListener {
    *
    * @param file a {@link java.io.File} object.
    */
-  void runFFXScript(File file) {
-
-    logger.info(" Executing script: " + file.getAbsolutePath());
-
+  public void runFFXScript(File file, List<String> args) {
+    logger.info(" Executing external script: " + file.getAbsolutePath() + "\n");
     try {
       before();
       try {
+        // Run the file using the current Shell and its Binding.
         Object o = getShell().run(file, args);
         // Do not destroy the system when using the GUI.
         if (headless) {
@@ -600,9 +605,47 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         logger.log(Level.SEVERE, " Uncaught error: FFX is shutting down.\n", ex);
       }
       after();
-    } catch (
-        Exception
-            e) { // Replacing this with a "Multi-Catch" leads to specific Exceptions not present in
+    } catch (Exception e) {
+      // Replacing this with a "Multi-Catch" leads to specific Exceptions not present in
+      // some versions of Groovy.
+      String message = "Error evaluating script.";
+      logger.log(Level.WARNING, message, e);
+    }
+  }
+
+  /**
+   * runFFXScript
+   *
+   * @param script a compiled FFX script.
+   */
+  public void runFFXScript(Class<? extends Script> script, List<String> argList) {
+    logger.info(" Executing internal script: " + script.getCanonicalName() + "\n");
+    try {
+      before();
+      try {
+        // Create a Binding for command line arguments and FFX User Interface variables.
+        Binding binding = new Binding();
+        binding.setVariable("args", argList);
+        initContext(binding);
+
+        // Create a new instance of the script and run it.
+        Script groovyScript = script.getDeclaredConstructor().newInstance();
+        groovyScript.setBinding(binding);
+        groovyScript.run();
+        // Do not destroy the system when using the GUI.
+        if (headless) {
+          if (groovyScript instanceof PotentialScript) {
+            ((PotentialScript) groovyScript).destroyPotentials();
+          } else if (groovyScript instanceof AlgorithmsScript) {
+            ((AlgorithmsScript) groovyScript).destroyPotentials();
+          }
+        }
+      } catch (Exception ex) {
+        logger.log(Level.SEVERE, " Uncaught error: FFX is shutting down.\n", ex);
+      }
+      after();
+    } catch (Exception e) {
+      // Replacing this with a "Multi-Catch" leads to specific Exceptions not present in
       // some versions of Groovy.
       String message = "Error evaluating script.";
       logger.log(Level.WARNING, message, e);
@@ -678,9 +721,9 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     // A short message about the script to be evaluated.
     String message;
     if (name == null || name.toString().equalsIgnoreCase("null")) {
-      message = String.format("\n Evaluating...\n\n");
+      message = "\n Evaluating...\n\n";
     } else {
-      message = String.format("\n Evaluating " + name + "...\n\n");
+      message = "\n Evaluating " + name + "...\n\n";
     }
     appendOutput(message, getPromptStyle());
   }
@@ -709,7 +752,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     if (EventQueue.isDispatchThread()) {
       scroll();
     } else {
-      SwingUtilities.invokeLater(() -> scroll());
+      SwingUtilities.invokeLater(this::scroll);
     }
   }
 
@@ -745,13 +788,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     if (EventQueue.isDispatchThread()) {
       scroll();
     } else {
-      SwingUtilities.invokeLater(
-          new Runnable() {
-            @Override
-            public void run() {
-              scroll();
-            }
-          });
+      SwingUtilities.invokeLater(this::scroll);
     }
   }
 

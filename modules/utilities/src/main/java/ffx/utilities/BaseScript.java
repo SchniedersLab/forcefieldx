@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static java.lang.String.format;
+import static java.util.Collections.sort;
 import static picocli.CommandLine.usage;
 
 import groovy.lang.Binding;
@@ -44,8 +46,17 @@ import groovy.lang.Script;
 import java.awt.GraphicsEnvironment;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
@@ -56,9 +67,11 @@ import picocli.CommandLine.ParseResult;
  *
  * @author Michael J. Schnieders
  */
-public class BaseScript extends Script {
+public abstract class BaseScript extends Script {
 
-  /** The logger for this class. */
+  /**
+   * The logger for this class.
+   */
   protected static final Logger logger = Logger.getLogger(BaseScript.class.getName());
 
   /**
@@ -75,29 +88,143 @@ public class BaseScript extends Script {
   /** The array of args passed into the Script. */
   public String[] args;
 
-  /** Parse Result. */
+  /**
+   * Parse Result.
+   */
   public ParseResult parseResult = null;
 
-  /** -V or --version Prints the FFX version and exits. */
+  /**
+   * -V or --version Prints the FFX version and exits.
+   */
   @Option(
       names = {"-V", "--version"},
       versionHelp = true,
       description = "Print the Force Field X version and exit.")
   public boolean version = false;
 
-  /** -h or --help Prints a help message. */
+  /**
+   * -h or --help Prints a help message.
+   */
   @Option(
       names = {"-h", "--help"},
       usageHelp = true,
       description = "Print command help and exit.")
   public boolean help = false;
 
-  /** Default constructor for an FFX Script. */
+  /**
+   * Default constructor for an FFX Script.
+   */
   public BaseScript() {
     if (GraphicsEnvironment.isHeadless()) {
       color = Ansi.ON;
     } else {
       color = Ansi.OFF;
+    }
+  }
+
+  /**
+   * Use the System ClassLoader to find the requested script.
+   *
+   * @param name Name of the script to load (e.g. Energy).
+   * @return The Script, if found, or null.
+   */
+  public static Class<? extends BaseScript> getScript(String name) {
+    ClassLoader loader = ClassLoader.getSystemClassLoader();
+    String pathName = name;
+    Class<?> script;
+    try {
+      // First try to load the class directly.
+      script = loader.loadClass(pathName);
+    } catch (ClassNotFoundException e) {
+      // Next, try to load a script from the potential package.
+      pathName = "ffx.potential.groovy." + name;
+      try {
+        script = loader.loadClass(pathName);
+      } catch (ClassNotFoundException e2) {
+        // Next, try to load a script from the algorithm package.
+        pathName = "ffx.algorithms.groovy." + name;
+        try {
+          script = loader.loadClass(pathName);
+        } catch (ClassNotFoundException e3) {
+          // Finally, try to load a script from the xray package.
+          pathName = "ffx.xray.groovy." + name;
+          try {
+            script = loader.loadClass(pathName);
+          } catch (ClassNotFoundException e4) {
+            logger.warning(format(" %s was not found.", name));
+            return null;
+          }
+        }
+      }
+    }
+    return script.asSubclass(BaseScript.class);
+  }
+
+  /**
+   * List the embedded FFX Groovy Scripts.
+   *
+   * @param logScripts     List Scripts.
+   * @param logTestScripts List Test Scripts.
+   */
+  public static void listGroovyScripts(boolean logScripts, boolean logTestScripts) {
+
+    ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+    String location = "ffx";
+    URL scriptURL = classLoader.getResource(location);
+    if (scriptURL == null) {
+      logger.info(format(" The %s resource could not be found by the classloader.", location));
+      return;
+    }
+    String scriptPath = scriptURL.getPath();
+    String ffx = scriptPath.substring(5, scriptURL.getPath().indexOf("!"));
+    JarFile jar;
+    try {
+      jar = new JarFile(URLDecoder.decode(ffx, StandardCharsets.UTF_8));
+    } catch (Exception e) {
+      logger.info(format(" The %s resource could not be decoded.", location));
+      return;
+    }
+
+    List<String> scripts = new ArrayList<>();
+    List<String> testScripts = new ArrayList<>();
+    // Iterates over Jar entries.
+    Enumeration<JarEntry> enumeration = jar.entries();
+    while (enumeration.hasMoreElements()) {
+      ZipEntry zipEntry = enumeration.nextElement();
+      String className = zipEntry.getName();
+      if (className.startsWith("ffx")
+          && className.contains("groovy")
+          && className.endsWith(".class")
+          && !className.contains("$")) {
+        className = className.replace("/", ".");
+        className = className.replace(".class", "");
+        // Present the classes using "short-cut" names.
+        className = className.replace("ffx.potential.groovy.", "");
+        className = className.replace("ffx.algorithms.groovy.", "");
+        className = className.replace("ffx.realspace.groovy", "realspace");
+        className = className.replace("ffx.xray.groovy", "xray");
+        if (className.toUpperCase().contains("TEST")) {
+          testScripts.add(className);
+        } else {
+          scripts.add(className);
+        }
+      }
+    }
+
+    // Sort the scripts alphabetically.
+    sort(scripts);
+    sort(testScripts);
+
+    // Log the script names.
+    if (logTestScripts) {
+      for (String script : testScripts) {
+        logger.info("   " + script);
+      }
+    }
+    if (logScripts) {
+      for (String script : scripts) {
+        logger.info("   " + script);
+      }
     }
   }
 
@@ -124,7 +251,19 @@ public class BaseScript extends Script {
    */
   public boolean init() {
     context = getBinding();
-    args = (String[]) context.getProperty("args");
+
+    // The args property could either be a list or an array of String arguments.
+    Object arguments = context.getProperty("args");
+    if (arguments instanceof List<?>) {
+      List<?> list = (List<?>) arguments;
+      int numArgs = list.size();
+      args = new String[numArgs];
+      for (int i = 0; i < numArgs; i++) {
+        args[i] = (String) list.get(i);
+      }
+    } else {
+      args = (String[]) context.getProperty("args");
+    }
 
     CommandLine commandLine = new CommandLine(this);
     try {

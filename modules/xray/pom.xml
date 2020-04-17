@@ -10,7 +10,6 @@
         <version>1.0.0-beta</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>xray</artifactId>
     <packaging>jar</packaging>
     <name>X-Ray Refinement</name>
@@ -95,28 +94,6 @@
                 <version>${resources.version}</version>
                 <inherited>false</inherited>
                 <executions>
-                    <execution>
-                        <id>jar-scripts</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <encoding>UTF-8</encoding>
-                            <resources>
-                                <resource>
-                                    <directory>${basedir}/src/main/groovy/ffx/xray/groovy</directory>
-                                    <targetPath>xray</targetPath>
-                                </resource>
-                                <resource>
-                                    <directory>${basedir}/src/main/groovy/ffx/realspace/groovy</directory>
-                                    <targetPath>realspace</targetPath>
-                                </resource>
-                            </resources>
-                            <outputDirectory>target/classes/ffx/scripts</outputDirectory>
-                            <overwrite>true</overwrite>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>website-scripts</id>
                         <phase>process-resources</phase>

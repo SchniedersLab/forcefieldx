@@ -1132,8 +1132,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * If "realBiasMagnitude" is 0, temporarily set biasMag to this value to calculate the the
      * ensemble average dU/dL.
      *
-     * <p>Any value that does not overflow/underflow double precision summations of the count matrix
-     * will give identical results. For example, values of 1.0e-20, 1.0 and 1.0e20 were tested and
+     * <p>Any value that does not overflow/underflow double precision summations of the count
+     * matrix will give identical results. For example, values of 1.0e-20, 1.0 and 1.0e20 were tested and
      * found to give identical results.
      *
      * <p>Thus, a value of 1.0 is good choice.
