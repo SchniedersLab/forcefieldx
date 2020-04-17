@@ -69,9 +69,7 @@ import picocli.CommandLine.ParseResult;
  */
 public abstract class BaseScript extends Script {
 
-  /**
-   * The logger for this class.
-   */
+  /** The logger for this class. */
   protected static final Logger logger = Logger.getLogger(BaseScript.class.getName());
 
   /**
@@ -88,32 +86,24 @@ public abstract class BaseScript extends Script {
   /** The array of args passed into the Script. */
   public String[] args;
 
-  /**
-   * Parse Result.
-   */
+  /** Parse Result. */
   public ParseResult parseResult = null;
 
-  /**
-   * -V or --version Prints the FFX version and exits.
-   */
+  /** -V or --version Prints the FFX version and exits. */
   @Option(
       names = {"-V", "--version"},
       versionHelp = true,
       description = "Print the Force Field X version and exit.")
   public boolean version = false;
 
-  /**
-   * -h or --help Prints a help message.
-   */
+  /** -h or --help Prints a help message. */
   @Option(
       names = {"-h", "--help"},
       usageHelp = true,
       description = "Print command help and exit.")
   public boolean help = false;
 
-  /**
-   * Default constructor for an FFX Script.
-   */
+  /** Default constructor for an FFX Script. */
   public BaseScript() {
     if (GraphicsEnvironment.isHeadless()) {
       color = Ansi.ON;
@@ -163,7 +153,7 @@ public abstract class BaseScript extends Script {
   /**
    * List the embedded FFX Groovy Scripts.
    *
-   * @param logScripts     List Scripts.
+   * @param logScripts List Scripts.
    * @param logTestScripts List Test Scripts.
    */
   public static void listGroovyScripts(boolean logScripts, boolean logTestScripts) {

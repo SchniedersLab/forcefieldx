@@ -917,13 +917,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * <p>The default doOptimization = false.
      */
     private boolean doOptimization = false;
-    /**
-     * Reset unit cell parameters, molecular orientation and translation.
-     */
+    /** Reset unit cell parameters, molecular orientation and translation. */
     private boolean doUnitCellReset;
-    /**
-     * Holds the lowest potential energy coordinates.
-     */
+    /** Holds the lowest potential energy coordinates. */
     private double[] optimumCoords;
     /**
      * The lowest energy found via optimizations.
@@ -1136,8 +1132,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * If "realBiasMagnitude" is 0, temporarily set biasMag to this value to calculate the the
      * ensemble average dU/dL.
      *
-     * <p>Any value that does not overflow/underflow double precision summations of the count
-     * matrix
+     * <p>Any value that does not overflow/underflow double precision summations of the count matrix
      * will give identical results. For example, values of 1.0e-20, 1.0 and 1.0e20 were tested and
      * found to give identical results.
      *

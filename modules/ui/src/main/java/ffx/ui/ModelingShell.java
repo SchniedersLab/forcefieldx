@@ -441,9 +441,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     }
   }
 
-  /**
-   * Initialize access to Force Field X variables and methods from with the Shell.
-   */
+  /** Initialize access to Force Field X variables and methods from with the Shell. */
   private void initContext(Binding binding) {
     binding.setVariable("dat", mainPanel.getHierarchy());
     binding.setVariable("cmd", mainPanel);

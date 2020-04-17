@@ -205,6 +205,7 @@ public class AtomicDoubleArray3D {
   /**
    * Perform reduction between the given lower bound (lb) and upper bound (up) if necessary.
    *
+   * @param parallelTeam ParallelTeam to use.
    * @param lb a int.
    * @param ub a int.
    */
