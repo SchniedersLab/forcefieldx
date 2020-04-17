@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.numerics.switching;
 
+import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.max;
 
@@ -139,7 +140,7 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
    * @param lbPrimary Value at which primary should begin to be obeyed exactly.
    * @param ubPrimary Value at which primary should stop being obeyed exactly.
    * @param ub Overall upper bound of the CompositeSwitch.
-   * @oaram lb Overall lower bound of the CompositeSwitch.
+   * @param lb Overall lower bound of the CompositeSwitch.
    */
   public CompositeSwitch(
       UnivariateSwitchingFunction primary,
@@ -151,13 +152,13 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
       double ub) {
     if (lbPrimary > ubPrimary) {
       throw new IllegalArgumentException(
-          String.format(
+          format(
               " Lower primary bound %10.4g was greater than upper primary bound %10.4g",
               lbPrimary, ubPrimary));
     }
     if (lb > ub) {
       throw new IllegalArgumentException(
-          String.format(" Lower bound %10.4g was greater than upper bound %10.4g", lb, ub));
+          format(" Lower bound %10.4g was greater than upper bound %10.4g", lb, ub));
     }
     assert lb < lbPrimary && ub > ubPrimary;
 
@@ -178,7 +179,7 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
     fdUB2 = fdUB * fdUB;
 
     if (!testJoints()) {
-      logger.warning(String.format(" Switch %s is not smooth at one of its joints!", toString()));
+      logger.warning(format(" Switch %s is not smooth at one of its joints!", toString()));
     }
   }
 
@@ -253,7 +254,7 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
   public String toString() {
     StringBuilder sb =
         new StringBuilder(
-            String.format(
+            format(
                 " Composite switch with overall range %12.5g-%12.5g, "
                     + "with an inner range %12.5g-%12.5g",
                 lb, ub, lbPrimary, ubPrimary));

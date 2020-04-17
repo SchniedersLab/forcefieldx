@@ -97,6 +97,7 @@ public interface AtomicDoubleArray {
   /**
    * Perform reduction between the given lower bound (lb) and upper bound (up) usign a ParallelTeam.
    *
+   * @param parallelTeam ParallelTeam to use.
    * @param lb a int.
    * @param ub a int.
    */
