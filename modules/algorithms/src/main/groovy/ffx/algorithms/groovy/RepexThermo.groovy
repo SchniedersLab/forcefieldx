@@ -149,20 +149,12 @@ class RepexThermo extends Thermodynamics {
     if (!rankDirectory.exists()) {
       rankDirectory.mkdir();
     }
-    rankDirName = "${
-      rankDirName
-    }${
-      File.separator
-    }";
-    String withRankName = "${
-      rankDirName
-    }${
-      fileBase
-    }";
+    // @formatter:off
+    rankDirName = "${rankDirName}${File.separator}";
+    String withRankName = "${rankDirName}${fileBase}";
+    File lambdaRestart = new File("${withRankName}.lam");
+    // @formatter:on
 
-    File lambdaRestart = new File("${
-      withRankName
-    }.lam");
     boolean lamExists = lambdaRestart.exists();
 
     // Read in files.
@@ -208,7 +200,7 @@ class RepexThermo extends Thermodynamics {
     potential.energy(x, true)
 
     if (nArgs == 1) {
-      randomSymop.randomize(topologies[0], potential)
+      randomSymop.randomize(topologies[0])
     }
 
     multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size);
@@ -219,13 +211,9 @@ class RepexThermo extends Thermodynamics {
     MolecularDynamics md;
 
     if (thermodynamics.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
-      File firstHisto = new File("${
-        filepath
-      }0${
-        File.separator
-      }${
-        fileBase
-      }.his");
+      // @formatter:on
+      File firstHisto = new File("${filepath}0${File.separator}${fileBase}.his");
+      // @formatter:off
 
       orthogonalSpaceTempering =
           ostOptions.constructOST(potential, lambdaRestart, firstHisto, topologies[0],
@@ -258,15 +246,9 @@ class RepexThermo extends Thermodynamics {
       }
 
       for (int i = 1; i < size; i++) {
-        File rankIHisto = new File("${
-          filepath
-        }${
-          i
-        }${
-          File.separator
-        }${
-          fileBase
-        }.his");
+        // @formatter:on
+        File rankIHisto = new File("${filepath}${i}${File.separator}${fileBase}.his");
+        // @formatter:off
         orthogonalSpaceTempering.addHistogram(ostOptions.generateHistogramSettings(rankIHisto,
             lambdaRestart.toString(), allProperties, i, dynamics, lambdaParticle, true, false));
       }
@@ -289,9 +271,9 @@ class RepexThermo extends Thermodynamics {
       logger.severe(" RepexThermo currently does not support fixed-lambda alchemy!")
     }
 
-    logger.info(" ${
-      thermodynamics.getAlgorithm()
-    } with Histogram Replica Exchange Done.");
+    // @formatter:on
+    logger.info(" ${thermodynamics.getAlgorithm()} with Histogram Replica Exchange Done.");
+    // @formatter:off
 
     return this
   }
