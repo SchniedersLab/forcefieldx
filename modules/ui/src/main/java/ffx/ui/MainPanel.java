@@ -53,7 +53,6 @@ import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ARCFileFilter;
-import ffx.potential.parsers.DYNFileFilter;
 import ffx.potential.parsers.FFXFileFilter;
 import ffx.potential.parsers.ForceFieldFileFilter;
 import ffx.potential.parsers.ForceFieldFilter;
@@ -140,8 +139,6 @@ import org.jogamp.vecmath.Vector3d;
  */
 public final class MainPanel extends JPanel implements ActionListener, ChangeListener {
 
-  /** Constant <code>dynFileFilter</code> */
-  public static final DYNFileFilter dynFileFilter = new DYNFileFilter();
   /** Constant <code>version="1.0.0-BETA"</code> */
   public static final String version = "1.0.0-BETA";
   /** Constant <code>date="January 2020"</code> */
@@ -1424,18 +1421,6 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     // Get "filename" from "filename.extension".
     String name = file.getName();
     String extension = FilenameUtils.getExtension(name);
-
-    // Run a Force Field X script.
-    if (extension.equalsIgnoreCase("ffx") || extension.equalsIgnoreCase("groovy")) {
-      ModelingShell shell = getModelingShell();
-      shell.runFFXScript(file);
-      boolean shutDown = Boolean.parseBoolean(System.getProperty("ffx.shutDown", "true"));
-      if (java.awt.GraphicsEnvironment.isHeadless() && shutDown) {
-        exit();
-      } else {
-        return null;
-      }
-    }
 
     // Create the CompositeConfiguration properties.
     CompositeConfiguration properties = Keyword.loadProperties(file);

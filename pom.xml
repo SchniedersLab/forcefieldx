@@ -1,1183 +1,1188 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>ffx</artifactId>
-    <packaging>pom</packaging>
-    <name>Force Field X</name>
-    <version>1.0.0-beta</version>
-    <description>Software for Molecular Biophysics</description>
-    <url>http://ffx.biochem.uiowa.edu</url>
-    <issueManagement>
-        <system>GitHub Issues</system>
-        <url>http://github.com/SchniedersLab/forcefieldx/issues</url>
-    </issueManagement>
-    <ciManagement>
-        <system>Travis CI</system>
-        <url>https://travis-ci.org/SchniedersLab/forcefieldx</url>
-        <notifiers>
-            <notifier>
-                <type>mail</type>
-                <sendOnFailure>true</sendOnFailure>
-                <sendOnError>true</sendOnError>
-                <sendOnSuccess>false</sendOnSuccess>
-                <sendOnWarning>false</sendOnWarning>
-                <configuration>
-                    <address>michael-schnieders@uiowa.edu</address>
-                </configuration>
-            </notifier>
-        </notifiers>
-    </ciManagement>
-    <inceptionYear>2001</inceptionYear>
-    <developers>
-        <developer>
-            <id>michael.schnieders</id>
-            <name>Michael J. Schnieders</name>
-            <email>michael-schnieders@uiowa.edu</email>
-            <organization>Associate Professor, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>Director of Force Field X</role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>fenn</id>
-            <name>Timothy D. Fenn</name>
-            <email>tim.fenn@gmail.com</email>
-            <organization>Associate Director at Prevail Therapeutics</organization>
-            <organizationUrl>http://www.prevailtherapeutics.com</organizationUrl>
-            <roles>
-                <role>Chief Crystallograper</role>
-            </roles>
-            <timezone>-7</timezone>
-        </developer>
-        <developer>
-            <id>jmlitman</id>
-            <name>Jacob M. Litman</name>
-            <email>jacob-litman@uiowa.edu</email>
-            <organization>Post-Doctoral Fellow, Ren and Schnieders Labs, The U. of Texas at Austin</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Many-Body Dead-End Elimination for Nucleic Acid Structure Prediction and Optimization
-                </role>
-                <role>
-                    Protein Design via Many-Body Dead-End Elimination and Alchemical Free Energy Methods
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>mrtollefson</id>
-            <name>Mallory R. Tollefson</name>
-            <email>mallory-tollefson@uiowa.edu</email>
-            <organization>Biomedical Engineering Graduate Student, Schnieders Lab, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Pathogenicity Prediction of Missense Mutations Implicated in Hearing Loss
-                </role>
-                <role>
-                    Structure Optimization
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>jhauer</id>
-            <name>Jill J. Hauer</name>
-            <email>jill-hauer@uiowa.edu</email>
-            <organization>Genetics Graduate Student, Richard Smith Lab, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Pathogenicity Prediction and Thermodynamics of Missense Mutations for Rare Renal Diseases
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>anessler</id>
-            <name>Aaron Nessler</name>
-            <email>aaron-nessler@uiowa.edu</email>
-            <organization>Biomedical Engineering Graduate Student, Schnieders Lab, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Thermodynamics of Crystals
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>andthiel</id>
-            <name>Andrew Thiel</name>
-            <email>andrew-thiel@uiowa.edu</email>
-            <organization>Biomedical Engineering Graduate Student, Schnieders Labs, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Constant pH Simulation methods.
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>rcorrigan</id>
-            <name>Rae Corrigan</name>
-            <email>rae-corrigan@uiowa.edu</email>
-            <organization>Biomedical Engineering Graduate Student, Casavant and Schnieders Labs, The U. of Iowa
-            </organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Continuum Solvation and Nucleic Acid Design
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-    </developers>
-    <contributors>
-        <contributor>
-            <name>Hernan Bernabe</name>
-            <email>hernan-bernabe@uiowa.edu</email>
-            <roles>
-                <role>
-                    Contributions to Monte Carlo Orthogonal Space Sampling.
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </contributor>
-        <contributor>
-            <name>William T. A. Tollefson</name>
-            <email>william.t.tollefson@rockwellcollins.com</email>
-            <organization>Software Engineer, Rockwell Collins</organization>
-            <organizationUrl>http://rockwellcollins.com</organizationUrl>
-            <roles>
-                <role>
-                    Contributions to many-body side-chain repacking and modeling of missense mutations.
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </contributor>
-        <contributor>
-            <name>Shibo "Hylia" Gao</name>
-            <email>gaosh01@luther.edu</email>
-            <organization>2013 BSURF Student, Biochemistry, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Contributions to many-body side-chain repacking.
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </contributor>
-        <contributor>
-            <name>Ava M. Lynn</name>
-            <email>ava-lynn@uiowa.edu</email>
-            <organization>Medical Student, Uniformed Services University of the Health Sciences</organization>
-            <organizationUrl>https://www.usuhs.edu</organizationUrl>
-            <roles>
-                <role>
-                    Contributions to implementation of rotamer libraries.
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </contributor>
-        <contributor>
-            <name>Ian J. Nessler</name>
-            <email>inessler@umich.edu</email>
-            <organization>Chemical Engineering Graduate Student, The U. of Michigan</organization>
-            <organizationUrl>http://www.umich.edu</organizationUrl>
-            <roles>
-                <role>
-                    Drug Crystal Structure, Thermodynamics and Solubility
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </contributor>
-        <contributor>
-            <name>Jooyeon "Julia" Park</name>
-            <email>julia-park@gmail.com</email>
-            <organization>Dental Student, The U. of Pennsylvania</organization>
-            <organizationUrl>http://www.upenn.edu</organizationUrl>
-            <roles>
-                <role>
-                    Drug Crystal Structure, Thermodynamics and Solubility
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </contributor>
-        <contributor>
-            <name>Pengyu Ren</name>
-            <email>pren@mail.utexas.edu</email>
-            <organization>Associate Professor, The U. of Texas at Austin</organization>
-            <organizationUrl>http://www.utexas.edu</organizationUrl>
-            <roles>
-                <role>AMOEBA Force Field</role>
-            </roles>
-            <timezone>-5</timezone>
-        </contributor>
-        <contributor>
-            <name>Zhen Xia</name>
-            <email>oversnow@gmail.com</email>
-            <organization>Postdoc, Ren Lab, The U. of Texas at Austin</organization>
-            <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
-            <roles>
-                <role>AMOEBA force field</role>
-            </roles>
-            <timezone>-5</timezone>
-        </contributor>
-        <contributor>
-            <name>Johnny Wu</name>
-            <email>jwu@mail.utexas.edu</email>
-            <organization>Scientist at Genentech</organization>
-            <organizationUrl>http://www.gene.com</organizationUrl>
-            <roles>
-                <role>Automatic AMOEBA Parameterization</role>
-            </roles>
-            <timezone>-7</timezone>
-        </contributor>
-        <contributor>
-            <name>Chuanjie Wu</name>
-            <email>chuanjiewu@gmail.com</email>
-            <organization>Scientist at Schrodinger</organization>
-            <roles>
-                <role>AMOEBA force field</role>
-            </roles>
-            <timezone>-4</timezone>
-        </contributor>
-    </contributors>
-    <licenses>
-        <license>
-            <name>GPL version 3 with Linking Exception</name>
-            <comments>
-                Force Field X is free software; you can redistribute it and/or modify it
-                under the terms of the GNU General Public License version 3 as published by
-                the Free Software Foundation.
-
-                Force Field X is distributed in the hope that it will be useful, but WITHOUT
-                ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-                FOR A PARTICULAR PURPOSE. See the GNU General Public License below for more details.
-
-                Linking Force Field X statically or dynamically with other modules is making a
-                combined work based on this library. Thus, the terms and conditions of the
-                GNU General Public License cover the whole combination.
-
-                As a special exception, the copyright holders of this library give you
-                permission to link this library with independent modules to produce an
-                executable, regardless of the license terms of these independent modules, and
-                to copy and distribute the resulting executable under terms of your choice,
-                provided that you also meet, for each linked independent module, the terms
-                and conditions of the license of that module. An independent module is a
-                module which is not derived from or based on this library. If you modify this
-                library, you may extend this exception to your version of the library, but
-                you are not obligated to do so. If you do not wish to do so, delete this
-                exception statement from your version.
-            </comments>
-            <url>http://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
-            <distribution>manual</distribution>
-        </license>
-    </licenses>
-    <scm>
-        <url>http://github.com/SchniedersLab/forcefieldx</url>
-        <connection>scm:git:http://github.com/SchniedersLab/forcefieldx.git</connection>
-        <developerConnection>scm:git:git@github.com:SchniedersLab/forcefieldx.git</developerConnection>
-    </scm>
-    <organization>
-        <!-- This is used to generate the Copyright on the website.
-        Module authors can use their name. -->
-        <name>Michael J. Schnieders</name>
-        <url>http://ffx.biochem.uiowa.edu</url>
-    </organization>
-    <build>
-        <defaultGoal>deploy</defaultGoal>
-        <pluginManagement>
-            <!-- Explicitly define plugins for FFX module pom.xml files. -->
-            <plugins>
-                <plugin>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>${assembly.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-changes-plugin</artifactId>
-                    <version>${changes.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>${checkstyle.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <version>${clean.version}</version>
-                    <configuration>
-                        <filesets>
-                            <fileset>
-                                <directory>${basedir}/src/site/resources/scripts</directory>
-                            </fileset>
-                        </filesets>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${compiler.version}</version>
-                    <configuration>
-                        <useIncrementalCompilation>true</useIncrementalCompilation>
-                        <debug>true</debug>
-                        <optimize>true</optimize>
-                        <verbose>false</verbose>
-                        <source>${compileVersion}</source>
-                        <target>${targetVersion}</target>
-                        <compilerArgs>
-                            <compilerArg>-Xlint:all</compilerArg>
-                        </compilerArgs>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <version>${dependency.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <version>${deploy.version}</version>
-                    <configuration>
-                        <deployAtEnd>true</deployAtEnd>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>${enforcer.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-install-plugin</artifactId>
-                    <version>${install.version}</version>
-                    <configuration>
-                        <installAtEnd>true</installAtEnd>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>${jar.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-jarsigner-plugin</artifactId>
-                    <version>${jarsigner.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>${javadoc.version}</version>
-                    <configuration>
-                        <author>true</author>
-                        <defaultAuthor>Michael J. Schnieders</defaultAuthor>
-                        <defaultSince>1.0</defaultSince>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-jxr-plugin</artifactId>
-                    <version>${jxr.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-linkcheck-plugin</artifactId>
-                    <version>${linkcheck.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-pmd-plugin</artifactId>
-                    <version>${pmd.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-project-info-reports-plugin</artifactId>
-                    <version>${project-info-reports.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-scm-plugin</artifactId>
-                    <version>${scm.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>${shade.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-site-plugin</artifactId>
-                    <version>${site.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>${source.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${surefire.version}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.maven.surefire</groupId>
-                            <artifactId>surefire-junit47</artifactId>
-                            <version>${surefire.version}</version>
-                        </dependency>
-                    </dependencies>
-                    <configuration>
-                        <!-- forkCount>0</forkCount -->
-                        <trimStackTrace>false</trimStackTrace>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-surefire-report-plugin</artifactId>
-                    <version>${surefire.version}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.maven.surefire</groupId>
-                            <artifactId>surefire-junit47</artifactId>
-                            <version>${surefire.version}</version>
-                        </dependency>
-                    </dependencies>
-                    <configuration>
-                        <alwaysGenerateSurefireReport>true</alwaysGenerateSurefireReport>
-                        <aggregate>true</aggregate>
-                        <linkXRef>true</linkXRef>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>${release.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <version>${resources.version}</version>
-                    <executions>
-                        <execution>
-                            <id>website-scripts</id>
-                            <phase>process-resources</phase>
-                            <goals>
-                                <goal>copy-resources</goal>
-                            </goals>
-                            <configuration>
-                                <encoding>UTF-8</encoding>
-                                <resources>
-                                    <resource>
-                                        <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}/groovy
-                                        </directory>
-                                    </resource>
-                                </resources>
-                                <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
-                                <overwrite>true</overwrite>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>distro-scripts</id>
-                            <phase>process-resources</phase>
-                            <goals>
-                                <goal>copy-resources</goal>
-                            </goals>
-                            <configuration>
-                                <encoding>UTF-8</encoding>
-                                <resources>
-                                    <resource>
-                                        <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}/groovy
-                                        </directory>
-                                    </resource>
-                                </resources>
-                                <outputDirectory>${basedir}/../../scripts</outputDirectory>
-                                <overwrite>true</overwrite>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                    <version>${exec.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>jdepend-maven-plugin</artifactId>
-                    <version>${jdepend.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>properties-maven-plugin</artifactId>
-                    <version>${properties.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>versions-maven-plugin</artifactId>
-                    <version>${versions.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>ru.concerteza.buildnumber</groupId>
-                    <artifactId>maven-jgit-buildnumber-plugin</artifactId>
-                    <version>${buildnumber.version}</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-        <plugins>
-            <plugin>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>${enforcer.version}</version>
-                <executions>
-                    <execution>
-                        <id>enforce-versions</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <banDuplicatePomDependencyVersions/>
-                                <!-- dependencyConvergence/ -->
-                                <!-- reactorModuleConvergence/ -->
-                                <requirePluginVersions/>
-                                <requireMavenVersion>
-                                    <version>3.0.5</version>
-                                </requireMavenVersion>
-                                <requireJavaVersion>
-                                    <version>[11,15.1]</version>
-                                </requireJavaVersion>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>${antrun.version}</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>groovydoc</id>
-                        <phase>site</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <taskdef name="groovydoc"
-                                         classname="org.codehaus.groovy.ant.Groovydoc"
-                                         classpathref="maven.compile.classpath"
-                                />
-                                <groovydoc destdir="${project.reporting.outputDirectory}/groovydoc"
-                                           sourcepath="${basedir}/modules/potential/src/main/groovy
+  <artifactId>ffx</artifactId>
+  <build>
+    <defaultGoal>install</defaultGoal>
+    <pluginManagement>
+      <!-- Explicitly define plugins for FFX module pom.xml files. -->
+      <plugins>
+        <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>${assembly.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-changes-plugin</artifactId>
+          <version>${changes.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${checkstyle.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-clean-plugin</artifactId>
+          <configuration>
+            <filesets>
+              <fileset>
+                <directory>${basedir}/src/site/resources/scripts</directory>
+              </fileset>
+            </filesets>
+          </configuration>
+          <version>${clean.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <compilerArgs>
+              <compilerArg>-Xlint:all</compilerArg>
+            </compilerArgs>
+            <debug>true</debug>
+            <optimize>true</optimize>
+            <source>${compileVersion}</source>
+            <target>${targetVersion}</target>
+            <useIncrementalCompilation>true</useIncrementalCompilation>
+            <verbose>false</verbose>
+          </configuration>
+          <version>${compiler.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${dependency.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <configuration>
+            <deployAtEnd>true</deployAtEnd>
+          </configuration>
+          <version>${deploy.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${enforcer.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-install-plugin</artifactId>
+          <configuration>
+            <installAtEnd>true</installAtEnd>
+          </configuration>
+          <version>${install.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>${jar.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-jarsigner-plugin</artifactId>
+          <version>${jarsigner.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <configuration>
+            <author>true</author>
+            <defaultAuthor>Michael J. Schnieders</defaultAuthor>
+            <defaultSince>1.0</defaultSince>
+          </configuration>
+          <version>${javadoc.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-jxr-plugin</artifactId>
+          <version>${jxr.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-linkcheck-plugin</artifactId>
+          <version>${linkcheck.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-pmd-plugin</artifactId>
+          <version>${pmd.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-project-info-reports-plugin</artifactId>
+          <version>${project-info-reports.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-scm-plugin</artifactId>
+          <version>${scm.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>${shade.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>${site.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>${source.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <!-- forkCount>0</forkCount -->
+            <trimStackTrace>false</trimStackTrace>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <artifactId>surefire-junit47</artifactId>
+              <groupId>org.apache.maven.surefire</groupId>
+              <version>${surefire.version}</version>
+            </dependency>
+          </dependencies>
+          <version>${surefire.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-surefire-report-plugin</artifactId>
+          <configuration>
+            <aggregate>true</aggregate>
+            <alwaysGenerateSurefireReport>true</alwaysGenerateSurefireReport>
+            <linkXRef>true</linkXRef>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <artifactId>surefire-junit47</artifactId>
+              <groupId>org.apache.maven.surefire</groupId>
+              <version>${surefire.version}</version>
+            </dependency>
+          </dependencies>
+          <version>${surefire.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>${release.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-resources-plugin</artifactId>
+          <executions>
+            <execution>
+              <configuration>
+                <encoding>UTF-8</encoding>
+                <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
+                <overwrite>true</overwrite>
+                <resources>
+                  <resource>
+                    <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}/groovy
+                    </directory>
+                  </resource>
+                </resources>
+              </configuration>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <id>website-scripts</id>
+              <phase>process-resources</phase>
+            </execution>
+            <execution>
+              <configuration>
+                <encoding>UTF-8</encoding>
+                <outputDirectory>${basedir}/../../scripts</outputDirectory>
+                <overwrite>true</overwrite>
+                <resources>
+                  <resource>
+                    <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}/groovy
+                    </directory>
+                  </resource>
+                </resources>
+              </configuration>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <id>distro-scripts</id>
+              <phase>process-resources</phase>
+            </execution>
+          </executions>
+          <version>${resources.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>exec-maven-plugin</artifactId>
+          <groupId>org.codehaus.mojo</groupId>
+          <version>${exec.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>jdepend-maven-plugin</artifactId>
+          <groupId>org.codehaus.mojo</groupId>
+          <version>${jdepend.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>properties-maven-plugin</artifactId>
+          <groupId>org.codehaus.mojo</groupId>
+          <version>${properties.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>versions-maven-plugin</artifactId>
+          <groupId>org.codehaus.mojo</groupId>
+          <version>${versions.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-jgit-buildnumber-plugin</artifactId>
+          <groupId>ru.concerteza.buildnumber</groupId>
+          <version>${buildnumber.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <configuration>
+              <rules>
+                <banDuplicatePomDependencyVersions/>
+                <!-- dependencyConvergence/ -->
+                <!-- reactorModuleConvergence/ -->
+                <requireJavaVersion>
+                  <version>[11,15.1]</version>
+                </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>3.0.5</version>
+                </requireMavenVersion>
+                <requirePluginVersions/>
+              </rules>
+            </configuration>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <id>enforce-versions</id>
+            <phase>initialize</phase>
+          </execution>
+        </executions>
+        <version>${enforcer.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <configuration>
+              <target>
+                <groovydoc destdir="${project.reporting.outputDirectory}/groovydoc"
+                  doctitle="${project.name}"
+                  sourcepath="${basedir}/modules/potential/src/main/groovy
                                                        ${path.separator} ${basedir}/modules/algorithms/src/main/groovy"
-                                           use="true"
-                                           windowtitle="${project.name}"
-                                           doctitle="${project.name}"
-                                />
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-site-plugin</artifactId>
-                <version>${site.version}</version>
-                <inherited>true</inherited>
-                <configuration>
-                    <generateSitemap>true</generateSitemap>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <version>${clean.version}</version>
-                <inherited>false</inherited>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>scripts</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-scm-plugin</artifactId>
-                <version>${scm.version}</version>
-                <configuration>
-                    <connectionType>connection</connectionType>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${compiler.version}</version>
-                <configuration>
-                    <useIncrementalCompilation>true</useIncrementalCompilation>
-                    <optimize>true</optimize>
-                    <debug>true</debug>
-                    <source>${compileVersion}</source>
-                    <target>${targetVersion}</target>
-                    <compilerArgs>
-                        <compilerArg>-Xlint:all</compilerArg>
-                    </compilerArgs>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>${source.version}</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>attach-source</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>aggregate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${assembly.version}</version>
-                <inherited>false</inherited>
-                <configuration>
-                    <descriptors>
-                        <descriptor>src/assemble/bin.xml</descriptor>
-                    </descriptors>
-                    <finalName>ffx-${project.version}</finalName>
-                    <outputDirectory>${project.build.directory}/site</outputDirectory>
-                    <tarLongFileMode>posix</tarLongFileMode>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <phase>site</phase>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>${exec.version}</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>Run Force Field X</id>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <executable>java</executable>
-                    <arguments>
-                        <argument>-ms1G</argument>
-                        <argument>-mx1G</argument>
-                        <argument>-Djava.awt.headless=true</argument>
-                        <argument>-classpath</argument>
-                        <argument>bin/ffx-all.jar</argument>
-                        <argument>ffx.Main</argument>
-                        <argument>timer</argument>
-                        <argument>-n</argument>
-                        <argument>100000</argument>
-                        <argument>-c</argument>
-                        <argument>1</argument>
-                        <argument>examples/ubiquitin.xyz</argument>
-                    </arguments>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${surefire.version}</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.maven.surefire</groupId>
-                        <artifactId>surefire-junit47</artifactId>
-                        <version>${surefire.version}</version>
-                    </dependency>
-                </dependencies>
-                <configuration>
-                    <useSystemClassLoader>false</useSystemClassLoader>
-                    <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
-                </configuration>
-            </plugin>
-            <!-- plugin>
-                <artifactId>maven-pdf-plugin</artifactId>
-                <version>1.2</version>
-                <executions>
-                    <execution>
-                        <id>pdf</id>
-                        <phase>site</phase>
-                        <goals>
-                            <goal>pdf</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.reporting.outputDirectory}/site</outputDirectory>
-                            <implementation>itext</implementation>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin -->
-            <plugin>
-                <groupId>ru.concerteza.buildnumber</groupId>
-                <artifactId>maven-jgit-buildnumber-plugin</artifactId>
-                <version>${buildnumber.version}</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>git-buildnumber</id>
-                        <goals>
-                            <goal>extract-buildnumber</goal>
-                        </goals>
-                        <phase>prepare-package</phase>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>properties-maven-plugin</artifactId>
-                <version>${properties.version}</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>write-project-properties</goal>
-                        </goals>
-                        <configuration>
-                            <outputFile>${basedir}/target/ffx-mvn.properties</outputFile>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-    <profiles>
-        <profile>
-            <id>ffx.jarsigner</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-jarsigner-plugin</artifactId>
-                        <configuration>
-                            <alias>FFXKey</alias>
-                            <storepass>${storepass}</storepass>
-                            <keypass>${keypass}</keypass>
-                            <removeExistingSignatures>true</removeExistingSignatures>
-                            <tsa>http://timestamp.digicert.com</tsa>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>sign</id>
-                                <phase>install</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>ffx.clover</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.openclover</groupId>
-                        <artifactId>clover-maven-plugin</artifactId>
-                        <version>${clover.version}</version>
-                        <configuration>
-                            <generateHtml>true</generateHtml>
-                            <generateXml>true</generateXml>
-                            <excludes>
-                                <exclude>edu/**/*.java</exclude>
-                                <exclude>ffx/ui/**/*.java</exclude>
-                            </excludes>
-                            <includesTestSourceRoots>false</includesTestSourceRoots>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-            <reporting>
-                <plugins>
-                    <plugin>
-                        <groupId>org.openclover</groupId>
-                        <artifactId>clover-maven-plugin</artifactId>
-                        <version>${clover.version}</version>
-                    </plugin>
-                </plugins>
-            </reporting>
-        </profile>
-    </profiles>
-    <repositories>
-        <repository>
-            <name>FFX Dependency Repository</name>
-            <id>1.ffx.repo</id>
-            <url>http://github.com/mjschnie/dependency/raw/master</url>
-            <releases>
-                <enabled>true</enabled>
-                <checksumPolicy>ignore</checksumPolicy>
-                <updatePolicy>daily</updatePolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <name>Apache Maven Repository</name>
-            <id>2.apache.repo</id>
-            <url>https://repo.maven.apache.org/maven2</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <name>JogAmp Maven Repository</name>
-            <id>3.jogamp.repo</id>
-            <url>http://jogamp.org/deployment/maven</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <name>BioJava's Git based legacy maven repo</name>
-            <id>4.biojava.legacy.repo</id>
-            <url>http://github.com/biojava/maven-repo/raw/master/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <name>BioJava Maven Repository</name>
-            <id>5.biojava.repo</id>
-            <url>http://www.biojava.org/download/maven/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <name>Tornadovm Repository</name>
-            <id>6.u.manchester.repo</id>
-            <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <!-- repository>
-            <name>JFrog OpenSource Snapshots</name>
-            <id>6.jfrog.repo</id>
-            <url>https://oss.jfrog.org/artifactory/oss-snapshot-local/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository -->
-    </repositories>
-    <reporting>
+                  use="true"
+                  windowtitle="${project.name}"
+                />
+                <taskdef classname="org.codehaus.groovy.ant.Groovydoc"
+                  classpathref="maven.compile.classpath"
+                  name="groovydoc"
+                />
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <id>groovydoc</id>
+            <phase>site</phase>
+          </execution>
+        </executions>
+        <inherited>false</inherited>
+        <version>${antrun.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-site-plugin</artifactId>
+        <configuration>
+          <generateSitemap>true</generateSitemap>
+        </configuration>
+        <inherited>true</inherited>
+        <version>${site.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>scripts</directory>
+            </fileset>
+          </filesets>
+        </configuration>
+        <inherited>false</inherited>
+        <version>${clean.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-scm-plugin</artifactId>
+        <configuration>
+          <connectionType>connection</connectionType>
+        </configuration>
+        <version>${scm.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <compilerArg>-Xlint:all</compilerArg>
+          </compilerArgs>
+          <debug>true</debug>
+          <optimize>true</optimize>
+          <source>${compileVersion}</source>
+          <target>${targetVersion}</target>
+          <useIncrementalCompilation>true</useIncrementalCompilation>
+        </configuration>
+        <version>${compiler.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>aggregate</goal>
+            </goals>
+            <id>attach-source</id>
+            <phase>verify</phase>
+          </execution>
+        </executions>
+        <inherited>false</inherited>
+        <version>${source.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+            <descriptor>src/assemble/bin.xml</descriptor>
+          </descriptors>
+          <finalName>ffx-${project.version}</finalName>
+          <outputDirectory>${project.build.directory}/site</outputDirectory>
+          <tarLongFileMode>posix</tarLongFileMode>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <phase>site</phase>
+          </execution>
+        </executions>
+        <inherited>false</inherited>
+        <version>${assembly.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>exec-maven-plugin</artifactId>
+        <configuration>
+          <arguments>
+            <argument>-ms1G</argument>
+            <argument>-mx1G</argument>
+            <argument>-Djava.awt.headless=true</argument>
+            <argument>-classpath</argument>
+            <argument>bin/ffx-all.jar</argument>
+            <argument>ffx.Main</argument>
+            <argument>timer</argument>
+            <argument>-n</argument>
+            <argument>100000</argument>
+            <argument>-c</argument>
+            <argument>1</argument>
+            <argument>examples/ubiquitin.xyz</argument>
+          </arguments>
+          <executable>java</executable>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <id>Run Force Field X</id>
+          </execution>
+        </executions>
+        <groupId>org.codehaus.mojo</groupId>
+        <inherited>false</inherited>
+        <version>${exec.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
+          <useSystemClassLoader>false</useSystemClassLoader>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <artifactId>surefire-junit47</artifactId>
+            <groupId>org.apache.maven.surefire</groupId>
+            <version>${surefire.version}</version>
+          </dependency>
+        </dependencies>
+        <version>${surefire.version}</version>
+      </plugin>
+      <!-- plugin>
+          <artifactId>maven-pdf-plugin</artifactId>
+          <version>1.2</version>
+          <executions>
+              <execution>
+                  <id>pdf</id>
+                  <phase>site</phase>
+                  <goals>
+                      <goal>pdf</goal>
+                  </goals>
+                  <configuration>
+                      <outputDirectory>${project.reporting.outputDirectory}/site</outputDirectory>
+                      <implementation>itext</implementation>
+                  </configuration>
+              </execution>
+          </executions>
+      </plugin -->
+      <plugin>
+        <artifactId>maven-jgit-buildnumber-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>extract-buildnumber</goal>
+            </goals>
+            <id>git-buildnumber</id>
+            <phase>prepare-package</phase>
+          </execution>
+        </executions>
+        <groupId>ru.concerteza.buildnumber</groupId>
+        <inherited>false</inherited>
+        <version>${buildnumber.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>properties-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <configuration>
+              <outputFile>${basedir}/target/ffx-mvn.properties</outputFile>
+            </configuration>
+            <goals>
+              <goal>write-project-properties</goal>
+            </goals>
+            <phase>initialize</phase>
+          </execution>
+        </executions>
+        <groupId>org.codehaus.mojo</groupId>
+        <inherited>false</inherited>
+        <version>${properties.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+  <ciManagement>
+    <notifiers>
+      <notifier>
+        <configuration>
+          <address>michael-schnieders@uiowa.edu</address>
+        </configuration>
+        <sendOnError>true</sendOnError>
+        <sendOnFailure>true</sendOnFailure>
+        <sendOnSuccess>false</sendOnSuccess>
+        <sendOnWarning>false</sendOnWarning>
+        <type>mail</type>
+      </notifier>
+    </notifiers>
+    <system>Travis CI</system>
+    <url>https://travis-ci.org/SchniedersLab/forcefieldx</url>
+  </ciManagement>
+  <contributors>
+    <contributor>
+      <email>hernan-bernabe@uiowa.edu</email>
+      <name>Hernan Bernabe</name>
+      <roles>
+        <role>
+          Contributions to Monte Carlo Orthogonal Space Sampling.
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </contributor>
+    <contributor>
+      <email>william.t.tollefson@rockwellcollins.com</email>
+      <name>William T. A. Tollefson</name>
+      <organization>Software Engineer, Rockwell Collins</organization>
+      <organizationUrl>http://rockwellcollins.com</organizationUrl>
+      <roles>
+        <role>
+          Contributions to many-body side-chain repacking and modeling of missense mutations.
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </contributor>
+    <contributor>
+      <email>gaosh01@luther.edu</email>
+      <name>Shibo "Hylia" Gao</name>
+      <organization>2013 BSURF Student, Biochemistry, The U. of Iowa</organization>
+      <organizationUrl>http://www.uiowa.edu</organizationUrl>
+      <roles>
+        <role>
+          Contributions to many-body side-chain repacking.
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </contributor>
+    <contributor>
+      <email>ava-lynn@uiowa.edu</email>
+      <name>Ava M. Lynn</name>
+      <organization>Medical Student, Uniformed Services University of the Health Sciences
+      </organization>
+      <organizationUrl>https://www.usuhs.edu</organizationUrl>
+      <roles>
+        <role>
+          Contributions to implementation of rotamer libraries.
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </contributor>
+    <contributor>
+      <email>inessler@umich.edu</email>
+      <name>Ian J. Nessler</name>
+      <organization>Chemical Engineering Graduate Student, The U. of Michigan</organization>
+      <organizationUrl>http://www.umich.edu</organizationUrl>
+      <roles>
+        <role>
+          Drug Crystal Structure, Thermodynamics and Solubility
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </contributor>
+    <contributor>
+      <email>julia-park@gmail.com</email>
+      <name>Jooyeon "Julia" Park</name>
+      <organization>Dental Student, The U. of Pennsylvania</organization>
+      <organizationUrl>http://www.upenn.edu</organizationUrl>
+      <roles>
+        <role>
+          Drug Crystal Structure, Thermodynamics and Solubility
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </contributor>
+    <contributor>
+      <email>pren@mail.utexas.edu</email>
+      <name>Pengyu Ren</name>
+      <organization>Associate Professor, The U. of Texas at Austin</organization>
+      <organizationUrl>http://www.utexas.edu</organizationUrl>
+      <roles>
+        <role>AMOEBA Force Field</role>
+      </roles>
+      <timezone>-5</timezone>
+    </contributor>
+    <contributor>
+      <email>oversnow@gmail.com</email>
+      <name>Zhen Xia</name>
+      <organization>Postdoc, Ren Lab, The U. of Texas at Austin</organization>
+      <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
+      <roles>
+        <role>AMOEBA force field</role>
+      </roles>
+      <timezone>-5</timezone>
+    </contributor>
+    <contributor>
+      <email>jwu@mail.utexas.edu</email>
+      <name>Johnny Wu</name>
+      <organization>Scientist at Genentech</organization>
+      <organizationUrl>http://www.gene.com</organizationUrl>
+      <roles>
+        <role>Automatic AMOEBA Parameterization</role>
+      </roles>
+      <timezone>-7</timezone>
+    </contributor>
+    <contributor>
+      <email>chuanjiewu@gmail.com</email>
+      <name>Chuanjie Wu</name>
+      <organization>Scientist at Schrodinger</organization>
+      <roles>
+        <role>AMOEBA force field</role>
+      </roles>
+      <timezone>-4</timezone>
+    </contributor>
+  </contributors>
+  <dependencies>
+    <dependency>
+      <artifactId>groovy-all</artifactId>
+      <groupId>org.codehaus.groovy</groupId>
+      <type>pom</type>
+      <version>${groovy-all.version}</version>
+    </dependency>
+    <dependency>
+      <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
+      <artifactId>jaxb-api</artifactId>
+      <groupId>javax.xml.bind</groupId>
+      <scope>compile</scope>
+      <version>${jaxb-api.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305 -->
+    <dependency>
+      <artifactId>jsr305</artifactId>
+      <groupId>com.google.code.findbugs</groupId>
+      <version>${findbugs.version}</version>
+    </dependency>
+  </dependencies>
+  <description>Software for Molecular Biophysics</description>
+  <developers>
+    <developer>
+      <email>michael-schnieders@uiowa.edu</email>
+      <id>michael.schnieders</id>
+      <name>Michael J. Schnieders</name>
+      <organization>Associate Professor, The U. of Iowa</organization>
+      <organizationUrl>http://www.uiowa.edu</organizationUrl>
+      <roles>
+        <role>Director of Force Field X</role>
+      </roles>
+      <timezone>-5</timezone>
+    </developer>
+    <developer>
+      <email>tim.fenn@gmail.com</email>
+      <id>fenn</id>
+      <name>Timothy D. Fenn</name>
+      <organization>Associate Director at Prevail Therapeutics</organization>
+      <organizationUrl>http://www.prevailtherapeutics.com</organizationUrl>
+      <roles>
+        <role>Chief Crystallograper</role>
+      </roles>
+      <timezone>-7</timezone>
+    </developer>
+    <developer>
+      <email>jacob-litman@uiowa.edu</email>
+      <id>jmlitman</id>
+      <name>Jacob M. Litman</name>
+      <organization>Post-Doctoral Fellow, Ren and Schnieders Labs, The U. of Texas at Austin
+      </organization>
+      <organizationUrl>http://www.uiowa.edu</organizationUrl>
+      <roles>
+        <role>
+          Many-Body Dead-End Elimination for Nucleic Acid Structure Prediction and Optimization
+        </role>
+        <role>
+          Protein Design via Many-Body Dead-End Elimination and Alchemical Free Energy Methods
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </developer>
+    <developer>
+      <email>mallory-tollefson@uiowa.edu</email>
+      <id>mrtollefson</id>
+      <name>Mallory R. Tollefson</name>
+      <organization>Biomedical Engineering Graduate Student, Schnieders Lab, The U. of Iowa
+      </organization>
+      <organizationUrl>http://www.uiowa.edu</organizationUrl>
+      <roles>
+        <role>
+          Pathogenicity Prediction of Missense Mutations Implicated in Hearing Loss
+        </role>
+        <role>
+          Structure Optimization
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </developer>
+    <developer>
+      <email>jill-hauer@uiowa.edu</email>
+      <id>jhauer</id>
+      <name>Jill J. Hauer</name>
+      <organization>Genetics Graduate Student, Richard Smith Lab, The U. of Iowa</organization>
+      <organizationUrl>http://www.uiowa.edu</organizationUrl>
+      <roles>
+        <role>
+          Pathogenicity Prediction and Thermodynamics of Missense Mutations for Rare Renal Diseases
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </developer>
+    <developer>
+      <email>aaron-nessler@uiowa.edu</email>
+      <id>anessler</id>
+      <name>Aaron Nessler</name>
+      <organization>Biomedical Engineering Graduate Student, Schnieders Lab, The U. of Iowa
+      </organization>
+      <organizationUrl>http://www.uiowa.edu</organizationUrl>
+      <roles>
+        <role>
+          Thermodynamics of Crystals
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </developer>
+    <developer>
+      <email>andrew-thiel@uiowa.edu</email>
+      <id>andthiel</id>
+      <name>Andrew Thiel</name>
+      <organization>Biomedical Engineering Graduate Student, Schnieders Labs, The U. of Iowa
+      </organization>
+      <organizationUrl>http://www.uiowa.edu</organizationUrl>
+      <roles>
+        <role>
+          Constant pH Simulation methods.
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </developer>
+    <developer>
+      <email>rae-corrigan@uiowa.edu</email>
+      <id>rcorrigan</id>
+      <name>Rae Corrigan</name>
+      <organization>Biomedical Engineering Graduate Student, Casavant and Schnieders Labs, The U. of
+        Iowa
+      </organization>
+      <organizationUrl>http://www.uiowa.edu</organizationUrl>
+      <roles>
+        <role>
+          Continuum Solvation and Nucleic Acid Design
+        </role>
+      </roles>
+      <timezone>-5</timezone>
+    </developer>
+  </developers>
+  <distributionManagement>
+    <downloadUrl>http://ffx.biochem.uiowa.edu/download.html</downloadUrl>
+    <repository>
+      <id>github</id>
+      <name>GitHub SchniedersLab Apache Maven Packages</name>
+      <uniqueVersion>false</uniqueVersion>
+      <url>${release.repo}</url>
+    </repository>
+    <site>
+      <id>Website</id>
+      <name>Force Field X Website Deploy Location</name>
+      <url>${website.repo}</url>
+    </site>
+    <snapshotRepository>
+      <id>Snapshots</id>
+      <name>Local Maven SNAPSHOT Repository</name>
+      <uniqueVersion>false</uniqueVersion>
+      <url>${snapshot.repo}</url>
+    </snapshotRepository>
+  </distributionManagement>
+  <groupId>edu.uiowa.eng.ffx</groupId>
+  <inceptionYear>2001</inceptionYear>
+  <issueManagement>
+    <system>GitHub Issues</system>
+    <url>http://github.com/SchniedersLab/forcefieldx/issues</url>
+  </issueManagement>
+  <licenses>
+    <license>
+      <comments>
+        Force Field X is free software; you can redistribute it and/or modify it
+        under the terms of the GNU General Public License version 3 as published by
+        the Free Software Foundation.
+
+        Force Field X is distributed in the hope that it will be useful, but WITHOUT
+        ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+        FOR A PARTICULAR PURPOSE. See the GNU General Public License below for more details.
+
+        Linking Force Field X statically or dynamically with other modules is making a
+        combined work based on this library. Thus, the terms and conditions of the
+        GNU General Public License cover the whole combination.
+
+        As a special exception, the copyright holders of this library give you
+        permission to link this library with independent modules to produce an
+        executable, regardless of the license terms of these independent modules, and
+        to copy and distribute the resulting executable under terms of your choice,
+        provided that you also meet, for each linked independent module, the terms
+        and conditions of the license of that module. An independent module is a
+        module which is not derived from or based on this library. If you modify this
+        library, you may extend this exception to your version of the library, but
+        you are not obligated to do so. If you do not wish to do so, delete this
+        exception statement from your version.
+      </comments>
+      <distribution>manual</distribution>
+      <name>GPL version 3 with Linking Exception</name>
+      <url>http://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
+    </license>
+  </licenses>
+  <modelVersion>4.0.0</modelVersion>
+  <modules>
+    <module>modules/algorithms</module>
+    <module>modules/crystal</module>
+    <module>modules/numerics</module>
+    <module>modules/openmm</module>
+    <module>modules/pj</module>
+    <module>modules/potential</module>
+    <module>modules/ui</module>
+    <module>modules/utilities</module>
+    <module>modules/xray</module>
+  </modules>
+  <name>Force Field X</name>
+  <organization>
+    <!-- This is used to generate the Copyright on the website.
+    Module authors can use their name. -->
+    <name>Michael J. Schnieders</name>
+    <url>http://ffx.biochem.uiowa.edu</url>
+  </organization>
+  <packaging>pom</packaging>
+  <profiles>
+    <profile>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>versions-maven-plugin</artifactId>
-                <version>${versions.version}</version>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>plugin-updates-report</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-            <plugin>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>${project-info-reports.version}</version>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>ci-management</report>
-                            <report>dependencies</report>
-                            <report>dependency-convergence</report>
-                            <report>dependency-management</report>
-                            <report>distribution-management</report>
-                            <report>issue-management</report>
-                            <report>licenses</report>
-                            <report>mailing-lists</report>
-                            <report>modules</report>
-                            <report>plugin-management</report>
-                            <report>plugins</report>
-                            <report>team</report>
-                            <report>scm</report>
-                            <report>summary</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-                <configuration>
-                    <showAvatarImages>true</showAvatarImages>
-                    <dependencyDetailsEnabled>${dependencyDetails}</dependencyDetailsEnabled>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${javadoc.version}</version>
-                <inherited>true</inherited>
-                <configuration>
-                    <quiet>true</quiet>
-                    <failOnError>false</failOnError>
-                    <!-- excludePackageNames>edu.rit.*</excludePackageNames -->
-                </configuration>
-                <reportSets>
-                    <reportSet>
-                        <id>aggregate</id>
-                        <reports>
-                            <report>aggregate</report>
-                            <!--report>test-aggregate</report-->
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-            <plugin>
-                <artifactId>maven-jxr-plugin</artifactId>
-                <version>${jxr.version}</version>
-                <reportSets>
-                    <reportSet>
-                        <id>aggregate</id>
-                        <reports>
-                            <report>aggregate</report>
-                            <report>test-aggregate</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-                <!-- configuration>
-                    <goal>aggregate</goal>
-                    <goal>test-aggregate</goal>
-                </configuration -->
-            </plugin>
-            <plugin>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>${surefire.version}</version>
-                <configuration>
-                    <linkXRef>true</linkXRef>
-                    <aggregate>true</aggregate>
-                    <alwaysGenerateSurefireReport>true</alwaysGenerateSurefireReport>
-                </configuration>
-            </plugin>
-            <!-- plugin>
-                <artifactId>maven-changes-plugin</artifactId>
-                <version>2.12.1</version>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>jira-report</report>
-                            <report>changes-report</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin -->
-            <!-- plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-changelog-plugin</artifactId>
-                <version>2.2</version>
-            </plugin -->
-            <plugin>
-                <artifactId>maven-linkcheck-plugin</artifactId>
-                <version>${linkcheck.version}</version>
-            </plugin>
-            <plugin>
-                <artifactId>maven-pmd-plugin</artifactId>
-                <version>${pmd.version}</version>
-                <configuration>
-                    <linkXRef>true</linkXRef>
-                    <minimumTokens>500</minimumTokens>
-                    <aggregate>true</aggregate>
-                    <targetJdk>11</targetJdk>
-                    <minimumPriority>2</minimumPriority>
-                </configuration>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>pmd</report>
-                            <report>cpd</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-            <!-- plugin>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.0.0</version>
-                <configuration>
-                    <goal>checkstyle-aggregate</goal>
-                </configuration>
-            </plugin -->
-            <!-- plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>jdepend-maven-plugin</artifactId>
-                <version>2.0</version>
-            </plugin -->
+          <plugin>
+            <artifactId>maven-jarsigner-plugin</artifactId>
+            <configuration>
+              <alias>FFXKey</alias>
+              <keypass>${keypass}</keypass>
+              <removeExistingSignatures>true</removeExistingSignatures>
+              <storepass>${storepass}</storepass>
+              <tsa>http://timestamp.digicert.com</tsa>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <id>sign</id>
+                <phase>install</phase>
+              </execution>
+            </executions>
+          </plugin>
         </plugins>
-    </reporting>
-    <distributionManagement>
-        <downloadUrl>http://ffx.biochem.uiowa.edu/download.html</downloadUrl>
-        <site>
-            <id>Website</id>
-            <name>Force Field X Website Deploy Location</name>
-            <url>${website.repo}</url>
-        </site>
-        <snapshotRepository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>Snapshots</id>
-            <name>Local Maven SNAPSHOT Repository</name>
-            <url>${snapshot.repo}</url>
-        </snapshotRepository>
-        <repository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>github</id>
-            <name>GitHub SchniedersLab Apache Maven Packages</name>
-            <url>${release.repo}</url>
-        </repository>
-    </distributionManagement>
-    <modules>
-        <module>modules/algorithms</module>
-        <module>modules/crystal</module>
-        <module>modules/numerics</module>
-        <module>modules/openmm</module>
-        <module>modules/pj</module>
-        <module>modules/potential</module>
-        <module>modules/ui</module>
-        <module>modules/utilities</module>
-        <module>modules/xray</module>
-    </modules>
-    <properties>
-        <!-- Version of FFX  -->
-        <ffx.version>1.0.0-BETA</ffx.version>
-        <!-- Default locations for deploying the website, snapshot location and
-        release location. These can be over-ridden by a developer's
-        settings.xml -->
-        <website.repo>file:website</website.repo>
-        <snapshot.repo>file:lib</snapshot.repo>
-        <release.repo>file:release</release.repo>
-        <!-- Control the source version and target JRE version -->
-        <compileVersion>11</compileVersion>
-        <targetVersion>11</targetVersion>
-        <!-- Setting the source encoding is required for builds
-        that are platform independent. -->
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
-        <timestamp>${maven.build.timestamp}</timestamp>
-        <!-- Skip most website reports by default -->
-        <assembly.skipAssembly>false</assembly.skipAssembly>
-        <changes.jira.skip>true</changes.jira.skip>
-        <checkstyle.skip>true</checkstyle.skip>
-        <dependencyDetails>false</dependencyDetails>
-        <maven.javadoc.skip>false</maven.javadoc.skip>
-        <maven.jxr.skip>false</maven.jxr.skip>
-        <linkcheck.skip>true</linkcheck.skip>
-        <pmd.skip>false</pmd.skip>
-        <skipSurefireReport>false</skipSurefireReport>
-        <skipTests>true</skipTests>
-        <failIfNoTests>false</failIfNoTests>
-        <!-- Specify versions of Dependencies to Use -->
-        <biojava.version>5.3.0</biojava.version>
-        <cdk.version>2.3</cdk.version>
-        <ciftools-java.version>0.10.0</ciftools-java.version>
-        <clustering.version>1.2.0</clustering.version>
-        <commons-beanutils.version>1.9.3</commons-beanutils.version>
-        <commons-collections4.version>4.4</commons-collections4.version>
-        <commons-configuration2.version>2.7</commons-configuration2.version>
-        <commons-io.version>2.6</commons-io.version>
-        <commons-lang3.version>3.10</commons-lang3.version>
-        <commons-math3.version>3.6.1</commons-math3.version>
-        <fastutil.version>8.3.0</fastutil.version>
-        <findbugs.version>3.0.2</findbugs.version>
-        <groovy-all.version>3.0.0.1</groovy-all.version>
-        <guava.version>28.1-jre</guava.version>
-        <jaxb-api.version>2.3.0</jaxb-api.version>
-        <java3d.version>1.7.0-final</java3d.version>
-        <jcuda.version>10.1.0</jcuda.version>
-        <jna.version>4.1.0</jna.version>
-        <jogamp-fat.version>2.4.0</jogamp-fat.version>
-        <jopenmm.version>7.5.0</jopenmm.version>
-        <junit.version>4.13</junit.version>
-        <log4j.version>2.13.1</log4j.version>
-        <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
-        <picocli.version>4.1.4</picocli.version>
-        <pj.version>1.0.1</pj.version>
-        <tornado.version>0.6</tornado.version>
-        <quickhull3D.version>1.0.0</quickhull3D.version>
-        <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
-        <tensorflow.version>1.12.0</tensorflow.version>
-        <!-- Maven Core Plugin Versions -->
-        <clean.version>3.1.0</clean.version>
-        <compiler.version>3.8.1</compiler.version>
-        <deploy.version>3.0.0-M1</deploy.version>
-        <install.version>3.0.0-M1</install.version>
-        <resources.version>3.1.0</resources.version>
-        <site.version>3.8.2</site.version>
-        <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
-        <surefire.version>3.0.0-M2</surefire.version>
-        <!-- Maven Packaging Tools Plugin Versions -->
-        <jar.version>3.2.0</jar.version>
-        <shade.version>3.2.1</shade.version>
-        <source.version>3.2.1</source.version>
-        <!-- Maven Reporting Plugin Versions -->
-        <changes.version>2.12.1</changes.version>
-        <checkstyle.version>3.1.0</checkstyle.version>
-        <javadoc.version>3.1.1</javadoc.version>
-        <jxr.version>3.0.0</jxr.version>
-        <linkcheck.version>1.2</linkcheck.version>
-        <pmd.version>3.12.0</pmd.version>
-        <project-info-reports.version>3.0.0</project-info-reports.version>
-        <!-- Maven Tools Plugin Versions -->
-        <antrun.version>1.8</antrun.version>
-        <assembly.version>3.2.0</assembly.version>
-        <dependency.version>3.1.1</dependency.version>
-        <enforcer.version>3.0.0-M3</enforcer.version>
-        <jarsigner.version>3.0.0</jarsigner.version>
-        <release.version>3.0.0-M1</release.version>
-        <scm.version>1.11.2</scm.version>
-        <!-- MojoHaus Plugins -->
-        <jdepend.version>2.0</jdepend.version>
-        <appassembler.version>1.10</appassembler.version>
-        <buildnumber.version>1.2.10</buildnumber.version>
-        <exec.version>1.6.0</exec.version>
-        <versions.version>2.7</versions.version>
-        <properties.version>1.0.0</properties.version>
-        <!-- Clover Plugin -->
-        <clover.version>4.3.1</clover.version>
-        <fmt.version>2.9</fmt.version>
-    </properties>
-    <dependencies>
-        <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
-            <version>${groovy-all.version}</version>
-            <type>pom</type>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>${jaxb-api.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305 -->
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <version>${findbugs.version}</version>
-        </dependency>
-    </dependencies>
+      </build>
+      <id>ffx.jarsigner</id>
+    </profile>
+    <profile>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>clover-maven-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>edu/**/*.java</exclude>
+                <exclude>ffx/ui/**/*.java</exclude>
+              </excludes>
+              <generateHtml>true</generateHtml>
+              <generateXml>true</generateXml>
+              <includesTestSourceRoots>false</includesTestSourceRoots>
+            </configuration>
+            <groupId>org.openclover</groupId>
+            <version>${clover.version}</version>
+          </plugin>
+        </plugins>
+      </build>
+      <id>ffx.clover</id>
+      <reporting>
+        <plugins>
+          <plugin>
+            <artifactId>clover-maven-plugin</artifactId>
+            <groupId>org.openclover</groupId>
+            <version>${clover.version}</version>
+          </plugin>
+        </plugins>
+      </reporting>
+    </profile>
+  </profiles>
+  <properties>
+    <!-- Version of FFX  -->
+    <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
+    <!-- Default locations for deploying the website, snapshot location and
+    release location. These can be over-ridden by a developer's
+    settings.xml -->
+    <antrun.version>1.8</antrun.version>
+    <appassembler.version>1.10</appassembler.version>
+    <assembly.skipAssembly>false</assembly.skipAssembly>
+    <!-- Control the source version and target JRE version -->
+    <assembly.version>3.2.0</assembly.version>
+    <biojava.version>5.3.0</biojava.version>
+    <!-- Setting the source encoding is required for builds
+    that are platform independent. -->
+    <buildnumber.version>1.2.10</buildnumber.version>
+    <cdk.version>2.3</cdk.version>
+    <changes.jira.skip>true</changes.jira.skip>
+    <!-- Skip most website reports by default -->
+    <changes.version>2.12.1</changes.version>
+    <checkstyle.skip>true</checkstyle.skip>
+    <checkstyle.version>3.1.1</checkstyle.version>
+    <ciftools-java.version>0.10.0</ciftools-java.version>
+    <clean.version>3.1.0</clean.version>
+    <clover.version>4.4.1</clover.version>
+    <clustering.version>1.2.0</clustering.version>
+    <commons-beanutils.version>1.9.3</commons-beanutils.version>
+    <commons-collections4.version>4.4</commons-collections4.version>
+    <commons-configuration2.version>2.7</commons-configuration2.version>
+    <commons-io.version>2.6</commons-io.version>
+    <!-- Specify versions of Dependencies to Use -->
+    <commons-lang3.version>3.10</commons-lang3.version>
+    <commons-math3.version>3.6.1</commons-math3.version>
+    <compileVersion>11</compileVersion>
+    <compiler.version>3.8.1</compiler.version>
+    <dependency.version>3.1.2</dependency.version>
+    <dependencyDetails>false</dependencyDetails>
+    <deploy.version>3.0.0-M1</deploy.version>
+    <enforcer.version>3.0.0-M3</enforcer.version>
+    <exec.version>1.6.0</exec.version>
+    <failIfNoTests>false</failIfNoTests>
+    <fastutil.version>8.3.0</fastutil.version>
+    <ffx.version>1.0.0-BETA</ffx.version>
+    <findbugs.version>3.0.2</findbugs.version>
+    <fmt.version>2.9</fmt.version>
+    <groovy-all.version>3.0.0.1</groovy-all.version>
+    <guava.version>28.1-jre</guava.version>
+    <install.version>3.0.0-M1</install.version>
+    <jar.version>3.2.0</jar.version>
+    <jarsigner.version>3.0.0</jarsigner.version>
+    <java3d.version>1.7.0-final</java3d.version>
+    <javadoc.version>3.2.0</javadoc.version>
+    <jaxb-api.version>2.3.0</jaxb-api.version>
+    <jcuda.version>10.1.0</jcuda.version>
+    <jdepend.version>2.0</jdepend.version>
+    <jna.version>4.1.0</jna.version>
+    <jogamp-fat.version>2.4.0</jogamp-fat.version>
+    <jopenmm.version>7.5.0</jopenmm.version>
+    <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
+    <junit.version>4.13</junit.version>
+    <!-- Maven Core Plugin Versions -->
+    <jxr.version>3.0.0</jxr.version>
+    <linkcheck.skip>true</linkcheck.skip>
+    <linkcheck.version>1.2</linkcheck.version>
+    <log4j.version>2.13.1</log4j.version>
+    <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
+    <maven.javadoc.skip>false</maven.javadoc.skip>
+    <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
+    <maven.jxr.skip>false</maven.jxr.skip>
+    <!-- Maven Packaging Tools Plugin Versions -->
+    <picocli.version>4.1.4</picocli.version>
+    <pj.version>1.0.1</pj.version>
+    <pmd.skip>false</pmd.skip>
+    <!-- Maven Reporting Plugin Versions -->
+    <pmd.version>3.13.0</pmd.version>
+    <project-info-reports.version>3.0.0</project-info-reports.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <properties.version>1.0.0</properties.version>
+    <quickhull3D.version>1.0.0</quickhull3D.version>
+    <release.repo>file:release</release.repo>
+    <release.version>3.0.0-M1</release.version>
+    <!-- Maven Tools Plugin Versions -->
+    <resources.version>3.1.0</resources.version>
+    <scm.version>1.11.2</scm.version>
+    <shade.version>3.2.3</shade.version>
+    <site.version>3.9.0</site.version>
+    <skipSurefireReport>false</skipSurefireReport>
+    <skipTests>true</skipTests>
+    <snapshot.repo>file:lib</snapshot.repo>
+    <!-- MojoHaus Plugins -->
+    <source.version>3.2.1</source.version>
+    <surefire.version>3.0.0-M2</surefire.version>
+    <targetVersion>11</targetVersion>
+    <tensorflow.version>1.12.0</tensorflow.version>
+    <timestamp>${maven.build.timestamp}</timestamp>
+    <tornado.version>0.6</tornado.version>
+    <!-- Clover Plugin -->
+    <versions.version>2.7</versions.version>
+    <website.repo>file:website</website.repo>
+  </properties>
+  <reporting>
+    <plugins>
+      <plugin>
+        <artifactId>versions-maven-plugin</artifactId>
+        <groupId>org.codehaus.mojo</groupId>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>plugin-updates-report</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+        <version>${versions.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <configuration>
+          <dependencyDetailsEnabled>${dependencyDetails}</dependencyDetailsEnabled>
+          <showAvatarImages>true</showAvatarImages>
+        </configuration>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>ci-management</report>
+              <report>dependencies</report>
+              <report>dependency-convergence</report>
+              <report>dependency-management</report>
+              <report>distribution-management</report>
+              <report>issue-management</report>
+              <report>licenses</report>
+              <report>mailing-lists</report>
+              <report>modules</report>
+              <report>plugin-management</report>
+              <report>plugins</report>
+              <report>team</report>
+              <report>scm</report>
+              <report>summary</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+        <version>${project-info-reports.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <failOnError>false</failOnError>
+          <quiet>true</quiet>
+          <!-- excludePackageNames>edu.rit.*</excludePackageNames -->
+        </configuration>
+        <inherited>true</inherited>
+        <reportSets>
+          <reportSet>
+            <id>aggregate</id>
+            <reports>
+              <report>aggregate</report>
+              <!--report>test-aggregate</report-->
+            </reports>
+          </reportSet>
+        </reportSets>
+        <version>${javadoc.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jxr-plugin</artifactId>
+        <reportSets>
+          <reportSet>
+            <id>aggregate</id>
+            <reports>
+              <report>aggregate</report>
+              <report>test-aggregate</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+        <version>${jxr.version}</version>
+        <!-- configuration>
+            <goal>aggregate</goal>
+            <goal>test-aggregate</goal>
+        </configuration -->
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+        <configuration>
+          <aggregate>true</aggregate>
+          <alwaysGenerateSurefireReport>true</alwaysGenerateSurefireReport>
+          <linkXRef>true</linkXRef>
+        </configuration>
+        <version>${surefire.version}</version>
+      </plugin>
+      <!-- plugin>
+          <artifactId>maven-changes-plugin</artifactId>
+          <version>2.12.1</version>
+          <reportSets>
+              <reportSet>
+                  <reports>
+                      <report>jira-report</report>
+                      <report>changes-report</report>
+                  </reports>
+              </reportSet>
+          </reportSets>
+      </plugin -->
+      <!-- plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-changelog-plugin</artifactId>
+          <version>2.2</version>
+      </plugin -->
+      <plugin>
+        <artifactId>maven-linkcheck-plugin</artifactId>
+        <version>${linkcheck.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <configuration>
+          <aggregate>true</aggregate>
+          <linkXRef>true</linkXRef>
+          <minimumPriority>2</minimumPriority>
+          <minimumTokens>500</minimumTokens>
+          <targetJdk>11</targetJdk>
+        </configuration>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>pmd</report>
+              <report>cpd</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+        <version>${pmd.version}</version>
+      </plugin>
+      <!-- plugin>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>3.0.0</version>
+          <configuration>
+              <goal>checkstyle-aggregate</goal>
+          </configuration>
+      </plugin -->
+      <!-- plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>jdepend-maven-plugin</artifactId>
+          <version>2.0</version>
+      </plugin -->
+    </plugins>
+  </reporting>
+  <repositories>
+    <repository>
+      <id>1.ffx.repo</id>
+      <name>FFX Dependency Repository</name>
+      <releases>
+        <checksumPolicy>ignore</checksumPolicy>
+        <enabled>true</enabled>
+        <updatePolicy>daily</updatePolicy>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <url>http://github.com/mjschnie/dependency/raw/master</url>
+    </repository>
+    <repository>
+      <id>2.apache.repo</id>
+      <name>Apache Maven Repository</name>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+    <repository>
+      <id>3.jogamp.repo</id>
+      <name>JogAmp Maven Repository</name>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <url>http://jogamp.org/deployment/maven</url>
+    </repository>
+    <repository>
+      <id>4.biojava.legacy.repo</id>
+      <name>BioJava's Git based legacy maven repo</name>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <url>http://github.com/biojava/maven-repo/raw/master/</url>
+    </repository>
+    <repository>
+      <id>5.biojava.repo</id>
+      <name>BioJava Maven Repository</name>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <url>http://www.biojava.org/download/maven/</url>
+    </repository>
+    <repository>
+      <id>6.u.manchester.repo</id>
+      <name>Tornadovm Repository</name>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
+    </repository>
+    <!-- repository>
+        <name>JFrog OpenSource Snapshots</name>
+        <id>6.jfrog.repo</id>
+        <url>https://oss.jfrog.org/artifactory/oss-snapshot-local/</url>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository -->
+  </repositories>
+  <scm>
+    <connection>scm:git:http://github.com/SchniedersLab/forcefieldx.git</connection>
+    <developerConnection>scm:git:git@github.com:SchniedersLab/forcefieldx.git</developerConnection>
+    <url>http://github.com/SchniedersLab/forcefieldx</url>
+  </scm>
+  <url>http://ffx.biochem.uiowa.edu</url>
+  <version>1.0.0-beta</version>
 </project>
