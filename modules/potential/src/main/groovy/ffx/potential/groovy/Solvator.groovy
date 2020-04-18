@@ -689,15 +689,13 @@ class Solvator extends PotentialScript {
     if (solventChain == ' '.charAt(0)) {
       logger.severe(" Could not find an unused character A-Z for the new solvent!")
     }
-    // @formatter:on
-    logger.info(" New solvent molecules will be placed in chain ${solventChain}")
     // @formatter:off
+    logger.info(" New solvent molecules will be placed in chain ${solventChain}")
     if (ionChain == ' '.charAt(0)) {
       logger.severe(" Could not find an unused character A-Z for the new solvent!")
     }
-    // @formatter:on
     logger.info(" New ions will be placed in chain ${ionChain}")
-    // @formatter:off
+    // @formatter:on
 
     // Accumulator for new solvent molecules.
     // Currently implemented as an ArrayList with the notion of removing from the end of the List.
@@ -782,9 +780,9 @@ class Solvator extends PotentialScript {
     Collections.shuffle(newMolecules, random)
 
     if (ionFileName) {
-      // @formatter:on
-      logger.info(" Ions will be placed into chain ${ionChain}")
       // @formatter:off
+      logger.info(" Ions will be placed into chain ${ionChain}")
+      // @formatter:on
       double volume = newBox[0] * newBox[1] * newBox[2]
       // newCrystal.volume may also work.
       // The L -> mL and M -> mM conversions cancel.
@@ -851,17 +849,17 @@ class Solvator extends PotentialScript {
 
       // Begin swapping waters for ions.
       double initialCharge = activeAssembly.getCharge(false)
-      // @formatter:on
-      logger.info(" Charge before addition of ions is ${initialCharge}")
       // @formatter:off
+      logger.info(" Charge before addition of ions is ${initialCharge}")
+      // @formatter:on
 
       for (IonAddition ia : byConc) {
         logger.info(ia.toString())
         int nIons = (int) Math.ceil(ionsPermM * ia.conc)
         if (nIons > newMolecules.size()) {
-          // @formatter:on
-          logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nIons} ions!")
           // @formatter:off
+          logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nIons} ions!")
+          // @formatter:on
         }
         logger.info(format(" Number of ions to place: %d\n", nIons))
         for (int i = 0; i < nIons; i++) {
@@ -872,26 +870,18 @@ class Solvator extends PotentialScript {
         initialCharge += nIons * ia.charge
       }
 
-      // @formatter:on
-      logger.info(" Charge before neutralization is ${initialCharge}")
       // @formatter:off
-
+      logger.info(" Charge before neutralization is ${initialCharge}")
       if (initialCharge > 0) {
         if (neutAnion == null) {
-          // @formatter:on
           logger.info(" No counter-anion specified; system will be cationic at charge ${initialCharge}")
-          // @formatter:off
         } else {
-          // @formatter:on
           logger.info(" Neutralizing system with ${neutAnion.toString()}")
-          // @formatter:off
           double charge = neutAnion.charge
           int nAnions = (int) Math.round(-1.0 * (initialCharge / charge))
           double netCharge = initialCharge + (nAnions * charge)
           if (nAnions > newMolecules.size()) {
-            // @formatter:on
             logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nAnions} counter-anions!")
-            // @formatter:off
           }
           for (int i = 0; i < nAnions; i++) {
             Atom[] newIon = swapIon(newMolecules, neutAnion, currXYZIndex, ionChain, ionResSeq++)
@@ -904,20 +894,15 @@ class Solvator extends PotentialScript {
         }
       } else if (initialCharge < 0) {
         if (neutCation == null) {
-          // @formatter:on
           logger.info(" No counter-cation specified; system will be anionic at charge ${initialCharge}")
-          // @formatter:off
         } else {
-          // @formatter:on
           logger.info(" Neutralizing system with ${neutCation.toString()}")
-          // @formatter:off
           double charge = neutCation.charge
           int nCations = (int) Math.round(-1.0 * (initialCharge / charge))
           double netCharge = initialCharge + (nCations * charge)
           if (nCations > newMolecules.size()) {
-            // @formatter:on
             logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nCations} counter-cations!")
-            // @formatter:off
+            // @formatter:on
           }
           for (int i = 0; i < nCations; i++) {
             Atom[] newIon = swapIon(newMolecules, neutCation, currXYZIndex, ionChain, ionResSeq++)

@@ -67,10 +67,10 @@ import java.util.stream.Collectors
 class RepexThermo extends Thermodynamics {
 
   @CommandLine.Mixin
-  RepexOSTOptions repex;
+  RepexOSTOptions repex
 
-  private RepExOST repExOST;
-  private CrystalPotential finalPotential;
+  private RepExOST repExOST
+  private CrystalPotential finalPotential
 
   @Override
   RepexThermo run() {
@@ -80,20 +80,20 @@ class RepexThermo extends Thermodynamics {
       return null
     }
 
-    boolean fromActive;
-    List<String> arguments;
+    boolean fromActive
+    List<String> arguments
     if (filenames) {
-      arguments = filenames;
-      fromActive = false;
+      arguments = filenames
+      fromActive = false
     } else {
-      logger.warning(" Untested: use of active assembly instead of provided filenames!");
-      MolecularAssembly mola = algorithmFunctions.getActiveAssembly();
+      logger.warning(" Untested: use of active assembly instead of provided filenames!")
+      MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
       if (mola == null) {
         logger.info(helpString())
-        return null;
+        return null
       }
       arguments = Collections.singletonList(mola.getFile().getName())
-      fromActive = true;
+      fromActive = true
     }
 
     int nArgs = arguments.size()
@@ -125,7 +125,7 @@ class RepexThermo extends Thermodynamics {
     Comm world = Comm.world()
     int size = world.size()
     if (size < 2) {
-      logger.severe(" RepexThermo requires multiple processes, found only one!");
+      logger.severe(" RepexThermo requires multiple processes, found only one!")
     }
     int rank = (size > 1) ? world.rank() : 0
 
@@ -142,20 +142,20 @@ class RepexThermo extends Thermodynamics {
 
     // SEGMENT DIFFERS FROM THERMODYNAMICS.
 
-    String filepath = FilenameUtils.getFullPath(filePathNoExtension);
-    String fileBase = FilenameUtils.getBaseName(FilenameUtils.getName(filePathNoExtension));
-    String rankDirName = String.format("%s%d", filepath, rank);
-    File rankDirectory = new File(rankDirName);
+    String filepath = FilenameUtils.getFullPath(filePathNoExtension)
+    String fileBase = FilenameUtils.getBaseName(FilenameUtils.getName(filePathNoExtension))
+    String rankDirName = String.format("%s%d", filepath, rank)
+    File rankDirectory = new File(rankDirName)
     if (!rankDirectory.exists()) {
-      rankDirectory.mkdir();
+      rankDirectory.mkdir()
     }
     // @formatter:off
-    rankDirName = "${rankDirName}${File.separator}";
-    String withRankName = "${rankDirName}${fileBase}";
-    File lambdaRestart = new File("${withRankName}.lam");
+    rankDirName = "${rankDirName}${File.separator}"
+    String withRankName = "${rankDirName}${fileBase}"
+    File lambdaRestart = new File("${withRankName}.lam")
     // @formatter:on
 
-    boolean lamExists = lambdaRestart.exists();
+    boolean lamExists = lambdaRestart.exists()
 
     // Read in files.
     logger.info(String.format(" Initializing %d topologies...", nArgs))
@@ -171,24 +171,24 @@ class RepexThermo extends Thermodynamics {
     MolecularAssembly[] topologies =
         topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
-    StringBuilder sb = new StringBuilder("\n Running ");
+    StringBuilder sb = new StringBuilder("\n Running ")
     switch (thermodynamics.getAlgorithm()) {
     // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
       case ThermodynamicsOptions.ThermodynamicsAlgorithm.OST:
         ostAlg:
         {
-          sb.append("Orthogonal Space Tempering");
+          sb.append("Orthogonal Space Tempering")
         }
-        break;
+        break
       default:
         defAlg:
         {
           throw new IllegalArgumentException(
-              " RepexThermo currently does not support fixed-lambda alchemy!");
+              " RepexThermo currently does not support fixed-lambda alchemy!")
         }
-        break;
+        break
     }
-    sb.append(" with histogram replica exchange for ");
+    sb.append(" with histogram replica exchange for ")
 
     potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
     LambdaInterface linter = (LambdaInterface) potential
@@ -203,17 +203,17 @@ class RepexThermo extends Thermodynamics {
       randomSymop.randomize(topologies[0])
     }
 
-    multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size);
+    multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size)
 
-    boolean isMC = ostOptions.isMc();
-    boolean twoStep = ostOptions.isTwoStep();
-    MonteCarloOST mcOST = null;
-    MolecularDynamics md;
+    boolean isMC = ostOptions.isMc()
+    boolean twoStep = ostOptions.isTwoStep()
+    MonteCarloOST mcOST = null
+    MolecularDynamics md
 
     if (thermodynamics.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
-      // @formatter:on
-      File firstHisto = new File("${filepath}0${File.separator}${fileBase}.his");
       // @formatter:off
+      File firstHisto = new File("${filepath}0${File.separator}${fileBase}.his")
+      // @formatter:on
 
       orthogonalSpaceTempering =
           ostOptions.constructOST(potential, lambdaRestart, firstHisto, topologies[0],
@@ -225,55 +225,55 @@ class RepexThermo extends Thermodynamics {
       if (isMC) {
         mcOST = ostOptions.
             setupMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose,
-                algorithmListener);
-        md = mcOST.getMD();
+                algorithmListener)
+        md = mcOST.getMD()
       } else {
         md = ostOptions.
-            assembleMolecularDynamics(topologies, finalPotential, dynamics, algorithmListener);
+            assembleMolecularDynamics(topologies, finalPotential, dynamics, algorithmListener)
       }
       if (!lamExists) {
         if (finalPotential instanceof LambdaInterface) {
-          ((LambdaInterface) finalPotential).setLambda(initLambda);
+          ((LambdaInterface) finalPotential).setLambda(initLambda)
         } else {
-          orthogonalSpaceTempering.setLambda(initLambda);
+          orthogonalSpaceTempering.setLambda(initLambda)
         }
       }
 
       CompositeConfiguration allProperties = new CompositeConfiguration(
-          topologies[0].getProperties());
+          topologies[0].getProperties())
       if (additionalProperties != null) {
-        allProperties.addConfiguration(additionalProperties);
+        allProperties.addConfiguration(additionalProperties)
       }
 
       for (int i = 1; i < size; i++) {
-        // @formatter:on
-        File rankIHisto = new File("${filepath}${i}${File.separator}${fileBase}.his");
         // @formatter:off
+        File rankIHisto = new File("${filepath}${i}${File.separator}${fileBase}.his")
+        // @formatter:on
         orthogonalSpaceTempering.addHistogram(ostOptions.generateHistogramSettings(rankIHisto,
-            lambdaRestart.toString(), allProperties, i, dynamics, lambdaParticle, true, false));
+            lambdaRestart.toString(), allProperties, i, dynamics, lambdaParticle, true, false))
       }
 
       if (isMC) {
         repExOST = RepExOST.repexMC(orthogonalSpaceTempering, mcOST, dynamics, ostOptions,
             topologies[0].getProperties(), writeout.getFileType(), twoStep,
-            repex.getRepexFrequency());
+            repex.getRepexFrequency())
       } else {
         repExOST = RepExOST.repexMD(orthogonalSpaceTempering, md, dynamics, ostOptions,
-            topologies[0].getProperties(), writeout.getFileType(), repex.getRepexFrequency());
+            topologies[0].getProperties(), writeout.getFileType(), repex.getRepexFrequency())
       }
 
-      long eSteps = thermodynamics.getEquilSteps();
+      long eSteps = thermodynamics.getEquilSteps()
       if (eSteps > 0) {
-        repExOST.mainLoop(eSteps, true);
+        repExOST.mainLoop(eSteps, true)
       }
-      repExOST.mainLoop(dynamics.getNumSteps(), false);
+      repExOST.mainLoop(dynamics.getNumSteps(), false)
     } else {
       logger.severe(" RepexThermo currently does not support fixed-lambda alchemy!")
     }
 
-    // @formatter:on
-    logger.info(" ${thermodynamics.getAlgorithm()} with Histogram Replica Exchange Done.");
     // @formatter:off
+    logger.info(" ${thermodynamics.getAlgorithm()} with Histogram Replica Exchange Done.")
+    // @formatter:on
 
     return this
   }
@@ -281,18 +281,18 @@ class RepexThermo extends Thermodynamics {
 
   @Override
   OrthogonalSpaceTempering getOST() {
-    return repExOST == null ? null : repExOST.getOST();
+    return repExOST == null ? null : repExOST.getOST()
   }
 
   @Override
   CrystalPotential getPotential() {
-    return (repExOST == null) ? potential : repExOST.getOST();
+    return (repExOST == null) ? potential : repExOST.getOST()
   }
 
   @Override
   List<Potential> getPotentials() {
     if (repExOST == null) {
-      return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
+      return potential == null ? Collections.emptyList() : Collections.singletonList(potential)
     }
     return Collections.singletonList(repExOST.getOST())
   }

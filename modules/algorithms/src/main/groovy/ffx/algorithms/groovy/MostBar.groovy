@@ -255,9 +255,9 @@ class MostBar extends AlgorithmsScript {
     if (lamBins < 1) {
       File histogramFile = new File(histogramName)
       if (!histogramFile.exists() || !histogramFile.canRead()) {
-        // @formatter:on
-        logger.severe(" Histogram file ${histogramName} does not exist or could not be read!")
         // @formatter:off
+        logger.severe(" Histogram file ${histogramName} does not exist or could not be read!")
+        // @formatter:on
       }
 
       HistogramReader hr = null
@@ -265,9 +265,9 @@ class MostBar extends AlgorithmsScript {
         hr = new HistogramReader(new BufferedReader(new FileReader(histogramFile)))
         hr.readHistogramFile()
         lamBins = hr.getLambdaBins()
-        // @formatter:on
-        logger.info(" Autodetected ${lamBins} from histogram file.")
         // @formatter:off
+        logger.info(" Autodetected ${lamBins} from histogram file.")
+        // @formatter:on
       } finally {
         hr?.close()
       }
@@ -294,9 +294,9 @@ class MostBar extends AlgorithmsScript {
     OptionalDouble optLam = openers[0].getLastReadLambda()
     // Note: OptionalDouble.isEmpty() is a JDK 11 feature, so !OptionalDouble.isPresent() preserves JDK 8 compatibility.
     if (!optLam.isPresent()) {
-      // @formatter:on
-      throw new IllegalArgumentException(" No lambda records found in the first header of archive file ${filenames[0]}")
       // @formatter:off
+      throw new IllegalArgumentException(" No lambda records found in the first header of archive file ${filenames[0]}")
+      // @formatter:on
     }
 
     start = startFrame - 1
@@ -316,7 +316,7 @@ class MostBar extends AlgorithmsScript {
     if (lambdaSorted) {
       Arrays.fill(observations, -startFrame)
     } else {
-      Arrays.fill(observations, 0);
+      Arrays.fill(observations, 0)
     }
 
     logger.info(" Reading snapshots.")
@@ -398,7 +398,9 @@ class MostBar extends AlgorithmsScript {
 
     // If bootstrap <= 0, skip this section.
     if (bootstrap > 0) {
+      // @formatter:off
       logger.info(" Re-estimate free energy and uncertainty from ${bootstrap} bootstrap trials.")
+      // @formatter:on
 
       EstimateBootstrapper barBS = new EstimateBootstrapper(bar)
       EstimateBootstrapper forBS = new EstimateBootstrapper(forwards)
