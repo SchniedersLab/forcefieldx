@@ -255,9 +255,9 @@ class MostBar extends AlgorithmsScript {
     if (lamBins < 1) {
       File histogramFile = new File(histogramName)
       if (!histogramFile.exists() || !histogramFile.canRead()) {
-        logger.severe(" Histogram file ${
-          histogramName
-        } does not exist or could not be read!")
+        // @formatter:on
+        logger.severe(" Histogram file ${histogramName} does not exist or could not be read!")
+        // @formatter:off
       }
 
       HistogramReader hr = null
@@ -265,9 +265,9 @@ class MostBar extends AlgorithmsScript {
         hr = new HistogramReader(new BufferedReader(new FileReader(histogramFile)))
         hr.readHistogramFile()
         lamBins = hr.getLambdaBins()
-        logger.info(" Autodetected ${
-          lamBins
-        } from histogram file.")
+        // @formatter:on
+        logger.info(" Autodetected ${lamBins} from histogram file.")
+        // @formatter:off
       } finally {
         hr?.close()
       }
@@ -294,10 +294,9 @@ class MostBar extends AlgorithmsScript {
     OptionalDouble optLam = openers[0].getLastReadLambda()
     // Note: OptionalDouble.isEmpty() is a JDK 11 feature, so !OptionalDouble.isPresent() preserves JDK 8 compatibility.
     if (!optLam.isPresent()) {
-      throw new IllegalArgumentException(
-          " No lambda records found in the first header of archive file ${
-            filenames[0]
-          }")
+      // @formatter:on
+      throw new IllegalArgumentException(" No lambda records found in the first header of archive file ${filenames[0]}")
+      // @formatter:off
     }
 
     start = startFrame - 1
@@ -399,9 +398,7 @@ class MostBar extends AlgorithmsScript {
 
     // If bootstrap <= 0, skip this section.
     if (bootstrap > 0) {
-      logger.info(" Re-estimate free energy and uncertainty from ${
-        bootstrap
-      } bootstrap trials.")
+      logger.info(" Re-estimate free energy and uncertainty from ${bootstrap} bootstrap trials.")
 
       EstimateBootstrapper barBS = new EstimateBootstrapper(bar)
       EstimateBootstrapper forBS = new EstimateBootstrapper(forwards)

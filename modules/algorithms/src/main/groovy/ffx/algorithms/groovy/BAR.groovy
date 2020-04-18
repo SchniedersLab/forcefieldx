@@ -280,9 +280,10 @@ class BAR extends AlgorithmsScript {
         mean2, sd2, min2, max2, nSnapshots2))
 
     String barFileName = FilenameUtils.removeExtension(filenames.get(0)) + ".bar"
-    logger.info(" Writing Tinker-compatible .bar file to ${
-      barFileName
-    }. For now: use Tinker's bar command; built-in FFX calculations not yet implemented.")
+    // @formatter:on
+    logger.info(" Writing Tinker-compatible .bar file to ${barFileName}. " +
+            "For now: use Tinker's bar command; built-in FFX calculations not yet implemented.")
+    // @formatter:on
     File barFile = new File(barFileName)
     BufferedWriter bw = null
     try {

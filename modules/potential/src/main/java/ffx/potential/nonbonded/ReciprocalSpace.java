@@ -301,7 +301,7 @@ public class ReciprocalSpace {
       sb.append(format("    B-Spline Order:                    %8d\n", bSplineOrder));
       sb.append(format("    Mesh Density:                      %8.3f\n", density));
       sb.append(format("    Mesh Dimensions:              (%3d,%3d,%3d)\n", fftX, fftY, fftZ));
-      sb.append(format("    Gird Method:                       %8s\n", gridMethod.toString()));
+      sb.append(format("    Grid Method:                       %8s\n", gridMethod.toString()));
       logger.info(sb.toString());
     }
 
