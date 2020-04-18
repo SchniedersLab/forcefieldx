@@ -949,7 +949,7 @@ public class SoluteRadii {
 
   private SoluteRadii() {}
 
-  public static double applyGKRadii(
+  public static void applyGKRadii(
       ForceField forceField, double bondiScale, Atom[] atoms, double[] baseRadius) {
     int nAtoms = atoms.length;
     for (int i = 0; i < nAtoms; i++) {
@@ -961,7 +961,6 @@ public class SoluteRadii {
         baseRadius[i] = soluteType.diameter * 0.5;
       }
     }
-    return bondiScale;
   }
 
   public static void logRadiiSource(ForceField forceField) {
