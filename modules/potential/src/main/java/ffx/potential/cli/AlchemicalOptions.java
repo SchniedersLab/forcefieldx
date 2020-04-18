@@ -92,7 +92,8 @@ public class AlchemicalOptions {
   /**
    * Sets the alchemical atoms for a MolecularAssembly.
    *
-   * @param assembly Assembly to which the atoms belong.
+   * @param assembly        Assembly to which the atoms belong.
+   * @param alchemicalAtoms Alchemical atoms selection string.
    */
   public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms) {
     if (alchemicalAtoms == null || alchemicalAtoms.equalsIgnoreCase("")) {
@@ -138,6 +139,7 @@ public class AlchemicalOptions {
    * Sets the alchemical atoms for a MolecularAssembly.
    *
    * @param assembly Assembly to which the atoms belong.
+   * @param unchargedAtoms Uncharged atoms selection string.
    */
   public static void setUnchargedAtoms(MolecularAssembly assembly, String unchargedAtoms) {
     if (unchargedAtoms == null || unchargedAtoms.equalsIgnoreCase("")) {

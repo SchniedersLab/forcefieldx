@@ -150,7 +150,12 @@ public class ChandlerCavitation {
     }
   }
 
-  /** Compute the cavitation energy. */
+  /**
+   * Compute the cavitation energy.
+   *
+   * @param gradient Add the gradient to this AtomicDoubleArray3D.
+   * @return Returns the cavitation energy.
+   */
   public double energyAndGradientConnolly(AtomicDoubleArray3D gradient) {
 
     connollyRegion.init(atoms, true);
@@ -320,7 +325,7 @@ public class ChandlerCavitation {
   }
 
   public ConnollyRegion getConnollyRegion() {
-    return getConnollyRegion();
+    return connollyRegion;
   }
 
   public double getCrossOver() {

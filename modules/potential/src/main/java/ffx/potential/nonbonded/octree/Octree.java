@@ -1,6 +1,5 @@
 package ffx.potential.nonbonded.octree;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 import org.apache.commons.lang3.BooleanUtils;
@@ -12,20 +11,27 @@ import org.apache.commons.lang3.BooleanUtils;
 public class Octree {
 
   private static final Logger logger = Logger.getLogger(Octree.class.getName());
-
-  /** List of cells */
+  /**
+   * List of all leaf cells
+   */
+  private final ArrayList<OctreeCell> leaves = new ArrayList<>();
+  /**
+   * List of cells
+   */
   private ArrayList<OctreeCell> cells = new ArrayList<>();
   /**
    * Critical (maximum allowed) number of points allowed in any one cell: If a cell already contains
    * nCritical points, it needs to be split
    */
-  private int nCritical = 10;
-  /** List of particles */
-  private ArrayList<OctreeParticle> particles = new ArrayList<>();
-  /** List of all leaf cells */
-  private ArrayList<OctreeCell> leaves = new ArrayList<>();
-  /** Tolerance parameter */
-  private double theta = 0.5;
+  private int nCritical;
+  /**
+   * List of particles
+   */
+  private ArrayList<OctreeParticle> particles;
+  /**
+   * Tolerance parameter
+   */
+  private double theta;
 
   /**
    * Default constructor: only need to pass in a list of particles nCritical and theta set to
@@ -64,6 +70,12 @@ public class Octree {
     this.theta = theta;
   }
 
+  /**
+   * Add a child.
+   *
+   * @param octant The octant.
+   * @param p      Cell index p.
+   */
   public void addChild(int octant, int p) {
     OctreeCell tempCell = new OctreeCell(nCritical);
 
@@ -86,6 +98,11 @@ public class Octree {
     cells.get(c).setnChild(cells.get(p).getnChild() | (1 << octant));
   }
 
+  /**
+   * Build the tree.
+   *
+   * @param root The Octree root cell.
+   */
   public void buildTree(OctreeCell root) {
     // (Re)Initialize cells to an empty array list
     cells = new ArrayList<>();
@@ -141,6 +158,7 @@ public class Octree {
     // return cells;
   }
 
+  /** Direct summation. */
   public void directSum() {
     for (int i = 0; i < particles.size(); i++) {
       for (int j = 0; j < particles.size(); j++) {
@@ -151,11 +169,18 @@ public class Octree {
       }
     }
     // Reset potential for all particles
-    for (int i = 0; i < particles.size(); i++) {
-      particles.get(i).addToPhi(0);
+    for (OctreeParticle particle : particles) {
+      particle.addToPhi(0);
     }
   }
 
+  /**
+   * Compute a distance between a position and the OctreePoint.
+   *
+   * @param array Position.
+   * @param point OctreePoint.
+   * @return Returns the distance.
+   */
   public double distance(double[] array, OctreePoint point) {
     return Math.sqrt(
         Math.pow((array[0] - point.getX()), 2)
@@ -163,13 +188,21 @@ public class Octree {
             + Math.pow((array[2] - point.getZ()), 2));
   }
 
-  /** Evaluate potential at all target points */
+  /**
+   * Evaluate potential at all target points
+   */
   public void evalPotnetial() {
     for (int i = 0; i < particles.size(); i++) {
       evalAtTarget(0, i);
     }
   }
 
+  /**
+   * Compute the L2 error.
+   *
+   * @param phiDirect Potential from direct summation.
+   * @param phiTree   Potential from the tree.
+   */
   public void l2Error(double[] phiDirect, double[] phiTree) {
     double errorSumNum = 0.0;
     double errorSumDenom = 0.0;
@@ -181,8 +214,9 @@ public class Octree {
     logger.info("L2 Norm Error: " + error);
   }
 
-  public void readParticle(File file) {}
-
+  /**
+   * Update sweep.
+   */
   public void upwardSweep() {
     for (int c = (cells.size() - 1); c > 0; c--) {
       int p = cells.get(c).getParentIndex();
@@ -190,6 +224,11 @@ public class Octree {
     }
   }
 
+  /**
+   * Spit a cell.
+   *
+   * @param p Cell index.
+   */
   private void splitCell(int p) {
     for (int i = 0; i < nCritical; i++) {
       int octX = 0;
@@ -227,6 +266,12 @@ public class Octree {
     }
   }
 
+  /**
+   * Get a multipole
+   *
+   * @param p      Cell index.
+   * @param leaves Leaves.
+   */
   private void getMultipole(int p, ArrayList<Integer> leaves) {
     // If the current cell is not a leaf cell, traverse down
     if (cells.get(p).getNumLeaves() >= nCritical) {
@@ -269,13 +314,19 @@ public class Octree {
     }
   }
 
+  /**
+   * M2M.
+   *
+   * @param p Cell index p.
+   * @param c Cell index c.
+   */
   private void M2M(int p, int c) {
     double dx = cells.get(p).getX() - cells.get(c).getX();
     double dy = cells.get(p).getY() - cells.get(c).getY();
     double dz = cells.get(p).getZ() - cells.get(c).getZ();
 
-    double[] Dxyz = new double[] {dx, dy, dz};
-    double[] Dyzx = new double[] {dy, dz, dx};
+    double[] Dxyz = new double[]{dx, dy, dz};
+    double[] Dyzx = new double[]{dy, dz, dx};
 
     cells.get(p).addToMultipole(cells.get(c).getMultipole());
 

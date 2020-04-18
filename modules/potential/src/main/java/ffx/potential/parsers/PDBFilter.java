@@ -76,6 +76,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.logging.Level;
@@ -224,6 +225,7 @@ public final class PDBFilter extends SystemFilter {
    * Simple method useful for converting files to PDB format.
    *
    * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @return Returns a PDB ATOM or HETATM record for the passed Atom.
    */
   public static String toPDBAtomLine(Atom atom) {
     StringBuilder sb;
@@ -232,9 +234,7 @@ public final class PDBFilter extends SystemFilter {
     } else {
       sb = new StringBuilder("ATOM  ");
     }
-    for (int i = 6; i < 80; i++) {
-      sb.append(' ');
-    }
+    sb.append(" ".repeat(74));
 
     String name = atom.getName();
     if (name.length() > 4) {
@@ -476,15 +476,12 @@ public final class PDBFilter extends SystemFilter {
                 if (chainIDs.size() == 1) {
                   logger.warning(
                       format(
-                          " Chain ID %c for " + "mutation not found: only one chain %c " + "found.",
+                          " Chain ID %c for mutation not found: only one chain %c found.",
                           mtn.chainChar, chainIDs.get(0)));
-                  mtn = new Mutation(mtn.resID, chainIDs.get(0), mtn.resName);
                 } else {
                   logger.warning(
                       format(
-                          " Chain ID %c for "
-                              + "mutation not found: mutation will not "
-                              + "proceed.",
+                          " Chain ID %c for mutation not found: mutation will not proceed.",
                           mtn.chainChar));
                 }
               }
@@ -575,11 +572,7 @@ public final class PDBFilter extends SystemFilter {
               Character chainID = line.substring(12, 13).toUpperCase().charAt(0);
               int seqBegin = parseInt(line.substring(14, 18).trim());
               int seqEnd = parseInt(line.substring(20, 24).trim());
-              int[] seqRange = dbRef.get(chainID);
-              if (seqRange == null) {
-                seqRange = new int[2];
-                dbRef.put(chainID, seqRange);
-              }
+              int[] seqRange = dbRef.computeIfAbsent(chainID, k -> new int[2]);
               seqRange[0] = seqBegin;
               seqRange[1] = seqEnd;
               break;
@@ -1614,9 +1607,7 @@ public final class PDBFilter extends SystemFilter {
         }
       } else if (modelsWritten >= 0) {
         model = new StringBuilder(format("MODEL     %-4d", ++modelsWritten));
-        for (int i = 15; i < 80; i++) {
-          model.append(' ');
-        }
+        model.append(" ".repeat(65));
       }
       activeMolecularAssembly.setFile(newFile);
       activeMolecularAssembly.setName(newFile.getName());
@@ -2151,11 +2142,7 @@ public final class PDBFilter extends SystemFilter {
     }
     sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
     Character altLoc = atom.getAltLoc();
-    if (altLoc != null) {
-      sb.setCharAt(16, altLoc);
-    } else {
-      sb.setCharAt(16, ' ');
-    }
+    sb.setCharAt(16, Objects.requireNonNullElse(altLoc, ' '));
 
     /*
      * On the following code:

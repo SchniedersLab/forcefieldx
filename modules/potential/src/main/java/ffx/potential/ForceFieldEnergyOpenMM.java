@@ -1410,10 +1410,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     PointerByReference createIntegrator(
         String integratorString, double timeStep, double temperature) {
-      double dt = timeStep;
       switch (integratorString) {
         case "LANGEVIN":
-          createLangevinIntegrator(temperature, frictionCoeff, dt);
+          createLangevinIntegrator(temperature, frictionCoeff, timeStep);
           break;
         case "RESPA":
           // Read in the inner time step in psec.
@@ -1421,8 +1420,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           if (in < 2) {
             in = 2;
           }
-          double inner = dt / in;
-          createRESPAIntegrator(inner, dt);
+          double inner = timeStep / in;
+          createRESPAIntegrator(inner, timeStep);
           break;
           /*
           case "BROWNIAN":
@@ -1437,7 +1436,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
            */
         case "VERLET":
         default:
-          createVerletIntegrator(dt);
+          createVerletIntegrator(timeStep);
       }
 
       return integratorPointer;
@@ -1917,7 +1916,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
     }
 
-    /** Print current lambda values. */
+    /**
+     * Print current lambda values.
+     */
     public void printLambdaValues() {
       logger.info(
           format(
@@ -1925,7 +1926,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               lambdaTorsion, lambdaVDW, lambdaElec));
     }
 
-    /** Set the overall lambda value for the system. */
+    /**
+     * Set the overall lambda value for the system.
+     *
+     * @param lambda Current lambda value.
+     */
     public void setLambda(double lambda) {
 
       // Initially set all lambda values to 1.0.

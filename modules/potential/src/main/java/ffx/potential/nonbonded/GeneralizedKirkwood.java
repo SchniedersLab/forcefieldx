@@ -40,6 +40,7 @@ package ffx.potential.nonbonded;
 import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
 import static ffx.potential.nonbonded.implicit.DispersionRegion.DEFAULT_DISPERSION_OFFSET;
 import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.potential.parameters.SoluteRadii.applyGKRadii;
 import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
 import static java.lang.String.format;
@@ -876,7 +877,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Update the GaussVol radii offset value.
    *
-   * @param offset
+   * @param offset Offset to apply to all radii (A).
    */
   public void setGaussVolRadiiOffset(double offset) {
     this.offset = offset;
@@ -1143,7 +1144,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     fill(use, true);
 
-    bondiScale = SoluteRadii.applyGKRadii(forceField, bondiScale, atoms, baseRadius);
+    applyGKRadii(forceField, bondiScale, atoms, baseRadius);
 
     // Set up HCT overlap scale factors and any requested radii overrides.
     for (int i = 0; i < nAtoms; i++) {

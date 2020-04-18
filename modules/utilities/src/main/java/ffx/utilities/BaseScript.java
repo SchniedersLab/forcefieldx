@@ -85,19 +85,13 @@ public abstract class BaseScript extends Script {
    */
   public Binding context;
 
-  /**
-   * The array of args passed into the Script.
-   */
+  /** The array of args passed into the Script. */
   public String[] args;
 
-  /**
-   * Parse Result.
-   */
+  /** Parse Result. */
   public ParseResult parseResult = null;
 
-  /**
-   * -V or --version Prints the FFX version and exits.
-   */
+  /** -V or --version Prints the FFX version and exits. */
   @Option(
       names = {"-V", "--version"},
       versionHelp = true,
@@ -105,9 +99,7 @@ public abstract class BaseScript extends Script {
       description = "Print the Force Field X version and exit.")
   public boolean version;
 
-  /**
-   * -h or --help Prints a help message.
-   */
+  /** -h or --help Prints a help message. */
   @Option(
       names = {"-h", "--help"},
       usageHelp = true,
@@ -115,9 +107,7 @@ public abstract class BaseScript extends Script {
       description = "Print command help and exit.")
   public boolean help;
 
-  /**
-   * Default constructor for an FFX Script.
-   */
+  /** Default constructor for an FFX Script. */
   public BaseScript() {
     if (GraphicsEnvironment.isHeadless()) {
       color = Ansi.ON;

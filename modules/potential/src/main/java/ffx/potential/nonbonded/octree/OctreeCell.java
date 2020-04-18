@@ -77,7 +77,7 @@ public class OctreeCell {
   /**
    * Returns cell radius
    *
-   * @return
+   * @return Returns the cell radius.
    */
   public double getR() {
     return this.r;
@@ -86,7 +86,7 @@ public class OctreeCell {
   /**
    * Sets cell radius
    *
-   * @param r
+   * @param r The radius.
    */
   public void setR(double r) {
     this.r = r;
@@ -95,7 +95,7 @@ public class OctreeCell {
   /**
    * Gets x coordinate of center of cell
    *
-   * @return
+   * @return Returns the x coordinate for center of the cell.
    */
   public double getX() {
     return this.x;
@@ -104,7 +104,7 @@ public class OctreeCell {
   /**
    * Sets x coordinate of center of cell
    *
-   * @param x
+   * @param x Cell x-coordinate.
    */
   public void setX(double x) {
     this.x = x;
@@ -113,7 +113,7 @@ public class OctreeCell {
   /**
    * Gets y coordinate of center of cell
    *
-   * @return
+   * @return Returns the y coordinate for center of the cell.
    */
   public double getY() {
     return this.y;
@@ -122,7 +122,7 @@ public class OctreeCell {
   /**
    * Sets y coordinate of center of cell
    *
-   * @param y
+   * @param y Cell y-coordinate.
    */
   public void setY(double y) {
     this.y = y;
@@ -131,7 +131,7 @@ public class OctreeCell {
   /**
    * Gets z coordinate of center of cell
    *
-   * @return
+   * @return Returns the z coordinate for center of the cell.
    */
   public double getZ() {
     return this.z;
@@ -140,7 +140,7 @@ public class OctreeCell {
   /**
    * Sets z coordinate of center of cell
    *
-   * @param z
+   * @param z Cell z-coordinate.
    */
   public void setZ(double z) {
     this.z = z;

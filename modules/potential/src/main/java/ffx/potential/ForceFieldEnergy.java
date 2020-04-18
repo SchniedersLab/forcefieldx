@@ -1068,10 +1068,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
         double dist;
         switch (toks.length) {
-          case 0:
-          case 1:
-            throw new IllegalArgumentException(
-                format(" restrain-distance value %s could not be parsed!", bondRest));
           case 2:
           case 3:
             double[] xyz1 = new double[3];
@@ -1302,13 +1298,20 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * Applies constraints to positions
    *
-   * @param xPrior
-   * @param xNew
+   * @param xPrior Prior coodinates.
+   * @param xNew   New coordinates.
    */
   public void applyAllConstraintPositions(double[] xPrior, double[] xNew) {
     applyAllConstraintPositions(xPrior, xNew, DEFAULT_CONSTRAINT_TOLERANCE);
   }
 
+  /**
+   * Applies constraints to positions
+   *
+   * @param xPrior Prior coodinates.
+   * @param xNew   New coordinates.
+   * @param tol    Constraint Tolerance.
+   */
   public void applyAllConstraintPositions(double[] xPrior, double[] xNew, double tol) {
     if (xPrior == null) {
       xPrior = Arrays.copyOf(xNew, xNew.length);
@@ -3072,7 +3075,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       nUreyBradleys = 0;
       for (UreyBradley r : ureyBradley) {
         if (keep(r)) {
-          ureyBradleys[nUreyBradleys++] = (UreyBradley) r;
+          ureyBradleys[nUreyBradleys++] = r;
         }
       }
       sort(ureyBradleys, 0, nUreyBradleys);
@@ -3922,7 +3925,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     OMM_CUDA,
     OMM_REF,
     OMM_OPTCPU,
-    OMM_OPENCL;
+    OMM_OPENCL
   }
 
   private class BondedRegion extends ParallelRegion {
