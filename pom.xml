@@ -256,16 +256,15 @@
           <execution>
             <configuration>
               <target>
-                <groovydoc destdir="${project.reporting.outputDirectory}/groovydoc"
-                  doctitle="${project.name}"
-                  sourcepath="${basedir}/modules/potential/src/main/groovy
-                                                       ${path.separator} ${basedir}/modules/algorithms/src/main/groovy"
-                  use="true"
-                  windowtitle="${project.name}"
-                />
                 <taskdef classname="org.codehaus.groovy.ant.Groovydoc"
                   classpathref="maven.compile.classpath"
                   name="groovydoc"
+                />
+                <groovydoc destdir="${project.reporting.outputDirectory}/groovydoc"
+                  doctitle="${project.name}"
+                  sourcepath="${basedir}/modules/potential/src/main/groovy${path.separator}${basedir}/modules/algorithms/src/main/groovy"
+                  use="true"
+                  windowtitle="${project.name}"
                 />
               </target>
             </configuration>
@@ -858,23 +857,15 @@
     </profile>
   </profiles>
   <properties>
-    <!-- Version of FFX  -->
     <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
-    <!-- Default locations for deploying the website, snapshot location and
-    release location. These can be over-ridden by a developer's
-    settings.xml -->
     <antrun.version>1.8</antrun.version>
     <appassembler.version>1.10</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
-    <!-- Control the source version and target JRE version -->
     <assembly.version>3.2.0</assembly.version>
     <biojava.version>5.3.0</biojava.version>
-    <!-- Setting the source encoding is required for builds
-    that are platform independent. -->
     <buildnumber.version>1.2.10</buildnumber.version>
     <cdk.version>2.3</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
-    <!-- Skip most website reports by default -->
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.1.1</checkstyle.version>
@@ -886,9 +877,9 @@
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.7</commons-configuration2.version>
     <commons-io.version>2.6</commons-io.version>
-    <!-- Specify versions of Dependencies to Use -->
     <commons-lang3.version>3.10</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
+    <!-- Control the source version version -->
     <compileVersion>11</compileVersion>
     <compiler.version>3.8.1</compiler.version>
     <dependency.version>3.1.2</dependency.version>
@@ -898,6 +889,7 @@
     <exec.version>1.6.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.3.0</fastutil.version>
+    <!-- Version of FFX  -->
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
     <fmt.version>2.9</fmt.version>
@@ -914,46 +906,45 @@
     <jna.version>4.1.0</jna.version>
     <jogamp-fat.version>2.4.0</jogamp-fat.version>
     <jopenmm.version>7.5.0</jopenmm.version>
-    <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
     <junit.version>4.13</junit.version>
-    <!-- Maven Core Plugin Versions -->
     <jxr.version>3.0.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
     <log4j.version>2.13.1</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
-    <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
     <maven.jxr.skip>false</maven.jxr.skip>
-    <!-- Maven Packaging Tools Plugin Versions -->
     <picocli.version>4.1.4</picocli.version>
     <pj.version>1.0.1</pj.version>
     <pmd.skip>false</pmd.skip>
-    <!-- Maven Reporting Plugin Versions -->
     <pmd.version>3.13.0</pmd.version>
     <project-info-reports.version>3.0.0</project-info-reports.version>
+    <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <properties.version>1.0.0</properties.version>
     <quickhull3D.version>1.0.0</quickhull3D.version>
+    <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
     <release.version>3.0.0-M1</release.version>
-    <!-- Maven Tools Plugin Versions -->
     <resources.version>3.1.0</resources.version>
     <scm.version>1.11.2</scm.version>
     <shade.version>3.2.3</shade.version>
     <site.version>3.9.0</site.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
+    <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
-    <!-- MojoHaus Plugins -->
     <source.version>3.2.1</source.version>
+    <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
     <surefire.version>3.0.0-M2</surefire.version>
+    <!-- Control the target JRE version -->
     <targetVersion>11</targetVersion>
-    <tensorflow.version>1.12.0</tensorflow.version>
+    <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
+    <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>
     <tornado.version>0.6</tornado.version>
-    <!-- Clover Plugin -->
     <versions.version>2.7</versions.version>
+    <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
   </properties>
   <reporting>
