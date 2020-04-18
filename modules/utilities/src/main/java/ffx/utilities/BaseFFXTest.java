@@ -51,11 +51,23 @@ import org.junit.BeforeClass;
  * @author Michael J. Schnieders
  */
 public abstract class BaseFFXTest {
+
+  /**
+   * Constant <code>ffxCI=System.getProperty("ffx.ci", "false").equalsIgnoreCase("true")</code>
+   */
   public static final boolean ffxCI =
       System.getProperty("ffx.ci", "false").equalsIgnoreCase("true");
+
+  /**
+   * Constant <code>ffxOpenMM=System.getProperty("ffx.openMM", "false").equalsIgnoreCase("true")
+   * </code>
+   */
   public static final boolean ffxOpenMM =
       System.getProperty("ffx.openMM", "false").equalsIgnoreCase("true");
-  /** Constant <code>logger</code> */
+
+  /**
+   * Constant <code>logger</code>
+   */
   protected static final Logger logger = Logger.getLogger(BaseFFXTest.class.getName());
 
   private static final Level origLevel = Logger.getLogger("ffx").getLevel();

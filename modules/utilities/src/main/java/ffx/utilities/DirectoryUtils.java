@@ -37,9 +37,11 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static java.nio.file.Files.delete;
+import static java.nio.file.Files.walkFileTree;
+
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -48,6 +50,7 @@ import java.nio.file.attribute.BasicFileAttributes;
  * DirectoryUtils class.
  *
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class DirectoryUtils {
 
@@ -58,13 +61,13 @@ public class DirectoryUtils {
    * @throws java.io.IOException Thrown if deletion fails.
    */
   public static void deleteDirectoryTree(Path path) throws IOException {
-    Files.walkFileTree(
+    walkFileTree(
         path,
-        new SimpleFileVisitor<Path>() {
+        new SimpleFileVisitor<>() {
           @Override
           public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
             if (e == null) {
-              Files.delete(dir);
+              delete(dir);
               return FileVisitResult.CONTINUE;
             } else {
               // directory iteration failed
@@ -75,7 +78,7 @@ public class DirectoryUtils {
           @Override
           public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
               throws IOException {
-            Files.delete(file);
+            delete(file);
             return FileVisitResult.CONTINUE;
           }
         });

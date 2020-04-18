@@ -37,7 +37,9 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static java.io.File.createTempFile;
 import static java.lang.String.format;
+import static java.nio.file.Paths.get;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -46,12 +48,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * FileUtils class.
  *
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class FileUtils {
 
@@ -71,24 +73,20 @@ public class FileUtils {
 
     name = prefix + "." + name + ".";
     try {
-      tmpFile = File.createTempFile(name, "." + suffix);
+      tmpFile = createTempFile(name, "." + suffix);
     } catch (IOException e) {
       System.out.println(format(" Could not extract %s.", name));
       System.err.println(e.toString());
       System.exit(-1);
     }
-
     tmpFile.deleteOnExit();
 
-    try (OutputStream output = new BufferedOutputStream(new FileOutputStream(tmpFile))) {
+    try (input;
+        OutputStream output = new BufferedOutputStream(new FileOutputStream(tmpFile))) {
       byte[] buffer = new byte[8192];
       int size;
       while ((size = input.read(buffer)) != -1) {
         output.write(buffer, 0, size);
-      }
-    } finally {
-      if (input != null) {
-        input.close();
       }
     }
 
@@ -98,13 +96,13 @@ public class FileUtils {
   /**
    * Constructs a relative path from the present working directory to a file.
    *
-   * @param fi Construct a relative path to File fi.
-   * @return Relative path to fi.
+   * @param file Construct a relative path to File file.
+   * @return Relative path to file.
    */
-  public static Path relativePathTo(File fi) {
+  public static Path relativePathTo(File file) {
     File pwd = new File(".");
-    Path pwdPath = Paths.get(pwd.getAbsolutePath());
-    Path otherPath = Paths.get(fi.getAbsolutePath());
+    Path pwdPath = get(pwd.getAbsolutePath());
+    Path otherPath = get(file.getAbsolutePath());
     return pwdPath.relativize(otherPath);
   }
 }

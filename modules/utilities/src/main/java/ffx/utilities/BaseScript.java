@@ -80,30 +80,44 @@ public abstract class BaseScript extends Script {
    */
   public final Ansi color;
 
-  /** The Groovy Binding contains defined variables, closures, etc. */
+  /**
+   * The Groovy Binding contains defined variables, closures, etc.
+   */
   public Binding context;
 
-  /** The array of args passed into the Script. */
+  /**
+   * The array of args passed into the Script.
+   */
   public String[] args;
 
-  /** Parse Result. */
+  /**
+   * Parse Result.
+   */
   public ParseResult parseResult = null;
 
-  /** -V or --version Prints the FFX version and exits. */
+  /**
+   * -V or --version Prints the FFX version and exits.
+   */
   @Option(
       names = {"-V", "--version"},
       versionHelp = true,
+      defaultValue = "false",
       description = "Print the Force Field X version and exit.")
-  public boolean version = false;
+  public boolean version;
 
-  /** -h or --help Prints a help message. */
+  /**
+   * -h or --help Prints a help message.
+   */
   @Option(
       names = {"-h", "--help"},
       usageHelp = true,
+      defaultValue = "false",
       description = "Print command help and exit.")
-  public boolean help = false;
+  public boolean help;
 
-  /** Default constructor for an FFX Script. */
+  /**
+   * Default constructor for an FFX Script.
+   */
   public BaseScript() {
     if (GraphicsEnvironment.isHeadless()) {
       color = Ansi.ON;

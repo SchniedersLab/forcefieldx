@@ -9,7 +9,12 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** A collection of Utility methods for compatibility with Tinker. */
+/**
+ * A collection of Utility methods for compatibility with Tinker.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class TinkerUtils {
 
   private static final Logger logger = Logger.getLogger(TinkerUtils.class.getName());
@@ -25,10 +30,12 @@ public class TinkerUtils {
    * could be used to add atoms 4, 9 through 17, and 23 to the set of active atoms during a TINKER
    * calculation."
    */
-  private static Pattern atomSelectionStartPattern = Pattern.compile("-(\\d+)");
+  private static final Pattern atomSelectionStartPattern = Pattern.compile("-(\\d+)");
 
-  /** Tinker ranges end with a positive number. Positive numbers may also be a Singleton. */
-  private static Pattern atomSingletonPattern = Pattern.compile("(\\d+)");
+  /**
+   * Tinker ranges end with a positive number. Positive numbers may also be a Singleton.
+   */
+  private static final Pattern atomSingletonPattern = Pattern.compile("(\\d+)");
 
   /**
    * Parse a Tinker selection list. No checking is done to make sure range i

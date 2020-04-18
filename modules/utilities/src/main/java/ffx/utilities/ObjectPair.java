@@ -46,6 +46,7 @@ import java.util.List;
  * @param <T> Some object
  * @param <S> Some indexing, comparable object
  * @author Jacob Litman
+ * @since 1.0
  */
 public class ObjectPair<T, S extends Comparable<S>> implements Comparable<ObjectPair<T, S>> {
 
