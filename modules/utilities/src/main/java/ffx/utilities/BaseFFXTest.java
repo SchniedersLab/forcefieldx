@@ -52,9 +52,7 @@ import org.junit.BeforeClass;
  */
 public abstract class BaseFFXTest {
 
-  /**
-   * Constant <code>ffxCI=System.getProperty("ffx.ci", "false").equalsIgnoreCase("true")</code>
-   */
+  /** Constant <code>ffxCI=System.getProperty("ffx.ci", "false").equalsIgnoreCase("true")</code> */
   public static final boolean ffxCI =
       System.getProperty("ffx.ci", "false").equalsIgnoreCase("true");
 

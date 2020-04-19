@@ -50,10 +50,10 @@ public class EnergyRegion extends ParallelRegion {
   /** Flag to control use of 3-body terms. */
   private boolean threeBodyTerm;
 
-  private SharedDouble self;
-  private SharedDouble twoBody;
-  private SharedDouble threeBody;
-  private EnergyLoop[] energyLoops;
+  private final SharedDouble self;
+  private final SharedDouble twoBody;
+  private final SharedDouble threeBody;
+  private final EnergyLoop[] energyLoops;
   private Residue[] residues;
   private int[] rotamers;
   private int nResidues;

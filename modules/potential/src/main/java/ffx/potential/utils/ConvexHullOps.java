@@ -107,7 +107,7 @@ public class ConvexHullOps {
    * UNTESTED: Identifies atoms forming the convex hull.
    *
    * @param quickHull3D A QuickHull3D.
-   * @param allAtoms    Atoms used in building the QuickHull3D.
+   * @param allAtoms Atoms used in building the QuickHull3D.
    * @return Atoms forming the convex hull.
    */
   public static Atom[] identifyHullAtoms(QuickHull3D quickHull3D, Atom[] allAtoms) {

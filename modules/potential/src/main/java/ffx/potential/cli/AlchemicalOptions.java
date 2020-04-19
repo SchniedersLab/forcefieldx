@@ -92,7 +92,7 @@ public class AlchemicalOptions {
   /**
    * Sets the alchemical atoms for a MolecularAssembly.
    *
-   * @param assembly        Assembly to which the atoms belong.
+   * @param assembly Assembly to which the atoms belong.
    * @param alchemicalAtoms Alchemical atoms selection string.
    */
   public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms) {
@@ -269,9 +269,9 @@ public class AlchemicalOptions {
   /**
    * Performs processing on a MolecularAssembly for alchemistry.
    *
-   * @param topologyOptions   TopologyOptions in case a dual-topology or greater is to be used.
+   * @param topologyOptions TopologyOptions in case a dual-topology or greater is to be used.
    * @param molecularAssembly The MolecularAssembly to be processed.
-   * @param topNum            The index of this topology, 0-indexed.
+   * @param topNum The index of this topology, 0-indexed.
    * @return The processed MolecularAssembly.
    */
   public MolecularAssembly processFile(

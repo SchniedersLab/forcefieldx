@@ -110,13 +110,13 @@ public class RepExOST {
    * Private constructor used here to centralize shared logic.
    *
    * @param orthogonalSpaceTempering An OrthogonalSpaceTempering for each RepEx rung.
-   * @param monteCarloOST            A MonteCarloOST for each RepEx rung, or null (for MD).
-   * @param molecularDynamics        A MolecularDynamics for each RepEx rung (never null).
-   * @param ostType                  Type of OST to run (MD, MC 1-step, MC 2-step).
-   * @param dynamicsOptions          DynamicsOptions to apply universally.
-   * @param ostOptions               OST options to apply.
-   * @param fileType                 File type to save to.
-   * @param repexInterval            Interval in psec between RepEx attempts.
+   * @param monteCarloOST A MonteCarloOST for each RepEx rung, or null (for MD).
+   * @param molecularDynamics A MolecularDynamics for each RepEx rung (never null).
+   * @param ostType Type of OST to run (MD, MC 1-step, MC 2-step).
+   * @param dynamicsOptions DynamicsOptions to apply universally.
+   * @param ostOptions OST options to apply.
+   * @param fileType File type to save to.
+   * @param repexInterval Interval in psec between RepEx attempts.
    */
   private RepExOST(
       OrthogonalSpaceTempering orthogonalSpaceTempering,
@@ -194,7 +194,7 @@ public class RepExOST {
     // h.setIndependentWrites(true));
 
     this.numPairs = size - 1;
-    this.invKT = -1.0 / (Constants.R * dynamicsOptions.getTemp());
+    this.invKT = -1.0 / (Constants.R * dynamicsOptions.getTemperature());
 
     long seed;
     // TODO: Set this per-process individually if we move back to sending accept/reject messages
@@ -533,7 +533,7 @@ public class RepExOST {
         dynamicsOptions.getDt(),
         dynamicsOptions.getReport(),
         dynamicsOptions.getSnapshotInterval(),
-        dynamicsOptions.getTemp(),
+        dynamicsOptions.getTemperature(),
         reinitVelocities,
         fileType,
         dynamicsOptions.getCheckpoint(),

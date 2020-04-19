@@ -70,7 +70,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
   /** Thermostat Type. */
   private final ThermostatEnum thermostatType;
   /** OpenMM ForceFieldEnergy. */
-  private ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
+  private final ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
   /** Integrator String. */
   private String integratorString;
   /** Number of OpenMM MD steps per iteration. */

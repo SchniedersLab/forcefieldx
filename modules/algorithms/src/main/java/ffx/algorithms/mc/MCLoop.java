@@ -77,13 +77,13 @@ public class MCLoop implements MonteCarloListener {
   /** The ForceFieldEnergy object being used by MD. */
   private final ForceFieldEnergy forceFieldEnergy;
   /** KIC generation of loop solutions. See doi:10.1002/jcc.10416 */
-  Loop loop;
+  final Loop loop;
   /** The MolecularDynamics object controlling the simulation. */
   private MolecularDynamics molDyn;
   /** The current MD step. */
   private int stepCount = 0;
   /** Number of simulation steps between MC move attempts. */
-  private int mcStepFrequency;
+  private final int mcStepFrequency;
   /** Number of accepted MD moves. */
   private int numMovesAccepted;
   /** Storage for coordinates before MC move. */
@@ -126,11 +126,11 @@ public class MCLoop implements MonteCarloListener {
       logger.info("MCLoop requires at least 3 residues. First and last residues are anchors.");
       skipAlgorithm = true;
     }
-    StringBuilder sb = new StringBuilder();
-    sb.append(String.format(" Running MCLoop:\n"));
-    sb.append(String.format("     mcStepFrequency: %4d\n", mcStepFrequency));
-    sb.append(String.format("     referenceEnergy: %7.2f\n", systemReferenceEnergy));
-    logger.info(sb.toString());
+    String sb =
+        " Running MCLoop:\n"
+            + String.format("     mcStepFrequency: %4d\n", mcStepFrequency)
+            + String.format("     referenceEnergy: %7.2f\n", systemReferenceEnergy);
+    logger.info(sb);
 
     loop = new Loop(molAss);
   }
@@ -173,7 +173,7 @@ public class MCLoop implements MonteCarloListener {
   public boolean mcUpdate(double temperature) {
 
     stepCount++;
-    if (skipAlgorithm == true) {
+    if (skipAlgorithm) {
       return false;
     }
     // Decide on the type of step to be taken.
@@ -184,7 +184,7 @@ public class MCLoop implements MonteCarloListener {
 
     if (lambdaInterface != null) {
       if (lambdaInterface.getLambda() > 0.1) {
-        logger.info(String.format(" KIC procedure skipped (Lambda > 0.1)."));
+        logger.info(" KIC procedure skipped (Lambda > 0.1).");
         return false;
       }
     }
@@ -208,9 +208,7 @@ public class MCLoop implements MonteCarloListener {
                 midResidue - 1,
                 midResidue + 1,
                 loopSolutions.get(rng.nextInt(loopSolutions.size())));
-        for (double[] tempLoop : tempLoops) {
-          loopSolutions.add(tempLoop);
-        }
+        loopSolutions.addAll(tempLoops);
       } else {
         loopSolutions = loop.generateLoops(midResidue - 1, midResidue + 1);
       }
@@ -222,8 +220,7 @@ public class MCLoop implements MonteCarloListener {
     }
 
     // Perform the MC move.
-    boolean accepted = tryLoopStep(loopSolutions);
-    return accepted;
+    return tryLoopStep(loopSolutions);
   }
 
   /**
@@ -267,14 +264,14 @@ public class MCLoop implements MonteCarloListener {
     }
 
     StringBuilder sb = new StringBuilder();
-    sb.append(String.format(" Assessing possible MC loop move step:\n"));
+    sb.append(" Assessing possible MC loop move step:\n");
     sb.append(String.format("     original loop: %16.8f\n", originalLoopEnergy));
     sb.append(String.format("     possible loop: %16.8f\n", newLoopEnergy));
-    sb.append(String.format("     -----\n"));
+    sb.append("     -----\n");
 
     // Test Monte-Carlo criterion.
     if (dE < 0) {
-      sb.append(String.format("     Accepted!"));
+      sb.append("     Accepted!");
       logger.info(sb.toString());
       numMovesAccepted++;
       return true;
@@ -285,12 +282,12 @@ public class MCLoop implements MonteCarloListener {
     sb.append(String.format("     criterion:  %9.4f\n", criterion));
     sb.append(String.format("     rng:        %9.4f\n", metropolis));
     if ((metropolis < criterion)) {
-      sb.append(String.format("     Accepted!"));
+      sb.append("     Accepted!");
       logger.info(sb.toString());
       numMovesAccepted++;
       return true;
     }
-    sb.append(String.format("     Denied."));
+    sb.append("     Denied.");
     logger.info(sb.toString());
 
     // Move was rejected, undo the loop move
@@ -327,6 +324,6 @@ public class MCLoop implements MonteCarloListener {
   private enum MCOverride {
     ACCEPT,
     REJECT,
-    NONE;
+    NONE
   }
 }

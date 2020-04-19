@@ -50,7 +50,7 @@ import java.io.Writer;
 class LambdaWriter extends PrintWriter {
 
   /** Private reference to the OST instance. */
-  private OrthogonalSpaceTempering orthogonalSpaceTempering;
+  private final OrthogonalSpaceTempering orthogonalSpaceTempering;
 
   /**
    * Constructor.

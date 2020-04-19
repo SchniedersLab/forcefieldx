@@ -616,7 +616,7 @@ public class Barostat implements CrystalPotential {
     boolean succeed = crystal.randomParameters(ucDensity, mass);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(String.format(" Proposing MC change to all unit cell parameters."));
+        logger.fine(" Proposing MC change to all unit cell parameters.");
       }
       return mcStep(currentE, currentV);
     }

@@ -1274,9 +1274,9 @@ public class EnergyExpansion {
    * Return the lowest pair-energy for residue (i,ri) with residue j.
    *
    * @param residues Residue array.
-   * @param i        Residue i index.
-   * @param ri       Residue i rotamer index.
-   * @param j        Residue j index.
+   * @param i Residue i index.
+   * @param ri Residue i rotamer index.
+   * @param j Residue j index.
    * @return Lowest pair energy.
    */
   public double lowestPairEnergy(Residue[] residues, int i, int ri, int j) {

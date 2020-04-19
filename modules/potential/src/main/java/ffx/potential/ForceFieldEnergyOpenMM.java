@@ -385,13 +385,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
    * lambdaStart = ~0.2).
    */
   private double lambdaStart = 0.0;
-  /**
-   * Lambda step size for finite difference dU/dL.
-   */
+  /** Lambda step size for finite difference dU/dL. */
   private final double finiteDifferenceStepSize;
-  /**
-   * Use two-sided finite difference dU/dL.
-   */
+  /** Use two-sided finite difference dU/dL. */
   private boolean twoSidedFiniteDifference = true;
 
   /**
@@ -987,43 +983,27 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
    */
   public class Context {
 
-    /**
-     * Requested Platform (i.e. Java or an OpenMM platform).
-     */
+    /** Requested Platform (i.e. Java or an OpenMM platform). */
     private final Platform platform;
-    /**
-     * Instance of the OpenMM Integrator class.
-     */
+    /** Instance of the OpenMM Integrator class. */
     private final Integrator integrator;
-    /**
-     * Constraint tolerance as a fraction of the constrained bond length.
-     */
+    /** Constraint tolerance as a fraction of the constrained bond length. */
     private final double constraintTolerance = ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
-    /**
-     * OpenMM Context pointer.
-     */
+    /** OpenMM Context pointer. */
     private PointerByReference contextPointer = null;
-    /**
-     * Integrator string (default = VERLET).
-     */
+    /** Integrator string (default = VERLET). */
     private String integratorString = "VERLET";
-    /**
-     * Time step (default = 0.001 psec).
-     */
+    /** Time step (default = 0.001 psec). */
     private double timeStep = 0.001;
-    /**
-     * OpenMM Platform pointer.
-     */
+    /** OpenMM Platform pointer. */
     private PointerByReference platformPointer = null;
-    /**
-     * Temperature (default = 298.15).
-     */
+    /** Temperature (default = 298.15). */
     private double temperature = 298.15;
 
     /**
      * Create an OpenMM Context.
      *
-     * @param forceField        ForceField to used to create an integrator.
+     * @param forceField ForceField to used to create an integrator.
      * @param requestedPlatform Platform requested.
      */
     Context(ForceField forceField, Platform requestedPlatform) {
@@ -1393,23 +1373,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
    */
   private class Integrator {
 
-    /**
-     * Constraint tolerance as a fraction of the constrained bond length.
-     */
+    /** Constraint tolerance as a fraction of the constrained bond length. */
     private final double constraintTolerance;
-    /**
-     * Langevin friction coefficient.
-     */
+    /** Langevin friction coefficient. */
     private final double frictionCoeff;
-    /**
-     * OpenMM Integrator pointer.
-     */
+    /** OpenMM Integrator pointer. */
     private PointerByReference integratorPointer = null;
 
     /**
      * Create an Integrator instance.
      *
-     * @param forceField          the ForceField instance containing integrator parameters.
+     * @param forceField the ForceField instance containing integrator parameters.
      * @param constraintTolerance The integrator constraint tolerance.
      */
     Integrator(ForceField forceField, double constraintTolerance) {
@@ -1578,38 +1552,24 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     private static final double DEFAULT_MELD_SCALE_FACTOR = -1.0;
     private final double meldScaleFactor;
-    /**
-     * The Force Field in use.
-     */
-    ForceField forceField;
-    /**
-     * Array of atoms in the sytem.
-     */
-    Atom[] atoms;
-    /**
-     * Andersen thermostat collision frequency.
-     */
+    /** Andersen thermostat collision frequency. */
     private final double collisionFreq;
+    /** The Force Field in use. */
+    ForceField forceField;
+    /** Array of atoms in the sytem. */
+    Atom[] atoms;
     /**
      * When using MELD, our goal will be to scale down the potential by this factor. A negative
      * value indicates we're not using MELD.
      */
     private final boolean useMeld;
-    /**
-     * OpenMM System.
-     */
+    /** OpenMM System. */
     private PointerByReference system;
-    /**
-     * Barostat to be added if NPT (isothermal-isobaric) dynamics is requested.
-     */
+    /** Barostat to be added if NPT (isothermal-isobaric) dynamics is requested. */
     private PointerByReference ommBarostat = null;
-    /**
-     * OpenMM center-of-mass motion remover.
-     */
+    /** OpenMM center-of-mass motion remover. */
     private PointerByReference commRemover = null;
-    /**
-     * OpenMM AMOEBA Torsion Force.
-     */
+    /** OpenMM AMOEBA Torsion Force. */
     private PointerByReference amoebaTorsionForce = null;
     /** OpenMM Improper Torsion Force. */
     private PointerByReference amoebaImproperTorsionForce = null;
@@ -1654,9 +1614,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private double lambdaVDW = 1.0;
     /** Value of the electrostatics lambda state variable. */
     private double lambdaElec = 1.0;
-    /**
-     * Value of the electrostatics lambda state variable.
-     */
+    /** Value of the electrostatics lambda state variable. */
     private double lambdaTorsion = 1.0;
     /**
      * The lambda value that defines when the electrostatics will start to turn on for full path
@@ -1667,21 +1625,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * ion having a formal negative charge and a large polarizability.
      */
     private double electrostaticStart = 0.6;
-    /**
-     * Electrostatics lambda is raised to this power.
-     */
+    /** Electrostatics lambda is raised to this power. */
     private double electrostaticLambdaPower;
-    /**
-     * van der Waals softcore alpha.
-     */
+    /** van der Waals softcore alpha. */
     private double vdWSoftcoreAlpha = 0.25;
-    /**
-     * OpenMM thermostat. Currently an Andersen thermostat is supported.
-     */
+    /** OpenMM thermostat. Currently an Andersen thermostat is supported. */
     private PointerByReference ommThermostat = null;
-    /**
-     * van der Waals softcore beta.
-     */
+    /** van der Waals softcore beta. */
     private double vdwSoftcorePower = 3.0;
     /** Torsional lambda power. */
     private double torsionalLambdaPower = 2.0;

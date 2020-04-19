@@ -40,9 +40,7 @@ public class SynchronousSend {
 
   private final DoubleBuf myRecursionWeightBuf;
   private boolean independentWalkers;
-  /**
-   * The histograms to update.
-   */
+  /** The histograms to update. */
   private Histogram[] histograms;
   /** Map from ranks to histograms */
   private int[] rankToHistogramMap;

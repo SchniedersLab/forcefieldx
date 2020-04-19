@@ -44,9 +44,7 @@ import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
 import java.util.Arrays;
 
-/**
- * Monte Carlo driver for DEE-MC.
- */
+/** Monte Carlo driver for DEE-MC. */
 public class RotamerMatrixMC extends BoltzmannMC {
 
   private final int[] currentRots;

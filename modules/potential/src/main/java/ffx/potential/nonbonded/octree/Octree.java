@@ -11,26 +11,18 @@ import org.apache.commons.lang3.BooleanUtils;
 public class Octree {
 
   private static final Logger logger = Logger.getLogger(Octree.class.getName());
-  /**
-   * List of all leaf cells
-   */
+  /** List of all leaf cells */
   private final ArrayList<OctreeCell> leaves = new ArrayList<>();
   /**
    * Critical (maximum allowed) number of points allowed in any one cell: If a cell already contains
    * nCritical points, it needs to be split
    */
   private final int nCritical;
-  /**
-   * List of particles
-   */
+  /** List of particles */
   private final ArrayList<OctreeParticle> particles;
-  /**
-   * Tolerance parameter
-   */
+  /** Tolerance parameter */
   private final double theta;
-  /**
-   * List of cells
-   */
+  /** List of cells */
   private ArrayList<OctreeCell> cells = new ArrayList<>();
 
   /**

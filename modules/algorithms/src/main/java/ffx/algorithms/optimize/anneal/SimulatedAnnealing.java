@@ -64,55 +64,39 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
   private final MolecularDynamics molecularDynamics;
   /** Schedule for annealing. */
   private final AnnealingSchedule schedule;
-  /**
-   * Number of MD steps per annealing window.
-   */
+  /** Number of MD steps per annealing window. */
   private final long mdSteps;
-  /**
-   * Integration time step.
-   */
+  /** Integration time step. */
   private final double timeStep;
-  /**
-   * Whether to reinitialize velocities at the start of each timestep.
-   */
+  /** Whether to reinitialize velocities at the start of each timestep. */
   private final boolean reinitV;
-  /**
-   * Interval to print updates to the screen.
-   */
-  private double printInterval = 0.01;
-  /**
-   * Flag to indicate the algorithm is done.
-   */
-  private boolean done = true;
-  /**
-   * Number of MD steps per OpenMM cycle (assuming OpenMM is used!).
-   */
+  /** Number of MD steps per OpenMM cycle (assuming OpenMM is used!). */
   private final int trajSteps = 1;
-  /**
-   * Flag to indicate the UI has requested the algorithm terminate.
-   */
+  /** Interval to print updates to the screen. */
+  private double printInterval = 0.01;
+  /** Flag to indicate the algorithm is done. */
+  private boolean done = true;
+  /** Flag to indicate the UI has requested the algorithm terminate. */
   private boolean terminate;
 
   private double saveFrequency = 0.1;
-  /**
-   * Restart file.
-   */
+  /** Restart file. */
   private File dynFile;
 
   /**
    * Constructor for SimulatedAnnealing.
    *
-   * @param molecularAssembly      The Molecular Assembly to operate on.
-   * @param potentialEnergy        The potential to anneal against.
+   * @param molecularAssembly The Molecular Assembly to operate on.
+   * @param potentialEnergy The potential to anneal against.
    * @param compositeConfiguration The system properties to use.
-   * @param algorithmListener      The algorithm listener is a callback to UI.
-   * @param requestedThermostat    The requested thermostat.
-   * @param requestedIntegrator    The requested integrator.
-   * @param annealingSchedule      Schedule of temperatures to simulate at.
-   * @param mdSteps                Steps per SA window.
-   * @param timeStep               Timestep for MD in psec.
-   * @param reinitVelocities       Request velocities to be reinitialized.
-   * @param dynFile                Dynamics restart file to begin from.
+   * @param algorithmListener The algorithm listener is a callback to UI.
+   * @param requestedThermostat The requested thermostat.
+   * @param requestedIntegrator The requested integrator.
+   * @param annealingSchedule Schedule of temperatures to simulate at.
+   * @param mdSteps Steps per SA window.
+   * @param timeStep Timestep for MD in psec.
+   * @param reinitVelocities Request velocities to be reinitialized.
+   * @param dynFile Dynamics restart file to begin from.
    */
   public SimulatedAnnealing(
       MolecularAssembly molecularAssembly,

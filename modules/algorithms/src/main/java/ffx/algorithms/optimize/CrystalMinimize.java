@@ -65,7 +65,7 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
 
   private final ForceFieldEnergy forceFieldEnergy;
   private Crystal crystal;
-  private Crystal unitCell;
+  private final Crystal unitCell;
 
   /**
    * Constructor for Minimize.
@@ -146,7 +146,7 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
     // 5 -> XZ
     // 6 -> XY
 
-    double x[] = new double[forceFieldEnergy.getNumberOfVariables()];
+    double[] x = new double[forceFieldEnergy.getNumberOfVariables()];
     arraycopy(xOrig, 0, x, 0, x.length);
 
     switch (crystal.spaceGroup.crystalSystem) {
@@ -364,7 +364,7 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
    * @param delta Strain delta
    * @param strain Strain matrix
    */
-  private void applyStrain(int voight, double delta, double strain[][]) {
+  private void applyStrain(int voight, double delta, double[][] strain) {
     switch (voight) {
       case 1: // XX
         strain[0][0] += delta;
@@ -398,7 +398,7 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
 
   private void computeStressTensor(boolean verbose) {
 
-    double x[] = new double[forceFieldEnergy.getNumberOfVariables()];
+    double[] x = new double[forceFieldEnergy.getNumberOfVariables()];
     forceFieldEnergy.getCoordinates(x);
 
     forceFieldEnergy.energy(x, verbose);
@@ -459,7 +459,7 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
     molecularAssembly.setFractionalMode(currentFractionalMode);
   }
 
-  private double dEdA(int ii, int jj, double delta, double x[]) {
+  private double dEdA(int ii, int jj, double delta, double[] x) {
 
     // Store current unit cell parameters.
     double a = unitCell.a;
@@ -469,11 +469,9 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
     double beta = unitCell.beta;
     double gamma = unitCell.gamma;
 
-    double cellVectors[][] = new double[3][3];
+    double[][] cellVectors = new double[3][3];
     for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        cellVectors[i][j] = unitCell.Ai[i][j];
-      }
+      System.arraycopy(unitCell.Ai[i], 0, cellVectors[i], 0, 3);
     }
 
     cellVectors[ii][jj] += delta;
@@ -522,7 +520,7 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
     return (eplus - eminus) / (2 * delta);
   }
 
-  private double dE2dA2(int voight1, int voight2, double delta, double x[], double eps) {
+  private double dE2dA2(int voight1, int voight2, double delta, double[] x, double eps) {
 
     // Store current unit cell parameters.
     double a = unitCell.a;

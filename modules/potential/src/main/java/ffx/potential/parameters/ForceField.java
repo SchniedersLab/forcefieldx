@@ -229,7 +229,7 @@ public class ForceField {
    * Add an instance of a force field type. Force Field types are more complicated than simple
    * Strings or doubles, in that they have multiple fields and may occur multiple times.
    *
-   * @param <T>  ForceFieldType to add that extends BaseType
+   * @param <T> ForceFieldType to add that extends BaseType
    * @param type The ForceFieldType to add.
    */
   @SuppressWarnings("unchecked")

@@ -50,9 +50,7 @@ import java.net.ServerSocket;
  */
 public class PortUtils {
 
-  /**
-   * The maximum TCP Port. <code>MAX_TCP_PORT=65535</code>
-   */
+  /** The maximum TCP Port. <code>MAX_TCP_PORT=65535</code> */
   public static final int MAX_TCP_PORT = 65535;
   /** The minimum TCP Port. <code>MIN_TCP_PORT = 0</code> */
   private static final int MIN_TCP_PORT = 0;

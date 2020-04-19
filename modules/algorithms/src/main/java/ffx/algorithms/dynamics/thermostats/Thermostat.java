@@ -102,7 +102,7 @@ public abstract class Thermostat {
   /** Reduce logging. */
   private boolean quiet = false;
   /** Number of degrees of freedom removed by constraints. */
-  private int constrainedDoF;
+  private final int constrainedDoF;
   /**
    * Constructor for Thermostat.
    *
@@ -230,20 +230,17 @@ public abstract class Thermostat {
     linearMomentum[2] /= totalMass;
 
     if (print) {
-      StringBuilder sb =
-          new StringBuilder(
-              format(
-                  "  Center of Mass   (%12.3f,%12.3f,%12.3f)\n",
-                  centerOfMass[0], centerOfMass[1], centerOfMass[2]));
-      sb.append(
+      String sb =
           format(
+              "  Center of Mass   (%12.3f,%12.3f,%12.3f)\n",
+              centerOfMass[0], centerOfMass[1], centerOfMass[2])
+              + format(
               "  Linear Momentum  (%12.3f,%12.3f,%12.3f)\n",
-              linearMomentum[0], linearMomentum[1], linearMomentum[2]));
-      sb.append(
-          format(
+              linearMomentum[0], linearMomentum[1], linearMomentum[2])
+              + format(
               "  Angular Momentum (%12.3f,%12.3f,%12.3f)",
-              angularMomentum[0], angularMomentum[1], angularMomentum[2]));
-      logger.info(sb.toString());
+              angularMomentum[0], angularMomentum[1], angularMomentum[2]);
+      logger.info(sb);
     }
 
     if (remove) {
@@ -472,18 +469,16 @@ public abstract class Thermostat {
   /** {@inheritDoc} */
   @Override
   public String toString() {
-    StringBuilder sb =
-        new StringBuilder(
-            format("  Target temperature:           %7.2f Kelvin\n", targetTemperature));
-    sb.append(format("  Current temperature:          %7.2f Kelvin\n", currentTemperature));
-    sb.append(format("  Number of variables:          %7d\n", nVariables));
-    sb.append(format("  Number of degrees of freedom: %7d\n", degreesOfFreedom));
-    sb.append(format("  Kinetic Energy:               %7.2f\n", currentKineticEnergy));
-    sb.append(
-        format(
+    String sb =
+        format("  Target temperature:           %7.2f Kelvin\n", targetTemperature)
+            + format("  Current temperature:          %7.2f Kelvin\n", currentTemperature)
+            + format("  Number of variables:          %7d\n", nVariables)
+            + format("  Number of degrees of freedom: %7d\n", degreesOfFreedom)
+            + format("  Kinetic Energy:               %7.2f\n", currentKineticEnergy)
+            + format(
             "  kT per degree of freedom:     %7.2f",
-            KCAL_TO_GRAM_ANG2_PER_PS2 * currentKineticEnergy / (degreesOfFreedom * kT)));
-    return sb.toString();
+            KCAL_TO_GRAM_ANG2_PER_PS2 * currentKineticEnergy / (degreesOfFreedom * kT));
+    return sb;
   }
 
   /**

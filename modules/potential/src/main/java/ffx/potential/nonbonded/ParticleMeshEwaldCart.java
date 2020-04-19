@@ -211,17 +211,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   private final GeneralizedKirkwood generalizedKirkwood;
   /** Partial derivative with respect to Lambda. */
   private final SharedDouble shareddEdLambda;
-  /**
-   * Second partial derivative with respect to Lambda.
-   */
+  /** Second partial derivative with respect to Lambda. */
   private final SharedDouble sharedd2EdLambda2;
-  /**
-   * The electrostatics functional form in use.
-   */
+  /** The electrostatics functional form in use. */
   private final ELEC_FORM elecForm;
-  /**
-   * Unit cell and spacegroup information.
-   */
+  /** Unit cell and spacegroup information. */
   private Crystal crystal;
   /** Number of symmetry operators. */
   private int nSymm;

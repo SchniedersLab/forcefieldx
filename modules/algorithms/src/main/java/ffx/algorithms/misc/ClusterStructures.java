@@ -53,8 +53,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.biojava.nbio.structure.Structure;
@@ -94,11 +95,7 @@ public class ClusterStructures {
    * @param utils AlgorithmFunctions object to use
    */
   public ClusterStructures(AlgorithmFunctions utils) {
-    if (utils != null) {
-      this.utils = utils;
-    } else {
-      this.utils = new AlgorithmUtils();
-    }
+    this.utils = Objects.requireNonNullElseGet(utils, AlgorithmUtils::new);
     pwdPath = generatePath(new File(""));
   }
 
@@ -418,7 +415,7 @@ public class ClusterStructures {
         double minRMSD = alignments[0].getRmsd();
         for (int k = 1; k < alignments.length; k++) {
           double rmsdK = alignments[k].getRmsd();
-          minRMSD = rmsdK < minRMSD ? rmsdK : minRMSD;
+          minRMSD = Math.min(rmsdK, minRMSD);
         }
         rmsdDistances[i][j] = minRMSD;
         rmsdDistances[j][i] = minRMSD;
@@ -431,7 +428,7 @@ public class ClusterStructures {
     int nClusters = 1;
 
     if (numClusters > 0) {
-      subClusters = new ArrayList<>(Arrays.asList(cluster));
+      subClusters = new ArrayList<>(Collections.singletonList(cluster));
 
       while (nClusters < numClusters) {
         double maxDist = subClusters.get(0).getDistanceValue();
@@ -469,7 +466,7 @@ public class ClusterStructures {
    */
   private List<Cluster> getSubclusters(Cluster cluster, double cutoff) {
     if (cluster.getDistanceValue() < cutoff || cluster.isLeaf()) {
-      return Arrays.asList(cluster);
+      return Collections.singletonList(cluster);
     } else {
       List<Cluster> clusters = new ArrayList<>();
       for (Cluster subcluster : cluster.getChildren()) {
@@ -487,7 +484,7 @@ public class ClusterStructures {
    */
   private List<Cluster> getLeafClusters(Cluster cluster) {
     if (cluster.isLeaf()) {
-      return Arrays.asList(cluster);
+      return Collections.singletonList(cluster);
     } else {
       List<Cluster> clusters = new ArrayList<>();
       for (Cluster subcluster : cluster.getChildren()) {
@@ -535,25 +532,25 @@ public class ClusterStructures {
       public String toString() {
         return "complete linkage";
       }
-    };
+    }
   }
 
   // Copyright license for hierarchical-clustering-java
-  /**
-   * ***************************************************************************** Copyright 2013
-   * Lars Behnke
-   *
-   * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
-   * except in compliance with the License. You may obtain a copy of the License at
-   *
-   * <p>http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * <p>Unless required by applicable law or agreed to in writing, software distributed under the
-   * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-   * either express or implied. See the License for the specific language governing permissions and
-   * limitations under the License.
-   * ****************************************************************************
-   */
+  /*
+   ***************************************************************************** Copyright 2013
+   Lars Behnke
+
+   <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+   except in compliance with the License. You may obtain a copy of the License at
+
+   <p>http://www.apache.org/licenses/LICENSE-2.0
+
+   <p>Unless required by applicable law or agreed to in writing, software distributed under the
+   License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+   either express or implied. See the License for the specific language governing permissions and
+   limitations under the License.
+   ****************************************************************************
+  */
   // Copyright license for BioJava
   /*
    *                    BioJava development code

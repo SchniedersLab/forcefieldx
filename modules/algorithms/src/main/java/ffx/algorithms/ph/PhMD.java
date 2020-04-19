@@ -133,17 +133,17 @@ public class PhMD implements MonteCarloListener {
   /** Number of accepted MD moves. */
   private int numMovesAccepted;
   /** Residues selected by user. */
-  private List<Residue> chosenResidues;
+  private final List<Residue> chosenResidues;
   /** MultiResidue forms of entities from chosenResidues; ready to be (de-/)protonated. */
-  private List<MultiResidue> titratingMultis = new ArrayList<>();
+  private final List<MultiResidue> titratingMultis = new ArrayList<>();
 
-  private List<MultiTerminus> titratingTermini = new ArrayList<>();
-  private List<ExtendedVariable> titratingESVs = new ArrayList<>();
+  private final List<MultiTerminus> titratingTermini = new ArrayList<>();
+  private final List<ExtendedVariable> titratingESVs = new ArrayList<>();
   /**
    * Maps Residue objects to their available Titration enumerations. Filled by the readyup() method
    * during MultiResidue creation.
    */
-  private HashMap<Residue, List<Titration>> titrationMap = new HashMap<>();
+  private final HashMap<Residue, List<Titration>> titrationMap = new HashMap<>();
   /** Snapshot index for the [num] portion of filename above. */
   private int snapshotIndex = 0;
   /** Target of the most recently accepted move. */
@@ -151,7 +151,7 @@ public class PhMD implements MonteCarloListener {
 
   private ExtendedSystem esvSystem;
   private Object[] mdOptions;
-  private RotamerLibrary library;
+  private final RotamerLibrary library;
 
   /**
    * Construct a Monte-Carlo protonation state switching mechanism.
@@ -188,12 +188,12 @@ public class PhMD implements MonteCarloListener {
     // library.setUseOrigCoordsRotamer(false);
     library = new RotamerLibrary(false);
 
-    StringBuilder sb = new StringBuilder();
-    sb.append(String.format(" Running Constant-pH MD:\n"));
-    sb.append(String.format("     Protonation Step Freq:  %4d\n", mcStepFrequency));
-    sb.append(String.format("     Conformation Step Freq: %4d\n", rotamerStepFrequency));
-    sb.append(String.format("     system pH:       %7.2f", this.pH));
-    logger.info(sb.toString());
+    String sb =
+        " Running Constant-pH MD:\n"
+            + String.format("     Protonation Step Freq:  %4d\n", mcStepFrequency)
+            + String.format("     Conformation Step Freq: %4d\n", rotamerStepFrequency)
+            + String.format("     system pH:       %7.2f", this.pH);
+    logger.info(sb);
 
     reInitialize(true, false);
     readyup();
@@ -593,10 +593,10 @@ public class PhMD implements MonteCarloListener {
       dG_ref = titrationConfig.refOverride.getAsDouble();
     }
 
-    /**
-     * dG_elec = electrostatic energy component of the titratable residue dG_ref = electrostatic
-     * component of the transition energy for the reference compound
-     */
+    /*
+     dG_elec = electrostatic energy component of the titratable residue dG_ref = electrostatic
+     component of the transition energy for the reference compound
+    */
     double prefix = Math.log(10) * kT * (pH - pKaref);
     if (titrationType == TitrationType.DEPROT) {
       prefix = -prefix;
@@ -610,18 +610,18 @@ public class PhMD implements MonteCarloListener {
     double dG_MC = prefix + postfix;
 
     StringBuilder sb = new StringBuilder();
-    sb.append(String.format(" Assessing possible MC protonation step:\n"));
+    sb.append(" Assessing possible MC protonation step:\n");
     sb.append(String.format("     %s --> %s\n", startString, target.toString()));
     sb.append(String.format("     dG_ref:  %7.2f                pKaref:  %7.2f\n", dG_ref, pKaref));
     sb.append(
         String.format("     pH_term: %9.4f              elec_term: %10.4f\n", prefix, postfix));
     sb.append(
         String.format("     dG_elec: %9.4f              dG_MC:     %10.4f\n", dG_elec, dG_MC));
-    sb.append(String.format("     -----\n"));
+    sb.append("     -----\n");
 
     // Test Monte-Carlo criterion.
     if (dG_MC < 0 && titrationConfig.mcOverride != MCOverride.REJECT) {
-      sb.append(String.format("     Accepted!"));
+      sb.append("     Accepted!");
       logger.info(sb.toString());
       numMovesAccepted++;
       return true;
@@ -705,10 +705,10 @@ public class PhMD implements MonteCarloListener {
       dG_ref = titrationConfig.refOverride.getAsDouble();
     }
 
-    /**
-     * dG_elec = electrostatic energy component of the titratable residue dG_ref = electrostatic
-     * component of the transition energy for the reference compound
-     */
+    /*
+     dG_elec = electrostatic energy component of the titratable residue dG_ref = electrostatic
+     component of the transition energy for the reference compound
+    */
     double pHterm = Math.log(10) * kT * (pH - pKaref);
     if (type == TitrationType.DEPROT) {
       pHterm = -pHterm;
@@ -730,7 +730,7 @@ public class PhMD implements MonteCarloListener {
     //        sb.append(String.format("     dG_MC:   %16.8f\n", dG_MC));
     //        sb.append(String.format("     -----\n"));
     StringBuilder sb = new StringBuilder();
-    sb.append(String.format(" Assessing possible MC protonation step:\n"));
+    sb.append(" Assessing possible MC protonation step:\n");
     if (beganCharged) {
       sb.append(String.format("     %sc --> %sn\n", startString, target.toString()));
     } else {
@@ -741,11 +741,11 @@ public class PhMD implements MonteCarloListener {
         String.format("     pH_term: %9.4f              elec_term: %10.4f\n", pHterm, ddGterm));
     sb.append(
         String.format("     dG_elec: %9.4f              dG_MC:     %10.4f\n", dG_elec, dG_MC));
-    sb.append(String.format("     -----\n"));
+    sb.append("     -----\n");
 
     // Test Monte-Carlo criterion.
     if (dG_MC < 0 && titrationConfig.mcOverride != MCOverride.REJECT) {
-      sb.append(String.format("     Accepted!"));
+      sb.append("     Accepted!");
       logger.info(sb.toString());
       numMovesAccepted++;
       return true;
@@ -831,7 +831,7 @@ public class PhMD implements MonteCarloListener {
     Residue residue = targetMulti.getActive();
     List<Atom> atoms = residue.getAtomList();
     ResidueState origState = residue.storeState();
-    double chi[] = new double[4];
+    double[] chi = new double[4];
     RotamerLibrary.measureAARotamer(residue, chi, false);
     AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
     Rotamer origCoordsRotamer =
@@ -852,15 +852,15 @@ public class PhMD implements MonteCarloListener {
     double criterion = exp(-dG_tot / kT);
 
     StringBuilder sb = new StringBuilder();
-    sb.append(String.format(" Assessing possible MC rotamer step:\n"));
+    sb.append(" Assessing possible MC rotamer step:\n");
     sb.append(String.format("     prev:   %16.8f\n", previousTotalEnergy));
     sb.append(String.format("     post:   %16.8f\n", postTotalEnergy));
     sb.append(String.format("     dG_tot: %16.8f\n", dG_tot));
-    sb.append(String.format("     -----\n"));
+    sb.append("     -----\n");
 
     // Automatic acceptance if energy change is favorable.
     if (dG_tot < 0) {
-      sb.append(String.format("     Accepted!"));
+      sb.append("     Accepted!");
       logger.info(sb.toString());
       numMovesAccepted++;
       propagateInactiveResidues(titratingMultis, true);
@@ -871,14 +871,14 @@ public class PhMD implements MonteCarloListener {
       sb.append(String.format("     criterion:  %9.4f\n", criterion));
       sb.append(String.format("     rng:        %9.4f\n", metropolis));
       if (metropolis < criterion) {
-        sb.append(String.format("     Accepted!"));
+        sb.append("     Accepted!");
         logger.info(sb.toString());
         numMovesAccepted++;
         propagateInactiveResidues(titratingMultis, true);
         return true;
       } else {
         // Move was denied.
-        sb.append(String.format("     Denied."));
+        sb.append("     Denied.");
         logger.info(sb.toString());
 
         // Undo the rejected move.
@@ -920,7 +920,7 @@ public class PhMD implements MonteCarloListener {
     Residue residue = targetMulti.getActive();
     List<Atom> atoms = residue.getAtomList();
     ResidueState origState = residue.storeState();
-    double chi[] = new double[4];
+    double[] chi = new double[4];
     RotamerLibrary.measureAARotamer(residue, chi, false);
     AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
     Rotamer origCoordsRotamer =
@@ -961,16 +961,16 @@ public class PhMD implements MonteCarloListener {
     double rotaCriterion = exp(-dG_rota / kT);
 
     StringBuilder sb = new StringBuilder();
-    sb.append(String.format(" Assessing possible MC combo step:\n"));
+    sb.append(" Assessing possible MC combo step:\n");
     sb.append(String.format("     dG_elec: %16.8f\n", dG_elec));
     sb.append(String.format("     dG_titr: %16.8f\n", dG_titr));
     sb.append(String.format("     dG_rota: %16.8f\n", dG_rota));
-    sb.append(String.format("     -----\n"));
+    sb.append("     -----\n");
 
     // Test the combined probability of this move.
     // Automatic acceptance if both energy changes are favorable.
     if (dG_titr < 0 && dG_rota < 0 && titrationConfig.mcOverride != MCOverride.REJECT) {
-      sb.append(String.format("     Accepted!"));
+      sb.append("     Accepted!");
       logger.info(sb.toString());
       numMovesAccepted++;
       propagateInactiveResidues(titratingMultis, false);
@@ -993,14 +993,14 @@ public class PhMD implements MonteCarloListener {
       sb.append(String.format("     criterion:  %9.4f\n", comboCriterion));
       sb.append(String.format("     rng:        %9.4f\n", metropolis));
       if (metropolis < comboCriterion) {
-        sb.append(String.format("     Accepted!"));
+        sb.append("     Accepted!");
         logger.info(sb.toString());
         numMovesAccepted++;
         propagateInactiveResidues(titratingMultis, false);
         return true;
       } else {
         // Move was denied.
-        sb.append(String.format("     Denied."));
+        sb.append("     Denied.");
         logger.info(sb.toString());
 
         // Undo both pieces of the rejected move IN THE RIGHT ORDER.
@@ -1019,7 +1019,7 @@ public class PhMD implements MonteCarloListener {
    * @return Energy of the current state.
    */
   private double currentElectrostaticEnergy() {
-    double x[] = new double[forceFieldEnergy.getNumberOfVariables() * 3];
+    double[] x = new double[forceFieldEnergy.getNumberOfVariables() * 3];
     forceFieldEnergy.getCoordinates(x);
     forceFieldEnergy.energy(x);
     return forceFieldEnergy.getTotalElectrostaticEnergy();
@@ -1031,7 +1031,7 @@ public class PhMD implements MonteCarloListener {
    * @return Energy of the current state.
    */
   private double currentTotalEnergy() {
-    double x[] = new double[forceFieldEnergy.getNumberOfVariables() * 3];
+    double[] x = new double[forceFieldEnergy.getNumberOfVariables() * 3];
     forceFieldEnergy.getCoordinates(x);
     forceFieldEnergy.energy(x);
     return forceFieldEnergy.getTotalEnergy();
@@ -1088,14 +1088,14 @@ public class PhMD implements MonteCarloListener {
 
   public enum Distribution {
     DISCRETE,
-    CONTINUOUS;
+    CONTINUOUS
   }
 
   private enum StepType {
     TITRATE,
     ROTAMER,
     COMBO,
-    CONTINUOUS_DYNAMICS;
+    CONTINUOUS_DYNAMICS
   }
 
   public class DynamicsLauncher {
@@ -1186,7 +1186,7 @@ public class PhMD implements MonteCarloListener {
       //            discountLogger.append(format("    terminating current md...\n"));
       //            log();
       //            molDyn.terminate();
-      discountLogger.append(format("    launching new md process...\n"));
+      discountLogger.append("    launching new md process...\n");
       log();
       molecularDynamics.dynamic(
           nSteps, timeStep, print, save, temperature, initVelocities, fileType, restart, dynFile);

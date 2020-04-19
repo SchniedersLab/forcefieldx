@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
+import static java.lang.String.format;
+
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.crystal.CrystalPotential;
@@ -48,7 +50,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 /**
  * Represents command line options for scripts that calculate thermodynamics.
@@ -64,31 +66,34 @@ public class ThermodynamicsOptions {
    * -Q or --equilibrate sets the number of equilibration steps prior to production OST counts
    * begin.
    */
-  @CommandLine.Option(
+  @Option(
       names = {"-Q", "--equilibrate"},
       paramLabel = "1000",
+      defaultValue = "1000",
       description = "Number of equilibration steps before evaluation of thermodynamics.")
-  private long nEquil = 1000;
+  private long equilibrationSteps;
 
   /**
    * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart files and thus resets the
    * histogram; use -rn false to continue from the end of any prior simulation.
    */
-  @CommandLine.Option(
+  @Option(
       names = {"--rn", "--resetNumSteps"},
+      defaultValue = "false",
       description = "Ignore prior steps logged in .lam or similar files")
-  private boolean resetNumSteps = false;
+  private boolean resetNumSteps;
 
   /**
    * --tA or --thermodynamicsAlgorithm specifies the algorithm to be used; currently serves as a
    * switch between OST and window-based methods.
    */
-  @CommandLine.Option(
+  @Option(
       names = {"--tA", "--thermodynamicsAlgorithm"},
       paramLabel = "OST",
+      defaultValue = "OST",
       description =
           "Choice of thermodynamics algorithm. THe default is OST, while FIXED runs MD at a fixed lambda value (e.g. BAR)")
-  private String thermoAlgoString = "OST";
+  private String thermoAlgoString;
 
   /**
    * Return the selected Thermodynamics algorithm as an enumerated type.
@@ -105,7 +110,7 @@ public class ThermodynamicsOptions {
    * @return a int.
    */
   public long getEquilSteps() {
-    return nEquil;
+    return equilibrationSteps;
   }
 
   /**
@@ -120,35 +125,37 @@ public class ThermodynamicsOptions {
   /**
    * Run an alchemical free energy window.
    *
-   * @param topologies All involved MolecularAssemblies.
-   * @param potential The Potential to be sampled.
-   * @param dynamics DynamicsOptions.
-   * @param writeOut WriteoutOptions
+   * @param molecularAssemblies All involved MolecularAssemblies.
+   * @param crystalPotential The Potential to be sampled.
+   * @param dynamicsOptions DynamicsOptions.
+   * @param writeoutOptions WriteoutOptions
    * @param dyn MD restart file
-   * @param aListener AlgorithmListener
+   * @param algorithmListener AlgorithmListener
    * @return The MolecularDynamics object constructed.
    */
   public MolecularDynamics runFixedAlchemy(
-      MolecularAssembly[] topologies,
-      CrystalPotential potential,
-      DynamicsOptions dynamics,
-      WriteoutOptions writeOut,
+      MolecularAssembly[] molecularAssemblies,
+      CrystalPotential crystalPotential,
+      DynamicsOptions dynamicsOptions,
+      WriteoutOptions writeoutOptions,
       File dyn,
-      AlgorithmListener aListener) {
-    dynamics.init();
+      AlgorithmListener algorithmListener) {
+    dynamicsOptions.init();
 
-    MolecularDynamics molDyn = dynamics.getDynamics(writeOut, potential, topologies[0], aListener);
-    for (int i = 1; i < topologies.length; i++) {
-      molDyn.addAssembly(topologies[i], topologies[i].getProperties());
+    MolecularDynamics molDyn =
+        dynamicsOptions.getDynamics(
+            writeoutOptions, crystalPotential, molecularAssemblies[0], algorithmListener);
+    for (int i = 1; i < molecularAssemblies.length; i++) {
+      molDyn.addAssembly(molecularAssemblies[i], molecularAssemblies[i].getProperties());
     }
 
     boolean initVelocities = true;
-    long nSteps = dynamics.steps;
-    molDyn.setRestartFrequency(dynamics.getCheckpoint());
+    long nSteps = dynamicsOptions.getSteps();
+    molDyn.setRestartFrequency(dynamicsOptions.getCheckpoint());
     // Start sampling.
-    if (nEquil > 0) {
+    if (equilibrationSteps > 0) {
       logger.info("\n Beginning equilibration");
-      runDynamics(molDyn, nEquil, dynamics, writeOut, true, dyn);
+      runDynamics(molDyn, equilibrationSteps, dynamicsOptions, writeoutOptions, true, dyn);
       logger.info(" Beginning fixed-lambda alchemical sampling");
       initVelocities = false;
     } else {
@@ -166,7 +173,7 @@ public class ThermodynamicsOptions {
     }
 
     if (nSteps > 0) {
-      runDynamics(molDyn, nSteps, dynamics, writeOut, initVelocities, dyn);
+      runDynamics(molDyn, nSteps, dynamicsOptions, writeoutOptions, initVelocities, dyn);
     } else {
       logger.info(" No steps remaining for this process!");
     }
@@ -174,22 +181,49 @@ public class ThermodynamicsOptions {
   }
 
   private void runDynamics(
-      MolecularDynamics md,
+      MolecularDynamics molecularDynamics,
       long nSteps,
-      DynamicsOptions dynamics,
-      WriteoutOptions writeOut,
+      DynamicsOptions dynamicsOptions,
+      WriteoutOptions writeoutOptions,
       boolean initVelocities,
       File dyn) {
-    md.dynamic(
+    molecularDynamics.dynamic(
         nSteps,
-        dynamics.dt,
-        dynamics.report,
-        dynamics.write,
-        dynamics.temp,
+        dynamicsOptions.getDt(),
+        dynamicsOptions.getReport(),
+        dynamicsOptions.getWrite(),
+        dynamicsOptions.getTemperature(),
         initVelocities,
-        writeOut.getFileType(),
-        dynamics.getCheckpoint(),
+        writeoutOptions.getFileType(),
+        dynamicsOptions.getCheckpoint(),
         dyn);
+  }
+
+  /** The number of equilibration steps prior to production OST counts begin. */
+  public long getEquilibrationSteps() {
+    return equilibrationSteps;
+  }
+
+  public void setEquilibrationSteps(long equilibrationSteps) {
+    this.equilibrationSteps = equilibrationSteps;
+  }
+
+  /** Ignores steps detected in .lam lambda-restart files. */
+  public boolean isResetNumSteps() {
+    return resetNumSteps;
+  }
+
+  public void setResetNumSteps(boolean resetNumSteps) {
+    this.resetNumSteps = resetNumSteps;
+  }
+
+  /** The algorithm to be used (e.g. OST, window-based methods, etc). */
+  public String getThermoAlgoString() {
+    return thermoAlgoString;
+  }
+
+  public void setThermoAlgoString(String thermoAlgoString) {
+    this.thermoAlgoString = thermoAlgoString;
   }
 
   /**
@@ -222,13 +256,13 @@ public class ThermodynamicsOptions {
      */
     public static ThermodynamicsAlgorithm parse(String name) throws IllegalArgumentException {
       String ucName = name.toUpperCase();
-      for (ThermodynamicsAlgorithm ta : values()) {
-        if (ta.aliases.contains(ucName)) {
-          return ta;
+      for (ThermodynamicsAlgorithm thermodynamicsAlgorithm : values()) {
+        if (thermodynamicsAlgorithm.aliases.contains(ucName)) {
+          return thermodynamicsAlgorithm;
         }
       }
       throw new IllegalArgumentException(
-          String.format(" Could not parse %s as a ThermodynamicsAlgorithm", name));
+          format(" Could not parse %s as a ThermodynamicsAlgorithm", name));
     }
   }
 }

@@ -326,11 +326,11 @@ public class AminoAcidUtils {
   /**
    * Assign atom types to an amino acid polymer.
    *
-   * @param residues   The residues to assign atom types to.
+   * @param residues The residues to assign atom types to.
    * @param forceField The ForceField to apply.
-   * @param bondList   Created bonds are added to this List.
+   * @param bondList Created bonds are added to this List.
    * @throws MissingHeavyAtomException A needed heavy atom was not found.
-   * @throws MissingAtomTypeException  An atom type could not be found.
+   * @throws MissingAtomTypeException An atom type could not be found.
    * @since 1.0
    */
   public static void assignAminoAcidAtomTypes(

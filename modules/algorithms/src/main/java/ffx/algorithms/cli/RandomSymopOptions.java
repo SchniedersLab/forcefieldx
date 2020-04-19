@@ -56,19 +56,21 @@ public class RandomSymopOptions {
   @Option(
       names = {"--rsym", "--randomSymOp"},
       paramLabel = "-1.0",
+      defaultValue = "-1.0",
       description =
           "Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp)")
-  double symScalar = -1.0;
+  private double randomSymOp;
 
   /**
-   * --ruc or --randomUnitCell random unit cell axes will be used achieve the specified density
-   * (g/cc) (no default density).
+   * --ruc or --randomUnitCell Random unit cell parameters will be used achieve the specified
+   * density (g/cc) (no default density).
    */
   @Option(
       names = {"--ruc", "--randomUnitCell"},
       paramLabel = "-1.0",
-      description = "Apply random unit cell axes to achieve the specified density (g/cc).")
-  double ucDensity = -1.0;
+      defaultValue = "-1.0",
+      description = "Apply random unit cell parameters to achieve the specified density (g/cc).")
+  private double randomUnitCell;
 
   /**
    * randomize.
@@ -76,11 +78,35 @@ public class RandomSymopOptions {
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    */
   public void randomize(MolecularAssembly assembly) {
-    if (symScalar >= 0) {
-      assembly.applyRandomSymOp(symScalar);
+    if (randomSymOp >= 0) {
+      assembly.applyRandomSymOp(randomSymOp);
     }
-    if (ucDensity > 0) {
-      assembly.applyRandomDensity(ucDensity);
+    if (randomUnitCell > 0) {
+      assembly.applyRandomDensity(randomUnitCell);
     }
+  }
+
+  /**
+   * A random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell,
+   * negative for no SymOp).
+   */
+  public double getRandomSymOp() {
+    return randomSymOp;
+  }
+
+  public void setRandomSymOp(double randomSymOp) {
+    this.randomSymOp = randomSymOp;
+  }
+
+  /**
+   * Random unit cell parameters will be used achieve the specified density (g/cc) (no default
+   * density).
+   */
+  public double getRandomUnitCell() {
+    return randomUnitCell;
+  }
+
+  public void setRandomUnitCell(double randomUnitCell) {
+    this.randomUnitCell = randomUnitCell;
   }
 }

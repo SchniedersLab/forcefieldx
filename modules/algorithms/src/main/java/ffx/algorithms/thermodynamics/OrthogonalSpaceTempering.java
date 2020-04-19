@@ -163,42 +163,26 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
    * <p>The default printFrequency = 100.
    */
   private int printFrequency;
-  /**
-   * Partial derivative of the force field energy with respect to lambda.
-   */
-  private double dForceFieldEnergydL;
-  /**
-   * Magnitude of the 2D orthogonal space bias G(L,dE/dL).
-   */
-  private double gLdEdL = 0.0;
-  /**
-   * OST Bias energy.
-   */
-  private double biasEnergy;
-  /**
-   * Total system energy.
-   */
-  private double totalEnergy;
-  /**
-   * Total partial derivative of the potential (U) being sampled with respect to lambda.
-   */
-  private double dUdLambda;
-  /**
-   * Mixed second partial derivative with respect to coordinates and lambda.
-   */
+  /** Mixed second partial derivative with respect to coordinates and lambda. */
   private final double[] dUdXdL;
-  /**
-   * Second partial derivative of the potential being sampled with respect to lambda.
-   */
+  /** Partial derivative of the force field energy with respect to lambda. */
+  private double dForceFieldEnergydL;
+  /** Magnitude of the 2D orthogonal space bias G(L,dE/dL). */
+  private double gLdEdL = 0.0;
+  /** OST Bias energy. */
+  private double biasEnergy;
+  /** Total system energy. */
+  private double totalEnergy;
+  /** Total partial derivative of the potential (U) being sampled with respect to lambda. */
+  private double dUdLambda;
+  /** Second partial derivative of the potential being sampled with respect to lambda. */
   private double d2UdL2;
   /**
    * Save the previous free energy, in order to limit logging to time points where the free energy
    * has changed.
    */
   private double previousFreeEnergy = 0.0;
-  /**
-   * If true, values of (lambda, dU/dL) that have not been observed are rejected.
-   */
+  /** If true, values of (lambda, dU/dL) that have not been observed are rejected. */
   private boolean hardWallConstraint = false;
 
   /**
@@ -926,9 +910,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     return true;
   }
 
-  /**
-   * Parameters for running local optimizations during OST sampling.
-   */
+  /** Parameters for running local optimizations during OST sampling. */
   public class OptimizationParameters {
 
     /**

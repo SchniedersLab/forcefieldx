@@ -32,9 +32,7 @@ public class TinkerUtils {
    */
   private static final Pattern atomSelectionStartPattern = Pattern.compile("-(\\d+)");
 
-  /**
-   * Tinker ranges end with a positive number. Positive numbers may also be a Singleton.
-   */
+  /** Tinker ranges end with a positive number. Positive numbers may also be a Singleton. */
   private static final Pattern atomSingletonPattern = Pattern.compile("(\\d+)");
 
   /**

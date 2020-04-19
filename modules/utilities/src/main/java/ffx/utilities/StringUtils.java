@@ -78,9 +78,7 @@ import org.apache.commons.math3.util.FastMath;
  */
 public class StringUtils {
 
-  /**
-   * Constant <code>STANDARD_WATER_NAME="HOH"</code>
-   */
+  /** Constant <code>STANDARD_WATER_NAME="HOH"</code> */
   public static final String STANDARD_WATER_NAME = "HOH";
 
   private static final Logger logger = Logger.getLogger(StringUtils.class.getName());

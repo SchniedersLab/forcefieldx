@@ -150,7 +150,7 @@ public class GoldsteinPairRegion extends ParallelRegion {
     }
 
     @Override
-    public void run(int lb, int ub) throws Exception {
+    public void run(int lb, int ub) {
       if (blockedResidues.isEmpty()) {
         double locSumOverK =
             rotamerOptimization.goldsteinPairSumOverK(

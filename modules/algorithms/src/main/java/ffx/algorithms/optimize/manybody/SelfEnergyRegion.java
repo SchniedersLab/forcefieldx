@@ -222,8 +222,8 @@ public class SelfEnergyRegion extends WorkerRegion {
 
   private class SelfEnergyLoop extends WorkerIntegerForLoop {
 
-    DoubleBuf[] resultBuffer;
-    DoubleBuf myBuffer;
+    final DoubleBuf[] resultBuffer;
+    final DoubleBuf myBuffer;
 
     SelfEnergyLoop() {
       resultBuffer = new DoubleBuf[numProc];

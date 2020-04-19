@@ -80,9 +80,7 @@ public abstract class BaseScript extends Script {
    */
   public final Ansi color;
 
-  /**
-   * The Groovy Binding contains defined variables, closures, etc.
-   */
+  /** The Groovy Binding contains defined variables, closures, etc. */
   public Binding context;
 
   /** The array of args passed into the Script. */

@@ -165,7 +165,7 @@ class Dynamics extends AlgorithmsScript {
       molDyn = dynamics.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
 
       molDyn.dynamic(dynamics.steps, dynamics.dt,
-          dynamics.report, dynamics.write, dynamics.temp, true, dyn)
+              dynamics.report, dynamics.write, dynamics.temperature, true, dyn)
 
     } else {
       logger.info("\n Running replica exchange molecular dynamics on " + modelFilename)
@@ -183,7 +183,7 @@ class Dynamics extends AlgorithmsScript {
 
       molDyn = dynamics.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
       ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
-          dynamics.temp)
+              dynamics.temperature)
 
       long totalSteps = dynamics.steps
       int nSteps = 100

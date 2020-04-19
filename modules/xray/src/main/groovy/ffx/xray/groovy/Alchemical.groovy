@@ -316,25 +316,25 @@ class Alchemical extends AlgorithmsScript {
 
     CompositeConfiguration props = assemblies[0].getProperties()
     HistogramSettings hOps = new HistogramSettings(histogramRestart, lambdaRestart.toString(),
-        props)
+            props)
     OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(
-        refinementEnergy, refinementEnergy, lambdaRestart,
-        hOps, props, dynamicsOptions.getTemp(), dynamicsOptions.getDt(),
-        dynamicsOptions.getReport(),
-        dynamicsOptions.getCheckpoint(), asynchronous, true, algorithmListener);
+            refinementEnergy, refinementEnergy, lambdaRestart,
+            hOps, props, dynamicsOptions.getTemperature(), dynamicsOptions.getDt(),
+            dynamicsOptions.getReport(),
+            dynamicsOptions.getCheckpoint(), asynchronous, true, algorithmListener);
 
 
     orthogonalSpaceTempering.setLambda(lambda);
     orthogonalSpaceTempering.getOptimizationParameters().setOptimization(true, activeAssembly);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(assemblies[0], orthogonalSpaceTempering, props,
-        null, thermostat, integrator)
+            null, thermostat, integrator)
 
     algorithmFunctions.energy(assemblies[0])
 
     molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,
-        dynamicsOptions.write, dynamicsOptions.temp, true,
-        fileType, dynamicsOptions.write, dyn)
+            dynamicsOptions.write, dynamicsOptions.temperature, true,
+            fileType, dynamicsOptions.write, dyn)
 
     logger.info(" Searching for low energy coordinates")
     OptimizationParameters opt = orthogonalSpaceTempering.getOptimizationParameters();

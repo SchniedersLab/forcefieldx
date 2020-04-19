@@ -52,18 +52,21 @@ public class MinimizeOptions {
   @Option(
       names = {"-I", "--iterations"},
       paramLabel = "Unlimited",
+      // Integer.MAX_VALUE = 2^31 -1 = 2147483647.
+      defaultValue = "2147483647",
       description = "Number of minimization steps.")
-  int iterations = Integer.MAX_VALUE;
+  private int iterations;
 
   /** -e or --eps Convergence criteria. */
   @Option(
       names = {"-e", "--eps"},
       paramLabel = "1.0",
+      defaultValue = "1.0",
       description = "Convergence criteria.")
-  double eps = 1.0;
+  private double eps;
 
   /**
-   * Getter for the field <code>eps</code>.
+   * Convergence criteria.
    *
    * @return a double.
    */
@@ -71,12 +74,20 @@ public class MinimizeOptions {
     return eps;
   }
 
+  public void setEps(double eps) {
+    this.eps = eps;
+  }
+
   /**
-   * Getter for the field <code>iterations</code>.
+   * Number of minimization steps.
    *
    * @return a int.
    */
   public int getIterations() {
     return iterations;
+  }
+
+  public void setIterations(int iterations) {
+    this.iterations = iterations;
   }
 }

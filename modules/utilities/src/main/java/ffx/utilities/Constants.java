@@ -55,9 +55,7 @@ public class Constants {
    * DEL_V_Cs_SI=9192631770L</code>
    */
   public static final long DEL_V_Cs_SI = 9192631770L;
-  /**
-   * Speed of light in m/s, defining the meter. <code>SPEED_OF_LIGHT_SI=299792458</code>
-   */
+  /** Speed of light in m/s, defining the meter. <code>SPEED_OF_LIGHT_SI=299792458</code> */
   public static final int SPEED_OF_LIGHT_SI = 299792458;
   /**
    * Planck constant in J*s, defining the kilogram (by defining the derived Joule) <code>

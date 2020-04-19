@@ -119,53 +119,29 @@ import org.apache.commons.io.FilenameUtils;
  */
 public class RotamerOptimization implements Terminatable {
 
-  /**
-   * Logger for this class.
-   */
+  /** Logger for this class. */
   private static final Logger logger = Logger.getLogger(RotamerOptimization.class.getName());
-  /**
-   * Fallback if there is no vdW node.
-   */
+  /** Fallback if there is no vdW node. */
   private static final double FALLBACK_TWO_BODY_CUTOFF = 0;
-  /**
-   * MolecularAssembly to perform rotamer optimization on.
-   */
+  /** MolecularAssembly to perform rotamer optimization on. */
   protected final MolecularAssembly molecularAssembly;
-  /**
-   * The Potential to evaluate during rotamer optimization.
-   */
+  /** The Potential to evaluate during rotamer optimization. */
   protected final Potential potential;
-  /**
-   * AlgorithmListener who should receive updates as the optimization runs.
-   */
+  /** AlgorithmListener who should receive updates as the optimization runs. */
   protected final AlgorithmListener algorithmListener;
-  /**
-   * World Parallel Java communicator.
-   */
+  /** World Parallel Java communicator. */
   private final Comm world;
-  /**
-   * Number of Parallel Java processes.
-   */
+  /** Number of Parallel Java processes. */
   private final int numProc;
-  /**
-   * Rank of this process.
-   */
+  /** Rank of this process. */
   private final int rank;
-  /**
-   * Flag to indicate if this is the master process.
-   */
+  /** Flag to indicate if this is the master process. */
   private final boolean master;
-  /**
-   * Flag to control the verbosity of printing.
-   */
+  /** Flag to control the verbosity of printing. */
   private final boolean print = false;
-  /**
-   * Flag to calculate and print additional energies (mostly for debugging).
-   */
+  /** Flag to calculate and print additional energies (mostly for debugging). */
   private final boolean verboseEnergies = true;
-  /**
-   * If true, write out an energy restart file.
-   */
+  /** If true, write out an energy restart file. */
   private final boolean writeEnergyRestart = true;
 
   private final BoxOptimization boxOpt;
@@ -181,37 +157,23 @@ public class RotamerOptimization implements Terminatable {
    * existing potential energy code. May discard the input file.
    */
   private final ToDoubleFunction<File> eFunction;
-  /**
-   * Flag to indicate verbose logging.
-   */
+  /** Flag to indicate verbose logging. */
   private final boolean verbose;
 
   private DistanceMatrix dM;
   private EnergyExpansion eE;
   private EliminatedRotamers eR;
-  /**
-   * RotamerLibrary instance.
-   */
+  /** RotamerLibrary instance. */
   protected RotamerLibrary library = RotamerLibrary.getDefaultLibrary();
-  /**
-   * Parallel evaluation of quantities used during Goldstein Pair elimination.
-   */
+  /** Parallel evaluation of quantities used during Goldstein Pair elimination. */
   private GoldsteinPairRegion goldsteinPairRegion;
-  /**
-   * Parallel evaluation of many-body energy sums.
-   */
+  /** Parallel evaluation of many-body energy sums. */
   private EnergyRegion energyRegion;
-  /**
-   * Flag to indicate a request to terminate the optimization.
-   */
+  /** Flag to indicate a request to terminate the optimization. */
   private boolean terminate = false;
-  /**
-   * Flag to indicate if the algorithm is running (done == false) or completed (done == true).
-   */
+  /** Flag to indicate if the algorithm is running (done == false) or completed (done == true). */
   private boolean done = true;
-  /**
-   * Two-Body cutoff distance.
-   */
+  /** Two-Body cutoff distance. */
   private double twoBodyCutoffDist;
   /** Flag to control use of 3-body terms. */
   private boolean threeBodyTerm = false;
@@ -431,11 +393,7 @@ public class RotamerOptimization implements Terminatable {
     numProc = world.size();
     rank = world.rank();
 
-    if (rank == 0) {
-      master = true;
-    } else {
-      master = false;
-    }
+    master = rank == 0;
 
     boxOpt = new BoxOptimization();
 

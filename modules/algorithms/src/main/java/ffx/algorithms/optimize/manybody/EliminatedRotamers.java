@@ -270,9 +270,9 @@ public class EliminatedRotamers {
    * residue i, or if i-ri is already eliminated.
    *
    * @param residues Residues under consideration.
-   * @param i        A residue index based on the current residue list.
-   * @param ri       A rotamer to attempt elimination of.
-   * @param verbose  Request verbose logging.
+   * @param i A residue index based on the current residue list.
+   * @param ri A rotamer to attempt elimination of.
+   * @param verbose Request verbose logging.
    * @return If the rotamer was eliminated.
    */
   public boolean eliminateRotamer(Residue[] residues, int i, int ri, boolean verbose) {
@@ -709,10 +709,8 @@ public class EliminatedRotamers {
         }
       }
     }
-    StringBuilder sb =
-        new StringBuilder(format(" %d out of %d rotamers eliminated.\n", singles, rotamerCount));
-    sb.append(format(" %d out of %d rotamer pairs eliminated.", pairs, pairCount));
-    return sb.toString();
+    return format(" %d out of %d rotamers eliminated.\n", singles, rotamerCount)
+        + format(" %d out of %d rotamer pairs eliminated.", pairs, pairCount);
   }
 
   public boolean validateDEE(Residue[] residues) {

@@ -324,9 +324,7 @@ public class CcmaConstraint implements Constraint {
     return newC;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void applyConstraintToStep(double[] xPrior, double[] xNew, double[] masses, double tol) {
     applyConstraints(xPrior, xNew, masses, false, tol);
@@ -479,17 +477,13 @@ public class CcmaConstraint implements Constraint {
       constraintDelta = cDelta;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public double end() {
       return sum;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public void start(int dimension, int start, int end) {}
 

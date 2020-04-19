@@ -194,9 +194,9 @@ public class DistanceMatrix {
   /**
    * Checks if the i,ri,j,rj pair exceeds the pair distance thresholds.
    *
-   * @param i  A residue index.
+   * @param i A residue index.
    * @param ri A rotamer index for i.
-   * @param j  A residue index j!=i.
+   * @param j A residue index j!=i.
    * @param rj A rotamer index for j.
    * @return If i,ri,j,rj is greater than the threshold distance.
    */
@@ -725,7 +725,7 @@ public class DistanceMatrix {
     for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
       SymOp symOp = crystal.spaceGroup.getSymOp(iSymOp);
       double dist = interResidueDistance(xi, xj, symOp);
-      minDist = dist < minDist ? dist : minDist;
+      minDist = Math.min(dist, minDist);
     }
     return minDist;
   }

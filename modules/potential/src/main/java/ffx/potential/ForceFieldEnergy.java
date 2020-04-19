@@ -165,317 +165,165 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   protected double lambda = 1.0;
   /** Indicates use of the Lambda state variable. */
   protected boolean lambdaTerm;
-  /**
-   * Optimization scaling value to use for each degree of freedom.
-   */
-  protected double[] optimizationScaling = null;
-  /**
-   * Indicates only bonded energy terms effected by Lambda should be evaluated.
-   */
-  boolean lambdaBondedTerms = false;
-  /**
-   * Flag to indicate proper shutdown of the ForceFieldEnergy.
-   */
-  boolean destroyed = false;
-  /**
-   * The array of Atoms being evaluated.
-   */
-  private Atom[] atoms;
-  /**
-   * The non-bonded cut-off plus buffer distance (Angstroms).
-   */
+  /** The non-bonded cut-off plus buffer distance (Angstroms). */
   private final double cutoffPlusBuffer;
-  /**
-   * An array of Stretch-Torsion terms.
-   */
+  /** An array of Stretch-Torsion terms. */
   private final StretchTorsion[] stretchTorsions;
-  /**
-   * An array of Angle-Torsion terms.
-   */
+  /** An array of Angle-Torsion terms. */
   private final AngleTorsion[] angleTorsions;
+  /** Particle-Mesh Ewald electrostatic energy. */
+  private final ParticleMeshEwald particleMeshEwald;
+  /** Number of Angle-Torsion terms in the system. */
+  private final int nAngleTorsions;
+  /** Number of Stretch-Torsion terms in the system. */
+  private final int nStretchTorsions;
+  /** Original state of the Bond energy term flag. */
+  private final boolean bondTermOrig;
   /**
    * An instance of the STATE enumeration to specify calculation of slowly varying energy terms,
    * fast varying or both.
    */
   private STATE state = STATE.BOTH;
-  /**
-   * An array of Bond terms.
-   */
-  private Bond[] bonds;
-  /**
-   * An array of Angle terms.
-   */
-  private Angle[] angles;
-  /**
-   * An array of Stretch-Bend terms.
-   */
-  private StretchBend[] stretchBends;
-  /**
-   * An array of Urey-Bradley terms.
-   */
-  private UreyBradley[] ureyBradleys;
-  /**
-   * An array of Out of Plane Bend terms.
-   */
-  private OutOfPlaneBend[] outOfPlaneBends;
-  /**
-   * Particle-Mesh Ewald electrostatic energy.
-   */
-  private final ParticleMeshEwald particleMeshEwald;
-  /**
-   * Number of Angle-Torsion terms in the system.
-   */
-  private final int nAngleTorsions;
-  /**
-   * Number of Stretch-Torsion terms in the system.
-   */
-  private final int nStretchTorsions;
-  /**
-   * Original state of the Bond energy term flag.
-   */
-  private final boolean bondTermOrig;
-  /**
-   * An array of Torsion-Torsion terms.
-   */
-  private TorsionTorsion[] torsionTorsions;
-  /**
-   * An array of Improper Torsion terms.
-   */
-  private ImproperTorsion[] improperTorsions;
-  /**
-   * Original state of the Angle energy term flag.
-   */
+  /** Original state of the Angle energy term flag. */
   private final boolean angleTermOrig;
-  /**
-   * Original state of the Stretch-Bend energy term flag.
-   */
+  /** Original state of the Stretch-Bend energy term flag. */
   private final boolean stretchBendTermOrig;
-  /**
-   * Number of atoms in the system.
-   */
-  private int nAtoms;
-  /**
-   * Number of bond terms in the system.
-   */
-  private int nBonds;
-  /**
-   * Number of angle terms in the system.
-   */
-  private int nAngles;
-  /**
-   * Number of stretch-bend terms in the system.
-   */
-  private int nStretchBends;
-  /**
-   * Number of Urey-Bradley terms in the system.
-   */
-  private int nUreyBradleys;
-  /**
-   * Number of Out of Plane Bend terms in the system.
-   */
-  private int nOutOfPlaneBends;
-  /**
-   * Original state of the Urey-Bradley energy term flag.
-   */
+  /** Original state of the Urey-Bradley energy term flag. */
   private final boolean ureyBradleyTermOrig;
-  /**
-   * Original state of the Out-of-Plane Bend energy term flag.
-   */
+  /** Original state of the Out-of-Plane Bend energy term flag. */
   private final boolean outOfPlaneBendTermOrig;
-  /**
-   * Original state of the Torsion energy term flag.
-   */
+  /** Original state of the Torsion energy term flag. */
   private final boolean torsionTermOrig;
-  /**
-   * Number of Improper Torsion terms in the system.
-   */
-  private int nImproperTorsions;
-  /**
-   * Number of Pi-Orbital Torsion terms in the system.
-   */
-  private int nPiOrbitalTorsions;
-  /**
-   * Number of Torsion-Torsion terms in the system.
-   */
-  private int nTorsionTorsions;
-  /**
-   * Number of Restraint Bond terms in the system.
-   */
-  private int nRestraintBonds = 0;
-  /**
-   * Number of Restraint Bond terms in the system.
-   */
-  private int nRestrainGroups = 0;
-  /**
-   * Number of van der Waals interactions evaluated.
-   */
-  private int nVanDerWaalInteractions;
-  /**
-   * Number of electrostatic interactions evaluated.
-   */
-  private int nPermanentInteractions;
-  /**
-   * Original state of the Stretch-Torsion energy term flag.
-   */
+  /** Original state of the Stretch-Torsion energy term flag. */
   private final boolean stretchTorsionTermOrig;
-  /**
-   * Original state of the Angle-Torsion energy term flag.
-   */
+  /** Original state of the Angle-Torsion energy term flag. */
   private final boolean angleTorsionTermOrig;
-  /**
-   * Original state of the Improper Torsion energy term flag.
-   */
+  /** Original state of the Improper Torsion energy term flag. */
   private final boolean improperTorsionTermOrig;
-  /**
-   * Original state of the Pi-Orbital Torsion energy term flag.
-   */
+  /** Original state of the Pi-Orbital Torsion energy term flag. */
   private final boolean piOrbitalTorsionTermOrig;
-  /**
-   * Original state of the Torsion-Torsion energy term flag.
-   */
+  /** Original state of the Torsion-Torsion energy term flag. */
   private final boolean torsionTorsionTermOrig;
-  /**
-   * Original state of the Restraint Bond energy term flag.
-   */
+  /** Original state of the Restraint Bond energy term flag. */
   private final boolean restraintBondTermOrig;
-  /**
-   * Original state of the van der Waals energy term flag.
-   */
+  /** Original state of the van der Waals energy term flag. */
   private final boolean vanderWaalsTermOrig;
-  /**
-   * Original state of the multipole energy term flag.
-   */
+  /** Original state of the multipole energy term flag. */
   private final boolean multipoleTermOrig;
-  /**
-   * Original state of the polarization energy term flag.
-   */
+  /** Original state of the polarization energy term flag. */
   private final boolean polarizationTermOrig;
-  /**
-   * Original state of the GK energy term flag.
-   */
+  /** Original state of the GK energy term flag. */
   private final boolean generalizedKirkwoodTermOrig;
-  /**
-   * Flag to indicate hydrogen bonded terms should be scaled up.
-   */
+  /** Flag to indicate hydrogen bonded terms should be scaled up. */
   private final boolean rigidHydrogens;
-  /**
-   * Indicates application of lambda scaling to all Torsion based energy terms.
-   */
+  /** Indicates application of lambda scaling to all Torsion based energy terms. */
   private final boolean lambdaTorsions;
-  /**
-   * Relative solvation term (TODO: needs further testing).
-   */
+  /** Relative solvation term (TODO: needs further testing). */
   private final RelativeSolvation relativeSolvation;
+  /** Optimization scaling value to use for each degree of freedom. */
+  protected double[] optimizationScaling = null;
+  /** Indicates only bonded energy terms effected by Lambda should be evaluated. */
+  boolean lambdaBondedTerms = false;
+  /** Flag to indicate proper shutdown of the ForceFieldEnergy. */
+  boolean destroyed = false;
+  /** The array of Atoms being evaluated. */
+  private Atom[] atoms;
+  /** An array of Bond terms. */
+  private Bond[] bonds;
+  /** An array of Angle terms. */
+  private Angle[] angles;
+  /** An array of Stretch-Bend terms. */
+  private StretchBend[] stretchBends;
+  /** An array of Urey-Bradley terms. */
+  private UreyBradley[] ureyBradleys;
+  /** An array of Out of Plane Bend terms. */
+  private OutOfPlaneBend[] outOfPlaneBends;
+  /** An array of Torsion-Torsion terms. */
+  private TorsionTorsion[] torsionTorsions;
+  /** An array of Improper Torsion terms. */
+  private ImproperTorsion[] improperTorsions;
+  /** Number of atoms in the system. */
+  private int nAtoms;
+  /** Number of bond terms in the system. */
+  private int nBonds;
+  /** Number of angle terms in the system. */
+  private int nAngles;
+  /** Number of stretch-bend terms in the system. */
+  private int nStretchBends;
+  /** Number of Urey-Bradley terms in the system. */
+  private int nUreyBradleys;
+  /** Number of Out of Plane Bend terms in the system. */
+  private int nOutOfPlaneBends;
+  /** Number of Improper Torsion terms in the system. */
+  private int nImproperTorsions;
+  /** Number of Pi-Orbital Torsion terms in the system. */
+  private int nPiOrbitalTorsions;
+  /** Number of Torsion-Torsion terms in the system. */
+  private int nTorsionTorsions;
+  /** Number of Restraint Bond terms in the system. */
+  private int nRestraintBonds = 0;
+  /** Number of Restraint Bond terms in the system. */
+  private int nRestrainGroups = 0;
+  /** Number of van der Waals interactions evaluated. */
+  private int nVanDerWaalInteractions;
+  /** Number of electrostatic interactions evaluated. */
+  private int nPermanentInteractions;
 
   private final boolean relativeSolvationTerm;
   private final Platform platform = Platform.FFX;
-  /**
-   * The boundary conditions used when evaluating the force field energy.
-   */
+  /** The boundary conditions used when evaluating the force field energy. */
   private Crystal crystal;
-  /**
-   * A Parallel Java Region used to evaluate Bonded energy values.
-   */
+  /** A Parallel Java Region used to evaluate Bonded energy values. */
   private BondedRegion bondedRegion;
-  /**
-   * An array of Torsion terms.
-   */
+  /** An array of Torsion terms. */
   private Torsion[] torsions;
-  /**
-   * An array of Pi-Orbital Torsion terms.
-   */
+  /** An array of Pi-Orbital Torsion terms. */
   private PiOrbitalTorsion[] piOrbitalTorsions;
-  /**
-   * An array of Bond Restraint terms.
-   */
+  /** An array of Bond Restraint terms. */
   private RestraintBond[] restraintBonds;
-  /**
-   * Number of Torsion terms in the system.
-   */
+  /** Number of Torsion terms in the system. */
   private int nTorsions;
-  /**
-   * Number of implicit solvent interactions evaluated.
-   */
+  /** Number of implicit solvent interactions evaluated. */
   private int nGKInteractions;
-  /**
-   * Evaluate Bond energy terms.
-   */
+  /** Evaluate Bond energy terms. */
   private boolean bondTerm;
-  /**
-   * Evaluate Angle energy terms.
-   */
+  /** Evaluate Angle energy terms. */
   private boolean angleTerm;
-  /**
-   * Evaluate Stretch-Bend energy terms.
-   */
+  /** Evaluate Stretch-Bend energy terms. */
   private boolean stretchBendTerm;
-  /**
-   * Evaluate Urey-Bradley energy terms.
-   */
+  /** Evaluate Urey-Bradley energy terms. */
   private boolean ureyBradleyTerm;
-  /**
-   * Evaluate Out of Plane Bend energy terms.
-   */
+  /** Evaluate Out of Plane Bend energy terms. */
   private boolean outOfPlaneBendTerm;
-  /**
-   * Evaluate Torsion energy terms.
-   */
+  /** Evaluate Torsion energy terms. */
   private boolean torsionTerm;
-  /**
-   * Evaluate Stretch-Torsion energy terms.
-   */
+  /** Evaluate Stretch-Torsion energy terms. */
   private boolean stretchTorsionTerm;
-  /**
-   * Evaluate Angle-Torsion energy terms.
-   */
+  /** Evaluate Angle-Torsion energy terms. */
   private boolean angleTorsionTerm;
-  /**
-   * Evaluate Improper Torsion energy terms.
-   */
+  /** Evaluate Improper Torsion energy terms. */
   private boolean improperTorsionTerm;
-  /**
-   * Evaluate Pi-Orbital Torsion energy terms.
-   */
+  /** Evaluate Pi-Orbital Torsion energy terms. */
   private boolean piOrbitalTorsionTerm;
-  /**
-   * Evaluate Torsion-Torsion energy terms.
-   */
+  /** Evaluate Torsion-Torsion energy terms. */
   private boolean torsionTorsionTerm;
-  /**
-   * Evaluate NCS energy term.
-   */
+  /** Evaluate NCS energy term. */
   private boolean ncsTerm;
-  /**
-   * Original state of the NCS energy term flag.
-   */
+  /** Original state of the NCS energy term flag. */
   private boolean ncsTermOrig;
-  /**
-   * Evaluate Restrain energy term.
-   */
+  /** Evaluate Restrain energy term. */
   private boolean restrainTerm;
-  /**
-   * Evaluate Restraint Bond energy terms.
-   */
+  /** Evaluate Restraint Bond energy terms. */
   private boolean restraintBondTerm;
-  /**
-   * Evaluate van der Waals energy term.
-   */
+  /** Evaluate van der Waals energy term. */
   private boolean vanderWaalsTerm;
-  /**
-   * Evaluate permanent multipole electrostatics energy term.
-   */
+  /** Evaluate permanent multipole electrostatics energy term. */
   private boolean multipoleTerm;
-  /**
-   * Evaluate COM energy term.
-   */
+  /** Evaluate COM energy term. */
   private boolean comTerm;
-  /**
-   * Original state of the COM energy term flag.
-   */
+  /** Original state of the COM energy term flag. */
   private boolean comTermOrig;
-  /**
-   * Evaluate polarization energy term.
-   */
+  /** Evaluate polarization energy term. */
   private boolean polarizationTerm;
   /** Scale factor for increasing the strength of bonded terms involving hydrogen atoms. */
   private double rigidScale;
@@ -537,93 +385,49 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private long bondTime;
   /** Time to evaluate Angle terms. */
   private long angleTime;
-  /**
-   * Time to evaluate Stretch-Bend terms.
-   */
+  /** Time to evaluate Stretch-Bend terms. */
   private long stretchBendTime;
-  /**
-   * Time to evaluate Urey-Bradley terms.
-   */
+  /** Time to evaluate Urey-Bradley terms. */
   private long ureyBradleyTime;
-  /**
-   * Time to evaluate Out-Of-Plane Bend terms.
-   */
+  /** Time to evaluate Out-Of-Plane Bend terms. */
   private long outOfPlaneBendTime;
-  /**
-   * Time to evaluate Torsion terms.
-   */
+  /** Time to evaluate Torsion terms. */
   private long torsionTime;
-  /**
-   * Time to evaluate Angle-Torsion terms.
-   */
+  /** Time to evaluate Angle-Torsion terms. */
   private long angleTorsionTime;
-  /**
-   * Time to evaluate Stretch-Torsion terms.
-   */
+  /** Time to evaluate Stretch-Torsion terms. */
   private long stretchTorsionTime;
-  /**
-   * Time to evaluate Pi-Orbital Torsion terms.
-   */
+  /** Time to evaluate Pi-Orbital Torsion terms. */
   private long piOrbitalTorsionTime;
-  /**
-   * Time to evaluate Improper Torsion terms.
-   */
+  /** Time to evaluate Improper Torsion terms. */
   private long improperTorsionTime;
-  /**
-   * Time to evaluate Torsion-Torsion terms.
-   */
+  /** Time to evaluate Torsion-Torsion terms. */
   private long torsionTorsionTime;
-  /**
-   * Time to evaluate van der Waals term.
-   */
+  /** Time to evaluate van der Waals term. */
   private long vanDerWaalsTime;
-  /**
-   * Time to evaluate electrostatics term.
-   */
+  /** Time to evaluate electrostatics term. */
   private long electrostaticTime;
-  /**
-   * Time to evaluate Restraint Bond term.
-   */
+  /** Time to evaluate Restraint Bond term. */
   private long restraintBondTime;
-  /**
-   * Evaluate generalized Kirkwood energy term.
-   */
+  /** Evaluate generalized Kirkwood energy term. */
   private boolean generalizedKirkwoodTerm;
-  /**
-   * Original state of the Restrain energy term flag.
-   */
+  /** Original state of the Restrain energy term flag. */
   private boolean restrainTermOrig;
-  /**
-   * Time to evaluate Center of Mass restraint term.
-   */
+  /** Time to evaluate Center of Mass restraint term. */
   private long comRestraintTime;
-  /**
-   * Time to evaluate restrain group term.
-   */
+  /** Time to evaluate restrain group term. */
   private long restrainGroupTime;
-  /**
-   * Time to evaluate all energy terms.
-   */
+  /** Time to evaluate all energy terms. */
   private long totalTime;
-  /**
-   * Evaluate Restrain Group energy term.
-   */
+  /** Evaluate Restrain Group energy term. */
   private boolean restrainGroupTerm;
-  /**
-   * Value of each degree of freedom.
-   */
+  /** Value of each degree of freedom. */
   private double[] xyz;
-  /**
-   * Original state of the Restrain Group energy term flag.
-   */
+  /** Original state of the Restrain Group energy term flag. */
   private boolean restrainGroupTermOrig;
-  /**
-   * Indicate resolution of this ForceFieldEnergy (TODO: needs further testing).
-   */
+  /** Indicate resolution of this ForceFieldEnergy (TODO: needs further testing). */
   private Resolution resolution = Resolution.AMOEBA;
-  /**
-   * Constant pH extended system (TODO: needs further testing).
-   */
+  /** Constant pH extended system (TODO: needs further testing). */
   private ExtendedSystem esvSystem = null;
 
   private boolean esvTerm;

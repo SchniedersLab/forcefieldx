@@ -582,7 +582,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
   /**
    * runFFXScript
    *
-   * @param file    a {@link java.io.File} object.
+   * @param file a {@link java.io.File} object.
    * @param argList List of String inputs to the script.
    */
   public void runFFXScript(File file, List<String> argList) {

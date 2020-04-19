@@ -413,8 +413,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * multipoleTypeFactory.
    *
-   * @param elecForm   The electrostatics form being used.
-   * @param atom       a {@link ffx.potential.bonded.Atom} object.
+   * @param elecForm The electrostatics form being used.
+   * @param atom a {@link ffx.potential.bonded.Atom} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
    * @return a {@link ffx.potential.parameters.MultipoleType} object.
    */

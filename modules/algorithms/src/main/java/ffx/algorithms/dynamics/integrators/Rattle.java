@@ -65,8 +65,8 @@ public class Rattle {
   private double[] yold;
   private double[] zold;
   private double[][] vel;
-  private int nVariables;
-  private Crystal cryst = molAss.getCrystal();
+  private final int nVariables;
+  private final Crystal cryst = molAss.getCrystal();
 
   // set the velocity and original coordinates of global variables in Rattle Class
 
@@ -77,7 +77,7 @@ public class Rattle {
    * @param molAss a {@link ffx.potential.MolecularAssembly} object.
    * @param v an array of {@link double} objects.
    */
-  public Rattle(int nVariables, MolecularAssembly molAss, double v[]) {
+  public Rattle(int nVariables, MolecularAssembly molAss, double[] v) {
 
     int i, j = 0;
     Atom[] tempArray = molAss.getAtomArray();
@@ -119,7 +119,7 @@ public class Rattle {
     double xo, yo, zo;
     double dot, rma, rmb;
     double dist2;
-    double delta = 0; // needs initializing to eliminate compile error on line 159
+    double delta;
     double term;
     double xterm, yterm, zterm;
     double[] xyzr = new double[3];
@@ -148,11 +148,7 @@ public class Rattle {
 
     // Initialize the lists of atoms previously corrected
     for (i = 0; i < n; i++) {
-      if (atomArray[i].isActive()) {
-        moved[i] = true;
-      } else {
-        moved[i] = false;
-      }
+      moved[i] = atomArray[i].isActive();
 
       update[i] = false;
     }
@@ -303,11 +299,7 @@ public class Rattle {
     // initialize lists of atoms previously corrected
     atomArray = molAss.getAtomArray();
     for (i = 0; i < n; i++) {
-      if (atomArray[i].isActive()) {
-        moved[i] = true;
-      } else {
-        moved[i] = false;
-      }
+      moved[i] = atomArray[i].isActive();
 
       update[i] = false;
     }

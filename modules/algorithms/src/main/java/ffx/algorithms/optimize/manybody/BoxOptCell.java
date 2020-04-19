@@ -93,11 +93,10 @@ public class BoxOptCell {
   /**
    * Checks if any rotamer of a Residue is inside this BoxOptCell.
    *
-   * @param residue        Residue to check.
-   * @param crystal        A Crystal.
-   * @param symOp          A symmetry operator to apply.
-   * @param variableOnly   If using only variable (protein side-chain, nucleic acid backbone)
-   *                       atoms.
+   * @param residue Residue to check.
+   * @param crystal A Crystal.
+   * @param symOp A symmetry operator to apply.
+   * @param variableOnly If using only variable (protein side-chain, nucleic acid backbone) atoms.
    * @param rotamerLibrary RotamerLibrary to apply.
    * @return If contained inside this BoxOptCell.
    */

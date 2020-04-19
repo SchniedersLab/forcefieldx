@@ -50,7 +50,7 @@ import java.io.Writer;
 class HistogramWriter extends PrintWriter {
 
   /** Private reference to the Histogram instance. */
-  private Histogram histogram;
+  private final Histogram histogram;
 
   /**
    * Constructor.

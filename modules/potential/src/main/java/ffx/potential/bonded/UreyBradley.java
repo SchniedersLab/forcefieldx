@@ -66,7 +66,7 @@ public class UreyBradley extends BondedTerm {
   /**
    * Constructor for the UreyBradley class.
    *
-   * @param a               a {@link ffx.potential.bonded.Angle} object.
+   * @param a a {@link ffx.potential.bonded.Angle} object.
    * @param ureyBradleyType The Urey-Bradley type to apply.
    */
   public UreyBradley(Angle a, UreyBradleyType ureyBradleyType) {
