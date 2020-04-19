@@ -169,7 +169,7 @@ public class MultiDynamicsOptions {
           optStructure(
               molecularAssemblies[3], qte.getDualTopB(), algorithmFunctions, rank, worldSize);
           break;
-        // Oct-topology is deprecated on account of not working as intended.
+          // Oct-topology is deprecated on account of not working as intended.
         default:
           logger.severe(" First: must have 1, 2, or 4 topologies.");
           break;
