@@ -471,16 +471,18 @@ public abstract class Thermostat {
   /** {@inheritDoc} */
   @Override
   public String toString() {
-    String sb =
-        format("  Target temperature:           %7.2f Kelvin\n", targetTemperature)
-            + format("  Current temperature:          %7.2f Kelvin\n", currentTemperature)
-            + format("  Number of variables:          %7d\n", nVariables)
-            + format("  Number of degrees of freedom: %7d\n", degreesOfFreedom)
-            + format("  Kinetic Energy:               %7.2f\n", currentKineticEnergy)
-            + format(
+    StringBuilder sb =
+        new StringBuilder(
+            format("  Target temperature:           %7.2f Kelvin\n", targetTemperature));
+    sb.append(format("  Current temperature:          %7.2f Kelvin\n", currentTemperature));
+    sb.append(format("  Number of variables:          %7d\n", nVariables));
+    sb.append(format("  Number of degrees of freedom: %7d\n", degreesOfFreedom));
+    sb.append(format("  Kinetic Energy:               %7.2f\n", currentKineticEnergy));
+    sb.append(
+        format(
             "  kT per degree of freedom:     %7.2f",
-            KCAL_TO_GRAM_ANG2_PER_PS2 * currentKineticEnergy / (degreesOfFreedom * kT));
-    return sb;
+            KCAL_TO_GRAM_ANG2_PER_PS2 * currentKineticEnergy / (degreesOfFreedom * kT)));
+    return sb.toString();
   }
 
   /**
