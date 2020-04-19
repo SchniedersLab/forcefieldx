@@ -199,6 +199,38 @@ public final class Main extends JFrame {
    * @param args an array of {@link java.lang.String} objects.
    */
   public static void main(String[] args) {
+
+    List<String> argList = new ArrayList<>();
+    File commandLineFile = initMain(args, argList);
+
+    try {
+      // Start up the GUI or CLI version of Force Field X.
+      if (!GraphicsEnvironment.isHeadless()) {
+        startGraphicalUserInterface(commandLineFile, argList);
+      } else {
+        if (commandLineFile == null) {
+          logger.info(" No command line file supplied.");
+        } else {
+          startCommandLineInterface(commandLineFile, argList);
+        }
+      }
+    } catch (Throwable t) {
+      int statusCode = 1;
+      logger.info(" Uncaught exception: exiting with status code " + statusCode);
+      t.printStackTrace();
+      System.exit(statusCode);
+    }
+  }
+
+  /**
+   * Process the input arguments into a List, start the logging, start Parallel Java and process the
+   * input command.
+   *
+   * @param args an array of {@link java.lang.String} objects.
+   * @param argList List is filled with processed arguments.
+   * @return A file for FFX to operate on.
+   */
+  public static File initMain(String[] args, List<String> argList) {
     // Process any "-D" command line flags.
     args = processProperties(args);
 
@@ -234,17 +266,27 @@ public final class Main extends JFrame {
     }
 
     // Convert the args to a List<String>.
-    List<String> argList = new ArrayList<>(nArgs);
     if (nArgs > 1) {
       argList.addAll(Arrays.asList(args).subList(1, nArgs));
     }
 
+    return commandLineFile;
+  }
+
+  /**
+   * A main entry point that runs a script and return a refernce to the result.
+   *
+   * @param args an array of {@link java.lang.String} objects.
+   * @return A Groovy Script instance.
+   */
+  public static Script ffxScript(String[] args) {
+    List<String> argList = new ArrayList<>();
+    File commandLineFile = initMain(args, argList);
     try {
-      // Start up the GUI or CLI version of Force Field X.
-      if (!GraphicsEnvironment.isHeadless()) {
-        startGraphicalUserInterface(commandLineFile, argList);
+      if (commandLineFile == null) {
+        logger.info(" No command line file supplied.");
       } else {
-        startCommandLineInterface(commandLineFile, argList);
+        return startCommandLineInterface(commandLineFile, argList);
       }
     } catch (Throwable t) {
       int statusCode = 1;
@@ -252,6 +294,7 @@ public final class Main extends JFrame {
       t.printStackTrace();
       System.exit(statusCode);
     }
+    return null;
   }
 
   /** Print out help for the command line version of Force Field X. */
@@ -378,13 +421,13 @@ public final class Main extends JFrame {
    * @param commandLineFile The command line file.
    * @param argList The command line argument list.
    */
-  private static void startCommandLineInterface(File commandLineFile, List<String> argList) {
+  private static Script startCommandLineInterface(File commandLineFile, List<String> argList) {
     if (configuration == null) {
       logger.info(" Starting up the command line interface.\n");
     }
-
-    HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
+    HeadlessMain m = new HeadlessMain(logHandler);
     mainPanel = m.mainPanel;
+    return runScript(mainPanel.getModelingShell(), commandLineFile, argList);
   }
 
   /**
@@ -523,18 +566,19 @@ public final class Main extends JFrame {
     }
   }
 
-  public static void runScript(ModelingShell shell, File commandLineFile, List<String> argList) {
+  public static Script runScript(ModelingShell shell, File commandLineFile, List<String> argList) {
     // Attempt to run a supplied script.
     if (commandLineFile.exists()) {
-      shell.runFFXScript(commandLineFile, argList);
+      return shell.runFFXScript(commandLineFile, argList);
     } else {
       // See if the commandLineFile is an embedded script.
       String name = commandLineFile.getName();
       Class<? extends Script> ffxScript = BaseScript.getScript(name);
       if (ffxScript != null) {
-        shell.runFFXScript(ffxScript, argList);
+        return shell.runFFXScript(ffxScript, argList);
       }
     }
+    return null;
   }
 
   /**
