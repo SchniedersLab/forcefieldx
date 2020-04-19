@@ -1620,8 +1620,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * The lambda value that defines when the electrostatics will start to turn on for full path
      * non-bonded term scaling.
      *
-     * <p>A value of 0.6 works well for Chloride ion solvation, which is a difficult case due to
-     * the
+     * <p>A value of 0.6 works well for Chloride ion solvation, which is a difficult case due to the
      * ion having a formal negative charge and a large polarizability.
      */
     private double electrostaticStart = 0.6;

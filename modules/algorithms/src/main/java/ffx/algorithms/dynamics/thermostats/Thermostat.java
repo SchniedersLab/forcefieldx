@@ -232,14 +232,16 @@ public abstract class Thermostat {
     if (print) {
       String sb =
           format(
-              "  Center of Mass   (%12.3f,%12.3f,%12.3f)\n",
-              centerOfMass[0], centerOfMass[1], centerOfMass[2])
-              + format(
-              "  Linear Momentum  (%12.3f,%12.3f,%12.3f)\n",
-              linearMomentum[0], linearMomentum[1], linearMomentum[2])
-              + format(
-              "  Angular Momentum (%12.3f,%12.3f,%12.3f)",
-              angularMomentum[0], angularMomentum[1], angularMomentum[2]);
+              "  Center of Mass   (%12.3f,%12.3f,%12.3f)\n  Linear Momentum  (%12.3f,%12.3f,%12.3f)\n  Angular Momentum (%12.3f,%12.3f,%12.3f)",
+              centerOfMass[0],
+              centerOfMass[1],
+              centerOfMass[2],
+              linearMomentum[0],
+              linearMomentum[1],
+              linearMomentum[2],
+              angularMomentum[0],
+              angularMomentum[1],
+              angularMomentum[2]);
       logger.info(sb);
     }
 

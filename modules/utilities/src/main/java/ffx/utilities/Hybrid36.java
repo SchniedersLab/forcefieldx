@@ -43,8 +43,8 @@ import static org.apache.commons.math3.util.FastMath.max;
  * Java port of the hy36encode() and hy36decode() functions in the hybrid_36.py Python
  * prototype/reference implementation.
  *
- * @author Michael J. Schnieders <br> Derived from code by: Ralf W. Grosse-Kunstleve, Vincent B.
- *     Chen, Jeff J. Headd, Sep 2007.
+ * @author Michael J. Schnieders
+ *     <p>Derived from code by: Ralf W. Grosse-Kunstleve, Vincent B. Chen, Jeff J. Headd, Sep 2007.
  * @see <a href="http://cci.lbl.gov/hybrid_36" target="_blank">LBL Hybrid36 Reference</a>
  * @since 1.0
  */

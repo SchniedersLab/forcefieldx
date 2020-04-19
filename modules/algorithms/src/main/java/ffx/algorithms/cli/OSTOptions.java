@@ -565,8 +565,7 @@ public class OSTOptions {
   }
 
   /**
-   * Returns true if the 2-step option is enabled (not guaranteed to also mean that MC is
-   * enabled!).
+   * Returns true if the 2-step option is enabled (not guaranteed to also mean that MC is enabled!).
    *
    * @return If --ts is enabled.
    */
