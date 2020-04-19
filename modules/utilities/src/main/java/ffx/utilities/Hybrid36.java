@@ -64,7 +64,7 @@ public class Hybrid36 {
    * Hybrid-36 decoder: converts string s to integer result.
    *
    * @param width must be 4 (e.g. for residue sequence numbers) or 5 (e.g. for atom serial numbers)
-   * @param s     the {@link java.lang.String} to be converted.
+   * @param s the {@link java.lang.String} to be converted.
    * @return Returns the conversion result.
    */
   public static int decode(int width, String s) {

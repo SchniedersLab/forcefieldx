@@ -270,9 +270,9 @@ public class EliminatedRotamers {
    * residue i, or if i-ri is already eliminated.
    *
    * @param residues Residues under consideration.
-   * @param i A residue index based on the current residue list.
-   * @param ri A rotamer to attempt elimination of.
-   * @param verbose
+   * @param i        A residue index based on the current residue list.
+   * @param ri       A rotamer to attempt elimination of.
+   * @param verbose  Request verbose logging.
    * @return If the rotamer was eliminated.
    */
   public boolean eliminateRotamer(Residue[] residues, int i, int ri, boolean verbose) {
@@ -645,7 +645,7 @@ public class EliminatedRotamers {
     }
     for (int i = 0; i < residues.length; i++) {
       Residue residue = residues[i];
-      Rotamer rotamers[] = residue.getRotamers(library);
+      Rotamer[] rotamers = residue.getRotamers(library);
       int nrot = rotamers.length;
       double minEnergy = Double.MAX_VALUE;
       int minRot = -1;
@@ -656,13 +656,6 @@ public class EliminatedRotamers {
         }
       }
 
-      /**
-       * Regular: ep = minEnergy + clashThreshold Nucleic acids: ep = minEnergy + (clashThreshold *
-       * factor * factor) MultiResidues: ep = minEnergy + multiResClashThreshold
-       *
-       * <p>Nucleic acids are bigger than amino acids, and MultiResidues can have wild swings in
-       * energy on account of chemical perturbation.
-       */
       double energyToPrune =
           (residue instanceof MultiResidue) ? multiResClashThreshold : clashThreshold;
       energyToPrune =
@@ -844,7 +837,7 @@ public class EliminatedRotamers {
    */
   private int[] rotamerCount(Residue[] residues, int i) {
     int nRes = residues.length;
-    Rotamer rotI[] = residues[i].getRotamers(library);
+    Rotamer[] rotI = residues[i].getRotamers(library);
     int ni = rotI.length;
 
     if (maxRotCheckDepth == 0) {
@@ -932,7 +925,7 @@ public class EliminatedRotamers {
       return 0;
     }
     int pairCount = 0;
-    Rotamer rotJ[] = residues[j].getRotamers(library);
+    Rotamer[] rotJ = residues[j].getRotamers(library);
     int nj = rotJ.length;
     // Loop over all rotamers for residue j.
     for (int rj = 0; rj < nj; rj++) {
@@ -976,7 +969,7 @@ public class EliminatedRotamers {
       return 0;
     }
     int tripleCount = 0;
-    Rotamer rotK[] = residues[k].getRotamers(library);
+    Rotamer[] rotK = residues[k].getRotamers(library);
     int nk = rotK.length;
     // Check that each rotamer and their pair have not be eliminated.
     if (!check(i, ri) && !check(j, rj) && !check(i, ri, j, rj)) {

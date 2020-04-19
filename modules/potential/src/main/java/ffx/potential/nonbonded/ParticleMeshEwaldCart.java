@@ -211,11 +211,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   private final GeneralizedKirkwood generalizedKirkwood;
   /** Partial derivative with respect to Lambda. */
   private final SharedDouble shareddEdLambda;
-  /** Second partial derivative with respect to Lambda. */
+  /**
+   * Second partial derivative with respect to Lambda.
+   */
   private final SharedDouble sharedd2EdLambda2;
-  /** The electrostatics functional form in use. */
-  private ELEC_FORM elecForm;
-  /** Unit cell and spacegroup information. */
+  /**
+   * The electrostatics functional form in use.
+   */
+  private final ELEC_FORM elecForm;
+  /**
+   * Unit cell and spacegroup information.
+   */
   private Crystal crystal;
   /** Number of symmetry operators. */
   private int nSymm;
@@ -2433,20 +2439,15 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     final int numThreads;
     /**
-     * Neighbor lists, without atoms beyond the real space cutoff. [nSymm][nAtoms][nIncludedNeighbors]
+     * Neighbor lists, without atoms beyond the real space cutoff.
+     * [nSymm][nAtoms][nIncludedNeighbors]
      */
     public int[][][] realSpaceLists;
-    /**
-     * Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms]
-     */
+    /** Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms] */
     public int[][] realSpaceCounts;
-    /**
-     * Optimal pairwise ranges.
-     */
+    /** Optimal pairwise ranges. */
     public Range[] realSpaceRanges;
-    /**
-     * Pairwise schedule for load balancing.
-     */
+    /** Pairwise schedule for load balancing. */
     public IntegerSchedule realSpaceSchedule;
 
     public RealSpaceNeighborParameters(int maxThreads) {
@@ -2461,9 +2462,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
   }
 
-  /**
-   * Mutable Particle Mesh Ewald constants.
-   */
+  /** Mutable Particle Mesh Ewald constants. */
   public class EwaldParameters {
 
     public double aewald;
@@ -3150,7 +3149,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       double[] values;
       double[][] jacobian;
       double[] initialSolution;
-      private MultivariateMatrixFunction multivariateMatrixFunction = point -> jacobian(point);
+      private final MultivariateMatrixFunction multivariateMatrixFunction = this::jacobian;
 
       LeastSquaresPredictor() {
         weights = new double[2 * nAtoms * 3];

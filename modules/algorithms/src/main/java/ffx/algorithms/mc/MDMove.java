@@ -251,9 +251,10 @@ public class MDMove implements MCMove {
   /**
    * Write restart and trajectory files if the provided step matches the frequency.
    *
-   * @param mdStep MD step (not MC cycle number) to write files (if any) for.
+   * @param mdStep      MD step (not MC cycle number) to write files (if any) for.
    * @param trySnapshot If false, do not write snapshot even if the timestep is correct.
-   * @param tryRestart If false, do not write a restart file even if the timestep is correct.
+   * @param tryRestart  If false, do not write a restart file even if the timestep is correct.
+   * @return Returns the write actions.
    */
   public EnumSet<MolecularDynamics.WriteActions> writeFilesForStep(
       long mdStep, boolean trySnapshot, boolean tryRestart) {

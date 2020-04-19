@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
+import static java.util.Arrays.fill;
+
 import edu.rit.mp.LongBuf;
 import edu.rit.pj.Comm;
 import ffx.algorithms.cli.DynamicsOptions;
@@ -65,23 +67,24 @@ import org.apache.commons.io.FilenameUtils;
 /**
  * An implementation of RepEx between Orthogonal Space Tempering potentials.
  *
- * @author Michael J. Schnieders
  * @author Jacob Litman
+ * @author Michael J. Schnieders
  * @since 1.0
  */
 public class RepExOST {
+
   private static final Logger logger = Logger.getLogger(RepExOST.class.getName());
   // Message tags to use.
   private static final int lamTag = 42;
   private static final int mainLoopTag = 2020;
-  private final OrthogonalSpaceTempering ost;
+  private final OrthogonalSpaceTempering orthogonalSpaceTempering;
   private final OrthogonalSpaceTempering.Histogram[] allHistograms;
-  private final SynchronousSend[] sends;
+  private final SynchronousSend[] synchronousSends;
   private final LongConsumer algoRun;
-  private final MolecularDynamics molDyn;
-  private final DynamicsOptions dynamics;
+  private final MolecularDynamics molecularDynamics;
+  private final DynamicsOptions dynamicsOptions;
   private final String fileType;
-  private final MonteCarloOST mcOST;
+  private final MonteCarloOST monteCarloOST;
   private final long stepsBetweenExchanges;
   private final Comm world;
   private final int rank;
@@ -99,37 +102,35 @@ public class RepExOST {
   private final long[] acceptedSwaps;
   private boolean reinitVelocities = true;
   private int currentHistoIndex;
-
   private double currentLambda;
-
-  private boolean automaticWriteouts =
-      true; // False if the repex OST is not responsible for writing files out.
+  // False if the RepEx OST is not responsible for writing files out.
+  private final boolean automaticWriteouts = true;
 
   /**
    * Private constructor used here to centralize shared logic.
    *
-   * @param ost An OrthogonalSpaceTempering for each repex rung.
-   * @param mcOST A MonteCarloOST for each repex rung, or null (for MD).
-   * @param dyn A MolecularDynamics for each repex rung (never null).
-   * @param oType Type of OST to run (MD, MC 1-step, MC 2-step).
-   * @param dynamics DynamicsOptions to apply universally.
-   * @param ostOpts OST options to apply.
-   * @param fileType File type to save to.
-   * @param repexInterval Interval in psec between repex attempts.
+   * @param orthogonalSpaceTempering An OrthogonalSpaceTempering for each RepEx rung.
+   * @param monteCarloOST            A MonteCarloOST for each RepEx rung, or null (for MD).
+   * @param molecularDynamics        A MolecularDynamics for each RepEx rung (never null).
+   * @param ostType                  Type of OST to run (MD, MC 1-step, MC 2-step).
+   * @param dynamicsOptions          DynamicsOptions to apply universally.
+   * @param ostOptions               OST options to apply.
+   * @param fileType                 File type to save to.
+   * @param repexInterval            Interval in psec between RepEx attempts.
    */
   private RepExOST(
-      OrthogonalSpaceTempering ost,
-      MonteCarloOST mcOST,
-      MolecularDynamics dyn,
-      OstType oType,
-      DynamicsOptions dynamics,
-      OSTOptions ostOpts,
+      OrthogonalSpaceTempering orthogonalSpaceTempering,
+      MonteCarloOST monteCarloOST,
+      MolecularDynamics molecularDynamics,
+      OstType ostType,
+      DynamicsOptions dynamicsOptions,
+      OSTOptions ostOptions,
       CompositeConfiguration properties,
       String fileType,
       double repexInterval)
       throws IOException {
-    this.ost = ost;
-    switch (oType) {
+    this.orthogonalSpaceTempering = orthogonalSpaceTempering;
+    switch (ostType) {
       case MD:
         algoRun = this::runMD;
         isMC = false;
@@ -146,13 +147,13 @@ public class RepExOST {
         throw new IllegalArgumentException(
             " Could not recognize whether this is supposed to be MD, MC 1-step, or MC 2-step!");
     }
-    this.molDyn = dyn;
-    molDyn.setAutomaticWriteouts(false);
-    this.dynamics = dynamics;
+    this.molecularDynamics = molecularDynamics;
+    this.molecularDynamics.setAutomaticWriteouts(false);
+    this.dynamicsOptions = dynamicsOptions;
     this.fileType = fileType;
-    this.mcOST = mcOST;
-    if (mcOST != null) {
-      mcOST.setAutomaticWriteouts(false);
+    this.monteCarloOST = monteCarloOST;
+    if (monteCarloOST != null) {
+      monteCarloOST.setAutomaticWriteouts(false);
     }
     this.extension = WriteoutOptions.toArchiveExtension(fileType);
 
@@ -160,7 +161,7 @@ public class RepExOST {
     this.rank = world.rank();
     int size = world.size();
 
-    MolecularAssembly[] allAssemblies = molDyn.getAssemblies();
+    MolecularAssembly[] allAssemblies = this.molecularDynamics.getAssemblies();
     allFilenames =
         Arrays.stream(allAssemblies)
             .map(MolecularAssembly::getFile)
@@ -171,8 +172,11 @@ public class RepExOST {
     File firstFile = allAssemblies[0].getFile();
     basePath = FilenameUtils.getFullPath(firstFile.getAbsolutePath()) + File.separator;
     String baseFileName = FilenameUtils.getBaseName(firstFile.getAbsolutePath());
-    dynFile = new File(String.format("%s%d%s%s.dyn", basePath, rank, File.separator, baseFileName));
-    molDyn.setFallbackDynFile(dynFile);
+    dynFile =
+        new File(
+            String.format(
+                "%s%d%s%s.molecularDynamics", basePath, rank, File.separator, baseFileName));
+    this.molecularDynamics.setFallbackDynFile(dynFile);
 
     File lambdaFile =
         new File(String.format("%s%d%s%s.lam", basePath, rank, File.separator, baseFileName));
@@ -184,13 +188,13 @@ public class RepExOST {
       }
     }
 
-    allHistograms = ost.getAllHistograms();
+    allHistograms = orthogonalSpaceTempering.getAllHistograms();
     // TODO: Possibly de-comment this... though HistogramSettings makes it obsolete.
     // Arrays.stream(allHistograms).forEach((OrthogonalSpaceTempering.Histogram h) ->
     // h.setIndependentWrites(true));
 
     this.numPairs = size - 1;
-    this.invKT = -1.0 / (Constants.R * dynamics.getTemp());
+    this.invKT = -1.0 / (Constants.R * dynamicsOptions.getTemp());
 
     long seed;
     // TODO: Set this per-process individually if we move back to sending accept/reject messages
@@ -206,15 +210,15 @@ public class RepExOST {
     }
     this.random = new Random(seed);
 
-    double timestep = dynamics.getDt() * Constants.FSEC_TO_PSEC;
+    double timestep = dynamicsOptions.getDt() * Constants.FSEC_TO_PSEC;
     stepsBetweenExchanges = Math.max(1, (int) (repexInterval / timestep));
 
-    sends =
+    synchronousSends =
         Arrays.stream(allHistograms)
             .map(OrthogonalSpaceTempering.Histogram::getSynchronousSend)
             .map(Optional::get)
             .toArray(SynchronousSend[]::new);
-    if (sends.length < 1) {
+    if (synchronousSends.length < 1) {
       throw new IllegalArgumentException(" No SynchronousSend objects were found!");
     }
 
@@ -222,13 +226,13 @@ public class RepExOST {
     // TODO: Properly back-copy instead of assuming everything is in order at the start.
     histoToRank = Arrays.copyOf(rankToHisto, size);
 
-    Arrays.stream(sends)
+    Arrays.stream(synchronousSends)
         .forEach((SynchronousSend ss) -> ss.setHistograms(allHistograms, rankToHisto));
 
     totalSwaps = new long[numPairs];
     acceptedSwaps = new long[numPairs];
-    Arrays.fill(totalSwaps, 0);
-    Arrays.fill(acceptedSwaps, 0);
+    fill(totalSwaps, 0);
+    fill(acceptedSwaps, 0);
 
     setFiles();
     setHistogram(rank);
@@ -237,77 +241,99 @@ public class RepExOST {
   /**
    * Construct a RepExOST for Monte Carlo orthogonal space tempering.
    *
-   * @param ost An OrthogonalSpaceTempering for each repex rung.
-   * @param mcOST A MonteCarloOST for each repex rung
-   * @param dynamics DynamicsOptions to apply universally.
-   * @param ostOpts OST options to apply.
+   * @param orthogonalSpaceTempering An OrthogonalSpaceTempering for each RepEx rung.
+   * @param monteCarloOST A MonteCarloOST for each RepEx rung
+   * @param dynamicsOptions DynamicsOptions to apply universally.
+   * @param ostOptions OST options to apply.
+   * @param compositeConfiguration CompositeConfiguration properties to use.
    * @param fileType File type to save to.
    * @param twoStep Whether to use the 2-step MC algorithm (instead of the 1-step).
-   * @param repexInterval Interval in psec between repex attempts.
+   * @param repexInterval Interval in psec between RepEx attempts.
    * @return A RepExOST.
+   * @throws IOException if one occurs constructing RepExOST.
    */
   public static RepExOST repexMC(
-      OrthogonalSpaceTempering ost,
-      MonteCarloOST mcOST,
-      DynamicsOptions dynamics,
-      OSTOptions ostOpts,
-      CompositeConfiguration properties,
+      OrthogonalSpaceTempering orthogonalSpaceTempering,
+      MonteCarloOST monteCarloOST,
+      DynamicsOptions dynamicsOptions,
+      OSTOptions ostOptions,
+      CompositeConfiguration compositeConfiguration,
       String fileType,
       boolean twoStep,
       double repexInterval)
       throws IOException {
-    MolecularDynamics md = mcOST.getMD();
+    MolecularDynamics md = monteCarloOST.getMD();
     OstType type = twoStep ? OstType.MC_TWOSTEP : OstType.MC_ONESTEP;
     return new RepExOST(
-        ost, mcOST, md, type, dynamics, ostOpts, properties, fileType, repexInterval);
+        orthogonalSpaceTempering,
+        monteCarloOST,
+        md,
+        type,
+        dynamicsOptions,
+        ostOptions,
+        compositeConfiguration,
+        fileType,
+        repexInterval);
   }
 
   /**
    * Construct a RepExOST for Molecular Dynamics orthogonal space tempering.
    *
-   * @param ost An OrthogonalSpaceTempering for each repex rung.
-   * @param dyn A MolecularDynamics for each repex rung.
-   * @param dynamics DynamicsOptions to apply universally.
-   * @param ostOpts OST options to apply.
+   * @param orthogonalSpaceTempering An OrthogonalSpaceTempering for each RepEx rung.
+   * @param molecularDynamics A MolecularDynamics for each RepEx rung.
+   * @param dynamicsOptions DynamicsOptions to apply universally.
+   * @param ostOptions OST options to apply.
+   * @param compositeConfiguration CompositeConfiguration properties to use.
    * @param fileType File type to save to.
-   * @param repexInterval Interval in psec between repex attempts.
+   * @param repexInterval Interval in psec between RepEx attempts.
    * @return A RepExOST.
+   * @throws IOException if one occurs constructing RepExOST.
    */
   public static RepExOST repexMD(
-      OrthogonalSpaceTempering ost,
-      MolecularDynamics dyn,
-      DynamicsOptions dynamics,
-      OSTOptions ostOpts,
-      CompositeConfiguration properties,
+      OrthogonalSpaceTempering orthogonalSpaceTempering,
+      MolecularDynamics molecularDynamics,
+      DynamicsOptions dynamicsOptions,
+      OSTOptions ostOptions,
+      CompositeConfiguration compositeConfiguration,
       String fileType,
       double repexInterval)
       throws IOException {
     return new RepExOST(
-        ost, null, dyn, OstType.MD, dynamics, ostOpts, properties, fileType, repexInterval);
+        orthogonalSpaceTempering,
+        null,
+        molecularDynamics,
+        OstType.MD,
+        dynamicsOptions,
+        ostOptions,
+        compositeConfiguration,
+        fileType,
+        repexInterval);
   }
 
   public OrthogonalSpaceTempering getOST() {
-    return ost;
+    return orthogonalSpaceTempering;
   }
 
   /**
    * Executes the main loop of RepExOST.
    *
+   * @param numTimesteps Number of times steps.
+   * @param equilibrate If true, perform equilibration.
    * @throws IOException Possible from Parallel Java.
    */
   public void mainLoop(long numTimesteps, boolean equilibrate) throws IOException {
     if (isMC) {
-      mcOST.setEquilibration(equilibrate);
+      monteCarloOST.setEquilibration(equilibrate);
     }
-    currentLambda = ost.getLambda();
+    currentLambda = orthogonalSpaceTempering.getLambda();
 
-    Arrays.fill(totalSwaps, 0);
-    Arrays.fill(acceptedSwaps, 0);
+    fill(totalSwaps, 0);
+    fill(acceptedSwaps, 0);
 
     if (equilibrate) {
       logger.info(
           String.format(
-              " Equilibrating repex OST without exchanges on histogram %d.", currentHistoIndex));
+              " Equilibrating RepEx OST without exchanges on histogram %d.", currentHistoIndex));
       algoRun.accept(numTimesteps);
       reinitVelocities = false;
     } else {
@@ -315,23 +341,23 @@ public class RepExOST {
       for (int i = 0; i < numExchanges; i++) {
         logger.info(
             String.format(
-                " Beginning of repex loop %d of %d, operating on histogram %d",
+                " Beginning of RepEx loop %d of %d, operating on histogram %d",
                 (i + 1), numExchanges, currentHistoIndex));
         world.barrier(mainLoopTag);
         algoRun.accept(stepsBetweenExchanges);
-        ost.logOutputFiles(currentHistoIndex);
+        orthogonalSpaceTempering.logOutputFiles(currentHistoIndex);
         world.barrier(mainLoopTag);
         proposeSwaps((i % 2), 2);
         setFiles();
 
         long mdMoveNum = i * stepsBetweenExchanges;
-        currentLambda = ost.getLambda();
-        boolean trySnapshot = currentLambda >= ost.getLambdaWriteOut();
+        currentLambda = orthogonalSpaceTempering.getLambda();
+        boolean trySnapshot = currentLambda >= orthogonalSpaceTempering.getLambdaWriteOut();
         if (automaticWriteouts) {
           EnumSet<MolecularDynamics.WriteActions> written =
-              molDyn.writeFilesForStep(mdMoveNum, trySnapshot, true);
+              molecularDynamics.writeFilesForStep(mdMoveNum, trySnapshot, true);
           if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
-            ost.writeAdditionalRestartInfo(false);
+            orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
           }
         }
 
@@ -346,7 +372,7 @@ public class RepExOST {
 
   private void setHistogram(int index) {
     currentHistoIndex = index;
-    ost.switchHistogram(index);
+    orthogonalSpaceTempering.switchHistogram(index);
   }
 
   /**
@@ -400,11 +426,11 @@ public class RepExOST {
                         "%s%d%s%s.%s", basePath, currentHistoIndex, File.separator, fn, extension))
             .map(File::new)
             .toArray(File[]::new);
-    molDyn.setTrajectoryFiles(trajFiles);
+    molecularDynamics.setTrajectoryFiles(trajFiles);
   }
 
   /**
-   * Main loop for consistent PRNG-based repex (i.e. every process tests every swap independently).
+   * Main loop for consistent PRNG-based RepEx (i.e. every process tests every swap independently).
    * Typically, to create an odd-even staggered schedule (i.e. each pair is tested every other
    * cycle), offset is either 0 or 1, and stride is 2.
    *
@@ -467,11 +493,11 @@ public class RepExOST {
     histoToRank[histoHigh] = rankLow;
     setHistogram(rankToHisto[rank]);
 
-    ost.setLambda(currentLambda);
+    orthogonalSpaceTempering.setLambda(currentLambda);
     /* TODO: If there is ever a case where an algorithm will not update coordinates itself at the start, we have to
      * update coordinates here (from the OST we used to be running on to the new OST). */
 
-    for (SynchronousSend send : sends) {
+    for (SynchronousSend send : synchronousSends) {
       send.updateRanks(rankToHisto);
     }
   }
@@ -482,8 +508,8 @@ public class RepExOST {
    * @param numSteps Number of MD steps (not MC cycles) to run.
    */
   private void runMCOneStep(long numSteps) {
-    mcOST.setRunLength(numSteps);
-    mcOST.sampleOneStep();
+    monteCarloOST.setRunLength(numSteps);
+    monteCarloOST.sampleOneStep();
   }
 
   /**
@@ -492,8 +518,8 @@ public class RepExOST {
    * @param numSteps Number of MD steps (not MC cycles) to run.
    */
   private void runMCTwoStep(long numSteps) {
-    mcOST.setRunLength(numSteps);
-    mcOST.sampleTwoStep();
+    monteCarloOST.setRunLength(numSteps);
+    monteCarloOST.sampleTwoStep();
   }
 
   /**
@@ -502,15 +528,15 @@ public class RepExOST {
    * @param numSteps MD steps to run.
    */
   private void runMD(long numSteps) {
-    molDyn.dynamic(
+    molecularDynamics.dynamic(
         numSteps,
-        dynamics.getDt(),
-        dynamics.getReport(),
-        dynamics.getSnapshotInterval(),
-        dynamics.getTemp(),
+        dynamicsOptions.getDt(),
+        dynamicsOptions.getReport(),
+        dynamicsOptions.getSnapshotInterval(),
+        dynamicsOptions.getTemp(),
         reinitVelocities,
         fileType,
-        dynamics.getCheckpoint(),
+        dynamicsOptions.getCheckpoint(),
         dynFile);
   }
 

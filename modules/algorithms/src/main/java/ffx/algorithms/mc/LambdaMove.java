@@ -53,18 +53,26 @@ import java.util.logging.Logger;
 public class LambdaMove implements MCMove {
 
   private static final Logger logger = Logger.getLogger(LambdaMove.class.getName());
-  /** Apply the Lambda move to an OST instance. */
+  /**
+   * Apply the Lambda move to an OST instance.
+   */
   private final OrthogonalSpaceTempering orthogonalSpaceTempering;
-  /** Current value of lambda, which always refreshed from the OST instance. */
+  /**
+   * Random number generator.
+   */
+  private final Random random;
+  /**
+   * Current value of lambda, which always refreshed from the OST instance.
+   */
   private double currentLambda;
-  /** Random number generator. */
-  private Random random;
   /**
    * Lambda move size: 1) The standard deviation for continuous moves from a Gaussian distribution.
    * 2) The step size for discrete moves.
    */
   private double moveSize = 0.1;
-  /** If true, do continuous moves. Otherwise, use discrete moves. */
+  /**
+   * If true, do continuous moves. Otherwise, use discrete moves.
+   */
   private boolean isContinuous = true;
 
   /**
@@ -136,17 +144,27 @@ public class LambdaMove implements MCMove {
     this.moveSize = moveSize;
   }
 
-  /** If true, do continuous moves. Otherwise, use discrete moves. */
+  /**
+   * If true, do continuous moves. Otherwise, use discrete moves.
+   *
+   * @return Returns true if the lambda moves are continuous.
+   */
   public boolean isContinuous() {
     return isContinuous;
   }
 
-  /** If true, do continuous moves. Otherwise, use discrete moves. */
+  /**
+   * If true, do continuous moves. Otherwise, use discrete moves.
+   *
+   * @param continuous Sets the lambda move style.
+   */
   public void setContinuous(boolean continuous) {
     isContinuous = continuous;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void move() {
     currentLambda = orthogonalSpaceTempering.getLambda();

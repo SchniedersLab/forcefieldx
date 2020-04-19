@@ -45,9 +45,6 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import java.io.File;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,48 +64,64 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
   private final MolecularDynamics molecularDynamics;
   /** Schedule for annealing. */
   private final AnnealingSchedule schedule;
-  /** Number of MD steps per annealing window. */
+  /**
+   * Number of MD steps per annealing window.
+   */
   private final long mdSteps;
-  /** Integration time step. */
+  /**
+   * Integration time step.
+   */
   private final double timeStep;
-  /** Whether to reinitialize velocities at the start of each timestep. */
+  /**
+   * Whether to reinitialize velocities at the start of each timestep.
+   */
   private final boolean reinitV;
-  /** Minimum length of a window in psec. */
-  private final double minSimLength;
-  /** Interval to print updates to the screen. */
+  /**
+   * Interval to print updates to the screen.
+   */
   private double printInterval = 0.01;
-  /** Flag to indicate the algorithm is done. */
+  /**
+   * Flag to indicate the algorithm is done.
+   */
   private boolean done = true;
-  /** Flag to indicate the UI has requested the algorithm terminate. */
+  /**
+   * Number of MD steps per OpenMM cycle (assuming OpenMM is used!).
+   */
+  private final int trajSteps = 1;
+  /**
+   * Flag to indicate the UI has requested the algorithm terminate.
+   */
   private boolean terminate;
-  /** Number of MD steps per OpenMM cycle (assuming OpenMM is used!). */
-  private int trajSteps = 1;
 
   private double saveFrequency = 0.1;
-  /** Restart file. */
-  private File dynFile = null;
+  /**
+   * Restart file.
+   */
+  private File dynFile;
 
   /**
    * Constructor for SimulatedAnnealing.
    *
-   * @param assembly The Molecular Assembly to operate on.
-   * @param potentialEnergy The potential to anneal against.
-   * @param properties The system properties to use.
-   * @param listener The algorithm listener is a callback to UI.
-   * @param requestedThermostat The requested thermostat.
-   * @param requestedIntegrator The requested integrator.
-   * @param schedule Schedule of temperatures to simulate at.
-   * @param mdSteps Steps per SA window.
-   * @param timeStep Timestep for MD in psec.
+   * @param molecularAssembly      The Molecular Assembly to operate on.
+   * @param potentialEnergy        The potential to anneal against.
+   * @param compositeConfiguration The system properties to use.
+   * @param algorithmListener      The algorithm listener is a callback to UI.
+   * @param requestedThermostat    The requested thermostat.
+   * @param requestedIntegrator    The requested integrator.
+   * @param annealingSchedule      Schedule of temperatures to simulate at.
+   * @param mdSteps                Steps per SA window.
+   * @param timeStep               Timestep for MD in psec.
+   * @param reinitVelocities       Request velocities to be reinitialized.
+   * @param dynFile                Dynamics restart file to begin from.
    */
   public SimulatedAnnealing(
-      MolecularAssembly assembly,
+      MolecularAssembly molecularAssembly,
       Potential potentialEnergy,
-      CompositeConfiguration properties,
-      AlgorithmListener listener,
+      CompositeConfiguration compositeConfiguration,
+      AlgorithmListener algorithmListener,
       ThermostatEnum requestedThermostat,
       IntegratorEnum requestedIntegrator,
-      AnnealingSchedule schedule,
+      AnnealingSchedule annealingSchedule,
       long mdSteps,
       double timeStep,
       boolean reinitVelocities,
@@ -116,17 +129,16 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
     molecularDynamics =
         MolecularDynamics.dynamicsFactory(
-            assembly,
+            molecularAssembly,
             potentialEnergy,
-            properties,
-            listener,
+            compositeConfiguration,
+            algorithmListener,
             requestedThermostat,
             requestedIntegrator);
-    this.schedule = schedule;
+    this.schedule = annealingSchedule;
     this.mdSteps = mdSteps;
     this.timeStep = timeStep;
     this.reinitV = reinitVelocities;
-    minSimLength = mdSteps * schedule.minWindowLength() * timeStep;
     this.dynFile = dynFile;
   }
 
@@ -319,7 +331,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
     Schedules(ScheduleConstructor sc, String... names) {
       this.sc = sc;
-      aliases = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(names)));
+      aliases = Set.of(names);
     }
 
     /**

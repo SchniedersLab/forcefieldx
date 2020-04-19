@@ -194,11 +194,11 @@ public class DistanceMatrix {
   /**
    * Checks if the i,ri,j,rj pair exceeds the pair distance thresholds.
    *
-   * @param i A residue index.
+   * @param i  A residue index.
    * @param ri A rotamer index for i.
-   * @param j A residue index j!=i.
+   * @param j  A residue index j!=i.
    * @param rj A rotamer index for j.
-   * @return If i,ri,j,rj > threshold distance.
+   * @return If i,ri,j,rj is greater than the threshold distance.
    */
   public boolean checkPairDistThreshold(int i, int ri, int j, int rj) {
     if (twoBodyCutoffDist <= 0 || !Double.isFinite(twoBodyCutoffDist)) {
@@ -219,7 +219,7 @@ public class DistanceMatrix {
    * @param rk A rotamer index for k.
    * @param l A residue index l!=i, l!=j, l!=k.
    * @param rl A rotamer index for l.
-   * @return If i,ri,j,rj,k,rk,l,rl > threshold distances.
+   * @return If i,ri,j,rj,k,rk,l,rl is greater than the threshold distances.
    */
   public boolean checkQuadDistThreshold(
       int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
@@ -246,7 +246,7 @@ public class DistanceMatrix {
    * @param rj A rotamer index for j.
    * @param k A residue index k!=i, k!=j.
    * @param rk A rotamer index for k.
-   * @return If i,ri,j,rj,k,rk > threshold distances.
+   * @return If i,ri,j,rj,k,rk is greater than the threshold distances.
    */
   public boolean checkTriDistThreshold(int i, int ri, int j, int rj, int k, int rk) {
     if (checkPairDistThreshold(i, ri, j, rj)
@@ -418,11 +418,9 @@ public class DistanceMatrix {
     double dist = Double.MAX_VALUE;
     Crystal crystal = molecularAssembly.getCrystal();
     int ni = resi.length;
-    for (int i = 0; i < ni; i++) {
-      double xi[] = resi[i];
+    for (double[] xi : resi) {
       int nj = resj.length;
-      for (int j = 0; j < nj; j++) {
-        double xj[] = resj[j];
+      for (double[] xj : resj) {
         if (symOp != null) {
           crystal.applySymOp(xj, xj, symOp);
         }

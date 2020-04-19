@@ -470,7 +470,8 @@ public class CcmaConstraint implements Constraint {
     logger.info(String.format(" Application of CCMA constraint: %10.4g sec", (time * 1.0E-9)));*/
   }
 
-  private class MatrixWalker implements RealVectorPreservingVisitor {
+  private static class MatrixWalker implements RealVectorPreservingVisitor {
+
     private final double[] constraintDelta; // DO NOT MODIFY.
     private double sum = 0.0;
 
@@ -478,16 +479,19 @@ public class CcmaConstraint implements Constraint {
       constraintDelta = cDelta;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double end() {
       return sum;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void start(int dimension, int start, int end) {
-    }
+    public void start(int dimension, int start, int end) {}
 
     /** {@inheritDoc} */
     @Override

@@ -246,7 +246,7 @@ public class EnergyExpansion {
     for (int i = 0; i < nResidues; i++) {
       Residue resi = residues[i];
       int indexI = allResiduesList.indexOf(resi);
-      Rotamer roti[] = resi.getRotamers(library);
+      Rotamer[] roti = resi.getRotamers(library);
       int[] nI = resNeighbors[i];
       int lenNI = nI.length;
       twoBodyEnergy[i] = new double[roti.length][lenNI][];
@@ -261,7 +261,7 @@ public class EnergyExpansion {
           if (rO.checkNeighboringPair(i, j)) {
             Residue resj = residues[j];
             int indexJ = allResiduesList.indexOf(resj);
-            Rotamer rotj[] = resj.getRotamers(library);
+            Rotamer[] rotj = resj.getRotamers(library);
             twoBodyEnergy[i][ri][indJ] = new double[rotj.length];
             for (int rj = 0; rj < rotj.length; rj++) {
               if (eR.checkToJ(i, ri, j, rj)) {
@@ -450,11 +450,11 @@ public class EnergyExpansion {
     selfEnergy = new double[nResidues][];
     for (int i = 0; i < nResidues; i++) {
       Residue resi = residues[i];
-      Rotamer roti[] = resi.getRotamers(library);
+      Rotamer[] roti = resi.getRotamers(library);
       selfEnergy[i] = new double[roti.length];
       for (int ri = 0; ri < roti.length; ri++) {
         if (!eR.check(i, ri)) {
-          Integer selfJob[] = {i, ri};
+          Integer[] selfJob = {i, ri};
           if (decomposeOriginal && ri != 0) {
             continue;
           }
@@ -885,7 +885,7 @@ public class EnergyExpansion {
         for (int i = 0; i < lines.size(); i++) {
           String line = lines.get(i);
           if (line.startsWith("Box")) {
-            String tok[] =
+            String[] tok =
                 line.replaceAll("Box", "").replaceAll(":", ",").replaceAll(" ", "").split(",");
             int readIteration = Integer.parseInt(tok[0]);
             int readCellIndexX = Integer.parseInt(tok[1]);
@@ -952,7 +952,7 @@ public class EnergyExpansion {
         // fill in self-energies from file while removing the corresponding jobs from selfEnergyMap
         for (String line : singleLines) {
           try {
-            String tok[] = line.replace(",", "").replace(":", "").split("\\s+");
+            String[] tok = line.replace(",", "").replace(":", "").split("\\s+");
             int i;
             if (tok[1].contains("-")) {
               i = nameToNumber(tok[1], residues);
@@ -979,7 +979,7 @@ public class EnergyExpansion {
             }
             // remove that job from the pool
             String revKey = format("%d %d", i, ri);
-            Integer ret[] = selfEnergyMap.remove(reverseJobMapSingles.get(revKey));
+            Integer[] ret = selfEnergyMap.remove(reverseJobMapSingles.get(revKey));
             if (ret == null) {
               // logIfMaster(format("(sdl %d) Restart file contained unnecessary value for %s",
               // BOXNUM, revKey));
@@ -1015,7 +1015,7 @@ public class EnergyExpansion {
         // twoBodyEnergyMap
         for (String line : pairLines) {
           try {
-            String tok[] = line.replace(",", "").replace(":", "").split("\\s+");
+            String[] tok = line.replace(",", "").replace(":", "").split("\\s+");
             int i;
             if (tok[1].contains("-")) {
               i = nameToNumber(tok[1], residues);
@@ -1049,13 +1049,13 @@ public class EnergyExpansion {
                   set2Body(i, ri, j, rj, energy);
 
                   double resDist = dM.getResidueDistance(indexI, ri, indexJ, rj);
-                  String resDistString = format("large");
+                  String resDistString = "large";
                   if (resDist < Double.MAX_VALUE) {
                     resDistString = format("%5.3f", resDist);
                   }
 
                   double dist = dM.checkDistMatrix(indexI, ri, indexJ, rj);
-                  String distString = format("     large");
+                  String distString = "     large";
                   if (dist < Double.MAX_VALUE) {
                     distString = format("%10.3f", dist);
                   }
@@ -1246,7 +1246,7 @@ public class EnergyExpansion {
             }
             // remove that job from the pool
             String revKey = format("%d %d %d %d %d %d", i, ri, j, rj, k, rk);
-            Integer ret[] = threeBodyEnergyMap.remove(reverseJobMapTrimers.get(revKey));
+            Integer[] ret = threeBodyEnergyMap.remove(reverseJobMapTrimers.get(revKey));
             if (ret == null) {
               // logIfMaster(format("(sdl %d) Restart file contained unnecessary value for %s",
               // BOXNUM, revKey));
@@ -1273,11 +1273,11 @@ public class EnergyExpansion {
   /**
    * Return the lowest pair-energy for residue (i,ri) with residue j.
    *
-   * @param residues
-   * @param i
-   * @param ri
-   * @param j
-   * @return
+   * @param residues Residue array.
+   * @param i        Residue i index.
+   * @param ri       Residue i rotamer index.
+   * @param j        Residue j index.
+   * @return Lowest pair energy.
    */
   public double lowestPairEnergy(Residue[] residues, int i, int ri, int j) {
     if (residues == null) {
@@ -1301,7 +1301,7 @@ public class EnergyExpansion {
           energy = e;
         }
       } catch (Exception e) {
-        continue;
+        // continue.
       }
     }
     return energy;
@@ -1310,9 +1310,9 @@ public class EnergyExpansion {
   /**
    * Return the lowest self-energy for residue i.
    *
-   * @param residues
-   * @param i
-   * @return
+   * @param residues Array if residues.
+   * @param i Index of residue i.
+   * @return Returns the lowest self-energy for residue i.
    */
   public double lowestSelfEnergy(Residue[] residues, int i) {
     if (residues == null) {
@@ -1332,7 +1332,7 @@ public class EnergyExpansion {
           energy = e;
         }
       } catch (Exception e) {
-        continue;
+        // continue
       }
     }
     return energy;
@@ -1728,8 +1728,8 @@ public class EnergyExpansion {
       return;
     }
     int nRes = residues.length;
-    for (int i = 0; i < nRes; i++) {
-      turnOffResidue(residues[i]);
+    for (Residue residue : residues) {
+      turnOffResidue(residue);
     }
   }
 
@@ -1743,14 +1743,14 @@ public class EnergyExpansion {
       return;
     }
     int nRes = residues.length;
-    for (int i = 0; i < nRes; i++) {
-      turnOnAtoms(residues[i]);
+    for (Residue residue : residues) {
+      turnOnAtoms(residue);
     }
   }
 
   public void turnOnResidue(Residue residue, int ri) {
     turnOnAtoms(residue);
-    Rotamer rotamers[] = residue.getRotamers(library);
+    Rotamer[] rotamers = residue.getRotamers(library);
     RotamerLibrary.applyRotamer(residue, rotamers[ri]);
   }
 

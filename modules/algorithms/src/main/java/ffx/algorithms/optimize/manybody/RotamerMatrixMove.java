@@ -55,14 +55,14 @@ public class RotamerMatrixMove implements MCMove {
    */
   private final int[] currentRots;
 
-  private final int nRes;
   private final List<Integer> allowedRes;
   private final List<List<Integer>> allowedRots;
   private final int nAllowed;
-  private RotamerOptimization rotamerOptimization;
-  private EliminatedRotamers eR;
-  private boolean monteCarloTesting;
-  /** When we take a step, we need to remember which rotamer of which residue was changed. */
+  private final RotamerOptimization rotamerOptimization;
+  private final boolean monteCarloTesting;
+  /**
+   * When we take a step, we need to remember which rotamer of which residue was changed.
+   */
   private int changedRes;
 
   private int changedRot;
@@ -71,24 +71,28 @@ public class RotamerMatrixMove implements MCMove {
    * Constructs the RotamerMatrixMove set; at present, a new object must be made if rotamers or
    * residues are changed outside the scope of this class.
    *
-   * @param useAllElims Use eliminated pair/triple info
-   * @param rots Initial rotamer set
+   * @param useAllElims         Use eliminated pair/triple info.
+   * @param rotamers            Initial rotamer set.
+   * @param residues            Array of residues.
+   * @param rotamerLibrary      RotamerLibrary instance.
+   * @param rotamerOptimization RotamerOptimization instance.
+   * @param eliminatedRotamers  Eliminated rotamers instance.
+   * @param monteCarloTesting   True for MC testing.
    */
   public RotamerMatrixMove(
       boolean useAllElims,
-      int[] rots,
+      int[] rotamers,
       Residue[] residues,
-      RotamerLibrary library,
+      RotamerLibrary rotamerLibrary,
       RotamerOptimization rotamerOptimization,
-      EliminatedRotamers eR,
+      EliminatedRotamers eliminatedRotamers,
       boolean monteCarloTesting) {
     this.useAllElims = useAllElims;
     this.rotamerOptimization = rotamerOptimization;
-    this.eR = eR;
     this.monteCarloTesting = monteCarloTesting;
 
-    nRes = rots.length;
-    currentRots = rots;
+    int nRes = rotamers.length;
+    currentRots = rotamers;
 
     allowedRes = new ArrayList<>(nRes);
     allowedRots = new ArrayList<>(nRes);
@@ -96,9 +100,9 @@ public class RotamerMatrixMove implements MCMove {
     for (int i = 0; i < nRes; i++) {
       ArrayList<Integer> resAllowed = new ArrayList<>();
 
-      int lenri = residues[i].getRotamers(library).length;
+      int lenri = residues[i].getRotamers(rotamerLibrary).length;
       for (int ri = 0; ri < lenri; ri++) {
-        if (!eR.check(i, ri)) {
+        if (!eliminatedRotamers.check(i, ri)) {
           resAllowed.add(ri);
         }
       }
@@ -110,7 +114,7 @@ public class RotamerMatrixMove implements MCMove {
       }
     }
 
-    ((ArrayList) allowedRes).trimToSize();
+    ((ArrayList<Integer>) allowedRes).trimToSize();
     nAllowed = allowedRes.size();
   }
 

@@ -1501,9 +1501,7 @@ public class ForceField {
     RELATIVESOLV
   }
 
-  /**
-   * Enumerates the types of constraints that can be applied.
-   */
+  /** Enumerates the types of constraints that can be applied. */
   public enum ConstraintTypes {
     // Constrain a Bond.
     BOND,

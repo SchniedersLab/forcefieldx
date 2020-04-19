@@ -186,41 +186,77 @@ public class MolecularDynamics implements Runnable, Terminatable {
   double currentTemperature;
   /** Current kinetic energy. */
   double currentKineticEnergy;
-  /** Current potential energy. */
+  /**
+   * Current potential energy.
+   */
   double currentPotentialEnergy;
-  /** Current total energy. */
+  /**
+   * Current total energy.
+   */
   double currentTotalEnergy;
-  /** Save snapshots in PDB format. */
+  /**
+   * Save snapshots in PDB format.
+   */
   boolean saveSnapshotAsPDB = true;
-  /** Monte Carlo listener. */
+  /**
+   * Monte Carlo listener.
+   */
   private MonteCarloListener monteCarloListener;
-  /** Thermostat instance. */
-  private Thermostat thermostat;
-  /** Integrator instance. */
-  private Integrator integrator;
-  /** Flag to indicate MD should be terminated. */
-  private boolean terminate = false;
-  /** Number of MD steps to take. */
+  /**
+   * Integrator instance.
+   */
+  private final Integrator integrator;
+  /**
+   * Keep some old coordinate snapshots around.
+   */
+  private final int numSnapshotsToKeep;
+  /**
+   * Circular FIFO queues will simply discard old elements.
+   */
+  private final CircularFifoQueue<CoordinateSnapshot> lastSnapshots;
+  /**
+   * Number of MD steps to take.
+   */
   private long nSteps = 1000;
-  /** State of the dynamics. */
+  /**
+   * State of the dynamics.
+   */
   private DynamicsState dynamicsState;
-  /** Indicates how verbose MD should be. */
+  /**
+   * Indicates how verbose MD should be.
+   */
   private VerbosityLevel verbosityLevel = VerbosityLevel.VERBOSE;
-  /** Time between appending to the trajectory file in picoseconds. */
+  /**
+   * Time between appending to the trajectory file in picoseconds.
+   */
   private double trajectoryInterval = DEFAULT_TRAJECTORY_INTERVAL;
-  /** Time between logging information to the screen in picoseconds. */
+  /**
+   * Thermostat instance.
+   */
+  private Thermostat thermostat;
+  /**
+   * Flag to indicate MD should be terminated.
+   */
+  private boolean terminate = false;
+  /**
+   * Time between logging information to the screen in picoseconds.
+   */
   private double logInterval = DEFAULT_LOG_INTERVAL;
-  /** Keep some old coordinate snapshots around. */
-  private int numSnapshotsToKeep;
-  /** Circular FIFO queues will simply discard old elements. */
-  private CircularFifoQueue<CoordinateSnapshot> lastSnapshots;
-  /** MC notification flag. */
+  /**
+   * MC notification flag.
+   */
   private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
-  /** ESV System. */
+  /**
+   * ESV System.
+   */
   private ExtendedSystem esvSystem;
-  /** Frequency to print ESV info. */
+  /**
+   * Frequency to print ESV info.
+   */
   private int printEsvFrequency = -1;
-  /** If asked to perform dynamics with a null dynamics file, write here. */
+  /**
+   * If asked to perform dynamics with a null dynamics file, write here.
+   */
   private File fallbackDynFile;
 
   /**
@@ -1495,7 +1531,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
   }
 
-  /** Append a snapshot to the trajectory file. */
+  /**
+   * Append a snapshot to the trajectory file.
+   *
+   * @param extraLines Strings of meta-data to include.
+   */
   protected void appendSnapshot(String[] extraLines) {
     for (AssemblyInfo ai : assemblies) {
       if (ai.archiveFile != null && !saveSnapshotAsPDB) {
@@ -1730,7 +1770,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     QUIET(true),
     SILENT(true);
 
-    private boolean isQuiet;
+    private final boolean isQuiet;
 
     VerbosityLevel(boolean isQuiet) {
       this.isQuiet = isQuiet;

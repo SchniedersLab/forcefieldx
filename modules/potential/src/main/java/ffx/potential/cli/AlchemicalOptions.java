@@ -248,8 +248,8 @@ public class AlchemicalOptions {
   /**
    * Opens a File to a MolecularAssembly for alchemistry.
    *
-   * @param potentialFunctions A utility object for opening Files into MolecularAssemblys.
-   * @param topOptions TopologyOptions in case a dual-topology or greater is to be used.
+   * @param potentialFunctions A utility object for opening Files into MolecularAssemblies.
+   * @param topologyOptions TopologyOptions in case a dual-topology or greater is to be used.
    * @param threadsPer Number of threads to be used for this MolecularAssembly.
    * @param toOpen The name of the File to be opened.
    * @param topNum The index of this topology.
@@ -257,46 +257,47 @@ public class AlchemicalOptions {
    */
   public MolecularAssembly openFile(
       PotentialsFunctions potentialFunctions,
-      TopologyOptions topOptions,
+      TopologyOptions topologyOptions,
       int threadsPer,
       String toOpen,
       int topNum) {
     potentialFunctions.openAll(toOpen, threadsPer);
-    MolecularAssembly mola = potentialFunctions.getActiveAssembly();
-    return processFile(topOptions, mola, topNum);
+    MolecularAssembly molecularAssembly = potentialFunctions.getActiveAssembly();
+    return processFile(topologyOptions, molecularAssembly, topNum);
   }
 
   /**
    * Performs processing on a MolecularAssembly for alchemistry.
    *
-   * @param topOptions TopologyOptions in case a dual-topology or greater is to be used.
-   * @param mola The MolecularAssembly to be processed.
-   * @param topNum The index of this topology, 0-indexed.
+   * @param topologyOptions   TopologyOptions in case a dual-topology or greater is to be used.
+   * @param molecularAssembly The MolecularAssembly to be processed.
+   * @param topNum            The index of this topology, 0-indexed.
    * @return The processed MolecularAssembly.
    */
   public MolecularAssembly processFile(
-      TopologyOptions topOptions, MolecularAssembly mola, int topNum) {
+      TopologyOptions topologyOptions, MolecularAssembly molecularAssembly, int topNum) {
 
     int remainder = (topNum % 2) + 1;
     switch (remainder) {
       case 1:
-        setFirstSystemAlchemistry(mola);
-        setFirstSystemUnchargedAtoms(mola);
+        setFirstSystemAlchemistry(molecularAssembly);
+        setFirstSystemUnchargedAtoms(molecularAssembly);
         break;
       case 2:
-        if (topOptions == null) {
-          throw new IllegalArgumentException(" For >= 2 systems, topOptions must not be empty!");
+        if (topologyOptions == null) {
+          throw new IllegalArgumentException(
+              " For >= 2 systems, topologyOptions must not be empty!");
         }
-        topOptions.setSecondSystemAlchemistry(mola);
-        topOptions.setSecondSystemUnchargedAtoms(mola);
+        topologyOptions.setSecondSystemAlchemistry(molecularAssembly);
+        topologyOptions.setSecondSystemUnchargedAtoms(molecularAssembly);
         break;
     }
 
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
-    ForceFieldEnergy energy = mola.getPotentialEnergy();
+    ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
     energy.getCrystal().setSpecialPositionCutoff(0.0);
 
-    return mola;
+    return molecularAssembly;
   }
 
   /**

@@ -16,22 +16,22 @@ public class Octree {
    */
   private final ArrayList<OctreeCell> leaves = new ArrayList<>();
   /**
-   * List of cells
-   */
-  private ArrayList<OctreeCell> cells = new ArrayList<>();
-  /**
    * Critical (maximum allowed) number of points allowed in any one cell: If a cell already contains
    * nCritical points, it needs to be split
    */
-  private int nCritical;
+  private final int nCritical;
   /**
    * List of particles
    */
-  private ArrayList<OctreeParticle> particles;
+  private final ArrayList<OctreeParticle> particles;
   /**
    * Tolerance parameter
    */
-  private double theta;
+  private final double theta;
+  /**
+   * List of cells
+   */
+  private ArrayList<OctreeCell> cells = new ArrayList<>();
 
   /**
    * Default constructor: only need to pass in a list of particles nCritical and theta set to
@@ -74,7 +74,7 @@ public class Octree {
    * Add a child.
    *
    * @param octant The octant.
-   * @param p      Cell index p.
+   * @param p Cell index p.
    */
   public void addChild(int octant, int p) {
     OctreeCell tempCell = new OctreeCell(nCritical);
@@ -188,9 +188,7 @@ public class Octree {
             + Math.pow((array[2] - point.getZ()), 2));
   }
 
-  /**
-   * Evaluate potential at all target points
-   */
+  /** Evaluate potential at all target points */
   public void evalPotnetial() {
     for (int i = 0; i < particles.size(); i++) {
       evalAtTarget(0, i);
@@ -201,7 +199,7 @@ public class Octree {
    * Compute the L2 error.
    *
    * @param phiDirect Potential from direct summation.
-   * @param phiTree   Potential from the tree.
+   * @param phiTree Potential from the tree.
    */
   public void l2Error(double[] phiDirect, double[] phiTree) {
     double errorSumNum = 0.0;
@@ -214,9 +212,7 @@ public class Octree {
     logger.info("L2 Norm Error: " + error);
   }
 
-  /**
-   * Update sweep.
-   */
+  /** Update sweep. */
   public void upwardSweep() {
     for (int c = (cells.size() - 1); c > 0; c--) {
       int p = cells.get(c).getParentIndex();
@@ -269,7 +265,7 @@ public class Octree {
   /**
    * Get a multipole
    *
-   * @param p      Cell index.
+   * @param p Cell index.
    * @param leaves Leaves.
    */
   private void getMultipole(int p, ArrayList<Integer> leaves) {

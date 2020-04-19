@@ -582,15 +582,16 @@ public final class ModelingShell extends Console implements AlgorithmListener {
   /**
    * runFFXScript
    *
-   * @param file a {@link java.io.File} object.
+   * @param file    a {@link java.io.File} object.
+   * @param argList List of String inputs to the script.
    */
-  public void runFFXScript(File file, List<String> args) {
+  public void runFFXScript(File file, List<String> argList) {
     logger.info(" Executing external script: " + file.getAbsolutePath() + "\n");
     try {
       before();
       try {
         // Run the file using the current Shell and its Binding.
-        Object o = getShell().run(file, args);
+        Object o = getShell().run(file, argList);
         // Do not destroy the system when using the GUI.
         if (headless) {
           if (o instanceof PotentialScript) {
@@ -615,6 +616,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
    * runFFXScript
    *
    * @param script a compiled FFX script.
+   * @param argList List of String inputs to the script.
    */
   public void runFFXScript(Class<? extends Script> script, List<String> argList) {
     logger.info(" Executing internal script: " + script.getCanonicalName() + "\n");

@@ -44,22 +44,26 @@ import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
 import java.util.Arrays;
 
-/** Monte Carlo driver for DEE-MC. */
+/**
+ * Monte Carlo driver for DEE-MC.
+ */
 public class RotamerMatrixMC extends BoltzmannMC {
 
   private final int[] currentRots;
   private final int[] oldRots;
   private final int nRes;
   private final Residue[] residues;
-  private RotamerOptimization rotamerOptimization;
-  private boolean useFullAMOEBAEnergy;
+  private final RotamerOptimization rotamerOptimization;
+  private final boolean useFullAMOEBAEnergy;
 
   /**
    * The Rotamers array must be the same array as passed to any MCMove objects used (and not a
    * copy).
    *
-   * @param rotamers
-   * @param residues
+   * @param rotamers Array of rotamers.
+   * @param residues Array of residues.
+   * @param useFullAMOEBAEnergy If true, re-evaluate AMOEBA energy for each conformation.
+   * @param rotamerOptimization RotamerOptimization instance.
    */
   public RotamerMatrixMC(
       int[] rotamers,
