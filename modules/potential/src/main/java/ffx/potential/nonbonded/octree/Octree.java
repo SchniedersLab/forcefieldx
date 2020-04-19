@@ -313,8 +313,8 @@ public class Octree {
     double dy = cells.get(p).getY() - cells.get(c).getY();
     double dz = cells.get(p).getZ() - cells.get(c).getZ();
 
-    double[] Dxyz = new double[]{dx, dy, dz};
-    double[] Dyzx = new double[]{dy, dz, dx};
+    double[] Dxyz = new double[] {dx, dy, dz};
+    double[] Dyzx = new double[] {dy, dz, dx};
 
     cells.get(p).addToMultipole(cells.get(c).getMultipole());
 

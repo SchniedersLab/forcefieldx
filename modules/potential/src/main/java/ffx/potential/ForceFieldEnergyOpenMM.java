@@ -375,6 +375,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
   private final Atom[] atoms;
   /** Number of particles. */
   private final int nAtoms;
+  /** Lambda step size for finite difference dU/dL. */
+  private final double finiteDifferenceStepSize;
   /** OpenMM Context. */
   private Context context;
   /** OpenMM System. */
@@ -385,8 +387,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
    * lambdaStart = ~0.2).
    */
   private double lambdaStart = 0.0;
-  /** Lambda step size for finite difference dU/dL. */
-  private final double finiteDifferenceStepSize;
   /** Use two-sided finite difference dU/dL. */
   private boolean twoSidedFiniteDifference = true;
 
@@ -1554,15 +1554,15 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private final double meldScaleFactor;
     /** Andersen thermostat collision frequency. */
     private final double collisionFreq;
-    /** The Force Field in use. */
-    ForceField forceField;
-    /** Array of atoms in the sytem. */
-    Atom[] atoms;
     /**
      * When using MELD, our goal will be to scale down the potential by this factor. A negative
      * value indicates we're not using MELD.
      */
     private final boolean useMeld;
+    /** The Force Field in use. */
+    ForceField forceField;
+    /** Array of atoms in the sytem. */
+    Atom[] atoms;
     /** OpenMM System. */
     private PointerByReference system;
     /** Barostat to be added if NPT (isothermal-isobaric) dynamics is requested. */

@@ -144,42 +144,34 @@ public class MultiDynamicsOptions {
       int nSys = molecularAssemblies.length;
       assert nSys == potentials.length;
       switch (nSys) {
-        case 1: {
+        case 1:
           optStructure(
               molecularAssemblies[0], crystalPotential, algorithmFunctions, rank, worldSize);
-        }
-        break;
-
-        case 2: {
+          break;
+        case 2:
           DualTopologyEnergy dte = (DualTopologyEnergy) crystalPotential;
-            if (dte.getNumSharedVariables() == dte.getNumberOfVariables()) {
-              logger.info(" Generating starting structures based on dual-topology:");
-              optStructure(molecularAssemblies[0], dte, algorithmFunctions, rank, worldSize);
-            } else {
-              logger.info(
-                  " Generating separate starting structures for each topology of the dual toplogy:");
-              optStructure(
-                  molecularAssemblies[0], potentials[0], algorithmFunctions, rank, worldSize);
-              optStructure(
-                  molecularAssemblies[1], potentials[1], algorithmFunctions, rank, worldSize);
-            }
+          if (dte.getNumSharedVariables() == dte.getNumberOfVariables()) {
+            logger.info(" Generating starting structures based on dual-topology:");
+            optStructure(molecularAssemblies[0], dte, algorithmFunctions, rank, worldSize);
+          } else {
+            logger.info(
+                " Generating separate starting structures for each topology of the dual toplogy:");
+            optStructure(
+                molecularAssemblies[0], potentials[0], algorithmFunctions, rank, worldSize);
+            optStructure(
+                molecularAssemblies[1], potentials[1], algorithmFunctions, rank, worldSize);
           }
           break;
-
-        case 4: {
+        case 4:
           QuadTopologyEnergy qte = (QuadTopologyEnergy) crystalPotential;
           optStructure(
               molecularAssemblies[0], qte.getDualTopA(), algorithmFunctions, rank, worldSize);
           optStructure(
               molecularAssemblies[3], qte.getDualTopB(), algorithmFunctions, rank, worldSize);
-        }
           break;
-
-          // Oct-topology is deprecated on account of not working as intended.
+        // Oct-topology is deprecated on account of not working as intended.
         default:
-          {
-            logger.severe(" First: must have 1, 2, or 4 topologies.");
-          }
+          logger.severe(" First: must have 1, 2, or 4 topologies.");
           break;
       }
     } else {

@@ -68,6 +68,8 @@ public abstract class Thermostat {
   private final double[] linearMomentum = new double[3];
   /** The angular momentum. */
   private final double[] angularMomentum = new double[3];
+  /** Number of degrees of freedom removed by constraints. */
+  private final int constrainedDoF;
   /** The identity of this Thermostat. */
   protected ThermostatEnum name;
   /** The value of kT in kcal/mol at the target temperature. */
@@ -101,8 +103,6 @@ public abstract class Thermostat {
   private boolean removeCenterOfMassMotion;
   /** Reduce logging. */
   private boolean quiet = false;
-  /** Number of degrees of freedom removed by constraints. */
-  private final int constrainedDoF;
   /**
    * Constructor for Thermostat.
    *

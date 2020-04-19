@@ -173,7 +173,7 @@ public class OSTOptions {
    * @param histogramRestart a {@link java.io.File} histogram restart file.
    * @param firstAssembly the first {@link ffx.potential.MolecularAssembly} in the OST system.
    * @param configuration a {@link org.apache.commons.configuration2.Configuration} with additional
-   * properties.
+   *     properties.
    * @param algorithmListener any {@link ffx.algorithms.AlgorithmListener} that OST should update.
    * @return the newly built {@link OrthogonalSpaceTempering} object.
    * @throws IOException Can be thrown by errors reading restart files.
@@ -185,7 +185,7 @@ public class OSTOptions {
       MolecularAssembly firstAssembly,
       Configuration configuration,
       AlgorithmListener algorithmListener)
-  throws IOException {
+      throws IOException {
     LambdaInterface linter = (LambdaInterface) crystalPotential;
     CompositeConfiguration allProperties =
         new CompositeConfiguration(firstAssembly.getProperties());
@@ -479,7 +479,7 @@ public class OSTOptions {
       LambdaParticleOptions lambdaParticleOptions,
       boolean writeIndependent,
       boolean async)
-  throws IOException {
+      throws IOException {
     return generateHistogramSettings(
         histogramRestartFile,
         lambdaFileName,
@@ -518,7 +518,7 @@ public class OSTOptions {
       boolean writeIndependent,
       boolean async,
       boolean overrideHistogram)
-  throws IOException {
+      throws IOException {
     HistogramSettings histogramSettings =
         new HistogramSettings(histogramRestartFile, lambdaFileName, compositeConfiguration);
     histogramSettings.temperingFactor = getTemperingParameter(index);
@@ -550,7 +550,6 @@ public class OSTOptions {
     return independentWalkers;
   }
 
-  /** --mc or --monteCarlo sets the Monte Carlo scheme for Orthogonal Space Tempering. */
   /**
    * Checks if use of the Monte Carlo algorithm has been specified.
    *
