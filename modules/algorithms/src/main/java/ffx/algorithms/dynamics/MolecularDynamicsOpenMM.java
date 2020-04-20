@@ -305,7 +305,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     if (constantPressure) {
-      // Add a Monte Carlo barostat, or if already present update its target temperature, pressure
+      // Add an isotropic Monte Carlo barostat, or if already present update its target temperature,
+      // pressure
       // and frequency.
       double pressure = barostat.getPressure();
       int frequency = barostat.getMeanBarostatInterval();

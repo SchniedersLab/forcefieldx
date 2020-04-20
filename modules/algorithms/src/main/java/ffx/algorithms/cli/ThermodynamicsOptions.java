@@ -199,7 +199,11 @@ public class ThermodynamicsOptions {
         dyn);
   }
 
-  /** The number of equilibration steps prior to production OST counts begin. */
+  /**
+   * The number of equilibration steps prior to production OST counts begin.
+   *
+   * @return Returns the number of equilibration steps.
+   */
   public long getEquilibrationSteps() {
     return equilibrationSteps;
   }
@@ -208,7 +212,11 @@ public class ThermodynamicsOptions {
     this.equilibrationSteps = equilibrationSteps;
   }
 
-  /** Ignores steps detected in .lam lambda-restart files. */
+  /**
+   * Ignores steps detected in .lam lambda-restart files.
+   *
+   * @return Returns true if the number of steps is being reset.
+   */
   public boolean isResetNumSteps() {
     return resetNumSteps;
   }
@@ -217,7 +225,11 @@ public class ThermodynamicsOptions {
     this.resetNumSteps = resetNumSteps;
   }
 
-  /** The algorithm to be used (e.g. OST, window-based methods, etc). */
+  /**
+   * The algorithm to be used (e.g. OST, window-based methods, etc).
+   *
+   * @return Returns the a String for requested algorithm.
+   */
   public String getThermoAlgoString() {
     return thermoAlgoString;
   }

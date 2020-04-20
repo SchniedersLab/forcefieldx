@@ -311,7 +311,11 @@ public class DynamicsOptions {
     thermostat = thermo;
   }
 
-  /** The desired thermostat: current choices are Adiabatic, Berendsen, orBussi. */
+  /**
+   * The desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
+   *
+   * @return Returns a String for the requested thermostat.
+   */
   public String getThermostatString() {
     return thermostatString;
   }
@@ -320,7 +324,11 @@ public class DynamicsOptions {
     this.thermostatString = thermostatString;
   }
 
-  /** The integrator: current choices are Beeman, RESPA, Stochastic (i.e. Langevin) or Verlet. */
+  /**
+   * The integrator: current choices are Beeman, RESPA, Stochastic (Langevin) or Verlet.
+   *
+   * @return Returns a String for the requested integrator.
+   */
   public String getIntegratorString() {
     return integratorString;
   }
@@ -329,7 +337,11 @@ public class DynamicsOptions {
     this.integratorString = integratorString;
   }
 
-  /** Snapshot save frequency in picoseconds (1.0 psec default). */
+  /**
+   * Snapshot save frequency in picoseconds (1.0 psec default).
+   *
+   * @return Returns the frequency to save snapshots.
+   */
   public double getWrite() {
     return write;
   }
@@ -338,7 +350,11 @@ public class DynamicsOptions {
     this.write = write;
   }
 
-  /** The number of molecular dynamics steps (default is 1 nsec). */
+  /**
+   * The number of molecular dynamics steps (default is 1,000,000).
+   *
+   * @return Returns the number of MD time steps.
+   */
   public long getSteps() {
     return steps;
   }
@@ -347,7 +363,11 @@ public class DynamicsOptions {
     this.steps = steps;
   }
 
-  /** Number of steps for each OpenMM MD cycle. */
+  /**
+   * Number of steps for each OpenMM MD cycle.
+   *
+   * @return Returns the number of steps for OpenMM MD cycles.
+   */
   public int getTrajSteps() {
     return trajSteps;
   }
@@ -356,7 +376,11 @@ public class DynamicsOptions {
     this.trajSteps = trajSteps;
   }
 
-  /** Saves low-energy snapshots discovered (only for single topology simulations). */
+  /**
+   * Saves low-energy snapshots discovered (only for single topology simulations).
+   *
+   * @return Returns true if low-energy snapshots should be saved.
+   */
   public boolean isOptimize() {
     return optimize;
   }
@@ -365,7 +389,11 @@ public class DynamicsOptions {
     this.optimize = optimize;
   }
 
-  /** The default engine choice for integrating the equations of motion */
+  /**
+   * The default engine choice for integrating the equations of motion
+   *
+   * @return Returns a String for the requested engine.
+   */
   public String getEngineString() {
     return engineString;
   }

@@ -89,6 +89,8 @@ public class RandomSymopOptions {
   /**
    * A random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell,
    * negative for no SymOp).
+   *
+   * @return Returns the random SymOp translation.
    */
   public double getRandomSymOp() {
     return randomSymOp;
@@ -101,6 +103,8 @@ public class RandomSymopOptions {
   /**
    * Random unit cell parameters will be used achieve the specified density (g/cc) (no default
    * density).
+   *
+   * @return Returns the density target for the random unit parameters.
    */
   public double getRandomUnitCell() {
     return randomUnitCell;

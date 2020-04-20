@@ -83,7 +83,15 @@ public class BarostatOptions {
       description =
           "Specify use of a MC Barostat at the given pressure; the default 0 disables NPT (atm).")
   private double pressure;
-
+  /**
+   * -iso or --isotropic Restrict the MC Barostat to isotropic moves. The lattice angles are held
+   * fixed, and lattice lengths are scaled equally.
+   */
+  @Option(
+      names = {"--iso", "--isotropic"},
+      defaultValue = "false",
+      description = "Restrict the MC Barostat to isotropic moves.")
+  private boolean isotropic;
   /** --maxD or --maxDensity Specify the maximum density accepted by the MC Barostat (g/cc). */
   @Option(
       names = {"--maxD", " --maxDensity"},
@@ -91,7 +99,6 @@ public class BarostatOptions {
       defaultValue = DEFAULT_MAX_DENSITY,
       description = "Specify the maximum density accepted by the MC Barostat (g/cc).")
   private double maxD;
-
   /** --minD or --minDensity Specify the minimum density accepted by the MC Barostat (g/cc). */
   @Option(
       names = {"--minD", " --minDensity"},
@@ -99,7 +106,6 @@ public class BarostatOptions {
       defaultValue = DEFAULT_MIN_DENSITY,
       description = "Specify the minimum density accepted by the MC Barostat (g/cc).")
   private double minD;
-
   /**
    * --maxSM or --maxSideMove Sets the width of proposed unit cell side length moves (uniformly
    * distributed) in Angstroms.
@@ -111,7 +117,6 @@ public class BarostatOptions {
       description =
           "Default width of proposed unit cell side length moves (uniformly distributed) in Angstroms.")
   private double maxSM;
-
   /**
    * --maxAM or --maxAngleMove Sets the width of proposed crystal angle moves (uniformly
    * distributed) in degrees.
@@ -123,7 +128,6 @@ public class BarostatOptions {
       description =
           "Sets the width of proposed crystal angle moves (uniformly distributed) in degrees.")
   private double maxAM;
-
   /**
    * --barInt or --meanBarostatInterval Sets the mean number of MD steps (Poisson distribution)
    * between barostat move proposals.
@@ -165,6 +169,7 @@ public class BarostatOptions {
     if (pressure > 0) {
       Barostat barostat = new Barostat(assembly, crystalPotential);
       barostat.setPressure(pressure);
+      barostat.setIsotropic(isotropic);
       barostat.setMaxDensity(maxD);
       barostat.setMinDensity(minD);
       double dens = barostat.density();
@@ -190,7 +195,11 @@ public class BarostatOptions {
     }
   }
 
-  /** MC Barostat at pressure. */
+  /**
+   * MC Barostat at pressure.
+   *
+   * @return Returns the pressure.
+   */
   public double getPressure() {
     return pressure;
   }
@@ -199,7 +208,25 @@ public class BarostatOptions {
     this.pressure = pressure;
   }
 
-  /** The maximum density accepted by the MC Barostat (g/cc). */
+  /**
+   * Restrict the MC Barostat to isotropic moves. The lattice angles are * held fixed, and lattice
+   * lengths are scaled equally.
+   *
+   * @return Returns true if the Barostat is isotropic.
+   */
+  public boolean isIsotropic() {
+    return isotropic;
+  }
+
+  public void setIsotropic(boolean isotropic) {
+    this.isotropic = isotropic;
+  }
+
+  /**
+   * The maximum density accepted by the MC Barostat (g/cc).
+   *
+   * @return Returns the maximum density.
+   */
   public double getMaxD() {
     return maxD;
   }
@@ -208,7 +235,11 @@ public class BarostatOptions {
     this.maxD = maxD;
   }
 
-  /** The minimum density accepted by the MC Barostat (g/cc). */
+  /**
+   * The minimum density accepted by the MC Barostat (g/cc).
+   *
+   * @return Returns the minimum density.
+   */
   public double getMinD() {
     return minD;
   }
@@ -217,7 +248,11 @@ public class BarostatOptions {
     this.minD = minD;
   }
 
-  /** The width of proposed unit cell side length moves (uniformly distributed) in Angstroms. */
+  /**
+   * The width of proposed unit cell side length moves (uniformly distributed) in Angstroms.
+   *
+   * @return Returns the maximum cell side length move.
+   */
   public double getMaxSM() {
     return maxSM;
   }
@@ -226,7 +261,11 @@ public class BarostatOptions {
     this.maxSM = maxSM;
   }
 
-  /** The width of proposed crystal angle moves (uniformly distributed) in degrees. */
+  /**
+   * The width of proposed crystal angle moves (uniformly distributed) in degrees.
+   *
+   * @return Returns the width of angle moves.
+   */
   public double getMaxAM() {
     return maxAM;
   }
@@ -235,7 +274,11 @@ public class BarostatOptions {
     this.maxAM = maxAM;
   }
 
-  /** The mean number of MD steps (Poisson distribution) between barostat move proposals. */
+  /**
+   * The mean number of MD steps (Poisson distribution) between barostat move proposals.
+   *
+   * @return Returns the mean number of MD steps between barostat MC trials.
+   */
   public int getBarInt() {
     return barInt;
   }

@@ -908,6 +908,8 @@ public class ManyBodyOptions {
   /**
    * Choices are independent residues (1), all with rotamer elimination (2), all brute force (3),
    * sliding window (4), or box optimization (5).
+   *
+   * @return Returns the algorithm choice.
    */
   public int getAlgorithm() {
     return algorithm;
@@ -917,7 +919,11 @@ public class ManyBodyOptions {
     this.algorithm = algorithm;
   }
 
-  /** Ponder and Richards (1) or Richardson (2) rotamer library. */
+  /**
+   * Ponder and Richards (1) or Richardson (2) rotamer library.
+   *
+   * @return Returns the Rotamer library.
+   */
   public int getLibrary() {
     return library;
   }
@@ -926,7 +932,11 @@ public class ManyBodyOptions {
     this.library = library;
   }
 
-  /** Nucleic acid library: currently only Richardson available. */
+  /**
+   * Nucleic acid library: currently only Richardson available.
+   *
+   * @return Returns a String for the nucleic acid library.
+   */
   public String getNaLibraryName() {
     return naLibraryName;
   }
@@ -935,7 +945,11 @@ public class ManyBodyOptions {
     this.naLibraryName = naLibraryName;
   }
 
-  /** Use dead-end elimination criteria instead of Goldstein criteria. */
+  /**
+   * Use dead-end elimination criteria instead of Goldstein criteria.
+   *
+   * @return Returns true if using DEE instead of Goldstein.
+   */
   public boolean isDee() {
     return dee;
   }
@@ -944,7 +958,11 @@ public class ManyBodyOptions {
     this.dee = dee;
   }
 
-  /** Single character chain ID of the residues to optimize. */
+  /**
+   * Single character chain ID of the residues to optimize.
+   *
+   * @return Returns the Chain name.
+   */
   public String getChain() {
     return chain;
   }
@@ -956,6 +974,8 @@ public class ManyBodyOptions {
   /**
    * Starting residue to perform the optimization on (-1 exits). For box optimization, first box to
    * optimize.
+   *
+   * @return Returns the starting index.
    */
   public int getStart() {
     return start;
@@ -968,6 +988,8 @@ public class ManyBodyOptions {
   /**
    * Final residue to perform the optimization on (-1 exits). For box optimization, final box to
    * optimize.
+   *
+   * @return Returns the finish index.
    */
   public int getFinish() {
     return finish;
@@ -977,7 +999,11 @@ public class ManyBodyOptions {
     this.finish = finish;
   }
 
-  /** Cutoff distance for two-body interactions. */
+  /**
+   * Cutoff distance for two-body interactions.
+   *
+   * @return Returns the 2-body cutoff.
+   */
   public double getTwoBodyCutoff() {
     return twoBodyCutoff;
   }
@@ -986,7 +1012,11 @@ public class ManyBodyOptions {
     this.twoBodyCutoff = twoBodyCutoff;
   }
 
-  /** -T or --threeBody Include 3-Body interactions in the elimination criteria. */
+  /**
+   * -T or --threeBody Include 3-Body interactions in the elimination criteria.
+   *
+   * @return Returns true if 3-body interactions are being used.
+   */
   public boolean isThreeBody() {
     return threeBody;
   }
@@ -995,7 +1025,11 @@ public class ManyBodyOptions {
     this.threeBody = threeBody;
   }
 
-  /** Cutoff distance for three-body interactions. */
+  /**
+   * Cutoff distance for three-body interactions.
+   *
+   * @return Returns the 3-body cutoff.
+   */
   public double getThreeBodyCutoff() {
     return threeBodyCutoff;
   }
@@ -1004,7 +1038,11 @@ public class ManyBodyOptions {
     this.threeBodyCutoff = threeBodyCutoff;
   }
 
-  /** Prune no clashes (0), only single clashes (1), or all clashes (2). */
+  /**
+   * Prune no clashes (0), only single clashes (1), or all clashes (2).
+   *
+   * @return Returns the pruning condition.
+   */
   public int getPrune() {
     return prune;
   }
@@ -1014,9 +1052,11 @@ public class ManyBodyOptions {
   }
 
   /**
-   * -x or --all Optimize all residues beginning from the passed value (overrides other options);
-   * for box optimization, optimizes all boxes beginning from the passed index. Default is to
-   * optimize all residues.
+   * Optimize all residues beginning from the passed value (overrides other options). for box
+   * optimization, optimizes all boxes beginning from the passed index. Default is to optimize all
+   * residues.
+   *
+   * @return Returns the residue / box to start from.
    */
   public int getAll() {
     return all;
@@ -1026,7 +1066,11 @@ public class ManyBodyOptions {
     this.all = all;
   }
 
-  /** Revert unfavorable changes. */
+  /**
+   * Revert unfavorable changes.
+   *
+   * @return Returns true if unfavorable changes are reverted.
+   */
   public boolean isRevert() {
     return revert;
   }
@@ -1035,7 +1079,11 @@ public class ManyBodyOptions {
     this.revert = revert;
   }
 
-  /** Energy restart file from a previous run (requires that all parameters are the same). */
+  /**
+   * Energy restart file from a previous run (requires that all parameters are the same).
+   *
+   * @return Returns the energy restart file to use.
+   */
   public String getEnergyRestart() {
     return energyRestart;
   }
@@ -1044,7 +1092,11 @@ public class ManyBodyOptions {
     this.energyRestart = energyRestart;
   }
 
-  /** Do not include starting coordinates as their own rotamer. */
+  /**
+   * Do not include starting coordinates as their own rotamer.
+   *
+   * @return Returns true if original side-chain coordinates should not be used as a rotamer.
+   */
   public boolean isNoOriginal() {
     return noOriginal;
   }
@@ -1053,7 +1105,11 @@ public class ManyBodyOptions {
     this.noOriginal = noOriginal;
   }
 
-  /** -E or --decompose Print energy decomposition for the input structure (no optimization). */
+  /**
+   * -E or --decompose Print energy decomposition for the input structure (no optimization).
+   *
+   * @return Returns true if the input structure should undergo an energy decomposition.
+   */
   public boolean isDecompose() {
     return decompose;
   }
@@ -1062,7 +1118,11 @@ public class ManyBodyOptions {
     this.decompose = decompose;
   }
 
-  /** Choose a list of individual residues to optimize (eg. A11,A24,B40). */
+  /**
+   * Choose a list of individual residues to optimize (eg. A11,A24,B40).
+   *
+   * @return Returns the list of selected residues.
+   */
   public String getListResidues() {
     return listResidues;
   }
@@ -1074,6 +1134,8 @@ public class ManyBodyOptions {
   /**
    * Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all remaining
    * conformations, whichever is smaller.
+   *
+   * @return Returns the number of Monte Carlo optimization steps to apply.
    */
   public int getMonteCarlo() {
     return monteCarlo;
@@ -1083,7 +1145,11 @@ public class ManyBodyOptions {
     this.monteCarlo = monteCarlo;
   }
 
-  /** Save eliminated singles and eliminated pairs to a text file (global and box optimization). */
+  /**
+   * Save eliminated singles and eliminated pairs to a text file (global and box optimization).
+   *
+   * @return Returns true to Save eliminated rotamers to a file.
+   */
   public boolean isSaveOutput() {
     return saveOutput;
   }
@@ -1092,7 +1158,11 @@ public class ManyBodyOptions {
     this.saveOutput = saveOutput;
   }
 
-  /** Size of the sliding window with respect to adjacent residues (default = 7). */
+  /**
+   * Size of the sliding window with respect to adjacent residues (default = 7).
+   *
+   * @return Returns the sliding window size.
+   */
   public int getWindow() {
     return window;
   }
@@ -1101,7 +1171,11 @@ public class ManyBodyOptions {
     this.window = window;
   }
 
-  /** Sliding window increment (default = 3). */
+  /**
+   * Sliding window increment (default = 3).
+   *
+   * @return Returns the sliding window increment.
+   */
   public int getIncrement() {
     return increment;
   }
@@ -1110,7 +1184,11 @@ public class ManyBodyOptions {
     this.increment = increment;
   }
 
-  /** The sliding window cutoff radius (Angstroms). */
+  /**
+   * The sliding window cutoff radius (Angstroms).
+   *
+   * @return Returns the sliding window cutoff radius.
+   */
   public double getCutoff() {
     return cutoff;
   }
@@ -1122,6 +1200,8 @@ public class ManyBodyOptions {
   /**
    * The threshold for pruning clashes. If two self-energies on the same residue have an energy
    * difference greater than 25 kcal/mol, the high energy rotamers get pruned.
+   *
+   * @return Returns the clash threshold for self energies.
    */
   public double getClashThreshold() {
     return clashThreshold;
@@ -1134,6 +1214,8 @@ public class ManyBodyOptions {
   /**
    * The threshold for pruning clashes. If two pair-energies on the same residues have an energy
    * difference greater than 25 kcal/mol, the high energy rotamers get pruned.
+   *
+   * @return Returns the clash threshold for pair energies.
    */
   public double getPairClashThreshold() {
     return pairClashThreshold;
@@ -1146,6 +1228,8 @@ public class ManyBodyOptions {
   /**
    * Force residues in this range to be considered for sliding window radii, regardless of whether
    * they lack rotamers.
+   *
+   * @return Returns forced residues.
    */
   public String getForceResidues() {
     return forceResidues;
@@ -1155,7 +1239,11 @@ public class ManyBodyOptions {
     this.forceResidues = forceResidues;
   }
 
-  /** The number of boxes along X, Y, and Z (default: '3,3,3'). */
+  /**
+   * The number of boxes along X, Y, and Z (default: '3,3,3').
+   *
+   * @return Returns the number of boxes.
+   */
   public String getNumBoxes() {
     return numBoxes;
   }
@@ -1164,7 +1252,11 @@ public class ManyBodyOptions {
     this.numBoxes = numBoxes;
   }
 
-  /** Extent of overlap between optimization boxes (default: 0.0 A). */
+  /**
+   * Extent of overlap between optimization boxes (default: 0.0 A).
+   *
+   * @return Returns the overlap between optimization boxes.
+   */
   public double getBoxBorderSize() {
     return boxBorderSize;
   }
@@ -1177,6 +1269,8 @@ public class ManyBodyOptions {
    * Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes). Box sizes are
    * rounded up to make a whole number of boxes along each axis (default of 0 disables this
    * function).
+   *
+   * @return Returns the approximate box length.
    */
   public double getApproxBoxLength() {
     return approxBoxLength;
@@ -1188,7 +1282,9 @@ public class ManyBodyOptions {
 
   /**
    * Criterion to use for adding residues to boxes. (1) uses C alpha only (N1/9 for nucleic acids)
-   * (2) uses any atom. (3) uses any rotamer
+   * (2) uses any atom. (3) uses any rotamer.
+   *
+   * @return Returns the Box inclusion criteria.
    */
   public int getBoxInclusionCriterion() {
     return boxInclusionCriterion;

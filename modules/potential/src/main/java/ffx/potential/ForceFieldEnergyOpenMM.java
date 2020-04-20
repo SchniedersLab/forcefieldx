@@ -1873,7 +1873,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double pressureInBar = targetPressure * Constants.ATM_TO_BAR;
         ommBarostat = OpenMM_MonteCarloBarostat_create(pressureInBar, targetTemp, frequency);
         CompositeConfiguration properties = molecularAssembly.getProperties();
-
         if (properties.containsKey("barostat-seed")) {
           int randomSeed = properties.getInt("barostat-seed", 0);
           logger.info(format(" Setting random seed %d for Monte Carlo Barostat", randomSeed));

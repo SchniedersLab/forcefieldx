@@ -559,7 +559,6 @@ public class OSTOptions {
     return monteCarlo;
   }
 
-  /** --ts or --twoStep MC Orthogonal Space sampling using separate lambda and MD moves. */
   public void setMonteCarlo(boolean monteCarlo) {
     this.monteCarlo = monteCarlo;
   }
@@ -673,7 +672,11 @@ public class OSTOptions {
     return temperingRate.length > 1 ? temperingRate[i] : temperingRate[0];
   }
 
-  /** Sets the number of time steps between OST counts. */
+  /**
+   * Sets the number of time steps between OST counts.
+   *
+   * @return Returns the interval between OST counts.
+   */
   public int getCountInterval() {
     return countInterval;
   }
@@ -682,7 +685,11 @@ public class OSTOptions {
     this.countInterval = countInterval;
   }
 
-  /** Sets the initial Gaussian bias magnitude in kcal/mol. */
+  /**
+   * Sets the initial Gaussian bias magnitude in kcal/mol.
+   *
+   * @return Returns the Bias magnitude.
+   */
   public double[] getBiasMag() {
     return biasMag;
   }
@@ -691,7 +698,11 @@ public class OSTOptions {
     this.biasMag = biasMag;
   }
 
-  /** Enforces that each walker maintains their own histogram. */
+  /**
+   * Enforces that each walker maintains their own histogram.
+   *
+   * @return Returns true if each Walker has their own histogram.
+   */
   public boolean isIndependentWalkers() {
     return independentWalkers;
   }
@@ -700,7 +711,11 @@ public class OSTOptions {
     this.independentWalkers = independentWalkers;
   }
 
-  /** The Dama et al tempering rate parameter, in multiples of kBT. */
+  /**
+   * The Dama et al tempering rate parameter, in multiples of kBT.
+   *
+   * @return Returns the tempering rate.
+   */
   public double[] getTemperingRate() {
     return temperingRate;
   }
@@ -709,7 +724,11 @@ public class OSTOptions {
     this.temperingRate = temperingRate;
   }
 
-  /** The tempering threshold/offset in kcal/mol. */
+  /**
+   * The tempering threshold/offset in kcal/mol.
+   *
+   * @return Returns the tempering threshold.
+   */
   public double[] getTemperingThreshold() {
     return temperingThreshold;
   }
@@ -719,8 +738,10 @@ public class OSTOptions {
   }
 
   /**
-   * The Monte Carlo scheme can use a hard wall that rejects any sample (Lambda, dU/dL) located in
-   * an empty histogram bin.
+   * The Monte Carlo scheme can use a hard wall that rejects any sample (Lambda, dU/dL) located in an
+   * empty histogram bin.
+   *
+   * @return Returns true if the MC-OST hard wall constraint is set.
    */
   public boolean isMcHardWall() {
     return mcHardWall;
@@ -730,7 +751,11 @@ public class OSTOptions {
     this.mcHardWall = mcHardWall;
   }
 
-  /** The number of steps to take for each MD trajectory for MC-OST. */
+  /**
+   * The number of steps to take for each MD trajectory for MC-OST.
+   *
+   * @return Returns the number of MD steps for each MC-OST round.
+   */
   public int getMcMDSteps() {
     return mcMDSteps;
   }
@@ -739,7 +764,11 @@ public class OSTOptions {
     this.mcMDSteps = mcMDSteps;
   }
 
-  /** The standard deviation for lambda moves. */
+  /**
+   * The standard deviation for lambda moves.
+   *
+   * @return Returns the MC lambda trial move standard deviations.
+   */
   public double getMcLambdaStdDev() {
     return mcLambdaStdDev;
   }
@@ -748,7 +777,11 @@ public class OSTOptions {
     this.mcLambdaStdDev = mcLambdaStdDev;
   }
 
-  /** Only write out snapshots if lambda is greater than the value specified. */
+  /**
+   * Only write out snapshots if lambda is greater than the value specified.
+   *
+   * @return Returns the lambda write-out threshold.
+   */
   public double getLambdaWriteOut() {
     return lambdaWriteOut;
   }

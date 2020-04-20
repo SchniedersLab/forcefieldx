@@ -253,7 +253,11 @@ public class AnnealOptions {
     return annealingSchedule;
   }
 
-  /** Number of annealing windows. */
+  /**
+   * Number of annealing windows.
+   *
+   * @return Returns the number of windows.
+   */
   public int getWindows() {
     return windows;
   }
@@ -262,7 +266,11 @@ public class AnnealOptions {
     this.windows = windows;
   }
 
-  /** Low temperature limit in degrees Kelvin. */
+  /**
+   * Low temperature limit in degrees Kelvin.
+   *
+   * @return Returns the low temperature limit.
+   */
   public double getLow() {
     return low;
   }
@@ -271,7 +279,11 @@ public class AnnealOptions {
     this.low = low;
   }
 
-  /** Upper temperature limit in degrees Kelvin. */
+  /**
+   * Upper temperature limit in degrees Kelvin.
+   *
+   * @return Returns the upper temperature limit.
+   */
   public double getUpper() {
     return upper;
   }
@@ -283,6 +295,8 @@ public class AnnealOptions {
   /**
    * Forces simulated annealing to re-initialize velocities to the new temperature at each annealing
    * step, rather than letting the thermostat shift temperature downwards.
+   *
+   * @return Returns true for re-initialization of velocities.
    */
   public boolean isReinitVelocities() {
     return reinitVelocities;
@@ -292,7 +306,11 @@ public class AnnealOptions {
     this.reinitVelocities = reinitVelocities;
   }
 
-  /** Sets the schedule to be used. */
+  /**
+   * Sets the schedule to be used.
+   *
+   * @return Returns a String representation of the tempering schedule.
+   */
   public String getTemperString() {
     return temperString;
   }
@@ -302,8 +320,10 @@ public class AnnealOptions {
   }
 
   /**
-   * Sets the number of annealing windows to hold flat at the high temperature (in addition to
-   * normal windows).
+   * Sets the number of annealing windows to hold flat at the high temperature (in addition to normal
+   * windows).
+   *
+   * @return Returns the number of annealing windows to hold flat at the high temperature.
    */
   public int getTemperBefore() {
     return temperBefore;
@@ -316,6 +336,8 @@ public class AnnealOptions {
   /**
    * Sets the number of annealing windows to hold flat at the low temperature (in addition to normal
    * windows).
+   *
+   * @return Returns the number of annealing windows to hold flat at the low temperature.
    */
   public int getTemperAfter() {
     return temperAfter;

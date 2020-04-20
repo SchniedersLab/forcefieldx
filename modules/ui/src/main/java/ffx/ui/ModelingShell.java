@@ -585,6 +585,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
    *
    * @param file a {@link java.io.File} object.
    * @param argList List of String inputs to the script.
+   * @return Returns a reference to the executed script.
    */
   public Script runFFXScript(File file, List<String> argList) {
     logger.info(" Executing external script: " + file.getAbsolutePath() + "\n");
@@ -628,6 +629,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
    *
    * @param script a compiled FFX script.
    * @param argList List of String inputs to the script.
+   * @return Returns a reference to the executed script.
    */
   public Script runFFXScript(Class<? extends Script> script, List<String> argList) {
     logger.info(" Executing internal script: " + script.getCanonicalName() + "\n");

@@ -49,7 +49,11 @@ public class RepexOSTOptions {
       description = "Picoseconds between exchange attempts.")
   private double repexFrequency;
 
-  /** The interval (in psec) between replica exchange attempts. */
+  /**
+   * The interval (in psec) between replica exchange attempts.
+   *
+   * @return Returns the RepEx exchange interval.
+   */
   public double getRepexFrequency() {
     return repexFrequency;
   }
