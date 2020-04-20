@@ -229,7 +229,8 @@ public class ForceField {
    * Add an instance of a force field type. Force Field types are more complicated than simple
    * Strings or doubles, in that they have multiple fields and may occur multiple times.
    *
-   * @param type BaseType
+   * @param <T> ForceFieldType to add that extends BaseType
+   * @param type The ForceFieldType to add.
    */
   @SuppressWarnings("unchecked")
   public <T extends BaseType> void addForceFieldType(T type) {
@@ -1051,7 +1052,7 @@ public class ForceField {
    */
   public String toString(ForceFieldType type) {
     StringBuilder sb = new StringBuilder("\n");
-    Map t = forceFieldTypes.get(type);
+    Map<String, ? extends BaseType> t = forceFieldTypes.get(type);
 
     if (t.size() == 0) {
       return "";
@@ -1089,14 +1090,18 @@ public class ForceField {
     key = toPropertyForm(key);
 
     if (properties.containsKey(key)) {
-      List l = properties.getList(key);
+      List<Object> l = properties.getList(key);
       return key + " " + Arrays.toString(l.toArray());
     } else {
       return key + " is not defined.";
     }
   }
 
-  /** toStringBuffer */
+  /**
+   * toStringBuffer
+   *
+   * @return Returns a StringBuffer representation of the ForceField.
+   */
   public StringBuffer toStringBuffer() {
     StringBuffer sb = new StringBuffer();
     for (ForceFieldType s : forceFieldTypes.keySet()) {
@@ -1354,6 +1359,7 @@ public class ForceField {
       for (int i = 2; i < len; i++) {
         if (atomName.equalsIgnoreCase(tokens[i])) {
           found = true;
+          break;
         }
       }
       if (!found) {
@@ -1389,10 +1395,7 @@ public class ForceField {
     for (String otherBool : otherBooleans) {
       if (getBoolean(otherBool, false)) {
         addProperty(toSet, "true");
-        logger.info(
-            format(
-                " Setting implied boolean %s true due to boolean %s",
-                toSet.toString(), otherBool.toString()));
+        logger.info(format(" Setting implied boolean %s true due to boolean %s", toSet, otherBool));
       }
     }
   }
@@ -1416,7 +1419,7 @@ public class ForceField {
               format("Polarize type %s references nonexistant polarize type %s.", key, key2));
           continue;
         }
-        int types2[] = polarizeType2.polarizationGroup;
+        int[] types2 = polarizeType2.polarizationGroup;
         if (types2 == null) {
           polarizeType2.add(orig);
           change = true;
@@ -1427,6 +1430,7 @@ public class ForceField {
           for (int type3 : types) {
             if (type2 == type3) {
               found = true;
+              break;
             }
           }
           if (!found) {
@@ -1499,8 +1503,10 @@ public class ForceField {
 
   /** Enumerates the types of constraints that can be applied. */
   public enum ConstraintTypes {
-    BOND, // Constrain a Bond.
-    ANGLEBONDS; // Constrain a 3-atom Angle and its two component Bonds.
+    // Constrain a Bond.
+    BOND,
+    // Constrain a 3-atom Angle and its two component Bonds.
+    ANGLEBONDS
     // TODO: Support dihedral constraints, lone angle constraints, etc.
   }
 }

@@ -39,7 +39,7 @@ public class SynchronousSend {
   private final DoubleBuf[] recursionWeightsBuf;
 
   private final DoubleBuf myRecursionWeightBuf;
-  private boolean independentWalkers = false;
+  private boolean independentWalkers;
   /** The histograms to update. */
   private Histogram[] histograms;
   /** Map from ranks to histograms */
@@ -50,6 +50,7 @@ public class SynchronousSend {
    *
    * @param histograms An array of Bias Histograms.
    * @param rankToHistogramMap A map from process rank to Histogram.
+   * @param independentWalkers If true, each walker has its own Histogram.
    */
   public SynchronousSend(
       Histogram[] histograms, int[] rankToHistogramMap, boolean independentWalkers) {

@@ -39,8 +39,6 @@ package ffx;
 
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
-import java.io.File;
-import java.util.List;
 import java.util.logging.Logger;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -59,21 +57,13 @@ public class HeadlessMain {
   /**
    * Complete initializations.
    *
-   * @param commandLineFile The command line file.
-   * @param argList The command line argument list.
    * @param logHandler The FFX log handler.
    */
-  HeadlessMain(File commandLineFile, List<String> argList, LogHandler logHandler) {
-
+  HeadlessMain(LogHandler logHandler) {
     // Construct the MainPanel, set it's LogHandler, and initialize then it.
     mainPanel = new MainPanel();
     logHandler.setMainPanel(mainPanel);
     mainPanel.initialize();
-
-    // Run the supplied command or file.
-    if (commandLineFile != null) {
-      Main.runScript(mainPanel.getModelingShell(), commandLineFile, argList);
-    }
   }
 
   /**

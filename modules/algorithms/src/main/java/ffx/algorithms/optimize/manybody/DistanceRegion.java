@@ -116,7 +116,7 @@ public class DistanceRegion extends ParallelRegion {
   }
 
   @Override
-  public void run() throws Exception {
+  public void run() {
     try {
       int threadID = getThreadIndex();
       execute(0, nResidues - 1, distanceLoops[threadID]);
@@ -127,8 +127,18 @@ public class DistanceRegion extends ParallelRegion {
     }
   }
 
-  private double[][] getCoordinates(Residue residue, Rotamer rotamer, boolean forced) {
-    synchronized (residue) {
+  /**
+   * Get the coordinates of a requested residue.
+   *
+   * @param i Residue index.
+   * @param residues Array of residues.
+   * @param rotamer Rotamer to apply.
+   * @param forced True for a forced residue.
+   * @return Returns the coordinates.
+   */
+  private double[][] getCoordinates(int i, Residue[] residues, Rotamer rotamer, boolean forced) {
+    synchronized (residues[i]) {
+      Residue residue = residues[i];
       if (!forced) {
         RotamerLibrary.applyRotamer(residue, rotamer);
         return residue.storeCoordinateArray();
@@ -170,9 +180,9 @@ public class DistanceRegion extends ParallelRegion {
           for (int ri = 0; ri < lengthRi; ri++) {
             double[][] xi;
             if (forcedResidueI) {
-              xi = getCoordinates(residuei, null, forcedResidueI);
+              xi = getCoordinates(i, allResiduesArray, null, forcedResidueI);
             } else {
-              xi = getCoordinates(residuei, rotamersi[ri], forcedResidueI);
+              xi = getCoordinates(i, allResiduesArray, rotamersi[ri], forcedResidueI);
             }
 
             // Loop over Residue i's neighbors.
@@ -200,9 +210,9 @@ public class DistanceRegion extends ParallelRegion {
               for (int rj = 0; rj < lengthRj; rj++) {
                 double[][] xj;
                 if (forcedResidueJ) {
-                  xj = getCoordinates(residuej, null, forcedResidueJ);
+                  xj = getCoordinates(j, allResiduesArray, null, forcedResidueJ);
                 } else {
-                  xj = getCoordinates(residuej, rotamersj[rj], forcedResidueJ);
+                  xj = getCoordinates(j, allResiduesArray, rotamersj[rj], forcedResidueJ);
                 }
                 if (getThreadIndex() == 0 && algorithmListener != null) {
                   algorithmListener.algorithmUpdate(molecularAssembly);

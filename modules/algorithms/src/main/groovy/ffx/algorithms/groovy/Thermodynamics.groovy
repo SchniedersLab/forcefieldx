@@ -289,7 +289,7 @@ class Thermodynamics extends AlgorithmsScript {
       CrystalPotential ostPotential =
           ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
               dynamics, barostat)
-      if (ostOptions.mc) {
+      if (ostOptions.monteCarlo) {
         MonteCarloOST mcOST = ostOptions.
             setupMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose,
                 algorithmListener)

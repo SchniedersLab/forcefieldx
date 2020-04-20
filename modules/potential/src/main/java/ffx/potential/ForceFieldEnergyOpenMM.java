@@ -375,6 +375,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
   private final Atom[] atoms;
   /** Number of particles. */
   private final int nAtoms;
+  /** Lambda step size for finite difference dU/dL. */
+  private final double finiteDifferenceStepSize;
   /** OpenMM Context. */
   private Context context;
   /** OpenMM System. */
@@ -385,8 +387,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
    * lambdaStart = ~0.2).
    */
   private double lambdaStart = 0.0;
-  /** Lambda step size for finite difference dU/dL. */
-  private double finiteDifferenceStepSize;
   /** Use two-sided finite difference dU/dL. */
   private boolean twoSidedFiniteDifference = true;
 
@@ -985,20 +985,20 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /** Requested Platform (i.e. Java or an OpenMM platform). */
     private final Platform platform;
+    /** Instance of the OpenMM Integrator class. */
+    private final Integrator integrator;
+    /** Constraint tolerance as a fraction of the constrained bond length. */
+    private final double constraintTolerance = ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
     /** OpenMM Context pointer. */
     private PointerByReference contextPointer = null;
-    /** Instance of the OpenMM Integrator class. */
-    private Integrator integrator;
-    /** OpenMM Platform pointer. */
-    private PointerByReference platformPointer = null;
     /** Integrator string (default = VERLET). */
     private String integratorString = "VERLET";
     /** Time step (default = 0.001 psec). */
     private double timeStep = 0.001;
+    /** OpenMM Platform pointer. */
+    private PointerByReference platformPointer = null;
     /** Temperature (default = 298.15). */
     private double temperature = 298.15;
-    /** Constraint tolerance as a fraction of the constrained bond length. */
-    private double constraintTolerance = ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
 
     /**
      * Create an OpenMM Context.
@@ -1373,12 +1373,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
    */
   private class Integrator {
 
+    /** Constraint tolerance as a fraction of the constrained bond length. */
+    private final double constraintTolerance;
+    /** Langevin friction coefficient. */
+    private final double frictionCoeff;
     /** OpenMM Integrator pointer. */
     private PointerByReference integratorPointer = null;
-    /** Constraint tolerance as a fraction of the constrained bond length. */
-    private double constraintTolerance;
-    /** Langevin friction coefficient. */
-    private double frictionCoeff;
 
     /**
      * Create an Integrator instance.
@@ -1410,10 +1410,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     PointerByReference createIntegrator(
         String integratorString, double timeStep, double temperature) {
-      double dt = timeStep;
       switch (integratorString) {
         case "LANGEVIN":
-          createLangevinIntegrator(temperature, frictionCoeff, dt);
+          createLangevinIntegrator(temperature, frictionCoeff, timeStep);
           break;
         case "RESPA":
           // Read in the inner time step in psec.
@@ -1421,8 +1420,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           if (in < 2) {
             in = 2;
           }
-          double inner = dt / in;
-          createRESPAIntegrator(inner, dt);
+          double inner = timeStep / in;
+          createRESPAIntegrator(inner, timeStep);
           break;
           /*
           case "BROWNIAN":
@@ -1437,7 +1436,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
            */
         case "VERLET":
         default:
-          createVerletIntegrator(dt);
+          createVerletIntegrator(timeStep);
       }
 
       return integratorPointer;
@@ -1550,18 +1549,22 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
    * computing its position.
    */
   public class System {
+
     private static final double DEFAULT_MELD_SCALE_FACTOR = -1.0;
     private final double meldScaleFactor;
+    /** Andersen thermostat collision frequency. */
+    private final double collisionFreq;
+    /**
+     * When using MELD, our goal will be to scale down the potential by this factor. A negative
+     * value indicates we're not using MELD.
+     */
+    private final boolean useMeld;
     /** The Force Field in use. */
     ForceField forceField;
     /** Array of atoms in the sytem. */
     Atom[] atoms;
     /** OpenMM System. */
     private PointerByReference system;
-    /** OpenMM thermostat. Currently an Andersen thermostat is supported. */
-    private PointerByReference ommThermostat = null;
-    /** Andersen thermostat collision frequency. */
-    private double collisionFreq;
     /** Barostat to be added if NPT (isothermal-isobaric) dynamics is requested. */
     private PointerByReference ommBarostat = null;
     /** OpenMM center-of-mass motion remover. */
@@ -1625,15 +1628,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private double electrostaticLambdaPower;
     /** van der Waals softcore alpha. */
     private double vdWSoftcoreAlpha = 0.25;
+    /** OpenMM thermostat. Currently an Andersen thermostat is supported. */
+    private PointerByReference ommThermostat = null;
     /** van der Waals softcore beta. */
     private double vdwSoftcorePower = 3.0;
     /** Torsional lambda power. */
     private double torsionalLambdaPower = 2.0;
-    /**
-     * When using MELD, our goal will be to scale down the potential by this factor. A negative
-     * value indicates we're not using MELD.
-     */
-    private boolean useMeld;
 
     /**
      * OpenMMSystem constructor.
@@ -1873,7 +1873,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double pressureInBar = targetPressure * Constants.ATM_TO_BAR;
         ommBarostat = OpenMM_MonteCarloBarostat_create(pressureInBar, targetTemp, frequency);
         CompositeConfiguration properties = molecularAssembly.getProperties();
-
         if (properties.containsKey("barostat-seed")) {
           int randomSeed = properties.getInt("barostat-seed", 0);
           logger.info(format(" Setting random seed %d for Monte Carlo Barostat", randomSeed));
@@ -1925,7 +1924,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               lambdaTorsion, lambdaVDW, lambdaElec));
     }
 
-    /** Set the overall lambda value for the system. */
+    /**
+     * Set the overall lambda value for the system.
+     *
+     * @param lambda Current lambda value.
+     */
     public void setLambda(double lambda) {
 
       // Initially set all lambda values to 1.0.

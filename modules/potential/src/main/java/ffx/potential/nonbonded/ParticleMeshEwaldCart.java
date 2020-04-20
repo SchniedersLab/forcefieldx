@@ -99,6 +99,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction;
+import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
 
 /**
@@ -212,7 +214,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   /** Second partial derivative with respect to Lambda. */
   private final SharedDouble sharedd2EdLambda2;
   /** The electrostatics functional form in use. */
-  private ELEC_FORM elecForm;
+  private final ELEC_FORM elecForm;
   /** Unit cell and spacegroup information. */
   private Crystal crystal;
   /** Number of symmetry operators. */
@@ -643,7 +645,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   }
 
   @Override
-  public void destroy() throws Exception {
+  public void destroy() {
     if (fftTeam != null) {
       try {
         fftTeam.shutdown();
@@ -2031,7 +2033,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         case POLY:
           scfPredictorParameters.polynomialPredictor();
           break;
-        case NONE:
         default:
           break;
       }
@@ -2428,6 +2429,33 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             eij));
   }
 
+  public static class RealSpaceNeighborParameters {
+
+    final int numThreads;
+    /**
+     * Neighbor lists, without atoms beyond the real space cutoff.
+     * [nSymm][nAtoms][nIncludedNeighbors]
+     */
+    public int[][][] realSpaceLists;
+    /** Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms] */
+    public int[][] realSpaceCounts;
+    /** Optimal pairwise ranges. */
+    public Range[] realSpaceRanges;
+    /** Pairwise schedule for load balancing. */
+    public IntegerSchedule realSpaceSchedule;
+
+    public RealSpaceNeighborParameters(int maxThreads) {
+      numThreads = maxThreads;
+      realSpaceRanges = new Range[maxThreads];
+    }
+
+    public void allocate(int nAtoms, int nSymm) {
+      realSpaceSchedule = new PairwiseSchedule(numThreads, nAtoms, realSpaceRanges);
+      realSpaceLists = new int[nSymm][nAtoms][];
+      realSpaceCounts = new int[nSymm][nAtoms];
+    }
+  }
+
   /** Mutable Particle Mesh Ewald constants. */
   public class EwaldParameters {
 
@@ -2599,7 +2627,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      *
      * <p>Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
      *
-     * <p>Set polarizationScale to L for part 1. Set polarizationScale to (1-L) for parts 2 & 3.
+     * <p>Set polarizationScale to L for part 1. Set polarizationScale to (1-L) for parts 2 and 3.
      */
     public double polarizationScale = 1.0;
     /**
@@ -3108,22 +3136,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       }
     }
 
-    private class LeastSquaresPredictor
-        implements org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction {
+    private class LeastSquaresPredictor implements DifferentiableMultivariateVectorFunction {
 
       double[] weights;
       double[] target;
       double[] values;
       double[][] jacobian;
       double[] initialSolution;
-      private org.apache.commons.math3.analysis.MultivariateMatrixFunction
-          multivariateMatrixFunction =
-              new org.apache.commons.math3.analysis.MultivariateMatrixFunction() {
-                @Override
-                public double[][] value(double[] point) {
-                  return jacobian(point);
-                }
-              };
+      private final MultivariateMatrixFunction multivariateMatrixFunction = this::jacobian;
 
       LeastSquaresPredictor() {
         weights = new double[2 * nAtoms * 3];
@@ -3136,7 +3156,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       }
 
       @Override
-      public org.apache.commons.math3.analysis.MultivariateMatrixFunction jacobian() {
+      public MultivariateMatrixFunction jacobian() {
         return multivariateMatrixFunction;
       }
 
@@ -3243,33 +3263,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       private double[][] jacobian(double[] variables) {
         return jacobian;
       }
-    }
-  }
-
-  public class RealSpaceNeighborParameters {
-
-    final int numThreads;
-    /**
-     * Neighbor lists, without atoms beyond the real space cutoff.
-     * [nSymm][nAtoms][nIncludedNeighbors]
-     */
-    public int[][][] realSpaceLists;
-    /** Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms] */
-    public int[][] realSpaceCounts;
-    /** Optimal pairwise ranges. */
-    public Range[] realSpaceRanges;
-    /** Pairwise schedule for load balancing. */
-    public IntegerSchedule realSpaceSchedule;
-
-    public RealSpaceNeighborParameters(int maxThreads) {
-      numThreads = maxThreads;
-      realSpaceRanges = new Range[maxThreads];
-    }
-
-    public void allocate(int nAtoms, int nSymm) {
-      realSpaceSchedule = new PairwiseSchedule(numThreads, nAtoms, realSpaceRanges);
-      realSpaceLists = new int[nSymm][nAtoms][];
-      realSpaceCounts = new int[nSymm][nAtoms];
     }
   }
 

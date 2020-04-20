@@ -81,17 +81,17 @@ public class ReplicaExchange implements Terminatable {
    */
   private final DoubleBuf[] parametersBuf;
 
-  private MolecularDynamics replica;
+  private final MolecularDynamics replica;
   private boolean done = false;
   private boolean terminate = false;
-  private double[] myParameters;
-  private DoubleBuf myParametersBuf;
+  private final double[] myParameters;
+  private final DoubleBuf myParametersBuf;
 
-  private int[] temp2Rank;
-  private int[] rank2Temp;
+  private final int[] temp2Rank;
+  private final int[] rank2Temp;
   private double[] temperatures;
-  private double lowTemperature;
-  private int[] acceptedCount;
+  private final double lowTemperature;
+  private final int[] acceptedCount;
 
   /**
    * ReplicaExchange constructor.

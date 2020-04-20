@@ -45,6 +45,7 @@ package ffx.utilities;
  * deal with it.
  *
  * @author Jacob M. Litman
+ * @since 1.0
  */
 public class LoggerSevereError extends Error {
   /** Constructor for LoggerSevereError. */

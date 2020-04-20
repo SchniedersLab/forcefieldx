@@ -61,8 +61,8 @@ public class GoldsteinPairRegion extends ParallelRegion {
   private int j, riB, rjD;
   private int[] possK;
   private int nK;
-  private GoldsteinRotamerPairLoop[] goldsteinRotamerPairLoop;
-  private SharedDouble sharedSumOverK = new SharedDouble();
+  private final GoldsteinRotamerPairLoop[] goldsteinRotamerPairLoop;
+  private final SharedDouble sharedSumOverK = new SharedDouble();
   private ArrayList<Residue> blockedResidues;
 
   public GoldsteinPairRegion(int nThreads) {
@@ -94,6 +94,7 @@ public class GoldsteinPairRegion extends ParallelRegion {
    * @param rjC Second member of the pair to attempt eliminating.
    * @param rjD Second member of the pair to try eliminating by.
    * @param bidiResNeighbors All interaction partners of a Residue, including prior residues
+   * @param rotamerOptimization RotamerOptimization instance.
    */
   public void init(
       Residue[] residues,
@@ -149,7 +150,7 @@ public class GoldsteinPairRegion extends ParallelRegion {
     }
 
     @Override
-    public void run(int lb, int ub) throws Exception {
+    public void run(int lb, int ub) {
       if (blockedResidues.isEmpty()) {
         double locSumOverK =
             rotamerOptimization.goldsteinPairSumOverK(

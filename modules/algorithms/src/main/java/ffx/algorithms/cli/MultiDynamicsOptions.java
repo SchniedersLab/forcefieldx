@@ -60,7 +60,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.configuration2.CompositeConfiguration;
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 /**
  * Represents command line options for scripts that can create multiple walkers, such as
@@ -76,105 +76,102 @@ public class MultiDynamicsOptions {
   private static final Logger logger = Logger.getLogger(MultiDynamicsOptions.class.getName());
 
   /** -y or --synchronous sets synchronous walker communication (not recommended) */
-  @CommandLine.Option(
+  @Option(
       names = {"-y", "--synchronous"},
+      defaultValue = "false",
       description = "Walker communication is synchronous")
-  private boolean synchronous = false;
+  private boolean synchronous;
 
   /**
    * -dw or --distributeWalkers allows walkers to start from multiple conformations; AUTO picks up
    * per-walker conformations as filename.pdb_(walker number), and specifying a residue starts a
    * rotamer optimization to generate side-chain configurations to start from.
    */
-  @CommandLine.Option(
+  @Option(
       names = {"--dw", "--distributeWalkers"},
       paramLabel = "OFF",
+      defaultValue = "OFF",
       description =
           "AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.")
-  private String distributeWalkersString = "OFF";
+  private String distributeWalkersString;
 
   /**
    * If residues selected for distributing initial configurations, performs many-body optimization
    * for this distribution.
    *
-   * @param topologies an array of {@link ffx.potential.MolecularAssembly} objects.
-   * @param cpot Overall CrystalPotential in use.
-   * @param afuncts a {@link ffx.algorithms.AlgorithmFunctions} object.
+   * @param molecularAssemblies an array of {@link ffx.potential.MolecularAssembly} objects.
+   * @param crystalPotential Overall CrystalPotential in use.
+   * @param algorithmFunctions a {@link ffx.algorithms.AlgorithmFunctions} object.
    * @param rank a int.
    * @param worldSize a int.
    */
   public void distribute(
-      MolecularAssembly[] topologies,
-      CrystalPotential cpot,
-      AlgorithmFunctions afuncts,
+      MolecularAssembly[] molecularAssemblies,
+      CrystalPotential crystalPotential,
+      AlgorithmFunctions algorithmFunctions,
       int rank,
       int worldSize) {
-    int ntops = topologies.length;
+    int ntops = molecularAssemblies.length;
     Potential[] energies = new Potential[ntops];
     for (int i = 0; i < ntops; i++) {
-      energies[i] = topologies[i].getPotentialEnergy();
+      energies[i] = molecularAssemblies[i].getPotentialEnergy();
     }
-    distribute(topologies, energies, cpot, afuncts, rank, worldSize);
+    distribute(
+        molecularAssemblies, energies, crystalPotential, algorithmFunctions, rank, worldSize);
   }
 
   /**
    * If residues selected for distributing initial configurations, performs many-body optimization
    * for this distribution.
    *
-   * @param topologies an array of {@link ffx.potential.MolecularAssembly} objects.
-   * @param energies ForceFieldEnergy for each topology.
-   * @param cpot Overall CrystalPotential in use.
-   * @param afuncts a {@link ffx.algorithms.AlgorithmFunctions} object.
+   * @param molecularAssemblies an array of {@link ffx.potential.MolecularAssembly} objects.
+   * @param potentials ForceFieldEnergy for each topology.
+   * @param crystalPotential Overall CrystalPotential in use.
+   * @param algorithmFunctions a {@link ffx.algorithms.AlgorithmFunctions} object.
    * @param rank a int.
    * @param worldSize a int.
    */
   public void distribute(
-      MolecularAssembly[] topologies,
-      Potential[] energies,
-      CrystalPotential cpot,
-      AlgorithmFunctions afuncts,
+      MolecularAssembly[] molecularAssemblies,
+      Potential[] potentials,
+      CrystalPotential crystalPotential,
+      AlgorithmFunctions algorithmFunctions,
       int rank,
       int worldSize) {
     if (!distributeWalkersString.equalsIgnoreCase("AUTO")
         && !distributeWalkersString.equalsIgnoreCase("OFF")) {
       logger.info(" Distributing walker conformations.");
-      int nSys = topologies.length;
-      assert nSys == energies.length;
+      int nSys = molecularAssemblies.length;
+      assert nSys == potentials.length;
       switch (nSys) {
         case 1:
-          {
-            optStructure(topologies[0], cpot, afuncts, rank, worldSize);
-          }
+          optStructure(
+              molecularAssemblies[0], crystalPotential, algorithmFunctions, rank, worldSize);
           break;
-
         case 2:
-          {
-            DualTopologyEnergy dte = (DualTopologyEnergy) cpot;
-            if (dte.getNumSharedVariables() == dte.getNumberOfVariables()) {
-              logger.info(" Generating starting structures based on dual-topology:");
-              optStructure(topologies[0], dte, afuncts, rank, worldSize);
-            } else {
-              logger.info(
-                  " Generating separate starting structures for each topology of the dual toplogy:");
-              optStructure(topologies[0], energies[0], afuncts, rank, worldSize);
-              optStructure(topologies[1], energies[1], afuncts, rank, worldSize);
-            }
+          DualTopologyEnergy dte = (DualTopologyEnergy) crystalPotential;
+          if (dte.getNumSharedVariables() == dte.getNumberOfVariables()) {
+            logger.info(" Generating starting structures based on dual-topology:");
+            optStructure(molecularAssemblies[0], dte, algorithmFunctions, rank, worldSize);
+          } else {
+            logger.info(
+                " Generating separate starting structures for each topology of the dual toplogy:");
+            optStructure(
+                molecularAssemblies[0], potentials[0], algorithmFunctions, rank, worldSize);
+            optStructure(
+                molecularAssemblies[1], potentials[1], algorithmFunctions, rank, worldSize);
           }
           break;
-
         case 4:
-          {
-            QuadTopologyEnergy qte = (QuadTopologyEnergy) cpot;
-            optStructure(topologies[0], qte.getDualTopA(), afuncts, rank, worldSize);
-            optStructure(topologies[3], qte.getDualTopB(), afuncts, rank, worldSize);
-          }
+          QuadTopologyEnergy qte = (QuadTopologyEnergy) crystalPotential;
+          optStructure(
+              molecularAssemblies[0], qte.getDualTopA(), algorithmFunctions, rank, worldSize);
+          optStructure(
+              molecularAssemblies[3], qte.getDualTopB(), algorithmFunctions, rank, worldSize);
           break;
-
           // Oct-topology is deprecated on account of not working as intended.
         default:
-          {
-            logger.severe(" First: must have 1, 2, or 4 topologies.");
-          }
+          logger.severe(" First: must have 1, 2, or 4 topologies.");
           break;
       }
     } else {
@@ -183,7 +180,9 @@ public class MultiDynamicsOptions {
   }
 
   /**
-   * isSynchronous.
+   * Synchronous walker communication.
+   *
+   * <p>isSynchronous.
    *
    * @return a boolean.
    */
@@ -191,27 +190,31 @@ public class MultiDynamicsOptions {
     return synchronous;
   }
 
+  public void setSynchronous(boolean synchronous) {
+    this.synchronous = synchronous;
+  }
+
   /**
    * Opens a file and processes it. Extends the behavior of AlchemicalOptions.openFile by permitting
    * use of a rank-dependent File.
    *
-   * @param afuncts AlgorithmFunctions object.
-   * @param topOptions Topology Options.
+   * @param algorithmFunctions AlgorithmFunctions object.
+   * @param topologyOptions Topology Options.
    * @param threadsPer Threads to use per system.
    * @param toOpen Filename to open.
    * @param topNum Number of the topology to open.
-   * @param alchemy Alchemical Options.
+   * @param alchemicalOptions Alchemical Options.
    * @param rank Rank in the world communicator.
    * @param structureFile a {@link java.io.File} object.
    * @return a {@link ffx.potential.MolecularAssembly} object.
    */
   public MolecularAssembly openFile(
-      AlgorithmFunctions afuncts,
-      TopologyOptions topOptions,
+      AlgorithmFunctions algorithmFunctions,
+      TopologyOptions topologyOptions,
       int threadsPer,
       String toOpen,
       int topNum,
-      AlchemicalOptions alchemy,
+      AlchemicalOptions alchemicalOptions,
       File structureFile,
       int rank) {
     boolean autoDist = distributeWalkersString.equalsIgnoreCase("AUTO");
@@ -225,7 +228,8 @@ public class MultiDynamicsOptions {
         logger.warning(format(" File %s does not exist; using default %s", openName, toOpen));
       }
     }
-    MolecularAssembly assembly = alchemy.openFile(afuncts, topOptions, threadsPer, toOpen, topNum);
+    MolecularAssembly assembly =
+        alchemicalOptions.openFile(algorithmFunctions, topologyOptions, threadsPer, toOpen, topNum);
     assembly.setFile(structureFile);
     return assembly;
   }
@@ -245,13 +249,17 @@ public class MultiDynamicsOptions {
   }
 
   /**
-   * Distribute side-chain conformations of mola.
+   * Distribute side-chain conformations of molecularAssembly.
    *
-   * @param mola To distribute
-   * @param pot Potential to use
+   * @param molecularAssembly To distribute
+   * @param potential Potential to use
    */
   private void optStructure(
-      MolecularAssembly mola, Potential pot, AlgorithmFunctions aFuncts, int rank, int worldSize) {
+      MolecularAssembly molecularAssembly,
+      Potential potential,
+      AlgorithmFunctions algorithmFunctions,
+      int rank,
+      int worldSize) {
     RotamerLibrary rLib = new RotamerLibrary(false);
     String[] distribRes = parseDistributed();
 
@@ -260,11 +268,12 @@ public class MultiDynamicsOptions {
           " Programming error: Must have list of residues to split on!");
     }
 
-    LambdaInterface linter = (pot instanceof LambdaInterface) ? (LambdaInterface) pot : null;
+    LambdaInterface lambdaInterface =
+        (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null;
     double initLam = -1.0;
-    if (linter != null) {
-      initLam = linter.getLambda();
-      linter.setLambda(0.5);
+    if (lambdaInterface != null) {
+      initLam = lambdaInterface.getLambda();
+      lambdaInterface.setLambda(0.5);
     }
 
     Pattern chainMatcher = Pattern.compile("^([a-zA-Z])?([0-9]+)$");
@@ -289,7 +298,7 @@ public class MultiDynamicsOptions {
       }
       logger.info(format(" Looking for chain %c residue %d", chainID, resNum));
 
-      for (Polymer p : mola.getChains()) {
+      for (Polymer p : molecularAssembly.getChains()) {
         if (p.getChainID() == chainID) {
           for (Residue r : p.getResidues()) {
             if (r.getResidueNumber() == resNum && r.getRotamers(rLib) != null) {
@@ -304,13 +313,13 @@ public class MultiDynamicsOptions {
       throw new IllegalArgumentException(" No valid entries for distWalkers!");
     }
 
-    AlgorithmListener alist = aFuncts.getDefaultListener();
-    RotamerOptimization ropt = new RotamerOptimization(mola, pot, alist);
+    AlgorithmListener alist = algorithmFunctions.getDefaultListener();
+    RotamerOptimization ropt = new RotamerOptimization(molecularAssembly, potential, alist);
     ropt.setRotamerLibrary(rLib);
 
     ropt.setThreeBodyEnergy(false);
 
-    CompositeConfiguration properties = mola.getProperties();
+    CompositeConfiguration properties = molecularAssembly.getProperties();
     if (!properties.containsKey("ro-ensembleNumber")
         && !properties.containsKey("ro-ensembleEnergy")) {
       logger.info(format(" Setting ensemble to default of number of walkers %d", worldSize));
@@ -333,17 +342,32 @@ public class MultiDynamicsOptions {
 
     // One final energy call to ensure the coordinates are properly set at the
     // end of rotamer optimization.
-    double[] xyz = new double[pot.getNumberOfVariables()];
-    pot.getCoordinates(xyz);
+    double[] xyz = new double[potential.getNumberOfVariables()];
+    potential.getCoordinates(xyz);
     logger.info(" Final Optimized Energy:");
-    pot.energy(xyz, true);
+    potential.energy(xyz, true);
 
-    if (linter != null) {
-      linter.setLambda(initLam);
+    if (lambdaInterface != null) {
+      lambdaInterface.setLambda(initLam);
     }
 
     if (!lazyMat) {
       properties.clearProperty("ro-lazyMatrix");
     }
+  }
+
+  /**
+   * Allows walkers to start from multiple conformations; AUTO picks up per-walker conformations as
+   * filename.pdb_(walker number), and specifying a residue starts a rotamer optimization to generate
+   * side-chain configurations to start from.
+   *
+   * @return Returns the Distribute Walkers string.
+   */
+  public String getDistributeWalkersString() {
+    return distributeWalkersString;
+  }
+
+  public void setDistributeWalkersString(String distributeWalkersString) {
+    this.distributeWalkersString = distributeWalkersString;
   }
 }

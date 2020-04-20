@@ -61,8 +61,8 @@ import org.apache.commons.io.FilenameUtils;
 public class Keyword {
 
   private static final Logger logger = Logger.getLogger(Keyword.class.getName());
-  private String keyword;
-  private Vector<String> data;
+  private final String keyword;
+  private final Vector<String> data;
 
   /**
    * Constructor for Keyword.

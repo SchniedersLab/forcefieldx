@@ -180,8 +180,8 @@ public class CcmaConstraint implements Constraint {
           atomc = atomj0;
           scale = invMassI0 / sumInv;
         } else if (atomi1 == atomj0) {
-          assert atomi0
-              != atomj1; // Yes IntelliJ, it should always be true. That's why I'm asserting it.
+          // Yes IntelliJ, it should always be true. That's why I'm asserting it.
+          assert atomi0 != atomj1;
           atoma = atomi0;
           atomb = atomi1;
           atomc = atomj1;
@@ -309,6 +309,7 @@ public class CcmaConstraint implements Constraint {
    * @param allAtoms All Atoms of the system, including unconstrained Atoms.
    * @param masses All masses of the system, including unconstrained atom masses.
    * @param nonzeroCutoff CCMA parameter defining how sparse/dense K-1 should be.
+   * @return Returns a new CcmaConstraint instance.
    */
   public static CcmaConstraint ccmaFactory(
       List<Bond> constrainedBonds,
@@ -323,31 +324,37 @@ public class CcmaConstraint implements Constraint {
     return newC;
   }
 
+  /** {@inheritDoc} */
   @Override
   public void applyConstraintToStep(double[] xPrior, double[] xNew, double[] masses, double tol) {
     applyConstraints(xPrior, xNew, masses, false, tol);
   }
 
+  /** {@inheritDoc} */
   @Override
   public void applyConstraintToVelocities(double[] x, double[] v, double[] masses, double tol) {
     applyConstraints(x, v, masses, true, tol);
   }
 
+  /** {@inheritDoc} */
   @Override
   public int[] constrainedAtomIndices() {
     return Arrays.copyOf(uniqueIndices, uniqueIndices.length);
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean constraintSatisfied(double[] x, double tol) {
     return false;
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean constraintSatisfied(double[] x, double[] v, double xTol, double vTol) {
     return false;
   }
 
+  /** {@inheritDoc} */
   @Override
   public int getNumDegreesFrozen() {
     return nConstraints;
@@ -366,8 +373,7 @@ public class CcmaConstraint implements Constraint {
   private void applyConstraints(
       double[] xPrior, double[] output, double[] masses, boolean constrainV, double tol) {
     if (xPrior == output) {
-      throw new IllegalArgumentException(
-          String.format(" xPrior and output must be different arrays!"));
+      throw new IllegalArgumentException(" xPrior and output must be different arrays!");
     }
     long time = -System.nanoTime();
 
@@ -462,7 +468,8 @@ public class CcmaConstraint implements Constraint {
     logger.info(String.format(" Application of CCMA constraint: %10.4g sec", (time * 1.0E-9)));*/
   }
 
-  private class MatrixWalker implements RealVectorPreservingVisitor {
+  private static class MatrixWalker implements RealVectorPreservingVisitor {
+
     private final double[] constraintDelta; // DO NOT MODIFY.
     private double sum = 0.0;
 
@@ -470,14 +477,17 @@ public class CcmaConstraint implements Constraint {
       constraintDelta = cDelta;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double end() {
       return sum;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void start(int dimension, int start, int end) {}
 
+    /** {@inheritDoc} */
     @Override
     public void visit(int index, double value) {
       sum += (value * constraintDelta[index]);

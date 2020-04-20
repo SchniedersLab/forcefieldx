@@ -110,9 +110,9 @@ public class MonteCarloOST extends BoltzmannMC {
   /** Total number of steps to take for MC-OST sampling. */
   private long totalSteps;
   /** Number of steps to take per MC-OST round. */
-  private long stepsPerMove;
+  private final long stepsPerMove;
   /** Lambda move object for completing MC-OST lambda moves. */
-  private LambdaMove lambdaMove;
+  private final LambdaMove lambdaMove;
   /** Double that keeps track of our lambda value. */
   private double lambda = 1.0;
   /** Boolean that tells algorithm that we are in the equilibration phase of MC-OST. */

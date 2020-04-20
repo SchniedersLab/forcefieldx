@@ -376,11 +376,12 @@ public class MMgksa {
 
   /** Functional interface for above. */
   private interface getE {
-    public double getEnergy();
+    double getEnergy();
   }
 
   /** Has a name, and some method to grab an energy. */
-  private class EnergyTerm {
+  private static class EnergyTerm {
+
     private final String name;
     private final getE method;
 

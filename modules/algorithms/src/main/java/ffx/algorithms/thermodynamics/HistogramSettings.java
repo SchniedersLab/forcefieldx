@@ -140,7 +140,7 @@ public class HistogramSettings {
    *
    * <p>The fLambdaPrintInterval is 25.
    */
-  int fLambdaPrintInterval = DEFAULT_FLAMDA_PRINT_INTERVAL;
+  final int fLambdaPrintInterval = DEFAULT_FLAMDA_PRINT_INTERVAL;
   /** The integration algorithm used for thermodynamic integration. */
   Integrate1DNumeric.IntegrationType integrationType = DEFAULT_INTEGRATION;
 
@@ -159,7 +159,7 @@ public class HistogramSettings {
    */
   private double biasMag = DEFAULT_BIAS_MAG;
 
-  private double DEFAULT_BIAS_TO_OFFSET = 20.0;
+  private final double DEFAULT_BIAS_TO_OFFSET = 20.0;
   /**
    * An offset applied before calculating tempering weight.
    *

@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
+import static java.lang.String.format;
+
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.optimize.anneal.AnnealingSchedule;
 import ffx.algorithms.optimize.anneal.FlatEndAnnealSchedule;
@@ -63,20 +65,26 @@ public class AnnealOptions {
   @Option(
       names = {"-W", "--windows"},
       paramLabel = "10",
+      defaultValue = "10",
       description = "Number of annealing windows.")
-  int windows = 10;
+  private int windows;
+
   /** -l or --low Low temperature limit in degrees Kelvin (10.0). */
   @Option(
       names = {"--tl", "--temperatureLow"},
       paramLabel = "10.0",
+      defaultValue = "10.0",
       description = "Low temperature limit (Kelvin).")
-  double low = 10.0;
+  private double low;
+
   /** -u or --upper Upper temperature limit in degrees Kelvin (1000.0). */
   @Option(
       names = {"--tu", "--temperatureUpper"},
       paramLabel = "1000.0",
+      defaultValue = "1000.0",
       description = "High temperature limit (Kelvin).")
-  double upper = 1000.0;
+  private double upper;
+
   /**
    * --rv or --reinitVelocities forces simulated annealing to re-initialize velocities to the new
    * temperature at each annealing step, rather than letting the thermostat shift temperature
@@ -85,14 +93,18 @@ public class AnnealOptions {
   @Option(
       names = {"--rv", "--reinitVelocities"},
       paramLabel = "false",
+      defaultValue = "false",
       description = "Re-initialize velocities before each round of annealing.")
-  boolean reinitV = false;
+  private boolean reinitVelocities;
+
   /** --tmS or --temperingSchedule sets the schedule to be used. */
   @Option(
       names = {"--tmS", "--temperingSchedule"},
       paramLabel = "EXP",
+      defaultValue = "EXP",
       description = "Tempering schedule: choose between EXP (exponential) or LINEAR")
-  private String temperString = "EXP";
+  private String temperString;
+
   /**
    * --tmB or --temperingBefore sets the number of annealing windows to hold flat at the high
    * temperature (in addition to normal windows).
@@ -100,8 +112,10 @@ public class AnnealOptions {
   @Option(
       names = {"--tmB", "--temperingBefore"},
       paramLabel = "0",
+      defaultValue = "0",
       description = "Number of (annealing, not MD/MC) steps to remain at the high temperature")
-  private int temperBefore = 0;
+  private int temperBefore;
+
   /**
    * --tmA or --temperingAfter sets the number of annealing windows to hold flat at the low
    * temperature (in addition to normal windows).
@@ -109,49 +123,56 @@ public class AnnealOptions {
   @Option(
       names = {"--tmA", "--temperingAfter"},
       paramLabel = "0",
+      defaultValue = "0",
       description = "Number of (annealing, not MD/MC) steps to remain at the low temperature")
-  private int temperAfter = 0;
+  private int temperAfter;
 
   /**
    * Creates a SimulatedAnnealing object.
    *
-   * @param dynOpts Dynamics options to use.
-   * @param mola MolecularAssembly
+   * @param dynamicsOptions Dynamics options to use.
+   * @param molecularAssembly MolecularAssembly
    * @param potential Potential
-   * @param props Properties
-   * @param alist AlgorithmListener
+   * @param compositeConfiguration Properties
+   * @param algorithmListener AlgorithmListener
    * @return SimulatedAnnealing
    */
   public SimulatedAnnealing createAnnealer(
-      DynamicsOptions dynOpts,
-      MolecularAssembly mola,
+      DynamicsOptions dynamicsOptions,
+      MolecularAssembly molecularAssembly,
       Potential potential,
-      CompositeConfiguration props,
-      AlgorithmListener alist) {
-    return createAnnealer(dynOpts, mola, potential, props, alist, null);
+      CompositeConfiguration compositeConfiguration,
+      AlgorithmListener algorithmListener) {
+    return createAnnealer(
+        dynamicsOptions,
+        molecularAssembly,
+        potential,
+        compositeConfiguration,
+        algorithmListener,
+        null);
   }
 
   /**
    * Creates a SimulatedAnnealing object.
    *
-   * @param dynOpts Dynamics options to use.
-   * @param mola MolecularAssembly
+   * @param dynamicsOptions Dynamics options to use.
+   * @param molecularAssembly MolecularAssembly
    * @param potential Potential
-   * @param props Properties
-   * @param alist AlgorithmListener
+   * @param compositeConfiguration Properties
+   * @param algorithmListener AlgorithmListener
    * @param dynFile Dynamics restart file.
    * @return SimulatedAnnealing
    */
   public SimulatedAnnealing createAnnealer(
-      DynamicsOptions dynOpts,
-      MolecularAssembly mola,
+      DynamicsOptions dynamicsOptions,
+      MolecularAssembly molecularAssembly,
       Potential potential,
-      CompositeConfiguration props,
-      AlgorithmListener alist,
+      CompositeConfiguration compositeConfiguration,
+      AlgorithmListener algorithmListener,
       File dynFile) {
     AnnealingSchedule schedule = getSchedule();
     double totNormLen = schedule.totalWindowLength();
-    long totSteps = dynOpts.steps;
+    long totSteps = dynamicsOptions.getSteps();
     long perWindowSteps = (long) (totSteps / totNormLen);
 
     if (totSteps > perWindowSteps * totNormLen) {
@@ -164,13 +185,13 @@ public class AnnealOptions {
 
     if (minWindowSteps == maxWindowSteps && minWindowSteps == perWindowSteps) {
       logger.info(
-          String.format(
+          format(
               " Each of %d simulated annealing windows will have %d steps each, for a "
                   + "total duration of %d timesteps",
               nWindows, perWindowSteps, perWindowSteps * nWindows));
     } else {
       logger.info(
-          String.format(
+          format(
               " Each of %d simulated annealing windows will have %d-%d steps each, "
                   + "with a \"normal\" length of %d steps, for a total duration of %d timesteps",
               nWindows,
@@ -187,7 +208,7 @@ public class AnnealOptions {
       for (int i = 0; i < nWindows; i++) {
         double len = schedule.windowLength(i);
         double temp = schedule.getTemperature(i);
-        sb.append(String.format("[%d,%d,%10.4g]", (i + 1), (int) (len * perWindowSteps), temp));
+        sb.append(format("[%d,%d,%10.4g]", (i + 1), (int) (len * perWindowSteps), temp));
         if (i == nWindows - 1) {
           sb.append("]\n");
         } else if (i % 10 == 9) {
@@ -203,16 +224,16 @@ public class AnnealOptions {
     }
 
     return new SimulatedAnnealing(
-        mola,
+        molecularAssembly,
         potential,
-        props,
-        alist,
-        dynOpts.thermostat,
-        dynOpts.integrator,
+        compositeConfiguration,
+        algorithmListener,
+        dynamicsOptions.thermostat,
+        dynamicsOptions.integrator,
         schedule,
         perWindowSteps,
-        dynOpts.dt,
-        reinitV,
+        dynamicsOptions.getDt(),
+        isReinitVelocities(),
         dynFile);
   }
 
@@ -222,11 +243,107 @@ public class AnnealOptions {
    * @return An AnnealingSchedule.
    */
   public AnnealingSchedule getSchedule() {
-    SimulatedAnnealing.Schedules sch = SimulatedAnnealing.Schedules.parse(temperString);
-    AnnealingSchedule as = sch.generate(windows, low, upper);
-    if (temperBefore > 0 || temperAfter > 0) {
-      as = new FlatEndAnnealSchedule(as, low, upper, temperBefore, temperAfter);
+    SimulatedAnnealing.Schedules schedules = SimulatedAnnealing.Schedules.parse(getTemperString());
+    AnnealingSchedule annealingSchedule = schedules.generate(getWindows(), getLow(), getUpper());
+    if (getTemperBefore() > 0 || getTemperAfter() > 0) {
+      annealingSchedule =
+          new FlatEndAnnealSchedule(
+              annealingSchedule, getLow(), getUpper(), getTemperBefore(), getTemperAfter());
     }
-    return as;
+    return annealingSchedule;
+  }
+
+  /**
+   * Number of annealing windows.
+   *
+   * @return Returns the number of windows.
+   */
+  public int getWindows() {
+    return windows;
+  }
+
+  public void setWindows(int windows) {
+    this.windows = windows;
+  }
+
+  /**
+   * Low temperature limit in degrees Kelvin.
+   *
+   * @return Returns the low temperature limit.
+   */
+  public double getLow() {
+    return low;
+  }
+
+  public void setLow(double low) {
+    this.low = low;
+  }
+
+  /**
+   * Upper temperature limit in degrees Kelvin.
+   *
+   * @return Returns the upper temperature limit.
+   */
+  public double getUpper() {
+    return upper;
+  }
+
+  public void setUpper(double upper) {
+    this.upper = upper;
+  }
+
+  /**
+   * Forces simulated annealing to re-initialize velocities to the new temperature at each annealing
+   * step, rather than letting the thermostat shift temperature downwards.
+   *
+   * @return Returns true for re-initialization of velocities.
+   */
+  public boolean isReinitVelocities() {
+    return reinitVelocities;
+  }
+
+  public void setReinitVelocities(boolean reinitVelocities) {
+    this.reinitVelocities = reinitVelocities;
+  }
+
+  /**
+   * Sets the schedule to be used.
+   *
+   * @return Returns a String representation of the tempering schedule.
+   */
+  public String getTemperString() {
+    return temperString;
+  }
+
+  public void setTemperString(String temperString) {
+    this.temperString = temperString;
+  }
+
+  /**
+   * Sets the number of annealing windows to hold flat at the high temperature (in addition to normal
+   * windows).
+   *
+   * @return Returns the number of annealing windows to hold flat at the high temperature.
+   */
+  public int getTemperBefore() {
+    return temperBefore;
+  }
+
+  public void setTemperBefore(int temperBefore) {
+    this.temperBefore = temperBefore;
+  }
+
+  /**
+   * Sets the number of annealing windows to hold flat at the low temperature (in addition to normal
+   * windows).
+   *
+   * @return Returns the number of annealing windows to hold flat at the low temperature.
+   */
+  public int getTemperAfter() {
+    return temperAfter;
+  }
+
+  public void setTemperAfter(int temperAfter) {
+    this.temperAfter = temperAfter;
   }
 }

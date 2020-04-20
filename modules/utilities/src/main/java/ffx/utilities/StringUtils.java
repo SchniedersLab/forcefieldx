@@ -38,8 +38,11 @@
 package ffx.utilities;
 
 import static ffx.utilities.TinkerUtils.parseTinkerAtomList;
+import static java.lang.Integer.parseInt;
 import static java.lang.Integer.parseUnsignedInt;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static org.apache.commons.math3.util.FastMath.max;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -71,10 +74,13 @@ import org.apache.commons.math3.util.FastMath;
  * StringUtils class.
  *
  * @author Michael Schnieders
+ * @since 1.0
  */
 public class StringUtils {
 
+  /** Constant <code>STANDARD_WATER_NAME="HOH"</code> */
   public static final String STANDARD_WATER_NAME = "HOH";
+
   private static final Logger logger = Logger.getLogger(StringUtils.class.getName());
   private static final Set<String> waterNames =
       Set.of("HOH", "DOD", "WAT", "TIP", "TIP3", "TIP4", "MOL");
@@ -84,7 +90,7 @@ public class StringUtils {
   static {
     Map<String, String> ions = new HashMap<>();
 
-    List<String> monoCats = Arrays.asList("NA", "K", "LI", "RB", "CS", "FR", "AG", "AU");
+    List<String> monoCats = asList("NA", "K", "LI", "RB", "CS", "FR", "AG", "AU");
     for (String mCat : monoCats) {
       ions.put(mCat, mCat);
       ions.put(mCat + "+", mCat);
@@ -95,7 +101,7 @@ public class StringUtils {
 
     // TODO: Finalize treatment of transition metals like Mn and Zn which may occur in other
     // oxidation states.
-    List<String> diCats = Arrays.asList("BE", "MG", "CA", "SR", "BA", "RA", "MN", "ZN");
+    List<String> diCats = asList("BE", "MG", "CA", "SR", "BA", "RA", "MN", "ZN");
     for (String diCat : diCats) {
       ions.put(diCat, diCat);
       ions.put(diCat + "+", diCat);
@@ -105,7 +111,7 @@ public class StringUtils {
       ions.put(diCat + "++", diCat);
     }
 
-    List<String> monoAns = Arrays.asList("F", "CL", "BR", "I", "AT");
+    List<String> monoAns = asList("F", "CL", "BR", "I", "AT");
     for (String monoAn : monoAns) {
       ions.put(monoAn, monoAn);
       ions.put(monoAn + "-", monoAn);
@@ -296,13 +302,9 @@ public class StringUtils {
       } else {
         sb = new StringBuilder("9");
       }
-      for (int i = 0; i < (width - prec - 2); i++) {
-        sb.append("9");
-      }
+      sb.append("9".repeat(max(0, (width - prec - 2))));
       sb.append(".");
-      for (int i = 0; i < prec; i++) {
-        sb.append("9");
-      }
+      sb.append("9".repeat(max(0, prec)));
       str = sb.toString();
     }
     return str;
@@ -385,8 +387,8 @@ public class StringUtils {
       throws IllegalArgumentException {
     Matcher m = intRangePattern.matcher(atomRange);
     if (m.matches()) {
-      int start = Integer.parseInt(m.group(1)) - 1;
-      int end = Integer.parseInt(m.group(2)) - 1;
+      int start = parseInt(m.group(1)) - 1;
+      int end = parseInt(m.group(2)) - 1;
       if (start > end) {
         throw new IllegalArgumentException(
             format(" %s input %s not valid: start > end.", keyType, atomRange));
@@ -427,9 +429,8 @@ public class StringUtils {
         return selectedAtoms;
       } catch (NumberFormatException ex) {
         // Try to parse as a Tinker style range.
-        List<String> tokens = Arrays.asList(atomRange.split("\\s+"));
-        List<Integer> range = parseTinkerAtomList(tokens, -1, -1);
-        return range;
+        List<String> tokens = asList(atomRange.split("\\s+"));
+        return parseTinkerAtomList(tokens, -1, -1);
       }
     }
   }
@@ -454,8 +455,10 @@ public class StringUtils {
     String n = Integer.toString(nAtoms);
     atomRanges = atomRanges.toUpperCase().replace("N", n);
     // Split on periods (.), commas (,) or semicolons(;).
+    // IntelliJ suggests replacing "\\.|,|;" with [.,;]
     String[] ranges =
         Arrays.stream(atomRanges.split("\\.|,|;")).map(String::trim).toArray(String[]::new);
+
     for (String range : ranges) {
       List<Integer> list = parseAtomRange(keyType, range, nAtoms);
       // Avoid adding duplicates.

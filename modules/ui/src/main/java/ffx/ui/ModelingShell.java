@@ -53,6 +53,7 @@ import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.cli.PotentialScript;
 import ffx.potential.utils.PotentialsFunctions;
+import ffx.utilities.BaseScript;
 import groovy.console.ui.Console;
 import groovy.lang.Binding;
 import groovy.lang.Script;
@@ -583,14 +584,23 @@ public final class ModelingShell extends Console implements AlgorithmListener {
    * runFFXScript
    *
    * @param file a {@link java.io.File} object.
+   * @param argList List of String inputs to the script.
+   * @return Returns a reference to the executed script.
    */
-  public void runFFXScript(File file, List<String> args) {
+  public Script runFFXScript(File file, List<String> argList) {
     logger.info(" Executing external script: " + file.getAbsolutePath() + "\n");
+
     try {
       before();
+      Script groovyScript = null;
       try {
         // Run the file using the current Shell and its Binding.
-        Object o = getShell().run(file, args);
+        Object o = getShell().run(file, argList);
+
+        if (o instanceof Script) {
+          groovyScript = (BaseScript) o;
+        }
+
         // Do not destroy the system when using the GUI.
         if (headless) {
           if (o instanceof PotentialScript) {
@@ -603,23 +613,29 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         logger.log(Level.SEVERE, " Uncaught error: FFX is shutting down.\n", ex);
       }
       after();
+      return groovyScript;
     } catch (Exception e) {
       // Replacing this with a "Multi-Catch" leads to specific Exceptions not present in
       // some versions of Groovy.
       String message = "Error evaluating script.";
       logger.log(Level.WARNING, message, e);
     }
+
+    return null;
   }
 
   /**
    * runFFXScript
    *
    * @param script a compiled FFX script.
+   * @param argList List of String inputs to the script.
+   * @return Returns a reference to the executed script.
    */
-  public void runFFXScript(Class<? extends Script> script, List<String> argList) {
+  public Script runFFXScript(Class<? extends Script> script, List<String> argList) {
     logger.info(" Executing internal script: " + script.getCanonicalName() + "\n");
     try {
       before();
+      Script groovyScript = null;
       try {
         // Create a Binding for command line arguments and FFX User Interface variables.
         Binding binding = new Binding();
@@ -627,9 +643,10 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         initContext(binding);
 
         // Create a new instance of the script and run it.
-        Script groovyScript = script.getDeclaredConstructor().newInstance();
+        groovyScript = script.getDeclaredConstructor().newInstance();
         groovyScript.setBinding(binding);
         groovyScript.run();
+
         // Do not destroy the system when using the GUI.
         if (headless) {
           if (groovyScript instanceof PotentialScript) {
@@ -642,12 +659,15 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         logger.log(Level.SEVERE, " Uncaught error: FFX is shutting down.\n", ex);
       }
       after();
+
+      return groovyScript;
     } catch (Exception e) {
       // Replacing this with a "Multi-Catch" leads to specific Exceptions not present in
       // some versions of Groovy.
       String message = "Error evaluating script.";
       logger.log(Level.WARNING, message, e);
     }
+    return null;
   }
 
   /**
@@ -712,7 +732,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
 
     // Attempt to get the script's name.
     Object name = getScriptFile();
-    if (name != null && name instanceof File) {
+    if (name instanceof File) {
       name = ((File) name).getName();
     }
 

@@ -73,7 +73,7 @@ class AsynchronousSend extends Thread {
   /** Number of processes. */
   private final int numProc = world.size();
   /** Private reference to the Histogram instance. */
-  private Histogram histogram;
+  private final Histogram histogram;
 
   /**
    * Constructor for a thread to asynchronously receive recursion counts.

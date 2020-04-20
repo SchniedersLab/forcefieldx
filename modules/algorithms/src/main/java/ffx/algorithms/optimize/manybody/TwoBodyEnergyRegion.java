@@ -216,8 +216,8 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
 
   private class TwoBodyEnergyLoop extends WorkerIntegerForLoop {
 
-    DoubleBuf[] resultBuffer;
-    DoubleBuf myBuffer;
+    final DoubleBuf[] resultBuffer;
+    final DoubleBuf myBuffer;
 
     TwoBodyEnergyLoop() {
       resultBuffer = new DoubleBuf[numProc];

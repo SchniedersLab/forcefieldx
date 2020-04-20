@@ -57,7 +57,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
   /** Constant <code>logger</code> */
   private static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
 
-  protected Random random = new Random();
+  protected final Random random = new Random();
   private double temperature = 298.15; // Room temperature (also STP).
   private double kbTinv =
       -1.0 / (R * temperature); // Constant factor for Monte Carlo moves (-1/kbT)

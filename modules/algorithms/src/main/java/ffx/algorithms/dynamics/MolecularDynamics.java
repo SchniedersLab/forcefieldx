@@ -116,7 +116,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
   /** Wait this many nanoseconds in between polling the dynamics thread. */
   private final int dynSleepTime;
   /** An Algorithm Listener to send updates to the GUI. */
-  protected AlgorithmListener algorithmListener;
+  protected final AlgorithmListener algorithmListener;
   /** Total simulation time. */
   protected double totalSimTime = 0.0;
   /** Flag to indicate a run has finished. */
@@ -186,6 +186,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
   double currentTemperature;
   /** Current kinetic energy. */
   double currentKineticEnergy;
+  /** Integrator instance. */
+  private final Integrator integrator;
+  /** Keep some old coordinate snapshots around. */
+  private final int numSnapshotsToKeep;
+  /** Circular FIFO queues will simply discard old elements. */
+  private final CircularFifoQueue<CoordinateSnapshot> lastSnapshots;
   /** Current potential energy. */
   double currentPotentialEnergy;
   /** Current total energy. */
@@ -194,12 +200,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
   boolean saveSnapshotAsPDB = true;
   /** Monte Carlo listener. */
   private MonteCarloListener monteCarloListener;
-  /** Thermostat instance. */
-  private Thermostat thermostat;
-  /** Integrator instance. */
-  private Integrator integrator;
-  /** Flag to indicate MD should be terminated. */
-  private boolean terminate = false;
   /** Number of MD steps to take. */
   private long nSteps = 1000;
   /** State of the dynamics. */
@@ -208,12 +208,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
   private VerbosityLevel verbosityLevel = VerbosityLevel.VERBOSE;
   /** Time between appending to the trajectory file in picoseconds. */
   private double trajectoryInterval = DEFAULT_TRAJECTORY_INTERVAL;
+  /** Thermostat instance. */
+  private Thermostat thermostat;
+  /** Flag to indicate MD should be terminated. */
+  private boolean terminate = false;
   /** Time between logging information to the screen in picoseconds. */
   private double logInterval = DEFAULT_LOG_INTERVAL;
-  /** Keep some old coordinate snapshots around. */
-  private int numSnapshotsToKeep;
-  /** Circular FIFO queues will simply discard old elements. */
-  private CircularFifoQueue<CoordinateSnapshot> lastSnapshots;
   /** MC notification flag. */
   private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
   /** ESV System. */
@@ -1495,7 +1495,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
   }
 
-  /** Append a snapshot to the trajectory file. */
+  /**
+   * Append a snapshot to the trajectory file.
+   *
+   * @param extraLines Strings of meta-data to include.
+   */
   protected void appendSnapshot(String[] extraLines) {
     for (AssemblyInfo ai : assemblies) {
       if (ai.archiveFile != null && !saveSnapshotAsPDB) {
@@ -1730,7 +1734,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     QUIET(true),
     SILENT(true);
 
-    private boolean isQuiet;
+    private final boolean isQuiet;
 
     VerbosityLevel(boolean isQuiet) {
       this.isQuiet = isQuiet;
@@ -1875,8 +1879,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
   protected class DynamicsState {
 
-    double[] xBak, vBak, aBak;
-    double[] aPreviousBak, massBak, gradBak;
+    final double[] xBak;
+    final double[] vBak;
+    final double[] aBak;
+    final double[] aPreviousBak;
+    final double[] massBak;
+    final double[] gradBak;
     double currentKineticEnergyBak, currentPotentialEnergyBak, currentTotalEnergyBak;
     double currentTemperatureBak;
 

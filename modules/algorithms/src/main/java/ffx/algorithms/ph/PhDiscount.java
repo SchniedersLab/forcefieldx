@@ -101,9 +101,9 @@ public class PhDiscount implements MonteCarloListener {
   private final String fileType;
   private final double writeRestartInterval;
   private final File dynLoader;
-  private List<MultiResidue> titratingMultiResidues = new ArrayList<>();
+  private final List<MultiResidue> titratingMultiResidues = new ArrayList<>();
   private int snapshotIndex = 0;
-  private int numESVs;
+  private final int numESVs;
 
   /**
    * Construct a "Discrete-Continuous" Monte-Carlo titration engine. For traditional discrete
@@ -408,7 +408,7 @@ public class PhDiscount implements MonteCarloListener {
   }
 
   private double currentTotalEnergy() {
-    double x[] = new double[forceFieldEnergy.getNumberOfVariables() * 3];
+    double[] x = new double[forceFieldEnergy.getNumberOfVariables() * 3];
     forceFieldEnergy.getCoordinates(x);
     forceFieldEnergy.energy(x);
     return forceFieldEnergy.getTotalEnergy();

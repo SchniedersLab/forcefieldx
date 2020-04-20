@@ -43,7 +43,7 @@ package ffx.utilities;
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class IndexIndexPair implements Comparable {
+public class IndexIndexPair implements Comparable<Object> {
 
   private final int sortedIndex;
   private final int referenceIndex;

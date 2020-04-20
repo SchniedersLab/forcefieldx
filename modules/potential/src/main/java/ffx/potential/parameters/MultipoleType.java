@@ -413,6 +413,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * multipoleTypeFactory.
    *
+   * @param elecForm The electrostatics form being used.
    * @param atom a {@link ffx.potential.bonded.Atom} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
    * @return a {@link ffx.potential.parameters.MultipoleType} object.
@@ -447,7 +448,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     MultipoleType multipoleType = forceField.getMultipoleType(key1);
     if (multipoleType != null) {
       atom.setMultipoleType(multipoleType);
-      atom.setAxisAtoms(null);
+      atom.setAxisAtoms((Atom[]) null);
       return multipoleType;
     }
 

@@ -327,6 +327,8 @@ public class AminoAcidUtils {
    * Assign atom types to an amino acid polymer.
    *
    * @param residues The residues to assign atom types to.
+   * @param forceField The ForceField to apply.
+   * @param bondList Created bonds are added to this List.
    * @throws MissingHeavyAtomException A needed heavy atom was not found.
    * @throws MissingAtomTypeException An atom type could not be found.
    * @since 1.0
@@ -576,18 +578,16 @@ public class AminoAcidUtils {
         }
         break;
       case LAST_RESIDUE:
-        switch (aminoAcid) {
-          case NME:
-            buildHydrogenAtom(
-                residue, "H1", CA, 1.10, N, 109.5, pC, 180.0, 0, atomType, forceField, bondList);
-            buildHydrogenAtom(
-                residue, "H2", CA, 1.10, N, 109.5, pC, 60.0, 0, atomType, forceField, bondList);
-            buildHydrogenAtom(
-                residue, "H3", CA, 1.10, N, 109.5, pC, -60.0, 0, atomType, forceField, bondList);
-            break;
-          default:
-            buildHydrogenAtom(
-                residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType, forceField, bondList);
+        if (aminoAcid == AminoAcid3.NME) {
+          buildHydrogenAtom(
+              residue, "H1", CA, 1.10, N, 109.5, pC, 180.0, 0, atomType, forceField, bondList);
+          buildHydrogenAtom(
+              residue, "H2", CA, 1.10, N, 109.5, pC, 60.0, 0, atomType, forceField, bondList);
+          buildHydrogenAtom(
+              residue, "H3", CA, 1.10, N, 109.5, pC, -60.0, 0, atomType, forceField, bondList);
+        } else {
+          buildHydrogenAtom(
+              residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType, forceField, bondList);
         }
         break;
       default:

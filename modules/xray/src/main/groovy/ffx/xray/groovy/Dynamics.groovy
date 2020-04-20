@@ -73,7 +73,7 @@ class Dynamics extends AlgorithmsScript {
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames
-  private RefinementEnergy refinementEnergy;
+  private RefinementEnergy refinementEnergy
 
   @Override
   Dynamics run() {
@@ -95,7 +95,7 @@ class Dynamics extends AlgorithmsScript {
       logger.info(helpString())
       return this
     } else {
-      modelfilename = activeAssembly.getFile().getAbsolutePath();
+      modelfilename = activeAssembly.getFile().getAbsolutePath()
     }
 
     logger.info("\n Running xray.Dynamics on " + modelfilename)
@@ -128,7 +128,7 @@ class Dynamics extends AlgorithmsScript {
     refinementEnergy.setThermostat(molDyn.getThermostat())
     boolean initVelocities = true
     molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
-        dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temp, initVelocities, dyn)
+            dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, initVelocities, dyn)
 
     return this
   }
@@ -136,6 +136,6 @@ class Dynamics extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy);
+            Collections.singletonList(refinementEnergy)
   }
 }

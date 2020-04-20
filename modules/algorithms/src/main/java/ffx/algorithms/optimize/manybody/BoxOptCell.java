@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
+import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
+
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
@@ -61,7 +63,7 @@ public class BoxOptCell {
   private final double[] fracCoords = new double[6];
   private final int[] indexXYZ = new int[3];
   private final int linearIndex;
-  private ArrayList<Residue> residues = new ArrayList<>();
+  private final ArrayList<Residue> residues = new ArrayList<>();
 
   /**
    * Constructs a BoxOptCell object, which takes up a set of fractional coordinates within the
@@ -95,17 +97,22 @@ public class BoxOptCell {
    * @param crystal A Crystal.
    * @param symOp A symmetry operator to apply.
    * @param variableOnly If using only variable (protein side-chain, nucleic acid backbone) atoms.
+   * @param rotamerLibrary RotamerLibrary to apply.
    * @return If contained inside this BoxOptCell.
    */
   public boolean anyRotamerInsideCell(
-      Residue residue, Crystal crystal, SymOp symOp, boolean variableOnly, RotamerLibrary library) {
+      Residue residue,
+      Crystal crystal,
+      SymOp symOp,
+      boolean variableOnly,
+      RotamerLibrary rotamerLibrary) {
     ResidueState incomingState = residue.storeState();
-    Rotamer[] rotamers = residue.getRotamers(library);
+    Rotamer[] rotamers = residue.getRotamers(rotamerLibrary);
     boolean inside =
         Arrays.stream(rotamers)
             .anyMatch(
                 (Rotamer r) -> {
-                  RotamerLibrary.applyRotamer(residue, r);
+                  applyRotamer(residue, r);
                   return residueInsideCell(residue, crystal, symOp, variableOnly);
                 });
     residue.revertState(incomingState);

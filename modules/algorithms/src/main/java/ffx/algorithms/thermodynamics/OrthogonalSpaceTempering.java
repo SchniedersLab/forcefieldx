@@ -163,6 +163,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
    * <p>The default printFrequency = 100.
    */
   private int printFrequency;
+  /** Mixed second partial derivative with respect to coordinates and lambda. */
+  private final double[] dUdXdL;
   /** Partial derivative of the force field energy with respect to lambda. */
   private double dForceFieldEnergydL;
   /** Magnitude of the 2D orthogonal space bias G(L,dE/dL). */
@@ -175,8 +177,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
   private double dUdLambda;
   /** Second partial derivative of the potential being sampled with respect to lambda. */
   private double d2UdL2;
-  /** Mixed second partial derivative with respect to coordinates and lambda. */
-  private double[] dUdXdL;
   /**
    * Save the previous free energy, in order to limit logging to time points where the free energy
    * has changed.
@@ -756,6 +756,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
   /**
    * If this flag is true, (lambda, dU/dL) Monte Carlo samples that have no weight in the Histogram
    * are rejected.
+   *
+   * @param hardWallConstraint If true, MC samples outside the current range are rejected.
    */
   public void setHardWallConstraint(boolean hardWallConstraint) {
     this.hardWallConstraint = hardWallConstraint;
@@ -918,9 +920,13 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      */
     private boolean doOptimization = false;
     /** Reset unit cell parameters, molecular orientation and translation. */
-    private boolean doUnitCellReset;
-    /** Holds the lowest potential energy coordinates. */
-    private double[] optimumCoords;
+    private final boolean doUnitCellReset;
+    /**
+     * OST optimization only runs if Lambda is greater than the lambdaCutoff.
+     *
+     * <p>The default lambdaCutoff = 0.8.
+     */
+    private final double lambdaCutoff;
     /**
      * The lowest energy found via optimizations.
      *
@@ -928,35 +934,31 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      */
     private double optimumEnergy = Double.MAX_VALUE;
     /**
-     * OST optimization only runs if Lambda is greater than the lambdaCutoff.
-     *
-     * <p>The default lambdaCutoff = 0.8.
-     */
-    private double lambdaCutoff;
-    /**
      * The OST optimization frequency
      *
      * <p>The default is once every 10,000 steps.
      */
-    private int frequency;
+    private final int frequency;
     /**
      * The OST optimization convergence criteria.
      *
      * <p>The default eps = 0.1.
      */
-    private double eps;
+    private final double eps;
     /**
      * The OST tolerance when checking for equal energy after coordinate reversion.
      *
      * <p>The default is 1.0e-8 kcal/mol.
      */
-    private double tolerance;
+    private final double tolerance;
     /**
      * The OST optimization energy window.
      *
      * <p>The default is 4.0 kcal/mol, which is convenient for small organic crystals.
      */
-    private double energyWindow;
+    private final double energyWindow;
+    /** Holds the lowest potential energy coordinates. */
+    private double[] optimumCoords;
     /** File instance used for saving optimized structures. */
     private File optimizationFile;
     /** SystemFilter used to save optimized structures. */

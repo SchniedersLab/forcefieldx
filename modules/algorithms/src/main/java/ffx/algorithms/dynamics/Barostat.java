@@ -43,6 +43,7 @@ import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.log;
+import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.random;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -89,6 +90,8 @@ public class Barostat implements CrystalPotential {
   private double kT;
   /** Sampling pressure (atm) */
   private double pressure = 1.0;
+  /** Only isotropic MC moves. */
+  private boolean isotropic = false;
   /** Flag to turn the Barostat on or off. If false, MC moves will not be tried. */
   private boolean active = true;
   /** Default edge length move (A). */
@@ -240,6 +243,26 @@ public class Barostat implements CrystalPotential {
       }
     }
     return energy;
+  }
+
+  /**
+   * Restrict the MC Barostat to isotropic moves. The lattice angles are held fixed, and lattice
+   * lengths are scaled equally.
+   *
+   * @return Returns true if only isotropic moves are allowed.
+   */
+  public boolean isIsotropic() {
+    return isotropic;
+  }
+
+  /**
+   * Restrict the MC Barostat to isotropic moves. The lattice angles are held fixed, and lattice
+   * lengths are scaled equally.
+   *
+   * @param isotropic If true, if only isotropic moves are allowed.
+   */
+  public void setIsotropic(boolean isotropic) {
+    this.isotropic = isotropic;
   }
 
   /** {@inheritDoc} */
@@ -616,7 +639,7 @@ public class Barostat implements CrystalPotential {
     boolean succeed = crystal.randomParameters(ucDensity, mass);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(String.format(" Proposing MC change to all unit cell parameters."));
+        logger.fine(" Proposing MC change to all unit cell parameters.");
       }
       return mcStep(currentE, currentV);
     }
@@ -626,11 +649,11 @@ public class Barostat implements CrystalPotential {
   private double mcA(double currentE) {
     moveType = MoveType.SIDE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * Math.random() - 1.0);
+    double move = maxSideMove * (2.0 * random() - 1.0);
     boolean succeed = crystal.changeUnitCellParameters(a + move, b, c, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(String.format(" Propsing MC change to the a-axis (%6.3f) of %6.3f A", a, move));
+        logger.fine(format(" Propsing MC change to the a-axis (%6.3f) of %6.3f A", a, move));
       }
       return mcStep(currentE, currentV);
     }
@@ -640,11 +663,11 @@ public class Barostat implements CrystalPotential {
   private double mcB(double currentE) {
     moveType = MoveType.SIDE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * Math.random() - 1.0);
+    double move = maxSideMove * (2.0 * random() - 1.0);
     boolean succeed = crystal.changeUnitCellParameters(a, b + move, c, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(String.format(" Propsing MC change to the b-axis (%6.3f) of %6.3f A", b, move));
+        logger.fine(format(" Propsing MC change to the b-axis (%6.3f) of %6.3f A", b, move));
       }
       return mcStep(currentE, currentV);
     }
@@ -654,11 +677,11 @@ public class Barostat implements CrystalPotential {
   private double mcC(double currentE) {
     moveType = MoveType.SIDE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * Math.random() - 1.0);
+    double move = maxSideMove * (2.0 * random() - 1.0);
     boolean succeed = crystal.changeUnitCellParameters(a, b, c + move, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(String.format(" Propsing MC change to the c-axis (%6.3f) of %6.3f A", c, move));
+        logger.fine(format(" Propsing MC change to the c-axis (%6.3f) of %6.3f A", c, move));
       }
       return mcStep(currentE, currentV);
     }
@@ -668,12 +691,28 @@ public class Barostat implements CrystalPotential {
   private double mcAB(double currentE) {
     moveType = MoveType.SIDE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * Math.random() - 1.0);
+    double move = maxSideMove * (2.0 * random() - 1.0);
     boolean succeed = crystal.changeUnitCellParameters(a + move, b + move, c, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(
-            String.format(" Propsing MC change to the a,b-axis (%6.3f) of %6.3f A", a, move));
+        logger.fine(format(" Propsing MC change to the a,b-axis (%6.3f) of %6.3f A", a, move));
+      }
+      return mcStep(currentE, currentV);
+    }
+    return currentE;
+  }
+
+  private double mcIsotropic(double currentE) {
+    moveType = MoveType.SIDE;
+    double currentV = unitCell.volume / nSymm;
+    double maxSide = max(a, max(b, c));
+    double move = maxSideMove * (2.0 * random() - 1.0);
+    double scale = (maxSide + move) / maxSide;
+    boolean succeed =
+        crystal.changeUnitCellParameters(a * scale, b * scale, c * scale, alpha, beta, gamma);
+    if (succeed) {
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine(format(" Propsing MC isotropic scaling to the a,b,c-axes of %6.3f A", scale));
       }
       return mcStep(currentE, currentV);
     }
@@ -683,13 +722,12 @@ public class Barostat implements CrystalPotential {
   private double mcABC(double currentE) {
     moveType = MoveType.SIDE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * Math.random() - 1.0);
+    double move = maxSideMove * (2.0 * random() - 1.0);
     boolean succeed =
         crystal.changeUnitCellParameters(a + move, b + move, c + move, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(
-            String.format(" Propsing MC change to the a,b,c-axis (%6.3f) of %6.3f A", a, move));
+        logger.fine(format(" Propsing MC change to the a,b,c-axis (%6.3f) of %6.3f A", a, move));
       }
       return mcStep(currentE, currentV);
     }
@@ -699,12 +737,12 @@ public class Barostat implements CrystalPotential {
   private double mcAlpha(double currentE) {
     moveType = MoveType.ANGLE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * Math.random() - 1.0);
+    double move = maxAngleMove * (2.0 * random() - 1.0);
     boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha + move, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
-            String.format(
+            format(
                 " Propsing MC change to the alpha angle (%6.3f) of %6.3f (degrees)", alpha, move));
       }
       return mcStep(currentE, currentV);
@@ -715,13 +753,12 @@ public class Barostat implements CrystalPotential {
   private double mcBeta(double currentE) {
     moveType = MoveType.ANGLE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * Math.random() - 1.0);
+    double move = maxAngleMove * (2.0 * random() - 1.0);
     boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha, beta + move, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
-            String.format(
-                " Propsing MC change to the beta angle (%6.3f) of %6.3f (degrees)", beta, move));
+            format(" Propsing MC change to the beta angle (%6.3f) of %6.3f (degrees)", beta, move));
       }
       return mcStep(currentE, currentV);
     }
@@ -731,12 +768,12 @@ public class Barostat implements CrystalPotential {
   private double mcGamma(double currentE) {
     moveType = MoveType.ANGLE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * Math.random() - 1.0);
+    double move = maxAngleMove * (2.0 * random() - 1.0);
     boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma + move);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
-            String.format(
+            format(
                 " Propsing MC change to the gamma angle (%6.3f) of %6.3f (degrees)", gamma, move));
       }
       return mcStep(currentE, currentV);
@@ -747,12 +784,12 @@ public class Barostat implements CrystalPotential {
   private double mcABeta(double currentE) {
     moveType = MoveType.ANGLE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * Math.random() - 1.0);
+    double move = maxAngleMove * (2.0 * random() - 1.0);
     boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha + move, beta + move, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
-            String.format(
+            format(
                 " Propsing MC change to the alpha/beta angles (%6.3f) of %6.3f (degrees)",
                 alpha, move));
       }
@@ -764,12 +801,12 @@ public class Barostat implements CrystalPotential {
   private double mcAG(double currentE) {
     moveType = MoveType.ANGLE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * Math.random() - 1.0);
+    double move = maxAngleMove * (2.0 * random() - 1.0);
     boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha + move, beta, gamma + move);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
-            String.format(
+            format(
                 " Propsing MC change to the alpha/gamma angles (%6.3f) of %6.3f (degrees)",
                 alpha, move));
       }
@@ -781,13 +818,13 @@ public class Barostat implements CrystalPotential {
   private double mcABG(double currentE) {
     moveType = MoveType.ANGLE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * Math.random() - 1.0);
+    double move = maxAngleMove * (2.0 * random() - 1.0);
     boolean succeed =
         crystal.changeUnitCellParameters(a, b, c, alpha + move, beta + move, gamma + move);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
-            String.format(
+            format(
                 " Propsing MC change to the alpha/beta/gamma angles (%6.3f) of %6.3f (degrees)",
                 alpha, move));
       }
@@ -816,9 +853,11 @@ public class Barostat implements CrystalPotential {
     beta = unitCell.beta;
     gamma = unitCell.gamma;
 
-    switch (spaceGroup.crystalSystem) {
-      case MONOCLINIC:
-        {
+    if (isotropic) {
+      currentE = mcIsotropic(currentE);
+    } else {
+      switch (spaceGroup.crystalSystem) {
+        case MONOCLINIC:
           int move = (int) floor(random() * 4.0);
           switch (move) {
             case 0:
@@ -837,11 +876,9 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        }
-      case ORTHORHOMBIC:
-        {
+        case ORTHORHOMBIC:
           // alpha == beta == gamma == 90.0
-          int move = (int) floor(random() * 3.0);
+          move = (int) floor(random() * 3.0);
           switch (move) {
             case 0:
               currentE = mcA(currentE);
@@ -856,11 +893,9 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        }
-      case TETRAGONAL:
-        {
+        case TETRAGONAL:
           // (a == b, alpha == beta == gamma == 90.0
-          int move = (int) floor(random() * 2.0);
+          move = (int) floor(random() * 2.0);
           switch (move) {
             case 0:
               currentE = mcAB(currentE);
@@ -872,12 +907,10 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        }
-      case TRIGONAL:
-        {
+        case TRIGONAL:
           if (a == b && b == c && alpha == beta && beta == gamma) {
             // Rombohedral axes, primitive cell.
-            int move = (int) floor(random() * 2.0);
+            move = (int) floor(random() * 2.0);
             switch (move) {
               case 0:
                 currentE = mcABC(currentE);
@@ -890,7 +923,7 @@ public class Barostat implements CrystalPotential {
             }
           } else if (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0) {
             // Hexagonal axes, triple obverse cell.
-            int move = (int) floor(random() * 2.0);
+            move = (int) floor(random() * 2.0);
             switch (move) {
               case 0:
                 currentE = mcAB(currentE);
@@ -905,11 +938,9 @@ public class Barostat implements CrystalPotential {
             logger.warning(" Trigonal constraints not satisfied.");
           }
           break;
-        }
-      case HEXAGONAL:
-        {
+        case HEXAGONAL:
           // a == b, alpha == beta == 90.0, gamma == 120.0
-          int move = (int) floor(random() * 2.0);
+          move = (int) floor(random() * 2.0);
           switch (move) {
             case 0:
               currentE = mcAB(currentE);
@@ -921,20 +952,16 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        }
-      case CUBIC:
-        {
+        case CUBIC:
           // a == b == c, alpha == beta == gamma == 90.0
           currentE = mcABC(currentE);
           break;
-        }
-      case TRICLINIC:
-      default:
-        {
+        case TRICLINIC:
+        default:
           if (a == b && b == c && alpha == 90.0 && beta == 90.0 && gamma == 90.0) {
             currentE = mcABC(currentE);
           } else {
-            int move = (int) floor(random() * 6.0);
+            move = (int) floor(random() * 6.0);
             switch (move) {
               case 0:
                 currentE = mcA(currentE);
@@ -958,7 +985,7 @@ public class Barostat implements CrystalPotential {
                 logger.severe(" Barostat programming error.");
             }
           }
-        }
+      }
     }
 
     currentDensity = density();

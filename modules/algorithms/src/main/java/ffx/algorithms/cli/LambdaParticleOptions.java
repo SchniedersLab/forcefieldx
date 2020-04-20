@@ -37,7 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 /**
  * Represents command line options for scripts that utilize a mobile lambda particle, such as
@@ -48,21 +48,25 @@ import picocli.CommandLine;
  * @since 1.0
  */
 public class LambdaParticleOptions {
+
   /** -m or --lambdaMass to set the mass of the lambda particle. */
-  @CommandLine.Option(
+  @Option(
       names = {"--lm", "--lambdaMass"},
       paramLabel = "1.0E-18",
+      defaultValue = "1.0E-18",
       description = "Mass of the lambda particle.")
-  private double lambdaMass = 1.0E-18;
+  private double lambdaMass;
+
   /** -x or --lambdaFriction to set friction on the lambda particle */
-  @CommandLine.Option(
+  @Option(
       names = {"--lf", "--lambdaFriction"},
       paramLabel = "1.0E-18",
+      defaultValue = "1.0E-18",
       description = "Friction on the lambda particle.")
-  private double lambdaFriction = 1.0E-18;
+  private double lambdaFriction;
 
   /**
-   * Getter for the field <code>lambdaFriction</code>.
+   * Friction on the lambda particle.
    *
    * @return a double.
    */
@@ -70,12 +74,20 @@ public class LambdaParticleOptions {
     return lambdaFriction;
   }
 
+  public void setLambdaFriction(double lambdaFriction) {
+    this.lambdaFriction = lambdaFriction;
+  }
+
   /**
-   * Getter for the field <code>lambdaMass</code>.
+   * The mass of the lambda particle.
    *
    * @return a double.
    */
   public double getLambdaMass() {
     return lambdaMass;
+  }
+
+  public void setLambdaMass(double lambdaMass) {
+    this.lambdaMass = lambdaMass;
   }
 }

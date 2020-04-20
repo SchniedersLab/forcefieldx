@@ -37,10 +37,11 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;
+import static java.lang.management.ManagementFactory.getOperatingSystemMXBean;
 
 import com.sun.management.UnixOperatingSystemMXBean;
-import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +50,7 @@ import java.util.logging.Logger;
  * Log resources.
  *
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class Resources {
 
@@ -59,15 +61,15 @@ public class Resources {
     if (logger.isLoggable(Level.INFO)) {
       StringBuilder sb = new StringBuilder("\n System Resources\n");
 
-      Runtime runtime = Runtime.getRuntime();
+      Runtime runtime = getRuntime();
       runtime.runFinalization();
       runtime.gc();
 
       long MB = 1024 * 1024;
-      OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
+      OperatingSystemMXBean operatingSystemMXBean = getOperatingSystemMXBean();
 
-      if (os instanceof UnixOperatingSystemMXBean) {
-        UnixOperatingSystemMXBean unixOS = (UnixOperatingSystemMXBean) os;
+      if (operatingSystemMXBean instanceof UnixOperatingSystemMXBean) {
+        UnixOperatingSystemMXBean unixOS = (UnixOperatingSystemMXBean) operatingSystemMXBean;
 
         // CPU Time and Average System Load.
         long time = unixOS.getProcessCpuTime();

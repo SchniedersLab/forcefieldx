@@ -45,5 +45,5 @@ package ffx.algorithms.dynamics.thermostats;
 public enum ThermostatEnum {
   ADIABATIC,
   BERENDSEN,
-  BUSSI;
+  BUSSI
 }

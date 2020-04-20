@@ -70,7 +70,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
   /** Thermostat Type. */
   private final ThermostatEnum thermostatType;
   /** OpenMM ForceFieldEnergy. */
-  private ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
+  private final ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
   /** Integrator String. */
   private String integratorString;
   /** Number of OpenMM MD steps per iteration. */
@@ -305,7 +305,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     if (constantPressure) {
-      // Add a Monte Carlo barostat, or if already present update its target temperature, pressure
+      // Add an isotropic Monte Carlo barostat, or if already present update its target temperature,
+      // pressure
       // and frequency.
       double pressure = barostat.getPressure();
       int frequency = barostat.getMeanBarostatInterval();

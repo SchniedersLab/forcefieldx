@@ -68,6 +68,8 @@ public abstract class Thermostat {
   private final double[] linearMomentum = new double[3];
   /** The angular momentum. */
   private final double[] angularMomentum = new double[3];
+  /** Number of degrees of freedom removed by constraints. */
+  private final int constrainedDoF;
   /** The identity of this Thermostat. */
   protected ThermostatEnum name;
   /** The value of kT in kcal/mol at the target temperature. */
@@ -101,8 +103,6 @@ public abstract class Thermostat {
   private boolean removeCenterOfMassMotion;
   /** Reduce logging. */
   private boolean quiet = false;
-  /** Number of degrees of freedom removed by constraints. */
-  private int constrainedDoF;
   /**
    * Constructor for Thermostat.
    *
@@ -230,20 +230,19 @@ public abstract class Thermostat {
     linearMomentum[2] /= totalMass;
 
     if (print) {
-      StringBuilder sb =
-          new StringBuilder(
-              format(
-                  "  Center of Mass   (%12.3f,%12.3f,%12.3f)\n",
-                  centerOfMass[0], centerOfMass[1], centerOfMass[2]));
-      sb.append(
+      String sb =
           format(
-              "  Linear Momentum  (%12.3f,%12.3f,%12.3f)\n",
-              linearMomentum[0], linearMomentum[1], linearMomentum[2]));
-      sb.append(
-          format(
-              "  Angular Momentum (%12.3f,%12.3f,%12.3f)",
-              angularMomentum[0], angularMomentum[1], angularMomentum[2]));
-      logger.info(sb.toString());
+              "  Center of Mass   (%12.3f,%12.3f,%12.3f)\n  Linear Momentum  (%12.3f,%12.3f,%12.3f)\n  Angular Momentum (%12.3f,%12.3f,%12.3f)",
+              centerOfMass[0],
+              centerOfMass[1],
+              centerOfMass[2],
+              linearMomentum[0],
+              linearMomentum[1],
+              linearMomentum[2],
+              angularMomentum[0],
+              angularMomentum[1],
+              angularMomentum[2]);
+      logger.info(sb);
     }
 
     if (remove) {

@@ -37,12 +37,14 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static org.apache.commons.math3.util.FastMath.max;
+
 /**
  * Java port of the hy36encode() and hy36decode() functions in the hybrid_36.py Python
  * prototype/reference implementation.
  *
- * @author Michael J. Schnieders <br>
- *     Derived from code by: Ralf W. Grosse-Kunstleve, Vincent B. Chen, Jeff J. Headd, Sep 2007.
+ * @author Michael J. Schnieders
+ *     <p>Derived from code by: Ralf W. Grosse-Kunstleve, Vincent B. Chen, Jeff J. Headd, Sep 2007.
  * @see <a href="http://cci.lbl.gov/hybrid_36" target="_blank">LBL Hybrid36 Reference</a>
  * @since 1.0
  */
@@ -63,10 +65,10 @@ public class Hybrid36 {
    *
    * @param width must be 4 (e.g. for residue sequence numbers) or 5 (e.g. for atom serial numbers)
    * @param s the {@link java.lang.String} to be converted.
-   * @return the conversion result.
+   * @return Returns the conversion result.
    */
   public static int decode(int width, String s) {
-    String ie_range = "internal error hy36.decode: integer value out of range.";
+    String outOfRange = "Internal error Hybrid-36.decode: integer value out of range.";
     if (firstCall) {
       firstCall = false;
       for (int i = 0; i < 128; i++) {
@@ -76,29 +78,30 @@ public class Hybrid36 {
         digitsValuesLower[i] = -1;
       }
       for (int i = 0; i < 36; i++) {
-        int di = (int) digitsUpper.charAt(i);
+        int di = digitsUpper.charAt(i);
         if (di > 127) {
-          throw new Error(ie_range);
+          throw new Error(outOfRange);
         }
         digitsValuesUpper[di] = i;
       }
       for (int i = 0; i < 36; i++) {
-        int di = (int) digitsLower.charAt(i);
+        int di = digitsLower.charAt(i);
         if (di > 127) {
-          throw new Error(ie_range);
+          throw new Error(outOfRange);
         }
         digitsValuesLower[di] = i;
       }
     }
     if (s.length() == width) {
-      int di = (int) s.charAt(0);
+      int di = s.charAt(0);
       if (di <= 127) {
         if (digitsValuesUpper[di] >= 10) {
           int result = decodePure(digitsValuesUpper, 36, s);
-          /* result - 10*36**(width-1) + 10**width */
           if (width == 4) {
+            // 10*36**3 + 10**4 = 456560
             result -= 456560;
           } else if (width == 5) {
+            // 10*36**4 + 10**5 = 16696160
             result -= 16696160;
           } else {
             throw new Error(unsupportedWidth);
@@ -106,10 +109,12 @@ public class Hybrid36 {
           return result;
         } else if (digitsValuesLower[di] >= 10) {
           int result = decodePure(digitsValuesLower, 36, s);
-          /* result + 16*36**(width-1) + 10**width */
+
           if (width == 4) {
+            // 16*36**3 + 10**4 = 756496
             result += 756496;
           } else if (width == 5) {
+            // 16*36**4 + 10**5 = 26973856
             result += 26973856;
           } else {
             throw new Error(unsupportedWidth);
@@ -142,8 +147,10 @@ public class Hybrid36 {
           return encodePure(digitsBase10, 4, i);
         }
         i -= 10000;
-        if (i < 1213056 /* 26*36**3 */) {
-          i += 466560 /* 10*36**3 */;
+        // 26*36**3 = 1213056
+        if (i < 1213056) {
+          // 10*36**3 = 466560
+          i += 466560;
           return encodePure(digitsUpper, 0, i);
         }
         i -= 1213056;
@@ -158,8 +165,10 @@ public class Hybrid36 {
           return encodePure(digitsBase10, 5, i);
         }
         i -= 100000;
-        if (i < 43670016 /* 26*36**4 */) {
-          i += 16796160 /* 10*36**4 */;
+        // 26*36**4 = 43670016
+        if (i < 43670016) {
+          // 10*36**4 = 16796160
+          i += 16796160;
           return encodePure(digitsUpper, 0, i);
         }
         i -= 43670016;
@@ -174,7 +183,7 @@ public class Hybrid36 {
     throw new Error(valueOutOfRange);
   }
 
-  private static int decodePure(int[] digits_values, int digits_size, String s) {
+  private static int decodePure(int[] digitsValues, int digitsSize, String s) {
     boolean haveMinus = false;
     boolean haveNonBlank = false;
     int value = 0;
@@ -187,7 +196,7 @@ public class Hybrid36 {
         if (!haveNonBlank) {
           continue;
         }
-        value *= digits_size;
+        value *= digitsSize;
       } else if (si == '-') {
         if (haveNonBlank) {
           throw new Error(invalidNumberLiteral);
@@ -196,11 +205,11 @@ public class Hybrid36 {
         haveMinus = true;
       } else {
         haveNonBlank = true;
-        int dv = digits_values[si];
-        if (dv < 0 || dv >= digits_size) {
+        int dv = digitsValues[si];
+        if (dv < 0 || dv >= digitsSize) {
           throw new Error(invalidNumberLiteral);
         }
-        value *= digits_size;
+        value *= digitsSize;
         value += dv;
       }
     }
@@ -216,22 +225,20 @@ public class Hybrid36 {
       neg = true;
       value = -value;
     }
-    String buf = "";
+    StringBuilder buf = new StringBuilder();
     while (true) {
       int rest = value / digits.length();
-      buf += digits.charAt(value - rest * digits.length());
+      buf.append(digits.charAt(value - rest * digits.length()));
       if (rest == 0) {
         break;
       }
       value = rest;
     }
     if (neg) {
-      buf += '-';
+      buf.append('-');
     }
-    StringBuilder result = new StringBuilder("");
-    for (int i = buf.length(); i < width; i++) {
-      result.append(" ");
-    }
+    StringBuilder result = new StringBuilder();
+    result.append(" ".repeat(max(0, width - buf.length())));
     for (int i = buf.length() - 1; i >= 0; i--) {
       result.append(buf.charAt(i));
     }

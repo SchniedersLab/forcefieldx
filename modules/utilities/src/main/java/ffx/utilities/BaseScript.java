@@ -93,15 +93,17 @@ public abstract class BaseScript extends Script {
   @Option(
       names = {"-V", "--version"},
       versionHelp = true,
+      defaultValue = "false",
       description = "Print the Force Field X version and exit.")
-  public boolean version = false;
+  public boolean version;
 
   /** -h or --help Prints a help message. */
   @Option(
       names = {"-h", "--help"},
       usageHelp = true,
+      defaultValue = "false",
       description = "Print command help and exit.")
-  public boolean help = false;
+  public boolean help;
 
   /** Default constructor for an FFX Script. */
   public BaseScript() {

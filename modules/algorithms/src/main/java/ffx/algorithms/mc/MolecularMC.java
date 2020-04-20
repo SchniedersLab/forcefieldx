@@ -117,12 +117,12 @@ public class MolecularMC extends BoltzmannMC {
   /** {@inheritDoc} */
   @Override
   public String toString() {
-    StringBuilder sb =
-        new StringBuilder("Default Metropolis Monte Carlo implementation\nTemperature: ");
-    sb.append(getTemperature());
-    sb.append(format("\ne1: %10.6f   e2: %10.6f\nMolecular Assembly", getE1(), getE2()));
-    sb.append(molecularAssembly.toString()).append("\nPotential: ").append(potential.toString());
-    return sb.toString();
+    return "Default Metropolis Monte Carlo implementation\nTemperature: "
+        + getTemperature()
+        + format("\ne1: %10.6f   e2: %10.6f\nMolecular Assembly", getE1(), getE2())
+        + molecularAssembly.toString()
+        + "\nPotential: "
+        + potential.toString();
   }
 
   /**

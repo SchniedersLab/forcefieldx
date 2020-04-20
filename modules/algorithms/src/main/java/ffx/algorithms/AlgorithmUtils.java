@@ -115,8 +115,7 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
       return null;
     } else {
       Minimize minimize = new Minimize(assembly, null);
-      Potential potential = minimize.minimize(eps);
-      return potential;
+      return minimize.minimize(eps);
     }
   }
 

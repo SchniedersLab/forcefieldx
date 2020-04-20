@@ -46,6 +46,7 @@ import java.nio.charset.Charset;
  * StringOutputStream class.
  *
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class StringOutputStream extends PrintStream {
 

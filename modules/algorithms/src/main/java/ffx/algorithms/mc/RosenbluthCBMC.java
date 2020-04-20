@@ -82,7 +82,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
   /** Counters for proposed and accepted moves. */
   private int numMovesProposed = 0;
   /** Writes PDBs of each trial set and original/proposed configurations. */
-  private boolean writeSnapshots;
+  private final boolean writeSnapshots;
   /** PDBFilter to write out result. */
   private PDBFilter writer = null;
 

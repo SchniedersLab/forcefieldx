@@ -37,7 +37,8 @@
 // ******************************************************************************
 package ffx.utilities;
 
-import java.net.InetAddress;
+import static java.net.InetAddress.getByName;
+
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 
@@ -45,12 +46,13 @@ import java.net.ServerSocket;
  * Port Utilities.
  *
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class PortUtils {
 
-  /** The maximum TCP Port (65535). */
+  /** The maximum TCP Port. <code>MAX_TCP_PORT=65535</code> */
   public static final int MAX_TCP_PORT = 65535;
-  /** The minimum TCP Port (0). */
+  /** The minimum TCP Port. <code>MIN_TCP_PORT = 0</code> */
   private static final int MIN_TCP_PORT = 0;
 
   /**
@@ -61,12 +63,11 @@ public class PortUtils {
    */
   public static boolean isTcpPortAvailable(int port) {
     try (ServerSocket serverSocket = new ServerSocket()) {
-      // setReuseAddress(false) is required only on OSX, otherwise the code will not work correctly
-      // on that platform
+      // setReuseAddress(false) is required on OSX.
       serverSocket.setReuseAddress(false);
 
       // Try to bind the port.
-      serverSocket.bind(new InetSocketAddress(InetAddress.getByName("localhost"), port), 1);
+      serverSocket.bind(new InetSocketAddress(getByName("localhost"), port), 1);
       return true;
     } catch (Exception ex) {
       return false;

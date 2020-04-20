@@ -120,7 +120,7 @@ class Dynamics extends AlgorithmsScript {
     // Reset velocities (ignored if a restart file is given)
     boolean initVelocities = true
     molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,
-        dynamicsOptions.write, dynamicsOptions.temp, initVelocities, dyn)
+            dynamicsOptions.write, dynamicsOptions.temperature, initVelocities, dyn)
 
     return this
   }
@@ -128,6 +128,6 @@ class Dynamics extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy);
+            Collections.singletonList(refinementEnergy)
   }
 }

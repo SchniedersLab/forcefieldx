@@ -266,7 +266,7 @@ public class ThermodynamicsTest extends PJDependentTest {
 
     if (doTest) {
       int nFiles = filenames.length;
-      String tempDirName = String.format("temp-%016x/", new Random().nextLong());
+      String tempDirName = String.format("temperature-%016x/", new Random().nextLong());
       tempDir = new File(tempDirName);
       tempDir.mkdir();
       logger.fine(String.format(" Running test %s in directory %s", info, tempDir));
