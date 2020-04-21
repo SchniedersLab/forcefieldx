@@ -175,7 +175,7 @@ public class RepExOST {
     dynFile =
         new File(
             String.format(
-                "%s%d%s%s.molecularDynamics", basePath, rank, File.separator, baseFileName));
+                "%s%d%s%s.dyn", basePath, rank, File.separator, baseFileName));
     this.molecularDynamics.setFallbackDynFile(dynFile);
 
     File lambdaFile =
