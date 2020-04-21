@@ -89,6 +89,18 @@ public abstract class BoltzmannMC implements MetropolisMC {
    * @return Whether to accept the move.
    */
   public static boolean evaluateMove(Random random, double invKT, double e1, double e2) {
+    boolean e1Finite = Double.isFinite(e1);
+    boolean e2Finite = Double.isFinite(e2);
+    if (!e1Finite && !e2Finite) {
+      throw new IllegalArgumentException(String.format(" Attempting to evaluate " +
+              "move with non-finite energies %f and %f!", e1, e2));
+    } else if (!e1Finite) {
+      throw new IllegalArgumentException(String.format(" Attempting to evaluate move " +
+              "from non-finite %f to finite %.4f!", e1, e2));
+    } else if (!e2Finite) {
+      throw new IllegalArgumentException(String.format(" Attempting to evaluate move " +
+              "from finite %.4f to non-finite %.4f!", e1, e2));
+    }
     if (e2 <= e1) {
       return true;
     } else {

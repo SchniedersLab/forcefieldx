@@ -1682,7 +1682,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           if (minFL > maxBias) {
             minFL = maxBias;
           }
-          FLambda[iL] = ensembleAverageFLambda / partitionFunction;
+          FLambda[iL] = (partitionFunction == 0) ? 0 : ensembleAverageFLambda / partitionFunction;
           lla = minFLambda + llFL * dFL;
           ula = minFLambda + (ulFL + 1) * dFL;
         }
