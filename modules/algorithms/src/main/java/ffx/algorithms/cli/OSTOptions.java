@@ -738,8 +738,8 @@ public class OSTOptions {
   }
 
   /**
-   * The Monte Carlo scheme can use a hard wall that rejects any sample (Lambda, dU/dL) located in an
-   * empty histogram bin.
+   * The Monte Carlo scheme can use a hard wall that rejects any sample (Lambda, dU/dL) located in
+   * an empty histogram bin.
    *
    * @return Returns true if the MC-OST hard wall constraint is set.
    */

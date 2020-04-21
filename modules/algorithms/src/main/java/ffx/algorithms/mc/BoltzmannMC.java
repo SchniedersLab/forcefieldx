@@ -38,7 +38,10 @@
 package ffx.algorithms.mc;
 
 import static ffx.utilities.Constants.R;
+import static java.lang.Double.isFinite;
+import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.min;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,9 +61,11 @@ public abstract class BoltzmannMC implements MetropolisMC {
   private static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
 
   protected final Random random = new Random();
-  private double temperature = 298.15; // Room temperature (also STP).
-  private double kbTinv =
-      -1.0 / (R * temperature); // Constant factor for Monte Carlo moves (-1/kbT)
+  /** Room temperature (also STP). */
+  private double temperature = 298.15;
+  /** Constant factor for Monte Carlo moves (-1/kbT) */
+  private double kbTinv = -1.0 / (R * temperature);
+
   private boolean print = true;
   private double e1 = 0.0;
   private double e2 = 0.0;
@@ -76,7 +81,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
    * @return Chance of accepting this move
    */
   public static double acceptChance(double invKT, double e1, double e2) {
-    return Math.min(exp(invKT * (e2 - e1)), 1.0);
+    return min(exp(invKT * (e2 - e1)), 1.0);
   }
 
   /**
@@ -89,17 +94,17 @@ public abstract class BoltzmannMC implements MetropolisMC {
    * @return Whether to accept the move.
    */
   public static boolean evaluateMove(Random random, double invKT, double e1, double e2) {
-    boolean e1Finite = Double.isFinite(e1);
-    boolean e2Finite = Double.isFinite(e2);
+    boolean e1Finite = isFinite(e1);
+    boolean e2Finite = isFinite(e2);
     if (!e1Finite && !e2Finite) {
-      throw new IllegalArgumentException(String.format(" Attempting to evaluate " +
-              "move with non-finite energies %f and %f!", e1, e2));
+      throw new IllegalArgumentException(
+          format(" Attempting to evaluate " + "move with non-finite energies %f and %f!", e1, e2));
     } else if (!e1Finite) {
-      throw new IllegalArgumentException(String.format(" Attempting to evaluate move " +
-              "from non-finite %f to finite %.4f!", e1, e2));
+      throw new IllegalArgumentException(
+          format(" Attempting to evaluate move " + "from non-finite %f to finite %.4f!", e1, e2));
     } else if (!e2Finite) {
-      throw new IllegalArgumentException(String.format(" Attempting to evaluate move " +
-              "from finite %.4f to non-finite %.4f!", e1, e2));
+      throw new IllegalArgumentException(
+          format(" Attempting to evaluate move " + "from finite %.4f to non-finite %.4f!", e1, e2));
     }
     if (e2 <= e1) {
       return true;
@@ -108,7 +113,6 @@ public abstract class BoltzmannMC implements MetropolisMC {
       double prob = acceptChance(invKT, e1, e2);
       assert (prob >= 0.0 && prob <= 1.0)
           : "Probability of a Monte Carlo move up in energy should be 0-1";
-
       double trial = random.nextDouble();
       return (trial <= prob);
     }
@@ -203,7 +207,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
     if (evaluateMove(e1, e2)) {
       lastAccept = true;
       if (print) {
-        logger.info(String.format(" Monte Carlo step accepted: e1 -> e2 %10.6f -> %10.6f", e1, e2));
+        logger.info(format(" Monte Carlo step accepted: e1 -> e2 %10.6f -> %10.6f", e1, e2));
       }
       return true;
     } else {
@@ -213,7 +217,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
       }
       lastE = e1;
       if (print) {
-        logger.info(String.format(" Monte Carlo step rejected: e1 -> e2 %10.6f -> %10.6f", e1, e2));
+        logger.info(format(" Monte Carlo step rejected: e1 -> e2 %10.6f -> %10.6f", e1, e2));
       }
       return false;
     }

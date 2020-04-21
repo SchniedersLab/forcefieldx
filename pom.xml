@@ -586,11 +586,20 @@
       <type>pom</type>
       <version>${groovy-all.version}</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
     <dependency>
-      <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
       <artifactId>jaxb-api</artifactId>
       <groupId>javax.xml.bind</groupId>
-      <scope>compile</scope>
+      <version>${jaxb-api.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>jaxb-core</artifactId>
+      <groupId>com.sun.xml.bind</groupId>
+      <version>${jaxb-api.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>jaxb-impl</artifactId>
+      <groupId>com.sun.xml.bind</groupId>
       <version>${jaxb-api.version}</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305 -->
@@ -928,7 +937,7 @@
     <release.version>3.0.0-M1</release.version>
     <resources.version>3.1.0</resources.version>
     <scm.version>1.11.2</scm.version>
-    <shade.version>3.2.3</shade.version>
+    <shade.version>3.2.2</shade.version>
     <site.version>3.9.0</site.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>

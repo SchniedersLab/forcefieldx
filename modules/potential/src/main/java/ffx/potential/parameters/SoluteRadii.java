@@ -958,6 +958,9 @@ public class SoluteRadii {
       int key = atom.getAtomType().type;
       SoluteType soluteType = forceField.getSoluteType(Integer.toString(key));
       if (soluteType != null) {
+        if (soluteType.diameter <= 0.0) {
+          logger.severe(format(" Invalid solute type: %s", soluteType.toString()));
+        }
         baseRadius[i] = soluteType.diameter * 0.5;
       }
     }

@@ -43,7 +43,6 @@ import com.apporiented.algorithm.clustering.CompleteLinkageStrategy
 import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm
 import com.apporiented.algorithm.clustering.visualization.DendrogramPanel
 import ffx.potential.cli.PotentialScript
-import ffx.potential.groovy.Superpose
 import ffx.potential.parsers.SystemFilter
 import org.apache.commons.math3.ml.clustering.CentroidCluster
 import org.apache.commons.math3.ml.clustering.Clusterable

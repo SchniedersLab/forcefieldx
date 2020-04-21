@@ -358,8 +358,8 @@ public class MultiDynamicsOptions {
 
   /**
    * Allows walkers to start from multiple conformations; AUTO picks up per-walker conformations as
-   * filename.pdb_(walker number), and specifying a residue starts a rotamer optimization to generate
-   * side-chain configurations to start from.
+   * filename.pdb_(walker number), and specifying a residue starts a rotamer optimization to
+   * generate side-chain configurations to start from.
    *
    * @return Returns the Distribute Walkers string.
    */

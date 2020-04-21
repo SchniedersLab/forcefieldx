@@ -320,8 +320,8 @@ public class AnnealOptions {
   }
 
   /**
-   * Sets the number of annealing windows to hold flat at the high temperature (in addition to normal
-   * windows).
+   * Sets the number of annealing windows to hold flat at the high temperature (in addition to
+   * normal windows).
    *
    * @return Returns the number of annealing windows to hold flat at the high temperature.
    */

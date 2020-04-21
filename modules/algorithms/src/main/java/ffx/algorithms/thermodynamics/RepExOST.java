@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
+import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import edu.rit.mp.LongBuf;
@@ -172,14 +173,11 @@ public class RepExOST {
     File firstFile = allAssemblies[0].getFile();
     basePath = FilenameUtils.getFullPath(firstFile.getAbsolutePath()) + File.separator;
     String baseFileName = FilenameUtils.getBaseName(firstFile.getAbsolutePath());
-    dynFile =
-        new File(
-            String.format(
-                "%s%d%s%s.dyn", basePath, rank, File.separator, baseFileName));
+    dynFile = new File(format("%s%d%s%s.dyn", basePath, rank, File.separator, baseFileName));
     this.molecularDynamics.setFallbackDynFile(dynFile);
 
     File lambdaFile =
-        new File(String.format("%s%d%s%s.lam", basePath, rank, File.separator, baseFileName));
+        new File(format("%s%d%s%s.lam", basePath, rank, File.separator, baseFileName));
     currentHistoIndex = rank;
     if (lambdaFile.exists()) {
       try (LambdaReader lr = new LambdaReader(new BufferedReader(new FileReader(lambdaFile)))) {
@@ -332,15 +330,14 @@ public class RepExOST {
 
     if (equilibrate) {
       logger.info(
-          String.format(
-              " Equilibrating RepEx OST without exchanges on histogram %d.", currentHistoIndex));
+          format(" Equilibrating RepEx OST without exchanges on histogram %d.", currentHistoIndex));
       algoRun.accept(numTimesteps);
       reinitVelocities = false;
     } else {
       long numExchanges = numTimesteps / stepsBetweenExchanges;
       for (int i = 0; i < numExchanges; i++) {
         logger.info(
-            String.format(
+            format(
                 " Beginning of RepEx loop %d of %d, operating on histogram %d",
                 (i + 1), numExchanges, currentHistoIndex));
         world.barrier(mainLoopTag);
@@ -422,7 +419,7 @@ public class RepExOST {
         Arrays.stream(allFilenames)
             .map(
                 (String fn) ->
-                    String.format(
+                    format(
                         "%s%d%s%s.%s", basePath, currentHistoIndex, File.separator, fn, extension))
             .map(File::new)
             .toArray(File[]::new);
@@ -455,7 +452,7 @@ public class RepExOST {
       double ejj = histoHigh.computeBiasEnergy(lamHigh, dUdLHigh);
 
       logIfSwapping(
-          String.format(
+          format(
               "\n Proposing exchange between histograms %d (rank %d) and %d (rank %d).\n"
                   + " Li: %.6f dU/dLi: %.6f Lj: %.6f dU/dLj: %.6f",
               i, rankLow, i + 1, rankHigh, lamLow, dUdLLow, lamHigh, dUdLHigh));
@@ -467,7 +464,7 @@ public class RepExOST {
 
       String desc = accept ? "Accepted" : "Rejected";
       logIfSwapping(
-          String.format(
+          format(
               " %s exchange with probability %.5f based on Eii %.6f, Ejj %.6f, Eij %.6f, Eji %.6f kcal/mol",
               desc, acceptChance, eii, ejj, eij, eji));
 
@@ -479,7 +476,7 @@ public class RepExOST {
 
       double acceptRate = ((double) acceptedSwaps[i]) / ((double) totalSwaps[i]);
       logIfSwapping(
-          String.format(
+          format(
               " Replica exchange acceptance rate for pair %d-%d is %.3f%%",
               i, (i + 1), acceptRate * 100));
     }
