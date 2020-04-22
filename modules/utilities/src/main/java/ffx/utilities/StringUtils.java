@@ -302,9 +302,10 @@ public class StringUtils {
       } else {
         sb = new StringBuilder("9");
       }
-      sb.append("9".repeat(max(0, (width - prec - 2))));
+
+      sb.append(org.apache.commons.lang3.StringUtils.repeat("9", max(0, (width - prec - 2))));
       sb.append(".");
-      sb.append("9".repeat(max(0, prec)));
+      sb.append(org.apache.commons.lang3.StringUtils.repeat("9", max(0, prec)));
       str = sb.toString();
     }
     return str;

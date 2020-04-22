@@ -1,0 +1,241 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     10673,        233]
+NotebookOptionsPosition[      9969,        212]
+NotebookOutlinePosition[     10363,        228]
+CellTagsIndexPosition[     10320,        225]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[TextData[{
+ StyleBox["Calling Force Field X Scripts from Mathematica", "Chapter",
+  FontColor->GrayLevel[0]],
+ StyleBox["\[LineSeparator]",
+  FontColor->GrayLevel[0]],
+ StyleBox["Prerequisites", "Section",
+  FontColor->GrayLevel[0]],
+ StyleBox["\[LineSeparator]",
+  FontColor->GrayLevel[0]],
+ StyleBox["To call Force Field X scripts from Mathematic please edit the \
+\[OpenCurlyDoubleQuote]ReinstallJava\[CloseCurlyDoubleQuote] command below:\n\
+1.) Start Mathematica from the command line to pick up environment variables \
+(or use absolute paths below for 2 & 3). Starting Mathematica from the \
+command line also results in Force Field X logging being sent to the shell.\n\
+2.) Please point \[OpenCurlyDoubleQuote]javahome\[CloseCurlyDoubleQuote] to a \
+JRE/JDK version 10 or higher.\[LineSeparator]3.) Please path \
+\[OpenCurlyDoubleQuote]ffxhome\[CloseCurlyDoubleQuote] to the FFX \
+installation directory.", "Text",
+  FontColor->GrayLevel[0]]
+}], "Section",
+ CellChangeTimes->{{3.796319720247898*^9, 3.7963198883481913`*^9}, {
+   3.7963201658100977`*^9, 3.796320195550817*^9}, {3.7963204706720037`*^9, 
+   3.796320509099841*^9}, {3.796320556780018*^9, 3.796320559097172*^9}, 
+   3.796320654025756*^9, {3.796322291309527*^9, 3.796322300154826*^9}, {
+   3.796557763169304*^9, 3.79655776411285*^9}, {3.796557804727416*^9, 
+   3.796557844423911*^9}, {3.796558050793521*^9, 3.7965581908898287`*^9}, 
+   3.796558397846035*^9, {3.796563398441401*^9, 3.7965634189391317`*^9}, {
+   3.79656385288803*^9, 3.796563904260149*^9}, 
+   3.796564022316124*^9},ExpressionUUID->"c66458ef-c2f3-482f-b04d-\
+e955dae343bc"],
+
+Cell[BoxData[{
+ RowBox[{"Quit", ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Needs", "[", "\"\<JLink`\>\"", "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"javahome", " ", "=", " ", 
+   RowBox[{"Values", "[", 
+    RowBox[{"GetEnvironment", "[", "\"\<JAVA_HOME\>\"", "]"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"javacommand", " ", "=", " ", 
+  RowBox[{"StringJoin", "[", 
+   RowBox[{
+   "javahome", ",", 
+    "\"\</bin/java -Dj3d.rend=noop -Djava.awt.headless=true\>\""}], 
+   "]"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ReinstallJava", "[", 
+   RowBox[{"CommandLine", "\[Rule]", "javacommand"}], "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ffxhome", " ", "=", " ", 
+   RowBox[{"Values", "[", 
+    RowBox[{"GetEnvironment", "[", "\"\<FFX_HOME\>\"", "]"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"ffxjar", " ", "=", " ", 
+  RowBox[{"StringJoin", "[", 
+   RowBox[{"ffxhome", ",", "\"\</bin/ffx-all.jar\>\""}], 
+   "]"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"AddToClassPath", "[", "ffxjar", "]"}], ";"}]}], "Input",
+ CellChangeTimes->{{3.796314172341997*^9, 3.796314173248699*^9}, {
+   3.796314545407902*^9, 3.7963145494130087`*^9}, {3.7963145927969103`*^9, 
+   3.79631462645579*^9}, {3.79631468583808*^9, 3.796314694341298*^9}, {
+   3.79631525177216*^9, 3.796315252467041*^9}, {3.796315604336053*^9, 
+   3.796315615089045*^9}, {3.796315762696742*^9, 3.796315772480845*^9}, 
+   3.796316090397347*^9, {3.796316378991088*^9, 3.7963164078108177`*^9}, {
+   3.796319434041547*^9, 3.7963194368734217`*^9}, {3.7963196850407352`*^9, 
+   3.796319702272984*^9}, {3.796319895527026*^9, 3.796319895848812*^9}, {
+   3.796557904519747*^9, 3.796558025008265*^9}, {3.796558221600765*^9, 
+   3.796558222028757*^9}, {3.796558988607897*^9, 3.7965590216353207`*^9}, {
+   3.796559063085082*^9, 3.796559110154477*^9}, {3.796559217976451*^9, 
+   3.796559230914063*^9}, {3.7965592837950497`*^9, 3.7965593601154537`*^9}, {
+   3.796559398668058*^9, 3.7965594398787537`*^9}, {3.796559481486065*^9, 
+   3.796559495522704*^9}, {3.7965595788684483`*^9, 3.796559582376706*^9}, {
+   3.796559612509997*^9, 3.796559682013405*^9}, {3.796559723323325*^9, 
+   3.7965597282028913`*^9}, {3.796559771678041*^9, 3.796559813323674*^9}, {
+   3.796559860574379*^9, 3.7965599711461487`*^9}, 3.79656002060283*^9, {
+   3.7965600796967163`*^9, 3.796560087067801*^9}, {3.796560146908255*^9, 
+   3.7965601933612003`*^9}, {3.796560223760592*^9, 3.796560228865808*^9}, {
+   3.7965603167074137`*^9, 3.7965603617742023`*^9}, {3.7965604145624323`*^9, 
+   3.796560490460005*^9}, {3.796560627898026*^9, 3.796560636260198*^9}, {
+   3.796560755965912*^9, 3.7965607869953938`*^9}, {3.796560983584619*^9, 
+   3.796560996887804*^9}, {3.796561149930429*^9, 3.796561199091805*^9}, {
+   3.7965612486653843`*^9, 3.7965612866417933`*^9}, 3.796561321320533*^9, {
+   3.796561364520331*^9, 3.796561418563534*^9}, {3.79656165205534*^9, 
+   3.796561845288683*^9}, {3.796563339453847*^9, 3.796563363274496*^9}, {
+   3.796563423441028*^9, 3.796563424160215*^9}},
+ CellLabel->
+  "In[658]:=",ExpressionUUID->"77429464-4b40-4ecf-b950-a365590c8cc9"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ StyleBox["Example Using Mathematic JLink Syntax", "Section",
+  FontColor->GrayLevel[0]],
+ StyleBox["\[LineSeparator]",
+  FontColor->GrayLevel[0]],
+ StyleBox["The following example runs the Force FIeld X \
+\[OpenCurlyDoubleQuote]Energy\[CloseCurlyDoubleQuote] script on an example \
+system \[OpenCurlyDoubleQuote]watersmall.xyz\[CloseCurlyDoubleQuote] located \
+in the examples directory.", "Text",
+  FontColor->GrayLevel[0]],
+ StyleBox[" ",
+  FontColor->GrayLevel[0]],
+ StyleBox["The JLink documentation can be found here:\n\
+https://reference.wolfram.com/language/JLink/tutorial/Overview.html\
+\[LineSeparator]\[LineSeparator]1.) An ArrayList (list) is created and loaded \
+with String arguments.\[LineSeparator]2.) A Groovy Binding is created, and \
+the \[OpenCurlyDoubleQuote]args\[CloseCurlyDoubleQuote] property is set to \
+the list.\[LineSeparator]3.) The Energy script is created, loaded with the \
+Groovy Binding, and its run method called.\[LineSeparator]4.) The toString \
+method of the Energy script field  \[OpenCurlyDoubleQuote]forceFieldEnergy\
+\[CloseCurlyDoubleQuote] is called.", "Text",
+  FontColor->GrayLevel[0]]
+}], "Section",
+ CellChangeTimes->{{3.796319977969363*^9, 3.796320142181131*^9}, {
+  3.796320201467784*^9, 3.7963202888387337`*^9}, {3.796320614226465*^9, 
+  3.796320631501848*^9}, {3.7965581956554327`*^9, 3.796558215755371*^9}, {
+  3.796558405404787*^9, 3.796558417381403*^9}, {3.796558495121257*^9, 
+  3.796558553696693*^9}, {3.7965634370970383`*^9, 3.7965634602055483`*^9}, {
+  3.7965635476429253`*^9, 3.7965636722058363`*^9}, {3.796563718873054*^9, 
+  3.796563838373661*^9}, {3.796563921379169*^9, 3.796563944217162*^9}, {
+  3.796563974662703*^9, 
+  3.796563998041588*^9}},ExpressionUUID->"fc72bfd0-3b60-41bd-a6e2-\
+ff7f66a13355"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"list", " ", "=", " ", 
+   RowBox[{"JavaNew", "[", "\"\<java.util.ArrayList\>\"", "]"}]}], " ", 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"list", "@", 
+   RowBox[{"add", "[", 
+    RowBox[{"JavaNew", "[", 
+     RowBox[{"\"\<java.lang.String\>\"", ",", " ", 
+      RowBox[{"StringJoin", "[", 
+       RowBox[{"ffxhome", ",", " ", "\"\</examples/watersmall.xyz\>\""}], 
+       "]"}]}], "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"binding", " ", "=", " ", 
+   RowBox[{"JavaNew", "[", "\"\<groovy.lang.Binding\>\"", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"binding", "@", 
+   RowBox[{"setProperty", "[", 
+    RowBox[{"\"\<args\>\"", ",", "list"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"script", " ", "=", " ", 
+   RowBox[{"JavaNew", "[", "\"\<ffx.potential.groovy.Energy\>\"", "]"}]}], 
+  ";"}], "\n", 
+ RowBox[{
+  RowBox[{"script", "@", 
+   RowBox[{"setBinding", "[", "binding", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"script", "@", 
+   RowBox[{"run", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"forceFieldEnergy", " ", "=", " ", 
+   RowBox[{"script", "@", "forceFieldEnergy"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"forceFieldEnergy", "@", 
+  RowBox[{"toString", "[", "]"}]}]}], "Input",
+ CellChangeTimes->{{3.796314995873674*^9, 3.79631500901157*^9}, {
+   3.7963151094787617`*^9, 3.796315165143322*^9}, {3.796315238743762*^9, 
+   3.796315240563737*^9}, {3.796315397104479*^9, 3.796315504318283*^9}, {
+   3.796315588390046*^9, 3.796315593240342*^9}, {3.796315655342431*^9, 
+   3.796315656018621*^9}, {3.796316448904894*^9, 3.79631645177849*^9}, {
+   3.796318966836712*^9, 3.796318967801186*^9}, {3.796319240494895*^9, 
+   3.7963192433902807`*^9}, {3.796319303538065*^9, 3.79631930403563*^9}, {
+   3.796319960062272*^9, 3.7963199614550743`*^9}, {3.796320310967033*^9, 
+   3.796320311744657*^9}, 3.796320410252369*^9, {3.796322229390833*^9, 
+   3.796322246964287*^9}, {3.796558580893156*^9, 3.796558616038336*^9}, {
+   3.796558665295681*^9, 3.79655866742901*^9}, {3.7965587487927103`*^9, 
+   3.7965589178166523`*^9}, {3.796561887324175*^9, 3.7965619392968903`*^9}, 
+   3.796562010403489*^9, {3.7965621748566523`*^9, 3.796562286507094*^9}, {
+   3.796562356053624*^9, 3.7965623673048897`*^9}, {3.79656247439052*^9, 
+   3.796562493557588*^9}, {3.796562565738244*^9, 3.796562704567507*^9}, {
+   3.796562740410612*^9, 3.796562910446607*^9}, {3.7965631010305653`*^9, 
+   3.796563130008253*^9}, {3.7965631681590548`*^9, 3.796563310152258*^9}, {
+   3.79656346848903*^9, 3.796563524114964*^9}, {3.796563685844124*^9, 
+   3.796563710170115*^9}},
+ CellLabel->
+  "In[666]:=",ExpressionUUID->"15999c6d-86d5-4530-83f7-40813158a58c"]
+}, Open  ]]
+},
+WindowSize->{1280, 1395},
+WindowMargins->{{Automatic, 0}, {Automatic, 0}},
+FrontEndVersion->"12.1 for Mac OS X x86 (64-bit) (March 18, 2020)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"33db9bc7-bd9f-4f77-9da4-501290f5a97c"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 1611, 29, 228, "Section",ExpressionUUID->"c66458ef-c2f3-482f-b04d-e955dae343bc"],
+Cell[2194, 53, 3151, 58, 178, "Input",ExpressionUUID->"77429464-4b40-4ecf-b950-a365590c8cc9"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5382, 116, 1782, 32, 244, "Section",ExpressionUUID->"fc72bfd0-3b60-41bd-a6e2-ff7f66a13355"],
+Cell[7167, 150, 2786, 59, 199, "Input",ExpressionUUID->"15999c6d-86d5-4530-83f7-40813158a58c"]
+}, Open  ]]
+}
+]
+*)
+

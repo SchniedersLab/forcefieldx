@@ -49,6 +49,7 @@ import static ffx.utilities.StringUtils.padLeft;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.repeat;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
@@ -234,7 +235,7 @@ public final class PDBFilter extends SystemFilter {
     } else {
       sb = new StringBuilder("ATOM  ");
     }
-    sb.append(" ".repeat(74));
+    sb.append(repeat(" ", 74));
 
     String name = atom.getName();
     if (name.length() > 4) {
@@ -1607,7 +1608,7 @@ public final class PDBFilter extends SystemFilter {
         }
       } else if (modelsWritten >= 0) {
         model = new StringBuilder(format("MODEL     %-4d", ++modelsWritten));
-        model.append(" ".repeat(65));
+        model.append(repeat(" ", 65));
       }
       activeMolecularAssembly.setFile(newFile);
       activeMolecularAssembly.setName(newFile.getName());

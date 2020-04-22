@@ -40,17 +40,6 @@
 
 BASEDIR=`dirname $0`/..
 BASEDIR=`(cd "$BASEDIR"; pwd)`
-ARCH=`uname -m||arch`
-
-case "$ARCH" in
-    x86_64 | ia64 | s390 )
-	BIT=64
-	;;
-    * )
-	BIT=32
-	;;
-esac
-
 
 # OS specific support.  $var _must_ be set to either true or false.
 cygwin=false;
@@ -140,7 +129,7 @@ if [ -x "$awkCmd" ]; then
     fi
 fi
 
-# Detect JDK version; disallow JDKs below 11 and above 15.
+# Detect JDK version; disallow JDKs below 10 and above 15.
 if [ $hasAwkSed ]; then
     JVERS="`java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g'`"
     JVFIRST="`echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }'`"
@@ -148,8 +137,10 @@ if [ $hasAwkSed ]; then
 
     USE_EXPTL_FLAGS=''
     if [ $JVFIRST -gt 15 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JDK 11 through JDK 15." 1>&2
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 10 through JDK 15." 1>&2
 #       exit 1
+    elif [ $JVFIRST -eq 10 ]; then
+        USE_EXPTL_FLAGS='1'
     elif [ $JVFIRST -eq 11 ]; then
         USE_EXPTL_FLAGS='1'
     elif [ $JVFIRST -eq 12 ]; then
@@ -160,8 +151,8 @@ if [ $hasAwkSed ]; then
         USE_EXPTL_FLAGS='1'
     elif [ $JVFIRST -eq 15 ]; then
         USE_EXPTL_FLAGS='1'
-    elif [ $JVSEC -lt 11 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JDK 11 through JDK 15." 1>&2
+    elif [ $JVSEC -lt 10 ]; then
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 10 through JDK 15." 1>&2
         exit 1
     fi
 
@@ -190,7 +181,7 @@ if [ $hasAwkSed ]; then
       fi
     fi
 else
-    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 11 through JDK 15 and (optionally) CUDA toolkit 10.1."
+    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 10 through JDK 15 and (optionally) CUDA toolkit 10.1."
 fi
 
 # For Cygwin, switch paths to Windows format before running java

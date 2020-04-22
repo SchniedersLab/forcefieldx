@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static org.apache.commons.lang3.StringUtils.repeat;
 import static org.apache.commons.math3.util.FastMath.max;
 
 /**
@@ -238,7 +239,7 @@ public class Hybrid36 {
       buf.append('-');
     }
     StringBuilder result = new StringBuilder();
-    result.append(" ".repeat(max(0, width - buf.length())));
+    result.append(repeat(" ", max(0, width - buf.length())));
     for (int i = buf.length() - 1; i >= 0; i--) {
       result.append(buf.charAt(i));
     }

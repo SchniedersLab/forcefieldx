@@ -233,7 +233,7 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[11,15.1]</version>
+                  <version>[10,15.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.0.5</version>
@@ -592,16 +592,6 @@
       <groupId>javax.xml.bind</groupId>
       <version>${jaxb-api.version}</version>
     </dependency>
-    <dependency>
-      <artifactId>jaxb-core</artifactId>
-      <groupId>com.sun.xml.bind</groupId>
-      <version>${jaxb-api.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>jaxb-impl</artifactId>
-      <groupId>com.sun.xml.bind</groupId>
-      <version>${jaxb-api.version}</version>
-    </dependency>
     <!-- https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305 -->
     <dependency>
       <artifactId>jsr305</artifactId>
@@ -889,7 +879,7 @@
     <commons-lang3.version>3.10</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
-    <compileVersion>11</compileVersion>
+    <compileVersion>10</compileVersion>
     <compiler.version>3.8.1</compiler.version>
     <dependency.version>3.1.2</dependency.version>
     <dependencyDetails>false</dependencyDetails>
@@ -937,7 +927,7 @@
     <release.version>3.0.0-M1</release.version>
     <resources.version>3.1.0</resources.version>
     <scm.version>1.11.2</scm.version>
-    <shade.version>3.2.2</shade.version>
+    <shade.version>3.2.1</shade.version>
     <site.version>3.9.0</site.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
@@ -947,7 +937,7 @@
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
     <surefire.version>3.0.0-M2</surefire.version>
     <!-- Control the target JRE version -->
-    <targetVersion>11</targetVersion>
+    <targetVersion>10</targetVersion>
     <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
     <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>
@@ -1071,7 +1061,7 @@
           <linkXRef>true</linkXRef>
           <minimumPriority>2</minimumPriority>
           <minimumTokens>500</minimumTokens>
-          <targetJdk>11</targetJdk>
+          <targetJdk>10</targetJdk>
         </configuration>
         <reportSets>
           <reportSet>
