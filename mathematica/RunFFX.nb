@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     10673,        233]
-NotebookOptionsPosition[      9969,        212]
-NotebookOutlinePosition[     10363,        228]
-CellTagsIndexPosition[     10320,        225]
+NotebookDataLength[     14170,        306]
+NotebookOptionsPosition[     13239,        281]
+NotebookOutlinePosition[     13633,        297]
+CellTagsIndexPosition[     13590,        294]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -21,21 +21,26 @@ Notebook[{
 
 Cell[CellGroupData[{
 Cell[TextData[{
- StyleBox["Calling Force Field X Scripts from Mathematica", "Chapter",
+ StyleBox["Force Field X: The Missing Mathematica Force Field Engine", 
+  "Chapter",
+  FontWeight->"Bold",
+  FontColor->RGBColor[0, 0, 1]],
+ StyleBox["\[LineSeparator]\n1. ",
   FontColor->GrayLevel[0]],
- StyleBox["\[LineSeparator]",
+ StyleBox["Prerequisites: Loading Java and Setting the Classpath", "Section",
   FontColor->GrayLevel[0]],
- StyleBox["Prerequisites", "Section",
+ StyleBox["\n",
   FontColor->GrayLevel[0]],
- StyleBox["\[LineSeparator]",
+ StyleBox["\n", "Text",
+  FontWeight->"Bold",
   FontColor->GrayLevel[0]],
  StyleBox["To call Force Field X scripts from Mathematic please edit the \
 \[OpenCurlyDoubleQuote]ReinstallJava\[CloseCurlyDoubleQuote] command below:\n\
-1.) Start Mathematica from the command line to pick up environment variables \
-(or use absolute paths below for 2 & 3). Starting Mathematica from the \
+a.) Start Mathematica from the command line to pick up environment variables \
+(or use absolute paths below for b & c). Starting Mathematica from the \
 command line also results in Force Field X logging being sent to the shell.\n\
-2.) Please point \[OpenCurlyDoubleQuote]javahome\[CloseCurlyDoubleQuote] to a \
-JRE/JDK version 10 or higher.\[LineSeparator]3.) Please path \
+b.) Please point \[OpenCurlyDoubleQuote]javahome\[CloseCurlyDoubleQuote] to a \
+JRE/JDK version 10 or higher.\[LineSeparator]c.) Please path \
 \[OpenCurlyDoubleQuote]ffxhome\[CloseCurlyDoubleQuote] to the FFX \
 installation directory.", "Text",
   FontColor->GrayLevel[0]]
@@ -47,8 +52,13 @@ installation directory.", "Text",
    3.796557763169304*^9, 3.79655776411285*^9}, {3.796557804727416*^9, 
    3.796557844423911*^9}, {3.796558050793521*^9, 3.7965581908898287`*^9}, 
    3.796558397846035*^9, {3.796563398441401*^9, 3.7965634189391317`*^9}, {
-   3.79656385288803*^9, 3.796563904260149*^9}, 
-   3.796564022316124*^9},ExpressionUUID->"c66458ef-c2f3-482f-b04d-\
+   3.79656385288803*^9, 3.796563904260149*^9}, 3.796564022316124*^9, {
+   3.796634933060278*^9, 3.7966349476405773`*^9}, {3.7966349937518177`*^9, 
+   3.7966350041399393`*^9}, 3.796635152689011*^9, {3.796635232657337*^9, 
+   3.796635234120371*^9}, {3.796635362892253*^9, 3.796635371059825*^9}, {
+   3.796635743403186*^9, 3.7966357601884623`*^9}, {3.796635813897436*^9, 
+   3.796635819814723*^9}, 
+   3.796639206817993*^9},ExpressionUUID->"c66458ef-c2f3-482f-b04d-\
 e955dae343bc"],
 
 Cell[BoxData[{
@@ -60,27 +70,32 @@ Cell[BoxData[{
    RowBox[{"Values", "[", 
     RowBox[{"GetEnvironment", "[", "\"\<JAVA_HOME\>\"", "]"}], "]"}]}], 
   ";"}], "\[IndentingNewLine]", 
- RowBox[{"javacommand", " ", "=", " ", 
-  RowBox[{"StringJoin", "[", 
-   RowBox[{
-   "javahome", ",", 
-    "\"\</bin/java -Dj3d.rend=noop -Djava.awt.headless=true\>\""}], 
-   "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
-  RowBox[{"ReinstallJava", "[", 
-   RowBox[{"CommandLine", "\[Rule]", "javacommand"}], "]"}], 
+  RowBox[{"javacommand", " ", "=", " ", 
+   RowBox[{"StringJoin", "[", 
+    RowBox[{
+    "javahome", ",", 
+     "\"\</bin/java -Dj3d.rend=noop -Djava.awt.headless=true\>\""}], "]"}]}], 
   ";"}], "\[IndentingNewLine]", 
+ RowBox[{"ReinstallJava", "[", 
+  RowBox[{
+   RowBox[{"CommandLine", "\[Rule]", "javacommand"}], ",", " ", 
+   RowBox[{"ClassPath", "\[Rule]", "None"}]}], "]"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"ffxhome", " ", "=", " ", 
    RowBox[{"Values", "[", 
     RowBox[{"GetEnvironment", "[", "\"\<FFX_HOME\>\"", "]"}], "]"}]}], 
   ";"}], "\[IndentingNewLine]", 
- RowBox[{"ffxjar", " ", "=", " ", 
-  RowBox[{"StringJoin", "[", 
-   RowBox[{"ffxhome", ",", "\"\</bin/ffx-all.jar\>\""}], 
-   "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
-  RowBox[{"AddToClassPath", "[", "ffxjar", "]"}], ";"}]}], "Input",
+  RowBox[{"ffxjar", " ", "=", " ", 
+   RowBox[{"StringJoin", "[", 
+    RowBox[{"ffxhome", ",", "\"\</bin/ffx-all.jar\>\""}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"AddToClassPath", "[", 
+   RowBox[{"ffxjar", ",", " ", 
+    RowBox[{"\"\<Prepend\>\"", "\[Rule]", "True"}]}], "]"}], ";"}]}], "Input",\
+
  CellChangeTimes->{{3.796314172341997*^9, 3.796314173248699*^9}, {
    3.796314545407902*^9, 3.7963145494130087`*^9}, {3.7963145927969103`*^9, 
    3.79631462645579*^9}, {3.79631468583808*^9, 3.796314694341298*^9}, {
@@ -107,32 +122,85 @@ Cell[BoxData[{
    3.7965612486653843`*^9, 3.7965612866417933`*^9}, 3.796561321320533*^9, {
    3.796561364520331*^9, 3.796561418563534*^9}, {3.79656165205534*^9, 
    3.796561845288683*^9}, {3.796563339453847*^9, 3.796563363274496*^9}, {
-   3.796563423441028*^9, 3.796563424160215*^9}},
+   3.796563423441028*^9, 3.796563424160215*^9}, {3.796638257964097*^9, 
+   3.79663826460023*^9}, {3.796638328063662*^9, 3.7966383494509*^9}, {
+   3.7966385312590857`*^9, 3.796638562687766*^9}, {3.796638952895308*^9, 
+   3.7966389892790327`*^9}, {3.796639043686223*^9, 3.7966391139315147`*^9}},
  CellLabel->
-  "In[658]:=",ExpressionUUID->"77429464-4b40-4ecf-b950-a365590c8cc9"]
+  "In[151]:=",ExpressionUUID->"77429464-4b40-4ecf-b950-a365590c8cc9"]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
 Cell[TextData[{
- StyleBox["Example Using Mathematic JLink Syntax", "Section",
+ StyleBox["2. Load a Protein Databank File from the RCSB.\n", "Section",
+  FontColor->GrayLevel[0]],
+ StyleBox["a.) Define a string with a 4-character PDB ID. This example uses \
+the SARS-CoV-2 main protease.\[LineSeparator]b.) Import the file from the \
+Protein Databank, and save it locally.\nc.) Display an 2D image of the \
+structure.", "Text",
+  FontColor->GrayLevel[0]]
+}], "Section",
+ CellChangeTimes->{{3.796635176979826*^9, 3.796635240042182*^9}, 
+   3.796635340502087*^9, {3.79663568148125*^9, 3.796635682605012*^9}, {
+   3.796635714938384*^9, 3.7966357363148823`*^9}, {3.796635839755865*^9, 
+   3.796635843934723*^9}, {3.796635928547269*^9, 3.796635973906665*^9}, {
+   3.796636042510766*^9, 3.7966360616135683`*^9}, {3.796636311323917*^9, 
+   3.796636319652052*^9}, {3.796636413228283*^9, 
+   3.796636414581088*^9}},ExpressionUUID->"954ca07f-686c-469b-96cb-\
+958ed0147f57"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"pdbID", " ", "=", "\"\<6YB7\>\""}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"filename", " ", "=", " ", 
+   RowBox[{"pdbID", " ", "<>", "\"\<.pdb\>\""}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"pdb", " ", "=", " ", 
+   RowBox[{"Import", "[", 
+    RowBox[{
+     RowBox[{
+     "\"\<http://www.rcsb.org/pdb/download/downloadFile.do?fileFormat=pdb&\
+compression=NO&structureId=\>\"", "<>", "pdbID"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<PDB\>\"", ",", "\"\<Rules\>\""}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{"filename", ",", " ", "pdb"}], "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Import", "[", 
+  RowBox[{"filename", ",", " ", 
+   RowBox[{"ImageSize", "\[Rule]", " ", "Medium"}]}], "]"}]}], "Input",
+ CellChangeTimes->{{3.7966343921915503`*^9, 3.796634396213505*^9}, {
+   3.796634472990549*^9, 3.7966344958322783`*^9}, {3.796634615328989*^9, 
+   3.796634693989876*^9}, {3.7966347576011066`*^9, 3.796634871296339*^9}, {
+   3.796635402138074*^9, 3.796635446399453*^9}, {3.796635528611723*^9, 
+   3.796635546544384*^9}, {3.796635622371907*^9, 3.7966356339591703`*^9}, 
+   3.796635665530344*^9, 3.7966359991132298`*^9, {3.796636301833819*^9, 
+   3.796636303519103*^9}},
+ CellLabel->
+  "In[159]:=",ExpressionUUID->"fb3d587b-f71b-4057-ae81-c2eb49898463"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ StyleBox["3. Use JLink Syntax to Use the Force Field X ", "Section",
   FontColor->GrayLevel[0]],
  StyleBox["\[LineSeparator]",
   FontColor->GrayLevel[0]],
- StyleBox["The following example runs the Force FIeld X \
-\[OpenCurlyDoubleQuote]Energy\[CloseCurlyDoubleQuote] script on an example \
-system \[OpenCurlyDoubleQuote]watersmall.xyz\[CloseCurlyDoubleQuote] located \
-in the examples directory.", "Text",
-  FontColor->GrayLevel[0]],
- StyleBox[" ",
-  FontColor->GrayLevel[0]],
- StyleBox["The JLink documentation can be found here:\n\
+ StyleBox["JLink documentation: \t\t\
 https://reference.wolfram.com/language/JLink/tutorial/Overview.html\
-\[LineSeparator]\[LineSeparator]1.) An ArrayList (list) is created and loaded \
-with String arguments.\[LineSeparator]2.) A Groovy Binding is created, and \
-the \[OpenCurlyDoubleQuote]args\[CloseCurlyDoubleQuote] property is set to \
-the list.\[LineSeparator]3.) The Energy script is created, loaded with the \
-Groovy Binding, and its run method called.\[LineSeparator]4.) The toString \
+\[LineSeparator]Force Field X documentation: \thttps://ffx.biochem.uiowa.edu\n\
+\nThe following example runs the Force FIeld X \[OpenCurlyDoubleQuote]Energy\
+\[CloseCurlyDoubleQuote] script on the PDB file.\[LineSeparator]a.) An \
+ArrayList (list) is created and loaded with String \
+arguments.\[LineSeparator]b.) A Groovy Binding is created, and the \
+\[OpenCurlyDoubleQuote]args\[CloseCurlyDoubleQuote] property is set to the \
+list.\[LineSeparator]c.) The Energy script is created, loaded with the Groovy \
+Binding, and its run method called.\[LineSeparator]d.) Finally, the toString \
 method of the Energy script field  \[OpenCurlyDoubleQuote]forceFieldEnergy\
 \[CloseCurlyDoubleQuote] is called.", "Text",
   FontColor->GrayLevel[0]]
@@ -144,8 +212,10 @@ method of the Energy script field  \[OpenCurlyDoubleQuote]forceFieldEnergy\
   3.796558553696693*^9}, {3.7965634370970383`*^9, 3.7965634602055483`*^9}, {
   3.7965635476429253`*^9, 3.7965636722058363`*^9}, {3.796563718873054*^9, 
   3.796563838373661*^9}, {3.796563921379169*^9, 3.796563944217162*^9}, {
-  3.796563974662703*^9, 
-  3.796563998041588*^9}},ExpressionUUID->"fc72bfd0-3b60-41bd-a6e2-\
+  3.796563974662703*^9, 3.796563998041588*^9}, {3.796634147509673*^9, 
+  3.796634147963539*^9}, {3.796635244582906*^9, 3.796635306677973*^9}, {
+  3.796636091021267*^9, 3.796636233156569*^9}, {3.796639157265048*^9, 
+  3.796639159628797*^9}},ExpressionUUID->"fc72bfd0-3b60-41bd-a6e2-\
 ff7f66a13355"],
 
 Cell[BoxData[{
@@ -157,10 +227,8 @@ Cell[BoxData[{
   RowBox[{"list", "@", 
    RowBox[{"add", "[", 
     RowBox[{"JavaNew", "[", 
-     RowBox[{"\"\<java.lang.String\>\"", ",", " ", 
-      RowBox[{"StringJoin", "[", 
-       RowBox[{"ffxhome", ",", " ", "\"\</examples/watersmall.xyz\>\""}], 
-       "]"}]}], "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+     RowBox[{"\"\<java.lang.String\>\"", ",", "filename"}], "]"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"binding", " ", "=", " ", 
    RowBox[{"JavaNew", "[", "\"\<groovy.lang.Binding\>\"", "]"}]}], 
@@ -205,9 +273,10 @@ Cell[BoxData[{
    3.796562740410612*^9, 3.796562910446607*^9}, {3.7965631010305653`*^9, 
    3.796563130008253*^9}, {3.7965631681590548`*^9, 3.796563310152258*^9}, {
    3.79656346848903*^9, 3.796563524114964*^9}, {3.796563685844124*^9, 
-   3.796563710170115*^9}},
+   3.796563710170115*^9}, {3.79663415419769*^9, 3.7966341645438843`*^9}, {
+   3.79663489152673*^9, 3.796634892941928*^9}},
  CellLabel->
-  "In[666]:=",ExpressionUUID->"15999c6d-86d5-4530-83f7-40813158a58c"]
+  "In[164]:=",ExpressionUUID->"15999c6d-86d5-4530-83f7-40813158a58c"]
 }, Open  ]]
 },
 WindowSize->{1280, 1395},
@@ -228,12 +297,16 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[CellGroupData[{
-Cell[580, 22, 1611, 29, 228, "Section",ExpressionUUID->"c66458ef-c2f3-482f-b04d-e955dae343bc"],
-Cell[2194, 53, 3151, 58, 178, "Input",ExpressionUUID->"77429464-4b40-4ecf-b950-a365590c8cc9"]
+Cell[580, 22, 2105, 39, 289, "Section",ExpressionUUID->"c66458ef-c2f3-482f-b04d-e955dae343bc"],
+Cell[2688, 63, 3563, 66, 178, "Input",ExpressionUUID->"77429464-4b40-4ecf-b950-a365590c8cc9"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[5382, 116, 1782, 32, 244, "Section",ExpressionUUID->"fc72bfd0-3b60-41bd-a6e2-ff7f66a13355"],
-Cell[7167, 150, 2786, 59, 199, "Input",ExpressionUUID->"15999c6d-86d5-4530-83f7-40813158a58c"]
+Cell[6288, 134, 900, 16, 136, "Section",ExpressionUUID->"954ca07f-686c-469b-96cb-958ed0147f57"],
+Cell[7191, 152, 1384, 31, 115, "Input",ExpressionUUID->"fb3d587b-f71b-4057-ae81-c2eb49898463"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8612, 188, 1840, 30, 251, "Section",ExpressionUUID->"fc72bfd0-3b60-41bd-a6e2-ff7f66a13355"],
+Cell[10455, 220, 2768, 58, 199, "Input",ExpressionUUID->"15999c6d-86d5-4530-83f7-40813158a58c"]
 }, Open  ]]
 }
 ]

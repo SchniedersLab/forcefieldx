@@ -234,6 +234,11 @@
       <groupId>org.apache.logging.log4j</groupId>
       <version>${log4j.version}</version>
     </dependency>
+    <dependency>
+      <artifactId>slf4j-nop</artifactId>
+      <groupId>org.slf4j</groupId>
+      <version>${slf4j-nop.version}</version>
+    </dependency>
     <!-- dependency>
         <groupId>org.tensorflow</groupId>
         <artifactId>libtensorflow</artifactId>
