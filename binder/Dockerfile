@@ -11,6 +11,17 @@ RUN ([ -f requirements.txt ] \
 
 USER root
 
+# Download Force Field X
+RUN wget https://ffx.biochem.uiowa.edu/ffx-1.0.0-beta-bin.tar.gz
+
+# Unpack Force Field X
+RUN tar xzf ffx-1.0.0-beta-bin.tar.gz
+RUN mv ffx-1.0.0-beta ffx
+
+# Set FFX_HOME and the CLASSPATH
+ENV FFX_HOME /ffx
+ENV CLASSPATH /ffx/bin/ffx-all.jar
+
 # Download the kernel release
 RUN wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip
 
@@ -18,16 +29,6 @@ RUN wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3
 RUN unzip ijava-1.3.0.zip -d ijava-kernel \
   && cd ijava-kernel \
   && python3 install.py --sys-prefix
-
-# Download Force Field X
-RUN wget https://ffx.biochem.uiowa.edu/ffx-1.0.0-beta-bin.tar.gz
-
-# Unpack Force Field X
-RUN tar xzf ffx-1.0.0-beta-bin.tar.gz 
-
-# Set FFX_HOME and the CLASSPATH
-ENV FFX_HOME /ffx-1.0.0-beta
-ENV CLASSPATH /ffx-1.0.0-beta/bin/ffx-all.jar
 
 # Set up the user environment
 
