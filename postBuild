@@ -11,6 +11,12 @@ unzip ijava-1.3.0.zip -d ijava-kernel
 cd ijava-kernel 
 python3 install.py --sys-prefix 
 
+cd ~
 ln -s ~/jdk-11/bin/java ~/bin/java
 ln -s ~/jdk-11/bin/jshell ~/bin/jshell
+
+wget https://ffx.biochem.uiowa.edu/ffx-1.0.0-beta-bin.tar.gz
+tar xzf ffx-1.0.0-beta-bin.tar.gz
+export CLASSPATH="ffx-1.0.0-beta/bin/ffx-all.jar:$CLASSPATH"
+
 
