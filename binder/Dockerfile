@@ -19,6 +19,16 @@ RUN unzip ijava-1.3.0.zip -d ijava-kernel \
   && cd ijava-kernel \
   && python3 install.py --sys-prefix
 
+# Download Force Field X
+RUN wget https://ffx.biochem.uiowa.edu/ffx-1.0.0-beta-bin.tar.gz
+
+# Unpack Force Field X
+RUN tar xzf ffx-1.0.0-beta-bin.tar.gz 
+
+# Set FFX_HOME and the CLASSPATH
+ENV FFX_HOME /ffx-1.0.0-beta
+ENV CLASSPATH /ffx-1.0.0-beta/bin/ffx-all.jar
+
 # Set up the user environment
 
 ENV NB_USER runffx

@@ -1,6 +1,0 @@
-#!/bin/bash
-
-wget https://ffx.biochem.uiowa.edu/ffx-1.0.0-beta-bin.tar.gz
-tar xzf ffx-1.0.0-beta-bin.tar.gz
-export CLASSPATH="ffx-1.0.0-beta/bin/ffx-all.jar:$CLASSPATH"
-
