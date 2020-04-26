@@ -62,6 +62,7 @@ public class PJDoubleArray implements AtomicDoubleArray {
   private static final Logger logger = Logger.getLogger(PJDoubleArray.class.getName());
 
   private SharedDoubleArray array;
+  private int size;
 
   /**
    * Constructor for PJDoubleArray.
@@ -69,6 +70,7 @@ public class PJDoubleArray implements AtomicDoubleArray {
    * @param size a int.
    */
   public PJDoubleArray(int size) {
+    this.size = size;
     array = new SharedDoubleArray(size);
   }
 
@@ -81,6 +83,7 @@ public class PJDoubleArray implements AtomicDoubleArray {
   /** {@inheritDoc} */
   @Override
   public void alloc(int size) {
+    this.size = size;
     if (array.length() < size) {
       array = new SharedDoubleArray(size);
     }
@@ -142,8 +145,21 @@ public class PJDoubleArray implements AtomicDoubleArray {
 
   /** {@inheritDoc} */
   @Override
+  public void scale(int threadID, int index, double value) {
+    double current = array.get(index);
+    array.getAndSet(index, current * value);
+  }
+
+  /** {@inheritDoc} */
+  @Override
   public void set(int threadID, int index, double value) {
     array.getAndSet(index, value);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public int size() {
+    return size;
   }
 
   /** {@inheritDoc} */

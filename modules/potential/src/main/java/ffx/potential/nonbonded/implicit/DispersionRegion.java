@@ -149,7 +149,7 @@ public class DispersionRegion extends ParallelRegion {
   /**
    * Compute a Buffered-14-7 tail correction.
    *
-   * @param ri The separation distance where the integal begins.
+   * @param ri The separation distance where the intregal begins.
    * @param eps The mixed eps value.
    * @param rmin The mixed rmin values.
    * @return The tail correction.
@@ -311,7 +311,6 @@ public class DispersionRegion extends ParallelRegion {
         cDisp[i] += 2.0 * tailCorrection(riH, emixh, rmixh);
       }
       cDisp[i] = SLEVY * AWATER * cDisp[i];
-      // logger.info(format(" CDISP %d %16.8f", i, cDisp[i]));
     }
   }
 
@@ -446,9 +445,9 @@ public class DispersionRegion extends ParallelRegion {
       double sum = 0.0;
       // Nothing to do if the integral begins beyond r + sk (i.e. atom k does not exclude solvent)
       if (ri < r + sk) {
-        double sk2 = sk * sk;
         // Zero out the derivative contribution of atom k.
         double de = 0.0;
+        double sk2 = sk * sk;
         // Compute the maximum of 1) the beginning of the integral and 2) closest edge of atom K.
         double iStart = max(ri, r - sk);
         // Use this as the lower limit for integrating the constant eps value below Rmin.
@@ -464,12 +463,11 @@ public class DispersionRegion extends ParallelRegion {
           double uik2 = uik * uik;
           double uik3 = uik2 * uik;
           double uik4 = uik3 * uik;
-          sum += factor * integralBeforeRMin(emix, r, r2, sk2, lik2, lik3, lik4, uik2, uik3, uik4);
+          sum = integralBeforeRMin(emix, r, r2, sk2, lik2, lik3, lik4, uik2, uik3, uik4);
           if (gradient) {
-            de +=
-                factor
-                    * integralBeforeRminDerivative(
-                        ri, emix, rmix, r, r2, r3, sk, sk2, lik, lik2, lik3, uik, uik2, uik3);
+            de =
+                integralBeforeRminDerivative(
+                    ri, emix, rmix, r, r2, r3, sk, sk2, lik, lik2, lik3, uik, uik2, uik3);
           }
         }
         // Upper limit the variable part of Uwca always the farthest edge of atom K.
@@ -495,24 +493,22 @@ public class DispersionRegion extends ParallelRegion {
           double uik12 = uik11 * uik;
           double rmix7 = pow(rmix, 7);
           sum +=
-              factor
-                  * integratlAfterRmin(
-                      emix, rmix7, r, r2, sk2, lik, lik2, lik3, lik4, lik5, lik10, lik11, lik12,
-                      uik, uik2, uik3, uik4, uik5, uik10, uik11, uik12);
+              integratlAfterRmin(
+                  emix, rmix7, r, r2, sk2, lik, lik2, lik3, lik4, lik5, lik10, lik11, lik12, uik,
+                  uik2, uik3, uik4, uik5, uik10, uik11, uik12);
           if (gradient) {
             double lik13 = lik12 * lik;
             double uik6 = uik5 * uik;
             double uik13 = uik12 * uik;
             de +=
-                factor
-                    * integratlAfterRminDerivative(
-                        ri, emix, rmix, rmix7, iStart, r, r2, r3, sk, sk2, lik, lik2, lik3, lik5,
-                        lik6, lik12, lik13, uik, uik2, uik3, uik6, uik13);
+                integratlAfterRminDerivative(
+                    ri, emix, rmix, rmix7, iStart, r, r2, r3, sk, sk2, lik, lik2, lik3, lik5, lik6,
+                    lik12, lik13, uik, uik2, uik3, uik6, uik13);
           }
         }
         // Increment the individual dispersion gradient components.
         if (gradient) {
-          de = -de / r * SLEVY * AWATER;
+          de = -de / r * factor * SLEVY * AWATER;
           double dedx = de * xr;
           double dedy = de * yr;
           double dedz = de * zr;
@@ -520,7 +516,7 @@ public class DispersionRegion extends ParallelRegion {
           grad.sub(threadID, k, dedx, dedy, dedz);
         }
       }
-      return sum;
+      return factor * sum;
     }
 
     /**

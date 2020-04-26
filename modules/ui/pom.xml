@@ -144,6 +144,25 @@
             <id>copy-jar</id>
             <phase>install</phase>
           </execution>
+          <execution>
+            <configuration>
+              <outputDirectory>${basedir}/../../target/site</outputDirectory>
+              <overwrite>true</overwrite>
+              <resources>
+                <resource>
+                  <directory>target</directory>
+                  <includes>
+                    <include>ffx-all.jar</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <id>copy-download-jar</id>
+            <phase>site</phase>
+          </execution>
         </executions>
         <version>${resources.version}</version>
       </plugin>

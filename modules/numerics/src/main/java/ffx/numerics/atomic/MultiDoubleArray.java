@@ -64,6 +64,8 @@ public class MultiDoubleArray implements AtomicDoubleArray {
    */
   private final double[][] array;
 
+  private int size;
+
   /**
    * Constructor for MultiDoubleArray.
    *
@@ -71,6 +73,7 @@ public class MultiDoubleArray implements AtomicDoubleArray {
    * @param size a int.
    */
   public MultiDoubleArray(int nThreads, int size) {
+    this.size = size;
     array = new double[nThreads][size];
     threadCount = nThreads;
   }
@@ -84,6 +87,7 @@ public class MultiDoubleArray implements AtomicDoubleArray {
   /** {@inheritDoc} */
   @Override
   public void alloc(int size) {
+    this.size = size;
     for (int i = 0; i < threadCount; i++) {
       if (array[i].length < size) {
         array[i] = new double[size];
@@ -187,8 +191,20 @@ public class MultiDoubleArray implements AtomicDoubleArray {
 
   /** {@inheritDoc} */
   @Override
+  public void scale(int threadID, int index, double value) {
+    array[threadID][index] *= value;
+  }
+
+  /** {@inheritDoc} */
+  @Override
   public void set(int threadID, int index, double value) {
     array[threadID][index] = value;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public int size() {
+    return size;
   }
 
   /** {@inheritDoc} */

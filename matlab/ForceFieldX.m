@@ -1,6 +1,6 @@
 %
 % This Force Field X example should be run after completing the
-% process described in the SetupFFX sript.
+% setup process described in the SetupFFX sript.
 %
 % Matlab Java syntax is available here:
 % https://www.mathworks.com/help/matlab/using-java-libraries-in-matlab.html

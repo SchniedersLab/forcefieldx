@@ -58,12 +58,15 @@ public class AdderDoubleArray implements AtomicDoubleArray {
   /** Atomic operations are handled by an Array of DoubleAdder instances. */
   private DoubleAdder[] array;
 
+  private int size;
+
   /**
    * Construct an AdderDoubleArray.
    *
    * @param size Size of the array.
    */
   public AdderDoubleArray(int size) {
+    this.size = size;
     array = new DoubleAdder[size];
     for (int i = 0; i < size; i++) {
       array[i] = new DoubleAdder();
@@ -79,6 +82,7 @@ public class AdderDoubleArray implements AtomicDoubleArray {
   /** {@inheritDoc} */
   @Override
   public void alloc(int size) {
+    this.size = size;
     if (array.length < size) {
       array = new DoubleAdder[size];
       for (int i = 0; i < size; i++) {
@@ -140,9 +144,22 @@ public class AdderDoubleArray implements AtomicDoubleArray {
 
   /** {@inheritDoc} */
   @Override
+  public void scale(int threadID, int index, double value) {
+    double current = array[index].sumThenReset();
+    array[index].add(current * value);
+  }
+
+  /** {@inheritDoc} */
+  @Override
   public void set(int threadID, int index, double value) {
     array[index].reset();
     array[index].add(value);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public int size() {
+    return size;
   }
 
   /** {@inheritDoc} */

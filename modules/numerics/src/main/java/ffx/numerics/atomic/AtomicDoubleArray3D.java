@@ -38,12 +38,14 @@
 package ffx.numerics.atomic;
 
 import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
+import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.math.Double3;
+import ffx.numerics.math.DoubleMath;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -278,6 +280,19 @@ public class AtomicDoubleArray3D {
   }
 
   /**
+   * Scale the double arrays at the specified index to the given values.
+   *
+   * @param threadID a int.
+   * @param index a int.
+   * @param scale The value to scale by.
+   */
+  public void scale(int threadID, int index, double scale) {
+    atomicDoubleArray[0].scale(threadID, index, scale);
+    atomicDoubleArray[1].scale(threadID, index, scale);
+    atomicDoubleArray[2].scale(threadID, index, scale);
+  }
+
+  /**
    * Set the double arrays at the specified index to the given values.
    *
    * @param threadID a int.
@@ -331,5 +346,60 @@ public class AtomicDoubleArray3D {
     atomicDoubleArray[0].sub(threadID, index, d3.x());
     atomicDoubleArray[1].sub(threadID, index, d3.y());
     atomicDoubleArray[2].sub(threadID, index, d3.z());
+  }
+
+  /**
+   * Return a string for given index.
+   *
+   * @param index Index.
+   * @return Returns a String for 3D vector at the given index.
+   */
+  public String toString(int index) {
+    String defaultLabel = " " + index + ": ";
+    return toString(index, defaultLabel);
+  }
+
+  /**
+   * Return a string for given index.
+   *
+   * @param index Index.
+   * @return Returns a String for 3D vector at the given index.
+   */
+  public String toString(int index, String label) {
+    var d = new double[] {getX(index), getY(index), getZ(index)};
+    return DoubleMath.toString(d, label);
+  }
+
+  /**
+   * Return a String for entire Array, with one 3D vector per line.
+   *
+   * @return Returns a String for the 3D array.
+   */
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < atomicDoubleArray.length; i++) {
+      sb.append(toString(i)).append("\n");
+    }
+    return sb.toString();
+  }
+
+  /**
+   * Return a String for entire Array, with one 3D vector per line.
+   *
+   * @param label Label may include one "%d" format conversion to include each entries index.
+   * @return Returns a String for the 3D array.
+   */
+  public String toString(String label) {
+    StringBuilder sb = new StringBuilder();
+    if (label.contains("%d")) {
+      for (int i = 0; i < atomicDoubleArray[0].size(); i++) {
+        sb.append(toString(i, format(label, i))).append("\n");
+      }
+    } else {
+      for (int i = 0; i < atomicDoubleArray[0].size(); i++) {
+        sb.append(toString(i, label)).append("\n");
+      }
+    }
+    return sb.toString();
   }
 }
