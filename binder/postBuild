@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 cd ~
 wget https://download.java.net/openjdk/jdk11/ri/openjdk-11+28_linux-x64_bin.tar.gz
@@ -19,4 +19,4 @@ wget https://ffx.biochem.uiowa.edu/ffx-1.0.0-beta-bin.tar.gz
 tar xzf ffx-1.0.0-beta-bin.tar.gz
 export CLASSPATH="ffx-1.0.0-beta/bin/ffx-all.jar:$CLASSPATH"
 
-
+https://mybinder.org/v2/gh/binder-examples/minimal-dockerfile/master
