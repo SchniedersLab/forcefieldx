@@ -1,4 +1,4 @@
-FROM openjdk:11.0.7-slim 
+FROM openjdk:11.0.7
 
 RUN apt-get update
 RUN apt-get install -y python3-pip
