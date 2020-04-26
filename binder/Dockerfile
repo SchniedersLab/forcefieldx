@@ -22,6 +22,9 @@ RUN mv ffx-1.0.0-beta ffx
 ENV FFX_HOME /ffx
 ENV CLASSPATH /ffx/bin/ffx-all.jar
 
+# Set the IJAVA_CLASSPATH for the Java kernel to pick up.
+ENV IJAVA_CLASSPATH /ffx/bin/ffx-all.jar
+
 # Download the kernel release
 RUN wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip
 
