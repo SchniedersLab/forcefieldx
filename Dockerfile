@@ -8,10 +8,10 @@ RUN pip3 install --no-cache-dir notebook==5.5.* jupyterlab==0.32.*
 USER root
 
 # Download the kernel release
-RUN curl -L https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip > ijava-kernel.zip
+RUN curl -v -L https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip > ijava-kernel.zip
 
 # Unpack and install the kernel
-RUN unzip ijava-kernel.zip -d ijava-kernel \
+RUN unzip -v ijava-kernel.zip -d ijava-kernel \
   && cd ijava-kernel \
   && python3 install.py --sys-prefix
 
