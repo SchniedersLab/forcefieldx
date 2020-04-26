@@ -15,7 +15,7 @@ Please see the Force Field X [website](http://ffx.biochem.uiowa.edu) for more de
 
 ## Run Force Field X Online using Binder
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?filepath=binder%2FForceFieldX.ipynb?urlpath=lab)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?urlpath=lab/tree/binder/ForceFieldX.ipynb)
 
 ---
 
