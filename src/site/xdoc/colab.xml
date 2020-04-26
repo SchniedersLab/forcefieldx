@@ -12,7 +12,7 @@
     <section name="Google Colab Integration">
       <p>Force Field X commands can be run online using Google Colab.</p>
       <a
-        href="https://colab.research.google.com/github/SchniedersLab/forcefieldx/blob/master/jupyter/ForceFieldX.ipynb">
+        href="https://colab.research.google.com/github/SchniedersLab/forcefieldx/blob/master/colab/ForceFieldX.ipynb">
         Start a Force Field X session at Google Colab
       </a>
       <img src="images/colab.png" alt="Google Colab"/>
