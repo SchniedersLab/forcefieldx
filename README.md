@@ -13,6 +13,12 @@ Please see the Force Field X [website](http://ffx.biochem.uiowa.edu) for more de
 
 ---
 
+## Run Force Field X Online using Binder
+
+[![Launch Force Field X binder][binder-badge-img]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master) [![Launch Force Field X lab binder][binder-lab-badge-img]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?urlpath=lab)
+
+---
+
 ## Clone Force Field X
 
 To clone the Force Field X source using GIT:
