@@ -787,7 +787,7 @@
   <organization>
     <!-- This is used to generate the Copyright on the website.
     Module authors can use their name. -->
-    <name>Michael J. Schnieders</name>
+    <name> Michael J. Schnieders</name>
     <url>http://ffx.biochem.uiowa.edu</url>
   </organization>
   <packaging>pom</packaging>
