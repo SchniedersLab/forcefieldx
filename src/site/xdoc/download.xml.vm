@@ -9,20 +9,20 @@
   </properties>
   <body>
     <section name="Download">
-      <p>A single Force Field X download supports Linux, Mac OS X and Microsoft Windows operating
-        systems.
-      </p>
-      <p>The distribution includes:</p>
-      <ul>
-        <li>A launcher for the command line interface.</li>
-        <li>Examples structures and their property files.</li>
-        <li>A large variety of scripts that are easily modified.</li>
-      </ul>
-      <p>System requirement:</p>
-      <ul>
-        <li>Java Runtime Environment (JRE) versions 10 through 14 are supported.</li>
-      </ul>
-      <subsection name="Current Force Field X Distributions">
+      <subsection name="Force Field X Distributions">
+        <p>A single Force Field X download supports Linux, Mac OS X and Microsoft Windows operating
+          systems.
+        </p>
+        <p>The distribution includes:</p>
+        <ul>
+          <li>A launcher for the command line interface.</li>
+          <li>Examples structures and their property files.</li>
+          <li>A large variety of scripts that are easily modified.</li>
+        </ul>
+        <p>System requirement:</p>
+        <ul>
+          <li>Java Runtime Environment (JRE) versions 10 through 14 are supported.</li>
+        </ul>
         <table>
           <thead>
             <tr>
@@ -56,7 +56,7 @@
           </tbody>
         </table>
       </subsection>
-      <subsection name="Current Force Field X Jar File">
+      <subsection name="Force Field X Jar File">
         <p>Instead of the entire Force Field X distribution, a stand-alone jar file is available.
         </p>
         <table>

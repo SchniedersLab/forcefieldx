@@ -161,7 +161,7 @@
               <goal>copy-resources</goal>
             </goals>
             <id>copy-download-jar</id>
-            <phase>site</phase>
+            <phase>install</phase>
           </execution>
         </executions>
         <version>${resources.version}</version>
