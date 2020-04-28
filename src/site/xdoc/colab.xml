@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+  xmlns="http://maven.apache.org/XDOC/2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties>
+    <title>Google Colab</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="Google Colab Integration">
+      <p>Force Field X commands can be run online using Google Colab.</p>
+      <a
+        href="https://colab.research.google.com/github/SchniedersLab/forcefieldx/blob/master/colab/ForceFieldX.ipynb">
+        Start a Force Field X session at Google Colab
+      </a>
+      <img src="images/colab.png" alt="Google Colab"/>
+    </section>
+  </body>
+</document>

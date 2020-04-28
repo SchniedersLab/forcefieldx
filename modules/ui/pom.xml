@@ -60,6 +60,8 @@
           <artifactSet>
             <excludes>
               <exclude>log4j:log4j</exclude>
+              <!-- exclude log4j-slf4j-impl (include the slf4j-nop) -->
+              <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
               <exclude>org.codehaus.groovy:groovy-testng</exclude>
               <!-- groovy and groovy-macro both define the service:
                   org.codehaus.groovy.transform.ASTTransformation -->
@@ -140,6 +142,25 @@
               <goal>copy-resources</goal>
             </goals>
             <id>copy-jar</id>
+            <phase>install</phase>
+          </execution>
+          <execution>
+            <configuration>
+              <outputDirectory>${basedir}/../../target/site</outputDirectory>
+              <overwrite>true</overwrite>
+              <resources>
+                <resource>
+                  <directory>target</directory>
+                  <includes>
+                    <include>ffx-all.jar</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <id>copy-download-jar</id>
             <phase>install</phase>
           </execution>
         </executions>

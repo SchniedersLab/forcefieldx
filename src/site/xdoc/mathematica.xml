@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+  xmlns="http://maven.apache.org/XDOC/2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties>
+    <title>Mathematica</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="Running Force Field X within Mathematica">
+      <p>The Force Field X application programming interface (API) is available within Mathematica
+        using JLink.
+      </p>
+      <iframe
+        src="https://www.wolframcloud.com/obj/michael-schnieders/Published/ForceFieldX.nb?_embed=iframe"
+        width="800" height="800"></iframe>
+    </section>
+  </body>
+</document>

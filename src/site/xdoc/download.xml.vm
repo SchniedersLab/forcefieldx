@@ -1,60 +1,83 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
-    <properties>
-        <title>Download</title>
-        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
-    </properties>
-    <body>
-        <section name="Download">
-            <p>A single Force Field X download supports Linux, Mac OS X and Microsoft Windows operating systems.
-            </p>
-            <p>The distribution includes:</p>
-            <ul>
-                <li>A launcher for the command line interface.</li>
-                <li>Examples structures and their property files.</li>
-                <li>A large variety of scripts that are easily modified.</li>
-            </ul>
-            <p>System requirement:</p>
-            <ul>
-                <li>Java Runtime Environment (JRE) versions 11 through 14 are supported.</li>
-            </ul>
-            <subsection name="Current Force Field X Distributions">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Version</th>
-                            <th>Build Date</th>
-                            <th>Download Link</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Force Field X ${project.version} (Binary tar.gz)</td>
-                            <td>${timestamp}</td>
-                            <td>
-                                <a href="ffx-${project.version}-bin.tar.gz">ffx-${project.version}-bin.tar.gz</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Force Field X ${project.version} (Binary tar.bz2)</td>
-                            <td>${timestamp}</td>
-                            <td>
-                                <a href="ffx-${project.version}-bin.tar.bz2">ffx-${project.version}-bin.tar.bz2</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Force Field X ${project.version} (Binary zip)</td>
-                            <td>${timestamp}</td>
-                            <td>
-                                <a href="ffx-${project.version}-bin.zip">ffx-${project.version}-bin.zip</a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </subsection>
-        </section>
-    </body>
+  xmlns="http://maven.apache.org/XDOC/2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties>
+    <title>Download</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="Download">
+      <subsection name="Force Field X Distributions">
+        <p>A single Force Field X download supports Linux, Mac OS X and Microsoft Windows operating
+          systems.
+        </p>
+        <p>The distribution includes:</p>
+        <ul>
+          <li>A launcher for the command line interface.</li>
+          <li>Examples structures and their property files.</li>
+          <li>A large variety of scripts that are easily modified.</li>
+        </ul>
+        <p>System requirement:</p>
+        <ul>
+          <li>Java Runtime Environment (JRE) versions 10 through 14 are supported.</li>
+        </ul>
+        <table>
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Build Date</th>
+              <th>Download Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Force Field X ${project.version} (Binary tar.gz)</td>
+              <td>${timestamp}</td>
+              <td>
+                <a href="ffx-${project.version}-bin.tar.gz">ffx-${project.version}-bin.tar.gz</a>
+              </td>
+            </tr>
+            <tr>
+              <td>Force Field X ${project.version} (Binary tar.bz2)</td>
+              <td>${timestamp}</td>
+              <td>
+                <a href="ffx-${project.version}-bin.tar.bz2">ffx-${project.version}-bin.tar.bz2</a>
+              </td>
+            </tr>
+            <tr>
+              <td>Force Field X ${project.version} (Binary zip)</td>
+              <td>${timestamp}</td>
+              <td>
+                <a href="ffx-${project.version}-bin.zip">ffx-${project.version}-bin.zip</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </subsection>
+      <subsection name="Force Field X Jar File">
+        <p>Instead of the entire Force Field X distribution, a stand-alone jar file is available.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Build Date</th>
+              <th>Download Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Force Field X ${project.version} (Jar)</td>
+              <td>${timestamp}</td>
+              <td>
+                <a href="ffx-all.jar">ffx-all.jar</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </subsection>
+    </section>
+  </body>
 </document>

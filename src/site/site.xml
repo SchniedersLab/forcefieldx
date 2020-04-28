@@ -8,13 +8,13 @@
     <skin>
         <groupId>org.apache.maven.skins</groupId>
         <artifactId>maven-fluido-skin</artifactId>
-        <version>1.8</version>
+        <version>1.9</version>
     </skin>
     <poweredBy>
         <logo
             target="_blank"
             name="Force Field X Development"
-            href="https://github.com/mjschnie/ffx"
+            href="https://github.com/schniederslab/forcefieldx"
             img="/images/icon90.png"
         />
     </poweredBy>
@@ -91,14 +91,14 @@
                 </script>
             ]]>
         </head>
-        <!-- links>
-            <item name="UI Biochemisty" href="http://www.medicine.uiowa.edu/biochemistry"/>
-            <item name="UI Biomedical Engineering"  href="http://www.engineering.uiowa.edu/bme"/>
+        <links>
+            <!-- item name="Biochemisty" href="http://www.medicine.uiowa.edu/biochemistry"/>
+            <item name="Biomedical Engineering"  href="http://www.engineering.uiowa.edu/bme"/>
             <item name="CBCB" href="https://genome.uiowa.edu/home"/>
             <item name="IIHG" href="https://www.medicine.uiowa.edu/humangenetics"/>
             <item name="IVR"  href="http://ivr.uiowa.edu"/>
-            <item name="HCCC" href="http://www.uihealthcare.org/holdencomprehensivecancercenter"/>
-        </links -->
+            <item name="HCCC" href="http://www.uihealthcare.org/holdencomprehensivecancercenter"/ -->
+        </links>
         <breadcrumbs>
             <item name="Sitemap" href="/sitemap.html"/>
             <item name="Home" href="/index.html"/>
@@ -135,6 +135,8 @@
                <item name="GPU Accelerated MC-OST Solvation Free Energy" href="/examples-mcOSRWSolvationFreeEnergy.html" />
             </item>
             <item name="Parallelization" href="/parallel.html"/>
+            <item name="Mathematica" href="/mathematica.html"/>
+            <item name="Google Colab" href="/colab.html"/>
             <item name="License" href="/licenses.html"/>
             <item name="FFX Team" href="/team.html"/>
         </menu>

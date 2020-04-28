@@ -122,6 +122,15 @@ public interface AtomicDoubleArray {
   void reset(ParallelTeam parallelTeam, int lb, int ub);
 
   /**
+   * Scale the double array at the specified index by the given value.
+   *
+   * @param threadID a int.
+   * @param index a int.
+   * @param value a double.
+   */
+  void scale(int threadID, int index, double value);
+
+  /**
    * Set the double array at the specified index to the given value.
    *
    * @param threadID a int.
@@ -129,6 +138,13 @@ public interface AtomicDoubleArray {
    * @param value a double.
    */
   void set(int threadID, int index, double value);
+
+  /**
+   * Get the size of the array.
+   *
+   * @return Returns the size of the array.
+   */
+  int size();
 
   /**
    * Subtract value to the double array at the specified index.
