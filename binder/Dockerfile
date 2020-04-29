@@ -32,10 +32,9 @@ RUN wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3
 # Unpack and install the kernel
 RUN unzip ijava-1.3.0.zip -d ijava-kernel \
   && cd ijava-kernel \
-  && python3 install.py --sys-prefix
+  && python3 install.py --sys-prefix --startup-scripts-path /ffx/binder/startup.jshell --classpath /ffx/bin/ffx-all.jar
 
 # Set up the user environment
-
 ENV NB_USER runffx
 ENV NB_UID 1000
 ENV HOME /home/$NB_USER
