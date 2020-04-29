@@ -3,7 +3,7 @@ import ffx.Main;
 import org.apache.commons.io.IOUtils;
 import static ffx.Main.ffxScript;
 
-// Set to Headless with no Java3D rendering.
+// Headless and no Java3D rendering.
 System.setProperty("java.awt.headless","true");
 System.setProperty("j3d.rend","noop");
 
@@ -34,4 +34,3 @@ System.out.println("  downloadPDB(\"2jof.pdb\");\n");
 System.out.println(" Scripts can be executed with the command:");
 System.out.println("  String[] args = {\"Energy\", \"2jof.pdb\"};");
 System.out.println("  ffxScript(args);\n\n");
-

@@ -24,6 +24,7 @@ ENV CLASSPATH /ffx/bin/ffx-all.jar
 
 # Set the IJAVA_CLASSPATH for the Java kernel to pick up.
 ENV IJAVA_CLASSPATH /ffx/bin/ffx-all.jar
+ENV IJAVA_STARTUP_SCRIPTS_PATH /ffx/binder/startup.jshell
 
 # Download the kernel release
 RUN wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip
