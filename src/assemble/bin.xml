@@ -14,6 +14,7 @@
             <includes>
                 <include>gpl-3.0.txt</include>
                 <include>install.txt</include>
+                <include>README.md</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -23,9 +24,12 @@
                 <include>ffxc</include>
                 <include>ffx.bat</include>
                 <include>ffxc.bat</include>
+                <include>icon.icns</include>
                 <include>ffx-all.jar</include>
                 <include>scheduler</include>
                 <include>scheduler.bat</include>
+                <include>splash.png</include>
+                <include>startup.jshell</include>
             </includes>
         </fileSet>
         <fileSet>

@@ -24,7 +24,7 @@ ENV CLASSPATH /ffx/bin/ffx-all.jar
 
 # Set the IJAVA_CLASSPATH for the Java kernel to pick up.
 ENV IJAVA_CLASSPATH /ffx/bin/ffx-all.jar
-ENV IJAVA_STARTUP_SCRIPTS_PATH /ffx/binder/startup.jshell
+ENV IJAVA_STARTUP_SCRIPTS_PATH /ffx/bin/startup.jshell
 
 # Download the kernel release
 RUN wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip
@@ -32,10 +32,10 @@ RUN wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3
 # Unpack and install the kernel
 RUN unzip ijava-1.3.0.zip -d ijava-kernel \
   && cd ijava-kernel \
-  && python3 install.py --sys-prefix --startup-scripts-path /ffx/binder/startup.jshell --classpath /ffx/bin/ffx-all.jar
+  && python3 install.py --sys-prefix --startup-scripts-path /ffx/bin/startup.jshell --classpath /ffx/bin/ffx-all.jar
 
 # Set up the user environment
-ENV NB_USER runffx
+ENV NB_USER ffx
 ENV NB_UID 1000
 ENV HOME /home/$NB_USER
 
