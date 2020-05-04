@@ -183,10 +183,6 @@ public class DispersionRegion extends ParallelRegion {
     maxDispersionEnergy();
   }
 
-  public double getDispersionOffest() {
-    return dispersionOffest;
-  }
-
   /**
    * The dispersion integral begins offset from the vdW radius.
    *
@@ -320,6 +316,7 @@ public class DispersionRegion extends ParallelRegion {
    * @since 1.0
    */
   private class DispersionLoop extends IntegerForLoop {
+
     private final double[] dx_local;
     private double edisp;
     private double r, r2, r3;
@@ -547,9 +544,9 @@ public class DispersionRegion extends ParallelRegion {
         double uik4) {
       return -eps
           * (4.0
-              * PI
-              / (48.0 * r)
-              * (3.0 * (lik4 - uik4) - 8.0 * r * (lik3 - uik3) + 6.0 * (r2 - sk2) * (lik2 - uik2)));
+          * PI
+          / (48.0 * r)
+          * (3.0 * (lik4 - uik4) - 8.0 * r * (lik3 - uik3) + 6.0 * (r2 - sk2) * (lik2 - uik2)));
     }
 
     /**
@@ -658,15 +655,15 @@ public class DispersionRegion extends ParallelRegion {
               * PI
               / (120.0 * r * lik5 * uik5)
               * (15.0 * uik * lik * r * (uik4 - lik4)
-                  - 10.0 * uik2 * lik2 * (uik3 - lik3)
-                  + 6.0 * (sk2 - r2) * (uik5 - lik5));
+              - 10.0 * uik2 * lik2 * (uik3 - lik3)
+              + 6.0 * (sk2 - r2) * (uik5 - lik5));
       double term2 =
           4.0
               * PI
               / (2640.0 * r * lik12 * uik12)
               * (120.0 * uik * lik * r * (uik11 - lik11)
-                  - 66.0 * uik2 * lik2 * (uik10 - lik10)
-                  + 55.0 * (sk2 - r2) * (uik12 - lik12));
+              - 66.0 * uik2 * lik2 * (uik10 - lik10)
+              + 55.0 * (sk2 - r2) * (uik12 - lik12));
       double idisp = -2.0 * er7 * term;
       double irep = er7 * rmin7 * term2;
       return irep + idisp;

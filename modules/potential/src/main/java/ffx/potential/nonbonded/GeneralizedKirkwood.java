@@ -426,7 +426,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         ConnollyRegion connollyRegion = new ConnollyRegion(atoms, radii, threadCount);
         double wiggle = forceField.getDouble("WIGGLE", ConnollyRegion.DEFAULT_WIGGLE);
         connollyRegion.setWiggle(wiggle);
-        chandlerCavitation = new ChandlerCavitation(atoms, connollyRegion);
+        chandlerCavitation = new ChandlerCavitation(atoms, connollyRegion, forceField);
         dispersionRegion = new DispersionRegion(threadCount, atoms, forceField);
         surfaceAreaRegion = null;
         break;
@@ -450,7 +450,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
           index++;
         }
         GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen, parallelTeam);
-        chandlerCavitation = new ChandlerCavitation(atoms, gaussVol);
+        chandlerCavitation = new ChandlerCavitation(atoms, gaussVol, forceField);
         break;
       case BORN_CAV_DISP:
         tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;

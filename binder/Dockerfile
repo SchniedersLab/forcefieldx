@@ -1,5 +1,8 @@
 FROM openjdk:11.0.7
 
+# Use GraalVM for JavaScript and Python
+# FROM findepi/graalvm:20.0.0-java11-polyglot
+
 RUN apt-get update
 RUN apt-get install -y python3-pip
 

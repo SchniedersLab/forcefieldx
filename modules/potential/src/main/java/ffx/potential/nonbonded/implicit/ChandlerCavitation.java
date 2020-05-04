@@ -47,6 +47,7 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.MultiplicativeSwitch;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
+import ffx.potential.parameters.ForceField;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -68,6 +69,9 @@ public class ChandlerCavitation {
    * <p>However, a smaller offset of 0.0 to ~0.1 A overshoots the limiting surface tension.
    */
   private final double SA_SWITCH_OFFSET = 0.2;
+
+  private final boolean doVolume;
+  private final boolean doSurfaceArea;
 
   private final GaussVol gaussVol;
   private final ConnollyRegion connollyRegion;
@@ -118,21 +122,27 @@ public class ChandlerCavitation {
   private MultiplicativeSwitch surfaceAreaSwitch =
       new MultiplicativeSwitch(beginSurfaceAreaOff, endSurfaceAreaOff);
 
-  private int nAtoms;
-  private Atom[] atoms;
+  private final int nAtoms;
+  private final Atom[] atoms;
 
-  public ChandlerCavitation(Atom[] atoms, GaussVol gaussVol) {
+  public ChandlerCavitation(Atom[] atoms, GaussVol gaussVol, ForceField forceField) {
     this.atoms = atoms;
     this.nAtoms = atoms.length;
     this.gaussVol = gaussVol;
     this.connollyRegion = null;
+
+    doVolume = forceField.getBoolean("VOLUMETERM", true);
+    doSurfaceArea = forceField.getBoolean("AREATERM", true);
   }
 
-  public ChandlerCavitation(Atom[] atoms, ConnollyRegion connollyRegion) {
+  public ChandlerCavitation(Atom[] atoms, ConnollyRegion connollyRegion, ForceField forceField) {
     this.atoms = atoms;
     this.nAtoms = atoms.length;
     this.connollyRegion = connollyRegion;
     this.gaussVol = null;
+
+    doVolume = forceField.getBoolean("VOLUMETERM", true);
+    doSurfaceArea = forceField.getBoolean("AREATERM", true);
   }
 
   /**
@@ -188,42 +198,46 @@ public class ChandlerCavitation {
     double dReffdvdW = 1.0 / (pow(6.0, 2.0 / 3.0) * PI * vdWVolPI23);
 
     // Find the cavitation energy using a combination of volume and surface area dependence.
-    if (reff < beginVolumeOff) {
-      // Find cavity energy from only the molecular volume.
-      cavitationEnergy = volumeEnergy;
-      double[][] volumeGradient = connollyRegion.getVolumeGradient();
-      for (int i = 0; i < nAtoms; i++) {
-        double dx = solventPressure * volumeGradient[0][i];
-        double dy = solventPressure * volumeGradient[1][i];
-        double dz = solventPressure * volumeGradient[2][i];
-        gradient.add(0, i, dx, dy, dz);
-      }
-    } else if (reff <= endVolumeOff) {
-      // Include a tapered molecular volume.
-      double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
-      cavitationEnergy = taper * volumeEnergy;
-      double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
-      double factor = dtaper * volumeEnergy + taper * solventPressure;
-      double[][] volumeGradient = connollyRegion.getVolumeGradient();
-      for (int i = 0; i < nAtoms; i++) {
-        double dx = factor * volumeGradient[0][i];
-        double dy = factor * volumeGradient[1][i];
-        double dz = factor * volumeGradient[2][i];
-        gradient.add(0, i, dx, dy, dz);
+    if (doVolume) {
+      if (!doSurfaceArea || reff < beginVolumeOff) {
+        // Find cavity energy from only the molecular volume.
+        cavitationEnergy = volumeEnergy;
+        double[][] volumeGradient = connollyRegion.getVolumeGradient();
+        for (int i = 0; i < nAtoms; i++) {
+          double dx = solventPressure * volumeGradient[0][i];
+          double dy = solventPressure * volumeGradient[1][i];
+          double dz = solventPressure * volumeGradient[2][i];
+          gradient.add(0, i, dx, dy, dz);
+        }
+      } else if (reff <= endVolumeOff) {
+        // Include a tapered molecular volume.
+        double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
+        cavitationEnergy = taper * volumeEnergy;
+        double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
+        double factor = dtaper * volumeEnergy + taper * solventPressure;
+        double[][] volumeGradient = connollyRegion.getVolumeGradient();
+        for (int i = 0; i < nAtoms; i++) {
+          double dx = factor * volumeGradient[0][i];
+          double dy = factor * volumeGradient[1][i];
+          double dz = factor * volumeGradient[2][i];
+          gradient.add(0, i, dx, dy, dz);
+        }
       }
     }
 
     // TODO: We need to include the surface area contribution to the gradient.
-    if (reff > beginSurfaceAreaOff) {
-      // Find cavity energy from only SA.
-      cavitationEnergy = surfaceAreaEnergy;
-      // addSurfaceAreaGradient(0.0, surfaceTension, gradient);
-    } else if (reff >= endSurfaceAreaOff) {
-      // Include a tapered surface area term.
-      double taperSA = surfaceAreaSwitch.taper(reff, reff2, reff3, reff4, reff5);
-      cavitationEnergy += taperSA * surfaceAreaEnergy;
-      // double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
-      // addSurfaceAreaGradient(dtaperSA * surfaceAreaEnergy, taperSA * surfaceTension, gradient);
+    if (doSurfaceArea) {
+      if (!doVolume || reff > beginSurfaceAreaOff) {
+        // Find cavity energy from only SA.
+        cavitationEnergy = surfaceAreaEnergy;
+        // addSurfaceAreaGradient(0.0, surfaceTension, gradient);
+      } else if (reff >= endSurfaceAreaOff) {
+        // Include a tapered surface area term.
+        double taperSA = surfaceAreaSwitch.taper(reff, reff2, reff3, reff4, reff5);
+        cavitationEnergy += taperSA * surfaceAreaEnergy;
+        // double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
+        // addSurfaceAreaGradient(dtaperSA * surfaceAreaEnergy, taperSA * surfaceTension, gradient);
+      }
     }
 
     if (logger.isLoggable(Level.FINE)) {
@@ -284,31 +298,35 @@ public class ChandlerCavitation {
     //        double dReffdvdW = 1.0 / (pow(6.0, 2.0 / 3.0) * PI * volPI23);
 
     // Find the cavitation energy using a combination of volume and surface area dependence.
-    if (reff < beginVolumeOff) {
-      // Find cavity energy from only the molecular volume.
-      cavitationEnergy = volumeEnergy;
-      addVolumeGradient(0.0, solventPressure, surfaceAreaGradient, volumeGradient, gradient);
-    } else if (reff <= endVolumeOff) {
-      // Include a tapered molecular volume.
-      double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
-      double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dRdSA;
-      cavitationEnergy = taper * volumeEnergy;
-      double factorSA = dtaper * volumeEnergy;
-      double factorVol = taper * solventPressure;
-      addVolumeGradient(factorSA, factorVol, surfaceAreaGradient, volumeGradient, gradient);
+    if (doVolume) {
+      if (!doSurfaceArea || reff < beginVolumeOff) {
+        // Find cavity energy from only the molecular volume.
+        cavitationEnergy = volumeEnergy;
+        addVolumeGradient(0.0, solventPressure, surfaceAreaGradient, volumeGradient, gradient);
+      } else if (reff <= endVolumeOff) {
+        // Include a tapered molecular volume.
+        double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
+        double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dRdSA;
+        cavitationEnergy = taper * volumeEnergy;
+        double factorSA = dtaper * volumeEnergy;
+        double factorVol = taper * solventPressure;
+        addVolumeGradient(factorSA, factorVol, surfaceAreaGradient, volumeGradient, gradient);
+      }
     }
 
-    if (reff > beginSurfaceAreaOff) {
-      // Find cavity energy from only SA.
-      cavitationEnergy = surfaceAreaEnergy;
-      addSurfaceAreaGradient(surfaceTension, surfaceAreaGradient, gradient);
-    } else if (reff >= endSurfaceAreaOff) {
-      // Include a tapered surface area term.
-      double taperSA = surfaceAreaSwitch.taper(reff, reff2, reff3, reff4, reff5);
-      double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dRdSA;
-      cavitationEnergy += taperSA * surfaceAreaEnergy;
-      double factor = dtaperSA * surfaceAreaEnergy + taperSA * surfaceTension;
-      addSurfaceAreaGradient(factor, surfaceAreaGradient, gradient);
+    if (doSurfaceArea) {
+      if (!doVolume || reff > beginSurfaceAreaOff) {
+        // Find cavity energy from only SA.
+        cavitationEnergy = surfaceAreaEnergy;
+        addSurfaceAreaGradient(surfaceTension, surfaceAreaGradient, gradient);
+      } else if (reff >= endSurfaceAreaOff) {
+        // Include a tapered surface area term.
+        double taperSA = surfaceAreaSwitch.taper(reff, reff2, reff3, reff4, reff5);
+        double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dRdSA;
+        cavitationEnergy += taperSA * surfaceAreaEnergy;
+        double factor = dtaperSA * surfaceAreaEnergy + taperSA * surfaceTension;
+        addSurfaceAreaGradient(factor, surfaceAreaGradient, gradient);
+      }
     }
 
     if (logger.isLoggable(Level.FINE)) {

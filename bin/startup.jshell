@@ -22,12 +22,12 @@ edu.rit.pj.Comm.init(new String[0]);
 // Create a method easily download a file from the PDB
 void downloadPDB(String pdb) {
     try {
-        System.out.println(" Downloading " + pdb + " ...");
+        System.out.print(" Downloading " + pdb + " ...");
         var rcsb = "https://files.rcsb.org/download/";
         var pb = new ProcessBuilder("wget", rcsb + pdb);
         var proc = pb.start();
         proc.waitFor();
-        System.out.println(" Done.\n\n");
+        System.out.println(" Done.");
         System.out.println(IOUtils.toString(proc.getInputStream()));
         System.out.println(IOUtils.toString(proc.getErrorStream()));
     } catch (Exception e) {
