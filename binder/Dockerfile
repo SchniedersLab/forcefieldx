@@ -19,10 +19,10 @@ USER root
 
 # Download Force Field X
 ENV FFX_TAR ffx-$FFX_VERSION-bin.tar.gz
-RUN wget https://ffx.biochem.uiowa.edu/FFX_TAR
+RUN wget https://ffx.biochem.uiowa.edu/$FFX_TAR
 
 # Unpack Force Field X
-RUN tar xzf FFX_TAR
+RUN tar xzf $FFX_TAR
 RUN mv ffx-$FFX_VERSION ffx
 
 # Set FFX_HOME and the CLASSPATH
