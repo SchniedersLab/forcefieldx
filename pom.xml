@@ -781,6 +781,7 @@
     <module>modules/ui</module>
     <module>modules/utilities</module>
     <module>modules/xray</module>
+    <module>modules/ffx-all</module>
   </modules>
   <name>Force Field X</name>
   <organization>

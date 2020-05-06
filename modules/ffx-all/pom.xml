@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>ffx</artifactId>
+    <groupId>edu.uiowa.eng.ffx</groupId>
+    <version>1.0.0-beta</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>ffx-all</artifactId>
+  <packaging>jar</packaging>
+  <description>This is a shaded jar with all FFX dependencies.</description>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${antrun.version}</version>
+        <executions>
+          <execution>
+            <id>remove-shaded-jar</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <delete verbose="true">
+                  <fileset dir="${project.basedir}" includes="dependency-reduced-pom.xml"/>
+                  <fileset dir="${project.basedir}/target" includes="*.jar"/>
+                </delete>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>remove-reduced-pom</id>
+            <phase>pre-clean</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <delete verbose="true">
+                  <fileset dir="${project.basedir}" includes="dependency-reduced-pom.xml"/>
+                </delete>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Create a shaded jar with all FFX dependencies -->
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <artifactSet>
+            <excludes>
+              <exclude>log4j:log4j</exclude>
+              <!-- exclude log4j-slf4j-impl (include the slf4j-nop) -->
+              <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
+              <exclude>org.codehaus.groovy:groovy-testng</exclude>
+              <!-- groovy and groovy-macro both define the service:
+                  org.codehaus.groovy.transform.ASTTransformation -->
+              <exclude>org.codehaus.groovy:groovy-macro</exclude>
+              <!-- This prevents loading the previously built ffx-all.jar -->
+              <!-- exclude>edu.uiowa.eng.ffx:ffx-all</exclude -->
+            </excludes>
+          </artifactSet>
+          <filters>
+            <filter>
+              <artifact>*:*</artifact>
+              <excludes>
+                <exclude>**/module-info.class</exclude>
+                <exclude>META-INF/*.SF</exclude>
+                <exclude>META-INF/*.DSA</exclude>
+                <exclude>META-INF/*.RSA</exclude>
+                <exclude>META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule</exclude>
+                <exclude>META-INF/DEPENDENCIES</exclude>
+                <exclude>META-INF/MANIFEST.MF</exclude>
+                <exclude>META-INF/maven/**</exclude>
+                <exclude>META-INF/groovy-release-info.properties</exclude>
+                <exclude>**/LICENSE*</exclude>
+                <exclude>**/NOTICE*</exclude>
+                <exclude>**/log4j2.xml</exclude>
+                <exclude>**/Log4j2Plugins.dat</exclude>
+              </excludes>
+            </filter>
+          </filters>
+          <!-- finalName>ffx-all</finalName -->
+          <transformers combine.children="append">
+            <!-- The GroovyResourceTransformer does not work. -->
+            <!-- transformer
+              implementation="org.apache.maven.plugins.shade.resource.GroovyResourceTransformer">
+              <extModuleName>org.codehaus.groovy.runtime.ExtensionModule</extModuleName>
+              <extModuleVersion>3.0.0</extModuleVersion>
+            </transformer -->
+            <transformer
+              implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+              <mainClass>ffx.Main</mainClass>
+              <manifestEntries>
+                <Multi-Release>true</Multi-Release>
+                <X-Compile-Source-JDK>${compileVersion}</X-Compile-Source-JDK>
+                <X-Compile-Target-JDK>${targetVersion}</X-Compile-Target-JDK>
+              </manifestEntries>
+            </transformer>
+            <transformer
+              implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+              <file>${basedir}/src/resources/log4j2.properties</file>
+              <resource>log4j2.properties</resource>
+            </transformer>
+          </transformers>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <phase>package</phase>
+          </execution>
+        </executions>
+        <groupId>org.apache.maven.plugins</groupId>
+        <version>${shade.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <!-- Copy shaded FFX jar to the ffx/bin directory. -->
+          <execution>
+            <configuration>
+              <outputDirectory>${project.basedir}/../../bin</outputDirectory>
+              <overwrite>true</overwrite>
+              <resources>
+                <resource>
+                  <directory>target</directory>
+                  <includes>
+                    <include>ffx-all-${project.version}.jar</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <id>copy-jar</id>
+            <phase>install</phase>
+          </execution>
+          <execution>
+            <!-- Copy shaded FFX jar to the target/site directory. -->
+            <configuration>
+              <outputDirectory>${project.basedir}/../../target/site</outputDirectory>
+              <overwrite>true</overwrite>
+              <resources>
+                <resource>
+                  <directory>target</directory>
+                  <includes>
+                    <include>ffx-all-${project.version}.jar</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <id>copy-download-jar</id>
+            <phase>install</phase>
+          </execution>
+        </executions>
+        <version>${resources.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+    <dependency>
+      <artifactId>algorithms</artifactId>
+      <groupId>edu.uiowa.eng.ffx</groupId>
+      <type>jar</type>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>pj</artifactId>
+      <groupId>edu.uiowa.eng.ffx</groupId>
+      <type>jar</type>
+      <version>${pj.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>crystal</artifactId>
+      <groupId>edu.uiowa.eng.ffx</groupId>
+      <type>jar</type>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>numerics</artifactId>
+      <groupId>edu.uiowa.eng.ffx</groupId>
+      <type>jar</type>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>potential</artifactId>
+      <groupId>edu.uiowa.eng.ffx</groupId>
+      <type>jar</type>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>ui</artifactId>
+      <groupId>edu.uiowa.eng.ffx</groupId>
+      <type>jar</type>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>utilities</artifactId>
+      <groupId>edu.uiowa.eng.ffx</groupId>
+      <type>jar</type>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>xray</artifactId>
+      <groupId>edu.uiowa.eng.ffx</groupId>
+      <type>jar</type>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+</project>

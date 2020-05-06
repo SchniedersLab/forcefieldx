@@ -38,6 +38,8 @@
 
 @echo off
 
+set VERSION=1.0.0-beta
+
 set ERROR_CODE=0
 
 :init
@@ -90,7 +92,7 @@ if "%JAVACMD%"=="" set JAVACMD=java
 
 if "%REPO%"=="" set REPO=%BASEDIR%
 
-set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\bin\ffx-all.jar
+set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\bin\ffx-all-"%VERSION%".jar
 
 set EXTRA_JVM_ARGUMENTS=-Xms1G -Xmx1G -Xss1M 
 

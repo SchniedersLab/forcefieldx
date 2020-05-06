@@ -41,7 +41,7 @@ FFX_HOME = getenv("FFX_HOME");
 
 % Append /bin/ffx-all.jar to FFX_HOME
 
-FFX_JAR = FFX_HOME + "/bin/ffx-all.jar"
+FFX_JAR = FFX_HOME + "/bin/ffx-all-1.0.0-beta.jar"
 
 % CD into the preferences directory
 
