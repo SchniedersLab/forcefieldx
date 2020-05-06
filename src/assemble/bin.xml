@@ -25,7 +25,7 @@
                 <include>ffx.bat</include>
                 <include>ffxc.bat</include>
                 <include>icon.icns</include>
-                <include>ffx-all.jar</include>
+                <include>ffx-all-${project.version}.jar</include>
                 <include>scheduler</include>
                 <include>scheduler.bat</include>
                 <include>splash.png</include>
