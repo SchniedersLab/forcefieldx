@@ -1,5 +1,8 @@
 FROM openjdk:11.0.7
 
+# Version of FFX to Download
+ENV FFX_VERSION 1.0.0-beta
+
 # Use GraalVM for JavaScript and Python
 # FROM findepi/graalvm:20.0.0-java11-polyglot
 
@@ -15,19 +18,21 @@ RUN ([ -f requirements.txt ] \
 USER root
 
 # Download Force Field X
-RUN wget https://ffx.biochem.uiowa.edu/ffx-1.0.0-beta-bin.tar.gz
+ENV FFX_TAR ffx-$FFX_VERSION-bin.tar.gz
+RUN wget https://ffx.biochem.uiowa.edu/FFX_TAR
 
 # Unpack Force Field X
-RUN tar xzf ffx-1.0.0-beta-bin.tar.gz
-RUN mv ffx-1.0.0-beta ffx
+RUN tar xzf FFX_TAR
+RUN mv ffx-$FFX_VERSION ffx
 
 # Set FFX_HOME and the CLASSPATH
 ENV FFX_HOME /ffx
-ENV CLASSPATH /ffx/bin/ffx-all-1.0.0-beta.jar
+ENV FFX_BIN $FFX_HOME/bin
+ENV CLASSPATH $FFX_BIN/ffx-all-$FFX_VERSION.jar
 
 # Set the IJAVA_CLASSPATH for the Java kernel to pick up.
-ENV IJAVA_CLASSPATH /ffx/bin/ffx-all-1.0.0-beta.jar
-ENV IJAVA_STARTUP_SCRIPTS_PATH /ffx/bin/startup.jshell
+ENV IJAVA_CLASSPATH $CLASSPATH
+ENV IJAVA_STARTUP_SCRIPTS_PATH $FFX_BIN/startup.jshell
 
 # Download the kernel release
 RUN wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip
@@ -35,7 +40,7 @@ RUN wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3
 # Unpack and install the kernel
 RUN unzip ijava-1.3.0.zip -d ijava-kernel \
   && cd ijava-kernel \
-  && python3 install.py --sys-prefix --startup-scripts-path /ffx/bin/startup.jshell --classpath /ffx/bin/ffx-all.jar
+  && python3 install.py --sys-prefix --startup-scripts-path $IJAVA_STARTUP_SCRIPTS_PATH --classpath $CLASSPATH
 
 # Set up the user environment
 ENV NB_USER ffx
