@@ -59,7 +59,7 @@ RUN chown -R $NB_UID $HOME
 # Set up the FFX Kotlin library
 RUN mkdir $HOME/.jupyter_kotlin
 RUN mkdir $HOME/.jupyter_kotlin/libraries
-RUN cp $FFX_HOME/binder/ffx.json $HOME/.jupyter_kotlin/libraries/.
+RUN cp $HOME/binder/ffx.json $HOME/.jupyter_kotlin/libraries/.
 
 USER $NB_USER
 
