@@ -5,7 +5,7 @@
 #   Leading '.' character has to be matched explicitly.
 #   The '*' does not match '/' (use '**' to match >1 nested directories).
 
-bin/ffx-all.jar
+bin/ffx-all*.jar
 bin/scheduler.log
 conf/*.jar
 
@@ -32,3 +32,5 @@ website/
 .mvn/
 
 velocity.log
+
+modules/ffx-all/dependency-reduced-pom.xml

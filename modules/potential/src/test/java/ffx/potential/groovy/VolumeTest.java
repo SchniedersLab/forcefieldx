@@ -225,7 +225,7 @@ public class VolumeTest {
     // Evaluate the script.
     volume.run();
     assertEquals(125.5120767378517, volume.totalVolume, tolerance);
-    assertEquals(134.25693852184395, volume.totalSurfaceArea, tolerance);
+    assertEquals(134.50524040566165, volume.totalSurfaceArea, tolerance);
   }
 
   /** Test GaussVol without hydrogen and a 0.0 A radii offset. */
@@ -237,7 +237,7 @@ public class VolumeTest {
     // Evaluate the script
     volume.run();
     assertEquals(4371.667466648112, volume.totalVolume, tolerance);
-    assertEquals(3977.079123178555, volume.totalSurfaceArea, tolerance);
+    assertEquals(3971.0619085859435, volume.totalSurfaceArea, tolerance);
   }
 
   /** Test GaussVol derivatives. */
@@ -277,7 +277,7 @@ public class VolumeTest {
     // Evaluate the script
     volume.run();
     assertEquals(194.44960348422916, volume.totalVolume, tolerance);
-    assertEquals(193.15447011592823, volume.totalSurfaceArea, tolerance);
+    assertEquals(193.55314214639066, volume.totalSurfaceArea, tolerance);
   }
 
   /** Test GaussVol derivatives. */

@@ -1173,9 +1173,20 @@ public class Comm {
             StackTraceElement[] stack
                     = Thread.currentThread().getStackTrace();
             StackTraceElement bottom = stack[stack.length - 1];
+
             if (!bottom.getMethodName().equals("main")) {
-                throw new IllegalStateException("Comm.init(): Not called from main program");
+                // throw new IllegalStateException("Comm.init(): Not called from main program, but from " + bottom.getMethodName());
+                // Set up world communicator in this process.
+                theWorldCommunicator
+                        = new Comm(/*size        */1,
+                        /*rank        */ 0,
+                        /*host        */ "<unknown>",
+                        /*channelgroup*/ new ChannelGroup(),
+                        /*address     */
+                        new InetSocketAddress[]{new InetSocketAddress(0)});
+                return;
             }
+
             String mainClassName = bottom.getClassName();
 
             // Set up the Job Frontend object.

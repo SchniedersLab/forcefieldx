@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     26032,        510]
-NotebookOptionsPosition[     24015,        469]
-NotebookOutlinePosition[     24409,        485]
-CellTagsIndexPosition[     24366,        482]
+NotebookDataLength[     26543,        525]
+NotebookOptionsPosition[     24526,        484]
+NotebookOutlinePosition[     24920,        500]
+CellTagsIndexPosition[     24877,        497]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -47,7 +47,7 @@ Cell[TextData[StyleBox["Force Field X with Mathematica", "Chapter",
    3.796840348621229*^9}},ExpressionUUID->"c66458ef-c2f3-482f-b04d-\
 e955dae343bc"],
 
-Cell[TextData[StyleBox["1. Prerequisites: Install Java 10 and Add FFX to the \
+Cell[TextData[StyleBox["1. Prerequisites: Install Java and Add FFX to the \
 Classpath",
  FontColor->GrayLevel[0]]], "Section",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.},
@@ -70,14 +70,15 @@ Classpath",
    3.796833059662339*^9, 3.796833067228063*^9}, {3.7968336728050003`*^9, 
    3.796833677282938*^9}, {3.796835133747052*^9, 3.796835134865658*^9}, {
    3.796835167023349*^9, 3.796835195405162*^9}, {3.796835230769445*^9, 
-   3.796835253495193*^9}, {3.79698084043729*^9, 
-   3.796980867438106*^9}},ExpressionUUID->"bdfd0022-0a5d-4d92-9854-\
+   3.796835253495193*^9}, {3.79698084043729*^9, 3.796980867438106*^9}, {
+   3.79776235118194*^9, 
+   3.797762368257784*^9}},ExpressionUUID->"bdfd0022-0a5d-4d92-9854-\
 d14957cffb69"],
 
 Cell[TextData[{
- StyleBox["This file is available \
-from:\[LineSeparator]https://www.wolframcloud.com/obj/michael-schnieders/\
-Published/ForceFieldX.nb\n\nForce Field X depends on ", "Text",
+ StyleBox["This file is available from (last updated 5/6/2020):\
+\[LineSeparator]https://www.wolframcloud.com/obj/michael-schnieders/Published/\
+ForceFieldX.nb\n\nForce Field X depends on ", "Text",
   FontSize->14,
   FontColor->GrayLevel[0]],
  StyleBox["Java version 10 or greater", "Text",
@@ -99,7 +100,7 @@ greater, and then start Mathematica from the command line ", "Text",
   ", "Text",
   FontSize->14,
   FontColor->GrayLevel[0]],
- StyleBox["\[OpenCurlyDoubleQuote]/your/path/to/jdk10/bin/java \
+ StyleBox["\[OpenCurlyDoubleQuote]/your/path/to/jdk/bin/java \
 \[OpenCurlyDoubleQuote]<>flags\n\nThe first time this notebook is executed, \
 ffx-all.jar will be downloaded to the Mathematica User Base DIrectory for \
 reuse. \nTo update ffx-all.jar, please delete this file and it will be \
@@ -133,14 +134,18 @@ re-downloaded.",
    3.7969801318492002`*^9, 3.796980290162035*^9}, {3.796980523274188*^9, 
    3.796980583300314*^9}, {3.796980621438861*^9, 3.796980678455365*^9}, {
    3.7969807698075457`*^9, 3.7969808289181356`*^9}, {3.796980878462709*^9, 
-   3.796981007555127*^9}, {3.796981785843286*^9, 
-   3.796981798353611*^9}},ExpressionUUID->"8fff24bf-fcf8-4846-9d60-\
+   3.796981007555127*^9}, {3.796981785843286*^9, 3.796981798353611*^9}, {
+   3.797762374558621*^9, 3.797762387475762*^9}, {3.797762821702941*^9, 
+   3.79776282181771*^9}},ExpressionUUID->"8fff24bf-fcf8-4846-9d60-\
 80d2d041bd8e"],
 
 Cell[BoxData[{
  RowBox[{"Quit", ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"Needs", "[", "\"\<JLink`\>\"", "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ffxVersion", " ", "=", " ", "\"\<1.0.0-beta\>\""}], 
+  ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{
   "flags", " ", "=", "\"\<-Dj3d.rend=noop -Djava.awt.headless=true\>\""}], 
@@ -175,19 +180,24 @@ Cell[BoxData[{
  RowBox[{
   RowBox[{"SetDirectory", "[", "$UserBaseDirectory", "]"}], 
   ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ffxFile", " ", "=", " ", 
+   RowBox[{"\"\<ffx-all-\>\"", "<>", "ffxVersion", "<>", "\"\<.jar\>\""}]}], 
+  ";"}], "\[IndentingNewLine]", 
  RowBox[{"If", "[", 
   RowBox[{
-   RowBox[{"FileExistsQ", "[", "\"\<ffx-all.jar\>\"", "]"}], ",", 
+   RowBox[{"FileExistsQ", "[", "ffxFile", "]"}], ",", 
    RowBox[{"\"\<Using existing Force Field X jar file: \>\"", "<>", " ", 
-    RowBox[{"AbsoluteFileName", "[", "\"\<ffx-all.jar\>\"", "]"}]}], ",", 
+    RowBox[{"AbsoluteFileName", "[", "ffxFile", "]"}]}], ",", 
    RowBox[{"URLDownload", "[", 
-    RowBox[{"\"\<https://ffx.biochem.uiowa.edu/ffx-all.jar\>\"", ",", 
-     RowBox[{"File", "[", "\"\<ffx-all.jar\>\"", "]"}]}], "]"}]}], 
+    RowBox[{
+    "\"\<https://ffx.biochem.uiowa.edu/ffx-all-1.0.0-beta.jar\>\"", ",", 
+     RowBox[{"File", "[", "ffxFile", "]"}]}], "]"}]}], 
   "]"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"AddToClassPath", "[", " ", 
    RowBox[{
-    RowBox[{"AbsoluteFileName", "[", "\"\<ffx-all.jar\>\"", "]"}], ",", " ", 
+    RowBox[{"AbsoluteFileName", "[", "ffxFile", "]"}], ",", " ", 
     RowBox[{"\"\<Prepend\>\"", "\[Rule]", "True"}]}], "]"}], 
   ";"}], "\[IndentingNewLine]", 
  RowBox[{"\"\<Current Directory: \>\"", " ", "<>", 
@@ -241,8 +251,11 @@ Cell[BoxData[{
    3.796981366502334*^9, 3.7969813924222507`*^9}, {3.7969814797257757`*^9, 
    3.796981523916316*^9}, {3.796981629062399*^9, 3.7969816703708677`*^9}, {
    3.7969817172866507`*^9, 3.796981753466632*^9}, 3.7969818234921303`*^9, 
-   3.796982989357849*^9, {3.7969830615375013`*^9, 3.796983098663834*^9}},
- CellLabel->"In[1]:=",ExpressionUUID->"77429464-4b40-4ecf-b950-a365590c8cc9"]
+   3.796982989357849*^9, {3.7969830615375013`*^9, 3.796983098663834*^9}, {
+   3.797762560256112*^9, 3.797762661168561*^9}, {3.797762738275948*^9, 
+   3.7977627644860353`*^9}},
+ CellLabel->
+  "In[120]:=",ExpressionUUID->"77429464-4b40-4ecf-b950-a365590c8cc9"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -307,7 +320,8 @@ Cell[BoxData[{
    3.796636303519103*^9}, {3.796829869601206*^9, 3.796829870204273*^9}, {
    3.796832691579093*^9, 3.79683269227558*^9}, {3.796982863114694*^9, 
    3.796982929683105*^9}},
- CellLabel->"In[78]:=",ExpressionUUID->"fb3d587b-f71b-4057-ae81-c2eb49898463"]
+ CellLabel->
+  "In[134]:=",ExpressionUUID->"fb3d587b-f71b-4057-ae81-c2eb49898463"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -356,7 +370,7 @@ Cell[BoxData[{
   3.796983153318821*^9, 3.796983161664558*^9}, {3.796983232362028*^9, 
   3.796983245950436*^9}},
  CellLabel->
-  "In[100]:=",ExpressionUUID->"f02619d9-4388-46b2-9452-a1941b1df12c"],
+  "In[139]:=",ExpressionUUID->"f02619d9-4388-46b2-9452-a1941b1df12c"],
 
 Cell[CellGroupData[{
 
@@ -463,12 +477,13 @@ Cell[BoxData[{
    3.79656346848903*^9, 3.796563524114964*^9}, {3.796563685844124*^9, 
    3.796563710170115*^9}, {3.79663415419769*^9, 3.7966341645438843`*^9}, {
    3.79663489152673*^9, 3.796634892941928*^9}, 3.7968354286131487`*^9},
- CellLabel->"In[83]:=",ExpressionUUID->"15999c6d-86d5-4530-83f7-40813158a58c"]
+ CellLabel->
+  "In[111]:=",ExpressionUUID->"15999c6d-86d5-4530-83f7-40813158a58c"]
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{1280, 1199},
-WindowMargins->{{Automatic, 1}, {Automatic, 0}},
+WindowSize->{1280, 1395},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
 FrontEndVersion->"12.1 for Mac OS X x86 (64-bit) (March 18, 2020)",
 StyleDefinitions->"Default.nb",
 ExpressionUUID->"6360de4a-4dbf-42a9-8d95-91a31bc53b84"
@@ -487,28 +502,28 @@ Notebook[{
 Cell[CellGroupData[{
 Cell[580, 22, 1718, 25, 84, "Title",ExpressionUUID->"c66458ef-c2f3-482f-b04d-e955dae343bc",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[2301, 49, 1716, 25, 67, "Section",ExpressionUUID->"bdfd0022-0a5d-4d92-9854-d14957cffb69",
+Cell[2301, 49, 1762, 26, 67, "Section",ExpressionUUID->"bdfd0022-0a5d-4d92-9854-d14957cffb69",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[4020, 76, 3388, 61, 222, "Text",ExpressionUUID->"8fff24bf-fcf8-4846-9d60-80d2d041bd8e",
+Cell[4066, 77, 3505, 62, 222, "Text",ExpressionUUID->"8fff24bf-fcf8-4846-9d60-80d2d041bd8e",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[7411, 139, 5964, 105, 283, "Input",ExpressionUUID->"77429464-4b40-4ecf-b950-a365590c8cc9",
+Cell[7574, 141, 6304, 116, 325, "Input",ExpressionUUID->"77429464-4b40-4ecf-b950-a365590c8cc9",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[13412, 249, 642, 10, 67, "Section",ExpressionUUID->"954ca07f-686c-469b-96cb-958ed0147f57"],
-Cell[14057, 261, 859, 15, 104, "Text",ExpressionUUID->"303e7e64-6d31-4e49-9274-228f7360c8aa"],
-Cell[14919, 278, 1467, 31, 115, "Input",ExpressionUUID->"fb3d587b-f71b-4057-ae81-c2eb49898463"]
+Cell[13915, 262, 642, 10, 67, "Section",ExpressionUUID->"954ca07f-686c-469b-96cb-958ed0147f57"],
+Cell[14560, 274, 859, 15, 104, "Text",ExpressionUUID->"303e7e64-6d31-4e49-9274-228f7360c8aa"],
+Cell[15422, 291, 1471, 32, 115, "Input",ExpressionUUID->"fb3d587b-f71b-4057-ae81-c2eb49898463"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[16423, 314, 282, 5, 67, "Section",ExpressionUUID->"58abe940-dffe-444c-864d-995c2d49e525"],
-Cell[16708, 321, 671, 11, 104, "Text",ExpressionUUID->"3cdc65cf-963e-4a8b-a400-0044977298b2"],
-Cell[17382, 334, 1008, 24, 94, "Input",ExpressionUUID->"f02619d9-4388-46b2-9452-a1941b1df12c"],
+Cell[16930, 328, 282, 5, 67, "Section",ExpressionUUID->"58abe940-dffe-444c-864d-995c2d49e525"],
+Cell[17215, 335, 671, 11, 104, "Text",ExpressionUUID->"3cdc65cf-963e-4a8b-a400-0044977298b2"],
+Cell[17889, 348, 1008, 24, 94, "Input",ExpressionUUID->"f02619d9-4388-46b2-9452-a1941b1df12c"],
 Cell[CellGroupData[{
-Cell[18415, 362, 1085, 17, 67, "Section",ExpressionUUID->"fc72bfd0-3b60-41bd-a6e2-ff7f66a13355",
+Cell[18922, 376, 1085, 17, 67, "Section",ExpressionUUID->"fc72bfd0-3b60-41bd-a6e2-ff7f66a13355",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[19503, 381, 1638, 24, 150, "Text",ExpressionUUID->"eb6470cf-34e3-45cb-8009-04d4ccc9158c",
+Cell[20010, 395, 1638, 24, 150, "Text",ExpressionUUID->"eb6470cf-34e3-45cb-8009-04d4ccc9158c",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[21144, 407, 2843, 58, 199, "Input",ExpressionUUID->"15999c6d-86d5-4530-83f7-40813158a58c",
+Cell[21651, 421, 2847, 59, 199, "Input",ExpressionUUID->"15999c6d-86d5-4530-83f7-40813158a58c",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}]
 }, Open  ]]
 }, Open  ]]

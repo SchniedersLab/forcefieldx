@@ -324,7 +324,7 @@
         <executions>
           <execution>
             <goals>
-              <goal>aggregate</goal>
+              <goal>jar</goal>
             </goals>
             <id>attach-source</id>
             <phase>verify</phase>
@@ -717,10 +717,9 @@
   <distributionManagement>
     <downloadUrl>http://ffx.biochem.uiowa.edu/download.html</downloadUrl>
     <repository>
-      <id>github</id>
-      <name>GitHub SchniedersLab Apache Maven Packages</name>
-      <uniqueVersion>false</uniqueVersion>
-      <url>${release.repo}</url>
+      <id>bintray-mjschnie-maven</id>
+      <name>mjschnie-maven</name>
+      <url>https://api.bintray.com/maven/mjschnie/maven/${project.artifactId}/</url>
     </repository>
     <site>
       <id>Website</id>
@@ -776,51 +775,23 @@
     <module>modules/algorithms</module>
     <module>modules/crystal</module>
     <module>modules/numerics</module>
-    <module>modules/openmm</module>
+    <module>modules/jopenmm</module>
     <module>modules/pj</module>
     <module>modules/potential</module>
     <module>modules/ui</module>
     <module>modules/utilities</module>
     <module>modules/xray</module>
+    <module>modules/ffx-all</module>
   </modules>
   <name>Force Field X</name>
   <organization>
     <!-- This is used to generate the Copyright on the website.
     Module authors can use their name. -->
-    <name> Michael J. Schnieders</name>
+    <name>Michael J. Schnieders</name>
     <url>http://ffx.biochem.uiowa.edu</url>
   </organization>
   <packaging>pom</packaging>
   <profiles>
-    <profile>
-      <activation>
-        <activeByDefault>false</activeByDefault>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-jarsigner-plugin</artifactId>
-            <configuration>
-              <alias>FFXKey</alias>
-              <keypass>${keypass}</keypass>
-              <removeExistingSignatures>true</removeExistingSignatures>
-              <storepass>${storepass}</storepass>
-              <tsa>http://timestamp.digicert.com</tsa>
-            </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-                <id>sign</id>
-                <phase>install</phase>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-      <id>ffx.jarsigner</id>
-    </profile>
     <profile>
       <activation>
         <activeByDefault>false</activeByDefault>
@@ -892,7 +863,6 @@
     <!-- Version of FFX  -->
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <fmt.version>2.9</fmt.version>
     <groovy-all.version>3.0.0.1</groovy-all.version>
     <guava.version>28.1-jre</guava.version>
     <install.version>3.0.0-M1</install.version>
@@ -905,7 +875,7 @@
     <jdepend.version>2.0</jdepend.version>
     <jna.version>4.1.0</jna.version>
     <jogamp-fat.version>2.4.0</jogamp-fat.version>
-    <jopenmm.version>7.5.0</jopenmm.version>
+    <jopenmm.version>7.5.0-Tinker</jopenmm.version>
     <junit.version>4.13</junit.version>
     <jxr.version>3.0.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>

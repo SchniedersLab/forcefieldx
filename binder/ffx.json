@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "v":"1.0.0-beta"
+  },
+  "link": "https://ffx.biochem.uiowa.edu",
+  "repositories": [
+    "file:/ffx/bin"
+  ],
+  "dependencies": [
+    "ffx-all-$v.jar"
+  ],
+  "imports": [
+    "ffx.Main",
+    "ffx.Main.*"
+  ],
+  "init": [
+   "System.setProperty(\"java.awt.headless\",\"true\")",
+   "System.setProperty(\"j3d.rend\",\"noop\")"
+  ]
+}

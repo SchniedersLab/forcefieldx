@@ -1,0 +1,44 @@
+//
+// This file can be used to initialize JShell:
+// jshell --class-path bin/ffx-all.jar bin/startup.jshell
+//
+// It can also be used to initialize a Jupyter notebook using the IJava kernel (which builds on jshell).
+// For example, see our a Binder Dockerfile located here: ffx/binder/Dockerfile
+// The IJava kernel is hosted here: https://github.com/SpencerPark/IJava
+//
+
+// Imports
+import ffx.Main;
+import org.apache.commons.io.IOUtils;
+import static ffx.Main.ffxScript;
+
+// Headless and no Java3D rendering.
+System.setProperty("java.awt.headless","true");
+System.setProperty("j3d.rend","noop");
+
+// Init Parallel Java
+edu.rit.pj.Comm.init(new String[0]);
+
+// Create a method easily download a file from the PDB
+void downloadPDB(String pdb) {
+    try {
+        System.out.print(" Downloading " + pdb + " ...");
+        var rcsb = "https://files.rcsb.org/download/";
+        var pb = new ProcessBuilder("wget", rcsb + pdb);
+        var proc = pb.start();
+        proc.waitFor();
+        System.out.println(" Done.");
+        System.out.println(IOUtils.toString(proc.getInputStream()));
+        System.out.println(IOUtils.toString(proc.getErrorStream()));
+    } catch (Exception e) {
+        System.out.println(" Exception downloading PDB file: " + e.toString());
+    }
+}
+
+System.out.println(" Force Field X environment initialized.\n");
+System.out.println(" PDB files can be downloaded using the commands:");
+System.out.println("  var pdb = \"2jof.pdb\";");
+System.out.println("  downloadPDB(pdb);\n");
+System.out.println(" Scripts can be executed with the commands:");
+System.out.println("  String[] args = {\"Energy\", pdb};");
+System.out.println("  ffxScript(args);\n\n");

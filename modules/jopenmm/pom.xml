@@ -11,7 +11,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <groupId>ffx</groupId>
-    <artifactId>openmm</artifactId>
+    <artifactId>jopenmm</artifactId>
     <!--version>${ffx.version}</version-->
     <packaging>pom</packaging>
     <name>OpenMM Java Wrappers</name>

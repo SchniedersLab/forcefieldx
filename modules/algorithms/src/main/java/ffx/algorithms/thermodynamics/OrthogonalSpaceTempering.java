@@ -326,7 +326,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     // Log parameters.
     logger.info("\n Orthogonal Space Random Walk Parameters");
     logger.info(format("  Gaussian Bias Magnitude:        %6.4f (kcal/mol)", histogram.biasMag));
-    logger.info(format("  Gaussian Bias Cutoff:           %6d bins", histogram.biasCutoff));
+    logger.info(format("  Gaussian dU/dL Bias Cutoff:     %6d bins", histogram.biasCutoff));
+    logger.info(format("  Gaussian Lambda Bias Cutoff:    %6d bins", histogram.lambdaBiasCutoff));
     logger.info(format("  Print Interval:                 %6.3f psec", printInterval));
     logger.info(format("  Save Interval:                  %6.3f psec", saveInterval));
   }
@@ -1190,6 +1191,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      */
     final int biasCutoff;
     /**
+     * When evaluating the biasing potential, contributions from Gaussians centered on bins more the
+     * "biasCutoff" away will be neglected.
+     *
+     * <p>The continuous lambda simulations, the default lambdaBiasCutoff = biasCutoff.
+     * <p>For discrete lambda simulations, the default lambdaBiasCutoff = 0.
+     */
+    final int lambdaBiasCutoff;
+    /**
      * Magnitude of each hill (not including tempering).
      *
      * <p>The default biasMag = 0.05 (kcal/mol).
@@ -1375,6 +1384,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       discreteLambda = settings.discreteLambda;
       temperingFactor = settings.temperingFactor;
       temperOffset = settings.getTemperOffset();
+
+      if (discreteLambda) {
+        lambdaBiasCutoff = 0;
+      } else {
+        lambdaBiasCutoff = biasCutoff;
+      }
 
       deltaT = temperingFactor * R * temperature;
 
@@ -2043,7 +2058,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       double invFLs2 = 0.5 / FLs2;
 
       double sum = 0.0;
-      for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+      for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
         int Lcenter = cLambda + iL;
         double deltaL = vL - Lcenter * dL;
         double deltaL2 = deltaL * deltaL;
@@ -2104,7 +2119,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       double bias2D = 0.0;
       double ls2 = (2.0 * dL) * (2.0 * dL);
       double FLs2 = (2.0 * dFL) * (2.0 * dFL);
-      for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+      for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
         int lcenter = lambdaBin + iL;
         double deltaL = currentLambda - (lcenter * dL);
         double deltaL2 = deltaL * deltaL;
@@ -2166,7 +2181,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
       double ls2 = (2.0 * dL) * (2.0 * dL);
       double FLs2 = (2.0 * dFL) * (2.0 * dFL);
-      for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+      for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
         int lcenter = lambdaBin + iL;
         // double deltaL = lambda - (lcenter * dL);
         double deltaL = currentLambda - (lcenter * dL);

@@ -72,7 +72,7 @@
               <td>Force Field X ${project.version} (Jar)</td>
               <td>${timestamp}</td>
               <td>
-                <a href="ffx-all.jar">ffx-all.jar</a>
+                <a href="ffx-all-${project.version}.jar">ffx-all-${project.version}.jar</a>
               </td>
             </tr>
           </tbody>

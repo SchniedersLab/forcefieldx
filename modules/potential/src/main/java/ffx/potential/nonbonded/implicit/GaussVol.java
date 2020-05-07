@@ -101,8 +101,8 @@ public class GaussVol {
 
   private static final Logger logger = Logger.getLogger(GaussVol.class.getName());
   /** Finite-Difference step size to compute surface area. */
-  private static final double offset = 0.00005;
-  /** Conversion factors from spheres to Gaussians. */
+  private static final double offset = 0.005;
+  /** Conversion factor from a sphere to a Gaussian. */
   private static double KFC = 2.2269859253;
 
   private static double PFC = 2.5;
@@ -226,6 +226,15 @@ public class GaussVol {
     gradV = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
     freeVolume = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
     selfVolume = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
+  }
+
+  /**
+   * Get the radii.
+   *
+   * @return Returns the radii.
+   */
+  public double[] getRadii() {
+    return radii;
   }
 
   /**

@@ -121,7 +121,7 @@ public abstract class BaseScript extends Script {
    * @return The Script, if found, or null.
    */
   public static Class<? extends BaseScript> getScript(String name) {
-    ClassLoader loader = ClassLoader.getSystemClassLoader();
+    ClassLoader loader = BaseScript.class.getClassLoader();
     String pathName = name;
     Class<?> script;
     try {

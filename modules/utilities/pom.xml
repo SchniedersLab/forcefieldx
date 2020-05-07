@@ -17,31 +17,6 @@
   <description>
     The Utilities module includes support for byte-swapping, keywords and Hybrid36.
   </description>
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>fmt-maven-plugin</artifactId>
-        <configuration>
-          <filesNamePattern>.*\.java</filesNamePattern>
-          <skip>false</skip>
-          <skipSortingImports>false</skipSortingImports>
-          <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
-          <style>google</style>
-          <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
-          <verbose>true</verbose>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>format</goal>
-            </goals>
-          </execution>
-        </executions>
-        <groupId>com.coveo</groupId>
-        <version>${fmt.version}</version>
-      </plugin>
-    </plugins>
-  </build>
   <dependencies>
     <dependency>
       <groupId>info.picocli</groupId>

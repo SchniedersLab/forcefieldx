@@ -38,6 +38,8 @@
 # exception statement from your version.
 ################################################################################
 
+VERSION=1.0.0-beta
+
 BASEDIR=`dirname $0`/..
 BASEDIR=`(cd "$BASEDIR"; pwd)`
 
@@ -96,9 +98,9 @@ then
 fi
 
 if [ "$CLASSPATH_PREFIX" != "" ]; then
-    CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/ffx-all.jar
+    CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR/bin/ffx-all-$VERSION.jar"
 else
-    CLASSPATH="$BASEDIR/bin/ffx-all.jar"
+    CLASSPATH="$BASEDIR/bin/ffx-all-$VERSION.jar"
 fi
 JLP=modules/numerics/src/main/java/ffx/numerics/fft
 
