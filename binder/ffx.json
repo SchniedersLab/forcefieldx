@@ -4,10 +4,10 @@
   },
   "link": "https://ffx.biochem.uiowa.edu",
   "repositories": [
-    "file:/ffx"
+    "file:/home/ffx/binder"
   ],
   "dependencies": [
-    "binder/ffx-all-$v.jar"
+    "ffx-all-$v.jar"
   ],
   "imports": [
     "ffx.Main",
