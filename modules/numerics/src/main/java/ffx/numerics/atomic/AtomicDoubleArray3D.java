@@ -363,6 +363,7 @@ public class AtomicDoubleArray3D {
    * Return a string for given index.
    *
    * @param index Index.
+   * @param label Label to use for the String.
    * @return Returns a String for 3D vector at the given index.
    */
   public String toString(int index, String label) {
