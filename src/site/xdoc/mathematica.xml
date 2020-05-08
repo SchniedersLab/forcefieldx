@@ -9,13 +9,21 @@
     <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
   </properties>
   <body>
-    <section name="Running Force Field X within Mathematica">
+    <section name="Use Force Field X with Mathematica">
       <p>The Force Field X application programming interface (API) is available within Mathematica
         using JLink.
+      </p>
+      <p>
+        Force Field X depends on Java version 10 or later. However, the Wolfram Cloud is currently
+        using Java version 8. Thus, please use a local Mathematica installation.
       </p>
       <iframe
         src="https://www.wolframcloud.com/obj/michael-schnieders/Published/ForceFieldX.nb?_embed=iframe"
         width="800" height="800"></iframe>
+      <p>
+        Please download this notebook to run on a local installation of Mathematica.
+        Use of the Wolfram Cloud (via "Make Your Own Copy") is not currently supported.
+      </p>
     </section>
   </body>
 </document>
