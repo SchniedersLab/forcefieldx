@@ -135,10 +135,14 @@
                <item name="GPU Accelerated MC-OST Solvation Free Energy" href="/examples-mcOSRWSolvationFreeEnergy.html" />
             </item>
             <item name="Parallelization" href="/parallel.html"/>
-            <item name="Mathematica" href="/mathematica.html"/>
-            <item name="Google Colab" href="/colab.html"/>
             <item name="License" href="/licenses.html"/>
             <item name="FFX Team" href="/team.html"/>
+        </menu>
+        <menu name="Integrations">
+            <item name="Binder" href="/binder.html"/>
+            <item name="Google Colab" href="/colab.html"/>
+            <item name="Mathematica" href="/mathematica.html"/>
+            <item name="Matlab" href="/matlab.html"/>
         </menu>
         <menu name="Modules" inherit="top">
             <item name="Modules" href="/modules.html"/>

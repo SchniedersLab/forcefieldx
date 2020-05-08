@@ -719,7 +719,7 @@
     <repository>
       <id>bintray-mjschnie-maven</id>
       <name>mjschnie-maven</name>
-      <url>https://api.bintray.com/maven/mjschnie/maven/${project.artifactId}/</url>
+      <url>${release.repo}</url>
     </repository>
     <site>
       <id>Website</id>

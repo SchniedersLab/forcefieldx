@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+  xmlns="http://maven.apache.org/XDOC/2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties>
+    <title>Matlab</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="Matlab Integration">
+      <p>Force Field X commands can be run within Matlab.</p>
+      <img src="images/matlab.png" alt="Matlab"/>
+      <subsection name="Setting up Force Field X with Matlab.">
+        <p>
+          The instructions below are available in the file "ffx/matlab/SetupFFX.m".
+          <br/>
+          <b>Jave Version</b>
+          <br/>
+          As of Matlab 2020a, Force Field X support depends on using JDK/JRE version 10 (Matlab does
+          not support JDK 11 or higher).
+          Please install JDK 10 from Oracle or from Adopt Open JDK:
+          <br/>
+          https://www.oracle.com/java/technologies/java-archive-javase10-downloads.html
+          <br/>
+          - or -
+          <br/>
+          https://adoptopenjdk.net/releases.html?variant=openjdk10
+          <br/>
+          Please then set the MATLAB_JAVA environment variable
+          <br/>
+          For csh / tcsh
+          <code>setenv MATLAB_JAVA /path/to/the/jre</code>
+          <br/>
+          For bash
+          <code>export MATLAB_JAVA=/path/to/the/jre</code>
+          <br/>
+          For example, using bash on MacOS with for Oracle JDK 10:
+          <br/>
+          <code>export MATLAB_JAVA=/Library/Java/JavaVirtualMachines/jdk-10.0.2.jdk/Contents/Home
+          </code>
+          <br/>
+          The restart Matlab from the command line (the GUI shortcut will not pick up
+          the environment variable).
+          For example, on MacOS
+          <code>/Applications/MATLAB_R2020a.app/bin/matlab</code>
+          <br/>
+          To check the current Matlab JRE, use the command
+          <code>version -java</code>
+          <br/>
+          <code>
+            ans =
+            'Java 10.0.2+13 with "Oracle Corporation" Java HotSpot(TM) 64-Bit Server VM mixed mode'
+          </code>
+        </p>
+        <p>
+          <b>Adding Force Field X to the Classpath</b>
+          <br/>
+          Once Matlab is running on JRE/JDK 10, the ffx-all.jar needs to be added
+          to the "static" Matlab classpath.
+          <br/>
+          https://www.mathworks.com/help/matlab/matlab_external/static-path.html
+          <br/>
+          To avoid absolute paths, its possible (but optional) to set an FFX_HOME
+          environment variable to the root FFX directory.
+          <br/>
+          <code>FFX_HOME = getenv("FFX_HOME");</code>
+          <br/>
+          Append /bin/ffx-all.jar to FFX_HOME
+          <br/>
+          <code>FFX_JAR = FFX_HOME + "/bin/ffx-all-1.0.0-beta.jar"</code>
+          <br/>
+          CD into the preferences directory
+          <br/>
+          <code>cd(prefdir)</code>
+          <br/>
+          Add ffx-all.jar to the file "javaclasspath.txt". The value of the
+          FFX_JAR variable was printed to the command window.
+          <br/>
+          <code>edit javaclasspath.txt</code>
+          <br/>
+          Matlab must be restarted for the new static classpath to take effect.
+        </p>
+      </subsection>
+      <subsection name="Running Force Field X Commands">
+        <p>Once Matlab is running on Java v. 10, a Force Field X example is available in the file "ffx/matlab/ForceFieldX.m".</p>
+      </subsection>
+    </section>
+  </body>
+</document>
