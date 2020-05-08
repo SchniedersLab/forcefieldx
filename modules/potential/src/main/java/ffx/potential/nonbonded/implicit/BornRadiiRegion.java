@@ -52,6 +52,7 @@ import edu.rit.pj.reduction.SharedDouble;
 import edu.rit.pj.reduction.SharedDoubleArray;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+import ffx.potential.parameters.ForceField;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -96,16 +97,17 @@ public class BornRadiiRegion extends ParallelRegion {
   /** Forces all atoms to be considered during Born radius updates. */
   private boolean nativeEnvironmentApproximation;
 
-  private boolean verboseRadii = false;
+  private boolean verboseRadii = true;
   private SharedDoubleArray sharedBorn;
   private SharedDouble ecavTot;
 
-  public BornRadiiRegion(int nt) {
+  public BornRadiiRegion(int nt, ForceField forceField) {
     bornRadiiLoop = new BornRadiiLoop[nt];
     for (int i = 0; i < nt; i++) {
       bornRadiiLoop[i] = new BornRadiiLoop();
     }
     ecavTot = new SharedDouble(0.0);
+    verboseRadii = forceField.getBoolean("VERBOSE_BORN_RADII", false);
   }
 
   @Override
@@ -118,26 +120,25 @@ public class BornRadiiRegion extends ParallelRegion {
       } else {
         double sum = sharedBorn.get(i);
         if (sum <= 0.0) {
-          sum = PI4_3 * 1.0e-9;
-          born[i] = 1.0 / pow(sum / PI4_3, oneThird);
+          born[i] = 1000.0;
           if (verboseRadii) {
-            logger.info(format(" I < 0; Resetting %d to %12.6f", i, born[i]));
+            logger.info(format(" Born integral < 0 for atom %d; set Born radius to %12.6f.", i, born[i]));
           }
           continue;
         }
+
         born[i] = 1.0 / pow(sum / PI4_3, oneThird);
-        if (verboseRadii) {
-          logger.info(
-              format(
-                  " Atom %s: Base radius %10.6f, Born radius %10.6f", atoms[i], baseRi, born[i]));
-        }
         if (born[i] < baseRi) {
           born[i] = baseRi;
+          if (verboseRadii) {
+            logger.info(format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f.", i, baseRi));
+          }
           continue;
         }
+
         if (isInfinite(born[i]) || isNaN(born[i])) {
           if (verboseRadii) {
-            logger.info(format(" NaN / Infinite: Resetting Base Radii %d %12.6f", i, baseRi));
+            logger.info(format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f.", i, baseRi));
           }
           born[i] = baseRi;
         }

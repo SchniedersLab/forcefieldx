@@ -489,7 +489,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     initializationRegion = new InitializationRegion(threadCount);
-    bornRadiiRegion = new BornRadiiRegion(threadCount);
+    bornRadiiRegion = new BornRadiiRegion(threadCount, forceField);
     permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount, forceField);
     inducedGKFieldRegion = new InducedGKFieldRegion(threadCount, forceField);
     bornGradRegion = new BornGradRegion(threadCount);

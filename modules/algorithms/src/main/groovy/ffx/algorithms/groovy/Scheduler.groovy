@@ -203,7 +203,7 @@ class Scheduler extends AlgorithmsScript {
     String ffxHome = System.getProperty("basedir")
 
     String java = javaHome + "/bin/java"
-    String ffx = ffxHome + "/bin/ffx-all.jar"
+    String ffx = ffxHome + "/bin/ffx-all-1.0.0-beta.jar"
     args = "-Xmx" + memory
 
     if (v) {

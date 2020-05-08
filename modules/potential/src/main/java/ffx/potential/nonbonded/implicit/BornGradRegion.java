@@ -242,6 +242,10 @@ public class BornGradRegion extends ParallelRegion {
               double de = integralDerivative(r, r2, ri, sk);
               double dbr = termi * de / r;
               de = dbr * sharedBornGrad.get(i);
+              if (isInfinite(de) || isNaN(de)) {
+                logger.warning(
+                    format(" Born radii chain rule term is unstable %d %d %16.8f", i, k, de));
+              }
               incrementGradient(i, k, de, xr, yr, zr, transOp);
 
               // Atom k being descreeened by atom i.
@@ -251,6 +255,11 @@ public class BornGradRegion extends ParallelRegion {
 
               final double si = ri * overlapScale[i];
               de = integralDerivative(r, r2, rk, si);
+              if (isInfinite(de) || isNaN(de)) {
+                logger.warning(
+                    format(" Born radii chain rule term is unstable %d %d %16.8f", k, i, de));
+              }
+
               dbr = termk * de / r;
               de = dbr * sharedBornGrad.get(k);
               incrementGradient(i, k, de, xr, yr, zr, transOp);
@@ -271,6 +280,13 @@ public class BornGradRegion extends ParallelRegion {
               // Atom i being descreeened by atom k.
               final double sk = rk * overlapScale[k];
               double de = integralDerivative(r, r2, ri, sk);
+
+              if (isInfinite(de) || isNaN(de)) {
+                logger.warning(
+                    format(" Born radii chain rule term is unstable %d %d %d %16.8f", iSymOp, i, k,
+                        de));
+              }
+
               double dbr = termi * de / r;
               de = dbr * sharedBornGrad.get(i);
               incrementGradient(i, k, de, xr, yr, zr, transOp);
