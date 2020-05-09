@@ -3732,12 +3732,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       int index = 0;
       for (Atom atom : atoms) {
         int isHydrogen = OpenMM_False;
+        double radius = rad[index++];
         if (atom.isHydrogen()) {
           isHydrogen = OpenMM_True;
+          radius = 0.0;
         }
         OpenMM_AmoebaGKCavitationForce_addParticle(
             amoebaCavitationForce,
-            rad[index++] * OpenMM_NmPerAngstrom,
+            radius * OpenMM_NmPerAngstrom,
             surfaceTension,
             0.0,
             atom.getCharge(),
@@ -4472,14 +4474,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
         useFactor *= lambdaScale;
 
+        double radius = rad[index];
         int isHydrogen = OpenMM_False;
         if (atom.isHydrogen()) {
           isHydrogen = OpenMM_True;
+          radius = 0.0;
         }
         OpenMM_AmoebaGKCavitationForce_setParticleParameters(
             amoebaCavitationForce,
             index,
-            rad[index] * OpenMM_NmPerAngstrom,
+            radius * OpenMM_NmPerAngstrom,
             surfaceTension * useFactor,
             0.0,
             atom.getCharge(),
