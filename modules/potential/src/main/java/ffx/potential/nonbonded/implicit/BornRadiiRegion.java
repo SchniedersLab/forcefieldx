@@ -120,7 +120,7 @@ public class BornRadiiRegion extends ParallelRegion {
       } else {
         double sum = sharedBorn.get(i);
         if (sum <= 0.0) {
-          born[i] = 1000.0;
+          born[i] = 50.0;
           if (verboseRadii) {
             logger.info(format(" Born integral < 0 for atom %d; set Born radius to %12.6f.", i, born[i]));
           }
