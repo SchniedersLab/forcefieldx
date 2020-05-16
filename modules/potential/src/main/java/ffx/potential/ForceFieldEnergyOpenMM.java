@@ -1148,12 +1148,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /** Free OpenMM memory for the current Context and Integrator. */
     void free() {
-      if (contextPointer != null) {
-        OpenMM_Context_destroy(contextPointer);
-      }
-      contextPointer = null;
       if (integrator != null) {
-        integrator.destroyIntegrator();
+        integrator.free();
+      }
+      if (contextPointer != null) {
+        logger.fine(" Free OpenMM Context.");
+        OpenMM_Context_destroy(contextPointer);
+        logger.fine(" Free OpenMM Context completed.");
+        contextPointer = null;
       }
     }
 
@@ -1494,7 +1496,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param dt Time step (psec).
      */
     private void createLangevinIntegrator(double temperature, double frictionCoeff, double dt) {
-      destroyIntegrator();
+      free();
       integratorPointer = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
       CompositeConfiguration properties = molecularAssembly.getProperties();
       if (properties.containsKey("integrator-seed")) {
@@ -1516,7 +1518,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param dt Time step (psec).
      */
     private void createVerletIntegrator(double dt) {
-      destroyIntegrator();
+      free();
       integratorPointer = OpenMM_VerletIntegrator_create(dt);
       OpenMM_Integrator_setConstraintTolerance(integratorPointer, constraintTolerance);
       logger.info("  Verlet Integrator");
@@ -1530,15 +1532,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param dt Time step (psec).
      */
     private void createCustomIntegrator(double dt) {
-      destroyIntegrator();
+      free();
       integratorPointer = OpenMM_CustomIntegrator_create(dt);
       OpenMM_Integrator_setConstraintTolerance(integratorPointer, constraintTolerance);
     }
 
     /** Destroy the integrator instance. */
-    private void destroyIntegrator() {
+    private void free() {
       if (integratorPointer != null) {
+        logger.fine(" Free OpenMM Integrator.");
         OpenMM_Integrator_destroy(integratorPointer);
+        logger.fine(" Free OpenMM Integrator completed.");
         integratorPointer = null;
       }
     }
@@ -1923,7 +1927,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /** Destroy the system. */
     public void free() {
       if (system != null) {
+        logger.fine(" Free OpenMM system.");
         OpenMM_System_destroy(system);
+        logger.fine(" Free OpenMM system completed.");
         system = null;
       }
     }
@@ -3732,12 +3738,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       int index = 0;
       for (Atom atom : atoms) {
         int isHydrogen = OpenMM_False;
+        double radius = rad[index++];
         if (atom.isHydrogen()) {
           isHydrogen = OpenMM_True;
+          radius = 0.0;
         }
         OpenMM_AmoebaGKCavitationForce_addParticle(
             amoebaCavitationForce,
-            rad[index++] * OpenMM_NmPerAngstrom,
+            radius * OpenMM_NmPerAngstrom,
             surfaceTension,
             0.0,
             atom.getCharge(),
@@ -4472,14 +4480,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
         useFactor *= lambdaScale;
 
+        double radius = rad[index];
         int isHydrogen = OpenMM_False;
         if (atom.isHydrogen()) {
           isHydrogen = OpenMM_True;
+          radius = 0.0;
         }
         OpenMM_AmoebaGKCavitationForce_setParticleParameters(
             amoebaCavitationForce,
             index,
-            rad[index] * OpenMM_NmPerAngstrom,
+            radius * OpenMM_NmPerAngstrom,
             surfaceTension * useFactor,
             0.0,
             atom.getCharge(),
