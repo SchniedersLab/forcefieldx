@@ -92,6 +92,8 @@ public class BornGradRegion extends ParallelRegion {
   private double[] overlapScale;
   /** Flag to indicate if an atom should be included. */
   private boolean[] use;
+  /** If true, the descreening size of atoms is based on their force field vdW radius */
+  private final boolean descreenWithVDW;
   /** If true, hydrogen atoms displace solvent */
   private final boolean descreenWithHydrogen;
   /** If true, bonded atoms displace solvent */
@@ -112,6 +114,7 @@ public class BornGradRegion extends ParallelRegion {
     for (int i = 0; i < nt; i++) {
       bornCRLoop[i] = new BornCRLoop();
     }
+    descreenWithVDW = forceField.getBoolean("DESCREEN_VDW", false);
     descreenWithHydrogen = forceField.getBoolean("DESCREEN_HYDROGEN", true);
     descreen12 = forceField.getBoolean("DESCREEN_12", true);
   }
@@ -216,7 +219,8 @@ public class BornGradRegion extends ParallelRegion {
           }
 
           final double ri = baseRadius[i];
-          assert (ri > 0.0);
+          final double descreenRi = (descreenWithVDW) ? atoms[i].getVDWType().radius / 2.0 : ri;
+          final double scaledRi = descreenRi * overlapScale[i];
           final double xi = x[i];
           final double yi = y[i];
           final double zi = z[i];
@@ -229,8 +233,7 @@ public class BornGradRegion extends ParallelRegion {
             if (!nativeEnvironmentApproximation && !use[k]) {
               continue;
             }
-            final double rk = baseRadius[k];
-            assert (rk > 0.0);
+            final double baseRk = baseRadius[k];
             if (k != i) {
               if (!descreen12 && atoms[i].isBonded(atoms[k])) {
                 // No descreening between bonded atoms.
@@ -251,8 +254,10 @@ public class BornGradRegion extends ParallelRegion {
               // Atom i being descreeened by atom k.
               if (rbi < 50.0) {
                 if (descreenWithHydrogen || !atoms[k].isHydrogen()) {
-                  final double sk = rk * overlapScale[k];
-                  double de = integralDerivative(r, r2, ri, sk);
+                  final double descreenRk =
+                      (descreenWithVDW) ? atoms[k].getVDWType().radius / 2.0 : baseRk;
+                  final double scaledRk = descreenRk * overlapScale[k];
+                  double de = integralDerivative(r, r2, ri, scaledRk);
 //                logger.info(format(
 //                    " Born radii chain rule term %d %d r=%16.8f ri=%16.8f sk=%16.8f de=%16.8f", i, k,
 //                    r, ri, sk, de));
@@ -276,8 +281,7 @@ public class BornGradRegion extends ParallelRegion {
                 if (descreenWithHydrogen || !atoms[i].isHydrogen()) {
                   double termk = PI4_3 / (rbk * rbk * rbk);
                   termk = factor / pow(termk, (4.0 * oneThird));
-                  final double si = ri * overlapScale[i];
-                  double de = integralDerivative(r, r2, rk, si);
+                  double de = integralDerivative(r, r2, baseRk, scaledRi);
 //                logger.info(format(
 //                    " Born radii chain rule term %d %d r=%16.8f ri=%16.8f sk=%16.8f de=%16.8f", k, i,
 //                    r, rk, si, de));
@@ -309,15 +313,15 @@ public class BornGradRegion extends ParallelRegion {
                 final double r = sqrt(r2);
 
                 // Atom i being descreeened by atom k.
-                final double sk = rk * overlapScale[k];
-                double de = integralDerivative(r, r2, ri, sk);
-
+                final double descreenRk =
+                    (descreenWithVDW) ? atoms[k].getVDWType().radius / 2.0 : baseRk;
+                final double scaledRk = descreenRk * overlapScale[k];
+                double de = integralDerivative(r, r2, ri, scaledRk);
                 if (isInfinite(de) || isNaN(de)) {
                   logger.warning(
                       format(" Born radii chain rule term is unstable %d %d %d %16.8f", iSymOp, i, k,
                           de));
                 }
-
                 double dbr = termi * de / r;
                 de = dbr * sharedBornGrad.get(i);
                 incrementGradient(i, k, de, xr, yr, zr, transOp);
