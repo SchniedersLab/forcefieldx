@@ -119,12 +119,6 @@ class Superpose extends PotentialScript {
       description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
 
-  private File baseDir = null
-
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
-  }
-
   public ForceFieldEnergy forceFieldEnergy = null
   private File outFile
   private XYZFilter outputFilter
@@ -132,12 +126,27 @@ class Superpose extends PotentialScript {
   double[][] distMatrix
 
   /**
+   * Superpose Constructor.
+   */
+  Superpose() {
+    this(new Binding())
+  }
+
+  /**
+   * Superpose Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  Superpose(Binding binding) {
+    super(binding)
+  }
+
+  /**
    * Execute the script.
    */
   @Override
   Superpose run() {
     if (!init()) {
-      return null
+      return this
     }
 
     MolecularAssembly assembly2 = null
@@ -150,7 +159,7 @@ class Superpose extends PotentialScript {
       }
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     forceFieldEnergy = activeAssembly.getPotentialEnergy()

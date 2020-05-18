@@ -69,10 +69,19 @@ class RGNtoPDB extends PotentialScript {
       description = 'RGN output and a FASTA file.')
   List<String> filenames = null
 
-  private File baseDir = null
+  /**
+   * RGNtoPDB Constructor.
+   */
+  RGNtoPDB() {
+    this(new Binding())
+  }
 
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * RGNtoPDB Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  RGNtoPDB(Binding binding) {
+    super(binding)
   }
 
   /**
@@ -82,12 +91,12 @@ class RGNtoPDB extends PotentialScript {
   RGNtoPDB run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     if (filenames == null || filenames.size() < 2) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     String rgnName = filenames.get(0)

@@ -80,13 +80,28 @@ class Gradient extends PotentialScript {
   public int nFailures = 0
 
   /**
+   * Gradient constructor.
+   */
+  Gradient() {
+    this(new Binding())
+  }
+
+  /**
+   * Gradient constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Gradient(Binding binding) {
+    super(binding)
+  }
+
+  /**
    * Execute the script.
    */
   @Override
   Gradient run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     String modelFilename
@@ -96,7 +111,7 @@ class Gradient extends PotentialScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     } else {
       modelFilename = activeAssembly.getFile().getAbsolutePath()
     }

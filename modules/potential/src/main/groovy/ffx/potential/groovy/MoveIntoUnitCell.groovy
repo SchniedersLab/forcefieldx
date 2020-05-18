@@ -69,10 +69,19 @@ class MoveIntoUnitCell extends PotentialScript {
   public double[][] origCoordinates = null
   public double[][] unitCellCoordinates = null
 
-  private File baseDir = null
+  /**
+   * MoveIntoUnitCell Constructor.
+   */
+  MoveIntoUnitCell() {
+    this(new Binding())
+  }
 
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * MoveIntoUnitCell Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  MoveIntoUnitCell(Binding binding) {
+    super(binding)
   }
 
   /**
@@ -82,7 +91,7 @@ class MoveIntoUnitCell extends PotentialScript {
   MoveIntoUnitCell run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     if (filenames != null && filenames.size() > 0) {
@@ -90,7 +99,7 @@ class MoveIntoUnitCell extends PotentialScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     } else {
       assemblies = [activeAssembly]
     }
@@ -148,12 +157,9 @@ class MoveIntoUnitCell extends PotentialScript {
     } else {
       return Arrays.stream(assemblies).
           filter {a -> a != null
-          }.
-          map {a -> a.getPotentialEnergy()
-          }.
-          filter {e -> e != null
-          }.
-          collect(Collectors.toList())
+          }.map {a -> a.getPotentialEnergy()
+      }.filter {e -> e != null
+      }.collect(Collectors.toList())
     }
   }
 }

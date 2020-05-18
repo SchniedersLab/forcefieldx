@@ -71,18 +71,33 @@ class PrmToProperty extends PotentialScript {
   private List<String> filenames = null
 
   /**
+   * PrmToProperty Constructor.
+   */
+  PrmToProperty() {
+    this(new Binding())
+  }
+
+  /**
+   * PrmToProperty Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  PrmToProperty(Binding binding) {
+    super(binding)
+  }
+
+  /**
    * Execute the script.
    */
   @Override
   PrmToProperty run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     if (filenames == null || filenames.size() < 1) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     // Read in the command line file.
@@ -102,7 +117,7 @@ class PrmToProperty extends PotentialScript {
     }
 
     if (forceField != null) {
-      StringBuffer sb = forceField.toStringBuffer();
+      StringBuffer sb = forceField.toStringBuffer()
       if (tinker) {
         String string = sb.toString()
         logger.info(string.replace('\\', ' '))

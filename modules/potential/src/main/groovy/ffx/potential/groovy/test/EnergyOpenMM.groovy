@@ -83,10 +83,25 @@ class EnergyOpenMM extends PotentialScript {
       description = 'The atomic coordinate file in PDB or XYZ format.')
   private List<String> filenames = null
 
+  /**
+   * EnergyOpenMM Constructor.
+   */
+  EnergyOpenMM() {
+    this(new Binding())
+  }
+
+  /**
+   * EnergyOpenMM Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  EnergyOpenMM(Binding binding) {
+    super(binding)
+  }
+
   @Override
   EnergyOpenMM run() {
     if (!init()) {
-      return null
+      return this
     }
 
     if (filenames != null && filenames.size() > 0) {
@@ -94,7 +109,7 @@ class EnergyOpenMM extends PotentialScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     String filename = activeAssembly.getFile().getAbsolutePath()
@@ -132,8 +147,8 @@ class EnergyOpenMM extends PotentialScript {
 
     ForceFieldEnergyOpenMM feOMM = (ForceFieldEnergyOpenMM) forceFieldEnergy
 
-    double dE = feOMM.energyAndGradientFFX(x, gFFX, true);
-    dE = dE - feOMM.energyAndGradient(x, gOMM, true);
+    double dE = feOMM.energyAndGradientFFX(x, gFFX, true)
+    dE = dE - feOMM.energyAndGradient(x, gOMM, true)
     logger.info(format(" Difference in energy: %14.8g kcal/mol", dE))
     int nActAts = (int) (nVars / 3)
 

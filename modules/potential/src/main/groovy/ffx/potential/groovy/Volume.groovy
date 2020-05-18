@@ -127,12 +127,6 @@ class Volume extends PotentialScript {
       description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
 
-  private File baseDir = null
-
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
-  }
-
   /**
    * JUnit Testing Variables
    */
@@ -140,9 +134,23 @@ class Volume extends PotentialScript {
   public double totalSurfaceArea = 0.0
 
   /**
+   * Volume Constructor.
+   */
+  Volume() {
+    this(new Binding())
+  }
+
+  /**
+   * Volume Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  Volume(Binding binding) {
+    super(binding)
+  }
+
+  /**
    * Execute the script.
    */
-
   @Override
   Volume run() {
     if (!init()) {

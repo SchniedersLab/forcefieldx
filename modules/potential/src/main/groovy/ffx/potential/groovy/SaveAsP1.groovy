@@ -65,10 +65,19 @@ class SaveAsP1 extends PotentialScript {
       description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
 
-  private File baseDir = null
+  /**
+   * SaveAsP1 Constructor.
+   */
+  SaveAsP1() {
+    this(new Binding())
+  }
 
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * SaveAsP1 Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  SaveAsP1(Binding binding) {
+    super(binding)
   }
 
   /**
@@ -77,7 +86,7 @@ class SaveAsP1 extends PotentialScript {
   @Override
   SaveAsP1 run() {
     if (!init()) {
-      return null
+      return this
     }
 
     MolecularAssembly[] assemblies
@@ -86,7 +95,7 @@ class SaveAsP1 extends PotentialScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     String modelFilename = activeAssembly.getFile().getAbsolutePath()

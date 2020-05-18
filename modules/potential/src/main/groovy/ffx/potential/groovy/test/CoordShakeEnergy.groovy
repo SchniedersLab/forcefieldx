@@ -92,7 +92,20 @@ class CoordShakeEnergy extends PotentialScript {
   @Parameters(arity = "1..*", paramLabel = "file", description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
 
-  Double energy = 0.0
+  /**
+   * CoordShakeEnergy Constructor.
+   */
+  CoordShakeEnergy() {
+    this(new Binding())
+  }
+
+  /**
+   * CoordShakeEnergy Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  CoordShakeEnergy(Binding binding) {
+    super(binding)
+  }
 
   /**
    * Execute the script.
@@ -101,14 +114,14 @@ class CoordShakeEnergy extends PotentialScript {
   CoordShakeEnergy run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     if (filenames != null && filenames.size() == 1) {
       activeAssembly = potentialFunctions.open(filenames.get(0))
     } else if (activeAssembly == null || filenames.size() != 1) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     String modelFilename = activeAssembly.getFile().getAbsolutePath()

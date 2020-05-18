@@ -45,6 +45,7 @@ import ffx.algorithms.AlgorithmUtils;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.utilities.BaseScript;
+import groovy.lang.Binding;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +72,14 @@ public class AlgorithmsScript extends BaseScript {
 
   /** The directory in which to place output files. Mostly for tests. */
   protected File saveDir;
+
+  public AlgorithmsScript() {
+    this(new Binding());
+  }
+
+  public AlgorithmsScript(Binding binding) {
+    super(binding);
+  }
 
   /**
    * Reclaims resources associated with all Potential objects associated with this script.
@@ -110,20 +119,23 @@ public class AlgorithmsScript extends BaseScript {
       return false;
     }
 
-    if (context.hasVariable("functions")) {
-      algorithmFunctions = (AlgorithmFunctions) context.getVariable("functions");
+    Binding binding = getBinding();
+
+    if (binding.hasVariable("functions")) {
+      algorithmFunctions = (AlgorithmFunctions) binding.getVariable("functions");
     } else {
       algorithmFunctions = new AlgorithmUtils();
+      binding.setVariable("functions", algorithmFunctions);
     }
 
     activeAssembly = null;
-    if (context.hasVariable("active")) {
-      activeAssembly = (MolecularAssembly) context.getVariable("active");
+    if (binding.hasVariable("active")) {
+      activeAssembly = (MolecularAssembly) binding.getVariable("active");
     }
 
     algorithmListener = null;
-    if (context.hasVariable("listener")) {
-      algorithmListener = (AlgorithmListener) context.getVariable("listener");
+    if (binding.hasVariable("listener")) {
+      algorithmListener = (AlgorithmListener) binding.getVariable("listener");
     }
 
     return true;

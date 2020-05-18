@@ -92,6 +92,21 @@ class MultiResidue extends Script {
   }
 
   /**
+   * MultiResidue Constructor.
+   */
+  MultiResidue() {
+    this(new Binding())
+  }
+
+  /**
+   * MultiResidue Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  MultiResidue(Binding binding) {
+    super(binding)
+  }
+
+  /**
    * Execute the script.
    */
   @Override
@@ -104,7 +119,7 @@ class MultiResidue extends Script {
     cli.parseFromInstance(options, args)
     if (options.help) {
       cli.usage()
-      return null
+      return this
     }
 
     List<String> arguments = options.filenames
@@ -113,7 +128,8 @@ class MultiResidue extends Script {
       // Read in command line.
       modelFilename = arguments.get(0)
     } else if (active == null) {
-      return cli.usage()
+      cli.usage()
+      return this
     } else {
       modelFilename = active.getFile()
     }
@@ -157,7 +173,7 @@ class MultiResidue extends Script {
 
     if (residue == null) {
       logger.info(" Chain " + chain + " residue " + resID + " was not found.")
-      return
+      return this
     }
 
     ResidueType type = residue.getResidueType()

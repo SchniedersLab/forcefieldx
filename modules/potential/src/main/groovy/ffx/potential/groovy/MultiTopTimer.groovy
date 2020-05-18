@@ -80,11 +80,26 @@ class MultiTopTimer extends PotentialScript {
   MolecularAssembly[] topologies
   private Potential potential
 
+  /**
+   * MultiTopTimer Constructor.
+   */
+  MultiTopTimer() {
+    this(new Binding())
+  }
+
+  /**
+   * MultiTopTimer Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  MultiTopTimer(Binding binding) {
+    super(binding)
+  }
+
   @Override
   MultiTopTimer run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     List<String> arguments = filenames
@@ -121,7 +136,7 @@ class MultiTopTimer extends PotentialScript {
       MolecularAssembly molecularAssembly = potentialFunctions.getActiveAssembly()
       if (molecularAssembly == null) {
         logger.info(helpString())
-        return null
+        return this
       }
       arguments = new ArrayList<>()
       arguments.add(molecularAssembly.getFile().getName())

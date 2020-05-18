@@ -102,10 +102,19 @@ class CIFtoXYZ extends PotentialScript {
       description = "A CIF file and an XYZ file (currently limited to one molecule).")
   List<String> filenames = null
 
-  private File baseDir = null
+  /**
+   * CIFtoXYZ Constructor.
+   */
+  CIFtoXYZ() {
+    this(new Binding())
+  }
 
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * CIFtoXYZ Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  CIFtoXYZ(Binding binding) {
+    super(binding)
   }
 
   /**
@@ -118,7 +127,7 @@ class CIFtoXYZ extends PotentialScript {
     System.setProperty("cdk.logging.level", "fatal")
 
     if (!init()) {
-      return null
+      return this
     }
 
     CifCoreFile cifFile
@@ -128,7 +137,7 @@ class CIFtoXYZ extends PotentialScript {
       cifFile = CifIO.readFromPath(path).as(StandardSchemata.CIF_CORE)
     } else {
       logger.info(helpString())
-      return null
+      return this
     }
 
     String modelFilename = path.toAbsolutePath().toString()
@@ -272,12 +281,12 @@ class CIFtoXYZ extends PotentialScript {
         for (IAtom atom : xyzCDKAtoms.atoms()) {
           String atomTypeName = atom.getAtomTypeName()
           if (atomTypeName == null || atomTypeName.length() == 0) {
-            IAtomType[] types = factory.getAtomTypes(atom.getSymbol());
+            IAtomType[] types = factory.getAtomTypes(atom.getSymbol())
             if (types.length > 0) {
               IAtomType atomType = types[0]
               atom.setAtomTypeName(atomType.getAtomTypeName())
             } else {
-              logger.info(" No atom type found for " + atom.toString());
+              logger.info(" No atom type found for " + atom.toString())
             }
           }
           factory.configure(atom)
@@ -290,12 +299,12 @@ class CIFtoXYZ extends PotentialScript {
         for (IAtom atom : cifCDKAtoms.atoms()) {
           String atomTypeName = atom.getAtomTypeName()
           if (atomTypeName == null || atomTypeName.length() == 0) {
-            IAtomType[] types = factory.getAtomTypes(atom.getSymbol());
+            IAtomType[] types = factory.getAtomTypes(atom.getSymbol())
             if (types.length > 0) {
               IAtomType atomType = types[0]
               atom.setAtomTypeName(atomType.getAtomTypeName())
             } else {
-              logger.info(" No atom type found for " + atom.toString());
+              logger.info(" No atom type found for " + atom.toString())
             }
           }
           factory.configure(atom)

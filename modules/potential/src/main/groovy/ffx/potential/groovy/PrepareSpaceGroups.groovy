@@ -119,8 +119,22 @@ class PrepareSpaceGroups extends PotentialScript {
   List<String> filenames = null
 
   public int numberCreated = 0
-  public File baseDir = null
   private ForceFieldEnergy energy
+
+  /**
+   * PrepareSpaceGroups Constructor.
+   */
+  PrepareSpaceGroups() {
+    this(new Binding())
+  }
+
+  /**
+   * PrepareSpaceGroups Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  PrepareSpaceGroups(Binding binding) {
+    super(binding)
+  }
 
   /**
    * Execute the script.
@@ -196,6 +210,7 @@ class PrepareSpaceGroups extends PotentialScript {
       // Create the directory.
       String sgDirName = spacegroup.shortName.replace('/', '_')
 
+      File baseDir = baseDir
       File sgDir
       if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
         sgDir = new File(FilenameUtils.getFullPath(coordFile.getAbsolutePath()) + sgDirName)

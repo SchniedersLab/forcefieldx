@@ -80,9 +80,6 @@ public abstract class BaseScript extends Script {
    */
   public final Ansi color;
 
-  /** The Groovy Binding contains defined variables, closures, etc. */
-  public Binding context;
-
   /** The array of args passed into the Script. */
   public String[] args;
 
@@ -106,7 +103,8 @@ public abstract class BaseScript extends Script {
   public boolean help;
 
   /** Default constructor for an FFX Script. */
-  public BaseScript() {
+  public BaseScript(Binding binding) {
+    super(binding);
     if (GraphicsEnvironment.isHeadless()) {
       color = Ansi.ON;
     } else {
@@ -242,10 +240,10 @@ public abstract class BaseScript extends Script {
    * @return boolean Returns true if the script should continue and false to exit.
    */
   public boolean init() {
-    context = getBinding();
+    Binding binding = getBinding();
 
     // The args property could either be a list or an array of String arguments.
-    Object arguments = context.getProperty("args");
+    Object arguments = binding.getProperty("args");
     if (arguments instanceof List<?>) {
       List<?> list = (List<?>) arguments;
       int numArgs = list.size();
@@ -254,7 +252,7 @@ public abstract class BaseScript extends Script {
         args[i] = (String) list.get(i);
       }
     } else {
-      args = (String[]) context.getProperty("args");
+      args = (String[]) binding.getProperty("args");
     }
 
     CommandLine commandLine = new CommandLine(this);

@@ -35,34 +35,33 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.groovy;
+package ffx.potential.utils;
 
-import ffx.potential.utils.PotentialTest;
-import org.junit.Test;
+import ffx.potential.cli.PotentialScript;
+import ffx.utilities.BaseFFXTest;
+import groovy.lang.Binding;
 
-/** Test the Energy script. */
-public class SaveAsP1Test extends PotentialTest {
+/**
+ * PotentialTest extends BaseFFXTest to include support for: 1) Creating a Groovy Binding before each
+ * test. 2) Destroying created potentials after each test.
+ */
+public class PotentialTest extends BaseFFXTest {
 
-  @Test
-  public void testSaveAsP1() {
-    // Set-up the input arguments for the SaveAsP1 script.
-    String[] args = {"src/main/java/ffx/potential/structures/1n7s.P212121.xyz"};
-    binding.setVariable("args", args);
-    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+  public PotentialScript potentialScript;
+  public Binding binding;
 
-    // Construct and evaluate the SaveAsP1 script.
-    SaveAsP1 saveAsP1 = new SaveAsP1(binding).run();
-    potentialScript = saveAsP1;
+  @Override
+  public void beforeTest() {
+    super.beforeTest();
+    binding = new Binding();
   }
 
-  @Test
-  public void testSaveAsP1Help() {
-    // Set-up the input arguments for the SaveAsP1 script.
-    String[] args = {"-h"};
-    binding.setVariable("args", args);
-
-    // Construct and evaluate the SaveAsP1 script.
-    SaveAsP1 saveAsP1 = new SaveAsP1(binding).run();
-    potentialScript = saveAsP1;
+  @Override
+  public void afterTest() {
+    super.afterTest();
+    // The script could be null if the test was skipped (e.g. no CUDA environment for OpenMM).
+    if (potentialScript != null) {
+      potentialScript.destroyPotentials();
+    }
   }
 }

@@ -40,7 +40,6 @@ package ffx.potential.groovy
 
 import ffx.crystal.Crystal
 import ffx.numerics.math.SummaryStatistics
-import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.WriteoutOptions
@@ -102,13 +101,20 @@ class Density extends PotentialScript {
       description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
 
-  private File baseDir = null
-
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * Density constructor.
+   */
+  Density() {
+    this(new Binding())
   }
 
-  public ForceFieldEnergy forceFieldEnergy = null
+  /**
+   * Density constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Density(Binding binding) {
+    super(binding)
+  }
 
   /**
    * Execute the script.
@@ -116,12 +122,12 @@ class Density extends PotentialScript {
   @Override
   Density run() {
     if (!init()) {
-      return null
+      return this
     }
 
     if (filenames == null || filenames.isEmpty() || stride < 1) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     for (String filename : filenames) {

@@ -91,10 +91,19 @@ class SaveAsXYZ extends PotentialScript {
       description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
 
-  private File baseDir = null
+  /**
+   * SaveAsXYZ Constructor.
+   */
+  SaveAsXYZ() {
+    this(new Binding())
+  }
 
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * SaveAsXYZ Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  SaveAsXYZ(Binding binding) {
+    super(binding)
   }
 
   /**
@@ -104,7 +113,7 @@ class SaveAsXYZ extends PotentialScript {
   SaveAsXYZ run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     if (filenames != null && filenames.size() > 0) {
@@ -112,7 +121,7 @@ class SaveAsXYZ extends PotentialScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     String modelFilename = activeAssembly.getFile().getAbsolutePath()
