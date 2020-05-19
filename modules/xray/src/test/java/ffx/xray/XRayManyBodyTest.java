@@ -37,7 +37,7 @@
 // ******************************************************************************
 package ffx.xray;
 
-import ffx.algorithms.misc.PJDependentTest;
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.numerics.Potential;
 import ffx.utilities.DirectoryUtils;
 import ffx.xray.groovy.ManyBody;
@@ -57,7 +57,7 @@ import org.junit.Test;
  *
  * @author Mallory R. Tollefson
  */
-public class XRayManyBodyTest extends PJDependentTest {
+public class XRayManyBodyTest extends AlgorithmsTest {
 
   private Binding binding;
   private ManyBody manyBody;
@@ -95,7 +95,7 @@ public class XRayManyBodyTest extends PJDependentTest {
     Path path = null;
     try {
       path = Files.createTempDirectory("ManyBodyTest");
-      manyBody.setSaveDir(path.toFile());
+      manyBody.setBaseDir(path.toFile());
     } catch (IOException e) {
       Assert.fail(" Could not create a temporary directory.");
     }

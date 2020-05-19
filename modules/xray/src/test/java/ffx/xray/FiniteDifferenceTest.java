@@ -50,7 +50,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.BaseFFXTest;
+import ffx.utilities.FFXTest;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.MTZFilter;
@@ -66,7 +66,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Timothy D. Fenn */
 @RunWith(Parameterized.class)
-public class FiniteDifferenceTest extends BaseFFXTest {
+public class FiniteDifferenceTest extends FFXTest {
 
   private final boolean ciOnly;
   private final Atom[] atomArray;

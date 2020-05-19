@@ -48,7 +48,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.BaseFFXTest;
+import ffx.utilities.FFXTest;
 import ffx.xray.parsers.CIFFilter;
 import ffx.xray.parsers.MTZFilter;
 import java.io.File;
@@ -64,7 +64,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Timothy D. Fenn and Michael J. Schnieders */
 @RunWith(Parameterized.class)
-public class XRayMinimizeTest extends BaseFFXTest {
+public class XRayMinimizeTest extends FFXTest {
 
   private static final Logger logger = Logger.getLogger(XRayMinimizeTest.class.getName());
   private final String info;

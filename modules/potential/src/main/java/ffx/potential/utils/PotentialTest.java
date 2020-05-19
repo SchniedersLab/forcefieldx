@@ -38,14 +38,17 @@
 package ffx.potential.utils;
 
 import ffx.potential.cli.PotentialScript;
-import ffx.utilities.BaseFFXTest;
+import ffx.utilities.FFXTest;
 import groovy.lang.Binding;
 
 /**
- * PotentialTest extends BaseFFXTest to include support for: 1) Creating a Groovy Binding before each
- * test. 2) Destroying created potentials after each test.
+ * PotentialTest extends BaseFFXTest to include support for:
+ * <br>
+ * 1) Creating a Groovy Binding before each test.
+ * <br>
+ * 2) Destroying created potentials after each test.
  */
-public class PotentialTest extends BaseFFXTest {
+public class PotentialTest extends FFXTest {
 
   public PotentialScript potentialScript;
   public Binding binding;

@@ -46,7 +46,7 @@ import ffx.potential.nonbonded.ParticleMeshEwald.SCFAlgorithm;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.parameters.ForceField.ForceFieldName;
-import ffx.utilities.BaseFFXTest;
+import ffx.utilities.FFXTest;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
@@ -67,7 +67,7 @@ import org.junit.runners.Parameterized.Parameters;
  * manually titrated input files. (3) Lambda paths and gradients are sufficiently smooth.
  */
 @RunWith(Parameterized.class)
-public class ExtendedVariableTest extends BaseFFXTest {
+public class ExtendedVariableTest extends FFXTest {
 
   private static final Logger logger = Logger.getLogger(ExtendedVariableTest.class.getName());
 
@@ -76,7 +76,7 @@ public class ExtendedVariableTest extends BaseFFXTest {
 
   private static final String dilysine = "lys-lys.pdb";
   private static final String[] dilysStates = {
-    "lyd-lyd.pdb", "lyd-lys.pdb", "lys-lyd.pdb", "lys-lys.pdb"
+      "lyd-lyd.pdb", "lyd-lys.pdb", "lys-lyd.pdb", "lys-lys.pdb"
   };
   private static final String dilysineCryst = "lys-lys-cryst.pdb";
   private static final String[] dilysStatesCryst = {

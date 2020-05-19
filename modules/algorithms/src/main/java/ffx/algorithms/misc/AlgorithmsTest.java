@@ -38,22 +38,25 @@
 package ffx.algorithms.misc;
 
 import edu.rit.pj.Comm;
-import ffx.utilities.BaseFFXTest;
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.utilities.FFXTest;
+import groovy.lang.Binding;
 import java.util.logging.Level;
 import org.junit.BeforeClass;
 
 /**
- * Abstract PJDependentTest class.
+ * Base class for Algorithm tests.
  *
  * @author Michael J. Schnieders
  */
-public abstract class PJDependentTest extends BaseFFXTest {
+public abstract class AlgorithmsTest extends FFXTest {
 
-  /** beforeClass. */
+  public AlgorithmsScript algorithmsScript;
+  public Binding binding;
+
+  /** Initialize the PJ communication layer. */
   @BeforeClass
   public static void beforeClass() {
-    BaseFFXTest.beforeClass();
-    // Initialize Parallel Java
     try {
       Comm.world();
     } catch (IllegalStateException ise) {
@@ -63,9 +66,23 @@ public abstract class PJDependentTest extends BaseFFXTest {
       } catch (Exception e) {
         String message = " Exception starting up the Parallel Java communication layer.";
         logger.log(Level.WARNING, message, e.toString());
-        message = " Skipping rotamer optimization test.";
-        logger.log(Level.WARNING, message, e.toString());
       }
     }
   }
+
+  @Override
+  public void beforeTest() {
+    super.beforeTest();
+    binding = new Binding();
+  }
+
+  @Override
+  public void afterTest() {
+    super.afterTest();
+    // The script could be null if the test was skipped (e.g. no CUDA environment for OpenMM).
+    if (algorithmsScript != null) {
+      algorithmsScript.destroyPotentials();
+    }
+  }
+
 }

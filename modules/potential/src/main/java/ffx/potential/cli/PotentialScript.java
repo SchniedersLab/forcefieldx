@@ -41,7 +41,7 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.BaseScript;
+import ffx.utilities.FFXScript;
 import groovy.lang.Binding;
 import java.io.File;
 import java.util.ArrayList;
@@ -55,7 +55,7 @@ import org.apache.log4j.PropertyConfigurator;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public abstract class PotentialScript extends BaseScript {
+public abstract class PotentialScript extends FFXScript {
 
   /** An instance of PotentialFunctions passed into the current context. */
   public PotentialsFunctions potentialFunctions;

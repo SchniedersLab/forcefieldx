@@ -106,11 +106,29 @@ class Scheduler extends AlgorithmsScript {
       description = 'String value of -Xmx to pass to worker nodes.')
   String memory = "2G"
 
+  /**
+   * Scheduler Constructor.
+   */
+  Scheduler() {
+    this(new Binding())
+  }
+
+  /**
+   * Scheduler Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Scheduler(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   Scheduler run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     // Determine the number of CPUs per node

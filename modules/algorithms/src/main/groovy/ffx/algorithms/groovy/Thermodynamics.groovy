@@ -58,6 +58,8 @@ import picocli.CommandLine.Parameters
 
 import java.util.stream.Collectors
 
+import static java.lang.String.format
+
 /**
  * The Thermodynamics script uses the Transition-Tempered Orthogonal Space Random Walk
  * algorithm to estimate a free energy.
@@ -127,12 +129,30 @@ class Thermodynamics extends AlgorithmsScript {
     this.additionalProperties = additionalProps
   }
 
+  /**
+   * Thermodynamics Constructor.
+   */
+  Thermodynamics() {
+    this(new Binding())
+  }
+
+  /**
+   * Thermodynamics Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Thermodynamics(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   Thermodynamics run() {
 
     // Begin boilerplate "make a topology" code.
     if (!init()) {
-      return null
+      return this
     }
 
     List<String> arguments = filenames
@@ -186,16 +206,16 @@ class Thermodynamics extends AlgorithmsScript {
     if (size > 1) {
       List<File> rankedFiles = new ArrayList<>(nArgs)
       String rankDirName = FilenameUtils.getFullPath(filePathNoExtension)
-      rankDirName = String.format("%s%d", rankDirName, rank)
+      rankDirName = format("%s%d", rankDirName, rank)
       File rankDirectory = new File(rankDirName)
       if (!rankDirectory.exists()) {
         rankDirectory.mkdir()
       }
       rankDirName = rankDirName + File.separator
-      withRankName = String.format("%s%s", rankDirName, FilenameUtils.getName(filePathNoExtension))
+      withRankName = format("%s%s", rankDirName, FilenameUtils.getName(filePathNoExtension))
 
       for (File structureFile : structureFiles) {
-        rankedFiles.add(new File(String.format("%s%s", rankDirName,
+        rankedFiles.add(new File(format("%s%s", rankDirName,
             FilenameUtils.getName(structureFile.getName()))))
       }
       structureFiles = rankedFiles
@@ -212,13 +232,13 @@ class Thermodynamics extends AlgorithmsScript {
       MolecularAssembly molecularAssembly = algorithmFunctions.getActiveAssembly()
       if (molecularAssembly == null) {
         logger.info(helpString())
-        return null
+        return this
       }
       arguments = new ArrayList<>()
       arguments.add(molecularAssembly.getFile().getName())
       topologyList.add(alchemical.processFile(topology, molecularAssembly, 0))
     } else {
-      logger.info(String.format(" Initializing %d topologies...", nArgs))
+      logger.info(format(" Initializing %d topologies...", nArgs))
       for (int i = 0; i < nArgs; i++) {
         topologyList.add(multidynamics.openFile(algorithmFunctions, topology,
             threadsPer, arguments.get(i), i, alchemical, structureFiles.get(i), rank))
@@ -240,14 +260,14 @@ class Thermodynamics extends AlgorithmsScript {
       case ThermodynamicsOptions.ThermodynamicsAlgorithm.FIXED:
         fixedAlg:
         {
-          sb.append("Fixed-Lambda Sampling at Lambda ").append(String.format("%8.3f ",
+          sb.append("Fixed-Lambda Sampling at Lambda ").append(format("%8.3f ",
               alchemical.getInitialLambda(true)))
         }
         break
       default:
         defAlg:
         {
-          sb.append("Unknown algorithm starting at Lambda ").append(String.format("%8.3f",
+          sb.append("Unknown algorithm starting at Lambda ").append(format("%8.3f",
               alchemical.getInitialLambda(true)))
         }
         break

@@ -71,18 +71,33 @@ class ManyBody extends AlgorithmsScript {
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
   private List<String> filenames
 
-  private File baseDir = null
-  boolean testing = null
-
   ForceFieldEnergy potentialEnergy
-
+  boolean testing = null
   boolean monteCarloTesting = false
 
+  /**
+   * ManyBody Constructor.
+   */
+  ManyBody() {
+    this(new Binding())
+  }
+
+  /**
+   * ManyBody Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  ManyBody(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   ManyBody run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     String priorGKwarn = System.getProperty("gk-suppressWarnings")
@@ -98,7 +113,7 @@ class ManyBody extends AlgorithmsScript {
       }
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
@@ -182,6 +197,9 @@ class ManyBody extends AlgorithmsScript {
     return potentialEnergy
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   List<Potential> getPotentials() {
     List<Potential> potentials

@@ -40,13 +40,9 @@ package ffx.algorithms.groovy;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.misc.PJDependentTest;
-import groovy.lang.Binding;
+import ffx.algorithms.misc.AlgorithmsTest;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.logging.Logger;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -54,19 +50,15 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Hernan V Bernabe */
 @RunWith(Parameterized.class)
-public class DynamicsRESPANVETest extends PJDependentTest {
+public class DynamicsRESPANVETest extends AlgorithmsTest {
 
-  private static final Logger logger = Logger.getLogger(DynamicsRESPANVETest.class.getName());
   private String info;
   private String filename;
   private double startingTotalEnergy;
   // Tight tolerance on energy conservation.
   private double tolerance = 0.01;
-  private Binding binding;
-  private Dynamics dynamics;
 
   public DynamicsRESPANVETest(String info, String filename, double startingTotalEnergy) {
-
     this.info = info;
     this.filename = filename;
     this.startingTotalEnergy = startingTotalEnergy;
@@ -76,25 +68,12 @@ public class DynamicsRESPANVETest extends PJDependentTest {
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {
-          {
-            "Acetamide RESPA NVE", // info
-            "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
-            -25.2085 // startingTotalEnergy
-          }
+            {
+                "Acetamide RESPA NVE", // info
+                "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
+                -25.2085 // startingTotalEnergy
+            }
         });
-  }
-
-  @After
-  public void after() {
-    dynamics.destroyPotentials();
-    System.gc();
-  }
-
-  @Before
-  public void before() {
-    binding = new Binding();
-    dynamics = new Dynamics();
-    dynamics.setBinding(binding);
   }
 
   @Test
@@ -102,24 +81,19 @@ public class DynamicsRESPANVETest extends PJDependentTest {
 
     // Set-up the input arguments for the script.
     String[] args = {
-      "-n",
-      "20",
-      "--dt",
-      "0.5",
-      "-t",
-      "298.15",
-      "-i",
-      "RESPA",
-      "-b",
-      "Adiabatic",
-      "-r",
-      "0.001",
-      "src/main/java/" + filename
+        "-n", "20",
+        "--dt", "0.5",
+        "-t", "298.15",
+        "-i", "RESPA",
+        "-b", "Adiabatic",
+        "-r", "0.001",
+        "src/main/java/" + filename
     };
     binding.setVariable("args", args);
 
-    // Evaluate the script.
-    dynamics.run();
+    // Construct and evaluate the script.
+    Dynamics dynamics = new Dynamics(binding).run();
+    algorithmsScript = dynamics;
 
     MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 

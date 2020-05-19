@@ -106,6 +106,24 @@ class Dynamics extends AlgorithmsScript {
     return potential
   }
 
+  /**
+   * Dynamics Constructor.
+   */
+  Dynamics() {
+    this(new Binding())
+  }
+
+  /**
+   * Dynamics Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Dynamics(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   Dynamics run() {
 
@@ -198,6 +216,9 @@ class Dynamics extends AlgorithmsScript {
     return this
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   List<Potential> getPotentials() {
     List<Potential> potentials

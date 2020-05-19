@@ -45,7 +45,7 @@ import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.ModelingShell;
 import ffx.ui.OSXAdapter;
-import ffx.utilities.BaseScript;
+import ffx.utilities.FFXScript;
 import groovy.lang.Script;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
@@ -302,10 +302,10 @@ public final class Main extends JFrame {
     logger.info(" usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
     logger.info("  where commands include:");
     if (listTestScripts) {
-      BaseScript.listGroovyScripts(false, true);
+      FFXScript.listGroovyScripts(false, true);
       logger.info("\n For help on an experimental or test command use:  ffxc <command> -h\n");
     } else {
-      BaseScript.listGroovyScripts(true, false);
+      FFXScript.listGroovyScripts(true, false);
       logger.info("\n To list experimental & test scripts: ffxc --test");
       logger.info(" For help on a specific command use:  ffxc <command> -h\n");
     }
@@ -573,7 +573,7 @@ public final class Main extends JFrame {
     } else {
       // See if the commandLineFile is an embedded script.
       String name = commandLineFile.getName();
-      Class<? extends Script> ffxScript = BaseScript.getScript(name);
+      Class<? extends Script> ffxScript = FFXScript.getScript(name);
       if (ffxScript != null) {
         return shell.runFFXScript(ffxScript, argList);
       }

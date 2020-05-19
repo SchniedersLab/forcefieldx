@@ -53,7 +53,7 @@ import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.cli.PotentialScript;
 import ffx.potential.utils.PotentialsFunctions;
-import ffx.utilities.BaseScript;
+import ffx.utilities.FFXScript;
 import groovy.console.ui.Console;
 import groovy.lang.Binding;
 import groovy.lang.Script;
@@ -598,7 +598,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         Object o = getShell().run(file, argList);
 
         if (o instanceof Script) {
-          groovyScript = (BaseScript) o;
+          groovyScript = (FFXScript) o;
         }
 
         // Do not destroy the system when using the GUI.

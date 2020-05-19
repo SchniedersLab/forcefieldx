@@ -37,7 +37,7 @@
 // ******************************************************************************
 package ffx.xray;
 
-import ffx.algorithms.misc.PJDependentTest;
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.realspace.cli.RealSpaceOptions;
 import ffx.realspace.groovy.test.Alchemical;
 import groovy.lang.Binding;
@@ -47,7 +47,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /** Test the Energy script. */
-public class AlchemicalTest extends PJDependentTest {
+public class AlchemicalTest extends AlgorithmsTest {
 
   private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
 

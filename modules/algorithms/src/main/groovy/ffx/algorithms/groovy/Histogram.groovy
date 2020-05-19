@@ -74,6 +74,24 @@ class Histogram extends AlgorithmsScript {
   private OrthogonalSpaceTempering orthogonalSpaceTempering
   private File saveDir = null
 
+  /**
+   * Histogram Constructor.
+   */
+  Histogram() {
+    this(new Binding())
+  }
+
+  /**
+   * Histogram Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Histogram(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   Histogram run() {
 
@@ -139,6 +157,9 @@ class Histogram extends AlgorithmsScript {
     return this
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   List<Potential> getPotentials() {
     List<Potential> potentials

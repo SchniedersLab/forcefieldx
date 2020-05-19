@@ -51,11 +51,25 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 /**
- * Abstract BaseFFXTest class.
+ * The FFXTest configures the context for FFX tests. This includes: 1) Sets testing related
+ * environment variables:
+ * <br>
+ * Set "-Dffx.ci=true" for a CI environment (default: false).
+ * <br>
+ * Set "-Dffx.openMM=true" for CUDA dependent OpenMM tests (default: false).
+ * <br>
+ * 2) Configures the logging level, using the ffx.test.log System property (default: INFO).
+ * <br>
+ * 3) Stores System properties prior to each test, and restores them after each test (i.e. properties
+ * set by a test do not effect the next test).
+ * <br>
+ * 4) Upon request, creates a temporary that is deleted after the current test is completed.
+ * <br>
+ * 5) Requests garbage collection after each test.
  *
  * @author Michael J. Schnieders
  */
-public abstract class BaseFFXTest {
+public abstract class FFXTest {
 
   /** Constant <code>ffxCI=System.getProperty("ffx.ci", "false").equalsIgnoreCase("true")</code> */
   public static final boolean ffxCI =
@@ -69,7 +83,7 @@ public abstract class BaseFFXTest {
       System.getProperty("ffx.openMM", "false").equalsIgnoreCase("true");
 
   /** Constant <code>logger</code> */
-  protected static final Logger logger = Logger.getLogger(BaseFFXTest.class.getName());
+  protected static final Logger logger = Logger.getLogger(FFXTest.class.getName());
 
   private static final Level origLevel = Logger.getLogger("ffx").getLevel();
   private static final Level testLevel;

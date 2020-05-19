@@ -101,13 +101,28 @@ class MutatePDB extends AlgorithmsScript {
   private ForceFieldEnergy forceFieldEnergy
 
   /**
+   * MutatePDB Constructor.
+   */
+  MutatePDB() {
+    this(new Binding())
+  }
+
+  /**
+   * MutatePDB Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  MutatePDB(Binding binding) {
+    super(binding)
+  }
+
+  /**
    * Execute the script.
    */
   @Override
   MutatePDB run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     // Used if --allChains is true.
@@ -119,7 +134,7 @@ class MutatePDB extends AlgorithmsScript {
       falseAssembly = assemblies[0]
     } else if (falseAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
     // For every chain, mutate the residue.
     Polymer[] chains = falseAssembly.getChains()
@@ -191,6 +206,9 @@ class MutatePDB extends AlgorithmsScript {
     return this
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   List<Potential> getPotentials() {
     List<Potential> potentials
