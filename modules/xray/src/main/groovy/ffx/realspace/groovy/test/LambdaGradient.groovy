@@ -76,7 +76,22 @@ class LambdaGradient extends AlgorithmsScript {
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
   private List<String> filenames
-  private Potential potential;
+  private Potential potential
+
+  /**
+   * LambdaGradient constructor.
+   */
+  LambdaGradient() {
+    this(new Binding())
+  }
+
+  /**
+   * LambdaGradient constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  LambdaGradient(Binding binding) {
+    super(binding)
+  }
 
   @Override
   LambdaGradient run() {
@@ -122,7 +137,7 @@ class LambdaGradient extends AlgorithmsScript {
     forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0)
 
     // Reset the number of variables for the case of dual topology.
-    int n = potential.getNumberOfVariables();
+    int n = potential.getNumberOfVariables()
     double[] x = new double[n]
     double[] gradient = new double[n]
     double[] lambdaGrad = new double[n]
@@ -350,7 +365,7 @@ class LambdaGradient extends AlgorithmsScript {
 
   @Override
   List<Potential> getPotentials() {
-    return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
+    return potential == null ? Collections.emptyList() : Collections.singletonList(potential)
   }
 }
 

@@ -85,6 +85,21 @@ class Anneal extends AlgorithmsScript {
 
   private RefinementEnergy refinementEnergy
 
+  /**
+   * Anneal constructor.
+   */
+  Anneal() {
+    this(new Binding())
+  }
+
+  /**
+   * Anneal constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Anneal(Binding binding) {
+    super(binding)
+  }
+
   @Override
   Anneal run() {
 
@@ -134,11 +149,11 @@ class Anneal extends AlgorithmsScript {
 
     simulatedAnnealing.anneal()
 
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+    if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
+      baseDir = new File(FilenameUtils.getFullPath(modelFilename))
     }
 
-    String dirName = saveDir.toString() + File.separator
+    String dirName = baseDir.toString() + File.separator
     String fileName = FilenameUtils.getName(modelFilename)
     fileName = FilenameUtils.removeExtension(fileName)
 

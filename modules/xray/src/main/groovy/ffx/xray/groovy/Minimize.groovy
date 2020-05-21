@@ -96,8 +96,23 @@ class Minimize extends AlgorithmsScript {
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames
-  private MolecularAssembly[] assemblies;
-  private DiffractionData diffractionData;
+  private MolecularAssembly[] assemblies
+  private DiffractionData diffractionData
+
+  /**
+   * Minimize constructor.
+   */
+  Minimize() {
+    this(new Binding())
+  }
+
+  /**
+   * Minimize constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Minimize(Binding binding) {
+    super(binding)
+  }
 
   @Override
   Minimize run() {
@@ -162,9 +177,9 @@ class Minimize extends AlgorithmsScript {
       if (maxiter < Integer.MAX_VALUE) {
         logger.info(String.format(
             "\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", coordeps,
-            maxiter));
+            maxiter))
       } else {
-        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", coordeps));
+        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", coordeps))
       }
 
       refinementMinimize.minimize(coordeps, maxiter)
@@ -179,9 +194,9 @@ class Minimize extends AlgorithmsScript {
 
       if (maxiter < Integer.MAX_VALUE) {
         logger.info(String.format(
-            "\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", beps, maxiter));
+            "\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", beps, maxiter))
       } else {
-        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", beps));
+        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", beps))
       }
 
       refinementMinimize.minimize(beps, maxiter)
@@ -198,9 +213,9 @@ class Minimize extends AlgorithmsScript {
         if (maxiter < Integer.MAX_VALUE) {
           logger.info(String.format(
               "\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", occeps,
-              maxiter));
+              maxiter))
         } else {
-          logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", occeps));
+          logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", occeps))
         }
 
         refinementMinimize.minimize(occeps, maxiter)
@@ -221,9 +236,9 @@ class Minimize extends AlgorithmsScript {
 
       if (maxiter < Integer.MAX_VALUE) {
         logger.info(String.format(
-            "\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps, maxiter));
+            "\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps, maxiter))
       } else {
-        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps));
+        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps))
       }
 
       refinementMinimize.minimize(eps, maxiter)
@@ -242,7 +257,7 @@ class Minimize extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     if (assemblies == null) {
-      return new ArrayList<Potential>();
+      return new ArrayList<Potential>()
     } else {
       return Arrays.stream(assemblies).
           filter {a -> a != null
@@ -251,12 +266,12 @@ class Minimize extends AlgorithmsScript {
           }.
           filter {e -> e != null
           }.
-          collect(Collectors.toList());
+          collect(Collectors.toList())
     }
   }
 
   @Override
   boolean destroyPotentials() {
-    return diffractionData == null ? true : diffractionData.destroy();
+    return diffractionData == null ? true : diffractionData.destroy()
   }
 }

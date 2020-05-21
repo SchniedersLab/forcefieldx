@@ -77,6 +77,21 @@ class Minimize extends AlgorithmsScript {
   private MolecularAssembly[] assemblies
   private RealSpaceData realspaceData
 
+  /**
+   * Minimize constructor.
+   */
+  Minimize() {
+    this(new Binding())
+  }
+
+  /**
+   * Minimize constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Minimize(Binding binding) {
+    super(binding)
+  }
+
   @Override
   Minimize run() {
 

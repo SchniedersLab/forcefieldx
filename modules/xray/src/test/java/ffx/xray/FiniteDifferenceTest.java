@@ -91,9 +91,6 @@ public class FiniteDifferenceTest extends FFXTest {
       return;
     }
 
-    int index = pdbName.lastIndexOf(".");
-    String name = pdbName.substring(0, index);
-
     // load the structure
     ClassLoader cl = this.getClass().getClassLoader();
     File structure = new File(cl.getResource(pdbName).getPath());
@@ -213,14 +210,14 @@ public class FiniteDifferenceTest extends FFXTest {
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {
-          {
-            true,
-            "ala met anisou",
-            NONE,
-            new int[] {91, 105, 119},
-            "ffx/xray/structures/alamet.pdb",
-            "ffx/xray/structures/alamet.mtz"
-          }
+            {
+                true,
+                "ala met anisou",
+                NONE,
+                new int[] {91, 105, 119},
+                "ffx/xray/structures/alamet.pdb",
+                "ffx/xray/structures/alamet.mtz"
+            }
         });
   }
 

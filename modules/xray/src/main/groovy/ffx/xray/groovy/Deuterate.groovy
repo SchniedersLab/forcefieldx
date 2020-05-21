@@ -64,6 +64,21 @@ class Deuterate extends AlgorithmsScript {
   private List<String> filenames
 
   /**
+   * Deuterate constructor.
+   */
+  Deuterate() {
+    this(new Binding())
+  }
+
+  /**
+   * Deuterate constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Deuterate(Binding binding) {
+    super(binding)
+  }
+
+  /**
    * Execute the script.
    */
   @Override

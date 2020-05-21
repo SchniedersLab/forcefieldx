@@ -76,6 +76,21 @@ class ManyBody extends AlgorithmsScript {
   private List<String> filenames
   private RefinementEnergy refinementEnergy
 
+  /**
+   * ManyBody constructor.
+   */
+  ManyBody() {
+    this(new Binding())
+  }
+
+  /**
+   * ManyBody constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  ManyBody(Binding binding) {
+    super(binding)
+  }
+
   @Override
   ManyBody run() {
 
@@ -95,7 +110,7 @@ class ManyBody extends AlgorithmsScript {
     }
     MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
 
-    CompositeConfiguration properties = activeAssembly.getProperties();
+    CompositeConfiguration properties = activeAssembly.getProperties()
     if (!properties.containsKey("gk-suppressWarnings")) {
       properties.setProperty("gk-suppressWarnings", "true")
     }
@@ -112,25 +127,25 @@ class ManyBody extends AlgorithmsScript {
     refinementEnergy.energy(x, true)
 
     ArrayList<Residue> residueList = rotamerOptimization.getResidues()
-    RotamerLibrary.measureRotamers(residueList, false);
+    RotamerLibrary.measureRotamers(residueList, false)
 
     if (manyBody.algorithm == 1) {
-      rotamerOptimization.optimize(RotamerOptimization.Algorithm.INDEPENDENT);
+      rotamerOptimization.optimize(RotamerOptimization.Algorithm.INDEPENDENT)
     } else if (manyBody.algorithm == 2) {
-      rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+      rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL)
     } else if (manyBody.algorithm == 3) {
-      rotamerOptimization.optimize(RotamerOptimization.Algorithm.BRUTE_FORCE);
+      rotamerOptimization.optimize(RotamerOptimization.Algorithm.BRUTE_FORCE)
     } else if (manyBody.algorithm == 4) {
-      rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW);
+      rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW)
     } else if (manyBody.algorithm == 5) {
-      rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX);
+      rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX)
     }
 
-    boolean master = true;
+    boolean master = true
     if (Comm.world().size() > 1) {
-      int rank = Comm.world().rank();
+      int rank = Comm.world().rank()
       if (rank != 0) {
-        master = false;
+        master = false
       }
     }
 
@@ -139,8 +154,8 @@ class ManyBody extends AlgorithmsScript {
 
       algorithmFunctions.energy(activeAssembly)
 
-      String ext = FilenameUtils.getExtension(modelFilename);
-      modelFilename = FilenameUtils.removeExtension(modelFilename);
+      String ext = FilenameUtils.getExtension(modelFilename)
+      modelFilename = FilenameUtils.removeExtension(modelFilename)
       if (ext.toUpperCase().contains("XYZ")) {
         algorithmFunctions.saveAsXYZ(assemblies[0], new File(modelFilename + ".xyz"))
       } else {
@@ -154,6 +169,6 @@ class ManyBody extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy);
+        Collections.singletonList(refinementEnergy)
   }
 }
