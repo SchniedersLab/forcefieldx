@@ -41,7 +41,9 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.BaseScript;
+import ffx.utilities.FFXScript;
+import groovy.lang.Binding;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -53,7 +55,7 @@ import org.apache.log4j.PropertyConfigurator;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public abstract class PotentialScript extends BaseScript {
+public abstract class PotentialScript extends FFXScript {
 
   /** An instance of PotentialFunctions passed into the current context. */
   public PotentialsFunctions potentialFunctions;
@@ -63,6 +65,28 @@ public abstract class PotentialScript extends BaseScript {
    * argument.
    */
   public MolecularAssembly activeAssembly;
+
+  /**
+   * A temporary directory that contains script artifacts. Temporary files are often created by unit
+   * tests and then deleted.
+   */
+  public File baseDir = null;
+
+  /**
+   * Default constructor.
+   */
+  public PotentialScript() {
+    this(new Binding());
+  }
+
+  /**
+   * Create a Script using the supplied Binding.
+   *
+   * @param binding Binding with variables to use.
+   */
+  public PotentialScript(Binding binding) {
+    super(binding);
+  }
 
   /**
    * Reclaims resources associated with all Potential objects associated with this script.
@@ -104,12 +128,15 @@ public abstract class PotentialScript extends BaseScript {
       return false;
     }
 
-    if (context.hasVariable("functions")) {
+    Binding binding = getBinding();
+
+    if (binding.hasVariable("functions")) {
       // FFX is running.
-      potentialFunctions = (PotentialsFunctions) context.getVariable("functions");
+      potentialFunctions = (PotentialsFunctions) binding.getVariable("functions");
     } else {
       // Potential package is running.
       potentialFunctions = new PotentialsUtils();
+      binding.setVariable("functions", potentialFunctions);
       // Turn off log4j.
       Properties properties = new Properties();
       properties.setProperty("log4j.threshold", "OFF");
@@ -119,8 +146,12 @@ public abstract class PotentialScript extends BaseScript {
     }
 
     activeAssembly = null;
-    if (context.hasVariable("active")) {
-      activeAssembly = (MolecularAssembly) context.getVariable("active");
+    if (binding.hasVariable("active")) {
+      activeAssembly = (MolecularAssembly) binding.getVariable("active");
+    }
+
+    if (binding.hasVariable("baseDir")) {
+      baseDir = (File) binding.getVariable("baseDir");
     }
 
     return true;

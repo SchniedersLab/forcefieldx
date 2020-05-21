@@ -39,7 +39,7 @@ package ffx.algorithms.optimize;
 
 import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.misc.PJDependentTest;
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.algorithms.optimize.manybody.EliminatedRotamers;
 import ffx.algorithms.optimize.manybody.EnergyExpansion;
 import ffx.potential.ForceFieldEnergy;
@@ -55,7 +55,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -67,7 +66,7 @@ import org.junit.runners.Parameterized;
  * @author Claire E. OConnell
  */
 @RunWith(Parameterized.class)
-public class RotamerOptimizationTest extends PJDependentTest {
+public class RotamerOptimizationTest extends AlgorithmsTest {
 
   private final String info;
   private final String filename;
@@ -143,232 +142,226 @@ public class RotamerOptimizationTest extends PJDependentTest {
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {
-          {
-            "Chignolin Direct with Orig Rot - No Pruning (Goldstein)",
-            "ffx/algorithms/structures/5awl.pdb",
-            "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
-            1, // Start Residue.
-            4, // End Residue.
-            0, // Pruning Level.
-            true, // Goldstein Elimination.
-            false, // Use 3-body Energies.
-            true, // Use Original Rotamers.
-            true, // Do Overall Opt.
-            -211.88384480357658, // Expected Energy.
-            true, // Do Self-Energy Opt.
-            -211.88384480357658, // Expected Self-Energy.
-            true, // Do Pair-Energy Opt.
-            1, // Pair residue
-            1000.5100013039976, // Expected Pair-Energy.
-            false, // Do Trimer-Energy Opt.
-            1, // Trimer residue 1.
-            2, // Trimer residue 2.
-            0.0, // Expected trimer energy.
-            1.0e-3 // Energy Tolerance.
-          },
-          {
-            "Chignolin Direct with Orig Rot - Singles Pruning (Goldstein)",
-            "ffx/algorithms/structures/5awl.pdb",
-            "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
-            1, // Start Residue.
-            4, // End Residue.
-            1, // Pruning Level.
-            true, // Goldstein Elimination.
-            false, // Use 3-body Energies.
-            true, // Use Original Rotamers.
-            true, // Do Overall Opt.
-            -211.88384480357658, // Expected Energy.
-            true, // Do Self-Energy Opt.
-            -211.88384480357658, // Expected Self-Energy.
-            true, // Do Pair-Energy Opt.
-            1, // Pair residue
-            -197.85885923519842, // Expected Pair-Energy.
-            false, // Do Trimer-Energy Opt.
-            1, // Trimer residue 1.
-            2, // Trimer residue 2.
-            0.0, // Expected trimer energy.
-            1.0e-3 // Energy Tolerance.
-          },
-          {
-            "Chignolin Direct with Orig Rot - Pairs Pruning (Goldstein)",
-            "ffx/algorithms/structures/5awl.pdb",
-            "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
-            1, // Start Residue.
-            4, // End Residue.
-            2, // Pruning Level.
-            true, // Goldstein Elimination.
-            false, // Use 3-body Energies.
-            true, // Use Original Rotamers.
-            true, // Do Overall Opt.
-            -211.88384480357658, // Expected Energy.
-            true, // Do Self-Energy Opt.
-            -211.88384480357658, // Expected Self-Energy.
-            true, // Do Pair-Energy Opt.
-            1, // Pair residue
-            -197.85885923519842, // Expected Pair-Energy.
-            false, // Do Trimer-Energy Opt.
-            1, // Trimer residue 1.
-            2, // Trimer residue 2.
-            0.0, // Expected trimer energy.
-            1.0e-3 // Energy Tolerance.
-          },
-          {
-            "Chignolin Direct with Orig Rot - 3-body (Goldstein)",
-            "ffx/algorithms/structures/5awl.pdb",
-            "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
-            1, // Start Residue.
-            4, // End Residue.
-            1, // Pruning Level.
-            true, // Goldstein Elimination.
-            true, // Use 3-body Energies.
-            true, // Use Original Rotamers.
-            true, // Do Overall Opt.
-            -211.88384480357658, // Expected Energy.
-            true, // Do Self-Energy Opt.
-            -211.88384480357658, // Expected Self-Energy.
-            true, // Do Pair-Energy Opt.
-            1, // Pair residue
-            -197.85885923519842, // Expected Pair-Energy.
-            true, // Do Trimer-Energy Opt.
-            1, // Trimer residue 1.
-            2, // Trimer residue 2.
-            -189.17343465853008, // Expected trimer energy.
-            1.0e-3 // Energy Tolerance.
-          },
-          {
-            "Chignolin Direct with Orig Rot - No Pruning (DEE)",
-            "ffx/algorithms/structures/5awl.pdb",
-            "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
-            1, // Start Residue.
-            4, // End Residue.
-            0, // Pruning Level.
-            false, // Goldstein Elimination.
-            false, // Use 3-body Energies.
-            true, // Use Original Rotamers.
-            true, // Do Overall Opt.
-            -211.88384480357658, // Expected Energy.
-            true, // Do Self-Energy Opt.
-            -211.88384480357658, // Expected Self-Energy.
-            true, // Do Pair-Energy Opt.
-            1, // Pair residue
-            1000.5100013039976, // Expected Pair-Energy.
-            false, // Do Trimer-Energy Opt.
-            1, // Trimer residue 1.
-            2, // Trimer residue 2.
-            0.0, // Expected trimer energy.
-            1.0e-3 // Energy Tolerance.
-          },
-          {
-            "Chignolin Direct with Orig Rot - Singles Pruning (DEE)",
-            "ffx/algorithms/structures/5awl.pdb",
-            "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
-            1, // Start Residue.
-            4, // End Residue.
-            1, // Pruning Level.
-            false, // Goldstein Elimination.
-            false, // Use 3-body Energies.
-            true, // Use Original Rotamers.
-            true, // Do Overall Opt.
-            -211.88384480357658, // Expected Energy.
-            true, // Do Self-Energy Opt.
-            -211.88384480357658, // Expected Self-Energy.
-            true, // Do Pair-Energy Opt.
-            1, // Pair residue
-            -197.85885923519842, // Expected Pair-Energy.
-            false, // Do Trimer-Energy Opt.
-            1, // Trimer residue 1.
-            2, // Trimer residue 2.
-            0.0, // Expected trimer energy.
-            1.0e-3 // Energy Tolerance.
-          },
-          {
-            "Chignolin Direct with Orig Rot - Pairs Pruning (DEE)",
-            "ffx/algorithms/structures/5awl.pdb",
-            "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
-            1, // Start Residue.
-            4, // End Residue.
-            2, // Pruning Level.
-            false, // Goldstein Elimination.
-            false, // Use 3-body Energies.
-            true, // Use Original Rotamers.
-            true, // Do Overall Opt.
-            -211.88384480357658, // Expected Energy.
-            true, // Do Self-Energy Opt.
-            -211.88384480357658, // Expected Self-Energy.
-            true, // Do Pair-Energy Opt.
-            1, // Pair residue
-            -197.85885923519842, // Expected Pair-Energy.
-            false, // Do Trimer-Energy Opt.
-            1, // Trimer residue 1.
-            2, // Trimer residue 2.
-            0.0, // Expected trimer energy.
-            1.0e-3 // Energy Tolerance.
-          },
-          {
-            "Chignolin Direct with Orig Rot - 3-body (DEE)",
-            "ffx/algorithms/structures/5awl.pdb",
-            "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
-            1, // Start Residue.
-            4, // End Residue.
-            1, // Pruning Level.
-            false, // Goldstein Elimination.
-            true, // Use 3-body Energies.
-            true, // Use Original Rotamers.
-            true, // Do Overall Opt.
-            -211.88384480357658, // Expected Energy.
-            true, // Do Self-Energy Opt.
-            -211.88384480357658, // Expected Self-Energy.
-            true, // Do Pair-Energy Opt.
-            1, // Pair residue
-            -197.85885923519842, // Expected Pair-Energy.
-            true, // Do Trimer-Energy Opt.
-            1, // Trimer residue 1.
-            2, // Trimer residue 2.
-            -189.17343465853008, // Expected trimer energy.
-            1.0e-3 // Energy Tolerance.
-          }
+            {
+                "Chignolin Direct with Orig Rot - No Pruning (Goldstein)",
+                "ffx/algorithms/structures/5awl.pdb",
+                "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
+                1, // Start Residue.
+                4, // End Residue.
+                0, // Pruning Level.
+                true, // Goldstein Elimination.
+                false, // Use 3-body Energies.
+                true, // Use Original Rotamers.
+                true, // Do Overall Opt.
+                -211.88384480357658, // Expected Energy.
+                true, // Do Self-Energy Opt.
+                -211.88384480357658, // Expected Self-Energy.
+                true, // Do Pair-Energy Opt.
+                1, // Pair residue
+                1000.5100013039976, // Expected Pair-Energy.
+                false, // Do Trimer-Energy Opt.
+                1, // Trimer residue 1.
+                2, // Trimer residue 2.
+                0.0, // Expected trimer energy.
+                1.0e-3 // Energy Tolerance.
+            },
+            {
+                "Chignolin Direct with Orig Rot - Singles Pruning (Goldstein)",
+                "ffx/algorithms/structures/5awl.pdb",
+                "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
+                1, // Start Residue.
+                4, // End Residue.
+                1, // Pruning Level.
+                true, // Goldstein Elimination.
+                false, // Use 3-body Energies.
+                true, // Use Original Rotamers.
+                true, // Do Overall Opt.
+                -211.88384480357658, // Expected Energy.
+                true, // Do Self-Energy Opt.
+                -211.88384480357658, // Expected Self-Energy.
+                true, // Do Pair-Energy Opt.
+                1, // Pair residue
+                -197.85885923519842, // Expected Pair-Energy.
+                false, // Do Trimer-Energy Opt.
+                1, // Trimer residue 1.
+                2, // Trimer residue 2.
+                0.0, // Expected trimer energy.
+                1.0e-3 // Energy Tolerance.
+            },
+            {
+                "Chignolin Direct with Orig Rot - Pairs Pruning (Goldstein)",
+                "ffx/algorithms/structures/5awl.pdb",
+                "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
+                1, // Start Residue.
+                4, // End Residue.
+                2, // Pruning Level.
+                true, // Goldstein Elimination.
+                false, // Use 3-body Energies.
+                true, // Use Original Rotamers.
+                true, // Do Overall Opt.
+                -211.88384480357658, // Expected Energy.
+                true, // Do Self-Energy Opt.
+                -211.88384480357658, // Expected Self-Energy.
+                true, // Do Pair-Energy Opt.
+                1, // Pair residue
+                -197.85885923519842, // Expected Pair-Energy.
+                false, // Do Trimer-Energy Opt.
+                1, // Trimer residue 1.
+                2, // Trimer residue 2.
+                0.0, // Expected trimer energy.
+                1.0e-3 // Energy Tolerance.
+            },
+            {
+                "Chignolin Direct with Orig Rot - 3-body (Goldstein)",
+                "ffx/algorithms/structures/5awl.pdb",
+                "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
+                1, // Start Residue.
+                4, // End Residue.
+                1, // Pruning Level.
+                true, // Goldstein Elimination.
+                true, // Use 3-body Energies.
+                true, // Use Original Rotamers.
+                true, // Do Overall Opt.
+                -211.88384480357658, // Expected Energy.
+                true, // Do Self-Energy Opt.
+                -211.88384480357658, // Expected Self-Energy.
+                true, // Do Pair-Energy Opt.
+                1, // Pair residue
+                -197.85885923519842, // Expected Pair-Energy.
+                true, // Do Trimer-Energy Opt.
+                1, // Trimer residue 1.
+                2, // Trimer residue 2.
+                -189.17343465853008, // Expected trimer energy.
+                1.0e-3 // Energy Tolerance.
+            },
+            {
+                "Chignolin Direct with Orig Rot - No Pruning (DEE)",
+                "ffx/algorithms/structures/5awl.pdb",
+                "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
+                1, // Start Residue.
+                4, // End Residue.
+                0, // Pruning Level.
+                false, // Goldstein Elimination.
+                false, // Use 3-body Energies.
+                true, // Use Original Rotamers.
+                true, // Do Overall Opt.
+                -211.88384480357658, // Expected Energy.
+                true, // Do Self-Energy Opt.
+                -211.88384480357658, // Expected Self-Energy.
+                true, // Do Pair-Energy Opt.
+                1, // Pair residue
+                1000.5100013039976, // Expected Pair-Energy.
+                false, // Do Trimer-Energy Opt.
+                1, // Trimer residue 1.
+                2, // Trimer residue 2.
+                0.0, // Expected trimer energy.
+                1.0e-3 // Energy Tolerance.
+            },
+            {
+                "Chignolin Direct with Orig Rot - Singles Pruning (DEE)",
+                "ffx/algorithms/structures/5awl.pdb",
+                "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
+                1, // Start Residue.
+                4, // End Residue.
+                1, // Pruning Level.
+                false, // Goldstein Elimination.
+                false, // Use 3-body Energies.
+                true, // Use Original Rotamers.
+                true, // Do Overall Opt.
+                -211.88384480357658, // Expected Energy.
+                true, // Do Self-Energy Opt.
+                -211.88384480357658, // Expected Self-Energy.
+                true, // Do Pair-Energy Opt.
+                1, // Pair residue
+                -197.85885923519842, // Expected Pair-Energy.
+                false, // Do Trimer-Energy Opt.
+                1, // Trimer residue 1.
+                2, // Trimer residue 2.
+                0.0, // Expected trimer energy.
+                1.0e-3 // Energy Tolerance.
+            },
+            {
+                "Chignolin Direct with Orig Rot - Pairs Pruning (DEE)",
+                "ffx/algorithms/structures/5awl.pdb",
+                "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
+                1, // Start Residue.
+                4, // End Residue.
+                2, // Pruning Level.
+                false, // Goldstein Elimination.
+                false, // Use 3-body Energies.
+                true, // Use Original Rotamers.
+                true, // Do Overall Opt.
+                -211.88384480357658, // Expected Energy.
+                true, // Do Self-Energy Opt.
+                -211.88384480357658, // Expected Self-Energy.
+                true, // Do Pair-Energy Opt.
+                1, // Pair residue
+                -197.85885923519842, // Expected Pair-Energy.
+                false, // Do Trimer-Energy Opt.
+                1, // Trimer residue 1.
+                2, // Trimer residue 2.
+                0.0, // Expected trimer energy.
+                1.0e-3 // Energy Tolerance.
+            },
+            {
+                "Chignolin Direct with Orig Rot - 3-body (DEE)",
+                "ffx/algorithms/structures/5awl.pdb",
+                "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
+                1, // Start Residue.
+                4, // End Residue.
+                1, // Pruning Level.
+                false, // Goldstein Elimination.
+                true, // Use 3-body Energies.
+                true, // Use Original Rotamers.
+                true, // Do Overall Opt.
+                -211.88384480357658, // Expected Energy.
+                true, // Do Self-Energy Opt.
+                -211.88384480357658, // Expected Self-Energy.
+                true, // Do Pair-Energy Opt.
+                1, // Pair residue
+                -197.85885923519842, // Expected Pair-Energy.
+                true, // Do Trimer-Energy Opt.
+                1, // Trimer residue 1.
+                2, // Trimer residue 2.
+                -189.17343465853008, // Expected trimer energy.
+                1.0e-3 // Energy Tolerance.
+            }
 
-          /**
-           * { "Trpcage Direct with Orig Rot (Goldstein)", "ffx/algorithms/structures/trpcage.pdb",
-           * "ffx/algorithms/structures/trpcage.direct.orig.restart", 0, // Pruning Level. true, //
-           * Goldstein Elimination. false, // Use 3-body Energies. true, // Use Original Rotamers.
-           * false, // Do Overall Opt. -628.143879, // Expected Energy. true, // Do Self-Energy Opt.
-           * 22086.367273, // Expected Self-Energy. false, // Do Pair-Energy Opt. 5, // Pair residue
-           * 1280.865248, // Expected Pair-Energy. false, // Do Trimer-Energy Opt. 5, // Trimer
-           * residue 1. 6, // Trimer residue 2. 0.0, // Expected trimer energy. 1.0e-3 // Energy
-           * Tolerance. }, { "Trpcage Direct with Orig Rot (DEE, Prune=1)",
-           * "ffx/algorithms/structures/trpcage.pdb",
-           * "ffx/algorithms/structures/trpcage.direct.orig.restart", 1, // Pruning Level. false, //
-           * Goldstein Elimination. false, // Use 3-body Energies. true, // Use Original Rotamers.
-           * false, // Do Overall Opt. (false because DEE leaves too many permutations) -628.143879,
-           * // Expected Energy. true, // Do Self-Energy Opt. 22086.367273, // Expected Self-Energy.
-           * true, // Do Pair-Energy Opt. 5, // Pair residue 1280.865248, // Expected Pair-Energy.
-           * false, // Do Trimer-Energy Opt. 5, // Trimer residue 1. 6, // Trimer residue 2. 0.0, //
-           * Expected trimer energy. 1.0e-3 // Energy Tolerance. }, { "Trpcage Direct with Orig Rot
-           * (DEE, Prune=2)", "ffx/algorithms/structures/trpcage.pdb",
-           * "ffx/algorithms/structures/trpcage.direct.orig.restart", 2, // Pruning Level. false, //
-           * Goldstein Elimination. false, // Use 3-body Energies. true, // Use Original Rotamers.
-           * true, // Do Overall Opt. (false because DEE leaves too many permutations) -628.143879,
-           * // Expected Energy. true, // Do Self-Energy Opt. -616.237522, // Expected Self-Energy.
-           * true, // Do Pair-Energy Opt. 5, // Pair residue -563.929018, // Expected Pair-Energy.
-           * false, // Do Trimer-Energy Opt. 5, // Trimer residue 1. 6, // Trimer residue 2. 0.0, //
-           * Expected trimer energy. 1.0e-3 // Energy Tolerance. }, { "Trpcage Direct (Goldstein)",
-           * "ffx/algorithms/structures/trpcage.pdb",
-           * "ffx/algorithms/structures/trpcage.direct.3body.restart", 1, // Pruning Level. true, //
-           * Goldstein Elimination. true, // Use 3-body Energies. true, // Use Original Rotamers.
-           * true, // Do Overall Opt. -628.143879, // Expected Energy. true, // Do Self-Energy Opt.
-           * 22086.367273, // Expected Self-Energy. true, // Do Pair-Energy Opt. 5, // Pair residue.
-           * 1280.865247, // Expected Pair-Energy. true, // Do Trimer-Energy Opt. 5, // Trimer
-           * residue 1. 6, // Trimer residue 2. 1276.608834, // Expected trimer energy. 1.0e-3 //
-           * Energy Tolerance. }
-           */
+            /**
+             * { "Trpcage Direct with Orig Rot (Goldstein)", "ffx/algorithms/structures/trpcage.pdb",
+             * "ffx/algorithms/structures/trpcage.direct.orig.restart", 0, // Pruning Level. true, //
+             * Goldstein Elimination. false, // Use 3-body Energies. true, // Use Original Rotamers.
+             * false, // Do Overall Opt. -628.143879, // Expected Energy. true, // Do Self-Energy Opt.
+             * 22086.367273, // Expected Self-Energy. false, // Do Pair-Energy Opt. 5, // Pair residue
+             * 1280.865248, // Expected Pair-Energy. false, // Do Trimer-Energy Opt. 5, // Trimer
+             * residue 1. 6, // Trimer residue 2. 0.0, // Expected trimer energy. 1.0e-3 // Energy
+             * Tolerance. }, { "Trpcage Direct with Orig Rot (DEE, Prune=1)",
+             * "ffx/algorithms/structures/trpcage.pdb",
+             * "ffx/algorithms/structures/trpcage.direct.orig.restart", 1, // Pruning Level. false, //
+             * Goldstein Elimination. false, // Use 3-body Energies. true, // Use Original Rotamers.
+             * false, // Do Overall Opt. (false because DEE leaves too many permutations) -628.143879,
+             * // Expected Energy. true, // Do Self-Energy Opt. 22086.367273, // Expected Self-Energy.
+             * true, // Do Pair-Energy Opt. 5, // Pair residue 1280.865248, // Expected Pair-Energy.
+             * false, // Do Trimer-Energy Opt. 5, // Trimer residue 1. 6, // Trimer residue 2. 0.0, //
+             * Expected trimer energy. 1.0e-3 // Energy Tolerance. }, { "Trpcage Direct with Orig Rot
+             * (DEE, Prune=2)", "ffx/algorithms/structures/trpcage.pdb",
+             * "ffx/algorithms/structures/trpcage.direct.orig.restart", 2, // Pruning Level. false, //
+             * Goldstein Elimination. false, // Use 3-body Energies. true, // Use Original Rotamers.
+             * true, // Do Overall Opt. (false because DEE leaves too many permutations) -628.143879,
+             * // Expected Energy. true, // Do Self-Energy Opt. -616.237522, // Expected Self-Energy.
+             * true, // Do Pair-Energy Opt. 5, // Pair residue -563.929018, // Expected Pair-Energy.
+             * false, // Do Trimer-Energy Opt. 5, // Trimer residue 1. 6, // Trimer residue 2. 0.0, //
+             * Expected trimer energy. 1.0e-3 // Energy Tolerance. }, { "Trpcage Direct (Goldstein)",
+             * "ffx/algorithms/structures/trpcage.pdb",
+             * "ffx/algorithms/structures/trpcage.direct.3body.restart", 1, // Pruning Level. true, //
+             * Goldstein Elimination. true, // Use 3-body Energies. true, // Use Original Rotamers.
+             * true, // Do Overall Opt. -628.143879, // Expected Energy. true, // Do Self-Energy Opt.
+             * 22086.367273, // Expected Self-Energy. true, // Do Pair-Energy Opt. 5, // Pair residue.
+             * 1280.865247, // Expected Pair-Energy. true, // Do Trimer-Energy Opt. 5, // Trimer
+             * residue 1. 6, // Trimer residue 2. 1276.608834, // Expected trimer energy. 1.0e-3 //
+             * Energy Tolerance. }
+            */
         });
-  }
-
-  @After
-  public void after() {
-    forceFieldEnergy.destroy();
-    System.gc();
   }
 
   @Test
@@ -403,7 +396,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
         counter++;
       }
     }
-    Residue[] residues = residueList.toArray(new Residue[residueList.size()]);
+    Residue[] residues = residueList.toArray(new Residue[0]);
 
     RotamerOptimization rotamerOptimization =
         new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);

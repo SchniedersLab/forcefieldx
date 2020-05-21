@@ -76,17 +76,29 @@ class MinimizeOpenMM extends AlgorithmsScript {
   private List<String> filenames
   private ForceFieldEnergy forceFieldEnergy
 
-  private File baseDir = null
-
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * MinimizeOpenMM Constructor.
+   */
+  MinimizeOpenMM() {
+    this(new Binding())
   }
 
+  /**
+   * MinimizeOpenMM Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  MinimizeOpenMM(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   MinimizeOpenMM run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     if (System.getProperty("platform") != null && !System.getProperty("platform").isEmpty()) {
@@ -100,7 +112,7 @@ class MinimizeOpenMM extends AlgorithmsScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     atomSelectionOptions.setActiveAtoms(activeAssembly)
@@ -129,11 +141,11 @@ class MinimizeOpenMM extends AlgorithmsScript {
           activeAssembly)
       minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)
 
-      if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-        saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+      if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
+        baseDir = new File(FilenameUtils.getFullPath(modelFilename))
       }
 
-      String dirName = saveDir.toString() + File.separator
+      String dirName = baseDir.toString() + File.separator
       String fileName = FilenameUtils.getName(modelFilename)
       String ext = FilenameUtils.getExtension(fileName)
       fileName = FilenameUtils.removeExtension(fileName)
@@ -168,6 +180,9 @@ class MinimizeOpenMM extends AlgorithmsScript {
     return this
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   List<Potential> getPotentials() {
     List<Potential> potentials

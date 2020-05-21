@@ -37,51 +37,29 @@
 // ******************************************************************************
 package ffx.xray;
 
-import ffx.algorithms.misc.PJDependentTest;
-import ffx.realspace.cli.RealSpaceOptions;
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.realspace.groovy.test.Alchemical;
-import groovy.lang.Binding;
-import java.util.logging.Logger;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 /** Test the Energy script. */
-public class AlchemicalTest extends PJDependentTest {
-
-  private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
-
-  Binding binding;
-  Alchemical alchemical;
-
-  @After
-  public void after() {
-    alchemical.destroyPotentials();
-  }
-
-  @Before
-  public void before() {
-    binding = new Binding();
-    alchemical = new Alchemical();
-    alchemical.setBinding(binding);
-  }
+public class AlchemicalTest extends AlgorithmsTest {
 
   @Test
   public void testAlchemical() {
 
     // Set-up the input arguments for the Alchemical script.
     String[] args = {
-      "-N",
-      "-n",
-      "10",
-      "-r",
-      "0.01",
-      "src/main/java/ffx/xray/structures/5zck.pdb",
-      "src/main/java/ffx/xray/structures/5zck_ffx_2fofc.map"
+        "-N",
+        "-n", "10",
+        "-r", "0.01",
+        "src/main/java/ffx/xray/structures/5zck.pdb",
+        "src/main/java/ffx/xray/structures/5zck_ffx_2fofc.map"
     };
     binding.setVariable("args", args);
 
-    alchemical.run();
+    // Construct and run the Alchemical test.
+    Alchemical alchemical = new Alchemical(binding).run();
+    algorithmsScript = alchemical;
   }
 
   @Test
@@ -90,7 +68,8 @@ public class AlchemicalTest extends PJDependentTest {
     String[] args = {"-h"};
     binding.setVariable("args", args);
 
-    // Evaluate the script.
-    alchemical.run();
+    // Construct and run the Alchemical test.
+    Alchemical alchemical = new Alchemical(binding).run();
+    algorithmsScript = alchemical;
   }
 }

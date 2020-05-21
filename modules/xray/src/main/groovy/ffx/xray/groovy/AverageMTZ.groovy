@@ -67,6 +67,21 @@ class AverageMTZ extends AlgorithmsScript {
   @Parameters(arity = "2", paramLabel = "MTZ", description = "Two diffraction input files.")
   private List<String> filenames
 
+  /**
+   * AverageMTZ constructor.
+   */
+  AverageMTZ() {
+    this(new Binding())
+  }
+
+  /**
+   * AverageMTZ constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  AverageMTZ(Binding binding) {
+    super(binding)
+  }
+
   @Override
   AverageMTZ run() {
 

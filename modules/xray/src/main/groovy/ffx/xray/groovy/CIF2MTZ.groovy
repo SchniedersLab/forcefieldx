@@ -69,8 +69,23 @@ class CIF2MTZ extends AlgorithmsScript {
   @Parameters(arity = "2", paramLabel = "file", description = "A PDB file and a CIF diffraction file.")
   private ArrayList<String> filenames = null
 
-  private MolecularAssembly[] systems;
-  private DiffractionRefinementData refinementdata;
+  private MolecularAssembly[] systems
+  private DiffractionRefinementData refinementdata
+
+  /**
+   * CIF2MTZ constructor.
+   */
+  CIF2MTZ() {
+    this(new Binding())
+  }
+
+  /**
+   * CIF2MTZ constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  CIF2MTZ(Binding binding) {
+    super(binding)
+  }
 
   /**
    * Execute the script.
@@ -121,7 +136,7 @@ class CIF2MTZ extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     if (systems == null) {
-      return new ArrayList<Potential>();
+      return new ArrayList<Potential>()
     } else {
       return Arrays.stream(systems).filter {a -> a != null
       }.
@@ -129,7 +144,7 @@ class CIF2MTZ extends AlgorithmsScript {
           }.
           filter {e -> e != null
           }.
-          collect(Collectors.toList());
+          collect(Collectors.toList())
     }
   }
 }

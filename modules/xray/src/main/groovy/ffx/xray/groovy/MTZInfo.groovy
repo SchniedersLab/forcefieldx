@@ -57,7 +57,22 @@ class MTZInfo extends AlgorithmsScript {
    * An MTZ filename.
    */
   @Parameters(arity = "1", paramLabel = "MTZ", description = "An MTZ diffraction file.")
-  private String filename = null;
+  private String filename = null
+
+  /**
+   * MTZInfo constructor.
+   */
+  MTZInfo() {
+    this(new Binding())
+  }
+
+  /**
+   * MTZInfo constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  MTZInfo(Binding binding) {
+    super(binding)
+  }
 
   /**
    * Execute the script.

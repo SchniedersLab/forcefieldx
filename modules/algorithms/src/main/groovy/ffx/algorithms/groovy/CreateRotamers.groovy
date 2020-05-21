@@ -93,11 +93,29 @@ class CreateRotamers extends AlgorithmsScript {
 
   public ForceFieldEnergy forceFieldEnergy = null
 
+  /**
+   * CreateRotamers Constructor.
+   */
+  CreateRotamers() {
+    this(new Binding())
+  }
+
+  /**
+   * CreateRotamers Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  CreateRotamers(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   CreateRotamers run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     if (filenames != null && filenames.size() > 0) {
@@ -105,7 +123,7 @@ class CreateRotamers extends AlgorithmsScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     String filename = activeAssembly.getFile().getAbsolutePath()

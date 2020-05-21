@@ -67,10 +67,10 @@ import picocli.CommandLine.ParseResult;
  *
  * @author Michael J. Schnieders
  */
-public abstract class BaseScript extends Script {
+public abstract class FFXScript extends Script {
 
   /** The logger for this class. */
-  protected static final Logger logger = Logger.getLogger(BaseScript.class.getName());
+  protected static final Logger logger = Logger.getLogger(FFXScript.class.getName());
 
   /**
    * Unix shells are able to evaluate PicoCLI ANSI color codes, but right now the FFX GUI Shell does
@@ -79,9 +79,6 @@ public abstract class BaseScript extends Script {
    * <p>In a headless environment, color will be ON for command line help, but OFF for the GUI.
    */
   public final Ansi color;
-
-  /** The Groovy Binding contains defined variables, closures, etc. */
-  public Binding context;
 
   /** The array of args passed into the Script. */
   public String[] args;
@@ -106,7 +103,8 @@ public abstract class BaseScript extends Script {
   public boolean help;
 
   /** Default constructor for an FFX Script. */
-  public BaseScript() {
+  public FFXScript(Binding binding) {
+    super(binding);
     if (GraphicsEnvironment.isHeadless()) {
       color = Ansi.ON;
     } else {
@@ -120,8 +118,8 @@ public abstract class BaseScript extends Script {
    * @param name Name of the script to load (e.g. Energy).
    * @return The Script, if found, or null.
    */
-  public static Class<? extends BaseScript> getScript(String name) {
-    ClassLoader loader = BaseScript.class.getClassLoader();
+  public static Class<? extends FFXScript> getScript(String name) {
+    ClassLoader loader = FFXScript.class.getClassLoader();
     String pathName = name;
     Class<?> script;
     try {
@@ -149,7 +147,7 @@ public abstract class BaseScript extends Script {
         }
       }
     }
-    return script.asSubclass(BaseScript.class);
+    return script.asSubclass(FFXScript.class);
   }
 
   /**
@@ -242,10 +240,10 @@ public abstract class BaseScript extends Script {
    * @return boolean Returns true if the script should continue and false to exit.
    */
   public boolean init() {
-    context = getBinding();
+    Binding binding = getBinding();
 
     // The args property could either be a list or an array of String arguments.
-    Object arguments = context.getProperty("args");
+    Object arguments = binding.getProperty("args");
     if (arguments instanceof List<?>) {
       List<?> list = (List<?>) arguments;
       int numArgs = list.size();
@@ -254,7 +252,7 @@ public abstract class BaseScript extends Script {
         args[i] = (String) list.get(i);
       }
     } else {
-      args = (String[]) context.getProperty("args");
+      args = (String[]) binding.getProperty("args");
     }
 
     CommandLine commandLine = new CommandLine(this);
@@ -288,7 +286,7 @@ public abstract class BaseScript extends Script {
    * <p>Execute the script.
    */
   @Override
-  public BaseScript run() {
+  public FFXScript run() {
     logger.info(helpString());
     return this;
   }

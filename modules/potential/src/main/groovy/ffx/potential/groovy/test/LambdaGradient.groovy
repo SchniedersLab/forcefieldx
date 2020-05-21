@@ -127,13 +127,28 @@ class LambdaGradient extends PotentialScript {
   public double e1 = 0.0
 
   /**
+   * LambdaGradient Constructor
+   */
+  LambdaGradient() {
+    this(new Binding())
+  }
+
+  /**
+   * LambdaGradient Constructor
+   * @param binding Groovy Binding to use.
+   */
+  LambdaGradient(Binding binding) {
+    super(binding)
+  }
+
+  /**
    * Script run method.
    */
   @Override
   LambdaGradient run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     List<String> arguments = filenames
@@ -375,7 +390,8 @@ class LambdaGradient extends PotentialScript {
         degreesOfFreedomToTest =
             parseAtomRanges(" Gradient atoms", gradientOptions.gradientAtoms, nAtoms)
         logger.info(
-            " Checking gradient for active atoms in the range: " + gradientOptions.gradientAtoms +
+            " Checking gradient for active atoms in the range: " + gradientOptions.gradientAtoms
+                +
                 "\n")
       }
 

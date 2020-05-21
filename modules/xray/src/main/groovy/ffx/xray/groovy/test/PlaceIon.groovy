@@ -80,12 +80,12 @@ class PlaceIon extends Script {
      * -S or --spacing Specify the spacing in fractional coordinates.
      */
     @Option(shortName = 'S', longName = 'spacing', defaultValue = '0.05', description = 'Search spacing in fractional coordinates.')
-    double spacing;
+    double spacing
     /**
      * -s or --suffix Specify the suffix to apply to output files. For example, for 1abc_refine.pdb, write out 1abc_refine_refine.[pdb|mtz] at the end.
      */
     @Option(shortName = 's', longName = 'suffix', defaultValue = '_refine', description = 'Suffix to apply to files written out by minimization.')
-    String suffix;
+    String suffix
     /**
      * -D or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
      */
@@ -97,6 +97,21 @@ class PlaceIon extends Script {
      */
     @Unparsed(description = "PDB file and a CIF or MTZ file.")
     List<String> filenames
+  }
+
+  /**
+   * PlaceIon constructor.
+   */
+  PlaceIon() {
+    this(new Binding())
+  }
+
+  /**
+   * PlaceIon constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  PlaceIon(Binding binding) {
+    super(binding)
   }
 
   @Override

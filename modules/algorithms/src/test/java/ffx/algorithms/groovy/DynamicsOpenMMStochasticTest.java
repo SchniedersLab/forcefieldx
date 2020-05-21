@@ -40,13 +40,10 @@ package ffx.algorithms.groovy;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
-import ffx.algorithms.misc.PJDependentTest;
-import groovy.lang.Binding;
+import ffx.algorithms.misc.AlgorithmsTest;
 import java.util.Arrays;
 import java.util.Collection;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -54,7 +51,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Hernan V Bernabe */
 @RunWith(Parameterized.class)
-public class DynamicsOpenMMStochasticTest extends PJDependentTest {
+public class DynamicsOpenMMStochasticTest extends AlgorithmsTest {
 
   private String info;
   private String filename;
@@ -62,10 +59,6 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
   private double endPotentialEnergy;
   private double endTotalEnergy;
   private double tolerance = 5.0;
-  private boolean ffxOpenMM;
-
-  private Binding binding;
-  private Dynamics dynamics;
 
   public DynamicsOpenMMStochasticTest(
       String info,
@@ -81,68 +74,47 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
     this.endTotalEnergy = endTotalEnergy;
   }
 
-  @AfterClass
-  public static void afterClass() {
-    System.clearProperty("platform");
-    PJDependentTest.afterClass();
-  }
-
-  @BeforeClass
-  public static void beforeClass() {
-    System.setProperty("platform", "omm");
-    PJDependentTest.beforeClass();
-  }
-
   @Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {
-          {
-            "System OpenMM Stochastic",
-            "ffx/algorithms/structures/waterbox_eq.xyz",
-            11785.5305,
-            -36464.2741,
-            -24678.7436
-          }
+            {
+                "System OpenMM Stochastic",
+                "ffx/algorithms/structures/waterbox_eq.xyz",
+                11785.5305,
+                -36464.2741,
+                -24678.7436
+            }
         });
   }
 
   @Before
   public void before() {
-    binding = new Binding();
-    dynamics = new Dynamics();
-    dynamics.setBinding(binding);
+    System.setProperty("platform", "omm");
   }
 
   @Test
   public void testDynamicsOpenMMStochastic() {
-
     if (!ffxOpenMM) {
       return;
     }
 
     // Set-up the input arguments for the script.
     String[] args = {
-      "-n",
-      "10",
-      "-z",
-      "1",
-      "-t",
-      "298.15",
-      "-i",
-      "Stochastic",
-      "-b",
-      "Adiabatic",
-      "-r",
-      "0.001",
-      "src/main/java/",
-      "--mdE",
-      "OpenMM" + filename
+        "-n", "10",
+        "-z", "1",
+        "-t", "298.15",
+        "-i", "Stochastic",
+        "-b", "Adiabatic",
+        "-r", "0.001",
+        "--mdE", "OpenMM ",
+        "src/main/java/" + filename
     };
     binding.setVariable("args", args);
 
-    // Evaluate script
-    dynamics.run();
+    // Construct and evaluate the script.
+    Dynamics dynamics = new Dynamics(binding).run();
+    algorithmsScript = dynamics;
 
     MolecularDynamicsOpenMM molDynOpenMM =
         (MolecularDynamicsOpenMM) dynamics.getMolecularDynamics();

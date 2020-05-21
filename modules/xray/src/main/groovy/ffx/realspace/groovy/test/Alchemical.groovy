@@ -132,7 +132,22 @@ class Alchemical extends AlgorithmsScript {
   // Reset velocities (ignored if a restart file is given)
   boolean initVelocities = true
 
-  private OrthogonalSpaceTempering orthogonalSpaceTempering;
+  private OrthogonalSpaceTempering orthogonalSpaceTempering
+
+  /**
+   * Alchemical constructor.
+   */
+  Alchemical() {
+    this(new Binding())
+  }
+
+  /**
+   * Alchemical constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Alchemical(Binding binding) {
+    super(binding)
+  }
 
   @Override
   Alchemical run() {
@@ -294,14 +309,14 @@ class Alchemical extends AlgorithmsScript {
     HistogramSettings hOps = new HistogramSettings(histogramRestart, lambdaRestart.toString(),
             props)
     OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(
-            refinementEnergy, refinementEnergy, lambdaRestart,
-            hOps, props, dynamicsOptions.getTemperature(), dynamicsOptions.getDt(),
-            dynamicsOptions.getReport(),
-            dynamicsOptions.getCheckpoint(), asynchronous, true, algorithmListener);
+        refinementEnergy, refinementEnergy, lambdaRestart,
+        hOps, props, dynamicsOptions.getTemperature(), dynamicsOptions.getDt(),
+        dynamicsOptions.getReport(),
+        dynamicsOptions.getCheckpoint(), asynchronous, true, algorithmListener)
 
-    orthogonalSpaceTempering.setLambda(lambda);
+    orthogonalSpaceTempering.setLambda(lambda)
 
-    orthogonalSpaceTempering.getOptimizationParameters().setOptimization(true, activeAssembly);
+    orthogonalSpaceTempering.getOptimizationParameters().setOptimization(true, activeAssembly)
     // Create the MolecularDynamics instance.
 
     MolecularDynamics molDyn = new MolecularDynamics(assemblies[0], orthogonalSpaceTempering,
@@ -313,7 +328,7 @@ class Alchemical extends AlgorithmsScript {
             dynamicsOptions.write, dynamicsOptions.temperature, true,
             fileType, dynamicsOptions.write, dyn)
     logger.info(" Searching for low energy coordinates")
-    OptimizationParameters opt = orthogonalSpaceTempering.getOptimizationParameters();
+    OptimizationParameters opt = orthogonalSpaceTempering.getOptimizationParameters()
     double[] lowEnergyCoordinates = opt.getOptimumCoordinates()
     double currentOSTOptimum = opt.getOptimumEnergy()
     if (lowEnergyCoordinates != null) {

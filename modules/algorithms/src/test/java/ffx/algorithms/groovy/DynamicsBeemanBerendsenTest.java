@@ -40,13 +40,9 @@ package ffx.algorithms.groovy;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.misc.PJDependentTest;
-import groovy.lang.Binding;
+import ffx.algorithms.misc.AlgorithmsTest;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.logging.Logger;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -54,10 +50,8 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Hernan V Bernabe */
 @RunWith(Parameterized.class)
-public class DynamicsBeemanBerendsenTest extends PJDependentTest {
+public class DynamicsBeemanBerendsenTest extends AlgorithmsTest {
 
-  private static final Logger logger =
-      Logger.getLogger(DynamicsBeemanBerendsenTest.class.getName());
   private String info;
   private String filename;
   private double endKineticEnergy;
@@ -65,8 +59,6 @@ public class DynamicsBeemanBerendsenTest extends PJDependentTest {
   private double endTotalEnergy;
   private double endTemperature;
   private double tolerance = 0.1;
-  private Binding binding;
-  private Dynamics dynamics;
 
   public DynamicsBeemanBerendsenTest(
       String info,
@@ -87,28 +79,15 @@ public class DynamicsBeemanBerendsenTest extends PJDependentTest {
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {
-          {
-            "Acetamide with BetterBeeman Integrator and Berendsen Thermostat", // info
-            "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
-            4.8087, // endKineticEnergy
-            -29.7186, // endPotentialEnergy
-            -24.9099, // endTotalEnergy
-            201.65 // End temperature
-          }
+            {
+                "Acetamide with BetterBeeman Integrator and Berendsen Thermostat", // info
+                "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
+                4.8087, // endKineticEnergy
+                -29.7186, // endPotentialEnergy
+                -24.9099, // endTotalEnergy
+                201.65 // End temperature
+            }
         });
-  }
-
-  @After
-  public void after() {
-    dynamics.destroyPotentials();
-    System.gc();
-  }
-
-  @Before
-  public void before() {
-    binding = new Binding();
-    dynamics = new Dynamics();
-    dynamics.setBinding(binding);
   }
 
   @Test
@@ -116,22 +95,18 @@ public class DynamicsBeemanBerendsenTest extends PJDependentTest {
 
     // Set-up the input arguments for the script.
     String[] args = {
-      "-n",
-      "10",
-      "-t",
-      "298.15",
-      "-i",
-      "Beeman",
-      "-b",
-      "Berendsen",
-      "-r",
-      "0.001",
-      "src/main/java/" + filename
+        "-n", "10",
+        "-t", "298.15",
+        "-i", "Beeman",
+        "-b", "Berendsen",
+        "-r", "0.001",
+        "src/main/java/" + filename
     };
     binding.setVariable("args", args);
 
-    // Evaluate the script.
-    dynamics.run();
+    // Construct and evaluate the script.
+    Dynamics dynamics = new Dynamics(binding).run();
+    algorithmsScript = dynamics;
 
     MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 

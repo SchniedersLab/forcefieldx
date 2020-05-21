@@ -37,15 +37,8 @@
 // ******************************************************************************
 package ffx.algorithms.groovy;
 
-import ffx.algorithms.misc.PJDependentTest;
-import ffx.utilities.DirectoryUtils;
-import groovy.lang.Binding;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import org.junit.After;
+import ffx.algorithms.misc.AlgorithmsTest;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -55,23 +48,7 @@ import org.junit.Test;
  * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
  */
-public class MinimizeTest extends PJDependentTest {
-
-  Binding binding;
-  Minimize minimize;
-
-  @After
-  public void after() {
-    minimize.destroyPotentials();
-    System.gc();
-  }
-
-  @Before
-  public void before() {
-    binding = new Binding();
-    minimize = new Minimize();
-    minimize.setBinding(binding);
-  }
+public class MinimizeTest extends AlgorithmsTest {
 
   /** Tests convergence criteria flag of the minimize class. */
   @Test
@@ -79,30 +56,16 @@ public class MinimizeTest extends PJDependentTest {
     // Set-up the input arguments for the script.
     String[] args = {"-e", "2", "src/main/java/ffx/algorithms/structures/5awl.pdb"};
     binding.setVariable("args", args);
-
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("MinimizeTest");
-      minimize.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Evaluate the script.
-    minimize.run();
-    double expectedTotalPotential = -277.6200456888939;
+    Minimize minimize = new Minimize(binding).run();
+    algorithmsScript = minimize;
 
+    double expectedTotalPotential = -277.6200456888939;
     double actualTotalPotential =
         minimize.getPotentials().get(minimize.getPotentials().size() - 1).getTotalEnergy();
     Assert.assertEquals(expectedTotalPotential, actualTotalPotential, 1E-8);
-
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by MinimizeTest.");
-    }
   }
 
   @Test
@@ -112,7 +75,8 @@ public class MinimizeTest extends PJDependentTest {
     binding.setVariable("args", args);
 
     // Evaluate the script.
-    minimize.run();
+    Minimize minimize = new Minimize(binding).run();
+    algorithmsScript = minimize;
   }
 
   /** Tests the iterations flag of the minimize class. */
@@ -121,29 +85,15 @@ public class MinimizeTest extends PJDependentTest {
     // Set-up the input arguments for the script.
     String[] args = {"-I", "5", "src/main/java/ffx/algorithms/structures/5awl.pdb"};
     binding.setVariable("args", args);
-
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("MinimizeTest");
-      minimize.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Evaluate the script.
-    minimize.run();
-    double expectedTotalPotential = -262.7346193607451;
+    Minimize minimize = new Minimize(binding).run();
+    algorithmsScript = minimize;
 
+    double expectedTotalPotential = -262.7346193607451;
     double actualTotalPotential =
         minimize.getPotentials().get(minimize.getPotentials().size() - 1).getTotalEnergy();
     Assert.assertEquals(expectedTotalPotential, actualTotalPotential, 1E-8);
-
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by MinimizeTest.");
-    }
   }
 }

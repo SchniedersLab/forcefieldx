@@ -58,16 +58,16 @@ import org.junit.Test;
  */
 public class MTZFilterTest {
 
-  private String filename = "ffx/xray/structures/2DRM.mtz";
-  private ClassLoader cl = this.getClass().getClassLoader();
-  private File mtzFile = new File(cl.getResource(filename).getPath());
+  private final String filename = "ffx/xray/structures/2DRM.mtz";
+  private final ClassLoader cl = this.getClass().getClassLoader();
+  private final File mtzFile = new File(cl.getResource(filename).getPath());
   // Load any properties associated with it
-  private CompositeConfiguration properties = Keyword.loadProperties(mtzFile);
+  private final CompositeConfiguration properties = Keyword.loadProperties(mtzFile);
   // set up the crystal data
-  private Crystal crystal = new Crystal(29.97, 37.86, 44.51, 90.28, 90.11, 90.64, "P1");
-  private Resolution resolution = new Resolution(1.30);
-  private ReflectionList reflectionList = new ReflectionList(crystal, resolution);
-  private DiffractionRefinementData refinementData =
+  private final Crystal crystal = new Crystal(29.97, 37.86, 44.51, 90.28, 90.11, 90.64, "P1");
+  private final Resolution resolution = new Resolution(1.30);
+  private final ReflectionList reflectionList = new ReflectionList(crystal, resolution);
+  private final DiffractionRefinementData refinementData =
       new DiffractionRefinementData(properties, reflectionList);
 
   @Test

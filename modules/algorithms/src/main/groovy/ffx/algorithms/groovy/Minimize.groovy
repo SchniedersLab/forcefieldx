@@ -83,22 +83,35 @@ class Minimize extends AlgorithmsScript {
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
   List<String> filenames = null
-  private File baseDir = null
 
   private int threadsAvail = ParallelTeam.getDefaultThreadCount()
   private int threadsPer = threadsAvail
   MolecularAssembly[] topologies
   private Potential potential
 
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * Minimize Constructor.
+   */
+  Minimize() {
+    this(new Binding())
   }
 
+  /**
+   * Minimize Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Minimize(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   Minimize run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     List<String> arguments = filenames
@@ -135,7 +148,7 @@ class Minimize extends AlgorithmsScript {
       MolecularAssembly molecularAssembly = algorithmFunctions.getActiveAssembly()
       if (molecularAssembly == null) {
         logger.info(helpString())
-        return null
+        return this
       }
       arguments = new ArrayList<>()
       arguments.add(molecularAssembly.getFile().getName())
@@ -183,11 +196,11 @@ class Minimize extends AlgorithmsScript {
       for (molecularAssembly in topologies) {
         String modelFilename = molecularAssembly.getFile().getAbsolutePath()
 
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-          saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+        if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
+          baseDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
 
-        String dirName = saveDir.toString() + File.separator
+        String dirName = baseDir.toString() + File.separator
         String fileName = FilenameUtils.getName(modelFilename)
         String ext = FilenameUtils.getExtension(fileName)
         fileName = FilenameUtils.removeExtension(fileName)
@@ -202,11 +215,11 @@ class Minimize extends AlgorithmsScript {
       // Handle Single Topology Cases.
       activeAssembly = topologies[0]
       String modelFilename = activeAssembly.getFile().getAbsolutePath()
-      if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-        saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+      if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
+        baseDir = new File(FilenameUtils.getFullPath(modelFilename))
       }
 
-      String dirName = saveDir.toString() + File.separator
+      String dirName = baseDir.toString() + File.separator
       String fileName = FilenameUtils.getName(modelFilename)
       String ext = FilenameUtils.getExtension(fileName)
       fileName = FilenameUtils.removeExtension(fileName)

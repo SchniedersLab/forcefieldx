@@ -50,7 +50,8 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
 
 import java.util.stream.Collectors
 
@@ -62,21 +63,39 @@ import java.util.stream.Collectors
  * <br>
  * ffxc Thermodynamics [options] &lt;filename&gt [file2...];
  */
-@CommandLine.Command(description = " Use Orthogonal Space Tempering with histogram replica exchange to estimate a free energy.", name = "ffxc RepexThermo")
+@Command(description = " Use Orthogonal Space Tempering with histogram replica exchange to estimate a free energy.", name = "ffxc RepexThermo")
 class RepexThermo extends Thermodynamics {
 
-  @CommandLine.Mixin
+  @Mixin
   RepexOSTOptions repex
 
   private RepExOST repExOST
   private CrystalPotential finalPotential
 
+  /**
+   * RepexThermo Constructor.
+   */
+  RepexThermo() {
+    this(new Binding())
+  }
+
+  /**
+   * RepexThermo Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  RepexThermo(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   RepexThermo run() {
 
     // Begin boilerplate "make a topology" code.
     if (!init()) {
-      return null
+      return this
     }
 
     boolean fromActive
@@ -89,7 +108,7 @@ class RepexThermo extends Thermodynamics {
       MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
       if (mola == null) {
         logger.info(helpString())
-        return null
+        return this
       }
       arguments = Collections.singletonList(mola.getFile().getName())
       fromActive = true

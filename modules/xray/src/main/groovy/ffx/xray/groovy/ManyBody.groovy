@@ -77,7 +77,22 @@ class ManyBody extends AlgorithmsScript {
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
   private List<String> filenames
-  private RefinementEnergy refinementEnergy;
+  private RefinementEnergy refinementEnergy
+
+  /**
+   * ManyBody constructor.
+   */
+  ManyBody() {
+    this(new Binding())
+  }
+
+  /**
+   * ManyBody constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  ManyBody(Binding binding) {
+    super(binding)
+  }
 
   @Override
   ManyBody run() {
@@ -127,7 +142,7 @@ class ManyBody extends AlgorithmsScript {
       xrayOptions.refinementMode = RefinementMode.COORDINATES
     }
     refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
-    refinementEnergy.setScaling(null);
+    refinementEnergy.setScaling(null)
     int n = refinementEnergy.getNumberOfVariables()
     double[] x = new double[n]
     refinementEnergy.getCoordinates(x)
@@ -166,12 +181,12 @@ class ManyBody extends AlgorithmsScript {
       e = refinementEnergy.energy(x, true)
       logger.info(String.format(" Final energy: %16.8f ", e))
 
-      String ext = FilenameUtils.getExtension(filename);
-      filename = FilenameUtils.removeExtension(filename);
+      String ext = FilenameUtils.getExtension(filename)
+      filename = FilenameUtils.removeExtension(filename)
       if (ext.toUpperCase().contains("XYZ")) {
         algorithmFunctions.saveAsXYZ(assemblies, new File(filename + ".xyz"))
       } else {
-        File modelFile = saveDirFile(activeAssembly.getFile());
+        File modelFile = saveDirFile(activeAssembly.getFile())
         algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
       }
     }
@@ -184,7 +199,7 @@ class ManyBody extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy);
+        Collections.singletonList(refinementEnergy)
   }
 }
 

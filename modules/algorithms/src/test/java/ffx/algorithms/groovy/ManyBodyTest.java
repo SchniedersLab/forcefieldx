@@ -37,19 +37,13 @@
 // ******************************************************************************
 package ffx.algorithms.groovy;
 
-import ffx.algorithms.misc.PJDependentTest;
+import static org.junit.Assert.assertEquals;
+
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.potential.PotentialComponent;
-import ffx.potential.Utilities;
-import ffx.utilities.DirectoryUtils;
-import groovy.lang.Binding;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -58,81 +52,45 @@ import org.junit.Test;
  *
  * @author Mallory R. Tollefson
  */
-public class ManyBodyTest extends PJDependentTest {
-
-  Binding binding;
-  ManyBody manyBody;
-
-  @After
-  public void after() {
-    manyBody.destroyPotentials();
-    System.gc();
-  }
-
-  @Before
-  public void before() {
-    binding = new Binding();
-    manyBody = new ManyBody();
-    manyBody.setBinding(binding);
-  }
+public class ManyBodyTest extends AlgorithmsTest {
 
   /**
-   * Tests ManyBody.groovy and RotamerOptimization.java by running a box optimization simulation on
-   * a small pdb file.
+   * Tests ManyBody.groovy and RotamerOptimization.java by running a box optimization simulation on a
+   * small pdb file.
    */
   @Test
   public void testManyBodyBoxOptimization() {
     // Set-up the input arguments for the script.
     String[] args = {
-      "-a",
-      "5",
-      "-L",
-      "2",
-      "--bL",
-      "10",
-      "--bB",
-      "2",
-      "--tC",
-      "2",
-      "--pr",
-      "2",
-      "src/main/java/ffx/algorithms/structures/5awl.pdb"
+        "-a", "5",
+        "-L", "2",
+        "--bL", "10",
+        "--bB", "2",
+        "--tC", "2",
+        "--pr", "2",
+        "src/main/java/ffx/algorithms/structures/5awl.pdb"
     };
     binding.setVariable("args", args);
-
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("ManyBodyTest");
-      manyBody.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Evaluate the script.
-    manyBody.run();
+    ManyBody manyBody = new ManyBody(binding).run();
+    algorithmsScript = manyBody;
 
     double expectedTotalPotential = -219.88365885049828;
     double actualTotalPotential =
         manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
-    Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
+    assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
     double expectedApproximateEnergy = -215.73796751249856;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
-    Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
-
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by ManyBodyTest.");
-    }
+    assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
   }
 
   /**
    * Tests the restart file functionality for box optimization. The test applies a 1.5 angstrom
-   * 2-body and 3-body cutoff but the restart file was generated using 2-body and 3-body cutoffs of
-   * 2 angstroms.
+   * 2-body and 3-body cutoff but the restart file was generated using 2-body and 3-body cutoffs of 2
+   * angstroms.
    */
   @Test
   public void testManyBodyBoxRestart() throws IOException {
@@ -143,53 +101,31 @@ public class ManyBodyTest extends PJDependentTest {
 
     // Set-up the input arguments for the script.
     String[] args = {
-      "-a",
-      "5",
-      "--bL",
-      "10",
-      "--tC",
-      "1.5",
-      "-T",
-      "--thC",
-      "1.5",
-      "--eR",
-      "src/main/java/ffx/algorithms/structures/5awl.restart",
-      "src/main/java/ffx/algorithms/structures/5awl.pdb"
+        "-a", "5",
+        "--bL", "10",
+        "--tC", "1.5",
+        "-T", "--thC",
+        "1.5", "--eR",
+        "src/main/java/ffx/algorithms/structures/5awl.restart",
+        "src/main/java/ffx/algorithms/structures/5awl.pdb"
     };
     binding.setVariable("args", args);
-
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("ManyBodyTest");
-      manyBody.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Evaluate the script.
-    try {
-      manyBody.run();
-    } catch (Error error) {
-      System.out.println(Utilities.stackTraceToString(error));
-    }
+    ManyBody manyBody = new ManyBody(binding).run();
+    algorithmsScript = manyBody;
 
     double expectedTotalPotential = -219.88365885049828;
     double actualTotalPotential =
         manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
-    Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
+    assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
     double expectedApproximateEnergy = -219.12352460035171;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
-    Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
+    assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
 
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by ManyBodyTest.");
-    }
-
+    // Delete restart file.
     manyBody.getManyBody().getRestartFile().delete();
   }
 
@@ -197,37 +133,27 @@ public class ManyBodyTest extends PJDependentTest {
   public void testManyBodyGlobal() {
     // Set-up the input arguments for the script.
     String[] args = {
-      "-a", "2", "-L", "2", "--tC", "2", "src/main/java/ffx/algorithms/structures/5awl.pdb"
+        "-a", "2", "-L", "2", "--tC", "2", "src/main/java/ffx/algorithms/structures/5awl.pdb"
     };
     binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("ManyBodyTest");
-      manyBody.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
+    // Evaluate the script.
+    ManyBody manyBody = new ManyBody(binding).run();
+    algorithmsScript = manyBody;
 
     // Evaluate the script.
     manyBody.run();
     double expectedTotalPotential = -219.88365885049828;
     double actualTotalPotential =
         manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
-    Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-8);
+    assertEquals(actualTotalPotential, expectedTotalPotential, 1E-8);
 
     double expectedApproximateEnergy = -211.27591736924524;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
-    Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
+    assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
 
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by ManyBodyTest.");
-    }
-
+    // Delete restart file.
     manyBody.getManyBody().getRestartFile().delete();
   }
 
@@ -238,7 +164,8 @@ public class ManyBodyTest extends PJDependentTest {
     binding.setVariable("args", args);
 
     // Evaluate the script.
-    manyBody.run();
+    ManyBody manyBody = new ManyBody(binding).run();
+    algorithmsScript = manyBody;
   }
 
   /**
@@ -253,55 +180,35 @@ public class ManyBodyTest extends PJDependentTest {
 
     // Set-up the input arguments for the script.
     String[] args = {
-      "-a",
-      "2",
-      "-L",
-      "2",
-      "--tC",
-      "2",
-      "--pr",
-      "2",
-      "--mC",
-      "10000",
-      "src/main/java/ffx/algorithms/structures/5awl.pdb"
+        "-a", "2",
+        "-L", "2",
+        "--tC", "2",
+        "--pr", "2",
+        "--mC", "10000",
+        "src/main/java/ffx/algorithms/structures/5awl.pdb"
     };
     binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("ManyBodyTest");
-      manyBody.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
-
+    // Evaluate the script.
+    ManyBody manyBody = new ManyBody(binding);
+    algorithmsScript = manyBody;
     manyBody.setTesting(true);
     manyBody.setMonteCarloTesting(true);
 
-    // Evaluate the script.
     manyBody.run();
 
     double expectedTotalPotential = -203.72294574070136;
     double actualTotalPotential =
         manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
-    Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
+    assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
     double expectedApproximateEnergy = -194.09506985539784;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
-    Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
+    assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
 
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by ManyBodyTest.");
-    }
-
-    // Clear properties and delete unneccesary files.
-    manyBody.setMonteCarloTesting(false);
+    // Delete restart file.
     manyBody.getManyBody().getRestartFile().delete();
-    System.clearProperty("polarization");
   }
 
   /**
@@ -316,52 +223,29 @@ public class ManyBodyTest extends PJDependentTest {
 
     // Set-up the input arguments for the script.
     String[] args = {
-      "-a",
-      "2",
-      "-L",
-      "2",
-      "--tC",
-      "1.5",
-      "-T",
-      "--thC",
-      "1.5",
-      "--eR",
-      "src/main/java/ffx/algorithms/structures/5awl.restart",
-      "src/main/java/ffx/algorithms/structures/5awl.pdb"
+        "-a", "2",
+        "-L", "2",
+        "--tC", "1.5",
+        "-T", "--thC",
+        "1.5", "--eR",
+        "src/main/java/ffx/algorithms/structures/5awl.restart",
+        "src/main/java/ffx/algorithms/structures/5awl.pdb"
     };
     binding.setVariable("args", args);
-
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("ManyBodyTest");
-      manyBody.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Evaluate the script.
-    try {
-      manyBody.run();
-    } catch (Error error) {
-      System.out.println(Utilities.stackTraceToString(error));
-    }
+    ManyBody manyBody = new ManyBody(binding).run();
+    algorithmsScript = manyBody;
 
     double expectedTotalPotential = -217.86618724075134;
     double actualTotalPotential =
         manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
-    Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
+    assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
     double expectedApproximateEnergy = -260.25114788484154;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
-    Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
-
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by ManyBodyTest.");
-    }
+    assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
 
     manyBody.getManyBody().getRestartFile().delete();
   }

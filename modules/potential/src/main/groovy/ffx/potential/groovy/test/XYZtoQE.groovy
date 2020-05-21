@@ -126,10 +126,19 @@ class XYZtoQE extends PotentialScript {
       description = 'XYZ file to be converted.')
   List<String> filenames = null
 
-  private File baseDir = null
+  /**
+   * XYZtoQE Constructor.
+   */
+  XYZtoQE() {
+    this(new Binding())
+  }
 
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * XYZtoQE Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  XYZtoQE(Binding binding) {
+    super(binding)
   }
 
   /**

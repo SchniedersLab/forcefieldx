@@ -37,6 +37,11 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,11 +51,25 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 /**
- * Abstract BaseFFXTest class.
+ * The FFXTest configures the context for FFX tests. This includes: 1) Sets testing related
+ * environment variables:
+ * <br>
+ * Set "-Dffx.ci=true" for a CI environment (default: false).
+ * <br>
+ * Set "-Dffx.openMM=true" for CUDA dependent OpenMM tests (default: false).
+ * <br>
+ * 2) Configures the logging level, using the ffx.test.log System property (default: INFO).
+ * <br>
+ * 3) Stores System properties prior to each test, and restores them after each test (i.e. properties
+ * set by a test do not effect the next test).
+ * <br>
+ * 4) Upon request, creates a temporary that is deleted after the current test is completed.
+ * <br>
+ * 5) Requests garbage collection after each test.
  *
  * @author Michael J. Schnieders
  */
-public abstract class BaseFFXTest {
+public abstract class FFXTest {
 
   /** Constant <code>ffxCI=System.getProperty("ffx.ci", "false").equalsIgnoreCase("true")</code> */
   public static final boolean ffxCI =
@@ -64,12 +83,13 @@ public abstract class BaseFFXTest {
       System.getProperty("ffx.openMM", "false").equalsIgnoreCase("true");
 
   /** Constant <code>logger</code> */
-  protected static final Logger logger = Logger.getLogger(BaseFFXTest.class.getName());
+  protected static final Logger logger = Logger.getLogger(FFXTest.class.getName());
 
   private static final Level origLevel = Logger.getLogger("ffx").getLevel();
   private static final Level testLevel;
   private static final Level ffxLevel;
   private static Properties properties;
+  private Path path = null;
 
   static {
     Level level;
@@ -105,11 +125,48 @@ public abstract class BaseFFXTest {
     logger.setLevel(testLevel);
   }
 
+  /**
+   * Create temporary testing directory that will be deleted after the current test.
+   *
+   * @return Path to the testing directory.
+   */
+  public Path registerTemporaryDirectory() {
+    deleteTemporaryDirectory();
+    try {
+      path = Files.createTempDirectory("FFXTestDirectory");
+    } catch (java.io.IOException e) {
+      fail(" Could not create a temporary directory.");
+    }
+    return path;
+  }
+
+  /**
+   * Delete the temporary test directory.
+   */
+  private void deleteTemporaryDirectory() {
+    // Delete the test directory if it exists.
+    if (path != null) {
+      try {
+        DirectoryUtils.deleteDirectoryTree(path);
+      } catch (IOException e) {
+        System.out.println(e.toString());
+        fail(" Exception deleting files created by Frac2Cart.");
+      }
+      path = null;
+    }
+  }
+
   /** afterTest. */
   @After
   public void afterTest() {
     // All properties are set to the values they were at the beginning of the test.
     System.setProperties(properties);
+
+    // Delete the test directory if it exists.
+    deleteTemporaryDirectory();
+
+    // Collect garbage.
+    System.gc();
   }
 
   /** beforeTest. */
@@ -123,8 +180,7 @@ public abstract class BaseFFXTest {
     Properties currentProperties = System.getProperties();
 
     // All key-value pairs from currentProperties are stored in the properties object.
-    for (String key : currentProperties.stringPropertyNames()) {
-      properties.setProperty(key, currentProperties.getProperty(key));
-    }
+    currentProperties.stringPropertyNames()
+        .forEach(key -> properties.setProperty(key, currentProperties.getProperty(key)));
   }
 }

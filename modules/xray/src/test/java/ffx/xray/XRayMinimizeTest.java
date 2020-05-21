@@ -44,11 +44,10 @@ import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.BaseFFXTest;
+import ffx.utilities.FFXTest;
 import ffx.xray.parsers.CIFFilter;
 import ffx.xray.parsers.MTZFilter;
 import java.io.File;
@@ -64,7 +63,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Timothy D. Fenn and Michael J. Schnieders */
 @RunWith(Parameterized.class)
-public class XRayMinimizeTest extends BaseFFXTest {
+public class XRayMinimizeTest extends FFXTest {
 
   private static final Logger logger = Logger.getLogger(XRayMinimizeTest.class.getName());
   private final String info;
@@ -99,9 +98,6 @@ public class XRayMinimizeTest extends BaseFFXTest {
       crystalStats = null;
       return;
     }
-
-    int index = pdbname.lastIndexOf(".");
-    String name = pdbname.substring(0, index);
 
     // load the structure
     ClassLoader cl = this.getClass().getClassLoader();
@@ -143,7 +139,6 @@ public class XRayMinimizeTest extends BaseFFXTest {
     }
 
     mola.finalize(true, mola.getForceField());
-    ForceFieldEnergy energy = mola.getPotentialEnergy();
 
     List<Atom> atomList = mola.getAtomList();
     Atom[] atomArray = atomList.toArray(new Atom[0]);
@@ -178,28 +173,28 @@ public class XRayMinimizeTest extends BaseFFXTest {
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {
-          {
-            false,
-            "NSF D2 domain test",
-            "ffx/xray/structures/1NSF.pdb",
-            "ffx/xray/structures/1NSF.mtz",
-            null,
-            25.17866326312945,
-            25.448305511010272,
-            0.893903833644513,
-            0.14952134994994207
-          },
-          {
-            true,
-            "SNARE complex",
-            "ffx/xray/structures/1N7S.pdb",
-            "ffx/xray/structures/1N7S.mtz",
-            null,
-            19.41267149593652,
-            21.555930987392596,
-            0.9336845537932159,
-            0.1319269157669047
-          }
+            {
+                false,
+                "NSF D2 domain test",
+                "ffx/xray/structures/1NSF.pdb",
+                "ffx/xray/structures/1NSF.mtz",
+                null,
+                25.17866326312945,
+                25.448305511010272,
+                0.893903833644513,
+                0.14952134994994207
+            },
+            {
+                true,
+                "SNARE complex",
+                "ffx/xray/structures/1N7S.pdb",
+                "ffx/xray/structures/1N7S.mtz",
+                null,
+                19.41267149593652,
+                21.555930987392596,
+                0.9336845537932159,
+                0.1319269157669047
+            }
         });
   }
 
@@ -221,7 +216,9 @@ public class XRayMinimizeTest extends BaseFFXTest {
 
   @Test
   public void testLauncher() {
-    if (!ffxCI && ciOnly) return;
+    if (!ffxCI && ciOnly) {
+      return;
+    }
     testCrystalStats();
     testScaleBulk();
     testSigmaA();

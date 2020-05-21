@@ -70,7 +70,7 @@ class Anneal extends AlgorithmsScript {
   DynamicsOptions dynamics
 
   @Mixin
-  WriteoutOptions writeout;
+  WriteoutOptions writeout
 
   @Mixin
   AnnealOptions anneal
@@ -81,10 +81,25 @@ class Anneal extends AlgorithmsScript {
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames
 
-  private SimulatedAnnealing simulatedAnnealing = null;
+  private SimulatedAnnealing simulatedAnnealing = null
 
-  private Potential potential;
-  private RefinementEnergy refinementEnergy;
+  private Potential potential
+  private RefinementEnergy refinementEnergy
+
+  /**
+   * Anneal constructor.
+   */
+  Anneal() {
+    this(new Binding())
+  }
+
+  /**
+   * Anneal constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Anneal(Binding binding) {
+    super(binding)
+  }
 
   @Override
   Anneal run() {
@@ -95,10 +110,10 @@ class Anneal extends AlgorithmsScript {
 
     dynamics.init()
     // Added vs. regular Anneal script.
-    xrayOptions.init();
+    xrayOptions.init()
 
     String modelFilename
-    MolecularAssembly[] assemblies;
+    MolecularAssembly[] assemblies
     if (filenames != null && filenames.size() > 0) {
       assemblies = algorithmFunctions.open(filenames.get(0))
       activeAssembly = assemblies[0]
@@ -107,7 +122,7 @@ class Anneal extends AlgorithmsScript {
       return
     }
 
-    modelFilename = activeAssembly.getFile().getAbsolutePath();
+    modelFilename = activeAssembly.getFile().getAbsolutePath()
 
     logger.info("\n Running simulated annealing on X-ray target including " + modelFilename + "\n")
 
@@ -118,39 +133,39 @@ class Anneal extends AlgorithmsScript {
     }
 
     // Differs between regular Anneal and x-ray Anneal.
-    CompositeConfiguration properties = activeAssembly.getProperties();
+    CompositeConfiguration properties = activeAssembly.getProperties()
     DiffractionData diffractionData =
-        xrayOptions.getDiffractionData(filenames, assemblies, parseResult);
-    potential = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions);
+        xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
+    potential = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly,
         potential, properties,
-        algorithmListener, dyn);
+        algorithmListener, dyn)
 
-    simulatedAnnealing.setPrintInterval(dynamics.report);
-    simulatedAnnealing.setSaveFrequency(dynamics.write);
+    simulatedAnnealing.setPrintInterval(dynamics.report)
+    simulatedAnnealing.setSaveFrequency(dynamics.write)
     simulatedAnnealing.setRestartFrequency(dynamics.checkpoint)
-    simulatedAnnealing.setTrajectorySteps(dynamics.trajSteps);
+    simulatedAnnealing.setTrajectorySteps(dynamics.trajSteps)
 
-    simulatedAnnealing.anneal();
+    simulatedAnnealing.anneal()
 
     diffractionData.scaleBulkFit()
     diffractionData.printStats()
 
-    double[] x = new double[potential.getNumberOfVariables()];
-    x = potential.getCoordinates(x);
+    double[] x = new double[potential.getNumberOfVariables()]
+    x = potential.getCoordinates(x)
     potential.energy(x, true)
 
     diffractionData.writeData(FilenameUtils.removeExtension(modelFilename) + ".mtz")
 
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+    if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
+      baseDir = new File(FilenameUtils.getFullPath(modelFilename))
     }
 
-    String dirName = saveDir.toString() + File.separator
+    String dirName = baseDir.toString() + File.separator
     String fileName = FilenameUtils.getName(modelFilename)
     fileName = FilenameUtils.removeExtension(fileName)
 
-    writeout.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly);
+    writeout.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly)
 
     return this
   }
@@ -158,7 +173,7 @@ class Anneal extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy);
+        Collections.singletonList(refinementEnergy)
   }
 }
 

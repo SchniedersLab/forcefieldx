@@ -75,6 +75,21 @@ class Dynamics extends AlgorithmsScript {
   private List<String> filenames
   private RefinementEnergy refinementEnergy
 
+  /**
+   * Dynamics constructor.
+   */
+  Dynamics() {
+    this(new Binding())
+  }
+
+  /**
+   * Dynamics constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Dynamics(Binding binding) {
+    super(binding)
+  }
+
   @Override
   Dynamics run() {
 

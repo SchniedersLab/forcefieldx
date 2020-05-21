@@ -40,11 +40,9 @@ package ffx.algorithms.groovy;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.misc.PJDependentTest;
-import groovy.lang.Binding;
+import ffx.algorithms.misc.AlgorithmsTest;
 import java.util.Arrays;
 import java.util.Collection;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -52,7 +50,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Hernan V Bernabe */
 @RunWith(Parameterized.class)
-public class DynamicsInitVelocitiesTest extends PJDependentTest {
+public class DynamicsInitVelocitiesTest extends AlgorithmsTest {
 
   private String info;
   private String filename;
@@ -62,9 +60,6 @@ public class DynamicsInitVelocitiesTest extends PJDependentTest {
   private double potentialEnergyTolerance = 5.0;
   private double endTotalEnergy;
   private double totalEnergyTolerance = 5.0;
-
-  private Binding binding;
-  private Dynamics dynamics;
 
   public DynamicsInitVelocitiesTest(
       String info,
@@ -84,21 +79,14 @@ public class DynamicsInitVelocitiesTest extends PJDependentTest {
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {
-          {
-            "Water Tiny Initialize Velocities", // info
-            "ffx/algorithms/structures/watertiny.xyz", // filename
-            64.8511, // endKineticEnergy
-            -218.0760, // endPotentialEnergy
-            -153.2249 // endTotalEnergy
-          }
+            {
+                "Water Tiny Initialize Velocities", // info
+                "ffx/algorithms/structures/watertiny.xyz", // filename
+                64.8511, // endKineticEnergy
+                -218.0760, // endPotentialEnergy
+                -153.2249 // endTotalEnergy
+            }
         });
-  }
-
-  @Before
-  public void before() {
-    binding = new Binding();
-    dynamics = new Dynamics();
-    dynamics.setBinding(binding);
   }
 
   @Test
@@ -106,22 +94,18 @@ public class DynamicsInitVelocitiesTest extends PJDependentTest {
 
     // Set-up the input arguments for the script.
     String[] args = {
-      "-n",
-      "10",
-      "-t",
-      "298.15",
-      "-i",
-      "VelocityVerlet",
-      "-b",
-      "Adiabatic",
-      "-r",
-      "0.001",
-      "src/main/java/" + filename
+        "-n", "10",
+        "-t", "298.15",
+        "-i", "VelocityVerlet",
+        "-b", "Adiabatic",
+        "-r", "0.001",
+        "src/main/java/" + filename
     };
     binding.setVariable("args", args);
 
-    // Evaluate script.
-    dynamics.run();
+    // Construct and evaluate the script.
+    Dynamics dynamics = new Dynamics(binding).run();
+    algorithmsScript = dynamics;
 
     MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 

@@ -62,6 +62,8 @@ import picocli.CommandLine.Parameters
 
 import java.util.logging.Level
 
+import static java.util.Arrays.fill
+
 /**
  * The MostBar script uses a single set of archive file(s) from a Metropolized
  * Orthogonal Space Tempering run to evaluate free energy via the Bennett Acceptance Ratio
@@ -194,14 +196,33 @@ class MostBar extends AlgorithmsScript {
     additionalProperties = addedProperties
   }
 
+  /**
+   * MostBar Constructor.
+   */
+  MostBar() {
+    this(new Binding())
+  }
+
+  /**
+   * MostBar Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  MostBar(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   MostBar run() {
     // Begin boilerplate code.
     if (!init()) {
-      return null
+      return this
     }
+
     if (filenames == null || filenames.isEmpty()) {
-      return null
+      return this
     }
 
     int nFiles = filenames.size()
@@ -314,9 +335,9 @@ class MostBar extends AlgorithmsScript {
     // --lambdaSorted and the observations array are there largely to deal with a test case that was just regular BAR with concatenated .arc files.
     observations = new int[lamBins]
     if (lambdaSorted) {
-      Arrays.fill(observations, -startFrame)
+      fill(observations, -startFrame)
     } else {
-      Arrays.fill(observations, 0)
+      fill(observations, 0)
     }
 
     logger.info(" Reading snapshots.")

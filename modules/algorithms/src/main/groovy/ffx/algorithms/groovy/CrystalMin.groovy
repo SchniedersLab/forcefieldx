@@ -103,11 +103,29 @@ class CrystalMin extends AlgorithmsScript {
   private XtalEnergy xtalEnergy
   private CrystalMinimize crystalMinimize
 
+  /**
+   * CrystalMin Constructor.
+   */
+  CrystalMin() {
+    this(new Binding())
+  }
+
+  /**
+   * CrystalMin Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  CrystalMin(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   CrystalMin run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     String modelFilename
@@ -117,7 +135,7 @@ class CrystalMin extends AlgorithmsScript {
       modelFilename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     } else {
       modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
@@ -152,11 +170,11 @@ class CrystalMin extends AlgorithmsScript {
 
     // Handle Single Topology Cases.
     modelFilename = activeAssembly.getFile().getAbsolutePath()
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+    if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
+      baseDir = new File(FilenameUtils.getFullPath(modelFilename))
     }
 
-    String dirName = saveDir.toString() + File.separator
+    String dirName = baseDir.toString() + File.separator
     String fileName = FilenameUtils.getName(modelFilename)
     String ext = FilenameUtils.getExtension(fileName)
     fileName = FilenameUtils.removeExtension(fileName)
@@ -244,6 +262,9 @@ class CrystalMin extends AlgorithmsScript {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   List<Potential> getPotentials() {
     List<Potential> potentials

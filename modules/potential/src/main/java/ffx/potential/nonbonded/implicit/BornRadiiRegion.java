@@ -97,6 +97,8 @@ public class BornRadiiRegion extends ParallelRegion {
   /** Forces all atoms to be considered during Born radius updates. */
   private boolean nativeEnvironmentApproximation;
   private boolean verboseRadii;
+  /** If true, the descreening size of atoms is based on their force field vdW radius */
+  private final boolean descreenWithVDW;
   /** If true, hydrogen atoms displace solvent */
   private final boolean descreenWithHydrogen;
   /** If true, bonded atoms displace solvent */
@@ -111,6 +113,7 @@ public class BornRadiiRegion extends ParallelRegion {
     }
     ecavTot = new SharedDouble(0.0);
     verboseRadii = forceField.getBoolean("VERBOSE_BORN_RADII", false);
+    descreenWithVDW = forceField.getBoolean("DESCREEN_VDW", false);
     descreenWithHydrogen = forceField.getBoolean("DESCREEN_HYDROGEN", true);
     descreen12 = forceField.getBoolean("DESCREEN_12", true);
 
@@ -118,7 +121,13 @@ public class BornRadiiRegion extends ParallelRegion {
       logger.info(" Verbose Born radii.");
     }
     if (!descreenWithHydrogen) {
-      logger.info(" Hydrogen do not block solvent.");
+      logger.info(" Hydrogen do not descreen.");
+    }
+    if (!descreen12) {
+      logger.info(" 1-2 atoms do not descreen.");
+    }
+    if (descreenWithVDW) {
+      logger.info(" van der Waals radii are used to descreen.");
     }
   }
 
@@ -262,6 +271,8 @@ public class BornRadiiRegion extends ParallelRegion {
             continue;
           }
           final double baseRi = baseRadius[i];
+          final double descreenRi = (descreenWithVDW) ? atoms[i].getVDWType().radius / 2.0 : baseRi;
+          final double scaledRi = descreenRi * overlapScale[i];
           assert (baseRi > 0.0);
           final double xi = x[i];
           final double yi = y[i];
@@ -288,13 +299,14 @@ public class BornRadiiRegion extends ParallelRegion {
               final double r = sqrt(r2);
               // Atom i being descreeened by atom k.
               if (descreenWithHydrogen || !atoms[k].isHydrogen()) {
-                double scaledRk = baseRk * overlapScale[k];
+                final double descreenRk =
+                    (descreenWithVDW) ? atoms[k].getVDWType().radius / 2.0 : baseRk;
+                final double scaledRk = descreenRk * overlapScale[k];
                 localBorn[i] += integral(r, r2, baseRi, scaledRk);
                 //logger.info(format(" %d after descreening by %d : %16.8f", i, k, localBorn[i]));
               }
               // Atom k being descreeened by atom i.
               if (descreenWithHydrogen || !atoms[i].isHydrogen()) {
-                double scaledRi = baseRi * overlapScale[i];
                 localBorn[k] += integral(r, r2, baseRk, scaledRi);
                 //logger.info(format(" %d after descreening by %d : %16.8f", k, i, localBorn[k]));
               }
@@ -310,7 +322,9 @@ public class BornRadiiRegion extends ParallelRegion {
                 final double r = sqrt(r2);
 
                 // Atom i being descreeened by atom k.
-                double scaledRk = baseRk * overlapScale[k];
+                final double descreenRk =
+                    (descreenWithVDW) ? atoms[k].getVDWType().radius / 2.0 : baseRk;
+                final double scaledRk = descreenRk * overlapScale[k];
                 localBorn[i] += integral(r, r2, baseRi, scaledRk);
               }
               // For symmetry mates, atom k is not descreeened by atom i.

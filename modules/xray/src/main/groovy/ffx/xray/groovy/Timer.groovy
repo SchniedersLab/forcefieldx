@@ -71,7 +71,22 @@ class Timer extends AlgorithmsScript {
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames
-  private RefinementEnergy refinementEnergy;
+  private RefinementEnergy refinementEnergy
+
+  /**
+   * Timer constructor.
+   */
+  Timer() {
+    this(new Binding())
+  }
+
+  /**
+   * Timer constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Timer(Binding binding) {
+    super(binding)
+  }
 
   @Override
   Timer run() {
@@ -97,7 +112,7 @@ class Timer extends AlgorithmsScript {
       logger.info(helpString())
       return this
     } else {
-      modelfilename = activeAssembly.getFile().getAbsolutePath();
+      modelfilename = activeAssembly.getFile().getAbsolutePath()
     }
 
     logger.info("\n Running xray.Timer on " + modelfilename)
@@ -125,7 +140,7 @@ class Timer extends AlgorithmsScript {
     refinementEnergy.getCoordinates(x)
     Potential energy = refinementEnergy.getDataEnergy()
 
-    int nEvals = timerOptions.iterations;
+    int nEvals = timerOptions.iterations
     long minTime = Long.MAX_VALUE
     double sumTime2 = 0.0
     int halfnEvals = (int) ((nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1) // Halfway point
@@ -139,7 +154,7 @@ class Timer extends AlgorithmsScript {
       }
       time += System.nanoTime()
       logger.info(String.format(" Target energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
-      minTime = time < minTime ? time : minTime;
+      minTime = time < minTime ? time : minTime
       if (i >= (int) (nEvals / 2)) {
         double time2 = time * 1.0E-9
         sumTime2 += (time2 * time2)
@@ -157,6 +172,6 @@ class Timer extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy);
+        Collections.singletonList(refinementEnergy)
   }
 }

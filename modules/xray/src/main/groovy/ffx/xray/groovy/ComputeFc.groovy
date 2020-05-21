@@ -67,13 +67,28 @@ class ComputeFc extends AlgorithmsScript {
   XrayOptions xrayOptions
 
   /**
+   * ComputeFc constructor.
+   */
+  ComputeFc() {
+    this(new Binding())
+  }
+
+  /**
+   * ComputeFc constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  ComputeFc(Binding binding) {
+    super(binding)
+  }
+
+  /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames
 
-  private MolecularAssembly[] assemblies;
-  private DiffractionData diffractiondata;
+  private MolecularAssembly[] assemblies
+  private DiffractionData diffractiondata
 
   @Override
   ComputeFc run() {
@@ -101,7 +116,7 @@ class ComputeFc extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
+    List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies)
 
     diffractiondata = new DiffractionData(assemblies, assemblies[0].getProperties(),
         xrayOptions.solventModel,
@@ -123,9 +138,9 @@ class ComputeFc extends AlgorithmsScript {
   }
 
   @Override
-  public List<Potential> getPotentials() {
+  List<Potential> getPotentials() {
     if (assemblies == null) {
-      return new ArrayList<Potential>();
+      return new ArrayList<Potential>()
     } else {
       return Arrays.stream(assemblies).
           filter {a -> a != null
@@ -134,12 +149,12 @@ class ComputeFc extends AlgorithmsScript {
           }.
           filter {e -> e != null
           }.
-          collect(Collectors.toList());
+          collect(Collectors.toList())
     }
   }
 
   @Override
   boolean destroyPotentials() {
-    return diffractiondata == null ? true : diffractiondata.destroy();
+    return diffractiondata == null ? true : diffractiondata.destroy()
   }
 }

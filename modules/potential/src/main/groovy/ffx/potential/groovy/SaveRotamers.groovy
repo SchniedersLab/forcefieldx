@@ -121,13 +121,28 @@ class SaveRotamers extends PotentialScript {
   private List<String> filenames
 
   /**
+   * SaveRotamers Constructor.
+   */
+  SaveRotamers() {
+    this(new Binding())
+  }
+
+  /**
+   * SaveRotamers Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  SaveRotamers(Binding binding) {
+    super(binding)
+  }
+
+  /**
    * Execute the script.
    */
   @Override
   SaveRotamers run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     String modelFilename
@@ -137,7 +152,7 @@ class SaveRotamers extends PotentialScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     } else {
       modelFilename = activeAssembly.getFile().getAbsolutePath()
     }

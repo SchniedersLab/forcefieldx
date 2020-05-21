@@ -40,12 +40,9 @@ package ffx.algorithms.groovy;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.misc.PJDependentTest;
-import groovy.lang.Binding;
+import ffx.algorithms.misc.AlgorithmsTest;
 import java.util.Arrays;
 import java.util.Collection;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -57,7 +54,7 @@ import org.junit.runners.Parameterized.Parameters;
  * @author Hernan V. Bernabe
  */
 @RunWith(Parameterized.class)
-public class DynamicsNVTTest extends PJDependentTest {
+public class DynamicsNVTTest extends AlgorithmsTest {
 
   private String info;
   private String filename;
@@ -65,9 +62,6 @@ public class DynamicsNVTTest extends PJDependentTest {
   private double tempTolerance = 0.01;
   private double endTotalEnergy;
   private double energyTolerance = 0.01;
-
-  private Binding binding;
-  private Dynamics dynamics;
 
   public DynamicsNVTTest(String info, String filename, double finalTemp, double endTotalEnergy) {
     this.info = info;
@@ -80,26 +74,13 @@ public class DynamicsNVTTest extends PJDependentTest {
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {
-          {
-            "Water Box NVT", // info
-            "ffx/algorithms/structures/waterbox_eq.xyz", // filename
-            296.18798, // Final temperature.
-            -24952.0595 // Final total energy
-          }
+            {
+                "Water Box NVT", // info
+                "ffx/algorithms/structures/waterbox_eq.xyz", // filename
+                296.18798, // Final temperature.
+                -24952.0595 // Final total energy
+            }
         });
-  }
-
-  @After
-  public void after() {
-    dynamics.destroyPotentials();
-    System.gc();
-  }
-
-  @Before
-  public void before() {
-    binding = new Binding();
-    dynamics = new Dynamics();
-    dynamics.setBinding(binding);
   }
 
   @Test
@@ -107,35 +88,27 @@ public class DynamicsNVTTest extends PJDependentTest {
 
     // Set-up the input arguments for the script.
     String[] args = {
-      "-n",
-      "10",
-      "-t",
-      "298.15",
-      "-i",
-      "VelocityVerlet",
-      "-b",
-      "Bussi",
-      "-r",
-      "0.001",
-      "src/main/java/" + filename
+        "-n", "10",
+        "-t", "298.15",
+        "-i", "VelocityVerlet",
+        "-b", "Bussi",
+        "-r", "0.001",
+        "src/main/java/" + filename
     };
     binding.setVariable("args", args);
 
-    // Evaluate the script.
-    dynamics.run();
-
+    // Construct and evaluate the script.
+    Dynamics dynamics = new Dynamics(binding).run();
+    algorithmsScript = dynamics;
     MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
     // Assert that temperature is within tolerance at the end of the dynamics trajectory.
-    assertEquals(
-        info + " End temperature for NVT test", finalTemp, molDyn.getTemperature(), tempTolerance);
+    assertEquals(info + " End temperature for NVT test", finalTemp, molDyn.getTemperature(),
+        tempTolerance);
 
     // Assert that the end total energy is withing the tolerance at the end of the dynamics
     // trajectory.
-    assertEquals(
-        info + " End total energy for NVT test and set random seed",
-        endTotalEnergy,
-        molDyn.getTotalEnergy(),
-        energyTolerance);
+    assertEquals(info + " End total energy for NVT test and set random seed",
+        endTotalEnergy, molDyn.getTotalEnergy(), energyTolerance);
   }
 }

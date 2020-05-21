@@ -37,15 +37,9 @@
 // ******************************************************************************
 package ffx.algorithms.groovy;
 
-import ffx.algorithms.misc.PJDependentTest;
-import ffx.utilities.DirectoryUtils;
-import groovy.lang.Binding;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
+import static org.junit.Assert.assertEquals;
+
+import ffx.algorithms.misc.AlgorithmsTest;
 import org.junit.Test;
 
 /**
@@ -54,23 +48,7 @@ import org.junit.Test;
  * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
  */
-public class CrystalMinTest extends PJDependentTest {
-
-  Binding binding;
-  CrystalMin xtalMin;
-
-  @After
-  public void after() {
-    xtalMin.destroyPotentials();
-    System.gc();
-  }
-
-  @Before
-  public void before() {
-    binding = new Binding();
-    xtalMin = new CrystalMin();
-    xtalMin.setBinding(binding);
-  }
+public class CrystalMinTest extends AlgorithmsTest {
 
   /** Tests convergence criteria flag of the CrystalMin class. */
   @Test
@@ -78,31 +56,17 @@ public class CrystalMinTest extends PJDependentTest {
     // Set-up the input arguments for the script.
     String[] args = {"-e", "0.25", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"};
     binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("CrystalMinTest");
-      xtalMin.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
-
-    // Evaluate the script.
-    xtalMin.run();
+    // Construct and evaluate the script.
+    CrystalMin xtalMin = new CrystalMin(binding).run();
+    algorithmsScript = xtalMin;
 
     double expectedPotentialEnergy = -32.72657252765883;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-    Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
-
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by CrystalMinTest.");
-    }
+    assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
   }
 
   /** Tests the fractional flag of the CrystalMin class. */
@@ -111,31 +75,17 @@ public class CrystalMinTest extends PJDependentTest {
     // Set-up the input arguments for the script.
     String[] args = {"-c", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"};
     binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("CrystalMinTest");
-      xtalMin.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
-
-    // Evaluate the script.
-    xtalMin.run();
+    // Construct and evaluate the script.
+    CrystalMin xtalMin = new CrystalMin(binding).run();
+    algorithmsScript = xtalMin;
 
     double expectedPotentialEnergy = -32.535694367226576;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-    Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
-
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by CrystalMinTest.");
-    }
+    assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
   }
 
   /** Tests the fractional flag of the CrystalMin class. */
@@ -143,34 +93,20 @@ public class CrystalMinTest extends PJDependentTest {
   public void testCrystalMinFractional() {
     // Set-up the input arguments for the script.
     String[] args = {
-      "-f", "ATOM", "-e", "0.24", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"
+        "-f", "ATOM", "-e", "0.24", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"
     };
     binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("CrystalMinTest");
-      xtalMin.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
-
-    // Evaluate the script.
-    xtalMin.run();
+    // Construct and evaluate the script.
+    CrystalMin xtalMin = new CrystalMin(binding).run();
+    algorithmsScript = xtalMin;
 
     double expectedPotentialEnergy = -32.54442936288904;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-    Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
-
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by CrystalMinTest.");
-    }
+    assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
   }
 
   @Test
@@ -179,8 +115,9 @@ public class CrystalMinTest extends PJDependentTest {
     String[] args = {"-h"};
     binding.setVariable("args", args);
 
-    // Evaluate the script.
-    xtalMin.run();
+    // Construct and evaluate the script.
+    CrystalMin xtalMin = new CrystalMin(binding).run();
+    algorithmsScript = xtalMin;
   }
 
   /** Tests the iterations flag of the CrystalMin class. */
@@ -188,33 +125,19 @@ public class CrystalMinTest extends PJDependentTest {
   public void testCrystalMinIterations() {
     // Set-up the input arguments for the script.
     String[] args = {
-      "-I", "1", "-e", "0.25", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"
+        "-I", "1", "-e", "0.25", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"
     };
     binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("CrystalMinTest");
-      xtalMin.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
-
-    // Evaluate the script.
-    xtalMin.run();
+    // Construct and evaluate the script.
+    CrystalMin xtalMin = new CrystalMin(binding).run();
+    algorithmsScript = xtalMin;
 
     double expectedPotentialEnergy = -32.63130589380454;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-    Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
-
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by CrystalMinTest.");
-    }
+    assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
   }
 }

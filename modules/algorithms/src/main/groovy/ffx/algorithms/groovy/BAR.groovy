@@ -55,6 +55,8 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import static java.lang.String.format
+
 /**
  * The BAR script find the free energy difference across a lambda window. It presently assumes
  * that the number of files composing the first end of the window equals the number of files
@@ -117,14 +119,32 @@ class BAR extends AlgorithmsScript {
     this.additionalProperties2 = additionalProps2
   }
 
+  /**
+   * BAR Constructor.
+   */
+  BAR() {
+    this(new Binding())
+  }
+
+  /**
+   * BAR Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  BAR(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   BAR run() {
     // Begin boilerplate code.
     if (!init()) {
-      return null
+      return this
     }
     if (filenames == null || filenames.size() % 2 != 0) {
-      return null
+      return this
     }
 
     int nFiles = filenames.size()
@@ -155,7 +175,7 @@ class BAR extends AlgorithmsScript {
       System.setProperty("ligand-vapor-elec", "false")
     }
 
-    logger.info(String.format(" Initializing %d topologies for each end", nPer))
+    logger.info(format(" Initializing %d topologies for each end", nPer))
     for (int i = 0; i < nPer; i++) {
       MolecularAssembly ma =
           alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[i], i)
@@ -169,7 +189,7 @@ class BAR extends AlgorithmsScript {
 
     double lambda1 = alchemical.initialLambda
 
-    StringBuilder sb = new StringBuilder(String.format(
+    StringBuilder sb = new StringBuilder(format(
         "\n Using BAR to analyze a free energy change between L=%.5f and L=%.5f for systems ",
         lambda1, lambda2))
     potential1 = (CrystalPotential) topology.assemblePotential(topologies1, threadsAvail, sb)
@@ -208,8 +228,8 @@ class BAR extends AlgorithmsScript {
     e2L1[0] = potential2.energy(x2, false)
     eDiff2[0] = e2L2[0] - e2L1[0]
 
-    String lamString1 = String.format("%.3f", lambda1)
-    String lamString2 = String.format("%.3f", lambda2)
+    String lamString1 = format("%.3f", lambda1)
+    String lamString2 = format("%.3f", lambda2)
 
     // TODO: Increment by stride instead of always 1.
     for (int i = 1; i < nSnapshots1; i++) {
@@ -224,7 +244,7 @@ class BAR extends AlgorithmsScript {
       e1L2[i] = potential1.energy(x1, false)
 
       eDiff1[i] = e1L2[i] - e1L1[i]
-      logger.info(String.format(
+      logger.info(format(
           " Snapshot %d of system 1: E(L=%s) = %14.7f, E(L=%s) = %14.7f, difference = %14.7f",
           i + 1, lamString1, e1L1[i], lamString2, e1L2[i], eDiff1[i]))
     }
@@ -240,7 +260,7 @@ class BAR extends AlgorithmsScript {
       e2L2[i] = potential2.energy(x2, false)
 
       eDiff2[i] = e2L2[i] - e2L1[i]
-      logger.info(String.format(
+      logger.info(format(
           " Snapshot %d of system 2: E(L=%s) = %14.7f, E(L=%s) = %14.7f, difference = %14.7f",
           i + 1, lamString1, e2L1[i], lamString2, e2L2[i], eDiff2[i]))
     }
@@ -258,7 +278,7 @@ class BAR extends AlgorithmsScript {
       max1 = Math.max(max1, val)
     }
     double sd1 = FastMath.sqrt(var1 / (nSnapshots1 - 1))
-    logger.info(String.format(
+    logger.info(format(
         " System 1 differences: mean %14.7f, sample standard deviation %14.7f, min %14.7f, max %14.7f over %d samples",
         mean1, sd1, min1, max1, nSnapshots1))
 
@@ -275,7 +295,7 @@ class BAR extends AlgorithmsScript {
       max2 = Math.max(max2, val)
     }
     double sd2 = FastMath.sqrt(var2 / (nSnapshots2 - 1))
-    logger.info(String.format(
+    logger.info(format(
         " System 2 differences: mean %14.7f, sample standard deviation %14.7f, min %14.7f, max %14.7f over %d samples",
         mean2, sd2, min2, max2, nSnapshots2))
 
@@ -293,18 +313,18 @@ class BAR extends AlgorithmsScript {
       for (int i = 0; i < nPer; i++) {
         fnames1.append("  ").append(filenames.get(i))
       }
-      bw.write(String.format("%8d %9.3f%s\n", nSnapshots1, temp1, fnames1.toString()))
+      bw.write(format("%8d %9.3f%s\n", nSnapshots1, temp1, fnames1.toString()))
       for (int i = 0; i < nSnapshots1; i++) {
-        bw.write(String.format("%8d %20.10f %20.10f\n", i + 1, e1L1[i], e1L2[i]))
+        bw.write(format("%8d %20.10f %20.10f\n", i + 1, e1L1[i], e1L2[i]))
       }
 
       StringBuilder fnames2 = new StringBuilder()
       for (int i = nPer; i < nFiles; i++) {
         fnames2.append("  ").append(filenames.get(i))
       }
-      bw.write(String.format("%8d %9.3f  %s\n", nSnapshots2, temp2, fnames2.toString()))
+      bw.write(format("%8d %9.3f  %s\n", nSnapshots2, temp2, fnames2.toString()))
       for (int i = 0; i < nSnapshots2; i++) {
-        bw.write(String.format("%8d %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i]))
+        bw.write(format("%8d %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i]))
       }
     } finally {
       bw?.close()
@@ -313,6 +333,9 @@ class BAR extends AlgorithmsScript {
     return this
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   List<Potential> getPotentials() {
     ArrayList<Potential> potentials = new ArrayList<>(2)

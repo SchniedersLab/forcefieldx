@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import ffx.utilities.BaseFFXTest;
+import ffx.utilities.FFXTest;
 import java.util.Arrays;
 import java.util.Collection;
 import org.junit.Test;
@@ -55,7 +55,7 @@ import org.junit.runners.Parameterized.Parameters;
  * @author Timothy D. Fenn
  */
 @RunWith(Parameterized.class)
-public class ReflectionListTest extends BaseFFXTest {
+public class ReflectionListTest extends FFXTest {
 
   private final String info;
   private final int size;

@@ -78,7 +78,22 @@ class LambdaGradient extends AlgorithmsScript {
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
   private List<String> filenames
-  private RefinementEnergy refinementEnergy;
+  private RefinementEnergy refinementEnergy
+
+  /**
+   * LambdaGradient constructor.
+   */
+  LambdaGradient() {
+    this(new Binding())
+  }
+
+  /**
+   * LambdaGradient constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  LambdaGradient(Binding binding) {
+    super(binding)
+  }
 
   @Override
   LambdaGradient run() {
@@ -428,7 +443,7 @@ class LambdaGradient extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy);
+        Collections.singletonList(refinementEnergy)
   }
 }
 

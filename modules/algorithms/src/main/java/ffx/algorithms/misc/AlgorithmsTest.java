@@ -35,34 +35,54 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.groovy;
+package ffx.algorithms.misc;
 
-import ffx.potential.utils.PotentialTest;
-import org.junit.Test;
+import edu.rit.pj.Comm;
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.utilities.FFXTest;
+import groovy.lang.Binding;
+import java.util.logging.Level;
+import org.junit.BeforeClass;
 
-/** Test the Energy script. */
-public class SaveAsP1Test extends PotentialTest {
+/**
+ * Base class for Algorithm tests.
+ *
+ * @author Michael J. Schnieders
+ */
+public abstract class AlgorithmsTest extends FFXTest {
 
-  @Test
-  public void testSaveAsP1() {
-    // Set-up the input arguments for the SaveAsP1 script.
-    String[] args = {"src/main/java/ffx/potential/structures/1n7s.P212121.xyz"};
-    binding.setVariable("args", args);
-    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+  public AlgorithmsScript algorithmsScript;
+  public Binding binding;
 
-    // Construct and evaluate the SaveAsP1 script.
-    SaveAsP1 saveAsP1 = new SaveAsP1(binding).run();
-    potentialScript = saveAsP1;
+  /** Initialize the PJ communication layer. */
+  @BeforeClass
+  public static void beforeClass() {
+    try {
+      Comm.world();
+    } catch (IllegalStateException ise) {
+      try {
+        String[] args = new String[0];
+        Comm.init(args);
+      } catch (Exception e) {
+        String message = " Exception starting up the Parallel Java communication layer.";
+        logger.log(Level.WARNING, message, e.toString());
+      }
+    }
   }
 
-  @Test
-  public void testSaveAsP1Help() {
-    // Set-up the input arguments for the SaveAsP1 script.
-    String[] args = {"-h"};
-    binding.setVariable("args", args);
-
-    // Construct and evaluate the SaveAsP1 script.
-    SaveAsP1 saveAsP1 = new SaveAsP1(binding).run();
-    potentialScript = saveAsP1;
+  @Override
+  public void beforeTest() {
+    super.beforeTest();
+    binding = new Binding();
   }
+
+  @Override
+  public void afterTest() {
+    super.afterTest();
+    // The script could be null if the test was skipped (e.g. no CUDA environment for OpenMM).
+    if (algorithmsScript != null) {
+      algorithmsScript.destroyPotentials();
+    }
+  }
+
 }

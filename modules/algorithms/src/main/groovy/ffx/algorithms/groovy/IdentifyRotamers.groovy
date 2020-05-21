@@ -69,17 +69,29 @@ class IdentifyRotamers extends AlgorithmsScript {
       description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
 
-  private File baseDir = null
-
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * IdentifyRotamers Constructor.
+   */
+  IdentifyRotamers() {
+    this(new Binding())
   }
 
+  /**
+   * IdentifyRotamers Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  IdentifyRotamers(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   IdentifyRotamers run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     mbOpts.setOriginalCoordinates(false)
@@ -92,7 +104,7 @@ class IdentifyRotamers extends AlgorithmsScript {
       }
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)

@@ -35,37 +35,36 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms.misc;
+package ffx.potential.utils;
 
-import edu.rit.pj.Comm;
-import ffx.utilities.BaseFFXTest;
-import java.util.logging.Level;
-import org.junit.BeforeClass;
+import ffx.potential.cli.PotentialScript;
+import ffx.utilities.FFXTest;
+import groovy.lang.Binding;
 
 /**
- * Abstract PJDependentTest class.
- *
- * @author Michael J. Schnieders
+ * PotentialTest extends BaseFFXTest to include support for:
+ * <br>
+ * 1) Creating a Groovy Binding before each test.
+ * <br>
+ * 2) Destroying created potentials after each test.
  */
-public abstract class PJDependentTest extends BaseFFXTest {
+public class PotentialTest extends FFXTest {
 
-  /** beforeClass. */
-  @BeforeClass
-  public static void beforeClass() {
-    BaseFFXTest.beforeClass();
-    // Initialize Parallel Java
-    try {
-      Comm.world();
-    } catch (IllegalStateException ise) {
-      try {
-        String[] args = new String[0];
-        Comm.init(args);
-      } catch (Exception e) {
-        String message = " Exception starting up the Parallel Java communication layer.";
-        logger.log(Level.WARNING, message, e.toString());
-        message = " Skipping rotamer optimization test.";
-        logger.log(Level.WARNING, message, e.toString());
-      }
+  public PotentialScript potentialScript;
+  public Binding binding;
+
+  @Override
+  public void beforeTest() {
+    super.beforeTest();
+    binding = new Binding();
+  }
+
+  @Override
+  public void afterTest() {
+    super.afterTest();
+    // The script could be null if the test was skipped (e.g. no CUDA environment for OpenMM).
+    if (potentialScript != null) {
+      potentialScript.destroyPotentials();
     }
   }
 }

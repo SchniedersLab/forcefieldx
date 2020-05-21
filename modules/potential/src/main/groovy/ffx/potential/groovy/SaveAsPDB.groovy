@@ -68,10 +68,19 @@ class SaveAsPDB extends PotentialScript {
       description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
 
-  private File baseDir = null
+  /**
+   * SaveAsPDB Constructor.
+   */
+  SaveAsPDB() {
+    this(new Binding())
+  }
 
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * SaveAsPDB Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  SaveAsPDB(Binding binding) {
+    super(binding)
   }
 
   /**
@@ -81,7 +90,7 @@ class SaveAsPDB extends PotentialScript {
   SaveAsPDB run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     SystemFilter openFilter = null
@@ -91,7 +100,7 @@ class SaveAsPDB extends PotentialScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     String modelFilename = activeAssembly.getFile().getAbsolutePath()
@@ -132,7 +141,8 @@ class SaveAsPDB extends PotentialScript {
 
     //If SaveAsPDB is run on an arc file, iterate through the models in the arc file and save each as a pdb file.
     if (
-    openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter) &&
+    openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter)
+        &&
         numModels > 1) {
       saveFilter.setModelNumbering(1)
       try {

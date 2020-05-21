@@ -80,12 +80,21 @@ class Fasta extends PotentialScript {
       description = 'FASTA file.')
   List<String> filenames = null
 
-  private File baseDir = null
-
   private ProteinSequence proteinSequence
 
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * Fasta Constructor.
+   */
+  Fasta() {
+    this(new Binding())
+  }
+
+  /**
+   * Fasta Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  Fasta(Binding binding) {
+    super(binding)
   }
 
   /**
@@ -95,12 +104,12 @@ class Fasta extends PotentialScript {
   Fasta run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     if (filenames === null || filenames.size() == 0) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     String fastaName = filenames.get(0)

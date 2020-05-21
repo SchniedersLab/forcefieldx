@@ -91,7 +91,6 @@ class ApplyTorsions extends AlgorithmsScript {
   @Option(names = ["-v", "--videoFile"],
       description = 'File to print torsion snapshots to.')
   String vidFileName = null
-
   /**
    * One or more filenames.
    */
@@ -99,11 +98,29 @@ class ApplyTorsions extends AlgorithmsScript {
       description = "XYZ or PDB input files.")
   private List<String> filenames
 
+  /**
+   * ApplyTorsions Constructor.
+   */
+  ApplyTorsions() {
+    this(new Binding())
+  }
+
+  /**
+   * ApplyTorsions Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  ApplyTorsions(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   ApplyTorsions run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     String modelFilename
@@ -113,7 +130,7 @@ class ApplyTorsions extends AlgorithmsScript {
       modelFilename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     } else {
       modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
@@ -136,12 +153,12 @@ class ApplyTorsions extends AlgorithmsScript {
     Polymer polymer = activeAssembly.getChain(chain)
     if (polymer == null) {
       logger.info(" Polymer + " + chain + " does not exist.")
-      return null
+      return this
     }
     Residue residue = polymer.getResidue(resID)
     if (residue == null) {
       logger.info(" Residue + " + resID + " does not exist.")
-      return null
+      return this
     }
 
     GenerateRotamers generateRotamers = new GenerateRotamers(activeAssembly,

@@ -83,10 +83,24 @@ class Anneal extends AlgorithmsScript {
 
   private Potential potential
 
-  void setBaseDir(File baseDir) {
-    this.saveDir = baseDir
+  /**
+   * Anneal Constructor.
+   */
+  Anneal() {
+    this(new Binding())
   }
 
+  /**
+   * Anneal Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Anneal(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   Anneal run() {
 
@@ -102,7 +116,7 @@ class Anneal extends AlgorithmsScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     atomSelectionOptions.setActiveAtoms(activeAssembly)
@@ -130,11 +144,11 @@ class Anneal extends AlgorithmsScript {
 
     simulatedAnnealing.anneal()
 
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+    if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
+      baseDir = new File(FilenameUtils.getFullPath(modelFilename))
     }
 
-    String dirName = saveDir.toString() + File.separator
+    String dirName = baseDir.toString() + File.separator
     String fileName = FilenameUtils.getName(modelFilename)
     fileName = FilenameUtils.removeExtension(fileName)
 
@@ -147,6 +161,9 @@ class Anneal extends AlgorithmsScript {
     return simulatedAnnealing
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   List<Potential> getPotentials() {
     List<Potential> potentials
@@ -158,6 +175,9 @@ class Anneal extends AlgorithmsScript {
     return potentials
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   boolean destroyPotentials() {
     return getPotentials().stream().allMatch({

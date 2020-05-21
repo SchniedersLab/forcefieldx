@@ -70,10 +70,19 @@ class Frac2Cart extends PotentialScript {
   public double[][] cartCoordinates = null
   public double[][] fracCoordinates = null
 
-  private File baseDir = null
+  /**
+   * Frac2Cart Constructor.
+   */
+  Frac2Cart() {
+    this(new Binding())
+  }
 
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * Frac2Cart Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  Frac2Cart(Binding binding) {
+    super(binding)
   }
 
   /**
@@ -83,7 +92,7 @@ class Frac2Cart extends PotentialScript {
   Frac2Cart run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     if (filenames != null && filenames.size() > 0) {
@@ -91,7 +100,7 @@ class Frac2Cart extends PotentialScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     } else {
       assemblies = [activeAssembly]
     }
@@ -152,14 +161,11 @@ class Frac2Cart extends PotentialScript {
     if (assemblies == null) {
       return new ArrayList<Potential>()
     } else {
-      return Arrays.stream(assemblies).
-          filter {a -> a != null
-          }.
-          map {a -> a.getPotentialEnergy()
-          }.
-          filter {e -> e != null
-          }.
-          collect(Collectors.toList())
+      return Arrays.stream(assemblies).filter {
+        a -> a != null
+      }.map {a -> a.getPotentialEnergy()
+      }.filter {e -> e != null
+      }.collect(Collectors.toList())
     }
   }
 }

@@ -68,7 +68,23 @@ class Timer extends PotentialScript {
   @Parameters(arity = "1", paramLabel = "files",
       description = "XYZ or PDB input files.")
   private List<String> filenames
+
   private ForceFieldEnergy energy = null
+
+  /**
+   * Timer Constructor.
+   */
+  Timer() {
+    this(new Binding())
+  }
+
+  /**
+   * Timer Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  Timer(Binding binding) {
+    super(binding)
+  }
 
   /**
    * Execute the script.
@@ -77,7 +93,7 @@ class Timer extends PotentialScript {
   Timer run() {
 
     if (!init()) {
-      return null
+      return this
     }
 
     // Set the number of threads.
@@ -90,7 +106,7 @@ class Timer extends PotentialScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     if (timer.noGradient) {

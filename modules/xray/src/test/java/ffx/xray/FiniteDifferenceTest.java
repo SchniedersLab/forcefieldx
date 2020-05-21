@@ -50,7 +50,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.BaseFFXTest;
+import ffx.utilities.FFXTest;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.MTZFilter;
@@ -66,7 +66,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Timothy D. Fenn */
 @RunWith(Parameterized.class)
-public class FiniteDifferenceTest extends BaseFFXTest {
+public class FiniteDifferenceTest extends FFXTest {
 
   private final boolean ciOnly;
   private final Atom[] atomArray;
@@ -90,9 +90,6 @@ public class FiniteDifferenceTest extends BaseFFXTest {
       sigmaAMinimize = null;
       return;
     }
-
-    int index = pdbName.lastIndexOf(".");
-    String name = pdbName.substring(0, index);
 
     // load the structure
     ClassLoader cl = this.getClass().getClassLoader();
@@ -213,14 +210,14 @@ public class FiniteDifferenceTest extends BaseFFXTest {
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {
-          {
-            true,
-            "ala met anisou",
-            NONE,
-            new int[] {91, 105, 119},
-            "ffx/xray/structures/alamet.pdb",
-            "ffx/xray/structures/alamet.mtz"
-          }
+            {
+                true,
+                "ala met anisou",
+                NONE,
+                new int[] {91, 105, 119},
+                "ffx/xray/structures/alamet.pdb",
+                "ffx/xray/structures/alamet.mtz"
+            }
         });
   }
 

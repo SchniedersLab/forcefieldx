@@ -125,8 +125,6 @@ class Solvator extends PotentialScript {
       description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
 
-  private File baseDir = null
-
   private MolecularAssembly solute
   private MolecularAssembly solvent
   private MolecularAssembly ions
@@ -142,320 +140,19 @@ class Solvator extends PotentialScript {
     this.additionalProperties = additionalProps
   }
 
-  void setBaseDir(File baseDir) {
-    this.baseDir = baseDir
+  /**
+   * Solvator Constructor.
+   */
+  Solvator() {
+    this(new Binding())
   }
 
   /**
-   * A domain decomposition scheme for solute atoms intended for rapidly assessing solute-solvent clashes.
-   * Instead of a naive double loop over solute & solvent atoms, pre-place solute into this domain decomposition.
-   * Then, for each new solvent atom, check which domain it belongs to, and check all atoms in that domain and
-   * neighboring domains for possible clashes.
+   * Solvator Constructor.
+   * @param binding Groovy Binding to use.
    */
-  private class DomainDecomposition {
-    // Solute atoms belonging in each domain.
-    private final Atom[][][][] domains
-    // Solute atoms in that domain and all surrounding domains.
-    private final Atom[][][][] withAdjacent
-    private final nX, nY, nZ
-    private final double domainLength
-    private final Crystal crystal
-
-    /**
-     * Seturn a set of integers corresponding to domains that may neighbor a current domain along an axis.
-     *
-     * Checks for wraparound, out-of-bounds indices, and the final domain being subsized (and thus always
-     * needing to include the penultimate domain).
-     *
-     * @param i Index to get neighbors for.
-     * @param nI Number of domains along this axis.
-     * @return All neighboring domain indices in this axis accounting for wraparound.
-     */
-    private static final Set<Integer> neighborsWithWraparound(int i, int nI) {
-      List<Integer> boxesI = new ArrayList<>(3)
-      boxesI.add(i)
-      // Account for wraparound, and for box[nX-1] possibly being undersized (and thus needing to include box[nX-2])
-      if (i == 0) {
-        boxesI.add(nI - 1)
-        boxesI.add(nI - 2)
-        boxesI.add(1)
-      } else if (i == (nI - 2)) {
-        boxesI.add(nI - 3)
-        boxesI.add(nI - 1)
-        boxesI.add(0)
-      } else if (i == (nI - 1)) {
-        boxesI.add(nI - 2)
-        boxesI.add(0)
-      } else {
-        boxesI.add(i - 1)
-        boxesI.add(i + 1)
-      }
-      // Eliminate out-of-bounds values and duplicate values.
-      return boxesI.stream().
-          filter({
-            it >= 0 && it < nI
-          }).
-          collect(Collectors.toSet())
-    }
-
-    DomainDecomposition(double boundary, Atom[] soluteAtoms, Crystal crystal) {
-      long time = -System.nanoTime()
-      domainLength = 2.1 * boundary
-      nX = (int) (crystal.a / domainLength) + 1
-      nY = (int) (crystal.b / domainLength) + 1
-      nZ = (int) (crystal.c / domainLength) + 1
-      this.crystal = crystal
-
-      // First, determine how many Atoms per domain.
-      // nAts will later be reused as a counter of "how many atoms placed in this domain".
-      int[][][] nAts = new int[nX][nY][nZ]
-      for (Atom at : soluteAtoms) {
-        double[] xyz = new double[3]
-        xyz = at.getXYZ(xyz)
-        int i = (int) (xyz[0] / domainLength)
-        int j = (int) (xyz[1] / domainLength)
-        int k = (int) (xyz[2] / domainLength)
-        nAts[i][j][k]++
-      }
-
-      // Build the domains.
-      domains = new Atom[nX][nY][nZ][]
-      for (int i = 0; i < nX; i++) {
-        for (int j = 0; j < nY; j++) {
-          for (int k = 0; k < nZ; k++) {
-            domains[i][j][k] = new Atom[nAts[i][j][k]]
-          }
-          // Reset the nAts array, which will be reused for placing atoms.
-          Arrays.fill(nAts[i][j], 0)
-        }
-      }
-
-      // Add Atoms to domains.
-      for (Atom at : soluteAtoms) {
-        double[] xyz = new double[3]
-        xyz = at.getXYZ(xyz)
-        int i = (int) (xyz[0] / domainLength)
-        int j = (int) (xyz[1] / domainLength)
-        int k = (int) (xyz[2] / domainLength)
-        domains[i][j][k][nAts[i][j][k]++] = at
-      }
-
-      // Now construct a faster lookup array that contains all atoms from the domain and its neighbors.
-      // I know it's a 6-deep loop, but it's still overall O(N) AFAICT; it does run < 300 ms for a 14000-atom system.
-      withAdjacent = new Atom[nX][nY][nZ][]
-      for (int i = 0; i < nX; i++) {
-        Set<Integer> neighborsI = neighborsWithWraparound(i, nX)
-        for (int j = 0; j < nY; j++) {
-          Set<Integer> neighborsJ = neighborsWithWraparound(j, nY)
-          for (int k = 0; k < nZ; k++) {
-            Set<Integer> neighborsK = neighborsWithWraparound(k, nZ)
-            List<Atom> neighborAtoms = new ArrayList<>()
-            for (int l : neighborsI) {
-              for (int m : neighborsJ) {
-                for (int n : neighborsK) {
-                  neighborAtoms.addAll(domains[l][m][n])
-                }
-              }
-            }
-            logger.fine(format(" Constructing domain %3d-%3d-%3d with %d atoms.", i, j, k,
-                neighborAtoms.size()))
-            logger.fine(format(" Neighbors along X: %s", neighborsI.toListString()))
-            logger.fine(format(" Neighbors along Y: %s", neighborsJ.toListString()))
-            logger.fine(format(" Neighbors along Z: %s\n", neighborsK.toListString()))
-            withAdjacent[i][j][k] = new Atom[neighborAtoms.size()]
-            withAdjacent[i][j][k] = neighborAtoms.toArray(withAdjacent[i][j][k])
-          }
-        }
-      }
-
-      int nBoxes = nX * nY * nZ
-      double avgAtoms = ((double) soluteAtoms.length) / nBoxes
-      time += System.nanoTime()
-      logger.info(format(
-          " Decomposed the solute into %d domains of side length %11.4g, averaging %10.3g atoms apiece in %8.3g sec.",
-          nBoxes, domainLength, avgAtoms, (time * 1E-9)))
-    }
-
-    /**
-     * Check if an Atom may clash with something registered with this DomainDecomposition
-     * @param a A new solvent atom.
-     * @param threshold Solute-solvent boundary.
-     * @return If a clash is detected over all solute atoms and symops.
-     */
-    boolean checkClashes(Atom a, double threshold) {
-      double[] xyz = new double[3]
-      xyz = a.getXYZ(xyz)
-      int i = (int) (xyz[0] / domainLength)
-      int j = (int) (xyz[1] / domainLength)
-      int k = (int) (xyz[2] / domainLength)
-      if (i >= nX) {
-        logger.fine(
-            format(" Atom %s violates the X boundary at %12.7g Angstroms", a.toString(), xyz[0]))
-        i = 0
-      }
-      if (j >= nY) {
-        logger.fine(
-            format(" Atom %s violates the Y boundary at %12.7g Angstroms", a.toString(), xyz[1]))
-        j = 0
-      }
-      if (k >= nZ) {
-        logger.fine(
-            format(" Atom %s violates the Y boundary at %12.7g Angstroms", a.toString(), xyz[2]))
-        k = 0
-      }
-
-      return Arrays.stream(withAdjacent[i][j][k]).
-          anyMatch({Atom s ->
-            double[] xyzS = new double[3]
-            xyzS = s.getXYZ(xyzS)
-            double dist = crystal.minDistOverSymOps(xyz, xyzS)
-            return dist < threshold
-          })
-    }
-  }
-
-  private class IonAddition {
-    // Once again, modestly bad practice by exposing these fields.
-    final double conc
-    final boolean toNeutralize
-    final Atom[] atoms
-    private final int nAts
-    final double[][] atomOffsets
-    final double charge
-
-    IonAddition(Atom[] atoms, double conc, boolean toNeutralize) {
-      this.atoms = Arrays.copyOf(atoms, atoms.length)
-      this.conc = conc
-      this.toNeutralize = toNeutralize
-      charge = Arrays.stream(atoms).mapToDouble({
-        it.getMultipoleType().getCharge()
-      }).sum()
-      nAts = atoms.length
-
-      if (nAts > 1) {
-        double[] com = new double[3]
-        atomOffsets = new double[nAts][3]
-        Arrays.fill(com, 0)
-        double sumMass = 0
-
-        // Calculate ionic center of mass.
-        for (Atom atom : atoms) {
-          double mass = atom.getMass()
-          sumMass += mass
-          double[] xyz = new double[3]
-          xyz = atom.getXYZ(xyz)
-
-          for (int i = 0; i < 3; i++) {
-            xyz[i] *= mass
-            com[i] += xyz[i]
-          }
-        }
-
-        for (int i = 0; i < 3; i++) {
-          com[i] /= sumMass
-        }
-
-        // Calculate positions as an offset from CoM.
-        for (int i = 0; i < nAts; i++) {
-          Atom ai = atoms[i]
-          double[] xyz = new double[3]
-          xyz = ai.getXYZ(xyz)
-
-          for (int j = 0; j < 3; j++) {
-            atomOffsets[i][j] = xyz[j] - com[j]
-          }
-        }
-      } else {
-        atomOffsets = new double[1][3]
-        Arrays.fill(atomOffsets[0], 0.0)
-      }
-    }
-
-    /**
-     * Creates a new ion.
-     *
-     * @param com Center of mass to place at.
-     * @param currXYZIndex XYZ index of the atom directly preceding the ones to add.
-     * @param chain Chain to add ion to.
-     * @param resSeq Residue number to assign to the ion.
-     * @return Newly created ion atoms.
-     */
-    Atom[] createIon(double[] com, int currXYZIndex, char chain, int resSeq) {
-      Atom[] newIonAts = new Atom[nAts]
-      for (int i = 0; i < nAts; i++) {
-        Atom fromAtom = atoms[i]
-        double[] newXYZ = new double[3]
-        System.arraycopy(com, 0, newXYZ, 0, 3)
-        for (int j = 0; j < 3; j++) {
-          newXYZ[j] += atomOffsets[i][j]
-        }
-        Atom newAtom = new Atom(++currXYZIndex, fromAtom, newXYZ, resSeq, chain,
-            Character.toString(chain))
-        logger.fine(format(" New ion atom %s at chain %c on ion molecule %s-%d", newAtom,
-            newAtom.getChainID(), newAtom.getResidueName(), newAtom.getResidueNumber()))
-        newAtom.setHetero(true)
-        newAtom.setResName(fromAtom.getResidueName())
-        if (newAtom.getAltLoc() == null) {
-          newAtom.setAltLoc(' ' as char)
-        }
-        newIonAts[i] = newAtom
-      }
-      return newIonAts
-    }
-
-    @Override
-    String toString() {
-      StringBuilder sb = new StringBuilder(
-          format(" Ion addition with %d atoms per ion, concentration %10.3g mM, " +
-              "charge %6.2f, used to neutralize %b", atoms.length, conc, charge, toNeutralize))
-      for (Atom atom : atoms) {
-        sb.append("\n").append(" Includes atom ").append(atom.toString())
-      }
-      return sb.toString()
-    }
-  }
-
-  /**
-   * Calculates the center of mass for an array of Atoms.
-   *
-   * @param atoms
-   * @return Center of mass
-   */
-  private static double[] getCOM(Atom[] atoms) {
-    double totMass = 0
-    double[] com = new double[3]
-    double[] xyz = new double[3]
-    for (Atom atom : atoms) {
-      xyz = atom.getXYZ(xyz)
-      double mass = atom.getMass()
-      totMass += mass
-      double invTotMass = 1.0 / totMass
-      for (int i = 0; i < 3; i++) {
-        xyz[i] -= com[i]
-        xyz[i] *= (mass * invTotMass)
-        com[i] += xyz[i]
-      }
-    }
-    return com
-  }
-
-  /**
-   * Pops a solvent molecule off the end of the list, and returns an ion at its center of mass.
-   *
-   * @param solvent Source of solvent molecules (last member will be removed).
-   * @param ia Ion to replace it with.
-   * @param currXYZIndex Index of the atom directly preceding the ion to be placed.
-   * @param chain Chain to place the ion into.
-   * @param resSeq Residue number to assign.
-   * @return Newly created set of ion atoms.
-   */
-  private static Atom[] swapIon(List<Atom[]> solvent, IonAddition ia, int currXYZIndex, char chain,
-      int resSeq) {
-    int nSolv = solvent.size() - 1
-    Atom[] lastSolvent = solvent.get(nSolv)
-    solvent.remove(nSolv)
-    double[] com = getCOM(lastSolvent)
-    return ia.createIon(com, currXYZIndex, chain, resSeq)
+  Solvator(Binding binding) {
+    super(binding)
   }
 
   /**
@@ -464,12 +161,12 @@ class Solvator extends PotentialScript {
   @Override
   Solvator run() {
     if (!init()) {
-      return null
+      return this
     }
 
     if (!solventFileName) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     // Reduce cutoff distances to avoid ill behavior caused by default aperiodic 900-1000A cutoffs.
@@ -484,7 +181,7 @@ class Solvator extends PotentialScript {
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return null
+      return this
     }
 
     solute = activeAssembly
@@ -962,4 +659,317 @@ class Solvator extends PotentialScript {
     }
     return potentials
   }
+
+  /**
+   * A domain decomposition scheme for solute atoms intended for rapidly assessing solute-solvent clashes.
+   * Instead of a naive double loop over solute & solvent atoms, pre-place solute into this domain decomposition.
+   * Then, for each new solvent atom, check which domain it belongs to, and check all atoms in that domain and
+   * neighboring domains for possible clashes.
+   */
+  private class DomainDecomposition {
+    // Solute atoms belonging in each domain.
+    private final Atom[][][][] domains
+    // Solute atoms in that domain and all surrounding domains.
+    private final Atom[][][][] withAdjacent
+    private final nX, nY, nZ
+    private final double domainLength
+    private final Crystal crystal
+
+    /**
+     * Seturn a set of integers corresponding to domains that may neighbor a current domain along an axis.
+     *
+     * Checks for wraparound, out-of-bounds indices, and the final domain being subsized (and thus always
+     * needing to include the penultimate domain).
+     *
+     * @param i Index to get neighbors for.
+     * @param nI Number of domains along this axis.
+     * @return All neighboring domain indices in this axis accounting for wraparound.
+     */
+    private static final Set<Integer> neighborsWithWraparound(int i, int nI) {
+      List<Integer> boxesI = new ArrayList<>(3)
+      boxesI.add(i)
+      // Account for wraparound, and for box[nX-1] possibly being undersized (and thus needing to include box[nX-2])
+      if (i == 0) {
+        boxesI.add(nI - 1)
+        boxesI.add(nI - 2)
+        boxesI.add(1)
+      } else if (i == (nI - 2)) {
+        boxesI.add(nI - 3)
+        boxesI.add(nI - 1)
+        boxesI.add(0)
+      } else if (i == (nI - 1)) {
+        boxesI.add(nI - 2)
+        boxesI.add(0)
+      } else {
+        boxesI.add(i - 1)
+        boxesI.add(i + 1)
+      }
+      // Eliminate out-of-bounds values and duplicate values.
+      return boxesI.stream().
+          filter({
+            it >= 0 && it < nI
+          }).
+          collect(Collectors.toSet())
+    }
+
+    DomainDecomposition(double boundary, Atom[] soluteAtoms, Crystal crystal) {
+      long time = -System.nanoTime()
+      domainLength = 2.1 * boundary
+      nX = (int) (crystal.a / domainLength) + 1
+      nY = (int) (crystal.b / domainLength) + 1
+      nZ = (int) (crystal.c / domainLength) + 1
+      this.crystal = crystal
+
+      // First, determine how many Atoms per domain.
+      // nAts will later be reused as a counter of "how many atoms placed in this domain".
+      int[][][] nAts = new int[nX][nY][nZ]
+      for (Atom at : soluteAtoms) {
+        double[] xyz = new double[3]
+        xyz = at.getXYZ(xyz)
+        int i = (int) (xyz[0] / domainLength)
+        int j = (int) (xyz[1] / domainLength)
+        int k = (int) (xyz[2] / domainLength)
+        nAts[i][j][k]++
+      }
+
+      // Build the domains.
+      domains = new Atom[nX][nY][nZ][]
+      for (int i = 0; i < nX; i++) {
+        for (int j = 0; j < nY; j++) {
+          for (int k = 0; k < nZ; k++) {
+            domains[i][j][k] = new Atom[nAts[i][j][k]]
+          }
+          // Reset the nAts array, which will be reused for placing atoms.
+          Arrays.fill(nAts[i][j], 0)
+        }
+      }
+
+      // Add Atoms to domains.
+      for (Atom at : soluteAtoms) {
+        double[] xyz = new double[3]
+        xyz = at.getXYZ(xyz)
+        int i = (int) (xyz[0] / domainLength)
+        int j = (int) (xyz[1] / domainLength)
+        int k = (int) (xyz[2] / domainLength)
+        domains[i][j][k][nAts[i][j][k]++] = at
+      }
+
+      // Now construct a faster lookup array that contains all atoms from the domain and its neighbors.
+      // I know it's a 6-deep loop, but it's still overall O(N) AFAICT; it does run < 300 ms for a 14000-atom system.
+      withAdjacent = new Atom[nX][nY][nZ][]
+      for (int i = 0; i < nX; i++) {
+        Set<Integer> neighborsI = neighborsWithWraparound(i, nX)
+        for (int j = 0; j < nY; j++) {
+          Set<Integer> neighborsJ = neighborsWithWraparound(j, nY)
+          for (int k = 0; k < nZ; k++) {
+            Set<Integer> neighborsK = neighborsWithWraparound(k, nZ)
+            List<Atom> neighborAtoms = new ArrayList<>()
+            for (int l : neighborsI) {
+              for (int m : neighborsJ) {
+                for (int n : neighborsK) {
+                  neighborAtoms.addAll(domains[l][m][n])
+                }
+              }
+            }
+            logger.fine(format(" Constructing domain %3d-%3d-%3d with %d atoms.", i, j, k,
+                neighborAtoms.size()))
+            logger.fine(format(" Neighbors along X: %s", neighborsI.toListString()))
+            logger.fine(format(" Neighbors along Y: %s", neighborsJ.toListString()))
+            logger.fine(format(" Neighbors along Z: %s\n", neighborsK.toListString()))
+            withAdjacent[i][j][k] = new Atom[neighborAtoms.size()]
+            withAdjacent[i][j][k] = neighborAtoms.toArray(withAdjacent[i][j][k])
+          }
+        }
+      }
+
+      int nBoxes = nX * nY * nZ
+      double avgAtoms = ((double) soluteAtoms.length) / nBoxes
+      time += System.nanoTime()
+      logger.info(format(
+          " Decomposed the solute into %d domains of side length %11.4g, averaging %10.3g atoms apiece in %8.3g sec.",
+          nBoxes, domainLength, avgAtoms, (time * 1E-9)))
+    }
+
+    /**
+     * Check if an Atom may clash with something registered with this DomainDecomposition
+     * @param a A new solvent atom.
+     * @param threshold Solute-solvent boundary.
+     * @return If a clash is detected over all solute atoms and symops.
+     */
+    boolean checkClashes(Atom a, double threshold) {
+      double[] xyz = new double[3]
+      xyz = a.getXYZ(xyz)
+      int i = (int) (xyz[0] / domainLength)
+      int j = (int) (xyz[1] / domainLength)
+      int k = (int) (xyz[2] / domainLength)
+      if (i >= nX) {
+        logger.fine(
+            format(" Atom %s violates the X boundary at %12.7g Angstroms", a.toString(), xyz[0]))
+        i = 0
+      }
+      if (j >= nY) {
+        logger.fine(
+            format(" Atom %s violates the Y boundary at %12.7g Angstroms", a.toString(), xyz[1]))
+        j = 0
+      }
+      if (k >= nZ) {
+        logger.fine(
+            format(" Atom %s violates the Y boundary at %12.7g Angstroms", a.toString(), xyz[2]))
+        k = 0
+      }
+
+      return Arrays.stream(withAdjacent[i][j][k]).
+          anyMatch({Atom s ->
+            double[] xyzS = new double[3]
+            xyzS = s.getXYZ(xyzS)
+            double dist = crystal.minDistOverSymOps(xyz, xyzS)
+            return dist < threshold
+          })
+    }
+  }
+
+  private class IonAddition {
+    // Once again, modestly bad practice by exposing these fields.
+    final double conc
+    final boolean toNeutralize
+    final Atom[] atoms
+    private final int nAts
+    final double[][] atomOffsets
+    final double charge
+
+    IonAddition(Atom[] atoms, double conc, boolean toNeutralize) {
+      this.atoms = Arrays.copyOf(atoms, atoms.length)
+      this.conc = conc
+      this.toNeutralize = toNeutralize
+      charge = Arrays.stream(atoms).mapToDouble({
+        it.getMultipoleType().getCharge()
+      }).sum()
+      nAts = atoms.length
+
+      if (nAts > 1) {
+        double[] com = new double[3]
+        atomOffsets = new double[nAts][3]
+        Arrays.fill(com, 0)
+        double sumMass = 0
+
+        // Calculate ionic center of mass.
+        for (Atom atom : atoms) {
+          double mass = atom.getMass()
+          sumMass += mass
+          double[] xyz = new double[3]
+          xyz = atom.getXYZ(xyz)
+
+          for (int i = 0; i < 3; i++) {
+            xyz[i] *= mass
+            com[i] += xyz[i]
+          }
+        }
+
+        for (int i = 0; i < 3; i++) {
+          com[i] /= sumMass
+        }
+
+        // Calculate positions as an offset from CoM.
+        for (int i = 0; i < nAts; i++) {
+          Atom ai = atoms[i]
+          double[] xyz = new double[3]
+          xyz = ai.getXYZ(xyz)
+
+          for (int j = 0; j < 3; j++) {
+            atomOffsets[i][j] = xyz[j] - com[j]
+          }
+        }
+      } else {
+        atomOffsets = new double[1][3]
+        Arrays.fill(atomOffsets[0], 0.0)
+      }
+    }
+
+    /**
+     * Creates a new ion.
+     *
+     * @param com Center of mass to place at.
+     * @param currXYZIndex XYZ index of the atom directly preceding the ones to add.
+     * @param chain Chain to add ion to.
+     * @param resSeq Residue number to assign to the ion.
+     * @return Newly created ion atoms.
+     */
+    Atom[] createIon(double[] com, int currXYZIndex, char chain, int resSeq) {
+      Atom[] newIonAts = new Atom[nAts]
+      for (int i = 0; i < nAts; i++) {
+        Atom fromAtom = atoms[i]
+        double[] newXYZ = new double[3]
+        System.arraycopy(com, 0, newXYZ, 0, 3)
+        for (int j = 0; j < 3; j++) {
+          newXYZ[j] += atomOffsets[i][j]
+        }
+        Atom newAtom = new Atom(++currXYZIndex, fromAtom, newXYZ, resSeq, chain,
+            Character.toString(chain))
+        logger.fine(format(" New ion atom %s at chain %c on ion molecule %s-%d", newAtom,
+            newAtom.getChainID(), newAtom.getResidueName(), newAtom.getResidueNumber()))
+        newAtom.setHetero(true)
+        newAtom.setResName(fromAtom.getResidueName())
+        if (newAtom.getAltLoc() == null) {
+          newAtom.setAltLoc(' ' as char)
+        }
+        newIonAts[i] = newAtom
+      }
+      return newIonAts
+    }
+
+    @Override
+    String toString() {
+      StringBuilder sb = new StringBuilder(
+          format(" Ion addition with %d atoms per ion, concentration %10.3g mM, " +
+              "charge %6.2f, used to neutralize %b", atoms.length, conc, charge, toNeutralize))
+      for (Atom atom : atoms) {
+        sb.append("\n").append(" Includes atom ").append(atom.toString())
+      }
+      return sb.toString()
+    }
+  }
+
+  /**
+   * Calculates the center of mass for an array of Atoms.
+   *
+   * @param atoms
+   * @return Center of mass
+   */
+  private static double[] getCOM(Atom[] atoms) {
+    double totMass = 0
+    double[] com = new double[3]
+    double[] xyz = new double[3]
+    for (Atom atom : atoms) {
+      xyz = atom.getXYZ(xyz)
+      double mass = atom.getMass()
+      totMass += mass
+      double invTotMass = 1.0 / totMass
+      for (int i = 0; i < 3; i++) {
+        xyz[i] -= com[i]
+        xyz[i] *= (mass * invTotMass)
+        com[i] += xyz[i]
+      }
+    }
+    return com
+  }
+
+  /**
+   * Pops a solvent molecule off the end of the list, and returns an ion at its center of mass.
+   *
+   * @param solvent Source of solvent molecules (last member will be removed).
+   * @param ia Ion to replace it with.
+   * @param currXYZIndex Index of the atom directly preceding the ion to be placed.
+   * @param chain Chain to place the ion into.
+   * @param resSeq Residue number to assign.
+   * @return Newly created set of ion atoms.
+   */
+  private static Atom[] swapIon(List<Atom[]> solvent, IonAddition ia, int currXYZIndex, char chain,
+      int resSeq) {
+    int nSolv = solvent.size() - 1
+    Atom[] lastSolvent = solvent.get(nSolv)
+    solvent.remove(nSolv)
+    double[] com = getCOM(lastSolvent)
+    return ia.createIon(com, currXYZIndex, chain, resSeq)
+  }
+
 }

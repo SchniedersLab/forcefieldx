@@ -37,18 +37,12 @@
 // ******************************************************************************
 package ffx.xray;
 
-import ffx.algorithms.misc.PJDependentTest;
+import static org.junit.Assert.assertEquals;
+
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.numerics.Potential;
-import ffx.utilities.DirectoryUtils;
 import ffx.xray.groovy.ManyBody;
-import groovy.lang.Binding;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -57,72 +51,32 @@ import org.junit.Test;
  *
  * @author Mallory R. Tollefson
  */
-public class XRayManyBodyTest extends PJDependentTest {
-
-  private Binding binding;
-  private ManyBody manyBody;
-
-  @After
-  public void after() {
-    manyBody.destroyPotentials();
-    System.gc();
-  }
-
-  @Before
-  public void before() {
-    binding = new Binding();
-    manyBody = new ManyBody();
-    manyBody.setBinding(binding);
-  }
+public class XRayManyBodyTest extends AlgorithmsTest {
 
   @Test
   public void testManyBodyGlobal() {
     // Set-up the input arguments for the script.
     String[] args = {
-      "-a",
-      "2",
-      "-L",
-      "2",
-      "-s",
-      "1",
-      "--fi",
-      "5",
-      "src/main/java/ffx/xray/structures/5awl.pdb",
-      "src/main/java/ffx/xray/structures/5awl.mtz"
+        "-a", "2",
+        "-L", "2",
+        "-s", "1",
+        "--fi", "5",
+        "src/main/java/ffx/xray/structures/5awl.pdb",
+        "src/main/java/ffx/xray/structures/5awl.mtz"
     };
     binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    Path path = null;
-    try {
-      path = Files.createTempDirectory("ManyBodyTest");
-      manyBody.setSaveDir(path.toFile());
-    } catch (IOException e) {
-      Assert.fail(" Could not create a temporary directory.");
-    }
-
-    // Evaluate the script.
-    try {
-      manyBody.run();
-    } catch (AssertionError ex) {
-      ex.printStackTrace();
-      throw ex;
-    }
+    // Construct and evaluate the ManyBody script.
+    ManyBody manyBody = new ManyBody(binding).run();
+    algorithmsScript = manyBody;
 
     List<Potential> list = manyBody.getPotentials();
     double expectedPotential = 2.8613333520253544E16;
     double actualPotential = list.get(0).getTotalEnergy();
     double tol = 1.0E-9 * expectedPotential;
 
-    Assert.assertEquals(actualPotential, expectedPotential, tol);
-
-    // Delete all created directories and files.
-    try {
-      DirectoryUtils.deleteDirectoryTree(path);
-    } catch (IOException e) {
-      System.out.println(e.toString());
-      Assert.fail(" Exception deleting files created by ManyBodyTest.");
-    }
-
+    assertEquals(actualPotential, expectedPotential, tol);
     manyBody.getManyBody().getRestartFile().delete();
   }
 
@@ -132,11 +86,8 @@ public class XRayManyBodyTest extends PJDependentTest {
     String[] args = {"-h"};
     binding.setVariable("args", args);
 
-    // Evaluate the script.
-    try {
-      manyBody.run();
-    } catch (Exception ex) {
-      ex.printStackTrace();
-    }
+    // Construct and evaluate the ManyBody script.
+    ManyBody manyBody = new ManyBody(binding).run();
+    algorithmsScript = manyBody;
   }
 }
