@@ -262,7 +262,7 @@ class BAR extends AlgorithmsScript {
       eDiff2[i] = e2L2[i] - e2L1[i]
       logger.info(format(
           " Snapshot %d of system 2: E(L=%s) = %14.7f, E(L=%s) = %14.7f, difference = %14.7f",
-          i + 1, lamString1, e1L1[i], lamString2, e1L2[i], eDiff2[i]))
+          i + 1, lamString1, e2L1[i], lamString2, e2L2[i], eDiff2[i]))
     }
 
     double mean1 = 0

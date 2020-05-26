@@ -42,8 +42,12 @@ import static ffx.utilities.StringUtils.parseAtomRanges;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import picocli.CommandLine.Option;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Represents command line options for scripts that support atom selections.
@@ -85,78 +89,53 @@ public class AtomSelectionOptions {
   }
 
   private void setInactive(MolecularAssembly assembly) {
-    if (inactiveAtoms == null || inactiveAtoms.equalsIgnoreCase("")) {
-      // Empty or null string -- no changes to alchemical atoms.
-      return;
-    }
-
-    Atom[] atoms = assembly.getAtomArray();
-
-    // No atoms are inactive.
-    if (inactiveAtoms.equalsIgnoreCase("NONE")) {
-      for (Atom atom : atoms) {
-        atom.setActive(true);
-      }
-      logger.info(" No atoms are inactive.\n");
-      return;
-    }
-
-    // All atoms are inactive.
-    if (inactiveAtoms.equalsIgnoreCase("ALL")) {
-      for (Atom atom : atoms) {
-        atom.setActive(false);
-      }
-      logger.info(" All atoms are inactive.\n");
-      return;
-    }
-
-    // A range(s) of atoms are inactive.
-    int nAtoms = atoms.length;
-    for (Atom atom : atoms) {
-      atom.setActive(true);
-    }
-    List<Integer> inactiveAtomRanges = parseAtomRanges(" Inactive atoms", inactiveAtoms, nAtoms);
-    for (int i : inactiveAtomRanges) {
-      atoms[i].setActive(false);
-    }
-    logger.info(" Inactive atoms set to: " + inactiveAtoms + "\n");
+    actOnAtoms(assembly, inactiveAtoms, (Atom a, Boolean b) -> a.setActive(!b),
+            "inactive", " Inactive atoms");
   }
 
   private void setActive(MolecularAssembly assembly) {
-    if (activeAtoms == null || activeAtoms.equalsIgnoreCase("")) {
-      // Empty or null string -- no changes to alchemical atoms.
+    actOnAtoms(assembly, activeAtoms, Atom::setActive, "active", " Active atoms");
+  }
+
+  public static void actOnAtoms(@Nonnull MolecularAssembly assembly, @Nullable String selection,
+                                @Nonnull BiConsumer<Atom, Boolean> action, @Nonnull String description,
+                                @Nullable String keyType) {
+    if (selection == null || selection.equalsIgnoreCase("")) {
+      // Empty or null string -- no changes.
       return;
     }
 
     Atom[] atoms = assembly.getAtomArray();
 
-    // No active are atoms.
-    if (activeAtoms.equalsIgnoreCase("NONE")) {
+    // No atoms selected.
+    if (selection.equalsIgnoreCase("NONE")) {
       for (Atom atom : atoms) {
-        atom.setActive(false);
+        action.accept(atom, false);
       }
-      logger.info(" No atoms are active.\n");
+      logger.info(" No atoms are " + description + ".\n");
       return;
     }
 
-    // All atoms are active.
-    if (activeAtoms.equalsIgnoreCase("ALL")) {
+    // All atoms selected
+    if (selection.equalsIgnoreCase("ALL")) {
       for (Atom atom : atoms) {
-        atom.setActive(true);
+        action.accept(atom, true);
       }
-      logger.info(" All atoms are active.\n");
+      logger.info(" All atoms are " + description + ".\n");
       return;
     }
 
     // A range(s) of atoms are active.
     int nAtoms = atoms.length;
     for (Atom atom : atoms) {
-      atom.setActive(false);
+      action.accept(atom, false);
     }
-    List<Integer> activeAtomRanges = parseAtomRanges(" Active atoms", activeAtoms, nAtoms);
-    for (int i : activeAtomRanges) {
-      atoms[i].setActive(true);
+    if (keyType != null) {
+      List<Integer> atomRanges = parseAtomRanges(keyType, selection, nAtoms);
+      for (int i : atomRanges) {
+        action.accept(atoms[i], true);
+      }
     }
-    logger.info(" Active atoms set to: " + activeAtoms + "\n");
+    logger.info(" " + description + " atoms set to: " + selection + "\n");
   }
 }

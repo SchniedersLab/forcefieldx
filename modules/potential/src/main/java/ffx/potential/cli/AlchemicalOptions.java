@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.cli;
 
+import static ffx.potential.cli.AtomSelectionOptions.actOnAtoms;
 import static ffx.utilities.StringUtils.parseAtomRanges;
 import static java.lang.String.format;
 
@@ -96,87 +97,18 @@ public class AlchemicalOptions {
    * @param alchemicalAtoms Alchemical atoms selection string.
    */
   public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms) {
-    if (alchemicalAtoms == null || alchemicalAtoms.equalsIgnoreCase("")) {
-      // Empty or null string -- no changes to alchemical atoms.
-      logger.info(" Empty alchemical selection.");
-      return;
-    }
-
-    Atom[] atoms = assembly.getAtomArray();
-
-    // No alchemical are atoms.
-    if (alchemicalAtoms.equalsIgnoreCase("NONE")) {
-      for (Atom atom : atoms) {
-        atom.setApplyLambda(false);
-      }
-      logger.info(" No atoms are alchemical \n");
-      return;
-    }
-
-    // All atoms are alchemical.
-    if (alchemicalAtoms.equalsIgnoreCase("ALL")) {
-      for (Atom atom : atoms) {
-        atom.setApplyLambda(true);
-      }
-      logger.info(" All atoms are alchemical \n");
-      return;
-    }
-
-    // A range(s) of atoms are alchemical.
-    int nAtoms = atoms.length;
-    for (Atom atom : atoms) {
-      atom.setApplyLambda(false);
-    }
-    List<Integer> alchemicalAtomRanges =
-        parseAtomRanges(" Alchemical atoms", alchemicalAtoms, nAtoms);
-    for (int i : alchemicalAtomRanges) {
-      atoms[i].setApplyLambda(true);
-    }
-    logger.info(" Alchemical atoms set to: " + alchemicalAtoms + "\n");
+    actOnAtoms(assembly, alchemicalAtoms, Atom::setApplyLambda, "alchemical", " Alchemical atoms");
   }
 
   /**
-   * Sets the alchemical atoms for a MolecularAssembly.
+   * Sets the uncharged atoms for a MolecularAssembly.
    *
    * @param assembly Assembly to which the atoms belong.
    * @param unchargedAtoms Uncharged atoms selection string.
    */
   public static void setUnchargedAtoms(MolecularAssembly assembly, String unchargedAtoms) {
-    if (unchargedAtoms == null || unchargedAtoms.equalsIgnoreCase("")) {
-      // Empty or null string -- no changes to uncharged atoms.
-      return;
-    }
-
-    Atom[] atoms = assembly.getAtomArray();
-
-    // No alchemical are atoms.
-    if (unchargedAtoms.equalsIgnoreCase("NONE")) {
-      for (Atom atom : atoms) {
-        atom.setElectrostatics(false);
-      }
-      logger.info(" No atoms are uncharged.\n");
-      return;
-    }
-
-    // All atoms are alchemical.
-    if (unchargedAtoms.equalsIgnoreCase("ALL")) {
-      for (Atom atom : atoms) {
-        atom.setElectrostatics(true);
-      }
-      logger.info(" All atoms are uncharged.\n");
-      return;
-    }
-
-    // A range(s) of atoms are uncharged.
-    int nAtoms = atoms.length;
-    for (Atom atom : atoms) {
-      atom.setElectrostatics(true);
-    }
-    List<Integer> unchargedAtomRanges = parseAtomRanges(" Uncharged atoms", unchargedAtoms, nAtoms);
-    for (int i : unchargedAtomRanges) {
-      atoms[i].setElectrostatics(false);
-    }
-    logger.info(" Uncharged atoms set to: " + unchargedAtoms + "\n");
+    actOnAtoms(assembly, unchargedAtoms, (Atom a, Boolean b) -> a.setElectrostatics(!b),
+            "uncharged", " Uncharged atoms");
   }
 
   /**
