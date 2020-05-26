@@ -392,7 +392,7 @@ class MostBar extends AlgorithmsScript {
     for (int i = 0; i < (lamBins - 1); i++) {
       sb.append(
           String.format(" %-10.8f %6d %-10.8f %6d %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
-              lamPoints[i], eAt[i].length, lamPoints[i + 1], observations[i + 1], barFE[i],
+              lamPoints[i], eAt[i].length, lamPoints[i + 1], eAt[i+1].length, barFE[i],
               barVar[i],
               forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
     }
@@ -471,7 +471,7 @@ class MostBar extends AlgorithmsScript {
       for (int i = 0; i < (lamBins - 1); i++) {
         sb.append(String.format(
             " %-10.8f %6d %-10.8f %6d %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
-            lamPoints[i], eAt[i].length, lamPoints[i + 1], observations[i + 1], barFE[i], barVar[i],
+            lamPoints[i], eAt[i].length, lamPoints[i + 1], eAt[i + 1].length, barFE[i], barVar[i],
             forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
       }
       logger.info(sb.toString())
@@ -508,14 +508,10 @@ class MostBar extends AlgorithmsScript {
           Double.isNaN(lastEntries[0]) ? nanFormat : String.format(energyFormat, lastEntries[0])
       String high =
           Double.isNaN(lastEntries[2]) ? nanFormat : String.format(energyFormat, lastEntries[2])
-      if (lambdaSorted) {
-        logger.log(standardLogging, String.format(" Energies for snapshot %5d at lambda %.4f: " +
-            "%s, %s, %s", (index + 1), lambda, low, String.format(energyFormat, lastEntries[1]),
-            high))
-      } else {
-        logger.log(standardLogging, String.format(" Energies for snapshot %5d: " +
-            "%s, %s, %s", (index + 1), low, String.format(energyFormat, lastEntries[1]), high))
-      }
+
+      logger.log(standardLogging, String.format(" Energies for snapshot %5d at lambda %.4f: " +
+          "%s, %s, %s", (index + 1), lambda, low, String.format(energyFormat, lastEntries[1]),
+          high))
     } else {
       logger.log(standardLogging, " Skipping frame " + index)
     }
