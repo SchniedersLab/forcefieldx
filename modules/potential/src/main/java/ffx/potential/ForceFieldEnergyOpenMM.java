@@ -393,8 +393,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
   private System system;
   /**
    * Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. This is useful for
-   * conformational optimization if full removal of vdW interactions is not desired (i.e.
-   * lambdaStart = ~0.2).
+   * conformational optimization if full removal of vdW interactions is not desired (i.e. lambdaStart
+   * = ~0.2).
    */
   private double lambdaStart = 0.0;
   /** Use two-sided finite difference dU/dL. */
@@ -1242,10 +1242,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Reinitialize the context.
      *
      * <p>When a Context is created, it may cache information about the System being simulated and
-     * the Force objects contained in it. This means that, if the System or Forces are then
-     * modified, the Context might not see all of the changes. Call reinitialize() to force the
-     * Context to rebuild its internal representation of the System and pick up any changes that
-     * have been made.
+     * the Force objects contained in it. This means that, if the System or Forces are then modified,
+     * the Context might not see all of the changes. Call reinitialize() to force the Context to
+     * rebuild its internal representation of the System and pick up any changes that have been
+     * made.
      *
      * <p>This is an expensive operation, so you should try to avoid calling it too frequently.
      */
@@ -1554,8 +1554,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
    * <p>The definition of a System involves four elements:
    *
    * <p>The particles and constraints are defined directly by the System object, while forces are
-   * defined by objects that extend the Force class. After creating a System, call addParticle()
-   * once for each particle, addConstraint() for each constraint, and addForce() for each Force.
+   * defined by objects that extend the Force class. After creating a System, call addParticle() once
+   * for each particle, addConstraint() for each constraint, and addForce() for each Force.
    *
    * <p>In addition, particles may be designated as "virtual sites". These are particles whose
    * positions are computed automatically based on the positions of other particles. To define a
@@ -1569,8 +1569,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /** Andersen thermostat collision frequency. */
     private final double collisionFreq;
     /**
-     * When using MELD, our goal will be to scale down the potential by this factor. A negative
-     * value indicates we're not using MELD.
+     * When using MELD, our goal will be to scale down the potential by this factor. A negative value
+     * indicates we're not using MELD.
      */
     private final boolean useMeld;
     /** The Force Field in use. */
@@ -2118,8 +2118,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * Adds atoms from the molecular assembly to the OpenMM System and reports to the user the
-     * number of particles added.
+     * Adds atoms from the molecular assembly to the OpenMM System and reports to the user the number
+     * of particles added.
      */
     private void addAtoms() throws Exception {
       double totalMass = 0.0;

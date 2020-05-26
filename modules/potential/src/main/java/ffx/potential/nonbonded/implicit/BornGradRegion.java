@@ -92,10 +92,6 @@ public class BornGradRegion extends ParallelRegion {
   private double[] overlapScale;
   /** Flag to indicate if an atom should be included. */
   private boolean[] use;
-  /** If true, the descreening size of atoms is based on their force field vdW radius */
-  private final boolean descreenWithVDW;
-  /** If true, hydrogen atoms displace solvent */
-  private final boolean descreenWithHydrogen;
   /** If true, bonded atoms displace solvent */
   private final boolean descreen12;
   /** GK cut-off distance squared. */
@@ -114,8 +110,6 @@ public class BornGradRegion extends ParallelRegion {
     for (int i = 0; i < nt; i++) {
       bornCRLoop[i] = new BornCRLoop();
     }
-    descreenWithVDW = forceField.getBoolean("DESCREEN_VDW", false);
-    descreenWithHydrogen = forceField.getBoolean("DESCREEN_HYDROGEN", true);
     descreen12 = forceField.getBoolean("DESCREEN_12", true);
   }
 
@@ -219,15 +213,13 @@ public class BornGradRegion extends ParallelRegion {
           }
 
           final double ri = baseRadius[i];
-          final double descreenRi = (descreenWithVDW) ? atoms[i].getVDWType().radius / 2.0 : ri;
-          final double scaledRi = descreenRi * overlapScale[i];
+          final double scaledRi = ri * overlapScale[i];
           final double xi = x[i];
           final double yi = y[i];
           final double zi = z[i];
           final double rbi = born[i];
           double termi = PI4_3 / (rbi * rbi * rbi);
           termi = factor / pow(termi, (4.0 * oneThird));
-
           int[] list = neighborLists[iSymOp][i];
           for (int k : list) {
             if (!nativeEnvironmentApproximation && !use[k]) {
@@ -252,81 +244,55 @@ public class BornGradRegion extends ParallelRegion {
               final double r = sqrt(r2);
 
               // Atom i being descreeened by atom k.
-              if (rbi < 50.0) {
-                if (descreenWithHydrogen || !atoms[k].isHydrogen()) {
-                  final double descreenRk =
-                      (descreenWithVDW) ? atoms[k].getVDWType().radius / 2.0 : baseRk;
-                  final double scaledRk = descreenRk * overlapScale[k];
-                  double de = integralDerivative(r, r2, ri, scaledRk);
-//                logger.info(format(
-//                    " Born radii chain rule term %d %d r=%16.8f ri=%16.8f sk=%16.8f de=%16.8f", i, k,
-//                    r, ri, sk, de));
-                  if (isInfinite(de) || isNaN(de)) {
-                    logger.warning(
-                        format(" Born radii chain rule term is unstable %d %d %16.8f", i, k, de));
-                  }
-                  double dbr = termi * de / r;
-                  de = dbr * sharedBornGrad.get(i);
-//                logger.info(
-//                    format(" Born radii chain rule terms %d %d rbi=%16.8f bornGrad=%16.8f de=%16.8f",
-//                        i, k,
-//                        rbi, sharedBornGrad.get(i), de));
-                  incrementGradient(i, k, de, xr, yr, zr, transOp);
-                }
-              }
-
-              // Atom k being descreeened by atom i.
-              double rbk = born[k];
-              if (rbk < 50.0) {
-                if (descreenWithHydrogen || !atoms[i].isHydrogen()) {
-                  double termk = PI4_3 / (rbk * rbk * rbk);
-                  termk = factor / pow(termk, (4.0 * oneThird));
-                  double de = integralDerivative(r, r2, baseRk, scaledRi);
-//                logger.info(format(
-//                    " Born radii chain rule term %d %d r=%16.8f ri=%16.8f sk=%16.8f de=%16.8f", k, i,
-//                    r, rk, si, de));
-                  if (isInfinite(de) || isNaN(de)) {
-                    logger.warning(
-                        format(" Born radii chain rule term is unstable %d %d %16.8f", k, i, de));
-                  }
-                  double dbr = termk * de / r;
-                  de = dbr * sharedBornGrad.get(k);
-//                logger.info(
-//                    format(" Born radii chain rule terms %d %d rbk=%16.8f bornGrad=%16.8f de=%16.8f",
-//                        k, i,
-//                        rbk, sharedBornGrad.get(k), de));
-                  incrementGradient(i, k, de, xr, yr, zr, transOp);
-                }
-              }
-            } else if (iSymOp > 0 && rbi < 50.0) {
-              if (descreenWithHydrogen || !atoms[k].isHydrogen()) {
-                dx_local[0] = xyz[0][k] - xi;
-                dx_local[1] = xyz[1][k] - yi;
-                dx_local[2] = xyz[2][k] - zi;
-                double r2 = crystal.image(dx_local);
-                if (r2 > cut2) {
-                  continue;
-                }
-                final double xr = dx_local[0];
-                final double yr = dx_local[1];
-                final double zr = dx_local[2];
-                final double r = sqrt(r2);
-
-                // Atom i being descreeened by atom k.
-                final double descreenRk =
-                    (descreenWithVDW) ? atoms[k].getVDWType().radius / 2.0 : baseRk;
-                final double scaledRk = descreenRk * overlapScale[k];
+              final double scaledRk = baseRk * overlapScale[k];
+              if (rbi < 50.0 && scaledRk > 0.0) {
                 double de = integralDerivative(r, r2, ri, scaledRk);
                 if (isInfinite(de) || isNaN(de)) {
                   logger.warning(
-                      format(" Born radii chain rule term is unstable %d %d %d %16.8f", iSymOp, i, k,
-                          de));
+                      format(" Born radii chain rule term is unstable %d %d %16.8f", i, k, de));
                 }
                 double dbr = termi * de / r;
                 de = dbr * sharedBornGrad.get(i);
                 incrementGradient(i, k, de, xr, yr, zr, transOp);
               }
-              // For symmetry mates, atom k is not descreeened by atom i.
+
+              // Atom k being descreeened by atom i.
+              double rbk = born[k];
+              if (rbk < 50.0 && scaledRi > 0.0) {
+                double termk = PI4_3 / (rbk * rbk * rbk);
+                termk = factor / pow(termk, (4.0 * oneThird));
+                double de = integralDerivative(r, r2, baseRk, scaledRi);
+                if (isInfinite(de) || isNaN(de)) {
+                  logger.warning(
+                      format(" Born radii chain rule term is unstable %d %d %16.8f", k, i, de));
+                }
+                double dbr = termk * de / r;
+                de = dbr * sharedBornGrad.get(k);
+                incrementGradient(i, k, de, xr, yr, zr, transOp);
+              }
+            } else if (iSymOp > 0 && rbi < 50.0) {
+              dx_local[0] = xyz[0][k] - xi;
+              dx_local[1] = xyz[1][k] - yi;
+              dx_local[2] = xyz[2][k] - zi;
+              double r2 = crystal.image(dx_local);
+              final double scaledRk = baseRk * overlapScale[k];
+              if (r2 < cut2 && scaledRk > 0.0) {
+                final double xr = dx_local[0];
+                final double yr = dx_local[1];
+                final double zr = dx_local[2];
+                final double r = sqrt(r2);
+                // Atom i being descreeened by atom k.
+                double de = integralDerivative(r, r2, ri, scaledRk);
+                if (isInfinite(de) || isNaN(de)) {
+                  logger.warning(
+                      format(" Born radii chain rule term is unstable %d %d %d %16.8f", iSymOp, i,
+                          k, de));
+                }
+                double dbr = termi * de / r;
+                de = dbr * sharedBornGrad.get(i);
+                incrementGradient(i, k, de, xr, yr, zr, transOp);
+                // For symmetry mates, atom k is not descreeened by atom i.
+              }
             }
           }
         }
@@ -349,8 +315,9 @@ public class BornGradRegion extends ParallelRegion {
      */
     private double integralDerivative(double r, double r2, double radius, double scaledRadius) {
       double de = 0.0;
-      // Descreen only if the descreened atom does not engulf the descreener.
-      if (radius < r + scaledRadius) {
+      // Descreen only if the scaledRadius is greater than zero.
+      // and atom I does not engulf atom K.
+      if (scaledRadius > 0.0 && (radius < r + scaledRadius)) {
         // Atom i is engulfed by atom k.
         if (radius + r < scaledRadius) {
           double uik = scaledRadius - r;

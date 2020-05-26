@@ -96,15 +96,11 @@ public class BornRadiiRegion extends ParallelRegion {
   private double cut2;
   /** Forces all atoms to be considered during Born radius updates. */
   private boolean nativeEnvironmentApproximation;
-  private boolean verboseRadii;
-  /** If true, the descreening size of atoms is based on their force field vdW radius */
-  private final boolean descreenWithVDW;
-  /** If true, hydrogen atoms displace solvent */
-  private final boolean descreenWithHydrogen;
   /** If true, bonded atoms displace solvent */
   private final boolean descreen12;
   private SharedDoubleArray sharedBorn;
   private SharedDouble ecavTot;
+  private boolean verboseRadii;
 
   public BornRadiiRegion(int nt, ForceField forceField) {
     bornRadiiLoop = new BornRadiiLoop[nt];
@@ -113,27 +109,19 @@ public class BornRadiiRegion extends ParallelRegion {
     }
     ecavTot = new SharedDouble(0.0);
     verboseRadii = forceField.getBoolean("VERBOSE_BORN_RADII", false);
-    descreenWithVDW = forceField.getBoolean("DESCREEN_VDW", false);
-    descreenWithHydrogen = forceField.getBoolean("DESCREEN_HYDROGEN", true);
     descreen12 = forceField.getBoolean("DESCREEN_12", true);
-
     if (verboseRadii) {
       logger.info(" Verbose Born radii.");
     }
-    if (!descreenWithHydrogen) {
-      logger.info(" Hydrogen do not descreen.");
-    }
     if (!descreen12) {
       logger.info(" 1-2 atoms do not descreen.");
-    }
-    if (descreenWithVDW) {
-      logger.info(" van der Waals radii are used to descreen.");
     }
   }
 
   @Override
   public void finish() {
     int nAtoms = atoms.length;
+    double bigRadius = 50.0;
     for (int i = 0; i < nAtoms; i++) {
       final double baseRi = baseRadius[i];
       if (!use[i]) {
@@ -141,33 +129,35 @@ public class BornRadiiRegion extends ParallelRegion {
       } else {
         double sum = sharedBorn.get(i);
         if (sum <= 0.0) {
-          born[i] = 50.0;
+          born[i] = bigRadius;
           if (verboseRadii) {
             logger.info(
                 format(" Born integral < 0 for atom %d; set Born radius to %12.6f.", i, born[i]));
-            logger.info(format(" %s with base radius %12.6f", atoms[i].toString(), baseRadius[i]));
           }
-          continue;
-        }
-
-        born[i] = 1.0 / pow(sum / PI4_3, oneThird);
-        if (born[i] < baseRi) {
-          born[i] = baseRi;
-          if (verboseRadii) {
-            logger.info(
-                format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f.", i,
-                    baseRi));
+        } else {
+          born[i] = 1.0 / pow(sum / PI4_3, oneThird);
+          if (born[i] < baseRi) {
+            born[i] = baseRi;
+            if (verboseRadii) {
+              logger.info(
+                  format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f.", i,
+                      baseRi));
+            }
+          } else if (born[i] > bigRadius) {
+            born[i] = bigRadius;
+            if (verboseRadii) {
+              logger.info(
+                  format(" Born radius > 50.0 Angstroms for atom %d: set Born radius to %12.6f.", i,
+                      baseRi));
+            }
+          } else if (isInfinite(born[i]) || isNaN(born[i])) {
+            if (verboseRadii) {
+              logger.info(
+                  format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f.", i,
+                      baseRi));
+            }
+            born[i] = baseRi;
           }
-          continue;
-        }
-
-        if (isInfinite(born[i]) || isNaN(born[i])) {
-          if (verboseRadii) {
-            logger.info(
-                format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f.", i,
-                    baseRi));
-          }
-          born[i] = baseRi;
         }
       }
     }
@@ -252,18 +242,14 @@ public class BornRadiiRegion extends ParallelRegion {
       for (int i = lb; i <= ub; i++) {
         final double baseRi = baseRadius[i];
         localBorn[i] = PI4_3 / (baseRi * baseRi * baseRi);
-        //logger.info(format(" Starting integral %d: %16.8f", i, localBorn[i]));
       }
-
       int nSymm = crystal.spaceGroup.symOps.size();
       if (nSymm == 0) {
         nSymm = 1;
       }
-
       double[] x = sXYZ[0][0];
       double[] y = sXYZ[0][1];
       double[] z = sXYZ[0][2];
-
       for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
         double[][] xyz = sXYZ[iSymOp];
         for (int i = lb; i <= ub; i++) {
@@ -271,9 +257,7 @@ public class BornRadiiRegion extends ParallelRegion {
             continue;
           }
           final double baseRi = baseRadius[i];
-          final double descreenRi = (descreenWithVDW) ? atoms[i].getVDWType().radius / 2.0 : baseRi;
-          final double scaledRi = descreenRi * overlapScale[i];
-          assert (baseRi > 0.0);
+          final double scaledRi = baseRi * overlapScale[i];
           final double xi = x[i];
           final double yi = y[i];
           final double zi = z[i];
@@ -298,35 +282,22 @@ public class BornRadiiRegion extends ParallelRegion {
               }
               final double r = sqrt(r2);
               // Atom i being descreeened by atom k.
-              if (descreenWithHydrogen || !atoms[k].isHydrogen()) {
-                final double descreenRk =
-                    (descreenWithVDW) ? atoms[k].getVDWType().radius / 2.0 : baseRk;
-                final double scaledRk = descreenRk * overlapScale[k];
-                localBorn[i] += integral(r, r2, baseRi, scaledRk);
-                //logger.info(format(" %d after descreening by %d : %16.8f", i, k, localBorn[i]));
-              }
+              final double scaledRk = baseRk * overlapScale[k];
+              localBorn[i] += integral(r, r2, baseRi, scaledRk);
               // Atom k being descreeened by atom i.
-              if (descreenWithHydrogen || !atoms[i].isHydrogen()) {
-                localBorn[k] += integral(r, r2, baseRk, scaledRi);
-                //logger.info(format(" %d after descreening by %d : %16.8f", k, i, localBorn[k]));
-              }
+              localBorn[k] += integral(r, r2, baseRk, scaledRi);
             } else if (iSymOp > 0) {
-              if (descreenWithHydrogen || !atoms[k].isHydrogen()) {
-                final double xr = xyz[0][k] - xi;
-                final double yr = xyz[1][k] - yi;
-                final double zr = xyz[2][k] - zi;
-                final double r2 = crystal.image(xr, yr, zr);
-                if (r2 > cut2) {
-                  continue;
-                }
-                final double r = sqrt(r2);
-
-                // Atom i being descreeened by atom k.
-                final double descreenRk =
-                    (descreenWithVDW) ? atoms[k].getVDWType().radius / 2.0 : baseRk;
-                final double scaledRk = descreenRk * overlapScale[k];
-                localBorn[i] += integral(r, r2, baseRi, scaledRk);
+              final double xr = xyz[0][k] - xi;
+              final double yr = xyz[1][k] - yi;
+              final double zr = xyz[2][k] - zi;
+              final double r2 = crystal.image(xr, yr, zr);
+              if (r2 > cut2) {
+                continue;
               }
+              final double r = sqrt(r2);
+              // Atom i being descreeened by atom k.
+              final double scaledRk = baseRk * overlapScale[k];
+              localBorn[i] += integral(r, r2, baseRi, scaledRk);
               // For symmetry mates, atom k is not descreeened by atom i.
             }
           }
@@ -354,9 +325,9 @@ public class BornRadiiRegion extends ParallelRegion {
      */
     private double integral(double r, double r2, double radius, double scaledRadius) {
       double integral = 0.0;
-
-      // Descreen only if atom I does not engulf atom K.
-      if (radius < r + scaledRadius) {
+      // Descreen only if the scaledRadius is greater than zero.
+      // and atom I does not engulf atom K.
+      if (scaledRadius > 0.0 && (radius < r + scaledRadius)) {
         // Atom i is engulfed by atom k.
         if (radius + r < scaledRadius) {
           final double lower = radius;
@@ -394,7 +365,6 @@ public class BornRadiiRegion extends ParallelRegion {
                 - (3.0 * (r2 - scaledRk2) + 6.0 * l2 - 8.0 * lr) / l4r;
         integral -= PI_12 * term;
       }
-
       return integral;
     }
   }

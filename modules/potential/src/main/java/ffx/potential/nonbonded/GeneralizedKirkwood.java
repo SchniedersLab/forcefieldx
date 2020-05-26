@@ -79,9 +79,8 @@ import java.util.logging.Logger;
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable atomic multipole force
  * field in parallel using a {@link ffx.potential.nonbonded.NeighborList}.
  *
- * @author Michael J. Schnieders<br>
- *     derived from:<br>
- *     TINKER code by Michael J. Schnieders and Jay W. Ponder<br>
+ * @author Michael J. Schnieders<br> derived from:<br> TINKER code by Michael J. Schnieders and Jay
+ *     W. Ponder<br>
  * @see <a href="http://dx.doi.org/10.1021/ct7001336" target="_blank">M. J. Schnieders and J. W.
  *     Ponder, Polarizable atomic multipole solutes in a generalized Kirkwood continuum, Journal of
  *     Chemical Theory and Computation 2007, 3, (6), 2083-2097.</a><br>
@@ -162,10 +161,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
   private final Polarization polarization;
   /** Treatment of non-polar interactions. */
   private final NonPolar nonPolar;
-  /** Over-ride the overlap scale factor for hydrogen atoms. */
-  private final double heavyAtomOverlapScale;
-  /** Over-ride the overlap scale factor for hydrogen atoms. */
-  private final double hydrogenOverlapScale;
   /**
    * Particle mesh Ewald instance, which contains variables such as expanded coordinates and
    * multipoles in the global frame that GK uses.
@@ -223,6 +218,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * J. Phys. Chem., 100, 19824-19839 (1996).
    */
   private double[] overlapScale;
+  /** If true, the descreening size of atoms is based on their force field vdW radius */
+  private final boolean descreenWithVDW;
+  /** If true, hydrogen atoms displace solvent */
+  private final boolean descreenWithHydrogen;
+  /** Base overlap scale factor. */
+  private double gkOverlapScale;
   /** Born radius of each atom. */
   private double[] born;
   /** Flag to indicate if an atom should be included. */
@@ -331,14 +332,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
     } catch (Exception e) {
       atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
       logger.info(
-          format(
-              " Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value, atomicDoubleArrayImpl));
+          format(" Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value,
+              atomicDoubleArrayImpl));
     }
 
     // Define default Bondi scale factor, and HCT overlap scale factors.
     bondiScale = forceField.getDouble("GK_BONDIOVERRIDE", DEFAULT_BONDI_SCALE);
-    heavyAtomOverlapScale = forceField.getDouble("GK_OVERLAPSCALE", DEFAULT_OVERLAP_SCALE);
-    hydrogenOverlapScale = forceField.getDouble("GK_HYDROGEN_OVERLAPSCALE", heavyAtomOverlapScale);
+    gkOverlapScale = forceField.getDouble("GK_OVERLAPSCALE", DEFAULT_OVERLAP_SCALE);
+    descreenWithVDW = forceField.getBoolean("DESCREEN_VDW", false);
+    descreenWithHydrogen = forceField.getBoolean("DESCREEN_HYDROGEN", true);
 
     // Process any radii override values.
     String radiiProp = forceField.getString("GK_RADIIOVERRIDE", null);
@@ -738,10 +740,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * Checks whether GK uses the Native Environment Approximation.
    *
    * <p>This (previously known as born-use-all) is useful for rotamer optimization under continuum
-   * solvent. If a large number of sidechain atoms are completely removed from the GK/GB
-   * calculation, the remaining sidechains are overly solvated. The NEA says "we will keep all
-   * sidechains not under optimization in some default state and let them contribute to Born radii
-   * calculations, but still exclude their solvation energy components."
+   * solvent. If a large number of sidechain atoms are completely removed from the GK/GB calculation,
+   * the remaining sidechains are overly solvated. The NEA says "we will keep all sidechains not
+   * under optimization in some default state and let them contribute to Born radii calculations, but
+   * still exclude their solvation energy components."
    *
    * @return Whether the NEA is in use.
    */
@@ -1148,12 +1150,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     // Set up HCT overlap scale factors and any requested radii overrides.
     for (int i = 0; i < nAtoms; i++) {
-      overlapScale[i] = heavyAtomOverlapScale;
-      int atomicNumber = atoms[i].getAtomicNumber();
-      if (atomicNumber == 1) {
-        overlapScale[i] = hydrogenOverlapScale;
-      }
-
       AtomType atomType = atoms[i].getAtomType();
       if (radiiOverride.containsKey(atomType.type)) {
         double override = radiiOverride.get(atomType.type);
@@ -1163,6 +1159,25 @@ public class GeneralizedKirkwood implements LambdaInterface {
             format(
                 " Scaling %s (atom type %d) to %7.4f (Bondi factor %7.4f)",
                 atoms[i], atomType.type, baseRadius[i], override));
+      }
+
+      // Set the default HCT overlap scale factor.
+      overlapScale[i] = gkOverlapScale;
+
+      // Apply the descreenWithVDW flag.
+      if (descreenWithVDW) {
+        // The descreening will be with a scaled size = vdW radius * overlapScale.
+        double vdwSize = atoms[i].getVDWType().radius / 2.0 * overlapScale[i];
+        // The code will descreen with a fit baseRadius whose size is different from the vdW radius.
+        // Define a per atom "overlapScale" to compensate.
+        // perAtomScaleFactor * baseRadius = vdwSize
+        // perAtomScaleFactor = vdwSize / baseRadius
+        overlapScale[i] = vdwSize / baseRadius[i];
+      }
+
+      // Apply the descreenWithHydrogen flag.
+      if (!descreenWithHydrogen && atoms[i].getAtomicNumber() == 1) {
+        overlapScale[i] = 0.0;
       }
     }
 
