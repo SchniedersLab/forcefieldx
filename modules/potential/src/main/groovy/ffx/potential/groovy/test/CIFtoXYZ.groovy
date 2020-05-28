@@ -41,9 +41,9 @@ import ffx.crystal.Crystal
 import ffx.crystal.SpaceGroup
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Angle
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Bond
-import ffx.potential.bonded.Angle
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.ForceField
 import org.apache.commons.io.FilenameUtils
@@ -54,10 +54,6 @@ import org.openscience.cdk.interfaces.IAtom
 import org.openscience.cdk.interfaces.IAtomType
 import org.openscience.cdk.interfaces.IBond.Order
 import org.openscience.cdk.isomorphism.AtomMatcher
-import org.openscience.cdk.atomtype.CDKAtomTypeMatcher
-import org.openscience.cdk.tools.manipulator.AtomTypeManipulator
-import org.openscience.cdk.tools.manipulator.AtomContainerManipulator
-import org.openscience.cdk.tools.periodictable.PeriodicTable
 import org.openscience.cdk.isomorphism.BondMatcher
 import org.openscience.cdk.isomorphism.Pattern
 import org.openscience.cdk.isomorphism.VentoFoggia
@@ -408,8 +404,8 @@ class CIFtoXYZ extends PotentialScript {
                                     hydrogen.getXYZ(null),
                                     atom1.getXYZ(null),
                                     atom1_2.getXYZ(null),
-                                    atom2_3.getXYZ(null));
-                    intxyz(hydrogen, atom1, bond0.bondType.distance, atom1_2, angle0_2, atom2_3, Math.toDegrees(diAng), 0);
+                                    atom2_3.getXYZ(null))
+                    intxyz(hydrogen, atom1, bond0.bondType.distance, atom1_2, angle0_2, atom2_3, Math.toDegrees(diAng), 0)
 //                    logger.info(format("0: %s\n1: %s\n0_1: %f\n2: %s\n0_2: %f\n3: %s\n0_3: %f\n",
 //                            hydrogen.toString(), atom1.toString(), bond0.bondType.distance, atom1_2.toString(), angle0_2,
 //                            atom2_3.toString(), diAng))
