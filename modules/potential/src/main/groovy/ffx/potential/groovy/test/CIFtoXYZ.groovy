@@ -43,6 +43,7 @@ import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Bond
+import ffx.potential.bonded.Angle
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.ForceField
 import org.apache.commons.io.FilenameUtils
@@ -53,6 +54,10 @@ import org.openscience.cdk.interfaces.IAtom
 import org.openscience.cdk.interfaces.IAtomType
 import org.openscience.cdk.interfaces.IBond.Order
 import org.openscience.cdk.isomorphism.AtomMatcher
+import org.openscience.cdk.atomtype.CDKAtomTypeMatcher
+import org.openscience.cdk.tools.manipulator.AtomTypeManipulator
+import org.openscience.cdk.tools.manipulator.AtomContainerManipulator
+import org.openscience.cdk.tools.periodictable.PeriodicTable
 import org.openscience.cdk.isomorphism.BondMatcher
 import org.openscience.cdk.isomorphism.Pattern
 import org.openscience.cdk.isomorphism.VentoFoggia
@@ -68,6 +73,8 @@ import javax.vecmath.Point3d
 import java.nio.file.Path
 import java.nio.file.Paths
 
+import static ffx.numerics.math.DoubleMath.dihedralAngle
+import static ffx.potential.bonded.BondedUtils.intxyz
 import static ffx.potential.parsers.PDBFilter.toPDBAtomLine
 import static java.lang.String.format
 
@@ -85,21 +92,21 @@ class CIFtoXYZ extends PotentialScript {
    * --sg or --spaceGroupNumber Override the CIF space group.
    */
   @Option(names = ['--sg', '--spaceGroupNumber'], paramLabel = "-1", defaultValue = "-1",
-      description = 'Override the CIF space group.')
+          description = 'Override the CIF space group.')
   private int sgNum = -1
 
   /**
    * --name or --spaceGroupName Override the CIF space group.
    */
   @Option(names = ['--name', '--spaceGroupName'], paramLabel = "", defaultValue = "",
-      description = 'Override the CIF space group.')
+          description = 'Override the CIF space group.')
   private String sgName = ""
 
   /**
    * The final argument(s) should be a CIF file and an XYZ file with atom types.
    */
   @Parameters(arity = "2..*", paramLabel = "files",
-      description = "A CIF file and an XYZ file (currently limited to one molecule).")
+          description = "A CIF file and an XYZ file (currently limited to one molecule).")
   List<String> filenames = null
 
   /**
@@ -230,7 +237,7 @@ class CIFtoXYZ extends PotentialScript {
       double[] xyz = [x, y, z]
       crystal.toCartesianCoordinates(xyz, xyz)
       atoms[i] = new Atom(i + 1, label.get(i), altLoc, xyz, resName, resID, chain, occupancy,
-          bfactor, segID)
+              bfactor, segID)
       atoms[i].setHetero(true)
     }
 
@@ -255,14 +262,33 @@ class CIFtoXYZ extends PotentialScript {
       activeAssembly = assemblies[0]
       Atom[] xyzAtoms = activeAssembly.getAtomArray()
       int nXYZAtoms = xyzAtoms.length
-      if (nAtoms == nXYZAtoms) {
+      //Used to determine if CIF sturcture is missing hydrogens later on...
+      int numHydrogens = 0
+      for (Atom atom in xyzAtoms) {
+        if (atom.isHydrogen()) {
+          numHydrogens++
+        }
+      }
+
+      if (nAtoms == nXYZAtoms || (nAtoms + numHydrogens) == nXYZAtoms) {//TODO: Add >1 ASU
         AtomContainer cifCDKAtoms = new AtomContainer()
         AtomContainer xyzCDKAtoms = new AtomContainer()
         for (int i = 0; i < nAtoms; i++) {
           cifCDKAtoms.addAtom(new org.openscience.cdk.Atom(symbols[i],
-              new Point3d(atoms[i].getXYZ(null))))
+                  new Point3d(atoms[i].getXYZ(null))))
+        }
+        AtomContainer nullCDKAtoms = new AtomContainer()
+
+        for (IAtom atom in cifCDKAtoms.atoms()) {
+          if (atom.toString() == null) {
+            nullCDKAtoms.addAtom(atom)
+          }
+        }
+        cifCDKAtoms.remove(nullCDKAtoms)
+
+        for (int i = 0; i < nXYZAtoms; i++) {
           xyzCDKAtoms.addAtom(new org.openscience.cdk.Atom(xyzAtoms[i].getAtomType().name,
-              new Point3d(xyzAtoms[i].getXYZ(null))))
+                  new Point3d(xyzAtoms[i].getXYZ(null))))
         }
 
         // Add known XYZ bonds. A limitation is all are given a Bond order of 1.
@@ -275,8 +301,8 @@ class CIFtoXYZ extends PotentialScript {
 
         // Assign CDK atom types for the XYZ molecule.
         AtomTypeFactory factory = AtomTypeFactory.getInstance(
-            "org/openscience/cdk/config/data/jmol_atomtypes.txt",
-            xyzCDKAtoms.getBuilder())
+                "org/openscience/cdk/config/data/jmol_atomtypes.txt",
+                xyzCDKAtoms.getBuilder())
 
         for (IAtom atom : xyzCDKAtoms.atoms()) {
           String atomTypeName = atom.getAtomTypeName()
@@ -294,8 +320,8 @@ class CIFtoXYZ extends PotentialScript {
 
         // Compute bonds for CIF molecule.
         factory = AtomTypeFactory.getInstance(
-            "org/openscience/cdk/config/data/jmol_atomtypes.txt",
-            cifCDKAtoms.getBuilder())
+                "org/openscience/cdk/config/data/jmol_atomtypes.txt",
+                cifCDKAtoms.getBuilder())
         for (IAtom atom : cifCDKAtoms.atoms()) {
           String atomTypeName = atom.getAtomTypeName()
           if (atomTypeName == null || atomTypeName.length() == 0) {
@@ -314,12 +340,11 @@ class CIFtoXYZ extends PotentialScript {
         rebonder.rebond(cifCDKAtoms)
 
         int cifBonds = cifCDKAtoms.bondCount
-        logger.info(format(" CIF Bond count: %d", cifBonds))
 
         // Number of bonds matches.
         if (cifBonds == xyzBonds) {
           Pattern pattern =
-              VentoFoggia.findIdentical(xyzCDKAtoms, AtomMatcher.forElement(), BondMatcher.forAny())
+                  VentoFoggia.findIdentical(xyzCDKAtoms, AtomMatcher.forElement(), BondMatcher.forAny())
           int[] p = pattern.match(cifCDKAtoms)
           if (p != null && p.length == nAtoms) {
             // Used matched atoms to update the positions of the XYZ file atoms.
@@ -329,51 +354,109 @@ class CIFtoXYZ extends PotentialScript {
               xyzAtoms[i].setXYZ(point3d.x, point3d.y, point3d.z)
             }
 
-            // Update the active molecular assembly to use the CIF space group and unit cell.
-            activeAssembly.getPotentialEnergy().setCrystal(crystal)
-            // Choose a location to save the file.
-            fileName = FilenameUtils.removeExtension(fileName) + ".xyz"
-            File modelFile = new File(dirName + fileName)
-            File saveFile = potentialFunctions.versionFile(modelFile)
 
-            // Write out the result.
-            potentialFunctions.saveAsXYZ(activeAssembly, saveFile)
-            logger.info("\n Saved XYZ file:        " + saveFile.getAbsolutePath())
-
-            // Write out a property file.
-            fileName = FilenameUtils.removeExtension(fileName) + ".properties"
-            File propertyFile = new File(dirName + fileName)
-            if (!propertyFile.exists()) {
-              FileWriter fw = new FileWriter(propertyFile, false)
-              BufferedWriter bw = new BufferedWriter(fw)
-              ForceField forceField = activeAssembly.getForceField()
-              String parameters = forceField.getString("parameters", "none")
-              if (parameters != null && !parameters.equalsIgnoreCase("none")) {
-                bw.write(format("parameters %s\n", parameters))
-              }
-              String patch = forceField.getString("patch", "none")
-              if (patch != null && !patch.equalsIgnoreCase("none")) {
-                bw.write(format("patch %s\n", patch))
-              }
-              bw.write(format("spacegroup %s\n", crystal.spaceGroup.shortName))
-
-              bw.close()
-              logger.info("\n Saved properties file: " + propertyFile.getAbsolutePath())
-            } else {
-              logger.info("\n Property file already exists:  " + propertyFile.getAbsolutePath())
-            }
           } else {
             logger.info(" CIF and XYZ files don't match.")
             savePDB = true
           }
+
+        } else if ((cifBonds + numHydrogens) % xyzBonds == 0) {
+          // Hydrogens most likely missing from file.
+          logger.info(" CIF may contain implicit hydrogens, attempting to patch...")
+          // Match heavy atoms between CIF and XYZ
+          Pattern pattern = VentoFoggia.findSubstructure(cifCDKAtoms, AtomMatcher.forElement(), BondMatcher.forAny())
+          int[] p = pattern.match(xyzCDKAtoms)
+          if (p != null && p.length == nAtoms) {
+            // Used matched atoms to update the positions of the XYZ file atoms.
+            for (int i = 0; i < p.length; i++) {
+              Point3d point3d = cifCDKAtoms.getAtom(i).getPoint3d()
+              xyzAtoms[p[i]].setXYZ(point3d.x, point3d.y, point3d.z)
+            }
+            // Add in hydrogen atoms
+            for (Atom hydrogen in xyzAtoms) {
+              if (hydrogen.isHydrogen()) {
+                Bond bond0 = hydrogen.getBonds()[0]
+                Atom atom1 = bond0.get1_2(hydrogen)
+                double angle0_2 = 0
+                List<Angle> anglesList = hydrogen.getAngles() // Same as bond
+                Atom atom1_2 = null
+                switch (anglesList.size()) {
+                  case 0:
+                    // H-Cl No angles
+                    logger.info("Structure may contain only two atoms. Not supported yet.")
+                    break
+                  case 1:
+                    // H-O=C Need torsion
+                    for (Angle angle in anglesList) {
+                      atom1_2 = angle.get1_3(hydrogen)
+                      if (atom1_2 != null && !atom1_2.isHydrogen()) {
+                        angle0_2 = angle.angleType.angle[0]
+                      }
+                      if (angle0_2 != 0) { //if angle1_3 is found then no need to look for another atom.
+                        break
+                      }
+                    }
+                    Atom atom2_3
+                    List<Bond> bonds2 = atom1_2.getBonds()
+                    if (atom1 == bonds2[0].get1_2(atom1_2)) { // Ensure first bond doesnt go to atom2
+                      atom2_3 = bonds2[1].get1_2(atom1_2)
+                    } else { //Else get first bond and assign atom to atom3
+                      atom2_3 = bonds2[0].get1_2(atom1_2)
+                    }
+                    double diAng =
+                            dihedralAngle(
+                                    hydrogen.getXYZ(null),
+                                    atom1.getXYZ(null),
+                                    atom1_2.getXYZ(null),
+                                    atom2_3.getXYZ(null));
+                    intxyz(hydrogen, atom1, bond0.bondType.distance, atom1_2, angle0_2, atom2_3, Math.toDegrees(diAng), 0);
+//                    logger.info(format("0: %s\n1: %s\n0_1: %f\n2: %s\n0_2: %f\n3: %s\n0_3: %f\n",
+//                            hydrogen.toString(), atom1.toString(), bond0.bondType.distance, atom1_2.toString(), angle0_2,
+//                            atom2_3.toString(), diAng))
+                    break
+                  default:
+                    // H-C-C
+                    Atom atom1_2B = null
+                    double angle0_3 = 0
+                    Atom proposedAtom
+                    double proposedAngle = 0
+                    for (Angle angle in anglesList) {
+                      proposedAtom = angle.get1_3(hydrogen)
+                      if (proposedAtom != null && !proposedAtom.isHydrogen()) {
+                        proposedAngle = angle.angleType.angle[0]
+                      }
+                      if (proposedAngle != 0) { //if angle1_3 is found then no need to look for another atom.
+                        if (angle0_2 != 0) {
+                          atom1_2 = proposedAtom
+                          angle0_3 = proposedAngle
+                        } else {
+                          atom1_2B = proposedAtom
+                          angle0_2 = proposedAngle
+                        }
+                        if (angle0_2 != 0 && angle0_3 != 0) {
+                          break
+                        }
+                      }
+                    }
+                    intxyz(hydrogen, atom1, bond0.bondType.distance, atom1_2, angle0_2, atom1_2B, angle0_3, 1)
+//                    logger.info(format("0: %s\n1: %s\n0_1: %f\n2: %s\n0_2: %f\n3: %s\n0_3: %f\n",
+//                            hydrogen.toString(), atom1.toString(), bond0.bondType.distance, atom1_2.toString(), angle0_2,
+//                            atom1_2B.toString(), angle0_3))
+                }
+              }
+            }
+          } else {
+            logger.info(" Could not match heavy atoms between CIF and XYZ.")
+            savePDB = true
+          }
         } else {
           logger.info(format(" CIF (%d) and XYZ (%d) have a different number of bonds.", cifBonds,
-              xyzBonds))
+                  xyzBonds))
           savePDB = true
         }
       } else {
         logger.info(format(" CIF (%d) and XYZ (%d) files have different numbers of atoms.", nAtoms,
-            nXYZAtoms))
+                nXYZAtoms))
         savePDB = true
       }
     }
@@ -394,6 +477,40 @@ class CIFtoXYZ extends PotentialScript {
       bw.write("END\n")
       bw.close()
       logger.info("\n Saved PDB file to " + saveFile.getAbsolutePath())
+    } else {
+      // Update the active molecular assembly to use the CIF space group and unit cell.
+      activeAssembly.getPotentialEnergy().setCrystal(crystal)
+      // Choose a location to save the file.
+      fileName = FilenameUtils.removeExtension(fileName) + ".xyz"
+      File modelFile = new File(dirName + fileName)
+      File saveFile = potentialFunctions.versionFile(modelFile)
+
+      // Write out the result.
+      potentialFunctions.saveAsXYZ(activeAssembly, saveFile)
+      logger.info("\n Saved XYZ file:        " + saveFile.getAbsolutePath())
+
+      // Write out a property file.
+      fileName = FilenameUtils.removeExtension(fileName) + ".properties"
+      File propertyFile = new File(dirName + fileName)
+      if (!propertyFile.exists()) {
+        FileWriter fw = new FileWriter(propertyFile, false)
+        BufferedWriter bw = new BufferedWriter(fw)
+        ForceField forceField = activeAssembly.getForceField()
+        String parameters = forceField.getString("parameters", "none")
+        if (parameters != null && !parameters.equalsIgnoreCase("none")) {
+          bw.write(format("parameters %s\n", parameters))
+        }
+        String patch = forceField.getString("patch", "none")
+        if (patch != null && !patch.equalsIgnoreCase("none")) {
+          bw.write(format("patch %s\n", patch))
+        }
+        bw.write(format("spacegroup %s\n", crystal.spaceGroup.shortName))
+
+        bw.close()
+        logger.info("\n Saved properties file: " + propertyFile.getAbsolutePath())
+      } else {
+        logger.info("\n Property file already exists:  " + propertyFile.getAbsolutePath())
+      }
     }
 
     return this
