@@ -695,7 +695,7 @@ public class MonteCarloOST extends BoltzmannMC {
         if (imove % biasDepositionFrequency == 0) {
           histogram.addBias(currentdUdL, currentCoordinates, null);
           logger.info(format(" Added Bias at move %d: [ L=%5.3f, FL=%9.3f] ",
-              imove, biasDepositionFrequency, lambda, currentdUdL));
+              imove, lambda, currentdUdL));
         } else {
           // TODO: Step down to FINE when we know this works.
           logger.log(Level.FINE, format(" Cycle %d: skipping bias deposition.", imove));
