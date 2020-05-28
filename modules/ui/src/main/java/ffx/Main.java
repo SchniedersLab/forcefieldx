@@ -480,6 +480,12 @@ public final class Main extends JFrame {
     properties.setProperty("org.apache.logging.log4j.level", "OFF");
     PropertyConfigurator.configure(properties);
 
+    Logger ffxLogger = Logger.getLogger("ffx");
+    // Remove any existing handlers.
+    for (Handler handler : ffxLogger.getHandlers()) {
+      ffxLogger.removeHandler(handler);
+    }
+    
     // Retrieve the log level from the ffx.log system property.
     String logLevel = System.getProperty("ffx.log", "info");
     Level tempLevel;
@@ -492,7 +498,6 @@ public final class Main extends JFrame {
     Level level = tempLevel;
     logHandler = new LogHandler();
     logHandler.setLevel(level);
-    Logger ffxLogger = Logger.getLogger("ffx");
     ffxLogger.addHandler(logHandler);
     ffxLogger.setLevel(level);
 
