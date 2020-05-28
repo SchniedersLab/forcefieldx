@@ -7,13 +7,11 @@ sudo: false
 matrix:
   include:
     - os: linux
+      jdk: oraclejdk10
+    - os: linux
       jdk: oraclejdk11
     - os: linux
-      jdk: oraclejdk13
-    - os: linux
-      jdk: openjdk11
-    - os: linux
-      jdk: openjdk13
+      jdk: oraclejdk14
     - os: osx
       osx_image: xcode10.1
     - os: osx
@@ -31,5 +29,5 @@ notifications:
     on_success: change
     on_failure: always
 
-script: mvn test -B -DskipTests=false -Dpj.nt=2 -Dffx.log=WARNING -Dffx.test.log=FINE
+script: mvn test -B -DskipTests=false -Dpj.nt=2 -Dffx.log=WARNING -Dffx.test.log=WARNING
 

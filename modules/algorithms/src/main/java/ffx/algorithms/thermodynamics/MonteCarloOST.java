@@ -443,11 +443,11 @@ public class MonteCarloOST extends BoltzmannMC {
 
         if (imove % biasDepositionFrequency == 0) {
           histogram.addBias(currentdUdL, currentCoordinates, null);
+          logger.info(format(" Added Bias at move %d: [ L=%5.3f, FL=%9.3f] ",
+              imove, lambda, currentdUdL));
         } else {
           logger.log(Level.FINE, format(" Cycle %d: skipping bias deposition.", imove));
         }
-
-        logger.fine(format(" Added Bias at [ L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
 
         // Compute the updated OST bias.
         currentBiasEnergy = histogram.computeBiasEnergy(lambda, currentdUdL);
@@ -694,14 +694,12 @@ public class MonteCarloOST extends BoltzmannMC {
 
         if (imove % biasDepositionFrequency == 0) {
           histogram.addBias(currentdUdL, currentCoordinates, null);
+          logger.info(format(" Added Bias at move %d: [ L=%5.3f, FL=%9.3f] ",
+              imove, biasDepositionFrequency, lambda, currentdUdL));
         } else {
           // TODO: Step down to FINE when we know this works.
-          logger.log(Level.INFO, format(" Cycle %d: skipping bias deposition.", imove));
+          logger.log(Level.FINE, format(" Cycle %d: skipping bias deposition.", imove));
         }
-
-        logger.log(
-            verboseLoggingLevel,
-            format("  Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
 
         // Compute the updated OST bias.
         currentBiasEnergy = histogram.computeBiasEnergy(lambda, currentdUdL);
