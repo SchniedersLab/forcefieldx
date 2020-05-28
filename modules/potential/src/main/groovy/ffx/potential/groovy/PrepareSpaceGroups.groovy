@@ -277,12 +277,18 @@ class PrepareSpaceGroups extends PotentialScript {
                 out.println(String.format("gamma %12.8f", crystal.gamma))
               } else if (tokens[0].equalsIgnoreCase("spacegroup")) {
                 out.println(String.format("spacegroup %s", spacegroup.shortName))
+              } else if (tokens[0].equalsIgnoreCase("parameters")) {
+                if (tokens.length > 1) {
+                  out.println(String.format("%s ../%s", tokens[0], tokens[1]))
+                } else {
+                  logger.warning("Parameter file may not have been specified")
+                }
               } else {
                 out.println(line)
               }
             } else {
-              out.println(line)
-            }
+                out.println(line)
+              }
           }
         }
       } catch (IOException ex) {
