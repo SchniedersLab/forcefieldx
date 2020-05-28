@@ -7,7 +7,7 @@ sudo: false
 matrix:
   include:
     - os: linux
-      jdk: oraclejdk10
+      jdk: openjdk10
     - os: linux
       jdk: oraclejdk11
     - os: linux
