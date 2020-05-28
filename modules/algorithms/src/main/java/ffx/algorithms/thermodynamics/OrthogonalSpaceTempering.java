@@ -1677,12 +1677,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         if (llFL == -1 || ulFL == -1) {
           FLambda[iL] = 0.0;
           minFL = 0.0;
+          logger.info(String.format(" Offset for bin %d: N/A (no bias deposited)", iL));
         } else {
           double ensembleAverageFLambda = 0.0;
           double partitionFunction = 0.0;
 
           // Evaluate and regularize all kernel values for this value of lambda.
           double offset = evaluateKernelforLambda(iL, llFL, ulFL);
+          logger.info(String.format(" Offset for bin %d: %.4f kcal/mol", iL, offset));
 
           for (int jFL = llFL; jFL <= ulFL; jFL++) {
             double kernel = kernelValues[jFL];
