@@ -84,6 +84,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.DoubleUnaryOperator;
+import java.util.function.IntToDoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -634,6 +636,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
    * @param lambda a double.
    */
   public void setLambda(double lambda) {
+    if (histogram != null) {
+      lambda = histogram.mapLambda(lambda);
+    } else {
+      logger.warning(" OrthogonalSpaceTempering.setLambda was called before histogram constructed!");
+      logger.info(Utilities.stackTraceToString(new RuntimeException()));
+    }
     lambdaInterface.setLambda(lambda);
     this.lambda = lambda;
     histogram.theta = asin(sqrt(lambda));
@@ -1362,8 +1370,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     private boolean resetStatistics;
     /** Most recent lambda values for each Walker. */
     private double lastReceivedLambda;
-
+    /** Most recent dU/dL value for each walker. */
     private double lastReceiveddUdL;
+    /** Either the discrete lambda values used, or null (continuous lambda). */
+    private final double[] lambdaLadder;
 
     /**
      * Histogram constructor.
@@ -1393,14 +1403,21 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       deltaT = temperingFactor * R * temperature;
 
       dL = settings.getDL();
+      lambdaBins = 1 + (int) round(1.0 / dL);
       if (discreteLambda) {
+        lambdaLadder = new double[lambdaBins];
+        lambdaLadder[0] = 0.0;
+        lambdaLadder[lambdaBins - 1] = 1.0;
+        for (int i = 1; i < lambdaBins - 1; i++) {
+          lambdaLadder[i] = dL * i;
+        }
         dL_2 = 0.0;
         minLambda = 0.0;
       } else {
+        lambdaLadder = null;
         dL_2 = dL * 0.5;
         minLambda = -dL_2;
       }
-      lambdaBins = 1 + (int) round(1.0 / dL);
 
       // The center of the central bin is at 0.
       FLambdaBins = 101;
@@ -1468,7 +1485,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         logger.info(
             String.format(
                 " Discrete lambda: initializing lambda to nearest bin %.5f", lastReceivedLambda));
-        lambda = lastReceivedLambda;
+        lambda = mapLambda(lastReceivedLambda);
+        theta = asin(sqrt(lambda));
         lambdaInterface.setLambda(lastReceivedLambda);
       }
       lastReceiveddUdL = getdEdL();
@@ -1532,7 +1550,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         sb.append(format(" %16.8f", currentFL));
 
         for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
-          lambda = lambdaBin * dL + dL_2;
+          setLambda(lambdaForIndex(lambdaBin));
           double bias1D = -energyAndGradient1D(lambda, false);
           double totalBias = bias1D - evaluateKernel(lambdaBin, fLambdaBin, biasMag);
           sb.append(format(" %16.8f", totalBias));
@@ -1847,6 +1865,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       }
     }
 
+    private double mapLambda(double lambda) {
+      if (discreteLambda) {
+        return lambdaLadder[indexForDiscreteLambda(lambda)];
+      } else {
+        return lambda;
+      }
+    }
+
     /**
      * For continuous lambda, the returned value is the lambda bin. For discrete lambda, the returned
      * value is the discrete lambda index.
@@ -1855,6 +1881,23 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @return a int.
      */
     int indexForLambda(double lambda) {
+      // I give up on making this a nice pretty method reference.
+      if (discreteLambda) {
+        return indexForDiscreteLambda(lambda);
+      } else {
+        return indexForContinuousLambda(lambda);
+      }
+    }
+
+    private double lambdaForIndex(int bin) {
+      if (discreteLambda) {
+        return lambdaLadder[bin];
+      } else {
+        return (bin * dL) - dL_2;
+      }
+    }
+
+    private int indexForContinuousLambda(double lambda) {
       int lambdaBin = (int) floor((lambda - minLambda) / dL);
       if (lambdaBin < 0) {
         lambdaBin = 0;
@@ -1863,6 +1906,29 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         lambdaBin = lambdaBins - 1;
       }
       return lambdaBin;
+    }
+
+    private int indexForDiscreteLambda(double lambda) {
+      assert discreteLambda && lambdaLadder != null && lambdaLadder.length > 0;
+
+      int initialGuess = indexForContinuousLambda(lambda);
+      double minErr = Double.MAX_VALUE;
+      int minErrBin = -1;
+      for (int i = -1; i < 2; i++) {
+        int guessBin = i + initialGuess;
+        if (guessBin < 0 || guessBin >= lambdaBins) {
+          continue;
+        }
+        double guessLam = lambdaLadder[guessBin];
+        double guessErr = Math.abs(guessLam - lambda);
+        if (guessErr < minErr) {
+          minErr = guessErr;
+          minErrBin = guessBin;
+        }
+      }
+
+      assert minErr < 1.0E-6 && minErrBin > -1;
+      return minErrBin;
     }
 
     /**
@@ -2427,7 +2493,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       double sinTheta = sin(theta);
 
       // Compute lambda as sin(theta)^2.
-      lambda = sinTheta * sinTheta;
+      setLambda(sinTheta * sinTheta);
       lambdaInterface.setLambda(lambda);
     }
 
