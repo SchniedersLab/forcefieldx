@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static java.lang.String.format;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -94,9 +95,9 @@ public abstract class FFXTest {
   static {
     Level level;
     try {
-      level = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
+      level = Level.parse(System.getProperty("ffx.test.log", "WARNING").toUpperCase());
     } catch (Exception ex) {
-      logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
+      logger.warning(format(" Exception %s in parsing value of ffx.test.log", ex));
       level = origLevel;
     }
     testLevel = level;
@@ -104,7 +105,7 @@ public abstract class FFXTest {
     try {
       level = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
     } catch (Exception ex) {
-      logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
+      logger.warning(format(" Exception %s in parsing value of ffx.log", ex));
       level = origLevel;
     }
     ffxLevel = level;
