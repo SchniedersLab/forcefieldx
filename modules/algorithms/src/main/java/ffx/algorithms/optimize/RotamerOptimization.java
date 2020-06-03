@@ -3364,8 +3364,6 @@ public class RotamerOptimization implements Terminatable {
     if (getEnergies) {
       applyEliminationCriteria(residues);
     } else {
-      // allocateEliminationMemory is now called for all algorithms in rotamerEnergies method.
-      // allocateEliminationMemory(residues);
       int i = 0;
       boolean pairEliminated;
       do {

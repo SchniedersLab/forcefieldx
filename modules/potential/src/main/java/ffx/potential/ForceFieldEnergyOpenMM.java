@@ -895,15 +895,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
   }
 
   /**
-   * Coordinates for active atoms.
+   * Set FFX and OpenMM coordinates for active atoms.
    *
    * @param x Atomic coordinates.
    */
   @Override
   public void setCoordinates(double[] x) {
-    // Set FFX coordiantes.
-    super.setCoordinates(x);
-    // Set OpenMM coordinates.
+    // Set both OpenMM and FFX coordinates to x.
     context.setOpenMMPositions(x);
   }
 
@@ -1069,14 +1067,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param x Atomic coordinate array for only active atoms.
      */
     public void setOpenMMPositions(double[] x) {
+      logger.info(" Setting OpenMM Positions");
       PointerByReference positions = OpenMM_Vec3Array_create(0);
       OpenMM_Vec3.ByValue coords = new OpenMM_Vec3.ByValue();
+      double[] d = new double[3];
       int index = 0;
       for (Atom a : atoms) {
         if (a.isActive()) {
-          coords.x = x[index++] * OpenMM_NmPerAngstrom;
-          coords.y = x[index++] * OpenMM_NmPerAngstrom;
-          coords.z = x[index++] * OpenMM_NmPerAngstrom;
+          a.moveTo(x[index++], x[index++], x[index++]);
+          a.getXYZ(d);
+          coords.x = d[0] * OpenMM_NmPerAngstrom;
+          coords.y = d[1] * OpenMM_NmPerAngstrom;
+          coords.z = d[2] * OpenMM_NmPerAngstrom;
           OpenMM_Vec3Array_append(positions, coords);
         } else {
           // OpenMM requires coordinates for even "inactive" atoms with mass of zero.
@@ -1096,17 +1098,22 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param v Velocity array for active atoms.
      */
     public void setOpenMMVelocities(double[] v) {
+      logger.info(" Setting OpenMM Velocities");
       PointerByReference velocities = OpenMM_Vec3Array_create(0);
       OpenMM_Vec3.ByValue vel = new OpenMM_Vec3.ByValue();
       int index = 0;
+      double[] velocity = new double[3];
       for (Atom a : atoms) {
         if (a.isActive()) {
-          vel.x = v[index++] * OpenMM_NmPerAngstrom;
-          vel.y = v[index++] * OpenMM_NmPerAngstrom;
-          vel.z = v[index++] * OpenMM_NmPerAngstrom;
+          a.setVelocity(v[index++], v[index++], v[index++]);
+          a.getVelocity(velocity);
+          vel.x = velocity[0] * OpenMM_NmPerAngstrom;
+          vel.y = velocity[1] * OpenMM_NmPerAngstrom;
+          vel.z = velocity[2] * OpenMM_NmPerAngstrom;
           OpenMM_Vec3Array_append(velocities, vel);
         } else {
           // OpenMM requires velocities for even "inactive" atoms with mass of zero.
+          a.setVelocity(0.0, 0.0, 0.0);
           vel.x = 0.0;
           vel.y = 0.0;
           vel.z = 0.0;
@@ -1209,15 +1216,24 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         ForceFieldEnergyOpenMM.this.setLambda(currentLambda);
       }
 
-      // Get initial positions for active atoms.
+      // Get initial positions and velocities for active atoms.
       int nVar = ForceFieldEnergyOpenMM.super.getNumberOfVariables();
       double[] x = new double[nVar];
+      double[] v = new double[nVar];
+      double[] vel3 = new double[3];
       int index = 0;
       for (Atom a : atoms) {
         if (a.isActive()) {
-          x[index++] = a.getX();
-          x[index++] = a.getY();
-          x[index++] = a.getZ();
+          a.getVelocity(vel3);
+          // X-axis
+          x[index] = a.getX();
+          v[index++] = vel3[0];
+          // Y-axis
+          x[index] = a.getY();
+          v[index++] = vel3[1];
+          // Z-axis
+          x[index] = a.getZ();
+          v[index++] = vel3[2];
         }
       }
 
@@ -1227,12 +1243,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       // Load current atomic positions.
       setOpenMMPositions(x);
 
+      // Load current velocities.
+      setOpenMMVelocities(v);
+
       // Apply constraints starting from current atomic positions.
       OpenMM_Context_applyConstraints(contextPointer, constraintTolerance);
 
-      // Get back constrained atomic coordinates for consistency.
-      State state = new State(true, false, false, false);
+      // Application of constraints can change coordinates and velocities.
+      // Retrieve them for consistency.
+      State state = new State(true, false, false, true);
       state.getPositions(x);
+      state.getVelocities(v);
       state.free();
 
       return this;
