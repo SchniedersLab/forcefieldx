@@ -1067,7 +1067,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param x Atomic coordinate array for only active atoms.
      */
     public void setOpenMMPositions(double[] x) {
-      logger.info(" Setting OpenMM Positions");
       PointerByReference positions = OpenMM_Vec3Array_create(0);
       OpenMM_Vec3.ByValue coords = new OpenMM_Vec3.ByValue();
       double[] d = new double[3];
@@ -1098,7 +1097,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param v Velocity array for active atoms.
      */
     public void setOpenMMVelocities(double[] v) {
-      logger.info(" Setting OpenMM Velocities");
       PointerByReference velocities = OpenMM_Vec3Array_create(0);
       OpenMM_Vec3.ByValue vel = new OpenMM_Vec3.ByValue();
       int index = 0;
