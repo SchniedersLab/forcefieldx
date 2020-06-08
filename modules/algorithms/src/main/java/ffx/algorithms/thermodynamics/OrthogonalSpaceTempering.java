@@ -84,8 +84,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.DoubleUnaryOperator;
-import java.util.function.IntToDoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -187,6 +185,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
   private double previousFreeEnergy = 0.0;
   /** If true, values of (lambda, dU/dL) that have not been observed are rejected. */
   private boolean hardWallConstraint = false;
+  /**
+   * If a 2D bias is in use (i.e. lambda-bias-cutoff > 0), do not normalize bias height.
+   */
+  private static final double TWO_D_NORMALIZATION = 1.0;
+  /**
+   * If a 1D bias is in use (i.e. lambda-bias-cutoff == 0), normalize bias height to deposit the same volume of bias.
+   */
+  private static final double ONE_D_NORMALIZATION = Math.sqrt(2.0 * Math.PI);
 
   /**
    * OST Constructor.
@@ -1387,18 +1393,26 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       this.histogramFile = settings.getHistogramFile();
       this.asynchronous = settings.asynchronous;
 
-      biasCutoff = settings.biasCutoff;
-      biasMag = settings.getBiasMag();
-      dFL = settings.dFL;
       discreteLambda = settings.discreteLambda;
-      temperingFactor = settings.temperingFactor;
-      temperOffset = settings.getTemperOffset();
-
+      biasCutoff = settings.biasCutoff;
       if (discreteLambda) {
         lambdaBiasCutoff = 0;
       } else {
         lambdaBiasCutoff = biasCutoff;
       }
+      double gaussNormalization;
+      if (lambdaBiasCutoff == 0) {
+        gaussNormalization = ONE_D_NORMALIZATION;
+        logger.info(String.format(" Bias magnitude multiplied by a factor of %.4f " +
+                "sqrt(2*pi) to match 1D Gaussian volume to 2D Gaussian volume.",
+                gaussNormalization));
+      } else {
+        gaussNormalization = TWO_D_NORMALIZATION;
+      }
+      biasMag = settings.getBiasMag() * gaussNormalization;
+      dFL = settings.dFL;
+      temperingFactor = settings.temperingFactor;
+      temperOffset = settings.getTemperOffset();
 
       deltaT = temperingFactor * R * temperature;
 
