@@ -1395,11 +1395,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
       discreteLambda = settings.discreteLambda;
       biasCutoff = settings.biasCutoff;
-      if (discreteLambda) {
+      /*if (discreteLambda) {
         lambdaBiasCutoff = 0;
       } else {
         lambdaBiasCutoff = biasCutoff;
-      }
+      }*/
+      lambdaBiasCutoff = settings.lambdaBiasCutoff;
       double gaussNormalization;
       if (lambdaBiasCutoff == 0) {
         gaussNormalization = ONE_D_NORMALIZATION;
