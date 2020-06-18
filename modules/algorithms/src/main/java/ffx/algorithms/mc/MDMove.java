@@ -108,6 +108,7 @@ public class MDMove implements MCMove {
       DynamicsOptions dynamics,
       long stepsPerCycle) {
     this.potential = potentialEnergy;
+    logger.info(" Using potential " + potential.toString());
     molecularDynamics =
         MolecularDynamics.dynamicsFactory(
             assembly,
