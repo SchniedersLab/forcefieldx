@@ -128,6 +128,7 @@ class CIFtoXYZ extends PotentialScript {
 
     // Turn off CDK logging.
     System.setProperty("cdk.logging.level", "fatal")
+    System.setProperty("vdwterm", "false")
 
     if (!init()) {
       return this
