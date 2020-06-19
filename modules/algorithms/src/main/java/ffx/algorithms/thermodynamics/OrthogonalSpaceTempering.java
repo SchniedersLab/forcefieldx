@@ -1402,7 +1402,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       }*/
       lambdaBiasCutoff = settings.lambdaBiasCutoff;
       double gaussNormalization;
-      if (lambdaBiasCutoff == 0) {
+      if (lambdaBiasCutoff == 0 && !settings.histogramRead) {
         gaussNormalization = ONE_D_NORMALIZATION;
         logger.info(String.format(" Bias magnitude multiplied by a factor of %.4f " +
                 "sqrt(2*pi) to match 1D Gaussian volume to 2D Gaussian volume.",
