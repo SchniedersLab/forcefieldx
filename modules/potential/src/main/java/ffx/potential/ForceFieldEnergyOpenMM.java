@@ -3766,8 +3766,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             amoebaCavitationForce,
             radius * OpenMM_NmPerAngstrom,
             surfaceTension,
-            0.0,
-            atom.getCharge(),
             isHydrogen);
       }
 
@@ -4510,8 +4508,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             index,
             radius * OpenMM_NmPerAngstrom,
             surfaceTension * useFactor,
-            0.0,
-            atom.getCharge(),
             isHydrogen);
       }
 

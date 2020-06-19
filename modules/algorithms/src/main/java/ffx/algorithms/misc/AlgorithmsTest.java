@@ -42,6 +42,8 @@ import ffx.algorithms.cli.AlgorithmsScript;
 import ffx.utilities.FFXTest;
 import groovy.lang.Binding;
 import java.util.logging.Level;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 /**
@@ -49,14 +51,16 @@ import org.junit.BeforeClass;
  *
  * @author Michael J. Schnieders
  */
-public abstract class AlgorithmsTest extends FFXTest {
+public class AlgorithmsTest extends FFXTest {
 
   public AlgorithmsScript algorithmsScript;
   public Binding binding;
 
+
   /** Initialize the PJ communication layer. */
   @BeforeClass
   public static void beforeClass() {
+    FFXTest.beforeClass();
     try {
       Comm.world();
     } catch (IllegalStateException ise) {
@@ -71,12 +75,14 @@ public abstract class AlgorithmsTest extends FFXTest {
   }
 
   @Override
+  @Before
   public void beforeTest() {
     super.beforeTest();
     binding = new Binding();
   }
 
   @Override
+  @After
   public void afterTest() {
     super.afterTest();
     // The script could be null if the test was skipped (e.g. no CUDA environment for OpenMM).

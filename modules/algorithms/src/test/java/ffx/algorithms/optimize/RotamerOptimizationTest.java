@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.optimize;
 
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.misc.AlgorithmsTest;
@@ -461,7 +462,7 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
             }
           }
         }
-        assertEquals(String.format(" %s Self-Energy of residue %d", info, i), optimum[i], bestRot);
+        assertEquals(format(" %s Self-Energy of residue %d", info, i), optimum[i], bestRot);
       }
     }
 
@@ -530,7 +531,7 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
       }
 
       assertEquals(
-          String.format(
+          format(
               " %s Best 2-body energy sum for residue %d is with rotamer %d at %10.4f.",
               info, pairResidue, bestRotI, minEnergy),
           optimum[pairResidue],
@@ -569,12 +570,12 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
           // Check if 2-body energies are equal.
           if (lowEnergy == eE.get2Body(pairResidue, bestRotI, j, optimum[j])) {
             logger.warning(
-                String.format(
+                format(
                     " Identical 2-body energies for %s: resi %d-%d, resj %d, best rotamer J %d, optimum J %d, 2-body energy (both) %10.6f",
                     info, pairResidue, bestRotI, j, bestRotJ, optimum[j], lowEnergy));
           } else {
             assertEquals(
-                String.format(
+                format(
                     " %s Pair-Energy of residue (%d,%d) with residue %d",
                     info, pairResidue, bestRotI, j),
                 optimum[j],
@@ -672,14 +673,14 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
       }
 
       assertEquals(
-          String.format(
+          format(
               " %s Best three-body energy sum for residue %d is with rotamer %d at %10.4f.",
               info, tripleResidue1, bestRotI, minEnergyIJ),
           optimum[tripleResidue1],
           bestRotI);
 
       assertEquals(
-          String.format(
+          format(
               " %s Best three-body energy sum for residue %d is with rotamer %d at %10.4f.",
               info, tripleResidue2, bestRotJ, minEnergyIJ),
           optimum[tripleResidue2],
@@ -720,7 +721,7 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
           }
         }
         assertEquals(
-            String.format(
+            format(
                 " %s Triple-Energy of residue (%d,%d) and residue (%d,%d) with residue %d",
                 info, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k),
             optimum[k],
@@ -822,7 +823,7 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
             }
           }
         }
-        assertEquals(String.format(" %s Self-Energy of residue %d", info, i), optimum[i], bestRot);
+        assertEquals(format(" %s Self-Energy of residue %d", info, i), optimum[i], bestRot);
       }
     }
 
@@ -889,7 +890,7 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
       }
 
       assertEquals(
-          String.format(
+          format(
               " %s Best 2-body energy sum for residue %d is with rotamer %d at %10.4f.",
               info, pairResidue, bestRotI, minEnergy),
           optimum[pairResidue],
@@ -925,7 +926,7 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
           }
         }
         assertEquals(
-            String.format(
+            format(
                 " %s Pair-Energy of residue (%d,%d) with residue %d",
                 info, pairResidue, bestRotI, j),
             optimum[j],
@@ -1021,14 +1022,14 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
       }
 
       assertEquals(
-          String.format(
+          format(
               " %s Best three-body energy sum for residue %d is with rotamer %d at %10.4f.",
               info, tripleResidue1, bestRotI, minEnergyIJ),
           optimum[tripleResidue1],
           bestRotI);
 
       assertEquals(
-          String.format(
+          format(
               " %s Best three-body energy sum for residue %d is with rotamer %d at %10.4f.",
               info, tripleResidue2, bestRotJ, minEnergyIJ),
           optimum[tripleResidue2],
@@ -1070,7 +1071,7 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
           }
         }
         assertEquals(
-            String.format(
+            format(
                 " %s Triple-Energy of residue (%d,%d) and residue (%d,%d) with residue %d",
                 info, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k),
             optimum[k],

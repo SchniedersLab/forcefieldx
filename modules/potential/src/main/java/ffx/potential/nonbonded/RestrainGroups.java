@@ -86,7 +86,7 @@ public class RestrainGroups {
   final double[] forceConstants;
   /** Distance 1 for each restraint. */
   final double[] distance1;
-  /** Distance 1 for each restraint. */
+  /** Distance 2 for each restraint. */
   final double[] distance2;
   /** Flag to indicate of all atoms for both groups are part of the same molecule. */
   final boolean[] sameMolecule;
