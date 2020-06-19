@@ -62,7 +62,7 @@ class Histogram extends AlgorithmsScript {
    * -p or --pmf Save the histogram, PMF and 2D bias to files.
    */
   @Option(names = ['-p', '--pmf'], paramLabel = 'false',
-      description = 'Save the bias histogram to a file.')
+      description = 'Save the bias histogram to histogram.txt, the PMF to pmf.txt, and 2D PMF to pmf.2D.txt')
   boolean pmf = false
 
   /**
