@@ -478,7 +478,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                     "-C", "10", "--ac", "1-9", "-d", "1.0", "-n", "20000", "-w", "5", "--bM", "0.25",
                     "--tp", "2.0"
                 },
-                new String[] {"randomseed", "42"},
+                new String[] {"randomseed", "42", "lambda-bin-width", "0.02"},
                 new String[] {}
             },
             {
