@@ -164,6 +164,11 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addBond;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addGlobalParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addPerBondParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addBond;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addGroup;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addPerBondParameter;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_addBond;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_addGlobalParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_addPerBondParameter;
@@ -329,6 +334,7 @@ import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.nonbonded.ReciprocalSpace;
+import ffx.potential.nonbonded.RestrainGroups;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.nonbonded.implicit.ChandlerCavitation;
@@ -1806,6 +1812,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       // Add bond restraints.
       addRestraintBondForce();
+
+      // Add Restrain Groups.
+      addRestrainGroupsForce();
 
       // Add stretch-torsion coupling terms.
       addStretchTorsionForce();
@@ -3898,6 +3907,68 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       logger.log(
           Level.INFO,
           format("  Restraint bonds force \t%6d\t%d", restraintBonds.size(), forceGroup));
+    }
+
+    private void addRestrainGroupsForce() {
+      RestrainGroups restrainGroups = getRestrainGroups();
+      if (restrainGroups == null) {
+        return;
+      }
+
+      // In the expression below, u and l are the upper and lower threshold
+      PointerByReference force = OpenMM_CustomCentroidBondForce_create (2,
+              "step(distance(g1,g2)-u)*k*(distance(g1,g2)-u)^2+step(l-distance(g1,g2))*k*(distance(g1,g2)-l)^2");
+      OpenMM_CustomCentroidBondForce_addPerBondParameter (force, "k");
+      OpenMM_CustomCentroidBondForce_addPerBondParameter (force, "l");
+      OpenMM_CustomCentroidBondForce_addPerBondParameter (force, "u");
+
+      // Create the Restrain Groups.
+      int nGroups = restrainGroups.getNumberOfGroups();
+      for (int j = 0; j < nGroups; j++) {
+        PointerByReference group = OpenMM_IntArray_create (0);
+        PointerByReference weight = OpenMM_DoubleArray_create (0);
+        int[] groupMembers = restrainGroups.getGroupMembers(j);
+        for (int i : groupMembers) {
+          OpenMM_IntArray_append (group, i);
+          OpenMM_DoubleArray_append(weight, atoms[i].getMass());
+        }
+        OpenMM_CustomCentroidBondForce_addGroup (force, group, weight);
+        OpenMM_IntArray_destroy (group);
+        OpenMM_DoubleArray_destroy(weight);
+      }
+
+      // Add the restraints between groups.
+      double convert = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom*OpenMM_NmPerAngstrom);
+      int nRestraints = restrainGroups.getNumberOfRestraints();
+      int[] group1 = restrainGroups.getGroup1();
+      int[] group2 = restrainGroups.getGroup2();
+      double[] forceConstants = restrainGroups.getForceConstants();
+      double[] smallerDistance = restrainGroups.getSmallerDistance();
+      double[] largerDistance = restrainGroups.getLargerDistance();
+      for (int i = 0; i < nRestraints; i++) {
+        PointerByReference group = OpenMM_IntArray_create (0);
+        OpenMM_IntArray_append (group, group1[i]);
+        OpenMM_IntArray_append (group, group2[i]);
+        PointerByReference params = OpenMM_DoubleArray_create(0);
+        OpenMM_DoubleArray_append (params, forceConstants[i] * convert);
+        OpenMM_DoubleArray_append (params, smallerDistance[i] * OpenMM_NmPerAngstrom);
+        OpenMM_DoubleArray_append (params, largerDistance[i] * OpenMM_NmPerAngstrom);
+        OpenMM_CustomCentroidBondForce_addBond (force, group, params);
+        OpenMM_IntArray_destroy (group);
+        OpenMM_DoubleArray_destroy (params);
+      }
+
+      // Add the constraint force.
+      int forceGroup = forceField.getInteger("BOND_RESTRAINT_FORCE_GROUP", 0);
+      OpenMM_Force_setForceGroup(force, forceGroup);
+
+      if (getCrystal().aperiodic()) {
+        OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions(force, OpenMM_False);
+      } else {
+        OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions(force, OpenMM_True);
+      }
+      OpenMM_System_addForce (system, force);
+      logger.log(Level.INFO, format("  Restrain Groups \t%6d\t\t%1d", nRestraints, forceGroup));
     }
 
     /** Add a constraint to every bond. */

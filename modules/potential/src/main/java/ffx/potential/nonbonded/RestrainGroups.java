@@ -220,6 +220,70 @@ public class RestrainGroups {
   }
 
   /**
+   * Get the number of groups.
+   *
+   * @return Returns the number of groups.
+   */
+  public int getNumberOfGroups() {
+    return nGroups;
+  }
+
+  /**
+   * Get group members.
+   *
+   * @param group Group index.
+   * @return Returns group members.
+   */
+  public int[] getGroupMembers(int group) {
+    return groupMembers[group];
+  }
+
+  /**
+   * Group 1 for each restraint.
+   *
+   * @return Returns group 1 for each restraint.
+   */
+  public int[] getGroup1() {
+    return group1;
+  }
+
+  /**
+   * Group 2 for each restraint.
+   *
+   * @return Returns group 2 for each restraint.
+   */
+  public int[] getGroup2() {
+    return group2;
+  }
+
+  /**
+   * Force constant for each restraint.
+   *
+   * @return Returns the force constant for each restraint.
+   */
+  public double[] getForceConstants() {
+    return forceConstants;
+  }
+
+  /**
+   * Smaller distance for each restraint.
+   *
+   * @return Returns the smaller distance for each restraint.
+   */
+  public double[] getSmallerDistance() {
+    return distance1;
+  }
+
+  /**
+   * Larger distance for each restraint.
+   *
+   * @return Returns the force constant for each restraint.
+   */
+  public double[] getLargerDistance() {
+    return distance2;
+  }
+
+  /**
    * Compute energy and derivatives for group distance restraint terms.
    *
    * @param gradient If true, compute the derivative.
@@ -281,15 +345,21 @@ public class RestrainGroups {
       double gf1 = distance1[i];
       double gf2 = distance2[i];
       double target = r;
-      if (r < gf1) target = gf1;
-      if (r > gf2) target = gf2;
+      if (r < gf1) {
+        target = gf1;
+      }
+      if (r > gf2) {
+        target = gf2;
+      }
       double dt = r - target;
       double dt2 = dt * dt;
       double e = force * dt2;
       energy = energy + e;
       if (gradient) {
         // Compute chain rule terms needed for derivatives.
-        if (r == 0.0) r = 1.0;
+        if (r == 0.0) {
+          r = 1.0;
+        }
         double de = 2.0 * force * dt / r;
         double dedx = de * xr;
         double dedy = de * yr;
