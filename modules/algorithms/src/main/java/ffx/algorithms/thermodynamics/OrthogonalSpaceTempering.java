@@ -393,7 +393,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
     }
 
-    // Compute the energy and gradient for the recursion slave at F(L) using interpolation.
+    // Compute the energy and gradient for the recursion worker at F(L) using interpolation.
     double bias1D = histogram.energyAndGradient1D(lambda, true);
 
     // The total bias energy is the sum of the 1D and 2D terms.
@@ -480,7 +480,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       }
     }
 
-    // Compute the energy and gradient for the recursion slave at F(L) using interpolation.
+    // Compute the energy and gradient for the recursion worker at F(L) using interpolation.
     double bias1D = histogram.energyAndGradient1D(lambda, true);
 
     // The total bias is the sum of 1D and 2D terms.
@@ -2249,7 +2249,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
       }
 
-      // Compute the energy for the recursion slave at F(L) using interpolation.
+      // Compute the energy for the recursion worker at F(L) using interpolation.
       double bias1D = energyAndGradient1D(currentLambda, false);
 
       // Return the total bias.
