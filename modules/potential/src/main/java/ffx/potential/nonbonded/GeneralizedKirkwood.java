@@ -136,7 +136,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Default overlap scale factor for the Hawkins, Cramer & Truhlar pairwise descreening algorithm.
    */
-  private static final double DEFAULT_OVERLAP_SCALE = 0.69;
+  private static final double DEFAULT_HCT_SCALE = 0.69;
   /**
    * Default surface tension for apolar models without an explicit dispersion term. This is lower
    * than CAVDISP, since the favorable dispersion term is implicitly included.
@@ -338,7 +338,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     // Define default Bondi scale factor, and HCT overlap scale factors.
     bondiScale = forceField.getDouble("GK_BONDIOVERRIDE", DEFAULT_BONDI_SCALE);
-    gkOverlapScale = forceField.getDouble("GK_OVERLAPSCALE", DEFAULT_OVERLAP_SCALE);
+    gkOverlapScale = forceField.getDouble("HCT_SCALE", DEFAULT_HCT_SCALE);
     descreenWithVDW = forceField.getBoolean("DESCREEN_VDW", false);
     descreenWithHydrogen = forceField.getBoolean("DESCREEN_HYDROGEN", true);
 
