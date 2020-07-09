@@ -101,6 +101,7 @@ import ffx.potential.nonbonded.VanDerWaalsTornado;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
+import ffx.potential.parameters.TorsionType;
 import ffx.potential.utils.ConvexHullOps;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
@@ -1113,6 +1114,50 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       } catch (Exception ex) {
         logger.info(format(" Exception in parsing restrain-distance: %s", ex.toString()));
       }
+    }
+
+    String[] restrainTorsionCos = properties.getStringArray("restrain-torsion-cos");
+    for (String rtc : restrainTorsionCos) {
+      String[] toks = rtc.split("\\s+");
+      int nTok = toks.length;
+      if (nTok < 7) {
+        throw new IllegalArgumentException(format("restrain-torsion-cos record %s must have 4 atom indices, amplitude, phase shift and periodicity!"));
+      }
+      int ai1 = Integer.parseInt(toks[0]);
+      int ai2 = Integer.parseInt(toks[1]);
+      int ai3 = Integer.parseInt(toks[2]);
+      int ai4 = Integer.parseInt(toks[3]);
+      Atom a1 = atoms[ai1];
+      Atom a2 = atoms[ai2];
+      Atom a3 = atoms[ai3];
+      Atom a4 = atoms[ai4];
+
+      int startTerms = 4;
+      boolean lamEnabled = false;
+      boolean revLam = false;
+      if (toks[4].equalsIgnoreCase("lambda")) {
+        ++startTerms;
+        lamEnabled = true;
+        if (toks[5].toLowerCase().startsWith("reverse")) {
+          ++startTerms;
+          revLam = true;
+        }
+      }
+
+      int nTerms = (nTok - startTerms) / 4;
+      assert (nTok - startTerms) % 3 == 0;
+      double[] amp = new double[nTerms];
+      double[] phase = new double[nTerms];
+      int[] period = new int[nTerms];
+
+      for (int i = 0; i < nTerms; i++) {
+        int i0 = startTerms + (3 * i);
+        amp[i] = Double.parseDouble(toks[i0]);
+        phase[i] = Double.parseDouble(toks[i0 + 1]);
+        period[i] = Integer.parseInt(toks[i0 + 2]);
+      }
+
+
     }
 
     String constraintStrings =
@@ -3480,6 +3525,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         RestraintBond.DEFAULT_RB_LAM_START,
         RestraintBond.DEFAULT_RB_LAM_END,
         new ConstantSwitch());
+  }
+
+  private void addTorsCosRestraint(Atom a1, Atom a2, Atom a3, Atom a4, double[] amp, double[] phase, int[] periodicity, boolean lambda, boolean revLambda) {
+    int[] classes = new int[4];
+    classes[0] = a1.getAtomType().atomClass;
+    classes[1] = a2.getAtomType().atomClass;
+    classes[2] = a3.getAtomType().atomClass;
+    classes[3] = a4.getAtomType().atomClass;
+    TorsionType tType = new TorsionType(classes, amp, phase, periodicity);
+
   }
 
   /**
