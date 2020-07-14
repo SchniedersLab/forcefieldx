@@ -139,27 +139,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
   }
 
   /**
-   * Dihedral restraint (cosine-based) constructor.
-   *
-   * @param a1         First atom.
-   * @param a2         Second (middle) atom.
-   * @param a3         Third (middle) atom.
-   * @param a4         Fourth atom.
-   * @param tType      Torsion type to apply.
-   * @param lambdaTerm Whether lambdaTerm should be enabled.
-   * @param revLambda  Whether input lambda should be reversed (i.e. scale by 1 - lambda).
-   */
-  public Torsion(Atom a1, Atom a2, Atom a3,Atom a4, TorsionType tType, boolean lambdaTerm, boolean revLambda) {
-    Bond b12 = a1.getBond(a2);
-    Bond b23 = a2.getBond(a3);
-    Bond b34 = a3.getBond(a4);
-    bonds = new Bond[]{b12, b23, b34};
-    this.torsionType = tType;
-    this.lambdaTerm = lambdaTerm;
-    this.lambdaMapper = revLambda ? (double d) -> 1.0 - d : (double d) -> d;
-  }
-
-  /**
    * Log that no TorsionType exists.
    *
    * @param a0 Atom 0.
