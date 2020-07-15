@@ -988,7 +988,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
     /** Empty constructor. */
     OptimizationParameters(CompositeConfiguration properties) {
-      energyWindow = properties.getDouble("ost-opt-energy-window", 4.0);
+      energyWindow = properties.getDouble("ost-opt-energy-window", 10.0);
       eps = properties.getDouble("ost-opt-eps", 0.1);
       tolerance = properties.getDouble("ost-opt-tolerance", 1.0e-8);
       frequency = properties.getInt("ost-opt-frequency", 10000);
