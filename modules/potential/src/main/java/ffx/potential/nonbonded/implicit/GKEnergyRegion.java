@@ -50,22 +50,27 @@ import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
 import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 import edu.rit.pj.reduction.SharedInteger;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -104,6 +109,8 @@ public class GKEnergyRegion extends ParallelRegion {
   private final double fd;
   /** Kirkwood quadrupole reaction field constant. */
   private final double fq;
+  /** Water probe radius. */
+  private final double probe;
 
   private final SharedDouble sharedGKEnergy;
   private final SharedInteger sharedInteractions;
@@ -138,8 +145,10 @@ public class GKEnergyRegion extends ParallelRegion {
   private AtomicDoubleArray3D torque;
   /** Shared array for computation of Born radii gradient. */
   private AtomicDoubleArray sharedBornGrad;
-  /** Water probe radius. */
-  private double probe;
+  /** Self-energy for each atom */
+  private AtomicDoubleArray selfEnergy;
+  /** Cross-term energy for each atom */
+  private AtomicDoubleArray crossEnergy;
 
   public GKEnergyRegion(
       int nt,
@@ -194,6 +203,7 @@ public class GKEnergyRegion extends ParallelRegion {
       double[] baseRadius,
       double[] born,
       boolean gradient,
+      ParallelTeam parallelTeam,
       AtomicDoubleArray3D grad,
       AtomicDoubleArray3D torque,
       AtomicDoubleArray sharedBornGrad) {
@@ -214,6 +224,18 @@ public class GKEnergyRegion extends ParallelRegion {
     this.grad = grad;
     this.torque = torque;
     this.sharedBornGrad = sharedBornGrad;
+
+    int nAtoms = atoms.length;
+    int nThreads = gkEnergyLoop.length;
+    if (selfEnergy == null || selfEnergy.size() != atoms.length) {
+      selfEnergy = AtomicDoubleArray.atomicDoubleArrayFactory(
+          AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
+      crossEnergy = AtomicDoubleArray.atomicDoubleArrayFactory(
+          AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
+    } else {
+      selfEnergy.reset(parallelTeam, 0, nAtoms - 1);
+      crossEnergy.reset(parallelTeam, 0, nAtoms - 1);
+    }
   }
 
   @Override
@@ -233,6 +255,27 @@ public class GKEnergyRegion extends ParallelRegion {
   public void start() {
     sharedGKEnergy.set(0.0);
     sharedInteractions.set(0);
+  }
+
+  @Override
+  public void finish() {
+    if (logger.isLoggable(Level.FINE)) {
+      int nAtoms = atoms.length;
+      selfEnergy.reduce(0, nAtoms - 1);
+      crossEnergy.reduce(0, nAtoms - 1);
+      logger.info(" Generalized Kirkwood Self-Energies and Cross-Energies\n");
+      double selfSum = 0.0;
+      double crossSum = 0.0;
+      for (int i=0; i<nAtoms; i++) {
+        double self = selfEnergy.get(i);
+        double cross = crossEnergy.get(i);
+        logger.info(format(" %5d %16.8f %16.8f", i, self, cross));
+        selfSum += self;
+        crossSum += cross;
+      }
+      logger.info(format("       %16.8f %16.8f %16.8f",
+          selfSum, crossSum, selfSum + crossSum));
+    }
   }
 
   /**
@@ -269,7 +312,7 @@ public class GKEnergyRegion extends ParallelRegion {
     private int count;
     private int iSymm;
     private int threadID;
-    private double[][] transOp;
+    private final double[][] transOp;
     private double gkEnergy;
     // Extra padding to avert cache interference.
     private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -910,6 +953,11 @@ public class GKEnergyRegion extends ParallelRegion {
       if (i == k) {
         e *= 0.5;
         ei *= 0.5;
+        selfEnergy.add(threadID, i, e + ei);
+      } else {
+        double half = 0.5 * (e + ei);
+        crossEnergy.add(threadID, i, half);
+        crossEnergy.add(threadID, k, half);
       }
 
       return e + ei;

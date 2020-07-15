@@ -44,8 +44,10 @@ import static ffx.potential.parameters.SoluteRadii.applyGKRadii;
 import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.pow;
 
@@ -74,6 +76,7 @@ import ffx.potential.parameters.SoluteRadii;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.math3.util.FastMath;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable atomic multipole force
@@ -222,6 +225,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
   private final boolean descreenWithVDW;
   /** If true, hydrogen atoms displace solvent */
   private final boolean descreenWithHydrogen;
+  /** If true, the descreening integral includes overlaps with the volume of the descreened atom */
+  private boolean perfectHCTScale;
   /** Base overlap scale factor. */
   private double gkOverlapScale;
   /** Born radius of each atom. */
@@ -341,6 +346,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
     gkOverlapScale = forceField.getDouble("HCT_SCALE", DEFAULT_HCT_SCALE);
     descreenWithVDW = forceField.getBoolean("DESCREEN_VDW", false);
     descreenWithHydrogen = forceField.getBoolean("DESCREEN_HYDROGEN", true);
+    if (descreenWithVDW && !descreenWithHydrogen) {
+      perfectHCTScale = forceField.getBoolean("PERFECT_HCT_SCALE", false);
+    } else {
+      perfectHCTScale = false;
+    }
 
     // Process any radii override values.
     String radiiProp = forceField.getString("GK_RADIIOVERRIDE", null);
@@ -491,16 +501,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     initializationRegion = new InitializationRegion(threadCount);
-    bornRadiiRegion = new BornRadiiRegion(threadCount, forceField);
+    bornRadiiRegion = new BornRadiiRegion(threadCount, forceField, perfectHCTScale);
     permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount, forceField);
     inducedGKFieldRegion = new InducedGKFieldRegion(threadCount, forceField);
-    bornGradRegion = new BornGradRegion(threadCount, forceField);
+    bornGradRegion = new BornGradRegion(threadCount, perfectHCTScale);
     gkEnergyRegion =
         new GKEnergyRegion(threadCount, forceField, polarization, nonPolar, surfaceTension, probe);
 
     logger.info("  Continuum Solvation ");
     logger.info(format("   Generalized Kirkwood Cut-Off:       %8.3f (A)", cutoff));
     logger.info(format("   Solvent Dielectric:                 %8.3f", epsilon));
+    logger.info(format("   Descreen with vdW Radii:            %8B", descreenWithVDW));
+    logger.info(format("   Descreen with Hydrogen Atoms:       %8B", descreenWithHydrogen));
+    logger.info(format("   GaussVol HCT Scale Factors:         %8B", perfectHCTScale));
     SoluteRadii.logRadiiSource(forceField);
     logger.info(
         format("   Non-Polar Model:                  %10s", nonPolar.toString().replace('_', '-')));
@@ -961,6 +974,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
           baseRadius,
           born,
           gradient,
+          parallelTeam,
           grad,
           torque,
           bornRadiiChainRule);
@@ -1148,6 +1162,40 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     applyGKRadii(forceField, bondiScale, atoms, baseRadius);
 
+    // Set default HCT overlap scale factor.
+    for (int i = 0; i < nAtoms; i++) {
+      overlapScale[i] = gkOverlapScale;
+    }
+
+    // Compute "perfect" HCT scale factors.
+    if (perfectHCTScale) {
+      boolean[] isHydrogen = new boolean[nAtoms];
+      double[] radii = new double[nAtoms];
+      double[] volume = new double[nAtoms];
+      double[] gamma = new double[nAtoms];
+      double[][] coords = new double[nAtoms][3];
+      double fourThirdsPI = 4.0 / 3.0 * PI;
+      int index = 0;
+      for (Atom atom : atoms) {
+        isHydrogen[index] = atom.isHydrogen();
+        radii[index] = atom.getVDWType().radius / 2.0;
+        volume[index] = fourThirdsPI * pow(radii[index], 3);
+        gamma[index] = 1.0;
+        coords[index][0] = atom.getX();
+        coords[index][1] = atom.getY();
+        coords[index][2] = atom.getZ();
+        baseRadius[index] = radii[index];
+        index++;
+      }
+
+      GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen, parallelTeam);
+      gaussVol.computeVolumeAndSA(coords);
+      double[] selfVolumesFractions = gaussVol.getSelfVolumeFractions();
+      for (int i=0; i<nAtoms; i++) {
+        overlapScale[i] = cbrt(selfVolumesFractions[i]) * gkOverlapScale;
+      }
+    }
+
     // Set up HCT overlap scale factors and any requested radii overrides.
     for (int i = 0; i < nAtoms; i++) {
       AtomType atomType = atoms[i].getAtomType();
@@ -1160,9 +1208,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 " Scaling %s (atom type %d) to %7.4f (Bondi factor %7.4f)",
                 atoms[i], atomType.type, baseRadius[i], override));
       }
-
-      // Set the default HCT overlap scale factor.
-      overlapScale[i] = gkOverlapScale;
 
       // Apply the descreenWithVDW flag.
       if (descreenWithVDW) {
