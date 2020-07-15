@@ -4426,6 +4426,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
       // Zero out shared restraint energy values.
       sharedRestraintBondEnergy.set(0.0);
+      sharedRestTorsEnergy.set(0.0);
 
       // Assure capacity of the gradient arrays.
       if (gradient) {
