@@ -79,6 +79,8 @@ public class BornRadiiRegion extends ParallelRegion {
   private int[][][] neighborLists;
   /** Base radius of each atom. */
   private double[] baseRadius;
+  /** Descreen radius of each atom. */
+  private double[] descreenRadius;
   /**
    * Overlap scale factor for each atom, when using the Hawkins, Cramer & Truhlar pairwise
    * descreening algorithm.
@@ -171,6 +173,7 @@ public class BornRadiiRegion extends ParallelRegion {
       double[][][] sXYZ,
       int[][][] neighborLists,
       double[] baseRadius,
+      double[] descreenRadius,
       double[] overlapScale,
       boolean[] use,
       double cut2,
@@ -181,6 +184,7 @@ public class BornRadiiRegion extends ParallelRegion {
     this.sXYZ = sXYZ;
     this.neighborLists = neighborLists;
     this.baseRadius = baseRadius;
+    this.descreenRadius = descreenRadius;
     this.overlapScale = overlapScale;
     this.use = use;
     this.cut2 = cut2;
@@ -254,13 +258,15 @@ public class BornRadiiRegion extends ParallelRegion {
             continue;
           }
           final double baseRi = baseRadius[i];
+          final double descreenRi = descreenRadius[i];
           final double xi = x[i];
           final double yi = y[i];
           final double zi = z[i];
           int[] list = neighborLists[iSymOp][i];
           for (int k : list) {
             final double baseRk = baseRadius[k];
-            assert (baseRk > 0.0);
+            final double descreenRk = descreenRadius[k];
+            assert (descreenRk > 0.0);
             if (!nativeEnvironmentApproximation && !use[k]) {
               continue;
             }
@@ -274,9 +280,15 @@ public class BornRadiiRegion extends ParallelRegion {
               }
               final double r = sqrt(r2);
               // Atom i being descreeened by atom k.
-              localBorn[i] += descreen(r, r2, baseRi, baseRk, overlapScale[k]);
+              double sk = overlapScale[k];
+              if (sk > 0.0) {
+                localBorn[i] += descreen(r, r2, baseRi, descreenRk, sk);
+              }
               // Atom k being descreeened by atom i.
-              localBorn[k] += descreen(r, r2, baseRk, baseRi, overlapScale[i]);
+              double si = overlapScale[i];
+              if (si > 0.0) {
+                localBorn[k] += descreen(r, r2, baseRk, descreenRi, si);
+              }
             } else if (iSymOp > 0) {
               final double xr = xyz[0][k] - xi;
               final double yr = xyz[1][k] - yi;
@@ -287,7 +299,10 @@ public class BornRadiiRegion extends ParallelRegion {
               }
               final double r = sqrt(r2);
               // Atom i being descreeened by atom k.
-              localBorn[i] += descreen(r, r2, baseRi, baseRk, overlapScale[k]);
+              double sk = overlapScale[k];
+              if (sk > 0.0) {
+                localBorn[i] += descreen(r, r2, baseRi, descreenRk, sk);
+              }
               // For symmetry mates, atom k is not descreeened by atom i.
             }
           }
@@ -365,8 +380,8 @@ public class BornRadiiRegion extends ParallelRegion {
       return integral;
     }
 
-    private double perfectHCTIntegral(double r, double r2, double radius, double radiusK,
-        double perfectHCT) {
+    private double perfectHCTIntegral(double r, double r2,
+        double radius, double radiusK, double perfectHCT) {
       double integral = 0.0;
       // Descreen only if the scaledRadius is greater than zero.
       // and atom I does not engulf atom K.

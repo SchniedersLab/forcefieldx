@@ -3621,14 +3621,28 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           amoebaGeneralizedKirkwoodForce, 1.0);
 
       double[] overlapScale = gk.getOverlapScale();
-      double[] baseRadii = gk.getBaseRadii();
+      double[] baseRadius = gk.getBaseRadii();
+      double[] descreenRadius = gk.getDescreenRadii();
+
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine("   GK Base Radii  Descreen Radius  Overlap Scale  Overlap");
+      }
+
       for (int i = 0; i < nAtoms; i++) {
         MultipoleType multipoleType = atoms[i].getMultipoleType();
+        double vdwSize = descreenRadius[i] * overlapScale[i];
+        double overlap = vdwSize / baseRadius[i];
         OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle(
             amoebaGeneralizedKirkwoodForce,
             multipoleType.charge,
-            OpenMM_NmPerAngstrom * baseRadii[i],
-            overlapScale[i]);
+            OpenMM_NmPerAngstrom * baseRadius[i],
+            overlap);
+
+        if (logger.isLoggable(Level.FINE)) {
+          logger.fine(
+              format("   %s %8.6f %8.6f %5.3f %5.3f",
+                  atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i], overlap));
+        }
       }
 
       OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(
@@ -3916,29 +3930,29 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
 
       // In the expression below, u and l are the upper and lower threshold
-      PointerByReference force = OpenMM_CustomCentroidBondForce_create (2,
-              "step(distance(g1,g2)-u)*k*(distance(g1,g2)-u)^2+step(l-distance(g1,g2))*k*(distance(g1,g2)-l)^2");
-      OpenMM_CustomCentroidBondForce_addPerBondParameter (force, "k");
-      OpenMM_CustomCentroidBondForce_addPerBondParameter (force, "l");
-      OpenMM_CustomCentroidBondForce_addPerBondParameter (force, "u");
+      PointerByReference force = OpenMM_CustomCentroidBondForce_create(2,
+          "step(distance(g1,g2)-u)*k*(distance(g1,g2)-u)^2+step(l-distance(g1,g2))*k*(distance(g1,g2)-l)^2");
+      OpenMM_CustomCentroidBondForce_addPerBondParameter(force, "k");
+      OpenMM_CustomCentroidBondForce_addPerBondParameter(force, "l");
+      OpenMM_CustomCentroidBondForce_addPerBondParameter(force, "u");
 
       // Create the Restrain Groups.
       int nGroups = restrainGroups.getNumberOfGroups();
       for (int j = 0; j < nGroups; j++) {
-        PointerByReference group = OpenMM_IntArray_create (0);
-        PointerByReference weight = OpenMM_DoubleArray_create (0);
+        PointerByReference group = OpenMM_IntArray_create(0);
+        PointerByReference weight = OpenMM_DoubleArray_create(0);
         int[] groupMembers = restrainGroups.getGroupMembers(j);
         for (int i : groupMembers) {
-          OpenMM_IntArray_append (group, i);
+          OpenMM_IntArray_append(group, i);
           OpenMM_DoubleArray_append(weight, atoms[i].getMass());
         }
-        OpenMM_CustomCentroidBondForce_addGroup (force, group, weight);
-        OpenMM_IntArray_destroy (group);
+        OpenMM_CustomCentroidBondForce_addGroup(force, group, weight);
+        OpenMM_IntArray_destroy(group);
         OpenMM_DoubleArray_destroy(weight);
       }
 
       // Add the restraints between groups.
-      double convert = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom*OpenMM_NmPerAngstrom);
+      double convert = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
       int nRestraints = restrainGroups.getNumberOfRestraints();
       int[] group1 = restrainGroups.getGroup1();
       int[] group2 = restrainGroups.getGroup2();
@@ -3946,16 +3960,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       double[] smallerDistance = restrainGroups.getSmallerDistance();
       double[] largerDistance = restrainGroups.getLargerDistance();
       for (int i = 0; i < nRestraints; i++) {
-        PointerByReference group = OpenMM_IntArray_create (0);
-        OpenMM_IntArray_append (group, group1[i]);
-        OpenMM_IntArray_append (group, group2[i]);
+        PointerByReference group = OpenMM_IntArray_create(0);
+        OpenMM_IntArray_append(group, group1[i]);
+        OpenMM_IntArray_append(group, group2[i]);
         PointerByReference params = OpenMM_DoubleArray_create(0);
-        OpenMM_DoubleArray_append (params, forceConstants[i] * convert);
-        OpenMM_DoubleArray_append (params, smallerDistance[i] * OpenMM_NmPerAngstrom);
-        OpenMM_DoubleArray_append (params, largerDistance[i] * OpenMM_NmPerAngstrom);
-        OpenMM_CustomCentroidBondForce_addBond (force, group, params);
-        OpenMM_IntArray_destroy (group);
-        OpenMM_DoubleArray_destroy (params);
+        OpenMM_DoubleArray_append(params, forceConstants[i] * convert);
+        OpenMM_DoubleArray_append(params, smallerDistance[i] * OpenMM_NmPerAngstrom);
+        OpenMM_DoubleArray_append(params, largerDistance[i] * OpenMM_NmPerAngstrom);
+        OpenMM_CustomCentroidBondForce_addBond(force, group, params);
+        OpenMM_IntArray_destroy(group);
+        OpenMM_DoubleArray_destroy(params);
       }
 
       // Add the constraint force.
@@ -3967,7 +3981,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       } else {
         OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions(force, OpenMM_True);
       }
-      OpenMM_System_addForce (system, force);
+      OpenMM_System_addForce(system, force);
       logger.log(Level.INFO, format("  Restrain Groups \t%6d\t\t%1d", nRestraints, forceGroup));
     }
 
@@ -4436,6 +4450,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       GeneralizedKirkwood gk = getGK();
       double[] overlapScale = gk.getOverlapScale();
       double[] baseRadii = gk.getBaseRadii();
+      double[] descreenRadius = gk.getDescreenRadii();
+      
       boolean nea = gk.getNativeEnvironmentApproximation();
 
       for (Atom atom : atoms) {
@@ -4450,6 +4466,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           lambdaScale = 1.0;
         }
 
+        // Handle use of vdW descreening.
+        double vdwSize = descreenRadius[index] * overlapScale[index];
+        double overlap = vdwSize / baseRadii[index];
+
         chargeUseFactor *= lambdaScale;
         double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
 
@@ -4459,7 +4479,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             index,
             multipoleType.charge * chargeUseFactor,
             OpenMM_NmPerAngstrom * baseRadii[index],
-            overlapScale[index] * overlapScaleUseFactor);
+            overlap * overlapScaleUseFactor);
       }
 
       //        OpenMM Bug: Surface Area is not Updated by "updateParametersInContext"

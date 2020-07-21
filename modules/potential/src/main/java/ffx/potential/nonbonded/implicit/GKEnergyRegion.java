@@ -133,7 +133,7 @@ public class GKEnergyRegion extends ParallelRegion {
   private boolean[] use = null;
   /** GK cut-off distance squared. */
   private double cut2;
-  /** Base radius of each atom. */
+  /** Base radius of each atom (for Born radii based nonpolar energy). */
   private double[] baseRadius;
   /** Born radius of each atom. */
   private double[] born;
@@ -273,7 +273,7 @@ public class GKEnergyRegion extends ParallelRegion {
         selfSum += self;
         crossSum += cross;
       }
-      logger.info(format("       %16.8f %16.8f %16.8f",
+      logger.info(format("       %16.8f %16.8f %16.8f\n",
           selfSum, crossSum, selfSum + crossSum));
     }
   }

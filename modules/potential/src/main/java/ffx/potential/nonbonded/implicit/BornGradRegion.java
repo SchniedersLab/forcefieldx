@@ -78,8 +78,8 @@ public class BornGradRegion extends ParallelRegion {
   private double[][][] sXYZ;
   /** Neighbor lists for each atom and symmetry operator. */
   private int[][][] neighborLists;
-  /** Base radius of each atom. */
-  private double[] baseRadius;
+  /** Descreen radius of each atom. */
+  private double[] descreenRadius;
   /**
    * Overlap scale factor for each atom, when using the Hawkins, Cramer & Truhlar pairwise
    * descreening algorithm.
@@ -132,7 +132,7 @@ public class BornGradRegion extends ParallelRegion {
       Crystal crystal,
       double[][][] sXYZ,
       int[][][] neighborLists,
-      double[] baseRadius,
+      double[] descreenRadius,
       double[] overlapScale,
       boolean[] use,
       double cut2,
@@ -144,7 +144,7 @@ public class BornGradRegion extends ParallelRegion {
     this.crystal = crystal;
     this.sXYZ = sXYZ;
     this.neighborLists = neighborLists;
-    this.baseRadius = baseRadius;
+    this.descreenRadius = descreenRadius;
     this.overlapScale = overlapScale;
     this.use = use;
     this.cut2 = cut2;
@@ -211,7 +211,7 @@ public class BornGradRegion extends ParallelRegion {
                 format(" %s\n Born radii CR %d %8.3f", atoms[i], i, bornGrad), true);
           }
 
-          final double ri = baseRadius[i];
+          final double descreenRi = descreenRadius[i];
           final double xi = x[i];
           final double yi = y[i];
           final double zi = z[i];
@@ -223,7 +223,7 @@ public class BornGradRegion extends ParallelRegion {
             if (!nativeEnvironmentApproximation && !use[k]) {
               continue;
             }
-            final double rk = baseRadius[k];
+            final double descreenRk = descreenRadius[k];
             if (k != i) {
               dx_local[0] = xyz[0][k] - xi;
               dx_local[1] = xyz[1][k] - yi;
@@ -238,8 +238,8 @@ public class BornGradRegion extends ParallelRegion {
               final double r = sqrt(r2);
 
               // Atom i being descreeened by atom k.
-              if (rbi < 50.0 && rk > 0.0) {
-                double de = descreenDerivative(r, r2, ri, rk, overlapScale[k]);
+              if (rbi < 50.0 && descreenRk > 0.0) {
+                double de = descreenDerivative(r, r2, descreenRi, descreenRk, overlapScale[k]);
                 if (isInfinite(de) || isNaN(de)) {
                   logger.warning(
                       format(" Born radii chain rule term is unstable %d %d %16.8f", i, k, de));
@@ -251,10 +251,10 @@ public class BornGradRegion extends ParallelRegion {
 
               // Atom k being descreeened by atom i.
               double rbk = born[k];
-              if (rbk < 50.0 && ri > 0.0) {
+              if (rbk < 50.0 && descreenRi > 0.0) {
                 double termk = PI4_3 / (rbk * rbk * rbk);
                 termk = factor / pow(termk, (4.0 * oneThird));
-                double de = descreenDerivative(r, r2, rk, ri, overlapScale[i]);
+                double de = descreenDerivative(r, r2, descreenRk, descreenRi, overlapScale[i]);
                 if (isInfinite(de) || isNaN(de)) {
                   logger.warning(
                       format(" Born radii chain rule term is unstable %d %d %16.8f", k, i, de));
@@ -268,13 +268,13 @@ public class BornGradRegion extends ParallelRegion {
               dx_local[1] = xyz[1][k] - yi;
               dx_local[2] = xyz[2][k] - zi;
               double r2 = crystal.image(dx_local);
-              if (r2 < cut2 && rk > 0.0) {
+              if (r2 < cut2 && descreenRk > 0.0) {
                 final double xr = dx_local[0];
                 final double yr = dx_local[1];
                 final double zr = dx_local[2];
                 final double r = sqrt(r2);
                 // Atom i being descreeened by atom k.
-                double de = descreenDerivative(r, r2, ri, rk, overlapScale[k]);
+                double de = descreenDerivative(r, r2, descreenRi, descreenRk, overlapScale[k]);
                 if (isInfinite(de) || isNaN(de)) {
                   logger.warning(
                       format(" Born radii chain rule term is unstable %d %d %d %16.8f", iSymOp, i,

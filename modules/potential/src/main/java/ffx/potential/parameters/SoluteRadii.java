@@ -949,37 +949,48 @@ public class SoluteRadii {
 
   private SoluteRadii() {}
 
+  private enum SOLUTE_RADII_TYPE { VDW, CONSENSUS, SOLUTE }
+
   public static void applyGKRadii(
       ForceField forceField, double bondiScale, Atom[] atoms, double[] baseRadius) {
     int nAtoms = atoms.length;
+
+    SOLUTE_RADII_TYPE soluteRadiiType;
+    String gkRadius = forceField.getString("GK_RADIUS", "SOLUTE");
+    try {
+      soluteRadiiType = SOLUTE_RADII_TYPE.valueOf(gkRadius.trim().toUpperCase());
+    } catch (Exception e) {
+      soluteRadiiType = SOLUTE_RADII_TYPE.SOLUTE;
+    }
+
     for (int i = 0; i < nAtoms; i++) {
       Atom atom = atoms[i];
+      // Begin by setting the base radius to a consensus radius.
       baseRadius[i] = DEFAULT_RADII.get(atom.getAtomicNumber()) * bondiScale;
-      int key = atom.getAtomType().type;
-      SoluteType soluteType = forceField.getSoluteType(Integer.toString(key));
-      if (soluteType != null) {
-        if (soluteType.diameter <= 0.0) {
-          logger.severe(format(" Invalid solute type: %s", soluteType.toString()));
+      // Overwrite consensus radii with VDW or SOLUTE radii.
+      if (soluteRadiiType == SOLUTE_RADII_TYPE.VDW) {
+        baseRadius[i] = atom.getVDWType().radius / 2.0 * bondiScale;
+      } else if (soluteRadiiType == SOLUTE_RADII_TYPE.SOLUTE)  {
+        int key = atom.getAtomType().type;
+        SoluteType soluteType = forceField.getSoluteType(Integer.toString(key));
+        if (soluteType != null) {
+          if (soluteType.diameter <= 0.0) {
+            logger.severe(format(" Invalid solute type: %s", soluteType.toString()));
+          }
+          baseRadius[i] = soluteType.diameter * 0.5;
         }
-        baseRadius[i] = soluteType.diameter * 0.5;
       }
     }
   }
 
   public static void logRadiiSource(ForceField forceField) {
-    String forcefieldName =
-        forceField.getString("FORCEFIELD", ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
-    forcefieldName = forcefieldName.replaceAll("_", "-");
-    if (forceField.getBoolean("GK_USEFITRADII", true)) {
-      if (forcefieldName.equalsIgnoreCase("AMOEBA-2009")) {
-        logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
-      } else if (forcefieldName.equalsIgnoreCase("AMOEBA-2014")) {
-        logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
-      } else if (forcefieldName.equalsIgnoreCase("AMOEBA-NUC-2017")) {
-        logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
-      } else if (forcefieldName.equalsIgnoreCase("AMOEBA-BIO-2018")) {
-        logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
-      }
+    SOLUTE_RADII_TYPE soluteRadiiType;
+    String gkRadius = forceField.getString("GK_RADIUS", "SOLUTE");
+    try {
+      soluteRadiiType = SOLUTE_RADII_TYPE.valueOf(gkRadius.trim().toUpperCase());
+    } catch (Exception e) {
+      soluteRadiiType = SOLUTE_RADII_TYPE.SOLUTE;
     }
+    logger.info(format("   Radii:                  %20s", soluteRadiiType.toString()));
   }
 }
