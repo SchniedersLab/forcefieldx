@@ -1115,7 +1115,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         double density = molecularAssembly.getCrystal().getDensity(mass);
         molecularAssembly.applyRandomDensity(density);
         molecularAssembly.applyRandomSymOp(0.0);
-        lambdaInterface.setLambda(0.0);
+        lambda = 0.0;
+        lambdaInterface.setLambda(lambda);
       } else {
         // Revert to the coordinates and gradient prior to optimization.
         double eCheck = potential.energyAndGradient(x, gradient);
