@@ -764,7 +764,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
   // TODO: Delete method when debugging of RepexOST is done.
   public void logOutputFiles(int index) {
     logger.info(
-        String.format(
+        format(
             " OST: Lambda file %s, histogram %s",
             histogram.lambdaFileName, allHistograms.get(index).hisFileName));
   }
@@ -910,7 +910,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
    */
   String histoInfo(int index) {
     Histogram histo = allHistograms.get(index);
-    return String.format(
+    return format(
         " Tempering parameter: %.5f kBT. Threshold: %.5f kcal/mol. Bias magnitude: %.5f kcal/mol",
         histo.temperingFactor, histo.temperOffset, histo.biasMag);
   }
@@ -994,6 +994,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       frequency = properties.getInt("ost-opt-frequency", 10000);
       lambdaCutoff = properties.getDouble("ost-opt-lambda-cutoff", 0.8);
       doUnitCellReset = properties.getBoolean("ost-opt-unitcell-reset", false);
+
+      logger.info("\n Optimization Parameters");
+      logger.info(format("  Energy Window:                  %6.4f (kcal/mol)", energyWindow));
+      logger.info(format("  EPS:                            %6.5f ", eps));
+      logger.info(format("  Tolerance:                      %6.4f (kcal/mol)", tolerance));
+      logger.info(format("  Frequency:                      %6d (steps)", frequency));
+      logger.info(format("  Lambda Cutoff:                  %6.4f ", lambdaCutoff));
+      logger.info(format("  Unit Cell Reset:                %B ", doUnitCellReset));
     }
 
     /**
@@ -1404,7 +1412,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       double gaussNormalization;
       if (lambdaBiasCutoff == 0 && !settings.histogramRead) {
         gaussNormalization = ONE_D_NORMALIZATION;
-        logger.info(String.format(" Bias magnitude multiplied by a factor of %.4f " +
+        logger.info(format(" Bias magnitude multiplied by a factor of %.4f " +
                 "sqrt(2*pi) to match 1D Gaussian volume to 2D Gaussian volume.",
                 gaussNormalization));
       } else {
@@ -1498,7 +1506,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       if (discreteLambda) {
         lastReceivedLambda = discretizedLambda(lastReceivedLambda);
         logger.info(
-            String.format(
+            format(
                 " Discrete lambda: initializing lambda to nearest bin %.5f", lastReceivedLambda));
         lambda = mapLambda(lastReceivedLambda);
         theta = asin(sqrt(lambda));
