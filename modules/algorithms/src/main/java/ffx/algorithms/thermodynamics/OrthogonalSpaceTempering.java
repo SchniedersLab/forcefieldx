@@ -1966,8 +1966,13 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       if (FLambdaBin == FLambdaBins) {
         FLambdaBin = FLambdaBins - 1;
       }
+      if (FLambdaBin < 0) {
+        FLambdaBin = 0;
+      }
+      
       assert (FLambdaBin < FLambdaBins);
       assert (FLambdaBin >= 0);
+
       return FLambdaBin;
     }
 
