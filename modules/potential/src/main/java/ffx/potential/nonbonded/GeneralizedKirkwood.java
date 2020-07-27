@@ -513,6 +513,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(format("   Descreen with vdW Radii:            %8B", descreenWithVDW));
     logger.info(format("   Descreen with Hydrogen Atoms:       %8B", descreenWithHydrogen));
     logger.info(format("   GaussVol HCT Scale Factors:         %8B", perfectHCTScale));
+    logger.info(format("   HCT Scale Factor:                   %8.4f",forceField.getDouble("HCT-SCALE",0.00)));
+    logger.info(format("   GKC:                                %8.3f",forceField.getDouble("GKC",DEFAULT_GKC)));
     SoluteRadii.logRadiiSource(forceField);
     logger.info(
         format("   Non-Polar Model:                  %10s", nonPolar.toString().replace('_', '-')));
