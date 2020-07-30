@@ -144,10 +144,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private final List<Constraint> constraints;
   /** 2.0 times the neighbor list cutoff. */
   private final double cutOff2;
-  /** Current value of the Lambda state variable. */
-  protected double lambda = 1.0;
-  /** Indicates use of the Lambda state variable. */
-  protected boolean lambdaTerm;
   /** The non-bonded cut-off plus buffer distance (Angstroms). */
   private final double cutoffPlusBuffer;
   /** An array of Stretch-Torsion terms. */
@@ -162,11 +158,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private final int nStretchTorsions;
   /** Original state of the Bond energy term flag. */
   private final boolean bondTermOrig;
-  /**
-   * An instance of the STATE enumeration to specify calculation of slowly varying energy terms,
-   * fast varying or both.
-   */
-  private STATE state = STATE.BOTH;
   /** Original state of the Angle energy term flag. */
   private final boolean angleTermOrig;
   /** Original state of the Stretch-Bend energy term flag. */
@@ -204,12 +195,23 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private final boolean lambdaTorsions;
   /** Relative solvation term (TODO: needs further testing). */
   private final RelativeSolvation relativeSolvation;
+  private final boolean relativeSolvationTerm;
+  private final Platform platform = Platform.FFX;
+  /** Current value of the Lambda state variable. */
+  protected double lambda = 1.0;
+  /** Indicates use of the Lambda state variable. */
+  protected boolean lambdaTerm;
   /** Optimization scaling value to use for each degree of freedom. */
   protected double[] optimizationScaling = null;
   /** Indicates only bonded energy terms effected by Lambda should be evaluated. */
   boolean lambdaBondedTerms = false;
   /** Flag to indicate proper shutdown of the ForceFieldEnergy. */
   boolean destroyed = false;
+  /**
+   * An instance of the STATE enumeration to specify calculation of slowly varying energy terms, fast
+   * varying or both.
+   */
+  private STATE state = STATE.BOTH;
   /** The array of Atoms being evaluated. */
   private Atom[] atoms;
   /** An array of Bond terms. */
@@ -226,7 +228,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private TorsionTorsion[] torsionTorsions;
   /** An array of Improper Torsion terms. */
   private ImproperTorsion[] improperTorsions;
-  private RestraintTorsion[] rTors;
+  protected RestraintTorsion[] rTors;
   /** Number of atoms in the system. */
   private int nAtoms;
   /** Number of bond terms in the system. */
@@ -254,8 +256,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /** Number of electrostatic interactions evaluated. */
   private int nPermanentInteractions;
   private int nRestTors = 0;
-  private final boolean relativeSolvationTerm;
-  private final Platform platform = Platform.FFX;
   /** The boundary conditions used when evaluating the force field energy. */
   private Crystal crystal;
   /** A Parallel Java Region used to evaluate Bonded energy values. */
@@ -3461,11 +3461,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * Sets the printOnFailure flag; if override is true, over-rides any existing property.
-   * Essentially sets the default value of printOnFailure for an algorithm. For example, rotamer
-   * optimization will generally run into force field issues in the normal course of execution as it
-   * tries unphysical self and pair configurations, so the algorithm should not print out a large
-   * number of error PDBs.
+   * Sets the printOnFailure flag; if override is true, over-rides any existing property. Essentially
+   * sets the default value of printOnFailure for an algorithm. For example, rotamer optimization
+   * will generally run into force field issues in the normal course of execution as it tries
+   * unphysical self and pair configurations, so the algorithm should not print out a large number of
+   * error PDBs.
    *
    * @param onFail To set
    * @param override Override properties
@@ -3975,6 +3975,15 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
+   * Getter for the RestrainGroup field.
+   *
+   * @return Returns RestrainGroup.
+   */
+  protected RestrainGroups getRestrainGroups() {
+    return restrainGroups;
+  }
+
+  /**
    * Platform describes a set of force field implementations that include a pure Java reference
    * implementation (FFX), and two OpenMM implementations (OMM_CUDA and OMM_REF are supported)
    *
@@ -4038,10 +4047,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     // Retraint energy parallel loops.
     private final BondedTermLoop[] restraintBondLoops;
     private final BondedTermLoop[] rTorsLoops;
+    private final AtomicDoubleArray3D grad;
     // Flag to indicate gradient computation.
     private boolean gradient = false;
     private AtomicDoubleArrayImpl atomicDoubleArrayImpl;
-    private final AtomicDoubleArray3D grad;
     private AtomicDoubleArray3D lambdaGrad;
 
     BondedRegion() {

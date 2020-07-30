@@ -45,6 +45,7 @@ import static ffx.numerics.math.DoubleMath.sub;
 import static java.lang.Double.compare;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 
@@ -103,21 +104,21 @@ public class GaussVol {
   /** Finite-Difference step size to compute surface area. */
   private static final double offset = 0.005;
   /** Conversion factor from a sphere to a Gaussian. */
-  private static double KFC = 2.2269859253;
+  private static final double KFC = 2.2269859253;
 
-  private static double PFC = 2.5;
+  private static final double PFC = 2.5;
   /** Set this to either KFC or PFC. */
-  private static double sphereConversion = KFC;
+  private static final double sphereConversion = KFC;
   /** Maximum overlap level. */
-  private static int MAX_ORDER = 16;
+  private static final int MAX_ORDER = 16;
   /** Volume cutoffs for the switching function (A^3). */
-  private static double ANG3 = 1.0;
+  private static final double ANG3 = 1.0;
   /** Volumes smaller than VOLMINB are switched to zero. */
-  private static double VOLMINA = 0.01 * ANG3;
+  private static final double VOLMINA = 0.01 * ANG3;
   /** Volumes larger than VOLMINB are not switched. */
-  private static double VOLMINB = 0.1 * ANG3;
+  private static final double VOLMINB = 0.1 * ANG3;
   /** Minimum volume. TODO: Should this be set closer to VOLMINA? */
-  private static double MIN_GVOL = Double.MIN_VALUE;
+  private static final double MIN_GVOL = Double.MIN_VALUE;
   // private static double MIN_GVOL = 1.0e-12;
   // Output Variables
   private final GaussVolRegion gaussVolRegion;
@@ -129,10 +130,9 @@ public class GaussVol {
   private final AtomicDoubleArray selfVolume;
   private final ParallelTeam parallelTeam;
   /** Number of atoms. */
-  private int nAtoms;
+  private final int nAtoms;
   /**
-   * Atomic radii for all atoms. To approximate solvent excluded volume, or solvent accessible
-   * surface area, a probe radius can be added to each radius.
+   * Atomic radii for all atoms.
    */
   private double[] radii;
   /**
@@ -140,7 +140,7 @@ public class GaussVol {
    * finite-difference approach.
    */
   private double[] radiiOffset;
-  /** Atomic "self" volumes for all atoms, which are computed from atomic radii. */
+  /** Atomic volumes for all atoms, which are computed from atomic radii. */
   private double[] volumes;
   /** Atomic "self" volumes for all atoms, which are computed from the radii plus offset array. */
   private double[] volumeOffset;
@@ -151,8 +151,12 @@ public class GaussVol {
    * S.A.
    */
   private boolean[] ishydrogen;
+  /**
+   * The self-volume fraction is the self-volume divided by the volume that ignores overlaps.
+   */
+  private double[] selfVolumeFraction;
   /** The Gaussian Overlap Tree. */
-  private GaussianOverlapTree tree;
+  private final GaussianOverlapTree tree;
   /** Maximum depth that the tree reaches */
   private int maximumDepth = 0;
   /** Total number of overlaps in overlap tree */
@@ -198,6 +202,7 @@ public class GaussVol {
 
     radiiOffset = new double[nAtoms];
     volumeOffset = new double[nAtoms];
+    selfVolumeFraction = new double[nAtoms];
     double fourThirdsPI = 4.0 / 3.0 * PI;
     for (int i = 0; i < nAtoms; i++) {
       if (radii[i] != 0.0 && !ishydrogen[i]) {
@@ -220,7 +225,6 @@ public class GaussVol {
 
     totalVolume = new SharedDouble();
     energy = new SharedDouble();
-    // Note -- the AtomicDoubleArrayImpl.MULTI does not work yet (use PJ).
     AtomicDoubleArrayImpl atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
     grad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, nThreads);
     gradV = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
@@ -328,6 +332,15 @@ public class GaussVol {
   }
 
   /**
+   * Return the self volume fraction for each atom.
+   *
+   * @return The self-volume fractions.
+   */
+  public double[] getSelfVolumeFractions() {
+    return selfVolumeFraction;
+  }
+
+  /**
    * Compute molecular volume and surface area.
    *
    * @param positions Atomic positions to use.
@@ -356,9 +369,11 @@ public class GaussVol {
       surfaceAreaGradient = new double[nAtoms * 3];
     }
 
-    double selfVolumeSum = 0;
+    double selfVolumeSum = 0.0;
+    double noOverlapVolume = 0.0;
     for (int i = 0; i < nAtoms; i++) {
-      selfVolumeSum += selfVolume.get(i);
+      double si = selfVolume.get(i);
+      selfVolumeSum += si;
       double x = grad.getX(i);
       double y = grad.getY(i);
       double z = grad.getZ(i);
@@ -366,6 +381,11 @@ public class GaussVol {
         x = 0.0;
         y = 0.0;
         z = 0.0;
+        selfVolumeFraction[i] = 0.0;
+      } else {
+        double vi = volumes[i];
+        noOverlapVolume += vi;
+        selfVolumeFraction[i] = si / vi;
       }
       // Volume based gradient
       int index = i * 3;
@@ -378,6 +398,19 @@ public class GaussVol {
       surfaceAreaGradient[index++] = x;
       surfaceAreaGradient[index++] = y;
       surfaceAreaGradient[index] = z;
+    }
+
+    // Log out the perfect self-volumes.
+    if (logger.isLoggable(Level.FINE)) {
+      double meanHCT = selfVolumeSum / noOverlapVolume;
+      logger.fine(format("\n Mean Self-Volume Fraction: %16.8f", meanHCT));
+      logger.fine(format(" Cube Root of the Fraction: %16.8f", cbrt(meanHCT)));
+      if (logger.isLoggable(Level.FINEST)) {
+        logger.finest(" Atomic Self-volume Fractions");
+        for (int i = 0; i < nAtoms; i++) {
+          logger.finest(format(" %6d %16.8f", i + 1, selfVolumeFraction[i]));
+        }
+      }
     }
 
     // Save the total molecular volume.
@@ -607,9 +640,13 @@ public class GaussVol {
    * @param nov Number of overlaps.
    */
   private void getStats(int[] nov) {
-    if (nov.length != nAtoms) return;
+    if (nov.length != nAtoms) {
+      return;
+    }
 
-    for (int i = 0; i < nAtoms; i++) nov[i] = 0;
+    for (int i = 0; i < nAtoms; i++) {
+      nov[i] = 0;
+    }
     for (int atom = 0; atom < nAtoms; atom++) {
       int slot = atom + 1;
       nov[atom] = tree.nChildrenUnderSlotR(slot);
@@ -623,6 +660,7 @@ public class GaussVol {
 
   /** 3D Gaussian, V,c,a representation. */
   private static class GaussianVca {
+
     // Gaussian volume
     public double v;
     // Gaussian exponent
@@ -632,8 +670,8 @@ public class GaussVol {
   }
 
   /**
-   * Overlap between two Gaussians represented by a (V,c,a) triplet V: volume of Gaussian c:
-   * position of Gaussian a: exponential coefficient
+   * Overlap between two Gaussians represented by a (V,c,a) triplet V: volume of Gaussian c: position
+   * of Gaussian a: exponential coefficient
    *
    * <p>g(x) = V (a/pi)^(3/2) exp(-a(x-c)^2)
    *
@@ -642,6 +680,7 @@ public class GaussVol {
    * d2VdVdr is (1/r) d^2V12/dV1 dr
    */
   private static class GaussianOverlap implements Comparable<GaussianOverlap> {
+
     /** level (0=root, 1=atoms, 2=2-body, 3=3-body, etc.) */
     public int level;
     /** Gaussian representing overlap */
@@ -956,8 +995,8 @@ public class GaussVol {
     }
 
     /**
-     * Compute volumes, energy of the overlap at slot and calls itself recursively to get the
-     * volumes of the children.
+     * Compute volumes, energy of the overlap at slot and calls itself recursively to get the volumes
+     * of the children.
      *
      * @param slot Slot to begin from.
      * @param psi1i Subtree accumulator for free volume.
@@ -1423,6 +1462,7 @@ public class GaussVol {
 
     /** Initialize the Overlap tree for a subset of the system. */
     private class ComputeTreeLoop extends IntegerForLoop {
+
       @Override
       public void run(int first, int last) throws Exception {
         // Compute the overlaps for a subset of atoms.
@@ -1441,6 +1481,7 @@ public class GaussVol {
 
     /** Compute the volume and derivatives for a subset of the system. */
     private class ComputeVolumeLoop extends IntegerForLoop {
+
       @Override
       public void run(int first, int last) throws Exception {
         int threadIndex = getThreadIndex();
@@ -1478,6 +1519,7 @@ public class GaussVol {
 
     /** Rescan the tree based on updated radii and volumes for a subset of the system. */
     private class RescanTreeLoop extends IntegerForLoop {
+
       @Override
       public void run(int first, int last) throws Exception {
         // Compute the overlaps for a subset of atoms.
@@ -1496,6 +1538,7 @@ public class GaussVol {
 
     /** Reduce GaussVol gradient. */
     private class ReductionLoop extends IntegerForLoop {
+
       int threadID;
 
       @Override

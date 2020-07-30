@@ -875,7 +875,7 @@
     <jdepend.version>2.0</jdepend.version>
     <jna.version>4.1.0</jna.version>
     <jogamp-fat.version>2.4.0</jogamp-fat.version>
-    <jopenmm.version>7.5.0-Tinker</jopenmm.version>
+    <jopenmm.version>7.5.0-Tinker-v3</jopenmm.version>
     <junit.version>4.13</junit.version>
     <jxr.version>3.0.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>

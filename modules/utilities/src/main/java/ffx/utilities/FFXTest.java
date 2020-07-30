@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.After;
@@ -86,14 +87,21 @@ public abstract class FFXTest {
   /** Constant <code>logger</code> */
   protected static final Logger logger = Logger.getLogger(FFXTest.class.getName());
 
-  private static final Level origLevel = Logger.getLogger("ffx").getLevel();
+  private static final Level origLevel;
   private static final Level testLevel;
-  private static final Level ffxLevel;
   private static Properties properties;
   private Path path = null;
 
   static {
     Level level;
+    try {
+      level = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
+    } catch (Exception ex) {
+      logger.warning(format(" Exception %s in parsing value of ffx.log", ex));
+      level = Level.INFO;
+    }
+    origLevel = level;
+
     try {
       level = Level.parse(System.getProperty("ffx.test.log", "WARNING").toUpperCase());
     } catch (Exception ex) {
@@ -101,19 +109,13 @@ public abstract class FFXTest {
       level = origLevel;
     }
     testLevel = level;
-
-    try {
-      level = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
-    } catch (Exception ex) {
-      logger.warning(format(" Exception %s in parsing value of ffx.log", ex));
-      level = origLevel;
-    }
-    ffxLevel = level;
+    System.setProperty("ffx.log", testLevel.toString());
   }
 
   /** afterClass. */
   @AfterClass
   public static void afterClass() {
+    Logger.getGlobal().setLevel(origLevel);
     Logger.getLogger("ffx").setLevel(origLevel);
     logger.setLevel(origLevel);
   }
@@ -122,7 +124,8 @@ public abstract class FFXTest {
   @BeforeClass
   public static void beforeClass() {
     // Set appropriate logging levels for interior/exterior Loggers.
-    Logger.getLogger("ffx").setLevel(ffxLevel);
+    Logger.getGlobal().setLevel(testLevel);
+    Logger.getLogger("ffx").setLevel(testLevel);
     logger.setLevel(testLevel);
   }
 

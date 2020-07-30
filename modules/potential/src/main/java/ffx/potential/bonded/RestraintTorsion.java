@@ -10,10 +10,10 @@ import static org.apache.commons.math3.util.FastMath.*;
 public class RestraintTorsion extends BondedTerm implements LambdaInterface {
 
     private final Atom[] atoms;
-    private final TorsionType torsionType;
+    public final TorsionType torsionType;
     private final boolean lambdaTerm;
     private final DoubleUnaryOperator lamMapper;
-    private final double units;
+    public final double units;
 
     private double lambda = 1.0;
     private double dEdL = 0.0;
@@ -138,6 +138,10 @@ public class RestraintTorsion extends BondedTerm implements LambdaInterface {
     @Override
     public double getdEdL() {
         return dEdL;
+    }
+
+    public double mapLambda(double lambda) {
+        return lamMapper.applyAsDouble(lambda);
     }
 
     @Override
