@@ -648,6 +648,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       return 0.0;
     }
 
+    // ZE BUG: updateParameters only gets called for energy(), not energyAndGradient().
+
+
     // Un-scale the coordinates.
     unscaleCoordinates(x);
 
@@ -956,6 +959,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
    * @param atoms Atoms in this list are considered.
    */
   public void updateParameters(Atom[] atoms) {
+    if (atoms == null) {
+      atoms = this.atoms;
+    }
     system.updateParameters(atoms);
   }
 
@@ -1704,7 +1710,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       vdwLambdaTerm = forceField.getBoolean("VDW_LAMBDATERM", vdwLambdaTerm);
       torsionLambdaTerm = forceField.getBoolean("TORSION_LAMBDATERM", torsionLambdaTerm);
 
-      lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
+      if (!forceField.getBoolean("LAMBDATERM", false)) {
+        lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
+      } else {
+        lambdaTerm = true;
+      }
 
       VanDerWaals vdW = ForceFieldEnergyOpenMM.super.getVdwNode();
       if (vdW != null) {
@@ -1867,7 +1877,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           int nTerms = rt.torsionType.terms;
           for (int j = 0; j < nTerms; j++) {
             OpenMM_PeriodicTorsionForce_addTorsion(
-                    amoebaTorsionForce,
+                    rtOMM,
                     a1,
                     a2,
                     a3,
@@ -4696,6 +4706,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         RestraintTorsion rt = rTors[i];
         PointerByReference rtOMM = restraintTorsions[i];
         if (rt.applyLambda()) {
+          int index = 0;
           TorsionType torsionType = rt.torsionType;
           int nTerms = torsionType.phase.length;
           int a1 = rt.getAtom(0).getXyzIndex() - 1;
@@ -4708,7 +4719,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     OpenMM_KJPerKcal * rt.units * torsionType.amplitude[j] * rt.mapLambda(lambda);
             OpenMM_PeriodicTorsionForce_setTorsionParameters(
                     rtOMM,
-                    0,
+                    index++,
                     a1,
                     a2,
                     a3,

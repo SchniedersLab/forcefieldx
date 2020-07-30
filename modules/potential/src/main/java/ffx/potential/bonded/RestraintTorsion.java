@@ -3,6 +3,7 @@ package ffx.potential.bonded;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.TorsionType;
 
+import java.util.Arrays;
 import java.util.function.DoubleUnaryOperator;
 
 import static org.apache.commons.math3.util.FastMath.*;
@@ -123,6 +124,20 @@ public class RestraintTorsion extends BondedTerm implements LambdaInterface {
     @Override
     public double getLambda() {
         return lambda;
+    }
+
+    public Atom[] getAtoms() {
+        return Arrays.copyOf(atoms, atoms.length);
+    }
+
+    @Override
+    public Atom getAtom(int index) {
+        return atoms[index];
+    }
+
+    @Override
+    public boolean applyLambda() {
+        return lambdaTerm;
     }
 
     @Override
