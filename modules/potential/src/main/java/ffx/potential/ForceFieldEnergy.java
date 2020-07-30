@@ -1057,6 +1057,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           revLam = true;
         }
       }
+      if (!lambdaTerm) {
+        lamEnabled = false;
+      }
 
       int nTerms = (nTok - startTerms) / 3;
       assert (nTok - startTerms) % 3 == 0;
