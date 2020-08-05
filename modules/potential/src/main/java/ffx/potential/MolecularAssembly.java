@@ -2300,7 +2300,7 @@ public class MolecularAssembly extends MSGroup {
       // Move the COM to the primary unit cell
       cryst.toPrimaryCell(com, translate);
 
-      // The translation vector is difference between the new location and the cureent COM.
+      // The translation vector is difference between the new location and the current COM.
       translate[0] -= com[0];
       translate[1] -= com[1];
       translate[2] -= com[2];
