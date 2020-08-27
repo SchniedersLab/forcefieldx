@@ -332,6 +332,14 @@ public class Bond extends BondedTerm {
   }
 
   /**
+   * Return the BondType for this Bond.
+   * @return Returns the BondType.
+   */
+  public BondType getBondType() {
+    return bondType;
+  }
+
+  /**
    * Set the color of this Bond's Java3D shapes based on the passed Atom.
    *
    * @param a Atom

@@ -388,7 +388,8 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
+          <!-- Less than 512M (e.g. 256M) leads to JVM out of memory exceptions. -->
+          <argLine>-Xms512M -Xmx512M -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
           <useSystemClassLoader>false</useSystemClassLoader>
         </configuration>
         <dependencies>

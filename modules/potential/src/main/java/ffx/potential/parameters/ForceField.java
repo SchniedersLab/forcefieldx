@@ -287,6 +287,14 @@ public class ForceField {
   }
 
   /**
+   * Clear a property from the force field instance.
+   * @param property Property to clear.
+   */
+  public void clearProperty(String property) {
+    properties.clearProperty(property);
+  }
+
+  /**
    * Append a 2nd ForceField "patch" to the current ForceField. Note that only the force field types
    * are appended; properties are ignored.
    *

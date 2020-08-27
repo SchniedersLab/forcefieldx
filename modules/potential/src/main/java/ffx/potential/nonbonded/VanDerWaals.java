@@ -124,7 +124,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private int nAtoms;
   /** A local convenience variable equal to the number of crystal symmetry operators. */
   private int nSymm;
-  /** ************************************************************************* Lambda variables. */
+  /** ************************************************************************ Lambda variables. */
   private boolean gradient;
 
   private boolean lambdaTerm;
@@ -185,8 +185,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   /** A local reference to the atom class of each atom in the system. */
   private int[] atomClass;
   /**
-   * Hydrogen atom vdW sites are located toward their heavy atom relative to their nucleus. This is
-   * a look-up that gives the heavy atom index for each hydrogen.
+   * Hydrogen atom vdW sites are located toward their heavy atom relative to their nucleus. This is a
+   * look-up that gives the heavy atom index for each hydrogen.
    */
   private int[] reductionIndex;
 
@@ -736,9 +736,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   }
 
   /**
-   * If the crystal being passed in is not equal to the current crystal, then some Van der Waals
-   * data structures may need to updated. If <code>nSymm</code> has changed, update arrays
-   * dimensioned by nSymm. Finally, rebuild the neighbor-lists.
+   * If the crystal being passed in is not equal to the current crystal, then some Van der Waals data
+   * structures may need to updated. If <code>nSymm</code> has changed, update arrays dimensioned by
+   * nSymm. Finally, rebuild the neighbor-lists.
    *
    * @param crystal The new crystal instance defining the symmetry and boundary conditions.
    */
@@ -1200,7 +1200,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     double d2sc2dL2 = 0.0;
 
     /** Overriden by the OST version which updates only during setLambda(). */
-    public void setFactors() {}
+    public void setFactors() {
+    }
 
     /**
      * Overriden by the ESV version which updates with every softcore interaction.
@@ -1208,7 +1209,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
      * @param i Index of atom i.
      * @param k Index of atom k.
      */
-    public void setFactors(int i, int k) {}
+    public void setFactors(int i, int k) {
+    }
   }
 
   public class LambdaFactorsOST extends LambdaFactors {
@@ -1632,30 +1634,43 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
             continue;
           }
           Atom atomi = atoms[i];
+          // Flag to indicate if atom i is effected by an extended system variable.
           final boolean esvi = esvAtoms[i];
+          // If so, store the index of atom i's extended system variable.
           final int idxi = atomEsvID[i];
           int i3 = i * 3;
+          // Atomic coordinates of atom i, including application of reduction factors.
           final double xi = reducedXYZ[i3++];
           final double yi = reducedXYZ[i3++];
           final double zi = reducedXYZ[i3];
+          // If this hydrogen atomic position is reduced, this is index of its heavy atom.
           final int redi = reductionIndex[i];
+          // If this hydrogen atomic position is reduced, this is the reduction factor.
           final double redv = reductionValue[i];
           final double rediv = 1.0 - redv;
           final int classI = atomClass[i];
+          // Molecule index for atom i.
           final int moleculei = molecule[i];
+          // Zero out local gradient accumulation variables.
           double gxi = 0.0;
           double gyi = 0.0;
           double gzi = 0.0;
+          // Zero out local gradient accumulation variables for reduced atoms.
           double gxredi = 0.0;
           double gyredi = 0.0;
           double gzredi = 0.0;
+          // Zero out local variables for accumulation of dU/dX/dL.
           double lxi = 0.0;
           double lyi = 0.0;
           double lzi = 0.0;
+          // Zero out local variables for accumulation of dU/dX/dL for reduced atoms.
           double lxredi = 0.0;
           double lyredi = 0.0;
           double lzredi = 0.0;
+          // Zero out a local variable for collecting dU/dL_i
           double localEsvDerivI = 0.0;
+          // Collect information about 1-4 interactions, and fill the mask array due to
+          // application of 1-2, 1-3 and 1-4 vdW scale factors.
           applyMask(i, vdw14, mask);
           // Default is that the outer loop atom is hard.
           boolean[] softCorei = softCore[HARD];
@@ -1666,31 +1681,43 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
           final int[] neighbors = list[i];
           for (final int k : neighbors) {
             Atom atomk = atoms[k];
+            // Check if atom k is in use, and if we're including the pairwise interaction.
             if (!use[k] || !include(atomi, atomk)) {
               continue;
             }
+            // Flag to indicate if atom k is effected by an extended system variable.
             final boolean esvk = esvAtoms[k];
+            // If so, store the index of atom k's extended system variable.
             final int idxk = atomEsvID[k];
             // Hide these global variable names for thread safety.
             final double sc1, dsc1dL, d2sc1dL2;
             final double sc2, dsc2dL, d2sc2dL2;
             int k3 = k * 3;
+            // Atomic coordinates of atom k, including application of reduction factors.
             final double xk = xyzS[k3++];
             final double yk = xyzS[k3++];
             final double zk = xyzS[k3];
+            // Compute the separation vector between atom i and k.
             dx_local[0] = xi - xk;
             dx_local[1] = yi - yk;
             dx_local[2] = zi - zk;
+            // Apply the minimum image convention (if periodic).
             final double r2 = crystal.image(dx_local);
             int classK = atomClass[k];
             double irv = vdwForm.getCombinedInverseRmin(classI, classK);
             if (vdw14[k]) {
+              // Some force fields such as CHARMM have special 1-4 vdW parameters.
               irv = vdwForm.getCombinedInverseRmin14(classI, classK);
             }
             if (r2 <= nonbondedCutoff.off2 && mask[k] > 0 && irv > 0) {
+              // Compute the separation distance.
               final double r = sqrt(r2);
+              // Check if i and k are part of the same molecule.
               boolean sameMolecule = (moleculei == molecule[k]);
+              // This a soft interaction based either 1) the softCore flag or 2) the two ESV flags.
               boolean soft = softCorei[k] || esvi || esvk;
+              // If both atoms are softcore, respect the intermolecularSoftcore and
+              // intramolecularSoftcore flags.
               if (isSoft[i] && isSoft[k]) {
                 if (intermolecularSoftcore && !sameMolecule) {
                   soft = true;
@@ -1698,12 +1725,11 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                   soft = true;
                 }
               }
-              /*
-               The setFactors(i,k) method is empty unless ESVs
-               are present. If OST lambda present,
-               lambdaFactors will already have been updated during setLambda().
-              */
               if (soft) {
+                /*
+                The setFactors(i,k) method is empty unless ESVs are present.
+                If OST lambda present, lambdaFactors will already have been updated during setLambda().
+                */
                 lambdaFactorsLocal.setFactors(i, k);
                 sc1 = lambdaFactorsLocal.sc1;
                 dsc1dL = lambdaFactorsLocal.dsc1dL;
