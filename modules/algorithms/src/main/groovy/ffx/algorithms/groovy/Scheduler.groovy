@@ -65,10 +65,11 @@ class Scheduler extends AlgorithmsScript {
   boolean v = false
 
   /**
-   * -p or --pj.nt to define the processor cores (threads) per process (default is all available cores).
+   * -p or --threadsPerProcess The number of cores (threads) per process (requires -Dpj.nt=x satisfies x <= p).
+   * The default is all available cores.
    */
-  @Option(names = ['-p', '--pj.nt'], paramLabel = 'all',
-      description = 'The number of processor cores (threads) per process.')
+  @Option(names = ['-p', '--threadsPerProcess'], paramLabel = 'all',
+      description = 'The number of cores (threads) per process (requires -Dpj.nt=X satisfies X <= p).')
   int p = -1
 
   /**
