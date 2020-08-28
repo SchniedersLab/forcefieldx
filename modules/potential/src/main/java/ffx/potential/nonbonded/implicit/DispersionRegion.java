@@ -149,20 +149,20 @@ public class DispersionRegion extends ParallelRegion {
   /**
    * Compute a Buffered-14-7 tail correction.
    *
-   * @param ri The separation distance where the intregal begins.
+   * @param r0 The separation distance where the intregal begins.
    * @param eps The mixed eps value.
-   * @param rmin The mixed rmin values.
+   * @param rmin The mixed rmin value.
    * @return The tail correction.
    */
-  private static double tailCorrection(double ri, double eps, double rmin) {
-    if (ri < rmin) {
-      double r3 = ri * ri * ri;
+  private static double tailCorrection(double r0, double eps, double rmin) {
+    if (r0 < rmin) {
+      double r03 = r0 * r0 * r0;
       double rmin3 = rmin * rmin * rmin;
-      return -eps * 4.0 * PI * (rmin3 - r3) / 3.0 - eps * PI * 18.0 * rmin3 / 11.0;
+      return -eps * 4.0 * PI * (rmin3 - r03) / 3.0 - eps * PI * 18.0 * rmin3 / 11.0;
     } else {
-      double ri2 = ri * ri;
+      double ri2 = r0 * r0;
       double ri4 = ri2 * ri2;
-      double ri7 = ri * ri2 * ri4;
+      double ri7 = r0 * ri2 * ri4;
       double ri11 = ri7 * ri4;
       double rmin2 = rmin * rmin;
       double rmin4 = rmin2 * rmin2;
@@ -520,9 +520,9 @@ public class DispersionRegion extends ParallelRegion {
      * Integrate over the constant portion of the WCA disperion interaction Uwca(x) = eps; x < rmin.
      *
      * @param eps The well depth.
-     * @param r The separation between the current atom and solvent blocking atom.
-     * @param r2 The separation squared.
-     * @param sk2 The scaled size of the solvent blocking atom squared.
+     * @param rij The separation between the current atom and solvent blocking atom.
+     * @param rij2 The separation squared.
+     * @param rho2 The scaled size of the solvent blocking atom squared.
      * @param lik2 The beginning of the integral squared.
      * @param lik3 The beginning of the integral to the third.
      * @param lik4 The beginning of the integral to the fourth.
@@ -533,9 +533,9 @@ public class DispersionRegion extends ParallelRegion {
      */
     private double integralBeforeRMin(
         double eps,
-        double r,
-        double r2,
-        double sk2,
+        double rij,
+        double rij2,
+        double rho2,
         double lik2,
         double lik3,
         double lik4,
@@ -545,8 +545,8 @@ public class DispersionRegion extends ParallelRegion {
       return -eps
           * (4.0
           * PI
-          / (48.0 * r)
-          * (3.0 * (lik4 - uik4) - 8.0 * r * (lik3 - uik3) + 6.0 * (r2 - sk2) * (lik2 - uik2)));
+          * (3.0 * (lik4 - uik4) - 8.0 * rij * (lik3 - uik3) + 6.0 * (rij2 - rho2) * (lik2 - uik2))
+          / (48.0 * rij));
     }
 
     /**
@@ -556,11 +556,11 @@ public class DispersionRegion extends ParallelRegion {
      * @param ri The beginning of the integral.
      * @param eps The well depth.
      * @param rmin The Rmin value.
-     * @param r The separation between the current atom and solvent blocking atom.
-     * @param r2 The separation squared.
-     * @param r3 The separation to the third.
-     * @param sk The scaled size of the solvent blocking atom.
-     * @param sk2 The scaled size of the solvent blocking atom squared.
+     * @param rij The separation between the current atom and solvent blocking atom.
+     * @param rij2 The separation squared.
+     * @param rij3 The separation to the third.
+     * @param rho The scaled size of the solvent blocking atom.
+     * @param rho2 The scaled size of the solvent blocking atom squared.
      * @param lik The beginning of the integral.
      * @param lik2 The beginning of the integral squared.
      * @param lik3 The beginning of the integral to the third.
@@ -573,11 +573,11 @@ public class DispersionRegion extends ParallelRegion {
         double ri,
         double eps,
         double rmin,
-        double r,
-        double r2,
-        double r3,
-        double sk,
-        double sk2,
+        double rij,
+        double rij2,
+        double rij3,
+        double rho,
+        double rho2,
         double lik,
         double lik2,
         double lik3,
@@ -585,30 +585,32 @@ public class DispersionRegion extends ParallelRegion {
         double uik2,
         double uik3) {
       double dl;
-      if (ri > r - sk) {
-        dl = (-lik2 + 2.0 * r2 + 2.0 * sk2) * lik2;
+      if (ri > rij - rho) {
+        dl = (-lik2 + 2.0 * rij2 + 2.0 * rho2) * lik2;
       } else {
         dl =
-            (-lik3 + 4.0 * lik2 * r - 6.0 * lik * r2 + 2.0 * lik * sk2 + 4.0 * r3 - 4.0 * r * sk2)
+            (-lik3 + 4.0 * lik2 * rij - 6.0 * lik * rij2 + 2.0 * lik * rho2 + 4.0 * rij3
+                - 4.0 * rij * rho2)
                 * lik;
       }
       double du;
-      if (r + sk > rmin) {
-        du = -(-uik2 + 2.0 * r2 + 2.0 * sk2) * uik2;
+      if (rij + rho > rmin) {
+        du = -(-uik2 + 2.0 * rij2 + 2.0 * rho2) * uik2;
       } else {
         du =
-            -(-uik3 + 4.0 * uik2 * r - 6.0 * uik * r2 + 2.0 * uik * sk2 + 4.0 * r3 - 4.0 * r * sk2)
+            -(-uik3 + 4.0 * uik2 * rij - 6.0 * uik * rij2 + 2.0 * uik * rho2 + 4.0 * rij3
+                - 4.0 * rij * rho2)
                 * uik;
       }
-      return -eps * PI * (dl + du) / (4.0 * r2);
+      return -eps * PI * (dl + du) / (4.0 * rij2);
     }
 
     /**
      * @param eps The well depth.
      * @param rmin7 The rmin value to the seventh.
-     * @param r The separation between the current atom and solvent blocking atom.
-     * @param r2 The separation squared.
-     * @param sk2 The scaled size of the solvent blocking atom squared.
+     * @param rij The separation between the current atom and solvent blocking atom.
+     * @param rij2 The separation squared.
+     * @param rho2 The scaled size of the solvent blocking atom squared.
      * @param lik The beginning of the integral.
      * @param lik2 The beginning of the integral squared.
      * @param lik3 The beginning of the integral to the third.
@@ -630,9 +632,9 @@ public class DispersionRegion extends ParallelRegion {
     private double integratlAfterRmin(
         double eps,
         double rmin7,
-        double r,
-        double r2,
-        double sk2,
+        double rij,
+        double rij2,
+        double rho2,
         double lik,
         double lik2,
         double lik3,
@@ -650,23 +652,15 @@ public class DispersionRegion extends ParallelRegion {
         double uik11,
         double uik12) {
       double er7 = eps * rmin7;
-      double term =
-          4.0
-              * PI
-              / (120.0 * r * lik5 * uik5)
-              * (15.0 * uik * lik * r * (uik4 - lik4)
-              - 10.0 * uik2 * lik2 * (uik3 - lik3)
-              + 6.0 * (sk2 - r2) * (uik5 - lik5));
-      double term2 =
-          4.0
-              * PI
-              / (2640.0 * r * lik12 * uik12)
-              * (120.0 * uik * lik * r * (uik11 - lik11)
-              - 66.0 * uik2 * lik2 * (uik10 - lik10)
-              + 55.0 * (sk2 - r2) * (uik12 - lik12));
+      double term = (15.0 * uik * lik * rij * (uik4 - lik4)
+          - 10.0 * uik2 * lik2 * (uik3 - lik3)
+          + 6.0 * (rho2 - rij2) * (uik5 - lik5)) / (120.0 * rij * lik5 * uik5);
+      double term2 = (120.0 * uik * lik * rij * (uik11 - lik11)
+          - 66.0 * uik2 * lik2 * (uik10 - lik10)
+          + 55.0 * (rho2 - rij2) * (uik12 - lik12)) / (2640.0 * rij * lik12 * uik12);
       double idisp = -2.0 * er7 * term;
       double irep = er7 * rmin7 * term2;
-      return irep + idisp;
+      return 4.0 * PI * (irep + idisp);
     }
 
     /**
@@ -674,11 +668,11 @@ public class DispersionRegion extends ParallelRegion {
      * @param eps The eps value.
      * @param rmin The rmin value to the seventh.
      * @param rmin7 The rmin value to the seventh.
-     * @param r The separation between the current atom and solvent blocking atom.
-     * @param r2 The separation squared.
-     * @param r3 The separation cubed.
-     * @param sk The scaled size of the solvent blocking atom.
-     * @param sk2 The scaled size of the solvent blocking atom squared.
+     * @param rij The separation between the current atom and solvent blocking atom.
+     * @param rij2 The separation squared.
+     * @param rij3 The separation cubed.
+     * @param rho The scaled size of the solvent blocking atom.
+     * @param rho2 The scaled size of the solvent blocking atom squared.
      * @param lik The beginning of the integral.
      * @param lik2 The beginning of the integral squared.
      * @param lik3 The beginning of the integral to the third.
@@ -699,11 +693,11 @@ public class DispersionRegion extends ParallelRegion {
         double rmin,
         double rmin7,
         double rmax,
-        double r,
-        double r2,
-        double r3,
-        double sk,
-        double sk2,
+        double rij,
+        double rij2,
+        double rij3,
+        double rho,
+        double rho2,
         double lik,
         double lik2,
         double lik3,
@@ -717,25 +711,25 @@ public class DispersionRegion extends ParallelRegion {
         double uik6,
         double uik13) {
       double er7 = eps * rmin7;
-      double lowerTerm = lik2 * r + r3 - r * sk2;
-      double upperTerm = uik2 * r + r3 - r * sk2;
+      double lowerTerm = lik2 * rij + rij3 - rij * rho2;
+      double upperTerm = uik2 * rij + rij3 - rij * rho2;
 
       double dl;
-      if (ri > r - sk || rmax < rmin) {
-        dl = -(-5.0 * lik2 + 3.0 * r2 + 3.0 * sk2) / lik5;
+      if (ri > rij - rho || rmax < rmin) {
+        dl = -(-5.0 * lik2 + 3.0 * rij2 + 3.0 * rho2) / lik5;
       } else {
-        dl = (5.0 * lik3 - 33.0 * lik * r2 - 3.0 * lik * sk2 + 15.0 * lowerTerm) / lik6;
+        dl = (5.0 * lik3 - 33.0 * lik * rij2 - 3.0 * lik * rho2 + 15.0 * lowerTerm) / lik6;
       }
-      double du = -(5.0 * uik3 - 33.0 * uik * r2 - 3.0 * uik * sk2 + 15.0 * upperTerm) / uik6;
-      double de = -2.0 * PI * er7 * (dl + du) / (15.0 * r2);
+      double du = -(5.0 * uik3 - 33.0 * uik * rij2 - 3.0 * uik * rho2 + 15.0 * upperTerm) / uik6;
+      double de = -2.0 * PI * er7 * (dl + du) / (15.0 * rij2);
 
-      if (ri > r - sk || rmax < rmin) {
-        dl = -(-6.0 * lik2 + 5.0 * r2 + 5.0 * sk2) / lik12;
+      if (ri > rij - rho || rmax < rmin) {
+        dl = -(-6.0 * lik2 + 5.0 * rij2 + 5.0 * rho2) / lik12;
       } else {
-        dl = (6.0 * lik3 - 125.0 * lik * r2 - 5.0 * lik * sk2 + 60.0 * lowerTerm) / lik13;
+        dl = (6.0 * lik3 - 125.0 * lik * rij2 - 5.0 * lik * rho2 + 60.0 * lowerTerm) / lik13;
       }
-      du = -(6.0 * uik3 - 125.0 * uik * r2 - 5.0 * uik * sk2 + 60.0 * upperTerm) / uik13;
-      de += PI * er7 * rmin7 * (dl + du) / (60.0 * r2);
+      du = -(6.0 * uik3 - 125.0 * uik * rij2 - 5.0 * uik * rho2 + 60.0 * upperTerm) / uik13;
+      de += PI * er7 * rmin7 * (dl + du) / (60.0 * rij2);
 
       return de;
     }
