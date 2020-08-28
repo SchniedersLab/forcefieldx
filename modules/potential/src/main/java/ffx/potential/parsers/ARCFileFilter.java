@@ -50,7 +50,8 @@ import org.apache.commons.io.FilenameUtils;
 public final class ARCFileFilter extends FileFilter {
 
   /** Default Constructor */
-  public ARCFileFilter() {}
+  public ARCFileFilter() {
+  }
 
   /**
    * {@inheritDoc}

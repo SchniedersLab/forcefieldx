@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
+import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 
 import ffx.crystal.Crystal;
@@ -85,11 +86,8 @@ public class DYNFilter {
     if (!dynFile.exists() || !dynFile.canRead()) {
       return false;
     }
-    FileReader fr = null;
-    BufferedReader br = null;
-    try {
-      fr = new FileReader(dynFile);
-      br = new BufferedReader(fr);
+    try (BufferedReader br = new BufferedReader(new FileReader(dynFile))) {
+
       br.readLine();
       String data = br.readLine().trim();
       String[] tokens = data.split(" +");
@@ -105,18 +103,18 @@ public class DYNFilter {
       if (tokens.length != 3) {
         return false;
       }
-      double aaxis = Double.parseDouble(tokens[0]);
-      double baxis = Double.parseDouble(tokens[1]);
-      double caxis = Double.parseDouble(tokens[2]);
+      double aaxis = parseDouble(tokens[0]);
+      double baxis = parseDouble(tokens[1]);
+      double caxis = parseDouble(tokens[2]);
 
       data = br.readLine().trim();
       tokens = data.split(" +");
       if (tokens.length != 3) {
         return false;
       }
-      double alpha = Double.parseDouble(tokens[0]);
-      double beta = Double.parseDouble(tokens[1]);
-      double gamma = Double.parseDouble(tokens[2]);
+      double alpha = parseDouble(tokens[0]);
+      double beta = parseDouble(tokens[1]);
+      double gamma = parseDouble(tokens[2]);
 
       crystal.changeUnitCellParameters(aaxis, baxis, caxis, alpha, beta, gamma);
 
@@ -129,9 +127,9 @@ public class DYNFilter {
           return false;
         }
         int j = i * 3;
-        x[j] = Double.parseDouble(tokens[0]);
-        x[j + 1] = Double.parseDouble(tokens[1]);
-        x[j + 2] = Double.parseDouble(tokens[2]);
+        x[j] = parseDouble(tokens[0]);
+        x[j + 1] = parseDouble(tokens[1]);
+        x[j + 2] = parseDouble(tokens[2]);
       }
 
       // Velocities
@@ -143,9 +141,9 @@ public class DYNFilter {
           return false;
         }
         int j = i * 3;
-        v[j] = Double.parseDouble(tokens[0]);
-        v[j + 1] = Double.parseDouble(tokens[1]);
-        v[j + 2] = Double.parseDouble(tokens[2]);
+        v[j] = parseDouble(tokens[0]);
+        v[j + 1] = parseDouble(tokens[1]);
+        v[j + 2] = parseDouble(tokens[2]);
       }
 
       // Accelerations
@@ -157,9 +155,9 @@ public class DYNFilter {
           return false;
         }
         int j = i * 3;
-        a[j] = Double.parseDouble(tokens[0]);
-        a[j + 1] = Double.parseDouble(tokens[1]);
-        a[j + 2] = Double.parseDouble(tokens[2]);
+        a[j] = parseDouble(tokens[0]);
+        a[j + 1] = parseDouble(tokens[1]);
+        a[j + 2] = parseDouble(tokens[2]);
       }
 
       // Previous Accelerations
@@ -171,22 +169,13 @@ public class DYNFilter {
           return false;
         }
         int j = i * 3;
-        ap[j] = Double.parseDouble(tokens[0]);
-        ap[j + 1] = Double.parseDouble(tokens[1]);
-        ap[j + 2] = Double.parseDouble(tokens[2]);
+        ap[j] = parseDouble(tokens[0]);
+        ap[j + 1] = parseDouble(tokens[1]);
+        ap[j + 2] = parseDouble(tokens[2]);
       }
     } catch (Exception e) {
       String message = "Exception reading dynamic restart file: " + dynFile;
       logger.log(Level.WARNING, message, e);
-    } finally {
-      try {
-        br.close();
-        fr.close();
-      } catch (Exception e) {
-        String message = "Exception closing restart file " + dynFile;
-        logger.log(Level.WARNING, message, e);
-        return false;
-      }
     }
     return true;
   }

@@ -56,7 +56,8 @@ import org.apache.commons.io.FilenameUtils;
 public final class XYZFileFilter extends FileFilter {
 
   /** Public Constructor. */
-  public XYZFileFilter() {}
+  public XYZFileFilter() {
+  }
 
   /**
    * {@inheritDoc}
@@ -80,15 +81,15 @@ public final class XYZFileFilter extends FileFilter {
    * @return a boolean.
    */
   public boolean acceptDeep(File file) {
-    try {
-      if (file == null || file.isDirectory() || !file.canRead()) {
-        return false;
-      }
-      FileReader fr = new FileReader(file);
-      BufferedReader br = new BufferedReader(fr);
+    if (file == null || file.isDirectory() || !file.canRead()) {
+      return false;
+    }
+
+    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
       if (!br.ready()) {
         return false;
       }
+
       /*
        If the first token is not an integer this file is not a TINKER
        Cartesian Coordinate File.
@@ -112,8 +113,6 @@ public final class XYZFileFilter extends FileFilter {
       if (firstAtom == null) {
         return false;
       }
-      br.close();
-      fr.close();
       String[] data = firstAtom.trim().split(" +");
       if (data.length < 6) {
         return false;

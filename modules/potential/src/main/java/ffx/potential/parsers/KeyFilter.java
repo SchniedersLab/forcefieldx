@@ -59,7 +59,8 @@ public class KeyFilter {
   private static final Logger logger = Logger.getLogger(KeyFilter.class.getName());
 
   /** Constructor for KeyFilter. */
-  public KeyFilter() {}
+  public KeyFilter() {
+  }
 
   /**
    * open
@@ -90,9 +91,7 @@ public class KeyFilter {
     if (keywordHash == null) {
       keywordHash = new Hashtable<>();
     }
-    BufferedReader br;
-    try (FileReader fr = new FileReader(keyFile)) {
-      br = new BufferedReader(fr);
+    try (BufferedReader br = new BufferedReader(new FileReader(keyFile))) {
       Keyword comments = new Keyword("COMMENTS");
       keywordHash.put("COMMENTS", comments);
       while (br.ready()) {

@@ -107,7 +107,8 @@ public class ForceFieldFilter {
   /**
    * Constructor for ForceFieldFilter.
    *
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public ForceFieldFilter(CompositeConfiguration properties) {
     this.properties = properties;
@@ -380,8 +381,7 @@ public class ForceFieldFilter {
   }
 
   private void parse(InputStream stream) {
-    try {
-      BufferedReader br = new BufferedReader(new InputStreamReader(stream));
+    try (BufferedReader br = new BufferedReader(new InputStreamReader(stream))) {
       while (br.ready()) {
         String input = br.readLine();
         parse(input, br);

@@ -139,7 +139,8 @@ public abstract class SystemFilter {
    * @param files a {@link java.util.List} object.
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public SystemFilter(
       List<File> files,
@@ -160,7 +161,8 @@ public abstract class SystemFilter {
    * @param file a {@link java.io.File} object.
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public SystemFilter(
       File file,
@@ -182,7 +184,8 @@ public abstract class SystemFilter {
    * @param file a {@link java.io.File} object.
    * @param molecularAssemblies a {@link java.util.List} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public SystemFilter(
       File file,
@@ -873,7 +876,8 @@ public abstract class SystemFilter {
   /**
    * Setter for the field <code>properties</code>.
    *
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public void setProperties(CompositeConfiguration properties) {
     this.properties = properties;
