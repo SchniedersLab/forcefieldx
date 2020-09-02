@@ -53,12 +53,12 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class DynamicsOpenMMStochasticTest extends AlgorithmsTest {
 
-  private String info;
-  private String filename;
-  private double endKineticEnergy;
-  private double endPotentialEnergy;
-  private double endTotalEnergy;
-  private double tolerance = 5.0;
+  private final String info;
+  private final String filename;
+  private final double endKineticEnergy;
+  private final double endPotentialEnergy;
+  private final double endTotalEnergy;
+  private final double tolerance = 5.0;
 
   public DynamicsOpenMMStochasticTest(
       String info,
@@ -82,8 +82,8 @@ public class DynamicsOpenMMStochasticTest extends AlgorithmsTest {
                 "System OpenMM Stochastic (Starting Potential Energy = -35661.8041)",
                 "ffx/algorithms/structures/waterbox_eq.xyz",
                 11009.729434,
-               -36039.826268,
-               -25030.095644,
+                -36039.826268,
+                -25030.095644,
             }
         });
   }
@@ -118,20 +118,11 @@ public class DynamicsOpenMMStochasticTest extends AlgorithmsTest {
         (MolecularDynamicsOpenMM) dynamics.getMolecularDynamics();
 
     // Assert that the end energies are within the threshold for the dynamics trajectory.
-    assertEquals(
-        info + "End kinetic energy for OpenMM Langevin(Stochastic) integrator",
-        endKineticEnergy,
-        molDynOpenMM.getKineticEnergy(),
-        tolerance);
-    assertEquals(
-        info + "End potential energy for OpenMM Langevin(Stochastic) integrator",
-        endPotentialEnergy,
-        molDynOpenMM.getPotentialEnergy(),
-        tolerance);
-    assertEquals(
-        info + "End total energy for OpenMM Langevin(Stochastic) integrator",
-        endTotalEnergy,
-        molDynOpenMM.getTotalEnergy(),
-        tolerance);
+    assertEquals(info + "End kinetic energy for OpenMM Langevin(Stochastic) integrator",
+        endKineticEnergy, molDynOpenMM.getKineticEnergy(), tolerance);
+    assertEquals(info + "End potential energy for OpenMM Langevin(Stochastic) integrator",
+        endPotentialEnergy, molDynOpenMM.getPotentialEnergy(), tolerance);
+    assertEquals(info + "End total energy for OpenMM Langevin(Stochastic) integrator",
+        endTotalEnergy, molDynOpenMM.getTotalEnergy(), tolerance);
   }
 }
