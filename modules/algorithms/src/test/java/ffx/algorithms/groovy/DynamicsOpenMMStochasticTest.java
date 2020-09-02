@@ -79,11 +79,11 @@ public class DynamicsOpenMMStochasticTest extends AlgorithmsTest {
     return Arrays.asList(
         new Object[][] {
             {
-                "System OpenMM Stochastic",
+                "System OpenMM Stochastic (Starting Potential Energy = -35661.8041)",
                 "ffx/algorithms/structures/waterbox_eq.xyz",
-                11785.5305,
-                -36464.2741,
-                -24678.7436
+                11009.729434,
+               -36039.826268,
+               -25030.095644,
             }
         });
   }
@@ -105,9 +105,7 @@ public class DynamicsOpenMMStochasticTest extends AlgorithmsTest {
         "-z", "1",
         "-t", "298.15",
         "-i", "Stochastic",
-        "-b", "Adiabatic",
         "-r", "0.001",
-        "--mdE", "OpenMM ",
         "src/main/java/" + filename
     };
     binding.setVariable("args", args);
