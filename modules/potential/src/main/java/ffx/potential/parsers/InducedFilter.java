@@ -37,6 +37,9 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import java.io.BufferedReader;
@@ -77,15 +80,13 @@ public class InducedFilter {
     if (!file.exists() || !file.canRead()) {
       return false;
     }
-    try {
-      FileReader fr = new FileReader(file);
-      BufferedReader br = new BufferedReader(fr);
+    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
       String data = br.readLine();
       String[] tokens = data.trim().split(" +");
       if (tokens.length == 0) {
         return false;
       }
-      int numatoms = Integer.parseInt(tokens[0]);
+      int numatoms = parseInt(tokens[0]);
       if (numatoms != molecularAssembly.getAtomList().size()) {
         return false;
       }
@@ -97,9 +98,9 @@ public class InducedFilter {
         if (tokens.length != 5) {
           return false;
         }
-        x[i][0] = Double.parseDouble(tokens[2]);
-        x[i][1] = Double.parseDouble(tokens[3]);
-        x[i][2] = Double.parseDouble(tokens[4]);
+        x[i][0] = parseDouble(tokens[2]);
+        x[i][1] = parseDouble(tokens[3]);
+        x[i][2] = parseDouble(tokens[4]);
       }
       List<Atom> atoms = molecularAssembly.getAtomList();
       double max = 0.0d;
@@ -108,8 +109,6 @@ public class InducedFilter {
         // a.setInducedDipole(-x[j][0], -x[j][1], -x[j][2]);
       }
       logger.warning("Max Induced: " + max);
-      br.close();
-      fr.close();
     } catch (Exception e) {
       return false;
     }

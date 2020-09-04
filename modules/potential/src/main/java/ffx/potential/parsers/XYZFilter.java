@@ -87,7 +87,8 @@ public class XYZFilter extends SystemFilter {
    * @param files a {@link java.util.List} object.
    * @param system a {@link ffx.potential.MolecularAssembly} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public XYZFilter(
       List<File> files,
@@ -104,7 +105,8 @@ public class XYZFilter extends SystemFilter {
    * @param file a {@link java.io.File} object.
    * @param system a {@link ffx.potential.MolecularAssembly} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public XYZFilter(
       File file,
@@ -126,9 +128,7 @@ public class XYZFilter extends SystemFilter {
     if (newFile == null || !newFile.exists() || oldSystem == null) {
       return false;
     }
-    try {
-      FileReader fr = new FileReader(newFile);
-      BufferedReader br = new BufferedReader(fr);
+    try (BufferedReader br = new BufferedReader(new FileReader(newFile))) {
       String data = br.readLine();
       if (data == null) {
         return false;
@@ -171,8 +171,6 @@ public class XYZFilter extends SystemFilter {
       }
       oldSystem.center();
       oldSystem.setFile(newFile);
-      br.close();
-      fr.close();
       return true;
     } catch (Exception e) {
       return false;
@@ -233,18 +231,6 @@ public class XYZFilter extends SystemFilter {
       }
     }
     return true;
-  }
-
-  /** close */
-  public void close() {
-    if (bufferedReader != null) {
-      try {
-        bufferedReader.close();
-      } catch (Exception e) {
-        String message = format("Exception closing file %s.", activeMolecularAssembly.getFile());
-        logger.log(Level.WARNING, message, e);
-      }
-    }
   }
 
   /** {@inheritDoc} */
@@ -332,9 +318,7 @@ public class XYZFilter extends SystemFilter {
       logger.warning(format(" No force field is associated with %s.", xyzFile.toString()));
       return false;
     }
-    try {
-      FileReader fr = new FileReader(xyzFile);
-      BufferedReader br = new BufferedReader(fr);
+    try (BufferedReader br = new BufferedReader(new FileReader(xyzFile))) {
       String data = br.readLine();
       // Read blank lines at the top of the file
       while (data != null && data.trim().equals("")) {
@@ -426,23 +410,18 @@ public class XYZFilter extends SystemFilter {
         while (data.equals("") && br.ready()) {
           data = br.readLine().trim();
         }
-        // Note that data could be null here if
-        if (data != null) {
-          tokens = data.split(" +", 2);
-          if (tokens.length > 0) {
-            try {
-              int archiveNumberOfAtoms = Integer.parseInt(tokens[0]);
-              if (archiveNumberOfAtoms == numberOfAtoms) {
-                setType(FileType.ARC);
-              }
-            } catch (NumberFormatException e) {
-              //
+        tokens = data.split(" +", 2);
+        if (tokens.length > 0) {
+          try {
+            int archiveNumberOfAtoms = Integer.parseInt(tokens[0]);
+            if (archiveNumberOfAtoms == numberOfAtoms) {
+              setType(FileType.ARC);
             }
+          } catch (NumberFormatException e) {
+            //
           }
         }
       }
-      br.close();
-      fr.close();
       // Try to renumber
       if (renumber) {
         for (int i = 0; i < numberOfAtoms; i++) {
@@ -466,7 +445,7 @@ public class XYZFilter extends SystemFilter {
         while (j < 7 && bonds[a1 - 1][++j] > 0) {
           int a2 = bonds[a1 - 1][j];
           if (a1 < a2) {
-            if (a2 > numberOfAtoms || a2 < 1) {
+            if (a2 > numberOfAtoms) {
               logger.warning(
                   format(
                       " Check the bond between %d and %d in %s.",
@@ -547,7 +526,7 @@ public class XYZFilter extends SystemFilter {
       Atom[] atoms = activeMolecularAssembly.getAtomArray();
       int nSystem = atoms.length;
 
-      if (bufferedReader == null || resetPosition /* || !bin.ready()*/) {
+      if (bufferedReader == null || resetPosition) {
         bufferedReader = new BufferedReader(new FileReader(currentFile));
         // Read past the first N + 1 lines that begin with an integer.
         for (int i = 0; i < nSystem + 1; i++) {
@@ -639,21 +618,16 @@ public class XYZFilter extends SystemFilter {
     if (saveFile == null) {
       return false;
     }
-    try {
-      File newFile = saveFile;
-      if (!append) {
-        newFile = version(saveFile);
-      }
-      activeMolecularAssembly.setFile(newFile);
-      activeMolecularAssembly.setName(newFile.getName());
-      FileWriter fw;
-      if (append && !newFile.exists()) {
-        fw = new FileWriter(newFile);
-      } else {
-        fw = new FileWriter(newFile, append);
-      }
-      BufferedWriter bw = new BufferedWriter(fw);
 
+    File newFile = saveFile;
+    if (!append) {
+      newFile = version(saveFile);
+    }
+    activeMolecularAssembly.setFile(newFile);
+    activeMolecularAssembly.setName(newFile.getName());
+
+    try (FileWriter fw = new FileWriter(newFile, append && newFile.exists());
+        BufferedWriter bw = new BufferedWriter(fw)) {
       // XYZ File First Line
       int numberOfAtoms = activeMolecularAssembly.getAtomList().size();
       StringBuilder sb =
@@ -725,8 +699,6 @@ public class XYZFilter extends SystemFilter {
         logger.log(Level.WARNING, message, e);
         return false;
       }
-      bw.close();
-      fw.close();
     } catch (IOException e) {
       String message =
           format(
@@ -764,15 +736,16 @@ public class XYZFilter extends SystemFilter {
     if (saveFile == null) {
       return false;
     }
-    try {
-      File newFile = saveFile;
-      if (!append) {
-        newFile = version(saveFile);
-      }
-      activeMolecularAssembly.setFile(newFile);
-      activeMolecularAssembly.setName(newFile.getName());
-      FileWriter fw = new FileWriter(newFile, append);
-      BufferedWriter bw = new BufferedWriter(fw);
+
+    File newFile = saveFile;
+    if (!append) {
+      newFile = version(saveFile);
+    }
+    activeMolecularAssembly.setFile(newFile);
+    activeMolecularAssembly.setName(newFile.getName());
+
+    try (FileWriter fw = new FileWriter(newFile, append && newFile.exists());
+        BufferedWriter bw = new BufferedWriter(fw)) {
       int nSymm = crystal.spaceGroup.symOps.size();
       // XYZ File First Line
       int numberOfAtoms = activeMolecularAssembly.getAtomList().size() * nSymm;
@@ -839,8 +812,6 @@ public class XYZFilter extends SystemFilter {
         logger.log(Level.WARNING, message, e);
         return false;
       }
-      bw.close();
-      fw.close();
     } catch (IOException e) {
       String message =
           format(

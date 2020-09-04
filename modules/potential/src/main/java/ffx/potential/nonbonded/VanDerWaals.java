@@ -1984,9 +1984,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                   d2sc2dL2 = 0.0;
                 }
                 final double alpha = sc1;
-                final double lambda5 = sc2;
+                final double lambdaN = sc2;
                 final double ev = vdwForm.getCombinedEps(classI, classK);
-                final double eps_lambda = ev * lambda5;
+                final double eps_lambda = ev * lambdaN;
                 final double rho = r * irv;
                 final double rhoDisp1 = vdwForm.rhoDisp1(rho);
                 final double rhoDisp = rhoDisp1 * rho;

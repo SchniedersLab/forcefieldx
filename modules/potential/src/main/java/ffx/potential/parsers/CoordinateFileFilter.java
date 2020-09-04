@@ -41,8 +41,8 @@ import java.io.File;
 import javax.swing.filechooser.FileFilter;
 
 /**
- * The CoordinateFileFilter class globally determines if a file is a valid coordinate file (PDB,
- * XYZ, INT, or ARC formats).
+ * The CoordinateFileFilter class globally determines if a file is a valid coordinate file (PDB, XYZ,
+ * INT, or ARC formats).
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -51,7 +51,8 @@ import javax.swing.filechooser.FileFilter;
 public final class CoordinateFileFilter extends FileFilter {
 
   /** Public Constructor. */
-  public CoordinateFileFilter() {}
+  public CoordinateFileFilter() {
+  }
 
   /**
    * {@inheritDoc}

@@ -465,7 +465,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 "Acetamide Implicit Solvation Free Energy: -10.5 kcal/mol",
                 new String[] {"ffx/algorithms/structures/acetamide.gk.xyz"},
                 ThermoTestMode.FREE,
-                false,
+                true,
                 -9.2,
                 1.0,
                 null,
@@ -1503,7 +1503,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                     "ffx/algorithms/structures/dualWell-trans.xyz"
                 },
                 ThermoTestMode.FREE,
-                false,
+                true,
                 0,
                 2.0,
                 null,

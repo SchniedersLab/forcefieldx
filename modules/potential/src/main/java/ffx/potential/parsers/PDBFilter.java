@@ -69,6 +69,7 @@ import ffx.utilities.StringUtils;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -128,8 +129,8 @@ public final class PDBFilter extends SystemFilter {
   /** Maps a chain to the number of insertion codes encountered in that chain. */
   private final Map<Character, Integer> insertionCodeCount = new HashMap<>();
   /**
-   * Maps chainIDResNumInsCode to renumbered chainIDResNum. For example, residue 52A in chain C
-   * might be renumbered to residue 53, and mapped as "C52A" to "C53".
+   * Maps chainIDResNumInsCode to renumbered chainIDResNum. For example, residue 52A in chain C might
+   * be renumbered to residue 53, and mapped as "C52A" to "C53".
    */
   private final Map<String, String> pdbToNewResMap = new HashMap<>();
   /** List of modified residues * */
@@ -171,7 +172,8 @@ public final class PDBFilter extends SystemFilter {
    * @param files a {@link java.util.List} object.
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public PDBFilter(
       List<File> files,
@@ -190,7 +192,8 @@ public final class PDBFilter extends SystemFilter {
    * @param file a {@link java.io.File} object.
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public PDBFilter(
       File file,
@@ -209,7 +212,8 @@ public final class PDBFilter extends SystemFilter {
    * @param file a {@link java.io.File} object.
    * @param molecularAssemblies a {@link java.util.List} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public PDBFilter(
       File file,
@@ -429,14 +433,13 @@ public final class PDBFilter extends SystemFilter {
     List<String> links = new ArrayList<>();
     List<String> ssbonds = new ArrayList<>();
     List<String> structs = new ArrayList<>();
-    BufferedReader br;
     try {
       for (File file : files) {
         currentFile = file;
         if (mutate) {
           List<Character> chainIDs = new ArrayList<>();
-          try (BufferedReader cr = new BufferedReader(new FileReader(file))) {
-            String line = cr.readLine();
+          try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line = br.readLine();
             while (line != null) {
               // Replace all tabs w/ 4x spaces
               line = line.replaceAll("\t", "    ");
@@ -450,7 +453,7 @@ public final class PDBFilter extends SystemFilter {
                 record = Record.valueOf(identity);
               } catch (Exception e) {
                 // Continue until the record is recognized.
-                line = cr.readLine();
+                line = br.readLine();
                 continue;
               }
               switch (record) {
@@ -470,7 +473,7 @@ public final class PDBFilter extends SystemFilter {
                   }
                   break;
               }
-              line = cr.readLine();
+              line = br.readLine();
             }
             for (Mutation mtn : mutations) {
               if (!chainIDs.contains(mtn.chainChar)) {
@@ -487,250 +490,388 @@ public final class PDBFilter extends SystemFilter {
                 }
               }
             }
-          } catch (IOException ex) {
-            logger.finest(format(" Exception %s in parsing file to find chain IDs", ex.toString()));
+          } catch (IOException ioException) {
+            logger.fine(
+                format(" Exception %s in parsing file to find chain IDs", ioException.toString()));
           }
         }
+
         // Check that the current file exists and that we can read it.
         if (currentFile == null || !currentFile.exists() || !currentFile.canRead()) {
           return false;
         }
 
         // Open the current file for parsing.
-        FileReader fr = new FileReader(currentFile);
-        br = new BufferedReader(fr);
-
-        // Echo the alternate location being parsed.
-        if (currentAltLoc == 'A') {
-          logger.info(format(" Reading %s", currentFile.getName()));
-        } else {
-          logger.info(
-              format(" Reading %s alternate location %s", currentFile.getName(), currentAltLoc));
-        }
-
-        // Reset the current chain and segID.
-        currentChainID = null;
-        currentSegID = null;
-        boolean containsInsCode = false;
-
-        // Read the first line of the file.
-        String line = br.readLine();
-
-        // Parse until END or ENDMDL is found, or to the end of the file.
-        while (line != null) {
-          // Replace all tabs w/ 4x spaces
-          line = line.replaceAll("\t", "    ");
-          String identity = line;
-          if (line.length() > 6) {
-            identity = line.substring(0, 6);
-          }
-          identity = identity.trim().toUpperCase();
-          Record record;
-          try {
-            record = Record.valueOf(identity);
-          } catch (Exception e) {
-            // Continue until the record is recognized.
-            line = br.readLine();
-            continue;
+        try (BufferedReader br = new BufferedReader(new FileReader(currentFile))) {
+          // Echo the alternate location being parsed.
+          if (currentAltLoc == 'A') {
+            logger.info(format(" Reading %s", currentFile.getName()));
+          } else {
+            logger.info(
+                format(" Reading %s alternate location %s", currentFile.getName(), currentAltLoc));
           }
 
-          // Switch on the known record.
-          switch (record) {
-            case ENDMDL:
-            case END:
-              // Setting "line" to null will exit the loop.
-              line = null;
+          // Reset the current chain and segID.
+          currentChainID = null;
+          currentSegID = null;
+          boolean containsInsCode = false;
+
+          // Read the first line of the file.
+          String line = br.readLine();
+
+          // Parse until END or ENDMDL is found, or to the end of the file.
+          while (line != null) {
+            // Replace all tabs w/ 4x spaces
+            line = line.replaceAll("\t", "    ");
+            String identity = line;
+            if (line.length() > 6) {
+              identity = line.substring(0, 6);
+            }
+            identity = identity.trim().toUpperCase();
+            Record record;
+            try {
+              record = Record.valueOf(identity);
+            } catch (Exception e) {
+              // Continue until the record is recognized.
+              line = br.readLine();
               continue;
-            case DBREF:
-              // =============================================================================
-              //  1 -  6       Record name   "DBREF "
-              //  8 - 11       IDcode        idCode             ID code of this entry.
-              // 13            Character     chainID            Chain  identifier.
-              // 15 - 18       Integer       seqBegin           Initial sequence number of the
-              //                                                PDB sequence segment.
-              // 19            AChar         insertBegin        Initial  insertion code of the
-              //                                                PDB  sequence segment.
-              // 21 - 24       Integer       seqEnd             Ending sequence number of the
-              //                                                PDB  sequence segment.
-              // 25            AChar         insertEnd          Ending insertion code of the
-              //                                                PDB  sequence segment.
-              // 27 - 32       LString       database           Sequence database name.
-              // 34 - 41       LString       dbAccession        Sequence database accession code.
-              // 43 - 54       LString       dbIdCode           Sequence  database identification
-              // code.
-              // 56 - 60       Integer       dbseqBegin         Initial sequence number of the
-              //                                                database seqment.
-              // 61            AChar         idbnsBeg           Insertion code of initial residue of
-              // the
-              //                                                segment, if PDB is the reference.
-              // 63 - 67       Integer       dbseqEnd           Ending sequence number of the
-              //                                                database segment.
-              // 68            AChar         dbinsEnd           Insertion code of the ending residue
-              // of
-              //                                                the segment, if PDB is the
-              // reference.
-              // =============================================================================
-              Character chainID = line.substring(12, 13).toUpperCase().charAt(0);
-              int seqBegin = parseInt(line.substring(14, 18).trim());
-              int seqEnd = parseInt(line.substring(20, 24).trim());
-              int[] seqRange = dbRef.computeIfAbsent(chainID, k -> new int[2]);
-              seqRange[0] = seqBegin;
-              seqRange[1] = seqEnd;
-              break;
-            case SEQRES:
-              // =============================================================================
-              //  1 -  6        Record name    "SEQRES"
-              //  8 - 10        Integer        serNum       Serial number of the SEQRES record for
-              // the
-              //                                            current  chain. Starts at 1 and
-              // increments
-              //                                            by one  each line. Reset to 1 for each
-              // chain.
-              // 12             Character      chainID      Chain identifier. This may be any single
-              //                                            legal  character, including a blank
-              // which is
-              //                                            is used if there is only one chain.
-              // 14 - 17        Integer        numRes       Number of residues in the chain.
-              //                                            This  value is repeated on every record.
-              // 20 - 22        Residue name   resName      Residue name.
-              // 24 - 26        Residue name   resName      Residue name.
-              // 28 - 30        Residue name   resName      Residue name.
-              // 32 - 34        Residue name   resName      Residue name.
-              // 36 - 38        Residue name   resName      Residue name.
-              // 40 - 42        Residue name   resName      Residue name.
-              // 44 - 46        Residue name   resName      Residue name.
-              // 48 - 50        Residue name   resName      Residue name.
-              // 52 - 54        Residue name   resName      Residue name.
-              // 56 - 58        Residue name   resName      Residue name.
-              // 60 - 62        Residue name   resName      Residue name.
-              // 64 - 66        Residue name   resName      Residue name.
-              // 68 - 70        Residue name   resName      Residue name.
-              // =============================================================================
-              activeMolecularAssembly.addHeaderLine(line);
-              chainID = line.substring(11, 12).toUpperCase().charAt(0);
-              int serNum = parseInt(line.substring(7, 10).trim());
-              String[] chain = seqRes.get(chainID);
-              int numRes = parseInt(line.substring(13, 17).trim());
-              if (chain == null) {
-                chain = new String[numRes];
-                seqRes.put(chainID, chain);
-              }
-              int resID = (serNum - 1) * 13;
-              int end = line.length();
-              for (int start = 19; start + 3 <= end; start += 4) {
-                String res = line.substring(start, start + 3).trim();
-                if (res == null || res.length() < 1) {
+            }
+
+            // Switch on the known record.
+            switch (record) {
+              case ENDMDL:
+              case END:
+                // Setting "line" to null will exit the loop.
+                line = null;
+                continue;
+              case DBREF:
+                // =============================================================================
+                //  1 -  6       Record name   "DBREF "
+                //  8 - 11       IDcode        idCode             ID code of this entry.
+                // 13            Character     chainID            Chain  identifier.
+                // 15 - 18       Integer       seqBegin           Initial sequence number of the
+                //                                                PDB sequence segment.
+                // 19            AChar         insertBegin        Initial  insertion code of the
+                //                                                PDB  sequence segment.
+                // 21 - 24       Integer       seqEnd             Ending sequence number of the
+                //                                                PDB  sequence segment.
+                // 25            AChar         insertEnd          Ending insertion code of the
+                //                                                PDB  sequence segment.
+                // 27 - 32       LString       database           Sequence database name.
+                // 34 - 41       LString       dbAccession        Sequence database accession code.
+                // 43 - 54       LString       dbIdCode           Sequence  database identification
+                // code.
+                // 56 - 60       Integer       dbseqBegin         Initial sequence number of the
+                //                                                database seqment.
+                // 61            AChar         idbnsBeg           Insertion code of initial residue of
+                // the
+                //                                                segment, if PDB is the reference.
+                // 63 - 67       Integer       dbseqEnd           Ending sequence number of the
+                //                                                database segment.
+                // 68            AChar         dbinsEnd           Insertion code of the ending residue
+                // of
+                //                                                the segment, if PDB is the
+                // reference.
+                // =============================================================================
+                Character chainID = line.substring(12, 13).toUpperCase().charAt(0);
+                int seqBegin = parseInt(line.substring(14, 18).trim());
+                int seqEnd = parseInt(line.substring(20, 24).trim());
+                int[] seqRange = dbRef.computeIfAbsent(chainID, k -> new int[2]);
+                seqRange[0] = seqBegin;
+                seqRange[1] = seqEnd;
+                break;
+              case SEQRES:
+                // =============================================================================
+                //  1 -  6        Record name    "SEQRES"
+                //  8 - 10        Integer        serNum       Serial number of the SEQRES record for
+                // the
+                //                                            current  chain. Starts at 1 and
+                // increments
+                //                                            by one  each line. Reset to 1 for each
+                // chain.
+                // 12             Character      chainID      Chain identifier. This may be any single
+                //                                            legal  character, including a blank
+                // which is
+                //                                            is used if there is only one chain.
+                // 14 - 17        Integer        numRes       Number of residues in the chain.
+                //                                            This  value is repeated on every record.
+                // 20 - 22        Residue name   resName      Residue name.
+                // 24 - 26        Residue name   resName      Residue name.
+                // 28 - 30        Residue name   resName      Residue name.
+                // 32 - 34        Residue name   resName      Residue name.
+                // 36 - 38        Residue name   resName      Residue name.
+                // 40 - 42        Residue name   resName      Residue name.
+                // 44 - 46        Residue name   resName      Residue name.
+                // 48 - 50        Residue name   resName      Residue name.
+                // 52 - 54        Residue name   resName      Residue name.
+                // 56 - 58        Residue name   resName      Residue name.
+                // 60 - 62        Residue name   resName      Residue name.
+                // 64 - 66        Residue name   resName      Residue name.
+                // 68 - 70        Residue name   resName      Residue name.
+                // =============================================================================
+                activeMolecularAssembly.addHeaderLine(line);
+                chainID = line.substring(11, 12).toUpperCase().charAt(0);
+                int serNum = parseInt(line.substring(7, 10).trim());
+                String[] chain = seqRes.get(chainID);
+                int numRes = parseInt(line.substring(13, 17).trim());
+                if (chain == null) {
+                  chain = new String[numRes];
+                  seqRes.put(chainID, chain);
+                }
+                int resID = (serNum - 1) * 13;
+                int end = line.length();
+                for (int start = 19; start + 3 <= end; start += 4) {
+                  String res = line.substring(start, start + 3).trim();
+                  if (res == null || res.length() < 1) {
+                    break;
+                  }
+                  chain[resID++] = res;
+                }
+                break;
+              case MODRES:
+                String modResName = line.substring(12, 15).trim();
+                String stdName = line.substring(24, 27).trim();
+                modRes.put(modResName.toUpperCase(), stdName.toUpperCase());
+                activeMolecularAssembly.addHeaderLine(line);
+                // =============================================================================
+                //  1 -  6        Record name     "MODRES"
+                //  8 - 11        IDcode          idCode         ID code of this entry.
+                // 13 - 15        Residue name    resName        Residue name used in this entry.
+                // 17             Character       chainID        Chain identifier.
+                // 19 - 22        Integer         seqNum         Sequence number.
+                // 23             AChar           iCode          Insertion code.
+                // 25 - 27        Residue name    stdRes         Standard residue name.
+                // 30 - 70        String          comment        Description of the residue
+                // modification.
+                // =============================================================================
+                break;
+              case ANISOU:
+                // =============================================================================
+                //  1 - 6        Record name   "ANISOU"
+                //  7 - 11       Integer       serial         Atom serial number.
+                // 13 - 16       Atom          name           Atom name.
+                // 17            Character     altLoc         Alternate location indicator
+                // 18 - 20       Residue name  resName        Residue name.
+                // 22            Character     chainID        Chain identifier.
+                // 23 - 26       Integer       resSeq         Residue sequence number.
+                // 27            AChar         iCode          Insertion code.
+                // 29 - 35       Integer       u[0][0]        U(1,1)
+                // 36 - 42       Integer       u[1][1]        U(2,2)
+                // 43 - 49       Integer       u[2][2]        U(3,3)
+                // 50 - 56       Integer       u[0][1]        U(1,2)
+                // 57 - 63       Integer       u[0][2]        U(1,3)
+                // 64 - 70       Integer       u[1][2]        U(2,3)
+                // 77 - 78       LString(2)    element        Element symbol, right-justified.
+                // 79 - 80       LString(2)    charge         Charge on the atom.
+                // =============================================================================
+                boolean deleteAnisou = properties.getBoolean("delete-anisou", false);
+                if (deleteAnisou) {
                   break;
                 }
-                chain[resID++] = res;
-              }
-              break;
-            case MODRES:
-              String modResName = line.substring(12, 15).trim();
-              String stdName = line.substring(24, 27).trim();
-              modRes.put(modResName.toUpperCase(), stdName.toUpperCase());
-              activeMolecularAssembly.addHeaderLine(line);
-              // =============================================================================
-              //  1 -  6        Record name     "MODRES"
-              //  8 - 11        IDcode          idCode         ID code of this entry.
-              // 13 - 15        Residue name    resName        Residue name used in this entry.
-              // 17             Character       chainID        Chain identifier.
-              // 19 - 22        Integer         seqNum         Sequence number.
-              // 23             AChar           iCode          Insertion code.
-              // 25 - 27        Residue name    stdRes         Standard residue name.
-              // 30 - 70        String          comment        Description of the residue
-              // modification.
-              // =============================================================================
-              break;
-            case ANISOU:
-              // =============================================================================
-              //  1 - 6        Record name   "ANISOU"
-              //  7 - 11       Integer       serial         Atom serial number.
-              // 13 - 16       Atom          name           Atom name.
-              // 17            Character     altLoc         Alternate location indicator
-              // 18 - 20       Residue name  resName        Residue name.
-              // 22            Character     chainID        Chain identifier.
-              // 23 - 26       Integer       resSeq         Residue sequence number.
-              // 27            AChar         iCode          Insertion code.
-              // 29 - 35       Integer       u[0][0]        U(1,1)
-              // 36 - 42       Integer       u[1][1]        U(2,2)
-              // 43 - 49       Integer       u[2][2]        U(3,3)
-              // 50 - 56       Integer       u[0][1]        U(1,2)
-              // 57 - 63       Integer       u[0][2]        U(1,3)
-              // 64 - 70       Integer       u[1][2]        U(2,3)
-              // 77 - 78       LString(2)    element        Element symbol, right-justified.
-              // 79 - 80       LString(2)    charge         Charge on the atom.
-              // =============================================================================
-              boolean deleteAnisou = properties.getBoolean("delete-anisou", false);
-              if (deleteAnisou) {
+                Integer serial = Hybrid36.decode(5, line.substring(6, 11));
+                Character altLoc = line.substring(16, 17).toUpperCase().charAt(0);
+                if (!altLocs.contains(altLoc)) {
+                  altLocs.add(altLoc);
+                }
+                if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
+                  break;
+                }
+                double[] adp = new double[6];
+                adp[0] = parseInt(line.substring(28, 35).trim()) * 1.0e-4;
+                adp[1] = parseInt(line.substring(35, 42).trim()) * 1.0e-4;
+                adp[2] = parseInt(line.substring(42, 49).trim()) * 1.0e-4;
+                adp[3] = parseInt(line.substring(49, 56).trim()) * 1.0e-4;
+                adp[4] = parseInt(line.substring(56, 63).trim()) * 1.0e-4;
+                adp[5] = parseInt(line.substring(63, 70).trim()) * 1.0e-4;
+                if (atoms.containsKey(serial)) {
+                  Atom a = atoms.get(serial);
+                  a.setAltLoc(altLoc);
+                  a.setAnisou(adp);
+                } else {
+                  logger.info(
+                      format(" No ATOM record for ANISOU serial number %d has been found.", serial));
+                  logger.info(format(" This ANISOU record will be ignored:\n %s", line));
+                }
                 break;
-              }
-              Integer serial = Hybrid36.decode(5, line.substring(6, 11));
-              Character altLoc = line.substring(16, 17).toUpperCase().charAt(0);
-              if (!altLocs.contains(altLoc)) {
-                altLocs.add(altLoc);
-              }
-              if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
-                break;
-              }
-              double[] adp = new double[6];
-              adp[0] = parseInt(line.substring(28, 35).trim()) * 1.0e-4;
-              adp[1] = parseInt(line.substring(35, 42).trim()) * 1.0e-4;
-              adp[2] = parseInt(line.substring(42, 49).trim()) * 1.0e-4;
-              adp[3] = parseInt(line.substring(49, 56).trim()) * 1.0e-4;
-              adp[4] = parseInt(line.substring(56, 63).trim()) * 1.0e-4;
-              adp[5] = parseInt(line.substring(63, 70).trim()) * 1.0e-4;
-              if (atoms.containsKey(serial)) {
-                Atom a = atoms.get(serial);
-                a.setAltLoc(altLoc);
-                a.setAnisou(adp);
-              } else {
-                logger.info(
-                    format(" No ATOM record for ANISOU serial number %d has been found.", serial));
-                logger.info(format(" This ANISOU record will be ignored:\n %s", line));
-              }
-              break;
-            case ATOM:
-              // =============================================================================
-              //  1 -  6        Record name   "ATOM  "
-              //  7 - 11        Integer       serial       Atom serial number.
-              // 13 - 16        Atom          name         Atom name.
-              // 17             Character     altLoc       Alternate location indicator.
-              // 18 - 20        Residue name  resName      Residue name.
-              // 22             Character     chainID      Chain identifier.
-              // 23 - 26        Integer       resSeq       Residue sequence number.
-              // 27             AChar         iCode        Code for insertion of residues.
-              // 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in
-              // Angstroms.
-              // 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in
-              // Angstroms.
-              // 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in
-              // Angstroms.
-              // 55 - 60        Real(6.2)     occupancy    Occupancy.
-              // 61 - 66        Real(6.2)     tempFactor   Temperature factor.
-              // 77 - 78        LString(2)    element      Element symbol, right-justified.
-              // 79 - 80        LString(2)    charge       Charge  on the atom.
-              // =============================================================================
-              String name;
-              String resName;
-              String segID;
-              int resSeq;
-              boolean printAtom;
-              double[] d;
-              double occupancy;
-              double tempFactor;
-              Atom newAtom;
-              Atom returnedAtom;
-              // If it's a misnamed water, it will fall through to HETATM.
-              if (!line.substring(17, 20).trim().equals("HOH")) {
+              case ATOM:
+                // =============================================================================
+                //  1 -  6        Record name   "ATOM  "
+                //  7 - 11        Integer       serial       Atom serial number.
+                // 13 - 16        Atom          name         Atom name.
+                // 17             Character     altLoc       Alternate location indicator.
+                // 18 - 20        Residue name  resName      Residue name.
+                // 22             Character     chainID      Chain identifier.
+                // 23 - 26        Integer       resSeq       Residue sequence number.
+                // 27             AChar         iCode        Code for insertion of residues.
+                // 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in
+                // Angstroms.
+                // 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in
+                // Angstroms.
+                // 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in
+                // Angstroms.
+                // 55 - 60        Real(6.2)     occupancy    Occupancy.
+                // 61 - 66        Real(6.2)     tempFactor   Temperature factor.
+                // 77 - 78        LString(2)    element      Element symbol, right-justified.
+                // 79 - 80        LString(2)    charge       Charge  on the atom.
+                // =============================================================================
+                String name;
+                String resName;
+                String segID;
+                int resSeq;
+                boolean printAtom;
+                double[] d;
+                double occupancy;
+                double tempFactor;
+                Atom newAtom;
+                Atom returnedAtom;
+                // If it's a misnamed water, it will fall through to HETATM.
+                if (!line.substring(17, 20).trim().equals("HOH")) {
+                  serial = Hybrid36.decode(5, line.substring(6, 11));
+                  name = line.substring(12, 16).trim();
+                  if (name.toUpperCase().contains("1H")
+                      || name.toUpperCase().contains("2H")
+                      || name.toUpperCase().contains("3H")) {
+                    // VERSION3_2 is presently just a placeholder for "anything non-standard".
+                    fileStandard = VERSION3_2;
+                  }
+                  altLoc = line.substring(16, 17).toUpperCase().charAt(0);
+                  if (!altLocs.contains(altLoc)) {
+                    altLocs.add(altLoc);
+                  }
+                  if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
+                    break;
+                  }
+                  resName = line.substring(17, 20).trim();
+                  chainID = line.substring(21, 22).charAt(0);
+                  segID = getSegID(chainID);
+                  resSeq = Hybrid36.decode(4, line.substring(22, 26));
+
+                  char insertionCode = line.charAt(26);
+                  if (insertionCode != ' ' && !containsInsCode) {
+                    containsInsCode = true;
+                    logger.warning(
+                        " FFX support for files with "
+                            + "insertion codes is experimental. "
+                            + "Residues will be renumbered to "
+                            + "eliminate insertion codes (52A "
+                            + "becomes 53, 53 becomes 54, etc)");
+                  }
+
+                  int offset = insertionCodeCount.getOrDefault(chainID, 0);
+                  String pdbResNum = format("%c%d%c", chainID, resSeq, insertionCode);
+                  if (!pdbToNewResMap.containsKey(pdbResNum)) {
+                    if (insertionCode != ' ') {
+                      ++offset;
+                      insertionCodeCount.put(chainID, offset);
+                    }
+                    resSeq += offset;
+                    if (offset != 0) {
+                      logger.info(
+                          format(
+                              " Chain %c " + "residue %s-%s renumbered to %c %s-%d",
+                              chainID,
+                              pdbResNum.substring(1).trim(),
+                              resName,
+                              chainID,
+                              resName,
+                              resSeq));
+                    }
+                    String newNum = format("%c%d", chainID, resSeq);
+                    pdbToNewResMap.put(pdbResNum, newNum);
+                  } else {
+                    resSeq += offset;
+                  }
+
+                  printAtom = false;
+                  if (mutate) {
+                    boolean doBreak = false;
+                    for (Mutation mtn : mutations) {
+                      if (chainID == mtn.chainChar && resSeq == mtn.resID) {
+                        String atomName = name.toUpperCase();
+                      /*if (atomName.equals("N") || atomName.equals("C")
+                      || atomName.equals("O") || atomName.equals("CA")) {*/
+                        if (backboneNames.contains(atomName)) {
+                          printAtom = true;
+                          resName = mtn.resName;
+                        } else {
+                          logger.info(
+                              format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
+                          doBreak = true;
+                          break;
+                        }
+                      }
+                    }
+                    if (doBreak) {
+                      break;
+                    }
+                  }
+                  d = new double[3];
+                  d[0] = parseDouble(line.substring(30, 38).trim());
+                  d[1] = parseDouble(line.substring(38, 46).trim());
+                  d[2] = parseDouble(line.substring(46, 54).trim());
+                  occupancy = 1.0;
+                  tempFactor = 1.0;
+                  try {
+                    occupancy = parseDouble(line.substring(54, 60).trim());
+                    tempFactor = parseDouble(line.substring(60, 66).trim());
+                  } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                    // Use default values.
+                    if (printMissingFields) {
+                      logger.info(" Missing occupancy and b-factors set to 1.0.");
+                      printMissingFields = false;
+                    } else if (logger.isLoggable(Level.FINE)) {
+                      logger.fine(" Missing occupancy and b-factors set to 1.0.");
+                    }
+                  }
+                  newAtom =
+                      new Atom(
+                          0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor,
+                          segID);
+
+                  // Check if this is a modified residue.
+                  if (modRes.containsKey(resName.toUpperCase())) {
+                    newAtom.setModRes(true);
+                  }
+                  returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
+                  if (returnedAtom != newAtom) {
+                    // A previously added atom has been retained.
+                    atoms.put(serial, returnedAtom);
+                    if (logger.isLoggable(Level.FINE)) {
+                      logger.fine(returnedAtom + " has been retained over\n" + newAtom);
+                    }
+                  } else {
+                    // The new atom has been added.
+                    atoms.put(serial, newAtom);
+                    // Check if the newAtom took the xyzIndex of a previous alternate conformer.
+                    if (newAtom.getIndex() == 0) {
+                      newAtom.setXyzIndex(xyzIndex++);
+                    }
+                    if (printAtom) {
+                      logger.info(newAtom.toString());
+                    }
+                  }
+                  break;
+                }
+              case HETATM:
+                // =============================================================================
+                //  1 - 6        Record name    "HETATM"
+                //  7 - 11       Integer        serial        Atom serial number.
+                // 13 - 16       Atom           name          Atom name.
+                // 17            Character      altLoc        Alternate location indicator.
+                // 18 - 20       Residue name   resName       Residue name.
+                // 22            Character      chainID       Chain identifier.
+                // 23 - 26       Integer        resSeq        Residue sequence number.
+                // 27            AChar          iCode         Code for insertion of residues.
+                // 31 - 38       Real(8.3)      x             Orthogonal coordinates for X.
+                // 39 - 46       Real(8.3)      y             Orthogonal coordinates for Y.
+                // 47 - 54       Real(8.3)      z             Orthogonal coordinates for Z.
+                // 55 - 60       Real(6.2)      occupancy     Occupancy.
+                // 61 - 66       Real(6.2)      tempFactor    Temperature factor.
+                // 77 - 78       LString(2)     element       Element symbol; right-justified.
+                // 79 - 80       LString(2)     charge        Charge on the atom.
+                // =============================================================================
                 serial = Hybrid36.decode(5, line.substring(6, 11));
                 name = line.substring(12, 16).trim();
-                if (name.toUpperCase().contains("1H")
-                    || name.toUpperCase().contains("2H")
-                    || name.toUpperCase().contains("3H")) {
-                  // VERSION3_2 is presently just a placeholder for "anything non-standard".
-                  fileStandard = VERSION3_2;
-                }
                 altLoc = line.substring(16, 17).toUpperCase().charAt(0);
                 if (!altLocs.contains(altLoc)) {
                   altLocs.add(altLoc);
@@ -765,7 +906,7 @@ public final class PDBFilter extends SystemFilter {
                   if (offset != 0) {
                     logger.info(
                         format(
-                            " Chain %c " + "residue %s-%s renumbered to %c %s-%d",
+                            " Chain %c " + "molecule %s-%s renumbered to %c %s-%d",
                             chainID,
                             pdbResNum.substring(1).trim(),
                             resName,
@@ -779,29 +920,6 @@ public final class PDBFilter extends SystemFilter {
                   resSeq += offset;
                 }
 
-                printAtom = false;
-                if (mutate) {
-                  boolean doBreak = false;
-                  for (Mutation mtn : mutations) {
-                    if (chainID == mtn.chainChar && resSeq == mtn.resID) {
-                      String atomName = name.toUpperCase();
-                      /*if (atomName.equals("N") || atomName.equals("C")
-                      || atomName.equals("O") || atomName.equals("CA")) {*/
-                      if (backboneNames.contains(atomName)) {
-                        printAtom = true;
-                        resName = mtn.resName;
-                      } else {
-                        logger.info(
-                            format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
-                        doBreak = true;
-                        break;
-                      }
-                    }
-                  }
-                  if (doBreak) {
-                    break;
-                  }
-                }
                 d = new double[3];
                 d[0] = parseDouble(line.substring(30, 38).trim());
                 d[1] = parseDouble(line.substring(38, 46).trim());
@@ -823,7 +941,7 @@ public final class PDBFilter extends SystemFilter {
                 newAtom =
                     new Atom(
                         0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor, segID);
-
+                newAtom.setHetero(true);
                 // Check if this is a modified residue.
                 if (modRes.containsKey(resName.toUpperCase())) {
                   newAtom.setModRes(true);
@@ -838,410 +956,299 @@ public final class PDBFilter extends SystemFilter {
                 } else {
                   // The new atom has been added.
                   atoms.put(serial, newAtom);
-                  // Check if the newAtom took the xyzIndex of a previous alternate conformer.
-                  if (newAtom.getIndex() == 0) {
-                    newAtom.setXyzIndex(xyzIndex++);
+                  newAtom.setXyzIndex(xyzIndex++);
+                }
+                break;
+              case CRYST1:
+                // =============================================================================
+                // The CRYST1 record presents the unit cell parameters, space group, and Z
+                // value. If the structure was not determined by crystallographic means, CRYST1
+                // simply provides the unitary values, with an appropriate REMARK.
+                //
+                //  7 - 15       Real(9.3)     a              a (Angstroms).
+                // 16 - 24       Real(9.3)     b              b (Angstroms).
+                // 25 - 33       Real(9.3)     c              c (Angstroms).
+                // 34 - 40       Real(7.2)     alpha          alpha (degrees).
+                // 41 - 47       Real(7.2)     beta           beta (degrees).
+                // 48 - 54       Real(7.2)     gamma          gamma (degrees).
+                // 56 - 66       LString       sGroup         Space  group.
+                // 67 - 70       Integer       z              Z value.
+                // =============================================================================
+                double aaxis = parseDouble(line.substring(6, 15).trim());
+                double baxis = parseDouble(line.substring(15, 24).trim());
+                double caxis = parseDouble(line.substring(24, 33).trim());
+                double alpha = parseDouble(line.substring(33, 40).trim());
+                double beta = parseDouble(line.substring(40, 47).trim());
+                double gamma = parseDouble(line.substring(47, 54).trim());
+                int limit = 66;
+                if (line.length() < 66) {
+                  limit = line.length();
+                }
+                String sg = line.substring(55, limit).trim();
+                properties.addProperty("a-axis", aaxis);
+                properties.addProperty("b-axis", baxis);
+                properties.addProperty("c-axis", caxis);
+                properties.addProperty("alpha", alpha);
+                properties.addProperty("beta", beta);
+                properties.addProperty("gamma", gamma);
+                properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(sg));
+                break;
+              case CONECT:
+                // =============================================================================
+                //  7 - 11        Integer        serial       Atom  serial number
+                // 12 - 16        Integer        serial       Serial number of bonded atom
+                // 17 - 21        Integer        serial       Serial number of bonded atom
+                // 22 - 26        Integer        serial       Serial number of bonded atom
+                // 27 - 31        Integer        serial       Serial number of bonded atom
+                //
+                // CONECT records involving atoms for which the coordinates are not present
+                // in the entry (e.g., symmetry-generated) are not given.
+                // CONECT records involving atoms for which the coordinates are missing due
+                // to disorder, are also not provided.
+                // =============================================================================
+                conects.add(line);
+                break;
+              case LINK:
+                // =============================================================================
+                // The LINK records specify connectivity between residues that is not implied by
+                // the primary structure. Connectivity is expressed in terms of the atom names.
+                // They also include the distance associated with the each linkage following the
+                // symmetry operations at the end of each record.
+                // 13 - 16         Atom           name1           Atom name.
+                // 17              Character      altLoc1         Alternate location indicator.
+                // 18 - 20         Residue name   resName1        Residue  name.
+                // 22              Character      chainID1        Chain identifier.
+                // 23 - 26         Integer        resSeq1         Residue sequence number.
+                // 27              AChar          iCode1          Insertion code.
+                // 43 - 46         Atom           name2           Atom name.
+                // 47              Character      altLoc2         Alternate location indicator.
+                // 48 - 50         Residue name   resName2        Residue name.
+                // 52              Character      chainID2        Chain identifier.
+                // 53 - 56         Integer        resSeq2         Residue sequence number.
+                // 57              AChar          iCode2          Insertion code.
+                // 60 - 65         SymOP          sym1            Symmetry operator atom 1.
+                // 67 - 72         SymOP          sym2            Symmetry operator atom 2.
+                // 74 – 78         Real(5.2)      Length          Link distance
+                // =============================================================================
+                Character a1 = line.charAt(16);
+                Character a2 = line.charAt(46);
+                if (a1 != a2) {
+                  // logger.info(format(" Ignoring LINK record as alternate locations do not match\n
+                  // %s.", line));
+                  break;
+                }
+                if (currentAltLoc == 'A') {
+                  if ((a1 == ' ' || a1 == 'A') && (a2 == ' ' || a2 == 'A')) {
+                    links.add(line);
                   }
-                  if (printAtom) {
-                    logger.info(newAtom.toString());
-                  }
-                }
-                break;
-              }
-            case HETATM:
-              // =============================================================================
-              //  1 - 6        Record name    "HETATM"
-              //  7 - 11       Integer        serial        Atom serial number.
-              // 13 - 16       Atom           name          Atom name.
-              // 17            Character      altLoc        Alternate location indicator.
-              // 18 - 20       Residue name   resName       Residue name.
-              // 22            Character      chainID       Chain identifier.
-              // 23 - 26       Integer        resSeq        Residue sequence number.
-              // 27            AChar          iCode         Code for insertion of residues.
-              // 31 - 38       Real(8.3)      x             Orthogonal coordinates for X.
-              // 39 - 46       Real(8.3)      y             Orthogonal coordinates for Y.
-              // 47 - 54       Real(8.3)      z             Orthogonal coordinates for Z.
-              // 55 - 60       Real(6.2)      occupancy     Occupancy.
-              // 61 - 66       Real(6.2)      tempFactor    Temperature factor.
-              // 77 - 78       LString(2)     element       Element symbol; right-justified.
-              // 79 - 80       LString(2)     charge        Charge on the atom.
-              // =============================================================================
-              serial = Hybrid36.decode(5, line.substring(6, 11));
-              name = line.substring(12, 16).trim();
-              altLoc = line.substring(16, 17).toUpperCase().charAt(0);
-              if (!altLocs.contains(altLoc)) {
-                altLocs.add(altLoc);
-              }
-              if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
-                break;
-              }
-              resName = line.substring(17, 20).trim();
-              chainID = line.substring(21, 22).charAt(0);
-              segID = getSegID(chainID);
-              resSeq = Hybrid36.decode(4, line.substring(22, 26));
-
-              char insertionCode = line.charAt(26);
-              if (insertionCode != ' ' && !containsInsCode) {
-                containsInsCode = true;
-                logger.warning(
-                    " FFX support for files with "
-                        + "insertion codes is experimental. "
-                        + "Residues will be renumbered to "
-                        + "eliminate insertion codes (52A "
-                        + "becomes 53, 53 becomes 54, etc)");
-              }
-
-              int offset = insertionCodeCount.getOrDefault(chainID, 0);
-              String pdbResNum = format("%c%d%c", chainID, resSeq, insertionCode);
-              if (!pdbToNewResMap.containsKey(pdbResNum)) {
-                if (insertionCode != ' ') {
-                  ++offset;
-                  insertionCodeCount.put(chainID, offset);
-                }
-                resSeq += offset;
-                if (offset != 0) {
-                  logger.info(
-                      format(
-                          " Chain %c " + "molecule %s-%s renumbered to %c %s-%d",
-                          chainID,
-                          pdbResNum.substring(1).trim(),
-                          resName,
-                          chainID,
-                          resName,
-                          resSeq));
-                }
-                String newNum = format("%c%d", chainID, resSeq);
-                pdbToNewResMap.put(pdbResNum, newNum);
-              } else {
-                resSeq += offset;
-              }
-
-              d = new double[3];
-              d[0] = parseDouble(line.substring(30, 38).trim());
-              d[1] = parseDouble(line.substring(38, 46).trim());
-              d[2] = parseDouble(line.substring(46, 54).trim());
-              occupancy = 1.0;
-              tempFactor = 1.0;
-              try {
-                occupancy = parseDouble(line.substring(54, 60).trim());
-                tempFactor = parseDouble(line.substring(60, 66).trim());
-              } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                // Use default values.
-                if (printMissingFields) {
-                  logger.info(" Missing occupancy and b-factors set to 1.0.");
-                  printMissingFields = false;
-                } else if (logger.isLoggable(Level.FINE)) {
-                  logger.fine(" Missing occupancy and b-factors set to 1.0.");
-                }
-              }
-              newAtom =
-                  new Atom(
-                      0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor, segID);
-              newAtom.setHetero(true);
-              // Check if this is a modified residue.
-              if (modRes.containsKey(resName.toUpperCase())) {
-                newAtom.setModRes(true);
-              }
-              returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
-              if (returnedAtom != newAtom) {
-                // A previously added atom has been retained.
-                atoms.put(serial, returnedAtom);
-                if (logger.isLoggable(Level.FINE)) {
-                  logger.fine(returnedAtom + " has been retained over\n" + newAtom);
-                }
-              } else {
-                // The new atom has been added.
-                atoms.put(serial, newAtom);
-                newAtom.setXyzIndex(xyzIndex++);
-              }
-              break;
-            case CRYST1:
-              // =============================================================================
-              // The CRYST1 record presents the unit cell parameters, space group, and Z
-              // value. If the structure was not determined by crystallographic means, CRYST1
-              // simply provides the unitary values, with an appropriate REMARK.
-              //
-              //  7 - 15       Real(9.3)     a              a (Angstroms).
-              // 16 - 24       Real(9.3)     b              b (Angstroms).
-              // 25 - 33       Real(9.3)     c              c (Angstroms).
-              // 34 - 40       Real(7.2)     alpha          alpha (degrees).
-              // 41 - 47       Real(7.2)     beta           beta (degrees).
-              // 48 - 54       Real(7.2)     gamma          gamma (degrees).
-              // 56 - 66       LString       sGroup         Space  group.
-              // 67 - 70       Integer       z              Z value.
-              // =============================================================================
-              double aaxis = parseDouble(line.substring(6, 15).trim());
-              double baxis = parseDouble(line.substring(15, 24).trim());
-              double caxis = parseDouble(line.substring(24, 33).trim());
-              double alpha = parseDouble(line.substring(33, 40).trim());
-              double beta = parseDouble(line.substring(40, 47).trim());
-              double gamma = parseDouble(line.substring(47, 54).trim());
-              int limit = 66;
-              if (line.length() < 66) {
-                limit = line.length();
-              }
-              String sg = line.substring(55, limit).trim();
-              properties.addProperty("a-axis", aaxis);
-              properties.addProperty("b-axis", baxis);
-              properties.addProperty("c-axis", caxis);
-              properties.addProperty("alpha", alpha);
-              properties.addProperty("beta", beta);
-              properties.addProperty("gamma", gamma);
-              properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(sg));
-              break;
-            case CONECT:
-              // =============================================================================
-              //  7 - 11        Integer        serial       Atom  serial number
-              // 12 - 16        Integer        serial       Serial number of bonded atom
-              // 17 - 21        Integer        serial       Serial number of bonded atom
-              // 22 - 26        Integer        serial       Serial number of bonded atom
-              // 27 - 31        Integer        serial       Serial number of bonded atom
-              //
-              // CONECT records involving atoms for which the coordinates are not present
-              // in the entry (e.g., symmetry-generated) are not given.
-              // CONECT records involving atoms for which the coordinates are missing due
-              // to disorder, are also not provided.
-              // =============================================================================
-              conects.add(line);
-              break;
-            case LINK:
-              // =============================================================================
-              // The LINK records specify connectivity between residues that is not implied by
-              // the primary structure. Connectivity is expressed in terms of the atom names.
-              // They also include the distance associated with the each linkage following the
-              // symmetry operations at the end of each record.
-              // 13 - 16         Atom           name1           Atom name.
-              // 17              Character      altLoc1         Alternate location indicator.
-              // 18 - 20         Residue name   resName1        Residue  name.
-              // 22              Character      chainID1        Chain identifier.
-              // 23 - 26         Integer        resSeq1         Residue sequence number.
-              // 27              AChar          iCode1          Insertion code.
-              // 43 - 46         Atom           name2           Atom name.
-              // 47              Character      altLoc2         Alternate location indicator.
-              // 48 - 50         Residue name   resName2        Residue name.
-              // 52              Character      chainID2        Chain identifier.
-              // 53 - 56         Integer        resSeq2         Residue sequence number.
-              // 57              AChar          iCode2          Insertion code.
-              // 60 - 65         SymOP          sym1            Symmetry operator atom 1.
-              // 67 - 72         SymOP          sym2            Symmetry operator atom 2.
-              // 74 – 78         Real(5.2)      Length          Link distance
-              // =============================================================================
-              Character a1 = line.charAt(16);
-              Character a2 = line.charAt(46);
-              if (a1 != a2) {
-                // logger.info(format(" Ignoring LINK record as alternate locations do not match\n
-                // %s.", line));
-                break;
-              }
-              if (currentAltLoc == 'A') {
-                if ((a1 == ' ' || a1 == 'A') && (a2 == ' ' || a2 == 'A')) {
+                } else if (a1 == currentAltLoc && a2 == currentAltLoc) {
                   links.add(line);
                 }
-              } else if (a1 == currentAltLoc && a2 == currentAltLoc) {
-                links.add(line);
-              }
-              break;
-            case SSBOND:
-              // =============================================================================
-              // The SSBOND record identifies each disulfide bond in protein and polypeptide
-              // structures by identifying the two residues involved in the bond.
-              // The disulfide bond distance is included after the symmetry operations at
-              // the end of the SSBOND record.
-              //
-              //  8 - 10        Integer         serNum       Serial number.
-              // 12 - 14        LString(3)      "CYS"        Residue name.
-              // 16             Character       chainID1     Chain identifier.
-              // 18 - 21        Integer         seqNum1      Residue sequence number.
-              // 22             AChar           icode1       Insertion code.
-              // 26 - 28        LString(3)      "CYS"        Residue name.
-              // 30             Character       chainID2     Chain identifier.
-              // 32 - 35        Integer         seqNum2      Residue sequence number.
-              // 36             AChar           icode2       Insertion code.
-              // 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
-              // 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
-              // 74 – 78        Real(5.2)      Length        Disulfide bond distance
-              //
-              // If SG of cysteine is disordered then there are possible alternate linkages.
-              // wwPDB practice is to put together all possible SSBOND records. This is
-              // problematic because the alternate location identifier is not specified in
-              // the SSBOND record.
-              //
-              // Notes:
-              // SSBOND records may be invalid if chain IDs are reused.
-              // SSBOND records are applied by FFX to the A conformer (not alternate conformers).
-              // =============================================================================
-              if (currentAltLoc == 'A') {
-                ssbonds.add(line);
-              }
-              break;
-            case HELIX:
-              // =============================================================================
-              // HELIX records are used to identify the position of helices in the molecule.
-              // Helices are named, numbered, and classified by type. The residues where the
-              // helix begins and ends are noted, as well as the total length.
-              //
-              //  8 - 10        Integer        serNum        Serial number of the helix. This starts
-              //                                             at 1  and increases incrementally.
-              // 12 - 14        LString(3)     helixID       Helix  identifier. In addition to a
-              // serial
-              //                                             number, each helix is given an
-              //                                             alphanumeric character helix
-              // identifier.
-              // 16 - 18        Residue name   initResName   Name of the initial residue.
-              // 20             Character      initChainID   Chain identifier for the chain
-              // containing
-              //                                             this  helix.
-              // 22 - 25        Integer        initSeqNum    Sequence number of the initial residue.
-              // 26             AChar          initICode     Insertion code of the initial residue.
-              // 28 - 30        Residue  name  endResName    Name of the terminal residue of the
-              // helix.
-              // 32             Character      endChainID    Chain identifier for the chain
-              // containing
-              //                                             this  helix.
-              // 34 - 37        Integer        endSeqNum     Sequence number of the terminal
-              // residue.
-              // 38             AChar          endICode      Insertion code of the terminal residue.
-              // 39 - 40        Integer        helixClass    Helix class (see below).
-              // 41 - 70        String         comment       Comment about this helix.
-              // 72 - 76        Integer        length        Length of this helix.
-              //
-              //                                      CLASS NUMBER
-              // TYPE OF  HELIX                     (COLUMNS 39 - 40)
-              // --------------------------------------------------------------
-              // Right-handed alpha (default)                1
-              // Right-handed omega                          2
-              // Right-handed pi                             3
-              // Right-handed gamma                          4
-              // Right-handed 3 - 10                         5
-              // Left-handed alpha                           6
-              // Left-handed omega                           7
-              // Left-handed gamma                           8
-              // 2 - 7 ribbon/helix                          9
-              // Polyproline                                10
-              // =============================================================================
-            case SHEET:
-              // =============================================================================
-              // SHEET records are used to identify the position of sheets in the molecule.
-              // Sheets are both named and numbered. The residues where the sheet begins and
-              // ends are noted.
-              //
-              //  8 - 10        Integer       strand         Strand  number which starts at 1 for
-              // each
-              //                                             strand within a sheet and increases by
-              // one.
-              // 12 - 14        LString(3)    sheetID        Sheet  identifier.
-              // 15 - 16        Integer       numStrands     Number  of strands in sheet.
-              // 18 - 20        Residue name  initResName    Residue  name of initial residue.
-              // 22             Character     initChainID    Chain identifier of initial residue
-              //                                             in strand.
-              // 23 - 26        Integer       initSeqNum     Sequence number of initial residue
-              //                                             in strand.
-              // 27             AChar         initICode      Insertion code of initial residue
-              //                                             in  strand.
-              // 29 - 31        Residue name  endResName     Residue name of terminal residue.
-              // 33             Character     endChainID     Chain identifier of terminal residue.
-              // 34 - 37        Integer       endSeqNum      Sequence number of terminal residue.
-              // 38             AChar         endICode       Insertion code of terminal residue.
-              // 39 - 40        Integer       sense          Sense of strand with respect to
-              // previous
-              //                                             strand in the sheet. 0 if first strand,
-              //                                             1 if  parallel,and -1 if anti-parallel.
-              // 42 - 45        Atom          curAtom        Registration.  Atom name in current
-              // strand.
-              // 46 - 48        Residue name  curResName     Registration.  Residue name in current
-              // strand
-              // 50             Character     curChainId     Registration. Chain identifier in
-              //                                             current strand.
-              // 51 - 54        Integer       curResSeq      Registration.  Residue sequence number
-              //                                             in current strand.
-              // 55             AChar         curICode       Registration. Insertion code in
-              //                                             current strand.
-              // 57 - 60        Atom          prevAtom       Registration.  Atom name in previous
-              // strand.
-              // 61 - 63        Residue name  prevResName    Registration.  Residue name in
-              //                                             previous strand.
-              // 65             Character     prevChainId    Registration.  Chain identifier in
-              //                                             previous  strand.
-              // 66 - 69        Integer       prevResSeq     Registration. Residue sequence number
-              //                                             in previous strand.
-              // 70             AChar         prevICode      Registration.  Insertion code in
-              //                                             previous strand.
-              // =============================================================================
-              structs.add(line);
-              break;
-            case MODEL: // Currently, no handling in initial read.
-              break;
-            case MTRIX1:
-              // ================================================================================
-              // MTRIXn (n = 1, 2, or 3) records present transformations expressing
-              // non-crystallographic symmetry.
-              // MTRIXn will appear only when such transformations are required to generate an
-              // entire asymmetric unit,
-              // such as a large viral structure.
-              //
-              //  8 - 10        Integer       serial         Serial number.
-              // 11 - 20        Real(10.6)    m[n][1]        Mn1
-              // 21 - 30        Real(10.6)    m[n][2]        Mn2
-              // 31 - 40        Real(10.6)    m[n][3]        Mn3
-              // 21 - 30        Real(10.6)    v[n]           Vn
-              // 60             Integer       iGiven         1 if coordinates for the
-              // representations which are
-              //                                              approximately related by the
-              // transformations of the
-              //                                              molecule are contained in the entry.
-              // Otherwise, blank.
-              // =================================================================================
-              StringBuilder MTRX1 = new StringBuilder(line.substring(11, 55));
-              properties.addProperty("MTRIX1", MTRX1);
-              break;
-            case MTRIX2:
-              StringBuilder MTRX2 = new StringBuilder(line.substring(11, 55));
-              properties.addProperty("MTRIX2", MTRX2);
-              break;
-            case MTRIX3:
-              StringBuilder MTRX3 = new StringBuilder(line.substring(11, 55));
-              properties.addProperty("MTRIX3", MTRX3);
-              break;
-            case REMARK:
-              remarkLines.add(line.trim());
-              if (line.contains("Lambda:")) {
-                Matcher m = lambdaPattern.matcher(line);
-                if (m.find()) {
-                  lastReadLambda = Double.parseDouble(m.group(1));
+                break;
+              case SSBOND:
+                // =============================================================================
+                // The SSBOND record identifies each disulfide bond in protein and polypeptide
+                // structures by identifying the two residues involved in the bond.
+                // The disulfide bond distance is included after the symmetry operations at
+                // the end of the SSBOND record.
+                //
+                //  8 - 10        Integer         serNum       Serial number.
+                // 12 - 14        LString(3)      "CYS"        Residue name.
+                // 16             Character       chainID1     Chain identifier.
+                // 18 - 21        Integer         seqNum1      Residue sequence number.
+                // 22             AChar           icode1       Insertion code.
+                // 26 - 28        LString(3)      "CYS"        Residue name.
+                // 30             Character       chainID2     Chain identifier.
+                // 32 - 35        Integer         seqNum2      Residue sequence number.
+                // 36             AChar           icode2       Insertion code.
+                // 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
+                // 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
+                // 74 – 78        Real(5.2)      Length        Disulfide bond distance
+                //
+                // If SG of cysteine is disordered then there are possible alternate linkages.
+                // wwPDB practice is to put together all possible SSBOND records. This is
+                // problematic because the alternate location identifier is not specified in
+                // the SSBOND record.
+                //
+                // Notes:
+                // SSBOND records may be invalid if chain IDs are reused.
+                // SSBOND records are applied by FFX to the A conformer (not alternate conformers).
+                // =============================================================================
+                if (currentAltLoc == 'A') {
+                  ssbonds.add(line);
                 }
-              }
-              // =================================================================================
-              // REMARK 350: presents all transformations, both crystallographic and
-              // non-crystallographic, needed to
-              // generate the biomolecule. These transformations operate on the coordinates in the
-              // entry. Both author
-              // and computational descriptions of assemblies are provided, if applicable. For
-              // strict ncs case where
-              // more than one assembly presents in asymmetric unit, only one chain with unit matrix
-              // will reported in
-              // REMARK 350, the other chain will be generated by rotation and translation.
-              //
-              // 20 - 23        Integer       serial         Serial number.
-              // 24 - 33        Real(10.6)    m[n][1]        Mn1
-              // 34 - 43        Real(10.6)    m[n][2]        Mn2
-              // 44 - 53        Real(10.6)    m[n][3]        Mn3
-              // 59 - 68        Real(10.6)    v[n]           Vn
-              // =================================================================================
-              if (line.length() >= 68) {
-                String remarkType = line.substring(7, 10).trim();
-                if (remarkType.matches("\\d+")
-                    && parseInt(remarkType) == 350
-                    && line.substring(13, 18).equalsIgnoreCase("BIOMT")) {
-                  properties.addProperty("BIOMTn", new StringBuilder(line.substring(24, 68)));
+                break;
+              case HELIX:
+                // =============================================================================
+                // HELIX records are used to identify the position of helices in the molecule.
+                // Helices are named, numbered, and classified by type. The residues where the
+                // helix begins and ends are noted, as well as the total length.
+                //
+                //  8 - 10        Integer        serNum        Serial number of the helix. This starts
+                //                                             at 1  and increases incrementally.
+                // 12 - 14        LString(3)     helixID       Helix  identifier. In addition to a
+                // serial
+                //                                             number, each helix is given an
+                //                                             alphanumeric character helix
+                // identifier.
+                // 16 - 18        Residue name   initResName   Name of the initial residue.
+                // 20             Character      initChainID   Chain identifier for the chain
+                // containing
+                //                                             this  helix.
+                // 22 - 25        Integer        initSeqNum    Sequence number of the initial residue.
+                // 26             AChar          initICode     Insertion code of the initial residue.
+                // 28 - 30        Residue  name  endResName    Name of the terminal residue of the
+                // helix.
+                // 32             Character      endChainID    Chain identifier for the chain
+                // containing
+                //                                             this  helix.
+                // 34 - 37        Integer        endSeqNum     Sequence number of the terminal
+                // residue.
+                // 38             AChar          endICode      Insertion code of the terminal residue.
+                // 39 - 40        Integer        helixClass    Helix class (see below).
+                // 41 - 70        String         comment       Comment about this helix.
+                // 72 - 76        Integer        length        Length of this helix.
+                //
+                //                                      CLASS NUMBER
+                // TYPE OF  HELIX                     (COLUMNS 39 - 40)
+                // --------------------------------------------------------------
+                // Right-handed alpha (default)                1
+                // Right-handed omega                          2
+                // Right-handed pi                             3
+                // Right-handed gamma                          4
+                // Right-handed 3 - 10                         5
+                // Left-handed alpha                           6
+                // Left-handed omega                           7
+                // Left-handed gamma                           8
+                // 2 - 7 ribbon/helix                          9
+                // Polyproline                                10
+                // =============================================================================
+              case SHEET:
+                // =============================================================================
+                // SHEET records are used to identify the position of sheets in the molecule.
+                // Sheets are both named and numbered. The residues where the sheet begins and
+                // ends are noted.
+                //
+                //  8 - 10        Integer       strand         Strand  number which starts at 1 for
+                // each
+                //                                             strand within a sheet and increases by
+                // one.
+                // 12 - 14        LString(3)    sheetID        Sheet  identifier.
+                // 15 - 16        Integer       numStrands     Number  of strands in sheet.
+                // 18 - 20        Residue name  initResName    Residue  name of initial residue.
+                // 22             Character     initChainID    Chain identifier of initial residue
+                //                                             in strand.
+                // 23 - 26        Integer       initSeqNum     Sequence number of initial residue
+                //                                             in strand.
+                // 27             AChar         initICode      Insertion code of initial residue
+                //                                             in  strand.
+                // 29 - 31        Residue name  endResName     Residue name of terminal residue.
+                // 33             Character     endChainID     Chain identifier of terminal residue.
+                // 34 - 37        Integer       endSeqNum      Sequence number of terminal residue.
+                // 38             AChar         endICode       Insertion code of terminal residue.
+                // 39 - 40        Integer       sense          Sense of strand with respect to
+                // previous
+                //                                             strand in the sheet. 0 if first strand,
+                //                                             1 if  parallel,and -1 if anti-parallel.
+                // 42 - 45        Atom          curAtom        Registration.  Atom name in current
+                // strand.
+                // 46 - 48        Residue name  curResName     Registration.  Residue name in current
+                // strand
+                // 50             Character     curChainId     Registration. Chain identifier in
+                //                                             current strand.
+                // 51 - 54        Integer       curResSeq      Registration.  Residue sequence number
+                //                                             in current strand.
+                // 55             AChar         curICode       Registration. Insertion code in
+                //                                             current strand.
+                // 57 - 60        Atom          prevAtom       Registration.  Atom name in previous
+                // strand.
+                // 61 - 63        Residue name  prevResName    Registration.  Residue name in
+                //                                             previous strand.
+                // 65             Character     prevChainId    Registration.  Chain identifier in
+                //                                             previous  strand.
+                // 66 - 69        Integer       prevResSeq     Registration. Residue sequence number
+                //                                             in previous strand.
+                // 70             AChar         prevICode      Registration.  Insertion code in
+                //                                             previous strand.
+                // =============================================================================
+                structs.add(line);
+                break;
+              case MODEL: // Currently, no handling in initial read.
+                break;
+              case MTRIX1:
+                // ================================================================================
+                // MTRIXn (n = 1, 2, or 3) records present transformations expressing
+                // non-crystallographic symmetry.
+                // MTRIXn will appear only when such transformations are required to generate an
+                // entire asymmetric unit,
+                // such as a large viral structure.
+                //
+                //  8 - 10        Integer       serial         Serial number.
+                // 11 - 20        Real(10.6)    m[n][1]        Mn1
+                // 21 - 30        Real(10.6)    m[n][2]        Mn2
+                // 31 - 40        Real(10.6)    m[n][3]        Mn3
+                // 21 - 30        Real(10.6)    v[n]           Vn
+                // 60             Integer       iGiven         1 if coordinates for the
+                // representations which are
+                //                                              approximately related by the
+                // transformations of the
+                //                                              molecule are contained in the entry.
+                // Otherwise, blank.
+                // =================================================================================
+                StringBuilder MTRX1 = new StringBuilder(line.substring(11, 55));
+                properties.addProperty("MTRIX1", MTRX1);
+                break;
+              case MTRIX2:
+                StringBuilder MTRX2 = new StringBuilder(line.substring(11, 55));
+                properties.addProperty("MTRIX2", MTRX2);
+                break;
+              case MTRIX3:
+                StringBuilder MTRX3 = new StringBuilder(line.substring(11, 55));
+                properties.addProperty("MTRIX3", MTRX3);
+                break;
+              case REMARK:
+                remarkLines.add(line.trim());
+                if (line.contains("Lambda:")) {
+                  Matcher m = lambdaPattern.matcher(line);
+                  if (m.find()) {
+                    lastReadLambda = Double.parseDouble(m.group(1));
+                  }
                 }
-              }
-              break;
-            default:
-              break;
+                // =================================================================================
+                // REMARK 350: presents all transformations, both crystallographic and
+                // non-crystallographic, needed to
+                // generate the biomolecule. These transformations operate on the coordinates in the
+                // entry. Both author
+                // and computational descriptions of assemblies are provided, if applicable. For
+                // strict ncs case where
+                // more than one assembly presents in asymmetric unit, only one chain with unit matrix
+                // will reported in
+                // REMARK 350, the other chain will be generated by rotation and translation.
+                //
+                // 20 - 23        Integer       serial         Serial number.
+                // 24 - 33        Real(10.6)    m[n][1]        Mn1
+                // 34 - 43        Real(10.6)    m[n][2]        Mn2
+                // 44 - 53        Real(10.6)    m[n][3]        Mn3
+                // 59 - 68        Real(10.6)    v[n]           Vn
+                // =================================================================================
+                if (line.length() >= 68) {
+                  String remarkType = line.substring(7, 10).trim();
+                  if (remarkType.matches("\\d+")
+                      && parseInt(remarkType) == 350
+                      && line.substring(13, 18).equalsIgnoreCase("BIOMT")) {
+                    properties.addProperty("BIOMTn", new StringBuilder(line.substring(24, 68)));
+                  }
+                }
+                break;
+              default:
+                break;
+            }
+            line = br.readLine();
           }
-          line = br.readLine();
+
+        } catch (FileNotFoundException fileNotFoundException) {
+          logger.log(Level.SEVERE, " PDB file not found", fileNotFoundException);
         }
-        br.close();
       }
       xyzIndex--;
       setFileRead(true);
@@ -1343,30 +1350,30 @@ public final class PDBFilter extends SystemFilter {
             Record record = Record.valueOf(recID);
             boolean hetatm = true;
             switch (record) {
-                // =============================================================================
-                //
-                //  7 - 11        Integer       serial       Atom serial number.
-                // 13 - 16        Atom          name         Atom name.
-                // 17             Character     altLoc       Alternate location indicator.
-                // 18 - 20        Residue name  resName      Residue name.
-                // 22             Character     chainID      Chain identifier.
-                // 23 - 26        Integer       resSeq       Residue sequence number.
-                // 27             AChar         iCode        Code for insertion of residues.
-                // 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in
-                // Angstroms.
-                // 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in
-                // Angstroms.
-                // 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in
-                // Angstroms.
-                // 55 - 60        Real(6.2)     occupancy    Occupancy.
-                // 61 - 66        Real(6.2)     tempFactor   Temperature factor.
-                // 77 - 78        LString(2)    element      Element symbol, right-justified.
-                // 79 - 80        LString(2)    charge       Charge  on the atom.
-                // =============================================================================
-                //         1         2         3         4         5         6         7
-                // 123456789012345678901234567890123456789012345678901234567890123456789012345678
-                // ATOM      1  N   ILE A  16      60.614  71.140 -10.592  1.00  7.38           N
-                // ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
+              // =============================================================================
+              //
+              //  7 - 11        Integer       serial       Atom serial number.
+              // 13 - 16        Atom          name         Atom name.
+              // 17             Character     altLoc       Alternate location indicator.
+              // 18 - 20        Residue name  resName      Residue name.
+              // 22             Character     chainID      Chain identifier.
+              // 23 - 26        Integer       resSeq       Residue sequence number.
+              // 27             AChar         iCode        Code for insertion of residues.
+              // 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in
+              // Angstroms.
+              // 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in
+              // Angstroms.
+              // 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in
+              // Angstroms.
+              // 55 - 60        Real(6.2)     occupancy    Occupancy.
+              // 61 - 66        Real(6.2)     tempFactor   Temperature factor.
+              // 77 - 78        LString(2)    element      Element symbol, right-justified.
+              // 79 - 80        LString(2)    charge       Charge  on the atom.
+              // =============================================================================
+              //         1         2         3         4         5         6         7
+              // 123456789012345678901234567890123456789012345678901234567890123456789012345678
+              // ATOM      1  N   ILE A  16      60.614  71.140 -10.592  1.00  7.38           N
+              // ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
               case ATOM:
                 hetatm = false;
               case HETATM:
@@ -1539,11 +1546,11 @@ public final class PDBFilter extends SystemFilter {
    *
    * @param saveFile a {@link java.io.File} object to save to.
    * @param append Whether to append to saveFile (vs over-write).
-   * @param toExclude A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from
-   *     writing.
+   * @param toExclude A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude
+   *     from writing.
    * @param writeEnd True if this is the final model.
-   * @param versioning True if the file being saved to should be versioned. False if the file being
-   *     saved to should be overwritten.
+   * @param versioning True if the file being saved to should be versioned. False if the file
+   *     being saved to should be overwritten.
    * @return Success of writing.
    */
   public boolean writeFile(
@@ -1556,11 +1563,11 @@ public final class PDBFilter extends SystemFilter {
    *
    * @param saveFile a {@link java.io.File} object to save to.
    * @param append Whether to append to saveFile (vs over-write).
-   * @param toExclude A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from
-   *     writing.
+   * @param toExclude A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude
+   *     from writing.
    * @param writeEnd True if this is the final model.
-   * @param versioning True if the file being saved to should be versioned. False if the file being
-   *     saved to should be overwritten.
+   * @param versioning True if the file being saved to should be versioned. False if the file
+   *     being saved to should be overwritten.
    * @param extraLines Extra comment/header lines to write.
    * @return Success of writing.
    */
@@ -1598,25 +1605,24 @@ public final class PDBFilter extends SystemFilter {
       anisouSB.append(' ');
       terSB.append(' ');
     }
-    FileWriter fw;
-    BufferedWriter bw;
-    try {
-      File newFile = saveFile;
-      if (!append) {
-        if (versioning) {
-          newFile = version(saveFile);
-        }
-      } else if (modelsWritten >= 0) {
-        model = new StringBuilder(format("MODEL     %-4d", ++modelsWritten));
-        model.append(repeat(" ", 65));
+
+    File newFile = saveFile;
+    if (!append) {
+      if (versioning) {
+        newFile = version(saveFile);
       }
-      activeMolecularAssembly.setFile(newFile);
-      activeMolecularAssembly.setName(newFile.getName());
-      if (logWrites) {
-        logger.log(Level.INFO, " Saving {0}", activeMolecularAssembly.getName());
-      }
-      fw = new FileWriter(newFile, append);
-      bw = new BufferedWriter(fw);
+    } else if (modelsWritten >= 0) {
+      model = new StringBuilder(format("MODEL     %-4d", ++modelsWritten));
+      model.append(repeat(" ", 65));
+    }
+    activeMolecularAssembly.setFile(newFile);
+    activeMolecularAssembly.setName(newFile.getName());
+    if (logWrites) {
+      logger.log(Level.INFO, " Saving {0}", activeMolecularAssembly.getName());
+    }
+
+    try (FileWriter fw = new FileWriter(newFile, append); BufferedWriter bw = new BufferedWriter(
+        fw)) {
       /*
        Will come before CRYST1 and ATOM records, but after anything
        written by writeFileWithHeader (particularly X-ray refinement statistics).
@@ -1967,7 +1973,6 @@ public final class PDBFilter extends SystemFilter {
         bw.write(end);
         bw.newLine();
       }
-      bw.close();
     } catch (Exception e) {
       String message = "Exception writing to file: " + saveFile.toString();
       logger.log(Level.WARNING, message, e);
@@ -1994,7 +1999,8 @@ public final class PDBFilter extends SystemFilter {
    * Writes out the atomic information in PDB format.
    *
    * @param saveFile The file to save information to.
-   * @param append True if the current data should be appended to the saveFile (as in arc files).
+   * @param append True if the current data should be appended to the saveFile (as in arc
+   *     files).
    * @param versioning True if the saveFile should be versioned. False if the saveFile should be
    *     overwritten.
    * @return Success of writing.
@@ -2012,21 +2018,18 @@ public final class PDBFilter extends SystemFilter {
    * @return a boolean.
    */
   public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
-    FileWriter fw;
-    BufferedWriter bw;
     if (standardizeAtomNames) {
       renameAtomsToPDBStandard(activeMolecularAssembly);
     }
-    try {
-      activeMolecularAssembly.setFile(saveFile);
-      activeMolecularAssembly.setName(saveFile.getName());
-      fw = new FileWriter(saveFile, append);
-      bw = new BufferedWriter(fw);
+    activeMolecularAssembly.setFile(saveFile);
+    activeMolecularAssembly.setName(saveFile.getName());
+
+    try (FileWriter fw = new FileWriter(saveFile, append);
+        BufferedWriter bw = new BufferedWriter(fw)) {
       bw.write(header);
       bw.newLine();
-      bw.close();
     } catch (Exception e) {
-      String message = "Exception writing to file: " + saveFile.toString();
+      String message = " Exception writing to file: " + saveFile.toString();
       logger.log(Level.WARNING, message, e);
       return false;
     }

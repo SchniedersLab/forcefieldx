@@ -38,6 +38,9 @@
 
 package ffx.potential.parsers;
 
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -96,13 +99,12 @@ public final class PDBFileFilter extends FileFilter {
           line = line.trim();
           if (line.startsWith("ATOM  ") || line.startsWith("HETATM")) {
             try {
-              Integer.parseInt(line.substring(6, 11).trim());
-              Integer.parseInt(line.substring(22, 26).trim());
+              parseInt(line.substring(6, 11).trim());
+              parseInt(line.substring(22, 26).trim());
               String[] coordOccTempVals = line.substring(30, 66).trim().split(" +");
               for (String value : coordOccTempVals) {
-                Double.parseDouble(value);
+                parseDouble(value);
               }
-              br.close();
               return true;
             } catch (NumberFormatException | StringIndexOutOfBoundsException ex) {
               // Do nothing.

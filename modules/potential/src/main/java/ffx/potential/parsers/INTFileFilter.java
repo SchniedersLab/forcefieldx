@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
+import static java.lang.Integer.parseInt;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -52,7 +54,8 @@ import org.apache.commons.io.FilenameUtils;
 public final class INTFileFilter extends FileFilter {
 
   /** Default Constructor. */
-  public INTFileFilter() {}
+  public INTFileFilter() {
+  }
 
   /**
    * {@inheritDoc}
@@ -76,12 +79,11 @@ public final class INTFileFilter extends FileFilter {
    * @return a boolean.
    */
   public boolean acceptDeep(File parm) {
-    try {
-      if (parm == null || parm.isDirectory() || !parm.canRead()) {
-        return false;
-      }
-      FileReader fr = new FileReader(parm);
-      BufferedReader br = new BufferedReader(fr);
+    if (parm == null || parm.isDirectory() || !parm.canRead()) {
+      return false;
+    }
+
+    try (BufferedReader br = new BufferedReader(new FileReader(parm))) {
       if (!br.ready()) {
         // Empty File?
         return false;
@@ -94,7 +96,7 @@ public final class INTFileFilter extends FileFilter {
         return false;
       }
       try {
-        Integer.parseInt(header[0]);
+        parseInt(header[0]);
       } catch (Exception e) {
         return false;
       }
@@ -104,14 +106,12 @@ public final class INTFileFilter extends FileFilter {
       if (firstAtom == null) {
         return false;
       }
-      br.close();
-      fr.close();
       String[] data = firstAtom.trim().split(" +");
       if (data.length != 3) {
         return false;
       }
       try {
-        Integer.parseInt(data[0]);
+        parseInt(data[0]);
       } catch (Exception e) {
         return false;
       }

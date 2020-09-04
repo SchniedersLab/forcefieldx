@@ -64,7 +64,7 @@ public final class DYNFileFilter extends FileFilter {
       return true;
     }
     String ext = FilenameUtils.getExtension(file.getName());
-    return ext.toUpperCase().startsWith("ARC");
+    return ext.toUpperCase().startsWith("DYN");
   }
 
   /**

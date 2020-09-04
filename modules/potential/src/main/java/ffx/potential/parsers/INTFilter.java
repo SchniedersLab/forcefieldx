@@ -75,7 +75,8 @@ public class INTFilter extends SystemFilter {
    * @param files a {@link java.util.List} object.
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public INTFilter(
       List<File> files,
@@ -92,7 +93,8 @@ public class INTFilter extends SystemFilter {
    * @param file a {@link java.io.File} object.
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public INTFilter(
       File file,
@@ -127,9 +129,8 @@ public class INTFilter extends SystemFilter {
     logger.info(" Opening " + intFile.toString());
 
     // Open a data stream to the Internal Coordinate file
-    try {
-      FileReader fr = new FileReader(intFile);
-      BufferedReader br = new BufferedReader(fr);
+    try (BufferedReader br = new BufferedReader(new FileReader(intFile))) {
+
       String data = br.readLine().trim();
       // Read blank lines at the top of the file
       while (data.length() == 0) {
@@ -260,8 +261,6 @@ public class INTFilter extends SystemFilter {
           }
         }
       }
-      br.close();
-      fr.close();
       if (atomList.size() == numberOfAtoms) {
         // Add bonds specified in the Z-matrix
         bondList = new ArrayList<>();
@@ -330,11 +329,8 @@ public class INTFilter extends SystemFilter {
         }
         return true;
       }
-      logger.warning(
-          "Reported number of Atoms: "
-              + numberOfAtoms
-              + "\nNumber of Atoms Found: "
-              + atomList.size());
+      logger.warning("\n Reported number of Atoms: " + numberOfAtoms
+          + "\n Number of Atoms Found: " + atomList.size());
     } catch (IOException e) {
       logger.severe(e.toString());
     }
