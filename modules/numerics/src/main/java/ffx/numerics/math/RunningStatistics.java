@@ -37,6 +37,11 @@
 // ******************************************************************************
 package ffx.numerics.math;
 
+import static java.lang.Double.isFinite;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
@@ -53,6 +58,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * @since 1.0
  */
 public class RunningStatistics {
+
   private double meanAcc = 0;
   private double varAcc = 0;
   private double minAcc = Double.MAX_VALUE;
@@ -84,8 +90,8 @@ public class RunningStatistics {
    * @param weight Weight to give the value.
    */
   public void addValue(double val, double weight) {
-    assert Double.isFinite(val);
-    assert Double.isFinite(weight);
+    assert isFinite(val);
+    assert isFinite(weight);
     assert weight > 0.0;
     ++count;
     ++dof;
@@ -96,15 +102,14 @@ public class RunningStatistics {
     comp = (t - sumAcc) - y;
     sumAcc = t;
 
-    minAcc = Math.min(minAcc, val);
-    maxAcc = Math.max(maxAcc, val);
+    minAcc = min(minAcc, val);
+    maxAcc = max(maxAcc, val);
     double invCount = 1.0 / weightAcc;
     meanAcc += ((val - meanAcc) * invCount);
     varAcc += ((val - priorMean) * (val - meanAcc)) * weight;
-    if (Double.isNaN(varAcc)) {
+    if (isNaN(varAcc)) {
       throw new IllegalArgumentException(
-          String.format(
-              " Val %.5f w/ wt %.3f resulted in NaN varAcc; current state %s",
+          format(" Val %.5f w/ wt %.3f resulted in NaN varAcc; current state %s",
               val, weight, new SummaryStatistics(this).toString()));
     }
   }

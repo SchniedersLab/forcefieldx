@@ -52,6 +52,7 @@ import static java.util.Arrays.stream;
  * @since 1.0
  */
 public abstract class SequentialEstimator implements StatisticalEstimator {
+
   protected final double[] lamVals;
   protected final double[][] eLow;
   protected final double[][] eAt;
@@ -67,8 +68,8 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
    * <p>The first dimension of the energies arrays corresponds to the lambda values/windows. The
    * second dimension (can be of uneven length) corresponds to potential energies of snapshots
    * sampled from that lambda value, calculated either at that lambda value, the lambda value below,
-   * or the lambda value above. The arrays energiesLow[0] and energiesHigh[n-1] is expected to be
-   * all NaN.
+   * or the lambda value above. The arrays energiesLow[0] and energiesHigh[n-1] is expected to be all
+   * NaN.
    *
    * @param lambdaValues Values of lambda dynamics was run at.
    * @param energiesLow Potential energies of trajectory L at lambda L-dL.
@@ -77,19 +78,17 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
    * @param temperature Temperature each lambda window was run at (single-element indicates
    *     identical temperatures).
    */
-  public SequentialEstimator(
-      double[] lambdaValues,
-      double[][] energiesLow,
-      double[][] energiesAt,
-      double[][] energiesHigh,
-      double[] temperature) {
+  public SequentialEstimator(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt,
+      double[][] energiesHigh, double[] temperature) {
     nTrajectories = lambdaValues.length;
+
     assert stream(energiesLow[0]).allMatch(Double::isNaN)
         && stream(energiesHigh[nTrajectories - 1]).allMatch(Double::isNaN);
+
     assert nTrajectories == energiesAt.length
-            && nTrajectories == energiesLow.length
-            && nTrajectories == energiesHigh.length
-        : "One of the energies arrays is of incorrect length in the first dimension!";
+        && nTrajectories == energiesLow.length
+        && nTrajectories == energiesHigh.length
+        : "One of the energy arrays is of the incorrect length in the first dimension!";
 
     this.lamVals = copyOf(lambdaValues, nTrajectories);
     temperatures = new double[nTrajectories];

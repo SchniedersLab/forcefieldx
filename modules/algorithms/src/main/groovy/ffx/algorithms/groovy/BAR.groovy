@@ -49,13 +49,13 @@ import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.SystemFilter
 import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.math3.util.FastMath
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
+import static org.apache.commons.math3.util.FastMath.*
 
 /**
  * The BAR script find the free energy difference across a lambda window. It presently assumes
@@ -260,9 +260,9 @@ class BAR extends AlgorithmsScript {
       e2L2[i] = potential2.energy(x2, false)
 
       eDiff2[i] = e2L2[i] - e2L1[i]
-      logger.info(format(
-          " Snapshot %d of system 2: E(L=%s) = %14.7f, E(L=%s) = %14.7f, difference = %14.7f",
-          i + 1, lamString1, e2L1[i], lamString2, e2L2[i], eDiff2[i]))
+      logger.info(
+          format(" Snapshot %d of system 2: E(L=%s) = %14.7f, E(L=%s) = %14.7f, difference = %14.7f",
+              i + 1, lamString1, e2L1[i], lamString2, e2L2[i], eDiff2[i]))
     }
 
     double mean1 = 0
@@ -274,10 +274,10 @@ class BAR extends AlgorithmsScript {
       double val = eDiff1[i - 1]
       mean1 += ((val - mean1) / i)
       var1 += ((val - priorMean) * (val - mean1))
-      min1 = Math.min(min1, val)
-      max1 = Math.max(max1, val)
+      min1 = min(min1, val)
+      max1 = max(max1, val)
     }
-    double sd1 = FastMath.sqrt(var1 / (nSnapshots1 - 1))
+    double sd1 = sqrt(var1 / (nSnapshots1 - 1))
     logger.info(format(
         " System 1 differences: mean %14.7f, sample standard deviation %14.7f, min %14.7f, max %14.7f over %d samples",
         mean1, sd1, min1, max1, nSnapshots1))
@@ -291,10 +291,10 @@ class BAR extends AlgorithmsScript {
       double val = eDiff2[i - 1]
       mean2 += ((val - mean2) / i)
       var2 += ((val - priorMean) * (val - mean2))
-      min2 = Math.min(min2, val)
-      max2 = Math.max(max2, val)
+      min2 = min(min2, val)
+      max2 = max(max2, val)
     }
-    double sd2 = FastMath.sqrt(var2 / (nSnapshots2 - 1))
+    double sd2 = sqrt(var2 / (nSnapshots2 - 1))
     logger.info(format(
         " System 2 differences: mean %14.7f, sample standard deviation %14.7f, min %14.7f, max %14.7f over %d samples",
         mean2, sd2, min2, max2, nSnapshots2))
@@ -304,11 +304,8 @@ class BAR extends AlgorithmsScript {
     logger.info(" Writing Tinker-compatible .bar file to ${barFileName}. " +
         "For now: use Tinker's bar command; built-in FFX calculations not yet implemented.")
     // @formatter:on
-    File barFile = new File(barFileName)
-    BufferedWriter bw = null
-    try {
-      bw = new BufferedWriter(new FileWriter(barFile))
 
+    new File(barFileName).withWriter {bw ->
       StringBuilder fnames1 = new StringBuilder()
       for (int i = 0; i < nPer; i++) {
         fnames1.append("  ").append(filenames.get(i))
@@ -326,8 +323,6 @@ class BAR extends AlgorithmsScript {
       for (int i = 0; i < nSnapshots2; i++) {
         bw.write(format("%8d %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i]))
       }
-    } finally {
-      bw?.close()
     }
 
     return this

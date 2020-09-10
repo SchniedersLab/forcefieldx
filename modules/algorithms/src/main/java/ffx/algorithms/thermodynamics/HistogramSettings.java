@@ -61,8 +61,7 @@ public class HistogramSettings {
   private static final double DEFAULT_DFL = 2.0;
   private static final int DEFAULT_BIAS_CUTOFF = 5;
   private static final double DEFAULT_BIAS_MAG = 0.05;
-  private static final double DEFAULT_TEMPERATURE =
-      298.15; // TODO: Consider setting this in Constants.
+  private static final double DEFAULT_TEMPERATURE = 298.15; // TODO: Consider setting this in Constants.
   private static final double DEFAULT_TEMPERING_FACTOR = 2.0;
   private static final int DEFAULT_FLAMDA_PRINT_INTERVAL = 25;
   private static final Integrate1DNumeric.IntegrationType DEFAULT_INTEGRATION =
@@ -221,8 +220,7 @@ public class HistogramSettings {
     setDL(properties.getDouble("lambda-bin-width", DEFAULT_DL));
     dFL = properties.getDouble("flambda-bin-width", DEFAULT_DFL);
     this.discreteLambda = discreteLambda;
-    // TODO: Strongly consider just eliminating the tempering flag, a relic of our earlier tempering
-    // scheme.
+    // TODO: Strongly consider just eliminating the tempering flag, a relic of our earlier tempering scheme.
     tempering = properties.getBoolean("ost-alwaysTemper", DEFAULT_TEMPERING);
     if (properties.containsKey("ost-temperOffset")) {
       temperOffsetSet = true;

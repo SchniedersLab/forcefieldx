@@ -1,5 +1,43 @@
+// ******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+// ******************************************************************************
 package ffx.numerics.estimator;
 
+import static java.lang.String.format;
 import static java.util.Arrays.stream;
 
 import ffx.numerics.math.RunningStatistics;
@@ -8,7 +46,11 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
+/**
+ * Bootstrap Free Energy Estimate.
+ */
 public class EstimateBootstrapper {
+
   private static final Logger logger = Logger.getLogger(EstimateBootstrapper.class.getName());
   private static final long DEFAULT_LOG_INTERVAL = 25;
 
@@ -63,7 +105,7 @@ public class EstimateBootstrapper {
         indices[0] = random.nextBoolean() ? 0 : 1;
         indices[1] = random.nextBoolean() ? 0 : 1;
         return indices;
-        // Default: leave switch and handle general case.
+      // Default: leave switch and handle general case.
     }
 
     // General case.
@@ -72,8 +114,7 @@ public class EstimateBootstrapper {
     int ctr = 0;
     while (distinctVals <= minDistinct) {
       logger.info(
-          String.format(
-              " Regenerating array (iteration %d): only %d distinct values found for length %d.",
+          format(" Regenerating array (iteration %d): only %d distinct values found for length %d.",
               ++ctr, distinctVals, length));
       indices = random.ints(length, 0, length).toArray();
       distinctVals = stream(indices).distinct().count();
@@ -81,10 +122,21 @@ public class EstimateBootstrapper {
     return indices;
   }
 
+  /**
+   * Perform bootstrap analysis.
+   *
+   * @param trials Number of trials.
+   */
   public void bootstrap(long trials) {
     bootstrap(trials, DEFAULT_LOG_INTERVAL);
   }
 
+  /**
+   * Perform bootstrap analysis.
+   *
+   * @param trials Number of trials.
+   * @param logInterval Interval between logging statements.
+   */
   public void bootstrap(long trials, long logInterval) {
     RunningStatistics[] windows = new RunningStatistics[nWindows];
     for (int i = 0; i < nWindows; i++) {
@@ -95,10 +147,11 @@ public class EstimateBootstrapper {
     // estimators/accumulators, it should be trivially parallelizable.
     for (long i = 0; i < trials; i++) {
       if ((i + 1) % logInterval == 0) {
-        logger.info(String.format(" Bootstrap Trial %d", i + 1));
+        logger.info(format(" Bootstrap Trial %d", i + 1));
       }
 
       estimate.estimateDG(true);
+
       double[] fe = estimate.getBinEnergies();
       for (int j = 0; j < nWindows; j++) {
         windows[j].addValue(fe[j]);
@@ -110,30 +163,68 @@ public class EstimateBootstrapper {
     }
   }
 
+  /**
+   * Get bootstrap free energy estimate for each window.
+   *
+   * @return Return the bootstrap free energy difference estimate for each windows.
+   */
   public double[] getFE() {
     return stream(bootstrapResults).mapToDouble(SummaryStatistics::getMean).toArray();
   }
 
+  /**
+   * Get the total free energy difference estimate from bootstrap analysis.
+   *
+   * @return The total free energy difference estimate.
+   */
   public double getTotalFE() {
     return getTotalFE(getFE());
   }
 
+  /**
+   * Get the total free energy difference estimate from per window bootstrap analysis.
+   *
+   * @param fe The free energy difference estimate for each window.
+   * @return The total free energy difference estimate from bootstrap analysis.
+   */
   public double getTotalFE(double[] fe) {
     return estimate.sumBootstrapResults(fe);
   }
 
+  /**
+   * Get the total free energy difference variance estimate from bootstrap analysis.
+   *
+   * @return The total free energy difference variance estimate.
+   */
   public double getTotalUncertainty() {
     return getTotalUncertainty(getVariance());
   }
 
+  /**
+   * Get the total free energy difference estimate from per window bootstrap analysis.
+   *
+   * @param var The free energy difference variance estimate (not uncertainty) for each window.
+   * @return The total free energy difference variance estimate from bootstrap analysis.
+   */
   public double getTotalUncertainty(double[] var) {
     return estimate.sumBootstrapUncertainty(var);
   }
 
+  /**
+   * Get the free energy difference standard deviation estimate from bootstrap analysis for each
+   * window.
+   *
+   * @return Returns free energy difference standard deviation estimate for each window.
+   */
   public double[] getUncertainty() {
     return stream(bootstrapResults).mapToDouble(SummaryStatistics::getSd).toArray();
   }
 
+  /**
+   * Get the free energy difference variance estimate from bootstrap analysis for each window.
+   *
+   * @return Returns free energy difference variance estimate for each window.
+   */
   public double[] getVariance() {
     return stream(bootstrapResults).mapToDouble(SummaryStatistics::getVar).toArray();
   }

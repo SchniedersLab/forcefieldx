@@ -62,7 +62,9 @@ import picocli.CommandLine.Parameters
 
 import java.util.logging.Level
 
+import static java.lang.String.format
 import static java.util.Arrays.fill
+import static org.apache.commons.math3.util.FastMath.*
 
 /**
  * The MostBar script uses a single set of archive file(s) from a Metropolized
@@ -148,7 +150,7 @@ class MostBar extends AlgorithmsScript {
   private boolean verbose = false
 
   /**
-   * The final argument(s) should be filenames for lambda windows in order..
+   * The final argument(s) should be filenames for lambda windows in order.
    */
   @Parameters(arity = "1..*", paramLabel = "files",
       description = 'Trajectory files for the first end of the window, followed by trajectories for the other end')
@@ -175,7 +177,7 @@ class MostBar extends AlgorithmsScript {
   private double[] x
   private final double[] lastEntries = new double[3]
   private static final String energyFormat = "%11.4f kcal/mol"
-  private static final String nanFormat = String.format("%20s", "N/A")
+  private static final String nanFormat = format("%20s", "N/A")
   // First frame (0-indexed).
   private int start
   // Last frame (0-indexed, exclusive.
@@ -252,7 +254,7 @@ class MostBar extends AlgorithmsScript {
       System.setProperty("ligand-vapor-elec", "false")
     }
 
-    logger.info(String.format(" Initializing %d topologies", nFiles))
+    logger.info(format(" Initializing %d topologies", nFiles))
     for (int i = 0; i < nFiles; i++) {
       MolecularAssembly ma =
           alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[i], i)
@@ -316,7 +318,8 @@ class MostBar extends AlgorithmsScript {
     // Note: OptionalDouble.isEmpty() is a JDK 11 feature, so !OptionalDouble.isPresent() preserves JDK 8 compatibility.
     if (!optLam.isPresent()) {
       // @formatter:off
-      throw new IllegalArgumentException(" No lambda records found in the first header of archive file ${filenames[0]}")
+      throw new IllegalArgumentException(
+          " No lambda records found in the first header of archive file ${filenames[0]}")
       // @formatter:on
     }
 
@@ -324,7 +327,7 @@ class MostBar extends AlgorithmsScript {
     if (finalFrame < 1) {
       end = nSnapshots
     } else {
-      end = Math.min(nSnapshots, finalFrame)
+      end = min(nSnapshots, finalFrame)
     }
     end -= startFrame // Will always be compared to an index offset by start.
 
@@ -365,20 +368,20 @@ class MostBar extends AlgorithmsScript {
       eHigh[i] = energiesUp.get(i).stream().mapToDouble(Double::doubleValue).toArray()
     }
 
-    logger.info(" Initial estimate via the iteration method.")
+    logger.info("\n Initial estimate via the iteration method.")
     SequentialEstimator bar = new BennettAcceptanceRatio(lamPoints, eLow, eAt, eHigh,
-        new double[]{temp})
+        new double[] {temp})
     SequentialEstimator forwards = bar.getInitialForwardsGuess()
     SequentialEstimator backwards = bar.getInitialBackwardsGuess()
 
-    logger.info(String.
-        format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", bar.getFreeEnergy(),
+    logger.
+        info(format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", bar.getFreeEnergy(),
             bar.getUncertainty()))
-    logger.warning(" Non-bootstrap FEP uncertainties in FFX are currently unreliable!")
-    logger.info(String.format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.",
+    logger.info(format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.",
         forwards.getFreeEnergy(), forwards.getUncertainty()))
-    logger.info(String.format(" Free energy via backwards FEP: %15.9f +/- %.9f kcal/mol.",
+    logger.info(format(" Free energy via backwards FEP: %15.9f +/- %.9f kcal/mol.",
         backwards.getFreeEnergy(), backwards.getUncertainty()))
+    logger.info(" Note - non-bootstrap FEP uncertainties are currently unreliable.")
 
     double[] barFE = bar.getBinEnergies()
     double[] barVar = bar.getBinUncertainties()
@@ -388,13 +391,11 @@ class MostBar extends AlgorithmsScript {
     double[] backwardsVar = backwards.getBinUncertainties()
 
     sb = new StringBuilder(
-        " Free Energy Profile\n Min_Lambda Counts Max_Lambda Counts         BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
+        "\n Free Energy Profile Per Window\n Min_Lambda Counts Max_Lambda Counts         BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
     for (int i = 0; i < (lamBins - 1); i++) {
-      sb.append(
-          String.format(" %-10.8f %6d %-10.8f %6d %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
-              lamPoints[i], eAt[i].length, lamPoints[i + 1], eAt[i+1].length, barFE[i],
-              barVar[i],
-              forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
+      sb.append(format(" %-10.8f %6d %-10.8f %6d %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
+          lamPoints[i], eAt[i].length, lamPoints[i + 1], eAt[i + 1].length, barFE[i],
+          barVar[i], forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
     }
     logger.info(sb.toString())
 
@@ -403,9 +404,9 @@ class MostBar extends AlgorithmsScript {
       if (totalRead >= MIN_BOOTSTRAP_TRIALS) {
         bootstrap = AUTO_BOOTSTRAP_NUMERATOR.intdiv(totalRead)
         // Weird Groovy syntax because Groovy defaults to BigDecimal/BigInteger.
-        bootstrap = Math.max(MIN_BOOTSTRAP_TRIALS, Math.min(MAX_BOOTSTRAP_TRIALS, bootstrap))
+        bootstrap = max(MIN_BOOTSTRAP_TRIALS, min(MAX_BOOTSTRAP_TRIALS, bootstrap))
       } else {
-        logger.info(String.format(
+        logger.info(format(
             " At least one lambda window had only %d snapshots read; defaulting to %d bootstrap cycles!",
             totalRead, MIN_BOOTSTRAP_TRIALS))
         bootstrap = MIN_BOOTSTRAP_TRIALS
@@ -430,19 +431,18 @@ class MostBar extends AlgorithmsScript {
       long time = -System.nanoTime()
       barBS.bootstrap(bootstrap, bootPrint)
       time += System.nanoTime()
-      logger.info(String.format(" BAR bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
+      logger.info(format(" BAR bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
 
       time = -System.nanoTime()
       forBS.bootstrap(bootstrap, bootPrint)
       time += System.nanoTime()
-      logger.info(String.
-          format(" Forwards FEP bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
+      logger.
+          info(format(" Forwards FEP bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
 
       time = -System.nanoTime()
       backBS.bootstrap(bootstrap, bootPrint)
       time += System.nanoTime()
-      logger.info(
-          String.format(" Reverse FEP bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
+      logger.info(format(" Reverse FEP bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
 
       barFE = barBS.getFE()
       barVar = barBS.getUncertainty()
@@ -452,25 +452,21 @@ class MostBar extends AlgorithmsScript {
       backwardsVar = backBS.getUncertainty()
 
       double sumFE = barBS.getTotalFE(barFE)
-      double varFE = barBS.getTotalUncertainty()
-      logger.info(
-          String.format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
+      double varFE = barBS.getTotalUncertainty(barVar)
+      logger.info(format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
 
       sumFE = forBS.getTotalFE(forwardsFE)
       varFE = forBS.getTotalUncertainty()
-      logger.info(
-          String.format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
+      logger.info(format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
 
       sumFE = backBS.getTotalFE(backwardsFE)
       varFE = backBS.getTotalUncertainty()
-      logger.info(
-          String.format(" Free energy via backwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
+      logger.info(format(" Free energy via backwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
 
       sb = new StringBuilder(
           " Free Energy Profile\n Min_Lambda Counts Max_Lambda Counts         BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
       for (int i = 0; i < (lamBins - 1); i++) {
-        sb.append(String.format(
-            " %-10.8f %6d %-10.8f %6d %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
+        sb.append(format(" %-10.8f %6d %-10.8f %6d %15.9f %12.9f %15.9f %12.9f %15.9f %12.9f\n",
             lamPoints[i], eAt[i].length, lamPoints[i + 1], eAt[i + 1].length, barFE[i], barVar[i],
             forwardsFE[i], forwardsVar[i], backwardsFE[i], backwardsVar[i]))
       }
@@ -504,14 +500,11 @@ class MostBar extends AlgorithmsScript {
       lastEntries[1] = addAtLambda(lambda, bin)
       lastEntries[2] = addLambdaUp(lambda, bin)
 
-      String low =
-          Double.isNaN(lastEntries[0]) ? nanFormat : String.format(energyFormat, lastEntries[0])
-      String high =
-          Double.isNaN(lastEntries[2]) ? nanFormat : String.format(energyFormat, lastEntries[2])
+      String low = Double.isNaN(lastEntries[0]) ? nanFormat : format(energyFormat, lastEntries[0])
+      String high = Double.isNaN(lastEntries[2]) ? nanFormat : format(energyFormat, lastEntries[2])
 
-      logger.log(standardLogging, String.format(" Energies for snapshot %5d at lambda %.4f: " +
-          "%s, %s, %s", (index + 1), lambda, low, String.format(energyFormat, lastEntries[1]),
-          high))
+      logger.log(standardLogging, format(" Energies for snapshot %5d at lambda %.4f: " +
+          "%s, %s, %s", (index + 1), lambda, low, format(energyFormat, lastEntries[1]), high))
     } else {
       logger.log(standardLogging, " Skipping frame " + index)
     }
@@ -544,7 +537,7 @@ class MostBar extends AlgorithmsScript {
   private double addLambdaUp(double lambda, int bin) {
     double modLambda = lambda + lamSep
     // DISCRETE ONLY: assert lambda == 1.0d || modLambda < (1.0 + 1.0E-6);
-    modLambda = Math.min(1.0d, modLambda)
+    modLambda = min(1.0d, modLambda)
     if (bin == (lamBins - 1)) {
       energiesUp.get(bin).add(Double.NaN)
       return Double.NaN
@@ -569,7 +562,7 @@ class MostBar extends AlgorithmsScript {
   private double addLambdaDown(double lambda, int bin) {
     double modLambda = lambda - lamSep
     // DISCRETE ONLY: assert lambda == 0.0d || modLambda > -1.0E-6;
-    modLambda = Math.max(0.0d, modLambda)
+    modLambda = max(0.0d, modLambda)
 
     if (bin == 0) {
       energiesDown.get(0).add(Double.NaN)
@@ -593,6 +586,6 @@ class MostBar extends AlgorithmsScript {
    */
   private int binForLambda(double lambda) {
     // TODO: Robust to existence of half-bins.
-    return (int) Math.round(lambda / lamSep)
+    return (int) round(lambda / lamSep)
   }
 }

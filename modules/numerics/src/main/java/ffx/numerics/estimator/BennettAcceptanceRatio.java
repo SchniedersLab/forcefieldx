@@ -38,13 +38,19 @@
 package ffx.numerics.estimator;
 
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
+import static ffx.numerics.estimator.Zwanzig.Directionality.BACKWARDS;
+import static ffx.numerics.estimator.Zwanzig.Directionality.FORWARDS;
 import static ffx.numerics.math.ScalarMath.fermiFunction;
+import static java.lang.String.format;
+import static java.util.Arrays.copyOf;
+import static java.util.Arrays.fill;
+import static java.util.Arrays.stream;
+import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.math.SummaryStatistics;
 import ffx.utilities.Constants;
-import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -70,21 +76,58 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class BennettAcceptanceRatio extends SequentialEstimator implements BootstrappableEstimator {
+
   private static final Logger logger = Logger.getLogger(BennettAcceptanceRatio.class.getName());
+
+  /**
+   * Default BAR convergence tolerance.
+   */
   private static final double DEFAULT_TOLERANCE = 1.0E-7;
+  /**
+   * Maximum number of BAR iterations.
+   */
   private static final int MAX_ITERS = 100;
+  /**
+   * Number of simulation windows.
+   */
   private final int nWindows;
-  private final double[] estForwards;
-  private final double[] estBackwards;
-  private final double[] dGs;
-  private final double[] uncerts;
+  /**
+   * Forward Zwanzig free-energy difference estimates.
+   */
+  private final double[] forwardZwanzig;
+  /**
+   * Backward Zwanzig free-energy difference estimates.
+   */
+  private final double[] backwardZwanzig;
+  /**
+   * BAR free-energy difference estimates.
+   */
+  private final double[] barEstimates;
+  /**
+   * BAR free-energy difference uncertainties.
+   */
+  private final double[] barUncertainties;
+  /**
+   * BAR convergence tolerance.
+   */
   private final double tolerance;
-  private final Random random = new Random(); // TODO: Use provided seed.
-  // Hang onto these in case the end-user wants them?
+  /**
+   * Forward Zwanzig instance.
+   */
   private final Zwanzig forwardsFEP;
+  /**
+   * Backward Zwanzig instance.
+   */
   private final Zwanzig backwardsFEP;
-  private double totDG;
-  private double totUncert;
+  private final Random random;
+  /**
+   * Total BAR free-energy difference estimate.
+   */
+  private double totalBAREstimate;
+  /**
+   * Total BAR free-energy difference uncertainty.
+   */
+  private double totalBARUncertainty;
 
   /**
    * Constructs a BAR estimator and obtains an initial free energy estimate.
@@ -95,12 +138,8 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
    * @param energiesHigh Energies of trajectory i at lambda (i+1).
    * @param temperature Temperature of each trajectory.
    */
-  public BennettAcceptanceRatio(
-      double[] lambdaValues,
-      double[][] energiesLow,
-      double[][] energiesAt,
-      double[][] energiesHigh,
-      double[] temperature) {
+  public BennettAcceptanceRatio(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt,
+      double[][] energiesHigh, double[] temperature) {
     this(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature, DEFAULT_TOLERANCE);
   }
 
@@ -114,39 +153,26 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
    * @param temperature Temperature of each trajectory.
    * @param tolerance Convergence criterion in kcal/mol for BAR iteration.
    */
-  public BennettAcceptanceRatio(
-      double[] lambdaValues,
-      double[][] energiesLow,
-      double[][] energiesAt,
-      double[][] energiesHigh,
-      double[] temperature,
-      double tolerance) {
+  public BennettAcceptanceRatio(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt,
+      double[][] energiesHigh, double[] temperature, double tolerance) {
+
     super(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature);
+
     // Used to seed an initial guess.
-    forwardsFEP =
-        new Zwanzig(
-            lambdaValues,
-            energiesLow,
-            energiesAt,
-            energiesHigh,
-            temperature,
-            Zwanzig.Directionality.FORWARDS);
-    backwardsFEP =
-        new Zwanzig(
-            lambdaValues,
-            energiesLow,
-            energiesAt,
-            energiesHigh,
-            temperature,
-            Zwanzig.Directionality.BACKWARDS);
+    forwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature,
+        FORWARDS);
+    backwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature,
+        BACKWARDS);
 
     nWindows = nTrajectories - 1;
-    estForwards = forwardsFEP.getBinEnergies();
-    estBackwards = backwardsFEP.getBinEnergies();
+    forwardZwanzig = forwardsFEP.getBinEnergies();
+    backwardZwanzig = backwardsFEP.getBinEnergies();
 
-    dGs = new double[nWindows];
-    uncerts = new double[nWindows];
+    barEstimates = new double[nWindows];
+    barUncertainties = new double[nWindows];
     this.tolerance = tolerance;
+    random = new Random();
+
     estimateDG();
   }
 
@@ -162,10 +188,31 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
    * @param c Prior best estimate of the BAR offset/free energy.
    * @param invRT 1.0 / ideal gas constant * temperature.
    */
-  private static void fermiDiffIterative(
-      double[] e0, double[] e1, double[] fermiDiffs, int len, double c, double invRT) {
+  private static void fermiDiffIterative(double[] e0, double[] e1, double[] fermiDiffs, int len,
+      double c, double invRT) {
     for (int i = 0; i < len; i++) {
       fermiDiffs[i] = fermiFunction(invRT * (e0[i] - e1[i] + c));
+    }
+  }
+
+  /**
+   * Calculates the Fermi function for the differences used in estimating c, using bootstrap sampling
+   * (choosing random indices with replacement rather than scanning through them all).
+   *
+   * <p>f(x) = 1 / (1 + exp(x)) x = (e1 - e0 + c) * invRT
+   *
+   * @param e0 Perturbed energy (to be added; evaluated at L +/- dL).
+   * @param e1 Unperturbed energy (to be subtracted; evaluated at L).
+   * @param fermiDiffs Array to be filled with Fermi differences.
+   * @param len Number of energies.
+   * @param c Prior best estimate of the BAR offset/free energy.
+   * @param invRT 1.0 / ideal gas constant * temperature.
+   */
+  private static void fermiDiffBootstrap(double[] e0, double[] e1, double[] fermiDiffs,
+      int len, double c, double invRT, int[] bootstrapSamples) {
+    for (int indexI = 0; indexI < len; indexI++) {
+      int i = bootstrapSamples[indexI];
+      fermiDiffs[indexI] = fermiFunction(invRT * (e0[i] - e1[i] + c));
     }
   }
 
@@ -177,11 +224,39 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
    * @param len Number of values.
    * @return One half of BAR variance.
    */
-  private static double uncertCalc(double meanFermi, double meanSqFermi, int len) {
+  private static double uncertaintyCalculation(double meanFermi, double meanSqFermi, int len) {
     double sqMeanFermi = meanFermi * meanFermi;
     return ((meanSqFermi - sqMeanFermi) / len) / sqMeanFermi;
   }
 
+  /**
+   * Returns the backwards Zwanzig estimator used to seed BAR.
+   *
+   * @return A backwards Zwanzig estimator.
+   */
+  public Zwanzig getInitialBackwardsGuess() {
+    return backwardsFEP;
+  }
+
+  /**
+   * Main driver for estimation of delta-G. Based on Tinker implementation, which uses the
+   * substitution proposed in Wyczalkowski, Vitalis and Pappu 2010.
+   */
+  @Override
+  public void estimateDG() {
+    estimateDG(false);
+  }
+
+  /**
+   * Returns the forwards Zwanzig estimator used to seed BAR.
+   *
+   * @return A forwards Zwanzig estimator.
+   */
+  public Zwanzig getInitialForwardsGuess() {
+    return forwardsFEP;
+  }
+
+  /** {@inheritDoc} */
   @Override
   public BennettAcceptanceRatio copyEstimator() {
     return new BennettAcceptanceRatio(lamVals, eLow, eAt, eHigh, temperatures, tolerance);
@@ -196,23 +271,23 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
   @Override
   public void estimateDG(final boolean randomSamples) {
     double cumDG = 0;
-    Arrays.fill(dGs, 0);
-    Arrays.fill(uncerts, 0);
+    fill(barEstimates, 0);
+    fill(barUncertainties, 0);
+
     // Avoid duplicate warnings when bootstrapping.
     Level warningLevel = randomSamples ? Level.FINE : Level.WARNING;
 
     for (int i = 0; i < nWindows; i++) {
-      boolean converged = false;
-      double c = 0.5 * (estForwards[i] + estBackwards[i]); // Free energy estimate/shift constant.
+      double c =
+          0.5 * (forwardZwanzig[i] + backwardZwanzig[i]); // Free energy estimate/shift constant.
       double cold = c;
       int len0 = eAt[i].length;
       int len1 = eAt[i + 1].length;
 
       if (len0 == 0 || len1 == 0) {
-        dGs[i] = c;
-        logger.log(
-            warningLevel,
-            String.format(" Window %d has no snapshots at one end (%d, %d)!", i, len0, len1));
+        barEstimates[i] = c;
+        logger.log(warningLevel,
+            format(" Window %d has no snapshots at one end (%d, %d)!", i, len0, len1));
         continue;
       }
 
@@ -242,10 +317,10 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
         bootstrapSamples1 = getBootstrapIndices(len1, random);
       }
 
-      // Tinker: ub0, ub1; ua1, ua0 = FFX: eLow[i+1], eAt[i+1], eHigh[i], eAt[i]
-
       int cycleCounter = 0;
+      boolean converged = false;
       while (!converged) {
+        // Tinker: ub0, ub1; ua1, ua0 = FFX: eLow[i+1], eAt[i+1], eHigh[i], eAt[i]
         if (randomSamples) {
           fermiDiffBootstrap(eHigh[i], eAt[i], fermi0, len0, -c, invRTA, bootstrapSamples0);
           fermiDiffBootstrap(eLow[i + 1], eAt[i + 1], fermi1, len1, c, invRTB, bootstrapSamples1);
@@ -256,109 +331,60 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
         s0 = new SummaryStatistics(fermi0);
         s1 = new SummaryStatistics(fermi1);
-        double ratio = Arrays.stream(fermi1).sum() / Arrays.stream(fermi0).sum();
+        double ratio = stream(fermi1).sum() / stream(fermi0).sum();
 
         c += rtMean * log(sampleRatio * ratio);
-        converged = (Math.abs(c - cold) < tolerance);
+        converged = (abs(c - cold) < tolerance);
         cold = c;
 
         if (++cycleCounter > MAX_ITERS) {
           throw new IllegalArgumentException(
-              String.format(" BAR required too many iterations (%d) to converge!", cycleCounter));
+              format(" BAR required too many iterations (%d) to converge!", cycleCounter));
         }
       }
 
-      dGs[i] = c;
+      barEstimates[i] = c;
       cumDG += c;
-      double sqFermiMean0 =
-          new SummaryStatistics(Arrays.stream(fermi0).map((double d) -> d * d).toArray()).mean;
-      double sqFermiMean1 =
-          new SummaryStatistics(Arrays.stream(fermi1).map((double d) -> d * d).toArray()).mean;
-
-      uncerts[i] =
-          sqrt(uncertCalc(s0.mean, sqFermiMean0, len0) + uncertCalc(s1.mean, sqFermiMean1, len1));
+      double sqFermiMean0 = new SummaryStatistics(
+          stream(fermi0).map((double d) -> d * d).toArray()).mean;
+      double sqFermiMean1 = new SummaryStatistics(
+          stream(fermi1).map((double d) -> d * d).toArray()).mean;
+      barUncertainties[i] = sqrt(
+          uncertaintyCalculation(s0.mean, sqFermiMean0, len0) + uncertaintyCalculation(s1.mean,
+              sqFermiMean1, len1));
     }
 
-    totDG = cumDG;
-    totUncert = sqrt(Arrays.stream(uncerts).map((double d) -> d * d).sum());
+    totalBAREstimate = cumDG;
+    totalBARUncertainty = sqrt(stream(barUncertainties).map((double d) -> d * d).sum());
   }
 
-  /**
-   * Main driver for estimation of delta-G. Based on Tinker implementation, which uses the
-   * substitution proposed in Wyczalkowski, Vitalis and Pappu 2010.
-   */
-  @Override
-  public void estimateDG() {
-    estimateDG(false);
-  }
-
+  /** {@inheritDoc} */
   @Override
   public double[] getBinEnergies() {
-    return Arrays.copyOf(dGs, nWindows);
+    return copyOf(barEstimates, nWindows);
   }
 
+  /** {@inheritDoc} */
   @Override
   public double[] getBinUncertainties() {
-    return Arrays.copyOf(uncerts, nWindows);
+    return copyOf(barUncertainties, nWindows);
   }
 
+  /** {@inheritDoc} */
   @Override
   public double getFreeEnergy() {
-    return totDG;
+    return totalBAREstimate;
   }
 
-  /**
-   * Returns the backwards Zwanzig estimator used to seed BAR.
-   *
-   * @return A backwards Zwanzig estimator.
-   */
-  public Zwanzig getInitialBackwardsGuess() {
-    return backwardsFEP;
-  }
-
-  /**
-   * Returns the forwards Zwanzig estimator used to seed BAR.
-   *
-   * @return A forwards Zwanzig estimator.
-   */
-  public Zwanzig getInitialForwardsGuess() {
-    return forwardsFEP;
-  }
-
+  /** {@inheritDoc} */
   @Override
   public double getUncertainty() {
-    return totUncert;
+    return totalBARUncertainty;
   }
 
+  /** {@inheritDoc} */
   @Override
   public int numberOfBins() {
     return nWindows;
-  }
-
-  /**
-   * Calculates the Fermi function for the differences used in estimating c, using bootstrap
-   * sampling (choosing random indices w/ replacement rather than scanning through them all).
-   *
-   * <p>f(x) = 1 / (1 + exp(x)) x = (e1 - e0 + c) * invRT
-   *
-   * @param e0 Perturbed energy (to be added; evaluated at L +/- dL).
-   * @param e1 Unperturbed energy (to be subtracted; evaluated at L).
-   * @param fermiDiffs Array to be filled with Fermi differences.
-   * @param len Number of energies.
-   * @param c Prior best estimate of the BAR offset/free energy.
-   * @param invRT 1.0 / ideal gas constant * temperature.
-   */
-  private void fermiDiffBootstrap(
-      double[] e0,
-      double[] e1,
-      double[] fermiDiffs,
-      int len,
-      double c,
-      double invRT,
-      int[] bootstrapSamples) {
-    for (int indexI = 0; indexI < len; indexI++) {
-      int i = bootstrapSamples[indexI];
-      fermiDiffs[indexI] = fermiFunction(invRT * (e0[i] - e1[i] + c));
-    }
   }
 }

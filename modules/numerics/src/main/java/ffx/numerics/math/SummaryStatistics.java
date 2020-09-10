@@ -164,14 +164,12 @@ public class SummaryStatistics {
 
     if (first < 0 || first > (nVals - 1)) {
       throw new IllegalArgumentException(
-          format(
-              " First entry %d was not in valid range 0-%d (0 to length of values - 1)",
+          format(" First entry %d was not in valid range 0-%d (0 to length of values - 1)",
               first, nVals - 1));
     }
     if (last <= first || last > nVals) {
       throw new IllegalArgumentException(
-          format(
-              " Last entry %d was not in valid range %d-%d (first+1 to length of values",
+          format(" Last entry %d was not in valid range %d-%d (first+1 to length of values",
               last, (first + 1), nVals));
     }
 
@@ -281,18 +279,34 @@ public class SummaryStatistics {
     return critVal * sd / sqrt(count);
   }
 
+  /**
+   * The mean.
+   *
+   * @return Return the mean.
+   */
   public double getMean() {
     return mean;
   }
 
+  /**
+   * The standard deviation.
+   *
+   * @return Return the standard deviation.
+   */
   public double getSd() {
     return sd;
   }
 
+  /**
+   * The variance.
+   *
+   * @return Return the variance.
+   */
   public double getVar() {
     return var;
   }
 
+  /** ${@inheritDoc} */
   @Override
   public String toString() {
     return descString;
