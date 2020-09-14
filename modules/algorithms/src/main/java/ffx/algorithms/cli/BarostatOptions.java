@@ -43,6 +43,7 @@ import ffx.algorithms.dynamics.Barostat;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
 import java.util.logging.Logger;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
 /**
@@ -74,70 +75,10 @@ public class BarostatOptions {
   private static final Logger logger = Logger.getLogger(BarostatOptions.class.getName());
 
   /**
-   * -p or --npt Specify use of a MC Barostat at the given pressure (default 0 = constant volume).
+   * The ArgGroup keeps the BarostatOptions together when printing help.
    */
-  @Option(
-      names = {"-p", "--npt"},
-      paramLabel = "0",
-      defaultValue = "0",
-      description =
-          "Specify use of a MC Barostat at the given pressure; the default 0 disables NPT (atm).")
-  private double pressure;
-  /**
-   * -iso or --isotropic Restrict the MC Barostat to isotropic moves. The lattice angles are held
-   * fixed, and lattice lengths are scaled equally.
-   */
-  @Option(
-      names = {"--iso", "--isotropic"},
-      defaultValue = "false",
-      description = "Restrict the MC Barostat to isotropic moves.")
-  private boolean isotropic;
-  /** --maxD or --maxDensity Specify the maximum density accepted by the MC Barostat (g/cc). */
-  @Option(
-      names = {"--maxD", " --maxDensity"},
-      paramLabel = DEFAULT_MAX_DENSITY,
-      defaultValue = DEFAULT_MAX_DENSITY,
-      description = "Specify the maximum density accepted by the MC Barostat (g/cc).")
-  private double maxD;
-  /** --minD or --minDensity Specify the minimum density accepted by the MC Barostat (g/cc). */
-  @Option(
-      names = {"--minD", " --minDensity"},
-      paramLabel = DEFAULT_MIN_DENSITY,
-      defaultValue = DEFAULT_MIN_DENSITY,
-      description = "Specify the minimum density accepted by the MC Barostat (g/cc).")
-  private double minD;
-  /**
-   * --maxSM or --maxSideMove Sets the width of proposed unit cell side length moves (uniformly
-   * distributed) in Angstroms.
-   */
-  @Option(
-      names = {"--maxSM", "--maxSideMove"},
-      paramLabel = DEFAULT_MAX_SIDE_MOVE,
-      defaultValue = DEFAULT_MAX_SIDE_MOVE,
-      description =
-          "Default width of proposed unit cell side length moves (uniformly distributed) in Angstroms.")
-  private double maxSM;
-  /**
-   * --maxAM or --maxAngleMove Sets the width of proposed crystal angle moves (uniformly
-   * distributed) in degrees.
-   */
-  @Option(
-      names = {"--maxAM", "--maxAngleMove"},
-      paramLabel = DEFAULT_MAX_ANGLE_MOVE,
-      defaultValue = DEFAULT_MAX_ANGLE_MOVE,
-      description =
-          "Sets the width of proposed crystal angle moves (uniformly distributed) in degrees.")
-  private double maxAM;
-  /**
-   * --barInt or --meanBarostatInterval Sets the mean number of MD steps (Poisson distribution)
-   * between barostat move proposals.
-   */
-  @Option(
-      names = {"--barInt", "--meanBarostatInterval"},
-      paramLabel = DEFAULT_BAROSTAT_INTERVAL,
-      defaultValue = DEFAULT_BAROSTAT_INTERVAL,
-      description = "Sets the mean number of MD steps between barostat move proposals.")
-  private int barInt;
+  @ArgGroup(heading = "%n Monte Carlo Pressure Options%n", validate = false)
+  public BarostatOptionGroup group = new BarostatOptionGroup();
 
   /**
    * If pressure has been set &gt; 0, creates a Barostat around a CrystalPotential, else returns the
@@ -149,7 +90,7 @@ public class BarostatOptions {
    */
   public CrystalPotential checkNPT(
       MolecularAssembly molecularAssembly, CrystalPotential crystalPotential) {
-    if (pressure > 0) {
+    if (group.pressure > 0) {
       return createBarostat(molecularAssembly, crystalPotential);
     } else {
       return crystalPotential;
@@ -166,29 +107,29 @@ public class BarostatOptions {
    */
   public Barostat createBarostat(MolecularAssembly assembly, CrystalPotential crystalPotential)
       throws IllegalArgumentException {
-    if (pressure > 0) {
+    if (group.pressure > 0) {
       Barostat barostat = new Barostat(assembly, crystalPotential);
-      barostat.setPressure(pressure);
-      barostat.setIsotropic(isotropic);
-      barostat.setMaxDensity(maxD);
-      barostat.setMinDensity(minD);
+      barostat.setPressure(group.pressure);
+      barostat.setIsotropic(group.isotropic);
+      barostat.setMaxDensity(group.maxD);
+      barostat.setMinDensity(group.minD);
       double dens = barostat.density();
-      if (dens < minD) {
+      if (dens < group.minD) {
         logger.info(
             format(
                 " Barostat: initial density %9.4g < minimum density %9.4g, resetting to minimum density",
-                dens, minD));
-        barostat.setDensity(minD);
-      } else if (dens > maxD) {
+                dens, group.minD));
+        barostat.setDensity(group.minD);
+      } else if (dens > group.maxD) {
         logger.info(
             format(
                 " Barostat: initial density %9.4g > maximum density %9.4g, resetting to maximum density",
-                dens, maxD));
-        barostat.setDensity(maxD);
+                dens, group.maxD));
+        barostat.setDensity(group.maxD);
       }
-      barostat.setMaxSideMove(maxSM);
-      barostat.setMaxAngleMove(maxAM);
-      barostat.setMeanBarostatInterval(barInt);
+      barostat.setMaxSideMove(group.maxSM);
+      barostat.setMaxAngleMove(group.maxAM);
+      barostat.setMeanBarostatInterval(group.barInt);
       return barostat;
     } else {
       throw new IllegalArgumentException(" Pressure is <= 0; cannot create a Barostat!");
@@ -196,16 +137,16 @@ public class BarostatOptions {
   }
 
   /**
-   * MC Barostat at pressure.
+   * -p or --npt Specify use of a MC Barostat at the given pressure (default 0 = constant volume).
    *
-   * @return Returns the pressure.
+   * @return Returns the pressure (atm).
    */
   public double getPressure() {
-    return pressure;
+    return group.pressure;
   }
 
   public void setPressure(double pressure) {
-    this.pressure = pressure;
+    group.pressure = pressure;
   }
 
   /**
@@ -215,11 +156,11 @@ public class BarostatOptions {
    * @return Returns true if the Barostat is isotropic.
    */
   public boolean isIsotropic() {
-    return isotropic;
+    return group.isotropic;
   }
 
   public void setIsotropic(boolean isotropic) {
-    this.isotropic = isotropic;
+    group.isotropic = isotropic;
   }
 
   /**
@@ -228,11 +169,11 @@ public class BarostatOptions {
    * @return Returns the maximum density.
    */
   public double getMaxD() {
-    return maxD;
+    return group.maxD;
   }
 
   public void setMaxD(double maxD) {
-    this.maxD = maxD;
+    group.maxD = maxD;
   }
 
   /**
@@ -241,11 +182,11 @@ public class BarostatOptions {
    * @return Returns the minimum density.
    */
   public double getMinD() {
-    return minD;
+    return group.minD;
   }
 
   public void setMinD(double minD) {
-    this.minD = minD;
+    group.minD = minD;
   }
 
   /**
@@ -254,11 +195,11 @@ public class BarostatOptions {
    * @return Returns the maximum cell side length move.
    */
   public double getMaxSM() {
-    return maxSM;
+    return group.maxSM;
   }
 
   public void setMaxSM(double maxSM) {
-    this.maxSM = maxSM;
+    group.maxSM = maxSM;
   }
 
   /**
@@ -267,11 +208,11 @@ public class BarostatOptions {
    * @return Returns the width of angle moves.
    */
   public double getMaxAM() {
-    return maxAM;
+    return group.maxAM;
   }
 
   public void setMaxAM(double maxAM) {
-    this.maxAM = maxAM;
+    group.maxAM = maxAM;
   }
 
   /**
@@ -280,10 +221,82 @@ public class BarostatOptions {
    * @return Returns the mean number of MD steps between barostat MC trials.
    */
   public int getBarInt() {
-    return barInt;
+    return group.barInt;
   }
 
   public void setBarInt(int barInt) {
-    this.barInt = barInt;
+    group.barInt = barInt;
+  }
+
+  /**
+   * Collection of Barostat Options.
+   */
+  private static class BarostatOptionGroup {
+
+    /**
+     * -p or --npt Specify use of a MC Barostat at the given pressure (default 0 = constant volume).
+     */
+    @Option(
+        names = {"-p", "--npt"},
+        paramLabel = "0",
+        defaultValue = "0",
+        description =
+            "Specify use of a MC Barostat at the given pressure; the default 0 disables NPT (atm).")
+    private double pressure;
+    /**
+     * -iso or --isotropic Restrict the MC Barostat to isotropic moves. The lattice angles are held
+     * fixed, and lattice lengths are scaled equally.
+     */
+    @Option(
+        names = {"--iso", "--isotropic"},
+        defaultValue = "false",
+        description = "Restrict the MC Barostat to isotropic moves.")
+    private boolean isotropic;
+    /** --maxD or --maxDensity Specify the maximum density accepted by the MC Barostat (g/cc). */
+    @Option(
+        names = {"--maxD", " --maxDensity"},
+        paramLabel = DEFAULT_MAX_DENSITY,
+        defaultValue = DEFAULT_MAX_DENSITY,
+        description = "Specify the maximum density accepted by the MC Barostat (g/cc).")
+    private double maxD;
+    /** --minD or --minDensity Specify the minimum density accepted by the MC Barostat (g/cc). */
+    @Option(
+        names = {"--minD", " --minDensity"},
+        paramLabel = DEFAULT_MIN_DENSITY,
+        defaultValue = DEFAULT_MIN_DENSITY,
+        description = "Specify the minimum density accepted by the MC Barostat (g/cc).")
+    private double minD;
+    /**
+     * --maxSM or --maxSideMove Sets the width of proposed unit cell side length moves (uniformly
+     * distributed) in Angstroms.
+     */
+    @Option(
+        names = {"--maxSM", "--maxSideMove"},
+        paramLabel = DEFAULT_MAX_SIDE_MOVE,
+        defaultValue = DEFAULT_MAX_SIDE_MOVE,
+        description =
+            "Default width of proposed unit cell side length moves (uniformly distributed) in Angstroms.")
+    private double maxSM;
+    /**
+     * --maxAM or --maxAngleMove Sets the width of proposed crystal angle moves (uniformly
+     * distributed) in degrees.
+     */
+    @Option(
+        names = {"--maxAM", "--maxAngleMove"},
+        paramLabel = DEFAULT_MAX_ANGLE_MOVE,
+        defaultValue = DEFAULT_MAX_ANGLE_MOVE,
+        description =
+            "Sets the width of proposed crystal angle moves (uniformly distributed) in degrees.")
+    private double maxAM;
+    /**
+     * --barInt or --meanBarostatInterval Sets the mean number of MD steps (Poisson distribution)
+     * between barostat move proposals.
+     */
+    @Option(
+        names = {"--barInt", "--meanBarostatInterval"},
+        paramLabel = DEFAULT_BAROSTAT_INTERVAL,
+        defaultValue = DEFAULT_BAROSTAT_INTERVAL,
+        description = "Sets the mean number of MD steps between barostat move proposals.")
+    private int barInt;
   }
 }

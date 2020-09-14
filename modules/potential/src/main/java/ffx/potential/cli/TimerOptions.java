@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.cli;
 
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
 /**
@@ -47,34 +48,12 @@ import picocli.CommandLine.Option;
  * @since 1.0
  */
 public class TimerOptions {
-  /** -n or --iterations to set the number of iterations */
-  @Option(
-      names = {"-n", "--iterations"},
-      paramLabel = "5",
-      description = "Number of iterations.")
-  public int iterations = 5;
 
   /**
-   * --nt or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU
-   * cores)
+   * The ArgGroup keeps the TimerOptions together when printing help.
    */
-  @Option(
-      names = {"--nt", "--threads"},
-      paramLabel = "0",
-      description = "Number of SMP threads (0 specifies use of all CPU cores).")
-  public int threads = 0;
-
-  /** -g or --noGradient to ignore computation of the atomic coordinates noGradient */
-  @Option(
-      names = {"-g", "--noGradient"},
-      description = "Ignore computation of the atomic coordinates noGradient.")
-  public boolean noGradient = false;
-
-  /** -v or --verbose to suppress printing of the energy for each iteration */
-  @Option(
-      names = {"-v", "--verbose"},
-      description = "Print the energy for each iteration.")
-  public boolean verbose = false;
+  @ArgGroup(heading = "%n Timing Options%n", validate = false)
+  public TimerOptionGroup group = new TimerOptionGroup();
 
   /**
    * Getter for the field <code>iterations</code>.
@@ -82,7 +61,7 @@ public class TimerOptions {
    * @return a int.
    */
   public int getIterations() {
-    return iterations;
+    return group.iterations;
   }
 
   /**
@@ -91,7 +70,7 @@ public class TimerOptions {
    * @return a boolean.
    */
   public boolean getNoGradient() {
-    return noGradient;
+    return group.noGradient;
   }
 
   /**
@@ -100,7 +79,7 @@ public class TimerOptions {
    * @return a int.
    */
   public int getThreads() {
-    return threads;
+    return group.threads;
   }
 
   /**
@@ -109,6 +88,41 @@ public class TimerOptions {
    * @return a boolean.
    */
   public boolean getVerbose() {
-    return verbose;
+    return group.verbose;
+  }
+
+  /**
+   * Collection of Timer Options.
+   */
+  private static class TimerOptionGroup {
+
+    /** -n or --iterations to set the number of iterations */
+    @Option(
+        names = {"-n", "--iterations"},
+        paramLabel = "5",
+        description = "Number of iterations.")
+    public int iterations = 5;
+
+    /**
+     * --nt or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU
+     * cores)
+     */
+    @Option(
+        names = {"--nt", "--threads"},
+        paramLabel = "0",
+        description = "Number of SMP threads (0 specifies use of all CPU cores).")
+    public int threads = 0;
+
+    /** -g or --noGradient to ignore computation of the atomic coordinates noGradient */
+    @Option(
+        names = {"-g", "--noGradient"},
+        description = "Ignore computation of the atomic coordinates gradient.")
+    public boolean noGradient = false;
+
+    /** -v or --verbose to suppress printing of the energy for each iteration */
+    @Option(
+        names = {"-v", "--verbose"},
+        description = "Print the energy for each iteration.")
+    public boolean verbose = false;
   }
 }

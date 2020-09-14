@@ -44,10 +44,10 @@ import ffx.potential.bonded.Atom;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
-import picocli.CommandLine.Option;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Option;
 
 /**
  * Represents command line options for scripts that support atom selections.
@@ -59,47 +59,15 @@ public class AtomSelectionOptions {
 
   private static final Logger logger = Logger.getLogger(AtomSelectionOptions.class.getName());
 
-  /** --aa or --activeAtoms Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N]. */
-  @Option(
-      names = {"--aa", "--active"},
-      paramLabel = "<selection>",
-      defaultValue = "",
-      description = "Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N].")
-  public String activeAtoms;
-
-  /** --ia or --inactiveAtoms Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N]. */
-  @Option(
-      names = {"--ia", "--inactive"},
-      paramLabel = "<selection>",
-      defaultValue = "",
-      description = "Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N].")
-  public String inactiveAtoms;
-
   /**
-   * Set active atoms for a MolecularAssembly.
-   *
-   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+   * The ArgGroup keeps the Atom Selection Options together when printing help.
    */
-  public void setActiveAtoms(MolecularAssembly molecularAssembly) {
-    // First, evaluate the inactive atom selection.
-    setInactive(molecularAssembly);
-
-    // Second, evaluate the active atom selection, which takes precedence over the inactive flag.
-    setActive(molecularAssembly);
-  }
-
-  private void setInactive(MolecularAssembly assembly) {
-    actOnAtoms(assembly, inactiveAtoms, (Atom a, Boolean b) -> a.setActive(!b),
-            "inactive", " Inactive atoms");
-  }
-
-  private void setActive(MolecularAssembly assembly) {
-    actOnAtoms(assembly, activeAtoms, Atom::setActive, "active", " Active atoms");
-  }
+  @ArgGroup(heading = "%n Atom Selection Options%n", validate = false)
+  public AtomSelectionOptionGroup group = new AtomSelectionOptionGroup();
 
   public static void actOnAtoms(@Nonnull MolecularAssembly assembly, @Nullable String selection,
-                                @Nonnull BiConsumer<Atom, Boolean> action, @Nonnull String description,
-                                @Nullable String keyType) {
+      @Nonnull BiConsumer<Atom, Boolean> action, @Nonnull String description,
+      @Nullable String keyType) {
     if (selection == null || selection.equalsIgnoreCase("")) {
       // Empty or null string -- no changes.
       return;
@@ -137,5 +105,67 @@ public class AtomSelectionOptions {
       }
     }
     logger.info(" " + description + " atoms set to: " + selection + "\n");
+  }
+
+  /**
+   * --aa or --activeAtoms Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N].
+   *
+   * @return Returns active atoms.
+   */
+  public String getActiveAtoms() {
+    return group.activeAtoms;
+  }
+
+  /**
+   * Set active atoms for a MolecularAssembly.
+   *
+   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+   */
+  public void setActiveAtoms(MolecularAssembly molecularAssembly) {
+    // First, evaluate the inactive atom selection.
+    setInactive(molecularAssembly);
+
+    // Second, evaluate the active atom selection, which takes precedence over the inactive flag.
+    setActive(molecularAssembly);
+  }
+
+  /**
+   * --ia or --inactiveAtoms Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N].
+   *
+   * @return Returns inactive atoms.
+   */
+  public String getInactiveAtoms() {
+    return group.inactiveAtoms;
+  }
+
+  private void setInactive(MolecularAssembly assembly) {
+    actOnAtoms(assembly, getInactiveAtoms(), (Atom a, Boolean b) -> a.setActive(!b),
+        "inactive", " Inactive atoms");
+  }
+
+  private void setActive(MolecularAssembly assembly) {
+    actOnAtoms(assembly, getActiveAtoms(), Atom::setActive, "active", " Active atoms");
+  }
+
+  /**
+   * Collection of Atom Selection Options.
+   */
+  private static class AtomSelectionOptionGroup {
+
+    /** --aa or --activeAtoms Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N]. */
+    @Option(
+        names = {"--aa", "--active"},
+        paramLabel = "<selection>",
+        defaultValue = "",
+        description = "Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N].")
+    public String activeAtoms;
+
+    /** --ia or --inactiveAtoms Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N]. */
+    @Option(
+        names = {"--ia", "--inactive"},
+        paramLabel = "<selection>",
+        defaultValue = "",
+        description = "Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N].")
+    public String inactiveAtoms;
   }
 }

@@ -55,6 +55,7 @@ import java.util.Scanner;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
 /**
@@ -70,296 +71,30 @@ public class ManyBodyOptions {
   private static final Logger logger = Logger.getLogger(ManyBodyOptions.class.getName());
 
   /**
-   * -a or --algorithm Choices are independent residues (1), all with rotamer elimination (2), all
-   * brute force (3), sliding window (4), or box optimization (5).
+   * The ArgGroup keeps the ManyBodyOptionGroup together when printing help.
    */
-  @Option(
-      names = {"-a", "--algorithm"},
-      paramLabel = "0",
-      defaultValue = "0",
-      description =
-          "Algorithm: default automatic settings (0), independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5)")
-  private int algorithm;
-
-  /** -L or --library Choose either Ponder and Richards (1) or Richardson (2) rotamer library. */
-  @Option(
-      names = {"-L", "--library"},
-      paramLabel = "2",
-      defaultValue = "2",
-      description = "Ponder and Richards (1) or Richardson (2) rotamer library.")
-  private int library;
-
-  /** -Ln or --libraryNucleic Choose a nucleic acid library: currently only Richardson available. */
-  @Option(
-      names = {"--Ln", "--libraryNucleic"},
-      paramLabel = "Richardson",
-      defaultValue = "Richardson",
-      description = "Nucleic acid library to select: [Richardson]")
-  private String naLibraryName;
-
-  /** --dee or --deadEnd Use dead-end elimination criteria instead of Goldstein criteria. */
-  @Option(
-      names = {"--dee", "--deadEnd"},
-      paramLabel = "false",
-      defaultValue = "false",
-      description = "Use dead-end elimination criteria instead of Goldstein criteria.")
-  private boolean dee;
-
-  /** --ch or --chain Single character chain ID of the residues to optimize. */
-  @Option(
-      names = {"--ch", "--chain"},
-      paramLabel = "-1",
-      defaultValue = "-1",
-      description = "Single character chain ID of the residues to optimize.")
-  private String chain;
-
+  @ArgGroup(heading = "%n Many-Body Optimization Options%n", validate = false)
+  public ManyBodyOptionGroup group = new ManyBodyOptionGroup();
   /**
-   * -s or --start Starting residue to perform the optimization on (-1 exits). For box optimization,
-   * first box to optimize.
+   * The ArgGroup keeps the ManyBodyBoxOptionGroup together when printing help.
    */
-  @Option(
-      names = {"-s", "--start"},
-      paramLabel = "-1",
-      defaultValue = "-1",
-      description =
-          "Starting residue to perform the optimization on (-1 exits). For box optimization, first box to optimize.")
-  private int start;
-
+  @ArgGroup(heading = "%n Many-Body Box Optimization Options%n", validate = false)
+  public ManyBodyBoxOptionGroup boxGroup = new ManyBodyBoxOptionGroup();
   /**
-   * --fi or --final Final residue to perform the optimization on (-1 exits). For box optimization,
-   * final box to optimize.
+   * The ArgGroup keeps the ManyBodyWindowOptionGroup together when printing help.
    */
-  @Option(
-      names = {"--fi", "--final"},
-      paramLabel = "-1",
-      defaultValue = "-1",
-      description =
-          "Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.")
-  private int finish;
-
-  /** --tC or --twoBodyCutoff Cutoff distance for two-body interactions. */
-  @Option(
-      names = {"--tC", "--twoBodyCutoff"},
-      paramLabel = "3.0",
-      defaultValue = "3.0",
-      description = "Cutoff distance for two body interactions.")
-  private double twoBodyCutoff;
-
-  /** -T or --threeBody Include 3-Body interactions in the elimination criteria. */
-  @Option(
-      names = {"-T", "--threeBody"},
-      defaultValue = "false",
-      description = "Include 3-Body interactions in the elimination criteria.")
-  private boolean threeBody;
-
-  /** --thC or --threeBodyCutoff Cutoff distance for three-body interactions. */
-  @Option(
-      names = {"--thC", "--threeBodyCutoff"},
-      paramLabel = "3.0",
-      defaultValue = "3.0",
-      description = "Cutoff distance for three-body interactions.")
-  private double threeBodyCutoff;
-
-  /** --pr or --prune Prune no clashes (0), only single clashes (1), or all clashes (2). */
-  @Option(
-      names = {"--pr", "--prune"},
-      paramLabel = "1",
-      defaultValue = "1",
-      description = "Prune no clashes (0), only single clashes (1), or all clashes (2)")
-  private int prune;
-
+  @ArgGroup(heading = "%n Many-Body Window Optimization Options%n", validate = false)
+  public ManyBodyWindowOptionGroup windowGroup = new ManyBodyWindowOptionGroup();
   /**
-   * -x or --all Optimize all residues beginning from the passed value (overrides other options);
-   * for box optimization, optimizes all boxes beginning from the passed index. Default is to
-   * optimize all residues.
+   * The ArgGroup keeps the ManyBodyWindowOptionGroup together when printing help.
    */
-  @Option(
-      names = {"-x", "--all"},
-      paramLabel = "-1",
-      defaultValue = "-1",
-      description =
-          "Optimize all residues beginning from the passed value (overrides other options); for box optimization, optimizes all boxes beginning from the passed index.")
-  private int all;
-
-  /** -z or --revert Revert unfavorable changes. */
-  @Option(
-      names = {"-z", "--revert"},
-      defaultValue = "true",
-      description = "Revert unfavorable changes.")
-  private boolean revert;
-
+  @ArgGroup(heading = "%n Many-Body Energy Expansion and Cut-off Options%n", validate = false)
+  public ManyBodyEnergyOptionGroup energyGroup = new ManyBodyEnergyOptionGroup();
   /**
-   * --eR or --energyRestart Load energy restart file from a previous run (requires that all
-   * parameters are the same).
+   * The ArgGroup keeps the ManyBodyResidueOptionGroup together when printing help.
    */
-  @Option(
-      names = {"--eR", "--energyRestart"},
-      paramLabel = "none",
-      defaultValue = "none",
-      description =
-          "Load energy restart file from a previous run (requires that all parameters are the same).")
-  private String energyRestart;
-
-  /** -o or --noOriginal Do not include starting coordinates as their own rotamer. */
-  @Option(
-      names = {"-O", "--noOriginal"},
-      defaultValue = "false",
-      description = "Do not include starting coordinates as their own rotamer.")
-  private boolean noOriginal;
-
-  /** -E or --decompose Print energy decomposition for the input structure (no optimization). */
-  @Option(
-      names = {"-E", "--decompose"},
-      defaultValue = "false",
-      description = "Print energy decomposition for the input structure (no optimization!).")
-  private boolean decompose;
-
-  //    /**
-  //     * --sO or --sequence Choose a list of individual residues to sequence
-  //     * optimize (example: A2.A3.A5).
-  //     */
-  //    @Option(names = {"--sO", "--sequence"}, paramLabel = "none",
-  //            description = "Choose a list of individual residues to sequence optimize (example:
-  // A2.A3.A5)")
-  //    String sequence = "none";
-  //    /**
-  //     * --tO or --titrationOptimization Optimize the titration states for a list
-  //     * of residues (example: H2.H3.H5).
-  //     */
-  //    @Option(names = {"--tO", "--titrationOptimization"}, paramLabel = "none",
-  //            description = "Optimize the titration states for a list of residues (example:
-  // H2.H3.H5).")
-  //    String titrationOptimization = "none";
-
-  /** --lR or --listResidues Choose a list of individual residues to optimize (eg. A11,A24,B40). */
-  @Option(
-      names = {"--lR", "--listResidues"},
-      paramLabel = "none",
-      defaultValue = "none",
-      description = "Choose a list of individual residues to optimize (eg. A11,A24,B40).")
-  private String listResidues;
-
-  /**
-   * --mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all
-   * remaining conformations, whichever is smaller.
-   */
-  @Option(
-      names = {"--mC", "--monteCarlo"},
-      paramLabel = "-1",
-      defaultValue = "-1",
-      description =
-          "Follow elimination criteria with (n) Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.")
-  private int monteCarlo;
-
-  /**
-   * -out or --output Save eliminated singles and eliminated pairs to a text file (global and box
-   * optimization).
-   */
-  //  @Option(
-  //      names = {"--out", "--output"},
-  //      defaultValue = "false",
-  //      description = "Save eliminated singles and eliminated pairs to a text file.")
-  private boolean saveOutput;
-
-  /** --window Size of the sliding window with respect to adjacent residues (default = 7). */
-  @Option(
-      names = {"--window"},
-      paramLabel = "7",
-      defaultValue = "7",
-      description = "Size of the sliding window with respect to adjacent residues.")
-  private int window;
-
-  /** --increment Sliding window increment (default = 3). */
-  @Option(
-      names = {"--increment"},
-      paramLabel = "3",
-      defaultValue = "3",
-      description = "Sliding window increment.")
-  private int increment;
-
-  /** --radius The sliding window cutoff radius (Angstroms). */
-  @Option(
-      names = {"--radius"},
-      paramLabel = "2.0",
-      defaultValue = "2.0",
-      description = "The sliding window cutoff radius (Angstroms).")
-  private double cutoff;
-
-  /**
-   * --clashThreshold The threshold for pruning clashes. If two self-energies on the same residue
-   * have an energy difference greater than 25 kcal/mol, the high energy rotamers get pruned.
-   */
-  @Option(
-      names = {"--clashThreshold"},
-      paramLabel = "25.0",
-      defaultValue = "25.0",
-      description = "The threshold for pruning clashes.")
-  private double clashThreshold;
-
-  /**
-   * --pairClashThreshold The threshold for pruning clashes. If two pair-energies on the same
-   * residues have an energy difference greater than 25 kcal/mol, the high energy rotamers get
-   * pruned.
-   */
-  @Option(
-      names = {"--pairClashThreshold"},
-      paramLabel = "25.0",
-      defaultValue = "25.0",
-      description = "The threshold for pruning pair clashes.")
-  private double pairClashThreshold;
-
-  /**
-   * -fR or --forceResidues Force residues in this range to be considered for sliding window radii,
-   * regardless of whether they lack rotamers.
-   */
-  @Option(
-      names = {"--fR", "--forceResidues"},
-      paramLabel = "-1,-1",
-      defaultValue = "-1,-1",
-      description =
-          "Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.")
-  private String forceResidues;
-
-  /** -nB or --numBoxes Specify number of boxes along X, Y, and Z (default: '3,3,3'). */
-  @Option(
-      names = {"--nB", "--numBoxes"},
-      paramLabel = "3,3,3",
-      defaultValue = "3,3,3",
-      description = "Specify number of boxes along X, Y, and Z (default: 3,3,3)")
-  private String numBoxes;
-
-  /** -bB or --boxBorderSize Extent of overlap between optimization boxes (default: 0.0 A). */
-  @Option(
-      names = {"--bB", "--boxBorderSize"},
-      paramLabel = "0.0",
-      defaultValue = "0.0",
-      description = "Extent of overlap between optimization boxes in Angstroms.")
-  private double boxBorderSize;
-
-  /**
-   * -bL or --approxBoxLength Approximate side lengths of boxes to be constructed (over-rides
-   * numXYZBoxes). Box sizes are rounded up to make a whole number of boxes along each axis (default
-   * of 0 disables this function).
-   */
-  @Option(
-      names = {"--bL", "--approxBoxLength"},
-      paramLabel = "20.0",
-      defaultValue = "20.0",
-      description = "Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes).")
-  private double approxBoxLength;
-
-  /**
-   * -bC or --boxInclusionCriterion Criterion to use for adding residues to boxes. (1) uses C alpha
-   * only (N1/9 for nucleic acids) (2) uses any atom. (3) uses any rotamer
-   */
-  @Option(
-      names = {"--bC", "--boxInclusionCriterion"},
-      paramLabel = "1",
-      defaultValue = "1",
-      description =
-          "Criterion to use for adding a residue to a box: (1) uses C alpha only (N1/9 for nucleic acids), (2) uses any atom, and (3) uses any rotamer")
-  private int boxInclusionCriterion;
-
+  @ArgGroup(heading = "%n Many-Body Residue Selection Options%n", validate = false)
+  public ManyBodyResidueOptionGroup residueGroup = new ManyBodyResidueOptionGroup();
   private RotamerOptimization rotamerOptimization;
   private RotamerLibrary rotamerLibrary;
   private int allStartResID;
@@ -376,28 +111,11 @@ public class ManyBodyOptions {
    *     etc.)
    */
   public int getAlgorithmNumber() {
-    return algorithm;
-  }
-
-  public double getApproximate() {
-    return rotamerOptimization.getApproximate();
-  }
-
-  /**
-   * Gets the restart file created during rotamer optimization.
-   *
-   * @return The restart file.
-   */
-  public File getRestartFile() {
-    return rotamerOptimization.getRestartFile();
-  }
-
-  public RotamerLibrary getRotamerLibrary() {
-    return rotamerLibrary;
+    return group.algorithm;
   }
 
   public boolean getUsingOriginalCoordinates() {
-    return !noOriginal;
+    return !group.noOriginal;
   }
 
   /**
@@ -410,8 +128,8 @@ public class ManyBodyOptions {
       RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
     this.rotamerOptimization = rotamerOptimization;
 
-    boolean useOrigCoordsRotamer = !noOriginal;
-    if (decompose) {
+    boolean useOrigCoordsRotamer = !group.noOriginal;
+    if (group.decompose) {
       useOrigCoordsRotamer = true;
     }
 
@@ -434,15 +152,16 @@ public class ManyBodyOptions {
     } else {
       rotamerLibrary =
           new RotamerLibrary(
-              RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), useOrigCoordsRotamer);
+              RotamerLibrary.ProteinLibrary.intToProteinLibrary(group.library),
+              useOrigCoordsRotamer);
     }
 
     rotamerOptimization.setRotamerLibrary(rotamerLibrary);
-    rotamerOptimization.setSingletonClashThreshold(clashThreshold);
-    rotamerOptimization.setPairClashThreshold(pairClashThreshold);
-    rotamerOptimization.setDecomposeOriginal(decompose);
+    rotamerOptimization.setSingletonClashThreshold(energyGroup.clashThreshold);
+    rotamerOptimization.setPairClashThreshold(energyGroup.pairClashThreshold);
+    rotamerOptimization.setDecomposeOriginal(group.decompose);
 
-    if (algorithm == 0) {
+    if (group.algorithm == 0) {
       setAlgorithm(activeAssembly);
     }
     setSelection();
@@ -452,7 +171,7 @@ public class ManyBodyOptions {
   }
 
   public void setOriginalCoordinates(boolean useOrig) {
-    noOriginal = !useOrig;
+    group.noOriginal = !useOrig;
   }
 
   /**
@@ -465,7 +184,7 @@ public class ManyBodyOptions {
     addListResidues(resList);
 
     int counter = 1;
-    if (algorithm != 5) {
+    if (group.algorithm != 5) {
       if (allStartResID > 0) {
         List<Residue> residueList = new ArrayList<>();
         Polymer[] polymers = activeAssembly.getChains();
@@ -481,7 +200,7 @@ public class ManyBodyOptions {
               if (counter >= allStartResID) {
                 residueList.add(residue);
               }
-            } else if (!forceResidues.equalsIgnoreCase("none")) {
+            } else if (!group.forceResidues.equalsIgnoreCase("none")) {
               if (counter >= allStartResID
                   && counter >= forceResiduesStart
                   && counter <= forceResiduesEnd) {
@@ -492,7 +211,7 @@ public class ManyBodyOptions {
           }
         }
         rotamerOptimization.setResidues(residueList);
-      } else if (!listResidues.equalsIgnoreCase("none")) {
+      } else if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
         List<Residue> residueList = new ArrayList<>();
         Polymer[] polymers = activeAssembly.getChains();
         int n = 0;
@@ -518,10 +237,10 @@ public class ManyBodyOptions {
         if (n < 1) {
           return;
         }
-      } else if (!chain.equalsIgnoreCase("-1")) {
-        rotamerOptimization.setResidues(chain, start, finish);
+      } else if (!residueGroup.chain.equalsIgnoreCase("-1")) {
+        rotamerOptimization.setResidues(residueGroup.chain, residueGroup.start, residueGroup.finish);
       } else {
-        rotamerOptimization.setResidues(start, finish);
+        rotamerOptimization.setResidues(residueGroup.start, residueGroup.finish);
       }
     } else {
       List<Residue> residueList = new ArrayList<>();
@@ -530,7 +249,7 @@ public class ManyBodyOptions {
       CompositeConfiguration properties = activeAssembly.getProperties();
       boolean ignoreNA = properties.getBoolean("ignoreNA", false);
 
-      if (!listResidues.equalsIgnoreCase("none")) {
+      if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
         int n = 0;
         for (String s : resList) {
           Character chainID = s.charAt(0);
@@ -614,7 +333,7 @@ public class ManyBodyOptions {
       }
       rotamerOptimization.setResidues(residueList);
       rotamerOptimization.setBoxStart(boxStart);
-      if (finish > 0) {
+      if (residueGroup.finish > 0) {
         rotamerOptimization.setBoxEnd(boxEnd);
       }
     }
@@ -645,24 +364,41 @@ public class ManyBodyOptions {
         nResidues = residues.size() + nResidues;
       }
       if (nResidues > 100) {
-        algorithm = 5;
+        group.algorithm = 5;
       } else {
-        algorithm = 2;
+        group.algorithm = 2;
       }
-    } else if (!listResidues.equalsIgnoreCase("none")) {
+    } else if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
       List<String> resList = new ArrayList<>();
       addListResidues(resList);
       if (resList.size() > 100) {
-        algorithm = 5;
+        group.algorithm = 5;
       } else {
-        algorithm = 2;
+        group.algorithm = 2;
       }
-    } else if (!chain.equalsIgnoreCase("-1")) {
-      algorithm = startFinishDifference();
-    } else if (start > 0 && finish > 0) {
-      algorithm = startFinishDifference();
+    } else if (!residueGroup.chain.equalsIgnoreCase("-1")) {
+      group.algorithm = startFinishDifference();
+    } else if (residueGroup.start > 0 && residueGroup.finish > 0) {
+      group.algorithm = startFinishDifference();
     }
-    return algorithm;
+    return group.algorithm;
+  }
+
+  public double getApproximate() {
+    return rotamerOptimization.getApproximate();
+  }
+
+  /**
+   * Gets the restart file created during rotamer optimization.
+   *
+   * @return The restart file.
+   */
+  public File getRestartFile() {
+    return rotamerOptimization.getRestartFile();
+  }
+
+  public RotamerLibrary getRotamerLibrary() {
+    return rotamerLibrary;
   }
 
   /**
@@ -674,7 +410,7 @@ public class ManyBodyOptions {
    * @return The default algorithm number.
    */
   private int startFinishDifference() {
-    if (finish - start > 100) {
+    if (residueGroup.finish - residueGroup.start > 100) {
       return 5;
     } else {
       return 2;
@@ -688,20 +424,20 @@ public class ManyBodyOptions {
    * how many amino acids will be optimized (general cutoff of 100 amino acids).
    */
   private void setStartAndEndDefault() {
-    if (start < 0 && finish < 0 && all < 0) {
-      if (!listResidues.equalsIgnoreCase("none")) {
+    if (residueGroup.start < 0 && residueGroup.finish < 0 && residueGroup.all < 0) {
+      if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
         allStartResID = -1;
         boxStart = 0;
         boxEnd = -1;
       } else {
         allStartResID = 1;
-        boxStart = start - 1;
-        boxEnd = finish - 1;
+        boxStart = residueGroup.start - 1;
+        boxEnd = residueGroup.finish - 1;
       }
     } else {
-      allStartResID = all;
-      boxStart = start - 1;
-      boxEnd = finish - 1;
+      allStartResID = residueGroup.all;
+      boxStart = residueGroup.start - 1;
+      boxEnd = residueGroup.finish - 1;
     }
   }
 
@@ -712,10 +448,11 @@ public class ManyBodyOptions {
     // Internal machinery indexed 0 to (n-1)
     setStartAndEndDefault();
 
-    if (algorithm != 5) {
+    if (group.algorithm != 5) {
       // Not Box optimization.
-      if (allStartResID < 1 && listResidues.equalsIgnoreCase("none")) {
-        if (finish < start || start < 0 || finish < 0) {
+      if (allStartResID < 1 && residueGroup.listResidues.equalsIgnoreCase("none")) {
+        if (residueGroup.finish < residueGroup.start || residueGroup.start < 0
+            || residueGroup.finish < 0) {
           logger.warning(" FFX shutting down: no residues specified for optimization.");
           return;
         }
@@ -736,8 +473,8 @@ public class ManyBodyOptions {
 
     // Box optimization options.
     numXYZBoxes = new int[3];
-    if (algorithm == 5) {
-      String input = numBoxes;
+    if (group.algorithm == 5) {
+      String input = boxGroup.numBoxes;
       Scanner boxNumInput = new java.util.Scanner(input);
       boxNumInput.useDelimiter(",");
       int inputLoopCounter = 0;
@@ -782,8 +519,8 @@ public class ManyBodyOptions {
     forceResiduesEnd = -1;
 
     List<String> resList = new ArrayList<>();
-    if (!listResidues.equalsIgnoreCase("none")) {
-      String[] tok = listResidues.split(",");
+    if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
+      String[] tok = residueGroup.listResidues.split(",");
       for (String t : tok) {
         logger.info(" Adding " + t);
         resList.add(t);
@@ -791,8 +528,8 @@ public class ManyBodyOptions {
     }
 
     // Evaluate forced residues for the sliding window algorithm
-    if (algorithm == 4 && !forceResidues.equalsIgnoreCase("-1,-1")) {
-      String input = forceResidues;
+    if (group.algorithm == 4 && !group.forceResidues.equalsIgnoreCase("-1,-1")) {
+      String input = group.forceResidues;
       Scanner frScan = new Scanner(input);
       frScan.useDelimiter(",");
       try {
@@ -821,20 +558,21 @@ public class ManyBodyOptions {
       }
     }
 
-    if (algorithm != 5) {
-      if (!listResidues.equalsIgnoreCase("none")) {
+    if (group.algorithm != 5) {
+      if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
         StringBuilder info = new StringBuilder("\n Evaluating rotamers for residues ");
         for (String i : resList) {
           info.append(format("%s, ", i));
         }
         logger.info(info.toString());
       } else if (allStartResID == -1) {
-        logger.info("\n Evaluating rotamers for residues " + start + " to " + finish);
+        logger.info("\n Evaluating rotamers for residues " + residueGroup.start + " to "
+            + residueGroup.finish);
       } else {
         logger.info("\n Evaluating rotamers for all residues beginning at " + allStartResID);
       }
     } else {
-      if (!listResidues.equalsIgnoreCase("none")) {
+      if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
         StringBuilder info = new StringBuilder("\n Evaluating rotamers for boxes with residues ");
         for (String i : resList) {
           info.append(format("%s, ", i));
@@ -854,8 +592,8 @@ public class ManyBodyOptions {
    * @param resList a {@link java.util.List} object.
    */
   private void addListResidues(List<String> resList) {
-    if (!listResidues.equalsIgnoreCase("none")) {
-      String[] tok = listResidues.split(",");
+    if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
+      String[] tok = residueGroup.listResidues.split(",");
       for (String t : tok) {
         logger.info(" Adding " + t);
         resList.add(t);
@@ -866,42 +604,42 @@ public class ManyBodyOptions {
   /** Sets the standard values for properties in rotamer optimization. */
   private void setRotOptProperties() {
     // General
-    rotamerOptimization.setTwoBodyCutoff(twoBodyCutoff);
-    rotamerOptimization.setThreeBodyCutoff(threeBodyCutoff);
-    rotamerOptimization.setThreeBodyEnergy(threeBody);
-    rotamerOptimization.setUseGoldstein(!dee);
-    rotamerOptimization.setRevert(revert);
-    rotamerOptimization.setPruning(prune);
-    rotamerOptimization.setDistanceCutoff(cutoff);
+    rotamerOptimization.setTwoBodyCutoff(energyGroup.twoBodyCutoff);
+    rotamerOptimization.setThreeBodyCutoff(energyGroup.threeBodyCutoff);
+    rotamerOptimization.setThreeBodyEnergy(energyGroup.threeBody);
+    rotamerOptimization.setUseGoldstein(!group.dee);
+    rotamerOptimization.setRevert(group.revert);
+    rotamerOptimization.setPruning(energyGroup.prune);
+    rotamerOptimization.setDistanceCutoff(energyGroup.cutoff);
     boolean monteCarloBool = false;
-    if (monteCarlo > 1) {
+    if (group.monteCarlo > 1) {
       monteCarloBool = true;
     }
-    rotamerOptimization.setMonteCarlo(monteCarloBool, monteCarlo);
+    rotamerOptimization.setMonteCarlo(monteCarloBool, group.monteCarlo);
 
     File energyRestartFile = null;
-    if (!energyRestart.equalsIgnoreCase("none")) {
-      energyRestartFile = new File(energyRestart);
+    if (!group.energyRestart.equalsIgnoreCase("none")) {
+      energyRestartFile = new File(group.energyRestart);
       rotamerOptimization.setEnergyRestartFile(energyRestartFile);
     }
 
     // Window
-    if (algorithm == 4) {
-      rotamerOptimization.setWindowSize(window);
-      rotamerOptimization.setIncrement(increment);
+    if (group.algorithm == 4) {
+      rotamerOptimization.setWindowSize(windowGroup.window);
+      rotamerOptimization.setIncrement(windowGroup.increment);
       rotamerOptimization.setForcedResidues(forceResiduesStart, forceResiduesEnd);
     }
 
     // Box
-    if (algorithm == 5) {
-      if (approxBoxLength < 0) {
+    if (group.algorithm == 5) {
+      if (boxGroup.approxBoxLength < 0) {
         logger.info(" Negative box length value changed to -1 * input.");
-        approxBoxLength *= -1;
+        boxGroup.approxBoxLength *= -1;
       }
-      rotamerOptimization.setBoxBorderSize(boxBorderSize);
-      rotamerOptimization.setApproxBoxLength(approxBoxLength);
+      rotamerOptimization.setBoxBorderSize(boxGroup.boxBorderSize);
+      rotamerOptimization.setApproxBoxLength(boxGroup.approxBoxLength);
       rotamerOptimization.setNumXYZBoxes(numXYZBoxes);
-      rotamerOptimization.setBoxInclusionCriterion(boxInclusionCriterion);
+      rotamerOptimization.setBoxInclusionCriterion(boxGroup.boxInclusionCriterion);
     }
   }
 
@@ -912,11 +650,11 @@ public class ManyBodyOptions {
    * @return Returns the algorithm choice.
    */
   public int getAlgorithm() {
-    return algorithm;
+    return group.algorithm;
   }
 
   public void setAlgorithm(int algorithm) {
-    this.algorithm = algorithm;
+    group.algorithm = algorithm;
   }
 
   /**
@@ -925,11 +663,11 @@ public class ManyBodyOptions {
    * @return Returns the Rotamer library.
    */
   public int getLibrary() {
-    return library;
+    return group.library;
   }
 
   public void setLibrary(int library) {
-    this.library = library;
+    group.library = library;
   }
 
   /**
@@ -938,11 +676,11 @@ public class ManyBodyOptions {
    * @return Returns a String for the nucleic acid library.
    */
   public String getNaLibraryName() {
-    return naLibraryName;
+    return group.naLibraryName;
   }
 
   public void setNaLibraryName(String naLibraryName) {
-    this.naLibraryName = naLibraryName;
+    group.naLibraryName = naLibraryName;
   }
 
   /**
@@ -951,11 +689,11 @@ public class ManyBodyOptions {
    * @return Returns true if using DEE instead of Goldstein.
    */
   public boolean isDee() {
-    return dee;
+    return group.dee;
   }
 
   public void setDee(boolean dee) {
-    this.dee = dee;
+    group.dee = dee;
   }
 
   /**
@@ -964,11 +702,11 @@ public class ManyBodyOptions {
    * @return Returns the Chain name.
    */
   public String getChain() {
-    return chain;
+    return residueGroup.chain;
   }
 
   public void setChain(String chain) {
-    this.chain = chain;
+    residueGroup.chain = chain;
   }
 
   /**
@@ -978,11 +716,11 @@ public class ManyBodyOptions {
    * @return Returns the starting index.
    */
   public int getStart() {
-    return start;
+    return residueGroup.start;
   }
 
   public void setStart(int start) {
-    this.start = start;
+    residueGroup.start = start;
   }
 
   /**
@@ -992,11 +730,11 @@ public class ManyBodyOptions {
    * @return Returns the finish index.
    */
   public int getFinish() {
-    return finish;
+    return residueGroup.finish;
   }
 
   public void setFinish(int finish) {
-    this.finish = finish;
+    residueGroup.finish = finish;
   }
 
   /**
@@ -1005,11 +743,11 @@ public class ManyBodyOptions {
    * @return Returns the 2-body cutoff.
    */
   public double getTwoBodyCutoff() {
-    return twoBodyCutoff;
+    return energyGroup.twoBodyCutoff;
   }
 
   public void setTwoBodyCutoff(double twoBodyCutoff) {
-    this.twoBodyCutoff = twoBodyCutoff;
+    energyGroup.twoBodyCutoff = twoBodyCutoff;
   }
 
   /**
@@ -1018,11 +756,11 @@ public class ManyBodyOptions {
    * @return Returns true if 3-body interactions are being used.
    */
   public boolean isThreeBody() {
-    return threeBody;
+    return energyGroup.threeBody;
   }
 
   public void setThreeBody(boolean threeBody) {
-    this.threeBody = threeBody;
+    energyGroup.threeBody = threeBody;
   }
 
   /**
@@ -1031,11 +769,11 @@ public class ManyBodyOptions {
    * @return Returns the 3-body cutoff.
    */
   public double getThreeBodyCutoff() {
-    return threeBodyCutoff;
+    return energyGroup.threeBodyCutoff;
   }
 
   public void setThreeBodyCutoff(double threeBodyCutoff) {
-    this.threeBodyCutoff = threeBodyCutoff;
+    energyGroup.threeBodyCutoff = threeBodyCutoff;
   }
 
   /**
@@ -1044,11 +782,11 @@ public class ManyBodyOptions {
    * @return Returns the pruning condition.
    */
   public int getPrune() {
-    return prune;
+    return energyGroup.prune;
   }
 
   public void setPrune(int prune) {
-    this.prune = prune;
+    energyGroup.prune = prune;
   }
 
   /**
@@ -1059,11 +797,11 @@ public class ManyBodyOptions {
    * @return Returns the residue / box to start from.
    */
   public int getAll() {
-    return all;
+    return residueGroup.all;
   }
 
   public void setAll(int all) {
-    this.all = all;
+    residueGroup.all = all;
   }
 
   /**
@@ -1072,11 +810,11 @@ public class ManyBodyOptions {
    * @return Returns true if unfavorable changes are reverted.
    */
   public boolean isRevert() {
-    return revert;
+    return group.revert;
   }
 
   public void setRevert(boolean revert) {
-    this.revert = revert;
+    group.revert = revert;
   }
 
   /**
@@ -1085,11 +823,11 @@ public class ManyBodyOptions {
    * @return Returns the energy restart file to use.
    */
   public String getEnergyRestart() {
-    return energyRestart;
+    return group.energyRestart;
   }
 
   public void setEnergyRestart(String energyRestart) {
-    this.energyRestart = energyRestart;
+    group.energyRestart = energyRestart;
   }
 
   /**
@@ -1098,11 +836,11 @@ public class ManyBodyOptions {
    * @return Returns true if original side-chain coordinates should not be used as a rotamer.
    */
   public boolean isNoOriginal() {
-    return noOriginal;
+    return group.noOriginal;
   }
 
   public void setNoOriginal(boolean noOriginal) {
-    this.noOriginal = noOriginal;
+    group.noOriginal = noOriginal;
   }
 
   /**
@@ -1111,11 +849,11 @@ public class ManyBodyOptions {
    * @return Returns true if the input structure should undergo an energy decomposition.
    */
   public boolean isDecompose() {
-    return decompose;
+    return group.decompose;
   }
 
   public void setDecompose(boolean decompose) {
-    this.decompose = decompose;
+    group.decompose = decompose;
   }
 
   /**
@@ -1124,11 +862,11 @@ public class ManyBodyOptions {
    * @return Returns the list of selected residues.
    */
   public String getListResidues() {
-    return listResidues;
+    return residueGroup.listResidues;
   }
 
   public void setListResidues(String listResidues) {
-    this.listResidues = listResidues;
+    residueGroup.listResidues = listResidues;
   }
 
   /**
@@ -1138,11 +876,11 @@ public class ManyBodyOptions {
    * @return Returns the number of Monte Carlo optimization steps to apply.
    */
   public int getMonteCarlo() {
-    return monteCarlo;
+    return group.monteCarlo;
   }
 
   public void setMonteCarlo(int monteCarlo) {
-    this.monteCarlo = monteCarlo;
+    group.monteCarlo = monteCarlo;
   }
 
   /**
@@ -1151,11 +889,11 @@ public class ManyBodyOptions {
    * @return Returns true to Save eliminated rotamers to a file.
    */
   public boolean isSaveOutput() {
-    return saveOutput;
+    return group.saveOutput;
   }
 
   public void setSaveOutput(boolean saveOutput) {
-    this.saveOutput = saveOutput;
+    group.saveOutput = saveOutput;
   }
 
   /**
@@ -1164,11 +902,11 @@ public class ManyBodyOptions {
    * @return Returns the sliding window size.
    */
   public int getWindow() {
-    return window;
+    return windowGroup.window;
   }
 
   public void setWindow(int window) {
-    this.window = window;
+    windowGroup.window = window;
   }
 
   /**
@@ -1177,24 +915,24 @@ public class ManyBodyOptions {
    * @return Returns the sliding window increment.
    */
   public int getIncrement() {
-    return increment;
+    return windowGroup.increment;
   }
 
   public void setIncrement(int increment) {
-    this.increment = increment;
+    windowGroup.increment = increment;
   }
 
   /**
-   * The sliding window cutoff radius (Angstroms).
+   * The sliding window and box cutoff radius (Angstroms).
    *
    * @return Returns the sliding window cutoff radius.
    */
   public double getCutoff() {
-    return cutoff;
+    return energyGroup.cutoff;
   }
 
   public void setCutoff(double cutoff) {
-    this.cutoff = cutoff;
+    energyGroup.cutoff = cutoff;
   }
 
   /**
@@ -1204,11 +942,11 @@ public class ManyBodyOptions {
    * @return Returns the clash threshold for self energies.
    */
   public double getClashThreshold() {
-    return clashThreshold;
+    return energyGroup.clashThreshold;
   }
 
   public void setClashThreshold(double clashThreshold) {
-    this.clashThreshold = clashThreshold;
+    energyGroup.clashThreshold = clashThreshold;
   }
 
   /**
@@ -1218,11 +956,11 @@ public class ManyBodyOptions {
    * @return Returns the clash threshold for pair energies.
    */
   public double getPairClashThreshold() {
-    return pairClashThreshold;
+    return energyGroup.pairClashThreshold;
   }
 
   public void setPairClashThreshold(double pairClashThreshold) {
-    this.pairClashThreshold = pairClashThreshold;
+    energyGroup.pairClashThreshold = pairClashThreshold;
   }
 
   /**
@@ -1232,11 +970,11 @@ public class ManyBodyOptions {
    * @return Returns forced residues.
    */
   public String getForceResidues() {
-    return forceResidues;
+    return group.forceResidues;
   }
 
   public void setForceResidues(String forceResidues) {
-    this.forceResidues = forceResidues;
+    group.forceResidues = forceResidues;
   }
 
   /**
@@ -1245,11 +983,11 @@ public class ManyBodyOptions {
    * @return Returns the number of boxes.
    */
   public String getNumBoxes() {
-    return numBoxes;
+    return boxGroup.numBoxes;
   }
 
   public void setNumBoxes(String numBoxes) {
-    this.numBoxes = numBoxes;
+    boxGroup.numBoxes = numBoxes;
   }
 
   /**
@@ -1258,11 +996,11 @@ public class ManyBodyOptions {
    * @return Returns the overlap between optimization boxes.
    */
   public double getBoxBorderSize() {
-    return boxBorderSize;
+    return boxGroup.boxBorderSize;
   }
 
   public void setBoxBorderSize(double boxBorderSize) {
-    this.boxBorderSize = boxBorderSize;
+    boxGroup.boxBorderSize = boxBorderSize;
   }
 
   /**
@@ -1273,11 +1011,11 @@ public class ManyBodyOptions {
    * @return Returns the approximate box length.
    */
   public double getApproxBoxLength() {
-    return approxBoxLength;
+    return boxGroup.approxBoxLength;
   }
 
   public void setApproxBoxLength(double approxBoxLength) {
-    this.approxBoxLength = approxBoxLength;
+    boxGroup.approxBoxLength = approxBoxLength;
   }
 
   /**
@@ -1287,11 +1025,335 @@ public class ManyBodyOptions {
    * @return Returns the Box inclusion criteria.
    */
   public int getBoxInclusionCriterion() {
-    return boxInclusionCriterion;
+    return boxGroup.boxInclusionCriterion;
   }
 
   public void setBoxInclusionCriterion(int boxInclusionCriterion) {
-    this.boxInclusionCriterion = boxInclusionCriterion;
+    boxGroup.boxInclusionCriterion = boxInclusionCriterion;
+  }
+
+  /**
+   * Collection of ManyBody Options.
+   */
+  private static class ManyBodyOptionGroup {
+
+    /**
+     * -a or --algorithm Choices are independent residues (1), all with rotamer elimination (2), all
+     * brute force (3), sliding window (4), or box optimization (5).
+     */
+    @Option(
+        names = {"-a", "--algorithm"},
+        paramLabel = "0",
+        defaultValue = "0",
+        description =
+            "Algorithm: default automatic settings (0), independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5)")
+    private int algorithm;
+
+    /** -L or --library Choose either Ponder and Richards (1) or Richardson (2) rotamer library. */
+    @Option(
+        names = {"-L", "--library"},
+        paramLabel = "2",
+        defaultValue = "2",
+        description = "Ponder and Richards (1) or Richardson (2) rotamer library.")
+    private int library;
+
+    /** -Ln or --libraryNucleic Choose a nucleic acid library: currently only Richardson available. */
+    @Option(
+        names = {"--Ln", "--libraryNucleic"},
+        paramLabel = "Richardson",
+        defaultValue = "Richardson",
+        description = "Nucleic acid library to select: [Richardson]")
+    private String naLibraryName;
+
+    /** --dee or --deadEnd Use dead-end elimination criteria instead of Goldstein criteria. */
+    @Option(
+        names = {"--dee", "--deadEnd"},
+        paramLabel = "false",
+        defaultValue = "false",
+        description = "Use dead-end elimination criteria instead of Goldstein criteria.")
+    private boolean dee;
+
+    /** -z or --revert Revert unfavorable changes. */
+    @Option(
+        names = {"-z", "--revert"},
+        defaultValue = "true",
+        description = "Revert unfavorable changes.")
+    private boolean revert;
+
+    /**
+     * --eR or --energyRestart Load energy restart file from a previous run (requires that all
+     * parameters are the same).
+     */
+    @Option(
+        names = {"--eR", "--energyRestart"},
+        paramLabel = "none",
+        defaultValue = "none",
+        description =
+            "Load energy restart file from a previous run (requires that all parameters are the same).")
+    private String energyRestart;
+
+    /** -o or --noOriginal Do not include starting coordinates as their own rotamer. */
+    @Option(
+        names = {"-O", "--noOriginal"},
+        defaultValue = "false",
+        description = "Do not include starting coordinates as their own rotamer.")
+    private boolean noOriginal;
+
+    /** -E or --decompose Print energy decomposition for the input structure (no optimization). */
+    @Option(
+        names = {"-E", "--decompose"},
+        defaultValue = "false",
+        description = "Print energy decomposition for the input structure (no optimization!).")
+    private boolean decompose;
+
+    //    /**
+    //     * --sO or --sequence Choose a list of individual residues to sequence
+    //     * optimize (example: A2.A3.A5).
+    //     */
+    //    @Option(names = {"--sO", "--sequence"}, paramLabel = "none",
+    //            description = "Choose a list of individual residues to sequence optimize (example:
+    // A2.A3.A5)")
+    //    String sequence = "none";
+    //    /**
+    //     * --tO or --titrationOptimization Optimize the titration states for a list
+    //     * of residues (example: H2.H3.H5).
+    //     */
+    //    @Option(names = {"--tO", "--titrationOptimization"}, paramLabel = "none",
+    //            description = "Optimize the titration states for a list of residues (example:
+    // H2.H3.H5).")
+    //    String titrationOptimization = "none";
+
+    /**
+     * --mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all
+     * remaining conformations, whichever is smaller.
+     */
+    @Option(
+        names = {"--mC", "--monteCarlo"},
+        paramLabel = "-1",
+        defaultValue = "-1",
+        description =
+            "Follow elimination criteria with (n) Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.")
+    private int monteCarlo;
+
+    /**
+     * -out or --output Save eliminated singles and eliminated pairs to a text file (global and box
+     * optimization).
+     */
+    //  @Option(
+    //      names = {"--out", "--output"},
+    //      defaultValue = "false",
+    //      description = "Save eliminated singles and eliminated pairs to a text file.")
+    private boolean saveOutput;
+
+    /**
+     * -fR or --forceResidues Force residues in this range to be considered for sliding window radii,
+     * regardless of whether they lack rotamers.
+     */
+    @Option(
+        names = {"--fR", "--forceResidues"},
+        paramLabel = "-1,-1",
+        defaultValue = "-1,-1",
+        description =
+            "Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.")
+    private String forceResidues;
+
+  }
+
+  /**
+   * Collection of ManyBody Box Optimization Options.
+   */
+  private static class ManyBodyBoxOptionGroup {
+
+    /** -nB or --numBoxes Specify number of boxes along X, Y, and Z (default: '3,3,3'). */
+    @Option(
+        names = {"--nB", "--numBoxes"},
+        paramLabel = "3,3,3",
+        defaultValue = "3,3,3",
+        description = "Specify number of boxes along X, Y, and Z (default: 3,3,3)")
+    private String numBoxes;
+
+    /** -bB or --boxBorderSize Extent of overlap between optimization boxes (default: 0.0 A). */
+    @Option(
+        names = {"--bB", "--boxBorderSize"},
+        paramLabel = "0.0",
+        defaultValue = "0.0",
+        description = "Extent of overlap between optimization boxes in Angstroms.")
+    private double boxBorderSize;
+
+    /**
+     * -bL or --approxBoxLength Approximate side lengths of boxes to be constructed (over-rides
+     * numXYZBoxes). Box sizes are rounded up to make a whole number of boxes along each axis
+     * (default of 0 disables this function).
+     */
+    @Option(
+        names = {"--bL", "--approxBoxLength"},
+        paramLabel = "20.0",
+        defaultValue = "20.0",
+        description = "Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes).")
+    private double approxBoxLength;
+
+    /**
+     * -bC or --boxInclusionCriterion Criterion to use for adding residues to boxes. (1) uses C alpha
+     * only (N1/9 for nucleic acids) (2) uses any atom. (3) uses any rotamer
+     */
+    @Option(
+        names = {"--bC", "--boxInclusionCriterion"},
+        paramLabel = "1",
+        defaultValue = "1",
+        description =
+            "Criterion to use for adding a residue to a box: (1) uses C alpha only (N1/9 for nucleic acids), (2) uses any atom, and (3) uses any rotamer")
+    private int boxInclusionCriterion;
+  }
+
+  /**
+   * Collection of ManyBody Window Optimization Options.
+   */
+  private static class ManyBodyWindowOptionGroup {
+
+    /** --window Size of the sliding window with respect to adjacent residues (default = 7). */
+    @Option(
+        names = {"--window"},
+        paramLabel = "7",
+        defaultValue = "7",
+        description = "Size of the sliding window with respect to adjacent residues.")
+    private int window;
+
+    /** --increment Sliding window increment (default = 3). */
+    @Option(
+        names = {"--increment"},
+        paramLabel = "3",
+        defaultValue = "3",
+        description = "Sliding window increment.")
+    private int increment;
+
+  }
+
+  /**
+   * Collection of ManyBody Energy Optimization Options.
+   */
+  private static class ManyBodyEnergyOptionGroup {
+
+    /** --radius The sliding window and box cutoff radius (Angstroms). */
+    @Option(
+        names = {"--radius"},
+        paramLabel = "2.0",
+        defaultValue = "2.0",
+        description = "The sliding box and window cutoff radius (Angstroms).")
+    private double cutoff;
+
+    /** --tC or --twoBodyCutoff Cutoff distance for two-body interactions. */
+    @Option(
+        names = {"--tC", "--twoBodyCutoff"},
+        paramLabel = "3.0",
+        defaultValue = "3.0",
+        description = "Cutoff distance for two body interactions.")
+    private double twoBodyCutoff;
+
+    /** -T or --threeBody Include 3-Body interactions in the elimination criteria. */
+    @Option(
+        names = {"-T", "--threeBody"},
+        defaultValue = "false",
+        description = "Include 3-Body interactions in the elimination criteria.")
+    private boolean threeBody;
+
+    /** --thC or --threeBodyCutoff Cutoff distance for three-body interactions. */
+    @Option(
+        names = {"--thC", "--threeBodyCutoff"},
+        paramLabel = "3.0",
+        defaultValue = "3.0",
+        description = "Cutoff distance for three-body interactions.")
+    private double threeBodyCutoff;
+
+    /** --pr or --prune Prune no clashes (0), only single clashes (1), or all clashes (2). */
+    @Option(
+        names = {"--pr", "--prune"},
+        paramLabel = "1",
+        defaultValue = "1",
+        description = "Prune no clashes (0), only single clashes (1), or all clashes (2)")
+    private int prune;
+
+    /**
+     * --clashThreshold The threshold for pruning clashes. If two self-energies on the same residue
+     * have an energy difference greater than 25 kcal/mol, the high energy rotamers get pruned.
+     */
+    @Option(
+        names = {"--clashThreshold"},
+        paramLabel = "25.0",
+        defaultValue = "25.0",
+        description = "The threshold for pruning clashes.")
+    private double clashThreshold;
+
+    /**
+     * --pairClashThreshold The threshold for pruning clashes. If two pair-energies on the same
+     * residues have an energy difference greater than 25 kcal/mol, the high energy rotamers get
+     * pruned.
+     */
+    @Option(
+        names = {"--pairClashThreshold"},
+        paramLabel = "25.0",
+        defaultValue = "25.0",
+        description = "The threshold for pruning pair clashes.")
+    private double pairClashThreshold;
+  }
+
+  /**
+   * Collection of ManyBody Residue Selection Options.
+   */
+  private static class ManyBodyResidueOptionGroup {
+
+    /** --ch or --chain Single character chain ID of the residues to optimize. */
+    @Option(
+        names = {"--ch", "--chain"},
+        paramLabel = "-1",
+        defaultValue = "-1",
+        description = "Single character chain ID of the residues to optimize.")
+    private String chain;
+
+    /**
+     * -s or --start Starting residue to perform the optimization on (-1 exits). For box
+     * optimization, first box to optimize.
+     */
+    @Option(
+        names = {"-s", "--start"},
+        paramLabel = "-1",
+        defaultValue = "-1",
+        description =
+            "Starting residue to perform the optimization on (-1 exits). For box optimization, first box to optimize.")
+    private int start;
+
+    /**
+     * --fi or --final Final residue to perform the optimization on (-1 exits). For box optimization,
+     * final box to optimize.
+     */
+    @Option(
+        names = {"--fi", "--final"},
+        paramLabel = "-1",
+        defaultValue = "-1",
+        description =
+            "Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.")
+    private int finish;
+
+    /**
+     * -x or --all Optimize all residues beginning from the passed value (overrides other options);
+     * for box optimization, optimizes all boxes beginning from the passed index. Default is to
+     * optimize all residues.
+     */
+    @Option(
+        names = {"-x", "--all"},
+        paramLabel = "-1",
+        defaultValue = "-1",
+        description =
+            "Optimize all residues beginning from the passed value (overrides other options); for box optimization, optimizes all boxes beginning from the passed index.")
+    private int all;
+
+    /** --lR or --listResidues Choose a list of individual residues to optimize (eg. A11,A24,B40). */
+    @Option(
+        names = {"--lR", "--listResidues"},
+        paramLabel = "none",
+        defaultValue = "none",
+        description = "Choose a list of individual residues to optimize (eg. A11,A24,B40).")
+    private String listResidues;
+
   }
 
   //    /**

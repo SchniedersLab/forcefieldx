@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
 /**
@@ -48,22 +49,11 @@ import picocli.CommandLine.Option;
  */
 public class MinimizeOptions {
 
-  /** -i or --iterations Number of minimization steps. */
-  @Option(
-      names = {"-I", "--iterations"},
-      paramLabel = "Unlimited",
-      // Integer.MAX_VALUE = 2^31 -1 = 2147483647.
-      defaultValue = "2147483647",
-      description = "Number of minimization steps.")
-  private int iterations;
-
-  /** -e or --eps Convergence criteria. */
-  @Option(
-      names = {"-e", "--eps"},
-      paramLabel = "1.0",
-      defaultValue = "1.0",
-      description = "Convergence criteria.")
-  private double eps;
+  /**
+   * The ArgGroup keeps the MinimizationOptionGroup together when printing help.
+   */
+  @ArgGroup(heading = "%n Minimization Options%n", validate = false)
+  public MinimizeOptionGroup group = new MinimizeOptionGroup();
 
   /**
    * Convergence criteria.
@@ -71,11 +61,11 @@ public class MinimizeOptions {
    * @return a double.
    */
   public double getEps() {
-    return eps;
+    return group.eps;
   }
 
   public void setEps(double eps) {
-    this.eps = eps;
+    group.eps = eps;
   }
 
   /**
@@ -84,10 +74,33 @@ public class MinimizeOptions {
    * @return a int.
    */
   public int getIterations() {
-    return iterations;
+    return group.iterations;
   }
 
   public void setIterations(int iterations) {
-    this.iterations = iterations;
+    group.iterations = iterations;
+  }
+
+  /**
+   * Collection of Minimize Options.
+   */
+  private static class MinimizeOptionGroup {
+
+    /** -i or --iterations Number of minimization steps. */
+    @Option(
+        names = {"-I", "--iterations"},
+        paramLabel = "Unlimited",
+        // Integer.MAX_VALUE = 2^31 -1 = 2147483647.
+        defaultValue = "2147483647",
+        description = "Number of minimization steps.")
+    private int iterations;
+
+    /** -e or --eps Convergence criteria. */
+    @Option(
+        names = {"-e", "--eps"},
+        paramLabel = "1.0",
+        defaultValue = "1.0",
+        description = "Convergence criteria.")
+    private double eps;
   }
 }

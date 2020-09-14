@@ -70,13 +70,13 @@ import static org.apache.commons.math3.util.FastMath.sqrt
 class LambdaGradient extends PotentialScript {
 
   @Mixin
-  private AlchemicalOptions alchemical
-
-  @Mixin
-  private TopologyOptions topology
+  private AlchemicalOptions alchemicalOptions
 
   @Mixin
   private GradientOptions gradientOptions
+
+  @Mixin
+  private TopologyOptions topologyOptions
 
   /**
    * --ls or --lambdaScan Scan lambda values.
@@ -158,19 +158,20 @@ class LambdaGradient extends PotentialScript {
 
     topologies = new MolecularAssembly[nArgs]
 
-    int numParallel = topology.getNumParallel(threadsAvail, nArgs)
+    int numParallel = topologyOptions.getNumParallel(threadsAvail, nArgs)
     threadsPer = (int) (threadsAvail / numParallel)
 
     // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
     /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
        The Minimize script, for example, may be running on a single, unscaled physical topology. */
-    boolean lambdaTerm = (nArgs == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
+    boolean lambdaTerm = (
+        nArgs == 1 || alchemicalOptions.hasSoftcore() || topologyOptions.hasSoftcore())
 
     if (lambdaTerm) {
       System.setProperty("lambdaterm", "true")
     }
 
-    alchemical.getInitialLambda()
+    alchemicalOptions.getInitialLambda()
 
     // Relative free energies via the DualTopologyEnergy class require different
     // default OST parameters than absolute free energies.
@@ -191,11 +192,11 @@ class LambdaGradient extends PotentialScript {
       }
       arguments = new ArrayList<>()
       arguments.add(mola.getFile().getName())
-      topologyList.add(alchemical.processFile(topology, mola, 0))
+      topologyList.add(alchemicalOptions.processFile(topologyOptions, mola, 0))
     } else {
       logger.info(format(" Initializing %d topologies...", nArgs))
       for (int i = 0; i < nArgs; i++) {
-        topologyList.add(alchemical.openFile(potentialFunctions, topology, threadsPer,
+        topologyList.add(alchemicalOptions.openFile(potentialFunctions, topologyOptions, threadsPer,
             arguments.get(i), i))
       }
     }
@@ -205,7 +206,7 @@ class LambdaGradient extends PotentialScript {
 
     // Configure the potential to test.
     StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ")
-    potential = topology.assemblePotential(topologies, threadsAvail, sb)
+    potential = topologyOptions.assemblePotential(topologies, threadsAvail, sb)
 
     if (potential instanceof ForceFieldEnergyOpenMM) {
       skipSecondDerivatives = true
@@ -274,7 +275,7 @@ class LambdaGradient extends PotentialScript {
       // Loop-local counter for printout.
       int jd2EdXdLFailures = 0
 
-      lambda = alchemical.initialLambda - lambdaMoveSize + lambdaMoveSize * j
+      lambda = alchemicalOptions.initialLambda - lambdaMoveSize + lambdaMoveSize * j
 
       if (lambda - gradientOptions.dx < 0.0 || lambda + gradientOptions.dx > 1.0) {
         continue
@@ -368,7 +369,7 @@ class LambdaGradient extends PotentialScript {
       }
     }
 
-    lambdaInterface.setLambda(alchemical.initialLambda)
+    lambdaInterface.setLambda(alchemicalOptions.initialLambda)
     potential.getCoordinates(x)
     potential.energyAndGradient(x, gradient, print)
 

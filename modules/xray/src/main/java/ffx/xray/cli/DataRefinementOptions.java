@@ -38,7 +38,7 @@
 package ffx.xray.cli;
 
 import ffx.xray.RefinementMinimize;
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 /**
  * Represents command line options for scripts that utilize some form of crystallographic data.
@@ -53,10 +53,10 @@ public abstract class DataRefinementOptions {
       RefinementMinimize.RefinementMode.COORDINATES;
 
   /** --wA or --dataWeight The weight of the data (wA). */
-  @CommandLine.Option(
+  @Option(
       names = {"--wA", "--dataWeight"},
       paramLabel = "1.0",
-      description = "The weight of the real space data (wA).")
+      description = "The weight of the experimental data (wA).")
   protected double wA = 1.0;
 
   /**

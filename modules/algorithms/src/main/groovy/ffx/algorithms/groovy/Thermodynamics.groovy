@@ -72,34 +72,34 @@ import static java.lang.String.format
 class Thermodynamics extends AlgorithmsScript {
 
   @Mixin
-  AlchemicalOptions alchemical
+  DynamicsOptions dynamicsOptions
 
   @Mixin
-  TopologyOptions topology
+  BarostatOptions barostatOptions
 
   @Mixin
-  BarostatOptions barostat
+  RandomUnitCellOptions randomSymopOptions
 
   @Mixin
-  DynamicsOptions dynamics
+  AlchemicalOptions alchemicalOptions
 
   @Mixin
-  WriteoutOptions writeout
+  TopologyOptions topologyOptions
 
   @Mixin
-  LambdaParticleOptions lambdaParticle
+  WriteoutOptions writeoutOptions
 
   @Mixin
-  MultiDynamicsOptions multidynamics
+  ThermodynamicsOptions thermodynamicsOptions
 
   @Mixin
   OSTOptions ostOptions
 
   @Mixin
-  RandomSymopOptions randomSymop
+  LambdaParticleOptions lambdaParticleOptions
 
   @Mixin
-  ThermodynamicsOptions thermodynamics
+  MultiDynamicsOptions multiDynamicsOptions
 
   /**
    * -v or --verbose  Log additional information (primarily for MC-OST).
@@ -162,13 +162,14 @@ class Thermodynamics extends AlgorithmsScript {
 
     topologies = new MolecularAssembly[nArgs]
 
-    int numParallel = topology.getNumParallel(threadsAvail, nArgs)
+    int numParallel = topologyOptions.getNumParallel(threadsAvail, nArgs)
     threadsPer = (int) (threadsAvail / numParallel)
 
     // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
     /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
     The Minimize script, for example, may be running on a single, unscaled physical topology. */
-    boolean lambdaTerm = (nArgs == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
+    boolean lambdaTerm = (
+        nArgs == 1 || alchemicalOptions.hasSoftcore() || topologyOptions.hasSoftcore())
 
     if (lambdaTerm) {
       System.setProperty("lambdaterm", "true")
@@ -188,7 +189,7 @@ class Thermodynamics extends AlgorithmsScript {
     int size = world.size()
     int rank = (size > 1) ? world.rank() : 0
 
-    double initLambda = alchemical.getInitialLambda(size, rank)
+    double initLambda = alchemicalOptions.getInitialLambda(size, rank)
 
     // Segment of code for MultiDynamics and OST.
     List<File> structureFiles = arguments.stream().
@@ -236,12 +237,12 @@ class Thermodynamics extends AlgorithmsScript {
       }
       arguments = new ArrayList<>()
       arguments.add(molecularAssembly.getFile().getName())
-      topologyList.add(alchemical.processFile(topology, molecularAssembly, 0))
+      topologyList.add(alchemicalOptions.processFile(topologyOptions, molecularAssembly, 0))
     } else {
       logger.info(format(" Initializing %d topologies...", nArgs))
       for (int i = 0; i < nArgs; i++) {
-        topologyList.add(multidynamics.openFile(algorithmFunctions, topology,
-            threadsPer, arguments.get(i), i, alchemical, structureFiles.get(i), rank))
+        topologyList.add(multiDynamicsOptions.openFile(algorithmFunctions, topologyOptions,
+            threadsPer, arguments.get(i), i, alchemicalOptions, structureFiles.get(i), rank))
       }
     }
 
@@ -249,7 +250,7 @@ class Thermodynamics extends AlgorithmsScript {
         topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
     StringBuilder sb = new StringBuilder("\n Running ")
-    switch (thermodynamics.getAlgorithm()) {
+    switch (thermodynamicsOptions.getAlgorithm()) {
     // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
       case ThermodynamicsOptions.ThermodynamicsAlgorithm.OST:
         ostAlg:
@@ -261,20 +262,20 @@ class Thermodynamics extends AlgorithmsScript {
         fixedAlg:
         {
           sb.append("Fixed-Lambda Sampling at Lambda ").append(format("%8.3f ",
-              alchemical.getInitialLambda(true)))
+              alchemicalOptions.getInitialLambda(true)))
         }
         break
       default:
         defAlg:
         {
           sb.append("Unknown algorithm starting at Lambda ").append(format("%8.3f",
-              alchemical.getInitialLambda(true)))
+              alchemicalOptions.getInitialLambda(true)))
         }
         break
     }
     sb.append(" for ")
 
-    potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
+    potential = (CrystalPotential) topologyOptions.assemblePotential(topologies, threadsAvail, sb)
     LambdaInterface linter = (LambdaInterface) potential
     logger.info(sb.toString())
 
@@ -292,44 +293,48 @@ class Thermodynamics extends AlgorithmsScript {
     potential.energy(x, true)
 
     if (nArgs == 1) {
-      randomSymop.randomize(topologies[0])
+      randomSymopOptions.randomize(topologies[0])
     }
 
-    multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size)
+    multiDynamicsOptions.distribute(topologies, potential, algorithmFunctions, rank, size)
 
-    if (thermodynamics.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
+    if (thermodynamicsOptions.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
       orthogonalSpaceTempering =
           ostOptions.constructOST(potential, lambdaRestart, histogramRestart, topologies[0],
-              additionalProperties, dynamics, thermodynamics, lambdaParticle, algorithmListener,
-              !multidynamics.isSynchronous())
+              additionalProperties, dynamicsOptions, thermodynamicsOptions, lambdaParticleOptions,
+              algorithmListener,
+              !multiDynamicsOptions.isSynchronous())
       if (!lamExists) {
         orthogonalSpaceTempering.setLambda(initLambda)
       }
       // Can be either the OST or a Barostat on top of it.
       CrystalPotential ostPotential =
           ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
-              dynamics, barostat)
+              dynamicsOptions, barostatOptions)
       if (ostOptions.monteCarlo) {
         MonteCarloOST mcOST = ostOptions.
-            setupMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose,
+            setupMCOST(orthogonalSpaceTempering, topologies, dynamicsOptions, thermodynamicsOptions,
+                verbose,
                 algorithmListener)
-        ostOptions.beginMCOST(mcOST, dynamics, thermodynamics)
+        ostOptions.beginMCOST(mcOST, dynamicsOptions, thermodynamicsOptions)
       } else {
         ostOptions.
-            beginMDOST(orthogonalSpaceTempering, topologies, ostPotential, dynamics, writeout,
-                thermodynamics, dyn, algorithmListener)
+            beginMDOST(orthogonalSpaceTempering, topologies, ostPotential, dynamicsOptions,
+                writeoutOptions,
+                thermodynamicsOptions, dyn, algorithmListener)
       }
 
       logger.info(" Done running OST")
     } else {
       orthogonalSpaceTempering = null
-      potential = barostat.checkNPT(topologies[0], potential)
-      thermodynamics.
-          runFixedAlchemy(topologies, potential, dynamics, writeout, dyn, algorithmListener)
+      potential = barostatOptions.checkNPT(topologies[0], potential)
+      thermodynamicsOptions.
+          runFixedAlchemy(topologies, potential, dynamicsOptions, writeoutOptions, dyn,
+              algorithmListener)
       logger.info(" Done running Fixed")
     }
 
-    logger.info(" Algorithm Done: " + thermodynamics.getAlgorithm())
+    logger.info(" Algorithm Done: " + thermodynamicsOptions.getAlgorithm())
 
     return this
   }

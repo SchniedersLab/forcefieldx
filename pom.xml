@@ -389,7 +389,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <!-- Less than 512M (e.g. 256M) leads to JVM out of memory exceptions. -->
-          <argLine>-Xms512M -Xmx512M -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
+          <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
           <useSystemClassLoader>false</useSystemClassLoader>
         </configuration>
         <dependencies>
@@ -834,7 +834,7 @@
     <appassembler.version>1.10</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.2.0</assembly.version>
-    <biojava.version>5.3.0</biojava.version>
+    <biojava.version>5.4.0</biojava.version>
     <buildnumber.version>1.2.10</buildnumber.version>
     <cdk.version>2.3</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>

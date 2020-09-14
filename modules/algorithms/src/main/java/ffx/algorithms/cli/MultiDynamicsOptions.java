@@ -60,12 +60,13 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.configuration2.CompositeConfiguration;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
 /**
- * Represents command line options for scripts that can create multiple walkers, such as
- * multi-walker OST. Should be kept agnostic to whether it is an MD-based algorithm, or some other
- * flavor of Monte Carlo.
+ * Represents command line options for scripts that can create multiple walkers, such as multi-walker
+ * OST. Should be kept agnostic to whether it is an MD-based algorithm, or some other flavor of Monte
+ * Carlo.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -75,50 +76,11 @@ public class MultiDynamicsOptions {
 
   private static final Logger logger = Logger.getLogger(MultiDynamicsOptions.class.getName());
 
-  /** -y or --synchronous sets synchronous walker communication (not recommended) */
-  @Option(
-      names = {"-y", "--synchronous"},
-      defaultValue = "false",
-      description = "Walker communication is synchronous")
-  private boolean synchronous;
-
   /**
-   * -dw or --distributeWalkers allows walkers to start from multiple conformations; AUTO picks up
-   * per-walker conformations as filename.pdb_(walker number), and specifying a residue starts a
-   * rotamer optimization to generate side-chain configurations to start from.
+   * The ArgGroup keeps the MultiDynamicsOptionGroup together when printing help.
    */
-  @Option(
-      names = {"--dw", "--distributeWalkers"},
-      paramLabel = "OFF",
-      defaultValue = "OFF",
-      description =
-          "AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.")
-  private String distributeWalkersString;
-
-  /**
-   * If residues selected for distributing initial configurations, performs many-body optimization
-   * for this distribution.
-   *
-   * @param molecularAssemblies an array of {@link ffx.potential.MolecularAssembly} objects.
-   * @param crystalPotential Overall CrystalPotential in use.
-   * @param algorithmFunctions a {@link ffx.algorithms.AlgorithmFunctions} object.
-   * @param rank a int.
-   * @param worldSize a int.
-   */
-  public void distribute(
-      MolecularAssembly[] molecularAssemblies,
-      CrystalPotential crystalPotential,
-      AlgorithmFunctions algorithmFunctions,
-      int rank,
-      int worldSize) {
-    int ntops = molecularAssemblies.length;
-    Potential[] energies = new Potential[ntops];
-    for (int i = 0; i < ntops; i++) {
-      energies[i] = molecularAssemblies[i].getPotentialEnergy();
-    }
-    distribute(
-        molecularAssemblies, energies, crystalPotential, algorithmFunctions, rank, worldSize);
-  }
+  @ArgGroup(heading = "%n Multiple Walker Options for MPI Simulations%n", validate = false)
+  public MultiDynamicsOptionGroup group = new MultiDynamicsOptionGroup();
 
   /**
    * If residues selected for distributing initial configurations, performs many-body optimization
@@ -138,8 +100,8 @@ public class MultiDynamicsOptions {
       AlgorithmFunctions algorithmFunctions,
       int rank,
       int worldSize) {
-    if (!distributeWalkersString.equalsIgnoreCase("AUTO")
-        && !distributeWalkersString.equalsIgnoreCase("OFF")) {
+    if (!group.distributeWalkersString.equalsIgnoreCase("AUTO")
+        && !group.distributeWalkersString.equalsIgnoreCase("OFF")) {
       logger.info(" Distributing walker conformations.");
       int nSys = molecularAssemblies.length;
       assert nSys == potentials.length;
@@ -169,7 +131,7 @@ public class MultiDynamicsOptions {
           optStructure(
               molecularAssemblies[3], qte.getDualTopB(), algorithmFunctions, rank, worldSize);
           break;
-          // Oct-topology is deprecated on account of not working as intended.
+        // Oct-topology is deprecated on account of not working as intended.
         default:
           logger.severe(" First: must have 1, 2, or 4 topologies.");
           break;
@@ -180,6 +142,31 @@ public class MultiDynamicsOptions {
   }
 
   /**
+   * If residues selected for distributing initial configurations, performs many-body optimization
+   * for this distribution.
+   *
+   * @param molecularAssemblies an array of {@link ffx.potential.MolecularAssembly} objects.
+   * @param crystalPotential Overall CrystalPotential in use.
+   * @param algorithmFunctions a {@link ffx.algorithms.AlgorithmFunctions} object.
+   * @param rank a int.
+   * @param worldSize a int.
+   */
+  public void distribute(
+      MolecularAssembly[] molecularAssemblies,
+      CrystalPotential crystalPotential,
+      AlgorithmFunctions algorithmFunctions,
+      int rank,
+      int worldSize) {
+    int ntops = molecularAssemblies.length;
+    Potential[] energies = new Potential[ntops];
+    for (int i = 0; i < ntops; i++) {
+      energies[i] = molecularAssemblies[i].getPotentialEnergy();
+    }
+    distribute(
+        molecularAssemblies, energies, crystalPotential, algorithmFunctions, rank, worldSize);
+  }
+
+  /**
    * Synchronous walker communication.
    *
    * <p>isSynchronous.
@@ -187,11 +174,11 @@ public class MultiDynamicsOptions {
    * @return a boolean.
    */
   public boolean isSynchronous() {
-    return synchronous;
+    return group.synchronous;
   }
 
   public void setSynchronous(boolean synchronous) {
-    this.synchronous = synchronous;
+    group.synchronous = synchronous;
   }
 
   /**
@@ -217,7 +204,7 @@ public class MultiDynamicsOptions {
       AlchemicalOptions alchemicalOptions,
       File structureFile,
       int rank) {
-    boolean autoDist = distributeWalkersString.equalsIgnoreCase("AUTO");
+    boolean autoDist = group.distributeWalkersString.equalsIgnoreCase("AUTO");
 
     if (autoDist) {
       String openName = format("%s_%d", toOpen, rank + 1);
@@ -240,12 +227,24 @@ public class MultiDynamicsOptions {
    * @return An array of Strings from splitting the distributed flag.
    */
   private String[] parseDistributed() {
+    String distributeWalkersString = group.distributeWalkersString;
     if (distributeWalkersString.equalsIgnoreCase("OFF")
         || distributeWalkersString.equalsIgnoreCase("AUTO")
         || distributeWalkersString.isEmpty()) {
       return null;
     }
     return distributeWalkersString.split("\\.");
+  }
+
+  /**
+   * Allows walkers to start from multiple conformations; AUTO picks up per-walker conformations as
+   * filename.pdb_(walker number), and specifying a residue starts a rotamer optimization to generate
+   * side-chain configurations to start from.
+   *
+   * @return Returns the Distribute Walkers string.
+   */
+  public String getDistributeWalkersString() {
+    return group.distributeWalkersString;
   }
 
   /**
@@ -356,18 +355,33 @@ public class MultiDynamicsOptions {
     }
   }
 
-  /**
-   * Allows walkers to start from multiple conformations; AUTO picks up per-walker conformations as
-   * filename.pdb_(walker number), and specifying a residue starts a rotamer optimization to
-   * generate side-chain configurations to start from.
-   *
-   * @return Returns the Distribute Walkers string.
-   */
-  public String getDistributeWalkersString() {
-    return distributeWalkersString;
+  public void setDistributeWalkersString(String distributeWalkersString) {
+    group.distributeWalkersString = distributeWalkersString;
   }
 
-  public void setDistributeWalkersString(String distributeWalkersString) {
-    this.distributeWalkersString = distributeWalkersString;
+  /**
+   * Collection of Multi-Walker Dynamics Options.
+   */
+  private static class MultiDynamicsOptionGroup {
+
+    /** -y or --synchronous sets synchronous walker communication (not recommended) */
+    @Option(
+        names = {"-y", "--synchronous"},
+        defaultValue = "false",
+        description = "Walker communication is synchronous")
+    private boolean synchronous;
+
+    /**
+     * -dw or --distributeWalkers allows walkers to start from multiple conformations; AUTO picks up
+     * per-walker conformations as filename.pdb_(walker number), and specifying a residue starts a
+     * rotamer optimization to generate side-chain configurations to start from.
+     */
+    @Option(
+        names = {"--dw", "--distributeWalkers"},
+        paramLabel = "OFF",
+        defaultValue = "OFF",
+        description =
+            "AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.")
+    private String distributeWalkersString;
   }
 }

@@ -53,12 +53,13 @@ import java.io.IOException;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
 /**
  * Represents command line options for scripts that utilize variants of the Orthogonal Space
- * Tempering (OST) algorithm. Metadynamics will be treated as a special case of OST where there is
- * no dU/dL axis.
+ * Tempering (OST) algorithm. Metadynamics will be treated as a special case of OST where there is no
+ * dU/dL axis.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -68,100 +69,11 @@ public class OSTOptions {
 
   private static final Logger logger = Logger.getLogger(OSTOptions.class.getName());
 
-  /** -c or --count Sets the number of time steps between OST counts. */
-  @Option(
-      names = {"-C", "--count"},
-      paramLabel = "10",
-      defaultValue = "10",
-      description = "Time steps between MD Orthogonal Space counts.")
-  private int countInterval;
-
-  /** --bM or --biasMag sets the initial Gaussian bias magnitude in kcal/mol. */
-  @Option(
-      names = {"--bM", "--biasMag"},
-      paramLabel = "0.05",
-      defaultValue = "0.05",
-      split = ",",
-      description =
-          "Orthogonal Space Gaussian bias magnitude (kcal/mol); RepEx OST uses a comma-separated list.")
-  private double[] biasMag;
-
-  /** --iW or --independentWalkers enforces that each walker maintains their own histogram. */
-  @Option(
-      names = {"--iW", "--independentWalkers"},
-      defaultValue = "false",
-      description = "Enforces that each walker maintains their own histogram. ")
-  private boolean independentWalkers;
-
-  /** --tp or --temperingRate sets the Dama et al tempering rate parameter, in multiples of kBT. */
-  @Option(
-      names = {"--tp", "--temperingRate"},
-      paramLabel = "4.0",
-      defaultValue = "4.0",
-      split = ",",
-      description =
-          "Tempering rate parameter in multiples of kBT; RepEx OST uses a comma-separated list.")
-  private double[] temperingRate;
-
-  /** --tth or --temperingThreshold sets the tempering threshold/offset in kcal/mol. */
-  @Option(
-      names = {"--tth", "--temperingThreshold"},
-      paramLabel = "20*bias",
-      defaultValue = "-1",
-      split = ",",
-      description = "Tempering threshold in kcal/mol; RepEx OST uses a comma-separated list.")
-  private double[] temperingThreshold;
-
-  /** --mc or --monteCarlo sets the Monte Carlo scheme for Orthogonal Space Tempering. */
-  @Option(
-      names = {"--mc", "--monteCarlo"},
-      defaultValue = "false",
-      description = "Specify use of Monte Carlo OST")
-  private boolean monteCarlo;
-
   /**
-   * --mcHW or --mcHardWall sets the Monte Carlo scheme to use a hard wall that rejects any sample
-   * (Lambda, dU/dL) located in an empty histogram bin.
+   * The ArgGroup keeps the OSTOptionGroup together when printing help.
    */
-  @Option(
-      names = {"--mcHW", "--mcHardWall"},
-      defaultValue = "false",
-      description = "Monte Carlo OST hard wall constraint.")
-  private boolean mcHardWall;
-
-  /** --mcmD or --mcMDSteps Sets the number of steps to take for each MD trajectory for MC-OST. */
-  @Option(
-      names = {"--mcMD", "--mcMDSteps"},
-      paramLabel = "100",
-      defaultValue = "100",
-      description = "Number of dynamics steps to take for each MD trajectory for Monte Carlo OST")
-  private int mcMDSteps;
-
-  /** --mcL or --mcLambdaStdDev Sets the standard deviation for lambda moves. */
-  @Option(
-      names = {"--mcL", "--mcLambdaStdDev"},
-      paramLabel = "0.01",
-      defaultValue = "0.01",
-      description = "Standard deviation for lambda move.")
-  private double mcLambdaStdDev;
-
-  /** --ts or --twoStep MC Orthogonal Space sampling using separate lambda and MD moves. */
-  @Option(
-      names = {"--ts", "--twoStep"},
-      defaultValue = "false",
-      description = "MC Orthogonal Space sampling using separate lambda and MD moves.")
-  private boolean twoStep;
-
-  /**
-   * --lw or --lambdaWriteOut Only write out snapshots if lambda is greater than the value
-   * specified.
-   */
-  @Option(
-      names = {"--lw", "--lambdaWriteOut"},
-      paramLabel = "0.0",
-      defaultValue = "0.0",
-      description = "Only write out snapshots if lambda is greater than the value specified.")
-  private double lambdaWriteOut;
+  @ArgGroup(heading = "%n Orthogonal Space Tempering Options%n", validate = false)
+  public OSTOptionGroup group = new OSTOptionGroup();
 
   /**
    * Static method for constructing an orthogonal space tempering object with numerous default
@@ -172,9 +84,10 @@ public class OSTOptions {
    * @param lambdaRestart a {@link java.io.File} lambda restart file.
    * @param histogramRestart a {@link java.io.File} histogram restart file.
    * @param firstAssembly the first {@link ffx.potential.MolecularAssembly} in the OST system.
-   * @param configuration a {@link org.apache.commons.configuration2.Configuration} with additional
-   *     properties.
-   * @param algorithmListener any {@link ffx.algorithms.AlgorithmListener} that OST should update.
+   * @param configuration a {@link org.apache.commons.configuration2.Configuration} with
+   *     additional properties.
+   * @param algorithmListener any {@link ffx.algorithms.AlgorithmListener} that OST should
+   *     update.
    * @return the newly built {@link OrthogonalSpaceTempering} object.
    * @throws IOException Can be thrown by errors reading restart files.
    */
@@ -223,8 +136,8 @@ public class OSTOptions {
   }
 
   /**
-   * Applies relevant options to a OST, and returns either the OST object or something that wraps
-   * the OST (such as a Barostat).
+   * Applies relevant options to a OST, and returns either the OST object or something that wraps the
+   * OST (such as a Barostat).
    *
    * @param orthogonalSpaceTempering Orthogonal Space Tempering.
    * @param firstAssembly Primary assembly in OST.
@@ -242,6 +155,42 @@ public class OSTOptions {
       opt.setOptimization(true, firstAssembly);
     }
     return barostatOptions.checkNPT(firstAssembly, orthogonalSpaceTempering);
+  }
+
+  /**
+   * G Runs MC-OST.
+   *
+   * @param monteCarloOST MC-OST to run.
+   * @param dynamicsOptions Dynamics options.
+   * @param thermodynamicsOptions Thermodynamics options.
+   */
+  public void beginMCOST(
+      MonteCarloOST monteCarloOST,
+      DynamicsOptions dynamicsOptions,
+      ThermodynamicsOptions thermodynamicsOptions) {
+    long nEquil = thermodynamicsOptions.getEquilSteps();
+
+    if (nEquil > 0) {
+      logger.info("\n Beginning MC-OST equilibration.");
+      monteCarloOST.setMDMoveParameters(nEquil);
+      if (group.twoStep) {
+        monteCarloOST.sampleTwoStep();
+      } else {
+        monteCarloOST.sampleOneStep();
+      }
+      monteCarloOST.setEquilibration(false);
+      logger.info("\n Finished MC-OST equilibration.");
+    }
+
+    logger.info("\n Beginning MC-OST sampling.");
+    monteCarloOST.setLambdaStdDev(group.mcLambdaStdDev);
+    monteCarloOST.setMDMoveParameters(dynamicsOptions.getSteps());
+
+    if (group.twoStep) {
+      monteCarloOST.sampleTwoStep();
+    } else {
+      monteCarloOST.sampleOneStep();
+    }
   }
 
   /**
@@ -282,39 +231,85 @@ public class OSTOptions {
   }
 
   /**
-   * G Runs MC-OST.
+   * constructOST.
    *
-   * @param monteCarloOST MC-OST to run.
-   * @param dynamicsOptions Dynamics options.
-   * @param thermodynamicsOptions Thermodynamics options.
+   * @param crystalPotential a {@link ffx.crystal.CrystalPotential} to build the OST around.
+   * @param lambdaRestartFile a {@link java.io.File} lambda restart file.
+   * @param histogramRestartFile a {@link java.io.File} histogram restart file.
+   * @param firstAssembly the first {@link ffx.potential.MolecularAssembly} in the OST system.
+   * @param addedProperties a {@link org.apache.commons.configuration2.Configuration} with
+   *     additional properties.
+   * @param dynamicsOptions a {@link ffx.algorithms.cli.DynamicsOptions} with MD-related
+   *     settings.
+   * @param thermodynamicsOptions a {@link ffx.algorithms.cli.ThermodynamicsOptions} with
+   *     thermodynamics-related settings.
+   * @param lambdaParticleOptions a {@link ffx.algorithms.cli.LambdaParticleOptions} with lambda
+   *     particle-related settings.
+   * @param algorithmListener any {@link ffx.algorithms.AlgorithmListener} that OST should
+   *     update.
+   * @param async If OST should use asynchronous communications.
+   * @return the newly built {@link OrthogonalSpaceTempering} object.
+   * @throws IOException Can be thrown by errors reading restart files.
    */
-  public void beginMCOST(
-      MonteCarloOST monteCarloOST,
+  public OrthogonalSpaceTempering constructOST(
+      CrystalPotential crystalPotential,
+      File lambdaRestartFile,
+      File histogramRestartFile,
+      MolecularAssembly firstAssembly,
+      Configuration addedProperties,
       DynamicsOptions dynamicsOptions,
-      ThermodynamicsOptions thermodynamicsOptions) {
-    long nEquil = thermodynamicsOptions.getEquilSteps();
+      ThermodynamicsOptions thermodynamicsOptions,
+      LambdaParticleOptions lambdaParticleOptions,
+      AlgorithmListener algorithmListener,
+      boolean async)
+      throws IOException {
 
-    if (nEquil > 0) {
-      logger.info("\n Beginning MC-OST equilibration.");
-      monteCarloOST.setMDMoveParameters(nEquil);
-      if (twoStep) {
-        monteCarloOST.sampleTwoStep();
-      } else {
-        monteCarloOST.sampleOneStep();
-      }
-      monteCarloOST.setEquilibration(false);
-      logger.info("\n Finished MC-OST equilibration.");
+    LambdaInterface lambdaInterface = (LambdaInterface) crystalPotential;
+    CompositeConfiguration compositeConfiguration =
+        new CompositeConfiguration(firstAssembly.getProperties());
+    if (addedProperties != null) {
+      compositeConfiguration.addConfiguration(addedProperties);
     }
+    double temp = dynamicsOptions.getTemperature();
+    double dt = dynamicsOptions.getDt();
+    double report = dynamicsOptions.getReport();
+    double checkpoint = dynamicsOptions.getCheckpoint();
+    boolean resetNSteps = thermodynamicsOptions.getResetNumSteps();
 
-    logger.info("\n Beginning MC-OST sampling.");
-    monteCarloOST.setLambdaStdDev(mcLambdaStdDev);
-    monteCarloOST.setMDMoveParameters(dynamicsOptions.getSteps());
+    String lamRestartName =
+        lambdaRestartFile == null
+            ? histogramRestartFile.toString().replaceFirst("\\.his$", ".lam")
+            : lambdaRestartFile.toString();
+    HistogramSettings histogramSettings =
+        generateHistogramSettings(
+            histogramRestartFile,
+            lamRestartName,
+            compositeConfiguration,
+            0,
+            dynamicsOptions,
+            lambdaParticleOptions,
+            group.independentWalkers,
+            async);
 
-    if (twoStep) {
-      monteCarloOST.sampleTwoStep();
-    } else {
-      monteCarloOST.sampleOneStep();
-    }
+    OrthogonalSpaceTempering orthogonalSpaceTempering =
+        new OrthogonalSpaceTempering(
+            lambdaInterface,
+            crystalPotential,
+            lambdaRestartFile,
+            histogramSettings,
+            compositeConfiguration,
+            temp,
+            dt,
+            report,
+            checkpoint,
+            async,
+            resetNSteps,
+            algorithmListener,
+            group.lambdaWriteOut);
+    orthogonalSpaceTempering.setHardWallConstraint(group.mcHardWall);
+
+    // Do NOT run applyOSTOptions here, because that can mutate the OST to a Barostat.
+    return orthogonalSpaceTempering;
   }
 
   /**
@@ -377,83 +372,52 @@ public class OSTOptions {
   }
 
   /**
-   * constructOST.
+   * Constructs histogram settings based on stored values.
    *
-   * @param crystalPotential a {@link ffx.crystal.CrystalPotential} to build the OST around.
-   * @param lambdaRestartFile a {@link java.io.File} lambda restart file.
-   * @param histogramRestartFile a {@link java.io.File} histogram restart file.
-   * @param firstAssembly the first {@link ffx.potential.MolecularAssembly} in the OST system.
-   * @param addedProperties a {@link org.apache.commons.configuration2.Configuration} with
-   *     additional properties.
-   * @param dynamicsOptions a {@link ffx.algorithms.cli.DynamicsOptions} with MD-related settings.
-   * @param thermodynamicsOptions a {@link ffx.algorithms.cli.ThermodynamicsOptions} with
-   *     thermodynamics-related settings.
-   * @param lambdaParticleOptions a {@link ffx.algorithms.cli.LambdaParticleOptions} with lambda
-   *     particle-related settings.
-   * @param algorithmListener any {@link ffx.algorithms.AlgorithmListener} that OST should update.
-   * @param async If OST should use asynchronous communications.
-   * @return the newly built {@link OrthogonalSpaceTempering} object.
-   * @throws IOException Can be thrown by errors reading restart files.
+   * @param histogramRestartFile Histogram restart (.his) file.
+   * @param lambdaFileName Name of the lambda file.
+   * @param compositeConfiguration All properties requested.
+   * @param index Index of the histogram (RepEx/independent walkers).
+   * @param dynamicsOptions Dynamics options.
+   * @param lambdaParticleOptions Lambda particle options.
+   * @param writeIndependent Whether walkers should write their own histogram files.
+   * @param async Whether to use asynchronous communication.
+   * @param overrideHistogram Whether to override settings stored in the histogram restart file
+   *     (if it exists).
+   * @return Settings to apply to a new Histogram object.
+   * @throws IOException From reading the histogram file.
    */
-  public OrthogonalSpaceTempering constructOST(
-      CrystalPotential crystalPotential,
-      File lambdaRestartFile,
+  public HistogramSettings generateHistogramSettings(
       File histogramRestartFile,
-      MolecularAssembly firstAssembly,
-      Configuration addedProperties,
+      String lambdaFileName,
+      CompositeConfiguration compositeConfiguration,
+      int index,
       DynamicsOptions dynamicsOptions,
-      ThermodynamicsOptions thermodynamicsOptions,
       LambdaParticleOptions lambdaParticleOptions,
-      AlgorithmListener algorithmListener,
-      boolean async)
+      boolean writeIndependent,
+      boolean async,
+      boolean overrideHistogram)
       throws IOException {
-
-    LambdaInterface lambdaInterface = (LambdaInterface) crystalPotential;
-    CompositeConfiguration compositeConfiguration =
-        new CompositeConfiguration(firstAssembly.getProperties());
-    if (addedProperties != null) {
-      compositeConfiguration.addConfiguration(addedProperties);
-    }
-    double temp = dynamicsOptions.getTemperature();
-    double dt = dynamicsOptions.getDt();
-    double report = dynamicsOptions.getReport();
-    double checkpoint = dynamicsOptions.getCheckpoint();
-    boolean resetNSteps = thermodynamicsOptions.getResetNumSteps();
-
-    String lamRestartName =
-        lambdaRestartFile == null
-            ? histogramRestartFile.toString().replaceFirst("\\.his$", ".lam")
-            : lambdaRestartFile.toString();
     HistogramSettings histogramSettings =
-        generateHistogramSettings(
-            histogramRestartFile,
-            lamRestartName,
-            compositeConfiguration,
-            0,
-            dynamicsOptions,
-            lambdaParticleOptions,
-            independentWalkers,
-            async);
+        new HistogramSettings(histogramRestartFile, lambdaFileName, compositeConfiguration);
+    histogramSettings.temperingFactor = getTemperingParameter(index);
+    if (thresholdsSet()) {
+      histogramSettings.setTemperOffset(getTemperingThreshold(index));
+    }
+    histogramSettings.dt = dynamicsOptions.getDt() * Constants.FSEC_TO_PSEC;
+    histogramSettings.setWriteIndependent(writeIndependent);
+    histogramSettings.setIndependentWalkers(group.independentWalkers);
+    histogramSettings.asynchronous = async;
+    if (overrideHistogram || !histogramRestartFile.exists()) {
+      histogramSettings.setBiasMag(getBiasMag(index));
+      // TODO: Let temperature be an array thing too.
+      histogramSettings.temperature = dynamicsOptions.getTemperature();
+      histogramSettings.thetaFriction = lambdaParticleOptions.getLambdaFriction();
+      histogramSettings.thetaMass = lambdaParticleOptions.getLambdaMass();
+      histogramSettings.countInterval = group.countInterval;
+    }
 
-    OrthogonalSpaceTempering orthogonalSpaceTempering =
-        new OrthogonalSpaceTempering(
-            lambdaInterface,
-            crystalPotential,
-            lambdaRestartFile,
-            histogramSettings,
-            compositeConfiguration,
-            temp,
-            dt,
-            report,
-            checkpoint,
-            async,
-            resetNSteps,
-            algorithmListener,
-            lambdaWriteOut);
-    orthogonalSpaceTempering.setHardWallConstraint(mcHardWall);
-
-    // Do NOT run applyOSTOptions here, because that can mutate the OST to a Barostat.
-    return orthogonalSpaceTempering;
+    return histogramSettings;
   }
 
   /**
@@ -493,61 +457,12 @@ public class OSTOptions {
   }
 
   /**
-   * Constructs histogram settings based on stored values.
-   *
-   * @param histogramRestartFile Histogram restart (.his) file.
-   * @param lambdaFileName Name of the lambda file.
-   * @param compositeConfiguration All properties requested.
-   * @param index Index of the histogram (RepEx/independent walkers).
-   * @param dynamicsOptions Dynamics options.
-   * @param lambdaParticleOptions Lambda particle options.
-   * @param writeIndependent Whether walkers should write their own histogram files.
-   * @param async Whether to use asynchronous communication.
-   * @param overrideHistogram Whether to override settings stored in the histogram restart file (if
-   *     it exists).
-   * @return Settings to apply to a new Histogram object.
-   * @throws IOException From reading the histogram file.
-   */
-  public HistogramSettings generateHistogramSettings(
-      File histogramRestartFile,
-      String lambdaFileName,
-      CompositeConfiguration compositeConfiguration,
-      int index,
-      DynamicsOptions dynamicsOptions,
-      LambdaParticleOptions lambdaParticleOptions,
-      boolean writeIndependent,
-      boolean async,
-      boolean overrideHistogram)
-      throws IOException {
-    HistogramSettings histogramSettings =
-        new HistogramSettings(histogramRestartFile, lambdaFileName, compositeConfiguration);
-    histogramSettings.temperingFactor = getTemperingParameter(index);
-    if (thresholdsSet()) {
-      histogramSettings.setTemperOffset(getTemperingThreshold(index));
-    }
-    histogramSettings.dt = dynamicsOptions.getDt() * Constants.FSEC_TO_PSEC;
-    histogramSettings.setWriteIndependent(writeIndependent);
-    histogramSettings.setIndependentWalkers(independentWalkers);
-    histogramSettings.asynchronous = async;
-    if (overrideHistogram || !histogramRestartFile.exists()) {
-      histogramSettings.setBiasMag(getBiasMag(index));
-      // TODO: Let temperature be an array thing too.
-      histogramSettings.temperature = dynamicsOptions.getTemperature();
-      histogramSettings.thetaFriction = lambdaParticleOptions.getLambdaFriction();
-      histogramSettings.thetaMass = lambdaParticleOptions.getLambdaMass();
-      histogramSettings.countInterval = countInterval;
-    }
-
-    return histogramSettings;
-  }
-
-  /**
    * Checks if independent walkers has been specified.
    *
    * @return Walker independence.
    */
   public boolean getIndependentWalkers() {
-    return independentWalkers;
+    return group.independentWalkers;
   }
 
   /**
@@ -556,11 +471,11 @@ public class OSTOptions {
    * @return Monte Carlo OST (as opposed to molecular dynamics OST).
    */
   public boolean isMonteCarlo() {
-    return monteCarlo;
+    return group.monteCarlo;
   }
 
   public void setMonteCarlo(boolean monteCarlo) {
-    this.monteCarlo = monteCarlo;
+    group.monteCarlo = monteCarlo;
   }
 
   /**
@@ -569,11 +484,11 @@ public class OSTOptions {
    * @return If --ts is enabled.
    */
   public boolean isTwoStep() {
-    return twoStep;
+    return group.twoStep;
   }
 
   public void setTwoStep(boolean twoStep) {
-    this.twoStep = twoStep;
+    group.twoStep = twoStep;
   }
 
   /**
@@ -605,7 +520,7 @@ public class OSTOptions {
             algorithmListener,
             dynamicsOptions,
             verbose,
-            mcMDSteps);
+            group.mcMDSteps);
 
     MolecularDynamics md = monteCarloOST.getMD();
     for (int i = 1; i < molecularAssemblies.length; i++) {
@@ -620,7 +535,17 @@ public class OSTOptions {
   }
 
   private boolean thresholdsSet() {
-    return temperingThreshold.length != 1 || temperingThreshold[0] >= 0;
+    return group.temperingThreshold.length != 1 || group.temperingThreshold[0] >= 0;
+  }
+
+  /**
+   * Returns the initial bias magnitude associated with a walker.
+   *
+   * @param i Index of a walker
+   * @return Its intended initial bias magnitude in kcal/mol.
+   */
+  private double getBiasMag(int i) {
+    return group.biasMag.length > 1 ? group.biasMag[i] : group.biasMag[0];
   }
 
   private void runDynamics(
@@ -643,23 +568,14 @@ public class OSTOptions {
   }
 
   /**
-   * Returns the initial bias magnitude associated with a walker.
-   *
-   * @param i Index of a walker
-   * @return Its intended initial bias magnitude in kcal/mol.
-   */
-  private double getBiasMag(int i) {
-    return biasMag.length > 1 ? biasMag[i] : biasMag[0];
-  }
-
-  /**
    * Returns the tempering threshold associated with a walker.
    *
    * @param i Index of a walker
    * @return Its intended tempering threshold in kcal/mol.
    */
   private double getTemperingThreshold(int i) {
-    return temperingThreshold.length > 1 ? temperingThreshold[i] : temperingThreshold[0];
+    return group.temperingThreshold.length > 1 ? group.temperingThreshold[i]
+        : group.temperingThreshold[0];
   }
 
   /**
@@ -669,7 +585,7 @@ public class OSTOptions {
    * @return Its intended tempering parameter in kBT.
    */
   private double getTemperingParameter(int i) {
-    return temperingRate.length > 1 ? temperingRate[i] : temperingRate[0];
+    return group.temperingRate.length > 1 ? group.temperingRate[i] : group.temperingRate[0];
   }
 
   /**
@@ -678,11 +594,11 @@ public class OSTOptions {
    * @return Returns the interval between OST counts.
    */
   public int getCountInterval() {
-    return countInterval;
+    return group.countInterval;
   }
 
   public void setCountInterval(int countInterval) {
-    this.countInterval = countInterval;
+    group.countInterval = countInterval;
   }
 
   /**
@@ -691,11 +607,11 @@ public class OSTOptions {
    * @return Returns the Bias magnitude.
    */
   public double[] getBiasMag() {
-    return biasMag;
+    return group.biasMag;
   }
 
   public void setBiasMag(double[] biasMag) {
-    this.biasMag = biasMag;
+    group.biasMag = biasMag;
   }
 
   /**
@@ -704,11 +620,11 @@ public class OSTOptions {
    * @return Returns true if each Walker has their own histogram.
    */
   public boolean isIndependentWalkers() {
-    return independentWalkers;
+    return group.independentWalkers;
   }
 
   public void setIndependentWalkers(boolean independentWalkers) {
-    this.independentWalkers = independentWalkers;
+    group.independentWalkers = independentWalkers;
   }
 
   /**
@@ -717,11 +633,11 @@ public class OSTOptions {
    * @return Returns the tempering rate.
    */
   public double[] getTemperingRate() {
-    return temperingRate;
+    return group.temperingRate;
   }
 
   public void setTemperingRate(double[] temperingRate) {
-    this.temperingRate = temperingRate;
+    group.temperingRate = temperingRate;
   }
 
   /**
@@ -730,25 +646,25 @@ public class OSTOptions {
    * @return Returns the tempering threshold.
    */
   public double[] getTemperingThreshold() {
-    return temperingThreshold;
+    return group.temperingThreshold;
   }
 
   public void setTemperingThreshold(double[] temperingThreshold) {
-    this.temperingThreshold = temperingThreshold;
+    group.temperingThreshold = temperingThreshold;
   }
 
   /**
-   * The Monte Carlo scheme can use a hard wall that rejects any sample (Lambda, dU/dL) located in
-   * an empty histogram bin.
+   * The Monte Carlo scheme can use a hard wall that rejects any sample (Lambda, dU/dL) located in an
+   * empty histogram bin.
    *
    * @return Returns true if the MC-OST hard wall constraint is set.
    */
   public boolean isMcHardWall() {
-    return mcHardWall;
+    return group.mcHardWall;
   }
 
   public void setMcHardWall(boolean mcHardWall) {
-    this.mcHardWall = mcHardWall;
+    group.mcHardWall = mcHardWall;
   }
 
   /**
@@ -757,11 +673,11 @@ public class OSTOptions {
    * @return Returns the number of MD steps for each MC-OST round.
    */
   public int getMcMDSteps() {
-    return mcMDSteps;
+    return group.mcMDSteps;
   }
 
   public void setMcMDSteps(int mcMDSteps) {
-    this.mcMDSteps = mcMDSteps;
+    group.mcMDSteps = mcMDSteps;
   }
 
   /**
@@ -770,11 +686,11 @@ public class OSTOptions {
    * @return Returns the MC lambda trial move standard deviations.
    */
   public double getMcLambdaStdDev() {
-    return mcLambdaStdDev;
+    return group.mcLambdaStdDev;
   }
 
   public void setMcLambdaStdDev(double mcLambdaStdDev) {
-    this.mcLambdaStdDev = mcLambdaStdDev;
+    group.mcLambdaStdDev = mcLambdaStdDev;
   }
 
   /**
@@ -783,10 +699,111 @@ public class OSTOptions {
    * @return Returns the lambda write-out threshold.
    */
   public double getLambdaWriteOut() {
-    return lambdaWriteOut;
+    return group.lambdaWriteOut;
   }
 
   public void setLambdaWriteOut(double lambdaWriteOut) {
-    this.lambdaWriteOut = lambdaWriteOut;
+    group.lambdaWriteOut = lambdaWriteOut;
+  }
+
+  /**
+   * Collection of Orthogonal Space Tempering Options.
+   */
+  private static class OSTOptionGroup {
+
+    /** -c or --count Sets the number of time steps between OST counts. */
+    @Option(
+        names = {"-C", "--count"},
+        paramLabel = "10",
+        defaultValue = "10",
+        description = "Time steps between MD Orthogonal Space counts.")
+    private int countInterval;
+
+    /** --bM or --biasMag sets the initial Gaussian bias magnitude in kcal/mol. */
+    @Option(
+        names = {"--bM", "--biasMag"},
+        paramLabel = "0.05",
+        defaultValue = "0.05",
+        split = ",",
+        description =
+            "Orthogonal Space Gaussian bias magnitude (kcal/mol); RepEx OST uses a comma-separated list.")
+    private double[] biasMag;
+
+    /** --iW or --independentWalkers enforces that each walker maintains their own histogram. */
+    @Option(
+        names = {"--iW", "--independentWalkers"},
+        defaultValue = "false",
+        description = "Enforces that each walker maintains their own histogram. ")
+    private boolean independentWalkers;
+
+    /** --tp or --temperingRate sets the Dama et al tempering rate parameter, in multiples of kBT. */
+    @Option(
+        names = {"--tp", "--temperingRate"},
+        paramLabel = "4.0",
+        defaultValue = "4.0",
+        split = ",",
+        description =
+            "Tempering rate parameter in multiples of kBT; RepEx OST uses a comma-separated list.")
+    private double[] temperingRate;
+
+    /** --tth or --temperingThreshold sets the tempering threshold/offset in kcal/mol. */
+    @Option(
+        names = {"--tth", "--temperingThreshold"},
+        paramLabel = "20*bias",
+        defaultValue = "-1",
+        split = ",",
+        description = "Tempering threshold in kcal/mol; RepEx OST uses a comma-separated list.")
+    private double[] temperingThreshold;
+
+    /** --mc or --monteCarlo sets the Monte Carlo scheme for Orthogonal Space Tempering. */
+    @Option(
+        names = {"--mc", "--monteCarlo"},
+        defaultValue = "false",
+        description = "Specify use of Monte Carlo OST")
+    private boolean monteCarlo;
+
+    /**
+     * --mcHW or --mcHardWall sets the Monte Carlo scheme to use a hard wall that rejects any sample
+     * (Lambda, dU/dL) located in an empty histogram bin.
+     */
+    @Option(
+        names = {"--mcHW", "--mcHardWall"},
+        defaultValue = "false",
+        description = "Monte Carlo OST hard wall constraint.")
+    private boolean mcHardWall;
+
+    /** --mcmD or --mcMDSteps Sets the number of steps to take for each MD trajectory for MC-OST. */
+    @Option(
+        names = {"--mcMD", "--mcMDSteps"},
+        paramLabel = "100",
+        defaultValue = "100",
+        description = "Number of dynamics steps to take for each MD trajectory for Monte Carlo OST")
+    private int mcMDSteps;
+
+    /** --mcL or --mcLambdaStdDev Sets the standard deviation for lambda moves. */
+    @Option(
+        names = {"--mcL", "--mcLambdaStdDev"},
+        paramLabel = "0.01",
+        defaultValue = "0.01",
+        description = "Standard deviation for lambda move.")
+    private double mcLambdaStdDev;
+
+    /** --ts or --twoStep MC Orthogonal Space sampling using separate lambda and MD moves. */
+    @Option(
+        names = {"--ts", "--twoStep"},
+        defaultValue = "false",
+        description = "MC Orthogonal Space sampling using separate lambda and MD moves.")
+    private boolean twoStep;
+
+    /**
+     * --lw or --lambdaWriteOut Only write out snapshots if lambda is greater than the value
+     * specified.
+     */
+    @Option(
+        names = {"--lw", "--lambdaWriteOut"},
+        paramLabel = "0.0",
+        defaultValue = "0.0",
+        description = "Only write out snapshots if lambda is greater than the value specified.")
+    private double lambdaWriteOut;
   }
 }
