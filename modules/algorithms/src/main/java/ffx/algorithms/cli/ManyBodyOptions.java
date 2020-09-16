@@ -75,26 +75,31 @@ public class ManyBodyOptions {
    */
   @ArgGroup(heading = "%n Many-Body Optimization Options%n", validate = false)
   public ManyBodyOptionGroup group = new ManyBodyOptionGroup();
+
   /**
    * The ArgGroup keeps the ManyBodyBoxOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Box Optimization Options%n", validate = false)
   public ManyBodyBoxOptionGroup boxGroup = new ManyBodyBoxOptionGroup();
+
   /**
    * The ArgGroup keeps the ManyBodyWindowOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Window Optimization Options%n", validate = false)
   public ManyBodyWindowOptionGroup windowGroup = new ManyBodyWindowOptionGroup();
+
   /**
    * The ArgGroup keeps the ManyBodyWindowOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Energy Expansion and Cut-off Options%n", validate = false)
   public ManyBodyEnergyOptionGroup energyGroup = new ManyBodyEnergyOptionGroup();
+
   /**
    * The ArgGroup keeps the ManyBodyResidueOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Residue Selection Options%n", validate = false)
   public ManyBodyResidueOptionGroup residueGroup = new ManyBodyResidueOptionGroup();
+
   private RotamerOptimization rotamerOptimization;
   private RotamerLibrary rotamerLibrary;
   private int allStartResID;

@@ -66,8 +66,7 @@ public class AtomSelectionOptions {
   public AtomSelectionOptionGroup group = new AtomSelectionOptionGroup();
 
   public static void actOnAtoms(@Nonnull MolecularAssembly assembly, @Nullable String selection,
-      @Nonnull BiConsumer<Atom, Boolean> action, @Nonnull String description,
-      @Nullable String keyType) {
+      @Nonnull BiConsumer<Atom, Boolean> action, @Nonnull String description) {
     if (selection == null || selection.equalsIgnoreCase("")) {
       // Empty or null string -- no changes.
       return;
@@ -98,13 +97,13 @@ public class AtomSelectionOptions {
     for (Atom atom : atoms) {
       action.accept(atom, false);
     }
-    if (keyType != null) {
-      List<Integer> atomRanges = parseAtomRanges(keyType, selection, nAtoms);
-      for (int i : atomRanges) {
-        action.accept(atoms[i], true);
-      }
+
+    List<Integer> atomRanges = parseAtomRanges(description, selection, nAtoms);
+    for (int i : atomRanges) {
+      action.accept(atoms[i], true);
     }
-    logger.info(" " + description + " atoms set to: " + selection + "\n");
+    logger.info("\n " + description + " atoms set to: " + selection);
+
   }
 
   /**
@@ -139,12 +138,11 @@ public class AtomSelectionOptions {
   }
 
   private void setInactive(MolecularAssembly assembly) {
-    actOnAtoms(assembly, getInactiveAtoms(), (Atom a, Boolean b) -> a.setActive(!b),
-        "inactive", " Inactive atoms");
+    actOnAtoms(assembly, getInactiveAtoms(), (Atom a, Boolean b) -> a.setActive(!b), "Inactive");
   }
 
   private void setActive(MolecularAssembly assembly) {
-    actOnAtoms(assembly, getActiveAtoms(), Atom::setActive, "active", " Active atoms");
+    actOnAtoms(assembly, getActiveAtoms(), Atom::setActive, "Active");
   }
 
   /**

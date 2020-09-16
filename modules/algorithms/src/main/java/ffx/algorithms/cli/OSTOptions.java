@@ -76,6 +76,12 @@ public class OSTOptions {
   public OSTOptionGroup group = new OSTOptionGroup();
 
   /**
+   * The ArgGroup keeps the OSTOptionGroup together when printing help.
+   */
+  @ArgGroup(heading = "%n Monte Carlo Orthogonal Space Tempering Options%n", validate = false)
+  public MCOSTOptionGroup mcGroup = new MCOSTOptionGroup();
+
+  /**
    * Static method for constructing an orthogonal space tempering object with numerous default
    * settings. Largely indended for use with the Histogram script and other scripts which don't need
    * to actively perform OST, just read its histogram.
@@ -173,7 +179,7 @@ public class OSTOptions {
     if (nEquil > 0) {
       logger.info("\n Beginning MC-OST equilibration.");
       monteCarloOST.setMDMoveParameters(nEquil);
-      if (group.twoStep) {
+      if (mcGroup.twoStep) {
         monteCarloOST.sampleTwoStep();
       } else {
         monteCarloOST.sampleOneStep();
@@ -183,10 +189,10 @@ public class OSTOptions {
     }
 
     logger.info("\n Beginning MC-OST sampling.");
-    monteCarloOST.setLambdaStdDev(group.mcLambdaStdDev);
+    monteCarloOST.setLambdaStdDev(mcGroup.mcLambdaStdDev);
     monteCarloOST.setMDMoveParameters(dynamicsOptions.getSteps());
 
-    if (group.twoStep) {
+    if (mcGroup.twoStep) {
       monteCarloOST.sampleTwoStep();
     } else {
       monteCarloOST.sampleOneStep();
@@ -306,7 +312,7 @@ public class OSTOptions {
             resetNSteps,
             algorithmListener,
             group.lambdaWriteOut);
-    orthogonalSpaceTempering.setHardWallConstraint(group.mcHardWall);
+    orthogonalSpaceTempering.setHardWallConstraint(mcGroup.mcHardWall);
 
     // Do NOT run applyOSTOptions here, because that can mutate the OST to a Barostat.
     return orthogonalSpaceTempering;
@@ -471,11 +477,11 @@ public class OSTOptions {
    * @return Monte Carlo OST (as opposed to molecular dynamics OST).
    */
   public boolean isMonteCarlo() {
-    return group.monteCarlo;
+    return mcGroup.monteCarlo;
   }
 
   public void setMonteCarlo(boolean monteCarlo) {
-    group.monteCarlo = monteCarlo;
+    mcGroup.monteCarlo = monteCarlo;
   }
 
   /**
@@ -484,11 +490,11 @@ public class OSTOptions {
    * @return If --ts is enabled.
    */
   public boolean isTwoStep() {
-    return group.twoStep;
+    return mcGroup.twoStep;
   }
 
   public void setTwoStep(boolean twoStep) {
-    group.twoStep = twoStep;
+    mcGroup.twoStep = twoStep;
   }
 
   /**
@@ -520,7 +526,7 @@ public class OSTOptions {
             algorithmListener,
             dynamicsOptions,
             verbose,
-            group.mcMDSteps);
+            mcGroup.mcMDSteps);
 
     MolecularDynamics md = monteCarloOST.getMD();
     for (int i = 1; i < molecularAssemblies.length; i++) {
@@ -660,11 +666,11 @@ public class OSTOptions {
    * @return Returns true if the MC-OST hard wall constraint is set.
    */
   public boolean isMcHardWall() {
-    return group.mcHardWall;
+    return mcGroup.mcHardWall;
   }
 
   public void setMcHardWall(boolean mcHardWall) {
-    group.mcHardWall = mcHardWall;
+    mcGroup.mcHardWall = mcHardWall;
   }
 
   /**
@@ -673,11 +679,11 @@ public class OSTOptions {
    * @return Returns the number of MD steps for each MC-OST round.
    */
   public int getMcMDSteps() {
-    return group.mcMDSteps;
+    return mcGroup.mcMDSteps;
   }
 
   public void setMcMDSteps(int mcMDSteps) {
-    group.mcMDSteps = mcMDSteps;
+    mcGroup.mcMDSteps = mcMDSteps;
   }
 
   /**
@@ -686,11 +692,11 @@ public class OSTOptions {
    * @return Returns the MC lambda trial move standard deviations.
    */
   public double getMcLambdaStdDev() {
-    return group.mcLambdaStdDev;
+    return mcGroup.mcLambdaStdDev;
   }
 
   public void setMcLambdaStdDev(double mcLambdaStdDev) {
-    group.mcLambdaStdDev = mcLambdaStdDev;
+    mcGroup.mcLambdaStdDev = mcLambdaStdDev;
   }
 
   /**
@@ -755,6 +761,23 @@ public class OSTOptions {
         description = "Tempering threshold in kcal/mol; RepEx OST uses a comma-separated list.")
     private double[] temperingThreshold;
 
+    /**
+     * --lw or --lambdaWriteOut Only write out snapshots if lambda is greater than the value
+     * specified.
+     */
+    @Option(
+        names = {"--lw", "--lambdaWriteOut"},
+        paramLabel = "0.0",
+        defaultValue = "0.0",
+        description = "Only write out snapshots if lambda is greater than the value specified.")
+    private double lambdaWriteOut;
+  }
+
+  /**
+   * Collection of Monte Carlo Orthogonal Space Tempering Options.
+   */
+  private static class MCOSTOptionGroup {
+
     /** --mc or --monteCarlo sets the Monte Carlo scheme for Orthogonal Space Tempering. */
     @Option(
         names = {"--mc", "--monteCarlo"},
@@ -794,16 +817,6 @@ public class OSTOptions {
         defaultValue = "false",
         description = "MC Orthogonal Space sampling using separate lambda and MD moves.")
     private boolean twoStep;
-
-    /**
-     * --lw or --lambdaWriteOut Only write out snapshots if lambda is greater than the value
-     * specified.
-     */
-    @Option(
-        names = {"--lw", "--lambdaWriteOut"},
-        paramLabel = "0.0",
-        defaultValue = "0.0",
-        description = "Only write out snapshots if lambda is greater than the value specified.")
-    private double lambdaWriteOut;
   }
+
 }

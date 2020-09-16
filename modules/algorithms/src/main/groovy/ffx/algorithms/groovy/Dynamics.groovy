@@ -152,15 +152,8 @@ class Dynamics extends AlgorithmsScript {
     String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
 
     potential = activeAssembly.getPotentialEnergy()
-    boolean updatesDisabled =
-        activeAssembly.getForceField().getBoolean("DISABLE_NEIGHBOR_UPDATES", false)
-    if (updatesDisabled) {
-      logger.info(
-          " This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart")
-    }
     double[] x = new double[potential.getNumberOfVariables()]
     potential.getCoordinates(x)
-
     potential.energy(x, true)
 
     if (barostatOptions.pressure > 0) {

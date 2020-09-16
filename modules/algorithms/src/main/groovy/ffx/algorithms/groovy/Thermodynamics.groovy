@@ -58,6 +58,7 @@ import picocli.CommandLine.Parameters
 
 import java.util.stream.Collectors
 
+import static ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm
 import static java.lang.String.format
 
 /**
@@ -189,8 +190,6 @@ class Thermodynamics extends AlgorithmsScript {
     int size = world.size()
     int rank = (size > 1) ? world.rank() : 0
 
-    double initLambda = alchemicalOptions.getInitialLambda(size, rank)
-
     // Segment of code for MultiDynamics and OST.
     List<File> structureFiles = arguments.stream().
         map {fn -> new File(new File(FilenameUtils.normalize(fn)).getAbsolutePath())
@@ -250,28 +249,20 @@ class Thermodynamics extends AlgorithmsScript {
         topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
     StringBuilder sb = new StringBuilder("\n Running ")
-    switch (thermodynamicsOptions.getAlgorithm()) {
-    // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
-      case ThermodynamicsOptions.ThermodynamicsAlgorithm.OST:
-        ostAlg:
-        {
-          sb.append("Orthogonal Space Tempering")
-        }
-        break
-      case ThermodynamicsOptions.ThermodynamicsAlgorithm.FIXED:
-        fixedAlg:
-        {
-          sb.append("Fixed-Lambda Sampling at Lambda ").append(format("%8.3f ",
-              alchemicalOptions.getInitialLambda(true)))
-        }
-        break
-      default:
-        defAlg:
-        {
-          sb.append("Unknown algorithm starting at Lambda ").append(format("%8.3f",
-              alchemicalOptions.getInitialLambda(true)))
-        }
-        break
+
+    double initLambda = 0.0
+    ThermodynamicsAlgorithm algorithm = thermodynamicsOptions.getAlgorithm()
+    if (algorithm == ThermodynamicsAlgorithm.OST) {
+      initLambda = alchemicalOptions.getInitialLambda(size, rank, true)
+      sb.append("Orthogonal Space Tempering")
+    } else if (algorithm == ThermodynamicsAlgorithm.FIXED) {
+      if (size != 1) {
+        logger.severe(" Attempted Fixed Lambda Sampling on Multiple Nodes.")
+      }
+      initLambda = alchemicalOptions.getInitialLambda(true)
+      sb.append("Fixed Lambda Sampling at Window L=").append(format("%5.3f ", initLambda))
+    } else {
+      logger.severe(" Unknown Thermodynamics Algorithm " + algorithm)
     }
     sb.append(" for ")
 
@@ -281,12 +272,6 @@ class Thermodynamics extends AlgorithmsScript {
 
     boolean lamExists = lambdaRestart.exists()
 
-    boolean updatesDisabled =
-        topologies[0].getForceField().getBoolean("DISABLE_NEIGHBOR_UPDATES", false)
-    if (updatesDisabled) {
-      logger.info(
-          " This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart")
-    }
     double[] x = new double[potential.getNumberOfVariables()]
     potential.getCoordinates(x)
     linter.setLambda(initLambda)
@@ -298,7 +283,7 @@ class Thermodynamics extends AlgorithmsScript {
 
     multiDynamicsOptions.distribute(topologies, potential, algorithmFunctions, rank, size)
 
-    if (thermodynamicsOptions.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
+    if (thermodynamicsOptions.getAlgorithm() == ThermodynamicsAlgorithm.OST) {
       orthogonalSpaceTempering =
           ostOptions.constructOST(potential, lambdaRestart, histogramRestart, topologies[0],
               additionalProperties, dynamicsOptions, thermodynamicsOptions, lambdaParticleOptions,
@@ -314,14 +299,12 @@ class Thermodynamics extends AlgorithmsScript {
       if (ostOptions.monteCarlo) {
         MonteCarloOST mcOST = ostOptions.
             setupMCOST(orthogonalSpaceTempering, topologies, dynamicsOptions, thermodynamicsOptions,
-                verbose,
-                algorithmListener)
+                verbose, algorithmListener)
         ostOptions.beginMCOST(mcOST, dynamicsOptions, thermodynamicsOptions)
       } else {
         ostOptions.
             beginMDOST(orthogonalSpaceTempering, topologies, ostPotential, dynamicsOptions,
-                writeoutOptions,
-                thermodynamicsOptions, dyn, algorithmListener)
+                writeoutOptions, thermodynamicsOptions, dyn, algorithmListener)
       }
 
       logger.info(" Done running OST")

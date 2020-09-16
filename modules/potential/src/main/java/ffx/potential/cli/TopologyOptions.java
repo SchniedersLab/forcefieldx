@@ -75,7 +75,7 @@ public class TopologyOptions {
   /**
    * The ArgGroup keeps the TopologyOptions together when printing help.
    */
-  @ArgGroup(heading = "%n Topology Options for Dual and Quad Topology Simulations%n", validate = false)
+  @ArgGroup(heading = "%n Alchemical Options for Dual and Quad Topologies%n", validate = false)
   public TopologyOptionGroup group = new TopologyOptionGroup();
 
   /**
@@ -275,11 +275,11 @@ public class TopologyOptions {
     Potential potential = null;
     switch (topologies.length) {
       case 1:
-        sb.append("single topology ");
+        sb.append("Single Topology ");
         potential = topologies[0].getPotentialEnergy();
         break;
       case 2:
-        sb.append("dual topology ");
+        sb.append("Dual Topology ");
         DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
         if (numParallel == 2) {
           dte.setParallel(true);
@@ -287,7 +287,7 @@ public class TopologyOptions {
         potential = dte;
         break;
       case 4:
-        sb.append("quad topology ");
+        sb.append("Quad Topology ");
         DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
         DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
         QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);

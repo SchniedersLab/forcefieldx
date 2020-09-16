@@ -129,12 +129,12 @@ public class ThermodynamicsOptions {
     molDyn.setRestartFrequency(dynamicsOptions.getCheckpoint());
     // Start sampling.
     if (group.equilibrationSteps > 0) {
-      logger.info("\n Beginning equilibration");
+      logger.info("\n Beginning Equilibration");
       runDynamics(molDyn, group.equilibrationSteps, dynamicsOptions, writeoutOptions, true, dyn);
-      logger.info(" Beginning fixed-lambda alchemical sampling");
+      logger.info(" Beginning Fixed-Lambda Alchemical Sampling");
       initVelocities = false;
     } else {
-      logger.info(" Beginning fixed-lambda alchemical sampling without equilibration");
+      logger.info("\n Beginning Fixed-Lambda Alchemical Sampling Without Equilibration");
       if (!group.resetNumSteps) {
         /*int nEnergyCount = ttOSRW.getEnergyCount();
         if (nEnergyCount > 0) {

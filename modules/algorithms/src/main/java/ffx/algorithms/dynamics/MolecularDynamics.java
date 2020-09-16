@@ -1004,10 +1004,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
             .map(FileUtils::relativePathTo)
             .map(Path::toString)
             .collect(Collectors.joining(","));
-    logger.info(
-        String.format(
-            " Dynamics file %s, archive file(s) %s",
-            FileUtils.relativePathTo(restartFile).toString(), arcFiles));
+    logger.info(format(" Dynamics file %s, archive file(s) %s",
+        FileUtils.relativePathTo(restartFile).toString(), arcFiles));
   }
 
   /** Reinitialize the MD engine after a chemical change. */
@@ -1218,12 +1216,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
         (extraLines == null) ? new ArrayList<>() : new ArrayList<>(Arrays.asList(extraLines));
 
     if (potential instanceof LambdaInterface) {
-      String lamString = String.format("Lambda: %.8f", ((LambdaInterface) potential).getLambda());
+      String lamString = format("Lambda: %.8f", ((LambdaInterface) potential).getLambda());
       linesList.add(lamString);
     }
     Comm world = Comm.world();
     if (world != null && world.size() > 1) {
-      String rankString = String.format("Rank: %d", world.rank());
+      String rankString = format("Rank: %d", world.rank());
       linesList.add(rankString);
     }
 

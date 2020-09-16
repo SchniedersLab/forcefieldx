@@ -78,7 +78,7 @@ public class AlchemicalOptions {
    */
   public static void setUnchargedAtoms(MolecularAssembly assembly, String unchargedAtoms) {
     actOnAtoms(assembly, unchargedAtoms, (Atom a, Boolean b) -> a.setElectrostatics(!b),
-        "uncharged", " Uncharged atoms");
+        "Uncharged");
   }
 
   /**
@@ -88,7 +88,7 @@ public class AlchemicalOptions {
    * @param alchemicalAtoms Alchemical atoms selection string.
    */
   public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms) {
-    actOnAtoms(assembly, alchemicalAtoms, Atom::setApplyLambda, "alchemical", " Alchemical atoms");
+    actOnAtoms(assembly, alchemicalAtoms, Atom::setApplyLambda, "Alchemical");
   }
 
   /**
@@ -131,20 +131,14 @@ public class AlchemicalOptions {
     if (initialLambda < 0.0 || initialLambda > 1.0) {
       if (rank == 0 || size < 2) {
         initialLambda = 0.0;
-        if (!quiet) {
-          logger.info(format(" Setting lambda to %5.3f", initialLambda));
-        }
       } else if (rank == size - 1) {
         initialLambda = 1.0;
-        if (!quiet) {
-          logger.info(format(" Setting lambda to %5.3f", initialLambda));
-        }
       } else {
         double dL = 1.0 / (size - 1);
         initialLambda = dL * rank;
-        if (!quiet) {
-          logger.info(format(" Setting lambda to %5.3f.", initialLambda));
-        }
+      }
+      if (!quiet) {
+        logger.info(format(" Setting lambda to %5.3f.", initialLambda));
       }
     }
     return initialLambda;
