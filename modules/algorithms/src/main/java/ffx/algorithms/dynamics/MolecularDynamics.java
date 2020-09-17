@@ -228,10 +228,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param requestedThermostat a {@link ThermostatEnum} object.
-   * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+   * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum}
+   *     object.
    */
   public MolecularDynamics(
       MolecularAssembly assembly,
@@ -255,10 +257,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param requestedThermostat a {@link ThermostatEnum} object.
-   * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+   * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum}
+   *     object.
    * @param fallbackDyn File to write restarts to if none is provided by the dynamics method.
    */
   public MolecularDynamics(
@@ -415,10 +419,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param requestedThermostat a {@link ThermostatEnum} object.
-   * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+   * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum}
+   *     object.
    * @param esvSystem a {@link ffx.potential.extended.ExtendedSystem} object.
    */
   public MolecularDynamics(
@@ -439,10 +445,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param requestedThermostat a {@link ThermostatEnum} object.
-   * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+   * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum}
+   *     object.
    * @return a {@link MolecularDynamics} object.
    */
   public static MolecularDynamics dynamicsFactory(
@@ -468,10 +476,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param requestedThermostat a {@link ThermostatEnum} object.
-   * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+   * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum}
+   *     object.
    * @param engine a {@link MolecularDynamics.DynamicsEngine} object.
    * @return a {@link MolecularDynamics} object.
    */
@@ -608,20 +618,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param restartInterval Interval between writing new restart files in picoseconds.
    * @param dyn A {@link java.io.File} object to write the restart file to.
    */
-  public void dynamic(
-      final long nSteps,
-      final double timeStep,
-      final double loggingInterval,
-      final double trajectoryInterval,
-      final double temperature,
-      final boolean initVelocities,
-      String fileType,
-      double restartInterval,
-      final File dyn) {
+  public void dynamic(final long nSteps, final double timeStep,
+      final double loggingInterval, final double trajectoryInterval,
+      final double temperature, final boolean initVelocities,
+      String fileType, double restartInterval, final File dyn) {
     this.fileType = fileType;
     setRestartFrequency(restartInterval);
-    dynamic(
-        nSteps, timeStep, loggingInterval, trajectoryInterval, temperature, initVelocities, dyn);
+    dynamic(nSteps, timeStep, loggingInterval, trajectoryInterval, temperature, initVelocities, dyn);
   }
 
   /**
@@ -636,14 +639,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param initVelocities Initialize new velocities from a Maxwell-Boltzmann distribution.
    * @param dyn A {@link java.io.File} object to write the restart file to.
    */
-  public void dynamic(
-      final long nSteps,
-      final double timeStep,
-      final double loggingInterval,
-      final double trajectoryInterval,
-      final double temperature,
-      final boolean initVelocities,
-      final File dyn) {
+  public void dynamic(final long nSteps, final double timeStep,
+      final double loggingInterval, final double trajectoryInterval,
+      final double temperature, final boolean initVelocities, final File dyn) {
     // Return if already running;
     // Could happen if two threads call dynamic on the same MolecularDynamics instance.
     if (!done) {
@@ -651,16 +649,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
       return;
     }
 
-    init(
-        nSteps,
-        timeStep,
-        loggingInterval,
-        trajectoryInterval,
-        fileType,
-        restartInterval,
-        temperature,
-        initVelocities,
-        dyn);
+    init(nSteps, timeStep, loggingInterval, trajectoryInterval, fileType, restartInterval,
+        temperature, initVelocities, dyn);
 
     Thread dynamicThread = new Thread(this);
     dynamicThread.start();
@@ -829,25 +819,22 @@ public class MolecularDynamics implements Runnable, Terminatable {
   public void setVerbosityLevel(VerbosityLevel level) {
     verbosityLevel = level;
     switch (level) {
-      case SILENT:
-        {
-          intermediateLogging = Level.FINE;
-          basicLogging = Level.FINE;
-        }
-        break;
-      case QUIET:
-        {
-          intermediateLogging = Level.FINE;
-          basicLogging = Level.INFO;
-        }
-        break;
+      case SILENT: {
+        intermediateLogging = Level.FINE;
+        basicLogging = Level.FINE;
+      }
+      break;
+      case QUIET: {
+        intermediateLogging = Level.FINE;
+        basicLogging = Level.INFO;
+      }
+      break;
       case VERBOSE:
-      default:
-        {
-          intermediateLogging = Level.INFO;
-          basicLogging = Level.INFO;
-        }
-        break;
+      default: {
+        intermediateLogging = Level.INFO;
+        basicLogging = Level.INFO;
+      }
+      break;
     }
   }
 
@@ -1186,8 +1173,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
   }
 
   /**
-   * Write restart and trajectory files if the provided step matches the frequency and that file
-   * type is requested.
+   * Write restart and trajectory files if the provided step matches the frequency and that file type
+   * is requested.
    *
    * @param step Step to write files (if any) for.
    * @param trySnapshot If false, do not write snapshot even if the timestep is correct.
@@ -1200,8 +1187,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
   }
 
   /**
-   * Write restart and trajectory files if the provided step matches the frequency and that file
-   * type is requested.
+   * Write restart and trajectory files if the provided step matches the frequency and that file type
+   * is requested.
    *
    * @param step Step to write files (if any) for.
    * @param trySnapshot If false, do not write snapshot even if the timestep is correct.
@@ -1663,10 +1650,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
   }
 
   /**
-   * Detects grossly atypical potential energy values that are likely incorrect, and writes
-   * snapshots to disc. "Grossly atypical" is defined as: greater than 1.0E100 kcal/mol, less than
-   * -1.0E100 kcal/mol, non-finite (NaN/infinite), or exceeding specified delta from the prior
-   * potential energy.
+   * Detects grossly atypical potential energy values that are likely incorrect, and writes snapshots
+   * to disc. "Grossly atypical" is defined as: greater than 1.0E100 kcal/mol, less than -1.0E100
+   * kcal/mol, non-finite (NaN/infinite), or exceeding specified delta from the prior potential
+   * energy.
    *
    * <p>After prior snapshots have been written to disc, the queue they are stored on is now empty,
    * preventing printing of duplicate snapshots.
@@ -1849,10 +1836,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
   }
 
   /**
-   * More limited version of a DynamicsState, storing only coordinates. TODO: Make DynamicsState
-   * more flexible and let it store any combination of variables.
+   * More limited version of a DynamicsState, storing only coordinates. TODO: Make DynamicsState more
+   * flexible and let it store any combination of variables.
    */
   protected class CoordinateSnapshot {
+
     final double[] xBak;
 
     CoordinateSnapshot() {

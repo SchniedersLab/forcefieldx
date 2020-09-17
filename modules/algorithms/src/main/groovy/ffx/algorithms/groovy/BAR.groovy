@@ -39,14 +39,19 @@ package ffx.algorithms.groovy
 
 import edu.rit.pj.ParallelTeam
 import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.cli.BarostatOptions
+import ffx.crystal.Crystal
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
+import ffx.numerics.estimator.BennettAcceptanceRatio
+import ffx.numerics.estimator.EstimateBootstrapper
+import ffx.numerics.estimator.SequentialEstimator
+import ffx.numerics.math.SummaryStatistics
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.SystemFilter
+import ffx.utilities.Constants
 import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
@@ -55,7 +60,7 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
-import static org.apache.commons.math3.util.FastMath.*
+import static org.apache.commons.math3.util.FastMath.min
 
 /**
  * The BAR script find the free energy difference across a lambda window. It presently assumes
@@ -75,9 +80,6 @@ class BAR extends AlgorithmsScript {
   @Mixin
   private TopologyOptions topology
 
-  @Mixin
-  private BarostatOptions barostat
-
   @Option(names = ["--l2", "--lambdaTwo"], paramLabel = "1.0",
       description = "Lambda value for the upper edge of the window")
   private double lambda2 = 1.0
@@ -89,6 +91,14 @@ class BAR extends AlgorithmsScript {
   @Option(names = ["--t2", "--temperature2"], paramLabel = "298.15",
       description = "Temperature for system 2")
   private double temp2 = 298.15
+
+  @Option(names = ["--dV", "--volume"], paramLabel = "false",
+      description = "Write out snapshot volumes to the Tinker BAR file.")
+  private boolean includeVolume = false
+
+  @Option(names = ["--tb", "--tinkerBAR"], paramLabel = "false",
+      description = "Write out a Tinker BAR file.")
+  private boolean tinkerBAR = false
 
   /**
    * The final argument(s) should be filenames for lambda windows in order..
@@ -143,6 +153,7 @@ class BAR extends AlgorithmsScript {
     if (!init()) {
       return this
     }
+
     if (filenames == null || filenames.size() % 2 != 0) {
       return this
     }
@@ -190,17 +201,26 @@ class BAR extends AlgorithmsScript {
     double lambda1 = alchemical.initialLambda
 
     StringBuilder sb = new StringBuilder(format(
-        "\n Using BAR to analyze a free energy change between L=%.5f and L=%.5f for systems ",
-        lambda1, lambda2))
+        "\n Using BAR to analyze a free energy change between L=%.5f and L=%.5f for\n ", lambda1,
+        lambda2))
     potential1 = (CrystalPotential) topology.assemblePotential(topologies1, threadsAvail, sb)
-    potential1 = barostat.checkNPT(topologies1[0], potential1)
-    sb.append(" and systems ")
+    sb.append(" and ")
     potential2 = (CrystalPotential) topology.assemblePotential(topologies2, threadsAvail, sb)
-    potential2 = barostat.checkNPT(topologies2[0], potential2)
 
     LambdaInterface linter1 = (LambdaInterface) potential1
     LambdaInterface linter2 = (LambdaInterface) potential2
     logger.info(sb.toString())
+
+    // Check for periodic boundary conditions
+    Crystal unitCell1 = potential1.getCrystal().getUnitCell()
+    Crystal unitCell2 = potential2.getCrystal().getUnitCell()
+    boolean isPBC = includeVolume && !unitCell1.aperiodic()
+    isPBC = isPBC && !unitCell2.aperiodic()
+    isPBC = isPBC && (unitCell1.getNumSymOps() == unitCell2.getNumSymOps())
+    int nSymm = 0
+    if (isPBC) {
+      nSymm = unitCell1.getNumSymOps()
+    }
 
     int nSnapshots1 = openers1[0].countNumModels()
     int nSnapshots2 = openers2[0].countNumModels()
@@ -210,8 +230,14 @@ class BAR extends AlgorithmsScript {
     double[] e2L2 = new double[nSnapshots2]
     double[] eDiff1 = new double[nSnapshots1]
     double[] eDiff2 = new double[nSnapshots2]
+    double[] vol1 = null
+    double[] vol2 = null
+    if (isPBC) {
+      vol1 = new double[nSnapshots1]
+      vol2 = new double[nSnapshots2]
+    }
 
-    logger.info(" Preliminary energy evaluation for first end of the window.")
+    logger.info("\n Preliminary energy evaluation for first end of the window.")
     double[] x1 = new double[potential1.getNumberOfVariables()]
     x1 = potential1.getCoordinates(x1)
     linter1.setLambda(lambda1)
@@ -219,8 +245,12 @@ class BAR extends AlgorithmsScript {
     linter1.setLambda(lambda2)
     e1L2[0] = potential1.energy(x1, false)
     eDiff1[0] = e1L2[0] - e1L1[0]
+    if (isPBC) {
+      Crystal unitCell = potential1.getCrystal().getUnitCell()
+      vol1[0] = unitCell.volume / nSymm
+    }
 
-    logger.info(" Preliminary energy evaluation for second end of the window.")
+    logger.info("\n Preliminary energy evaluation for second end of the window.")
     double[] x2 = new double[potential2.getNumberOfVariables()]
     potential2.getCoordinates(x2)
     linter2.setLambda(lambda2)
@@ -228,25 +258,51 @@ class BAR extends AlgorithmsScript {
     e2L1[0] = potential2.energy(x2, false)
     eDiff2[0] = e2L2[0] - e2L1[0]
 
+    if (isPBC) {
+      Crystal unitCell = potential2.getCrystal().getUnitCell()
+      vol2[0] = unitCell.volume / nSymm
+    }
+
     String lamString1 = format("%.3f", lambda1)
     String lamString2 = format("%.3f", lambda2)
 
-    // TODO: Increment by stride instead of always 1.
+    logger.info(format("\n Ensemble 1 collected at L=%s", lamString1))
+    if (isPBC) {
+      logger.info(
+          format(" Snapshot     E(L=%s)     E(L=%s)             dE         Volume", lamString1,
+              lamString2))
+    } else {
+      logger.info(format(" Snapshot     E(L=%s)     E(L=%s)             dE", lamString1, lamString2))
+    }
+
     for (int i = 1; i < nSnapshots1; i++) {
       linter1.setLambda(lambda1)
       for (int j = 0; j < nPer; j++) {
         openers1[j].readNext(false, false)
       }
-      // TODO: Make repeat measurements (esp. for mixed-precision OMM).
       x1 = potential1.getCoordinates(x1)
       e1L1[i] = potential1.energy(x1, false)
       linter1.setLambda(lambda2)
       e1L2[i] = potential1.energy(x1, false)
-
       eDiff1[i] = e1L2[i] - e1L1[i]
-      logger.info(format(
-          " Snapshot %d of system 1: E(L=%s) = %14.7f, E(L=%s) = %14.7f, difference = %14.7f",
-          i + 1, lamString1, e1L1[i], lamString2, e1L2[i], eDiff1[i]))
+      if (isPBC) {
+        Crystal unitCell = potential1.getCrystal().getUnitCell()
+        vol1[i] = unitCell.volume / nSymm
+        logger.info(format(" %8d %14.4f %14.4f %14.4f %14.4f",
+            i + 1, e1L1[i], e1L2[i], eDiff1[i], vol1[i]))
+      } else {
+        logger.info(format(" %8d %14.4f %14.4f %14.4f",
+            i + 1, e1L1[i], e1L2[i], eDiff1[i]))
+      }
+    }
+
+    logger.info(format("\n Ensemble 2 collected at L=%s", lamString2))
+    if (isPBC) {
+      logger.info(
+          format(" Snapshot     E(L=%s)     E(L=%s)             dE         Volume", lamString1,
+              lamString2))
+    } else {
+      logger.info(format(" Snapshot     E(L=%s)     E(L=%s)             dE", lamString1, lamString2))
     }
 
     for (int i = 1; i < nSnapshots2; i++) {
@@ -258,72 +314,121 @@ class BAR extends AlgorithmsScript {
       e2L1[i] = potential2.energy(x2, false)
       linter2.setLambda(lambda2)
       e2L2[i] = potential2.energy(x2, false)
-
       eDiff2[i] = e2L2[i] - e2L1[i]
-      logger.info(
-          format(" Snapshot %d of system 2: E(L=%s) = %14.7f, E(L=%s) = %14.7f, difference = %14.7f",
-              i + 1, lamString1, e2L1[i], lamString2, e2L2[i], eDiff2[i]))
-    }
-
-    double mean1 = 0
-    double var1 = 0
-    double max1 = Integer.MIN_VALUE
-    double min1 = Integer.MAX_VALUE
-    for (int i = 1; i <= nSnapshots1; i++) {
-      double priorMean = mean1
-      double val = eDiff1[i - 1]
-      mean1 += ((val - mean1) / i)
-      var1 += ((val - priorMean) * (val - mean1))
-      min1 = min(min1, val)
-      max1 = max(max1, val)
-    }
-    double sd1 = sqrt(var1 / (nSnapshots1 - 1))
-    logger.info(format(
-        " System 1 differences: mean %14.7f, sample standard deviation %14.7f, min %14.7f, max %14.7f over %d samples",
-        mean1, sd1, min1, max1, nSnapshots1))
-
-    double mean2 = 0
-    double var2 = 0
-    double max2 = Integer.MIN_VALUE
-    double min2 = Integer.MAX_VALUE
-    for (int i = 1; i <= nSnapshots2; i++) {
-      double priorMean = mean2
-      double val = eDiff2[i - 1]
-      mean2 += ((val - mean2) / i)
-      var2 += ((val - priorMean) * (val - mean2))
-      min2 = min(min2, val)
-      max2 = max(max2, val)
-    }
-    double sd2 = sqrt(var2 / (nSnapshots2 - 1))
-    logger.info(format(
-        " System 2 differences: mean %14.7f, sample standard deviation %14.7f, min %14.7f, max %14.7f over %d samples",
-        mean2, sd2, min2, max2, nSnapshots2))
-
-    String barFileName = FilenameUtils.removeExtension(filenames.get(0)) + ".bar"
-    // @formatter:off
-    logger.info(" Writing Tinker-compatible .bar file to ${barFileName}. " +
-        "For now: use Tinker's bar command; built-in FFX calculations not yet implemented.")
-    // @formatter:on
-
-    new File(barFileName).withWriter {bw ->
-      StringBuilder fnames1 = new StringBuilder()
-      for (int i = 0; i < nPer; i++) {
-        fnames1.append("  ").append(filenames.get(i))
-      }
-      bw.write(format("%8d %9.3f%s\n", nSnapshots1, temp1, fnames1.toString()))
-      for (int i = 0; i < nSnapshots1; i++) {
-        bw.write(format("%8d %20.10f %20.10f\n", i + 1, e1L1[i], e1L2[i]))
-      }
-
-      StringBuilder fnames2 = new StringBuilder()
-      for (int i = nPer; i < nFiles; i++) {
-        fnames2.append("  ").append(filenames.get(i))
-      }
-      bw.write(format("%8d %9.3f  %s\n", nSnapshots2, temp2, fnames2.toString()))
-      for (int i = 0; i < nSnapshots2; i++) {
-        bw.write(format("%8d %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i]))
+      if (isPBC) {
+        Crystal unitCell = potential2.getCrystal().getUnitCell()
+        vol2[i] = unitCell.volume / nSymm
+        logger.info(format(" %8d %14.4f %14.4f %14.4f %14.4f",
+            i + 1, e2L1[i], e2L2[i], eDiff2[i], vol2[i]))
+      } else {
+        logger.info(format(" %8d %14.4f %14.4f %14.4f",
+            i + 1, e2L1[i], e2L2[i], eDiff2[i]))
       }
     }
+
+    SummaryStatistics eDiff1Stats = new SummaryStatistics(eDiff1)
+    logger.info(format(" Ensemble 1 Statistics (%d snapshots)", eDiff1Stats.count))
+    logger.info(format("  Energy difference: %s", eDiff1Stats.describe()))
+    if (isPBC) {
+      SummaryStatistics vol1Stats = new SummaryStatistics(vol1)
+      logger.info(format("  Volume:            %s", vol1Stats.describe()))
+    }
+
+    SummaryStatistics eDiff2Stats = new SummaryStatistics(eDiff2)
+    logger.info(format(" Ensemble 2 Statistics (%d snapshots)", eDiff2Stats.count))
+    logger.info(format("  Energy difference: %s", eDiff2Stats.describe()))
+    if (isPBC) {
+      SummaryStatistics vol2Stats = new SummaryStatistics(vol2)
+      logger.info(format("  Volume:            %s", vol2Stats.describe()))
+    }
+
+    if (tinkerBAR) {
+      String barFileName = FilenameUtils.removeExtension(filenames.get(0)) + ".bar"
+      logger.info(format("\n Writing Tinker-compatible BAR file to %s.", barFileName))
+
+      new File(barFileName).withWriter {bw ->
+        StringBuilder fnames1 = new StringBuilder()
+        for (int i = 0; i < nPer; i++) {
+          fnames1.append("  ").append(filenames.get(i))
+        }
+        bw.write(format("%8d %9.3f%s\n", nSnapshots1, temp1, fnames1.toString()))
+        for (int i = 0; i < nSnapshots1; i++) {
+          if (isPBC) {
+            bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, e1L1[i], e1L2[i], vol1[i]))
+          } else {
+            bw.write(format("%8d %20.10f %20.10f\n", i + 1, e1L1[i], e1L2[i]))
+          }
+        }
+
+        StringBuilder fnames2 = new StringBuilder()
+        for (int i = nPer; i < nFiles; i++) {
+          fnames2.append("  ").append(filenames.get(i))
+        }
+        bw.write(format("%8d %9.3f  %s\n", nSnapshots2, temp2, fnames2.toString()))
+        for (int i = 0; i < nSnapshots2; i++) {
+          if (isPBC) {
+            bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i], vol2[i]))
+          } else {
+            bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i]))
+          }
+        }
+      }
+    }
+
+    // Load energy values for FEP and BAR
+    double[][] energyLow = new double[2][]
+    double[][] energyAt = new double[2][]
+    double[][] energyHigh = new double[2][]
+    // First Lambda Value.
+    energyLow[0] = new double[nSnapshots1]
+    energyAt[0] = e1L1
+    energyHigh[0] = e1L2
+    // Second Lambda Value.
+    energyLow[1] = e2L1
+    energyAt[1] = e2L2
+    energyHigh[1] = new double[nSnapshots2]
+
+    double[] lambda = new double[] {lambda1, lambda2}
+    SequentialEstimator bar = new BennettAcceptanceRatio(lambda, energyLow, energyAt, energyHigh,
+        new double[] {temp1, temp2})
+    SequentialEstimator forwards = bar.getInitialForwardsGuess()
+    SequentialEstimator backwards = bar.getInitialBackwardsGuess()
+
+    EstimateBootstrapper barBS = new EstimateBootstrapper(bar)
+    EstimateBootstrapper forBS = new EstimateBootstrapper(forwards)
+    EstimateBootstrapper backBS = new EstimateBootstrapper(backwards)
+
+    long MAX_BOOTSTRAP_TRIALS = 100000L
+    long bootstrap = min(MAX_BOOTSTRAP_TRIALS, min(nSnapshots1, nSnapshots2))
+
+    logger.info("\n Free Energy Difference via FEP Method\n")
+    long time = -System.nanoTime()
+    forBS.bootstrap(bootstrap)
+    time += System.nanoTime()
+    logger.fine(format(" Forward FEP Bootstrap Complete:      %7.4f sec", time * Constants.NS2SEC))
+    double sumFE = forBS.getTotalFE()
+    double varFE = forBS.getTotalUncertainty()
+    logger.info(format(" Free energy via Forwards FEP:   %12.4f +/- %6.4f kcal/mol.", sumFE, varFE))
+
+    time = -System.nanoTime()
+    backBS.bootstrap(bootstrap)
+    time += System.nanoTime()
+    logger.fine(format(" Backward FEP Bootstrap Complete:     %7.4f sec", time * Constants.NS2SEC))
+    sumFE = backBS.getTotalFE()
+    varFE = backBS.getTotalUncertainty()
+    logger.info(format(" Free energy via Backwards FEP:  %12.4f +/- %6.4f kcal/mol.", sumFE, varFE))
+
+    logger.info("\n Free Energy Difference via BAR Method\n")
+    logger.info(
+        format(" Free energy via BAR Iteration:  %12.4f +/- %6.4f kcal/mol.", bar.getFreeEnergy(),
+            bar.getUncertainty()))
+    time = -System.nanoTime()
+    barBS.bootstrap(bootstrap)
+    time += System.nanoTime()
+    logger.fine(format(" BAR Bootstrap Complete:              %7.4f sec", time * Constants.NS2SEC))
+    sumFE = barBS.getTotalFE()
+    varFE = barBS.getTotalUncertainty()
+    logger.info(format(" Free energy via BAR Bootstrap:  %12.4f +/- %6.4f kcal/mol.", sumFE, varFE))
 
     return this
   }
@@ -333,9 +438,18 @@ class BAR extends AlgorithmsScript {
    */
   @Override
   List<Potential> getPotentials() {
-    ArrayList<Potential> potentials = new ArrayList<>(2)
-    potentials.add(potential1)
-    potentials.add(potential2)
+    List<Potential> potentials
+    if (potential1 == null && potential2 == null) {
+      potentials = Collections.emptyList()
+    } else {
+      potentials = new ArrayList<>()
+      if (potential1 != null) {
+        potentials.add(potential1)
+      }
+      if (potential2) {
+        potentials.add(potential2)
+      }
+    }
     return potentials
   }
 }

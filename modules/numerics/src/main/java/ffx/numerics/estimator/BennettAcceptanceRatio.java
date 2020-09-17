@@ -278,8 +278,13 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
     Level warningLevel = randomSamples ? Level.FINE : Level.WARNING;
 
     for (int i = 0; i < nWindows; i++) {
-      double c =
-          0.5 * (forwardZwanzig[i] + backwardZwanzig[i]); // Free energy estimate/shift constant.
+      // Free energy estimate/shift constant.
+      double c = 0.5 * (forwardZwanzig[i] + backwardZwanzig[i]);
+
+      if (!randomSamples) {
+        logger.fine(format(" BAR Iteration   %2d: %12.4f Kcal/mol", 0, c));
+      }
+
       double cold = c;
       int len0 = eAt[i].length;
       int len1 = eAt[i + 1].length;
@@ -305,8 +310,10 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
       double invRTA = 1.0 / rta;
       double invRTB = 1.0 / rtb;
 
-      SummaryStatistics s1 = null; // Summary statistics for Fermi differences for the upper half.
-      SummaryStatistics s0 = null; // Summary statistics for Fermi differences for the lower half.
+      // Summary statistics for Fermi differences for the upper half.
+      SummaryStatistics s1 = null;
+      // Summary statistics for Fermi differences for the lower half.
+      SummaryStatistics s0 = null;
 
       // Each BAR convergence cycle needs to operate on the same set of indices.
       int[] bootstrapSamples0 = null;
@@ -320,7 +327,6 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
       int cycleCounter = 0;
       boolean converged = false;
       while (!converged) {
-        // Tinker: ub0, ub1; ua1, ua0 = FFX: eLow[i+1], eAt[i+1], eHigh[i], eAt[i]
         if (randomSamples) {
           fermiDiffBootstrap(eHigh[i], eAt[i], fermi0, len0, -c, invRTA, bootstrapSamples0);
           fermiDiffBootstrap(eLow[i + 1], eAt[i + 1], fermi1, len1, c, invRTB, bootstrapSamples1);
@@ -334,12 +340,17 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
         double ratio = stream(fermi1).sum() / stream(fermi0).sum();
 
         c += rtMean * log(sampleRatio * ratio);
+
         converged = (abs(c - cold) < tolerance);
         cold = c;
 
         if (++cycleCounter > MAX_ITERS) {
           throw new IllegalArgumentException(
               format(" BAR required too many iterations (%d) to converge!", cycleCounter));
+        }
+
+        if (!randomSamples) {
+          logger.fine(format(" BAR Iteration   %2d: %12.4f Kcal/mol", cycleCounter, c));
         }
       }
 
@@ -349,9 +360,8 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
           stream(fermi0).map((double d) -> d * d).toArray()).mean;
       double sqFermiMean1 = new SummaryStatistics(
           stream(fermi1).map((double d) -> d * d).toArray()).mean;
-      barUncertainties[i] = sqrt(
-          uncertaintyCalculation(s0.mean, sqFermiMean0, len0) + uncertaintyCalculation(s1.mean,
-              sqFermiMean1, len1));
+      barUncertainties[i] = sqrt(uncertaintyCalculation(s0.mean, sqFermiMean0, len0)
+          + uncertaintyCalculation(s1.mean, sqFermiMean1, len1));
     }
 
     totalBAREstimate = cumDG;

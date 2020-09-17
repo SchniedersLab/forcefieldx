@@ -208,16 +208,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
       return;
     }
 
-    init(
-        numSteps,
-        timeStep,
-        printInterval,
-        saveInterval,
-        fileType,
-        restartInterval,
-        temperature,
-        initVelocities,
-        dyn);
+    init(numSteps, timeStep, printInterval, saveInterval, fileType, restartInterval,
+        temperature, initVelocities, dyn);
 
     if (intervalSteps == 0 || intervalSteps > numSteps) {
       // Safe cast: if intervalSteps > numSteps, then numSteps must be less than Integer.MAX_VALUE.

@@ -117,9 +117,8 @@ public class ThermodynamicsOptions {
       AlgorithmListener algorithmListener) {
     dynamicsOptions.init();
 
-    MolecularDynamics molDyn =
-        dynamicsOptions.getDynamics(
-            writeoutOptions, crystalPotential, molecularAssemblies[0], algorithmListener);
+    MolecularDynamics molDyn = dynamicsOptions.getDynamics(
+        writeoutOptions, crystalPotential, molecularAssemblies[0], algorithmListener);
     for (int i = 1; i < molecularAssemblies.length; i++) {
       molDyn.addAssembly(molecularAssemblies[i], molecularAssemblies[i].getProperties());
     }

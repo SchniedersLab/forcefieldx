@@ -143,11 +143,9 @@ public class EstimateBootstrapper {
       windows[i] = new RunningStatistics();
     }
 
-    // TODO: Parallelize this loop, because so long as we construct duplicate
-    // estimators/accumulators, it should be trivially parallelizable.
     for (long i = 0; i < trials; i++) {
       if ((i + 1) % logInterval == 0) {
-        logger.info(format(" Bootstrap Trial %d", i + 1));
+        logger.fine(format(" Bootstrap Trial %d", i + 1));
       }
 
       estimate.estimateDG(true);

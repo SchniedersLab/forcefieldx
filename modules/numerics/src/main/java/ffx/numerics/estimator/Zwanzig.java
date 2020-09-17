@@ -39,12 +39,9 @@ package ffx.numerics.estimator;
 
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
 import static java.util.Arrays.copyOf;
-import static java.util.Arrays.stream;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.log;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.numerics.math.SummaryStatistics;
 import ffx.utilities.Constants;
 import java.util.Random;
 import java.util.logging.Level;
@@ -136,56 +133,39 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
     Level warningLevel = randomSamples ? Level.FINE : Level.WARNING;
 
     for (int i = 0; i < nWindows; i++) {
-
       int windowIndex = forwards ? 0 : 1;
       windowIndex += i;
-      double[] e1 = forwards ? eAt[windowIndex] : eLow[windowIndex];
-      double[] e2 = forwards ? eHigh[windowIndex] : eAt[windowIndex];
-      int len = e1.length;
+      double[] e1 = eAt[windowIndex];
+      double[] e2 = forwards ? eHigh[windowIndex] : eLow[windowIndex];
+      double sign = forwards ? 1.0 : -1.0;
+      double beta = -temperatures[windowIndex] * Constants.R;
+      double invBeta = 1.0 / beta;
 
+      int len = e1.length;
       if (len == 0) {
         logger.log(warningLevel, " Skipping frame " + i + " due to lack of snapshots!");
         continue;
       }
 
-      // IMPORTANT: Use the class variable temperatures, not temperature (which may be a 1-length
-      // array).
-      // ALSO IMPORTANT: The -1 factor is included in here for optimization reasons.
-      double beta = -temperatures[windowIndex] * Constants.R;
-      double invBeta = 1.0 / beta;
-
-      double[] deltas = new double[len];
-      double[] expDeltas = new double[len];
-
+      // With no iteration-to-convergence, generating a fresh random index is OK.
       int[] samples =
           randomSamples ? getBootstrapIndices(len, random) : IntStream.range(0, len).toArray();
 
+      double sum = 0.0;
       for (int indJ = 0; indJ < len; indJ++) {
-        // With no iteration-to-convergence, generating a fresh random index is OK.
         int j = samples[indJ];
-        deltas[indJ] = e2[j] - e1[j];
-        // expDeltas[indJ] = exp(beta * deltas[j]);
-        expDeltas[indJ] = exp(invBeta * deltas[indJ]);
+        double dE = e2[j] - e1[j];
+        sum += exp(invBeta * dE);
       }
 
-      // SummaryStatistics deltaSummary = new SummaryStatistics(deltas);
-      SummaryStatistics expDeltaSummary = new SummaryStatistics(expDeltas);
-      // double dG = invBeta * log(expDeltaSummary.mean);
-      double dG = beta * log(expDeltaSummary.mean);
+      double dG = sign * beta * log(sum / len);
       windowFreeEnergyDifferences[i] = dG;
+      windowFreeEnergyUncertainties[i] = 0.0;
       cumDG += dG;
-      if (len == 1) {
-        windowFreeEnergyUncertainties[i] = 0.0;
-      } else {
-        /*double ci = deltaSummary.confidenceInterval();
-        uncerts[i] = ci;*/
-        windowFreeEnergyUncertainties[i] = expDeltaSummary.sd;
-      }
     }
 
     totalFreeEnergyDifference = cumDG;
-    totalFreeEnergyUncertainty = sqrt(
-        stream(windowFreeEnergyUncertainties).map((double d) -> d * d).sum());
+    totalFreeEnergyUncertainty = 0.0;
   }
 
   /** {@inheritDoc} */

@@ -311,4 +311,13 @@ public class SummaryStatistics {
   public String toString() {
     return descString;
   }
+
+  /**
+   * Describe the Summary Statistics.
+   *
+   * @return Return the description.
+   */
+  public String describe() {
+    return format(" Mean: %12.6f +/-%12.6f, Min/Max: %12.6f/%12.6f", mean, sd, min, max);
+  }
 }
