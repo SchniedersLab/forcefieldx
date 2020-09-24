@@ -154,7 +154,7 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
       double sum = 0.0;
       for (int indJ = 0; indJ < len; indJ++) {
         int j = samples[indJ];
-        double dE = e2[j] - e1[j];
+        double dE = e2[j] - e1[j]; // TODO: Add the contribution due to volume changes.
         sum += exp(invBeta * dE);
       }
 

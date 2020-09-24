@@ -162,7 +162,7 @@ public final class PDBFilter extends SystemFilter {
   /** Tracks output MODEL numbers. Unused if below zero. */
   private int modelsWritten = -1;
 
-  private File readFile;
+  private final File readFile;
   private List<String> remarkLines = Collections.emptyList();
   private double lastReadLambda = Double.NaN;
 

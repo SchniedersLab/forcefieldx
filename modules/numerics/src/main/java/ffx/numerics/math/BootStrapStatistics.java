@@ -44,20 +44,18 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import java.util.Random;
 import org.apache.commons.math3.distribution.TDistribution;
 
 /**
- * The SummaryStatistics class uses online, stable algorithms to calculate summary statistics from
- * double arrays/lists, including mean, variance, standard deviation, max, min, sum, and count.
- *
- * <p>This is intended for accuracy and numerical stability, not necessarily for performance (e.g.
- * using Kahan summation).
+ * The BootStrapStatistics class uses bootstrapping to estimate statistics from a
+ * given population.
  *
  * @author Michael J. Schnieders
- * @author Jacob M. Litman
+ * @author Rose Gogal
  * @since 1.0
  */
-public class SummaryStatistics {
+public class BootStrapStatistics {
   // Weight-sensitive values.
   public final double mean;
   public final double var;
@@ -75,39 +73,12 @@ public class SummaryStatistics {
   private final String descString;
 
   /**
-   * Builds a static view of a running statistic.
-   *
-   * @param rs Running statistic.
-   */
-  public SummaryStatistics(RunningStatistics rs) {
-    mean = rs.getMean();
-    var = rs.getVariance();
-    varPopulation = rs.getPopulationVariance();
-    sumWeights = rs.getWeight();
-    min = rs.getMin();
-    max = rs.getMax();
-    count = rs.getCount();
-    sum = rs.getSum();
-    dof = rs.getDOF();
-    tDist = (dof > 0) ? new TDistribution(dof) : null;
-    sd = rs.getStandardDeviation();
-    sdPopulation = rs.getPopulationStandardDeviation();
-    descString =
-        format(
-            " Summary of %d observations: sum is %17.14g, mean is %17.14g, min is %17.14g, "
-                + "max is %17.14g, and the sum of weights is %17.14g"
-                + "\nSample standard deviation: %17.14g (dof = %d)"
-                + "\nPopulation standard deviation: %17.14g (dof = %d)",
-            count, sum, mean, min, max, sumWeights, sd, dof, sdPopulation, count);
-  }
-
-  /**
    * Constructs a static summary of a statistic from provided values. Assumes weights are all
    * constant (1.0). Assumes all values will be used.
    *
    * @param values Values to summarize.
    */
-  public SummaryStatistics(double[] values) {
+  public BootStrapStatistics(double[] values) {
     this(values, null, 0, values.length, 1);
   }
 
@@ -118,7 +89,7 @@ public class SummaryStatistics {
    * @param values Values to summarize.
    * @param first First value to use.
    */
-  public SummaryStatistics(double[] values, int first) {
+  public BootStrapStatistics(double[] values, int first) {
     this(values, null, first, values.length, 1);
   }
 
@@ -130,7 +101,7 @@ public class SummaryStatistics {
    * @param first First value to use.
    * @param last Last value to use.
    */
-  public SummaryStatistics(double[] values, int first, int last) {
+  public BootStrapStatistics(double[] values, int first, int last) {
     this(values, null, first, last, 1);
   }
 
@@ -143,7 +114,7 @@ public class SummaryStatistics {
    * @param last Last value to use.
    * @param stride Stride between values used.
    */
-  public SummaryStatistics(double[] values, int first, int last, int stride) {
+  public BootStrapStatistics(double[] values, int first, int last, int stride) {
     this(values, null, first, last, stride);
   }
 
@@ -156,7 +127,7 @@ public class SummaryStatistics {
    * @param last Last value to use.
    * @param stride Stride between values used.
    */
-  public SummaryStatistics(double[] values, double[] weights, int first, int last, int stride) {
+  public BootStrapStatistics(double[] values, double[] weights, int first, int last, int stride) {
     if (values == null) {
       throw new IllegalArgumentException(" Cannot have null values!");
     }
@@ -198,56 +169,34 @@ public class SummaryStatistics {
       sumWeights = weights[first];
       dof = 0;
       tDist = null;
-
       descString = format(" Summary of single observation: value is %17.14g", mean);
     } else {
+      // Collect Bootstrap Results
+      RunningStatistics bootstrapRunningStatistics = new RunningStatistics();
+      Random random = new Random();
 
-
-
-      double meanAcc = 0;
-      double varAcc = 0;
-      double minAcc = Double.MAX_VALUE;
-      double maxAcc = Double.MIN_VALUE;
-      double sumAcc = 0;
-      double comp = 0;
-      double weightAcc = 0;
-
-      for (int i = 0; i < count; i++) {
-        int ii = first + (i * stride);
-        assert ii < last && ii < nVals;
-        double val = values[ii];
-        double priorMean = meanAcc;
-        double weight = weights[ii];
-        weightAcc += weight;
-
-        double y = val - comp;
-        double t = sumAcc + y;
-        comp = (t - sumAcc) - y;
-        sumAcc = t;
-
-        minAcc = min(minAcc, val);
-        maxAcc = max(maxAcc, val);
-
-        double invCount = weight / weightAcc;
-        meanAcc += ((val - meanAcc) * invCount);
-        // TODO: Check correctness of variance accumulation when weight != 1.0.
-        varAcc += ((val - priorMean) * (val - meanAcc)) * weight;
+      for (int bs = 0; bs < count; bs++) {
+        // Collect the mean for one Bootstrap round.
+        RunningStatistics bootstrapRound = new RunningStatistics();
+        for (int i=0; i < count; i++) {
+          int j = random.nextInt((int) count);
+          bootstrapRound.addValue(values[j], weights[j]);
+        }
+        // Add the mean from this round.
+        bootstrapRunningStatistics.addValue(bootstrapRound.getMean());
       }
 
-      min = minAcc;
-      max = maxAcc;
-      mean = meanAcc;
-      sum = sumAcc;
-      sumWeights = weightAcc;
-      // Mean via Kahan summation and online mean estimation should be pretty close to each other.
-      assert abs(mean - (sum / count)) < 1.0E-11;
-      varPopulation = varAcc / count;
-      sdPopulation = sqrt(varPopulation);
-      dof = count - 1;
-      var = varAcc / dof;
-      sd = sqrt(var);
+      min = bootstrapRunningStatistics.getMin();
+      max = bootstrapRunningStatistics.getMax();
+      mean = bootstrapRunningStatistics.getMean();
+      sum = bootstrapRunningStatistics.getSum();
+      sumWeights = bootstrapRunningStatistics.getWeight();
+      varPopulation = bootstrapRunningStatistics.getPopulationVariance();
+      sdPopulation = bootstrapRunningStatistics.getPopulationStandardDeviation();
+      dof = bootstrapRunningStatistics.getDOF();
+      var = bootstrapRunningStatistics.getVariance();
+      sd = bootstrapRunningStatistics.getStandardDeviation();
       tDist = new TDistribution(dof);
-
       descString =
           format(
               " Summary of %d observations: sum is %17.14g, mean is %17.14g, min is %17.14g, "

@@ -45,6 +45,7 @@ import ffx.numerics.Potential
 import ffx.numerics.estimator.BennettAcceptanceRatio
 import ffx.numerics.estimator.EstimateBootstrapper
 import ffx.numerics.estimator.SequentialEstimator
+import ffx.numerics.math.BootStrapStatistics
 import ffx.numerics.math.SummaryStatistics
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
@@ -369,7 +370,7 @@ class BAR extends AlgorithmsScript {
           if (isPBC) {
             bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i], vol2[i]))
           } else {
-            bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i]))
+            bw.write(format("%8d %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i]))
           }
         }
       }
@@ -429,6 +430,22 @@ class BAR extends AlgorithmsScript {
     sumFE = barBS.getTotalFE()
     varFE = barBS.getTotalUncertainty()
     logger.info(format(" Free energy via BAR Bootstrap:  %12.4f +/- %6.4f kcal/mol.", sumFE, varFE))
+
+    logger.info(" Enthalpy from Potential Energy Averages")
+    BootStrapStatistics e1L1Stats = new BootStrapStatistics(e1L1)
+    BootStrapStatistics e2L2Stats = new BootStrapStatistics(e2L2)
+    logger.info(format(" Average Energy for State 0:     %12.4f +/- %6.4f kcal/mol.",
+        e1L1Stats.mean, e1L1Stats.sd))
+    logger.info(format(" Average Energy for State 1:     %12.4f +/- %6.4f kcal/mol.",
+        e2L2Stats.mean, e2L2Stats.sd))
+    double enthalpyDiff = e2L2Stats.mean - e1L1Stats.mean
+    double enthalpyDiffSD = Math.sqrt(e2L2Stats.var + e1L1Stats.var)
+    logger.info(format(" Enthalpy via Direct Estimate:   %12.4f +/- %6.4f kcal/mol.",
+        enthalpyDiff, enthalpyDiffSD))
+
+    // TODO: Enthalpy and Entropy via FEP Method
+
+    // TODO: Enthalpy and Entropy via BAR Method
 
     return this
   }
