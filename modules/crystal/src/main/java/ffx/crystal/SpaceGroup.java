@@ -856,7 +856,13 @@ public class SpaceGroup {
     }
   }
 
-  private static boolean check(double x1, double x2) {
+  /**
+   * If the two passed values are the same, within the tolerance, return true.
+   * @param x1 First value.
+   * @param x2 Second value.
+   * @return Return true if the two values are the same within specified tolerance.
+   */
+  public static boolean check(double x1, double x2) {
     return abs(x1 - x2) < tolerance;
   }
 

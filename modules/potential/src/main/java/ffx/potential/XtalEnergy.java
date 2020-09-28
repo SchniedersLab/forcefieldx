@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential;
 
+import static ffx.crystal.SpaceGroup.check;
+
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly.FractionalMode;
@@ -369,7 +371,7 @@ public class XtalEnergy implements Potential {
         g[index] = 0.0;
         break;
       case TRIGONAL:
-        if (a == b && b == c && alpha == beta && beta == gamma) {
+        if (check(a, b) && check(b, c) && check(alpha, beta) && check(beta, gamma)) {
           // Rhombohedral axes, primitive cell.
           g[index] = finiteDifference3(x, index, index + 1, index + 2, eps);
           index++;
@@ -382,8 +384,7 @@ public class XtalEnergy implements Potential {
           g[index] = g[index - 1];
           index++;
           g[index] = g[index - 2];
-
-        } else if (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0) {
+        } else if (check(a, b) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 120.0)) {
           // Hexagonal axes, triple obverse cell.
           g[index] = finiteDifference2(x, index, index + 1, eps);
           index++;
@@ -610,7 +611,7 @@ public class XtalEnergy implements Potential {
         gamma = 90.0;
         break;
       case TRIGONAL:
-        if (a == b && b == c && alpha == beta && beta == gamma) {
+        if (check(a, b) && check(b, c) && check(alpha, beta) && check(beta, gamma)) {
           temp = (a + b + c) / 3.0;
           a = temp;
           b = temp;
@@ -619,7 +620,7 @@ public class XtalEnergy implements Potential {
           alpha = temp;
           beta = temp;
           gamma = temp;
-        } else if (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0) {
+        } else if (check(a, b) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 120.0)) {
           // Hexagonal axes, triple obverse cell.
           temp = (a + b) / 2.0;
           a = temp;
