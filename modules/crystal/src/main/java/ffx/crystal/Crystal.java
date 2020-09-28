@@ -952,13 +952,13 @@ public class Crystal {
       if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
         if (logger.isLoggable(Level.FINE)) {
           StringBuilder sb = new StringBuilder(" The proposed lattice parameters do not satisfy the " + crystalSystem +
-              " crystal system restrictions and were ignored.");
-          sb.append(format("  A-axis:                              %8.3f\n", a));
-          sb.append(format("  B-axis:                              %8.3f\n", b));
-          sb.append(format("  C-axis:                              %8.3f\n", c));
-          sb.append(format("  Alpha:                               %8.3f\n", alpha));
-          sb.append(format("  Beta:                                %8.3f\n", beta));
-          sb.append(format("  Gamma:                               %8.3f\n", gamma));
+              " crystal system restrictions and were ignored.\n");
+          sb.append(format("  A-axis:                              %16.8f\n", a));
+          sb.append(format("  B-axis:                              %16.8f\n", b));
+          sb.append(format("  C-axis:                              %16.8f\n", c));
+          sb.append(format("  Alpha:                               %16.8f\n", alpha));
+          sb.append(format("  Beta:                                %16.8f\n", beta));
+          sb.append(format("  Gamma:                               %16.8f\n", gamma));
           logger.fine(sb.toString());
         }
         return false;
