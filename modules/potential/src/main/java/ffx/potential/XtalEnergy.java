@@ -53,11 +53,25 @@ import ffx.potential.bonded.Atom;
  */
 public class XtalEnergy implements Potential {
 
-  private final ForceFieldEnergy forceFieldEnergy;
+  /**
+   * MolecularAssembly to compute the crystal energy for.
+   */
   private final MolecularAssembly molecularAssembly;
+  /**
+   * The ForceFieldEnergy to use.
+   */
+  private final ForceFieldEnergy forceFieldEnergy;
+  /**
+   * Array of active atoms.
+   */
   private final Atom[] activeAtoms;
+  /**
+   * Number of active atoms.
+   */
   private final int nActive;
-
+  /**
+   * Atomic coordinates
+   */
   private final double[] xyz;
   private final double[] gr;
   private final int nParams;

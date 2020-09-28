@@ -186,12 +186,16 @@ public class Crystal {
     crystalSystem = spaceGroup.crystalSystem;
 
     if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
-      String message =
-          " The lattice parameters do not satisfy the "
-              + crystalSystem
-              + " crystal system restrictions:\n"
-              + toString();
-      logger.severe(message);
+      StringBuilder sb = new StringBuilder(
+          " The proposed lattice parameters do not satisfy the " + crystalSystem +
+              " crystal system restrictions and were ignored.\n");
+      sb.append(format("  A-axis:                              %18.15e\n", a));
+      sb.append(format("  B-axis:                              %18.15e\n", b));
+      sb.append(format("  C-axis:                              %18.15e\n", c));
+      sb.append(format("  Alpha:                               %18.15e\n", alpha));
+      sb.append(format("  Beta:                                %18.15e\n", beta));
+      sb.append(format("  Gamma:                               %18.15e\n", gamma));
+      logger.severe(sb.toString());
     }
 
     for (int i = 0; i < 6; i++) {
@@ -306,7 +310,8 @@ public class Crystal {
   /**
    * checkProperties
    *
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    * @return a {@link ffx.crystal.Crystal} object.
    */
   public static Crystal checkProperties(CompositeConfiguration properties) {
@@ -452,8 +457,8 @@ public class Crystal {
 
   /**
    * Apply a Cartesian symmetry operator to an array of Cartesian coordinates. If the arrays x, y or
-   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are
-   * null or not of length n, new arrays are allocated.
+   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
+   * or not of length n, new arrays are allocated.
    *
    * @param n Number of atoms.
    * @param x Input x coordinates.
@@ -557,9 +562,9 @@ public class Crystal {
   }
 
   /**
-   * Apply a fractional symmetry operator to an array of Cartesian coordinates. If the arrays x, y
-   * or z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are
-   * null or not of length n, new arrays are allocated.
+   * Apply a fractional symmetry operator to an array of Cartesian coordinates. If the arrays x, y or
+   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
+   * or not of length n, new arrays are allocated.
    *
    * @param n Number of atoms.
    * @param x Input x coordinates.
@@ -734,9 +739,9 @@ public class Crystal {
   }
 
   /**
-   * Apply a symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or z are
-   * null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null or
-   * not of length n, new arrays are allocated.
+   * Apply a symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or z are null
+   * or not of length n, the method returns immediately. If mateX, mateY or mateZ are null or not of
+   * length n, new arrays are allocated.
    *
    * @param n Number of atoms.
    * @param x Input x coordinates.
@@ -951,8 +956,9 @@ public class Crystal {
     if (checkRestrictions) {
       if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
         if (logger.isLoggable(Level.FINE)) {
-          StringBuilder sb = new StringBuilder(" The proposed lattice parameters do not satisfy the " + crystalSystem +
-              " crystal system restrictions and were ignored.\n");
+          StringBuilder sb = new StringBuilder(
+              " The proposed lattice parameters do not satisfy the " + crystalSystem +
+                  " crystal system restrictions and were ignored.\n");
           sb.append(format("  A-axis:                              %18.15e\n", a));
           sb.append(format("  B-axis:                              %18.15e\n", b));
           sb.append(format("  C-axis:                              %18.15e\n", c));
@@ -985,8 +991,12 @@ public class Crystal {
    */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     Crystal crystal = (Crystal) o;
     return (a == crystal.a
         && b == crystal.b
@@ -1554,7 +1564,7 @@ public class Crystal {
         double dbeta =
             2.0 * sin_beta * cos_beta
                 - (2.0 * (cos_alpha - cos_beta * cos_gamma) * sin_beta * cos_gamma)
-                    / (sin_gamma * sin_gamma);
+                / (sin_gamma * sin_gamma);
         double dgamma1 = -2.0 * (cos_alpha - cos_beta * cos_gamma) * cos_beta / sin_gamma;
         double dgamma2 = cos_alpha - cos_beta * cos_gamma;
         dgamma2 *= dgamma2 * 2.0 * cos_gamma / (sin_gamma * sin_gamma * sin_gamma);

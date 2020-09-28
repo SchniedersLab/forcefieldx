@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics;
 
+import static ffx.crystal.SpaceGroup.check;
 import static ffx.utilities.Constants.AVOGADRO;
 import static ffx.utilities.Constants.PRESCON;
 import static java.lang.String.format;
@@ -908,7 +909,7 @@ public class Barostat implements CrystalPotential {
           }
           break;
         case TRIGONAL:
-          if (a == b && b == c && alpha == beta && beta == gamma) {
+          if (check(a, b) && check(b, c) && check(alpha, beta) && check(beta, gamma)) {
             // Rombohedral axes, primitive cell.
             move = (int) floor(random() * 2.0);
             switch (move) {
@@ -921,7 +922,7 @@ public class Barostat implements CrystalPotential {
               default:
                 logger.severe(" Barostat programming error.");
             }
-          } else if (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0) {
+          } else if (check(a, b) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 120.0)) {
             // Hexagonal axes, triple obverse cell.
             move = (int) floor(random() * 2.0);
             switch (move) {
@@ -958,7 +959,8 @@ public class Barostat implements CrystalPotential {
           break;
         case TRICLINIC:
         default:
-          if (a == b && b == c && alpha == 90.0 && beta == 90.0 && gamma == 90.0) {
+          if (check(a, b) && check(b, c) && check(alpha, 90.0)
+              && check(beta, 90.0) && check(gamma, 90.0)) {
             currentE = mcABC(currentE);
           } else {
             move = (int) floor(random() * 6.0);

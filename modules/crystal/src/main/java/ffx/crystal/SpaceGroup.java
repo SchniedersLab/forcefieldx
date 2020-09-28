@@ -531,8 +531,11 @@ public class SpaceGroup {
    * Tolerance for checking if the crystal system restrictions are satisfied.
    *
    * Set this to 0.0 for strict checking of lattice parameters.
+   *
+   * For an acetamide crystal minimization, 1.0e-15 was too small a tolerance for
+   * equivalent lattice parameters to equate as equal.
    */
-  private static final double tolerance = 1.0e-10;
+  private static final double tolerance = 1.0e-12;
 
   /**
    * Immutable SpaceGroup instances are made available only through the factory method so this
