@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.potential.groovy
 
+import ffx.numerics.math.Double3
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -51,10 +52,12 @@ import picocli.CommandLine.Parameters
 
 import java.util.stream.IntStream
 
+import static ffx.potential.utils.Superpose.*
 import static java.lang.String.format
+import static org.apache.commons.math3.util.FastMath.sqrt
 
 /**
- * The Superpose script superposes all molecules in an arc file to the first molecule in the arc file and reports the RMSD.
+ * The Superpose script superposes molecules in an arc/multiple model pdb file (all versus all or one versus all) or in two pdb/xyz files.
  * <br>
  * Usage:
  * <br>
@@ -64,10 +67,10 @@ import static java.lang.String.format
 class Superpose extends PotentialScript {
 
   /**
-   * --aS or --atomSelection The atom selection [HEAVY (0) / ALL (1) / CALPHA (2)] for the RMSD calculation (CALPHA chooses N1 or N9 for nucleic acids).
+   * --aS or --atomSelection The atom selection [HEAVY (0) / ALL (1) / CALPHA (2) / BACKBONE (3)] for the RMSD calculation (CALPHA chooses N1 or N9 for nucleic acids).
    */
   @Option(names = ['--aS', '--atomSelection'], paramLabel = "0", defaultValue = "0",
-      description = 'The atom selection [HEAVY (0) / ALL (1) / CALPHA (2)] for the RMSD calculation (CALPHA chooses N1 or N9 for nucleic acids).')
+      description = 'The atom selection [HEAVY (0) / ALL (1) / CALPHA (2) / BACKBONE (3) ] for the RMSD calculation (CALPHA chooses N1 or N9 for nucleic acids).')
   private String atomSelection = "0"
 
   /**
@@ -97,6 +100,13 @@ class Superpose extends PotentialScript {
   @Option(names = ['-f', '--final'], paramLabel = "nAtoms",
       description = 'Final atom to include in the RMSD calculation.')
   private int finish = Integer.MAX_VALUE
+
+  /**
+   * --dRMSD Calculate the dRMSD in addition to RMSD.
+   */
+  @Option(names = ['--dRMSD'], paramLabel = "nAtoms",
+      description = 'Calculate the dRMSD in addtion to RMSD.')
+  private boolean dRMSD = false
 
   /**
    * -w or --write Write out superposed snapshots.
@@ -149,18 +159,22 @@ class Superpose extends PotentialScript {
       return this
     }
 
-    MolecularAssembly assembly2 = null
+    // Turn off non-bonded terms for efficiency.
+    System.setProperty("vdwterm", "false")
+
     if (filenames != null && filenames.size() > 0) {
       MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
       activeAssembly = assemblies[0]
       if (filenames.size() > 1) {
         MolecularAssembly[] assemblies2 = [potentialFunctions.open(filenames.get(1))]
-        assembly2 = assemblies2[0]
       }
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
+
+    // Either the SystemFilter for the first parsed file, or the 2nd parsed file.
+    SystemFilter systemFilter = potentialFunctions.getFilter()
 
     forceFieldEnergy = activeAssembly.getPotentialEnergy()
     Atom[] atoms = activeAssembly.getAtomArray()
@@ -180,7 +194,6 @@ class Superpose extends PotentialScript {
           activeAssembly.getProperties())
     }
 
-    SystemFilter systemFilter = potentialFunctions.getFilter()
     int distMatrixSize = systemFilter.countNumModels()
     distMatrix = new double[distMatrixSize][distMatrixSize]
 
@@ -202,7 +215,7 @@ class Superpose extends PotentialScript {
 
       // Note that atoms are indexed from 0 to nAtoms - 1.
       if (verbose) {
-        logger.info(format(" Atoms from %d to %d will be considered.", start, finish))
+        logger.info(format("\n Atoms from %d to %d will be considered.", start, finish))
       }
 
       // Begin streaming the possible atom indices, filtering out inactive atoms.
@@ -240,15 +253,28 @@ class Superpose extends PotentialScript {
           })
           selectionType = "C-Alpha Atoms (or N1/N9 for nucleic acids)"
           break
+        case "BACKBONE":
+        case "3":
+          // Filter for only backbone atoms.
+          atomIndexStream = atomIndexStream.filter({int i ->
+            Atom ati = atoms[i]
+            String atName = ati.getName().toUpperCase()
+            boolean caReference = atName.equals("CA") && ati.getAtomType().atomicNumber == 6
+            boolean cReference = atName.equals("C") && ati.getAtomType().atomicNumber == 6
+            boolean nReference = atName.equals("N") && ati.getAtomType().atomicNumber == 7
+            return caReference || cReference || nReference
+          })
+          selectionType = "C, C-Alpha, and N backbone atoms."
+          break
         default:
-          logger.severe(
-              format(" Could not parse %s as an atom selection! Must be ALL, HEAVY, or ALPHA",
-                  atomSelection))
+          logger.severe(format(
+              " Could not parse %s as an atom selection! Must be ALL, HEAVY, ALPHA or BACKBONE.",
+              atomSelection))
           break
       }
 
       if (verbose) {
-        logger.info(" Superpose selection criteria: " + selectionType)
+        logger.info(" Superpose selection criteria: " + selectionType + "\n")
       }
 
       // Indices of atoms used in alignment and RMSD calculations.
@@ -265,8 +291,8 @@ class Superpose extends PotentialScript {
         AssemblyState origState = new AssemblyState(activeAssembly)
         forceFieldEnergy.getCoordinates(x2)
         copyCoordinates(nUsed, usedIndices, x2, x2Used)
-        double[] translate = ffx.potential.utils.Superpose.calculateTranslation(x2Used, massUsed)
-        ffx.potential.utils.Superpose.applyTranslation(x2, translate)
+        double[] translate = calculateTranslation(x2Used, massUsed)
+        applyTranslation(x2, translate)
         forceFieldEnergy.setCoordinates(x2)
         outputFilter.writeFile(outFile, true)
         origState.revertState()
@@ -274,39 +300,45 @@ class Superpose extends PotentialScript {
 
       // Check which molecular assemblies to do RMSD comparisons among.
       if (!frameComparison) {
+        if (dRMSD) {
+          logger.info(format("\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation    dRMSD"))
+        } else if (verbose) {
+          logger.info(format("\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation"))
+        }
         if (filenames.size() != 2) {
           // The first snapshot is being used for all comparisons here; therefore, snapshot = 1.
-          rmsd(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 1)
+          trajectoryRMSD(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 1)
         } else {
-          rmsd(assembly2, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed)
+          // Get the coordinates from the first file that was read in (i.e. an experimental PDB).
+          forceFieldEnergy.getCoordinates(x)
+          // The systemFilter is from the 2nd file read in, which could have multiple models.
+          trajectoryRMSD(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 0)
         }
       } else {
+        // Do the all vs. all comparison.
         if (storeMatrix) {
           fillDiagonals(distMatrixSize)
         }
-        rmsd(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 1)
-        SystemFilter systemFilter1 = null
-        if (systemFilter instanceof PDBFilter) {
-          systemFilter1 = new PDBFilter(activeAssembly.getFile(), activeAssembly,
-              activeAssembly.getForceField(), activeAssembly.getProperties())
-          systemFilter1.readFile()
-        } else if (systemFilter instanceof XYZFilter) {
-          systemFilter1 = new XYZFilter(activeAssembly.getFile(), activeAssembly,
-              activeAssembly.getForceField(), activeAssembly.getProperties())
+
+        // Open a second copy of the system.
+        MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
+        SystemFilter systemFilter2 = potentialFunctions.getFilter()
+
+        if (dRMSD) {
+          logger.info(format("\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation    dRMSD"))
+        } else if (verbose) {
+          logger.info(format("\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation"))
         }
-        while (systemFilter1.readNext(false, false)) {
-          int snapshot1 = systemFilter1.getSnapshot()
+
+        // Rewind the file to the first structure.
+        boolean rewindFilter = true
+        while (systemFilter.readNext(rewindFilter, false)) {
+          rewindFilter = false
+          int snapshot1 = systemFilter.getSnapshot()
           forceFieldEnergy.getCoordinates(x)
-          SystemFilter systemFilter2 = null
-          if (systemFilter instanceof PDBFilter) {
-            systemFilter2 = new PDBFilter(activeAssembly.getFile(), activeAssembly,
-                activeAssembly.getForceField(), activeAssembly.getProperties())
-            systemFilter2.readFile()
-          } else if (systemFilter instanceof XYZFilter) {
-            systemFilter2 = new XYZFilter(activeAssembly.getFile(), activeAssembly,
-                activeAssembly.getForceField(), activeAssembly.getProperties())
-          }
-          rmsd(systemFilter2, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, snapshot1)
+
+          // Compare the coordinates in x to all coordinates in the ensemble using systemFilter2.
+          trajectoryRMSD(systemFilter2, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, snapshot1)
         }
       }
     }
@@ -331,43 +363,63 @@ class Superpose extends PotentialScript {
     }
   }
 
-  void rmsd(SystemFilter systemFilter, int nUsed, int[] usedIndices, double[] x, double[] x2,
+  /**
+   * This method calculates the all versus all RMSD of a multiple model pdb/arc file.
+   *
+   * @param systemFilter The filter on the multiple model file.
+   * @param xUsed A double array containing the xyz coordinates for multiple atoms.
+   * @param x2Used A double array containing the xyz coordinates for multiple atoms.
+   * @param nUsed The number of atoms that dRMSD is calculated on.
+   * @param usedIndices Mapping from the xUsed array to its source in x.
+   * @param x All atomic coordinates.
+   * @param x2 All atomic coordinates for the second assembly.
+   * @param massUsed Masses of the atoms represented in x.
+   * @param snapshot1 The number of the first model being compared in the all vs. all RMSD.
+   */
+  void trajectoryRMSD(SystemFilter systemFilter, int nUsed, int[] usedIndices, double[] x,
+      double[] x2,
       double[] xUsed, double[] x2Used, double[] massUsed, int snapshot1) {
-    double[] xBak = Arrays.copyOf(x, x.length)
-    while (systemFilter.readNext(false, false)) {
+
+    boolean resetFilter = true
+    while (systemFilter.readNext(resetFilter, false)) {
+      resetFilter = false
       int snapshot2 = systemFilter.getSnapshot()
       // Only calculate RMSD for snapshots if they aren't the same snapshot.
       // Also avoid double calculating snapshots in the matrix by only calculating the upper triangle.
       if (snapshot1 != snapshot2 && snapshot1 < snapshot2) {
-        AssemblyState origStateB = new AssemblyState(activeAssembly)
-        forceFieldEnergy.getCoordinates(x2)
+        MolecularAssembly molecularAssembly2 = systemFilter.getActiveMolecularSystem()
+        AssemblyState origStateB = new AssemblyState(molecularAssembly2)
+        ForceFieldEnergy forceFieldEnergy2 = molecularAssembly2.getPotentialEnergy()
+        forceFieldEnergy2.getCoordinates(x2)
+
         copyCoordinates(nUsed, usedIndices, x, xUsed)
         copyCoordinates(nUsed, usedIndices, x2, x2Used)
 
-        double origRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
+        double origRMSD = rmsd(xUsed, x2Used, massUsed)
 
         // Calculate the translation on only the used subset, but apply it to the entire structure.
-        double[] tA = ffx.potential.utils.Superpose.calculateTranslation(xUsed, massUsed)
-        ffx.potential.utils.Superpose.applyTranslation(x, tA)
-        double[] tB = ffx.potential.utils.Superpose.calculateTranslation(x2Used, massUsed)
-        ffx.potential.utils.Superpose.applyTranslation(x2, tB)
+        applyTranslation(x, calculateTranslation(xUsed, massUsed))
+        applyTranslation(x2, calculateTranslation(x2Used, massUsed))
         // Copy the applied translation to xUsed and x2Used.
         copyCoordinates(nUsed, usedIndices, x, xUsed)
         copyCoordinates(nUsed, usedIndices, x2, x2Used)
-        double translatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
+        double translatedRMSD = rmsd(xUsed, x2Used, massUsed)
 
         // Calculate the rotation on only the used subset, but apply it to the entire structure.
-        double[][] rotation = ffx.potential.utils.Superpose.calculateRotation(xUsed, x2Used,
-            massUsed)
-        ffx.potential.utils.Superpose.applyRotation(x2, rotation)
+        applyRotation(x2, calculateRotation(xUsed, x2Used, massUsed))
         // Copy the applied rotation to x2Used.
         copyCoordinates(nUsed, usedIndices, x2, x2Used)
-        double rotatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
+        double rotatedRMSD = rmsd(xUsed, x2Used, massUsed)
 
-        if (verbose) {
+        if (dRMSD) {
+          double disRMSD = calcDRMSD(xUsed, x2Used, nUsed * 3)
           logger.info(format(
-              " Coordinate RMSD for %d and %d: Original %7.3f, After Translation %7.3f, After Rotation %7.3f",
-              snapshot1, snapshot2, origRMSD, translatedRMSD, rotatedRMSD))
+              " %6d  %6d  %7.3f            %7.3f         %7.3f  %7.3f", snapshot1, snapshot2, origRMSD,
+              translatedRMSD, rotatedRMSD, disRMSD))
+        } else if (verbose) {
+          logger.info(format(
+              " %6d  %6d  %7.3f            %7.3f         %7.3f", snapshot1, snapshot2, origRMSD, translatedRMSD,
+              rotatedRMSD))
         }
 
         if (storeMatrix) {
@@ -382,53 +434,35 @@ class Superpose extends PotentialScript {
           outputFilter.writeFile(outFile, true)
           origStateB.revertState()
         }
-        System.arraycopy(xBak, 0, x, 0, x.length)
       }
     }
   }
 
-  void rmsd(MolecularAssembly assembly2, int nUsed, int[] usedIndices, double[] x, double[] x2,
-      double[] xUsed, double[] x2Used, double[] massUsed) {
-    double[] xBak = Arrays.copyOf(x, x.length)
-
-    AssemblyState origStateB = new AssemblyState(activeAssembly)
-
-    ForceFieldEnergy forceFieldEnergy2 = assembly2.getPotentialEnergy()
-    forceFieldEnergy2.getCoordinates(x2)
-    copyCoordinates(nUsed, usedIndices, x, xUsed)
-    copyCoordinates(nUsed, usedIndices, x2, x2Used)
-
-    double origRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
-
-    // Calculate the translation on only the used subset, but apply it to the entire structure.
-    double[] tA = ffx.potential.utils.Superpose.calculateTranslation(xUsed, massUsed)
-    ffx.potential.utils.Superpose.applyTranslation(x, tA)
-    double[] tB = ffx.potential.utils.Superpose.calculateTranslation(x2Used, massUsed)
-    ffx.potential.utils.Superpose.applyTranslation(x2, tB)
-    // Copy the applied translation to xUsed and x2Used.
-    copyCoordinates(nUsed, usedIndices, x, xUsed)
-    copyCoordinates(nUsed, usedIndices, x2, x2Used)
-    double translatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
-
-    // Calculate the rotation on only the used subset, but apply it to the entire structure.
-    double[][] rotation = ffx.potential.utils.Superpose.calculateRotation(xUsed, x2Used, massUsed)
-    ffx.potential.utils.Superpose.applyRotation(x2, rotation)
-    // Copy the applied rotation to x2Used.
-    copyCoordinates(nUsed, usedIndices, x2, x2Used)
-    double rotatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
-
-    if (verbose) {
-      logger.info(format(
-          " Coordinate RMSD for %s and %s: Original %7.3f, After Translation %7.3f, After Rotation %7.3f",
-          filenames.get(0), filenames.get(1), origRMSD, translatedRMSD, rotatedRMSD))
+  /**
+   * Calculates the dRMSD between to sets of coordinates.
+   * @param xUsed A double array containing the xyz coordinates for multiple atoms.
+   * @param x2Used A double array containing the xyz coordinates for multiple atoms.
+   * @param nUsed The number of atoms that dRMSD is calculated on.
+   * @return A double containing the dRMSD value.
+   */
+  static double calcDRMSD(double[] xUsed, double[] x2Used, int nUsed) {
+    double disRMSD = 0.0
+    int counter = 0
+    for (int i = 0; i < nUsed; i = i + 3) {
+      Double3 xi = new Double3(xUsed[i], xUsed[i + 1], xUsed[i + 2])
+      Double3 x2i = new Double3(x2Used[i], x2Used[i + 1], x2Used[i + 2])
+      for (int j = i + 3; j < nUsed; j = j + 3) {
+        Double3 xj = new Double3(xUsed[j], xUsed[j + 1], xUsed[j + 2])
+        Double3 x2j = new Double3(x2Used[j], x2Used[j + 1], x2Used[j + 2])
+        double dis1 = xi.sub(xj).length()
+        double dis2 = x2i.sub(x2j).length()
+        double diff = dis1 - dis2
+        disRMSD += diff * diff
+        counter++
+      }
     }
-
-    if (writeSnapshots) {
-      forceFieldEnergy.setCoordinates(x2)
-      outputFilter.writeFile(outFile, true)
-      origStateB.revertState()
-    }
-    System.arraycopy(xBak, 0, x, 0, x.length)
+    disRMSD = disRMSD / counter
+    return sqrt(disRMSD)
   }
 
   void fillDiagonals(int size) {

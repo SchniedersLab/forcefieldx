@@ -513,7 +513,7 @@ public class XYZFilter extends SystemFilter {
    */
   @Override
   public boolean readNext(boolean resetPosition) {
-    return readNext(false, true);
+    return readNext(resetPosition, true);
   }
 
   /**
