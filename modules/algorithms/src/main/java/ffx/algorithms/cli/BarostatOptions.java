@@ -71,6 +71,10 @@ public class BarostatOptions {
   public static final String DEFAULT_MAX_ANGLE_MOVE = "0.5";
   /** Default mean number of MD steps (Poisson distribution) between barostat move proposals. */
   public static final String DEFAULT_BAROSTAT_INTERVAL = "10";
+  /**
+   * Default number of Barostat moves between print statements.
+   */
+  public static final String DEFAULT_BAROSTAT_PRINT_INTERVAL = "1000";
 
   private static final Logger logger = Logger.getLogger(BarostatOptions.class.getName());
 
@@ -113,6 +117,7 @@ public class BarostatOptions {
       barostat.setIsotropic(group.isotropic);
       barostat.setMaxDensity(group.maxD);
       barostat.setMinDensity(group.minD);
+      barostat.setBarostatPrintFrequency(group.barPrint);
       double dens = barostat.density();
       if (dens < group.minD) {
         logger.info(
@@ -197,6 +202,7 @@ public class BarostatOptions {
   public double getMaxSM() {
     return group.maxSM;
   }
+  
 
   public void setMaxSM(double maxSM) {
     group.maxSM = maxSM;
@@ -226,6 +232,18 @@ public class BarostatOptions {
 
   public void setBarInt(int barInt) {
     group.barInt = barInt;
+  }
+
+  /**
+   * --bpi or --barostatPrintInterval Sets the number of Barostat MC cycles between print
+   * statements.
+   */
+  public int getPrintInt() {
+    return group.barPrint;
+  }
+
+  public void setPrintInt(int printInterval) {
+    group.barPrint = printInterval;
   }
 
   /**
@@ -298,5 +316,15 @@ public class BarostatOptions {
         defaultValue = DEFAULT_BAROSTAT_INTERVAL,
         description = "Sets the mean number of MD steps between barostat move proposals.")
     private int barInt;
+    /**
+     * --bpi or --barostatPrintInterval Sets the number of Barostat MC cycles between print
+     * statements.
+     */
+    @Option(
+        names = {"--bpi", "--barostatPrintInterval"},
+        paramLabel = DEFAULT_BAROSTAT_PRINT_INTERVAL,
+        defaultValue = DEFAULT_BAROSTAT_PRINT_INTERVAL,
+        description = "Sets the number of Barostat MC cycles between print statements.")
+    private int barPrint;
   }
 }
