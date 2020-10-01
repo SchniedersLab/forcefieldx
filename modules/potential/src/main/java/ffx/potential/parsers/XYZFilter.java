@@ -526,7 +526,7 @@ public class XYZFilter extends SystemFilter {
       Atom[] atoms = activeMolecularAssembly.getAtomArray();
       int nSystem = atoms.length;
 
-      if (bufferedReader == null || resetPosition) {
+      if (bufferedReader == null && !resetPosition) {
         bufferedReader = new BufferedReader(new FileReader(currentFile));
         // Read past the first N + 1 lines that begin with an integer.
         for (int i = 0; i < nSystem + 1; i++) {
@@ -536,6 +536,10 @@ public class XYZFilter extends SystemFilter {
           }
         }
         snapShot = 1;
+      } else if (resetPosition){
+        //Reset the reader to the beginning of the file. Do not skip reading the first entry if resetPostion is true.
+        bufferedReader = new BufferedReader(new FileReader(currentFile));
+        snapShot = 0;
       }
 
       snapShot++;
