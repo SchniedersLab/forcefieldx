@@ -44,6 +44,9 @@ import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
 import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.PDBFilter
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -126,6 +129,9 @@ class SaveAsXYZ extends PotentialScript {
 
     String modelFilename = activeAssembly.getFile().getAbsolutePath()
 
+    SystemFilter openFilter = potentialFunctions.getFilter()
+    int numModels = openFilter.countNumModels()
+
     int offset = 0
 
     // Positive offset atom types.
@@ -167,11 +173,29 @@ class SaveAsXYZ extends PotentialScript {
     }
     String dirName = saveDir.getAbsolutePath()
     String fileName = FilenameUtils.getName(modelFilename)
-    fileName = FilenameUtils.removeExtension(fileName) + ".xyz"
-    File modelFile = new File(dirName + File.separator + fileName)
 
-    saveOptions.preSaveOperations(activeAssembly)
-    potentialFunctions.save(activeAssembly, modelFile)
+    if (numModels <= 1) {
+      fileName = FilenameUtils.removeExtension(fileName) + ".xyz"
+      File modelFile = new File(dirName + File.separator + fileName)
+
+      saveOptions.preSaveOperations(activeAssembly)
+      potentialFunctions.save(activeAssembly, modelFile)
+    } else{
+      //Save to an arc file rather than an xyz file if more than one model exists.
+      fileName = FilenameUtils.removeExtension(fileName) + ".arc"
+      File modelFile = new File(dirName + File.separator + fileName)
+
+      File saveFile = potentialFunctions.versionFile(modelFile)
+      saveOptions.preSaveOperations(activeAssembly)
+      potentialFunctions.save(activeAssembly, saveFile)
+
+      XYZFilter saveFilter = (XYZFilter) potentialFunctions.getFilter()
+
+      while (openFilter.readNext(false)) {
+        saveOptions.preSaveOperations(activeAssembly)
+        saveFilter.writeFile(saveFile, true)
+      }
+    }
 
     return this
   }
