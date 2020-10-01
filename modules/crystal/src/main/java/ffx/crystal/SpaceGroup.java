@@ -44,6 +44,12 @@ import static ffx.crystal.SpaceGroup.CrystalSystem.ORTHORHOMBIC;
 import static ffx.crystal.SpaceGroup.CrystalSystem.TETRAGONAL;
 import static ffx.crystal.SpaceGroup.CrystalSystem.TRICLINIC;
 import static ffx.crystal.SpaceGroup.CrystalSystem.TRIGONAL;
+import static ffx.crystal.SpaceGroup.LatticeSystem.CUBIC_LATTICE;
+import static ffx.crystal.SpaceGroup.LatticeSystem.HEXAGONAL_LATTICE;
+import static ffx.crystal.SpaceGroup.LatticeSystem.MONOCLINIC_LATTICE;
+import static ffx.crystal.SpaceGroup.LatticeSystem.ORTHORHOMBIC_LATTICE;
+import static ffx.crystal.SpaceGroup.LatticeSystem.TETRAGONAL_LATTICE;
+import static ffx.crystal.SpaceGroup.LatticeSystem.TRICLINIC_LATTICE;
 import static ffx.crystal.SpaceGroup.LaueSystem.L111;
 import static ffx.crystal.SpaceGroup.LaueSystem.L113;
 import static ffx.crystal.SpaceGroup.LaueSystem.L114;
@@ -86,8 +92,8 @@ public class SpaceGroup {
       "P21/c", "C2/c", "P222", "P2221", "P21212", "P212121", "C2221", "C222", "F222", "I222",
       "I212121", "Pmm2", "Pmc21", "Pcc2", "Pma2", "Pca21", "Pnc2", "Pmn21", "Pba2", "Pna21", "Pnn2",
       "Cmm2", "Cmc21", "Ccc2", "Amm2", "Abm2", "Ama2", "Aba2", "Fmm2", "Fdd2", "Imm2", "Iba2",
-      "Ima2",
-      "Pmmm", "Pnnn", "Pccm", "Pban", "Pmma", "Pnna", "Pmna", "Pcca", "Pbam", "Pccn", "Pbcm", "Pnnm",
+      "Ima2", "Pmmm", "Pnnn", "Pccm", "Pban", "Pmma", "Pnna", "Pmna", "Pcca", "Pbam", "Pccn", "Pbcm",
+      "Pnnm",
       "Pmmn", "Pbcn", "Pbca", "Pnma", "Cmcm", "Cmca", "Cmmm", "Cccm", "Cmma", "Ccca", "Fmmm", "Fddd",
       "Immm", "Ibam", "Ibca", "Imma", "P4", "P41", "P42", "P43", "I4", "I41", "P-4", "I-4", "P4/m",
       "P42/m", "P4/n", "P42/n", "I4/m", "I41/a", "P422", "P4212", "P4122", "P41212", "P4222",
@@ -96,14 +102,14 @@ public class SpaceGroup {
       "P-4m2", "P-4c2", "P-4b2", "P-4n2", "I-4m2", "I-4c2", "I-42m", "I-42d", "P4/mmm", "P4/mcc",
       "P4/nbm", "P4/nnc", "P4/mbm", "P4/mnc", "P4/nmm", "P4/ncc", "P42/mmc", "P42/mcm", "P42/nbc",
       "P42/nnm", "P42/mbc", "P42/mnm", "P42/nmc", "P42/ncm", "I4/mmm", "I4/mcm", "I41/amd",
-      "I41/acd",
-      "P3", "P31", "P32", "H3", "P-3", "H-3", "P312", "P321", "P3112", "P3121", "P3212", "P3221",
+      "I41/acd", "P3", "P31", "P32", "H3", "P-3", "H-3", "P312", "P321", "P3112", "P3121", "P3212",
+      "P3221",
       "H32", "P3m1", "P31m", "P3c1", "P31c", "H3m", "H3c", "P-31m", "P-31c", "P-3m1", "P-3c1",
-      "H-3m",
-      "H-3c", "P6", "P61", "P65", "P62", "P64", "P63", "P-6", "P6/m", "P63/m", "P622", "P6122",
+      "H-3m", "H-3c", "P6", "P61", "P65", "P62", "P64", "P63", "P-6", "P6/m", "P63/m", "P622",
+      "P6122",
       "P6522", "P6222", "P6422", "P6322", "P6mm", "P6cc", "P63cm", "P63mc", "P-6m2", "P-6c2",
-      "P-62m",
-      "P-62c", "P6/mmm", "P6/mcc", "P63/mcm", "P63/mmc", "P23", "F23", "I23", "P213", "I213", "Pm-3",
+      "P-62m", "P-62c", "P6/mmm", "P6/mcc", "P63/mcm", "P63/mmc", "P23", "F23", "I23", "P213",
+      "I213", "Pm-3",
       "Pn-3", "Fm-3", "Fd-3", "Im-3", "Pa-3", "Ia-3", "P432", "P4232", "F432", "F4132", "I432",
       "P4332", "P4132", "I4132", "P-43m", "F-43m", "I-43m", "P-43n", "F-43c", "I-43d", "Pm-3m",
       "Pn-3n", "Pm-3n", "Pn-3m", "Fm-3m", "Fm-3c", "Fd-3m", "Fd-3c", "Im-3m", "Ia-3d"
@@ -399,7 +405,7 @@ public class SpaceGroup {
       "I 41/a -3 2/d"
   };
 
-  private static String[] alternativeSpaceGroupNames = {"P21/a"};
+  private static final String[] alternativeSpaceGroupNames = {"P21/a"};
 
   static {
     rank.put("P 21 21 21", "1");
@@ -512,6 +518,15 @@ public class SpaceGroup {
   public final String pointGroupName;
   /** Crystal system. */
   public final CrystalSystem crystalSystem;
+  /**
+   * Tolerance for checking if the crystal system restrictions are satisfied.
+   * <p>
+   * Set this to 0.0 for strict checking of lattice parameters.
+   * <p>
+   * For an acetamide crystal minimization, 1.0e-15 was too small a tolerance for equivalent lattice
+   * parameters to equate as equal.
+   */
+  private static final double tolerance = 1.0e-15;
   /** Laue group */
   public final LaueSystem laueSystem;
   /** Space group name under the PDB convention. */
@@ -526,16 +541,8 @@ public class SpaceGroup {
   private final double[] asulim;
   /** Number of symmetry equivalents. */
   private final int numSymEquiv;
-
-  /**
-   * Tolerance for checking if the crystal system restrictions are satisfied.
-   *
-   * Set this to 0.0 for strict checking of lattice parameters.
-   *
-   * For an acetamide crystal minimization, 1.0e-15 was too small a tolerance for
-   * equivalent lattice parameters to equate as equal.
-   */
-  private static final double tolerance = 1.0e-12;
+  /** Lattice system. */
+  public final LatticeSystem latticeSystem;
 
   /**
    * Immutable SpaceGroup instances are made available only through the factory method so this
@@ -562,6 +569,7 @@ public class SpaceGroup {
       String pointGroupName,
       String pdbName,
       CrystalSystem crystalSystem,
+      LatticeSystem latticeSystem,
       LaueSystem laueSystem,
       ASULimit[] limit,
       double[] asulim,
@@ -572,6 +580,7 @@ public class SpaceGroup {
     this.shortName = shortName;
     this.pointGroupName = pointGroupName;
     this.crystalSystem = crystalSystem;
+    this.latticeSystem = latticeSystem;
     this.laueSystem = laueSystem;
     this.limit = limit;
     this.asulim = asulim;
@@ -815,9 +824,9 @@ public class SpaceGroup {
   }
 
   /**
-   * Check that the lattice parameters satisfy the restrictions of the crystal systems.
+   * Check that the lattice parameters satisfy the restrictions of the lattice systems.
    *
-   * @param crystalSystem a {@link ffx.crystal.SpaceGroup.CrystalSystem} object.
+   * @param latticeSystem a {@link ffx.crystal.SpaceGroup.LatticeSystem} object.
    * @param a the a-axis length.
    * @param b the b-axis length.
    * @param c the c-axis length.
@@ -826,31 +835,29 @@ public class SpaceGroup {
    * @param gamma the gamma angle.
    * @return True if the restrictions are satisfied, false otherwise.
    */
-  static boolean checkRestrictions(
-      CrystalSystem crystalSystem,
-      double a,
-      double b,
-      double c,
-      double alpha,
-      double beta,
-      double gamma) {
-    switch (crystalSystem) {
-      case TRICLINIC:
+  static boolean checkLatticeSystemRestrictions(LatticeSystem latticeSystem,
+      double a, double b, double c, double alpha, double beta, double gamma) {
+    switch (latticeSystem) {
+      case TRICLINIC_LATTICE:
+        // No restrictions.
         return true;
-      case MONOCLINIC:
+      case MONOCLINIC_LATTICE:
+        // alpha = gamma = 90
         return check(alpha, 90.0) && check(gamma, 90.0);
-      case ORTHORHOMBIC:
+      case ORTHORHOMBIC_LATTICE:
+        // alpha = beta = gamma = 90
         return check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 90.0);
-      case TETRAGONAL:
+      case TETRAGONAL_LATTICE:
+        // a = b, alpha = beta = gamma = 90
         return check(a, b) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 90.0);
-      case TRIGONAL:
-        return // Rombohedral axes, primitive cell.
-            (check(a, b) && check(b, c) && check(alpha, beta) && check(beta, gamma)) ||
-                // Hexagonal axes, triple obverse cell.
-                (check(a, b) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 120.0));
-      case HEXAGONAL:
+      case RHOMBOHEDRAL_LATTICE:
+        // a = b = c, alpha = beta = gamma.
+        return check(a, b) && check(b, c) && check(alpha, beta) && check(beta, gamma);
+      case HEXAGONAL_LATTICE:
+        // a = b, alpha = beta = 90, gamma = 120
         return check(a, b) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 120.0);
-      case CUBIC:
+      case CUBIC_LATTICE:
+        // a = b = c; alpha = beta = gamma = 90
         return check(a, b) && check(b, c) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma,
             90.0);
       default:
@@ -861,6 +868,7 @@ public class SpaceGroup {
 
   /**
    * If the two passed values are the same, within the tolerance, return true.
+   *
    * @param x1 First value.
    * @param x2 Second value.
    * @return Return true if the two values are the same within specified tolerance.
@@ -881,6 +889,7 @@ public class SpaceGroup {
               "PG2/m",
               "P 1 21/a 1",
               MONOCLINIC,
+              MONOCLINIC_LATTICE,
               L121,
               new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
               new double[] {-1.0, -1.0, -1.0},
@@ -894,7 +903,7 @@ public class SpaceGroup {
   }
 
   /**
-   * There are 3 private "getSpaceGroupX" routines because if they are not split up, a Java
+   * There are 6 private "getSpaceGroupX" routines because if they are not split up, a Java
    * specification limit on method size is exceeded.
    *
    * @param num input parameter (between 1 and 50)
@@ -913,6 +922,7 @@ public class SpaceGroup {
                 "PG1",
                 "P 1",
                 TRICLINIC,
+                TRICLINIC_LATTICE,
                 L111,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {1.0, 1.0, 1.0},
@@ -928,6 +938,7 @@ public class SpaceGroup {
                 "PG1bar",
                 "P -1",
                 TRICLINIC,
+                TRICLINIC_LATTICE,
                 L111,
                 new ASULimit[] {ASULimit.LT, ASULimit.LTE, ASULimit.LT},
                 new double[] {1.0, f12, 1.0},
@@ -944,6 +955,7 @@ public class SpaceGroup {
                 "PG2",
                 "P 1 2 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LT, ASULimit.LT},
                 new double[] {f12, 1.0, 1.0},
@@ -960,6 +972,7 @@ public class SpaceGroup {
                 "PG2",
                 "P 1 21 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {1.0, f12, 1.0},
@@ -976,6 +989,7 @@ public class SpaceGroup {
                 "PG2",
                 "C 1 2 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LT, ASULimit.LT},
                 new double[] {f12, f12, 1.0},
@@ -994,6 +1008,7 @@ public class SpaceGroup {
                 "PGm",
                 "P 1 m 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1010,6 +1025,7 @@ public class SpaceGroup {
                 "PGm",
                 "P 1 c 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1026,6 +1042,7 @@ public class SpaceGroup {
                 "PGm",
                 "C 1 m 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1044,6 +1061,7 @@ public class SpaceGroup {
                 "PGm",
                 "C 1 c 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1062,6 +1080,7 @@ public class SpaceGroup {
                 "PG2/m",
                 "P 1 2/m 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f12, f12, 1.0},
@@ -1080,6 +1099,7 @@ public class SpaceGroup {
                 "PG2/m",
                 "P 1 21/m 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1098,6 +1118,7 @@ public class SpaceGroup {
                 "PG2/m",
                 "C 1 2/m 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1120,6 +1141,7 @@ public class SpaceGroup {
                 "PG2/m",
                 "P 1 2/c 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1138,6 +1160,7 @@ public class SpaceGroup {
                 "PG2/m",
                 "P 1 21/c 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1156,6 +1179,7 @@ public class SpaceGroup {
                 "PG2/m",
                 "C 1 2/c 1",
                 MONOCLINIC,
+                MONOCLINIC_LATTICE,
                 L121,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1178,6 +1202,7 @@ public class SpaceGroup {
                 "PG222",
                 "P 2 2 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f12, f12, 1.0},
@@ -1196,6 +1221,7 @@ public class SpaceGroup {
                 "PG222",
                 "P 2 2 21",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f12, f12, 1.0},
@@ -1214,6 +1240,7 @@ public class SpaceGroup {
                 "PG222",
                 "P 21 21 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LTE, ASULimit.LT},
                 new double[] {1.0, f14, 1.0},
@@ -1232,6 +1259,7 @@ public class SpaceGroup {
                 "PG222",
                 "P 21 21 21",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f14},
@@ -1250,6 +1278,7 @@ public class SpaceGroup {
                 "PG222",
                 "C 2 2 21",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f12, f14, 1.0},
@@ -1272,6 +1301,7 @@ public class SpaceGroup {
                 "PG222",
                 "C 2 2 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f12, f14, 1.0},
@@ -1294,6 +1324,7 @@ public class SpaceGroup {
                 "PG222",
                 "F 2 2 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f14, f14, 1.0},
@@ -1324,6 +1355,7 @@ public class SpaceGroup {
                 "PG222",
                 "I 2 2 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f14, 1.0},
@@ -1346,6 +1378,7 @@ public class SpaceGroup {
                 "PG222",
                 "I 21 21 21",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -1368,6 +1401,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "P m m 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1386,6 +1420,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "P m c 21",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1404,6 +1439,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "P c c 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1422,6 +1458,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "P m a 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1440,6 +1477,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "P c a 21",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1458,6 +1496,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "P n c 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1476,6 +1515,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "P m n 21",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1494,6 +1534,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "P b a 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1512,6 +1553,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "P n a 21",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1530,6 +1572,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "P n n 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1548,6 +1591,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "C m m 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1570,6 +1614,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "C m c 21",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1592,6 +1637,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "C c c 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1614,6 +1660,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "A m m 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1636,6 +1683,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "A b m 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1658,6 +1706,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "A m a 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1680,6 +1729,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "A b a 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1702,6 +1752,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "F m m 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1732,6 +1783,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "F d d 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1762,6 +1814,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "I m m 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1784,6 +1837,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "I b a 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1806,6 +1860,7 @@ public class SpaceGroup {
                 "PGmm2",
                 "I m a 2",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1828,6 +1883,7 @@ public class SpaceGroup {
                 "PGmmm",
                 "P 2/m 2/m 2/m",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -1850,6 +1906,7 @@ public class SpaceGroup {
                 "PGmmm",
                 "P 2/n 2/n 2/n",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1872,6 +1929,7 @@ public class SpaceGroup {
                 "PGmmm",
                 "P 2/c 2/c 2/m",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1894,6 +1952,7 @@ public class SpaceGroup {
                 "PGmmm",
                 "P 2/b 2/a 2/n",
                 ORTHORHOMBIC,
+                ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1912,7 +1971,7 @@ public class SpaceGroup {
   }
 
   /**
-   * There are 3 private "getSpaceGroupX" routines because if they are not split up, a Java
+   * There are 6 private "getSpaceGroupX" routines because if they are not split up, a Java
    * specification limit on method size is exceeded.
    *
    * @param num input parameter (between 51 and 100)
@@ -1930,7 +1989,7 @@ public class SpaceGroup {
                 "Pmma",
                 "PGmmm",
                 "P 21/m 2/m 2/a",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1952,7 +2011,7 @@ public class SpaceGroup {
                 "Pnna",
                 "PGmmm",
                 "P 2/n 21/n 2/a",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1974,7 +2033,7 @@ public class SpaceGroup {
                 "Pmna",
                 "PGmmm",
                 "P 2/m 2/n 21/a",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -1996,7 +2055,7 @@ public class SpaceGroup {
                 "Pcca",
                 "PGmmm",
                 "P 21/c 2/c 2/a",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2018,7 +2077,7 @@ public class SpaceGroup {
                 "Pbam",
                 "PGmmm",
                 "P 21/b 21/a 2/m",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2040,7 +2099,7 @@ public class SpaceGroup {
                 "Pccn",
                 "PGmmm",
                 "P 21/c 21/c 2/n",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2062,7 +2121,7 @@ public class SpaceGroup {
                 "Pbcm",
                 "PGmmm",
                 "P 2/b 21/c 21/m",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2084,7 +2143,7 @@ public class SpaceGroup {
                 "Pnnm",
                 "PGmmm",
                 "P 21/n 21/n 2/m",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2106,7 +2165,7 @@ public class SpaceGroup {
                 "Pmmn",
                 "PGmmm",
                 "P 21/m 21/m 2/n",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2128,7 +2187,7 @@ public class SpaceGroup {
                 "Pbcn",
                 "PGmmm",
                 "P 21/b 2/c 21/n",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2150,7 +2209,7 @@ public class SpaceGroup {
                 "Pbca",
                 "PGmmm",
                 "P 21/b 21/c 21/a",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2172,7 +2231,7 @@ public class SpaceGroup {
                 "Pnma",
                 "PGmmm",
                 "P 21/n 21/m 21/a",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2194,7 +2253,7 @@ public class SpaceGroup {
                 "Cmcm",
                 "PGmmm",
                 "C 2/m 2/c 21/m",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2224,7 +2283,7 @@ public class SpaceGroup {
                 "Cmca",
                 "PGmmm",
                 "C 2/m 2/c 21/a",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2254,7 +2313,7 @@ public class SpaceGroup {
                 "Cmmm",
                 "PGmmm",
                 "C 2/m 2/m 2/m",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f14, f12},
@@ -2284,7 +2343,7 @@ public class SpaceGroup {
                 "Cccm",
                 "PGmmm",
                 "C 2/c 2/c 2/m",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2314,7 +2373,7 @@ public class SpaceGroup {
                 "Cmma",
                 "PGmmm",
                 "C 2/m 2/m 2/a",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2344,7 +2403,7 @@ public class SpaceGroup {
                 "Ccca",
                 "PGmmm",
                 "C 2/c 2/c 2/a",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2374,7 +2433,7 @@ public class SpaceGroup {
                 "Fmmm",
                 "PGmmm",
                 "F 2/m 2/m 2/m",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f14, f14, f12},
@@ -2420,7 +2479,7 @@ public class SpaceGroup {
                 "Fddd",
                 "PGmmm",
                 "F 2/d 2/d 2/d",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2466,7 +2525,7 @@ public class SpaceGroup {
                 "Immm",
                 "PGmmm",
                 "I 2/m 2/m 2/m",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f14, f12},
@@ -2496,7 +2555,7 @@ public class SpaceGroup {
                 "Ibam",
                 "PGmmm",
                 "I 2/b 2/a 2/m",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2526,7 +2585,7 @@ public class SpaceGroup {
                 "Ibca",
                 "PGmmm",
                 "I 21/b 21/c 21/a",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2556,7 +2615,7 @@ public class SpaceGroup {
                 "Imma",
                 "PGmmm",
                 "I 21/m 21/m 21/a",
-                ORTHORHOMBIC,
+                ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
                 L222,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2586,7 +2645,7 @@ public class SpaceGroup {
                 "P4",
                 "PG4",
                 "P 4",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f12, f12, 1.0},
@@ -2604,7 +2663,7 @@ public class SpaceGroup {
                 "P41",
                 "PG4",
                 "P 41",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {1.0, 1.0, f14},
@@ -2622,7 +2681,7 @@ public class SpaceGroup {
                 "P42",
                 "PG4",
                 "P 42",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LT, ASULimit.LT},
                 new double[] {f12, 1.0, f12},
@@ -2640,7 +2699,7 @@ public class SpaceGroup {
                 "P43",
                 "PG4",
                 "P 43",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {1.0, 1.0, f14},
@@ -2658,7 +2717,7 @@ public class SpaceGroup {
                 "I4",
                 "PG4",
                 "I 4",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -2680,7 +2739,7 @@ public class SpaceGroup {
                 "I41",
                 "PG4",
                 "I 41",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LT, ASULimit.LT},
                 new double[] {f12, 1.0, f14},
@@ -2702,7 +2761,7 @@ public class SpaceGroup {
                 "P-4",
                 "PG4bar",
                 "P -4",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2720,7 +2779,7 @@ public class SpaceGroup {
                 "I-4",
                 "PG4bar",
                 "I -4",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2742,7 +2801,7 @@ public class SpaceGroup {
                 "P4/m",
                 "PG4/m",
                 "P 4/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -2764,7 +2823,7 @@ public class SpaceGroup {
                 "P42/m",
                 "PG4/m",
                 "P 42/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2786,7 +2845,7 @@ public class SpaceGroup {
                 "P4/n",
                 "PG4/m",
                 "P 4/n",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2808,7 +2867,7 @@ public class SpaceGroup {
                 "P42/n",
                 "PG4/m",
                 "P 42/n",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2830,7 +2889,7 @@ public class SpaceGroup {
                 "I4/m",
                 "PG4/m",
                 "I 4/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f14},
@@ -2860,7 +2919,7 @@ public class SpaceGroup {
                 "I41/a",
                 "PG4/m",
                 "I 41/a",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -2890,7 +2949,7 @@ public class SpaceGroup {
                 "P422",
                 "PG422",
                 "P 4 2 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -2912,7 +2971,7 @@ public class SpaceGroup {
                 "P4212",
                 "PG422",
                 "P 4 21 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -2934,7 +2993,7 @@ public class SpaceGroup {
                 "P4122",
                 "PG422",
                 "P 41 2 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f18},
@@ -2956,7 +3015,7 @@ public class SpaceGroup {
                 "P41212",
                 "PG422",
                 "P 41 21 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f18},
@@ -2978,7 +3037,7 @@ public class SpaceGroup {
                 "P4222",
                 "PG422",
                 "P 42 2 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LT, ASULimit.LTE},
                 new double[] {f12, 1.0, f14},
@@ -3000,7 +3059,7 @@ public class SpaceGroup {
                 "P42212",
                 "PG422",
                 "P 42 21 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -3022,7 +3081,7 @@ public class SpaceGroup {
                 "P4322",
                 "PG422",
                 "P 43 2 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f18},
@@ -3044,7 +3103,7 @@ public class SpaceGroup {
                 "P43212",
                 "PG422",
                 "P 43 21 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f18},
@@ -3066,7 +3125,7 @@ public class SpaceGroup {
                 "I422",
                 "PG422",
                 "I 4 2 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f14},
@@ -3096,7 +3155,7 @@ public class SpaceGroup {
                 "I4122",
                 "PG422",
                 "I 41 2 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LT, ASULimit.LTE},
                 new double[] {f12, 1.0, f18},
@@ -3126,7 +3185,7 @@ public class SpaceGroup {
                 "P4mm",
                 "PG4mm",
                 "P 4 m m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3148,7 +3207,7 @@ public class SpaceGroup {
                 "P4bm",
                 "PG4mm",
                 "P 4 b m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3167,7 +3226,7 @@ public class SpaceGroup {
   }
 
   /**
-   * There are 3 private "getSpaceGroupX" routines because if they are not split up, a Java
+   * There are 6 private "getSpaceGroupX" routines because if they are not split up, a Java
    * specification limit on method size is exceeded.
    *
    * @param num input parameter (between 101 and 150)
@@ -3185,7 +3244,7 @@ public class SpaceGroup {
                 "P42cm",
                 "PG4mm",
                 "P 42 c m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3207,7 +3266,7 @@ public class SpaceGroup {
                 "P42nm",
                 "PG4mm",
                 "P 42 n m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3229,7 +3288,7 @@ public class SpaceGroup {
                 "P4cc",
                 "PG4mm",
                 "P 4 c c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3251,7 +3310,7 @@ public class SpaceGroup {
                 "P4nc",
                 "PG4mm",
                 "P 4 n c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3273,7 +3332,7 @@ public class SpaceGroup {
                 "P42mc",
                 "PG4mm",
                 "P 42 m c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3295,7 +3354,7 @@ public class SpaceGroup {
                 "P42bc",
                 "PG4mm",
                 "P 42 b c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3317,7 +3376,7 @@ public class SpaceGroup {
                 "I4mm",
                 "PG4mm",
                 "I 4 m m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3347,7 +3406,7 @@ public class SpaceGroup {
                 "I4cm",
                 "PG4mm",
                 "I 4 c m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3377,7 +3436,7 @@ public class SpaceGroup {
                 "I41md",
                 "PG4mm",
                 "I 41 m d",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3407,7 +3466,7 @@ public class SpaceGroup {
                 "I41cd",
                 "PG4mm",
                 "I 41 c d",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3437,7 +3496,7 @@ public class SpaceGroup {
                 "P-42m",
                 "PG4bar2m",
                 "P -4 2 m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3459,7 +3518,7 @@ public class SpaceGroup {
                 "P-42c",
                 "PG4bar2m",
                 "P -4 2 c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3481,7 +3540,7 @@ public class SpaceGroup {
                 "P-421m",
                 "PG4bar2m",
                 "P -4 21 m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3503,7 +3562,7 @@ public class SpaceGroup {
                 "P-421c",
                 "PG4bar2m",
                 "P -4 21 c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3525,7 +3584,7 @@ public class SpaceGroup {
                 "P-4m2",
                 "PG4barm2",
                 "P -4 m 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3547,7 +3606,7 @@ public class SpaceGroup {
                 "P-4c2",
                 "PG4barm2",
                 "P -4 c 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3569,7 +3628,7 @@ public class SpaceGroup {
                 "P-4b2",
                 "PG4barm2",
                 "P -4 b 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3591,7 +3650,7 @@ public class SpaceGroup {
                 "P-4n2",
                 "PG4barm2",
                 "P -4 n 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3613,7 +3672,7 @@ public class SpaceGroup {
                 "I-4m2",
                 "PG4barm2",
                 "I -4 m 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3643,7 +3702,7 @@ public class SpaceGroup {
                 "I-4c2",
                 "PG4barm2",
                 "I -4 c 2",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3673,7 +3732,7 @@ public class SpaceGroup {
                 "I-42m",
                 "PG4bar2m",
                 "I -4 2 m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3703,7 +3762,7 @@ public class SpaceGroup {
                 "I-42d",
                 "PG4bar2m",
                 "I -4 2 d",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3733,7 +3792,7 @@ public class SpaceGroup {
                 "P4/mmm",
                 "PG4/mmm",
                 "P 4/m 2/m 2/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -3763,7 +3822,7 @@ public class SpaceGroup {
                 "P4/mcc",
                 "PG4/mmm",
                 "P 4/m 2/c 2/c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3793,7 +3852,7 @@ public class SpaceGroup {
                 "P4/nbm",
                 "PG4/mmm",
                 "P 4/n 2/b 2/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3823,7 +3882,7 @@ public class SpaceGroup {
                 "P4/nnc",
                 "PG4/mmm",
                 "P 4/n 2/n 2/c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3853,7 +3912,7 @@ public class SpaceGroup {
                 "P4/mbm",
                 "PG4/mmm",
                 "P 4/m 21/b 2/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3883,7 +3942,7 @@ public class SpaceGroup {
                 "P4/mnc",
                 "PG4/mmm",
                 "P 4/m 21/n 2/c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3913,7 +3972,7 @@ public class SpaceGroup {
                 "P4/nmm",
                 "PG4/mmm",
                 "P 4/n 21/m 2/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3943,7 +4002,7 @@ public class SpaceGroup {
                 "P4/ncc",
                 "PG4/mmm",
                 "P 4/n 2/c 2/c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -3973,7 +4032,7 @@ public class SpaceGroup {
                 "P42/mmc",
                 "PG4/mmm",
                 "P 42/m 2/m 2/c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4003,7 +4062,7 @@ public class SpaceGroup {
                 "P42/mcm",
                 "PG4/mmm",
                 "P 42/m 2/c 2/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4033,7 +4092,7 @@ public class SpaceGroup {
                 "P42/nbc",
                 "PG4/mmm",
                 "P 42/n 2/b 2/c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4063,7 +4122,7 @@ public class SpaceGroup {
                 "P42/nnm",
                 "PG4/mmm",
                 "P 42/n 2/n 2/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4093,7 +4152,7 @@ public class SpaceGroup {
                 "P42/mbc",
                 "PG4/mmm",
                 "P 42/m 21/b 2/c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4123,7 +4182,7 @@ public class SpaceGroup {
                 "P42/mnm",
                 "PG4/mmm",
                 "P 42/m 21/n 2/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4153,7 +4212,7 @@ public class SpaceGroup {
                 "P42/nmc",
                 "PG4/mmm",
                 "P 42/n 21/m 2/c",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4183,7 +4242,7 @@ public class SpaceGroup {
                 "P42/ncm",
                 "PG4/mmm",
                 "P 42/n 21/c 2/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4213,7 +4272,7 @@ public class SpaceGroup {
                 "I4/mmm",
                 "PG4/mmm",
                 "I 4/m 2/m 2/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f14},
@@ -4259,7 +4318,7 @@ public class SpaceGroup {
                 "I4/mcm",
                 "PG4/mmm",
                 "I 4/m 2/c 2/m",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4305,7 +4364,7 @@ public class SpaceGroup {
                 "I41/amd",
                 "PG4/mmm",
                 "I 41/a 2/m 2/d",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4351,7 +4410,7 @@ public class SpaceGroup {
                 "I41/acd",
                 "PG4/mmm",
                 "I 41/a 2/c 2/d",
-                TETRAGONAL,
+                TETRAGONAL, TETRAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4397,7 +4456,7 @@ public class SpaceGroup {
                 "P3",
                 "PG3",
                 "P 3",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L113,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f23, f23, 1.0},
@@ -4414,7 +4473,7 @@ public class SpaceGroup {
                 "P31",
                 "PG3",
                 "P 31",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L113,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {1.0, 1.0, f13},
@@ -4431,7 +4490,7 @@ public class SpaceGroup {
                 "P32",
                 "PG3",
                 "P 32",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L113,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {1.0, 1.0, f13},
@@ -4448,7 +4507,7 @@ public class SpaceGroup {
                 "H3",
                 "PG3",
                 "H 3",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L113,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f23, f23, f13},
@@ -4471,7 +4530,7 @@ public class SpaceGroup {
                 "P-3",
                 "PG3bar",
                 "P -3",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L113,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f23, f12},
@@ -4491,7 +4550,7 @@ public class SpaceGroup {
                 "H-3",
                 "PG3bar",
                 "H -3",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L113,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f23, f16},
@@ -4523,7 +4582,7 @@ public class SpaceGroup {
                 "P312",
                 "PG312",
                 "P 3 1 2",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L223,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f23, f12},
@@ -4543,7 +4602,7 @@ public class SpaceGroup {
                 "P321",
                 "PG321",
                 "P 3 2 1",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f23, f12},
@@ -4560,7 +4619,7 @@ public class SpaceGroup {
   }
 
   /**
-   * There are 3 private "getSpaceGroupX" routines because if they are not split up, a Java
+   * There are 6 private "getSpaceGroupX" routines because if they are not split up, a Java
    * specification limit on method size is exceeded.
    *
    * @param num input parameter (between 151 and 200)
@@ -4578,7 +4637,7 @@ public class SpaceGroup {
                 "P3112",
                 "PG312",
                 "P 31 1 2",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L223,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f16},
@@ -4598,7 +4657,7 @@ public class SpaceGroup {
                 "P3121",
                 "PG321",
                 "P 31 2 1",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f16},
@@ -4618,7 +4677,7 @@ public class SpaceGroup {
                 "P3212",
                 "PG312",
                 "P 32 1 2",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L223,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f16},
@@ -4638,7 +4697,7 @@ public class SpaceGroup {
                 "P3221",
                 "PG321",
                 "P 32 2 1",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f16},
@@ -4658,7 +4717,7 @@ public class SpaceGroup {
                 "H32",
                 "PG321",
                 "H 3 2",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f23, f16},
@@ -4690,7 +4749,7 @@ public class SpaceGroup {
                 "P3m1",
                 "PG3m1",
                 "P 3 m 1",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4710,7 +4769,7 @@ public class SpaceGroup {
                 "P31m",
                 "PG31m",
                 "P 3 1 m",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L223,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4730,7 +4789,7 @@ public class SpaceGroup {
                 "P3c1",
                 "PG3m1",
                 "P 3 c 1",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4750,7 +4809,7 @@ public class SpaceGroup {
                 "P31c",
                 "PG31m",
                 "P 3 1 c",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L223,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4770,7 +4829,7 @@ public class SpaceGroup {
                 "H3m",
                 "PG3m",
                 "H 3 m",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4802,7 +4861,7 @@ public class SpaceGroup {
                 "H3c",
                 "PG3m",
                 "H 3 c",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4834,7 +4893,7 @@ public class SpaceGroup {
                 "P-31m",
                 "PG3bar1m",
                 "P -3 1 2/m",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L223,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f12, f12},
@@ -4860,7 +4919,7 @@ public class SpaceGroup {
                 "P-31c",
                 "PG3bar1m",
                 "P -3 1 2/c",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L223,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4886,7 +4945,7 @@ public class SpaceGroup {
                 "P-3m1",
                 "PG3barm1",
                 "P -3 2/m 1",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f13, 1.0},
@@ -4912,7 +4971,7 @@ public class SpaceGroup {
                 "P-3c1",
                 "PG3barm1",
                 "P -3 2/c 1",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -4938,7 +4997,7 @@ public class SpaceGroup {
                 "H-3m",
                 "PG3barm",
                 "H -3 2/m",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f23, f16},
@@ -4988,7 +5047,7 @@ public class SpaceGroup {
                 "H-3c",
                 "PG3barm",
                 "H -3 2/c",
-                TRIGONAL,
+                TRIGONAL, HEXAGONAL_LATTICE,
                 L32U,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5038,7 +5097,7 @@ public class SpaceGroup {
                 "P6",
                 "PG6",
                 "P 6",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f23, f12, 1.0},
@@ -5058,7 +5117,7 @@ public class SpaceGroup {
                 "P61",
                 "PG6",
                 "P 61",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {1.0, 1.0, f16},
@@ -5078,7 +5137,7 @@ public class SpaceGroup {
                 "P65",
                 "PG6",
                 "P 65",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {1.0, 1.0, f16},
@@ -5098,7 +5157,7 @@ public class SpaceGroup {
                 "P62",
                 "PG6",
                 "P 62",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {1.0, 1.0, f13},
@@ -5118,7 +5177,7 @@ public class SpaceGroup {
                 "P64",
                 "PG6",
                 "P 64",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {1.0, 1.0, f13},
@@ -5138,7 +5197,7 @@ public class SpaceGroup {
                 "P63",
                 "PG6",
                 "P 63",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f23, f23, f12},
@@ -5158,7 +5217,7 @@ public class SpaceGroup {
                 "P-6",
                 "PG6bar",
                 "P -6",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5178,7 +5237,7 @@ public class SpaceGroup {
                 "P6/m",
                 "PG6/m",
                 "P 6/m",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f23, f12},
@@ -5204,7 +5263,7 @@ public class SpaceGroup {
                 "P63/m",
                 "PG6/m",
                 "P 63/m",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L114,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5230,7 +5289,7 @@ public class SpaceGroup {
                 "P622",
                 "PG622",
                 "P 6 2 2",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f12, f12},
@@ -5256,7 +5315,7 @@ public class SpaceGroup {
                 "P6122",
                 "PG622",
                 "P 61 2 2",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f112},
@@ -5282,7 +5341,7 @@ public class SpaceGroup {
                 "P6522",
                 "PG622",
                 "P 65 2 2",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f112},
@@ -5308,7 +5367,7 @@ public class SpaceGroup {
                 "P6222",
                 "PG622",
                 "P 62 2 2",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f16},
@@ -5334,7 +5393,7 @@ public class SpaceGroup {
                 "P6422",
                 "PG622",
                 "P 64 2 2",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f16},
@@ -5360,7 +5419,7 @@ public class SpaceGroup {
                 "P6322",
                 "PG622",
                 "P 63 2 2",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f23, f14},
@@ -5386,7 +5445,7 @@ public class SpaceGroup {
                 "P6mm",
                 "PG6mm",
                 "P 6 m m",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5412,7 +5471,7 @@ public class SpaceGroup {
                 "P6cc",
                 "PG6mm",
                 "P 6 c c",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5438,7 +5497,7 @@ public class SpaceGroup {
                 "P63cm",
                 "PG6mm",
                 "P 63 c m",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5464,7 +5523,7 @@ public class SpaceGroup {
                 "P63mc",
                 "PG6mm",
                 "P 63 m c",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5490,7 +5549,7 @@ public class SpaceGroup {
                 "P-6m2",
                 "PG6barm2",
                 "P -6 m 2",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5516,7 +5575,7 @@ public class SpaceGroup {
                 "P-6c2",
                 "PG6barm2",
                 "P -6 c 2",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5542,7 +5601,7 @@ public class SpaceGroup {
                 "P-62m",
                 "PG6bar2m",
                 "P -6 2 m",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5568,7 +5627,7 @@ public class SpaceGroup {
                 "P-62c",
                 "PG6bar2m",
                 "P -6 2 c",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5594,7 +5653,7 @@ public class SpaceGroup {
                 "P6/mmm",
                 "PG6/mmm",
                 "P 6/m 2/m 2/m",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f23, f13, f12},
@@ -5632,7 +5691,7 @@ public class SpaceGroup {
                 "P6/mcc",
                 "PG6/mmm",
                 "P 6/m 2/c 2/c",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5670,7 +5729,7 @@ public class SpaceGroup {
                 "P63/mcm",
                 "PG6/mmm",
                 "P 63/m 2/c 2/m",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5708,7 +5767,7 @@ public class SpaceGroup {
                 "P63/mmc",
                 "PG6/mmm",
                 "P 63/m 2/m 2/c",
-                HEXAGONAL,
+                HEXAGONAL, HEXAGONAL_LATTICE,
                 L224,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -5746,7 +5805,7 @@ public class SpaceGroup {
                 "P23",
                 "PG23",
                 "P 2 3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f12},
@@ -5772,7 +5831,7 @@ public class SpaceGroup {
                 "F23",
                 "PG23",
                 "F 2 3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f14, f14, 1.0},
@@ -5834,7 +5893,7 @@ public class SpaceGroup {
                 "I23",
                 "PG23",
                 "I 2 3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f12},
@@ -5872,7 +5931,7 @@ public class SpaceGroup {
                 "P213",
                 "PG23",
                 "P 21 3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LT},
                 new double[] {f12, f12, 1.0},
@@ -5898,7 +5957,7 @@ public class SpaceGroup {
                 "I213",
                 "PG23",
                 "I 21 3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -5936,7 +5995,7 @@ public class SpaceGroup {
                 "Pm-3",
                 "PGm3bar",
                 "P 2/m -3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -5971,7 +6030,7 @@ public class SpaceGroup {
   }
 
   /**
-   * There are 3 private "getSpaceGroupX" routines because if they are not split up, a Java
+   * There are 6 private "getSpaceGroupX" routines because if they are not split up, a Java
    * specification limit on method size is exceeded.
    *
    * @param num input parameter (between 201 and 215)
@@ -5989,7 +6048,7 @@ public class SpaceGroup {
                 "Pn-3",
                 "PGm3bar",
                 "P 2/n -3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -6027,7 +6086,7 @@ public class SpaceGroup {
                 "Fm-3",
                 "PGm3bar",
                 "F 2/m -3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f14},
@@ -6137,7 +6196,7 @@ public class SpaceGroup {
                 "Fd-3",
                 "PGm3bar",
                 "F 2/d -3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -6247,7 +6306,7 @@ public class SpaceGroup {
                 "Im-3",
                 "PGm3bar",
                 "I 2/m -3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -6309,7 +6368,7 @@ public class SpaceGroup {
                 "Pa-3",
                 "PGm3bar",
                 "P 21/a -3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -6347,7 +6406,7 @@ public class SpaceGroup {
                 "Ia-3",
                 "PGm3bar",
                 "I 21/a -3",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3B,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -6409,7 +6468,7 @@ public class SpaceGroup {
                 "P432",
                 "PG432",
                 "P 4 3 2",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LTE, ASULimit.LTE},
                 new double[] {1.0, f12, f12},
@@ -6447,7 +6506,7 @@ public class SpaceGroup {
                 "P4232",
                 "PG432",
                 "P 42 3 2",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LT, ASULimit.LTE},
                 new double[] {f12, 1.0, f14},
@@ -6485,7 +6544,7 @@ public class SpaceGroup {
                 "F432",
                 "PG432",
                 "F 4 3 2",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -6595,7 +6654,7 @@ public class SpaceGroup {
                 "F4132",
                 "PG432",
                 "F 41 3 2",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LT, ASULimit.LTE},
                 new double[] {f12, 1.0, f18},
@@ -6705,7 +6764,7 @@ public class SpaceGroup {
                 "I432",
                 "PG432",
                 "I 4 3 2",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f14},
@@ -6767,7 +6826,7 @@ public class SpaceGroup {
                 "P4332",
                 "PG432",
                 "P 43 3 2",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f18},
@@ -6805,7 +6864,7 @@ public class SpaceGroup {
                 "P4132",
                 "PG432",
                 "P 41 3 2",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LTE},
                 new double[] {1.0, 1.0, f18},
@@ -6843,7 +6902,7 @@ public class SpaceGroup {
                 "I4132",
                 "PG432",
                 "I 41 3 2",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LT, ASULimit.LTE},
                 new double[] {f12, 1.0, f18},
@@ -6905,7 +6964,7 @@ public class SpaceGroup {
                 "P-43m",
                 "PG4bar3m",
                 "P -4 3 m",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -6940,7 +6999,7 @@ public class SpaceGroup {
   }
 
   /**
-   * There are 3 private "getSpaceGroupX" routines because if they are not split up, a Java
+   * There are 6 private "getSpaceGroupX" routines because if they are not split up, a Java
    * specification limit on method size is exceeded.
    *
    * @param num input parameter (between 216 and 230)
@@ -6958,7 +7017,7 @@ public class SpaceGroup {
                 "F-43m",
                 "PG4bar3m",
                 "F -4 3 m",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -7068,7 +7127,7 @@ public class SpaceGroup {
                 "I-43m",
                 "PG4bar3m",
                 "I -4 3 m",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -7130,7 +7189,7 @@ public class SpaceGroup {
                 "P-43n",
                 "PG4bar3m",
                 "P -4 3 n",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -7168,7 +7227,7 @@ public class SpaceGroup {
                 "F-43c",
                 "PG4bar3m",
                 "F -4 3 c",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -7278,7 +7337,7 @@ public class SpaceGroup {
                 "I-43d",
                 "PG4bar3m",
                 "I -4 3 d",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -7340,7 +7399,7 @@ public class SpaceGroup {
                 "Pm-3m",
                 "PGm3barm",
                 "P 4/m -3 2/m",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f12},
@@ -7402,7 +7461,7 @@ public class SpaceGroup {
                 "Pn-3n",
                 "PGm3barm",
                 "P 4/n -3 2/n",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -7464,7 +7523,7 @@ public class SpaceGroup {
                 "Pm-3n",
                 "PGm3barm",
                 "P 42/m -3 2/n",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -7526,7 +7585,7 @@ public class SpaceGroup {
                 "Pn-3m",
                 "PGm3barm",
                 "P 42/n -3 2/m",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -7588,7 +7647,7 @@ public class SpaceGroup {
                 "Fm-3m",
                 "PGm3barm",
                 "F 4/m -3 2/m",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f14, f14},
@@ -7794,7 +7853,7 @@ public class SpaceGroup {
                 "Fm-3c",
                 "PGm3barm",
                 "F 4/m -3 2/c",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -8000,7 +8059,7 @@ public class SpaceGroup {
                 "Fd-3m",
                 "PGm3barm",
                 "F 41/d -3 2/m",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -8206,7 +8265,7 @@ public class SpaceGroup {
                 "Fd-3c",
                 "PGm3barm",
                 "F 41/d -3 2/c",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -8412,7 +8471,7 @@ public class SpaceGroup {
                 "Im-3m",
                 "PGm3barm",
                 "I 4/m -3 2/m",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LTE, ASULimit.LTE, ASULimit.LTE},
                 new double[] {f12, f12, f14},
@@ -8522,7 +8581,7 @@ public class SpaceGroup {
                 "Ia-3d",
                 "PGm3barm",
                 "I 41/a -3 2/d",
-                CUBIC,
+                CUBIC, CUBIC_LATTICE,
                 LM3M,
                 new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
                 new double[] {-1.0, -1.0, -1.0},
@@ -8633,50 +8692,66 @@ public class SpaceGroup {
   }
 
   /**
-   * Reset lattice parameters for the given crystal systems.
+   * Reset lattice parameters for the given lattice systems.
    *
-   * @param crystalSystem a {@link ffx.crystal.SpaceGroup.CrystalSystem} object.
+   * @param latticeSystem a {@link ffx.crystal.SpaceGroup.LatticeSystem} object.
    * @return New unit cell parameters.
    */
-  static double[] resetUnitCellParams(CrystalSystem crystalSystem) {
+  static double[] resetUnitCellParams(LatticeSystem latticeSystem) {
     double alpha = 60.0 + random() * 60.0;
     double beta = 60.0 + random() * 60.0;
     double gamma = 60.0 + random() * 60.0;
     double[] params = {0.1 + random(), 0.1 + random(), 0.1 + random(), alpha, beta, gamma};
-    switch (crystalSystem) {
-      case TRICLINIC:
+    switch (latticeSystem) {
+      case TRICLINIC_LATTICE:
         break;
-      case MONOCLINIC:
-        // alpha == gamma == 90.0
+      case MONOCLINIC_LATTICE:
+        // alpha = gamma = 90
         params[3] = 90.0;
         params[5] = 90.0;
         break;
-      case ORTHORHOMBIC:
-        // alpha == beta == gamma == 90.0
-        params[3] = 90.0;
-        params[4] = 90.0;
-        params[5] = 90.0;
-        break;
-      case TETRAGONAL:
-        // a == b, alpha == beta == gamma == 90.0
-        params[1] = params[0];
+      case ORTHORHOMBIC_LATTICE:
+        // alpha = beta = gamma = 90
         params[3] = 90.0;
         params[4] = 90.0;
         params[5] = 90.0;
         break;
-      case TRIGONAL:
-      case HEXAGONAL:
-        // a == b, alpha == beta == gamma == 120.0
-        params[1] = params[0];
+      case TETRAGONAL_LATTICE:
+        // a = b, alpha = beta = gamma = 90
+        double ab = 0.5 * (params[0] + params[1]);
+        params[0] = ab;
+        params[1] = ab;
+        params[3] = 90.0;
+        params[4] = 90.0;
+        params[5] = 90.0;
+        break;
+      case RHOMBOHEDRAL_LATTICE:
+        // a = b = c, alpha = beta = gamma.
+        double abc = (params[0] + params[1] + params[2]) / 3.0;
+        double angles = (params[3] + params[4] + params[5]) / 3.0;
+        params[0] = abc;
+        params[1] = abc;
+        params[2] = abc;
+        params[3] = angles;
+        params[4] = angles;
+        params[5] = angles;
+        break;
+      case HEXAGONAL_LATTICE:
+        // a = b, alpha = beta = 90, gamma = 120
+        ab = 0.5 * (params[0] + params[1]);
+        params[0] = ab;
+        params[1] = ab;
         params[3] = 90.0;
         params[4] = 90.0;
         params[5] = 120.0;
         break;
-      case CUBIC:
+      case CUBIC_LATTICE:
       default:
-        // a == b == c, alpha == beta == gamma == 90.0
-        params[1] = params[0];
-        params[2] = params[0];
+        // a = b = c, alpha = beta = gamma = 90
+        abc = (params[0] + params[1] + params[2]) / 3.0;
+        params[0] = abc;
+        params[1] = abc;
+        params[2] = abc;
         params[3] = 90.0;
         params[4] = 90.0;
         params[5] = 90.0;
@@ -8742,7 +8817,7 @@ public class SpaceGroup {
   }
 
   public double[] randomUnitCellParams() {
-    return resetUnitCellParams(crystalSystem);
+    return resetUnitCellParams(latticeSystem);
   }
 
   public boolean respectsChirality() {
@@ -8763,6 +8838,27 @@ public class SpaceGroup {
     TRIGONAL,
     HEXAGONAL,
     CUBIC
+  }
+
+  /**
+   * Enumeration of the 7 lattice systems.
+   * <p>
+   * Currently the SpaceGroup class uses the HEXAGONAL_LATTICE in all cases where its also possible
+   * to use a RHOMBOHEDRAL_LATTICE.
+   * <p>
+   * This includes space groups 146, 148, 155, 160, 161, 166 and 167.
+   *
+   * @author Michael J. Schnieders
+   * @since 1.0
+   */
+  public enum LatticeSystem {
+    TRICLINIC_LATTICE,
+    MONOCLINIC_LATTICE,
+    ORTHORHOMBIC_LATTICE,
+    TETRAGONAL_LATTICE,
+    RHOMBOHEDRAL_LATTICE,
+    HEXAGONAL_LATTICE,
+    CUBIC_LATTICE
   }
 
   /** Enumeration of the different ASU limits. Some are only used for nonstandard cells. */

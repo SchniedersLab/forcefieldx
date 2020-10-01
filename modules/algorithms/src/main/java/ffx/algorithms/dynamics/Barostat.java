@@ -901,8 +901,9 @@ public class Barostat implements CrystalPotential {
     if (isotropic) {
       currentE = mcIsotropic(currentE);
     } else {
-      switch (spaceGroup.crystalSystem) {
-        case MONOCLINIC:
+      switch (spaceGroup.latticeSystem) {
+        case MONOCLINIC_LATTICE:
+          // alpha = gamma = 90
           int move = (int) floor(random() * 4.0);
           switch (move) {
             case 0:
@@ -921,8 +922,8 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        case ORTHORHOMBIC:
-          // alpha == beta == gamma == 90.0
+        case ORTHORHOMBIC_LATTICE:
+          // alpha = beta = gamma = 90
           move = (int) floor(random() * 3.0);
           switch (move) {
             case 0:
@@ -938,8 +939,8 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        case TETRAGONAL:
-          // (a == b, alpha == beta == gamma == 90.0
+        case TETRAGONAL_LATTICE:
+          // a = b, alpha = beta = gamma = 90
           move = (int) floor(random() * 2.0);
           switch (move) {
             case 0:
@@ -952,39 +953,22 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        case TRIGONAL:
-          if (check(a, b) && check(b, c) && check(alpha, beta) && check(beta, gamma)) {
-            // Rombohedral axes, primitive cell.
-            move = (int) floor(random() * 2.0);
-            switch (move) {
-              case 0:
-                currentE = mcABC(currentE);
-                break;
-              case 1:
-                currentE = mcABG(currentE);
-                break;
-              default:
-                logger.severe(" Barostat programming error.");
-            }
-          } else if (check(a, b) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 120.0)) {
-            // Hexagonal axes, triple obverse cell.
-            move = (int) floor(random() * 2.0);
-            switch (move) {
-              case 0:
-                currentE = mcAB(currentE);
-                break;
-              case 1:
-                currentE = mcC(currentE);
-                break;
-              default:
-                logger.severe(" Barostat programming error.");
-            }
-          } else {
-            logger.warning(" Trigonal constraints not satisfied.");
+        case RHOMBOHEDRAL_LATTICE:
+          // a = b = c, alpha = beta = gamma
+          move = (int) floor(random() * 2.0);
+          switch (move) {
+            case 0:
+              currentE = mcABC(currentE);
+              break;
+            case 1:
+              currentE = mcABG(currentE);
+              break;
+            default:
+              logger.severe(" Barostat programming error.");
           }
           break;
-        case HEXAGONAL:
-          // a == b, alpha == beta == 90.0, gamma == 120.0
+        case HEXAGONAL_LATTICE:
+          // a = b, alpha = beta = 90, gamma = 120
           move = (int) floor(random() * 2.0);
           switch (move) {
             case 0:
@@ -997,11 +981,11 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        case CUBIC:
-          // a == b == c, alpha == beta == gamma == 90.0
+        case CUBIC_LATTICE:
+          // a = b = c, alpha = beta = gamma = 90
           currentE = mcABC(currentE);
           break;
-        case TRICLINIC:
+        case TRICLINIC_LATTICE:
         default:
           if (check(a, b) && check(b, c) && check(alpha, 90.0)
               && check(beta, 90.0) && check(gamma, 90.0)) {
