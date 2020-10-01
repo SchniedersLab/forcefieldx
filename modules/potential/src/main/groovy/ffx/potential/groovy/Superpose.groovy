@@ -300,6 +300,7 @@ class Superpose extends PotentialScript {
 
       // Check which molecular assemblies to do RMSD comparisons among.
       if (!frameComparison) {
+        // Do one vs. all comparison.
         if (dRMSD) {
           logger.info(format("\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation    dRMSD"))
         } else if (verbose) {
@@ -314,6 +315,8 @@ class Superpose extends PotentialScript {
           // The systemFilter is from the 2nd file read in, which could have multiple models.
           trajectoryRMSD(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 0)
         }
+      } else if (filenames.size() >= 2 && frameComparison){
+          logger.severe("\n Cannot perform all versus all superposition (-A) with two different model files. Please choose one versus all when using two model files.")
       } else {
         // Do the all vs. all comparison.
         if (storeMatrix) {
