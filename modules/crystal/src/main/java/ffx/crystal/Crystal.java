@@ -60,8 +60,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
-import ffx.crystal.SpaceGroup.CrystalSystem;
-import ffx.crystal.SpaceGroup.LatticeSystem;
 import ffx.numerics.math.ScalarMath;
 import java.util.ArrayList;
 import java.util.List;

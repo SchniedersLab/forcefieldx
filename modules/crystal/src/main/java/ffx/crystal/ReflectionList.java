@@ -71,7 +71,7 @@ public class ReflectionList {
   /** String to HKL look-up. */
   final HashMap<String, HKL> hklmap = new HashMap<>();
   /** The Laue System. */
-  private final SpaceGroup.LaueSystem laueSystem;
+  private final LaueSystem laueSystem;
   /** For binning reflections based on resolution */
   public int nbins = 10;
   /** Histogram. */
