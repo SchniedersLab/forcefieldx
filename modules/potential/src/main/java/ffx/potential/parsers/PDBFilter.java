@@ -52,7 +52,7 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.repeat;
 
 import ffx.crystal.Crystal;
-import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupInfo;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
@@ -991,7 +991,7 @@ public final class PDBFilter extends SystemFilter {
                 properties.addProperty("alpha", alpha);
                 properties.addProperty("beta", beta);
                 properties.addProperty("gamma", gamma);
-                properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(sg));
+                properties.addProperty("spacegroup", SpaceGroupInfo.pdb2ShortName(sg));
                 break;
               case CONECT:
                 // =============================================================================

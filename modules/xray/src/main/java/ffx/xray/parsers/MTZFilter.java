@@ -52,7 +52,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupInfo;
 import ffx.numerics.math.ComplexNumber;
 import ffx.xray.DiffractionRefinementData;
 import ffx.xray.parsers.MTZWriter.MTZType;
@@ -236,7 +236,7 @@ public class MTZFilter implements DiffractionFileFilter {
       sb.append(
           format(
               "  Space group number: %d (name: %s)\n",
-              spaceGroupNum, SpaceGroup.spaceGroupNames[spaceGroupNum - 1]));
+              spaceGroupNum, SpaceGroupInfo.spaceGroupNames[spaceGroupNum - 1]));
       sb.append(format("  Resolution:         %8.3f\n", 0.999999 * resHigh));
       sb.append(
           format(
@@ -258,7 +258,7 @@ public class MTZFilter implements DiffractionFileFilter {
             dataSet.cell[3],
             dataSet.cell[4],
             dataSet.cell[5],
-            SpaceGroup.spaceGroupNames[spaceGroupNum - 1]);
+            SpaceGroupInfo.spaceGroupNames[spaceGroupNum - 1]);
 
     double sampling = 0.6;
     if (properties != null) {
@@ -292,7 +292,7 @@ public class MTZFilter implements DiffractionFileFilter {
           .append(" space group number: ")
           .append(spaceGroupNum)
           .append(" (")
-          .append(SpaceGroup.spaceGroupNames[spaceGroupNum - 1])
+          .append(SpaceGroupInfo.spaceGroupNames[spaceGroupNum - 1])
           .append(")\n");
       sb.append(" MTZ resolution: ").append(resLow).append(" - ").append(resHigh).append("\n");
       sb.append(" Number of reflections: ").append(nReflections).append("\n");

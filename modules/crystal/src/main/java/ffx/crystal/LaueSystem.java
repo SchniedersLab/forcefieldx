@@ -38,55 +38,119 @@
 package ffx.crystal;
 
 /**
- * Enumeration of the different ASU limits. Some are only used for nonstandard cells.
+ * Enumeration of the different Laue systems. Some are only used for nonstandard cells.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public enum LaueSystem {
-  L111,
-  L112,
-  L121,
-  L211,
-  L21U,
-  L21V,
-  L21W,
-  L21X,
-  L21Y,
-  L21Z,
-  L222,
-  L22U,
-  L22V,
-  L22W,
-  L114,
-  L141,
-  L411,
-  L224,
-  L242,
-  L422,
-  L113,
-  L131,
-  L311,
-  L11T,
-  L1T1,
-  LT11,
-  L31A,
-  L31B,
-  L31C,
-  L31D,
-  L223,
-  L232,
-  L322,
-  L32A,
-  L32B,
-  L32C,
-  L32D,
-  L32U,
-  L32V,
-  L32W,
-  L32X,
-  L32Y,
-  L32Z,
-  LM3B,
-  LM3M
+  L111, L112, L121, L211, L21U, L21V, L21W, L21X, L21Y, L21Z, L222, L22U, L22V, L22W, L114, L141,
+  L411, L224, L242, L422, L113, L131, L311, L11T, L1T1, LT11, L31A, L31B, L31C, L31D, L223, L232,
+  L322, L32A, L32B, L32C, L32D, L32U, L32V, L32W, L32X, L32Y, L32Z, LM3B, LM3M;
+
+  /**
+   * Check the given HKL is valid given the Laue system.
+   *
+   * @param h a int.
+   * @param k a int.
+   * @param l a int.
+   * @return True if the reflection is valid, false otherwise.
+   */
+  public boolean checkRestrictions(int h, int k, int l) {
+    switch (this) {
+      case L111:
+        return (l > 0 || (l == 0 && (h > 0 || (h == 0 && k >= 0))));
+      case L112:
+        return (l >= 0 && (h > 0 || (h == 0 && k >= 0)));
+      case L121:
+        return (k >= 0 && (l > 0 || (l == 0 && h >= 0)));
+      case L211:
+        return (h >= 0 && (k > 0 || (k == 0 && l >= 0)));
+      case L21U:
+        return (h + k >= 0 && (l > 0 || (l == 0 && h - k >= 0)));
+      case L21V:
+        return (l + h >= 0 && (k > 0 || (k == 0 && l - h >= 0)));
+      case L21W:
+        return (k + l >= 0 && (h > 0 || (h == 0 && k - l >= 0)));
+      case L21X:
+        return (h - k >= 0 && (l > 0 || (l == 0 && h + k >= 0)));
+      case L21Y:
+        return (l - h >= 0 && (k > 0 || (k == 0 && l + h >= 0)));
+      case L21Z:
+        return (k - l >= 0 && (h > 0 || (h == 0 && k + l >= 0)));
+      case L222:
+        return (h >= 0 && k >= 0 && l >= 0);
+      case L22U:
+        return (h <= k && h >= -k && l >= 0);
+      case L22V:
+        return (l <= h && l >= -h && k >= 0);
+      case L22W:
+        return (k <= l && k >= -l && h >= 0);
+      case L114:
+        return (l >= 0 && ((h >= 0 && k > 0) || (h == 0 && k == 0)));
+      case L141:
+        return (k >= 0 && ((l >= 0 && h > 0) || (l == 0 && h == 0)));
+      case L411:
+        return (h >= 0 && ((k >= 0 && l > 0) || (k == 0 && l == 0)));
+      case L224:
+        return (h >= k && k >= 0 && l >= 0);
+      case L242:
+        return (l >= h && h >= 0 && k >= 0);
+      case L422:
+        return (k >= l && l >= 0 && h >= 0);
+      case L113:
+        return (h >= 0 && k > 0) || (h == 0 && k == 0 && l >= 0);
+      case L131:
+        return (l >= 0 && h > 0) || (l == 0 && h == 0 && k >= 0);
+      case L311:
+        return (k >= 0 && l > 0) || (k == 0 && l == 0 && h >= 0);
+      case L11T:
+        return (h <= 0 && k > 0) || (h == 0 && k == 0 && l >= 0);
+      case L1T1:
+        return (l <= 0 && h > 0) || (l == 0 && h == 0 && k >= 0);
+      case LT11:
+        return (k <= 0 && l > 0) || (k == 0 && l == 0 && h >= 0);
+      case L31A:
+        return (k - l >= 0 && l - h > 0) || (h == l && k == l && h + k + l >= 0);
+      case L31B:
+        return (k - l >= 0 && l + h > 0) || (-h == l && k == l && -h + k + l >= 0);
+      case L31C:
+        return (-k - l >= 0 && l - h > 0) || (h == l && -k == l && h - k + l >= 0);
+      case L31D:
+        return (k + l >= 0 && -l - h > 0) || (h == -l && k == -l && h + k - l >= 0);
+      case L223:
+        return (h >= k && k >= 0 && (k > 0 || l >= 0));
+      case L232:
+        return (l >= h && h >= 0 && (h > 0 || k >= 0));
+      case L322:
+        return (k >= l && l >= 0 && (l > 0 || h >= 0));
+      case L32A:
+        return (h >= k && k + l >= h + h && (k + l > h + h || h + k + l >= 0));
+      case L32B:
+        return (-h >= k && k + l >= -h - h && (k + l > -h - h || -h + k + l >= 0));
+      case L32C:
+        return (h >= -k && -k + l >= h + h && (-k + l > h + h || h - k + l >= 0));
+      case L32D:
+        return (h >= k && k - l >= h + h && (k - l > h + h || h + k - l >= 0));
+      case L32U:
+        return (h >= k && k >= 0 && (h > k || l >= 0));
+      case L32V:
+        return (k >= l && l >= 0 && (k > l || h >= 0));
+      case L32W:
+        return (l >= h && h >= 0 && (l > h || k >= 0));
+      case L32X:
+        return (-h >= k && k >= 0 && (-h > k || l >= 0));
+      case L32Y:
+        return (-k >= l && l >= 0 && (-k > l || h >= 0));
+      case L32Z:
+        return (-l >= h && h >= 0 && (-l > h || k >= 0));
+      case LM3B:
+        return (h >= 0 && ((l >= h && k > h) || (l == h && k == h)));
+      case LM3M:
+        return (k >= l && l >= h && h >= 0);
+      default:
+        assert (2 != 2);
+        return false;
+    }
+  }
 }

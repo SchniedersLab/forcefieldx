@@ -37,7 +37,7 @@
 // ******************************************************************************
 package ffx.crystal;
 
-import static ffx.crystal.SpaceGroup.check;
+import static ffx.crystal.LatticeSystem.check;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;

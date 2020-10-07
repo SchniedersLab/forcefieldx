@@ -37,10 +37,7 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import ffx.crystal.Crystal
-import ffx.crystal.ReplicatesCrystal
-import ffx.crystal.SpaceGroup
-import ffx.crystal.SymOp
+import ffx.crystal.*
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -176,9 +173,9 @@ class PrepareSpaceGroups extends PotentialScript {
     }
 
     for (int num = 1; num <= 230; num++) {
-      SpaceGroup spacegroup = SpaceGroup.spaceGroupFactory(num)
+      SpaceGroup spacegroup = SpaceGroupDefinitions.spaceGroupFactory(num)
       if (sg) {
-        SpaceGroup spacegroup2 = SpaceGroup.spaceGroupFactory(sg)
+        SpaceGroup spacegroup2 = SpaceGroupDefinitions.spaceGroupFactory(sg)
         if (spacegroup2 == null) {
           logger.info(String.format("\n Space group %s was not recognized.\n", sg))
           return this
@@ -196,16 +193,17 @@ class PrepareSpaceGroups extends PotentialScript {
         continue
       }
 
-      if (spacegroup.csdPercent[num - 1] < percent) {
+      if (SpaceGroupInfo.csdPercent[num - 1] < percent) {
         continue
       }
 
-      if (SpaceGroup.getPDBRank(spacegroup) > rank) {
+      if (SpaceGroupInfo.getPDBRank(spacegroup) > rank) {
         continue
       }
 
       logger.info(String.format("\n Preparing %s (CSD percent: %7.4f, PDB Rank: %d)",
-          spacegroup.shortName, spacegroup.csdPercent[num - 1], SpaceGroup.getPDBRank(spacegroup)))
+          spacegroup.shortName, SpaceGroupInfo.csdPercent[num - 1], SpaceGroupInfo.getPDBRank(
+          spacegroup)))
 
       // Create the directory.
       String sgDirName = spacegroup.shortName.replace('/', '_')
@@ -223,7 +221,7 @@ class PrepareSpaceGroups extends PotentialScript {
         sgDir.mkdir()
       }
 
-      double[] abc = spacegroup.randomUnitCellParams()
+      double[] abc = spacegroup.latticeSystem.resetUnitCellParams()
       Crystal crystal = new Crystal(abc[0], abc[1], abc[2], abc[3], abc[4], abc[5],
           spacegroup.shortName)
       crystal.setDensity(density, mass)

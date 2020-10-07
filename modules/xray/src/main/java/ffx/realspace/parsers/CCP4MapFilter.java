@@ -40,7 +40,7 @@ package ffx.realspace.parsers;
 import static java.lang.String.format;
 
 import ffx.crystal.Crystal;
-import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupInfo;
 import ffx.realspace.RealSpaceRefinementData;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -148,7 +148,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
         cellAlpha,
         cellBeta,
         cellGamma,
-        SpaceGroup.spaceGroupNames[spaceGroup - 1]);
+        SpaceGroupInfo.spaceGroupNames[spaceGroup - 1]);
   }
 
   /** {@inheritDoc} */
@@ -285,7 +285,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
         sb.append(format("  Section origin: %d\t Extent: %d\n", ori[2], ext[2]));
         sb.append(format("  Axis order:     %d %d %d\n", axisi[0], axisi[1], axisi[2]));
         sb.append(format("  Number of X, Y, Z columns: %d %d %d\n", ni[0], ni[1], ni[2]));
-        sb.append(format("  Spacegroup:     %d (%s)\n", sg, SpaceGroup.spaceGroupNames[sg - 1]));
+        sb.append(format("  Spacegroup:     %d (%s)\n", sg, SpaceGroupInfo.spaceGroupNames[sg - 1]));
         sb.append(
             format(
                 "  Cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",

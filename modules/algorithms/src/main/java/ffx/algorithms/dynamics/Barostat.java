@@ -37,7 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics;
 
-import static ffx.crystal.SpaceGroup.check;
+import static ffx.crystal.LatticeSystem.check;
 import static ffx.utilities.Constants.AVOGADRO;
 import static ffx.utilities.Constants.PRESCON;
 import static java.lang.String.format;

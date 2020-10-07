@@ -195,11 +195,11 @@ public class Crystal {
     this.beta = beta;
     this.gamma = gamma;
     aperiodic = false;
-    spaceGroup = SpaceGroup.spaceGroupFactory(sg);
+    spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
     crystalSystem = spaceGroup.crystalSystem;
     latticeSystem = spaceGroup.latticeSystem;
 
-    if (!SpaceGroup.checkLatticeSystemRestrictions(latticeSystem, a, b, c, alpha, beta, gamma)) {
+    if (!latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
       StringBuilder sb = new StringBuilder(
           " The proposed lattice parameters for " + spaceGroup.pdbName
               + " do not satisfy the " + latticeSystem +
@@ -338,17 +338,17 @@ public class Crystal {
     double gamma = properties.getDouble("gamma", -1.0);
     String sg = properties.getString("spacegroup", null);
 
-    sg = SpaceGroup.pdb2ShortName(sg);
+    sg = SpaceGroupInfo.pdb2ShortName(sg);
 
     if (a < 0.0 || b < 0.0 || c < 0.0 || alpha < 0.0 || beta < 0.0 || gamma < 0.0 || sg == null) {
       return null;
     }
 
     // check the space group name is valid
-    SpaceGroup spaceGroup = SpaceGroup.spaceGroupFactory(sg);
+    SpaceGroup spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
     if (spaceGroup == null) {
       sg = sg.replaceAll(" ", "");
-      spaceGroup = SpaceGroup.spaceGroupFactory(sg);
+      spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
       if (spaceGroup == null) {
         return null;
       }
@@ -956,7 +956,7 @@ public class Crystal {
   public boolean changeUnitCellParameters(
       double a, double b, double c, double alpha, double beta, double gamma) {
     if (checkRestrictions) {
-      if (!SpaceGroup.checkLatticeSystemRestrictions(latticeSystem, a, b, c, alpha, beta, gamma)) {
+      if (!latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
         if (logger.isLoggable(Level.FINE)) {
           StringBuilder sb = new StringBuilder(
               " The proposed lattice parameters for " + spaceGroup.pdbName
@@ -1285,7 +1285,7 @@ public class Crystal {
   }
 
   public boolean randomParameters(double dens, double mass) {
-    double[] params = SpaceGroup.resetUnitCellParams(latticeSystem);
+    double[] params = latticeSystem.resetUnitCellParams();
     boolean succeed =
         changeUnitCellParameters(params[0], params[1], params[2], params[3], params[4], params[5]);
     if (succeed) {

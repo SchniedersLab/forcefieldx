@@ -48,6 +48,7 @@ import static ffx.crystal.LatticeSystem.CUBIC_LATTICE;
 import static ffx.crystal.LatticeSystem.HEXAGONAL_LATTICE;
 import static ffx.crystal.LatticeSystem.MONOCLINIC_LATTICE;
 import static ffx.crystal.LatticeSystem.ORTHORHOMBIC_LATTICE;
+import static ffx.crystal.LatticeSystem.RHOMBOHEDRAL_LATTICE;
 import static ffx.crystal.LatticeSystem.TETRAGONAL_LATTICE;
 import static ffx.crystal.LatticeSystem.TRICLINIC_LATTICE;
 import static ffx.crystal.LaueSystem.L111;
@@ -7865,5 +7866,120 @@ public class SpaceGroupDefinitions {
       default:
     }
     return spaceGroup;
+  }
+
+  /**
+   * Alternative space group definitions.
+   *
+   * @param name Space group name.
+   * @return Return the created SpaceGroup instance.
+   */
+  static SpaceGroup getAlternativeSpaceGroup(String name) {
+    SpaceGroup spaceGroup = null;
+    if (name.equalsIgnoreCase("P21/a")) {
+      spaceGroup =
+          new SpaceGroup(
+              14,
+              4,
+              4,
+              "P21/a",
+              "PG2/m",
+              "P 1 21/a 1",
+              MONOCLINIC,
+              MONOCLINIC_LATTICE,
+              L121,
+              new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+              new double[] {-1.0, -1.0, -1.0},
+              new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+              new SymOp(SymOp.Rot_mX_mY_Z, SymOp.Tr_12_0_12),
+              new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
+              new SymOp(SymOp.Rot_X_Y_mZ, SymOp.Tr_12_0_12));
+    } else if (name.equalsIgnoreCase("R3c")) {
+      // TODO: Rhombohedral defintions for 146, 148, 155, 160, 161, 166 and 167.
+      spaceGroup =
+          new SpaceGroup(
+              161,
+              6,
+              6,
+              "R3c",
+              "PG3m",
+              "R 3 c",
+              TRIGONAL,
+              RHOMBOHEDRAL_LATTICE,
+              L32U,
+              new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+              new double[] {-1.0, -1.0, -1.0},
+              new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+              new SymOp(SymOp.Rot_Z_X_Y, SymOp.Tr_0_0_0),
+              new SymOp(SymOp.Rot_Y_Z_X, SymOp.Tr_0_0_0),
+              new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_12_12_12),
+              new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_12_12_12),
+              new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_12_12_12));
+    }
+
+    return spaceGroup;
+  }
+
+  /**
+   * Returns a SpaceGroup instance corresponding to the number parameter. If number is not between
+   * 1-230 inclusive then null is returned.
+   *
+   * @param number All 230 3D spacegroups are available.
+   * @return The space group corresponding to the given number.
+   * @since 1.0
+   */
+  public static SpaceGroup spaceGroupFactory(int number) {
+    if (number > 0 && number <= 50) {
+      return getSpaceGroup1(number);
+    } else if (number > 50 && number <= 100) {
+      return getSpaceGroup2(number);
+    } else if (number > 100 && number <= 150) {
+      return getSpaceGroup3(number);
+    } else if (number > 150 && number <= 200) {
+      return getSpaceGroup4(number);
+    } else if (number > 200 && number <= 215) {
+      return getSpaceGroup5(number);
+    } else if (number > 215 && number <= 230) {
+      return getSpaceGroup6(number);
+    }
+    return null;
+  }
+
+  /**
+   * Return a SpaceGroup based on its name.
+   *
+   * @param name Available SpaceGroup names are given in the "spaceGroupName" array.
+   * @return The space group corresponding to the given number.
+   * @since 1.0
+   */
+  public static SpaceGroup spaceGroupFactory(String name) {
+    SpaceGroup spaceGroup = spaceGroupFactory(spaceGroupNumber(name));
+    if (spaceGroup == null) {
+      spaceGroup = getAlternativeSpaceGroup(name);
+    }
+    return spaceGroup;
+  }
+
+  /**
+   * Returns the space group number for a given space group name.
+   *
+   * @param name The space group name.
+   * @return The space group number.
+   * @since 1.0
+   */
+  public static int spaceGroupNumber(String name) {
+    if (name == null) {
+      return -1;
+    }
+    String n = name.trim();
+    int num = SpaceGroupInfo.spaceGroupNames.length;
+    for (int i = 0; i < num; i++) {
+      String s1 = SpaceGroupInfo.spaceGroupNames[i];
+      String s2 = SpaceGroupInfo.pdbSpaceGroupNames[i];
+      if (s1.equalsIgnoreCase(n) || s2.equalsIgnoreCase(n)) {
+        return i + 1;
+      }
+    }
+    return -1;
   }
 }

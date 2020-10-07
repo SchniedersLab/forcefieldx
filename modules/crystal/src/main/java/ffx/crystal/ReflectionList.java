@@ -46,7 +46,7 @@ import static org.apache.commons.math3.util.FastMath.rint;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Map.Entry;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
@@ -96,7 +96,8 @@ public class ReflectionList {
    *
    * @param crystal a {@link ffx.crystal.Crystal} object.
    * @param resolution a {@link ffx.crystal.Resolution} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public ReflectionList(Crystal crystal, Resolution resolution, CompositeConfiguration properties) {
     this.crystal = crystal;
@@ -122,7 +123,8 @@ public class ReflectionList {
 
           double res = Crystal.invressq(this.crystal, hkl);
           getepsilon(hkl);
-          if (SpaceGroup.checkLaueRestrictions(laueSystem, h, k, l)
+          LaueSystem laueSystem = spaceGroup.laueSystem;
+          if (laueSystem.checkRestrictions(h, k, l)
               && resolution.inInverseResSqRange(res)
               && !HKL.sys_abs(hkl)) {
             minResolution = min(res, minResolution);
@@ -136,7 +138,7 @@ public class ReflectionList {
     }
 
     n = 0;
-    for (Map.Entry ei : hklmap.entrySet()) {
+    for (Entry ei : hklmap.entrySet()) {
       HKL ih = (HKL) ei.getValue();
       ih.index(n);
       hkllist.add(ih);
@@ -318,10 +320,12 @@ public class ReflectionList {
       } else {
         crystal.applySymRot(hkl, mate, spaceGroup.symOps.get(i));
       }
-      if (SpaceGroup.checkLaueRestrictions(laueSystem, mate.h(), mate.k(), mate.l())) {
+
+      LaueSystem laueSystem = spaceGroup.laueSystem;
+      if (laueSystem.checkRestrictions(mate.h(), mate.k(), mate.l())) {
         return false;
       }
-      if (SpaceGroup.checkLaueRestrictions(laueSystem, -mate.h(), -mate.k(), -mate.l())) {
+      if (laueSystem.checkRestrictions(-mate.h(), -mate.k(), -mate.l())) {
         mate.h(-mate.h());
         mate.k(-mate.k());
         mate.l(-mate.l());

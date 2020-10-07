@@ -39,6 +39,7 @@ package ffx.potential.groovy.test
 
 import ffx.crystal.Crystal
 import ffx.crystal.SpaceGroup
+import ffx.crystal.SpaceGroupDefinitions
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Angle
@@ -182,15 +183,15 @@ class CIFtoXYZ extends PotentialScript {
     }
     SpaceGroup sg
     if (sgNum != -1) {
-      sg = SpaceGroup.spaceGroupFactory(sgNum)
+      sg = SpaceGroupDefinitions.spaceGroupFactory(sgNum)
     } else {
-      sg = SpaceGroup.spaceGroupFactory(sgName)
+      sg = SpaceGroupDefinitions.spaceGroupFactory(sgName)
     }
 
     // Fall to back to P1
     if (sg == null) {
       logger.info(" The space group could not be determined from the CIF file (using P1).")
-      sg = SpaceGroup.spaceGroupFactory(1)
+      sg = SpaceGroupDefinitions.spaceGroupFactory(1)
     }
 
     Cell cell = firstBlock.cell
