@@ -7894,16 +7894,15 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_mX_mY_Z, SymOp.Tr_12_0_12),
               new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_X_Y_mZ, SymOp.Tr_12_0_12));
-    } else if (name.equalsIgnoreCase("R3c")) {
-      // TODO: Rhombohedral defintions for 146, 148, 155, 160, 161, 166 and 167.
+    } else if (name.equalsIgnoreCase("R3")) {
       spaceGroup =
           new SpaceGroup(
-              161,
-              6,
-              6,
-              "R3c",
-              "PG3m",
-              "R 3 c",
+              146,
+              4,
+              4,
+              "R3",
+              "PG3",
+              "R 3",
               TRIGONAL,
               RHOMBOHEDRAL_LATTICE,
               L32U,
@@ -7911,10 +7910,139 @@ public class SpaceGroupDefinitions {
               new double[] {-1.0, -1.0, -1.0},
               new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_Z_X_Y, SymOp.Tr_0_0_0),
-              new SymOp(SymOp.Rot_Y_Z_X, SymOp.Tr_0_0_0),
-              new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_12_12_12),
-              new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_12_12_12),
-              new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_12_12_12));
+              new SymOp(SymOp.Rot_Y_Z_X, SymOp.Tr_0_0_0));
+    }else if (name.equalsIgnoreCase("R-3")) {
+      spaceGroup =
+              new SpaceGroup(
+                      148,
+                      6,
+                      6,
+                      "R-3",
+                      "PG3bar",
+                      "R -3",
+                      TRIGONAL,
+                      RHOMBOHEDRAL_LATTICE,
+                      L113,
+                      new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+                      new double[] {-1.0, -1.0, -1.0},
+                      new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Z_X_Y, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Y_Z_X, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mZ_mX_mY, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mY_mZ_mX, SymOp.Tr_0_0_0));
+    }else if (name.equalsIgnoreCase("R32")) {
+      spaceGroup =
+              new SpaceGroup(
+                      155,
+                      6,
+                      6,
+                      "R32",
+                      "PG321",
+                      "R 3 2",
+                      TRIGONAL,
+                      RHOMBOHEDRAL_LATTICE,
+                      L32U,
+                      new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+                      new double[] {-1.0, -1.0, -1.0},
+                      new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Z_X_Y, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Y_Z_X, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mY_mX_mZ, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mZ_mY_mX, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mX_mZ_mY, SymOp.Tr_0_0_0));
+    }else if (name.equalsIgnoreCase("R3m")) {
+      spaceGroup =
+              new SpaceGroup(
+                      160,
+                      6,
+                      6,
+                      "R3m",
+                      "PG3m",
+                      "R 3 m",
+                      TRIGONAL,
+                      RHOMBOHEDRAL_LATTICE,
+                      L32U,
+                      new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+                      new double[] {-1.0, -1.0, -1.0},
+                      new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Z_X_Y, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Y_Z_X, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_0_0_0));
+    }else if (name.equalsIgnoreCase("R3c")) {
+      spaceGroup =
+              new SpaceGroup(
+                      161,
+                      6,
+                      6,
+                      "R3c",
+                      "PG3m",
+                      "R 3 c",
+                      TRIGONAL,
+                      RHOMBOHEDRAL_LATTICE,
+                      L32U,
+                      new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+                      new double[] {-1.0, -1.0, -1.0},
+                      new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Z_X_Y, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Y_Z_X, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_12_12_12),
+                      new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_12_12_12),
+                      new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_12_12_12));
+    }else if (name.equalsIgnoreCase("R-3m")) {
+      spaceGroup =
+              new SpaceGroup(
+                      166,
+                      12,
+                      12,
+                      "R-3m",
+                      "PG3barm",
+                      "R -3 2/m",
+                      TRIGONAL,
+                      RHOMBOHEDRAL_LATTICE,
+                      L32U,
+                      new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+                      new double[] {-1.0, -1.0, -1.0},
+                      new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Z_X_Y, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Y_Z_X, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mY_mX_mZ, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mZ_mY_mX, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mX_mZ_mY, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mZ_mX_mY, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mY_mZ_mX, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_0_0_0));
+    }else if (name.equalsIgnoreCase("R-3c")) {
+      spaceGroup =
+              new SpaceGroup(
+                      167,
+                      12,
+                      12,
+                      "R-3c",
+                      "PG3barm",
+                      "R -3 2/c",
+                      TRIGONAL,
+                      RHOMBOHEDRAL_LATTICE,
+                      L32U,
+                      new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+                      new double[] {-1.0, -1.0, -1.0},
+                      new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Z_X_Y, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Y_Z_X, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mY_mX_mZ, SymOp.Tr_12_12_12),
+                      new SymOp(SymOp.Rot_mZ_mY_mX, SymOp.Tr_12_12_12),
+                      new SymOp(SymOp.Rot_mX_mZ_mY, SymOp.Tr_12_12_12),
+                      new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mZ_mX_mY, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mY_mZ_mX, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_12_12_12),
+                      new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_12_12_12),
+                      new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_12_12_12));
     }
 
     return spaceGroup;
