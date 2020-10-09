@@ -44,7 +44,6 @@ import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
 import ffx.potential.parameters.ForceField
-import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
@@ -52,6 +51,8 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import static java.lang.String.format
 
 /**
  * The SaveAsXYZ script saves a file as an XYZ file
@@ -69,21 +70,21 @@ class SaveAsXYZ extends PotentialScript {
   /**
    * -p or --pos-offset to set the positive atom type offset
    */
-  @Option(names = ['--pos-offset', '-p'], paramLabel = "0",
+  @Option(names = ['-p', '--pos-offset'], paramLabel = "0",
       description = 'Positive offset of atom types in the new file')
   int posOffset = 0
 
   /**
    * -n or --neg-offset to set the negative atom type offset
    */
-  @Option(names = ['--neg-offset', '-n'], paramLabel = "0",
+  @Option(names = ['-n', '--neg-offset'], paramLabel = "0",
       description = 'Negative offset of atom types in the new file.')
   int negOffset = 0
 
   /**
    * -r or --random to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
    */
-  @Option(names = ['--random', '-r'],
+  @Option(names = ['-r', '--random'], paramLabel = "X",
       description = 'Apply a random Cartesian SymOp with translation range -X .. X.')
   double scalar = -1
 
@@ -156,7 +157,7 @@ class SaveAsXYZ extends PotentialScript {
 
     if (scalar > 0.0) {
       SymOp symOp = SymOp.randomSymOpFactory(scalar)
-      logger.info(String.format("\n Applying random Cartesian SymOp\n: %s", symOp.toString()))
+      logger.info(format("\n Applying random Cartesian SymOp\n: %s", symOp.toString()))
       Crystal crystal = activeAssembly.getCrystal()
       Atom[] atoms = activeAssembly.getAtomArray()
       double[] xyz = new double[3]
@@ -180,7 +181,7 @@ class SaveAsXYZ extends PotentialScript {
 
       saveOptions.preSaveOperations(activeAssembly)
       potentialFunctions.save(activeAssembly, modelFile)
-    } else{
+    } else {
       //Save to an arc file rather than an xyz file if more than one model exists.
       fileName = FilenameUtils.removeExtension(fileName) + ".arc"
       File modelFile = new File(dirName + File.separator + fileName)

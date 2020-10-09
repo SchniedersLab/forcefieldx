@@ -1730,7 +1730,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         lambdaStart = 0.0;
       }
 
-      electrostaticStart = forceField.getDouble("ELEC_START", electrostaticStart);
+      electrostaticStart = forceField.getDouble("PERMANENT_LAMBDA_START", electrostaticStart);
       if (electrostaticStart > 1.0) {
         electrostaticStart = 1.0;
       } else if (electrostaticStart < 0.0) {

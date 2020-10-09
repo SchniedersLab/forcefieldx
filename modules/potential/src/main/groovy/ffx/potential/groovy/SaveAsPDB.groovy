@@ -44,9 +44,11 @@ import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine
 import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+import static java.lang.String.format
 
 /**
  * The SaveAsPDB script saves a file as a PDB file
@@ -58,7 +60,7 @@ import picocli.CommandLine.Parameters
 @Command(description = " Save the system as a PDB file.", name = "ffxc SaveAsPDB")
 class SaveAsPDB extends PotentialScript {
 
-  @CommandLine.Mixin
+  @Mixin
   SaveOptions saveOptions
 
   /**
@@ -107,43 +109,43 @@ class SaveAsPDB extends PotentialScript {
 
     logger.info("\n Saving PDB for " + modelFilename)
 
+    // Configure the base directory if it has not been set.
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
       saveDir = new File(FilenameUtils.getFullPath(modelFilename))
     }
+
     String dirName = saveDir.toString() + File.separator
     String fileName = FilenameUtils.getName(modelFilename)
     fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
     File modelFile = new File(dirName + fileName)
     File saveFile = potentialFunctions.versionFile(modelFile)
 
-    PDBFilter saveFilter
-
     int numModels = openFilter.countNumModels()
     if (numModels > 1) {
-      BufferedWriter bw = new BufferedWriter(new FileWriter(saveFile))
-      bw.write("MODEL        1\n")
-      bw.flush()
+      new BufferedWriter(new FileWriter(saveFile)).withCloseable {bw ->
+        bw.write("MODEL        1\n")
+        bw.flush()
+      }
       saveOptions.preSaveOperations(activeAssembly)
       potentialFunctions.saveAsPDB(activeAssembly, saveFile, false, true)
-      bw.close()
     } else {
       saveOptions.preSaveOperations(activeAssembly)
       potentialFunctions.saveAsPDB(activeAssembly, saveFile)
     }
+
+    PDBFilter saveFilter
     try {
       saveFilter = (PDBFilter) potentialFunctions.getFilter()
     } catch (Throwable t) {
-      logger.info(String.format(" The type of %s is %s", potentialFunctions.getFilter(),
+      logger.info(format(" The type of %s is %s", potentialFunctions.getFilter(),
           potentialFunctions.getFilter().class.getName()))
       throw t
     }
 
     //If SaveAsPDB is run on an arc file, iterate through the models in the arc file and save each as a pdb file.
-    if (
-    openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter)
-        &&
-        numModels > 1) {
+    if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter)
+        && numModels > 1) {
       saveFilter.setModelNumbering(1)
       try {
         while (openFilter.readNext(false)) {

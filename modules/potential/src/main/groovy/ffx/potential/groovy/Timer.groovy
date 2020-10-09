@@ -46,6 +46,9 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
+import static java.lang.String.format
+import static org.apache.commons.math3.util.FastMath.sqrt
+
 /**
  * The Timer script evaluates the wall clock time for energy and forces.
  * <br>
@@ -110,9 +113,9 @@ class Timer extends PotentialScript {
     }
 
     if (timer.noGradient) {
-      logger.info(" Timing energy for " + activeAssembly.toString())
+      logger.info("\n Timing energy for " + activeAssembly.toString())
     } else {
-      logger.info(" Timing energy and gradient for " + activeAssembly.toString())
+      logger.info("\n Timing energy and gradient for " + activeAssembly.toString())
     }
 
     // The number of iterations.
@@ -122,13 +125,14 @@ class Timer extends PotentialScript {
 
     long minTime = Long.MAX_VALUE
     double sumTime2 = 0.0
-    int halfnEvals = (int) ((nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1) // Halfway point
+    // Halfway point
+    int halfnEvals = (int) ((nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1)
     for (int i = 0; i < nEvals; i++) {
       long time = -System.nanoTime()
       double e = energy.energy(!timer.noGradient, timer.getVerbose())
       time += System.nanoTime()
       if (!timer.getVerbose()) {
-        logger.info(String.format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
+        logger.info(format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
       }
       minTime = time < minTime ? time : minTime
       if (i >= (int) (nEvals / 2)) {
@@ -138,9 +142,9 @@ class Timer extends PotentialScript {
     }
 
     ++halfnEvals
-    double rmsTime = Math.sqrt(sumTime2 / halfnEvals)
-    logger.info(String.format("\n Minimum time:           %6.3f (sec)", minTime * 1.0E-9))
-    logger.info(String.format(" RMS time (latter half): %6.3f (sec)", rmsTime))
+    double rmsTime = sqrt(sumTime2 / halfnEvals)
+    logger.info(format("\n Minimum time:           %6.3f (sec)", minTime * 1.0E-9))
+    logger.info(format(" RMS time (latter half): %6.3f (sec)", rmsTime))
 
     return this
   }

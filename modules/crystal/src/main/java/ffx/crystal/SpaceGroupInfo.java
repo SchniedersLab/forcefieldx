@@ -219,6 +219,15 @@ public class SpaceGroupInfo {
   }
 
   /**
+   * Return the given space group representation in the CCDC.
+   * @param spaceGroup The space group (from 1 to 230).
+   * @return Return the percentage.
+   */
+  public static double getCCDCPercent(int spaceGroup) {
+    return csdPercent[spaceGroup - 1];
+  }
+
+  /**
    * Returns the space group name for the given PDB name.
    *
    * @param pdbName PDB space group name.
@@ -239,6 +248,14 @@ public class SpaceGroupInfo {
     return pdbName;
   }
 
+  /**
+   * Check if the value of x is between lower and upper (inclusive).
+   *
+   * @param x Input integer.
+   * @param lower Lower limit for comparison.
+   * @param upper Upper limit for comparison.
+   * @return True if x is within the limits (inclusive).
+   */
   private static boolean isBetween(int x, int lower, int upper) {
     return lower <= x && x <= upper;
   }

@@ -49,6 +49,7 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
 import static ffx.potential.parsers.PDBFilter.toPDBAtomLine
+import static java.lang.Double.parseDouble
 import static java.lang.String.format
 
 /**
@@ -136,6 +137,7 @@ class RGNtoPDB extends PotentialScript {
       return null
     }
 
+    // Configure the base directory if it has not been set.
     File saveDir = baseDir
     rgnName = rgnFile.getAbsolutePath()
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
@@ -147,48 +149,45 @@ class RGNtoPDB extends PotentialScript {
     File modelFile = new File(dirName + fileName)
     File saveFile = potentialFunctions.versionFile(modelFile)
 
-    FileWriter fw = new FileWriter(saveFile, false)
-    BufferedWriter bw = new BufferedWriter(fw)
+    new BufferedWriter(new FileWriter(saveFile, false)).withCloseable {bw ->
+      int atomNumber = 0
+      double[] xyz = new double[3]
+      double occupancy = 1.0
+      double bfactor = 1.0
+      char altLoc = ' '
+      char chain = 'A'
+      String segID = "A"
 
-    int atomNumber = 0
-    double[] xyz = new double[3]
-    double occupancy = 1.0
-    double bfactor = 1.0
-    char altLoc = ' '
-    char chain = 'A'
-    String segID = "A"
+      for (int i = 0; i < nAmino; i++) {
+        int resID = i + 1
+        String oneLetterResidue = sequence.charAt(i)
+        String resName = convertToThreeLetter(oneLetterResidue)
 
-    for (int i = 0; i < nAmino; i++) {
-      int resID = i + 1
-      String oneLetterResidue = sequence.charAt(i)
-      String resName = convertToThreeLetter(oneLetterResidue)
+        // Write N
+        xyz[0] = parseDouble(tokenizedLines[2][atomNumber]) / 100.0
+        xyz[1] = parseDouble(tokenizedLines[3][atomNumber]) / 100.0
+        xyz[2] = parseDouble(tokenizedLines[4][atomNumber]) / 100.0
+        Atom atom = new Atom(++atomNumber, "N", altLoc, xyz, resName, resID, chain, occupancy,
+            bfactor, segID)
+        bw.write(toPDBAtomLine(atom))
 
-      // Write N
-      xyz[0] = Double.parseDouble(tokenizedLines[2][atomNumber]) / 100.0
-      xyz[1] = Double.parseDouble(tokenizedLines[3][atomNumber]) / 100.0
-      xyz[2] = Double.parseDouble(tokenizedLines[4][atomNumber]) / 100.0
-      Atom atom = new Atom(++atomNumber, "N", altLoc, xyz, resName, resID, chain, occupancy,
-          bfactor, segID)
-      bw.write(toPDBAtomLine(atom))
+        // Write CA
+        xyz[0] = parseDouble(tokenizedLines[2][atomNumber]) / 100.0
+        xyz[1] = parseDouble(tokenizedLines[3][atomNumber]) / 100.0
+        xyz[2] = parseDouble(tokenizedLines[4][atomNumber]) / 100.0
+        atom = new Atom(++atomNumber, "CA", altLoc, xyz, resName, resID, chain, occupancy, bfactor,
+            segID)
+        bw.write(toPDBAtomLine(atom))
 
-      // Write CA
-      xyz[0] = Double.parseDouble(tokenizedLines[2][atomNumber]) / 100.0
-      xyz[1] = Double.parseDouble(tokenizedLines[3][atomNumber]) / 100.0
-      xyz[2] = Double.parseDouble(tokenizedLines[4][atomNumber]) / 100.0
-      atom = new Atom(++atomNumber, "CA", altLoc, xyz, resName, resID, chain, occupancy, bfactor,
-          segID)
-      bw.write(toPDBAtomLine(atom))
-
-      // Write C
-      xyz[0] = Double.parseDouble(tokenizedLines[2][atomNumber]) / 100.0
-      xyz[1] = Double.parseDouble(tokenizedLines[3][atomNumber]) / 100.0
-      xyz[2] = Double.parseDouble(tokenizedLines[4][atomNumber]) / 100.0
-      atom = new Atom(++atomNumber, "C", altLoc, xyz, resName, resID, chain, occupancy, bfactor,
-          segID)
-      bw.write(toPDBAtomLine(atom))
+        // Write C
+        xyz[0] = parseDouble(tokenizedLines[2][atomNumber]) / 100.0
+        xyz[1] = parseDouble(tokenizedLines[3][atomNumber]) / 100.0
+        xyz[2] = parseDouble(tokenizedLines[4][atomNumber]) / 100.0
+        atom = new Atom(++atomNumber, "C", altLoc, xyz, resName, resID, chain, occupancy, bfactor,
+            segID)
+        bw.write(toPDBAtomLine(atom))
+      }
     }
-
-    bw.close()
 
     MolecularAssembly[] assemblies = [potentialFunctions.open(saveFile.getAbsolutePath())]
     activeAssembly = assemblies[0]

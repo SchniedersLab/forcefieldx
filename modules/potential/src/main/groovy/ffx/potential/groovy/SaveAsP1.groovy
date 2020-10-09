@@ -101,6 +101,7 @@ class SaveAsP1 extends PotentialScript {
     String modelFilename = activeAssembly.getFile().getAbsolutePath()
     logger.info("\n Expanding to P1 for " + modelFilename)
 
+    // Configure the base directory if it has not been set.
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
       saveDir = new File(FilenameUtils.getFullPath(modelFilename))

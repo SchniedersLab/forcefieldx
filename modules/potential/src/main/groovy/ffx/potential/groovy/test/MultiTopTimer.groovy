@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.groovy
+package ffx.potential.groovy.test
 
 import edu.rit.pj.ParallelTeam
 import ffx.numerics.Potential
@@ -48,6 +48,8 @@ import ffx.potential.cli.TopologyOptions
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+import static java.lang.String.format
 
 /**
  * The MultiTopTimer extends the functionality of the Timer script to handle
@@ -142,7 +144,7 @@ class MultiTopTimer extends PotentialScript {
       arguments.add(molecularAssembly.getFile().getName())
       topologyList.add(alchemical.processFile(topology, molecularAssembly, 0))
     } else {
-      logger.info(String.format(" Initializing %d topologies...", nArgs))
+      logger.info(format(" Initializing %d topologies...", nArgs))
       for (int i = 0; i < nArgs; i++) {
         topologyList.add(alchemical.openFile(potentialFunctions, topology, threadsPer,
             arguments.get(i), i))
@@ -193,7 +195,7 @@ class MultiTopTimer extends PotentialScript {
       minTime = time < minTime ? time : minTime
       int rmsIndex = i + (rmsIterations - iterations)
       double thisTime = time * 1.0E-9
-      logger.info(String.format("%s%d in %14.5g seconds.", baseString, (i + 1), thisTime))
+      logger.info(format("%s%d in %14.5g seconds.", baseString, (i + 1), thisTime))
 
       if (rmsIndex >= 0) {
         thisTime *= thisTime
@@ -203,10 +205,10 @@ class MultiTopTimer extends PotentialScript {
     rmsTime /= ((double) rmsIterations)
     rmsTime = Math.sqrt(rmsTime)
 
-    logger.info(String.format(" Minimum time: %14.5g (sec)", minTime * 1.0E-9))
-    logger.info(String.format(" RMS time (latter half): %14.5g (sec)", rmsTime))
+    logger.info(format(" Minimum time: %14.5g (sec)", minTime * 1.0E-9))
+    logger.info(format(" RMS time (latter half): %14.5g (sec)", rmsTime))
     for (int i = 0; i < topologies.size(); i++) {
-      logger.info(String.format(" Number of threads for topology %d: %d", i, threadsPer))
+      logger.info(format(" Number of threads for topology %d: %d", i, threadsPer))
     }
 
     return this
