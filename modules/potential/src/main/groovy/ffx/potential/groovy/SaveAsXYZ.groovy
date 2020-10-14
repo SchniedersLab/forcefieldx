@@ -88,6 +88,13 @@ class SaveAsXYZ extends PotentialScript {
   double scalar = -1
 
   /**
+   * --wS or --writeSnapshot Write out a specific snapshot. Provide the number of the snapshot to be written.
+   */
+  @Option(names = ['--wS', '--writeSnapshot'], paramLabel = "0", defaultValue = "0",
+          description = 'Write out a specific snapshot.')
+  private int writeSnapshot = 0
+
+  /**
    * The final argument(s) should be one or more filenames.
    */
   @Parameters(arity = "1", paramLabel = "files",
@@ -145,8 +152,6 @@ class SaveAsXYZ extends PotentialScript {
       offset = -offset
     }
 
-    logger.info("\n Writing out XYZ for " + modelFilename)
-
     // Offset atom type numbers.
     if (offset != 0) {
       logger.info("\n Offset atom types by " + offset)
@@ -173,6 +178,33 @@ class SaveAsXYZ extends PotentialScript {
     }
     String dirName = saveDir.getAbsolutePath()
     String fileName = FilenameUtils.getName(modelFilename)
+
+    if(writeSnapshot>=1){
+      XYZFilter snapshotFilter = new XYZFilter(new File(dirName + File.separator + fileName), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+      openFilter.readNext(true)
+      int counter=1
+      if(counter==writeSnapshot) {
+        File snapshotFile = new File(dirName + File.separator + "snapshot" + counter.toString()+".xyz")
+        potentialFunctions.versionFile(snapshotFile)
+        saveOptions.preSaveOperations(activeAssembly)
+        logger.info("\n Writing out XYZ for " + snapshotFile.toString())
+        snapshotFilter.writeFile(snapshotFile, true)
+      }
+      while (openFilter.readNext(false)) {
+        counter++
+        if(counter==writeSnapshot) {
+          File snapshotFile = new File(dirName + File.separator + "snapshot" + counter.toString()+".xyz")
+          potentialFunctions.versionFile(snapshotFile)
+          saveOptions.preSaveOperations(activeAssembly)
+          logger.info("\n Writing out XYZ for " + snapshotFile.toString())
+          snapshotFilter.writeFile(snapshotFile, true)
+          break
+        }
+      }
+      return this
+    }
+
+    logger.info("\n Writing out XYZ for " + modelFilename)
 
     if (numModels <= 1) {
       fileName = FilenameUtils.removeExtension(fileName) + ".xyz"
