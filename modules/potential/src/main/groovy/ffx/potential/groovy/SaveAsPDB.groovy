@@ -46,6 +46,7 @@ import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
@@ -62,6 +63,13 @@ class SaveAsPDB extends PotentialScript {
 
   @Mixin
   SaveOptions saveOptions
+
+  /**
+   * --wS or --writeSnapshot Write out a specific snapshot. Provide the number of the snapshot to be written.
+   */
+  @Option(names = ['--wS', '--writeSnapshot'], paramLabel = "0", defaultValue = "0",
+      description = 'Write out a specific snapshot.')
+  private int writeSnapshot = 0
 
   /**
    * The final argument(s) should be one or more filenames.
@@ -119,6 +127,38 @@ class SaveAsPDB extends PotentialScript {
     String fileName = FilenameUtils.getName(modelFilename)
     fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
     File modelFile = new File(dirName + fileName)
+
+    if (writeSnapshot >= 1) {
+      PDBFilter snapshotFilter = new PDBFilter(modelFile, activeAssembly,
+          activeAssembly.getForceField(), activeAssembly.getProperties())
+      openFilter.readNext(true)
+      int counter = 1
+      if (counter == writeSnapshot) {
+        File snapshotFile = new File(
+            dirName + File.separator + "snapshot" + counter.toString() + ".pdb")
+        potentialFunctions.versionFile(snapshotFile)
+        saveOptions.preSaveOperations(activeAssembly)
+        snapshotFilter.setModelNumbering(writeSnapshot - 1)
+        logger.info("\n Writing out PDB for " + snapshotFile.toString())
+        snapshotFilter.writeFile(snapshotFile, true)
+      }
+      while (openFilter.readNext(false)) {
+        counter++
+        if (counter == writeSnapshot) {
+          File snapshotFile = new File(
+              dirName + File.separator + "snapshot" + counter.toString() + ".pdb")
+          potentialFunctions.versionFile(snapshotFile)
+          saveOptions.preSaveOperations(activeAssembly)
+          snapshotFilter.setModelNumbering(writeSnapshot - 1)
+          logger.info("\n Writing out PDB for " + snapshotFile.toString())
+          snapshotFilter.writeFile(snapshotFile, true, false, false)
+          snapshotFile.append("END\n")
+          break
+        }
+      }
+      return this
+    }
+
     File saveFile = potentialFunctions.versionFile(modelFile)
 
     int numModels = openFilter.countNumModels()
