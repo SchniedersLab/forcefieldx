@@ -250,16 +250,11 @@ class Thermodynamics extends AlgorithmsScript {
 
     StringBuilder sb = new StringBuilder("\n Running ")
 
-    double initLambda = 0.0
     ThermodynamicsAlgorithm algorithm = thermodynamicsOptions.getAlgorithm()
+    double initLambda = alchemicalOptions.getInitialLambda(size, rank, true)
     if (algorithm == ThermodynamicsAlgorithm.OST) {
-      initLambda = alchemicalOptions.getInitialLambda(size, rank, true)
       sb.append("Orthogonal Space Tempering")
     } else if (algorithm == ThermodynamicsAlgorithm.FIXED) {
-      if (size != 1) {
-        logger.severe(" Attempted Fixed Lambda Sampling on Multiple Nodes.")
-      }
-      initLambda = alchemicalOptions.getInitialLambda(true)
       sb.append("Fixed Lambda Sampling at Window L=").append(format("%5.3f ", initLambda))
     } else {
       logger.severe(" Unknown Thermodynamics Algorithm " + algorithm)
