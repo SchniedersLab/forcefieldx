@@ -61,13 +61,13 @@ public interface BootstrappableEstimator extends StatisticalEstimator {
   BootstrappableEstimator copyEstimator();
 
   /**
-   * Re-calculates free energy.
+   * Re-calculates free energy and enthalpy.
    *
    * @param randomSamples Whether to draw random samples with replacement (one bootstrap trial).
    */
   void estimateDG(final boolean randomSamples);
 
-  /** Re-calculates free energy without bootstrapping. */
+  /** Re-calculates free energy and enthalpy without bootstrapping. */
   void estimateDG();
 
   /**
@@ -82,6 +82,9 @@ public interface BootstrappableEstimator extends StatisticalEstimator {
     return stream(freeEnergyDifferences).sum();
   }
 
+  default double sumEnthalpyBootstrapResults(double[] totalEnthalpy) {
+    return stream(totalEnthalpy).sum();
+  }
   /**
    * Obtains bootstrap uncertainty. Default implementation is square root of summed variances.
    *
@@ -92,5 +95,9 @@ public interface BootstrappableEstimator extends StatisticalEstimator {
    */
   default double sumBootstrapUncertainty(double[] variances) {
     return sqrt(stream(variances).sum());
+  }
+
+  default double sumBootstrapEnthalpyUncertainty(double[] enthalpyVariances) {
+    return sqrt(stream(enthalpyVariances).sum());
   }
 }

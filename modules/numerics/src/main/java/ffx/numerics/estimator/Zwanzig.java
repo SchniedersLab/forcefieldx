@@ -69,6 +69,7 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
    * Free energy difference for each window.
    */
   private final double[] windowFreeEnergyDifferences;
+  private final double[] windowEnthalpies;
   /**
    * Free energy difference uncertainty for each window.
    */
@@ -83,6 +84,11 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
    * Window Uncertainty Squared ] ]
    */
   private double totalFreeEnergyUncertainty;
+
+  /**
+   * Total Enthalpy
+   */
+  private double totalEnthalpy;
 
   /**
    * Estimates a free energy using the Zwanzig relationship. The temperature array can be of length 1
@@ -113,6 +119,7 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
 
     windowFreeEnergyDifferences = new double[nWindows];
     windowFreeEnergyUncertainties = new double[nWindows];
+    windowEnthalpies = new double[nWindows];
 
     forwards = directionality.equals(Directionality.FORWARDS);
     random = new Random();
@@ -130,6 +137,7 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
   @Override
   public void estimateDG(final boolean randomSamples) {
     double cumDG = 0;
+
     Level warningLevel = randomSamples ? Level.FINE : Level.WARNING;
 
     for (int i = 0; i < nWindows; i++) {
@@ -152,15 +160,34 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
           randomSamples ? getBootstrapIndices(len, random) : IntStream.range(0, len).toArray();
 
       double sum = 0.0;
+      double num = 0.0;
+      double term = 0.0;
+      double uAve = 0.0;
       for (int indJ = 0; indJ < len; indJ++) {
         int j = samples[indJ];
-        double dE = e2[j] - e1[j]; // TODO: Add the contribution due to volume changes.
-        sum += exp(invBeta * dE);
+        double dE = e2[j] - e1[j];
+        if (sign > 0){
+          uAve += e1[j];
+          term = exp(invBeta*dE);
+          sum += term;
+          num += e2[j] * term;
+        } else {
+          uAve += e2[j];
+          term = exp(invBeta*dE);
+          sum += term;
+          num += e1[j] * term;
+        }
+
+
       }
+
+      uAve = uAve/len;
 
       double dG = sign * beta * log(sum / len);
       windowFreeEnergyDifferences[i] = dG;
+      windowEnthalpies[i] = sign*((num / sum) - uAve);
       windowFreeEnergyUncertainties[i] = 0.0;
+      totalEnthalpy += windowEnthalpies[i];
       cumDG += dG;
     }
 
@@ -202,6 +229,12 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
   @Override
   public int numberOfBins() {
     return nWindows;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double[] getBinEthalpies() {
+    return copyOf(windowEnthalpies, nWindows);
   }
 
   /**
