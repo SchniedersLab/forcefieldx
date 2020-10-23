@@ -864,7 +864,7 @@
     <!-- Version of FFX  -->
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <groovy-all.version>3.0.0.1</groovy-all.version>
+    <groovy-all.version>3.0.6.1</groovy-all.version>
     <guava.version>28.1-jre</guava.version>
     <install.version>3.0.0-M1</install.version>
     <jar.version>3.2.0</jar.version>

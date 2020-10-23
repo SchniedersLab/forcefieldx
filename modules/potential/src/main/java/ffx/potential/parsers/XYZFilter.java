@@ -39,6 +39,7 @@ package ffx.potential.parsers;
 
 import static ffx.potential.bonded.Bond.logNoBondType;
 import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.crystal.Crystal;
@@ -134,7 +135,7 @@ public class XYZFilter extends SystemFilter {
         return false;
       }
       String[] tokens = data.trim().split(" +");
-      int num_atoms = Integer.parseInt(tokens[0]);
+      int num_atoms = parseInt(tokens[0]);
       if (num_atoms != oldSystem.getAtomList().size()) {
         return false;
       }
@@ -191,7 +192,7 @@ public class XYZFilter extends SystemFilter {
     // Check if the first token in an integer.
     try {
       String[] tokens = data.split(" +");
-      Integer.parseInt(tokens[0]);
+      parseInt(tokens[0]);
       return true;
     } catch (NumberFormatException e) {
       return false;
@@ -258,7 +259,7 @@ public class XYZFilter extends SystemFilter {
       int nSnaps = 0;
       // For each header line, will read either X or X+1 lines, where X is the number of atoms.
       while (line != null) {
-        assert Integer.parseInt(line.trim().split("\\s+")[0]) == nAtoms;
+        assert parseInt(line.trim().split("\\s+")[0]) == nAtoms;
         // Read either the crystal information *or* the first line of the snapshot.
         line = br.readLine();
         Matcher m = crystInfoPattern.matcher(line);
@@ -328,7 +329,7 @@ public class XYZFilter extends SystemFilter {
         return false;
       }
       String[] tokens = data.trim().split(" +", 2);
-      int numberOfAtoms = Integer.parseInt(tokens[0]);
+      int numberOfAtoms = parseInt(tokens[0]);
       if (numberOfAtoms < 1) {
         return false;
       }
@@ -372,7 +373,7 @@ public class XYZFilter extends SystemFilter {
           return false;
         }
         // Valid number of tokens, so try to parse this line.
-        label[i] = Integer.parseInt(tokens[0]);
+        label[i] = parseInt(tokens[0]);
         // Check for valid atom numbering, or flag for re-numbering.
         if (label[i] != i + 1) {
           renumber = true;
@@ -381,7 +382,7 @@ public class XYZFilter extends SystemFilter {
         d[i][0] = parseDouble(tokens[2]);
         d[i][1] = parseDouble(tokens[3]);
         d[i][2] = parseDouble(tokens[4]);
-        int type = Integer.parseInt(tokens[5]);
+        int type = parseInt(tokens[5]);
         AtomType atomType = forceField.getAtomType(Integer.toString(type));
         if (atomType == null) {
           StringBuilder message = new StringBuilder("Check atom type ");
@@ -396,7 +397,7 @@ public class XYZFilter extends SystemFilter {
         int numberOfBonds = tokens.length - 6;
         for (int b = 0; b < 8; b++) {
           if (b < numberOfBonds) {
-            int bond = Integer.parseInt(tokens[6 + b]);
+            int bond = parseInt(tokens[6 + b]);
             bonds[i][b] = bond;
           } else {
             bonds[i][b] = 0;
@@ -413,7 +414,7 @@ public class XYZFilter extends SystemFilter {
         tokens = data.split(" +", 2);
         if (tokens.length > 0) {
           try {
-            int archiveNumberOfAtoms = Integer.parseInt(tokens[0]);
+            int archiveNumberOfAtoms = parseInt(tokens[0]);
             if (archiveNumberOfAtoms == numberOfAtoms) {
               setType(FileType.ARC);
             }
@@ -557,7 +558,7 @@ public class XYZFilter extends SystemFilter {
         logger.info(format("\n Attempting to read snapshot %d.", snapShot));
       }
       try {
-        int nArchive = Integer.parseInt(data.trim().split(" +")[0]);
+        int nArchive = parseInt(data.trim().split(" +")[0]);
         if (nArchive != nSystem) {
           String message =
               format("Number of atoms mismatch (Archive: %d, System: %d).", nArchive, nSystem);
