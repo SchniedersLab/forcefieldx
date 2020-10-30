@@ -4126,6 +4126,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         int isAlchemical = atom.applyLambda() ? 1 : 0;
         double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
+        int typeIndex = -1;
         OpenMM_AmoebaVdwForce_setParticleParameters(
             amoebaVDWForce,
             index,
@@ -4133,7 +4134,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_NmPerAngstrom * vdwType.radius * radScale,
             eps,
             vdwType.reductionFactor,
-            isAlchemical);
+            isAlchemical, typeIndex);
       }
 
       if (context.contextPointer != null) {
