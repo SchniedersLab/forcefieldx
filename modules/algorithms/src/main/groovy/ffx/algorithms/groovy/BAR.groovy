@@ -45,6 +45,7 @@ import ffx.numerics.Potential
 import ffx.numerics.estimator.BennettAcceptanceRatio
 import ffx.numerics.estimator.EstimateBootstrapper
 import ffx.numerics.estimator.SequentialEstimator
+import ffx.numerics.estimator.Zwanzig
 import ffx.numerics.math.BootStrapStatistics
 import ffx.numerics.math.SummaryStatistics
 import ffx.potential.MolecularAssembly
@@ -370,7 +371,9 @@ class BAR extends AlgorithmsScript {
           if (isPBC) {
             bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i], vol2[i]))
           } else {
-            bw.write(format("%8d %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i]))
+
+            bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, e2L1[i], e2L2[i]))
+
           }
         }
       }
@@ -407,17 +410,25 @@ class BAR extends AlgorithmsScript {
     forBS.bootstrap(bootstrap)
     time += System.nanoTime()
     logger.fine(format(" Forward FEP Bootstrap Complete:      %7.4f sec", time * Constants.NS2SEC))
-    double sumFE = forBS.getTotalFE()
-    double varFE = forBS.getTotalUncertainty()
-    logger.info(format(" Free energy via Forwards FEP:   %12.4f +/- %6.4f kcal/mol.", sumFE, varFE))
+
+    double sumForeFE = forBS.getTotalFE()
+    double sumEnthalpyFore = forBS.getTotalEnthalpy()
+    double varForeFE = forBS.getTotalUncertainty()
+    double varEnthalpyFore = forBS.getTotalEnthalpyUncertainty()
+    logger.info(format(" Free energy via Forwards FEP:   %12.4f +/- %6.4f kcal/mol.", sumForeFE, varForeFE))
+
 
     time = -System.nanoTime()
     backBS.bootstrap(bootstrap)
     time += System.nanoTime()
     logger.fine(format(" Backward FEP Bootstrap Complete:     %7.4f sec", time * Constants.NS2SEC))
-    sumFE = backBS.getTotalFE()
-    varFE = backBS.getTotalUncertainty()
-    logger.info(format(" Free energy via Backwards FEP:  %12.4f +/- %6.4f kcal/mol.", sumFE, varFE))
+
+    double sumBackFE = backBS.getTotalFE()
+    double sumEnthalpyBack = backBS.getTotalEnthalpy()
+    double varBackFE = backBS.getTotalUncertainty()
+    double varEnthalpyBack = backBS.getTotalEnthalpyUncertainty()
+    logger.info(format(" Free energy via Backwards FEP:  %12.4f +/- %6.4f kcal/mol.", sumBackFE, varBackFE))
+
 
     logger.info("\n Free Energy Difference via BAR Method\n")
     logger.info(
@@ -427,25 +438,47 @@ class BAR extends AlgorithmsScript {
     barBS.bootstrap(bootstrap)
     time += System.nanoTime()
     logger.fine(format(" BAR Bootstrap Complete:              %7.4f sec", time * Constants.NS2SEC))
-    sumFE = barBS.getTotalFE()
-    varFE = barBS.getTotalUncertainty()
-    logger.info(format(" Free energy via BAR Bootstrap:  %12.4f +/- %6.4f kcal/mol.", sumFE, varFE))
+
+    double sumBARFE = barBS.getTotalFE()
+    double varBARFE = barBS.getTotalUncertainty()
+    double barEnthalpy = barBS.getTotalEnthalpy()
+    double varEnthalpy = barBS.getTotalEnthalpyUncertainty()
+    logger.info(format(" Free energy via BAR Bootstrap:  %12.4f +/- %6.4f kcal/mol.", sumBARFE, varBARFE))
+
 
     logger.info(" Enthalpy from Potential Energy Averages")
     BootStrapStatistics e1L1Stats = new BootStrapStatistics(e1L1)
     BootStrapStatistics e2L2Stats = new BootStrapStatistics(e2L2)
-    logger.info(format(" Average Energy for State 0:     %12.4f +/- %6.4f kcal/mol.",
-        e1L1Stats.mean, e1L1Stats.sd))
-    logger.info(format(" Average Energy for State 1:     %12.4f +/- %6.4f kcal/mol.",
-        e2L2Stats.mean, e2L2Stats.sd))
+
+    logger.info(format(" Average Energy for State 0:          %12.4f +/- %6.4f kcal/mol.",
+            e1L1Stats.mean, e1L1Stats.sd))
+    logger.info(format(" Average Energy for State 1:          %12.4f +/- %6.4f kcal/mol.",
+            e2L2Stats.mean, e2L2Stats.sd))
     double enthalpyDiff = e2L2Stats.mean - e1L1Stats.mean
     double enthalpyDiffSD = Math.sqrt(e2L2Stats.var + e1L1Stats.var)
     logger.info(format(" Enthalpy via Direct Estimate:   %12.4f +/- %6.4f kcal/mol.",
-        enthalpyDiff, enthalpyDiffSD))
+            enthalpyDiff, enthalpyDiffSD))
 
-    // TODO: Enthalpy and Entropy via FEP Method
+    logger.info("Enthalpy and Entropy via FEP")
 
-    // TODO: Enthalpy and Entropy via BAR Method
+    double forwardsEntropy = (sumEnthalpyFore - sumForeFE) / temp1
+    double backwardsEntropy = (sumEnthalpyBack- sumBackFE) / temp1
+
+    logger.info(format(" Enthalpy via Forward FEP       %12.4f +/- %6.4f kcal/mol.", sumEnthalpyFore, varEnthalpyFore))
+    logger.info(format(" Entropy via Forward FEP        %12.4f kcal/mol/K.", forwardsEntropy))
+    logger.info(format(" Forward FEP -T*ds Value         %12.4f kcal/mol.", -(forwardsEntropy*temp1)))
+
+    logger.info(format(" Enthalpy via Backward FEP     %12.4f +/- %6.4f kcal/mol.", sumEnthalpyBack,varEnthalpyBack))
+    logger.info(format(" Entropy via Backward FEP     %12.4f kcal/mol/K.", backwardsEntropy ))
+    logger.info(format(" Backward FEP -T*ds Value      %12.4f kcal/mol.", -(backwardsEntropy*temp1)))
+
+    double tsBar = barEnthalpy - sumBARFE
+    double barEntropy = tsBar /(temp1)
+    logger.info(format(" Enthalpy via BAR     %12.4f +/- %6.4f kcal/mol.", barEnthalpy, varEnthalpy))
+    logger.info(format(" Entropy via BAR     %12.4f kcal/mol/K.", barEntropy ))
+    logger.info(format(" BAR Estimate of -T*ds      %12.4f kcal/mol.", -(tsBar)))
+
+
 
     return this
   }
