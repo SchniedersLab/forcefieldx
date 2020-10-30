@@ -233,7 +233,7 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[10,15.1]</version>
+                  <version>[10,16.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.0.5</version>
@@ -885,7 +885,7 @@
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
-    <picocli.version>4.1.4</picocli.version>
+    <picocli.version>4.5.1</picocli.version>
     <pj.version>1.0.1</pj.version>
     <pmd.skip>false</pmd.skip>
     <pmd.version>3.13.0</pmd.version>
