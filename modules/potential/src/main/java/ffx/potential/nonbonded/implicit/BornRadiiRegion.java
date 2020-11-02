@@ -104,6 +104,7 @@ public class BornRadiiRegion extends ParallelRegion {
   private SharedDoubleArray sharedBorn;
   private SharedDouble ecavTot;
   private boolean verboseRadii;
+  private boolean neckCorrection;
 
   public BornRadiiRegion(int nt, ForceField forceField, boolean perfectHCTScale) {
     bornRadiiLoop = new BornRadiiLoop[nt];
@@ -112,6 +113,7 @@ public class BornRadiiRegion extends ParallelRegion {
     }
     ecavTot = new SharedDouble(0.0);
     verboseRadii = forceField.getBoolean("VERBOSE_BORN_RADII", false);
+    neckCorrection = forceField.getBoolean("NECK_CORRECTION", false);
     this.perfectHCTScale = perfectHCTScale;
     if (verboseRadii) {
       logger.info(" Verbose Born radii.");
@@ -285,14 +287,24 @@ public class BornRadiiRegion extends ParallelRegion {
               if (sk > 0.0) {
                 localBorn[i] += descreen(r, r2, baseRi, descreenRk, sk);
               }
-              // TODO: Add neck contribution to atom i being descreeened by atom k.
+              if(neckCorrection) {
+                // TODO: Add neck contribution to atom i being descreeened by atom k.
+                localBorn[i] += neckDescreen(r, baseRi, baseRk);
+
+                // TODO: Add tanh function rescaling
+              }
 
               // Atom k being descreeened by atom i.
               double si = overlapScale[i];
               if (si > 0.0) {
                 localBorn[k] += descreen(r, r2, baseRk, descreenRi, si);
               }
-              // TODO: Add neck contribution to atom k being descreeened by atom i.
+              if(neckCorrection) {
+                // TODO: Add neck contribution to atom k being descreeened by atom i.
+                localBorn[k] += neckDescreen(r, baseRk, baseRi);
+
+                // TODO: Add tanh function rescaling
+              }
 
             } else if (iSymOp > 0) {
               final double xr = xyz[0][k] - xi;
@@ -308,7 +320,12 @@ public class BornRadiiRegion extends ParallelRegion {
               if (sk > 0.0) {
                 localBorn[i] += descreen(r, r2, baseRi, descreenRk, sk);
               }
-              // TODO: Add neck contribution to atom i being descreeened by atom k.
+              if(neckCorrection) {
+                // TODO: Add neck contribution to atom i being descreeened by atom k.
+                localBorn[i] += neckDescreen(r, baseRi, baseRk);
+
+                // TODO: Add tanh function rescaling
+              }
 
               // For symmetry mates, atom k is not descreeened by atom i.
             }
@@ -335,9 +352,28 @@ public class BornRadiiRegion extends ParallelRegion {
      * @return this contribution to the descreening integral.
      */
     private double neckDescreen(double r, double radius, double radiusK) {
-      double neckIntegral = 0.0;
-      // TODO: implement Aguilar & Onufriev neck equation.
-      return neckIntegral;
+      double neckIntegral;
+      double radiusWater = 1.4;
+
+      if(r > radius + radiusK + 2*radiusWater){
+        return 0.0;
+      }
+
+      // Get Aij and Bij from Aguilar/Onufriev 2010 paper
+      double[] constants = NeckIntegralOnufriev.NeckIntegralOnufrievConstants.run(radius, radiusK);
+
+      double Aij = constants[0];
+      double Bij = constants[1];
+
+      double rMinusBij = r - Bij;
+      double radiiMinusr = radius + radiusK + 2*radiusWater - r;
+      double power1 = rMinusBij * rMinusBij * rMinusBij * rMinusBij;
+      double power2 = radiiMinusr * radiiMinusr * radiiMinusr * radiiMinusr;
+
+      // Use Aij and Bij to get neck integral using Equation 13 from Aguilar/Onufriev 2010 paper
+      neckIntegral = Aij*power1*power2;
+
+      return -neckIntegral;
     }
 
     private double descreen(double r, double r2, double radius, double radiusK, double hctScale) {

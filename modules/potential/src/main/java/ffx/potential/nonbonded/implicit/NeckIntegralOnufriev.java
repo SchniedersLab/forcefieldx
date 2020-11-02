@@ -41,118 +41,140 @@ public class NeckIntegralOnufriev {
     };
 
     /** Radius of atom i */
-    private final double rhoi;
+    //private double rhoi;
     /** Radius of atom j */
-    private final double rhoj;
+    //private double rhoj;
 
-    private double Aij = 0.0;
-    private double Bij = 0.0;
+    //private double Aij = 0.0;
+    //private double Bij = 0.0;
 
     /**
      * NeckIntegralOnufriev Constructor
-     * @param rhoi radius of atom i
-     * @param rhoj radius of atom j
+     *
      */
-    public NeckIntegralOnufriev(double rhoi, double rhoj) {
-        // Read in rho i and rho j
-        this.rhoi = rhoi;
-        this.rhoj = rhoj;
-    }
+    public static class NeckIntegralOnufrievConstants {
+        private double Aij;
+        private double Bij;
 
-    public double getAij() {return this.Aij;}
-    public double getBij() {return this.Bij;}
+        public double getAij() {
+            return this.Aij;
+        }
 
-    public void run(){
-        // If both rho i and rho j are in Aguilar/Onufriev data, get Aij and Bij values directly from tables
-        if(rhoiRows.contains(rhoi) && rhojColumns.contains(rhoj)){
-            int row = rhoiRows.indexOf(rhoi);
-            int col = rhojColumns.indexOf(rhoj);
-            this.Aij = AijAguilarOnufriev[row][col];
-            this.Bij = BijAguilarOnufriev[row][col];
-        } else{
-            // Otherwise, interpolate/extrapolate as needed
-            boolean calculatei = false;
-            boolean counti = true;
-            boolean calculatej = false;
-            boolean countj = true;
-            // Find which two values of rho i and rho j the inputs fall between
-            int lowi = 0;
-            int lowj = 0;
-            int highi = lowi + 1;
-            int highj = lowj + 1;
+        public double getBij() {
+            return this.Bij;
+        }
 
-            if(!rhoiRows.contains(rhoi)){
-                calculatei = true;
-                // If input rho i is smaller than all values in table, extrapolate down using first two table values
-                // These values are the defaults (set above)
-                if(rhoiRows.get(0) > rhoi){ counti = false; }
-                // If input rho i is larger than all values in table, extrapolate up using last two table values
-                if(rhoiRows.get(rhoiRows.size() - 1) < rhoi){
-                    lowi = rhoiRows.size() - 2;
-                    highi = rhoiRows.size() - 1;
-                    counti = false;
-                }
-                while(counti){
-                    // Find the two table values that the input rho i falls between
-                    if(rhoiRows.get(lowi) < rhoi && rhoi < rhoiRows.get(lowi+1)){
-                        highi = lowi + 1;
+        public static double[] run(double rhoi, double rhoj) {
+
+            double Aij = 0.0;
+            double Bij = 0.0;
+
+            // If both rho i and rho j are in Aguilar/Onufriev data, get Aij and Bij values directly from tables
+            if (rhoiRows.contains(rhoi) && rhojColumns.contains(rhoj)) {
+                int row = rhoiRows.indexOf(rhoi);
+                int col = rhojColumns.indexOf(rhoj);
+                Aij = AijAguilarOnufriev[row][col];
+                Bij = BijAguilarOnufriev[row][col];
+            } else {
+                // Otherwise, interpolate/extrapolate as needed
+                boolean calculatei = false;
+                boolean counti = true;
+                boolean calculatej = false;
+                boolean countj = true;
+                // Find which two values of rho i and rho j the inputs fall between
+                int lowi = 0;
+                int lowj = 0;
+                int highi = lowi + 1;
+                int highj = lowj + 1;
+
+                if (!rhoiRows.contains(rhoi)) {
+                    calculatei = true;
+                    // If input rho i is smaller than all values in table, extrapolate down using first two table values
+                    // These values are the defaults (set above)
+                    if (rhoiRows.get(0) > rhoi) {
                         counti = false;
-                    } else {
-                        lowi++;
                     }
-                    if(lowi >= rhoiRows.size()){ counti = false; }
+                    // If input rho i is larger than all values in table, extrapolate up using last two table values
+                    if (rhoiRows.get(rhoiRows.size() - 1) < rhoi) {
+                        lowi = rhoiRows.size() - 2;
+                        highi = rhoiRows.size() - 1;
+                        counti = false;
+                    }
+                    while (counti) {
+                        // Find the two table values that the input rho i falls between
+                        if (rhoiRows.get(lowi) < rhoi && rhoi < rhoiRows.get(lowi + 1)) {
+                            highi = lowi + 1;
+                            counti = false;
+                        } else {
+                            lowi++;
+                        }
+                        if (lowi >= rhoiRows.size()) {
+                            counti = false;
+                        }
+                    }
                 }
-            }
 
-            if(!rhojColumns.contains(rhoj)){
-                calculatej = true;
-                // If input rho j is smaller than all values in table, extrapolate down using first two table values
-                // These values are the defaults (set above)
-                if(rhojColumns.get(0) > rhoj){ countj = false; }
-                // If input j is larger than all values in table, extrapolate up using last two table values
-                if(rhojColumns.get(rhojColumns.size()-1) < rhoj){
-                    lowj = rhojColumns.size() - 2;
-                    highj = rhojColumns.size() - 1;
-                    countj = false;
-                }
-                while(countj){
-                    // Find the two table values that the input rho j falls between
-                    if(rhojColumns.get(lowj) < rhoj && rhoj < rhojColumns.get(lowj + 1)){
-                        highj = lowj + 1;
+                if (!rhojColumns.contains(rhoj)) {
+                    calculatej = true;
+                    // If input rho j is smaller than all values in table, extrapolate down using first two table values
+                    // These values are the defaults (set above)
+                    if (rhojColumns.get(0) > rhoj) {
                         countj = false;
-                    } else{
-                        lowj++;
                     }
-                    if(lowj >= rhojColumns.size()){ countj = false; }
+                    // If input j is larger than all values in table, extrapolate up using last two table values
+                    if (rhojColumns.get(rhojColumns.size() - 1) < rhoj) {
+                        lowj = rhojColumns.size() - 2;
+                        highj = rhojColumns.size() - 1;
+                        countj = false;
+                    }
+                    while (countj) {
+                        // Find the two table values that the input rho j falls between
+                        if (rhojColumns.get(lowj) < rhoj && rhoj < rhojColumns.get(lowj + 1)) {
+                            highj = lowj + 1;
+                            countj = false;
+                        } else {
+                            lowj++;
+                        }
+                        if (lowj >= rhojColumns.size()) {
+                            countj = false;
+                        }
+                    }
+                }
+
+                // If the values of rho i and rho j aren't in table, interpolate/extrapolate
+                double startInterp_i = rhoiRows.get(lowi);
+                double endInterp_i = rhoiRows.get(highi);
+                double startInterp_j = rhojColumns.get(lowj);
+                double endInterp_j = rhojColumns.get(highj);
+
+                if (calculatei && calculatej) {
+                    // Rho i and rho j aren't table values
+                    Aij = interpolateAij(startInterp_i, endInterp_i, startInterp_j, endInterp_j, rhoi, rhoj);
+                    Bij = interpolateBij(startInterp_i, endInterp_i, startInterp_j, endInterp_j, rhoi, rhoj);
+                }
+                // Rho i is in table, but rho j isn't
+                if (!calculatei && calculatej) {
+                    Aij = interpolateAij(rhoi, rhoi, startInterp_j, endInterp_j, rhoi, rhoj);
+                    Bij = interpolateBij(rhoi, rhoi, startInterp_j, endInterp_j, rhoi, rhoj);
+                }
+                // Rho i isn't in table, but rho j is
+                if (calculatei && !calculatej) {
+                    Aij = interpolateAij(startInterp_i, endInterp_i, rhoj, rhoj, rhoi, rhoj);
+                    Bij = interpolateBij(startInterp_i, endInterp_i, rhoj, rhoj, rhoi, rhoj);
                 }
             }
 
-            // If the values of rho i and rho j aren't in table, interpolate/extrapolate
-            double startInterp_i = rhoiRows.get(lowi);
-            double endInterp_i = rhoiRows.get(highi);
-            double startInterp_j = rhojColumns.get(lowj);
-            double endInterp_j = rhojColumns.get(highj);
+            // Never let Aij or Bij be negative
+            if(Aij < 0.00){ Aij = 0.0; }
+            if(Bij < 0.00){ Bij = 0.0; }
 
-            if(calculatei && calculatej){
-                // Rho i and rho j aren't table values
-                interpolateAij(startInterp_i, endInterp_i, startInterp_j, endInterp_j);
-                interpolateBij(startInterp_i, endInterp_i, startInterp_j, endInterp_j);
-            }
-            // Rho i is in table, but rho j isn't
-            if(!calculatei && calculatej){
-                interpolateAij(rhoi, rhoi, startInterp_j, endInterp_j);
-                interpolateBij(rhoi, rhoi, startInterp_j, endInterp_j);
-            }
-            // Rho i isn't in table, but rho j is
-            if(calculatei && !calculatej){
-                interpolateAij(startInterp_i, endInterp_i, rhoj, rhoj);
-                interpolateBij(startInterp_i, endInterp_i, rhoj, rhoj);
-            }
+            return new double[]{Aij, Bij};
         }
     }
 
-    private void interpolateAij(double startInterp_i, double endInterp_i, double startInterp_j, double endInterp_j){
+    private static double interpolateAij(double startInterp_i, double endInterp_i, double startInterp_j, double endInterp_j, double rhoi, double rhoj){
 
+        double Aij;
         if(startInterp_i == endInterp_i){
             // 1D interpolation: Only interpolate between rho j values
             // System.out.println("Start j: "+startInterp_j+" End j: "+endInterp_j+" Start i: "+startInterp_i+" End i: "+endInterp_i);
@@ -175,9 +197,12 @@ public class NeckIntegralOnufriev {
                     AijAguilarOnufriev[rhoiRows.indexOf(startInterp_i)][rhojColumns.indexOf(endInterp_j)],
                     AijAguilarOnufriev[rhoiRows.indexOf(endInterp_i)][rhojColumns.indexOf(endInterp_j)]);
         }
+        return Aij;
     }
 
-    private void interpolateBij(double startInterp_i, double endInterp_i, double startInterp_j, double endInterp_j){
+    private static double interpolateBij(double startInterp_i, double endInterp_i, double startInterp_j, double endInterp_j, double rhoi, double rhoj){
+
+        double Bij;
 
         if(startInterp_i == endInterp_i){
             // 1D interpolation: Only interpolate between rho j values
@@ -197,9 +222,10 @@ public class NeckIntegralOnufriev {
                     BijAguilarOnufriev[rhoiRows.indexOf(startInterp_i)][rhojColumns.indexOf(endInterp_j)],
                     BijAguilarOnufriev[rhoiRows.indexOf(endInterp_i)][rhojColumns.indexOf(endInterp_j)]);
         }
+        return Bij;
     }
 
-    private double interpolate1D(double y1, double y2, double y, double fxy1, double fxy2){
+    private static double interpolate1D(double y1, double y2, double y, double fxy1, double fxy2){
         double frac1 = (y2 - y)/(y2 - y1);
         double frac2 = (y - y1)/(y2 - y1);
         double product1 = frac1 * fxy1;
@@ -208,7 +234,7 @@ public class NeckIntegralOnufriev {
         return product1 + product2;
     }
 
-    private double interpolate2D(double x1, double x2, double y1, double y2, double x, double y,
+    private static double interpolate2D(double x1, double x2, double y1, double y2, double x, double y,
                                  double fx1y1, double fx2y1, double fx1y2, double fx2y2){
         double fxy = 0.0;
         double fxy1 = (x2 - x)/(x2 -x1) * fx1y1 + (x - x1)/(x2 - x1) * fx2y1;

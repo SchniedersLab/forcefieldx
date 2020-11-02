@@ -226,6 +226,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
   private final boolean descreenWithHydrogen;
   /** If true, the descreening integral includes overlaps with the volume of the descreened atom */
   private boolean perfectHCTScale;
+  /** If true, the descreening integral includes the neck correction to better approximate molecular surface */
+  private boolean neckCorrection;
   /** Base overlap scale factor. */
   private double gkOverlapScale;
   /** Born radius of each atom. */
@@ -350,6 +352,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     } else {
       perfectHCTScale = false;
     }
+    neckCorrection = forceField.getBoolean("NECK_CORRECTION",false);
 
     // Process any radii override values.
     String radiiProp = forceField.getString("GK_RADIIOVERRIDE", null);
@@ -503,7 +506,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     bornRadiiRegion = new BornRadiiRegion(threadCount, forceField, perfectHCTScale);
     permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount, forceField);
     inducedGKFieldRegion = new InducedGKFieldRegion(threadCount, forceField);
-    bornGradRegion = new BornGradRegion(threadCount, perfectHCTScale);
+    bornGradRegion = new BornGradRegion(threadCount, perfectHCTScale, neckCorrection);
     gkEnergyRegion =
         new GKEnergyRegion(threadCount, forceField, polarization, nonPolar, surfaceTension, probe);
 
@@ -512,6 +515,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(format("   Solvent Dielectric:                 %8.3f", epsilon));
     logger.info(format("   Descreen with vdW Radii:            %8B", descreenWithVDW));
     logger.info(format("   Descreen with Hydrogen Atoms:       %8B", descreenWithHydrogen));
+    logger.info(format("   Use Neck Correction:                %8B", neckCorrection));
     logger.info(format("   GaussVol HCT Scale Factors:         %8B", perfectHCTScale));
     logger.info(format("   HCT Scale Factor:                   %8.4f",forceField.getDouble("HCT-SCALE",0.00)));
     logger.info(format("   GKC:                                %8.3f",forceField.getDouble("GKC",DEFAULT_GKC)));
