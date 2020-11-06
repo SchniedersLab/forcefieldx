@@ -841,7 +841,7 @@
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.1.1</checkstyle.version>
-    <ciftools-java.version>2.0.2</ciftools-java.version>
+    <ciftools-java.version>2.0.3</ciftools-java.version>
     <clean.version>3.1.0</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
