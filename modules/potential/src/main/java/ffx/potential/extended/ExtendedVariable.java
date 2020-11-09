@@ -221,21 +221,21 @@ public abstract class ExtendedVariable {
 
   /** List all the atoms and bonded terms associated with each end state. */
   public final void describe() {
-    SB.append(format(" %s", this.toString()));
-    SB.append(format("   %-50s %-50s", "Shared Atoms", "(Background)"));
+    SB.append(format(" %s\n", this.toString()));
+    SB.append(format("   %-50s %-50s\n", "Shared Atoms", "(Background)"));
     for (int i = 0; i < atomsShared.size(); i++) {
       Atom ai = atomsShared.get(i);
       SB.append(
           format(
-              "     %-50s %-50s",
+              "     %-50s %-50s\n",
               ai.describe(Atom.Descriptions.Default).trim(),
               fg2bg.get(ai).describe(Atom.Descriptions.Trim)));
     }
-    SB.append(format("   Unshared Atoms"));
+    SB.append(format("   Unshared Atoms\n"));
     for (Atom atom : atomsUnshared) {
-      SB.append(format("%s", atom));
+      SB.append(format("%s\n", atom));
     }
-    SB.append(format("   %-50s %-50s", "Bonded Terms", "(Background)"));
+    SB.append(format("   %-50s %-50s\n", "Bonded Terms", "(Background)"));
     MSNode extendedNode =
         termNode.getChildList().stream()
             .filter(node -> node.toString().contains("Extended"))
@@ -257,7 +257,7 @@ public abstract class ExtendedVariable {
                   .findAny()
                   .orElse(null);
       String bgTermString = (background != null) ? background.toString() : "";
-      SB.append(format("     %-50s %-50s", term.toString(), bgTermString));
+      SB.append(format("     %-50s %-50s\n", term.toString(), bgTermString));
     }
     logger.info(SB.toString());
   }

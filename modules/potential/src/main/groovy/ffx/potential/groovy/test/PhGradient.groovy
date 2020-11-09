@@ -92,7 +92,10 @@ class PhGradient extends PotentialScript {
   List<String> filenames = null
 
   private ForceFieldEnergy energy
+  //For unit test of endstate energies.
+  public HashMap<String,double[]> endstateEnergyMap = new HashMap<String,double[]>()
   public int nFailures = 0
+  public int nESVFailures = 0
 
   /**
    * Gradient constructor.
@@ -334,13 +337,88 @@ class PhGradient extends PotentialScript {
       if (error > gradientTolerance) {
         logger.info(format(" ESV %d\n Failed: %10.6f\n", i, error)
             + format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[i], fdDeriv))
+        ++nESVFailures
       } else {
         logger.info(format(" ESV %d\n Passed: %10.6f\n", i, error)
             + format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[i], fdDeriv))
       }
     }
 
+    if(print){
+      if(numESVs < 4){
+        printPermutations(esvSystem, numESVs, energy, x)
+      }
+    }
+
     return this
+  }
+
+  private void printPermutations(ExtendedSystem esvSystem, int numESVs, ForceFieldEnergy energy, double[] x){
+    for (int i=0; i<numESVs; i++) {
+      esvSystem.setLambda(i, 0.0)
+    }
+    energy.getCoordinates(x)
+    printPermutationsR(esvSystem, numESVs-1, energy, x)
+  }
+
+  private void printPermutationsR(ExtendedSystem esvSystem, int esvID, ForceFieldEnergy energy, double[] x){
+    for (int i=0; i<=1; i++){
+      esvSystem.setLambda(esvID,(double) i)
+      if(esvID!=0){
+        printPermutationsR(esvSystem, esvID-1, energy, x)
+      }
+      else{
+        double[] energyAndInteractionList = new double [26]
+        String lambdaList = esvSystem.getLambdaList()
+        logger.info(format("Lambda List: %s", lambdaList))
+        //Add ForceFieldEnergy to hashmap for testing. Protonation endstates used as key in map.
+        energy.energy(x,true)
+
+        // Bond Energy
+        energyAndInteractionList[0] = energy.getBondEnergy()
+        energyAndInteractionList[1] = (double) energy.getNumberofBonds()
+        // Angle Energy
+        energyAndInteractionList[2] = energy.getAngleEnergy()
+        energyAndInteractionList[3] = (double) energy.getNumberofAngles()
+        // Stretch-Bend Energy
+        energyAndInteractionList[4] = energy.getStrenchBendEnergy()
+        energyAndInteractionList[5] = (double) energy.getNumberofStretchBends()
+        // Urey-Bradley Energy,
+        energyAndInteractionList[6] = energy.getUreyBradleyEnergy()
+        energyAndInteractionList[7] = (double) energy.getNumberofUreyBradleys()
+        // Out-of-Plane Bend
+        energyAndInteractionList[8] = energy.getOutOfPlaneBendEnergy()
+        energyAndInteractionList[9] = (double) energy.getNumberofOutOfPlaneBends()
+        // Torsional Angle
+        energyAndInteractionList[10] = energy.getTorsionEnergy()
+        energyAndInteractionList[11] = (double) energy.getNumberofTorsions()
+        // Improper Torsional Angle
+        energyAndInteractionList[12] = energy.getImproperTorsionEnergy()
+        energyAndInteractionList[13] = (double) energy.getNumberofImproperTorsions()
+        // Pi-Orbital Torsion
+        energyAndInteractionList[14] = energy.getPiOrbitalTorsionEnergy()
+        energyAndInteractionList[15] = (double) energy.getNumberofPiOrbitalTorsions()
+        // Torsion-Torsion
+        energyAndInteractionList[16] = energy.getTorsionTorsionEnergy()
+        energyAndInteractionList[17] = (double) energy.getNumberofTorsionTorsions()
+        // van Der Waals
+        energyAndInteractionList[18] = energy.getVanDerWaalsEnergy()
+        energyAndInteractionList[19] = (double) energy.getVanDerWaalsInteractions()
+        // Permanent Multipoles
+        energyAndInteractionList[20] = energy.getPermanentMultipoleEnergy()
+        energyAndInteractionList[21] = (double) energy.getPermanentInteractions()
+        // Polarization Energy
+        energyAndInteractionList[22] = energy.getPolarizationEnergy()
+        energyAndInteractionList[23] = (double) energy.getPermanentInteractions()
+        // Extended System Bias
+        energyAndInteractionList[24] = energy.getEsvBiasEnergy()
+        // Total Energy
+        energyAndInteractionList[25] = energy.getTotalEnergy()
+
+        endstateEnergyMap.put(lambdaList,energyAndInteractionList)
+        logger.info(format("\n"))
+      }
+    }
   }
 
   @Override
