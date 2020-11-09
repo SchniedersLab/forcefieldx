@@ -63,7 +63,6 @@ import edu.rit.mp.Status;
 import edu.rit.mp.buf.ObjectItemBuf;
 import edu.rit.util.ByteSequence;
 import edu.rit.util.Timer;
-import edu.rit.util.TimerTask;
 import edu.rit.util.TimerThread;
 
 /**
@@ -228,7 +227,7 @@ public class JobBackend
                 File file = new File(Integer.toString(this.rank));
                 if (!file.exists()) {
                     boolean success = file.mkdir();
-                    sb.append(format("\n Created logging directory: (%s, %b)", file, success));
+                    sb.append(format("\n Creation of logging directory %s: %b", file, success));
                 }
                 String logFile = file.getAbsolutePath() + File.separator + "backend.log";
                 fileHandler = new FileHandler(logFile);
@@ -284,7 +283,6 @@ public class JobBackend
         myFrontendExpireTimer.start(Constants.LEASE_EXPIRE_INTERVAL);
 
         // Set up middleware channel group.
-
         logger.log(Level.INFO, " Set up middleware channel group.");
         myMiddlewareChannelGroup = new ChannelGroup(new InetSocketAddress(backendHost, 0));
         myMiddlewareChannelGroup.startListening();
@@ -1072,11 +1070,13 @@ public class JobBackend
         // theJobBackend.getClassLoader());
         Method mainmethod = mainclass.getMethod("main", String[].class);
 
-        logger.log(Level.INFO, " Preparing to invoke main method: " + mainmethod.toString());
+        StringBuilder stringBuilder = new StringBuilder(format(" Preparing to invoke main method:\n %s\n With args: ", mainmethod.toString()));
+
         for (String arg : theJobBackend.getArgs()) {
-            logger.log(Level.INFO, " Arg: " + arg);
+            stringBuilder.append(format(" %s", arg));
         }
-        logger.log(Level.INFO, " Backend logging finished.");
+        stringBuilder.append("\n Backend start-up completed.");
+        logger.log(Level.INFO, stringBuilder.toString());
 
         // Close down the FileHandler if it exists.
         if (theJobBackend.fileHandler != null) {

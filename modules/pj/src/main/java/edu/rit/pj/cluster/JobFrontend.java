@@ -545,7 +545,7 @@ public class JobFrontend
             }
             System.err.println(" Exception executing SSH command:\n" + exc.toString());
             logger.log(Level.SEVERE, " Exception executing SSH command:\n" + exc.toString());
-            terminateCancelJob(backendFailed(processinfo, "SSH command failed."));
+            terminateCancelJob(backendFailed(processinfo, "SSH command failed"));
         }
     }
 
@@ -1003,7 +1003,7 @@ public class JobFrontend
             ProcessInfo processinfo = myProcessInfo[rank];
             if (processinfo.expireTimer.isTriggered()) {
                 // Terminate the Job Frontend.
-                String msg = backendFailed(processinfo, "Expire Timer Triggered.");
+                String msg = backendFailed(processinfo, "Expire Timer Triggered");
                 continueRun = false;
                 if (myState == State.RUNNING) {
                     myState = State.TERMINATE_CANCEL_JOB;
