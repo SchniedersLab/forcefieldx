@@ -52,16 +52,14 @@ import java.util.logging.Logger;
  * CCP4MapWriter class.
  *
  * @author Timothy D. Fenn
- * @see
- *     <ul>
- *       <li><a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
- *       <li><a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library
- *           documentation </a>
- *       <li><a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format </a>
- *       <li><a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library
- *           documentation </a>
+ * @see <ul>
+ *     <li><a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
+ *     <li><a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library
+ *     documentation </a>
+ *     <li><a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format </a>
+ *     <li><a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library
+ *     documentation </a>
  *     </ul>
- *
  * @since 1.0
  */
 public class CCP4MapWriter {

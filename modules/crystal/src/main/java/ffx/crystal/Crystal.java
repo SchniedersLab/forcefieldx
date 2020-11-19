@@ -43,6 +43,7 @@ import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.numerics.math.MatrixMath.mat3Mat3;
 import static ffx.numerics.math.MatrixMath.mat3SymVec6;
 import static ffx.numerics.math.MatrixMath.transpose3;
+import static ffx.utilities.Constants.AVOGADRO;
 import static ffx.utilities.StringUtils.padRight;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -83,8 +84,6 @@ import org.apache.commons.math3.util.FastMath;
 public class Crystal {
 
   private static final Logger logger = Logger.getLogger(Crystal.class.getName());
-  /** Avogadro's number. */
-  private static final double AVOGADRO = 6.02214129e23;
   /** A mask equal to 0 for X-coordinates. */
   private static final int XX = 0;
   /** A mask equal to 1 for Y-coordinates. */
@@ -97,8 +96,10 @@ public class Crystal {
   public final double[][] Ai = new double[3][3];
   /** The direct space metric matrix. */
   public final double[][] G = new double[3][3];
-  /** reference to the space group crystal system. */
-  private final SpaceGroup.CrystalSystem crystalSystem;
+  /** Reference to the space group crystal system. */
+  private final CrystalSystem crystalSystem;
+  /** Reference to the space group lattice system. */
+  private final LatticeSystem latticeSystem;
   /** Length of the cell edge in the direction of the <b>a</b> basis vector. */
   public double a;
   /** Length of the cell edge in the direction of the <b>b</b> basis vector. */
@@ -123,8 +124,13 @@ public class Crystal {
   public double interfacialRadiusB;
   /** Interfacial radius in the direction of the C-axis. */
   public double interfacialRadiusC;
-
+  /**
+   * Anisotropic bulk solvent B-factor scaling (0 or 1 for each component).
+   */
   public int[] scaleB = new int[6];
+  /**
+   * Number of bulk solvent B-factor components.
+   */
   public int scaleN;
   /** Entries in the Ai array. */
   public double Ai00, Ai01, Ai02, Ai10, Ai11, Ai12, Ai20, Ai21, Ai22;
@@ -146,21 +152,28 @@ public class Crystal {
    * Change in the volume with respect to gamma (in Radians). This is set to zero if gamma is fixed.
    */
   double dVdGamma;
-
+  /**
+   * For some finite-difference calculations, it's currently necessary to remove lattice system
+   * restrictions.
+   */
   boolean checkRestrictions = true;
-  /** Copy of symmetry operators in Cartesian coordinates. */
-  private List<SymOp> symOpsCartesian;
-  /** The reciprocal space metric matrix. */
-  private double[][] Gstar;
-
-  private boolean aperiodic;
   /**
    * An atom and one of its symmetry copies within the specialPositionCutoff should be flagged to be
    * at a special position.
    */
   private double specialPositionCutoff = 0.3;
-
-  public double specialPositionCutoff2 = specialPositionCutoff * specialPositionCutoff;
+  /** Copy of symmetry operators in Cartesian coordinates. */
+  private List<SymOp> symOpsCartesian;
+  /** The reciprocal space metric matrix. */
+  private double[][] Gstar;
+  /**
+   * SpecialPositionCutoff squared.
+   */
+  private double specialPositionCutoff2 = specialPositionCutoff * specialPositionCutoff;
+  /**
+   * Flag to indicate an aperiodic system.
+   */
+  private boolean aperiodic;
 
   /**
    * The Crystal class encapsulates the lattice parameters and space group. Methods are available to
@@ -182,16 +195,22 @@ public class Crystal {
     this.beta = beta;
     this.gamma = gamma;
     aperiodic = false;
-    spaceGroup = SpaceGroup.spaceGroupFactory(sg);
+    spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
     crystalSystem = spaceGroup.crystalSystem;
+    latticeSystem = spaceGroup.latticeSystem;
 
-    if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
-      String message =
-          " The lattice parameters do not satisfy the "
-              + crystalSystem
-              + " crystal system restrictions:\n"
-              + toString();
-      logger.severe(message);
+    if (!latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
+      StringBuilder sb = new StringBuilder(
+          " The proposed lattice parameters for " + spaceGroup.pdbName
+              + " do not satisfy the " + latticeSystem +
+              " lattice system restrictions and were ignored.\n");
+      sb.append(format("  A-axis:                              %18.15e\n", a));
+      sb.append(format("  B-axis:                              %18.15e\n", b));
+      sb.append(format("  C-axis:                              %18.15e\n", c));
+      sb.append(format("  Alpha:                               %18.15e\n", alpha));
+      sb.append(format("  Beta:                                %18.15e\n", beta));
+      sb.append(format("  Gamma:                               %18.15e\n", gamma));
+      logger.severe(sb.toString());
     }
 
     for (int i = 0; i < 6; i++) {
@@ -306,7 +325,8 @@ public class Crystal {
   /**
    * checkProperties
    *
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    * @return a {@link ffx.crystal.Crystal} object.
    */
   public static Crystal checkProperties(CompositeConfiguration properties) {
@@ -318,17 +338,17 @@ public class Crystal {
     double gamma = properties.getDouble("gamma", -1.0);
     String sg = properties.getString("spacegroup", null);
 
-    sg = SpaceGroup.pdb2ShortName(sg);
+    sg = SpaceGroupInfo.pdb2ShortName(sg);
 
     if (a < 0.0 || b < 0.0 || c < 0.0 || alpha < 0.0 || beta < 0.0 || gamma < 0.0 || sg == null) {
       return null;
     }
 
     // check the space group name is valid
-    SpaceGroup spaceGroup = SpaceGroup.spaceGroupFactory(sg);
+    SpaceGroup spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
     if (spaceGroup == null) {
       sg = sg.replaceAll(" ", "");
-      spaceGroup = SpaceGroup.spaceGroupFactory(sg);
+      spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
       if (spaceGroup == null) {
         return null;
       }
@@ -452,8 +472,8 @@ public class Crystal {
 
   /**
    * Apply a Cartesian symmetry operator to an array of Cartesian coordinates. If the arrays x, y or
-   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are
-   * null or not of length n, new arrays are allocated.
+   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
+   * or not of length n, new arrays are allocated.
    *
    * @param n Number of atoms.
    * @param x Input x coordinates.
@@ -557,9 +577,9 @@ public class Crystal {
   }
 
   /**
-   * Apply a fractional symmetry operator to an array of Cartesian coordinates. If the arrays x, y
-   * or z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are
-   * null or not of length n, new arrays are allocated.
+   * Apply a fractional symmetry operator to an array of Cartesian coordinates. If the arrays x, y or
+   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
+   * or not of length n, new arrays are allocated.
    *
    * @param n Number of atoms.
    * @param x Input x coordinates.
@@ -734,9 +754,9 @@ public class Crystal {
   }
 
   /**
-   * Apply a symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or z are
-   * null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null or
-   * not of length n, new arrays are allocated.
+   * Apply a symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or z are null
+   * or not of length n, the method returns immediately. If mateX, mateY or mateZ are null or not of
+   * length n, new arrays are allocated.
    *
    * @param n Number of atoms.
    * @param x Input x coordinates.
@@ -748,14 +768,8 @@ public class Crystal {
    * @param symOp The symmetry operator.
    */
   public void applySymRot(
-      int n,
-      double[] x,
-      double[] y,
-      double[] z,
-      double[] mateX,
-      double[] mateY,
-      double[] mateZ,
-      SymOp symOp) {
+      int n, double[] x, double[] y, double[] z,
+      double[] mateX, double[] mateY, double[] mateZ, SymOp symOp) {
     double[][] rot = symOp.rot;
     final double rot00 = rot[0][0];
     final double rot10 = rot[1][0];
@@ -841,15 +855,8 @@ public class Crystal {
    * @param rotmat an array of double.
    */
   public void applyTransSymRot(
-      int n,
-      double[] x,
-      double[] y,
-      double[] z,
-      double[] mateX,
-      double[] mateY,
-      double[] mateZ,
-      SymOp symOp,
-      double[][] rotmat) {
+      int n, double[] x, double[] y, double[] z,
+      double[] mateX, double[] mateY, double[] mateZ, SymOp symOp, double[][] rotmat) {
 
     if (x == null || y == null || z == null) {
       return;
@@ -949,13 +956,19 @@ public class Crystal {
   public boolean changeUnitCellParameters(
       double a, double b, double c, double alpha, double beta, double gamma) {
     if (checkRestrictions) {
-      if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
+      if (!latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
         if (logger.isLoggable(Level.FINE)) {
-          String message =
-              " The proposed lattice parameters do not satisfy the "
-                  + crystalSystem
-                  + " crystal system restrictions and were ignored.";
-          logger.fine(message);
+          StringBuilder sb = new StringBuilder(
+              " The proposed lattice parameters for " + spaceGroup.pdbName
+                  + " do not satisfy the " + latticeSystem +
+                  " lattice system restrictions and were ignored.\n");
+          sb.append(format("  A-axis:                              %18.15e\n", a));
+          sb.append(format("  B-axis:                              %18.15e\n", b));
+          sb.append(format("  C-axis:                              %18.15e\n", c));
+          sb.append(format("  Alpha:                               %18.15e\n", alpha));
+          sb.append(format("  Beta:                                %18.15e\n", beta));
+          sb.append(format("  Gamma:                               %18.15e\n", gamma));
+          logger.fine(sb.toString());
         }
         return false;
       }
@@ -981,8 +994,12 @@ public class Crystal {
    */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     Crystal crystal = (Crystal) o;
     return (a == crystal.a
         && b == crystal.b
@@ -1042,6 +1059,15 @@ public class Crystal {
    */
   public double getSpecialPositionCutoff() {
     return specialPositionCutoff;
+  }
+
+  /**
+   * Getter for the field <code>specialPositionCutoff2</code>.
+   *
+   * @return a double.
+   */
+  public double getSpecialPositionCutoff2() {
+    return specialPositionCutoff2;
   }
 
   /**
@@ -1259,7 +1285,7 @@ public class Crystal {
   }
 
   public boolean randomParameters(double dens, double mass) {
-    double[] params = SpaceGroup.resetUnitCellParams(crystalSystem);
+    double[] params = latticeSystem.resetUnitCellParams();
     boolean succeed =
         changeUnitCellParameters(params[0], params[1], params[2], params[3], params[4], params[5]);
     if (succeed) {
@@ -1550,7 +1576,7 @@ public class Crystal {
         double dbeta =
             2.0 * sin_beta * cos_beta
                 - (2.0 * (cos_alpha - cos_beta * cos_gamma) * sin_beta * cos_gamma)
-                    / (sin_gamma * sin_gamma);
+                / (sin_gamma * sin_gamma);
         double dgamma1 = -2.0 * (cos_alpha - cos_beta * cos_gamma) * cos_beta / sin_gamma;
         double dgamma2 = cos_alpha - cos_beta * cos_gamma;
         dgamma2 *= dgamma2 * 2.0 * cos_gamma / (sin_gamma * sin_gamma * sin_gamma);

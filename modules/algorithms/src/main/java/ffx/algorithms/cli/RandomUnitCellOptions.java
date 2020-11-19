@@ -38,6 +38,7 @@
 package ffx.algorithms.cli;
 
 import ffx.potential.MolecularAssembly;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
 /**
@@ -47,42 +48,25 @@ import picocli.CommandLine.Option;
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class RandomSymopOptions {
+public class RandomUnitCellOptions {
 
   /**
-   * --rsym or --randomSymOp Apply a random SymOp with translation range -X/2 .. X/2 (0 for random
-   * placement in the unit cell, negative for no SymOp).
+   * The ArgGroup keeps the RandomSymopOptions together when printing help.
    */
-  @Option(
-      names = {"--rsym", "--randomSymOp"},
-      paramLabel = "-1.0",
-      defaultValue = "-1.0",
-      description =
-          "Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp)")
-  private double randomSymOp;
+  @ArgGroup(heading = "%n Random Unit Cell Options%n", validate = false)
+  public RandomUnitCellOptionGroup group = new RandomUnitCellOptionGroup();
 
   /**
-   * --ruc or --randomUnitCell Random unit cell parameters will be used achieve the specified
-   * density (g/cc) (no default density).
-   */
-  @Option(
-      names = {"--ruc", "--randomUnitCell"},
-      paramLabel = "-1.0",
-      defaultValue = "-1.0",
-      description = "Apply random unit cell parameters to achieve the specified density (g/cc).")
-  private double randomUnitCell;
-
-  /**
-   * randomize.
+   * Randomize the unit cell for a Molcular Assembly.
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    */
   public void randomize(MolecularAssembly assembly) {
-    if (randomSymOp >= 0) {
-      assembly.applyRandomSymOp(randomSymOp);
+    if (group.randomSymOp >= 0) {
+      assembly.applyRandomSymOp(group.randomSymOp);
     }
-    if (randomUnitCell > 0) {
-      assembly.applyRandomDensity(randomUnitCell);
+    if (group.randomUnitCell > 0) {
+      assembly.applyRandomDensity(group.randomUnitCell);
     }
   }
 
@@ -93,11 +77,11 @@ public class RandomSymopOptions {
    * @return Returns the random SymOp translation.
    */
   public double getRandomSymOp() {
-    return randomSymOp;
+    return group.randomSymOp;
   }
 
   public void setRandomSymOp(double randomSymOp) {
-    this.randomSymOp = randomSymOp;
+    group.randomSymOp = randomSymOp;
   }
 
   /**
@@ -107,10 +91,39 @@ public class RandomSymopOptions {
    * @return Returns the density target for the random unit parameters.
    */
   public double getRandomUnitCell() {
-    return randomUnitCell;
+    return group.randomUnitCell;
   }
 
   public void setRandomUnitCell(double randomUnitCell) {
-    this.randomUnitCell = randomUnitCell;
+    group.randomUnitCell = randomUnitCell;
+  }
+
+  /**
+   * Collection of Random Unit Cell Options.
+   */
+  private static class RandomUnitCellOptionGroup {
+
+    /**
+     * --rsym or --randomSymOp Apply a random SymOp with translation range -X/2 .. X/2 (0 for random
+     * placement in the unit cell, negative for no SymOp).
+     */
+    @Option(
+        names = {"--rsym", "--randomSymOp"},
+        paramLabel = "-1.0",
+        defaultValue = "-1.0",
+        description =
+            "Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp)")
+    private double randomSymOp;
+
+    /**
+     * --ruc or --randomUnitCell Random unit cell parameters will be used achieve the specified
+     * density (g/cc) (no default density).
+     */
+    @Option(
+        names = {"--ruc", "--randomUnitCell"},
+        paramLabel = "-1.0",
+        defaultValue = "-1.0",
+        description = "Apply random unit cell parameters to achieve the specified density (g/cc).")
+    private double randomUnitCell;
   }
 }

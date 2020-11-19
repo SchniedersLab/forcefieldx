@@ -118,13 +118,14 @@ class RepexThermo extends Thermodynamics {
 
     topologies = new MolecularAssembly[nArgs]
 
-    int numParallel = topology.getNumParallel(threadsAvail, nArgs)
+    int numParallel = topologyOptions.getNumParallel(threadsAvail, nArgs)
     threadsPer = (int) (threadsAvail / numParallel)
 
     // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
     /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
     The Minimize script, for example, may be running on a single, unscaled physical topology. */
-    boolean lambdaTerm = (nArgs == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
+    boolean lambdaTerm = (
+        nArgs == 1 || alchemicalOptions.hasSoftcore() || topologyOptions.hasSoftcore())
 
     if (lambdaTerm) {
       System.setProperty("lambdaterm", "true")
@@ -147,7 +148,7 @@ class RepexThermo extends Thermodynamics {
     }
     int rank = (size > 1) ? world.rank() : 0
 
-    double initLambda = alchemical.getInitialLambda(size, rank)
+    double initLambda = alchemicalOptions.getInitialLambda(size, rank)
 
     // Segment of code for MultiDynamics and OST.
     List<File> structureFiles = arguments.stream().
@@ -178,11 +179,11 @@ class RepexThermo extends Thermodynamics {
     // Read in files.
     logger.info(String.format(" Initializing %d topologies...", nArgs))
     if (fromActive) {
-      topologyList.add(alchemical.processFile(topology, activeAssembly, 0))
+      topologyList.add(alchemicalOptions.processFile(topologyOptions, activeAssembly, 0))
     } else {
       for (int i = 0; i < nArgs; i++) {
-        topologyList.add(multidynamics.openFile(algorithmFunctions, topology,
-            threadsPer, arguments.get(i), i, alchemical, structureFiles.get(i), rank))
+        topologyList.add(multiDynamicsOptions.openFile(algorithmFunctions, topologyOptions,
+            threadsPer, arguments.get(i), i, alchemicalOptions, structureFiles.get(i), rank))
       }
     }
 
@@ -190,7 +191,7 @@ class RepexThermo extends Thermodynamics {
         topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
     StringBuilder sb = new StringBuilder("\n Running ")
-    switch (thermodynamics.getAlgorithm()) {
+    switch (thermodynamicsOptions.getAlgorithm()) {
     // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
       case ThermodynamicsOptions.ThermodynamicsAlgorithm.OST:
         ostAlg:
@@ -208,7 +209,7 @@ class RepexThermo extends Thermodynamics {
     }
     sb.append(" with histogram replica exchange for ")
 
-    potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
+    potential = (CrystalPotential) topologyOptions.assemblePotential(topologies, threadsAvail, sb)
     LambdaInterface linter = (LambdaInterface) potential
     logger.info(sb.toString())
 
@@ -218,36 +219,38 @@ class RepexThermo extends Thermodynamics {
     potential.energy(x, true)
 
     if (nArgs == 1) {
-      randomSymop.randomize(topologies[0])
+      randomSymopOptions.randomize(topologies[0])
     }
 
-    multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size)
+    multiDynamicsOptions.distribute(topologies, potential, algorithmFunctions, rank, size)
 
     boolean isMC = ostOptions.isMonteCarlo()
     boolean twoStep = ostOptions.isTwoStep()
     MonteCarloOST mcOST = null
     MolecularDynamics md
 
-    if (thermodynamics.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
+    if (thermodynamicsOptions.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
       // @formatter:off
       File firstHisto = new File("${filepath}0${File.separator}${fileBase}.his")
       // @formatter:on
 
       orthogonalSpaceTempering =
           ostOptions.constructOST(potential, lambdaRestart, firstHisto, topologies[0],
-              additionalProperties, dynamics, thermodynamics, lambdaParticle, algorithmListener,
+              additionalProperties, dynamicsOptions, thermodynamicsOptions, lambdaParticleOptions,
+              algorithmListener,
               false)
       finalPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
-          dynamics, barostat)
+          dynamicsOptions, barostatOptions)
 
       if (isMC) {
         mcOST = ostOptions.
-            setupMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose,
+            setupMCOST(orthogonalSpaceTempering, topologies, dynamicsOptions, thermodynamicsOptions,
+                verbose,
                 algorithmListener)
         md = mcOST.getMD()
       } else {
         md = ostOptions.
-            assembleMolecularDynamics(topologies, finalPotential, dynamics, algorithmListener)
+            assembleMolecularDynamics(topologies, finalPotential, dynamicsOptions, algorithmListener)
       }
       if (!lamExists) {
         if (finalPotential instanceof LambdaInterface) {
@@ -268,29 +271,30 @@ class RepexThermo extends Thermodynamics {
         File rankIHisto = new File("${filepath}${i}${File.separator}${fileBase}.his")
         // @formatter:on
         orthogonalSpaceTempering.addHistogram(ostOptions.generateHistogramSettings(rankIHisto,
-            lambdaRestart.toString(), allProperties, i, dynamics, lambdaParticle, true, false))
+            lambdaRestart.toString(), allProperties, i, dynamicsOptions, lambdaParticleOptions, true,
+            false))
       }
 
       if (isMC) {
-        repExOST = RepExOST.repexMC(orthogonalSpaceTempering, mcOST, dynamics, ostOptions,
-            topologies[0].getProperties(), writeout.getFileType(), twoStep,
+        repExOST = RepExOST.repexMC(orthogonalSpaceTempering, mcOST, dynamicsOptions, ostOptions,
+            topologies[0].getProperties(), writeoutOptions.getFileType(), twoStep,
             repex.getRepexFrequency())
       } else {
-        repExOST = RepExOST.repexMD(orthogonalSpaceTempering, md, dynamics, ostOptions,
-            topologies[0].getProperties(), writeout.getFileType(), repex.getRepexFrequency())
+        repExOST = RepExOST.repexMD(orthogonalSpaceTempering, md, dynamicsOptions, ostOptions,
+            topologies[0].getProperties(), writeoutOptions.getFileType(), repex.getRepexFrequency())
       }
 
-      long eSteps = thermodynamics.getEquilSteps()
+      long eSteps = thermodynamicsOptions.getEquilSteps()
       if (eSteps > 0) {
         repExOST.mainLoop(eSteps, true)
       }
-      repExOST.mainLoop(dynamics.getNumSteps(), false)
+      repExOST.mainLoop(dynamicsOptions.getNumSteps(), false)
     } else {
       logger.severe(" RepexThermo currently does not support fixed-lambda alchemy!")
     }
 
     // @formatter:off
-    logger.info(" ${thermodynamics.getAlgorithm()} with Histogram Replica Exchange Done.")
+    logger.info(" ${thermodynamicsOptions.getAlgorithm()} with Histogram Replica Exchange Done.")
     // @formatter:on
 
     return this

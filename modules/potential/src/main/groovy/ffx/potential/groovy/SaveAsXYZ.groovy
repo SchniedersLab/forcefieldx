@@ -44,11 +44,15 @@ import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
 import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import static java.lang.String.format
 
 /**
  * The SaveAsXYZ script saves a file as an XYZ file
@@ -66,23 +70,30 @@ class SaveAsXYZ extends PotentialScript {
   /**
    * -p or --pos-offset to set the positive atom type offset
    */
-  @Option(names = ['--pos-offset', '-p'], paramLabel = "0",
+  @Option(names = ['-p', '--pos-offset'], paramLabel = "0",
       description = 'Positive offset of atom types in the new file')
   int posOffset = 0
 
   /**
    * -n or --neg-offset to set the negative atom type offset
    */
-  @Option(names = ['--neg-offset', '-n'], paramLabel = "0",
+  @Option(names = ['-n', '--neg-offset'], paramLabel = "0",
       description = 'Negative offset of atom types in the new file.')
   int negOffset = 0
 
   /**
    * -r or --random to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
    */
-  @Option(names = ['--random', '-r'],
+  @Option(names = ['-r', '--random'], paramLabel = "X",
       description = 'Apply a random Cartesian SymOp with translation range -X .. X.')
   double scalar = -1
+
+  /**
+   * --wS or --writeSnapshot Write out a specific snapshot. Provide the number of the snapshot to be written.
+   */
+  @Option(names = ['--wS', '--writeSnapshot'], paramLabel = "0", defaultValue = "0",
+          description = 'Write out a specific snapshot.')
+  private int writeSnapshot = 0
 
   /**
    * The final argument(s) should be one or more filenames.
@@ -126,6 +137,9 @@ class SaveAsXYZ extends PotentialScript {
 
     String modelFilename = activeAssembly.getFile().getAbsolutePath()
 
+    SystemFilter openFilter = potentialFunctions.getFilter()
+    int numModels = openFilter.countNumModels()
+
     int offset = 0
 
     // Positive offset atom types.
@@ -139,8 +153,6 @@ class SaveAsXYZ extends PotentialScript {
       offset = -offset
     }
 
-    logger.info("\n Writing out XYZ for " + modelFilename)
-
     // Offset atom type numbers.
     if (offset != 0) {
       logger.info("\n Offset atom types by " + offset)
@@ -150,7 +162,7 @@ class SaveAsXYZ extends PotentialScript {
 
     if (scalar > 0.0) {
       SymOp symOp = SymOp.randomSymOpFactory(scalar)
-      logger.info(String.format("\n Applying random Cartesian SymOp\n: %s", symOp.toString()))
+      logger.info(format("\n Applying random Cartesian SymOp\n: %s", symOp.toString()))
       Crystal crystal = activeAssembly.getCrystal()
       Atom[] atoms = activeAssembly.getAtomArray()
       double[] xyz = new double[3]
@@ -167,11 +179,56 @@ class SaveAsXYZ extends PotentialScript {
     }
     String dirName = saveDir.getAbsolutePath()
     String fileName = FilenameUtils.getName(modelFilename)
-    fileName = FilenameUtils.removeExtension(fileName) + ".xyz"
-    File modelFile = new File(dirName + File.separator + fileName)
 
-    saveOptions.preSaveOperations(activeAssembly)
-    potentialFunctions.save(activeAssembly, modelFile)
+    if(writeSnapshot>=1){
+      XYZFilter snapshotFilter = new XYZFilter(new File(dirName + File.separator + fileName), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+      openFilter.readNext(true)
+      int counter=1
+      if(counter==writeSnapshot) {
+        File snapshotFile = new File(dirName + File.separator + "snapshot" + counter.toString()+".xyz")
+        potentialFunctions.versionFile(snapshotFile)
+        saveOptions.preSaveOperations(activeAssembly)
+        logger.info("\n Writing out XYZ for " + snapshotFile.toString())
+        snapshotFilter.writeFile(snapshotFile, true)
+      }
+      while (openFilter.readNext(false)) {
+        counter++
+        if(counter==writeSnapshot) {
+          File snapshotFile = new File(dirName + File.separator + "snapshot" + counter.toString()+".xyz")
+          potentialFunctions.versionFile(snapshotFile)
+          saveOptions.preSaveOperations(activeAssembly)
+          logger.info("\n Writing out XYZ for " + snapshotFile.toString())
+          snapshotFilter.writeFile(snapshotFile, true)
+          break
+        }
+      }
+      return this
+    }
+
+    logger.info("\n Writing out XYZ for " + modelFilename)
+
+    if (numModels <= 1) {
+      fileName = FilenameUtils.removeExtension(fileName) + ".xyz"
+      File modelFile = new File(dirName + File.separator + fileName)
+
+      saveOptions.preSaveOperations(activeAssembly)
+      potentialFunctions.save(activeAssembly, modelFile)
+    } else {
+      //Save to an arc file rather than an xyz file if more than one model exists.
+      fileName = FilenameUtils.removeExtension(fileName) + ".arc"
+      File modelFile = new File(dirName + File.separator + fileName)
+
+      File saveFile = potentialFunctions.versionFile(modelFile)
+      saveOptions.preSaveOperations(activeAssembly)
+      potentialFunctions.save(activeAssembly, saveFile)
+
+      XYZFilter saveFilter = (XYZFilter) potentialFunctions.getFilter()
+
+      while (openFilter.readNext(false)) {
+        saveOptions.preSaveOperations(activeAssembly)
+        saveFilter.writeFile(saveFile, true)
+      }
+    }
 
     return this
   }

@@ -198,7 +198,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private final boolean relativeSolvationTerm;
   private final Platform platform = Platform.FFX;
   /** Current value of the Lambda state variable. */
-  protected double lambda = 1.0;
+  private double lambda = 1.0;
   /** Indicates use of the Lambda state variable. */
   protected boolean lambdaTerm;
   /** Optimization scaling value to use for each degree of freedom. */

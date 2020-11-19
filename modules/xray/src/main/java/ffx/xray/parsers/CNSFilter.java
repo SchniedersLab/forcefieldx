@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.xray.parsers;
 
+import static ffx.crystal.SpaceGroupInfo.spaceGroupNames;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -46,7 +47,8 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupDefinitions;
+import ffx.crystal.SpaceGroupInfo;
 import ffx.xray.DiffractionRefinementData;
 import java.io.BufferedReader;
 import java.io.File;
@@ -72,7 +74,8 @@ public class CNSFilter implements DiffractionFileFilter {
   private int spaceGroupNum = -1;
 
   /** Constructor for CNSFilter. */
-  public CNSFilter() {}
+  public CNSFilter() {
+  }
 
   /** {@inheritDoc} */
   @Override
@@ -83,8 +86,7 @@ public class CNSFilter implements DiffractionFileFilter {
   /** {@inheritDoc} */
   @Override
   public ReflectionList getReflectionList(File cnsFile, CompositeConfiguration properties) {
-    try {
-      BufferedReader br = new BufferedReader(new FileReader(cnsFile));
+    try (BufferedReader br = new BufferedReader(new FileReader(cnsFile))) {
       String string;
       while ((string = br.readLine()) != null) {
         String[] strArray = string.split("\\s+");
@@ -105,12 +107,11 @@ public class CNSFilter implements DiffractionFileFilter {
           cell[3] = parseDouble(strArray[4]);
           cell[4] = parseDouble(strArray[5]);
           cell[5] = parseDouble(strArray[6]);
-          spaceGroupName = SpaceGroup.pdb2ShortName(string.substring(55, 65));
+          spaceGroupName = SpaceGroupInfo.pdb2ShortName(string.substring(55, 65));
         } else if (strArray[0].toLowerCase().startsWith("inde")) {
           break;
         }
       }
-      br.close();
     } catch (IOException e) {
       String message = " CNS IO Exception.";
       logger.log(Level.WARNING, message, e);
@@ -124,7 +125,7 @@ public class CNSFilter implements DiffractionFileFilter {
     }
 
     if (spaceGroupName != null) {
-      spaceGroupNum = SpaceGroup.spaceGroupNumber(spaceGroupName);
+      spaceGroupNum = SpaceGroupDefinitions.spaceGroupNumber(spaceGroupName);
     }
 
     if (spaceGroupNum < 0 || cell[0] < 0 || resolution == null) {
@@ -137,27 +138,16 @@ public class CNSFilter implements DiffractionFileFilter {
       StringBuilder sb = new StringBuilder();
       sb.append(format("\n Opening %s\n", cnsFile.getName()));
       sb.append(" Setting up Reflection List based on CNS:\n");
-      sb.append(
-          format(
-              "  Spacegroup #: %d (name: %s)\n",
-              spaceGroupNum, SpaceGroup.spaceGroupNames[spaceGroupNum - 1]));
+      sb.append(format("  Spacegroup #: %d (name: %s)\n",
+          spaceGroupNum, spaceGroupNames[spaceGroupNum - 1]));
       sb.append(format("  Resolution:   %8.3f\n", resHigh));
-      sb.append(
-          format(
-              "  Cell:         %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
-              cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]));
+      sb.append(format("  Cell:         %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
+          cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]));
       logger.info(sb.toString());
     }
 
-    Crystal crystal =
-        new Crystal(
-            cell[0],
-            cell[1],
-            cell[2],
-            cell[3],
-            cell[4],
-            cell[5],
-            SpaceGroup.spaceGroupNames[spaceGroupNum - 1]);
+    Crystal crystal = new Crystal(cell[0], cell[1], cell[2],
+        cell[3], cell[4], cell[5], spaceGroupNames[spaceGroupNum - 1]);
 
     return new ReflectionList(crystal, resolution, properties);
   }
@@ -167,8 +157,7 @@ public class CNSFilter implements DiffractionFileFilter {
   public double getResolution(File cnsFile, Crystal crystal) {
     double res = Double.POSITIVE_INFINITY;
 
-    try {
-      BufferedReader br = new BufferedReader(new FileReader(cnsFile));
+    try (BufferedReader br = new BufferedReader(new FileReader(cnsFile))) {
       HKL hkl = new HKL();
       String string;
       while ((string = br.readLine()) != null) {
@@ -215,14 +204,14 @@ public class CNSFilter implements DiffractionFileFilter {
       sb.append(format(" Setting R free flag to CNS default: %d\n", refinementData.rFreeFlag));
     }
 
-    try {
-      BufferedReader br = new BufferedReader(new FileReader(cnsFile));
+    // column identifiers
+    String foString = null;
+    String sigFoString = null;
+    String rFreeString = null;
+    int ih, ik, il, free;
+    double fo, sigFo;
 
-      boolean hasHKL, hasFo, hasSigFo, hasFree;
-      int ih, ik, il, free;
-      double fo, sigFo;
-
-      hasHKL = hasFo = hasSigFo = hasFree = false;
+    try (BufferedReader br = new BufferedReader(new FileReader(cnsFile))) {
       ih = ik = il = free = -1;
       fo = sigFo = -1.0;
 
@@ -238,9 +227,9 @@ public class CNSFilter implements DiffractionFileFilter {
         for (int i = 0; i < strArray.length; i++) {
           if (strArray[i].toLowerCase().startsWith("inde")) {
             if (i < strArray.length - 3) {
-              ih = Integer.parseInt(strArray[i + 1]);
-              ik = Integer.parseInt(strArray[i + 2]);
-              il = Integer.parseInt(strArray[i + 3]);
+              ih = parseInt(strArray[i + 1]);
+              ik = parseInt(strArray[i + 2]);
+              il = parseInt(strArray[i + 3]);
               reflectionList.findSymHKL(ih, ik, il, mate, false);
               HKL hklpos = reflectionList.getHKL(mate);
               if (hklpos == null) {
@@ -260,18 +249,22 @@ public class CNSFilter implements DiffractionFileFilter {
         transpose = true;
       }
 
-      // column identifiers
-      String foString = null;
-      String sigFoString = null;
-      String rFreeString = null;
       if (properties != null) {
         foString = properties.getString("fostring", null);
         sigFoString = properties.getString("sigfostring", null);
         rFreeString = properties.getString("rfreestring", null);
       }
+    } catch (IOException e) {
+      String message = "CNS IO Exception.";
+      logger.log(Level.WARNING, message, e);
+      return false;
+    }
 
-      // reopen to start at beginning
-      br = new BufferedReader(new FileReader(cnsFile));
+    boolean hasHKL, hasFo, hasSigFo, hasFree;
+    hasHKL = hasFo = hasSigFo = hasFree = false;
+
+    // reopen to start at beginning
+    try (BufferedReader br = new BufferedReader(new FileReader(cnsFile))) {
 
       // read in data
       double[][] anofSigF = new double[refinementData.n][4];
@@ -280,6 +273,8 @@ public class CNSFilter implements DiffractionFileFilter {
       }
       nRead = nRes = nIgnore = nFriedel = nCut = 0;
 
+      String string;
+      HKL mate = new HKL();
       while ((string = br.readLine()) != null) {
         String[] strArray = string.split("\\s+");
         for (int i = 0; i < strArray.length; i++) {
@@ -338,8 +333,6 @@ public class CNSFilter implements DiffractionFileFilter {
           }
         }
       }
-      br.close();
-
       // Set up fsigf from F+ and F-.
       refinementData.generateFsigFfromAnomalousFsigF(anofSigF);
     } catch (IOException e) {

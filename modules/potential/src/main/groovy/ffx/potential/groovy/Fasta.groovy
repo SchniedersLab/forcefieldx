@@ -137,6 +137,7 @@ class Fasta extends PotentialScript {
     logger.info(format("\n New sequence from residue %d to residue %d is of length %d: \n %s",
         firstResidue, lastResidue, length, proteinSequence.toString()))
 
+    // Configure the base directory if it has not been set.
     File saveDir = baseDir
     fastaName = fastaFile.getAbsolutePath()
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {

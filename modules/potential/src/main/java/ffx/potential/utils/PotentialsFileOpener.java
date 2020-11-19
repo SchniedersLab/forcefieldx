@@ -83,10 +83,10 @@ public class PotentialsFileOpener implements FileOpener {
   private final File[] allFiles;
   private final Path[] allPaths;
   private int nThreads = -1;
-  private List<MolecularAssembly> assemblies;
-  private MolecularAssembly
-      activeAssembly; // Presently, will just be the first element of assemblies.
-  private List<CompositeConfiguration> propertyList;
+  private final List<MolecularAssembly> assemblies;
+  private final List<CompositeConfiguration> propertyList;
+  // Presently, will just be the first element of assemblies.
+  private MolecularAssembly activeAssembly;
   private CompositeConfiguration activeProperties;
   private SystemFilter filter;
   private List<Mutation> mutationsToApply;

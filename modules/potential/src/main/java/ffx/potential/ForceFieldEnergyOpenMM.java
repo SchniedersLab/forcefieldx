@@ -830,7 +830,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     double[] x = new double[getNumberOfVariables()];
     getCoordinates(x);
 
-    double currentLambda = lambda;
+    double currentLambda = getLambda();
     double width = finiteDifferenceStepSize;
     double ePlus;
     double eMinus;
@@ -912,9 +912,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
   /** {@inheritDoc} */
   @Override
   public void setLambda(double lambda) {
+
     if (!lambdaTerm) {
-      logger.fine(
-          " Attempting to set a lambda value on a ForceFieldEnergyOpenMM with lambdaterm false.");
+      logger.fine(" Attempting to set lambda for a ForceFieldEnergyOpenMM with lambdaterm false.");
       return;
     }
 
@@ -926,8 +926,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     super.setLambda(lambda);
-
-    this.lambda = lambda;
 
     // Remove the beginning of the normal Lambda path.
     double mappedLambda = lambda;
@@ -1200,14 +1198,15 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           integrator.createIntegrator(integratorString, this.timeStep, temperature);
 
       // Set lambda to 1.0 when creating a context to avoid OpenMM compiling out any terms.
-      double currentLambda = lambda;
+      double currentLambda = getLambda();
+
       if (lambdaTerm) {
         ForceFieldEnergyOpenMM.this.setLambda(1.0);
       }
 
       // Create a context.
-      contextPointer =
-          OpenMM_Context_create_2(system.getSystem(), integratorPointer, platformPointer);
+      contextPointer = OpenMM_Context_create_2(system.getSystem(), integratorPointer,
+          platformPointer);
 
       // Revert to the current lambda value.
       if (lambdaTerm) {
@@ -1730,7 +1729,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         lambdaStart = 0.0;
       }
 
-      electrostaticStart = forceField.getDouble("ELEC_START", electrostaticStart);
+      electrostaticStart = forceField.getDouble("PERMANENT_LAMBDA_START", electrostaticStart);
       if (electrostaticStart > 1.0) {
         electrostaticStart = 1.0;
       } else if (electrostaticStart < 0.0) {
@@ -4165,6 +4164,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         int isAlchemical = atom.applyLambda() ? 1 : 0;
         double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
+        int typeIndex = -1;
         OpenMM_AmoebaVdwForce_setParticleParameters(
             amoebaVDWForce,
             index,
@@ -4172,7 +4172,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_NmPerAngstrom * vdwType.radius * radScale,
             eps,
             vdwType.reductionFactor,
-            isAlchemical);
+            isAlchemical, typeIndex);
       }
 
       if (context.contextPointer != null) {

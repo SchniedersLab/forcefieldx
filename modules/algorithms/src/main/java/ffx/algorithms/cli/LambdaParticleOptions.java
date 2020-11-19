@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
 /**
@@ -49,21 +50,11 @@ import picocli.CommandLine.Option;
  */
 public class LambdaParticleOptions {
 
-  /** -m or --lambdaMass to set the mass of the lambda particle. */
-  @Option(
-      names = {"--lm", "--lambdaMass"},
-      paramLabel = "1.0E-18",
-      defaultValue = "1.0E-18",
-      description = "Mass of the lambda particle.")
-  private double lambdaMass;
-
-  /** -x or --lambdaFriction to set friction on the lambda particle */
-  @Option(
-      names = {"--lf", "--lambdaFriction"},
-      paramLabel = "1.0E-18",
-      defaultValue = "1.0E-18",
-      description = "Friction on the lambda particle.")
-  private double lambdaFriction;
+  /**
+   * The ArgGroup keeps the LambdaParticleOptions together when printing help.
+   */
+  @ArgGroup(heading = "%n Lambda Particle Options for MD-OST%n", validate = false)
+  public LambdaParticleOptionGroup group = new LambdaParticleOptionGroup();
 
   /**
    * Friction on the lambda particle.
@@ -71,11 +62,11 @@ public class LambdaParticleOptions {
    * @return a double.
    */
   public double getLambdaFriction() {
-    return lambdaFriction;
+    return group.lambdaFriction;
   }
 
   public void setLambdaFriction(double lambdaFriction) {
-    this.lambdaFriction = lambdaFriction;
+    group.lambdaFriction = lambdaFriction;
   }
 
   /**
@@ -84,10 +75,32 @@ public class LambdaParticleOptions {
    * @return a double.
    */
   public double getLambdaMass() {
-    return lambdaMass;
+    return group.lambdaMass;
   }
 
   public void setLambdaMass(double lambdaMass) {
-    this.lambdaMass = lambdaMass;
+    group.lambdaMass = lambdaMass;
+  }
+
+  /**
+   * Collection of Lambda Particle Options.
+   */
+  private static class LambdaParticleOptionGroup {
+
+    /** -m or --lambdaMass to set the mass of the lambda particle. */
+    @Option(
+        names = {"--lm", "--lambdaMass"},
+        paramLabel = "1.0E-18",
+        defaultValue = "1.0E-18",
+        description = "Mass of the lambda particle.")
+    private double lambdaMass;
+
+    /** -x or --lambdaFriction to set friction on the lambda particle */
+    @Option(
+        names = {"--lf", "--lambdaFriction"},
+        paramLabel = "1.0E-18",
+        defaultValue = "1.0E-18",
+        description = "Friction on the lambda particle.")
+    private double lambdaFriction;
   }
 }

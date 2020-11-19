@@ -1041,7 +1041,7 @@ public class NeighborList extends ParallelRegion {
           if (d2 <= cutoffPlusBuffer2) {
 
             // Warn about close overlaps.
-            if (d2 < crystal.specialPositionCutoff2 && logger.isLoggable(Level.FINE)) {
+            if (d2 < crystal.getSpecialPositionCutoff2() && logger.isLoggable(Level.FINE)) {
               logger.fine(
                   format(
                       " Close overlap (%6.3f) between atoms (iSymm = %d):\n %s\n %s\n",

@@ -65,10 +65,10 @@ import static org.apache.commons.math3.util.FastMath.sqrt
 class Gradient extends PotentialScript {
 
   @Mixin
-  GradientOptions gradientOptions
+  AtomSelectionOptions atomSelectionOptions
 
   @Mixin
-  AtomSelectionOptions atomSelectionOptions
+  GradientOptions gradientOptions
 
   /**
    * The final argument(s) should be one or more filenames.

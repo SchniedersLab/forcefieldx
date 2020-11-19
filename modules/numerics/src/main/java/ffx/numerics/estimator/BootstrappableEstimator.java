@@ -43,8 +43,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 /**
  * The BootstrappableEstimator interface describes a StatisticalEstimator which can use bootstrap
  * sampling as an additional method of calculating free energy and uncertainty. These will generally
- * perform non-bootstrap estimation on construction, with estimateDG(true) called to reset the dG
- * and uncertainty estimates using bootstrapping.
+ * perform non-bootstrap estimation on construction, with estimateDG(true) called to reset the dG and
+ * uncertainty estimates using bootstrapping.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -61,13 +61,13 @@ public interface BootstrappableEstimator extends StatisticalEstimator {
   BootstrappableEstimator copyEstimator();
 
   /**
-   * Re-calculates free energy.
+   * Re-calculates free energy and enthalpy.
    *
-   * @param randomSamples Whether to draw random samples w/ replacement (one bootstrap trial).
+   * @param randomSamples Whether to draw random samples with replacement (one bootstrap trial).
    */
   void estimateDG(final boolean randomSamples);
 
-  /** Re-calculates free energy without bootstrapping. */
+  /** Re-calculates free energy and enthalpy without bootstrapping. */
   void estimateDG();
 
   /**
@@ -75,22 +75,29 @@ public interface BootstrappableEstimator extends StatisticalEstimator {
    *
    * <p>May be over-ridden by non-sequential estimators like MBAR.
    *
-   * @param fe By-bin bootstrap results.
+   * @param freeEnergyDifferences By-bin bootstrap results.
    * @return Overall free energy change.
    */
-  default double sumBootstrapResults(double[] fe) {
-    return stream(fe).sum();
+  default double sumBootstrapResults(double[] freeEnergyDifferences) {
+    return stream(freeEnergyDifferences).sum();
   }
 
+  default double sumEnthalpyBootstrapResults(double[] totalEnthalpy) {
+    return stream(totalEnthalpy).sum();
+  }
   /**
    * Obtains bootstrap uncertainty. Default implementation is square root of summed variances.
    *
    * <p>May be over-ridden by non-sequential estimators like MBAR.
    *
-   * @param var Variance (not uncertainty) in by-bin bootstrap results.
+   * @param variances Variance (not uncertainty) in by-bin bootstrap results.
    * @return Overall uncertainty.
    */
-  default double sumBootstrapUncertainty(double[] var) {
-    return sqrt(stream(var).sum());
+  default double sumBootstrapUncertainty(double[] variances) {
+    return sqrt(stream(variances).sum());
+  }
+
+  default double sumBootstrapEnthalpyUncertainty(double[] enthalpyVariances) {
+    return sqrt(stream(enthalpyVariances).sum());
   }
 }

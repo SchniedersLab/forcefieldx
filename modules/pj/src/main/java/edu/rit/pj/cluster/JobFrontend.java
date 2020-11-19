@@ -39,6 +39,8 @@
 //******************************************************************************
 package edu.rit.pj.cluster;
 
+import static java.lang.String.format;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -543,7 +545,7 @@ public class JobFrontend
             }
             System.err.println(" Exception executing SSH command:\n" + exc.toString());
             logger.log(Level.SEVERE, " Exception executing SSH command:\n" + exc.toString());
-            terminateCancelJob(backendFailed(processinfo));
+            terminateCancelJob(backendFailed(processinfo, "SSH command failed"));
         }
     }
 
@@ -1001,7 +1003,7 @@ public class JobFrontend
             ProcessInfo processinfo = myProcessInfo[rank];
             if (processinfo.expireTimer.isTriggered()) {
                 // Terminate the Job Frontend.
-                String msg = backendFailed(processinfo);
+                String msg = backendFailed(processinfo, "Expire Timer Triggered");
                 continueRun = false;
                 if (myState == State.RUNNING) {
                     myState = State.TERMINATE_CANCEL_JOB;
@@ -1024,9 +1026,10 @@ public class JobFrontend
      * Take action when a backend process fails.
      *
      * @param processinfo Process info.
+     * @param reason Reason for the failure.
      * @return Error message.
      */
-    private String backendFailed(ProcessInfo processinfo) {
+    private String backendFailed(ProcessInfo processinfo, String reason) {
         // Mark the backend process as failed.
         processinfo.state = ProcessInfo.State.FAILED;
 
@@ -1037,8 +1040,9 @@ public class JobFrontend
         }
 
         // Set up error message.
-        return "Job backend process failed, node "
-                + processinfo.name + ", rank " + processinfo.rank;
+        String message = format("Job backend process failed (%s), node %s, rank %d",
+            reason, processinfo.name, processinfo.rank);
+        return message;
     }
 
     /**

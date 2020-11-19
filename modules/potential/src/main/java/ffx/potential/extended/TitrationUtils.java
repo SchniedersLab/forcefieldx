@@ -300,51 +300,56 @@ public class TitrationUtils {
    */
   public static void initEsvPreloadProperties(Double cutoffs) {
     // Active Potential
-    System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
+    // System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
     System.setProperty("esvterm", "true");
     System.setProperty("lambdaterm", "true");
-    System.setProperty("bondterm", "true");
-    System.setProperty("angleterm", "true");
-    System.setProperty("strbndterm", "true");
-    System.setProperty("ureyterm", "true");
-    System.setProperty("opbendterm", "true");
-    System.setProperty("torsionterm", "true");
-    System.setProperty("pitorsterm", "true");
-    System.setProperty("tortorterm", "true");
-    System.setProperty("improperterm", "true");
+    // System.setProperty("bondterm", "true");
+    // System.setProperty("angleterm", "true");
+    // System.setProperty("strbndterm", "true");
+    // System.setProperty("ureyterm", "true");
+    // System.setProperty("opbendterm", "true");
+    // System.setProperty("torsionterm", "true");
+    // System.setProperty("pitorsterm", "true");
+    // System.setProperty("tortorterm", "true");
+    // System.setProperty("improperterm", "true");
 
     // Optional Potential
-    System.setProperty("vdwterm", "true"); // van der Waals
+    // System.setProperty("vdwterm", "true"); // van der Waals
     System.setProperty("esv.vdw", "true");
-    System.setProperty("mpoleterm", "true"); // permanent real space
+    // System.setProperty("mpoleterm", "true"); // permanent real space
     System.setProperty("pme-qi", "true");
     System.setProperty("esv.pme", "true");
-    System.setProperty("recipterm", "true"); // permanent reciprocal space
+    // System.setProperty("recipterm", "true"); // permanent reciprocal space
 
     // Inactive Potential
-    System.setProperty("polarizeterm", "false"); // polarization
-    System.setProperty("polarization", "NONE");
-    System.setProperty("gkterm", "false");
-    System.setProperty("restrainterm", "false");
-    System.setProperty("comrestrainterm", "false");
-    System.setProperty("lambda_torsions", "false");
+    // System.setProperty("polarizeterm", "false"); // polarization
+    // System.setProperty("polarization", "NONE");
+    // System.setProperty("gkterm", "false");
+    // System.setProperty("restrainterm", "false");
+    // System.setProperty("comrestrainterm", "false");
+    // System.setProperty("lambda_torsions", "false");
 
     // Potential Settings
     System.setProperty("permanent-lambda-alpha", "2.0");
     System.setProperty("permanent-lambda-exponent", "3.0");
-    System.setProperty("polarization-lambda-start", "0.0"); // polarize on the whole range [0,1]
-    System.setProperty(
-        "polarization-lambda-exponent", "0.0"); // polarization not softcored, only prefactored
-    System.setProperty("ligand-vapor-elec", "false"); // cancels when reference is solution phase
-    System.setProperty(
-        "no-ligand-condensed-scf", "false"); // don't need condensed phase polarization
+
+    // Polarize on the whole range [0,1]
+    System.setProperty("polarization-lambda-start", "0.0");
+
+    // Polarization is not soft-cored, only a factor of lambda is applied.
+    System.setProperty("polarization-lambda-exponent", "0.0");
+
+    // No special SCF between proton atoms that are being turned off.
+    System.setProperty("ligand-vapor-elec", "false");
+
+    // No special SCF for the protein without protons.
+    System.setProperty("no-ligand-condensed-scf", "false");
+
+    // Protons on different amino acids do not feel each other when turned off.
     System.setProperty("intramolecular-softcore", "true");
+
+    // Protons on different proteins do not feel each other when turned off.
     System.setProperty("intermolecular-softcore", "true");
-    if (cutoffs != null) {
-      System.setProperty("vdw-cutoff", String.valueOf(cutoffs));
-      System.setProperty("ewald-cutoff", String.valueOf(cutoffs));
-    }
-    System.setProperty("polar-eps", "1e-12");
 
     // ESV Settings
     //        System.setProperty("esv.biasTerm", "true");             // include discretization and

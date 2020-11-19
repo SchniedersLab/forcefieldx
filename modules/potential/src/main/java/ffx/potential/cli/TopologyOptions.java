@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
 /**
@@ -71,54 +72,58 @@ public class TopologyOptions {
   /** The logger for this class. */
   public static final Logger logger = Logger.getLogger(TopologyOptions.class.getName());
 
-  /** --ac2 or --alchemicalAtoms2 Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]." */
-  @Option(
-      names = {"--ac2", "--alchemicalAtoms2"},
-      paramLabel = "<selection>",
-      defaultValue = "",
-      description = "Specify alchemical atoms for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
-  String alchemicalAtoms2;
+  /**
+   * The ArgGroup keeps the TopologyOptions together when printing help.
+   */
+  @ArgGroup(heading = "%n Alchemical Options for Dual and Quad Topologies%n", validate = false)
+  public TopologyOptionGroup group = new TopologyOptionGroup();
 
   /**
-   * --uc2 or --unchargedAtoms2 Specify atoms without electrostatics [ALL, NONE, Range(s):
-   * 1-3,6-N]."
+   * --ac2 or --alchemicalAtoms2 Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N].
+   *
+   * @return Returns alchemical atoms for the 2nd topology.
    */
-  @Option(
-      names = {"--uc2", "--unchargedAtoms2"},
-      paramLabel = "<selection>",
-      defaultValue = "",
-      description =
-          "Specify atoms without electrostatics for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
-  String unchargedAtoms2;
+  public String getAlchemicalAtoms2() {
+    return group.alchemicalAtoms2;
+  }
+
+  /**
+   * --uc2 or --unchargedAtoms2 Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N].
+   *
+   * @return Returns atoms without electrostatics for the 2nd topology.
+   */
+  public String getUnchargedAtoms2() {
+    return group.unchargedAtoms2;
+  }
 
   /**
    * -np or --nParallel sets the number of topologies to evaluate in parallel; currently 1, 2, or 4.
+   *
+   * @return Returns Number of topologies to evaluate in parallel.
    */
-  @Option(
-      names = {"--np", "--nParallel"},
-      paramLabel = "1",
-      description = "Number of topologies to evaluate in parallel")
-  int nPar = 1;
+  public int getNPar() {
+    return group.nPar;
+  }
 
   /**
    * --uaA or --unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated
    * ranges or singletons.
+   *
+   * @return Return atoms unique to the A dual-topology.
    */
-  @Option(
-      names = {"--uaA", "--unsharedA"},
-      paramLabel = "-1",
-      description = "Unshared atoms in the A dual topology (e.g. 1-24.32-65).")
-  String unsharedA = null;
+  public String getUnsharedA() {
+    return group.unsharedA;
+  }
 
   /**
-   * --uaB or --unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated
+   * --uaB or --unsharedB sets atoms unique to the A dual-topology, as period-separated hyphenated
    * ranges or singletons.
+   *
+   * @return Return atoms unique to the B dual-topology.
    */
-  @Option(
-      names = {"--uaB", "--unsharedB"},
-      paramLabel = "-1",
-      description = "Unshared atoms in the B dual topology (e.g. 1-24.32-65).")
-  String unsharedB = null;
+  public String getUnsharedB() {
+    return group.unsharedB;
+  }
 
   /**
    * -sf or --switchingFunction
@@ -144,13 +149,37 @@ public class TopologyOptions {
    * where f(l) is a continuous switching function such that f(0) = 0, f(1) = 1, and 0 <= f(l) <= 1
    * for lambda 0-1. The trigonometric switch can be restated thusly, since cos^2(pi/2*lambda) is
    * identical to sin^2(pi/2*(1-lambda)), f(1-l).
+   *
+   * @return Returns the lambda function.
    */
-  @Option(
-      names = {"--sf", "--switchingFunction"},
-      paramLabel = "1.0",
-      description =
-          "Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)")
-  String lambdaFunction = "1.0";
+  public String getLambdaFunction() {
+    return group.lambdaFunction;
+  }
+
+  /**
+   * The number of topologies to run in parallel.
+   *
+   * @param threadsAvail a int.
+   * @param nArgs a int.
+   * @return a int.
+   */
+  public int getNumParallel(int threadsAvail, int nArgs) {
+    int numParallel = getNPar();
+    if (threadsAvail % numParallel != 0) {
+      logger.warning(
+          format(
+              " Number of threads available %d not evenly divisible by np %d reverting to sequential",
+              threadsAvail, numParallel));
+      numParallel = 1;
+    } else if (nArgs % numParallel != 0) {
+      logger.warning(
+          format(
+              " Number of topologies %d not evenly divisible by np %d reverting to sequential",
+              nArgs, numParallel));
+      numParallel = 1;
+    }
+    return numParallel;
+  }
 
   /**
    * Performs the bulk of the work of setting up a multi-topology system.
@@ -181,37 +210,13 @@ public class TopologyOptions {
   }
 
   /**
-   * The number of topologies to run in parallel.
-   *
-   * @param threadsAvail a int.
-   * @param nArgs a int.
-   * @return a int.
-   */
-  public int getNumParallel(int threadsAvail, int nArgs) {
-    int numParallel = nPar;
-    if (threadsAvail % numParallel != 0) {
-      logger.warning(
-          format(
-              " Number of threads available %d not evenly divisible by np %d reverting to sequential",
-              threadsAvail, numParallel));
-      numParallel = 1;
-    } else if (nArgs % numParallel != 0) {
-      logger.warning(
-          format(
-              " Number of topologies %d not evenly divisible by np %d reverting to sequential",
-              nArgs, numParallel));
-      numParallel = 1;
-    }
-    return numParallel;
-  }
-
-  /**
    * Return the switching function between topology energies.
    *
    * @return the switching function.
    */
   public UnivariateSwitchingFunction getSwitchingFunction() {
     UnivariateSwitchingFunction sf;
+    String lambdaFunction = getLambdaFunction();
     if (!lambdaFunction.equalsIgnoreCase("1.0")) {
       String lf = lambdaFunction.toUpperCase();
       switch (lf) {
@@ -240,6 +245,16 @@ public class TopologyOptions {
   }
 
   /**
+   * Collect unique atoms for the A dual-topology.
+   *
+   * @param topology A MolecularAssembly from dual-topology A.
+   * @return A List of Integers.
+   */
+  public List<Integer> getUniqueAtomsA(MolecularAssembly topology) {
+    return getUniqueAtoms(topology, "A", getUnsharedA());
+  }
+
+  /**
    * Configure a Dual-, Quad- or Oct- Topology.
    *
    * @param topologies The topologies.
@@ -260,11 +275,11 @@ public class TopologyOptions {
     Potential potential = null;
     switch (topologies.length) {
       case 1:
-        sb.append("single topology ");
+        sb.append("Single Topology ");
         potential = topologies[0].getPotentialEnergy();
         break;
       case 2:
-        sb.append("dual topology ");
+        sb.append("Dual Topology ");
         DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
         if (numParallel == 2) {
           dte.setParallel(true);
@@ -272,7 +287,7 @@ public class TopologyOptions {
         potential = dte;
         break;
       case 4:
-        sb.append("quad topology ");
+        sb.append("Quad Topology ");
         DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
         DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
         QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
@@ -357,23 +372,13 @@ public class TopologyOptions {
   }
 
   /**
-   * Collect unique atoms for the A dual-topology.
-   *
-   * @param topology A MolecularAssembly from dual-topology A.
-   * @return A List of Integers.
-   */
-  public List<Integer> getUniqueAtomsA(MolecularAssembly topology) {
-    return getUniqueAtoms(topology, "A", unsharedA);
-  }
-
-  /**
    * Collect unique atoms for the B dual-topology.
    *
    * @param topology A MolecularAssembly from dual-topology B.
    * @return A List of Integers.
    */
   public List<Integer> getUniqueAtomsB(MolecularAssembly topology) {
-    return getUniqueAtoms(topology, "B", unsharedB);
+    return getUniqueAtoms(topology, "B", getUnsharedB());
   }
 
   /**
@@ -382,6 +387,7 @@ public class TopologyOptions {
    * @return Presence of softcore Atoms.
    */
   public boolean hasSoftcore() {
+    String alchemicalAtoms2 = getAlchemicalAtoms2();
     return (alchemicalAtoms2 != null
         && !alchemicalAtoms2.equalsIgnoreCase("NONE")
         && !alchemicalAtoms2.equalsIgnoreCase(""));
@@ -393,6 +399,7 @@ public class TopologyOptions {
    * @param topology a {@link ffx.potential.MolecularAssembly} object.
    */
   public void setSecondSystemAlchemistry(MolecularAssembly topology) {
+    String alchemicalAtoms2 = getAlchemicalAtoms2();
     AlchemicalOptions.setAlchemicalAtoms(topology, alchemicalAtoms2);
   }
 
@@ -402,6 +409,95 @@ public class TopologyOptions {
    * @param topology a {@link ffx.potential.MolecularAssembly} object.
    */
   public void setSecondSystemUnchargedAtoms(MolecularAssembly topology) {
+    String unchargedAtoms2 = getUnchargedAtoms2();
     AlchemicalOptions.setUnchargedAtoms(topology, unchargedAtoms2);
+  }
+
+  /**
+   * Collection of Topology Options.
+   */
+  private static class TopologyOptionGroup {
+
+    /** --ac2 or --alchemicalAtoms2 Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]. */
+    @Option(
+        names = {"--ac2", "--alchemicalAtoms2"},
+        paramLabel = "<selection>",
+        defaultValue = "",
+        description = "Specify alchemical atoms for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
+    String alchemicalAtoms2;
+
+    /**
+     * --uc2 or --unchargedAtoms2 Specify atoms without electrostatics [ALL, NONE, Range(s):
+     * 1-3,6-N]."
+     */
+    @Option(
+        names = {"--uc2", "--unchargedAtoms2"},
+        paramLabel = "<selection>",
+        defaultValue = "",
+        description =
+            "Specify atoms without electrostatics for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
+    String unchargedAtoms2;
+
+    /**
+     * -np or --nParallel sets the number of topologies to evaluate in parallel; currently 1, 2, or
+     * 4.
+     */
+    @Option(
+        names = {"--np", "--nParallel"},
+        paramLabel = "1",
+        description = "Number of topologies to evaluate in parallel")
+    int nPar = 1;
+
+    /**
+     * --uaA or --unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated
+     * ranges or singletons.
+     */
+    @Option(
+        names = {"--uaA", "--unsharedA"},
+        paramLabel = "-1",
+        description = "Unshared atoms in the A dual topology (e.g. 1-24.32-65).")
+    String unsharedA = null;
+
+    /**
+     * --uaB or --unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated
+     * ranges or singletons.
+     */
+    @Option(
+        names = {"--uaB", "--unsharedB"},
+        paramLabel = "-1",
+        description = "Unshared atoms in the B dual topology (e.g. 1-24.32-65).")
+    String unsharedB = null;
+
+    /**
+     * -sf or --switchingFunction
+     *
+     * <p>Sets the switching function to be used by dual topologies.
+     *
+     * <p>
+     *
+     * <ul>
+     *   TRIG produces the function sin^2(pi/2*lambda)*E1(lambda) + cos^2(pi/2*lambda)*E2(1-lambda)
+     * </ul>
+     *
+     * <ul>
+     *   MULT uses a 5th-order polynomial switching function with zero first and second derivatives at
+     *   the end (same function as used for van der Waals switch)
+     * </ul>
+     *
+     * <ul>
+     *   A number uses the original function, of l^beta*E1(lambda) + (1-lambda)^beta*E2(1-lambda).
+     * </ul>
+     *
+     * <p>All of these are generalizations of <code>Udt = f(l)*E1(l) + f(1-l)*E2(1-lambda)</code>,
+     * where f(l) is a continuous switching function such that f(0) = 0, f(1) = 1, and 0 <= f(l) <= 1
+     * for lambda 0-1. The trigonometric switch can be restated thusly, since cos^2(pi/2*lambda) is
+     * identical to sin^2(pi/2*(1-lambda)), f(1-l).
+     */
+    @Option(
+        names = {"--sf", "--switchingFunction"},
+        paramLabel = "1.0",
+        description =
+            "Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)")
+    String lambdaFunction = "1.0";
   }
 }

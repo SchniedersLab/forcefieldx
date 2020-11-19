@@ -136,8 +136,14 @@ public abstract class FFXScript extends Script {
         try {
           script = loader.loadClass(pathName);
         } catch (ClassNotFoundException e3) {
-          // Finally, try to load a script from the xray package.
-          pathName = "ffx.xray.groovy." + name;
+          if (name.startsWith("xray.")) {
+            // Finally, try to load a script from the xray package.
+            pathName = "ffx.xray.groovy." + name.replaceAll("xray.", "");
+          } else if (name.startsWith("realspace.")) {
+            pathName = "ffx.realspace.groovy." + name.replaceAll("realspace.", "");
+          } else {
+            pathName = "ffx." + name;
+          }
           try {
             script = loader.loadClass(pathName);
           } catch (ClassNotFoundException e4) {

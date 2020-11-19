@@ -38,16 +38,15 @@
 package ffx.potential.cli;
 
 import static ffx.potential.cli.AtomSelectionOptions.actOnAtoms;
-import static ffx.utilities.StringUtils.parseAtomRanges;
 import static java.lang.String.format;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsFunctions;
-import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
 /**
@@ -65,40 +64,11 @@ public class AlchemicalOptions {
   /** A regular expression used to parse ranges of atoms. */
   public static final Pattern rangeRegEx = Pattern.compile("([0-9]+)-?([0-9]+)?");
 
-  /** -l or --lambda sets the initial lambda value. */
-  @Option(
-      names = {"-l", "--lambda"},
-      paramLabel = "-1",
-      description = "Initial lambda value.")
-  double initialLambda = -1.0;
-
-  /** --ac or --alchemicalAtoms Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]." */
-  @Option(
-      names = {"--ac", "--alchemicalAtoms"},
-      paramLabel = "<selection>",
-      defaultValue = "",
-      description = "Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N].")
-  String alchemicalAtoms;
-
   /**
-   * --uc or --unchargedAtoms Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N]."
+   * The ArgGroup keeps the AlchemicalOptions together when printing help.
    */
-  @Option(
-      names = {"--uc", "--unchargedAtoms"},
-      paramLabel = "<selection>",
-      defaultValue = "",
-      description = "Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N].")
-  String unchargedAtoms;
-
-  /**
-   * Sets the alchemical atoms for a MolecularAssembly.
-   *
-   * @param assembly Assembly to which the atoms belong.
-   * @param alchemicalAtoms Alchemical atoms selection string.
-   */
-  public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms) {
-    actOnAtoms(assembly, alchemicalAtoms, Atom::setApplyLambda, "alchemical", " Alchemical atoms");
-  }
+  @ArgGroup(heading = "%n Alchemical Options%n", validate = false)
+  public AlchemicalOptionGroup group = new AlchemicalOptionGroup();
 
   /**
    * Sets the uncharged atoms for a MolecularAssembly.
@@ -108,16 +78,70 @@ public class AlchemicalOptions {
    */
   public static void setUnchargedAtoms(MolecularAssembly assembly, String unchargedAtoms) {
     actOnAtoms(assembly, unchargedAtoms, (Atom a, Boolean b) -> a.setElectrostatics(!b),
-            "uncharged", " Uncharged atoms");
+        "Uncharged");
+  }
+
+  /**
+   * Sets the alchemical atoms for a MolecularAssembly.
+   *
+   * @param assembly Assembly to which the atoms belong.
+   * @param alchemicalAtoms Alchemical atoms selection string.
+   */
+  public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms) {
+    actOnAtoms(assembly, alchemicalAtoms, Atom::setApplyLambda, "Alchemical");
+  }
+
+  /**
+   * -l or --lambda sets the initial lambda value.
+   *
+   * @return Returns the initial value of lambda.
+   */
+  public double getInitialLambda() {
+    return getInitialLambda(false);
+  }
+
+  /**
+   * --ac or --alchemicalAtoms Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]."
+   *
+   * @return Returns alchemical atoms.
+   */
+  public String getAlchemicalAtoms() {
+    return group.alchemicalAtoms;
+  }
+
+  /**
+   * --uc or --unchargedAtoms Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N].
+   *
+   * @return Returns atoms without electrostatics.
+   */
+  public String getUnchargedAtoms() {
+    return group.unchargedAtoms;
   }
 
   /**
    * Gets the initial value of lambda.
    *
+   * @param size The number of processes.
+   * @param rank THe rank of this process.
+   * @param quiet No logging if quiet.
    * @return Initial lambda.
    */
-  public double getInitialLambda() {
-    return getInitialLambda(false);
+  public double getInitialLambda(int size, int rank, boolean quiet) {
+    double initialLambda = group.initialLambda;
+    if (initialLambda < 0.0 || initialLambda > 1.0) {
+      if (rank == 0 || size < 2) {
+        initialLambda = 0.0;
+      } else if (rank == size - 1) {
+        initialLambda = 1.0;
+      } else {
+        double dL = 1.0 / (size - 1);
+        initialLambda = dL * rank;
+      }
+      if (!quiet) {
+        logger.info(format(" Setting lambda to %5.3f.", initialLambda));
+      }
+    }
+    return initialLambda;
   }
 
   /**
@@ -142,39 +166,24 @@ public class AlchemicalOptions {
   }
 
   /**
-   * Gets the initial value of lambda.
-   *
-   * @param size The number of processes.
-   * @param rank THe rank of this process.
-   * @param quiet No logging if quiet.
-   * @return Initial lambda.
-   */
-  public double getInitialLambda(int size, int rank, boolean quiet) {
-    if (initialLambda < 0.0 || initialLambda > 1.0) {
-      if (rank == 0 || size < 2) {
-        initialLambda = 0.0;
-        if (!quiet) logger.info(format(" Setting lambda to %5.3f", initialLambda));
-      } else if (rank == size - 1) {
-        initialLambda = 1.0;
-        if (!quiet) logger.info(format(" Setting lambda to %5.3f", initialLambda));
-      } else {
-        double dL = 1.0 / (size - 1);
-        initialLambda = dL * rank;
-        if (!quiet) logger.info(format(" Setting lambda to %5.3f.", initialLambda));
-      }
-    }
-    return initialLambda;
-  }
-
-  /**
    * If any softcore Atoms have been detected.
    *
    * @return Presence of softcore Atoms.
    */
   public boolean hasSoftcore() {
+    String alchemicalAtoms = getAlchemicalAtoms();
     return (alchemicalAtoms != null
         && !alchemicalAtoms.equalsIgnoreCase("NONE")
         && !alchemicalAtoms.equalsIgnoreCase(""));
+  }
+
+  /**
+   * Set the alchemical atoms for this molecularAssembly.
+   *
+   * @param topology a {@link ffx.potential.MolecularAssembly} object.
+   */
+  public void setFirstSystemAlchemistry(MolecularAssembly topology) {
+    setAlchemicalAtoms(topology, getAlchemicalAtoms());
   }
 
   /**
@@ -233,20 +242,43 @@ public class AlchemicalOptions {
   }
 
   /**
-   * Set the alchemical atoms for this molecularAssembly.
-   *
-   * @param topology a {@link ffx.potential.MolecularAssembly} object.
-   */
-  public void setFirstSystemAlchemistry(MolecularAssembly topology) {
-    setAlchemicalAtoms(topology, alchemicalAtoms);
-  }
-
-  /**
    * Set uncharged atoms for this molecularAssembly.
    *
    * @param topology a {@link ffx.potential.MolecularAssembly} object.
    */
   public void setFirstSystemUnchargedAtoms(MolecularAssembly topology) {
-    setUnchargedAtoms(topology, unchargedAtoms);
+    setUnchargedAtoms(topology, getUnchargedAtoms());
+  }
+
+  /**
+   * Collection of Alchemical Options.
+   */
+  private static class AlchemicalOptionGroup {
+
+    /** -l or --lambda sets the initial lambda value. */
+    @Option(
+        names = {"-l", "--lambda"},
+        paramLabel = "-1",
+        description = "Initial lambda value.")
+    double initialLambda = -1.0;
+
+    /** --ac or --alchemicalAtoms Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]." */
+    @Option(
+        names = {"--ac", "--alchemicalAtoms"},
+        paramLabel = "<selection>",
+        defaultValue = "",
+        description = "Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N].")
+    String alchemicalAtoms;
+
+    /**
+     * --uc or --unchargedAtoms Specify atoms without electrostatics [ALL, NONE, Range(s):
+     * 1-3,6-N]."
+     */
+    @Option(
+        names = {"--uc", "--unchargedAtoms"},
+        paramLabel = "<selection>",
+        defaultValue = "",
+        description = "Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N].")
+    String unchargedAtoms;
   }
 }

@@ -61,10 +61,10 @@ import picocli.CommandLine.Parameters
 class Anneal extends AlgorithmsScript {
 
   @Mixin
-  DynamicsOptions dynamics
+  AtomSelectionOptions atomSelectionOptions
 
   @Mixin
-  AtomSelectionOptions atomSelectionOptions
+  DynamicsOptions dynamics
 
   @Mixin
   AnnealOptions anneal

@@ -66,13 +66,13 @@ import picocli.CommandLine.Parameters
 class Dynamics extends AlgorithmsScript {
 
   @Mixin
-  DynamicsOptions dynamics
-
-  @Mixin
   AtomSelectionOptions atomSelectionOptions
 
   @Mixin
-  BarostatOptions barostatOpt
+  DynamicsOptions dynamicsOptions
+
+  @Mixin
+  BarostatOptions barostatOptions
 
   @Mixin
   WriteoutOptions writeOut
@@ -131,7 +131,7 @@ class Dynamics extends AlgorithmsScript {
       return this
     }
 
-    dynamics.init()
+    dynamicsOptions.init()
 
     String modelFilename
     if (filenames != null && filenames.size() > 0) {
@@ -152,20 +152,13 @@ class Dynamics extends AlgorithmsScript {
     String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
 
     potential = activeAssembly.getPotentialEnergy()
-    boolean updatesDisabled =
-        activeAssembly.getForceField().getBoolean("DISABLE_NEIGHBOR_UPDATES", false)
-    if (updatesDisabled) {
-      logger.info(
-          " This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart")
-    }
     double[] x = new double[potential.getNumberOfVariables()]
     potential.getCoordinates(x)
-
     potential.energy(x, true)
 
-    if (barostatOpt.pressure > 0) {
+    if (barostatOptions.pressure > 0) {
       CrystalPotential crystalPotential = (CrystalPotential) potential
-      Barostat barostat = barostatOpt.createBarostat(activeAssembly, crystalPotential)
+      Barostat barostat = barostatOptions.createBarostat(activeAssembly, crystalPotential)
       potential = barostat
     }
 
@@ -180,10 +173,10 @@ class Dynamics extends AlgorithmsScript {
         dyn = null
       }
 
-      molDyn = dynamics.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
+      molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
 
-      molDyn.dynamic(dynamics.steps, dynamics.dt,
-              dynamics.report, dynamics.write, dynamics.temperature, true, dyn)
+      molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
+          dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
 
     } else {
       logger.info("\n Running replica exchange molecular dynamics on " + modelFilename)
@@ -199,18 +192,19 @@ class Dynamics extends AlgorithmsScript {
         dyn = null
       }
 
-      molDyn = dynamics.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
+      molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
       ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
-              dynamics.temperature)
+          dynamicsOptions.temperature)
 
-      long totalSteps = dynamics.steps
+      long totalSteps = dynamicsOptions.steps
       int nSteps = 100
       int cycles = (int) (totalSteps / nSteps)
       if (cycles <= 0) {
         cycles = 1
       }
 
-      replicaExchange.sample(cycles, nSteps, dynamics.dt, dynamics.report, dynamics.write)
+      replicaExchange.
+          sample(cycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
     }
 
     return this

@@ -131,6 +131,7 @@ class MoveIntoUnitCell extends PotentialScript {
       }
     }
 
+    // Configure the base directory if it has not been set.
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
       saveDir = new File(FilenameUtils.getFullPath(modelFilename))

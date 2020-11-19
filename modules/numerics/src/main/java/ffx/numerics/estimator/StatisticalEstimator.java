@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.numerics.estimator;
 
+import static java.util.Arrays.copyOf;
+
 /**
  * The StatisticalEstimator interface defines a free energy estimator in the most generic sense.
  * Implementations should generally perform their estimation when constructed.
@@ -81,4 +83,10 @@ public interface StatisticalEstimator {
    * @return Total number of subvalues used to compute free energy.
    */
   int numberOfBins();
+  /**
+   * Gets the enthalpy per bin/window.
+   *
+   * @return Individual bin/window enthalpy.
+   */
+  double[] getBinEthalpies();
 }

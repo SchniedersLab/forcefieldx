@@ -38,7 +38,6 @@
 package ffx.potential.groovy
 
 import ffx.crystal.Crystal
-import ffx.crystal.ReplicatesCrystal
 import ffx.crystal.SpaceGroup
 import ffx.crystal.SymOp
 import ffx.numerics.Potential
@@ -51,6 +50,13 @@ import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import static ffx.crystal.ReplicatesCrystal.replicatesCrystalFactory
+import static ffx.crystal.SpaceGroupDefinitions.spaceGroupFactory
+import static ffx.crystal.SpaceGroupInfo.getCCDCPercent
+import static ffx.crystal.SpaceGroupInfo.getPDBRank
+import static ffx.crystal.SymOp.randomSymOpFactory
+import static java.lang.String.format
 
 /**
  * The PrepareSpaceGroups creates sub-directories for the selected space groups.
@@ -65,28 +71,28 @@ class PrepareSpaceGroups extends PotentialScript {
   /**
    * -r or --PDB only consider space groups ranked above the supplied cut-off in the Protein Databank.
    */
-  @Option(names = ['--PDB', '-r'], paramLabel = '231',
+  @Option(names = ['-r', '--PDB'], paramLabel = '231',
       description = 'Only consider space groups populated in the PDB above the specified rank (231 excludes none).')
   int rank = 231
 
   /**
    * -p or --CSD only consider space groups populated above the specified percentage in the CSD.
    */
-  @Option(names = ['--CSD', '-p'], paramLabel = '1.0',
+  @Option(names = ['-p', '--CSD'], paramLabel = '1.0',
       description = 'Only consider space groups populated above the specified percentage in the CSD.')
   double percent = 0.0
 
   /**
    * -c or --chiral to create directories only for chiral space groups.
    */
-  @Option(names = ['--chiral', '-c'], paramLabel = 'false',
+  @Option(names = ['-c', '--chiral'], paramLabel = 'false',
       description = 'Only consider chiral space groups.')
   boolean chiral = false
 
   /**
    *  -a or --achiral to create directories only for achiral space groups.
    */
-  @Option(names = ['--achiral', '-a'], paramLabel = 'false',
+  @Option(names = ['-a', '--achiral'], paramLabel = 'false',
       description = 'Only consider achiral space groups.')
   boolean achiral = false
 
@@ -176,11 +182,11 @@ class PrepareSpaceGroups extends PotentialScript {
     }
 
     for (int num = 1; num <= 230; num++) {
-      SpaceGroup spacegroup = SpaceGroup.spaceGroupFactory(num)
+      SpaceGroup spacegroup = spaceGroupFactory(num)
       if (sg) {
-        SpaceGroup spacegroup2 = SpaceGroup.spaceGroupFactory(sg)
+        SpaceGroup spacegroup2 = spaceGroupFactory(sg)
         if (spacegroup2 == null) {
-          logger.info(String.format("\n Space group %s was not recognized.\n", sg))
+          logger.info(format("\n Space group %s was not recognized.\n", sg))
           return this
         }
         if (spacegroup2.number != spacegroup.number) {
@@ -196,16 +202,16 @@ class PrepareSpaceGroups extends PotentialScript {
         continue
       }
 
-      if (spacegroup.csdPercent[num - 1] < percent) {
+      if (getCCDCPercent(num) < percent) {
         continue
       }
 
-      if (SpaceGroup.getPDBRank(spacegroup) > rank) {
+      if (getPDBRank(spacegroup) > rank) {
         continue
       }
 
-      logger.info(String.format("\n Preparing %s (CSD percent: %7.4f, PDB Rank: %d)",
-          spacegroup.shortName, spacegroup.csdPercent[num - 1], SpaceGroup.getPDBRank(spacegroup)))
+      logger.info(format("\n Preparing %s (CSD percent: %7.4f, PDB Rank: %d)",
+          spacegroup.shortName, getCCDCPercent(num), getPDBRank(spacegroup)))
 
       // Create the directory.
       String sgDirName = spacegroup.shortName.replace('/', '_')
@@ -223,17 +229,17 @@ class PrepareSpaceGroups extends PotentialScript {
         sgDir.mkdir()
       }
 
-      double[] abc = spacegroup.randomUnitCellParams()
+      double[] abc = spacegroup.latticeSystem.resetUnitCellParams()
       Crystal crystal = new Crystal(abc[0], abc[1], abc[2], abc[3], abc[4], abc[5],
           spacegroup.shortName)
       crystal.setDensity(density, mass)
       double cutoff2 = energy.getCutoffPlusBuffer() * 2.0
-      crystal = ReplicatesCrystal.replicatesCrystalFactory(crystal, cutoff2)
+      crystal = replicatesCrystalFactory(crystal, cutoff2)
       energy.setCrystal(crystal)
 
       if (symScalar > 0.0) {
-        SymOp symOp = SymOp.randomSymOpFactory(symScalar)
-        logger.info(String.format("\n Applying random Cartesian SymOp:\n %s", symOp.toString()))
+        SymOp symOp = randomSymOpFactory(symScalar)
+        logger.info(format("\n Applying random Cartesian SymOp:\n %s", symOp.toString()))
         double[] xyz = new double[3]
         for (int i = 0; i < atoms.length; i++) {
           atoms[i].getXYZ(xyz)
@@ -253,53 +259,47 @@ class PrepareSpaceGroups extends PotentialScript {
 
       numberCreated++
 
-      PrintWriter out = null
-      BufferedReader keyReader = null
-      try {
-        out = new PrintWriter(new BufferedWriter(new FileWriter(keyFile)))
-        keyReader = new BufferedReader(new FileReader(propertyFile))
-        while (keyReader.ready()) {
-          String line = keyReader.readLine().trim()
-          if (line != null && !line.equalsIgnoreCase("")) {
-            String[] tokens = line.split(" +")
-            if (tokens != null && tokens.length > 1) {
-              if (tokens[0].equalsIgnoreCase("a-axis")) {
-                out.println(String.format("a-axis %12.8f", crystal.a))
-              } else if (tokens[0].equalsIgnoreCase("b-axis")) {
-                out.println(String.format("b-axis %12.8f", crystal.b))
-              } else if (tokens[0].equalsIgnoreCase("c-axis")) {
-                out.println(String.format("c-axis %12.8f", crystal.c))
-              } else if (tokens[0].equalsIgnoreCase("alpha")) {
-                out.println(String.format("alpha %12.8f", crystal.alpha))
-              } else if (tokens[0].equalsIgnoreCase("beta")) {
-                out.println(String.format("beta %12.8f", crystal.beta))
-              } else if (tokens[0].equalsIgnoreCase("gamma")) {
-                out.println(String.format("gamma %12.8f", crystal.gamma))
-              } else if (tokens[0].equalsIgnoreCase("spacegroup")) {
-                out.println(String.format("spacegroup %s", spacegroup.shortName))
-              } else if (tokens[0].equalsIgnoreCase("parameters")) {
-                if (tokens.length > 1) {
-                  out.println(String.format("%s ../%s", tokens[0], tokens[1]))
+      // Write the new properties file.
+      new BufferedReader(new FileReader(propertyFile)).withCloseable {keyReader ->
+        new PrintWriter(new BufferedWriter(new FileWriter(keyFile))).withCloseable {keyWriter ->
+          try {
+            while (keyReader.ready()) {
+              String line = keyReader.readLine().trim()
+              if (line != null && !line.equalsIgnoreCase("")) {
+                String[] tokens = line.split(" +")
+                if (tokens != null && tokens.length > 1) {
+                  String first = tokens[0].toLowerCase()
+                  if (first == "a-axis") {
+                    keyWriter.println(format("a-axis %12.8f", crystal.a))
+                  } else if (first == "b-axis") {
+                    keyWriter.println(format("b-axis %12.8f", crystal.b))
+                  } else if (first == "c-axis") {
+                    keyWriter.println(format("c-axis %12.8f", crystal.c))
+                  } else if (first == "alpha") {
+                    keyWriter.println(format("alpha %12.8f", crystal.alpha))
+                  } else if (first == "beta") {
+                    keyWriter.println(format("beta %12.8f", crystal.beta))
+                  } else if (first == "gamma") {
+                    keyWriter.println(format("gamma %12.8f", crystal.gamma))
+                  } else if (first == "spacegroup") {
+                    keyWriter.println(format("spacegroup %s", spacegroup.shortName))
+                  } else if (first == "parameters") {
+                    if (tokens.length > 1) {
+                      keyWriter.println(format("parameters ../%s", tokens[1]))
+                    } else {
+                      logger.warning("Parameter file may not have been specified")
+                    }
+                  } else {
+                    keyWriter.println(line)
+                  }
                 } else {
-                  logger.warning("Parameter file may not have been specified")
+                  keyWriter.println(line)
                 }
-              } else {
-                out.println(line)
               }
-            } else {
-                out.println(line)
-              }
+            }
+          } catch (IOException ex) {
+            logger.warning(" Exception writing keyfile." + ex.toString())
           }
-        }
-      } catch (IOException ex) {
-        logger.warning(" Exception writing keyfile." + ex.toString())
-      } finally {
-        if (out != null) {
-          out.flush()
-          out.close()
-        }
-        if (keyReader != null) {
-          keyReader.close()
         }
       }
     }

@@ -37,7 +37,10 @@
 // ******************************************************************************
 package ffx.potential;
 
+import static org.apache.commons.math3.util.FastMath.toDegrees;
+
 import ffx.crystal.Crystal;
+import ffx.crystal.SpaceGroup;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly.FractionalMode;
 import ffx.potential.bonded.Atom;
@@ -51,11 +54,25 @@ import ffx.potential.bonded.Atom;
  */
 public class XtalEnergy implements Potential {
 
-  private final ForceFieldEnergy forceFieldEnergy;
+  /**
+   * MolecularAssembly to compute the crystal energy for.
+   */
   private final MolecularAssembly molecularAssembly;
+  /**
+   * The ForceFieldEnergy to use.
+   */
+  private final ForceFieldEnergy forceFieldEnergy;
+  /**
+   * Array of active atoms.
+   */
   private final Atom[] activeAtoms;
+  /**
+   * Number of active atoms.
+   */
   private final int nActive;
-
+  /**
+   * Atomic coordinates
+   */
   private final double[] xyz;
   private final double[] gr;
   private final int nParams;
@@ -302,18 +319,12 @@ public class XtalEnergy implements Potential {
   private void unitCellParameterDerivatives(double[] x, double[] g) {
 
     double eps = 1.0e-5;
-    double deps = Math.toDegrees(eps);
-
-    double a = unitCell.a;
-    double b = unitCell.b;
-    double c = unitCell.c;
-    double alpha = unitCell.alpha;
-    double beta = unitCell.beta;
-    double gamma = unitCell.gamma;
+    double deps = toDegrees(eps);
+    SpaceGroup spaceGroup = crystal.spaceGroup;
 
     int index = 3 * nActive;
-    switch (crystal.spaceGroup.crystalSystem) {
-      case TRICLINIC:
+    switch (spaceGroup.latticeSystem) {
+      case TRICLINIC_LATTICE:
         g[index] = finiteDifference(x, index, eps);
         index++;
         g[index] = finiteDifference(x, index, eps);
@@ -326,8 +337,8 @@ public class XtalEnergy implements Potential {
         index++;
         g[index] = finiteDifference(x, index, deps);
         break;
-      case MONOCLINIC:
-        // alpha == gamma == 90.0
+      case MONOCLINIC_LATTICE:
+        // alpha = gamma = 90
         g[index] = finiteDifference(x, index, eps);
         index++;
         g[index] = finiteDifference(x, index, eps);
@@ -340,8 +351,8 @@ public class XtalEnergy implements Potential {
         index++;
         g[index] = 0.0;
         break;
-      case ORTHORHOMBIC:
-        // alpha == beta == gamma == 90.0
+      case ORTHORHOMBIC_LATTICE:
+        // alpha = beta = gamma = 90
         g[index] = finiteDifference(x, index, eps);
         index++;
         g[index] = finiteDifference(x, index, eps);
@@ -354,8 +365,8 @@ public class XtalEnergy implements Potential {
         index++;
         g[index] = 0.0;
         break;
-      case TETRAGONAL:
-        // a == b && alpha == beta == gamma == 90.0
+      case TETRAGONAL_LATTICE:
+        // a = b && alpha = beta = gamma = 90
         g[index] = finiteDifference2(x, index, index + 1, eps);
         index++;
         g[index] = g[index - 1];
@@ -368,38 +379,22 @@ public class XtalEnergy implements Potential {
         index++;
         g[index] = 0.0;
         break;
-      case TRIGONAL:
-        if (a == b && b == c && alpha == beta && beta == gamma) {
-          // Rhombohedral axes, primitive cell.
-          g[index] = finiteDifference3(x, index, index + 1, index + 2, eps);
-          index++;
-          g[index] = g[index - 1];
-          index++;
-          g[index] = g[index - 2];
-          index++;
-          g[index] = finiteDifference3(x, index, index + 1, index + 2, deps);
-          index++;
-          g[index] = g[index - 1];
-          index++;
-          g[index] = g[index - 2];
-
-        } else if (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0) {
-          // Hexagonal axes, triple obverse cell.
-          g[index] = finiteDifference2(x, index, index + 1, eps);
-          index++;
-          g[index] = g[index - 1];
-          index++;
-          g[index] = finiteDifference(x, index, eps);
-          index++;
-          g[index] = 0.0;
-          index++;
-          g[index] = 0.0;
-          index++;
-          g[index] = 0.0;
-        }
+      case RHOMBOHEDRAL_LATTICE:
+        // a = b = c, alpha = beta = gamma
+        g[index] = finiteDifference3(x, index, index + 1, index + 2, eps);
+        index++;
+        g[index] = g[index - 1];
+        index++;
+        g[index] = g[index - 2];
+        index++;
+        g[index] = finiteDifference3(x, index, index + 1, index + 2, deps);
+        index++;
+        g[index] = g[index - 1];
+        index++;
+        g[index] = g[index - 2];
         break;
-      case HEXAGONAL:
-        // a == b && alpha == beta == 90.0 && gamma == 120.0
+      case HEXAGONAL_LATTICE:
+        // a = b, alpha = beta = 90, gamma = 120
         g[index] = finiteDifference2(x, index, index + 1, eps);
         index++;
         g[index] = g[index - 1];
@@ -412,8 +407,8 @@ public class XtalEnergy implements Potential {
         index++;
         g[index] = 0.0;
         break;
-      case CUBIC:
-        // a == b == c && alpha == beta == gamma == 90.0
+      case CUBIC_LATTICE:
+        // a = b = c, alpha = beta = gamma = 90
         g[index] = finiteDifference3(x, index, index + 1, index + 2, eps);
         index++;
         g[index] = g[index - 1];
@@ -586,64 +581,58 @@ public class XtalEnergy implements Potential {
     double beta = x[index + 4];
     double gamma = x[index + 5];
 
-    switch (crystal.spaceGroup.crystalSystem) {
-      case TRICLINIC:
+    SpaceGroup spaceGroup = crystal.spaceGroup;
+
+    // Enforce the lattice system.
+    switch (spaceGroup.latticeSystem) {
+      case TRICLINIC_LATTICE:
         break;
-      case MONOCLINIC:
-        // alpha == gamma == 90.0
+      case MONOCLINIC_LATTICE:
+        // alpha = gamma = 90
         alpha = 90.0;
         gamma = 90.0;
         break;
-      case ORTHORHOMBIC:
-        // alpha == beta == gamma == 90.0
-        alpha = 90.0;
-        beta = 90.0;
-        gamma = 90.0;
-        break;
-      case TETRAGONAL:
-        // a == b && alpha == beta == gamma == 90.0
-        double temp = (a + b) / 2.0;
-        a = temp;
-        b = temp;
+      case ORTHORHOMBIC_LATTICE:
+        // alpha = beta = gamma = 90
         alpha = 90.0;
         beta = 90.0;
         gamma = 90.0;
         break;
-      case TRIGONAL:
-        if (a == b && b == c && alpha == beta && beta == gamma) {
-          temp = (a + b + c) / 3.0;
-          a = temp;
-          b = temp;
-          c = temp;
-          temp = (alpha + beta + gamma) / 3.0;
-          alpha = temp;
-          beta = temp;
-          gamma = temp;
-        } else if (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0) {
-          // Hexagonal axes, triple obverse cell.
-          temp = (a + b) / 2.0;
-          a = temp;
-          b = temp;
-          alpha = 90.0;
-          beta = 90.0;
-          gamma = 120.0;
-        }
+      case TETRAGONAL_LATTICE:
+        // a = b, alpha = beta = gamma = 90
+        double ab = 0.5 * (a + b);
+        a = ab;
+        b = ab;
+        alpha = 90.0;
+        beta = 90.0;
+        gamma = 90.0;
         break;
-      case HEXAGONAL:
-        // a == b && alpha == beta == 90.0 && gamma == 120.0
-        temp = (a + b) / 2.0;
-        a = temp;
-        b = temp;
+      case RHOMBOHEDRAL_LATTICE:
+        // a = b = c, alpha = beta = gamma.
+        double abc = (a + b + c) / 3.0;
+        a = abc;
+        b = abc;
+        c = abc;
+        double angles = (alpha + beta + gamma) / 3.0;
+        alpha = angles;
+        beta = angles;
+        gamma = angles;
+        break;
+      case HEXAGONAL_LATTICE:
+        // a = b, alpha = beta = 90 && gamma = 120
+        ab = 0.5 * (a + b);
+        a = ab;
+        b = ab;
         alpha = 90.0;
         beta = 90.0;
         gamma = 120.0;
         break;
-      case CUBIC:
-        // a == b == c && alpha == beta == gamma == 90.0
-        temp = (a + b + c) / 3.0;
-        a = temp;
-        b = temp;
-        c = temp;
+      case CUBIC_LATTICE:
+        // a = b = c, alpha = beta = gamma = 90
+        abc = (a + b + c) / 3.0;
+        a = abc;
+        b = abc;
+        c = abc;
         alpha = 90.0;
         beta = 90.0;
         gamma = 90.0;

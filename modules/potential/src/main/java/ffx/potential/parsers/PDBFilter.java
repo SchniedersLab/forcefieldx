@@ -52,7 +52,7 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.repeat;
 
 import ffx.crystal.Crystal;
-import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupInfo;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
@@ -162,7 +162,7 @@ public final class PDBFilter extends SystemFilter {
   /** Tracks output MODEL numbers. Unused if below zero. */
   private int modelsWritten = -1;
 
-  private File readFile;
+  private final File readFile;
   private List<String> remarkLines = Collections.emptyList();
   private double lastReadLambda = Double.NaN;
 
@@ -991,7 +991,7 @@ public final class PDBFilter extends SystemFilter {
                 properties.addProperty("alpha", alpha);
                 properties.addProperty("beta", beta);
                 properties.addProperty("gamma", gamma);
-                properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(sg));
+                properties.addProperty("spacegroup", SpaceGroupInfo.pdb2ShortName(sg));
                 break;
               case CONECT:
                 // =============================================================================
@@ -1307,14 +1307,33 @@ public final class PDBFilter extends SystemFilter {
         BufferedReader currentReader;
         if (readers.containsKey(system)) {
           currentReader = readers.get(system);
-          if (!currentReader.ready()) {
+          try {
+            if (!currentReader.ready()) {
+              currentReader = new BufferedReader(new FileReader(readFile));
+              // Mark the start of the file.
+              currentReader.mark(0);
+              readers.remove(system);
+              readers.put(system, currentReader);
+            } else if (resetPosition) {
+              // If the BufferedReader has been opened, and reset is requested, reset the position.
+              currentReader.reset();
+            }
+          } catch (Exception exception) {
+            // If all structures in the PDB file have been read, the currentReader may have closed.
+            // The try block will catch this case and reset to the beginning of the file.
             currentReader = new BufferedReader(new FileReader(readFile));
+            // Mark the start of the file.
+            currentReader.mark(0);
+            readers.remove(system);
             readers.put(system, currentReader);
           }
         } else {
           currentReader = new BufferedReader(new FileReader(readFile));
+          // Mark the start of the file.
+          currentReader.mark(0);
           readers.put(system, currentReader);
         }
+
         // Skip to appropriate model.
         String line = currentReader.readLine();
         while (line != null) {

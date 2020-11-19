@@ -218,6 +218,7 @@ class Energy extends PotentialScript {
           numSnaps = index
         }
 
+        // Configure the base directory if it has not been set.
         File saveDir = baseDir
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {

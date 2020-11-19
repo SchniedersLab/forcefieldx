@@ -35,72 +35,20 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms.cli;
-
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Option;
+package ffx.crystal;
 
 /**
- * Represents command line options for scripts that involve local energy minimization.
+ * Enumeration of the 7 crystal systems.
  *
  * @author Michael J. Schnieders
- * @author Jacob M. Litman
  * @since 1.0
  */
-public class MinimizeOptions {
-
-  /**
-   * The ArgGroup keeps the MinimizationOptionGroup together when printing help.
-   */
-  @ArgGroup(heading = "%n Minimization Options%n", validate = false)
-  public MinimizeOptionGroup group = new MinimizeOptionGroup();
-
-  /**
-   * Convergence criteria.
-   *
-   * @return a double.
-   */
-  public double getEps() {
-    return group.eps;
-  }
-
-  public void setEps(double eps) {
-    group.eps = eps;
-  }
-
-  /**
-   * Number of minimization steps.
-   *
-   * @return a int.
-   */
-  public int getIterations() {
-    return group.iterations;
-  }
-
-  public void setIterations(int iterations) {
-    group.iterations = iterations;
-  }
-
-  /**
-   * Collection of Minimize Options.
-   */
-  private static class MinimizeOptionGroup {
-
-    /** -i or --iterations Number of minimization steps. */
-    @Option(
-        names = {"-I", "--iterations"},
-        paramLabel = "Unlimited",
-        // Integer.MAX_VALUE = 2^31 -1 = 2147483647.
-        defaultValue = "2147483647",
-        description = "Number of minimization steps.")
-    private int iterations;
-
-    /** -e or --eps Convergence criteria. */
-    @Option(
-        names = {"-e", "--eps"},
-        paramLabel = "1.0",
-        defaultValue = "1.0",
-        description = "Convergence criteria.")
-    private double eps;
-  }
+public enum CrystalSystem {
+  TRICLINIC,
+  MONOCLINIC,
+  ORTHORHOMBIC,
+  TETRAGONAL,
+  TRIGONAL,
+  HEXAGONAL,
+  CUBIC
 }

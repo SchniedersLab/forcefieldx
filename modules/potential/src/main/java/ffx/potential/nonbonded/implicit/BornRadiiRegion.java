@@ -100,6 +100,7 @@ public class BornRadiiRegion extends ParallelRegion {
   private boolean nativeEnvironmentApproximation;
   /** If true, the descreening integral includes overlaps with the volume of the descreened atom */
   private final boolean perfectHCTScale;
+
   private SharedDoubleArray sharedBorn;
   private SharedDouble ecavTot;
   private boolean verboseRadii;
@@ -284,11 +285,15 @@ public class BornRadiiRegion extends ParallelRegion {
               if (sk > 0.0) {
                 localBorn[i] += descreen(r, r2, baseRi, descreenRk, sk);
               }
+              // TODO: Add neck contribution to atom i being descreeened by atom k.
+
               // Atom k being descreeened by atom i.
               double si = overlapScale[i];
               if (si > 0.0) {
                 localBorn[k] += descreen(r, r2, baseRk, descreenRi, si);
               }
+              // TODO: Add neck contribution to atom k being descreeened by atom i.
+
             } else if (iSymOp > 0) {
               final double xr = xyz[0][k] - xi;
               final double yr = xyz[1][k] - yi;
@@ -303,6 +308,8 @@ public class BornRadiiRegion extends ParallelRegion {
               if (sk > 0.0) {
                 localBorn[i] += descreen(r, r2, baseRi, descreenRk, sk);
               }
+              // TODO: Add neck contribution to atom i being descreeened by atom k.
+
               // For symmetry mates, atom k is not descreeened by atom i.
             }
           }
@@ -319,6 +326,20 @@ public class BornRadiiRegion extends ParallelRegion {
       fill(localBorn, 0.0);
     }
 
+    /**
+     * Compute the integral of 1/r^6 over a neck region.
+     *
+     * @param r atomic separation.
+     * @param radius base radius of the atom being descreened.
+     * @param radiusK radius of the atom doing the descreening.
+     * @return this contribution to the descreening integral.
+     */
+    private double neckDescreen(double r, double radius, double radiusK) {
+      double neckIntegral = 0.0;
+      // TODO: implement Aguilar & Onufriev neck equation.
+      return neckIntegral;
+    }
+
     private double descreen(double r, double r2, double radius, double radiusK, double hctScale) {
       if (perfectHCTScale) {
         return perfectHCTIntegral(r, r2, radius, radiusK, hctScale);
@@ -333,7 +354,7 @@ public class BornRadiiRegion extends ParallelRegion {
      * @param r atomic separation.
      * @param r2 atomic separation squared.
      * @param radius base radius of the atom being descreened.
-     * @param scaledRadius scaled raduis of the atom doing the descreening.
+     * @param scaledRadius scaled radius of the atom doing the descreening.
      * @return this contribution to the descreening integral.
      */
     private double integral(double r, double r2, double radius, double scaledRadius) {

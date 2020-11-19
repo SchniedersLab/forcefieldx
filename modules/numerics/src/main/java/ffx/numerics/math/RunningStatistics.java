@@ -37,6 +37,11 @@
 // ******************************************************************************
 package ffx.numerics.math;
 
+import static java.lang.Double.isFinite;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
@@ -53,15 +58,18 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * @since 1.0
  */
 public class RunningStatistics {
-  private double meanAcc = 0;
-  private double varAcc = 0;
-  private double minAcc = Double.MAX_VALUE;
-  private double maxAcc = Double.MIN_VALUE;
-  private double sumAcc = 0;
-  private double comp = 0;
-  private double weightAcc = 0;
+
+  // Weight-sensitive values.
+  private double mean = 0;
+  private double var = 0;
+  private double weight = 0;
+  // Weight-insensitive values.
+  private double min = Double.MAX_VALUE;
+  private double max = Double.MIN_VALUE;
   private long count = 0;
+  private double sum = 0;
   private long dof = -1;
+  private double comp = 0;
 
   /** Constructs new running statistics accumulator. */
   public RunningStatistics() {
@@ -84,27 +92,26 @@ public class RunningStatistics {
    * @param weight Weight to give the value.
    */
   public void addValue(double val, double weight) {
-    assert Double.isFinite(val);
-    assert Double.isFinite(weight);
+    assert isFinite(val);
+    assert isFinite(weight);
     assert weight > 0.0;
     ++count;
     ++dof;
-    double priorMean = meanAcc;
-    weightAcc += weight;
+    double priorMean = mean;
+    this.weight += weight;
     double y = val - comp;
-    double t = sumAcc + y;
-    comp = (t - sumAcc) - y;
-    sumAcc = t;
+    double t = sum + y;
+    comp = (t - sum) - y;
+    sum = t;
 
-    minAcc = Math.min(minAcc, val);
-    maxAcc = Math.max(maxAcc, val);
-    double invCount = 1.0 / weightAcc;
-    meanAcc += ((val - meanAcc) * invCount);
-    varAcc += ((val - priorMean) * (val - meanAcc)) * weight;
-    if (Double.isNaN(varAcc)) {
+    min = min(min, val);
+    max = max(max, val);
+    double invCount = 1.0 / this.weight;
+    mean += ((val - mean) * invCount);
+    var += ((val - priorMean) * (val - mean)) * weight;
+    if (isNaN(var)) {
       throw new IllegalArgumentException(
-          String.format(
-              " Val %.5f w/ wt %.3f resulted in NaN varAcc; current state %s",
+          format(" Val %.5f w/ wt %.3f resulted in NaN varAcc; current state %s",
               val, weight, new SummaryStatistics(this).toString()));
     }
   }
@@ -133,7 +140,7 @@ public class RunningStatistics {
    * @return Returns the max.
    */
   public double getMax() {
-    return maxAcc;
+    return max;
   }
 
   /**
@@ -142,7 +149,7 @@ public class RunningStatistics {
    * @return Current running mean.
    */
   public double getMean() {
-    return meanAcc;
+    return mean;
   }
 
   /**
@@ -151,7 +158,7 @@ public class RunningStatistics {
    * @return Returns the min.
    */
   public double getMin() {
-    return minAcc;
+    return min;
   }
 
   /**
@@ -169,7 +176,7 @@ public class RunningStatistics {
    * @return Returns the population variance.
    */
   public double getPopulationVariance() {
-    return varAcc / ((double) count);
+    return var / ((double) count);
   }
 
   /**
@@ -187,7 +194,7 @@ public class RunningStatistics {
    * @return Returns the sum.
    */
   public double getSum() {
-    return sumAcc;
+    return sum;
   }
 
   /**
@@ -196,7 +203,7 @@ public class RunningStatistics {
    * @return Returns the variance.
    */
   public double getVariance() {
-    return varAcc / ((double) dof);
+    return var / ((double) dof);
   }
 
   /**
@@ -205,6 +212,17 @@ public class RunningStatistics {
    * @return Returns the weight.
    */
   public double getWeight() {
-    return weightAcc;
+    return weight;
   }
+
+  /**
+   * Describe the Summary Statistics.
+   *
+   * @return Return the description.
+   */
+  public String describe() {
+    return format(" Mean: %12.6f +/-%12.6f, Min/Max: %12.6f/%12.6f", mean,
+        getStandardDeviation(), min, max);
+  }
+
 }

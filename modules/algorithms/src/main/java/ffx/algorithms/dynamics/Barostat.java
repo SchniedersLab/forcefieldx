@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics;
 
+import static ffx.crystal.LatticeSystem.check;
 import static ffx.utilities.Constants.AVOGADRO;
 import static ffx.utilities.Constants.PRESCON;
 import static java.lang.String.format;
@@ -45,12 +46,12 @@ import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.random;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.Potential;
+import ffx.numerics.math.RunningStatistics;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import java.util.ArrayList;
@@ -74,6 +75,10 @@ public class Barostat implements CrystalPotential {
   private static final double kB = 1.98720415e-3;
   /** MolecularAssembly being simulated. */
   private final MolecularAssembly molecularAssembly;
+  /** Boundary conditions and symmetry operators (may be a ReplicatedCrystal). */
+  private Crystal crystal;
+  /** The unit cell. */
+  private Crystal unitCell;
   /** Mass of the system. */
   private final double mass;
   /** ForceFieldEnergy that describes the system. */
@@ -98,10 +103,14 @@ public class Barostat implements CrystalPotential {
   private double maxSideMove = 0.25;
   /** Default angle move (degrees). */
   private double maxAngleMove = 0.5;
-  /** Boundary conditions and symmetry operators (may be a ReplicatedCrystal). */
-  private Crystal crystal;
-  /** The unit cell. */
-  private Crystal unitCell;
+  /**
+   * Minimum density constraint.
+   */
+  private double minDensity = 0.75;
+  /**
+   * Maximum density constraint.
+   */
+  private double maxDensity = 1.60;
   /** Number of energy evaluations between application of MC moves. */
   private int meanBarostatInterval = 1;
   /** A counter for the number of barostat calls. */
@@ -120,41 +129,68 @@ public class Barostat implements CrystalPotential {
   private int angleMovesAccepted = 0;
   /** Energy STATE. */
   private STATE state = STATE.BOTH;
+  /**
+   * Barostat move type.
+   */
+  private MoveType moveType = MoveType.SIDE;
   /** True when a Monte Carlo move is accepted. */
   private boolean moveAccepted = false;
   /** Current density value. */
   private double currentDensity = 0;
-  /** Mean density value. */
-  private double densityMean = 0;
-  /** Mean density squared for STD calculation. */
-  private double densityMean2 = 0;
   /** Current lattice parameters. */
   private double a = 0;
-
+  /**
+   * Current B-axis value.
+   */
   private double b = 0;
+  /**
+   * Current C-axis value.
+   */
   private double c = 0;
+  /**
+   * Current alpha value.
+   */
   private double alpha = 0;
+  /**
+   * Current beta value.
+   */
   private double beta = 0;
+  /**
+   * Current gamma value.
+   */
   private double gamma = 0;
-  /** Mean values of lattice parameters. */
-  private double aMean = 0;
-
-  private double bMean = 0;
-  private double cMean = 0;
-  private double alphaMean = 0;
-  private double betaMean = 0;
-  private double gammaMean = 0;
-  /** Mean values squared of lattice parameters for STD calculation. */
-  private double aMean2 = 0;
-
-  private double bMean2 = 0;
-  private double cMean2 = 0;
-  private double alphaMean2 = 0;
-  private double betaMean2 = 0;
-  private double gammaMean2 = 0;
-  private double minDensity = 0.75;
-  private double maxDensity = 1.60;
-  private MoveType moveType = MoveType.SIDE;
+  /**
+   * A-axis statistics.
+   */
+  private RunningStatistics aStatistics = new RunningStatistics();
+  /**
+   * B-axis statistics.
+   */
+  private RunningStatistics bStatistics = new RunningStatistics();
+  /**
+   * C-axis statistics.
+   */
+  private RunningStatistics cStatistics = new RunningStatistics();
+  /**
+   * Alpha statistics.
+   */
+  private RunningStatistics alphaStatistics = new RunningStatistics();
+  /**
+   * Beta statistics.
+   */
+  private RunningStatistics betaStatistics = new RunningStatistics();
+  /**
+   * Gamma statistics.
+   */
+  private RunningStatistics gammaStatistics = new RunningStatistics();
+  /**
+   * Density statistics.
+   */
+  private RunningStatistics densityStatistics = new RunningStatistics();
+  /**
+   * Barostat print frequency.
+   */
+  private int printFrequency = 1000;
 
   /**
    * Initialize the Barostat.
@@ -173,8 +209,8 @@ public class Barostat implements CrystalPotential {
    * @param potential a {@link ffx.crystal.CrystalPotential} object.
    * @param temperature The Metropolis Monte Carlo temperature (Kelvin).
    */
-  public Barostat(
-      MolecularAssembly molecularAssembly, CrystalPotential potential, double temperature) {
+  public Barostat(MolecularAssembly molecularAssembly, CrystalPotential potential,
+      double temperature) {
 
     this.molecularAssembly = molecularAssembly;
     this.potential = potential;
@@ -459,6 +495,15 @@ public class Barostat implements CrystalPotential {
    */
   public void setMinDensity(double minDensity) {
     this.minDensity = minDensity;
+  }
+
+  /**
+   * Set the Barostat print frequency.
+   *
+   * @param frequency The number of Barostat moves between print statements.
+   */
+  public void setBarostatPrintFrequency(int frequency) {
+    this.printFrequency = frequency;
   }
 
   /** {@inheritDoc} */
@@ -856,8 +901,9 @@ public class Barostat implements CrystalPotential {
     if (isotropic) {
       currentE = mcIsotropic(currentE);
     } else {
-      switch (spaceGroup.crystalSystem) {
-        case MONOCLINIC:
+      switch (spaceGroup.latticeSystem) {
+        case MONOCLINIC_LATTICE:
+          // alpha = gamma = 90
           int move = (int) floor(random() * 4.0);
           switch (move) {
             case 0:
@@ -876,8 +922,8 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        case ORTHORHOMBIC:
-          // alpha == beta == gamma == 90.0
+        case ORTHORHOMBIC_LATTICE:
+          // alpha = beta = gamma = 90
           move = (int) floor(random() * 3.0);
           switch (move) {
             case 0:
@@ -893,8 +939,8 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        case TETRAGONAL:
-          // (a == b, alpha == beta == gamma == 90.0
+        case TETRAGONAL_LATTICE:
+          // a = b, alpha = beta = gamma = 90
           move = (int) floor(random() * 2.0);
           switch (move) {
             case 0:
@@ -907,39 +953,22 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        case TRIGONAL:
-          if (a == b && b == c && alpha == beta && beta == gamma) {
-            // Rombohedral axes, primitive cell.
-            move = (int) floor(random() * 2.0);
-            switch (move) {
-              case 0:
-                currentE = mcABC(currentE);
-                break;
-              case 1:
-                currentE = mcABG(currentE);
-                break;
-              default:
-                logger.severe(" Barostat programming error.");
-            }
-          } else if (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0) {
-            // Hexagonal axes, triple obverse cell.
-            move = (int) floor(random() * 2.0);
-            switch (move) {
-              case 0:
-                currentE = mcAB(currentE);
-                break;
-              case 1:
-                currentE = mcC(currentE);
-                break;
-              default:
-                logger.severe(" Barostat programming error.");
-            }
-          } else {
-            logger.warning(" Trigonal constraints not satisfied.");
+        case RHOMBOHEDRAL_LATTICE:
+          // a = b = c, alpha = beta = gamma
+          move = (int) floor(random() * 2.0);
+          switch (move) {
+            case 0:
+              currentE = mcABC(currentE);
+              break;
+            case 1:
+              currentE = mcABG(currentE);
+              break;
+            default:
+              logger.severe(" Barostat programming error.");
           }
           break;
-        case HEXAGONAL:
-          // a == b, alpha == beta == 90.0, gamma == 120.0
+        case HEXAGONAL_LATTICE:
+          // a = b, alpha = beta = 90, gamma = 120
           move = (int) floor(random() * 2.0);
           switch (move) {
             case 0:
@@ -952,13 +981,14 @@ public class Barostat implements CrystalPotential {
               logger.severe(" Barostat programming error.");
           }
           break;
-        case CUBIC:
-          // a == b == c, alpha == beta == gamma == 90.0
+        case CUBIC_LATTICE:
+          // a = b = c, alpha = beta = gamma = 90
           currentE = mcABC(currentE);
           break;
-        case TRICLINIC:
+        case TRICLINIC_LATTICE:
         default:
-          if (a == b && b == c && alpha == 90.0 && beta == 90.0 && gamma == 90.0) {
+          if (check(a, b) && check(b, c) && check(alpha, 90.0)
+              && check(beta, 90.0) && check(gamma, 90.0)) {
             currentE = mcABC(currentE);
           } else {
             move = (int) floor(random() * 6.0);
@@ -1024,66 +1054,38 @@ public class Barostat implements CrystalPotential {
     return currentE;
   }
 
+  /**
+   * Collect statistics on lattice parameters and density.
+   */
   private void collectStats() {
     // Collect statistics.
     barostatCount++;
-    densityMean += currentDensity;
-    densityMean2 += currentDensity * currentDensity;
-    aMean += a;
-    bMean += b;
-    cMean += c;
-    alphaMean += alpha;
-    betaMean += beta;
-    gammaMean += gamma;
-    aMean2 += a * a;
-    bMean2 += b * b;
-    cMean2 += c * c;
-    alphaMean2 += alpha * alpha;
-    betaMean2 += beta * beta;
-    gammaMean2 += gamma * gamma;
-    int printFrequency = 1000;
+    densityStatistics.addValue(currentDensity);
+    aStatistics.addValue(a);
+    bStatistics.addValue(b);
+    cStatistics.addValue(c);
+    alphaStatistics.addValue(alpha);
+    betaStatistics.addValue(beta);
+    gammaStatistics.addValue(gamma);
     if (barostatCount % printFrequency == 0) {
-      densityMean = densityMean / printFrequency;
-      densityMean2 = densityMean2 / printFrequency;
-      double densitySD = sqrt(densityMean2 - densityMean * densityMean);
-      logger.info(format(" Density: %5.3f +/- %5.3f", densityMean, densitySD));
-      aMean = aMean / printFrequency;
-      bMean = bMean / printFrequency;
-      cMean = cMean / printFrequency;
-      alphaMean = alphaMean / printFrequency;
-      betaMean = betaMean / printFrequency;
-      gammaMean = gammaMean / printFrequency;
-      aMean2 = aMean2 / printFrequency;
-      bMean2 = bMean2 / printFrequency;
-      cMean2 = cMean2 / printFrequency;
-      alphaMean2 = alphaMean2 / printFrequency;
-      betaMean2 = betaMean2 / printFrequency;
-      gammaMean2 = gammaMean2 / printFrequency;
-      double aSD = sqrt(aMean2 - aMean * aMean);
-      double bSD = sqrt(bMean2 - bMean * bMean);
-      double cSD = sqrt(cMean2 - cMean * cMean);
-      double alphaSD = sqrt(alphaMean2 - alphaMean * alphaMean);
-      double betaSD = sqrt(betaMean2 - betaMean * betaMean);
-      double gammaSD = sqrt(gammaMean2 - gammaMean * gammaMean);
-      logger.info(
-          format(
-              " Lattice a: %4.2f +/-%4.2f b: %4.2f +/-%4.2f c: %4.2f +/-%4.2f alpha: %5.2f +/-%3.2f beta: %5.2f +/-%3.2f gamma: %5.2f +/-%3.2f",
-              aMean, aSD, bMean, bSD, cMean, cSD, alphaMean, alphaSD, betaMean, betaSD, gammaMean,
-              gammaSD));
-      densityMean = 0;
-      densityMean2 = 0;
-      aMean = 0;
-      bMean = 0;
-      cMean = 0;
-      alphaMean = 0;
-      betaMean = 0;
-      gammaMean = 0;
-      aMean2 = 0;
-      bMean2 = 0;
-      cMean2 = 0;
-      alphaMean2 = 0;
-      betaMean2 = 0;
-      gammaMean2 = 0;
+      logger.info(format(" Density: %5.3f +/- %5.3f with range %5.3f .. %5.3f",
+          densityStatistics.getMean(), densityStatistics.getStandardDeviation(),
+          densityStatistics.getMin(), densityStatistics.getMax()));
+      logger.info(format(
+          " Lattice a: %4.2f +/-%4.2f b: %4.2f +/-%4.2f c: %4.2f +/-%4.2f alpha: %5.2f +/-%3.2f beta: %5.2f +/-%3.2f gamma: %5.2f +/-%3.2f",
+          aStatistics.getMean(), aStatistics.getStandardDeviation(),
+          bStatistics.getMean(), bStatistics.getStandardDeviation(),
+          cStatistics.getMean(), cStatistics.getStandardDeviation(),
+          alphaStatistics.getMean(), alphaStatistics.getStandardDeviation(),
+          betaStatistics.getMean(), betaStatistics.getStandardDeviation(),
+          gammaStatistics.getMean(), gammaStatistics.getStandardDeviation()));
+      densityStatistics = new RunningStatistics();
+      aStatistics = new RunningStatistics();
+      bStatistics = new RunningStatistics();
+      cStatistics = new RunningStatistics();
+      alphaStatistics = new RunningStatistics();
+      betaStatistics = new RunningStatistics();
+      gammaStatistics = new RunningStatistics();
     }
   }
 

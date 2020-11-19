@@ -54,7 +54,7 @@ import picocli.CommandLine.Parameters
 import static java.lang.String.format
 
 /**
- * The Density script calculates system density. Currently only supports single topologies.
+ * The Density script calculates system density for single topology systems.
  * <br>
  * Usage:
  * <br>

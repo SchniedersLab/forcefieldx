@@ -38,14 +38,11 @@
 package ffx.numerics.estimator;
 
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
-import static java.util.Arrays.stream;
+import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.log;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.numerics.math.SummaryStatistics;
 import ffx.utilities.Constants;
-import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,28 +57,52 @@ import java.util.stream.IntStream;
  * @since 1.0
  */
 public class Zwanzig extends SequentialEstimator implements BootstrappableEstimator {
+
   private static final Logger logger = Logger.getLogger(SequentialEstimator.class.getName());
   public final Directionality directionality;
-  private final int nWindows;
-  private final double[] dGs;
-  private final double[] uncerts;
   private final boolean forwards;
-  private final Random random = new Random();
-  private double totDG;
-  private double totUncert;
+  /**
+   * Number of windows.
+   */
+  private final int nWindows;
+  /**
+   * Free energy difference for each window.
+   */
+  private final double[] windowFreeEnergyDifferences;
+  private final double[] windowEnthalpies;
+  /**
+   * Free energy difference uncertainty for each window.
+   */
+  private final double[] windowFreeEnergyUncertainties;
+  private final Random random;
+  /**
+   * Total free energy difference as a sum over windows.
+   */
+  private double totalFreeEnergyDifference;
+  /**
+   * Total free energy difference uncertainty: totalFreeEnergyUncertainty = Sqrt [ Sum over Windows [
+   * Window Uncertainty Squared ] ]
+   */
+  private double totalFreeEnergyUncertainty;
 
   /**
-   * Estimates a free energy using the Zwanzig relationship. The temperature array can be of length
-   * 1 if all elements are meant to be the same temperature.
+   * Total Enthalpy
+   */
+  private double totalEnthalpy;
+
+  /**
+   * Estimates a free energy using the Zwanzig relationship. The temperature array can be of length 1
+   * if all elements are meant to be the same temperature.
    *
    * <p>The first dimension of the energies arrays corresponds to the lambda values/windows. The
    * second dimension (can be of uneven length) corresponds to potential energies of snapshots
    * sampled from that lambda value, calculated either at that lambda value, the lambda value below,
-   * or the lambda value above. The arrays energiesLow[0] and energiesHigh[n-1] is expected to be
-   * all NaN.
+   * or the lambda value above. The arrays energiesLow[0] and energiesHigh[n-1] is expected to be all
+   * NaN.
    *
    * @param lambdaValues Values of lambda dynamics was run at.
-   * @param energiesLow Potential energies of trajectory L at lambda L-dL. Ignored for forwards FEP.
+   * @param energiesLow Potential energies of trajectory L at lambda L-dL. Ignored for forwards
+   *     FEP.
    * @param energiesAt Potential energies of trajectory L at lambda L.
    * @param energiesHigh Potential energies of trajectory L at lambda L+dL. Ignored for backwards
    *     FEP.
@@ -89,112 +110,131 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
    *     identical temperatures).
    * @param directionality Forwards vs. backwards FEP.
    */
-  public Zwanzig(
-      double[] lambdaValues,
-      double[][] energiesLow,
-      double[][] energiesAt,
+  public Zwanzig(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt,
       double[][] energiesHigh,
-      double[] temperature,
-      Directionality directionality) {
+      double[] temperature, Directionality directionality) {
     super(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature);
     this.directionality = directionality;
     nWindows = nTrajectories - 1;
 
-    dGs = new double[nWindows];
-    uncerts = new double[nWindows];
+    windowFreeEnergyDifferences = new double[nWindows];
+    windowFreeEnergyUncertainties = new double[nWindows];
+    windowEnthalpies = new double[nWindows];
 
     forwards = directionality.equals(Directionality.FORWARDS);
+    random = new Random();
+
     estimateDG();
   }
 
+  /** {@inheritDoc} */
   @Override
   public Zwanzig copyEstimator() {
     return new Zwanzig(lamVals, eLow, eAt, eHigh, temperatures, directionality);
   }
 
+  /** {@inheritDoc} */
   @Override
   public void estimateDG(final boolean randomSamples) {
     double cumDG = 0;
+
     Level warningLevel = randomSamples ? Level.FINE : Level.WARNING;
 
     for (int i = 0; i < nWindows; i++) {
-
       int windowIndex = forwards ? 0 : 1;
       windowIndex += i;
-      double[] e1 = forwards ? eAt[windowIndex] : eLow[windowIndex];
-      double[] e2 = forwards ? eHigh[windowIndex] : eAt[windowIndex];
-      int len = e1.length;
+      double[] e1 = eAt[windowIndex];
+      double[] e2 = forwards ? eHigh[windowIndex] : eLow[windowIndex];
+      double sign = forwards ? 1.0 : -1.0;
+      double beta = -temperatures[windowIndex] * Constants.R;
+      double invBeta = 1.0 / beta;
 
+      int len = e1.length;
       if (len == 0) {
         logger.log(warningLevel, " Skipping frame " + i + " due to lack of snapshots!");
         continue;
       }
 
-      // IMPORTANT: Use the class variable temperatures, not temperature (which may be a 1-length
-      // array).
-      // ALSO IMPORTANT: The -1 factor is included in here for optimization reasons.
-      double beta = -temperatures[windowIndex] * Constants.R;
-      double invBeta = 1.0 / beta;
-
-      double[] deltas = new double[len];
-      double[] expDeltas = new double[len];
-
+      // With no iteration-to-convergence, generating a fresh random index is OK.
       int[] samples =
           randomSamples ? getBootstrapIndices(len, random) : IntStream.range(0, len).toArray();
 
+      double sum = 0.0;
+      double num = 0.0;
+      double term = 0.0;
+      double uAve = 0.0;
       for (int indJ = 0; indJ < len; indJ++) {
-        // With no iteration-to-convergence, generating a fresh random index is OK.
         int j = samples[indJ];
-        deltas[indJ] = e2[j] - e1[j];
-        expDeltas[indJ] = exp(beta * deltas[j]);
+        double dE = e2[j] - e1[j];
+        if (sign > 0){
+          uAve += e1[j];
+          term = exp(invBeta*dE);
+          sum += term;
+          num += e2[j] * term;
+        } else {
+          uAve += e2[j];
+          term = exp(invBeta*dE);
+          sum += term;
+          num += e1[j] * term;
+        }
+
+
       }
 
-      SummaryStatistics deltaSummary = new SummaryStatistics(deltas);
-      SummaryStatistics expDeltaSummary = new SummaryStatistics(expDeltas);
-      double dG = invBeta * log(expDeltaSummary.mean);
-      dGs[i] = dG;
+      uAve = uAve/len;
+
+      double dG = sign * beta * log(sum / len);
+      windowFreeEnergyDifferences[i] = dG;
+      windowEnthalpies[i] = sign*((num / sum) - uAve);
+      windowFreeEnergyUncertainties[i] = 0.0;
+      totalEnthalpy += windowEnthalpies[i];
       cumDG += dG;
-      if (len == 1) {
-        uncerts[i] = 0.0;
-      } else {
-        /*double ci = deltaSummary.confidenceInterval();
-        uncerts[i] = ci;*/
-        uncerts[i] = expDeltaSummary.sd;
-      }
     }
 
-    totDG = cumDG;
-    totUncert = sqrt(stream(uncerts).map((double d) -> d * d).sum());
+    totalFreeEnergyDifference = cumDG;
+    totalFreeEnergyUncertainty = 0.0;
   }
 
+  /** {@inheritDoc} */
   @Override
   public void estimateDG() {
     estimateDG(false);
   }
 
+  /** {@inheritDoc} */
   @Override
   public double[] getBinEnergies() {
-    return Arrays.copyOf(dGs, nWindows);
+    return copyOf(windowFreeEnergyDifferences, nWindows);
   }
 
+  /** {@inheritDoc} */
   @Override
   public double[] getBinUncertainties() {
-    return Arrays.copyOf(uncerts, nWindows);
+    return copyOf(windowFreeEnergyUncertainties, nWindows);
   }
 
+  /** {@inheritDoc} */
   @Override
   public double getFreeEnergy() {
-    return totDG;
+    return totalFreeEnergyDifference;
   }
 
+  /** {@inheritDoc} */
   @Override
   public double getUncertainty() {
-    return totUncert;
+    return totalFreeEnergyUncertainty;
   }
 
+  /** {@inheritDoc} */
   @Override
   public int numberOfBins() {
     return nWindows;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public double[] getBinEthalpies() {
+    return copyOf(windowEnthalpies, nWindows);
   }
 
   /**

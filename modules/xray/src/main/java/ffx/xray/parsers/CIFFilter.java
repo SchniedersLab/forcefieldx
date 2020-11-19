@@ -37,6 +37,10 @@
 // ******************************************************************************
 package ffx.xray.parsers;
 
+import static ffx.crystal.SpaceGroupDefinitions.spaceGroupNumber;
+import static ffx.crystal.SpaceGroupInfo.pdb2ShortName;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.min;
 
@@ -44,7 +48,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupInfo;
 import ffx.xray.DiffractionRefinementData;
 import java.io.BufferedReader;
 import java.io.File;
@@ -74,7 +78,8 @@ public class CIFFilter implements DiffractionFileFilter {
   private int nAll, nObs;
 
   /** Constructor. */
-  public CIFFilter() {}
+  public CIFFilter() {
+  }
 
   /** {@inheritDoc} */
   @Override
@@ -85,8 +90,7 @@ public class CIFFilter implements DiffractionFileFilter {
   /** {@inheritDoc} */
   @Override
   public ReflectionList getReflectionList(File cifFile, CompositeConfiguration properties) {
-    try {
-      BufferedReader br = new BufferedReader(new FileReader(cifFile));
+    try (BufferedReader br = new BufferedReader(new FileReader(cifFile))) {
       String string;
       while ((string = br.readLine()) != null) {
 
@@ -99,36 +103,36 @@ public class CIFFilter implements DiffractionFileFilter {
             || strArray[0].startsWith("_cell")
             || strArray[0].startsWith("_symmetry")) {
           String[] cifArray = strArray[0].split("\\.+");
-          switch (Header.toHeader(cifArray[1])) {
+          switch (CIFHeader.toHeader(cifArray[1])) {
             case d_resolution_high:
-              resHigh = Double.parseDouble(strArray[1]);
+              resHigh = parseDouble(strArray[1]);
               break;
             case number_all:
-              nAll = Integer.parseInt(strArray[1]);
+              nAll = parseInt(strArray[1]);
               break;
             case number_obs:
-              nObs = Integer.parseInt(strArray[1]);
+              nObs = parseInt(strArray[1]);
               break;
             case length_a:
-              cell[0] = Double.parseDouble(strArray[1]);
+              cell[0] = parseDouble(strArray[1]);
               break;
             case length_b:
-              cell[1] = Double.parseDouble(strArray[1]);
+              cell[1] = parseDouble(strArray[1]);
               break;
             case length_c:
-              cell[2] = Double.parseDouble(strArray[1]);
+              cell[2] = parseDouble(strArray[1]);
               break;
             case angle_alpha:
-              cell[3] = Double.parseDouble(strArray[1]);
+              cell[3] = parseDouble(strArray[1]);
               break;
             case angle_beta:
-              cell[4] = Double.parseDouble(strArray[1]);
+              cell[4] = parseDouble(strArray[1]);
               break;
             case angle_gamma:
-              cell[5] = Double.parseDouble(strArray[1]);
+              cell[5] = parseDouble(strArray[1]);
               break;
             case Int_Tables_number:
-              spacegroupNum = Integer.parseInt(strArray[1]);
+              spacegroupNum = parseInt(strArray[1]);
               break;
             case space_group_name_H_M:
               String[] spacegroupNameArray = string.split("'+");
@@ -141,7 +145,6 @@ public class CIFFilter implements DiffractionFileFilter {
           }
         }
       }
-      br.close();
     } catch (IOException e) {
       String message = " CIF IO Exception.";
       logger.log(Level.WARNING, message, e);
@@ -149,7 +152,7 @@ public class CIFFilter implements DiffractionFileFilter {
     }
 
     if (spacegroupNum < 0 && spacegroupName != null) {
-      spacegroupNum = SpaceGroup.spaceGroupNumber(SpaceGroup.pdb2ShortName(spacegroupName));
+      spacegroupNum = spaceGroupNumber(pdb2ShortName(spacegroupName));
     }
 
     if (spacegroupNum < 0 || resHigh < 0 || cell[0] < 0) {
@@ -165,7 +168,7 @@ public class CIFFilter implements DiffractionFileFilter {
       sb.append(
           format(
               "  spacegroup #: %d (name: %s)\n",
-              spacegroupNum, SpaceGroup.spaceGroupNames[spacegroupNum - 1]));
+              spacegroupNum, SpaceGroupInfo.spaceGroupNames[spacegroupNum - 1]));
       sb.append(format("  Resolution: %8.3f\n", 0.999999 * resHigh));
       sb.append(
           format(
@@ -184,7 +187,7 @@ public class CIFFilter implements DiffractionFileFilter {
             cell[3],
             cell[4],
             cell[5],
-            SpaceGroup.spaceGroupNames[spacegroupNum - 1]);
+            SpaceGroupInfo.spaceGroupNames[spacegroupNum - 1]);
     double sampling = 1.0 / 1.5;
     if (properties != null) {
       sampling = properties.getDouble("sampling", 1.0 / 1.5);
@@ -197,8 +200,7 @@ public class CIFFilter implements DiffractionFileFilter {
   @Override
   public double getResolution(File cifFile, Crystal crystal) {
     double resolution = Double.POSITIVE_INFINITY;
-    try {
-      BufferedReader br = new BufferedReader(new FileReader(cifFile));
+    try (BufferedReader br = new BufferedReader(new FileReader(cifFile))) {
       String string;
       int nCol = 0;
       boolean inHKL = false;
@@ -208,7 +210,7 @@ public class CIFFilter implements DiffractionFileFilter {
           inHKL = true;
           br.mark(0);
           String[] cifArray = strArray[0].split("\\.+");
-          switch (Header.toHeader(cifArray[1])) {
+          switch (CIFHeader.toHeader(cifArray[1])) {
             case index_h:
               h = nCol;
               break;
@@ -251,9 +253,9 @@ public class CIFFilter implements DiffractionFileFilter {
           strArray = string.trim().split("\\s+");
         }
 
-        int ih = Integer.parseInt(strArray[h]);
-        int ik = Integer.parseInt(strArray[k]);
-        int il = Integer.parseInt(strArray[l]);
+        int ih = parseInt(strArray[h]);
+        int ik = parseInt(strArray[k]);
+        int il = parseInt(strArray[l]);
 
         hkl.h(ih);
         hkl.k(ik);
@@ -301,7 +303,7 @@ public class CIFFilter implements DiffractionFileFilter {
           inHKL = true;
           br.mark(0);
           String[] cifArray = stringArray[0].split("\\.+");
-          switch (Header.toHeader(cifArray[1])) {
+          switch (CIFHeader.toHeader(cifArray[1])) {
             case index_h:
               h = nCol;
               break;
@@ -384,9 +386,9 @@ public class CIFFilter implements DiffractionFileFilter {
           }
         }
 
-        int ih = Integer.parseInt(strArray[h]);
-        int ik = Integer.parseInt(strArray[k]);
-        int il = Integer.parseInt(strArray[l]);
+        int ih = parseInt(strArray[h]);
+        int ik = parseInt(strArray[k]);
+        int il = parseInt(strArray[l]);
 
         boolean friedel = reflectionList.findSymHKL(ih, ik, il, mate, false);
         HKL hklPos = reflectionList.getHKL(mate);
@@ -444,9 +446,9 @@ public class CIFFilter implements DiffractionFileFilter {
           strArray = string.trim().split("\\s+");
         }
 
-        int ih = Integer.parseInt(strArray[h]);
-        int ik = Integer.parseInt(strArray[k]);
-        int il = Integer.parseInt(strArray[l]);
+        int ih = parseInt(strArray[h]);
+        int ik = parseInt(strArray[k]);
+        int il = parseInt(strArray[l]);
 
         boolean friedel = reflectionList.findSymHKL(ih, ik, il, mate, transpose);
         HKL hkl = reflectionList.getHKL(mate);
@@ -467,7 +469,7 @@ public class CIFFilter implements DiffractionFileFilter {
               isnull = true;
               nCIFIgnore++;
             } else {
-              refinementData.setFreeR(hkl.index(), Integer.parseInt(strArray[rFree]));
+              refinementData.setFreeR(hkl.index(), parseInt(strArray[rFree]));
             }
           }
 
@@ -478,8 +480,8 @@ public class CIFFilter implements DiffractionFileFilter {
             }
 
             if (refinementData.fSigFCutoff > 0.0) {
-              double f1 = Double.parseDouble(strArray[fo]);
-              double sigf1 = Double.parseDouble(strArray[sigFo]);
+              double f1 = parseDouble(strArray[fo]);
+              double sigf1 = parseDouble(strArray[sigFo]);
               if ((f1 / sigf1) < refinementData.fSigFCutoff) {
                 nCut++;
                 continue;
@@ -487,12 +489,12 @@ public class CIFFilter implements DiffractionFileFilter {
             }
 
             if (friedel) {
-              anofSigF[hkl.index()][2] = Double.parseDouble(strArray[fo]);
-              anofSigF[hkl.index()][3] = Double.parseDouble(strArray[sigFo]);
+              anofSigF[hkl.index()][2] = parseDouble(strArray[fo]);
+              anofSigF[hkl.index()][3] = parseDouble(strArray[sigFo]);
               nFriedel++;
             } else {
-              anofSigF[hkl.index()][0] = Double.parseDouble(strArray[fo]);
-              anofSigF[hkl.index()][1] = Double.parseDouble(strArray[sigFo]);
+              anofSigF[hkl.index()][0] = parseDouble(strArray[fo]);
+              anofSigF[hkl.index()][1] = parseDouble(strArray[sigFo]);
             }
           }
 
@@ -503,12 +505,12 @@ public class CIFFilter implements DiffractionFileFilter {
             }
 
             if (friedel) {
-              anofSigF[hkl.index()][2] = Double.parseDouble(strArray[io]);
-              anofSigF[hkl.index()][3] = Double.parseDouble(strArray[sigIo]);
+              anofSigF[hkl.index()][2] = parseDouble(strArray[io]);
+              anofSigF[hkl.index()][3] = parseDouble(strArray[sigIo]);
               nFriedel++;
             } else {
-              anofSigF[hkl.index()][0] = Double.parseDouble(strArray[io]);
-              anofSigF[hkl.index()][1] = Double.parseDouble(strArray[sigIo]);
+              anofSigF[hkl.index()][0] = parseDouble(strArray[io]);
+              anofSigF[hkl.index()][1] = parseDouble(strArray[sigIo]);
             }
           }
 
@@ -558,7 +560,7 @@ public class CIFFilter implements DiffractionFileFilter {
     return true;
   }
 
-  private enum Header {
+  private enum CIFHeader {
     d_resolution_high,
     number_all,
     number_obs,
@@ -585,7 +587,7 @@ public class CIFFilter implements DiffractionFileFilter {
     intensity_sigma,
     NOVALUE;
 
-    public static Header toHeader(String str) {
+    public static CIFHeader toHeader(String str) {
       try {
         return valueOf(str.replace('-', '_'));
       } catch (Exception ex) {
