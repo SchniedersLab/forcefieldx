@@ -308,6 +308,7 @@ import edu.rit.mp.CharacterBuf;
 import edu.rit.pj.Comm;
 import edu.uiowa.jopenmm.OpenMMAmoebaLibrary;
 import edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod;
+import edu.uiowa.jopenmm.OpenMMLibrary;
 import edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean;
 import edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_NonbondedMethod;
 import edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_NonbondedMethod;
@@ -1296,6 +1297,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private void loadPlatform(Platform requestedPlatform) {
 
       OpenMMUtils.init();
+
+      logger.log(Level.INFO, " Loaded from:\n {0}", OpenMMLibrary.JNA_NATIVE_LIB.toString());
 
       // Print out the OpenMM Version.
       Pointer version = OpenMM_Platform_getOpenMMVersion();
