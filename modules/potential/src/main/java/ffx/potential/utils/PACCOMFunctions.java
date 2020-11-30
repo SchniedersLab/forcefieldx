@@ -22,8 +22,21 @@ import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.*;
 import static org.apache.commons.math3.util.FastMath.pow;
 
+/**
+ * PACCOMFunctions contains methods utilized in the PACCOM.groovy file.
+ *
+ * @author Aaron J. Nessler
+ * @author Michael J. Schnieders
+ */
 public class PACCOMFunctions {
 
+    /**
+     * Generate a molecular assembly of a shell containing a specified number of molecules.
+     * @param molecularAssembly Base molecular assembly to expand.
+     * @param n_mol Number of molecules to include in shell.
+     * @param original If following the original version of PACCOM (by Okimasa Okada)
+     * @return MolecularAssembly of the desired shell size.
+     */
     static MolecularAssembly GenerateBaseShell(MolecularAssembly molecularAssembly, int n_mol,
                                                boolean original) {
         molecularAssembly.moveAllIntoUnitCell();
@@ -209,6 +222,14 @@ public class PACCOMFunctions {
         return expandedAssembly;
     }
 
+    /**
+     * Cut a subshell from a larger shell (molecularAssembly) that matches a smaller shell (baseAssembly).
+     * @param originalAssembly Assembly of the original molecule.
+     * @param baseAssembly Assembly containing the desired shell size/orientation.
+     * @param molecularAssembly Assembly of the current shell.
+     * @param original If following the original version of PACCOM (by Okimasa Okada)
+     * @return MolecularAssembly cut from molecularAssembly that is similar to baseAssembly.
+     */
     static MolecularAssembly CutSubShell(MolecularAssembly originalAssembly, MolecularAssembly baseAssembly,
                                          MolecularAssembly molecularAssembly, boolean original) {
         molecularAssembly.moveAllIntoUnitCell();
@@ -364,6 +385,11 @@ public class PACCOMFunctions {
         return expandedAssembly;
     }
 
+    /**
+     * Determine the index for the central molecule based on center of mass for an assembly.
+     * @param assembly Assembly of which the center is desired.
+     * @return int index of the molecule closest to the center of mass.
+     */
     static int CenterMoleculeIndex(MolecularAssembly assembly){
         int minIndex = -1; // Molecule index closest to center of crystal.
         double minDist = Double.MAX_VALUE;
@@ -397,9 +423,10 @@ public class PACCOMFunctions {
     }
 
     /**
-     * Sort the given HashMap by values (Doubles).
+     * Sort the given HashMap (Integer, Double) by values (Double).
      *
      * @param hm Hashmap to be sorted.
+     * @return HashMap(Integer, Double) that has been sorted.
      */
     static HashMap<Integer, Double> SortHashMapByValue(HashMap<Integer, Double> hm) {
         // Create a list from elements of HashMap
