@@ -258,14 +258,14 @@ public class BornRadiiRegion extends ParallelRegion {
           if (!nativeEnvironmentApproximation && !use[i]) {
             continue;
           }
-          final double baseRi = baseRadius[i];
+          final double baseRi = descreenRadius[i];
           final double descreenRi = descreenRadius[i];
           final double xi = x[i];
           final double yi = y[i];
           final double zi = z[i];
           int[] list = neighborLists[iSymOp][i];
           for (int k : list) {
-            final double baseRk = baseRadius[k];
+            final double baseRk = descreenRadius[k];
             final double descreenRk = descreenRadius[k];
             assert (descreenRk > 0.0);
             if (!nativeEnvironmentApproximation && !use[k]) {
