@@ -927,8 +927,10 @@ class PACCOM extends PotentialScript {
                         assemblyCoords[coordIndex++] = atom.getZ()
                     }
                 }
-                // TODO: Determine normalization (numMolRMSD * compareAtomsSize) include masses?
-                rmsdValues[i][j] = Superpose.rmsd(compareCoords, assemblyCoords)/(numMolRMSD * compareAtomsSize)
+                // TODO: Determine normalization (numMolRMSD * compareAtomsSize include masses?
+                double[] mass = new double[compareCoords.length];
+                Arrays.fill(mass, 1.0);
+                rmsdValues[i][j] = Superpose.rmsd(compareCoords, assemblyCoords, mass)/(numMolRMSD * compareAtomsSize)
                 if (i == 0) {
                     topLabels += format("%s  ", filenames.get(j))
                 }
