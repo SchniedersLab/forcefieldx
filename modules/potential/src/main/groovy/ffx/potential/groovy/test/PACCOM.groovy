@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.groovy
+package ffx.potential.groovy.test
 
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
@@ -222,15 +222,15 @@ class PACCOM extends PotentialScript {
             File saveLocationPDB = new File(fileName + ".pdb")
             int minIndex = -1
             if (i == 0) {
-                expandedAssemblies[i] = PACCOMFunctions.GenerateBaseShell(assemblies[i], n_mol, original)
+                expandedAssemblies[i] = PACCOMFunctions.generateBaseShell(assemblies[i], n_mol, original)
                 baseAssembly = expandedAssemblies[i]
                 currentAssembly = baseAssembly
             } else {
                 //TODO: Determine appropriate largeShell value (currently flag)
-                expandedAssemblies[i] = PACCOMFunctions.GenerateBaseShell(assemblies[i], largeShell, original)
+                expandedAssemblies[i] = PACCOMFunctions.generateBaseShell(assemblies[i], largeShell, original)
                 currentAssembly = expandedAssemblies[i]
             }
-            minIndicies[i] = PACCOMFunctions.CenterMoleculeIndex(currentAssembly)
+            minIndicies[i] = PACCOMFunctions.centerMoleculeIndex(currentAssembly)
             logger.info("\n " + currentAssembly.getFile().getName() + " --> "
                     + baseAssembly.getFile().getName())
             logger.info(format(" AssemblySize: %d", currentAssembly.getMolecules().size()))
@@ -509,7 +509,7 @@ class PACCOM extends PotentialScript {
                         }
                     }
                 }
-                baseClosestMols = PACCOMFunctions.SortHashMapByValue(baseClosestMols)
+                baseClosestMols = PACCOMFunctions.sortHashMapByValue(baseClosestMols)
                 logger.info(format(" baseClosestMol size: %d", baseClosestMols.size()))
                 //Determine numMolAlign molecules in other assemblies closest to those in first
                 // TODO Right now first come first serve, maybe optimize for closest molecule.
@@ -568,7 +568,7 @@ class PACCOM extends PotentialScript {
                         }
                     }
                 }
-                baseClosestMols = PACCOMFunctions.SortHashMapByValue(baseClosestMols)
+                baseClosestMols = PACCOMFunctions.sortHashMapByValue(baseClosestMols)
                 for (Map.Entry<Integer, Double> item : baseClosestMols) {
                     logger.fine(format(" BaseKey: %d\tValue: %f", item.key, item.value))
                 }
@@ -872,12 +872,12 @@ class PACCOM extends PotentialScript {
             }
 
             if (saveIntermediates) {
-                PACCOMFunctions.SaveAssemblyPDB(currentAssembly, saveLocationPDB)
+                PACCOMFunctions.saveAssemblyPDB(currentAssembly, saveLocationPDB)
             }
-            expandedAssemblies[i] = PACCOMFunctions.CutSubShell(assemblies[i], baseAssembly, currentAssembly, original)
+            expandedAssemblies[i] = PACCOMFunctions.cutSubShell(assemblies[i], baseAssembly, currentAssembly, original)
             currentAssembly = expandedAssemblies[i]
             if (saveFiles) {
-                PACCOMFunctions.SaveAssemblyPDB(currentAssembly, saveLocationPDB)
+                PACCOMFunctions.saveAssemblyPDB(currentAssembly, saveLocationPDB)
             }
         }
 
