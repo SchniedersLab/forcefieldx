@@ -126,6 +126,9 @@ public class AlchemicalOptions {
    * @param quiet No logging if quiet.
    * @return Initial lambda.
    */
+  //assume initial lambda is not set
+  //how to handle is we get nWindows and lambda
+  //nWindows is size and rank is the window you're looking at (0 - nWindows-1)
   public double getInitialLambda(int size, int rank, boolean quiet) {
     double initialLambda = group.initialLambda;
     if (initialLambda < 0.0 || initialLambda > 1.0) {
@@ -137,12 +140,14 @@ public class AlchemicalOptions {
         double dL = 1.0 / (size - 1);
         initialLambda = dL * rank;
       }
+
       if (!quiet) {
         logger.info(format(" Setting lambda to %5.3f.", initialLambda));
       }
     }
     return initialLambda;
   }
+
 
   /**
    * Gets the initial value of lambda.
