@@ -39,8 +39,6 @@ package ffx.potential.utils;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cbrt;
-import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;
@@ -53,6 +51,9 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
+import ffx.utilities.FFXScript;
+import org.apache.commons.math3.ml.distance.EuclideanDistance;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,17 +74,22 @@ import java.util.logging.Logger;
  */
 public class PACCOMFunctions {
 
+  /** The logger for this class. */
+  protected static final Logger logger = Logger.getLogger(FFXScript.class.getName());
+
+  /** Distance calculator from Apache Commons. */
+  protected static final EuclideanDistance distance = new EuclideanDistance();
   /**
-   * Generate a molecular assembly of a shell containing a specified number of molecules.
+   * Generate a molecular assembly of a sphere containing a specified number of molecules.
    *
    * @param molecularAssembly Base molecular assembly to expand.
-   * @param nMolecules Number of molecules to include in shell.
+   * @param nMolecules Number of molecules to include in sphere.
    * @param original If following the original version of PACCOM (by Okimasa Okada)
-   * @return MolecularAssembly of the desired shell size.
+   * @return MolecularAssembly of the desired sphere size.
    */
-  public static MolecularAssembly generateBaseShell(MolecularAssembly molecularAssembly,
-      int nMolecules,
-      boolean original) {
+  public static MolecularAssembly generateBaseSphere(MolecularAssembly molecularAssembly,
+                                                     int nMolecules,
+                                                     boolean original) {
 
     // Move molecules into the unit cell.
     molecularAssembly.moveAllIntoUnitCell();
@@ -179,9 +185,7 @@ public class PACCOMFunctions {
       replicatesCrystal.toCartesianCoordinates(centerMolsFrac[i], centerMolsCart[i]);
 
       // Then compute euclidean distance from cartesian center of the replicates cell
-      double value = sqrt(pow(cartCenter[0] - centerMolsCart[i][0], 2)
-          + pow(cartCenter[1] - centerMolsCart[i][1], 2)
-          + pow(cartCenter[2] - centerMolsCart[i][2], 2));
+      double value = distance.compute(cartCenter, centerMolsCart[i]);
 
       // Save index of molecule closest to replicates cell center
       if (value < minDist) {
@@ -195,9 +199,7 @@ public class PACCOMFunctions {
 
     // Loop over saved CoM coordinates to find the nMolecules closest to the marked molecule
     for (int i = 0; i < nSymm; i++) {
-      double value = sqrt(pow(centerMolsCart[minIndex][0] - centerMolsCart[i][0], 2)
-          + pow(centerMolsCart[minIndex][1] - centerMolsCart[i][1], 2)
-          + pow(centerMolsCart[minIndex][2] - centerMolsCart[i][2], 2));
+      double value = distance.compute(centerMolsCart[minIndex], centerMolsCart[i]);
 
       if (closestMols.size() < nMolecules) {
         closestMols.put(i, value);
@@ -281,18 +283,18 @@ public class PACCOMFunctions {
   }
 
   /**
-   * Cut a subshell from a larger shell (molecularAssembly) that matches a smaller shell
+   * Cut a molecular sub-sphere from a larger sphere (molecularAssembly) that matches a smaller molecular sphere
    * (baseAssembly).
    *
    * @param asymmetricUnitAssembly Assembly of the original molecule.
-   * @param targetAssembly Assembly containing the desired shell size/orientation.
-   * @param inflatedAssembly Assembly of the current shell.
+   * @param targetAssembly Assembly containing the desired sphere size/orientation.
+   * @param inflatedAssembly Assembly of the current sphere.
    * @param original If following the original version of PACCOM (by Okimasa Okada)
    * @return MolecularAssembly cut from molecularAssembly that is similar to baseAssembly.
    */
-  public static MolecularAssembly cutSubShell(MolecularAssembly asymmetricUnitAssembly,
-      MolecularAssembly targetAssembly,
-      MolecularAssembly inflatedAssembly, boolean original) {
+  public static MolecularAssembly cutSubSphere(MolecularAssembly asymmetricUnitAssembly,
+                                               MolecularAssembly targetAssembly,
+                                               MolecularAssembly inflatedAssembly, boolean original) {
 
     int nAtoms = asymmetricUnitAssembly.getAtomArray().length;
     int nMolecules = targetAssembly.getMolecules().size();
@@ -356,9 +358,7 @@ public class PACCOMFunctions {
       double minValue = Double.MAX_VALUE;
       for (int i = 0; i < nInflatedMolecules; i++) {
         boolean duplicate = false;
-        double value = sqrt(pow(baseCenter[0] - centerOfMols[i][0], 2)
-            + pow(baseCenter[1] - centerOfMols[i][1], 2)
-            + pow(baseCenter[2] - centerOfMols[i][2], 2));
+        double value = distance.compute(baseCenter, centerOfMols[i]);
         if (value < minValue) {
           // Avoid using a molecule from the inflated system twice.
           for (int prevKey : desiredMols) {
@@ -458,9 +458,7 @@ public class PACCOMFunctions {
     assembly.getMolecules().get(0).getCenter(true);
     for (int i = 0; i < nMolecules; i++) {
       double[] centerMol = assembly.getMolecules().get(i).getCenter(true);
-      double value = sqrt(pow(centerOfMass[0] - centerMol[0], 2)
-          + pow(centerOfMass[1] - centerMol[1], 2)
-          + pow(centerOfMass[2] - centerMol[2], 2));
+      double value = distance.compute(centerOfMass, centerMol);
       if (value < minDist) {
         minDist = value;
         minIndex = i;
@@ -493,11 +491,10 @@ public class PACCOMFunctions {
   /**
    * Save the current assembly as a PDB file.
    *
-   * @param logger Logger used to display information.
    * @param currentAssembly Current assembly of which to save a PDB.
    * @param saveLocationPDB A pre-made file to save the PDB.
    */
-  public static void saveAssemblyPDB(Logger logger, MolecularAssembly currentAssembly,
+  public static void saveAssemblyPDB(MolecularAssembly currentAssembly,
       File saveLocationPDB) {
     //Save aperiodic system of n_mol closest atoms for visualization
     logger.info(" Saving " + saveLocationPDB.getName());
