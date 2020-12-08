@@ -105,6 +105,7 @@ public class BornRadiiRegion extends ParallelRegion {
   private SharedDouble ecavTot;
   private boolean verboseRadii;
   private boolean neckCorrection;
+  private boolean neckCorrection;
   private boolean tanhCorrection;
   private BornRescalingTanh bornRescalingTanh;
 
