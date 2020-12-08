@@ -122,7 +122,7 @@ public class ForceField {
     bioTypes = new TreeMap<>(new BioType(0, null, null, 0, null));
     bondTypes = new TreeMap<>(new BondType(new int[2], 0, 0, null));
     chargeTypes = new TreeMap<>(new ChargeType(0, 0));
-    soluteTypes = new TreeMap<>(new SoluteType(0, 0.0, 0.0));
+    soluteTypes = new TreeMap<>(new SoluteType(0, 0.0, 0.0, 0.0));
     multipoleTypes = new TreeMap<>(new MultipoleType(new double[10], null, null, false));
     outOfPlaneBendTypes = new TreeMap<>(new OutOfPlaneBendType(new int[4], 0));
     piTorsionTypes = new TreeMap<>(new PiTorsionType(new int[2], 0));

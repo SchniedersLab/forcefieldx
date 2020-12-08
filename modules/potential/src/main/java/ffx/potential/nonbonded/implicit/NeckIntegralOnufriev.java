@@ -40,16 +40,8 @@ public class NeckIntegralOnufriev {
             {0.80,0.75,0.70,0.85,1.00,0.95,0.90,1.05,1.00,1.15,1.10,1.25,1.20}
     };
 
-    /** Radius of atom i */
-    //private double rhoi;
-    /** Radius of atom j */
-    //private double rhoj;
-
-    //private double Aij = 0.0;
-    //private double Bij = 0.0;
-
     /**
-     * NeckIntegralOnufriev Constructor
+     * NeckIntegralOnufrievConstants Static Class
      *
      */
     public static class NeckIntegralOnufrievConstants {
@@ -197,6 +189,10 @@ public class NeckIntegralOnufriev {
                     AijAguilarOnufriev[rhoiRows.indexOf(startInterp_i)][rhojColumns.indexOf(endInterp_j)],
                     AijAguilarOnufriev[rhoiRows.indexOf(endInterp_i)][rhojColumns.indexOf(endInterp_j)]);
         }
+
+        // Test capping Aij at table values
+
+
         return Aij;
     }
 
