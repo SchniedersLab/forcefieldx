@@ -105,7 +105,6 @@ public class BornRadiiRegion extends ParallelRegion {
   private SharedDouble ecavTot;
   private boolean verboseRadii;
   private boolean neckCorrection;
-  private boolean neckCorrection;
   private boolean tanhCorrection;
   private BornRescalingTanh bornRescalingTanh;
 
@@ -142,8 +141,9 @@ public class BornRadiiRegion extends ParallelRegion {
                         i+1, born[i],baseRadius[i]));
           }
         } else {
+          // TODO: Fix tanh correction
           if(tanhCorrection){
-            sum = BornRescalingTanh.Tanh.rescale(sum, baseRi);
+            //sum = BornRescalingTanh.Tanh.rescale(sum, baseRi);
           }
           born[i] = 1.0 / pow(sum / PI4_3, oneThird);
           if (born[i] < baseRi) {
@@ -169,10 +169,10 @@ public class BornRadiiRegion extends ParallelRegion {
             born[i] = baseRi;
           } else {
             if (verboseRadii){
-              logger.info(
+              /*logger.info(
                       format(" Set Born radius for atom %d to %12.6f " +
                                       "(Base Radius: %2.6f)", i+1, born[i], baseRi)
-              );
+              );*/
             }
           }
         }
@@ -395,8 +395,8 @@ public class BornRadiiRegion extends ParallelRegion {
         Aij = 0.0000161523;
       }
 
-      logger.info(format("For atom rad. %2.3f descreened by atom rad. %2.3f, Aij: %2.8f Bij: %2.8f",
-              radius,radiusK,Aij,Bij));
+      /*logger.info(format("For atom rad. %2.3f descreened by atom rad. %2.3f, Aij: %2.8f Bij: %2.8f",
+              radius,radiusK,Aij,Bij));*/
       double rMinusBij = r - Bij;
       double radiiMinusr = radius + radiusK + 2*radiusWater - r;
       double power1 = rMinusBij * rMinusBij * rMinusBij * rMinusBij;
@@ -404,8 +404,6 @@ public class BornRadiiRegion extends ParallelRegion {
 
       // Use Aij and Bij to get neck integral using Equation 13 from Aguilar/Onufriev 2010 paper
       neckIntegral = Aij*power1*power2*Sneck;
-
-      //logger.info(format("Neck before Sneck: %2.8f",Aij*power1*power2));
 
       return -neckIntegral;
     }

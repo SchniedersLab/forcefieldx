@@ -40,18 +40,9 @@ public class NeckIntegralOnufriev {
             {0.80,0.75,0.70,0.85,1.00,0.95,0.90,1.05,1.00,1.15,1.10,1.25,1.20}
     };
 
-    /** Radius of atom i */
-    //private double rhoi;
-    /** Radius of atom j */
-    //private double rhoj;
-
-    //private double Aij = 0.0;
-    //private double Bij = 0.0;
-
     /**
-     * NeckIntegralOnufriev Constructor
-     * @param rhoi radius of atom i
-     * @param rhoj radius of atom j
+     * NeckIntegralOnufrievConstants Static Class
+     *
      */
     public static class NeckIntegralOnufrievConstants {
         private double Aij;
@@ -178,20 +169,17 @@ public class NeckIntegralOnufriev {
         double Aij;
         if(startInterp_i == endInterp_i){
             // 1D interpolation: Only interpolate between rho j values
-            // System.out.println("Start j: "+startInterp_j+" End j: "+endInterp_j+" Start i: "+startInterp_i+" End i: "+endInterp_i);
             Aij = interpolate1D(startInterp_j, endInterp_j, rhoj,
                     AijAguilarOnufriev[rhoiRows.indexOf(startInterp_i)][rhojColumns.indexOf(startInterp_j)],
                     AijAguilarOnufriev[rhoiRows.indexOf(endInterp_i)][rhojColumns.indexOf(endInterp_j)]);
 
         } else if(startInterp_j == endInterp_j){
             // 1D interpolation: Only interpolate between rho i values
-            // System.out.println("Start j: "+startInterp_j+" End j: "+endInterp_j+" Start i: "+startInterp_i+" End i: "+endInterp_i);
             Aij = interpolate1D(startInterp_i, endInterp_i, rhoi,
                     AijAguilarOnufriev[rhoiRows.indexOf(startInterp_i)][rhojColumns.indexOf(startInterp_j)],
                     AijAguilarOnufriev[rhoiRows.indexOf(endInterp_i)][rhojColumns.indexOf(endInterp_j)]);
         } else{
             // 2D interpolation: Interpolate both values
-            // System.out.println("Start j: "+startInterp_j+" End j: "+endInterp_j+" Start i: "+startInterp_i+" End i: "+endInterp_i);
             Aij = interpolate2D(startInterp_i, endInterp_i, startInterp_j, endInterp_j,rhoi, rhoj,
                     AijAguilarOnufriev[rhoiRows.indexOf(startInterp_i)][rhojColumns.indexOf(startInterp_j)],
                     AijAguilarOnufriev[rhoiRows.indexOf(endInterp_i)][rhojColumns.indexOf(startInterp_j)],
