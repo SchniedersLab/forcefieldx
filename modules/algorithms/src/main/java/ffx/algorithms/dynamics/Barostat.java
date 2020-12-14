@@ -41,11 +41,12 @@ import static ffx.crystal.LatticeSystem.check;
 import static ffx.utilities.Constants.AVOGADRO;
 import static ffx.utilities.Constants.PRESCON;
 import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.log;
-import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.random;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
@@ -99,10 +100,10 @@ public class Barostat implements CrystalPotential {
   private boolean isotropic = false;
   /** Flag to turn the Barostat on or off. If false, MC moves will not be tried. */
   private boolean active = true;
-  /** Default edge length move (A). */
-  private double maxSideMove = 0.25;
-  /** Default angle move (degrees). */
-  private double maxAngleMove = 0.5;
+  /**
+   * Maximum volume move.
+   */
+  private double maxVolumeMove = 1.0;
   /**
    * Minimum density constraint.
    */
@@ -462,12 +463,12 @@ public class Barostat implements CrystalPotential {
   }
 
   /**
-   * Setter for the field <code>maxAngleMove</code>.
+   * Setter for the field <code>maxVolumeMove</code>.
    *
-   * @param maxAngleMove a double.
+   * @param maxVolumeMove a double.
    */
-  public void setMaxAngleMove(double maxAngleMove) {
-    this.maxAngleMove = maxAngleMove;
+  public void setMaxVolumeMove(double maxVolumeMove) {
+    this.maxVolumeMove = maxVolumeMove;
   }
 
   /**
@@ -477,15 +478,6 @@ public class Barostat implements CrystalPotential {
    */
   public void setMaxDensity(double maxDensity) {
     this.maxDensity = maxDensity;
-  }
-
-  /**
-   * Setter for the field <code>maxSideMove</code>.
-   *
-   * @param maxSideMove a double.
-   */
-  public void setMaxSideMove(double maxSideMove) {
-    this.maxSideMove = maxSideMove;
   }
 
   /**
@@ -677,28 +669,17 @@ public class Barostat implements CrystalPotential {
     molecularAssembly.moveToFractionalCoordinates();
   }
 
-  private double mcUNIT(double currentE) {
-    moveType = MoveType.UNIT;
-    double currentV = unitCell.volume / nSymm;
-    double ucDensity = crystal.getDensity(mass);
-    boolean succeed = crystal.randomParameters(ucDensity, mass);
-    if (succeed) {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(" Proposing MC change to all unit cell parameters.");
-      }
-      return mcStep(currentE, currentV);
-    }
-    return currentE;
-  }
-
   private double mcA(double currentE) {
     moveType = MoveType.SIDE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a + move, b, c, alpha, beta, gamma);
+    double step = maxVolumeMove * (2.0 * random() - 1.0);
+    double dA = step / unitCell.dVdA;
+    boolean succeed = crystal.changeUnitCellParameters(a + dA, b, c, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC change to the a-axis (%6.3f) of %6.3f A", a, move));
+        logger.fine(
+            format(" Proposing MC change to the a-axis (%6.3f) with volume change %6.3f (A^3)", a,
+                step));
       }
       return mcStep(currentE, currentV);
     }
@@ -708,11 +689,14 @@ public class Barostat implements CrystalPotential {
   private double mcB(double currentE) {
     moveType = MoveType.SIDE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b + move, c, alpha, beta, gamma);
+    double step = maxVolumeMove * (2.0 * random() - 1.0);
+    double dB = step / unitCell.dVdB;
+    boolean succeed = crystal.changeUnitCellParameters(a, b + dB, c, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC change to the b-axis (%6.3f) of %6.3f A", b, move));
+        logger.fine(
+            format(" Proposing MC change to the b-axis (%6.3f) with volume change %6.3f (A^3)", b,
+                step));
       }
       return mcStep(currentE, currentV);
     }
@@ -722,11 +706,14 @@ public class Barostat implements CrystalPotential {
   private double mcC(double currentE) {
     moveType = MoveType.SIDE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c + move, alpha, beta, gamma);
+    double step = maxVolumeMove * (2.0 * random() - 1.0);
+    double dC = step / unitCell.dVdC;
+    boolean succeed = crystal.changeUnitCellParameters(a, b, c + dC, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC change to the c-axis (%6.3f) of %6.3f A", c, move));
+        logger.fine(
+            format(" Proposing MC change to the c-axis (%6.3f) with volume change %6.3f (A^3)", c,
+                step));
       }
       return mcStep(currentE, currentV);
     }
@@ -736,28 +723,15 @@ public class Barostat implements CrystalPotential {
   private double mcAB(double currentE) {
     moveType = MoveType.SIDE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a + move, b + move, c, alpha, beta, gamma);
+    double step = maxVolumeMove * (2.0 * random() - 1.0);
+    double newVolume = currentV + step;
+    double dAB = sqrt(newVolume/currentV);
+    boolean succeed = crystal.changeUnitCellParameters(a * dAB, b * dAB, c, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC change to the a,b-axis (%6.3f) of %6.3f A", a, move));
-      }
-      return mcStep(currentE, currentV);
-    }
-    return currentE;
-  }
-
-  private double mcIsotropic(double currentE) {
-    moveType = MoveType.SIDE;
-    double currentV = unitCell.volume / nSymm;
-    double maxSide = max(a, max(b, c));
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    double scale = (maxSide + move) / maxSide;
-    boolean succeed =
-        crystal.changeUnitCellParameters(a * scale, b * scale, c * scale, alpha, beta, gamma);
-    if (succeed) {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC isotropic scaling to the a,b,c-axes of %6.3f A", scale));
+        logger.fine(
+            format(" Proposing MC change to the a,b-axis (%6.3f) with volume change %6.3f (A^3)", a,
+                step));
       }
       return mcStep(currentE, currentV);
     }
@@ -767,12 +741,16 @@ public class Barostat implements CrystalPotential {
   private double mcABC(double currentE) {
     moveType = MoveType.SIDE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    boolean succeed =
-        crystal.changeUnitCellParameters(a + move, b + move, c + move, alpha, beta, gamma);
+    double step = maxVolumeMove * (2.0 * random() - 1.0);
+    double newVolume = currentV + step;
+    double dABC = cbrt(newVolume/currentV);
+    boolean succeed = crystal
+        .changeUnitCellParameters(a * dABC, b * dABC, c * dABC, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC change to the a,b,c-axis (%6.3f) of %6.3f A", a, move));
+        logger.fine(
+            format(" Proposing MC change to the a,b,c-axis (%6.3f) with volume change %6.3f (A^3)",
+                a, step));
       }
       return mcStep(currentE, currentV);
     }
@@ -782,13 +760,23 @@ public class Barostat implements CrystalPotential {
   private double mcAlpha(double currentE) {
     moveType = MoveType.ANGLE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha + move, beta, gamma);
+    double step = maxVolumeMove * (2.0 * random() - 1.0);
+    double scale = cbrt(1.0+step/currentV);
+    double[][] ascale = new double[3][3];
+    ascale[0][0] = 1.0;
+    ascale[1][1] = 1.0;
+    ascale[2][2] = 1.0;
+    // Alpha is between the b-axis and c-axis.
+    ascale[1][2] = scale - 1.0;
+    ascale[2][1] = scale - 1.0;
+    boolean succeed = crystal.setCellVectorsAndVolume(
+        scaleLatticeVectors(ascale,crystal.Ai), currentV + step);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
             format(
-                " Propsing MC change to the alpha angle (%6.3f) of %6.3f (degrees)", alpha, move));
+                " Proposing MC change to the alpha angle (%6.3f) with volume change %6.3f (A^3)",
+                alpha, step));
       }
       return mcStep(currentE, currentV);
     }
@@ -798,12 +786,23 @@ public class Barostat implements CrystalPotential {
   private double mcBeta(double currentE) {
     moveType = MoveType.ANGLE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha, beta + move, gamma);
+    double step = maxVolumeMove * (2.0 * random() - 1.0);
+    double scale = cbrt(1.0+step/currentV);
+    double[][] ascale = new double[3][3];
+    ascale[0][0] = 1.0;
+    ascale[1][1] = 1.0;
+    ascale[2][2] = 1.0;
+    // Beta is between the a-axis and c-axis.
+    ascale[0][2] = scale - 1.0;
+    ascale[2][0] = scale - 1.0;
+    boolean succeed = crystal.setCellVectorsAndVolume(
+        scaleLatticeVectors(ascale,crystal.Ai), currentV + step);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
-            format(" Propsing MC change to the beta angle (%6.3f) of %6.3f (degrees)", beta, move));
+            format(
+                " Proposing MC change to the beta angle (%6.3f) with volume change %6.3f (A^3)",
+                beta, step));
       }
       return mcStep(currentE, currentV);
     }
@@ -813,47 +812,23 @@ public class Barostat implements CrystalPotential {
   private double mcGamma(double currentE) {
     moveType = MoveType.ANGLE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma + move);
+    double step = maxVolumeMove * (2.0 * random() - 1.0);
+    double scale = cbrt(1.0+step/currentV);
+    double[][] ascale = new double[3][3];
+    ascale[0][0] = 1.0;
+    ascale[1][1] = 1.0;
+    ascale[2][2] = 1.0;
+    // Gamma is between the a-axis and b-axis.
+    ascale[0][1] = scale - 1.0;
+    ascale[1][0] = scale - 1.0;
+    boolean succeed = crystal.setCellVectorsAndVolume(
+        scaleLatticeVectors(ascale,crystal.Ai), currentV + step);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
             format(
-                " Propsing MC change to the gamma angle (%6.3f) of %6.3f (degrees)", gamma, move));
-      }
-      return mcStep(currentE, currentV);
-    }
-    return currentE;
-  }
-
-  private double mcABeta(double currentE) {
-    moveType = MoveType.ANGLE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha + move, beta + move, gamma);
-    if (succeed) {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(
-            format(
-                " Propsing MC change to the alpha/beta angles (%6.3f) of %6.3f (degrees)",
-                alpha, move));
-      }
-      return mcStep(currentE, currentV);
-    }
-    return currentE;
-  }
-
-  private double mcAG(double currentE) {
-    moveType = MoveType.ANGLE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha + move, beta, gamma + move);
-    if (succeed) {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(
-            format(
-                " Propsing MC change to the alpha/gamma angles (%6.3f) of %6.3f (degrees)",
-                alpha, move));
+                " Proposing MC change to the gamma angle (%6.3f) with volume change %6.3f (A^3)",
+                gamma, step));
       }
       return mcStep(currentE, currentV);
     }
@@ -863,15 +838,27 @@ public class Barostat implements CrystalPotential {
   private double mcABG(double currentE) {
     moveType = MoveType.ANGLE;
     double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed =
-        crystal.changeUnitCellParameters(a, b, c, alpha + move, beta + move, gamma + move);
+    double step = maxVolumeMove * (2.0 * random() - 1.0);
+    double scale = cbrt(1.0+step/currentV);
+    double[][] ascale = new double[3][3];
+    ascale[0][0] = 1.0;
+    ascale[1][1] = 1.0;
+    ascale[2][2] = 1.0;
+    // TODO: This needs further testing; currently only used for RHOMBOHEDRAL Lattice systems.
+    ascale[0][1] = scale - 1.0;
+    ascale[1][0] = scale - 1.0;
+    ascale[0][2] = scale - 1.0;
+    ascale[2][0] = scale - 1.0;
+    ascale[1][2] = scale - 1.0;
+    ascale[2][1] = scale - 1.0;
+    boolean succeed = crystal.setCellVectorsAndVolume(
+        scaleLatticeVectors(ascale,crystal.Ai), currentV + step);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
             format(
-                " Propsing MC change to the alpha/beta/gamma angles (%6.3f) of %6.3f (degrees)",
-                alpha, move));
+                " Proposing MC change to all angles (%6.3f) with volume change %6.3f (A^3)", alpha,
+                step));
       }
       return mcStep(currentE, currentV);
     }
@@ -899,7 +886,7 @@ public class Barostat implements CrystalPotential {
     gamma = unitCell.gamma;
 
     if (isotropic) {
-      currentE = mcIsotropic(currentE);
+      currentE = mcABC(currentE);
     } else {
       switch (spaceGroup.latticeSystem) {
         case MONOCLINIC_LATTICE:
@@ -1087,6 +1074,21 @@ public class Barostat implements CrystalPotential {
       betaStatistics = new RunningStatistics();
       gammaStatistics = new RunningStatistics();
     }
+  }
+
+  /**
+   * Apply a random change to unit cell parameters.
+   */
+  private double[][] scaleLatticeVectors(double[][] ascale, double[][] Ai) {
+    double[][] latticeVectors = new double[3][3];
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        for (int k = 0; k < 3; k++) {
+          latticeVectors[j][i] += ascale[j][k] * Ai[k][i];
+        }
+      }
+    }
+    return latticeVectors;
   }
 
   /** The type of Barostat move. */

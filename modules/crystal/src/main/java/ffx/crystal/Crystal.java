@@ -135,23 +135,23 @@ public class Crystal {
   /** Entries in the Ai array. */
   public double Ai00, Ai01, Ai02, Ai10, Ai11, Ai12, Ai20, Ai21, Ai22;
   /** Change in the volume with respect to a. */
-  double dVdA;
+  public double dVdA;
   /** Change in the volume with respect to b. */
-  double dVdB;
+  public double dVdB;
   /** Change in the volume with respect to c. */
-  double dVdC;
+  public double dVdC;
   /**
    * Change in the volume with respect to alpha (in Radians). This is set to zero if alpha is fixed.
    */
-  double dVdAlpha;
+  public double dVdAlpha;
   /**
    * Change in the volume with respect to beta (in Radians). This is set to zero if beta is fixed.
    */
-  double dVdBeta;
+  public double dVdBeta;
   /**
    * Change in the volume with respect to gamma (in Radians). This is set to zero if gamma is fixed.
    */
-  double dVdGamma;
+  public double dVdGamma;
   /**
    * For some finite-difference calculations, it's currently necessary to remove lattice system
    * restrictions.
@@ -1303,6 +1303,28 @@ public class Crystal {
     this.aperiodic = aperiodic;
   }
 
+  public double[] getCellParametersFromVectors(double[][] cellVectors) {
+    // Update a-, b-, and c-axis lengths.
+    double aa = length(cellVectors[0]);
+    double bb = length(cellVectors[1]);
+    double cc = length(cellVectors[2]);
+
+    // Update alpha, beta and gamma angles.
+    double aalpha = toDegrees(acos(dot(cellVectors[1], cellVectors[2]) / (bb * cc)));
+    double bbeta = toDegrees(acos(dot(cellVectors[0], cellVectors[2]) / (aa * cc)));
+    double ggamma = toDegrees(acos(dot(cellVectors[0], cellVectors[1]) / (aa * bb)));
+
+    // Load and return new cell parameters.
+    double[] params = new double[6];
+    params[0] = aa;
+    params[1] = bb;
+    params[2] = cc;
+    params[3] = aalpha;
+    params[4] = bbeta;
+    params[5] = ggamma;
+    return params;
+  }
+
   /**
    * Set the unit cell vectors.
    *
@@ -1322,6 +1344,23 @@ public class Crystal {
     double ggamma = toDegrees(acos(dot(cellVectors[0], cellVectors[1]) / (aa * bb)));
 
     return changeUnitCellParameters(aa, bb, cc, aalpha, bbeta, ggamma);
+  }
+
+  /**
+   * Set the unit cell vectors. Scale lattice lengths if necessary to hit the target volume.
+   *
+   * @param cellVectors 3x3 matrix of cell vectors.
+   * @param targetAUVolume the target volume for the new cell Vectors.
+   * @return True if the perturbation of cell vectors succeeds.
+   */
+  public boolean setCellVectorsAndVolume(double[][] cellVectors, double targetAUVolume) {
+    if (setCellVectors(cellVectors)) {
+      double currentAUVolume = volume / getNumSymOps();
+      double scale = cbrt(currentAUVolume / targetAUVolume);
+      return changeUnitCellParameters(scale * a, scale * b, scale * c, alpha, beta, gamma);
+    } else {
+      return false;
+    }
   }
 
   public void setDensity(double dens, double mass) {
