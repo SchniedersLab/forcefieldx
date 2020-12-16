@@ -1072,7 +1072,7 @@
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
-      <url>http://github.com/mjschnie/dependency/raw/master</url>
+      <url>https://github.com/mjschnie/dependency/raw/master</url>
     </repository>
     <repository>
       <id>2.apache.repo</id>
@@ -1094,7 +1094,7 @@
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
-      <url>http://jogamp.org/deployment/maven</url>
+      <url>https://jogamp.org/deployment/maven</url>
     </repository>
     <repository>
       <id>4.biojava.legacy.repo</id>
@@ -1105,7 +1105,7 @@
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
-      <url>http://github.com/biojava/maven-repo/raw/master/</url>
+      <url>https://github.com/biojava/maven-repo/raw/master/</url>
     </repository>
     <repository>
       <id>5.biojava.repo</id>
@@ -1116,7 +1116,7 @@
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
-      <url>http://www.biojava.org/download/maven/</url>
+      <url>https://www.biojava.org/download/maven/</url>
     </repository>
     <repository>
       <id>6.u.manchester.repo</id>
