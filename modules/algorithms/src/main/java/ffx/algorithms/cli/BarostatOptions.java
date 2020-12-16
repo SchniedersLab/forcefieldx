@@ -268,8 +268,7 @@ public class BarostatOptions {
         description = "Specify the minimum density accepted by the MC Barostat (g/cc).")
     private double minD;
     /**
-     * --maxSM or --maxSideMove Sets the width of proposed unit cell side length moves (uniformly
-     * distributed) in Angstroms.
+     * --maxV or --maxVolumeMove Sets the volume move size (uniformly distributed) in Angstroms^3.
      */
     @Option(
         names = {"--maxV", "--maxVolumeMove"},
