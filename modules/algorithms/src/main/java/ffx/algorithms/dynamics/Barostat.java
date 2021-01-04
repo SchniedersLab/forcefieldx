@@ -798,8 +798,9 @@ public class Barostat implements CrystalPotential {
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
     double dVdAlpha = unitCell.dVdAlpha * (PI / 180.0) / nSymm;
     double dAlpha = dAUVolume / dVdAlpha;
+    double newAlpha = Crystal.reflectBounds(alpha + dAlpha);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
-        a, b, c, alpha + dAlpha, beta, gamma, currentAUV + dAUVolume);
+        a, b, c, newAlpha, beta, gamma, currentAUV + dAUVolume);
 
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
@@ -825,8 +826,9 @@ public class Barostat implements CrystalPotential {
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
     double dVdBeta = unitCell.dVdBeta * (PI / 180.0) / nSymm;
     double dBeta = dAUVolume / dVdBeta;
+    double newBeta = Crystal.reflectBounds(beta + dBeta);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
-        a, b, c, alpha, beta + dBeta, gamma, currentAUV + dAUVolume);
+        a, b, c, alpha, newBeta, gamma, currentAUV + dAUVolume);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
@@ -851,8 +853,9 @@ public class Barostat implements CrystalPotential {
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
     double dVdGamma = unitCell.dVdGamma * (PI / 180.0) / nSymm;
     double dGamma = dAUVolume / dVdGamma;
+    double newGamma = Crystal.reflectBounds(gamma + dGamma);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
-        a, b, c, alpha, beta, gamma + dGamma, currentAUV + dAUVolume);
+        a, b, c, alpha, beta, newGamma, currentAUV + dAUVolume);
 
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
@@ -879,8 +882,11 @@ public class Barostat implements CrystalPotential {
     double dVdAngle =
         (unitCell.dVdAlpha + unitCell.dVdBeta + unitCell.dVdGamma) * (PI / 180.0) / nSymm;
     double dAngle = dAUVolume / dVdAngle;
+    double newAlpha = Crystal.reflectBounds(alpha + dAngle);
+    double newBeta = Crystal.reflectBounds(beta + dAngle);
+    double newGamma = Crystal.reflectBounds(gamma + dAngle);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
-        a, b, c, alpha + dAngle, beta + dAngle, gamma + dAngle, currentAUV + dAUVolume);
+        a, b, c, newAlpha, newBeta, newGamma, currentAUV + dAUVolume);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(

@@ -1396,6 +1396,21 @@ public class Crystal {
   }
 
   /**
+   * Ensure that the proposed angle is between 0 and 180 degrees.
+   *
+   * @return Angle between 0 and 180 degrees for the system.
+   */
+  public static double reflectBounds(double angle) {
+    if(angle > 180.0){
+      return 180.0 - (angle - 180.0);
+    } else if(angle < 0.0){
+      return 0.0 + (0.0 - angle);
+    }else {
+      return angle;
+    }
+  }
+
+  /**
    * Return a CRYST1 record useful for writing a PDB file.
    *
    * @return The CRYST1 record.
