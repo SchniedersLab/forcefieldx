@@ -798,7 +798,7 @@ public class Barostat implements CrystalPotential {
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
     double dVdAlpha = unitCell.dVdAlpha * (PI / 180.0) / nSymm;
     double dAlpha = dAUVolume / dVdAlpha;
-    double newAlpha = Crystal.reflectBounds(alpha + dAlpha);
+    double newAlpha = Crystal.mirrorBounds(alpha + dAlpha);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
         a, b, c, newAlpha, beta, gamma, currentAUV + dAUVolume);
 
@@ -826,7 +826,7 @@ public class Barostat implements CrystalPotential {
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
     double dVdBeta = unitCell.dVdBeta * (PI / 180.0) / nSymm;
     double dBeta = dAUVolume / dVdBeta;
-    double newBeta = Crystal.reflectBounds(beta + dBeta);
+    double newBeta = Crystal.mirrorBounds(beta + dBeta);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
         a, b, c, alpha, newBeta, gamma, currentAUV + dAUVolume);
     if (succeed) {
@@ -853,7 +853,7 @@ public class Barostat implements CrystalPotential {
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
     double dVdGamma = unitCell.dVdGamma * (PI / 180.0) / nSymm;
     double dGamma = dAUVolume / dVdGamma;
-    double newGamma = Crystal.reflectBounds(gamma + dGamma);
+    double newGamma = Crystal.mirrorBounds(gamma + dGamma);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
         a, b, c, alpha, beta, newGamma, currentAUV + dAUVolume);
 
@@ -882,9 +882,9 @@ public class Barostat implements CrystalPotential {
     double dVdAngle =
         (unitCell.dVdAlpha + unitCell.dVdBeta + unitCell.dVdGamma) * (PI / 180.0) / nSymm;
     double dAngle = dAUVolume / dVdAngle;
-    double newAlpha = Crystal.reflectBounds(alpha + dAngle);
-    double newBeta = Crystal.reflectBounds(beta + dAngle);
-    double newGamma = Crystal.reflectBounds(gamma + dAngle);
+    double newAlpha = Crystal.mirrorBounds(alpha + dAngle);
+    double newBeta = Crystal.mirrorBounds(beta + dAngle);
+    double newGamma = Crystal.mirrorBounds(gamma + dAngle);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
         a, b, c, newAlpha, newBeta, newGamma, currentAUV + dAUVolume);
     if (succeed) {

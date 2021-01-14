@@ -1400,14 +1400,14 @@ public class Crystal {
    *
    * @return Angle between 0 and 180 degrees for the system.
    */
-  public static double reflectBounds(double angle) {
-    if(angle > 180.0){
-      return 180.0 - (angle - 180.0);
-    } else if(angle < 0.0){
-      return 0.0 + (0.0 - angle);
-    }else {
-      return angle;
+  public static double mirrorBounds(double angle) {
+    double angleDegrees = angle * 180 / PI;
+    if(angleDegrees > 180.0){
+      angleDegrees = 180.0 - (angleDegrees - 180.0);
+    } else if(angleDegrees < 0.0){
+      angleDegrees =  0.0 - angleDegrees;
     }
+    return angleDegrees * PI / 180;
   }
 
   /**
