@@ -68,6 +68,7 @@ public class BornRadiiRegion extends ParallelRegion {
   private static final double oneThird = 1.0 / 3.0;
   private static final double PI4_3 = 4.0 / 3.0 * PI;
   private static final double PI_12 = PI / 12.0;
+  private static final double DEFAULT_SNECK = 0.4058;
   private final BornRadiiLoop[] bornRadiiLoop;
   /** An ordered array of atoms in the system. */
   protected Atom[] atoms;
@@ -106,6 +107,7 @@ public class BornRadiiRegion extends ParallelRegion {
   private boolean verboseRadii;
   private boolean neckCorrection;
   private boolean tanhCorrection;
+  private double Sneck;
   private BornRescalingTanh bornRescalingTanh;
 
   public BornRadiiRegion(int nt, ForceField forceField, boolean perfectHCTScale) {
@@ -117,6 +119,7 @@ public class BornRadiiRegion extends ParallelRegion {
     verboseRadii = forceField.getBoolean("VERBOSE_BORN_RADII", false);
     neckCorrection = forceField.getBoolean("NECK_CORRECTION", false);
     tanhCorrection = forceField.getBoolean("TANH_CORRECTION",false);
+    Sneck = forceField.getDouble("SNECK",DEFAULT_SNECK);
     this.perfectHCTScale = perfectHCTScale;
     if (verboseRadii) {
       logger.info(" Verbose Born radii.");
@@ -169,10 +172,10 @@ public class BornRadiiRegion extends ParallelRegion {
             born[i] = baseRi;
           } else {
             if (verboseRadii){
-              /*logger.info(
+              logger.info(
                       format(" Set Born radius for atom %d to %12.6f " +
                                       "(Base Radius: %2.6f)", i+1, born[i], baseRi)
-              );*/
+              );
             }
           }
         }
@@ -325,8 +328,6 @@ public class BornRadiiRegion extends ParallelRegion {
                           k + 1, i + 1, neckDescreen(r, baseRk, baseRi)));
                 }*/
                 localBorn[k] += neckDescreen(r, baseRk, baseRi);
-
-                // TODO: Add tanh function rescaling
               }
 
             } else if (iSymOp > 0) {
@@ -346,8 +347,6 @@ public class BornRadiiRegion extends ParallelRegion {
               if(neckCorrection && !atoms[k].isHydrogen()) {
                 // TODO: Add neck contribution to atom i being descreeened by atom k.
                 localBorn[i] += neckDescreen(r, baseRi, baseRk);
-
-                // TODO: Add tanh function rescaling
               }
 
               // For symmetry mates, atom k is not descreeened by atom i.
@@ -377,17 +376,17 @@ public class BornRadiiRegion extends ParallelRegion {
     private double neckDescreen(double r, double radius, double radiusK) {
       double neckIntegral;
       double radiusWater = 1.4;
-      double Sneck = 0.4058;
-
-      if(r > radius + radiusK + 2*radiusWater){
-        return 0.0;
-      }
 
       // Get Aij and Bij from Aguilar/Onufriev 2010 paper
       double[] constants = NeckIntegralOnufriev.NeckIntegralOnufrievConstants.run(radius, radiusK);
 
       double Aij = constants[0];
       double Bij = constants[1];
+
+      logger.info(format("Aij: %2.8f Bij: %2.8f", Aij, Bij));
+      if(r > radius + radiusK + 2*radiusWater || Bij > r){
+          return 0.0;
+      }
 
       // If a neck is formed, Aij can never be zero
       if(Aij <= 0.000000000){

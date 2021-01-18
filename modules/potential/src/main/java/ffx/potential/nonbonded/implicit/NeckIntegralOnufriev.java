@@ -7,10 +7,17 @@ public class NeckIntegralOnufriev {
     // Inputs: radius of atom i (rho i) and radius of atom j (rho j)
     // Outputs: Aij and Bij (interpolated/extrapolated where necessary)
 
-    private static final ArrayList<Double> rhoiRows = new ArrayList<>(Arrays.asList(1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8));
-    private static final ArrayList<Double> rhojColumns = new ArrayList<>(Arrays.asList(1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8));
+    //private static final ArrayList<Double> rhoiRows = new ArrayList<>(Arrays.asList(1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8));
+    //private static final ArrayList<Double> rhojColumns = new ArrayList<>(Arrays.asList(1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8));
+
+    private static final ArrayList<Double> rhoiRows = new ArrayList<>(Arrays.asList(0.8,0.85,0.9,0.95,1.00,1.05,1.1,1.15,1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8,1.85,1.9,1.95,2.0,2.05,2.1,2.15,2.2,2.25,2.3,2.35,2.4,2.45,2.5));
+    private static final ArrayList<Double> rhojColumns = new ArrayList<>(Arrays.asList(0.8,0.85,0.9,0.95,1.00,1.05,1.1,1.15,1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8,1.85,1.9,1.95,2.0,2.05,2.1,2.15,2.2,2.25,2.3,2.35,2.4,2.45,2.5));
+
+    private static final ArrayList<Double> benchmarkedRadii = new ArrayList<>(Arrays.asList(0.8,0.85,0.9,0.95,1.00,1.05,1.1,1.15,1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8,1.85,1.9,1.95,2.0,2.05,2.1,2.15,2.2,2.25,2.3,2.35,2.4,2.45,2.5));
+
+    // Aij AO: 0.0000947808
     private static final double[][] AijAguilarOnufriev = {
-            {0.0000947808,0.0001137020,0.0001001180,0.0001195900,0.0001050630,0.0000922010,0.0001099390,0.0000961817,0.0001143420,0.0000999772,0.0001184650,0.0001035490,0.0001227270},
+            {0.0000435585,0.0001137020,0.0001001180,0.0001195900,0.0001050630,0.0000922010,0.0001099390,0.0000961817,0.0001143420,0.0000999772,0.0001184650,0.0001035490,0.0001227270},
             {0.0000789821,0.0000948444,0.0000836245,0.0000733297,0.0000878314,0.0000769799,0.0000919335,0.0000804789,0.0000958057,0.0000839558,0.0000997966,0.0000870743,0.0001031750},
             {0.0000665366,0.0000799715,0.0000703720,0.0000842561,0.0000740921,0.0000649757,0.0000775663,0.0000681323,0.0000811720,0.0000708781,0.0000842888,0.0000735226,0.0000872208},
             {0.0000560640,0.0000673256,0.0000593409,0.0000523516,0.0000625504,0.0000549136,0.0000656357,0.0000782465,0.0000685443,0.0000599304,0.0000712967,0.0000622049,0.0000738641},
@@ -24,8 +31,9 @@ public class NeckIntegralOnufriev {
             {0.0000236280,0.0000208424,0.0000251832,0.0000221566,0.0000195124,0.0000234327,0.0000205702,0.0000246477,0.0000215557,0.0000257936,0.0000225548,0.0000268717,0.0000234796},
             {0.0000207603,0.0000182939,0.0000161523,0.0000195050,0.0000234519,0.0000206073,0.0000180540,0.0000216798,0.0000189606,0.0000226817,0.0000198338,0.0000236529,0.0000206561}
     };
+    // Bij AO: 0.00
     private static final double[][] BijAguilarOnufriev = {
-            {0.00,0.15,0.10,0.25,0.20,0.15,0.30,0.25,0.40,0.35,0.50,0.45,0.60},
+            {-0.06,0.15,0.10,0.25,0.20,0.15,0.30,0.25,0.40,0.35,0.50,0.45,0.60},
             {0.05,0.20,0.15,0.10,0.25,0.20,0.35,0.30,0.45,0.40,0.55,0.50,0.65},
             {0.10,0.25,0.20,0.35,0.30,0.25,0.40,0.35,0.50,0.45,0.60,0.55,0.70},
             {0.15,0.30,0.25,0.20,0.35,0.30,0.45,0.60,0.55,0.50,0.65,0.60,0.75},
@@ -61,83 +69,94 @@ public class NeckIntegralOnufriev {
             double Aij = 0.0;
             double Bij = 0.0;
 
+            // Find which two values of rho i and rho j the inputs fall between
+            int lowi = 0;
+            int lowj = 0;
+            int highi = lowi + 1;
+            int highj = lowj + 1;
+            int[] ibounds = new int[]{lowi,highi};
+            int[] jbounds = new int[]{lowj,highj};
+
             // If both rho i and rho j are in Aguilar/Onufriev data, get Aij and Bij values directly from tables
             if (rhoiRows.contains(rhoi) && rhojColumns.contains(rhoj)) {
                 int row = rhoiRows.indexOf(rhoi);
                 int col = rhojColumns.indexOf(rhoj);
-                Aij = AijAguilarOnufriev[row][col];
-                Bij = BijAguilarOnufriev[row][col];
+
+                // If the benchmark values have been determined
+                if(AijAguilarOnufriev[row][col] != 999) {
+                    Aij = AijAguilarOnufriev[row][col];
+                    Bij = BijAguilarOnufriev[row][col];
+                } else {
+                    // Determine closest values for interpolation
+                }
             } else {
                 // Otherwise, interpolate/extrapolate as needed
                 boolean calculatei = false;
-                boolean counti = true;
+                //boolean counti = true;
                 boolean calculatej = false;
-                boolean countj = true;
-                // Find which two values of rho i and rho j the inputs fall between
-                int lowi = 0;
-                int lowj = 0;
-                int highi = lowi + 1;
-                int highj = lowj + 1;
+                //boolean countj = true;
 
                 if (!rhoiRows.contains(rhoi)) {
                     calculatei = true;
+                    ibounds = determineijBounds(rhoi,lowi,highi);
                     // If input rho i is smaller than all values in table, extrapolate down using first two table values
                     // These values are the defaults (set above)
-                    if (rhoiRows.get(0) > rhoi) {
-                        counti = false;
-                    }
-                    // If input rho i is larger than all values in table, extrapolate up using last two table values
-                    if (rhoiRows.get(rhoiRows.size() - 1) < rhoi) {
-                        lowi = rhoiRows.size() - 2;
-                        highi = rhoiRows.size() - 1;
-                        counti = false;
-                    }
-                    while (counti) {
-                        // Find the two table values that the input rho i falls between
-                        if (rhoiRows.get(lowi) < rhoi && rhoi < rhoiRows.get(lowi + 1)) {
-                            highi = lowi + 1;
-                            counti = false;
-                        } else {
-                            lowi++;
-                        }
-                        if (lowi >= rhoiRows.size()) {
-                            counti = false;
-                        }
-                    }
+//                    if (rhoiRows.get(0) > rhoi) {
+//                        counti = false;
+//                    }
+//                    // If input rho i is larger than all values in table, extrapolate up using last two table values
+//                    if (rhoiRows.get(rhoiRows.size() - 1) < rhoi) {
+//                        lowi = rhoiRows.size() - 2;
+//                        highi = rhoiRows.size() - 1;
+//                        counti = false;
+//                    }
+//                    while (counti) {
+//                        // Find the two table values that the input rho i falls between
+//                        if (rhoiRows.get(lowi) < rhoi && rhoi < rhoiRows.get(lowi + 1)) {
+//                            highi = lowi + 1;
+//                            counti = false;
+//                        } else {
+//                            lowi++;
+//                        }
+//                        if (lowi >= rhoiRows.size()) {
+//                            counti = false;
+//                        }
+//                    }
                 }
 
                 if (!rhojColumns.contains(rhoj)) {
                     calculatej = true;
+                    jbounds = determineijBounds(rhoj,lowj,highj);
                     // If input rho j is smaller than all values in table, extrapolate down using first two table values
                     // These values are the defaults (set above)
-                    if (rhojColumns.get(0) > rhoj) {
-                        countj = false;
-                    }
-                    // If input j is larger than all values in table, extrapolate up using last two table values
-                    if (rhojColumns.get(rhojColumns.size() - 1) < rhoj) {
-                        lowj = rhojColumns.size() - 2;
-                        highj = rhojColumns.size() - 1;
-                        countj = false;
-                    }
-                    while (countj) {
-                        // Find the two table values that the input rho j falls between
-                        if (rhojColumns.get(lowj) < rhoj && rhoj < rhojColumns.get(lowj + 1)) {
-                            highj = lowj + 1;
-                            countj = false;
-                        } else {
-                            lowj++;
-                        }
-                        if (lowj >= rhojColumns.size()) {
-                            countj = false;
-                        }
-                    }
+//                    if (rhojColumns.get(0) > rhoj) {
+//                        countj = false;
+//                    }
+//                    // If input j is larger than all values in table, extrapolate up using last two table values
+//                    if (rhojColumns.get(rhojColumns.size() - 1) < rhoj) {
+//                        lowj = rhojColumns.size() - 2;
+//                        highj = rhojColumns.size() - 1;
+//                        countj = false;
+//                    }
+//                    while (countj) {
+//                        // Find the two table values that the input rho j falls between
+//                        if (rhojColumns.get(lowj) < rhoj && rhoj < rhojColumns.get(lowj + 1)) {
+//                            highj = lowj + 1;
+//                            countj = false;
+//                        } else {
+//                            lowj++;
+//                        }
+//                        if (lowj >= rhojColumns.size()) {
+//                            countj = false;
+//                        }
+//                    }
                 }
 
                 // If the values of rho i and rho j aren't in table, interpolate/extrapolate
-                double startInterp_i = rhoiRows.get(lowi);
-                double endInterp_i = rhoiRows.get(highi);
-                double startInterp_j = rhojColumns.get(lowj);
-                double endInterp_j = rhojColumns.get(highj);
+                double startInterp_i = rhoiRows.get(ibounds[0]);
+                double endInterp_i = rhoiRows.get(ibounds[1]);
+                double startInterp_j = rhojColumns.get(jbounds[0]);
+                double endInterp_j = rhojColumns.get(jbounds[1]);
 
                 if (calculatei && calculatej) {
                     // Rho i and rho j aren't table values
@@ -156,12 +175,86 @@ public class NeckIntegralOnufriev {
                 }
             }
 
-            // Never let Aij or Bij be negative
+            // Never let Aij be negative
             if(Aij < 0.00){ Aij = 0.0; }
-            if(Bij < 0.00){ Bij = 0.0; }
+            //if(Bij < 0.00){ Bij = 0.0; }
 
             return new double[]{Aij, Bij};
         }
+    }
+
+    private static int[] determineClosestCalculatedValues(double rhoi, double rhoj){
+
+        int lowi = 0;
+        int lowj = 0;
+        int highi = lowi + 1;
+        int highj = lowj + 1;
+
+        // Find lowi
+        for(int i = benchmarkedRadii.indexOf(rhoi);i>0;i--){
+            if(AijAguilarOnufriev[i][benchmarkedRadii.indexOf(rhoj)] != 999){
+                lowi = i;
+                i = -1;
+            }
+        }
+        // Find highi
+        for(int i = benchmarkedRadii.indexOf(rhoi);i<benchmarkedRadii.size();i++){
+            if(AijAguilarOnufriev[i][benchmarkedRadii.indexOf(rhoj)] != 999){
+                highi = i;
+                i = -1;
+            }
+        }
+        // Find lowj
+        for(int j = benchmarkedRadii.indexOf(rhoj);j>0;j--){
+            if(AijAguilarOnufriev[benchmarkedRadii.indexOf(rhoi)][j] != 999){
+                lowj = j;
+                j = -1;
+            }
+        }
+        // Find highj
+        for(int j = benchmarkedRadii.indexOf(rhoj);j<benchmarkedRadii.size();j++){
+            if(AijAguilarOnufriev[benchmarkedRadii.indexOf(rhoi)][j] != 999){
+                highj = j;
+                j = -1;
+            }
+        }
+
+        return new int[]{lowi,highi,lowj,highj};
+
+    }
+
+    private static int[] determineijBounds(double rho, int defaultLow, int defaultHigh){
+        boolean count = true;
+
+        // If input rho is in table but doesn't have a calculated value, find the rho's with values closest to it
+        if(benchmarkedRadii.contains(rho)){
+
+        }
+
+        // If input rho is smaller than all values in table, extrapolate down using first two table values
+        // These values are the defaults (set above)
+        if (benchmarkedRadii.get(0) > rho) {
+            count = false;
+        }
+        // If input rho is larger than all values in table, extrapolate up using last two table values
+        if (benchmarkedRadii.get(benchmarkedRadii.size() - 1) < rho) {
+            defaultLow = benchmarkedRadii.size() - 2;
+            defaultHigh = benchmarkedRadii.size() - 1;
+            count = false;
+        }
+        while (count) {
+            // Find the two table values that the input rho falls between
+            if (benchmarkedRadii.get(defaultLow) < rho && rho < benchmarkedRadii.get(defaultLow + 1)) {
+                defaultHigh = defaultLow + 1;
+                count = false;
+            } else {
+                defaultLow++;
+            }
+            if (defaultLow >= benchmarkedRadii.size()) {
+                count = false;
+            }
+        }
+        return new int[]{defaultLow,defaultHigh};
     }
 
     private static double interpolateAij(double startInterp_i, double endInterp_i, double startInterp_j, double endInterp_j, double rhoi, double rhoj){
