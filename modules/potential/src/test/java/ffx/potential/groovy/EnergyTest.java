@@ -297,7 +297,7 @@ public class EnergyTest extends PotentialTest {
                 2290,
                 0.0,
                 2290,
-                -157.8978447444496,
+                -183.2685758293095,
                 2556,
                 true
             },
@@ -361,7 +361,7 @@ public class EnergyTest extends PotentialTest {
                 2290,
                 -25.85878386,
                 2290,
-                -190.15196400147826,
+                -207.47535790184864,
                 2556,
                 true
             },
@@ -393,7 +393,7 @@ public class EnergyTest extends PotentialTest {
                 748,
                 -8.62910979,
                 748,
-                -55.771821575687085,
+                -62.58502136469313,
                 903,
                 false
             },
