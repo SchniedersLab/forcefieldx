@@ -346,8 +346,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     // Define default Bondi scale factor, and HCT overlap scale factors.
     bondiScale = forceField.getDouble("SOLUTE_SCALE", DEFAULT_SOLUTE_SCALE);
     gkOverlapScale = forceField.getDouble("HCT_SCALE", DEFAULT_HCT_SCALE);
-    descreenWithVDW = forceField.getBoolean("DESCREEN_VDW", false);
-    descreenWithHydrogen = forceField.getBoolean("DESCREEN_HYDROGEN", true);
+    descreenWithVDW = forceField.getBoolean("DESCREEN_VDW", true);
+    descreenWithHydrogen = forceField.getBoolean("DESCREEN_HYDROGEN", false);
     if (descreenWithVDW && !descreenWithHydrogen) {
       perfectHCTScale = forceField.getBoolean("PERFECT_HCT_SCALE", false);
     } else {
@@ -518,7 +518,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(format("   Descreen with Hydrogen Atoms:       %8B", descreenWithHydrogen));
     logger.info(format("   Use Neck Correction:                %8B", neckCorrection));
     logger.info(format("   GaussVol HCT Scale Factors:         %8B", perfectHCTScale));
-    logger.info(format("   HCT Scale Factor:                   %8.4f",forceField.getDouble("HCT-SCALE",0.00)));
+    logger.info(format("   HCT Scale Factor:                   %8.4f",forceField.getDouble("HCT-SCALE",DEFAULT_HCT_SCALE)));
     logger.info(format("   GKC:                                %8.3f",forceField.getDouble("GKC",DEFAULT_GKC)));
     SoluteRadii.logRadiiSource(forceField);
     logger.info(
