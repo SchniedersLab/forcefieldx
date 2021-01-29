@@ -97,6 +97,16 @@
                                 <p>Define the size of the simulation cell, spece group symmetry and use of PBC.</p>
                             </td>
                         </tr>
+                        <tr>
+                            <td>
+                                <p>
+                                    <a href="properties-implicitsolvent.html">Implicit Solvent</a>
+                                </p>
+                            </td>
+                            <td>
+                                <p>Properties associated with the GK Implicit Solvent Model.</p>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </subsection>
