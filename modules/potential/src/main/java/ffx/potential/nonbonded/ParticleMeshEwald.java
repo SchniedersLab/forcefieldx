@@ -55,6 +55,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy.Platform;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
@@ -647,6 +648,8 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
     for (int i = 0; i < nAtoms; i++) {
       Atom a = atoms[i];
       if (a.getIndex() - 1 != i) {
+        logger.info(format(" PME Index i: %d, %s Index: %d\n Atom: %s",
+            i, MolecularAssembly.atomIndexing, a.getIndex(), a.toString()));
         logger.severe(" Atom indexing is not consistent in PME.");
       }
     }
