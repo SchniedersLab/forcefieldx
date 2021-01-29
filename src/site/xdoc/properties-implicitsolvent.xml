@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Force Field Properties</title>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="Implicit Solvent Properties">
+            <p>Implicit Solvent properties are used to specify certain conditions and constants used for
+                the GK implicit solvent model including scaling factors, non-polar model parameters,
+                and radii definitions.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Type</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>gkterm</td>
+                        <td>boolean</td>
+                        <td>true</td>
+                        <td>Specifies use of Generalized Kirkwood (GK) electrostatics.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>cavmodel</td>
+                        <td>enum</td>
+                        <td>gauss-disp</td>
+                        <td>Specifies cavitation model to be used. Using <code>cavmodel</code> sev-disp
+                            is recommended for small molecules (radius of gyration below 10 Ang) and
+                            <code>cavmodel</code> gauss-disp is recommended for larger molecules. Setting
+                            <code>cavmodel</code> to none will turn off calculation of the cavitation term.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>gkc</td>
+                        <td>double</td>
+                        <td>2.455</td>
+                        <td>Interpolation constant for GK electrostatics integrals.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>hct-scale</td>
+                        <td>double</td>
+                        <td>0.72</td>
+                        <td>Scaling factor used to reduce overlaps between adjacent atoms.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>descreen-hydrogen</td>
+                        <td>boolean</td>
+                        <td>false</td>
+                        <td>Controls inclusion of hydrogen atom contributions
+                            to descreening calculations.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>descreen-vdw</td>
+                        <td>boolean</td>
+                        <td>true</td>
+                        <td>Controls use of radii definitions (van der Waals or fit solute radii)
+                            for descreening calculations.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </body>
+</document>
