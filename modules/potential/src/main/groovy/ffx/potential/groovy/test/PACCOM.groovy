@@ -47,22 +47,20 @@ import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.Superpose
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.math3.ml.distance.EuclideanDistance
+import org.apache.commons.lang.ArrayUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.util.logging.Level
 import java.util.stream.Collectors
 
 import static java.lang.String.format
-import static org.apache.commons.math3.util.FastMath.sin
-import static org.apache.commons.math3.util.FastMath.acos
-import static org.apache.commons.math3.util.FastMath.cos
-import static org.apache.commons.math3.util.FastMath.sqrt
-import static org.apache.commons.math3.util.FastMath.pow
 
 /**
  * The PACCOM script calculates intracrystollographic distances.
  *
+ * @author Okimasa OKADA
  * created by Okimasa OKADA 2017/3/31
  * revised by Okimasa OKADA 2019/2/25
  * ported to FFX by Aaron Nessler, Kaleb Bierstedt, and Micheal Schnieders 2020
@@ -82,13 +80,6 @@ class PACCOM extends PotentialScript {
     int nMolecules = 50
 
     /**
-     * --na or --numberAlign Number of molecules to align between each crystal in RMSD comparison.
-     */
-    @Option(names = ['--na', '--numberAlign'], paramLabel = '3',
-            description = 'Determines number of molecules to overlap during comparison.')
-    int numMolAlign = 3
-
-    /**
      * --ls or --largeSphere Number of molecules in the large sphere to compare with first crystal.
      */
     @Option(names = ['--ls', '--largeSphere'], paramLabel = '500',
@@ -102,7 +93,6 @@ class PACCOM extends PotentialScript {
             description = 'Calculate the RMSD between each sphere.')
     private boolean allVsAll = false
 
-    // TODO: Fix original PACCOM
     /**
      * --op or --originalPACCOM Use Algorithm supplied by original PACCOM.
      */
@@ -117,22 +107,14 @@ class PACCOM extends PotentialScript {
             description = 'Save each sphere as an aperiodic system to a PDB file.')
     private boolean saveFiles = false
 
-    /**
-     * --si or --saveIntermediates Save out intermediate crystals as PDB files.
-     */
-    @Option(names = ['--si', '--saveIntermediates'], paramLabel = "false", defaultValue = "false",
-            description = 'Save each sphere as an aperiodic system to a PDB file.')
-    private static boolean saveIntermediates = false
-
     // TODO: implement closestDistance
     /**
      * --cd or --closestDistance Neighbor molecules calculated via closest atom (not currently implemented).
      */
-    @Option(names = ['--cd', '--closestDistance'], paramLabel = "false", defaultValue = "false",
-            description = 'Neighbors calculated via closest atom.')
-    private static boolean closestDistance = false
+//    @Option(names = ['--cd', '--closestDistance'], paramLabel = "false", defaultValue = "false",
+//            description = 'Neighbors calculated via closest atom.')
+//    private static boolean closestDistance = false
 
-    // TODO: Test implementation of noHydrogens
     /**
      * --nh or --noHydrogens Perform comparison without hydrogens.
      */
@@ -159,6 +141,26 @@ class PACCOM extends PotentialScript {
     public double[][] coordinates = null
 
     private File baseDir = null
+
+    /**
+     * JUnit Testing Variables
+     */
+    public double[][] rmsdValues = null
+
+    /**
+     * PACCOM Constructor.
+     */
+    PACCOM() {
+        this(new Binding())
+    }
+
+    /**
+     * PACCOM Constructor.
+     * @param binding Groovy Binding to use.
+     */
+    PACCOM(Binding binding) {
+        super(binding)
+    }
 
     /**
      * Execute the script.
@@ -189,8 +191,14 @@ class PACCOM extends PotentialScript {
 
         EuclideanDistance distance = new EuclideanDistance()
 
-        MolecularAssembly[] expandedAssemblies = new MolecularAssembly[assemblies.size()]
-        int[] minIndicies = new int[assemblies.size()]
+        int numAssemblies = assemblies.size()
+        // TODO: Make more robust? This assumes atom orders are the same in all molecules... (noHydrogens)
+        List<Atom> exampleAtoms = assemblies[0].getMolecules().get(0).getAtomList()
+        int nAtoms = exampleAtoms.size()
+        int numHydrogens = 0
+        MolecularAssembly[] expandedAssemblies = new MolecularAssembly[numAssemblies]
+        MolecularAssembly[] inflatedAssemblies = new MolecularAssembly[numAssemblies]
+        int[][] minIndices = new int[numAssemblies][nMolecules]
         // If comparison atoms are not specified use all atoms from the molecule.
         int[] comparisonAtoms
         if (centerAtoms != null) {
@@ -203,9 +211,25 @@ class PACCOM extends PotentialScript {
                 }
             }
         } else {
-            comparisonAtoms = new int[assemblies[0].getMolecules().get(0).getAtomList().size()]
-            for (int i = 0; i < comparisonAtoms.size(); i++) {
-                comparisonAtoms[i] = i
+            if (noHydrogens) {
+                int[] hydrogenIndices = 0
+                numHydrogens = 0
+                for (int i = 0; i < exampleAtoms.size(); i++) {
+                    if (exampleAtoms.get(i).isHydrogen()) {
+                        hydrogenIndices[numHydrogens++] = i
+                    }
+                }
+                comparisonAtoms = new int[exampleAtoms.size() - numHydrogens]
+                for (int i = 0; i < comparisonAtoms.size(); i++) {
+                    if (!ArrayUtils.contains(hydrogenIndices, i))
+                        comparisonAtoms[i] = i
+                }
+
+            } else {
+                comparisonAtoms = new int[exampleAtoms.size()]
+                for (int i = 0; i < comparisonAtoms.size(); i++) {
+                    comparisonAtoms[i] = i
+                }
             }
         }
 
@@ -215,151 +239,126 @@ class PACCOM extends PotentialScript {
             logger.fine(format(" Comparing atom #: %d", integerVal + 1))
         }
 
-        // TODO: Ensure this default is accurate
-        if (original) {
-            numMolAlign = 3
-        }
+        // Values for Printing RMSD at the end.
+        rmsdValues = new double[numAssemblies][numAssemblies]
+        String row = new String()
 
-        MolecularAssembly targetAssembly = null
-        MolecularAssembly currentAssembly
-        int moleculeSize = assemblies[0].getMolecules().get(0).getAtomList().size()
-        int numAssemblies = assemblies.size()
-        double[] targetCoords = new double[compareAtomsSize * numMolAlign * 3]
-        double[] centerOfFirst = new double[moleculeSize * 3]
         int massIndex
         int coordIndex
-        double[] assemblyMasses
-        double[] assemblyCoords
+//        int mnum = 1 // TODO: determine better value than nMolecules
+        int numPDBs = 0
+
+        double[] targetCoords
+        double[][] assemblyCoords
+        //for (int m = 0; m < mnum; m++) {
+        // Loop over each crystal, move to origin, orient to x and x-y
+//        if (m == 0) {
         for (int i = 0; i < numAssemblies; i++) {
             String fileName = FilenameUtils.getBaseName(assemblies[i].getFile().getName())
-            File saveLocationPDB = new File(fileName + ".pdb")
-            if (i == 0) {
-                expandedAssemblies[i] = PACCOMFunctions.generateBaseSphere(assemblies[i], nMolecules, original)
-                targetAssembly = expandedAssemblies[i]
-                currentAssembly = targetAssembly
-            } else {
-                // TODO: Determine appropriate largeSphere value (currently flag; default 500)
-                expandedAssemblies[i] = PACCOMFunctions.generateBaseSphere(assemblies[i], largeSphere, original)
-                currentAssembly = expandedAssemblies[i]
-            }
-            minIndicies[i] = PACCOMFunctions.centerMoleculeIndex(currentAssembly)
-            logger.info("\n " + currentAssembly.getFile().getName() + " --> "
-                    + targetAssembly.getFile().getName())
+
+            inflatedAssemblies[i] = PACCOMFunctions.generateBaseSphere(assemblies[i], largeSphere, true)
+            // TODO replace boolean with original
+            MolecularAssembly currentAssembly = inflatedAssemblies[i]
+//                for (int l = 0; l < currentAssembly.getMolecules().size(); l++) {
+            //logger.info(format("Molecule %d" + currentAssembly.getMolecules().get(l).getAtomList().get(comparisonAtoms[0]), l))
+//                }
             logger.info(format(" Number of molecules in currentAssembly: %d", currentAssembly.getMolecules().size()))
+            if (saveFiles && logger.isLoggable(Level.FINE)) {
+                PACCOMFunctions.saveAssemblyPDB(currentAssembly, fileName + "_inflated", numPDBs++)
+            }
+            minIndices[i] = PACCOMFunctions.centerMoleculesIndices(currentAssembly, nMolecules, original)
+        }
+//        } else {
+//            for (int i = 1; i < numAssemblies; i++) {
+//                String fileName = FilenameUtils.getBaseName(assemblies[i].getFile().getName())
+//
+//                inflatedAssemblies[i] = PACCOMFunctions.generateBaseSphere(assemblies[i], largeSphere, true)
+//                // TODO replace boolean with original
+//                MolecularAssembly currentAssembly = inflatedAssemblies[i]
+//                for (int l = 0; l < currentAssembly.getMolecules().size(); l++) {
+//                    //logger.info(format("Molecule %d" + currentAssembly.getMolecules().get(l).getAtomList().get(comparisonAtoms[0]), l))
+//                }
+//                logger.info(format(" Number of molecules in currentAssembly: %d", currentAssembly.getMolecules().size()))
+//                if (saveFiles && logger.isLoggable(Level.FINE)) {
+//                    PACCOMFunctions.saveAssemblyPDB(currentAssembly, fileName +format("_%d_%d", m, i) + "inflated", numPDBs++)
+//                }
+//                minIndices[i] = PACCOMFunctions.moleculeIndicesNear(currentAssembly, m, i, minIndices, nMolecules, original)
+//            }
+//        }
 
-            /**         SUPERPOSE CENTER MOLECULES             **/
-            logger.info("\n Superposing center-most molecule from each sphere.\n")
-
-            MSNode centerMolecule = currentAssembly.getMolecules().get(minIndicies[i])
-            // Record masses of atoms in center molecule
-            double[] centerMasses = new double[compareAtomsSize]
-            // Record atom positions of center molecule
-            double[] centerCoords = new double[compareAtomsSize * 3]
-
+        //**            Move to origin         **//
+        ArrayList<Atom> list1Center
+        Atom atomN11
+        Atom atomN21
+        Atom atomN31
+        assemblyCoords = new double[numAssemblies][inflatedAssemblies[0].getAtomList().size() * 3]
+        for (int i = 0; i < numAssemblies; i++) {
+            String fileName = FilenameUtils.getBaseName(assemblies[i].getFile().getName())
+            MolecularAssembly currentAssembly = inflatedAssemblies[i]
+            MSNode centerMolecule = currentAssembly.getMolecules().get(minIndices[i][0])
             ArrayList<Atom> centerMolAtomList = centerMolecule.getAtomList()
             ArrayList<Atom> assemblyAtomList = currentAssembly.getAtomList()
             int assemblyAtomsSize = assemblyAtomList.size()
-            assemblyMasses = new double[assemblyAtomsSize]
+            double[] assemblyMasses = new double[assemblyAtomsSize]
             // Record coordinates for all atoms within the assembly in a manner the Superpose class will handle.
-            assemblyCoords = new double[assemblyAtomsSize * 3]
             massIndex = 0
             coordIndex = 0
             for (Atom atom : assemblyAtomList) {
                 assemblyMasses[massIndex++] = atom.getMass()
-                assemblyCoords[coordIndex++] = atom.getX()
-                assemblyCoords[coordIndex++] = atom.getY()
-                assemblyCoords[coordIndex++] = atom.getZ()
+                assemblyCoords[i][coordIndex++] = atom.getX()
+                assemblyCoords[i][coordIndex++] = atom.getY()
+                assemblyCoords[i][coordIndex++] = atom.getZ()
             }
-            massIndex = 0
-            coordIndex = 0
-            if (original) {
-                centerCoords = new double[3]
-                centerMasses = new double[1]
 
-                Atom atom = centerMolAtomList.get(comparisonAtoms[0])
-                centerMasses[0] = 1.00
-                centerCoords[0] = atom.getX()
-                centerCoords[1] = atom.getY()
-                centerCoords[2] = atom.getZ()
+            // Begin translation of center molecule to origin.
 
-                logger.info(format(" Atom coordinates pre translation:"))
-                logger.info(format(" N1: " + centerMolAtomList.get(comparisonAtoms[0]).toString()))
-                logger.info(format(" N2: " + centerMolAtomList.get(comparisonAtoms[1]).toString()))
-                logger.info(format(" N3: " + centerMolAtomList.get(comparisonAtoms[2]).toString()))
-            } else {
-                for (int index : comparisonAtoms) {
-                    Atom atom = centerMolAtomList.get(index)
-                    centerMasses[massIndex++] = atom.getMass()
-                    centerCoords[coordIndex++] = atom.getX()
-                    centerCoords[coordIndex++] = atom.getY()
-                    centerCoords[coordIndex++] = atom.getZ()
-                }
-            }
+            double[] coordsToMove = new double[3]
+            double[] centerMasses = new double[1]
+            centerMasses[0] = 1.0
+
+            Atom atomN1 = centerMolAtomList.get(comparisonAtoms[0])
+            coordsToMove[0] = atomN1.getX()
+            coordsToMove[1] = atomN1.getY()
+            coordsToMove[2] = atomN1.getZ()
+
+            logger.fine(format(" Atom coordinates pre translation:"))
+            logger.fine(format(" N1: " + atomN1.toString()))
+            logger.fine(format(" N2: " + centerMolAtomList.get(comparisonAtoms[1]).toString()))
+            logger.fine(format(" N3: " + centerMolAtomList.get(comparisonAtoms[2]).toString()))
 
             // Determine/apply translation necessary to get CoM for middle molecule to origin
-            double[] translation = Superpose.calculateTranslation(centerCoords, centerMasses)
+            double[] translation = Superpose.calculateTranslation(coordsToMove, centerMasses)
             String translationString = new String()
             for (double valueT : translation) {
                 translationString += format("%16.8f", valueT) + "\t"
             }
             logger.info(format(" Translation Vector: (Move to Origin)\n %s", translationString))
-            Superpose.applyTranslation(assemblyCoords, translation)
+            Superpose.applyTranslation(assemblyCoords[i], translation)
 
-            // Update expanded assemblies to include translation
-            coordIndex = 0
-            for (Atom atom : assemblyAtomList) {
-                double[] newXYZ = new double[]{assemblyCoords[coordIndex++],
-                        assemblyCoords[coordIndex++],
-                        assemblyCoords[coordIndex++]}
-                atom.setXYZ(newXYZ)
-            }
+            // Translation to origin finished. Begin first rotation:
 
-            coordIndex = 0
-            if (original) {
-                Atom atom = centerMolAtomList.get(comparisonAtoms[0])
-                centerCoords[coordIndex++] = atom.getX()
-                centerCoords[coordIndex++] = atom.getY()
-                centerCoords[coordIndex] = atom.getZ()
-            } else {
-                // Update centerCoords with the translation.
-                for (int index : comparisonAtoms) {
-                    Atom atom = centerMolAtomList.get(index)
-                    centerCoords[coordIndex++] = atom.getX()
-                    centerCoords[coordIndex++] = atom.getY()
-                    centerCoords[coordIndex++] = atom.getZ()
-                }
-                double[] coMcenter = centerMolecule.getCenter(true)
-                logger.info(format(" Center Mol CoM post Trans: %16.8f %16.8f %16.8f", coMcenter[0], coMcenter[1], coMcenter[2]))
-            }
+            atomN1 = centerMolAtomList.get(comparisonAtoms[0])
+            Atom atomN2 = centerMolAtomList.get(comparisonAtoms[1])
+            Atom atomN3 = centerMolAtomList.get(comparisonAtoms[2])
 
-            // Record atom coordinates for center molecule of first assembly (Other assemblies will rotate to match first).
-            if (i == 0) {
-                centerOfFirst = Arrays.copyOf(centerCoords, centerCoords.length)
-            }
 
-            if (original) {
-                Atom atomN1 = centerMolAtomList.get(comparisonAtoms[0])
-                Atom atomN2 = centerMolAtomList.get(comparisonAtoms[1])
-                Atom atomN3 = centerMolAtomList.get(comparisonAtoms[2])
+            coordsToMove = new double[nMolecules * 3]
+            coordsToMove[0] = atomN1.getX()
+            coordsToMove[1] = atomN1.getY()
+            coordsToMove[2] = atomN1.getZ()
+            coordsToMove[3] = atomN2.getX()
+            coordsToMove[4] = atomN2.getY()
+            coordsToMove[5] = atomN2.getZ()
+            coordsToMove[6] = atomN3.getX()
+            coordsToMove[7] = atomN3.getY()
+            coordsToMove[8] = atomN3.getZ()
 
-                centerOfFirst = standardOrientation(atomN1, atomN2, atomN3)
+            targetCoords = PACCOMFunctions.standardOrientation(atomN1, atomN2, atomN3)
 
-                centerCoords = new double[numMolAlign * 3]
-                centerCoords[0] = atomN1.getX()
-                centerCoords[1] = atomN1.getY()
-                centerCoords[2] = atomN1.getZ()
-                centerCoords[3] = atomN2.getX()
-                centerCoords[4] = atomN2.getY()
-                centerCoords[5] = atomN2.getZ()
-                centerCoords[6] = atomN3.getX()
-                centerCoords[7] = atomN3.getY()
-                centerCoords[8] = atomN3.getZ()
+            centerMasses = new double[nMolecules]
+            Arrays.fill(centerMasses, 1.0)
 
-                centerMasses = new double[numMolAlign]
-                Arrays.fill(centerMasses, 1.0)
-            }
-
-            double[][] rotation = Superpose.calculateRotation(centerOfFirst, centerCoords, centerMasses)
+            double[][] rotation = Superpose.calculateRotation(targetCoords, coordsToMove, centerMasses)
             // Print out first rotation matrix
             String rotString = new String()
             for (double[] rotRow : rotation) {
@@ -370,250 +369,138 @@ class PACCOM extends PotentialScript {
             }
             logger.info(" First Rotation Matrix:" + rotString)
 
-            Superpose.applyRotation(assemblyCoords, rotation)
+            Superpose.applyRotation(assemblyCoords[i], rotation)
 
             // Update expanded assemblies to include rotation.
             coordIndex = 0
             for (Atom atom : assemblyAtomList) {
-                double[] newXYZ = new double[]{assemblyCoords[coordIndex++],
-                        assemblyCoords[coordIndex++],
-                        assemblyCoords[coordIndex++]}
+                double[] newXYZ = new double[]{assemblyCoords[i][coordIndex++],
+                        assemblyCoords[i][coordIndex++],
+                        assemblyCoords[i][coordIndex++]}
                 atom.setXYZ(newXYZ)
             }
 
-            if (original) {
-                Atom atomN1 = centerMolAtomList.get(comparisonAtoms[0])
-                Atom atomN2 = centerMolAtomList.get(comparisonAtoms[1])
-                Atom atomN3 = centerMolAtomList.get(comparisonAtoms[2])
-                centerCoords[0] = atomN1.getX()
-                centerCoords[1] = atomN1.getY()
-                centerCoords[2] = atomN1.getZ()
-                centerCoords[3] = atomN2.getX()
-                centerCoords[4] = atomN2.getY()
-                centerCoords[5] = atomN2.getZ()
-                centerCoords[6] = atomN3.getX()
-                centerCoords[7] = atomN3.getY()
-                centerCoords[8] = atomN3.getZ()
-            } else {
-                // Update centerCoords with the translation.
-                coordIndex = 0
-                for (int index : comparisonAtoms) {
-                    Atom atom = centerMolAtomList.get(index)
-                    centerCoords[coordIndex++] = atom.getX()
-                    centerCoords[coordIndex++] = atom.getY()
-                    centerCoords[coordIndex++] = atom.getZ()
-                }
+            if (saveFiles && logger.isLoggable(Level.FINE)) {
+                PACCOMFunctions.saveAssemblyPDB(currentAssembly, fileName + "_1stRot", numPDBs++)
             }
-            double rmsdCenter = Superpose.rmsd(centerOfFirst, centerCoords, centerMasses)
-            logger.info(format(" RMSD for Center Molecules After First Rotation: %16.8f\n", rmsdCenter))
-
-            // At this point, all expanded assemblies should have their center molecules at the origin.
-            /**     PERFORM numMolAlign MOLECULE SUPERPOSITION     **/
-            logger.info(format(" Superposing %d center-most molecules from each sphere.", numMolAlign))
-            int[] similarMolecules = new int[numMolAlign]
-            // Need to have array initialized with impossible values (i.e. not 0)
-            Arrays.fill(similarMolecules, -1)
-            // Store molecules matching molecules in first
-            double[] centerOfFirstMidMol = new double[3]
-            HashMap<Integer, Double> targetClosestMols = new HashMap<Integer, Double>()
-            if (original) {
-                similarMolecules = new int[numMolAlign]
-                // Determine next numMolAlign closest molecules based on n1 atom in first assembly
-                targetAssembly.getMolecules().get(minIndicies[0]).getAtomList().get(comparisonAtoms[0]).getXYZ(centerOfFirstMidMol)
-                for (int j = 0; j < targetAssembly.getMolecules().size(); j++) {
-                    double[] nextCenter = new double[3]
-                    targetAssembly.getMolecules().get(j).getAtomList().get(comparisonAtoms[0]).getXYZ(nextCenter)
-
-                    double value = distance.compute(centerOfFirstMidMol, nextCenter)
-                    if (targetClosestMols.size() < numMolAlign) {
-                        targetClosestMols.put(j, value)
-                    } else {
-                        double maxValue = Collections.max(targetClosestMols.values())
-                        if (value < maxValue) {
-                            Iterator<Map.Entry<Integer, Double>> it = targetClosestMols.entrySet().iterator()
-                            while (it.hasNext()) {
-                                Map.Entry<Integer, Double> item = it.next()
-                                if (item.getValue() == maxValue) {
-                                    it.remove()
-                                    break
-                                }
-                            }
-                            targetClosestMols.put(j, value)
-                        }
-                    }
-                }
-                targetClosestMols = PACCOMFunctions.sortHashMapByValue(targetClosestMols)
-                logger.info(format(" targetClosestMol size: %d", targetClosestMols.size()))
-                // Determine numMolAlign molecules in other assemblies closest to those in first
-                // TODO Right now first come first serve, optimize for closest molecule.
-                int targetIndex = 0
-                for (int j : targetClosestMols.keySet()) {
-                    double[] targetCenter = new double[3]
-                    targetAssembly.getMolecules().get(j).getAtomList().get(comparisonAtoms[0]).getXYZ(targetCenter)
-                    int index = -1
-                    double minDist = Double.MAX_VALUE
-                    for (int k = 0; k < currentAssembly.getMolecules().size(); k++) {
-                        boolean duplicate = false
-                        double[] nextCenter = new double[3]
-                        currentAssembly.getMolecules().get(k).getAtomList().get(comparisonAtoms[0]).getXYZ(nextCenter)
-                        double value = distance.compute(targetCenter, nextCenter)
-                        if (value < minDist) {
-                            for (int prevKey : similarMolecules) {
-                                if (prevKey == k) {
-                                    duplicate = true
-                                    break
-                                }
-                            }
-                            logger.fine(format(" Key: " + k + " Value: " + value + " is duplicate? " + duplicate))
-                            if (!duplicate) {
-                                minDist = value
-                                index = k
-                            }
-                        }
-                    }
-                    logger.fine(format(" Set: %d", index))
-                    similarMolecules[targetIndex++] = index
-                }
-            } else {
-                // Determine next numMolAlign closest molecules in first assembly
-                centerOfFirstMidMol = targetAssembly.getMolecules().get(minIndicies[0]).getCenter(true)
-                for (int j = 0; j < targetAssembly.getMolecules().size(); j++) {
-                    double[] nextCenter = targetAssembly.getMolecules().get(j).getCenter(true)
-                    double value = distance.compute(centerOfFirstMidMol, nextCenter)
-                    if (targetClosestMols.size() < numMolAlign) {
-                        targetClosestMols.put(j, value)
-                    } else {
-                        double maxValue = Collections.max(targetClosestMols.values())
-                        if (value < maxValue) {
-                            Iterator<Map.Entry<Integer, Double>> it = targetClosestMols.entrySet().iterator()
-                            while (it.hasNext()) {
-                                Map.Entry<Integer, Double> item = it.next()
-                                if (item.getValue() == maxValue) {
-                                    it.remove()
-                                    break
-                                }
-                            }
-                            targetClosestMols.put(j, value)
-                        }
-                    }
-                }
-                targetClosestMols = PACCOMFunctions.sortHashMapByValue(targetClosestMols)
-                for (Map.Entry<Integer, Double> item : targetClosestMols) {
-                    logger.fine(format(" targetKey: %d\tValue: %f", item.key, item.value))
-                }
-
-                // Determine numMolAlign molecules in other assemblies closest to those in first
-                int targetIndex = 0
-                for (int j : targetClosestMols.keySet()) {
-                    double[] targetCenter = targetAssembly.getMolecules().get(j).getCenter(true)
-                    int index = -1
-                    double minDist = Double.MAX_VALUE
-                    for (int k = 0; k < currentAssembly.getMolecules().size(); k++) {
-                        boolean duplicate = false
-                        double[] nextCenter = currentAssembly.getMolecules().get(k).getCenter(true)
-                        double value = distance.compute(targetCenter, nextCenter)
-                        if (value < minDist) {
-                            for (int prevKey : similarMolecules) {
-                                if (prevKey == k) {
-                                    duplicate = true
-                                    break
-                                }
-                            }
-                            logger.fine(format(" Key: " + k + " Value: " + value + " is duplicate? " + duplicate))
-                            if (!duplicate) {
-                                minDist = value
-                                index = k
-                            }
-                        }
-                    }
-                    logger.fine(format(" Set: %d", index))
-                    similarMolecules[targetIndex++] = index
-                }
+            // Check RMSD of center molecules in shell compared to first
+            if (i == 0) {
+                list1Center = inflatedAssemblies[0].getMolecules().get(minIndices[0][0]).getAtomList()
+                atomN11 = list1Center.get(comparisonAtoms[0])
+                atomN21 = list1Center.get(comparisonAtoms[1])
+                atomN31 = list1Center.get(comparisonAtoms[2])
             }
-            // Closest numMolAlign molecules have been determined for each sphere
+            ArrayList<Atom> list2Center = inflatedAssemblies[i].getMolecules().get(minIndices[i][0]).getAtomList()
+
+            Atom atomN12 = list2Center.get(comparisonAtoms[0])
+            Atom atomN22 = list2Center.get(comparisonAtoms[1])
+            Atom atomN32 = list2Center.get(comparisonAtoms[2])
+
+            double[][] checkCoords = new double[2][compareAtomsSize * 3]
+            checkCoords[0][0] = atomN11.getX()
+            checkCoords[0][1] = atomN11.getY()
+            checkCoords[0][2] = atomN11.getZ()
+            checkCoords[0][3] = atomN21.getX()
+            checkCoords[0][4] = atomN21.getY()
+            checkCoords[0][5] = atomN21.getZ()
+            checkCoords[0][6] = atomN31.getX()
+            checkCoords[0][7] = atomN31.getY()
+            checkCoords[0][8] = atomN31.getZ()
+
+            checkCoords[1][0] = atomN12.getX()
+            checkCoords[1][1] = atomN12.getY()
+            checkCoords[1][2] = atomN12.getZ()
+            checkCoords[1][3] = atomN22.getX()
+            checkCoords[1][4] = atomN22.getY()
+            checkCoords[1][5] = atomN22.getZ()
+            checkCoords[1][6] = atomN32.getX()
+            checkCoords[1][7] = atomN32.getY()
+            checkCoords[1][8] = atomN32.getZ()
+
+            double[] checkMass = new double[]{1.0, 1.0, 1.0}
+
+            double tempRMSD = Superpose.rmsd(checkCoords[0], checkCoords[1], checkMass)
+            logger.info(format("Post-rotation RMSD between center molecules: %16.8f", tempRMSD))
+
+            logger.fine(format(" Center N1 atoms for %d shell.", i))
+            for (int l : minIndices[i]) {
+                Atom atom = inflatedAssemblies[i].getMolecules().get(l).getAtomList().get(comparisonAtoms[0])
+                logger.fine(format("HETATM %4d  C   100 A %3d   %8.3f%8.3f %8.3f", l + 1, l + 1, atom.getX(), atom.getY(), atom.getZ()))
+                //PACCOMFunctions.saveAssemblyPDB(inflatedAssemblies[0], "list1", numPDBs++)
+            }
+        }
+
+        /**     PERFORM nMolecules MOLECULE SUPERPOSITION     **/
+        // At this point, all expanded assemblies should have their center molecules aligned at the origin.
+        logger.info("\n\n Begin Second Rotation\n\n")
+
+        for (int i = 0; i < numAssemblies; i++) {
+            int[][] similarMolecules = new int[numAssemblies][nMolecules]
+            // Need to have array initialized with impossible values
+            String fileName = FilenameUtils.getBaseName(assemblies[i].getFile().getName())
+            MolecularAssembly currentAssembly = inflatedAssemblies[i]
+            // Find molecules closest to target assembly in current assembly
+//                Arrays.fill(similarMolecules[ii], -1)
+//                int targetIndex = 0
+//                for (int j = 0; j < nMolecules; j++) {
+//                    double[] targetCenter = new double[3]
+//                    targetAssembly.getMolecules().get(minIndices[i][j]).getAtomList().get(comparisonAtoms[0]).getXYZ(targetCenter)
+//                    int index = -1
+//                    double minDist = Double.MAX_VALUE
+//                    double value
+//                    for (int k = 0; k < currentAssembly.getMolecules().size(); k++) {
+//                        boolean duplicate = false
+//                        double[] nextCenter = new double[3]
+//                        currentAssembly.getMolecules().get(k).getAtomList().get(comparisonAtoms[0]).getXYZ(nextCenter)
+//                        value = distance.compute(targetCenter, nextCenter)
+//                        if (value < minDist) {
+//                            for (int prevKey : similarMolecules[ii]) {
+//                                if (prevKey == k) {
+//                                    duplicate = true
+//                                    break
+//                                }
+//                            }
+//                            logger.fine(format(" Key: " + k + " Value: " + value + " is duplicate? " + duplicate))
+//                            if (!duplicate) {
+//                                minDist = value
+//                                index = k
+//                            }
+//                        }
+//                    }
+//                    if (minDist > 1.0) {
+//                        logger.warning(format(" Matched molecules are greater than 1.0 Å (%16.8f)", minDist))
+//                    }
+//                    similarMolecules[ii][targetIndex++] = index
+//                }
             // Prepare coordinates for Superpose algorithm
-            coordIndex = 0
-            double[] masses = new double[numMolAlign * compareAtomsSize]
-            double[] coordsToMove = new double[numMolAlign * compareAtomsSize * 3]
-            if (original) {
-                Atom atomN1 = assemblyAtomList.get(moleculeSize * similarMolecules[0] + comparisonAtoms[0])
-                Atom atomN2 = assemblyAtomList.get(moleculeSize * similarMolecules[0] + comparisonAtoms[1])
-                Atom atomN3 = assemblyAtomList.get(moleculeSize * similarMolecules[0] + comparisonAtoms[2])
+//                Atom atomN1 = assemblyAtomList.get(nAtoms * similarMolecules[ii][0] + comparisonAtoms[0])
+//                Atom atomN2 = assemblyAtomList.get(nAtoms * similarMolecules[ii][1] + comparisonAtoms[0])
+//                Atom atomN3 = assemblyAtomList.get(nAtoms * similarMolecules[ii][2] + comparisonAtoms[0])
 
-                centerCoords = standardOrientation(atomN1, atomN2, atomN3)
+            Atom atomN1 = currentAssembly.getAtomList().get(nAtoms * minIndices[i][0] + comparisonAtoms[0])
+            Atom atomN2 = currentAssembly.getAtomList().get(nAtoms * minIndices[i][1] + comparisonAtoms[0])
+            Atom atomN3 = currentAssembly.getAtomList().get(nAtoms * minIndices[i][2] + comparisonAtoms[0])
 
-                coordsToMove = new double[compareAtomsSize * 3]
-                coordsToMove[0] = atomN1.getX()
-                coordsToMove[1] = atomN1.getY()
-                coordsToMove[2] = atomN1.getZ()
-                coordsToMove[3] = atomN2.getX()
-                coordsToMove[4] = atomN2.getY()
-                coordsToMove[5] = atomN2.getZ()
-                coordsToMove[6] = atomN3.getX()
-                coordsToMove[7] = atomN3.getY()
-                coordsToMove[8] = atomN3.getZ()
+            targetCoords = PACCOMFunctions.standardOrientation(atomN1, atomN2, atomN3)
 
-                targetCoords = centerCoords
+            double[] coordsToMove = new double[compareAtomsSize * 3]
+            coordsToMove[0] = atomN1.getX()
+            coordsToMove[1] = atomN1.getY()
+            coordsToMove[2] = atomN1.getZ()
+            coordsToMove[3] = atomN2.getX()
+            coordsToMove[4] = atomN2.getY()
+            coordsToMove[5] = atomN2.getZ()
+            coordsToMove[6] = atomN3.getX()
+            coordsToMove[7] = atomN3.getY()
+            coordsToMove[8] = atomN3.getZ()
 
-                masses = new double[numMolAlign]
-                // Oringial PACCOM does not use masses
-                Arrays.fill(masses, 1.0)
+            double[] masses = new double[compareAtomsSize]
+            // Oringial PACCOM does not use masses
+            Arrays.fill(masses, 1.0)
 
-                for (int j = 0; j < compareAtomsSize; j++) {
-                    int xyzIterate = j * 3
-                    double[] centerAtomCoords = new double[3]
-                    double[] moveAtomCoords = new double[3]
-                    def tempMasses = new double[] {1.0}
-                    centerAtomCoords[0] = centerCoords[xyzIterate]
-                    moveAtomCoords[0] = coordsToMove[xyzIterate++]
-
-                    centerAtomCoords[1] = centerCoords[xyzIterate]
-                    moveAtomCoords[1] = coordsToMove[xyzIterate++]
-
-                    centerAtomCoords[2] = centerCoords[xyzIterate]
-                    moveAtomCoords[2] = coordsToMove[xyzIterate]
-
-                    logger.info(format("x: %16.8f y: %16.8f z: %16.8f\tvs\tx: %16.8f y: %16.8f z: %16.8f",
-                            centerAtomCoords[0], centerAtomCoords[1], centerAtomCoords[2],
-                            moveAtomCoords[0], moveAtomCoords[1], moveAtomCoords[2]))
-
-                    rmsdCenter = Superpose.rmsd(centerAtomCoords, moveAtomCoords, tempMasses)
-                    logger.info(format(" Atom %d Alignment RMSD After First Rotation: %16.8f", j, rmsdCenter))
-                }
-            } else {
-                // First assembly: Move remaining assemblies compared to first.
-                if (i == 0) {
-                    for (int j : targetClosestMols.keySet()) {
-                        for (int compareAtom : comparisonAtoms) {
-                            Atom atom = assemblyAtomList.get(moleculeSize * j + compareAtom)
-                            targetCoords[coordIndex++] = atom.getX()
-                            targetCoords[coordIndex++] = atom.getY()
-                            targetCoords[coordIndex++] = atom.getZ()
-                        }
-                    }
-                }
-                massIndex = 0
-                coordIndex = 0
-                for (int j = 0; j < numMolAlign; j++) {
-                    for (int compareAtom : comparisonAtoms) {
-                        Atom atom = assemblyAtomList.get(moleculeSize * similarMolecules[j] + compareAtom)
-                        masses[massIndex++] = atom.getMass()
-                        coordsToMove[coordIndex++] = atom.getX()
-                        coordsToMove[coordIndex++] = atom.getY()
-                        coordsToMove[coordIndex++] = atom.getZ()
-                    }
-                }
-                // Record coordinates for all atoms within the assembly in a manner the Superpose class will handle.
-                coordIndex = 0
-                for (Atom atom : assemblyAtomList) {
-                    assemblyCoords[coordIndex++] = atom.getX()
-                    assemblyCoords[coordIndex++] = atom.getY()
-                    assemblyCoords[coordIndex++] = atom.getZ()
-                }
-            }
-
-            rotation = Superpose.calculateRotation(targetCoords, coordsToMove, masses)
-            rotString = new String()
+            logger.finest(format(" target: %d coords: %d masses: %d", targetCoords.length, coordsToMove.length, masses.length))
+            double[][] rotation = Superpose.calculateRotation(targetCoords, coordsToMove, masses)
+            String rotString = new String()
             for (double[] rotRow : rotation) {
                 rotString += "\n  "
                 for (double rotCol : rotRow) {
@@ -621,276 +508,155 @@ class PACCOM extends PotentialScript {
                 }
             }
             logger.info(" Second Rotation Matrix:" + rotString)
-            Superpose.applyRotation(assemblyCoords, rotation)
+            Superpose.applyRotation(assemblyCoords[i], rotation)
 
-            // Update expanded assemblies to include rotation.
+            // Update expanded assemblies to include second rotation.
             coordIndex = 0
-            for (Atom atom : assemblyAtomList) {
-                double[] newXYZ = new double[]{assemblyCoords[coordIndex++],
-                        assemblyCoords[coordIndex++],
-                        assemblyCoords[coordIndex++]}
+            for (Atom atom : currentAssembly.getAtomList()) {
+                double[] newXYZ = new double[]{assemblyCoords[i][coordIndex++],
+                        assemblyCoords[i][coordIndex++],
+                        assemblyCoords[i][coordIndex++]}
                 atom.setXYZ(newXYZ)
             }
 
-            if (original) {
-                // TEMP Update coords for after rotation RMSD comparions:
-                for (int j = 0; j < numMolAlign; j++) {
-                    coordIndex = 0
-                    for (int compareAtom : comparisonAtoms) {
-                        Atom atom = assemblyAtomList.get(moleculeSize * similarMolecules[j] + compareAtom)
-                        coordsToMove[coordIndex++] = atom.getX()
-                        coordsToMove[coordIndex++] = atom.getY()
-                        coordsToMove[coordIndex++] = atom.getZ()
-                    }
-                }
-                // Update coordinates for all atoms within the assembly in a manner the Superpose class will handle.
-                coordIndex = 0
-                for (Atom atom : assemblyAtomList) {
-                    assemblyCoords[coordIndex++] = atom.getX()
-                    assemblyCoords[coordIndex++] = atom.getY()
-                    assemblyCoords[coordIndex++] = atom.getZ()
-                }
-
-                for (int j = 0; j < numMolAlign; j++) {
-                    for (int k = 0; k < compareAtomsSize; k++) {
-                        int xyzIterate = k * 3
-                        double[] centerAtomCoords = new double[3]
-                        double[] moveAtomCoords = new double[3]
-                        def tempMasses = new double[] {1.0}
-                        centerAtomCoords[0] = targetCoords[xyzIterate]
-                        moveAtomCoords[0] = coordsToMove[xyzIterate++]
-
-                        centerAtomCoords[1] = targetCoords[xyzIterate]
-                        moveAtomCoords[1] = coordsToMove[xyzIterate++]
-
-                        centerAtomCoords[2] = targetCoords[xyzIterate]
-                        moveAtomCoords[2] = coordsToMove[xyzIterate]
-
-                        rmsdCenter = Superpose.rmsd(centerAtomCoords, moveAtomCoords, tempMasses)
-                        logger.fine(format(" Mol %d Atom %d Alignment RMSD After Second Rotation: %16.8f", j, k, rmsdCenter))
-                    }
-                }
-            } else {
-                massIndex = 0
-                coordIndex = 0
-                for (int j = 0; j < numMolAlign; j++) {
-                    for (int compareAtom : comparisonAtoms) {
-                        Atom atom = assemblyAtomList.get(moleculeSize * similarMolecules[j] + compareAtom)
-                        masses[massIndex++] = atom.getMass()
-                        coordsToMove[coordIndex++] = atom.getX()
-                        coordsToMove[coordIndex++] = atom.getY()
-                        coordsToMove[coordIndex++] = atom.getZ()
-                    }
-                }
-                // Update coordinates for all atoms within the assembly in a manner the Superpose class will handle.
-                for (int j = 0; j < numMolAlign; j++) {
-                    for (int k = 0; k < compareAtomsSize; k++) {
-                        int xyzIterate = k * 3
-                        double[] centerAtomCoords = new double[3]
-                        double[] moveAtomCoords = new double[3]
-                        double[] tempMasses = new double[1]
-                        tempMasses[0] = masses[k]
-                        centerAtomCoords[0] = targetCoords[xyzIterate]
-                        moveAtomCoords[0] = coordsToMove[xyzIterate++]
-
-                        centerAtomCoords[1] = targetCoords[xyzIterate]
-                        moveAtomCoords[1] = coordsToMove[xyzIterate++]
-
-                        centerAtomCoords[2] = targetCoords[xyzIterate]
-                        moveAtomCoords[2] = coordsToMove[xyzIterate]
-
-                        rmsdCenter = Superpose.rmsd(centerAtomCoords, moveAtomCoords, tempMasses)
-                        logger.fine(format(" Mol %d Atom %d Alignment RMSD After Second Rotation: %16.8f", j, k, rmsdCenter))
-                    }
-                }
+            if (saveFiles && logger.isLoggable(Level.FINE)) {
+                PACCOMFunctions.saveAssemblyPDB(currentAssembly, fileName + "_2ndRot", numPDBs++)
             }
+            // Determine molecules closest to shell one for
+//                targetIndex = 0
+//                for (int j = 0; j < minIndices[i].length; j++) {
+//                    double[] targetCenter = new double[3]
+//                    targetAssembly.getMolecules().get(minIndices[i][j]).getAtomList().get(comparisonAtoms[0]).getXYZ(targetCenter)
+//                    int index = -1
+//                    double minDist = Double.MAX_VALUE
+//                    double value
+//                    for (int k = 0; k < currentAssembly.getMolecules().size(); k++) {
+//                        boolean duplicate = false
+//                        double[] nextCenter = new double[3]
+//                        currentAssembly.getMolecules().get(k).getAtomList().get(comparisonAtoms[0]).getXYZ(nextCenter)
+//                        value = distance.compute(targetCenter, nextCenter)
+//                        if (value < minDist) {
+//                            for (int prevKey : similarMolecules[ii]) {
+//                                if (prevKey == k) {
+//                                    duplicate = true
+//                                    break
+//                                }
+//                            }
+//                            //logger.fine(format(" Key: " + k + " Value: " + value + " is duplicate? " + duplicate))
+//                            if (!duplicate) {
+//                                minDist = value
+//                                index = k
+//                            }
+//                        }
+//                    }
+//                    if (minDist > 1.0) {
+//                        //logger.warning(format(" Matched molecules are greater than 1.0 Å (%16.8f)", minDist))
+//                    }
+//                    //logger.fine(format(" nMol Index: %d \tDistance to Matched: %16.8f", index, minDist))
+//                    similarMolecules[ii][targetIndex++] = index
+//                }
 
-            if (saveIntermediates) {
-                PACCOMFunctions.saveAssemblyPDB(currentAssembly, saveLocationPDB)
-            }
-            expandedAssemblies[i] = PACCOMFunctions.cutSubSphere(assemblies[i], targetAssembly, currentAssembly, original)
-            currentAssembly = expandedAssemblies[i]
+//                expandedAssemblies[ii] = PACCOMFunctions.cutSubSphere(assemblies[ii], currentAssembly, similarMolecules[ii])
+            expandedAssemblies[i] = PACCOMFunctions.cutSubSphere(assemblies[i], currentAssembly, minIndices[i])
             if (saveFiles) {
-                PACCOMFunctions.saveAssemblyPDB(currentAssembly, saveLocationPDB)
+                PACCOMFunctions.saveAssemblyPDB(expandedAssemblies[i], fileName + "_final", numPDBs++)
             }
         }
-
-        // Calculate RMSD between each oriented molecular sphere.
-        if (allVsAll) {
-            logger.info("\n Calculating RMSD between each crystal:\n")
-        } else {
-            logger.info("\n Calculating RMSDs compared to first crystal:\n")
-        }
-        double[][] rmsdValues = new double[numAssemblies][numAssemblies]
-        String topLabels = new String(" ")
-        topLabels += "\t\t"
-        String row = new String()
         for (int i = 0; i < numAssemblies; i++) {
-            double[] compareCoords = new double[expandedAssemblies[i].getMolecules().size() * compareAtomsSize * 3]
+            String tempTarget = " "
             row += format(" %s\t", filenames.get(i))
-            coordIndex = 0
-            for (MSNode molecule : expandedAssemblies[i].getMolecules()) {
-                for (int compareAtom : comparisonAtoms) {
-                        Atom atom = molecule.getAtomList().get(compareAtom)
-                    if(noHydrogens){
-                        if(!atom.isHydrogen()){
-                            compareCoords[coordIndex++] = atom.getX()
-                            compareCoords[coordIndex++] = atom.getY()
-                            compareCoords[coordIndex++] = atom.getZ()
-                        }
-                    }else {
-                        compareCoords[coordIndex++] = atom.getX()
-                        compareCoords[coordIndex++] = atom.getY()
-                        compareCoords[coordIndex++] = atom.getZ()
+            MolecularAssembly targetAssembly = expandedAssemblies[i]
+            List<Atom> targetAtomList = targetAssembly.getAtomList()
+            for (Atom atom : targetAtomList) {
+                if (noHydrogens) {
+                    if (!atom.isHydrogen()) {
+                        tempTarget += atom.getAtomType().name
                     }
+                } else {
+                    tempTarget += atom.getAtomType().name
                 }
             }
-            for (int j = 0; j < numAssemblies; j++) {
+            for (int ii = 0; ii < numAssemblies; ii++) {
+                MolecularAssembly currentAssembly = expandedAssemblies[ii]
+                // Closest nMolecules have been determined for each sphere
+                String tempCurrent = " "
+                ArrayList<Atom> assemblyAtomList = currentAssembly.getAtomList()
+                for (Atom atom : assemblyAtomList) {
+                    if (noHydrogens) {
+                        if (!atom.isHydrogen()) {
+                            tempCurrent += atom.getAtomType().name
+                        }
+                    } else {
+                        tempCurrent += atom.getAtomType().name
+                    }
+                }
+                // String comparison to ensure same atom types are being matched.
+                if (tempTarget != tempCurrent) {
+                    for (int j = 0; j < tempTarget.length(); j++) {
+                        if (tempTarget.charAt(j) != tempCurrent.charAt(j)) {
+                            logger.warning(" Atom name (" + tempTarget.charAt(j) +
+                                    ") from target does not match comparison atom (" + tempCurrent.charAt(j) + ").")
+                        }
+                    }
+                }
+                // Perform RMSD calculation
+                double[] targetFinalCoords = new double[targetAssembly.getMolecules().size() * nAtoms * 3]
+                coordIndex = 0
+                for (MSNode molecule : targetAssembly.getMolecules()) {
+                    for (Atom atom : molecule.getAtomList()) {
+                        if (noHydrogens) {
+                            if (!atom.isHydrogen()) {
+                                targetFinalCoords[coordIndex++] = atom.getX()
+                                targetFinalCoords[coordIndex++] = atom.getY()
+                                targetFinalCoords[coordIndex++] = atom.getZ()
+                            }
+                        } else {
+                            targetFinalCoords[coordIndex++] = atom.getX()
+                            targetFinalCoords[coordIndex++] = atom.getY()
+                            targetFinalCoords[coordIndex++] = atom.getZ()
+                        }
+                    }
+                }
+
                 // Record coordinates for all atoms within the assembly in a manner the Superpose class will handle.
-                int numMolRMSD = expandedAssemblies[j].getMolecules().size()
-                logger.fine(format(" Number of Molecules to Align: %d", numMolAlign))
-                logger.fine(format(" Number of Molecules for RMSD: %d", numMolRMSD))
-                logger.fine(format(" Number of Atoms to Compare: %d", compareAtomsSize))
-                logger.fine(format(" RMSD Denominator: %d\n", numMolRMSD * compareAtomsSize))
-                assemblyMasses = new double[
-                        expandedAssemblies[j].getMolecules().size() * compareAtomsSize]
-                assemblyCoords = new double[
-                        expandedAssemblies[j].getMolecules().size() * compareAtomsSize * 3]
+                int numMolRMSD = currentAssembly.getMolecules().size()
+                double[] assemblyMasses
+                if (noHydrogens) {
+                    assemblyMasses = new double[numMolRMSD * (nAtoms - numHydrogens)]
+                } else {
+                    assemblyMasses = new double[numMolRMSD * nAtoms]
+                }
+                Arrays.fill(assemblyMasses, 1.0)
+                double[] currentAssemblyCoords = new double[numMolRMSD * nAtoms * 3]
                 coordIndex = 0
                 massIndex = 0
-                for (MSNode molecule : expandedAssemblies[j].getMolecules()) {
-                    for (int compareAtom : comparisonAtoms) {
-                        Atom atom = molecule.getAtomList().get(compareAtom)
-                        if(noHydrogens){
-                            if(!atom.isHydrogen()){
+                for (MSNode molecule : currentAssembly.getMolecules()) {
+                    for (Atom atom : molecule.getAtomList()) {
+                        if (noHydrogens) {
+                            if (!atom.isHydrogen()) {
                                 assemblyMasses[massIndex++] = atom.getMass()
-                                assemblyCoords[coordIndex++] = atom.getX()
-                                assemblyCoords[coordIndex++] = atom.getY()
-                                assemblyCoords[coordIndex++] = atom.getZ()
+                                currentAssemblyCoords[coordIndex++] = atom.getX()
+                                currentAssemblyCoords[coordIndex++] = atom.getY()
+                                currentAssemblyCoords[coordIndex++] = atom.getZ()
                             }
-                        }else {
+                        } else {
                             assemblyMasses[massIndex++] = atom.getMass()
-                            assemblyCoords[coordIndex++] = atom.getX()
-                            assemblyCoords[coordIndex++] = atom.getY()
-                            assemblyCoords[coordIndex++] = atom.getZ()
+                            currentAssemblyCoords[coordIndex++] = atom.getX()
+                            currentAssemblyCoords[coordIndex++] = atom.getY()
+                            currentAssemblyCoords[coordIndex++] = atom.getZ()
                         }
                     }
                 }
-                if(original){
+                if (original) {
                     Arrays.fill(assemblyMasses, 1.0)
                 }
-
-                // TODO: Determine normalization (numMolRMSD * compareAtomsSize).
-                rmsdValues[i][j] = Superpose.rmsd(compareCoords, assemblyCoords, assemblyMasses) / (numMolRMSD * compareAtomsSize)
-                if (i == 0) {
-                    topLabels += format("%s  ", filenames.get(j))
-                }
-                row += format("%16.8f\t", rmsdValues[i][j])
-                if (!allVsAll) {
-                    j = numAssemblies
-                }
+                rmsdValues[i][ii] = Superpose.rmsd(targetFinalCoords, currentAssemblyCoords, assemblyMasses)
+                row += format("%16.8f\t", rmsdValues[i][ii])
             }
             row += format("\n")
-            topLabels += format("\n")
         }
-        logger.info(topLabels + row)
+        logger.info(row)
         return this
-    }
-
-    /**
-     * Reorients the given atoms so n2 and n3 are on the X axis and X-Y plane. n1 should be at origin.
-     * @author Okimasa Okada
-     * @param n1 Atom located at the origin
-     * @param n2 Atom to go to X axis
-     * @param n3 Atom to go to X-Y plane
-     * @return double[] New coordinates for the atoms
-     */
-    static double[] standardOrientation(Atom n1, Atom n2, Atom n3){
-        double[] orientedCoords = new double[9]
-        double p1n2 = n2.getX()
-        double q1n2 = n2.getY()
-        double r1n2 = n2.getZ()
-        double p2n2
-        double q2n2
-
-        double p1n3 = n3.getX()
-        double q1n3 = n3.getY()
-        double r1n3 = n3.getZ()
-        double p2n3
-        double q2n3
-
-        logger.fine(format("START: N1: %f %f %f", n1.getX(), n1.getY(), n1.getZ()))
-        logger.fine(format("START: N2: %f %f %f", p1n2, q1n2, r1n2))
-        logger.fine(format("START: N3: %f %f %f", p1n3, q1n3, r1n3))
-        // Calculation of sigma, phai, and cita angles needed to get specified atoms to desired loci
-        double cita0 = acos(p1n2 / sqrt(pow(p1n2, 2) + pow(q1n2, 2)))
-        double phai0 = acos(sqrt(pow(p1n2, 2) + pow(q1n2, 2)) / sqrt(pow(p1n2, 2) + pow(q1n2, 2) + pow(r1n2, 2)))
-        if (q1n2 < 0.0) {
-            cita0 = -cita0
-        }
-
-        logger.fine(format("cita: %f", cita0))
-        logger.fine(format("cos(cita): %f", cos(cita0)))
-        logger.fine(format("sin(cita): %f", sin(cita0)))
-
-        p2n2 = p1n2 * cos(cita0) + q1n2 * sin(cita0)
-        q1n2 = -p1n2 * sin(cita0) + q1n2 * cos(cita0)
-        p2n3 = p1n3 * cos(cita0) + q1n3 * sin(cita0)
-        q1n3 = -p1n3 * sin(cita0) + q1n3 * cos(cita0)
-
-        p1n2 = p2n2
-        p1n3 = p2n3
-
-        logger.fine(format("Step 1 N2: %f %f %f", p1n2, q1n2, r1n2))
-        logger.fine(format("Step 1 N3: %f %f %f", p1n3, q1n3, r1n3))
-
-        if (r1n2 > 0.0) {
-            phai0 = -phai0
-        }
-
-        logger.fine(format("phai: %f", phai0))
-
-        p2n2 = p1n2 * cos(phai0) - r1n2 * sin(phai0)
-        r1n2 = p1n2 * sin(phai0) + r1n2 * cos(phai0)
-        p2n3 = p1n3 * cos(phai0) - r1n3 * sin(phai0)
-        r1n3 = p1n3 * sin(phai0) + r1n3 * cos(phai0)
-
-        p1n2 = p2n2
-        p1n3 = p2n3
-
-        logger.fine(format("Step 2 N2: %f %f %f", p1n2, q1n2, r1n2))
-        logger.fine(format("Step 2 N3: %f %f %f", p1n3, q1n3, r1n3))
-
-        double sigma0 = acos(q1n3 / sqrt(pow(q1n3, 2) + pow(r1n3, 2)))
-        if (r1n3 < 0.0) {
-            sigma0 = -sigma0
-        }
-
-        logger.fine(format("sigma: %f", sigma0))
-
-        q2n2 = q1n2 * cos(sigma0) + r1n2 * sin(sigma0)
-        r1n2 = -q1n2 * sin(sigma0) + r1n2 * cos(sigma0)
-        q2n3 = q1n3 * cos(sigma0) + r1n3 * sin(sigma0)
-        r1n3 = -q1n3 * sin(sigma0) + r1n3 * cos(sigma0)
-
-        q1n2 = q2n2
-        q1n3 = q2n3
-
-        logger.fine(format("DONE: N1: %f %f %f", n1.getX(), n1.getY(), n1.getZ()))
-        logger.fine(format("DONE N2: %f %f %f", p1n2, q1n2, r1n2))
-        logger.fine(format("DONE N3: %f %f %f", p1n3, q1n3, r1n3))
-
-        orientedCoords[0] = n1.getX()
-        orientedCoords[1] = n1.getY()
-        orientedCoords[2] = n1.getZ()
-        orientedCoords[3] = p1n2
-        orientedCoords[4] = q1n2
-        orientedCoords[5] = r1n2
-        orientedCoords[6] = p1n3
-        orientedCoords[7] = q1n3
-        orientedCoords[8] = r1n3
-
-        return orientedCoords
     }
 
     @Override
