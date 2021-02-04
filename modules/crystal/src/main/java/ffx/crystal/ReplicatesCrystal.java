@@ -387,6 +387,7 @@ public class ReplicatesCrystal extends Crystal {
     double dX = 1.0 / (double) l;
     double dY = 1.0 / (double) m;
     double dZ = 1.0 / (double) n;
+    int symOpCount = 0;
     for (int i = 0; i < l; i++) {
       for (int j = 0; j < m; j++) {
         for (int k = 0; k < n; k++) {
@@ -399,10 +400,11 @@ public class ReplicatesCrystal extends Crystal {
             SymOp repSymOp = new SymOp(symOp.rot, repTrans);
             symOps.add(repSymOp);
             if (logger.isLoggable(Level.FINEST)) {
-              logger.finest(format("\n SymOp (%2d,%2d,%2d): %d", i, j, k, ii));
+              logger.finest(format("\n SymOp %d (%2d,%2d,%2d): %d", symOpCount, i, j, k, ii));
               logger.finest(repSymOp.toString());
             }
             ii++;
+            symOpCount++;
           }
         }
       }
