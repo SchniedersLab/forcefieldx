@@ -38,7 +38,6 @@
 package ffx.algorithms.groovy;
 
 import ffx.algorithms.misc.AlgorithmsTest;
-import ffx.algorithms.optimize.Minimize;
 import org.junit.Assert;
 import org.junit.Test;
 
