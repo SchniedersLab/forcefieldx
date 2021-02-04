@@ -221,7 +221,7 @@ class BAR extends AlgorithmsScript {
         String directoryPath = file.getAbsoluteFile().getParent() + File.separator
 
         for(int j=0; j<nFiles; j++){
-            logger.info(directoryPath)
+            logger.info("Directory path " + directoryPath)
             logger.info("the full path is" + FilenameUtils.getFullPath(files[j]))
             String archiveName = FilenameUtils.getBaseName(files[j]) + ".arc"
             for (int i = 0; i < nWindows; i++) {
@@ -298,12 +298,12 @@ class BAR extends AlgorithmsScript {
             nSymm = unitCell1.getNumSymOps()
         }
 
-        int snaps = openers[0].countNumModels()
+
         double[] currentLambdas
-        double[][] energyLow = new double[nWindows][snaps]
-        double[][] energyAt = new double[nWindows][snaps]
-        double[][] energyHigh = new double[nWindows][snaps]
-        double[] volume
+        double[][] energyLow = new double[nWindows]
+        double[][] energyAt = new double[nWindows]
+        double[][] energyHigh = new double[nWindows]
+        double[][] volume = new double[nWindows]
         double[][] energy
         double[] energyMean = new double[nWindows]
         double[] energySD = new double[nWindows]
@@ -332,7 +332,7 @@ class BAR extends AlgorithmsScript {
             energy = new double[currentLambdas.length][]
             
 
-            volume = getEnergyForLambdas(topologies, currentLambdas,
+            volume[w] = getEnergyForLambdas(topologies, currentLambdas,
                         archiveFullPaths[w], energy, isPBC, nSymm)
 
 
@@ -361,10 +361,52 @@ class BAR extends AlgorithmsScript {
             energyVar[w] = energyStats.var
 
 
+
+
         }
 
-
+        String tinkerDirectoryPath = directoryPath + File.separator + "tinkerFiles"
+        File directory = new File(tinkerDirectoryPath)
+        String tinkerFilePath = tinkerDirectoryPath + File.separator
+        directory.mkdir()
        for (int w=0; w<nWindows + 1; w++){
+
+           int snaps = energyAt[0].length
+           if (tinkerBAR) {
+               String barFileName = tinkerFilePath + "energy_" + w.toString() + ".bar"
+               logger.info(format("\n Writing Tinker-compatible BAR file to %s.", barFileName))
+               new File(barFileName).withWriter {bw ->
+                   StringBuilder fileName = new StringBuilder()
+                   for (int i = 0; i < nFiles; i++) {
+                       fileName.append("  ").append(filenames.get(i))
+                   }
+                   bw.write(format("%8d %9.3f%s\n", snaps, temp1, fileName.toString()))
+                   for (int i = 0; i < snaps; i++) {
+                       if (isPBC) {
+                           if (w == 0){
+                               bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, energyAt[w][i], energyHigh[w][i], volume[w][i]))
+                           }else if (w == nWindows-1){
+                               bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, energyLow[w][i], energyAt[w][i], volume[w][i]))
+                           } else {
+                               bw.write(format("%8d %20.10f %20.10f %20.10f %20.10f\n", i + 1, energyLow[w][i] ,energyAt[w][i], energyHigh[w][i], volume[w][i]))
+                           }
+                          
+                       } else {
+                           if (w == 0){
+                               bw.write(format("%8d %20.10f %20.10f\n", i + 1, energyAt[w][i], energyHigh[w][i]))
+                           } else if (w == nWindows-1){
+                               bw.write(format("%8d %20.10f %20.10f\n", i + 1, energyLow[w][i], energyAt[w][i]))
+                           } else {
+                               bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, energyLow[w][i], energyAt[w][i], energyHigh[w][i]))
+                           }
+
+                       }
+                   }
+               }
+
+
+           }
+
 
            if(w == nWindows){
                logger.info("\n\nEvaluating Overall:")
@@ -529,6 +571,13 @@ class BAR extends AlgorithmsScript {
            logger.info(format(" Entropy via BAR:                %12.4f kcal/mol/K.", sBAR))
            logger.info(format(" BAR Estimate of -T*ds:          %12.4f kcal/mol.", -(tsBar)))
        }
+
+
+
+
+
+
+
 
 
 
