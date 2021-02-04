@@ -22,11 +22,11 @@ public class BARTest extends AlgorithmsTest {
         algorithmsScript = bar;
 
         System.out.println("after run");
-        double expectedFepFor= -115.2142;
+        double expectedFepFor= -54.3012;
         double actualFepFor = bar.getFepFor();
         Assert.assertEquals(expectedFepFor, actualFepFor, 0.2);
 
-        double expectedFepBack= -118.4924;
+        double expectedFepBack= -52.9186;
         double actualFepBack = bar.getFepBack();
         Assert.assertEquals(expectedFepBack, actualFepBack, 0.2);
 
