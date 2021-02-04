@@ -233,7 +233,7 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[10,15.1]</version>
+                  <version>[10,16.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.0.5</version>
@@ -830,10 +830,10 @@
   </profiles>
   <properties>
     <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
-    <antrun.version>1.8</antrun.version>
+    <antrun.version>3.0.0</antrun.version>
     <appassembler.version>1.10</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
-    <assembly.version>3.2.0</assembly.version>
+    <assembly.version>3.3.0</assembly.version>
     <biojava.version>5.4.0</biojava.version>
     <buildnumber.version>1.2.10</buildnumber.version>
     <cdk.version>2.3</cdk.version>
@@ -841,15 +841,15 @@
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.1.1</checkstyle.version>
-    <ciftools-java.version>0.10.1</ciftools-java.version>
+    <ciftools-java.version>2.0.3</ciftools-java.version>
     <clean.version>3.1.0</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
-    <commons-beanutils.version>1.9.3</commons-beanutils.version>
+    <commons-beanutils.version>1.9.4</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.7</commons-configuration2.version>
     <commons-io.version>2.6</commons-io.version>
-    <commons-lang3.version>3.10</commons-lang3.version>
+    <commons-lang3.version>3.11</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
     <compileVersion>10</compileVersion>
@@ -860,32 +860,32 @@
     <enforcer.version>3.0.0-M3</enforcer.version>
     <exec.version>1.6.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
-    <fastutil.version>8.3.0</fastutil.version>
+    <fastutil.version>8.4.3</fastutil.version>
     <!-- Version of FFX  -->
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <groovy-all.version>3.0.0.1</groovy-all.version>
-    <guava.version>28.1-jre</guava.version>
+    <groovy-all.version>3.0.6.1</groovy-all.version>
+    <guava.version>30.0-jre</guava.version>
     <install.version>3.0.0-M1</install.version>
     <jar.version>3.2.0</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
     <java3d.version>1.7.0-final</java3d.version>
     <javadoc.version>3.2.0</javadoc.version>
     <jaxb-api.version>2.3.0</jaxb-api.version>
-    <jcuda.version>10.1.0</jcuda.version>
+    <jcuda.version>10.2.0</jcuda.version>
     <jdepend.version>2.0</jdepend.version>
-    <jna.version>4.1.0</jna.version>
+    <jna.version>5.6.0</jna.version>
     <jogamp-fat.version>2.4.0</jogamp-fat.version>
-    <jopenmm.version>7.5.0-Tinker-v3</jopenmm.version>
-    <junit.version>4.13</junit.version>
+    <jopenmm.version>7.5.0-cuda10.2</jopenmm.version>
+    <junit.version>4.13.1</junit.version>
     <jxr.version>3.0.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.13.1</log4j.version>
+    <log4j.version>2.13.3</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
-    <picocli.version>4.1.4</picocli.version>
+    <picocli.version>4.5.1</picocli.version>
     <pj.version>1.0.1</pj.version>
     <pmd.skip>false</pmd.skip>
     <pmd.version>3.13.0</pmd.version>
@@ -900,7 +900,7 @@
     <resources.version>3.1.0</resources.version>
     <scm.version>1.11.2</scm.version>
     <slf4j-nop.version>1.7.30</slf4j-nop.version>
-    <shade.version>3.2.1</shade.version>
+    <shade.version>3.2.3</shade.version>
     <site.version>3.9.0</site.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
@@ -908,14 +908,14 @@
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.2.1</source.version>
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
-    <surefire.version>3.0.0-M2</surefire.version>
+    <surefire.version>3.0.0-M5</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>10</targetVersion>
     <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
     <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>
     <tornado.version>0.6</tornado.version>
-    <versions.version>2.7</versions.version>
+    <versions.version>2.8.1</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
   </properties>
@@ -1060,6 +1060,20 @@
       </plugin -->
     </plugins>
   </reporting>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>central</id>
+      <name>Central Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
   <repositories>
     <repository>
       <id>1.ffx.repo</id>
@@ -1072,7 +1086,7 @@
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
-      <url>http://github.com/mjschnie/dependency/raw/master</url>
+      <url>https://github.com/mjschnie/dependency/raw/master</url>
     </repository>
     <repository>
       <id>2.apache.repo</id>
@@ -1094,7 +1108,7 @@
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
-      <url>http://jogamp.org/deployment/maven</url>
+      <url>https://jogamp.org/deployment/maven</url>
     </repository>
     <repository>
       <id>4.biojava.legacy.repo</id>
@@ -1105,7 +1119,7 @@
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
-      <url>http://github.com/biojava/maven-repo/raw/master/</url>
+      <url>https://github.com/biojava/maven-repo/raw/master/</url>
     </repository>
     <repository>
       <id>5.biojava.repo</id>
@@ -1116,7 +1130,7 @@
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
-      <url>http://www.biojava.org/download/maven/</url>
+      <url>https://www.biojava.org/download/maven/</url>
     </repository>
     <repository>
       <id>6.u.manchester.repo</id>

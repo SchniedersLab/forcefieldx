@@ -42,6 +42,7 @@ import static org.apache.commons.math3.util.FastMath.random;
 import static org.junit.Assert.assertEquals;
 
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.groovy.Energy;
 import ffx.potential.groovy.test.Gradient;
 import ffx.potential.groovy.test.LambdaGradient;
 import ffx.potential.utils.PotentialTest;

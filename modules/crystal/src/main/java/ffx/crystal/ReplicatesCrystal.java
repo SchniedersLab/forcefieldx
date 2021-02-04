@@ -111,8 +111,8 @@ public class ReplicatesCrystal extends Crystal {
 
   /**
    * Returns a ReplicatesCrystal large enough to satisfy the minimum image convention for the
-   * specified unit cell and cutoff criteria. If the unit cell is already sufficiently large, then
-   * it is returned.
+   * specified unit cell and cutoff criteria. If the unit cell is already sufficiently large, then it
+   * is returned.
    *
    * @param unitCell The unit cell of the crystal.
    * @param cutOff2 Two times the cutoff distance.
@@ -148,6 +148,42 @@ public class ReplicatesCrystal extends Crystal {
   }
 
   /**
+   * Change the cell vectors for the base unit cell, which is followed by an update of the
+   * ReplicateCrystal parameters and possibly the number of replicated cells.
+   *
+   * @param cellVectors 3x3 matrix of cell vectors.
+   * @return True if the perturbation of cell vectors succeeds.
+   */
+  public boolean setCellVectors(double[][] cellVectors) {
+
+    // First, update the parameters of the unit cell.
+    if (unitCell.setCellVectors(cellVectors)) {
+
+      // Then, update the parameters of the ReplicatesCrystal and possibly the number of replicates.
+      return updateReplicatesDimensions();
+    }
+    return false;
+  }
+
+  /**
+   * Change the cell vectors and volume for the base unit cell, which is followed by an update of the
+   * ReplicateCrystal parameters and possibly the number of replicated cells.
+   *
+   * @param cellVectors 3x3 matrix of cell vectors.
+   * @param targetAUVolume the target volume for the new cell Vectors.
+   * @return True if the perturbation of cell vectors succeeds.
+   */
+  public boolean setCellVectorsAndVolume(double[][] cellVectors, double targetAUVolume) {
+    // First, update the parameters of the unit cell.
+    if (unitCell.setCellVectorsAndVolume(cellVectors, targetAUVolume)) {
+
+      // Then, update the parameters of the ReplicatesCrystal and possibly the number of replicates.
+      return updateReplicatesDimensions();
+    }
+    return false;
+  }
+
+  /**
    * Change the cell parameters for the base unit cell, which is followed by an update of the
    * ReplicateCrystal parameters and possibly the number of replicated cells.
    *
@@ -172,11 +208,42 @@ public class ReplicatesCrystal extends Crystal {
     return false;
   }
 
+  /**
+   * Change the cell parameters for the base unit cell, which is followed by an update of the
+   * ReplicateCrystal parameters and possibly the number of replicated cells.
+   *
+   * @param a The length of the a-axis for the base unit cell (in Angstroms).
+   * @param b The length of the b-axis for the base unit cell (in Angstroms).
+   * @param c The length of the c-axis for the base unit cell (in Angstroms).
+   * @param alpha The angle between the b-axis and c-axis (in Degrees).
+   * @param beta The angle between the a-axis and c-axis (in Degrees).
+   * @param gamma The angle between the a-axis and b-axis (in Degrees).
+   * @param targetAUVolume the target volume for the new cell Vectors.
+   * @return True is returned if the unit cell and replicates cell are updated successfully.
+   */
+  @Override
+  public boolean changeUnitCellParametersAndVolume(
+      double a, double b, double c, double alpha, double beta, double gamma, double targetAUVolume) {
+
+    // First, update the parameters of the unit cell.
+    if (unitCell.changeUnitCellParametersAndVolume(a, b, c, alpha, beta, gamma, targetAUVolume)) {
+
+      // Then, update the parameters of the ReplicatesCrystal and possibly the number of replicates.
+      return updateReplicatesDimensions();
+    }
+    return false;
+  }
+
+
   /** Two crystals are equal only if all unit cell parameters are exactly the same. */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ReplicatesCrystal replicatesCrystal = (ReplicatesCrystal) o;
     return (Objects.equals(unitCell, replicatesCrystal.unitCell)
         && a == replicatesCrystal.a
@@ -320,6 +387,7 @@ public class ReplicatesCrystal extends Crystal {
     double dX = 1.0 / (double) l;
     double dY = 1.0 / (double) m;
     double dZ = 1.0 / (double) n;
+    int symOpCount = 0;
     for (int i = 0; i < l; i++) {
       for (int j = 0; j < m; j++) {
         for (int k = 0; k < n; k++) {
@@ -332,10 +400,11 @@ public class ReplicatesCrystal extends Crystal {
             SymOp repSymOp = new SymOp(symOp.rot, repTrans);
             symOps.add(repSymOp);
             if (logger.isLoggable(Level.FINEST)) {
-              logger.finest(format("\n SymOp (%2d,%2d,%2d): %d", i, j, k, ii));
+              logger.finest(format("\n SymOp %d (%2d,%2d,%2d): %d", symOpCount, i, j, k, ii));
               logger.finest(repSymOp.toString());
             }
             ii++;
+            symOpCount++;
           }
         }
       }

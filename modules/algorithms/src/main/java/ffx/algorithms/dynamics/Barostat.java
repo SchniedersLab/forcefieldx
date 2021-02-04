@@ -40,11 +40,11 @@ package ffx.algorithms.dynamics;
 import static ffx.crystal.LatticeSystem.check;
 import static ffx.utilities.Constants.AVOGADRO;
 import static ffx.utilities.Constants.PRESCON;
+import static java.lang.Math.PI;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.log;
-import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.random;
 
 import ffx.crystal.Crystal;
@@ -99,10 +99,10 @@ public class Barostat implements CrystalPotential {
   private boolean isotropic = false;
   /** Flag to turn the Barostat on or off. If false, MC moves will not be tried. */
   private boolean active = true;
-  /** Default edge length move (A). */
-  private double maxSideMove = 0.25;
-  /** Default angle move (degrees). */
-  private double maxAngleMove = 0.5;
+  /**
+   * Maximum volume move.
+   */
+  private double maxVolumeMove = 1.0;
   /**
    * Minimum density constraint.
    */
@@ -137,7 +137,7 @@ public class Barostat implements CrystalPotential {
   private boolean moveAccepted = false;
   /** Current density value. */
   private double currentDensity = 0;
-  /** Current lattice parameters. */
+  /** Current A-axis value. */
   private double a = 0;
   /**
    * Current B-axis value.
@@ -462,12 +462,12 @@ public class Barostat implements CrystalPotential {
   }
 
   /**
-   * Setter for the field <code>maxAngleMove</code>.
+   * Setter for the field <code>maxVolumeMove</code>.
    *
-   * @param maxAngleMove a double.
+   * @param maxVolumeMove a double.
    */
-  public void setMaxAngleMove(double maxAngleMove) {
-    this.maxAngleMove = maxAngleMove;
+  public void setMaxVolumeMove(double maxVolumeMove) {
+    this.maxVolumeMove = maxVolumeMove;
   }
 
   /**
@@ -477,15 +477,6 @@ public class Barostat implements CrystalPotential {
    */
   public void setMaxDensity(double maxDensity) {
     this.maxDensity = maxDensity;
-  }
-
-  /**
-   * Setter for the field <code>maxSideMove</code>.
-   *
-   * @param maxSideMove a double.
-   */
-  public void setMaxSideMove(double maxSideMove) {
-    this.maxSideMove = maxSideMove;
   }
 
   /**
@@ -677,203 +668,227 @@ public class Barostat implements CrystalPotential {
     molecularAssembly.moveToFractionalCoordinates();
   }
 
-  private double mcUNIT(double currentE) {
-    moveType = MoveType.UNIT;
-    double currentV = unitCell.volume / nSymm;
-    double ucDensity = crystal.getDensity(mass);
-    boolean succeed = crystal.randomParameters(ucDensity, mass);
-    if (succeed) {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(" Proposing MC change to all unit cell parameters.");
-      }
-      return mcStep(currentE, currentV);
-    }
-    return currentE;
-  }
-
+  /**
+   * Propose to change the A-axis length.
+   *
+   * @param currentE Current energy.
+   * @return Energy after the MC trial.
+   */
   private double mcA(double currentE) {
     moveType = MoveType.SIDE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a + move, b, c, alpha, beta, gamma);
+    double currentAUV = unitCell.volume / nSymm;
+    double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
+    double dVdA = unitCell.dVdA / nSymm;
+    double dA = dAUVolume / dVdA;
+    boolean succeed = crystal.changeUnitCellParameters(a + dA, b, c, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC change to the a-axis (%6.3f) of %6.3f A", a, move));
+        logger.fine(
+            format(" Proposing MC change of the a-axis to (%6.3f) with volume change %6.3f (A^3)", a,
+                dAUVolume));
       }
-      return mcStep(currentE, currentV);
+      return mcStep(currentE, currentAUV);
     }
     return currentE;
   }
 
+  /**
+   * Propose to change the B-axis length.
+   *
+   * @param currentE Current energy.
+   * @return Energy after the MC trial.
+   */
   private double mcB(double currentE) {
     moveType = MoveType.SIDE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b + move, c, alpha, beta, gamma);
+    double currentAUV = unitCell.volume / nSymm;
+    double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
+    double dVdB = unitCell.dVdB / nSymm;
+    double dB = dAUVolume / dVdB;
+    boolean succeed = crystal.changeUnitCellParameters(a, b + dB, c, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC change to the b-axis (%6.3f) of %6.3f A", b, move));
+        logger.fine(
+            format(" Proposing MC change of the b-axis to (%6.3f) with volume change %6.3f (A^3)", b,
+                dAUVolume));
       }
-      return mcStep(currentE, currentV);
+      return mcStep(currentE, currentAUV);
     }
     return currentE;
   }
 
+  /**
+   * Propose to change the C-axis length.
+   *
+   * @param currentE Current energy.
+   * @return Energy after the MC trial.
+   */
   private double mcC(double currentE) {
     moveType = MoveType.SIDE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c + move, alpha, beta, gamma);
+    double currentAUV = unitCell.volume / nSymm;
+    double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
+    double dVdC = unitCell.dVdC / nSymm;
+    double dC = dAUVolume / dVdC;
+    boolean succeed = crystal.changeUnitCellParameters(a, b, c + dC, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC change to the c-axis (%6.3f) of %6.3f A", c, move));
+        logger.fine(
+            format(" Proposing MC change to the c-axis to (%6.3f) with volume change %6.3f (A^3)", c,
+                dAUVolume));
       }
-      return mcStep(currentE, currentV);
+      return mcStep(currentE, currentAUV);
     }
     return currentE;
   }
 
+  /**
+   * Propose the same change to the A-axis and B-axis lengths.
+   *
+   * @param currentE Current energy.
+   * @return Energy after the MC trial.
+   */
   private double mcAB(double currentE) {
     moveType = MoveType.SIDE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a + move, b + move, c, alpha, beta, gamma);
+    double currentAUV = unitCell.volume / nSymm;
+    double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
+    double dVdAB = (unitCell.dVdA + unitCell.dVdB) / nSymm;
+    double dAB = dAUVolume / dVdAB;
+    boolean succeed = crystal.changeUnitCellParametersAndVolume(
+        a + dAB, b + dAB, c, alpha, beta, gamma, currentAUV + dAUVolume);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC change to the a,b-axis (%6.3f) of %6.3f A", a, move));
+        logger.fine(
+            format(" Proposing MC change to the a,b-axes to (%6.3f) with volume change %6.3f (A^3)",
+                a,
+                dAUVolume));
       }
-      return mcStep(currentE, currentV);
-    }
-    return currentE;
-  }
-
-  private double mcIsotropic(double currentE) {
-    moveType = MoveType.SIDE;
-    double currentV = unitCell.volume / nSymm;
-    double maxSide = max(a, max(b, c));
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    double scale = (maxSide + move) / maxSide;
-    boolean succeed =
-        crystal.changeUnitCellParameters(a * scale, b * scale, c * scale, alpha, beta, gamma);
-    if (succeed) {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC isotropic scaling to the a,b,c-axes of %6.3f A", scale));
-      }
-      return mcStep(currentE, currentV);
+      return mcStep(currentE, currentAUV);
     }
     return currentE;
   }
 
   private double mcABC(double currentE) {
     moveType = MoveType.SIDE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxSideMove * (2.0 * random() - 1.0);
-    boolean succeed =
-        crystal.changeUnitCellParameters(a + move, b + move, c + move, alpha, beta, gamma);
+    double currentAUV = unitCell.volume / nSymm;
+    double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
+    double dVdABC = (unitCell.dVdA + unitCell.dVdB + unitCell.dVdC) / nSymm;
+    double dABC = dAUVolume / dVdABC;
+    boolean succeed = crystal.changeUnitCellParametersAndVolume(
+        a + dABC, b + dABC, c + dABC, alpha, beta, gamma, currentAUV + dAUVolume);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Propsing MC change to the a,b,c-axis (%6.3f) of %6.3f A", a, move));
+        logger.fine(
+            format(
+                " Proposing MC change to the a,b,c-axes to (%6.3f) with volume change %6.3f (A^3)",
+                a, dAUVolume));
       }
-      return mcStep(currentE, currentV);
+      return mcStep(currentE, currentAUV);
     }
     return currentE;
   }
 
+  /**
+   * Propose to change the Alpha angle.
+   *
+   * @param currentE Current energy.
+   * @return Energy after the MC trial.
+   */
   private double mcAlpha(double currentE) {
     moveType = MoveType.ANGLE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha + move, beta, gamma);
+    double currentAUV = unitCell.volume / nSymm;
+    double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
+    double dVdAlpha = unitCell.dVdAlpha * (PI / 180.0) / nSymm;
+    double dAlpha = dAUVolume / dVdAlpha;
+    boolean succeed = crystal.changeUnitCellParametersAndVolume(
+        a, b, c, alpha + dAlpha, beta, gamma, currentAUV + dAUVolume);
+
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
             format(
-                " Propsing MC change to the alpha angle (%6.3f) of %6.3f (degrees)", alpha, move));
+                " Proposing MC change of alpha to %6.3f with a volume change %6.3f (A^3)",
+                crystal.alpha, dAUVolume));
       }
-      return mcStep(currentE, currentV);
+      return mcStep(currentE, currentAUV);
     }
     return currentE;
   }
 
+  /**
+   * Propose to change the Beta angle.
+   *
+   * @param currentE Current energy.
+   * @return Energy after the MC trial.
+   */
   private double mcBeta(double currentE) {
     moveType = MoveType.ANGLE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha, beta + move, gamma);
+    double currentAUV = unitCell.volume / nSymm;
+    double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
+    double dVdBeta = unitCell.dVdBeta * (PI / 180.0) / nSymm;
+    double dBeta = dAUVolume / dVdBeta;
+    boolean succeed = crystal.changeUnitCellParametersAndVolume(
+        a, b, c, alpha, beta + dBeta, gamma, currentAUV + dAUVolume);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
-            format(" Propsing MC change to the beta angle (%6.3f) of %6.3f (degrees)", beta, move));
+            format(
+                " Proposing MC change of beta to %6.3f with a volume change %6.3f (A^3)",
+                crystal.beta, dAUVolume));
       }
-      return mcStep(currentE, currentV);
+      return mcStep(currentE, currentAUV);
     }
     return currentE;
   }
 
+  /**
+   * Propose to change the Gamma angle.
+   *
+   * @param currentE Current energy.
+   * @return Energy after the MC trial.
+   */
   private double mcGamma(double currentE) {
     moveType = MoveType.ANGLE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma + move);
+    double currentAUV = unitCell.volume / nSymm;
+    double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
+    double dVdGamma = unitCell.dVdGamma * (PI / 180.0) / nSymm;
+    double dGamma = dAUVolume / dVdGamma;
+    boolean succeed = crystal.changeUnitCellParametersAndVolume(
+        a, b, c, alpha, beta, gamma + dGamma, currentAUV + dAUVolume);
+
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
             format(
-                " Propsing MC change to the gamma angle (%6.3f) of %6.3f (degrees)", gamma, move));
+                " Proposing MC change of gamma to %6.3f with a volume change %6.3f (A^3)",
+                crystal.gamma, dAUVolume));
       }
-      return mcStep(currentE, currentV);
+      return mcStep(currentE, currentAUV);
     }
     return currentE;
   }
 
-  private double mcABeta(double currentE) {
-    moveType = MoveType.ANGLE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha + move, beta + move, gamma);
-    if (succeed) {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(
-            format(
-                " Propsing MC change to the alpha/beta angles (%6.3f) of %6.3f (degrees)",
-                alpha, move));
-      }
-      return mcStep(currentE, currentV);
-    }
-    return currentE;
-  }
-
-  private double mcAG(double currentE) {
-    moveType = MoveType.ANGLE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed = crystal.changeUnitCellParameters(a, b, c, alpha + move, beta, gamma + move);
-    if (succeed) {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(
-            format(
-                " Propsing MC change to the alpha/gamma angles (%6.3f) of %6.3f (degrees)",
-                alpha, move));
-      }
-      return mcStep(currentE, currentV);
-    }
-    return currentE;
-  }
-
+  /**
+   * Propose the same change to all 3 angles.
+   *
+   * @param currentE Current energy.
+   * @return Energy after the MC trial.
+   */
   private double mcABG(double currentE) {
     moveType = MoveType.ANGLE;
-    double currentV = unitCell.volume / nSymm;
-    double move = maxAngleMove * (2.0 * random() - 1.0);
-    boolean succeed =
-        crystal.changeUnitCellParameters(a, b, c, alpha + move, beta + move, gamma + move);
+    double currentAUV = unitCell.volume / nSymm;
+    double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
+    double dVdAngle =
+        (unitCell.dVdAlpha + unitCell.dVdBeta + unitCell.dVdGamma) * (PI / 180.0) / nSymm;
+    double dAngle = dAUVolume / dVdAngle;
+    boolean succeed = crystal.changeUnitCellParametersAndVolume(
+        a, b, c, alpha + dAngle, beta + dAngle, gamma + dAngle, currentAUV + dAUVolume);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
             format(
-                " Propsing MC change to the alpha/beta/gamma angles (%6.3f) of %6.3f (degrees)",
-                alpha, move));
+                " Proposing MC change to all angles (%6.3f) with volume change %6.3f (A^3)",
+                crystal.alpha, dAUVolume));
       }
-      return mcStep(currentE, currentV);
+      return mcStep(currentE, currentAUV);
     }
     return currentE;
   }
@@ -899,7 +914,7 @@ public class Barostat implements CrystalPotential {
     gamma = unitCell.gamma;
 
     if (isotropic) {
-      currentE = mcIsotropic(currentE);
+      currentE = mcABC(currentE);
     } else {
       switch (spaceGroup.latticeSystem) {
         case MONOCLINIC_LATTICE:

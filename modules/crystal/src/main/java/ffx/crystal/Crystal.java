@@ -92,7 +92,12 @@ public class Crystal {
   private static final int ZZ = 2;
   /** The space group of the crystal. */
   public final SpaceGroup spaceGroup;
-  /** Matrix to convert from fractional to Cartesian coordinates. */
+  /**
+   * Matrix to convert from fractional to Cartesian coordinates.
+   * <br>a-axis vector is the first row of A^(-1).
+   * <br>b-axis vector is the second row of A^(-1).
+   * <br>c-axis vector is the third row of A^(-1).
+   */
   public final double[][] Ai = new double[3][3];
   /** The direct space metric matrix. */
   public final double[][] G = new double[3][3];
@@ -135,23 +140,23 @@ public class Crystal {
   /** Entries in the Ai array. */
   public double Ai00, Ai01, Ai02, Ai10, Ai11, Ai12, Ai20, Ai21, Ai22;
   /** Change in the volume with respect to a. */
-  double dVdA;
+  public double dVdA;
   /** Change in the volume with respect to b. */
-  double dVdB;
+  public double dVdB;
   /** Change in the volume with respect to c. */
-  double dVdC;
+  public double dVdC;
   /**
    * Change in the volume with respect to alpha (in Radians). This is set to zero if alpha is fixed.
    */
-  double dVdAlpha;
+  public double dVdAlpha;
   /**
    * Change in the volume with respect to beta (in Radians). This is set to zero if beta is fixed.
    */
-  double dVdBeta;
+  public double dVdBeta;
   /**
    * Change in the volume with respect to gamma (in Radians). This is set to zero if gamma is fixed.
    */
-  double dVdGamma;
+  public double dVdGamma;
   /**
    * For some finite-difference calculations, it's currently necessary to remove lattice system
    * restrictions.
@@ -987,6 +992,33 @@ public class Crystal {
   }
 
   /**
+   * This method should be called to update the unit cell parameters of a crystal. The proposed
+   * parameters will only be accepted if symmetry restrictions are satisfied. If so, all Crystal
+   * variables that depend on the unit cell parameters will be updated.
+   * <p>
+   * If the new parameters are accepted, the target asymmetric unit volume is achieved by uniformly
+   * scaling all lattice lengths.
+   *
+   * @param a length of the a-axis.
+   * @param b length of the b-axis.
+   * @param c length of the c-axis.
+   * @param alpha Angle between b-axis and c-axis.
+   * @param beta Angle between a-axis and c-axis.
+   * @param gamma Angle between a-axis and b-axis.
+   * @param targetAUVolume Target asymmetric unit volume.
+   * @return The method return true if the parameters are accepted, false otherwise.
+   */
+  public boolean changeUnitCellParametersAndVolume(
+      double a, double b, double c, double alpha, double beta, double gamma, double targetAUVolume) {
+    if (changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
+      double currentAUVolume = volume / getNumSymOps();
+      double scale = cbrt(targetAUVolume / currentAUVolume);
+      return changeUnitCellParameters(scale * a, scale * b, scale * c, alpha, beta, gamma);
+    }
+    return false;
+  }
+
+  /**
    * Two crystals are equal only if all unit cell parameters are exactly the same.
    *
    * @param o the Crystal to compare to.
@@ -1303,14 +1335,7 @@ public class Crystal {
     this.aperiodic = aperiodic;
   }
 
-  /**
-   * Set the unit cell vectors.
-   *
-   * @param cellVectors 3x3 matrix of cell vectors.
-   * @return True if the perturbation of cell vectors succeeds.
-   */
-  public boolean setCellVectors(double[][] cellVectors) {
-
+  public double[] getCellParametersFromVectors(double[][] cellVectors) {
     // Update a-, b-, and c-axis lengths.
     double aa = length(cellVectors[0]);
     double bb = length(cellVectors[1]);
@@ -1321,7 +1346,43 @@ public class Crystal {
     double bbeta = toDegrees(acos(dot(cellVectors[0], cellVectors[2]) / (aa * cc)));
     double ggamma = toDegrees(acos(dot(cellVectors[0], cellVectors[1]) / (aa * bb)));
 
-    return changeUnitCellParameters(aa, bb, cc, aalpha, bbeta, ggamma);
+    // Load and return new cell parameters.
+    double[] params = new double[6];
+    params[0] = aa;
+    params[1] = bb;
+    params[2] = cc;
+    params[3] = aalpha;
+    params[4] = bbeta;
+    params[5] = ggamma;
+    return params;
+  }
+
+  /**
+   * Set the unit cell vectors.
+   *
+   * @param cellVectors 3x3 matrix of cell vectors.
+   * @return True if the perturbation of cell vectors succeeds.
+   */
+  public boolean setCellVectors(double[][] cellVectors) {
+    double[] p = getCellParametersFromVectors(cellVectors);
+    return changeUnitCellParameters(p[0], p[1], p[2], p[3], p[4], p[5]);
+  }
+
+  /**
+   * Set the unit cell vectors. Scale lattice lengths if necessary to hit the target volume.
+   *
+   * @param cellVectors 3x3 matrix of cell vectors.
+   * @param targetAUVolume the target volume for the new cell Vectors.
+   * @return True if the perturbation of cell vectors succeeds.
+   */
+  public boolean setCellVectorsAndVolume(double[][] cellVectors, double targetAUVolume) {
+    if (setCellVectors(cellVectors)) {
+      double currentAUVolume = volume / getNumSymOps();
+      double scale = cbrt(targetAUVolume / currentAUVolume);
+      return changeUnitCellParameters(scale * a, scale * b, scale * c, alpha, beta, gamma);
+    } else {
+      return false;
+    }
   }
 
   public void setDensity(double dens, double mass) {
@@ -1496,9 +1557,15 @@ public class Crystal {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("\n Unit Cell\n");
-    sb.append(format("  A-axis:                              %8.3f\n", a));
-    sb.append(format("  B-axis:                              %8.3f\n", b));
-    sb.append(format("  C-axis:                              %8.3f\n", c));
+    sb.append(
+        format("  A-axis:                              %8.3f (%8.3f, %8.3f, %8.3f)\n", a, Ai00, Ai01,
+            Ai02));
+    sb.append(
+        format("  B-axis:                              %8.3f (%8.3f, %8.3f, %8.3f)\n", b, Ai10, Ai11,
+            Ai12));
+    sb.append(
+        format("  C-axis:                              %8.3f (%8.3f, %8.3f, %8.3f)\n", c, Ai20, Ai21,
+            Ai22));
     sb.append(format("  Alpha:                               %8.3f\n", alpha));
     sb.append(format("  Beta:                                %8.3f\n", beta));
     sb.append(format("  Gamma:                               %8.3f\n", gamma));

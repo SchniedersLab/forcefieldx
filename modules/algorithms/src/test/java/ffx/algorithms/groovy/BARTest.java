@@ -10,6 +10,10 @@ public class BARTest extends AlgorithmsTest {
     /** Tests BAR script with nw input. */
     @Test
     public void testBAR() {
+        if (!ffxOpenMM) {
+            return;
+        }
+        
         // Set-up the input arguments for the script.
         String[] args = {"--t1", "298","--nw","8","--ac","1-13", "src/main/java/ffx/algorithms/structures/testBar/dimethylphosphate.10.xyz"};
         binding.setVariable("args", args);

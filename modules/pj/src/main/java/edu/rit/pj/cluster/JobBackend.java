@@ -39,6 +39,8 @@
 //******************************************************************************
 package edu.rit.pj.cluster;
 
+import static java.lang.String.format;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -61,7 +63,6 @@ import edu.rit.mp.Status;
 import edu.rit.mp.buf.ObjectItemBuf;
 import edu.rit.util.ByteSequence;
 import edu.rit.util.Timer;
-import edu.rit.util.TimerTask;
 import edu.rit.util.TimerThread;
 
 /**
@@ -98,38 +99,38 @@ public class JobBackend
 
     // Hidden data members.
     // Command line arguments.
-    private String username;
-    private int jobnum;
-    private int K;
-    private int rank;
-    private boolean hasFrontendComm;
-    private String frontendHost;
-    private int frontendPort;
-    private String backendHost;
+    private final String username;
+    private final int jobnum;
+    private final int K;
+    private final int rank;
+    private final boolean hasFrontendComm;
+    private final String frontendHost;
+    private final int frontendPort;
+    private final String backendHost;
 
     // Logging
     FileHandler fileHandler = null;
 
     // Timer thread for lease renewals and expirations.
-    private TimerThread myLeaseTimerThread;
+    private final TimerThread myLeaseTimerThread;
 
     // Timers for the lease with the job frontend.
-    private Timer myFrontendRenewTimer;
-    private Timer myFrontendExpireTimer;
+    private final Timer myFrontendRenewTimer;
+    private final Timer myFrontendExpireTimer;
 
     // Middleware channel group and address array.
-    private ChannelGroup myMiddlewareChannelGroup;
+    private final ChannelGroup myMiddlewareChannelGroup;
     private InetSocketAddress[] myMiddlewareAddress;
 
     // Job frontend proxy.
-    private JobFrontendRef myJobFrontend;
+    private final JobFrontendRef myJobFrontend;
 
     // For loading classes from the job frontend process.
-    private ResourceCache myResourceCache;
-    private BackendClassLoader myClassLoader;
+    private final ResourceCache myResourceCache;
+    private final BackendClassLoader myClassLoader;
 
     // World communicator channel group and address array.
-    private ChannelGroup myWorldChannelGroup;
+    private final ChannelGroup myWorldChannelGroup;
     private InetSocketAddress[] myWorldAddress;
 
     // Frontend communicator channel group and address array.
@@ -149,18 +150,17 @@ public class JobBackend
     private boolean commence;
 
     // Buffer for receiving job backend messages.
-    private ObjectItemBuf<JobBackendMessage> myBuffer
+    private final ObjectItemBuf<JobBackendMessage> myBuffer
             = ObjectBuf.buffer((JobBackendMessage) null);
 
     // Flags for shutting down the run() method.
     private boolean continueRun = true;
-    private CountDownLatch runFinished = new CountDownLatch(1);
+    private final CountDownLatch runFinished = new CountDownLatch(1);
 
     // State of this job backend.
     private State myState = State.RUNNING;
 
     private static enum State {
-
         RUNNING,
         TERMINATE_CANCEL_JOB,
         TERMINATE_NO_REPORT,
@@ -171,11 +171,11 @@ public class JobBackend
     private String myCancelMessage;
 
     // Original standard error stream; goes to the Job Launcher's log file.
-    private PrintStream myJobLauncherLog;
+    private final PrintStream myJobLauncherLog;
 
     // For writing and reading files in the job frontend.
-    private BackendFileWriter myFileWriter;
-    private BackendFileReader myFileReader;
+    private final BackendFileWriter myFileWriter;
+    private final BackendFileReader myFileReader;
 
 // Hidden constructors.
 
@@ -188,8 +188,7 @@ public class JobBackend
      * @param rank            Rank of this backend process.
      * @param hasFrontendComm Whether the frontend communicator exists.
      * @param frontendHost    Host name of job frontend's middleware channel group.
-     * @param frontendPort    Port number of job frontend's middleware channel
-     *                        group.
+     * @param frontendPort    Port number of job frontend's middleware channel group.
      * @param backendHost     Host name of job backend's middleware channel group.
      * @throws IOException Thrown if an I/O error occurred.
      */
@@ -214,19 +213,25 @@ public class JobBackend
         this.backendHost = backendHost;
 
         // Turn on logging?
+        StringBuilder sb = new StringBuilder();
         if (System.getProperty("pj.log", "false").equalsIgnoreCase("true")) {
             try {
                 // Remove all log handlers from the default logger.
                 Logger defaultLogger = LogManager.getLogManager().getLogger("");
-                Handler defaultHandlers[] = defaultLogger.getHandlers();
+                Handler[] defaultHandlers = defaultLogger.getHandlers();
                 for (Handler h : defaultHandlers) {
                     defaultLogger.removeHandler(h);
                 }
 
                 // Create a FileHandler that logs messages with a SimpleFormatter.
                 File file = new File(Integer.toString(this.rank));
-                file.mkdir();
-                fileHandler = new FileHandler(file.getAbsolutePath() + "/backend.log");
+                if (!file.exists()) {
+                    boolean success = file.mkdir();
+                    sb.append(format("\n Creation of logging directory %s: %b", file, success));
+                }
+                String logFile = file.getAbsolutePath() + File.separator + "backend.log";
+                fileHandler = new FileHandler(logFile);
+                sb.append(format("\n Log file: %s", logFile));
                 fileHandler.setFormatter(new SimpleFormatter());
                 logger.addHandler(fileHandler);
                 logger.setLevel(Level.INFO);
@@ -238,22 +243,18 @@ public class JobBackend
         }
 
         // Note that logging is OFF if the "pj.verbose" property was not true.
-        logger.log(Level.INFO, " Username: " + this.username);
-        logger.log(Level.INFO, " Job number: " + this.jobnum);
-        logger.log(Level.INFO, " Nodes: " + this.K);
-        logger.log(Level.INFO, " Rank: " + this.rank);
-        logger.log(Level.INFO, " Has Frontend Comm: " + this.hasFrontendComm);
-        logger.log(Level.INFO, " Frontend Host: " + this.frontendHost);
-        logger.log(Level.INFO, " Frontend Port: " + this.frontendPort);
-        logger.log(Level.INFO, " Backend Host: " + this.backendHost);
-
+        sb.append(format("\n Username:          %s", this.username));
+        sb.append(format("\n Job number:        %d", this.jobnum));
+        sb.append(format("\n Nodes:             %d", this.K));
+        sb.append(format("\n Rank:              %d", this.rank));
+        sb.append(format("\n Has Frontend Comm: %b", this.hasFrontendComm));
+        sb.append(format("\n Frontend Host:     %s", this.frontendHost));
+        sb.append(format("\n Frontend Port:     %d", this.frontendPort));
+        sb.append(format("\n Backend Host:      %s", this.backendHost));
+        logger.log(Level.INFO, sb.toString());
 
         // Set up shutdown hook.
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                shutdown();
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
 
         // Set up lease timer thread.
         logger.log(Level.INFO, " Set up lease timer thread.");
@@ -262,70 +263,60 @@ public class JobBackend
         myLeaseTimerThread.start();
 
         // Set up job frontend lease timers.
-        logger.log(Level.INFO, " Set up job frontend lease timers.");
-        myFrontendRenewTimer
-                = myLeaseTimerThread.createTimer(new TimerTask() {
-            public void action(Timer timer) {
-                try {
-                    frontendRenewTimeout();
-                } catch (Throwable exc) {
-                }
-            }
-        });
-        myFrontendExpireTimer
-                = myLeaseTimerThread.createTimer(new TimerTask() {
-            public void action(Timer timer) {
-                try {
-                    frontendExpireTimeout();
-                } catch (Throwable exc) {
-                }
-            }
-        });
+        logger.log(Level.INFO, format(" Create frontend renew timer (%d sec)." , Constants.LEASE_RENEW_INTERVAL / 1000));
+        myFrontendRenewTimer = myLeaseTimerThread.createTimer(timer -> {
+                    try {
+                        frontendRenewTimeout();
+                    } catch (Throwable exc) {
+                    }
+                });
+        logger.log(Level.INFO, format(" Create frontend expire timer (%d sec)." , Constants.LEASE_EXPIRE_INTERVAL / 1000));
+        myFrontendExpireTimer = myLeaseTimerThread.createTimer(timer -> {
+                    try {
+                        frontendExpireTimeout();
+                    } catch (Throwable exc) {
+                    }
+                });
 
         // Start job frontend lease expiration timer regardless of whether the
         // job frontend proxy gets set up.
         myFrontendExpireTimer.start(Constants.LEASE_EXPIRE_INTERVAL);
 
         // Set up middleware channel group.
-
         logger.log(Level.INFO, " Set up middleware channel group.");
-        myMiddlewareChannelGroup
-                = new ChannelGroup(new InetSocketAddress(backendHost, 0));
+        myMiddlewareChannelGroup = new ChannelGroup(new InetSocketAddress(backendHost, 0));
         myMiddlewareChannelGroup.startListening();
 
         // Set up job frontend proxy.
         logger.log(Level.INFO, " Set up job frontend proxy.");
-        myJobFrontend
-                = new JobFrontendProxy(myMiddlewareChannelGroup,
+        myJobFrontend = new JobFrontendProxy(myMiddlewareChannelGroup,
                 myMiddlewareChannelGroup.connect(new InetSocketAddress(frontendHost, frontendPort)));
 
         // If we get here, the job frontend proxy has been set up.
         logger.log(Level.INFO, " The job frontend proxy has been set up.");
 
         // Start job frontend lease renewal timer.
-        logger.log(Level.INFO, " Start job frontend lease renewal timer.");
+        logger.log(Level.INFO, " Start frontend lease renewal timer.");
         myFrontendRenewTimer.start(Constants.LEASE_RENEW_INTERVAL,
                 Constants.LEASE_RENEW_INTERVAL);
 
         // Set up backend class loader.
         myResourceCache = new ResourceCache();
-        myClassLoader
-                = new BackendClassLoader(/*parent        */getClass().getClassLoader(),
+        myClassLoader = new BackendClassLoader(
+                /*parent        */ getClass().getClassLoader(),
                 /*theJobBackend */ this,
                 /*theJobFrontend*/ myJobFrontend,
                 /*theCache      */ myResourceCache);
 
         // Set up world communicator channel group.
         logger.log(Level.INFO, " Set up world communicator channel group.");
-        myWorldChannelGroup
-                = new ChannelGroup(new InetSocketAddress(backendHost, 0));
+        myWorldChannelGroup= new ChannelGroup(new InetSocketAddress(backendHost, 0));
         myWorldChannelGroup.setAlternateClassLoader(myClassLoader);
 
         // Set up frontend communicator channel group.
         if (hasFrontendComm) {
             logger.log(Level.INFO, " Set up frontend communicator channel group.");
-            myFrontendChannelGroup
-                    = new ChannelGroup(new InetSocketAddress(backendHost, 0));
+            myFrontendChannelGroup = new ChannelGroup(new InetSocketAddress(backendHost, 0));
             myFrontendChannelGroup.setAlternateClassLoader(myClassLoader);
         }
 
@@ -345,16 +336,12 @@ public class JobBackend
 
         // Tell job frontend we're ready!
         logger.log(Level.INFO, " Tell job frontend we're ready.");
-        myJobFrontend.backendReady(/*theJobBackend    */this,
+        myJobFrontend.backendReady(
+                /*theJobBackend    */this,
                 /*rank             */ rank,
-                /*middlewareAddress*/
-                myMiddlewareChannelGroup.listenAddress(),
-                /*worldAddress     */
-                myWorldChannelGroup.listenAddress(),
-                /*frontendAddress  */
-                hasFrontendComm
-                        ? myFrontendChannelGroup.listenAddress()
-                        : null);
+                /*middlewareAddress*/ myMiddlewareChannelGroup.listenAddress(),
+                /*worldAddress     */ myWorldChannelGroup.listenAddress(),
+                /*frontendAddress  */ hasFrontendComm ? myFrontendChannelGroup.listenAddress() : null);
     }
 
 // Exported operations.
@@ -1083,14 +1070,17 @@ public class JobBackend
         // theJobBackend.getClassLoader());
         Method mainmethod = mainclass.getMethod("main", String[].class);
 
-        logger.log(Level.INFO, " Preparing to invoke main method: " + mainmethod.toString());
+        StringBuilder stringBuilder = new StringBuilder(format(" Preparing to invoke main method:\n %s\n With args: ", mainmethod.toString()));
+
         for (String arg : theJobBackend.getArgs()) {
-            logger.log(Level.INFO, " Arg: " + arg);
+            stringBuilder.append(format(" %s", arg));
         }
-        logger.log(Level.INFO, " Backend logging finished.");
-        
+        stringBuilder.append("\n Backend start-up completed.");
+        logger.log(Level.INFO, stringBuilder.toString());
+
         // Close down the FileHandler if it exists.
         if (theJobBackend.fileHandler != null) {
+            theJobBackend.fileHandler.flush();
             logger.setLevel(Level.OFF);
             theJobBackend.fileHandler.close();
         }

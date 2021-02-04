@@ -45,6 +45,7 @@ import ffx.potential.parsers.PDBFilter
 import org.apache.commons.io.FilenameUtils
 import org.biojava.nbio.core.sequence.ProteinSequence
 import org.biojava.nbio.core.sequence.io.FastaReaderHelper
+import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
@@ -66,9 +67,16 @@ class RGNtoPDB extends PotentialScript {
   /**
    * The final argument(s) should be an RGN output file and a sequence file in FASTA format.
    */
-  @Parameters(arity = "2", paramLabel = "files",
+  @Parameters(arity = "2..3", paramLabel = "files",
       description = 'RGN output and a FASTA file.')
   List<String> filenames = null
+
+  /**
+   * --pN or --proteinNet boolean to indicate whether the tertiary is from RGN output or from a ProteinNet file.
+   */
+  @CommandLine.Option(names = ["--pN", "--proteinNet"], paramLabel = 'false',
+          description = 'Indicates whether the tertiary format follows RGN output or ProteinNet input.')
+  boolean proteinNet = false
 
   /**
    * RGNtoPDB Constructor.
@@ -122,7 +130,11 @@ class RGNtoPDB extends PotentialScript {
     int lineNumber = 0
     while (lineNumber < 5) {
       lines[lineNumber] = cr.readLine().trim()
-      tokenizedLines[lineNumber] = lines[lineNumber].split(" +")
+      if(!proteinNet){
+        tokenizedLines[lineNumber] = lines[lineNumber].split(" +")
+      } else {
+        tokenizedLines[lineNumber] = lines[lineNumber].split("\t")
+      }
       lineNumber++
     }
     cr.close()
@@ -137,7 +149,25 @@ class RGNtoPDB extends PotentialScript {
       return null
     }
 
-    // Configure the base directory if it has not been set.
+    boolean includeBFactors = false
+    String[] bfactorLines = new String[sequence.length()]
+    if (filenames.size() == 3) {
+      String bfactorName = filenames.get(2)
+      includeBFactors = true
+
+      logger.info("\n Opening BFactors " + bfactorName)
+      File bfactorFile = new File(bfactorName)
+      BufferedReader reader = new BufferedReader(new FileReader(bfactorFile))
+      lineNumber = 0
+      while (lineNumber < sequence.length()) {
+        bfactorLines[lineNumber] = reader.readLine().trim()
+        lineNumber++
+      }
+      reader.close()
+    }
+
+
+      // Configure the base directory if it has not been set.
     File saveDir = baseDir
     rgnName = rgnFile.getAbsolutePath()
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
@@ -162,6 +192,10 @@ class RGNtoPDB extends PotentialScript {
         int resID = i + 1
         String oneLetterResidue = sequence.charAt(i)
         String resName = convertToThreeLetter(oneLetterResidue)
+
+        if(includeBFactors){
+          bfactor = Double.parseDouble(bfactorLines[i])
+        }
 
         // Write N
         xyz[0] = parseDouble(tokenizedLines[2][atomNumber]) / 100.0

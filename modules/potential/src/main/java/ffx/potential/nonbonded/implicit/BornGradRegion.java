@@ -103,6 +103,8 @@ public class BornGradRegion extends ParallelRegion {
   private AtomicDoubleArray3D grad;
   /** Shared array for computation of Born radii gradient. */
   private AtomicDoubleArray sharedBornGrad;
+  /** Flag for using neck correction, default to false for now. */
+  private boolean neckCorrection = false;
 
   public BornGradRegion(int nt, boolean perfectHCTScale) {
     bornCRLoop = new BornCRLoop[nt];
@@ -110,6 +112,21 @@ public class BornGradRegion extends ParallelRegion {
       bornCRLoop[i] = new BornCRLoop();
     }
     this.perfectHCTScale = perfectHCTScale;
+  }
+
+  /**
+   * Overloaded BornGradRegion constructor to include set-able neckCorrection term
+   * @param nt
+   * @param perfectHCTScale
+   * @param neckCorrection
+   */
+  public BornGradRegion(int nt, boolean perfectHCTScale, boolean neckCorrection){
+    bornCRLoop = new BornCRLoop[nt];
+    for(int i = 0; i < nt; i++){
+      bornCRLoop[i] = new BornCRLoop();
+    }
+    this.perfectHCTScale = perfectHCTScale;
+    this.neckCorrection = neckCorrection;
   }
 
   /**
@@ -240,6 +257,10 @@ public class BornGradRegion extends ParallelRegion {
               // Atom i being descreeened by atom k.
               if (rbi < 50.0 && descreenRk > 0.0) {
                 double de = descreenDerivative(r, r2, descreenRi, descreenRk, overlapScale[k]);
+                // TODO: Add neck contribution to atom i being descreeened by atom k.
+                if(neckCorrection) {
+                  de += neckDescreenDerivative(r, descreenRi, descreenRk);
+                }
                 if (isInfinite(de) || isNaN(de)) {
                   logger.warning(
                       format(" Born radii chain rule term is unstable %d %d %16.8f", i, k, de));
@@ -255,6 +276,10 @@ public class BornGradRegion extends ParallelRegion {
                 double termk = PI4_3 / (rbk * rbk * rbk);
                 termk = factor / pow(termk, (4.0 * oneThird));
                 double de = descreenDerivative(r, r2, descreenRk, descreenRi, overlapScale[i]);
+                // TODO: Add neck contribution to atom k being descreeened by atom i.
+                if(neckCorrection) {
+                  de += neckDescreenDerivative(r, descreenRk, descreenRi);
+                }
                 if (isInfinite(de) || isNaN(de)) {
                   logger.warning(
                       format(" Born radii chain rule term is unstable %d %d %16.8f", k, i, de));
@@ -275,6 +300,10 @@ public class BornGradRegion extends ParallelRegion {
                 final double r = sqrt(r2);
                 // Atom i being descreeened by atom k.
                 double de = descreenDerivative(r, r2, descreenRi, descreenRk, overlapScale[k]);
+                // TODO: Add neck contribution to atom i being descreeened by atom k.
+                if(neckCorrection) {
+                  de += neckDescreenDerivative(r, descreenRi, descreenRk);
+                }
                 if (isInfinite(de) || isNaN(de)) {
                   logger.warning(
                       format(" Born radii chain rule term is unstable %d %d %d %16.8f", iSymOp, i,
@@ -294,6 +323,33 @@ public class BornGradRegion extends ParallelRegion {
     @Override
     public void start() {
       threadID = getThreadIndex();
+    }
+
+    private double neckDescreenDerivative(double r, double radius, double radiusK){
+      double neckIntegralDerivative;
+      double radiusWater = 1.4;
+
+      if(r > radius + radiusK + 2*radiusWater){
+        return 0.0;
+      }
+
+      // Get Aij and Bij from Aguilar/Onufriev 2010 paper
+      double[] constants = NeckIntegralOnufriev.NeckIntegralOnufrievConstants.run(radius, radiusK);
+
+      double Aij = constants[0];
+      double Bij = constants[1];
+
+      // Use Aij and Bij to get neck value using derivative of Equation 13 from Aguilar/Onufriev 2010 paper
+      double rMinusBij = r - Bij;
+      double rMinusBij3 = rMinusBij * rMinusBij * rMinusBij;
+      double rMinusBij4 = rMinusBij3 * rMinusBij;
+      double radiiMinusr = radius + radiusK + 2.0*radiusWater - r;
+      double radiiMinusr3 = radiiMinusr * radiiMinusr * radiiMinusr;
+      double radiiMinusr4 = radiiMinusr3 * radiiMinusr;
+
+      neckIntegralDerivative = 4.0*Aij*rMinusBij3*radiiMinusr4 - 4.0*Aij*rMinusBij4*radiiMinusr3;
+
+      return neckIntegralDerivative;
     }
 
     private double descreenDerivative(double r, double r2, double radius, double radiusK,
