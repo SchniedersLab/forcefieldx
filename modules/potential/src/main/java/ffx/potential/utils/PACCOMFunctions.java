@@ -257,7 +257,11 @@ public class PACCOMFunctions {
     forceField.clearProperty("spacegroup");
 
     expandedAssembly.setForceField(forceField);
+
+    // The biochemistry method is designed to load chemical entities into the
+    // Polymer, Molecule, Water and Ion data structure.
     Utilities.biochemistry(expandedAssembly, newAtomList);
+
     expandedAssembly.finalize(true, forceField);
     ForceFieldEnergy energy = ForceFieldEnergy.energyFactory(expandedAssembly);
     expandedAssembly.setPotential(energy);
@@ -459,6 +463,7 @@ public class PACCOMFunctions {
     logger.fine(format("START: N1: %16.8f %16.8f %16.8f", n1.getX(), n1.getY(), n1.getZ()));
     logger.fine(format("START: N2: %16.8f %16.8f %16.8f", p1n2, q1n2, r1n2));
     logger.fine(format("START: N3: %16.8f %16.8f %16.8f", p1n3, q1n3, r1n3));
+
     // Calculation of sigma, phai, and cita angles needed to get specified atoms to desired loci
     double cita0 = acos(p1n2 / sqrt(pow(p1n2, 2) + pow(q1n2, 2)));
     double phai0 = acos(
@@ -514,7 +519,7 @@ public class PACCOMFunctions {
     q1n2 = q2n2;
     q1n3 = q2n3;
 
-    logger.fine(format("DONE: N1: %16.8f %16.8f %16.8f", n1.getX(), n1.getY(), n1.getZ()));
+    logger.fine(format("DONE N1: %16.8f %16.8f %16.8f", n1.getX(), n1.getY(), n1.getZ()));
     logger.fine(format("DONE N2: %16.8f %16.8f %16.8f", p1n2, q1n2, r1n2));
     logger.fine(format("DONE N3: %16.8f %16.8f %16.8f", p1n3, q1n3, r1n3));
 
