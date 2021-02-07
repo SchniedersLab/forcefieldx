@@ -397,12 +397,12 @@ public class TitrationUtils {
         }
         break;
       case "HID":
-        if (name.equals("HD1")) {
+        if (name.equals("HE2")) {  //HD1?
           return true;
         }
         break;
       case "HIE":
-        if (name.equals("HE2")) {
+        if (name.equals("HD1")) {  //HE2?
           return true;
         }
         break;

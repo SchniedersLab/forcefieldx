@@ -56,6 +56,8 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig;
 import ffx.potential.parameters.MultipoleType;
 import ffx.utilities.Constants;
+import org.apache.commons.lang.ObjectUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -128,7 +130,7 @@ public abstract class ExtendedVariable {
     this.config = esvSystem.config;
     this.discrBiasMag = config.discrBias;
     this.switchingFunction = new MultiplicativeSwitch(1.0, 0.0);
-    setInitialLambda(lambda);
+    setInitialLambda(initialLambda);
 
     residueForeground = multiRes.getActive();
     termNode = residueForeground.getTermNode();
@@ -182,6 +184,7 @@ public abstract class ExtendedVariable {
         assert (!atomsForeground.contains(a0));
         assert (!isTitratableHydrogen(a0));
         if (atomsForeground.contains(a0) || isTitratableHydrogen(a0)) {
+          logger.warning(format("a0: %s",a0.describe(Descriptions.XyzIndex_Name)));
           logger.warning("Error: inappropriate background atom.");
           throw new IllegalStateException();
         }
@@ -338,13 +341,20 @@ public abstract class ExtendedVariable {
     }
     double rt2 = 2.0 * Constants.R * setTemperature * config.thetaFriction / dt;
     double randomForce = sqrt(rt2) * RNG.nextGaussian() / ExtConstants.forceToKcal;
+    logger.info(format("randomForce: %6.6f", randomForce));
     double dEdL = -dEdEsv * sin(2.0 * theta);
+    logger.info(format("dEdL: %6.6f", dEdL));
+
     halfThetaVelocity =
         (halfThetaVelocity * (2.0 * config.thetaMass - config.thetaFriction * dt)
                 + ExtConstants.forceToKcalSquared * 2.0 * dt * (dEdL + randomForce))
             / (2.0 * config.thetaMass + config.thetaFriction * dt);
-    theta = theta + dt * halfThetaVelocity;
 
+    logger.info(format("halfThetaVelocity: %6.6f", halfThetaVelocity));
+    logger.info(format("dt: %6.6f", dt));
+    logger.info(format("ThetaOld: %6.6f", theta));
+    theta = theta + dt * halfThetaVelocity;
+    logger.info(format("ThetaNew: %6.6f", theta));
     if (theta > PI) {
       theta -= 2.0 * PI;
     } else if (theta <= -PI) {

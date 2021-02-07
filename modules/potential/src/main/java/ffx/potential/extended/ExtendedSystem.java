@@ -695,10 +695,11 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
       double oldLambda = esv.getLambda();
       esv.propagate(dedl[esv.esvIndex], dt, temperature);
       double newLambda = esv.getLambda();
-      if (logger.isLoggable(Level.FINEST)) {
-        logger.log(
-            Level.FINEST,
-            format(
+      //TODO: Adjust lambda logging level
+      //if (logger.isLoggable(Level.FINEST)) {
+        //logger.log(
+            //Level.FINEST,
+            logger.info(format(
                 " Propagating ESV[%d]: %g --> %g @ psec,temp,bias: %g %g %.2f",
                 esv.esvIndex,
                 oldLambda,
@@ -706,7 +707,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
                 currentTimePs,
                 temperature,
                 esv.getTotalBias(temperature, false)));
-      }
+      //}
     }
     updateListeners();
   }
@@ -943,9 +944,9 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     public final boolean forceRoomTemp = prop("esv.forceRoomTemp", false);
     public final boolean propagation = prop("esv.propagation", true);
     public final double thetaMass =
-        prop("esv.thetaMass", 1.0e-18); // from OST, reasonably 100 a.m.u.
+        prop("esv.thetaMass", 1.6605e-22); // from OST, reasonably 100 a.m.u.
     public final double thetaFriction =
-        prop("esv.thetaFriction", 1.0e-19); // from OST, reasonably 60/ps
+        prop("esv.thetaFriction", 1.0e-12); // from OST, reasonably 60/ps
 
     // Options below are untested and/or dangerous if changed.
     public final boolean cloneXyzIndices = prop("esv.cloneXyzIndices", true); // set bg_idx = fg_idx

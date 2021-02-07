@@ -68,7 +68,7 @@ public final class TitrationESV extends ExtendedVariable {
    * @param multiRes a {@link ffx.potential.bonded.MultiResidue} object.
    */
   public TitrationESV(ExtendedSystem esvSystem, MultiResidue multiRes) {
-    super(esvSystem, multiRes, 1.0);
+    super(esvSystem, multiRes, 0.0);
     this.constPh = esvSystem.getConstantPh();
     this.titrating = multiRes;
     Titration titration = Titration.lookup(titrating.getActive());
@@ -110,7 +110,9 @@ public final class TitrationESV extends ExtendedVariable {
   protected double getPhBias(double temperature) {
     double lambda = getLambda();
     double uph = ExtConstants.log10 * Constants.R * temperature * (pKaModel - constPh) * lambda;
+    logger.info(format("uph: %6.6f", uph));
     double umod = referenceEnergy * lambda; // TODO Find PMFs for monomers/trimers/pentapeptides.
+    logger.info(format("umod: %6.6f", umod));
     return uph + umod;
   }
 
@@ -123,6 +125,8 @@ public final class TitrationESV extends ExtendedVariable {
   protected double getPhBiasDeriv(double temperature) {
     double duphdl = ExtConstants.log10 * Constants.R * temperature * (pKaModel - constPh);
     double dumoddl = referenceEnergy;
+    logger.info(format("duphdl: %6.6f", duphdl));
+    logger.info(format("dumoddl: %6.6f", dumoddl));
     return duphdl + dumoddl;
   }
 }

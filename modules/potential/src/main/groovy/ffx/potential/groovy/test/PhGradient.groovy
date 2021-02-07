@@ -371,6 +371,7 @@ class PhGradient extends PotentialScript {
         double[] energyAndInteractionList = new double [26]
         String lambdaList = esvSystem.getLambdaList()
         logger.info(format("Lambda List: %s", lambdaList))
+
         //Add ForceFieldEnergy to hashmap for testing. Protonation endstates used as key in map.
         energy.energy(x,true)
 
