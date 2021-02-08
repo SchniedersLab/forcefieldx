@@ -345,7 +345,7 @@ class PhGradient extends PotentialScript {
     }
 
     if(print){
-      if(numESVs < 4){
+      if(numESVs <= 4){
         printPermutations(esvSystem, numESVs, energy, x)
       }
     }
