@@ -1284,6 +1284,32 @@ public class Crystal {
   }
 
   /**
+   * Reflect proposed angles to be within 0 and 180 degrees.
+   *
+   * @param angle Proposed angle in radians.
+   * @return value of mirrored angle in radians.
+   */
+  public static double mirrorRadians(double angle) {
+    double angleDegrees = angle * 180 / PI;
+    return mirrorDegrees(angleDegrees) * PI / 180;
+  }
+
+  /**
+   * Reflect proposed angles to be within 0 and 180 degrees.
+   *
+   * @param angle Proposed angle in radians.
+   * @return value of mirrored angle in radians.
+   */
+  public static double mirrorDegrees(double angle) {
+    if (angle > 180.0) {
+      angle = 180.0 - (angle - 180.0);
+    } else if (angle < 0.0) {
+      angle = 0.0 - angle;
+    }
+    return angle;
+  }
+
+  /**
    * Strain the unit cell vectors.
    *
    * @param dStrain a 3x3 matrix of unitless Strain percentages.
