@@ -65,6 +65,8 @@ public class BarostatOptions {
    * (particularly at or near vapor states).
    */
   public static final String DEFAULT_MIN_DENSITY = "0.75";
+  /** Default width of proposed crystal angle moves (uniformly distributed) in degrees. */
+  public static final String DEFAULT_MAX_ANGLE_MOVE = "0.5";
   /** Default size of proposed unit cell volume moves (uniformly distributed) in Angstroms^3. */
   public static final String DEFAULT_MAX_VOLUME_MOVE = "1.0";
   /** Default mean number of MD steps (Poisson distribution) between barostat move proposals. */
@@ -130,6 +132,7 @@ public class BarostatOptions {
                 dens, group.maxD));
         barostat.setDensity(group.maxD);
       }
+      barostat.setMaxAngleMove(group.maxAM);
       barostat.setMaxVolumeMove(group.maxV);
       barostat.setMeanBarostatInterval(group.barInt);
       return barostat;
@@ -200,6 +203,19 @@ public class BarostatOptions {
     return group.maxV;
   }
 
+  /**
+   * The width of proposed crystal angle moves (uniformly distributed) in degrees.
+   *
+   * @return Returns the width of angle moves.
+   */
+  public double getMaxAM() {
+    return group.maxAM;
+  }
+
+  public void setMaxAM(double maxAM) {
+    group.maxAM = maxAM;
+  }
+
   public void setMaxV(double maxV) {
     group.maxV = maxV;
   }
@@ -267,6 +283,13 @@ public class BarostatOptions {
         defaultValue = DEFAULT_MIN_DENSITY,
         description = "Specify the minimum density accepted by the MC Barostat (g/cc).")
     private double minD;
+    @Option(
+            names = {"--maxAM", "--maxAngleMove"},
+            paramLabel = DEFAULT_MAX_ANGLE_MOVE,
+            defaultValue = DEFAULT_MAX_ANGLE_MOVE,
+            description =
+                    "Sets the width of proposed crystal angle moves (uniformly distributed) in degrees.")
+    private double maxAM;
     /**
      * --maxV or --maxVolumeMove Sets the volume move size (uniformly distributed) in Angstroms^3.
      */

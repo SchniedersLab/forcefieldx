@@ -99,6 +99,8 @@ public class Barostat implements CrystalPotential {
   private boolean isotropic = false;
   /** Flag to turn the Barostat on or off. If false, MC moves will not be tried. */
   private boolean active = true;
+  /** Default angle move (degrees). */
+  private double maxAngleMove = 0.5;
   /**
    * Maximum volume move.
    */
@@ -460,6 +462,14 @@ public class Barostat implements CrystalPotential {
     potential.setCrystal(crystal);
     molecularAssembly.moveToFractionalCoordinates();
   }
+  /**
+   * Setter for the field <code>maxAngleMove</code>.
+   *
+   * @param maxAngleMove a double.
+   */
+  public void setMaxAngleMove(double maxAngleMove) {
+    this.maxAngleMove = maxAngleMove;
+  }
 
   /**
    * Setter for the field <code>maxVolumeMove</code>.
@@ -794,12 +804,12 @@ public class Barostat implements CrystalPotential {
    */
   private double mcAlpha(double currentE) {
     moveType = MoveType.ANGLE;
+    double move = maxAngleMove * (2.0 * random() - 1.0);
     double currentAUV = unitCell.volume / nSymm;
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
-    double dVdAlpha = unitCell.dVdAlpha * (PI / 180.0) / nSymm;
-    double dAlpha = dAUVolume / dVdAlpha;
+    double newAlpha = Crystal.mirrorDegrees(alpha + move);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
-        a, b, c, alpha + dAlpha, beta, gamma, currentAUV + dAUVolume);
+        a, b, c, newAlpha, beta, gamma, currentAUV + dAUVolume);
 
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
@@ -821,12 +831,12 @@ public class Barostat implements CrystalPotential {
    */
   private double mcBeta(double currentE) {
     moveType = MoveType.ANGLE;
+    double move = maxAngleMove * (2.0 * random() - 1.0);
     double currentAUV = unitCell.volume / nSymm;
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
-    double dVdBeta = unitCell.dVdBeta * (PI / 180.0) / nSymm;
-    double dBeta = dAUVolume / dVdBeta;
+    double newBeta = Crystal.mirrorDegrees(beta + move);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
-        a, b, c, alpha, beta + dBeta, gamma, currentAUV + dAUVolume);
+        a, b, c, alpha, newBeta, gamma, currentAUV + dAUVolume);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
@@ -847,12 +857,12 @@ public class Barostat implements CrystalPotential {
    */
   private double mcGamma(double currentE) {
     moveType = MoveType.ANGLE;
+    double move = maxAngleMove * (2.0 * random() - 1.0);
     double currentAUV = unitCell.volume / nSymm;
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
-    double dVdGamma = unitCell.dVdGamma * (PI / 180.0) / nSymm;
-    double dGamma = dAUVolume / dVdGamma;
+    double newGamma = Crystal.mirrorDegrees(gamma + move);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
-        a, b, c, alpha, beta, gamma + dGamma, currentAUV + dAUVolume);
+        a, b, c, alpha, beta, newGamma, currentAUV + dAUVolume);
 
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
@@ -874,13 +884,14 @@ public class Barostat implements CrystalPotential {
    */
   private double mcABG(double currentE) {
     moveType = MoveType.ANGLE;
+    double move = maxAngleMove * (2.0 * random() - 1.0);
     double currentAUV = unitCell.volume / nSymm;
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
-    double dVdAngle =
-        (unitCell.dVdAlpha + unitCell.dVdBeta + unitCell.dVdGamma) * (PI / 180.0) / nSymm;
-    double dAngle = dAUVolume / dVdAngle;
+    double newAlpha = Crystal.mirrorDegrees(alpha + move);
+    double newBeta = Crystal.mirrorDegrees(beta + move);
+    double newGamma = Crystal.mirrorDegrees(gamma + move);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
-        a, b, c, alpha + dAngle, beta + dAngle, gamma + dAngle, currentAUV + dAUVolume);
+        a, b, c, newAlpha, newBeta, newGamma, currentAUV + dAUVolume);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
