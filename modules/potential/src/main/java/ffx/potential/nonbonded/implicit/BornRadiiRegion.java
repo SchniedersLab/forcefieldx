@@ -42,6 +42,7 @@ import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -118,8 +119,8 @@ public class BornRadiiRegion extends ParallelRegion {
     ecavTot = new SharedDouble(0.0);
     verboseRadii = forceField.getBoolean("VERBOSE_BORN_RADII", false);
     neckCorrection = forceField.getBoolean("NECK_CORRECTION", false);
-    tanhCorrection = forceField.getBoolean("TANH_CORRECTION",false);
-    Sneck = forceField.getDouble("SNECK",DEFAULT_SNECK);
+    tanhCorrection = forceField.getBoolean("TANH_CORRECTION", false);
+    Sneck = forceField.getDouble("SNECK", DEFAULT_SNECK);
     this.perfectHCTScale = perfectHCTScale;
     if (verboseRadii) {
       logger.info(" Verbose Born radii.");
@@ -140,12 +141,13 @@ public class BornRadiiRegion extends ParallelRegion {
           born[i] = bigRadius;
           if (verboseRadii) {
             logger.info(
-                format(" Born integral < 0 for atom %d; set Born radius to %12.6f (Base Radius: %2.6f)",
-                        i+1, born[i],baseRadius[i]));
+                format(
+                    " Born integral < 0 for atom %d; set Born radius to %12.6f (Base Radius: %2.6f)",
+                    i + 1, born[i], baseRadius[i]));
           }
         } else {
           // TODO: Fix tanh correction
-          if(tanhCorrection){
+          if (tanhCorrection) {
             //sum = BornRescalingTanh.Tanh.rescale(sum, baseRi);
           }
           born[i] = 1.0 / pow(sum / PI4_3, oneThird);
@@ -153,28 +155,29 @@ public class BornRadiiRegion extends ParallelRegion {
             born[i] = baseRi;
             if (verboseRadii) {
               logger.info(
-                  format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f", i+1,
+                  format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f", i + 1,
                       baseRi));
             }
           } else if (born[i] > bigRadius) {
             born[i] = bigRadius;
             if (verboseRadii) {
               logger.info(
-                  format(" Born radius > 50.0 Angstroms for atom %d: set Born radius to %12.6f", i+1,
+                  format(" Born radius > 50.0 Angstroms for atom %d: set Born radius to %12.6f",
+                      i + 1,
                       baseRi));
             }
           } else if (isInfinite(born[i]) || isNaN(born[i])) {
             if (verboseRadii) {
               logger.info(
-                  format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f", i+1,
+                  format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f", i + 1,
                       baseRi));
             }
             born[i] = baseRi;
           } else {
-            if (verboseRadii){
+            if (verboseRadii) {
               logger.info(
-                      format(" Set Born radius for atom %d to %12.6f " +
-                                      "(Base Radius: %2.6f)", i+1, born[i], baseRi)
+                  format(" Set Born radius for atom %d to %12.6f " +
+                      "(Base Radius: %2.6f)", i + 1, born[i], baseRi)
               );
             }
           }
@@ -278,14 +281,14 @@ public class BornRadiiRegion extends ParallelRegion {
           if (!nativeEnvironmentApproximation && !use[i]) {
             continue;
           }
-          final double baseRi = descreenRadius[i];
+          final double baseRi = max(baseRadius[i], descreenRadius[i]);
           final double descreenRi = descreenRadius[i];
           final double xi = x[i];
           final double yi = y[i];
           final double zi = z[i];
           int[] list = neighborLists[iSymOp][i];
           for (int k : list) {
-            final double baseRk = descreenRadius[k];
+            final double baseRk = max(baseRadius[k], descreenRadius[k]);
             final double descreenRk = descreenRadius[k];
             assert (descreenRk > 0.0);
             if (!nativeEnvironmentApproximation && !use[k]) {
@@ -304,9 +307,13 @@ public class BornRadiiRegion extends ParallelRegion {
               // Atom i being descreeened by atom k.
               double sk = overlapScale[k];
               if (sk > 0.0) {
-                localBorn[i] += descreen(r, r2, baseRi, descreenRk, sk);
+                double descreenIK = descreen(r, r2, baseRi, descreenRk, sk);
+                localBorn[i] += descreenIK;
+//                if (is_12or13) {
+//                  logger.info(format(" Descreen %d %d %16.8f", i + 1, k + 1, descreenIK));
+//                }
               }
-              if(neckCorrection && !is_12or13 && !atoms[k].isHydrogen()) {
+              if (neckCorrection && !is_12or13 && !atoms[k].isHydrogen()) {
                 // TODO: Add neck contribution to atom i being descreeened by atom k.
                 /*if(neckDescreen(r,baseRi,baseRk) != 0.0) {
                   logger.info(
@@ -319,9 +326,13 @@ public class BornRadiiRegion extends ParallelRegion {
               // Atom k being descreeened by atom i.
               double si = overlapScale[i];
               if (si > 0.0) {
-                localBorn[k] += descreen(r, r2, baseRk, descreenRi, si);
+                double descreenKI = descreen(r, r2, baseRk, descreenRi, si);
+                localBorn[k] += descreenKI;
+//                if (is_12or13) {
+//                  logger.info(format(" Descreen %d %d %16.8f", k + 1, i + 1, descreenKI));
+//                }
               }
-              if(neckCorrection && !is_12or13 && !atoms[i].isHydrogen()) {
+              if (neckCorrection && !is_12or13 && !atoms[i].isHydrogen()) {
                 // TODO: Add neck contribution to atom k being descreeened by atom i.
                /* if(neckDescreen(r,baseRk,baseRi) != 0.0) {
                   logger.info(format("Modify local Born for atom %d with neck from %d by %2.8f",
@@ -344,7 +355,7 @@ public class BornRadiiRegion extends ParallelRegion {
               if (sk > 0.0) {
                 localBorn[i] += descreen(r, r2, baseRi, descreenRk, sk);
               }
-              if(neckCorrection && !atoms[k].isHydrogen()) {
+              if (neckCorrection && !atoms[k].isHydrogen()) {
                 // TODO: Add neck contribution to atom i being descreeened by atom k.
                 localBorn[i] += neckDescreen(r, baseRi, baseRk);
               }
@@ -384,12 +395,12 @@ public class BornRadiiRegion extends ParallelRegion {
       double Bij = constants[1];
 
       logger.info(format("Aij: %2.8f Bij: %2.8f", Aij, Bij));
-      if(r > radius + radiusK + 2*radiusWater || Bij > r){
-          return 0.0;
+      if (r > radius + radiusK + 2 * radiusWater || Bij > r) {
+        return 0.0;
       }
 
       // If a neck is formed, Aij can never be zero
-      if(Aij <= 0.000000000){
+      if (Aij <= 0.000000000) {
         // Set to minimum in Aij matrix
         Aij = 0.0000161523;
       }
@@ -397,12 +408,12 @@ public class BornRadiiRegion extends ParallelRegion {
       /*logger.info(format("For atom rad. %2.3f descreened by atom rad. %2.3f, Aij: %2.8f Bij: %2.8f",
               radius,radiusK,Aij,Bij));*/
       double rMinusBij = r - Bij;
-      double radiiMinusr = radius + radiusK + 2*radiusWater - r;
+      double radiiMinusr = radius + radiusK + 2 * radiusWater - r;
       double power1 = rMinusBij * rMinusBij * rMinusBij * rMinusBij;
       double power2 = radiiMinusr * radiiMinusr * radiiMinusr * radiiMinusr;
 
       // Use Aij and Bij to get neck integral using Equation 13 from Aguilar/Onufriev 2010 paper
-      neckIntegral = Aij*power1*power2*Sneck;
+      neckIntegral = Aij * power1 * power2 * Sneck;
 
       return -neckIntegral;
     }

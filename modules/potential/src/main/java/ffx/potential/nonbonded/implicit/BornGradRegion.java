@@ -41,6 +41,7 @@ import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -78,6 +79,8 @@ public class BornGradRegion extends ParallelRegion {
   private double[][][] sXYZ;
   /** Neighbor lists for each atom and symmetry operator. */
   private int[][][] neighborLists;
+  /** Base radius of each atom. */
+  private double[] baseRadius;
   /** Descreen radius of each atom. */
   private double[] descreenRadius;
   /**
@@ -149,6 +152,7 @@ public class BornGradRegion extends ParallelRegion {
       Crystal crystal,
       double[][][] sXYZ,
       int[][][] neighborLists,
+      double[] baseRadius,
       double[] descreenRadius,
       double[] overlapScale,
       boolean[] use,
@@ -161,6 +165,7 @@ public class BornGradRegion extends ParallelRegion {
     this.crystal = crystal;
     this.sXYZ = sXYZ;
     this.neighborLists = neighborLists;
+    this.baseRadius = baseRadius;
     this.descreenRadius = descreenRadius;
     this.overlapScale = overlapScale;
     this.use = use;
@@ -227,7 +232,7 @@ public class BornGradRegion extends ParallelRegion {
             throw new EnergyException(
                 format(" %s\n Born radii CR %d %8.3f", atoms[i], i, bornGrad), true);
           }
-
+          final double baseRi = max(baseRadius[i], descreenRadius[i]);
           final double descreenRi = descreenRadius[i];
           final double xi = x[i];
           final double yi = y[i];
@@ -240,6 +245,7 @@ public class BornGradRegion extends ParallelRegion {
             if (!nativeEnvironmentApproximation && !use[k]) {
               continue;
             }
+            final double baseRk = max(baseRadius[k], descreenRadius[k]);
             final double descreenRk = descreenRadius[k];
             if (k != i) {
               dx_local[0] = xyz[0][k] - xi;
@@ -256,7 +262,7 @@ public class BornGradRegion extends ParallelRegion {
 
               // Atom i being descreeened by atom k.
               if (rbi < 50.0 && descreenRk > 0.0) {
-                double de = descreenDerivative(r, r2, descreenRi, descreenRk, overlapScale[k]);
+                double de = descreenDerivative(r, r2, baseRi, descreenRk, overlapScale[k]);
                 // TODO: Add neck contribution to atom i being descreeened by atom k.
                 if(neckCorrection) {
                   de += neckDescreenDerivative(r, descreenRi, descreenRk);
@@ -275,7 +281,7 @@ public class BornGradRegion extends ParallelRegion {
               if (rbk < 50.0 && descreenRi > 0.0) {
                 double termk = PI4_3 / (rbk * rbk * rbk);
                 termk = factor / pow(termk, (4.0 * oneThird));
-                double de = descreenDerivative(r, r2, descreenRk, descreenRi, overlapScale[i]);
+                double de = descreenDerivative(r, r2, baseRk, descreenRi, overlapScale[i]);
                 // TODO: Add neck contribution to atom k being descreeened by atom i.
                 if(neckCorrection) {
                   de += neckDescreenDerivative(r, descreenRk, descreenRi);
@@ -299,7 +305,7 @@ public class BornGradRegion extends ParallelRegion {
                 final double zr = dx_local[2];
                 final double r = sqrt(r2);
                 // Atom i being descreeened by atom k.
-                double de = descreenDerivative(r, r2, descreenRi, descreenRk, overlapScale[k]);
+                double de = descreenDerivative(r, r2, baseRi, descreenRk, overlapScale[k]);
                 // TODO: Add neck contribution to atom i being descreeened by atom k.
                 if(neckCorrection) {
                   de += neckDescreenDerivative(r, descreenRi, descreenRk);

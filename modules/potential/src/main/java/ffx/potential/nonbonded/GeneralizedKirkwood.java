@@ -1079,6 +1079,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             crystal,
             sXYZ,
             neighborLists,
+            baseRadius,
             descreenRadius,
             overlapScale,
             use,
