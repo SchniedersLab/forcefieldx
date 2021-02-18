@@ -73,16 +73,16 @@ class XYZtoQE extends PotentialScript {
   /**
    * --ec or --etot_conv_thr Convergence threshold on total energy (a.u) for ionic minimization.
    */
-  @Option(names = ['--ec', '--etot_conv_thr'], paramLabel = "1.0e-4", defaultValue = "1.0e-4",
+  @Option(names = ['--ec', '--etot_conv_thr'], paramLabel = "1.0e-6", defaultValue = "1.0e-6",
       description = 'Convergence threshold on total energy (a.u) for ionic minimization.')
-  private double etot_conv_thr = 1.0e-4
+  private double etot_conv_thr = 1.0e-6
 
   /**
    * --ef or --forc_conv_thr Convergence threshold on forces (a.u) for ionic minimization.
    */
-  @Option(names = ['--ef', '--forc_conv_thr'], paramLabel = "1.0e-3", defaultValue = "1.0e-3",
+  @Option(names = ['--ef', '--forc_conv_thr'], paramLabel = "1.0e-4", defaultValue = "1.0e-4",
       description = 'Convergence threshold on forces (a.u) for ionic minimization.')
-  private double forc_conv_thr = 1.0e-3
+  private double forc_conv_thr = 1.0e-4
 
   /**
    * --ke or --ecutwfc Kinetic energy cutoff (Ry) for wavefunctions.
@@ -108,9 +108,9 @@ class XYZtoQE extends PotentialScript {
   /**
    * --ct or --conv_thr Convergence threshold for self consistency.
    */
-  @Option(names = ['--ct', '--conv_thr'], paramLabel = "1.0e-6", defaultValue = "1.0e-6",
+  @Option(names = ['--ct', '--conv_thr'], paramLabel = "1.0e-8", defaultValue = "1.0e-8",
       description = 'Convergence threshold for self consistency.')
-  private double conv_thr = 1.0e-6
+  private double conv_thr = 1.0e-8
 
   /**
    * --mb or --mixing_beta Mixing factor for self-consistency.
@@ -118,6 +118,13 @@ class XYZtoQE extends PotentialScript {
   @Option(names = ['--mb', '--mixing_beta'], paramLabel = "0.7", defaultValue = "0.7",
       description = 'Mixing factor for self-consistency.')
   private double mixing_beta = 0.7
+
+  /**
+   * --hx or --hexagonal Perform QE caclulation on hexagonal rather than rhombohedral representation
+   */
+  @Option(names = ['--hx', '--hexagonal'], paramLabel = "true", defaultValue = "true",
+          description = 'Perform QE on hexagonal system.')
+  private boolean hexagonal = true
 
   /**
    * The final argument(s) should be one or more filenames.
@@ -191,6 +198,7 @@ class XYZtoQE extends PotentialScript {
     }
 
     BufferedWriter bwQE = new BufferedWriter(new FileWriter(modelFile))
+    // general variables controlling the run
     bwQE.write(format("&CONTROL\n" +
         "\tcalculation = 'vc-relax',\n" +
         "\trestart_mode = 'from_scratch',\n" +
@@ -199,6 +207,7 @@ class XYZtoQE extends PotentialScript {
         "\tforc_conv_thr = %6.4E,\n" +
         "\tnstep = %d,\n" +
         "/\n", removeExtension(fileName), etot_conv_thr, forc_conv_thr, nstep))
+    // structural information on the system under investigation
     bwQE.write(format("&SYSTEM\n" +
         "\tspace_group = " + crystal.spaceGroup.number + ",\n" +
         // Number of atoms
@@ -218,15 +227,22 @@ class XYZtoQE extends PotentialScript {
         // "\txdm_a1 = 0.6512,\n" +
         // "\txdm_a2 = 1.4633,\n" +
         "/\n", ecutwfc, ecutrho))
+    if(hexagonal){
+      bwQE.write("\trhombohedral = .FALSE.,\n")
+    }
+    bwQE.write("/\n")
+    // electronic variables: self-consistency, smearing
     bwQE.write(format("&ELECTRONS\n" +
         "\telectron_maxstep = %d,\n" +
         "\tconv_thr = %6.4E,\n" +
         "\tscf_must_converge = .TRUE.,\n" +
         "\tmixing_beta = %5.3f,\n" +
         "/\n", electron_maxstep, conv_thr, mixing_beta))
+    // ionic variables: relaxation, dynamics
     bwQE.write("&IONS\n" +
         "\tion_dynamics = 'bfgs',\n" +
         "/\n")
+    // variable-cell optimization or dynamics
     bwQE.write("&CELL\n" +
         "\tcell_dynamics = 'bfgs',\n" +
         "/\n")
@@ -250,9 +266,9 @@ class XYZtoQE extends PotentialScript {
     } else if (xtalA <= 8) {
       k1 = 6
     } else if (xtalA <= 12) {
-      k1 = 3
+      k1 = 4
     } else {
-      k1 = 1
+      k1 = 2
     }
 
     if (xtalB < 5) {
@@ -260,9 +276,9 @@ class XYZtoQE extends PotentialScript {
     } else if (xtalB <= 8) {
       k2 = 6
     } else if (xtalB <= 12) {
-      k2 = 3
+      k2 = 4
     } else {
-      k2 = 1
+      k2 = 2
     }
 
     if (xtalC < 5) {
@@ -270,9 +286,9 @@ class XYZtoQE extends PotentialScript {
     } else if (xtalC <= 8) {
       k3 = 6
     } else if (xtalC <= 12) {
-      k3 = 3
+      k3 = 4
     } else {
-      k3 = 1
+      k3 = 2
     }
 
     bwQE.write("K_POINTS automatic\n" + k1 + " " + k2 + " " + k3 + " 1 1 1\n")
