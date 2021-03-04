@@ -109,6 +109,21 @@ public class ReplicatesCrystal extends Crystal {
     updateReplicateOperators();
   }
 
+  /** The number of replicates along the a-axis. */
+  public int getL() {
+    return l;
+  }
+
+  /** The number of replicates along the b-axis. */
+  public int getM() {
+    return m;
+  }
+
+  /** The number of replicates along the c-axis. */
+  public int getN() {
+    return n;
+  }
+
   /**
    * Returns a ReplicatesCrystal large enough to satisfy the minimum image convention for the
    * specified unit cell and cutoff criteria. If the unit cell is already sufficiently large, then it

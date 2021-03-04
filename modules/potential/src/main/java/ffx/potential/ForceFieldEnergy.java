@@ -947,10 +947,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       improperTorsions = null;
     }
 
-    logger.info("\n Non-Bonded Terms");
-
     int[] molecule = molecularAssembly.getMoleculeNumbers();
     if (vanderWaalsTerm) {
+      logger.info("\n Non-Bonded Terms");
       if (!tornadoVM) {
         vanderWaals =
             new VanDerWaals(
