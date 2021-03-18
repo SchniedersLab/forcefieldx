@@ -1787,6 +1787,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
               }
               eik *= taper;
               final double eik_preswitch = eik;
+              // TODO: Add an explanation for the ESV Lambda Switch
               if (esvi || esvk) {
                 eik *= esvLambdaSwitch[i] * esvLambdaSwitch[k];
               }
@@ -1802,7 +1803,11 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
               final double dt2d_dr = vdwForm.dispersivePower * rhoDisp1 * irv;
               final double dt1_dr = t1 * dt1d_dr * t1d;
               final double dt2_dr = t2a * dt2d_dr * t2d;
-              final double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
+              double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
+              // TODO: Add an explanation for the ESV Lambda Switch
+              if (esvi || esvk) {
+                dedr *= esvLambdaSwitch[i] * esvLambdaSwitch[k];
+              }
               final double ir = 1.0 / r;
               final double drdx = dx_local[0] * ir;
               final double drdy = dx_local[1] * ir;
