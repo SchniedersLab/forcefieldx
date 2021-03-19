@@ -136,6 +136,7 @@ public class BARFilter {
     //one file at a time
     public boolean writeFile(String saveFile, boolean isPBC) throws IOException {
         int snaps = e1l1.length;
+        int snaps2 = e2l1.length;
         String name = givenFile.getName();
 
 
@@ -158,7 +159,7 @@ public class BARFilter {
             fileName2.append("  ").append(name);
 
             bw.write(format("%8d %9.3f  %s\n", snaps, temp, name));
-            for (int i = 0; i < snaps; i++) {
+            for (int i = 0; i < snaps2; i++) {
                 if (isPBC) {
                     bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, e2l1[i], e2l2[i], volume2[i]));
                 } else {
