@@ -176,11 +176,6 @@ class SortArc extends AlgorithmsScript {
 
             for (int i = 0; i < nWindows; i++) {
 
-                //MolecularAssembly ma =
-                        //alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
-                //topologies[j] = ma
-                //openers[j] = algorithmFunctions.getFilter()
-
                 logger.info(format(" Initializing %d topologies for each end", nTopology))
                 openers[j].setFile(arcFiles[i][j])
                 topologies[j].setFile(arcFiles[i][j])
@@ -188,6 +183,7 @@ class SortArc extends AlgorithmsScript {
 
 
                 int snapshots = openers[j].countNumModels()
+                logger.info(snapshots.toString())
 
                 for (int n = 0; n < snapshots; n++) {
                     boolean resetPosition = (n == 0) ? true : false;
