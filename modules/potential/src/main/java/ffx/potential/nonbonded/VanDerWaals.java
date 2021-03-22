@@ -2037,6 +2037,12 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                 final double dt1_dr = t1 * dt1d_dr * t1d;
                 final double dt2_dr = t2a * dt2d_dr * t2d;
                 double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
+
+                // TODO: Add an explanation for the ESV Lambda Switch
+                if (esvi || esvk) {
+                  dedr *= esvLambdaSwitch[i] * esvLambdaSwitch[k];
+                }
+
                 final double ir = 1.0 / r;
                 double drdx = dx_local[0] * ir;
                 double drdy = dx_local[1] * ir;
