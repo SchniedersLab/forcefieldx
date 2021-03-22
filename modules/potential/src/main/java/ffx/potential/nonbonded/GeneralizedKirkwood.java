@@ -71,6 +71,8 @@ import ffx.potential.nonbonded.implicit.SurfaceAreaRegion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteRadii;
+import uk.ac.manchester.tornado.api.type.annotations.Atomic;
+
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -231,6 +233,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
   private boolean neckCorrection;
   /** Base overlap scale factor. */
   private double gkOverlapScale;
+  /** If true, HCT overlap scale factors are element-specific */
+  private boolean elementHCTScale;
+  /** Element-specific HCT overlap scale factors */
+  private HashMap<String,Double> elementHCTScaleFactors;
+  private double hct_n;
+  private double hct_c;
+  private double hct_h;
+  private double hct_o;
+  private double hct_p;
+  private double hct_s;
   /** Born radius of each atom. */
   private double[] born;
   /** Flag to indicate if an atom should be included. */
@@ -346,6 +358,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     // Define default Bondi scale factor, and HCT overlap scale factors.
     bondiScale = forceField.getDouble("SOLUTE_SCALE", DEFAULT_SOLUTE_SCALE);
     gkOverlapScale = forceField.getDouble("HCT_SCALE", DEFAULT_HCT_SCALE);
+    elementHCTScale = forceField.getBoolean("ELEMENT_HCT_SCALE", false);
     descreenWithVDW = forceField.getBoolean("DESCREEN_VDW", true);
     descreenWithHydrogen = forceField.getBoolean("DESCREEN_HYDROGEN", false);
     if (descreenWithVDW && !descreenWithHydrogen) {
@@ -354,6 +367,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
       perfectHCTScale = false;
     }
     neckCorrection = forceField.getBoolean("NECK_CORRECTION",false);
+    elementHCTScaleFactors = new HashMap<>();
+    hct_n = forceField.getDouble("HCT_N",DEFAULT_HCT_SCALE);
+    hct_c = forceField.getDouble("HCT_C",DEFAULT_HCT_SCALE);
+    hct_h = forceField.getDouble("HCT_H",DEFAULT_HCT_SCALE);
+    hct_o = forceField.getDouble("HCT_O",DEFAULT_HCT_SCALE);
+    hct_p = forceField.getDouble("HCT_P",DEFAULT_HCT_SCALE);
+    hct_s = forceField.getDouble("HCT_S",DEFAULT_HCT_SCALE);
+    // Add default values for all elements
+    elementHCTScaleFactors.put("N",hct_n);
+    elementHCTScaleFactors.put("C",hct_c);
+    elementHCTScaleFactors.put("H",hct_h);
+    elementHCTScaleFactors.put("O",hct_o);
+    elementHCTScaleFactors.put("P",hct_p);
+    elementHCTScaleFactors.put("S",hct_s);
 
     // Process any radii override values.
     String radiiProp = forceField.getString("GK_RADIIOVERRIDE", null);
@@ -518,6 +545,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(format("   Descreen with Hydrogen Atoms:       %8B", descreenWithHydrogen));
     logger.info(format("   Use Neck Correction:                %8B", neckCorrection));
     logger.info(format("   GaussVol HCT Scale Factors:         %8B", perfectHCTScale));
+    logger.info(format("   Element-Specific HCT Scale Factors: %8B", elementHCTScale));
+    if(elementHCTScale){
+      logger.info(format("    HCT-H:                             %8.4f",hct_h));
+      logger.info(format("    HCT-C:                             %8.4f",hct_c));
+      logger.info(format("    HCT-N:                             %8.4f",hct_n));
+      logger.info(format("    HCT-O:                             %8.4f",hct_o));
+      logger.info(format("    HCT-P:                             %8.4f",hct_p));
+      logger.info(format("    HCT-S:                             %8.4f",hct_s));
+    }
     logger.info(format("   HCT Scale Factor:                   %8.4f",forceField.getDouble("HCT-SCALE",DEFAULT_HCT_SCALE)));
     logger.info(format("   GKC:                                %8.3f",forceField.getDouble("GKC",DEFAULT_GKC)));
     SoluteRadii.logRadiiSource(forceField);
@@ -885,6 +921,29 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
   }
 
+  public AtomicDoubleArray getSelfEnergy(){
+    // Init and execute gkEnergyRegion (?)
+
+    return gkEnergyRegion.getSelfEnergy();
+  }
+
+  /**
+   * Setter for element-specific HCT overlap scale factors
+   * @param elementHCT HashMap containing element name keys and scale factor values
+   */
+  public void setElementHCTScaleFactors(HashMap<String,Double> elementHCT){
+    for(String element : elementHCT.keySet()){
+      if(elementHCTScaleFactors.containsKey(element.toUpperCase())){
+        elementHCTScaleFactors.replace(element.toUpperCase(), elementHCT.get(element));
+      } else {
+        logger.info("No HCT scale factor set for element: "+element);
+      }
+    }
+    initAtomArrays();
+    //logger.info("Set HCT Element Scale Factors to: "+elementHCT.get("N")+" "+elementHCT.get("C")+" "+
+      //      elementHCT.get("H")+" "+elementHCT.get("O")+" "+elementHCT.get("P")+" "+elementHCT.get("S"));
+  }
+
   /**
    * Setter for the field <code>atoms</code>.
    *
@@ -1184,6 +1243,24 @@ public class GeneralizedKirkwood implements LambdaInterface {
     // Set default HCT overlap scale factor.
     for (int i = 0; i < nAtoms; i++) {
       overlapScale[i] = gkOverlapScale;
+      if(elementHCTScale){
+        // Use element specific HCT scaling factors
+        Atom atom = atoms[i];
+        String atomName = atom.getName();
+        char elementChar = (atomName.charAt(0));
+        String elementName = Character.toString(elementChar);
+        boolean notIon = true;
+        if(atomName.contains("-")||atomName.contains("+")){
+          logger.info("Ion found: "+atomName);
+          notIon = false;
+        }
+        if(elementHCTScaleFactors.get(elementName) != null && notIon) {
+          overlapScale[i] = elementHCTScaleFactors.get(elementName);
+        } else{
+          logger.info("Element-specific HCT scale factor not found for atom "+i+" of element "+atomName);
+          overlapScale[i] = gkOverlapScale;
+        }
+      }
       descreenRadius[i] = baseRadius[i];
     }
 

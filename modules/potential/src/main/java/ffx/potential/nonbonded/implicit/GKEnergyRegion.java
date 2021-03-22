@@ -103,6 +103,8 @@ public class GKEnergyRegion extends ParallelRegion {
   private final double surfaceTension;
   /** Empirical constant that controls the GK cross-term. */
   private final double gkc;
+  /** Boolean to determine when HCT scale factors are being optimized */
+  private final boolean hctOpt;
   /** Kirkwood monopole reaction field constant. */
   private final double fc;
   /** Kirkwood dipole reaction field constant. */
@@ -162,6 +164,7 @@ public class GKEnergyRegion extends ParallelRegion {
     electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
 
     gkc = forceField.getDouble("GKC", DEFAULT_GKC);
+    hctOpt = forceField.getBoolean("OPTIMIZE_HCT",false);
 
     // Set the Kirkwood multipolar reaction field constants.
     double epsilon = forceField.getDouble("GK_EPSILON", dWater);
@@ -184,6 +187,13 @@ public class GKEnergyRegion extends ParallelRegion {
 
   public double getEnergy() {
     return sharedGKEnergy.get();
+  }
+
+  public AtomicDoubleArray getSelfEnergy(){
+//    for(int i = 0; i < selfEnergy.size(); i++){
+//      logger.info("Self Energy from GK Region for atom "+i+" :   "+selfEnergy.get(i));
+//    }
+    return selfEnergy;
   }
 
   public int getInteractions() {
@@ -259,22 +269,22 @@ public class GKEnergyRegion extends ParallelRegion {
 
   @Override
   public void finish() {
-    if (logger.isLoggable(Level.FINE)) {
+    if (logger.isLoggable(Level.FINE) || hctOpt) {
       int nAtoms = atoms.length;
       selfEnergy.reduce(0, nAtoms - 1);
       crossEnergy.reduce(0, nAtoms - 1);
-      logger.info(" Generalized Kirkwood Self-Energies and Cross-Energies\n");
+      if(logger.isLoggable(Level.FINE)){logger.info(" Generalized Kirkwood Self-Energies and Cross-Energies\n");}
       double selfSum = 0.0;
       double crossSum = 0.0;
       for (int i=0; i<nAtoms; i++) {
         double self = selfEnergy.get(i);
         double cross = crossEnergy.get(i);
-        logger.info(format(" %5d %16.8f %16.8f", i, self, cross));
+        if(logger.isLoggable(Level.FINE)){logger.info(format("GKSELF   %5d %16.8f %16.8f", i, self, cross));}
         selfSum += self;
         crossSum += cross;
       }
-      logger.info(format("       %16.8f %16.8f %16.8f\n",
-          selfSum, crossSum, selfSum + crossSum));
+      if(logger.isLoggable(Level.FINE)){logger.info(format("       %16.8f %16.8f %16.8f\n",
+          selfSum, crossSum, selfSum + crossSum));}
     }
   }
 
