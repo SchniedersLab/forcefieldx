@@ -682,11 +682,11 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
    * @param currentTimePs a double.
    */
   public void propagateESVs(double temperature, double dt, double currentTimePs) {
-    if (config.forceRoomTemp) {
-      temperature = Constants.ROOM_TEMPERATURE;
-    } else {
+    //TODO: Delete config
+    //if (config.forceRoomTemp) {
+//    //} else {
       currentTemperature = temperature;
-    }
+   // }
     if (esvList == null || esvList.isEmpty()) {
       return;
     }
@@ -793,6 +793,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
   }
 
   private double getDerivative(int esvID) {
+    StringBuilder sb = new StringBuilder();
     final double temperature =
         (config.forceRoomTemp) ? Constants.ROOM_TEMPERATURE : currentTemperature;
     final boolean p = config.decomposeDeriv;
@@ -800,18 +801,18 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     double esvDeriv = 0.0;
     final String format = " %-20.20s %2.2s %9.4f";
     if (config.biasTerm) {
-      final double dBias = esv.getTotalBiasDeriv(temperature, true);
+      final double dBias = esv.getTotalBiasDeriv(temperature, false);
       if (p) {
-        sb.append(format("  Biases:", "", dBias));
+        sb.append(format("  Biases: %9.4f", dBias));
       }
       final double dDiscr = esv.getDiscrBiasDeriv();
       if (p) {
-        sb.append(format("    Discretizer:", ">", dDiscr));
+        sb.append(format("    Discretizer: %9.4f", dDiscr));
       }
       if (esv instanceof TitrationESV) {
         final double dPh = ((TitrationESV) esv).getPhBiasDeriv(temperature);
         if (p) {
-          sb.append(format("    Acidostat:", ">", dPh));
+          sb.append(format("    Acidostat: %9.4f", dPh));
         }
       }
       esvDeriv += dBias;
@@ -819,7 +820,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     if (config.vanDerWaals) {
       final double dVdw = vdw.getEsvDerivative(esvID);
       if (p) {
-        sb.append(format("  VanDerWaals:", "", dVdw));
+        sb.append(format("  VanDerWaals: %9.4f", dVdw));
       }
       esvDeriv += dVdw;
     }
@@ -827,44 +828,44 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
       final double permanent = pme.getEsvDeriv_Permanent(esvID);
       esvDeriv += permanent;
       if (p) {
-        sb.append(format("  PermanentElec:", "", permanent));
+        sb.append(format("  PermanentElec: %9.4f", permanent));
       }
       double permReal = pme.getEsvDeriv_PermReal(esvID);
       double permSelf = pme.getEsvDeriv_PermSelf(esvID);
       double permRecip = pme.getEsvDeriv_PermRecip(esvID);
       if (p) {
-        sb.append(format("    PermReal:", ">", permReal));
+        sb.append(format("    PermReal: %9.4f", permReal));
       }
       if (p) {
-        sb.append(format("    PermRcpSelf:", ">", permSelf));
+        sb.append(format("    PermRcpSelf: %9.4f", permSelf));
       }
       if (p) {
-        sb.append(format("    PermRecipMpole:", ">", permRecip));
+        sb.append(format("    PermRecipMpole: %9.4f", permRecip));
       }
       if (config.polarization) {
         final double induced = pme.getEsvDeriv_Induced(esvID);
         esvDeriv += induced;
         if (p) {
-          sb.append(format("  Polarization:", "", induced));
+          sb.append(format("  Polarization: %9.4f", induced));
         }
         double indReal = pme.getEsvDeriv_IndReal(esvID);
         double indSelf = pme.getEsvDeriv_IndSelf(esvID);
         double indRecip = pme.getEsvDeriv_IndRecip(esvID);
         if (p) {
-          sb.append(format("    IndReal:", ">", indReal));
+          sb.append(format("    IndReal: %9.4f", indReal));
         }
         if (p) {
-          sb.append(format("    IndSelf:", ">", indSelf));
+          sb.append(format("    IndSelf: %9.4f", indSelf));
         }
         if (p) {
-          sb.append(format("    IndRecip:", ">", indRecip));
+          sb.append(format("    IndRecip: %9.4f", indRecip));
         }
       }
     }
     if (config.bonded) {
       final double dBonded = esv.getBondedDeriv();
       if (p) {
-        sb.append(format("  Bonded:", "", dBonded));
+        sb.append(format("  Bonded: %9.4f", dBonded));
       }
       esvDeriv += dBonded;
       /* If desired, decompose bonded contribution into component types from foreground and background. */
@@ -876,7 +877,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
           fgSum += dub.get();
         }
         if (p) {
-          sb.append(format("    Foreground:", ">", fgSum));
+          sb.append(format("    Foreground: %9.4f", fgSum));
         }
         for (Class<? extends BondedTerm> clas : fgMap.keySet()) {
           if (p) {
@@ -895,7 +896,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
           bgSum += dub.get();
         }
         if (p) {
-          sb.append(format("    Background:", ">", bgSum));
+          sb.append(format("    Background: %9.4f", bgSum));
         }
         for (Class<? extends BondedTerm> clas : bgMap.keySet()) {
           if (p) {
@@ -944,9 +945,9 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     public final boolean forceRoomTemp = prop("esv.forceRoomTemp", false);
     public final boolean propagation = prop("esv.propagation", true);
     public final double thetaMass =
-        prop("esv.thetaMass", 1.6605e-22); // from OST, reasonably 100 a.m.u.
+        prop("esv.thetaMass", 10); // from OST, reasonably 10 a.m.u.
     public final double thetaFriction =
-        prop("esv.thetaFriction", 1.0e-12); // from OST, reasonably 60/ps
+        prop("esv.thetaFriction", 0.0); // 1.0e-12 from OST, reasonably 60/ps
 
     // Options below are untested and/or dangerous if changed.
     public final boolean cloneXyzIndices = prop("esv.cloneXyzIndices", true); // set bg_idx = fg_idx

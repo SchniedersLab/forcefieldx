@@ -105,8 +105,8 @@ public abstract class ExtendedVariable {
       new HashMap<>(); // maps multipole end points of this ESV's lambda path
   private final ExtendedSystemConfig config;
   /* Lambda and derivative variables. */
-  private double lambda = 1.0; // ESVs travel on {0,1}
-  private double theta; // Propagates lambda particle via "lambda=sin(theta)^2"
+  private double lambda = 0.0; // ESVs travel on {0,1}
+  private double theta = 0.0; // Propagates lambda particle via "lambda=sin(theta)^2"
   private double halfThetaVelocity = 0.0; // from OST, start theta with zero velocity
   private StringBuilder SB = new StringBuilder();
   /** Discretization bias and its (chain rule) derivative. */
@@ -339,27 +339,28 @@ public abstract class ExtendedVariable {
     if (!config.propagation) {
       return;
     }
-    double rt2 = 2.0 * Constants.R * setTemperature * config.thetaFriction / dt;
+    double rt2 = 2.0 * config.thetaMass * Constants.R * setTemperature * config.thetaFriction / dt;
     double randomForce = sqrt(rt2) * RNG.nextGaussian() / ExtConstants.forceToKcal;
-    logger.info(format("randomForce: %6.6f", randomForce));
+    logger.info(format("randomForce: %g", randomForce));
     double dEdL = -dEdEsv * sin(2.0 * theta);
-    logger.info(format("dEdL: %6.6f", dEdL));
+    logger.info(format("dEdL: %g", dEdL));
 
     halfThetaVelocity =
         (halfThetaVelocity * (2.0 * config.thetaMass - config.thetaFriction * dt)
                 + ExtConstants.forceToKcalSquared * 2.0 * dt * (dEdL + randomForce))
             / (2.0 * config.thetaMass + config.thetaFriction * dt);
 
-    logger.info(format("halfThetaVelocity: %6.6f", halfThetaVelocity));
-    logger.info(format("dt: %6.6f", dt));
-    logger.info(format("ThetaOld: %6.6f", theta));
+    logger.info(format("halfThetaVelocity: %g", halfThetaVelocity));
+    logger.info(format("dt: %g", dt));
+    logger.info(format("ThetaOld: %g", theta));
     theta = theta + dt * halfThetaVelocity;
-    logger.info(format("ThetaNew: %6.6f", theta));
+
     if (theta > PI) {
       theta -= 2.0 * PI;
     } else if (theta <= -PI) {
       theta += 2.0 * PI;
     }
+    logger.info(format("ThetaNew: %g", theta));
 
     double sinTheta = sin(theta);
     setLambda(sinTheta * sinTheta);

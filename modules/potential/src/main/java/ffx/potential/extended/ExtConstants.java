@@ -60,7 +60,7 @@ public class ExtConstants {
   /** Constant <code>beta=1 / Boltzmann</code> */
   public static final double beta = 1 / Constants.R;
   /** Random force conversion to kcal/mol/A; formerly randomForce. */
-  public static final double forceToKcal = sqrt(4.184) / 10e9;
+  public static final double forceToKcal = sqrt(4.184) / 1e9;
   /** Random force conversion to (kcal/mol/A)^2; formerly randomForce2. */
   public static final double forceToKcalSquared = forceToKcal * forceToKcal;
   /** Conversion from natural to base ten. */
