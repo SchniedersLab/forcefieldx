@@ -57,7 +57,8 @@ import ffx.utilities.Constants;
 public final class TitrationESV extends ExtendedVariable {
 
   private final MultiResidue titrating; // from TitrationUtils.titrationFactory()
-  private final double referenceEnergy; // deprotonation free energy of a model tripeptide
+  private final double referenceEnergy; // Model PMF coefficient A in A*(lambda-B)^2
+  private final double lambdaIntercept; // Model PMF coefficient B in A*(lambda-B)^2
   private final double constPh; // Simulation pH.
   private final double pKaModel; // Reference pKa value.
 
@@ -68,11 +69,12 @@ public final class TitrationESV extends ExtendedVariable {
    * @param multiRes a {@link ffx.potential.bonded.MultiResidue} object.
    */
   public TitrationESV(ExtendedSystem esvSystem, MultiResidue multiRes) {
-    super(esvSystem, multiRes, 0.0);
+    super(esvSystem, multiRes, 0.5);
     this.constPh = esvSystem.getConstantPh();
     this.titrating = multiRes;
     Titration titration = Titration.lookup(titrating.getActive());
     this.referenceEnergy = titration.refEnergy;
+    this.lambdaIntercept = titration.lambdaIntercept;
     this.pKaModel = titration.pKa;
   }
 
@@ -110,7 +112,8 @@ public final class TitrationESV extends ExtendedVariable {
   protected double getPhBias(double temperature) {
     double lambda = getLambda();
     double uph = ExtConstants.log10 * Constants.R * temperature * (pKaModel - constPh) * (1-lambda);
-    double umod = referenceEnergy * lambda; // TODO Find PMFs for monomers/trimers/pentapeptides.
+    double umod = -referenceEnergy * (lambda - lambdaIntercept) * (lambda - lambdaIntercept); //PMF Equation: A*(lambda-B)^2
+    // TODO Find PMFs for monomers/trimers/pentapeptides.
     return uph + umod;
   }
 
@@ -121,8 +124,9 @@ public final class TitrationESV extends ExtendedVariable {
    * @return a double.
    */
   protected double getPhBiasDeriv(double temperature) {
+    double lambda = getLambda();
     double duphdl = ExtConstants.log10 * Constants.R * temperature * (pKaModel - constPh)* -1;
-    double dumoddl = referenceEnergy;
+    double dumoddl = -2*referenceEnergy*(lambda-lambdaIntercept);
     return duphdl + dumoddl;
   }
 }

@@ -302,7 +302,7 @@ public class TitrationUtils {
     // Active Potential
     // System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
     System.setProperty("esvterm", "true");
-    System.setProperty("lambdaterm", "true");
+    //System.setProperty("lambdaterm", "true");
     // System.setProperty("bondterm", "true");
     // System.setProperty("angleterm", "true");
     // System.setProperty("strbndterm", "true");
@@ -856,25 +856,27 @@ public class TitrationUtils {
    * energy of protonation, obtained via (OST) metadynamics on capped monomers.
    */
   public enum Titration {
-    ctoC(8.18, 60.168, AminoAcid3.CYD, AminoAcid3.CYS),
-    Dtod(3.90, 53.188, AminoAcid3.ASP, AminoAcid3.ASH),
-    Etoe(4.25, 59.390, AminoAcid3.GLU, AminoAcid3.GLH),
-    ktoK(10.53, -50.440, AminoAcid3.LYD, AminoAcid3.LYS),
-    ytoY(10.07, 34.961, AminoAcid3.TYD, AminoAcid3.TYR),
-    UtoH(6.00, -42.923, AminoAcid3.HID, AminoAcid3.HIS),
-    ZtoH(6.00, 00.000, AminoAcid3.HIE, AminoAcid3.HIS),
-    TerminalNH3toNH2(8.23, 00.00, AminoAcid3.UNK, AminoAcid3.UNK),
-    TerminalCOOHtoCOO(3.55, 00.00, AminoAcid3.UNK, AminoAcid3.UNK);
+    ctoC(8.18, 60.168, 0.0, AminoAcid3.CYD, AminoAcid3.CYS),
+    Dtod(3.90, 53.188, 0.0, AminoAcid3.ASP, AminoAcid3.ASH),
+    Etoe(4.25, 59.390, 0.0, AminoAcid3.GLU, AminoAcid3.GLH),
+    ktoK(10.53, -53.390,0.073697, AminoAcid3.LYD, AminoAcid3.LYS),
+    ytoY(10.07, 34.961, 0.0, AminoAcid3.TYD, AminoAcid3.TYR),
+    UtoH(6.00, -42.923, 0.0, AminoAcid3.HID, AminoAcid3.HIS),
+    ZtoH(6.00, 00.000, 0.0, AminoAcid3.HIE, AminoAcid3.HIS),
+    TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcid3.UNK, AminoAcid3.UNK),
+    TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcid3.UNK, AminoAcid3.UNK);
 
     public final double pKa;
     public final double refEnergy;
+    public final double lambdaIntercept;
     public final AminoAcid3 protForm;
     public final AminoAcid3 deprotForm;
 
     /** Invoked by Enum; use the factory method to obtain instances. */
-    private Titration(double pKa, double refEnergy, AminoAcid3 deprotForm, AminoAcid3 protForm) {
+    private Titration(double pKa, double refEnergy, double lambdaIntercept, AminoAcid3 deprotForm, AminoAcid3 protForm) {
       this.pKa = pKa;
       this.refEnergy = refEnergy;
+      this.lambdaIntercept = lambdaIntercept;
       this.deprotForm = deprotForm;
       this.protForm = protForm;
     }
