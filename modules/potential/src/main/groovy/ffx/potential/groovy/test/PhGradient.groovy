@@ -86,6 +86,13 @@ class PhGradient extends PotentialScript {
   double pH = 7.4
 
   /**
+   * --esvLambda ESV Lambda at which to test gradient.
+   */
+  @CommandLine.Option(names = ['--esvLambda'], paramLabel = '0.5',
+          description = 'ESV Lambda at which to test gradient.')
+  double esvLambda = 0.5
+
+  /**
    * The final argument(s) should be one or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
@@ -156,7 +163,13 @@ class PhGradient extends PotentialScript {
       esvSystem.addVariable(esv)
     }
     energy.attachExtendedSystem(esvSystem)
-    logger.info(format(" Extended system with %d residues.", titratingESVs.size()));
+    logger.info(format(" Extended system with %d residues.", titratingESVs.size()))
+
+    // Set all ESV variables to 0.5
+    int numESVs = titratingESVs.size()
+    for (int i=0; i<numESVs; i++) {
+      esvSystem.setLambda(i, esvLambda)
+    }
 
     Atom[] atoms = activeAssembly.getAtomArray()
     int nAtoms = atoms.length
@@ -313,23 +326,44 @@ class PhGradient extends PotentialScript {
     }
 
     // Set all ESV variables to 0.5
-    int numESVs = titratingESVs.size()
+    //int numESVs = titratingESVs.size()
     for (int i=0; i<numESVs; i++) {
-      esvSystem.setLambda(i, 0.5)
+      esvSystem.setLambda(i, esvLambda)
     }
 
     energy.getCoordinates(x)
-    double e = energy.energyAndGradient(x, g)
+    energy.energyAndGradient(x, g)
+    double eMinus = 0
+    double ePlus = 0
     double[] esvDerivs = esvSystem.derivatives
 
     // Check the dU/dL_i analytic results vs. finite-differences for extended system variables.
     // Loop over extended system variables
     for (int i=0; i<numESVs; i++) {
-      esvSystem.setLambda(i, 0.5 + step)
-      double ePlus = energy.energy(x)
-      esvSystem.setLambda(i, 0.5 - step)
-      double eMinus = energy.energy(x)
-      esvSystem.setLambda(i, 0.5)
+      //Calculate backward finite difference if very close to lambda=1
+      if(esvLambda + step > 1){
+        esvSystem.setLambda(i, esvLambda - 2 * step)
+        eMinus = energy.energy(x)
+        esvSystem.setLambda(i, esvLambda)
+        ePlus = energy.energy(x)
+      }
+
+      //Calculate forward finite difference if very close to lambda=0
+      else if(esvLambda - step < 0){
+        esvSystem.setLambda(i, esvLambda + 2 * step)
+        ePlus = energy.energy(x)
+        esvSystem.setLambda(i, esvLambda)
+        eMinus = energy.energy(x)
+      }
+
+      //Calculate central finite difference
+      else {
+        esvSystem.setLambda(i, esvLambda + step)
+        ePlus = energy.energy(x)
+        esvSystem.setLambda(i, esvLambda - step)
+        eMinus = energy.energy(x)
+        esvSystem.setLambda(i, esvLambda)
+        }
 
       double fdDeriv = (ePlus - eMinus) / width
       double error = abs(fdDeriv - esvDerivs[i])
