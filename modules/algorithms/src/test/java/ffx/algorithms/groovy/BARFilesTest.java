@@ -7,7 +7,7 @@ import org.junit.Test;
 public class BARFilesTest extends AlgorithmsTest {
 
 
-    /** Tests BAR script with nw input. */
+    /** Tests BAR script with tinker bar files input. */
     @Test
     public void testBARFiles() {
         if (!ffxOpenMM) {

@@ -16,6 +16,12 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Logger;
+/**
+ * The BARFilter class parses TINKER bar(*.BAR) files.
+ *
+ * @author Rose A. Gogal
+ * @since 1.0
+ */
 
 public class BARFilter {
 
@@ -34,12 +40,25 @@ public class BARFilter {
     private double temp;
 
 
-    //pass in four 1 dimensional arrays
+    /**
+     * BARFilter constructor
+     * @param barFile a {@link java.util.List} object.
+     */
     public BARFilter(File barFile) {
         this.givenFile = barFile;
     }
 
-
+    /**
+     * BARFilter constructor
+     * @param xyzFile a {@link java.util.List} object.
+     * @param e1l1 energy in ensemble 1 at lambda 1
+     * @param e1l2 energy in ensemble 1 at lambda 2
+     * @param e2l1 energy in ensemble 2 at lambda 1
+     * @param e2l2 energy in ensemble 2 at lambda 2
+     * @param volume1 volume in ensemble 1
+     * @param volume2 volume in ensemble 2
+     * @param temp temperature
+     */
     public BARFilter(File xyzFile,
                      double[] e1l1, double[] e1l2,
                      double[] e2l1,
@@ -57,10 +76,10 @@ public class BARFilter {
 
     }
 
-    public void closeReader() {
-
-    }
-
+    /**
+     * Read TINKER bar files and parse the snapshots into energy arrays
+     * @return
+     */
     public boolean readFile() {
         ArrayList<Double> ens1lam1 = new ArrayList<Double>();
         ArrayList<Double> ens1lam2 = new ArrayList<Double>();
@@ -83,6 +102,7 @@ public class BARFilter {
                     if (tokens.length == 4) {
                         vol1.add(Double.parseDouble(tokens[3]));
                     }
+
                     ens1lam1.add(Double.parseDouble(tokens[1]));
                     ens1lam2.add(Double.parseDouble(tokens[2]));
                 } else if (count > snaps + 2) {
@@ -133,7 +153,13 @@ public class BARFilter {
     }
 
 
-    //one file at a time
+    /**
+     * Write TINKER bar files
+     * @param saveFile filename
+     * @param isPBC include volume
+     * @return
+     * @throws IOException
+     */
     public boolean writeFile(String saveFile, boolean isPBC) throws IOException {
         int snaps = e1l1.length;
         int snaps2 = e2l1.length;
