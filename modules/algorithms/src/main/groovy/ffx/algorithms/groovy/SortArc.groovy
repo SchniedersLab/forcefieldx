@@ -19,6 +19,15 @@ import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
 
+/**
+ * The SortArc script sort Monte Carlo archive files by lambda value. It presently assumes
+ * that the number of files composing the first end of the window equals the number of files
+ * composing the other end.
+ * <br>
+ * Usage:
+ * <br>
+ * ffxc SortArc [options] &lt;structures1&gt &lt;structures2&gt;
+ */
 
 @Command(description = " Unwind .ARC files for nWindows", name = "ffxc SortArc")
 class SortArc extends AlgorithmsScript {
@@ -47,7 +56,6 @@ class SortArc extends AlgorithmsScript {
     private Configuration additionalProperties
     private List<String> windowFiles = new ArrayList<>()
     MolecularAssembly[] topologies
-    CrystalPotential potential
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
 

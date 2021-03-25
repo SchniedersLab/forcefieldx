@@ -356,8 +356,8 @@ class BAR extends AlgorithmsScript {
 
 
                 } else if (w == nWindows - 1) {
-                    energyLow[w] = barOpeners[w].getE1l2()
-                    energyAt[w] = barOpeners[w].getE1l1()
+                    energyLow[w] = barOpeners[w].getE1l1()
+                    energyAt[w] = barOpeners[w].getE1l2()
                     energyHigh[w] = new double[barOpeners[w].getSnaps()]
 
 
@@ -419,7 +419,7 @@ class BAR extends AlgorithmsScript {
                 if (w == 0) {
                     barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1], energyAt[w + 1], volume[w], volume[w + 1], temp1)
                 } else if (w == nWindows - 1) {
-                    barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyLow[w], energyHigh[w - 1], energyAt[w - 1], volume[w], volume[w - 1], temp1)
+                    barWriters[w] = new BARFilter(xyzFile,energyLow[w], energyAt[w], energyAt[w - 1] , energyHigh[w - 1], volume[w], volume[w - 1], temp1)
                 } else {
                     barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1], energyAt[w + 1], volume[w], volume[w + 1], temp1)
                 }
