@@ -201,7 +201,7 @@ public class PhGradientTest extends PotentialTest{
                                 -28.28571436,
                                 6105,
                                 0.00000000,
-                                -6.71209530
+                                -6.42212098
                         },
                         {
                                 "DEHK peptide",
@@ -232,7 +232,7 @@ public class PhGradientTest extends PotentialTest{
                                 -15.15183374,
                                 6105,
                                 0.00000000,
-                                51.25076924
+                                -54.83525644
                         },
                         {
                                 "DEHK peptide",
@@ -263,7 +263,7 @@ public class PhGradientTest extends PotentialTest{
                                 -18.69501522,
                                 6105,
                                 0.00000000,
-                                56.97528279
+                                -61.51474289
                         },
                         {
                                 "DEHK peptide",
@@ -294,7 +294,7 @@ public class PhGradientTest extends PotentialTest{
                                 -8.39983635,
                                 6105,
                                 0.00000000,
-                                114.93814733
+                                -109.92787835
                         },
                         {
                                 "DEHK peptide",
@@ -325,7 +325,7 @@ public class PhGradientTest extends PotentialTest{
                                 -32.83203586,
                                 6105,
                                 0.00000000,
-                                -47.72514949
+                                38.41082483
                         },
                         {
                                 "DEHK peptide",
@@ -356,7 +356,7 @@ public class PhGradientTest extends PotentialTest{
                                 -18.75451109,
                                 6105,
                                 0.00000000,
-                                10.23771506
+                                -10.00231062
                         },
                         {
                                 "DEHK peptide",
@@ -387,7 +387,7 @@ public class PhGradientTest extends PotentialTest{
                                 -25.32650991,
                                 6105,
                                 0.00000000,
-                                15.96222861
+                                -16.68179707
                         },
                         {
                                 "DEHK peptide",
@@ -418,7 +418,7 @@ public class PhGradientTest extends PotentialTest{
                                 -14.14018274,
                                 6105,
                                 0.00000000,
-                                73.92509315
+                                -65.09493253
                         },
                         {
                                 "DEHK peptide",
@@ -449,7 +449,7 @@ public class PhGradientTest extends PotentialTest{
                                 -36.13604092,
                                 6105,
                                 0.00000000,
-                                -61.42218845
+                                34.82842021
                         },
                         {
                                 "DEHK peptide",
@@ -480,7 +480,7 @@ public class PhGradientTest extends PotentialTest{
                                 -21.93473964,
                                 6105,
                                 0.00000000,
-                                -3.45932391
+                                -13.58471525
                         },
                         {
                                 "DEHK peptide",
@@ -511,7 +511,7 @@ public class PhGradientTest extends PotentialTest{
                                 -25.85245332,
                                 6105,
                                 0.00000000,
-                                2.26518964
+                                -20.26420170
                         },
                         {
                                 "DEHK peptide",
@@ -542,7 +542,7 @@ public class PhGradientTest extends PotentialTest{
                                 -14.50012773,
                                 6105,
                                 0.00000000,
-                                60.22805418
+                                -68.67733716
                         },
                         {
                                 "DEHK peptide",
@@ -573,7 +573,7 @@ public class PhGradientTest extends PotentialTest{
                                 -42.20880342,
                                 6105,
                                 0.00000000,
-                                -102.43524264
+                                79.66136602
                         },
                         {
                                 "DEHK peptide",
@@ -604,7 +604,7 @@ public class PhGradientTest extends PotentialTest{
                                 -27.00713890,
                                 6105,
                                 0.00000000,
-                                -44.47237809
+                                31.24823057
                         },
                         {
                                 "DEHK peptide",
@@ -635,7 +635,7 @@ public class PhGradientTest extends PotentialTest{
                                 -33.89597126,
                                 6105,
                                 0.00000000,
-                                -38.74786455
+                                24.56874411
                         },
                         {
                                 "DEHK peptide",
@@ -666,7 +666,7 @@ public class PhGradientTest extends PotentialTest{
                                 -21.59591450,
                                 6105,
                                 0.00000000,
-                                19.21500000
+                                -23.84439134
                         }
 
                 });

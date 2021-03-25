@@ -107,6 +107,8 @@ public abstract class ExtendedVariable {
   /* Lambda and derivative variables. */
   private double lambda = 0.0; // ESVs travel on {0,1}
   private double theta = 0.0; // Propagates lambda particle via "lambda=sin(theta)^2"
+  private double theta_velocity = 0.0;
+  private double theta_accel = 0.0;
   private double halfThetaVelocity = 0.0; // from OST, start theta with zero velocity
   private StringBuilder SB = new StringBuilder();
   /** Discretization bias and its (chain rule) derivative. */
@@ -335,7 +337,10 @@ public abstract class ExtendedVariable {
    * @param dt a double.
    * @param setTemperature a double.
    */
-  protected void propagate(double dEdEsv, double dt, double setTemperature) {
+  protected void propagate(double dEdEsv, double dt, double setTemperature){
+
+  }
+ /* protected void propagate(double dEdEsv, double dt, double setTemperature) {
     if (!config.propagation) {
       return;
     }
@@ -364,7 +369,7 @@ public abstract class ExtendedVariable {
 
     double sinTheta = sin(theta);
     setLambda(sinTheta * sinTheta);
-  }
+  }*/
 
   private void setLambda(double lambda, boolean updateComponents) {
     this.lambda = lambda;
