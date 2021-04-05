@@ -40,6 +40,7 @@ package ffx.potential.extended;
 import static ffx.potential.extended.ExtConstants.RNG;
 import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
 import static ffx.potential.parameters.MultipoleType.zeroM;
+import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.sin;
@@ -63,6 +64,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.Random;
 
 /**
  * A generalized extended system variable. Treatment of ESVs: a. Bonded terms interpolate linearly
@@ -109,7 +111,6 @@ public abstract class ExtendedVariable {
   private double theta = 0.0; // Propagates lambda particle via "lambda=sin(theta)^2"
   private double theta_velocity = 0.0;
   private double theta_accel = 0.0;
-  private double halfThetaVelocity = 0.0; // from OST, start theta with zero velocity
   private StringBuilder SB = new StringBuilder();
   /** Discretization bias and its (chain rule) derivative. */
   private double discrBias, dDiscrBiasdL;
@@ -328,54 +329,26 @@ public abstract class ExtendedVariable {
    */
   protected abstract double getTotalBiasDeriv(double temperature, boolean print);
 
-  /**
-   * Propagate lambda using Langevin dynamics. Check that temperature goes to the value used below
-   * (when set as a constant), even when sim is decoupled. Be sure it call setLambda() rather than
-   * using direct access for array resizing, etc.
-   *
-   * @param dEdEsv a double.
-   * @param dt a double.
-   * @param setTemperature a double.
-   */
-  protected void propagate(double dEdEsv, double dt, double setTemperature){
-
+  private void setInitialLambda(double lambda){
+    setTheta(Math.asin(Math.sqrt(lambda)));
+    Random random = new Random();
+    setTheta_velocity(random.nextGaussian() * sqrt(kB * 298.15 / config.thetaMass));
+    updateLambda(lambda,false);
+    logger.info(format("ESV: %d Initial Theta: %g, Initial Theta_v: %g, Initial Theta_a: %g",
+            getEsvIndex(),getTheta(),getTheta_velocity(),getTheta_accel()));
   }
- /* protected void propagate(double dEdEsv, double dt, double setTemperature) {
-    if (!config.propagation) {
-      return;
-    }
-    double rt2 = 2.0 * config.thetaMass * Constants.R * setTemperature * config.thetaFriction / dt;
-    double randomForce = sqrt(rt2) * RNG.nextGaussian() / ExtConstants.forceToKcal;
-    logger.info(format("randomForce: %g", randomForce));
-    double dEdL = -dEdEsv * sin(2.0 * theta);
-    logger.info(format("dEdL: %g", dEdL));
 
-    halfThetaVelocity =
-        (halfThetaVelocity * (2.0 * config.thetaMass - config.thetaFriction * dt)
-                + ExtConstants.forceToKcalSquared * 2.0 * dt * (dEdL + randomForce))
-            / (2.0 * config.thetaMass + config.thetaFriction * dt);
-
-    logger.info(format("halfThetaVelocity: %g", halfThetaVelocity));
-    logger.info(format("dt: %g", dt));
-    logger.info(format("ThetaOld: %g", theta));
-    theta = theta + dt * halfThetaVelocity;
-
-    if (theta > PI) {
-      theta -= 2.0 * PI;
-    } else if (theta <= -PI) {
-      theta += 2.0 * PI;
-    }
-    logger.info(format("ThetaNew: %g", theta));
-
-    double sinTheta = sin(theta);
-    setLambda(sinTheta * sinTheta);
-  }*/
-
+  //Used when a manual setting of lambda is needed; not during Langevin dynamics
   private void setLambda(double lambda, boolean updateComponents) {
+    setTheta(Math.asin(Math.sqrt(lambda)));
+    updateLambda(lambda, updateComponents);
+  }
+
+  //Used to update lambda during dynamics, does not update theta value
+  protected void updateLambda(double lambda, boolean updateComponents){
     this.lambda = lambda;
     this.lSwitch = (config.allowLambdaSwitch) ? switchingFunction.taper(lambda) : lambda;
     this.dlSwitch = (config.allowLambdaSwitch) ? switchingFunction.dtaper(lambda) : 1.0;
-    theta = Math.asin(Math.sqrt(lambda));
     discrBias = discrBiasMag - 4 * discrBiasMag * (lambda - 0.5) * (lambda - 0.5);
     dDiscrBiasdL = -8 * discrBiasMag * (lambda - 0.5);
     if (updateComponents) {
@@ -384,9 +357,25 @@ public abstract class ExtendedVariable {
     }
   }
 
-  private void setInitialLambda(double lambda) {
-    setLambda(lambda, false);
+  protected void setTheta(double theta){
+    this.theta = theta;
   }
+
+  protected double getTheta(){
+    return theta;
+  }
+
+  protected void setTheta_velocity(double theta_velocity){
+    this.theta_velocity = theta_velocity;
+  }
+
+  protected double getTheta_velocity(){
+    return theta_velocity;
+  }
+
+  protected void setTheta_accel(double theta_accel){this.theta_accel = theta_accel;}
+
+  protected double getTheta_accel(){return theta_accel;}
 
   /** Invoked by ExtendedSystem after lambda changes and by PME after multipole rotation. */
   protected final void updateMultipoleTypes() {

@@ -39,7 +39,9 @@ package ffx.potential.extended;
 
 import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
+import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.Potential;
@@ -54,15 +56,11 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.ForceField;
+import static org.apache.commons.math3.util.FastMath.sin;
 import ffx.utilities.Constants;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -122,10 +120,13 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
   private int[] fg2bgIdx;
   // ESV variables
   private Double constantSystemPh;
+
+
   private int numESVs;
   private List<ExtendedVariable> esvList;
   private boolean vdwTerm, mpoleTerm;
   private Double currentTemperature;
+  public double[] theta, theta_velocity, theta_accel, theta_mass;
   /**
    * Construct extended system with a default configuration and/or system properties.
    *
@@ -242,6 +243,38 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     }
 
     updateListeners();
+  }
+
+  public void createMDThetaArrays(){
+    theta = new double[numESVs];
+    theta_velocity = new double[numESVs];
+    theta_accel = new double[numESVs];
+    theta_mass = new double[numESVs];
+    Arrays.fill(theta_mass, config.thetaMass);
+    collectThetaValues();
+  }
+
+  /**
+   * Iterate over all Extended Variables in Extended System and collect thetas, velocities, and accelerations into arrays.
+   *
+   */
+  private void collectThetaValues(){
+    for (ExtendedVariable esv : esvList) {
+      theta[esv.getEsvIndex()] = esv.getTheta();
+      theta_velocity[esv.getEsvIndex()] = esv.getTheta_velocity();
+      theta_accel[esv.getEsvIndex()] = esv.getTheta_accel();
+    }
+  }
+
+  /**
+   * Send all theta information stored in Extended System arrays back to respective Extended Variables.
+   */
+  public void setThetaValues(){
+    for (ExtendedVariable esv : esvList) {
+      esv.setTheta(theta[esv.getEsvIndex()]);
+      esv.setTheta_velocity(theta_velocity[esv.getEsvIndex()]);
+      esv.setTheta_accel(theta_accel[esv.getEsvIndex()]);
+    }
   }
 
   /**
@@ -545,6 +578,14 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
   }
 
   /**
+   * getNumESVs
+   * @return a int num of ESVs
+   */
+  public int getNumESVs() {
+    return numESVs;
+  }
+
+  /**
    * getSwitchDeriv.
    *
    * @param i a int.
@@ -673,43 +714,27 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     populate(tokens);
   }
 
-  /**
-   * Update the position of all ESV particles via langevin dynamics. Temperature controls
-   * propagation speed and also affects (pH-) bias energy.
-   *
-   * @param temperature a double.
-   * @param dt a double.
-   * @param currentTimePs a double.
-   */
-  public void propagateESVs(double temperature, double dt, double currentTimePs) {
-    //TODO: Delete config
-    //if (config.forceRoomTemp) {
-//    //} else {
-      currentTemperature = temperature;
-   // }
-    if (esvList == null || esvList.isEmpty()) {
-      return;
-    }
-    double[] dedl = ExtendedSystem.this.getDerivatives();
+
+  public void preForce(){
     for (ExtendedVariable esv : esvList) {
+      double sinTheta = sin(theta[esv.getEsvIndex()]);
       double oldLambda = esv.getLambda();
-      esv.propagate(dedl[esv.esvIndex], dt, temperature);
+      esv.updateLambda(sinTheta*sinTheta,true);
       double newLambda = esv.getLambda();
-      //TODO: Adjust lambda logging level
-      //if (logger.isLoggable(Level.FINEST)) {
-        //logger.log(
-            //Level.FINEST,
-            logger.info(format(
-                " Propagating ESV[%d]: %g --> %g @ psec,temp,bias: %g %g %.2f",
-                esv.esvIndex,
-                oldLambda,
-                newLambda,
-                currentTimePs,
-                temperature,
-                esv.getTotalBias(temperature, false)));
-      //}
+      logger.info(format(
+              " Propagating ESV[%d]: %g --> %g ",
+              esv.esvIndex,
+              oldLambda,
+              newLambda));
     }
-    updateListeners();
+  }
+
+  public double[] postForce(){
+    double[] dEdL = ExtendedSystem.this.getDerivatives();
+    for(int i = 0; i < numESVs; i++){
+      dEdL[i] = dEdL[i] * sin(2*theta[i]);
+    }
+    return dEdL;
   }
 
   /**
