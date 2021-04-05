@@ -218,6 +218,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
   private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
   /** ESV System. */
   private ExtendedSystem esvSystem;
+  /** ESV Stochastic integrator. */
+  private Stochastic esvIntegrator;
+  /** ESV Adiabatic thermostat. */
+  private Adiabatic esvThermostat;
   /** Frequency to print ESV info. */
   private int printEsvFrequency = -1;
   /** If asked to perform dynamics with a null dynamics file, write here. */
@@ -590,6 +594,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
       logger.warning("An ExtendedSystem is already attached to this MD!");
     }
     esvSystem = system;
+    esvSystem.createMDThetaArrays();
+    this.esvIntegrator = new Stochastic(0.0, esvSystem.getNumESVs(),esvSystem.theta,
+            esvSystem.theta_velocity, esvSystem.theta_accel, esvSystem.theta_mass);
+    this.esvThermostat = new Adiabatic(esvSystem.getNumESVs(),esvSystem.theta, esvSystem.theta_velocity, esvSystem.theta_mass, potential.getVariableTypes());
     printEsvFrequency = printFrequency;
     logger.info(
         format(" Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
@@ -1569,6 +1577,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
       // Do the half-step integration operation.
       integrator.preForce(potential);
+      if (esvSystem != null) {
+        esvIntegrator.preForce(potential);
+        esvSystem.preForce();
+      }
 
       // Compute the potential energy and gradients.
       double priorPE = currentPotentialEnergy;
@@ -1590,9 +1602,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
       // Do the full-step integration operation.
       integrator.postForce(gradient);
+      if (esvSystem != null) {
+        double[] dEdL = esvSystem.postForce();
+        esvIntegrator.postForce(dEdL);
+
+      }
 
       // Compute the full-step kinetic energy.
       thermostat.computeKineticEnergy();
+      if (esvSystem != null) {
+        esvThermostat.computeKineticEnergy();
+      }
 
       // Do the full-step thermostat operation.
       thermostat.fullStep(dt);
@@ -1608,6 +1628,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
       // Collect current kinetic energy, temperature, and total energy.
       currentKineticEnergy = thermostat.getKineticEnergy();
+      if (esvSystem != null) {
+        currentKineticEnergy += esvThermostat.getKineticEnergy();
+      }
       currentTemperature = thermostat.getCurrentTemperature();
       currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
 
@@ -1618,7 +1641,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
       // Update extended system variables if present.
       if (esvSystem != null) {
-        esvSystem.propagateESVs(currentTemperature, dt, step * dt);
+        esvSystem.setThetaValues();
       }
 
       // Log the current state every printFrequency steps.
