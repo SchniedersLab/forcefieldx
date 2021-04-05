@@ -39,12 +39,8 @@ package ffx.algorithms.groovy.test
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.dynamics.MolecularDynamics
-
 import ffx.numerics.Potential
-import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
@@ -52,23 +48,16 @@ import ffx.potential.extended.ExtendedVariable
 import ffx.potential.extended.TitrationESV
 import ffx.potential.extended.TitrationUtils
 import ffx.algorithms.dynamics.integrators.Stochastic
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
-import java.util.logging.Level
-import java.util.stream.IntStream
-
 import static ffx.potential.extended.TitrationUtils.inactivateResidue
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2
 import static ffx.utilities.Constants.kB
 import static java.lang.String.format
-import static org.apache.commons.math3.util.FastMath.PI
 import static org.apache.commons.math3.util.FastMath.sin
 import static org.apache.commons.math3.util.FastMath.sqrt
-import java.util.Random
 
 /**
  * The Dynamics script implements molecular and stochastic dynamics algorithms.
@@ -205,7 +194,7 @@ class ProtonMDDriver extends AlgorithmsScript {
     double[] x = new double[potential.getNumberOfVariables()]
     double[] g = new double[potential.getNumberOfVariables()]
     potential.getCoordinates(x)
-    double intiialEnergy = potential.energyAndGradient(x, g, true)
+    double initialEnergy = potential.energyAndGradient(x, g, true)
 
     //Initialize acceleration based on gradient in radians/psec^2
     double[] esvDerivs = esvSystem.derivatives
