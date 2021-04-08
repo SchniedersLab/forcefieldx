@@ -88,8 +88,8 @@ class BAR extends AlgorithmsScript {
             description = "Lambda value for the upper edge of the window")
     private double lambda2 = 1.0
 
-    @Option(names = ["--t1", "--temperature1"], paramLabel = "298.15",
-            description = "Temperature for system 1")
+    @Option(names = ["--t", "--temperature"], paramLabel = "298.15",
+            description = "Temperature for system")
     private double temp1 = 298.15
 
     @Option(names = ["--t2", "--temperature2"], paramLabel = "298.15",
@@ -123,6 +123,14 @@ class BAR extends AlgorithmsScript {
     @Option(names = ["--sa", "--sortedArc"], paramLabel = "false",
             description = "If set, use sorted archive values.")
     private boolean sortedArc = false
+
+    @Option(names = ["--ss", "--startSnapshot"], paramLabel = "0",
+            description = "Start at this snapshot when reading in tinker BAR files.")
+    private int startingSnapshot = 0
+
+    @Option(names = ["--es", "--endSnapshot"], paramLabel = "0",
+            description = "End at this snapshot when reading in tinker BAR files.")
+    private int endingSnapshot = 0
 
     /**
      * The final argument(s) should be filenames for lambda windows in order..
@@ -266,241 +274,55 @@ class BAR extends AlgorithmsScript {
             }
         }
 
+        if (filenames.get(0).contains(".bar")) {
+            File barFile = new File(directoryPath + File.separator + filenames.get(0))
+            BARFilter barOpener = new BARFilter(barFile, startingSnapshot, endingSnapshot)
+            barOpener.readFile()
+            int snapshots = barOpener.getSnaps()
+            double[] currentLambdas = new double[2]
+            double[][] energyLow = new double[2]
+            double[][] energyAt = new double[2]
+            double[][] energyHigh = new double[2]
+            double[][] volume = new double[2]
+            double[] energy
+            double[] energyMean = new double[2]
+            double[] energySD = new double[2]
+            double[] energyVar = new double[2]
 
-        topologies = new MolecularAssembly[nFiles]
-        openers = new SystemFilter[nFiles]
+            int ensembleNum = Integer.parseInt(filenames.get(0).replaceAll("[^0-9]", ""));
 
-        int numParallel = topology.getNumParallel(threadsAvail, nFiles)
-        threadsPer = (int) (threadsAvail / numParallel)
-
-        // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
-        /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
-    The Minimize script, for example, may be running on a single, unscaled physical topology. */
-        boolean lambdaTerm = (nFiles == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
-
-        if (lambdaTerm) {
-            System.setProperty("lambdaterm", "true")
-        }
-
-        // Relative free energies via the DualTopologyEnergy class require different
-        // default OST parameters than absolute free energies.
-        if (nFiles >= 2) {
-            // Ligand vapor electrostatics are not calculated. This cancels when the
-            // difference between protein and water environments is considered.
-            System.setProperty("ligand-vapor-elec", "false")
-        }
-
-        logger.info(format(" Initializing %d topologies for each end", nFiles))
-        for (int i = 0; i < nFiles; i++) {
-            MolecularAssembly ma =
-                    alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[i], i)
-
-            topologies[i] = ma
-            openers[i] = algorithmFunctions.getFilter()
-        }
-
-        StringBuilder sb = new StringBuilder(format(
-                "\n Using BAR to analyze a free energy change for %s\n ", filenames))
-        potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
-        Crystal unitCell = potential.getCrystal().getUnitCell()
-
-        boolean isPBC = includeVolume && !unitCell.aperiodic()
-        isPBC = isPBC && !unitCell.aperiodic()
-
-        int nSymm = 0
-        if (isPBC) {
-            nSymm = unitCell.getNumSymOps()
-        }
-
-
-        double[] currentLambdas
-        double[][] energyLow = new double[nWindows]
-        double[][] energyAt = new double[nWindows]
-        double[][] energyHigh = new double[nWindows]
-        double[][] volume = new double[nWindows]
-        double[][] energy
-        double[] energyMean = new double[nWindows]
-        double[] energySD = new double[nWindows]
-        double[] energyVar = new double[nWindows]
-
-
-        double[] temperature = new double[nWindows]
-        Arrays.fill(temperature, temp1)
-
-        for (int w = 0; w < nWindows; w++) {
-
-            if (w == 0) {
-                currentLambdas = new double[2]
-                currentLambdas[0] = lambdaValues[w]
-                currentLambdas[1] = lambdaValues[w + 1]
-            } else if (w == nWindows - 1) {
-                currentLambdas = new double[2]
-                currentLambdas[0] = lambdaValues[w - 1]
-                currentLambdas[1] = lambdaValues[w]
+           if (ensembleNum == nWindows - 1) {
+               energyLow[0] = new double[snapshots]
+               energyAt[0] = barOpener.getE2l1()
+               energyHigh[0] = barOpener.getE2l2()
+               energyLow[1] = barOpener.getE1l1()
+               energyAt[1] = barOpener.getE1l2()
+               energyHigh[1] = new double[snapshots]
+                currentLambdas[0] = lambdaValues[ensembleNum - 1]
+                currentLambdas[1] = lambdaValues[ensembleNum]
             } else {
-                currentLambdas = new double[3]
-                currentLambdas[0] = lambdaValues[w - 1]
-                currentLambdas[1] = lambdaValues[w]
-                currentLambdas[2] = lambdaValues[w + 1]
-            }
-            energy = new double[currentLambdas.length][]
-
-            if (useTinkerBAR) {
-                File barFile = new File(fullFilePaths[w][0])
-                barOpeners[w] = new BARFilter(barFile)
-                barOpeners[w].readFile()
-                if (w == 0) {
-                    energyLow[w] = new double[barOpeners[w].getSnaps()]
-                    energyAt[w] = barOpeners[w].getE1l1()
-                    energyHigh[w] = barOpeners[w].getE1l2()
-
-
-                } else if (w == nWindows - 1) {
-                    energyLow[w] = barOpeners[w].getE1l1()
-                    energyAt[w] = barOpeners[w].getE1l2()
-                    energyHigh[w] = new double[barOpeners[w].getSnaps()]
-
-
-                } else if (w > 0 && w < nWindows - 1) {
-                    energyLow[w] = barOpeners[w - 1].getE2l1()
-                    energyAt[w] = barOpeners[w].getE1l1()
-                    energyHigh[w] = barOpeners[w].getE1l2()
-                }
-
-                if (isPBC) {
-                    volume[w] = barOpeners[w].getVolume1()
-                }
-
-            } else {
-                volume[w] = getEnergyForLambdas(topologies, currentLambdas,
-                        fullFilePaths[w], energy, isPBC, nSymm)
-
-                if (w == 0) {
-                    energyLow[w] = new double[energy[0].length]
-                    energyAt[w] = energy[0]
-                    energyHigh[w] = energy[1]
-
-                } else if (w == nWindows - 1) {
-                    energyLow[w] = energy[0]
-                    energyAt[w] = energy[1]
-                    energyHigh[w] = new double[energy[0].length]
-
-
-                } else if (w > 0 && w < nWindows - 1) {
-                    energyLow[w] = energy[0]
-                    energyAt[w] = energy[1]
-                    energyHigh[w] = energy[2]
-                }
-
-
+                energyLow[0] = new double[snapshots]
+                energyAt[0] = barOpener.getE1l1()
+                energyHigh[0] = barOpener.getE1l2()
+                energyLow[1] = barOpener.getE2l1()
+                energyAt[1] = barOpener.getE2l2()
+                energyHigh[1] = new double[snapshots]
+                currentLambdas[0] = lambdaValues[ensembleNum]
+                currentLambdas[1] = lambdaValues[ensembleNum + 1]
             }
 
 
-            BootStrapStatistics energyStats = new BootStrapStatistics(energyAt[w])
-            energyMean[w] = energyStats.mean
-            energySD[w] = energyStats.sd
-            energyVar[w] = energyStats.var
+            BootStrapStatistics energyStats0 = new BootStrapStatistics(energyAt[0])
+            energyMean[0] = energyStats0.mean
+            energySD[0] = energyStats0.sd
+            energyVar[0] = energyStats0.var
+            BootStrapStatistics energyStats1 = new BootStrapStatistics(energyAt[1])
+            energyMean[1] = energyStats1.mean
+            energySD[1] = energyStats1.sd
+            energyVar[1] = energyStats1.var
 
-
-        }
-
-        String tinkerFilePath = ""
-        if (tinkerBAR) {
-            String tinkerDirectoryPath = directoryPath + File.separator + "barFiles"
-            File directory = new File(tinkerDirectoryPath)
-            tinkerFilePath = tinkerDirectoryPath + File.separator
-            directory.mkdir()
-
-        }
-
-        File xyzFile = new File(filenames.get(0))
-        for (int w = 0; w < nWindows; w++) {
-            if (tinkerBAR) {
-                if (w == 0) {
-                    barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1], energyAt[w + 1], volume[w], volume[w + 1], temp1)
-                } else if (w == nWindows - 1) {
-                    barWriters[w] = new BARFilter(xyzFile,energyLow[w], energyAt[w], energyAt[w - 1] , energyHigh[w - 1], volume[w], volume[w - 1], temp1)
-                } else {
-                    barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1], energyAt[w + 1], volume[w], volume[w + 1], temp1)
-                }
-                String barFileName = tinkerFilePath + "energy_" + w.toString() + ".bar"
-                barWriters[w].writeFile(barFileName, isPBC)
-            }
-        }
-
-
-        for (int w = 0; w < nWindows + 1; w++) {
-
-
-            if (w == nWindows) {
-                logger.info("\n\nEvaluating Overall:")
-            } else {
-                logger.info(format("\n\nEvaluating Window %d:", w))
-            }
-
-            if (w == 0) {
-                currentLambdas = new double[2]
-                currentLambdas[0] = lambdaValues[w]
-                currentLambdas[1] = lambdaValues[w + 1]
-            } else if (w == nWindows - 1) {
-                currentLambdas = new double[2]
-                currentLambdas[0] = lambdaValues[w - 1]
-                currentLambdas[1] = lambdaValues[w]
-            } else if (w == nWindows) {
-                currentLambdas = new double[nWindows]
-                currentLambdas = lambdaValues
-            } else {
-                currentLambdas = new double[3]
-                currentLambdas[0] = lambdaValues[w - 1]
-                currentLambdas[1] = lambdaValues[w]
-                currentLambdas[2] = lambdaValues[w + 1]
-            }
-            double[][] energyWindowLow
-            double[][] energyWindowAt
-            double[][] energyWindowHigh
-
-            energyWindowLow = new double[currentLambdas.length][]
-            energyWindowAt = new double[currentLambdas.length][]
-            energyWindowHigh = new double[currentLambdas.length][]
-
-            if (w == 0) {
-                energyWindowLow[0] = energyLow[w]
-                energyWindowLow[1] = energyLow[w + 1]
-
-                energyWindowAt[0] = energyAt[w]
-                energyWindowAt[1] = energyAt[w + 1]
-
-                energyWindowHigh[0] = energyHigh[w]
-                energyWindowHigh[1] = energyHigh[w + 1]
-            } else if (w == nWindows - 1) {
-                energyWindowLow[0] = energyLow[w - 1]
-                energyWindowLow[1] = energyLow[w]
-
-                energyWindowAt[0] = energyAt[w - 1]
-                energyWindowAt[1] = energyAt[w]
-
-                energyWindowHigh[0] = energyHigh[w - 1]
-                energyWindowHigh[1] = energyHigh[w]
-            } else if (w == nWindows) {
-                energyWindowLow = energyLow
-                energyWindowAt = energyAt
-                energyWindowHigh = energyHigh
-            } else {
-                energyWindowLow[0] = energyLow[w - 1]
-                energyWindowLow[1] = energyLow[w]
-                energyWindowLow[2] = energyLow[w + 1]
-
-                energyWindowAt[0] = energyAt[w - 1]
-                energyWindowAt[1] = energyAt[w]
-                energyWindowAt[2] = energyAt[w + 1]
-
-                energyWindowHigh[0] = energyHigh[w - 1]
-                energyWindowHigh[1] = energyHigh[w]
-                energyWindowHigh[2] = energyHigh[w + 1]
-            }
-
-            SequentialEstimator bar = new BennettAcceptanceRatio(currentLambdas, energyWindowLow, energyWindowAt, energyWindowHigh,
-                    temperature)
+            SequentialEstimator bar = new BennettAcceptanceRatio(currentLambdas, energyLow, energyAt, energyHigh,
+                    temp1)
             SequentialEstimator forwards = bar.getInitialForwardsGuess()
             SequentialEstimator backwards = bar.getInitialBackwardsGuess()
 
@@ -509,12 +331,10 @@ class BAR extends AlgorithmsScript {
             EstimateBootstrapper backBS = new EstimateBootstrapper(backwards)
 
             long MAX_BOOTSTRAP_TRIALS = 100000L
-            long bootstrap = min(MAX_BOOTSTRAP_TRIALS, min(volume.length, volume.length))
-            if (w == nWindows) {
-                logger.info("\n Free Energy Difference via FEP Method\n")
-            } else {
-                logger.info(format("\n Free Energy Difference via FEP Method for Window %d\n", w))
-            }
+            long bootstrap = min(MAX_BOOTSTRAP_TRIALS, min(snapshots, snapshots))
+
+            logger.info("\n Free Energy Difference via FEP Method\n")
+
 
             long time = -System.nanoTime()
             forBS.bootstrap(bootstrap)
@@ -539,11 +359,9 @@ class BAR extends AlgorithmsScript {
             logger.info(format(" Free energy via Backwards FEP:  %12.4f +/- %6.4f kcal/mol.", fepBack, varBackFE))
             barEnergy = bar.getFreeEnergy()
 
-            if (w == nWindows) {
-                logger.info("\n Free Energy Difference via BAR Method\n")
-            } else {
-                logger.info(format("\n Free Energy Difference via BAR Method for Window %d\n", w))
-            }
+
+            logger.info("\n Free Energy Difference via BAR Method\n")
+
 
             logger.info(format(" Free energy via BAR Iteration:  %12.4f +/- %6.4f kcal/mol.", barEnergy,
                     bar.getUncertainty()))
@@ -558,23 +376,22 @@ class BAR extends AlgorithmsScript {
             double varEnthalpy = barBS.getTotalEnthalpyUncertainty()
             logger.info(format(" Free energy via BAR Bootstrap:  %12.4f +/- %6.4f kcal/mol.", barEnergyBS, varBARFE))
 
-            if (w == nWindows) {
-                logger.info("\n Enthalpy from Potential Energy Averages\n")
 
-                for (int n = 0; n < nWindows; n++) {
-                    logger.info(format(" Average Energy for State %d:       %12.4f +/- %6.4f kcal/mol.",
-                            n, energyMean[n], energySD[n]))
+            logger.info("\n Enthalpy from Potential Energy Averages\n")
 
-                }
-                double enthalpyDiff = energyMean[nWindows - 1] - energyMean[0]
-                double enthalpyDiffSD = Math.sqrt(energyVar[nWindows - 1] + energyVar[0])
-                logger.info(format(" Enthalpy via Direct Estimate:    %12.4f +/- %6.4f kcal/mol.",
-                        enthalpyDiff, enthalpyDiffSD))
 
-                logger.info("\n Enthalpy and Entropy via FEP:\n")
-            } else {
-                logger.info(format("\n Enthalpy and Entropy via FEP for Window %d\n", w))
-            }
+            logger.info(format(" Average Energy for State %d:       %12.4f +/- %6.4f kcal/mol.",
+                    ensembleNum, energyMean[0], energySD[0]))
+            logger.info(format(" Average Energy for State %d:       %12.4f +/- %6.4f kcal/mol.",
+                    ensembleNum+1, energyMean[1], energySD[1]))
+
+
+            double enthalpyDiff = energyMean[1] - energyMean[0]
+            double enthalpyDiffSD = Math.sqrt(energyVar[1] + energyVar[0])
+            logger.info(format(" Enthalpy via Direct Estimate:    %12.4f +/- %6.4f kcal/mol.",
+                    enthalpyDiff, enthalpyDiffSD))
+
+            logger.info("\n Enthalpy and Entropy via FEP:\n")
 
 
             sFor = (hFor - fepFor) / temp1
@@ -594,8 +411,339 @@ class BAR extends AlgorithmsScript {
             logger.info(format(" Entropy via BAR:                %12.4f kcal/mol/K.", sBAR))
             logger.info(format(" BAR Estimate of -T*ds:          %12.4f kcal/mol.", -(tsBar)))
 
-        }
 
+        } else {
+
+
+            topologies = new MolecularAssembly[nFiles]
+            openers = new SystemFilter[nFiles]
+
+            int numParallel = topology.getNumParallel(threadsAvail, nFiles)
+            threadsPer = (int) (threadsAvail / numParallel)
+
+            // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
+            /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
+        The Minimize script, for example, may be running on a single, unscaled physical topology. */
+            boolean lambdaTerm = (nFiles == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
+
+            if (lambdaTerm) {
+                System.setProperty("lambdaterm", "true")
+            }
+
+            // Relative free energies via the DualTopologyEnergy class require different
+            // default OST parameters than absolute free energies.
+            if (nFiles >= 2) {
+                // Ligand vapor electrostatics are not calculated. This cancels when the
+                // difference between protein and water environments is considered.
+                System.setProperty("ligand-vapor-elec", "false")
+            }
+
+            logger.info(format(" Initializing %d topologies for each end", nFiles))
+            for (int i = 0; i < nFiles; i++) {
+                MolecularAssembly ma =
+                        alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[i], i)
+
+                topologies[i] = ma
+                openers[i] = algorithmFunctions.getFilter()
+            }
+
+            StringBuilder sb = new StringBuilder(format(
+                    "\n Using BAR to analyze a free energy change for %s\n ", filenames))
+            potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
+            Crystal unitCell = potential.getCrystal().getUnitCell()
+
+            boolean isPBC = includeVolume && !unitCell.aperiodic()
+            isPBC = isPBC && !unitCell.aperiodic()
+
+            int nSymm = 0
+            if (isPBC) {
+                nSymm = unitCell.getNumSymOps()
+            }
+
+
+            double[] currentLambdas
+            double[][] energyLow = new double[nWindows]
+            double[][] energyAt = new double[nWindows]
+            double[][] energyHigh = new double[nWindows]
+            double[][] volume = new double[nWindows]
+            double[][] energy
+            double[] energyMean = new double[nWindows]
+            double[] energySD = new double[nWindows]
+            double[] energyVar = new double[nWindows]
+
+
+            double[] temperature = new double[nWindows]
+            Arrays.fill(temperature, temp1)
+
+            for (int w = 0; w < nWindows; w++) {
+
+                if (w == 0) {
+                    currentLambdas = new double[2]
+                    currentLambdas[0] = lambdaValues[w]
+                    currentLambdas[1] = lambdaValues[w + 1]
+                } else if (w == nWindows - 1) {
+                    currentLambdas = new double[2]
+                    currentLambdas[0] = lambdaValues[w - 1]
+                    currentLambdas[1] = lambdaValues[w]
+                } else {
+                    currentLambdas = new double[3]
+                    currentLambdas[0] = lambdaValues[w - 1]
+                    currentLambdas[1] = lambdaValues[w]
+                    currentLambdas[2] = lambdaValues[w + 1]
+                }
+                energy = new double[currentLambdas.length][]
+
+                if (useTinkerBAR) {
+                    File barFile = new File(fullFilePaths[w][0])
+                    barOpeners[w] = new BARFilter(barFile, startingSnapshot, endingSnapshot)
+                    barOpeners[w].readFile()
+                    if (w == 0) {
+                        energyLow[w] = new double[barOpeners[w].getSnaps()]
+                        energyAt[w] = barOpeners[w].getE1l1()
+                        energyHigh[w] = barOpeners[w].getE1l2()
+
+
+                    } else if (w == nWindows - 1) {
+                        energyLow[w] = barOpeners[w].getE1l1()
+                        energyAt[w] = barOpeners[w].getE1l2()
+                        energyHigh[w] = new double[barOpeners[w].getSnaps()]
+
+
+                    } else if (w > 0 && w < nWindows - 1) {
+                        energyLow[w] = barOpeners[w - 1].getE2l1()
+                        energyAt[w] = barOpeners[w].getE1l1()
+                        energyHigh[w] = barOpeners[w].getE1l2()
+                    }
+
+                    if (isPBC) {
+                        volume[w] = barOpeners[w].getVolume1()
+                    }
+
+                } else {
+                    volume[w] = getEnergyForLambdas(topologies, currentLambdas,
+                            fullFilePaths[w], energy, isPBC, nSymm)
+
+                    if (w == 0) {
+                        energyLow[w] = new double[energy[0].length]
+                        energyAt[w] = energy[0]
+                        energyHigh[w] = energy[1]
+
+                    } else if (w == nWindows - 1) {
+                        energyLow[w] = energy[0]
+                        energyAt[w] = energy[1]
+                        energyHigh[w] = new double[energy[0].length]
+
+
+                    } else if (w > 0 && w < nWindows - 1) {
+                        energyLow[w] = energy[0]
+                        energyAt[w] = energy[1]
+                        energyHigh[w] = energy[2]
+                    }
+
+
+                }
+
+
+                BootStrapStatistics energyStats = new BootStrapStatistics(energyAt[w])
+                energyMean[w] = energyStats.mean
+                energySD[w] = energyStats.sd
+                energyVar[w] = energyStats.var
+
+
+            }
+
+            String tinkerFilePath = ""
+            if (tinkerBAR) {
+                String tinkerDirectoryPath = directoryPath + File.separator + "barFiles"
+                File directory = new File(tinkerDirectoryPath)
+                tinkerFilePath = tinkerDirectoryPath + File.separator
+                directory.mkdir()
+
+            }
+
+            File xyzFile = new File(filenames.get(0))
+            for (int w = 0; w < nWindows; w++) {
+                if (tinkerBAR) {
+                    if (w == 0) {
+                        barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1], energyAt[w + 1], volume[w], volume[w + 1], temp1)
+                    } else if (w == nWindows - 1) {
+                        barWriters[w] = new BARFilter(xyzFile, energyLow[w], energyAt[w], energyAt[w - 1], energyHigh[w - 1], volume[w], volume[w - 1], temp1)
+                    } else {
+                        barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1], energyAt[w + 1], volume[w], volume[w + 1], temp1)
+                    }
+                    String barFileName = tinkerFilePath + "energy_" + w.toString() + ".bar"
+                    barWriters[w].writeFile(barFileName, isPBC)
+                }
+            }
+
+
+            for (int w = 0; w < nWindows + 1; w++) {
+
+
+                if (w == nWindows) {
+                    logger.info("\n\nEvaluating Overall:")
+                } else {
+                    logger.info(format("\n\nEvaluating Window %d:", w))
+                }
+
+                if (w == 0) {
+                    currentLambdas = new double[2]
+                    currentLambdas[0] = lambdaValues[w]
+                    currentLambdas[1] = lambdaValues[w + 1]
+                } else if (w == nWindows - 1) {
+                    currentLambdas = new double[2]
+                    currentLambdas[0] = lambdaValues[w - 1]
+                    currentLambdas[1] = lambdaValues[w]
+                } else if (w == nWindows) {
+                    currentLambdas = new double[nWindows]
+                    currentLambdas = lambdaValues
+                } else {
+                    currentLambdas = new double[3]
+                    currentLambdas[0] = lambdaValues[w - 1]
+                    currentLambdas[1] = lambdaValues[w]
+                    currentLambdas[2] = lambdaValues[w + 1]
+                }
+                double[][] energyWindowLow
+                double[][] energyWindowAt
+                double[][] energyWindowHigh
+
+                energyWindowLow = new double[currentLambdas.length][]
+                energyWindowAt = new double[currentLambdas.length][]
+                energyWindowHigh = new double[currentLambdas.length][]
+
+                if (w == 0) {
+                    energyWindowLow[0] = energyLow[w]
+                    energyWindowLow[1] = energyLow[w + 1]
+
+                    energyWindowAt[0] = energyAt[w]
+                    energyWindowAt[1] = energyAt[w + 1]
+
+                    energyWindowHigh[0] = energyHigh[w]
+                    energyWindowHigh[1] = energyHigh[w + 1]
+                } else if (w == nWindows - 1) {
+                    energyWindowLow[0] = energyLow[w - 1]
+                    energyWindowLow[1] = energyLow[w]
+
+                    energyWindowAt[0] = energyAt[w - 1]
+                    energyWindowAt[1] = energyAt[w]
+
+                    energyWindowHigh[0] = energyHigh[w - 1]
+                    energyWindowHigh[1] = energyHigh[w]
+                } else if (w == nWindows) {
+                    energyWindowLow = energyLow
+                    energyWindowAt = energyAt
+                    energyWindowHigh = energyHigh
+                } else {
+                    energyWindowLow[0] = energyLow[w - 1]
+                    energyWindowLow[1] = energyLow[w]
+                    energyWindowLow[2] = energyLow[w + 1]
+
+                    energyWindowAt[0] = energyAt[w - 1]
+                    energyWindowAt[1] = energyAt[w]
+                    energyWindowAt[2] = energyAt[w + 1]
+
+                    energyWindowHigh[0] = energyHigh[w - 1]
+                    energyWindowHigh[1] = energyHigh[w]
+                    energyWindowHigh[2] = energyHigh[w + 1]
+                }
+
+                SequentialEstimator bar = new BennettAcceptanceRatio(currentLambdas, energyWindowLow, energyWindowAt, energyWindowHigh,
+                        temperature)
+                SequentialEstimator forwards = bar.getInitialForwardsGuess()
+                SequentialEstimator backwards = bar.getInitialBackwardsGuess()
+
+                EstimateBootstrapper barBS = new EstimateBootstrapper(bar)
+                EstimateBootstrapper forBS = new EstimateBootstrapper(forwards)
+                EstimateBootstrapper backBS = new EstimateBootstrapper(backwards)
+
+                long MAX_BOOTSTRAP_TRIALS = 100000L
+                long bootstrap = min(MAX_BOOTSTRAP_TRIALS, min(volume.length, volume.length))
+                if (w == nWindows) {
+                    logger.info("\n Free Energy Difference via FEP Method\n")
+                } else {
+                    logger.info(format("\n Free Energy Difference via FEP Method for Window %d\n", w))
+                }
+
+                long time = -System.nanoTime()
+                forBS.bootstrap(bootstrap)
+                time += System.nanoTime()
+                logger.fine(format(" Forward FEP Bootstrap Complete:      %7.4f sec", time * Constants.NS2SEC))
+                fepFor = forBS.getTotalFE()
+                hFor = forBS.getTotalEnthalpy()
+                double varForeFE = forBS.getTotalUncertainty()
+                double varEnthalpyFore = forBS.getTotalEnthalpyUncertainty()
+                logger.info(format(" Free energy via Forwards FEP:   %12.4f +/- %6.4f kcal/mol.", fepFor, varForeFE))
+
+
+                time = -System.nanoTime()
+                backBS.bootstrap(bootstrap)
+                time += System.nanoTime()
+                logger.fine(format(" Backward FEP Bootstrap Complete:     %7.4f sec", time * Constants.NS2SEC))
+
+                fepBack = backBS.getTotalFE()
+                hBack = backBS.getTotalEnthalpy()
+                double varBackFE = backBS.getTotalUncertainty()
+                double varEnthalpyBack = backBS.getTotalEnthalpyUncertainty()
+                logger.info(format(" Free energy via Backwards FEP:  %12.4f +/- %6.4f kcal/mol.", fepBack, varBackFE))
+                barEnergy = bar.getFreeEnergy()
+
+                if (w == nWindows) {
+                    logger.info("\n Free Energy Difference via BAR Method\n")
+                } else {
+                    logger.info(format("\n Free Energy Difference via BAR Method for Window %d\n", w))
+                }
+
+                logger.info(format(" Free energy via BAR Iteration:  %12.4f +/- %6.4f kcal/mol.", barEnergy,
+                        bar.getUncertainty()))
+                time = -System.nanoTime()
+                barBS.bootstrap(bootstrap)
+                time += System.nanoTime()
+                logger.fine(format(" BAR Bootstrap Complete:              %7.4f sec", time * Constants.NS2SEC))
+
+                barEnergyBS = barBS.getTotalFE()
+                double varBARFE = barBS.getTotalUncertainty()
+                hBAR = barBS.getTotalEnthalpy()
+                double varEnthalpy = barBS.getTotalEnthalpyUncertainty()
+                logger.info(format(" Free energy via BAR Bootstrap:  %12.4f +/- %6.4f kcal/mol.", barEnergyBS, varBARFE))
+
+                if (w == nWindows) {
+                    logger.info("\n Enthalpy from Potential Energy Averages\n")
+
+                    for (int n = 0; n < nWindows; n++) {
+                        logger.info(format(" Average Energy for State %d:       %12.4f +/- %6.4f kcal/mol.",
+                                n, energyMean[n], energySD[n]))
+
+                    }
+                    double enthalpyDiff = energyMean[nWindows - 1] - energyMean[0]
+                    double enthalpyDiffSD = Math.sqrt(energyVar[nWindows - 1] + energyVar[0])
+                    logger.info(format(" Enthalpy via Direct Estimate:    %12.4f +/- %6.4f kcal/mol.",
+                            enthalpyDiff, enthalpyDiffSD))
+
+                    logger.info("\n Enthalpy and Entropy via FEP:\n")
+                } else {
+                    logger.info(format("\n Enthalpy and Entropy via FEP for Window %d\n", w))
+                }
+
+
+                sFor = (hFor - fepFor) / temp1
+                sBack = (hBack - fepBack) / temp1
+
+                logger.info(format(" Enthalpy via Forward FEP:       %12.4f +/- %6.4f kcal/mol.", hFor, varEnthalpyFore))
+                logger.info(format(" Entropy via Forward FEP:        %12.4f kcal/mol/K.", sFor))
+                logger.info(format(" Forward FEP -T*ds Value:        %12.4f kcal/mol.", -(sFor * temp1)))
+
+                logger.info(format("\n Enthalpy via Backward FEP:      %12.4f +/- %6.4f kcal/mol.", hBack, varEnthalpyBack))
+                logger.info(format(" Entropy via Backward FEP:       %12.4f kcal/mol/K.", sBack))
+                logger.info(format(" Backward FEP -T*ds Value:       %12.4f kcal/mol.", -(sBack * temp1)))
+
+                double tsBar = hBAR - barEnergyBS
+                double sBAR = tsBar / (temp1)
+                logger.info(format("\n Enthalpy via BAR:               %12.4f +/- %6.4f kcal/mol.", hBAR, varEnthalpy))
+                logger.info(format(" Entropy via BAR:                %12.4f kcal/mol/K.", sBAR))
+                logger.info(format(" BAR Estimate of -T*ds:          %12.4f kcal/mol.", -(tsBar)))
+
+            }
+        }
 
         return this
 
@@ -675,6 +823,7 @@ class BAR extends AlgorithmsScript {
         return vol
 
     }
+
 /**
  * {@inheritDoc}
  */
