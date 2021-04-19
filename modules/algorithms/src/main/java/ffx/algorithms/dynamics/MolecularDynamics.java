@@ -595,7 +595,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
     esvSystem = system;
     esvSystem.createMDThetaArrays();
-    this.esvIntegrator = new Stochastic(0.0, esvSystem.getNumESVs(),esvSystem.theta,
+    this.esvIntegrator = new Stochastic(5.0, esvSystem.getNumESVs(),esvSystem.theta,
             esvSystem.theta_velocity, esvSystem.theta_accel, esvSystem.theta_mass);
     this.esvThermostat = new Adiabatic(esvSystem.getNumESVs(),esvSystem.theta, esvSystem.theta_velocity, esvSystem.theta_mass, potential.getVariableTypes());
     printEsvFrequency = printFrequency;
@@ -1579,6 +1579,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
       integrator.preForce(potential);
       if (esvSystem != null) {
         esvIntegrator.preForce(potential);
+        //preForce processes theta values after
         esvSystem.preForce();
       }
 
@@ -1605,25 +1606,29 @@ public class MolecularDynamics implements Runnable, Terminatable {
       if (esvSystem != null) {
         double[] dEdL = esvSystem.postForce();
         esvIntegrator.postForce(dEdL);
-
       }
 
       // Compute the full-step kinetic energy.
       thermostat.computeKineticEnergy();
-      if (esvSystem != null) {
-        esvThermostat.computeKineticEnergy();
-      }
+
 
       // Do the full-step thermostat operation.
       thermostat.fullStep(dt);
 
       // Recompute the kinetic energy after the full-step thermostat operation.
       thermostat.computeKineticEnergy();
+      if (esvSystem != null) {
+        //Adiabatic thermostat does nothing at half step.
+        esvThermostat.computeKineticEnergy();
+      }
 
-      // Remove center of mass motion ever ~100 steps.
+      // Remove center of mass motion every ~100 steps.
       int removeCOMMotionFrequency = 100;
       if (thermostat.getRemoveCenterOfMassMotion() && step % removeCOMMotionFrequency == 0) {
         thermostat.centerOfMassMotion(true, false);
+        /*if(esvSystem != null){
+          esvThermostat.centerOfMassMotion(true,false);
+        }*/
       }
 
       // Collect current kinetic energy, temperature, and total energy.
@@ -1642,6 +1647,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
       // Update extended system variables if present.
       if (esvSystem != null) {
         esvSystem.setThetaValues();
+        esvSystem.collectThetaValues();
       }
 
       // Log the current state every printFrequency steps.

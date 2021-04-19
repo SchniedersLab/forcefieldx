@@ -258,11 +258,13 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
    * Iterate over all Extended Variables in Extended System and collect thetas, velocities, and accelerations into arrays.
    *
    */
-  private void collectThetaValues(){
+  public void collectThetaValues(){
     for (ExtendedVariable esv : esvList) {
       theta[esv.getEsvIndex()] = esv.getTheta();
       theta_velocity[esv.getEsvIndex()] = esv.getTheta_velocity();
       theta_accel[esv.getEsvIndex()] = esv.getTheta_accel();
+      /*logger.info(format("ESV: %d Theta: %g, Theta_v: %g, Theta_a: %g",
+              esv.getEsvIndex(),esv.getTheta(),esv.getTheta_velocity(),esv.getTheta_accel()));*/
     }
   }
 
@@ -731,8 +733,10 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
   public double[] postForce(){
     double[] dEdL = ExtendedSystem.this.getDerivatives();
-    for(int i = 0; i < numESVs; i++){
-      dEdL[i] = dEdL[i] * sin(2*theta[i]);
+    for(ExtendedVariable esv : esvList) {
+      //logger.info(format("dEdL: %g", dEdL[esv.getEsvIndex()]));
+      dEdL[esv.getEsvIndex()] = dEdL[esv.getEsvIndex()] * sin(2*theta[esv.getEsvIndex()]);
+      //logger.info(format("dEdL*sin(2x): %g", dEdL[esv.getEsvIndex()]));
     }
     return dEdL;
   }
@@ -908,8 +912,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
           if (p) {
             sb.append(
                 format(
-                    "      " + clas.getName().replaceAll("ffx.potential.bonded.", "") + ":",
-                    ">>",
+                    "      " + clas.getName().replaceAll("ffx.potential.bonded.", "") + ": "+
                     fgMap.get(clas).get()));
           }
         }
@@ -927,8 +930,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
           if (p) {
             sb.append(
                 format(
-                    "      " + clas.getName().replaceAll("ffx.potential.bonded.", "") + ":",
-                    ">>",
+                    "      " + clas.getName().replaceAll("ffx.potential.bonded.", "") + ": "+
                     bgMap.get(clas).get()));
           }
         }
@@ -949,7 +951,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
   public static class ExtendedSystemConfig {
 
     /** Use polarizability scaling by default. */
-    public final boolean bonded = prop("esv.bonded", true);
+    public final boolean bonded = prop("esv.bonded", false);
 
     public final boolean vanDerWaals = prop("esv.vanDerWaals", true);
     public final boolean electrostatics = prop("esv.electrostatics", true);
@@ -957,7 +959,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     public final boolean biasTerm = prop("esv.biasTerm", true);
     public final boolean verbose = prop("esv.verbose", false);
     public final boolean decomposeBonded = prop("esv.decomposeBonded", false);
-    public final boolean decomposeDeriv = prop("esv.decomposeDeriv", false);
+    public final boolean decomposeDeriv = prop("esv.decomposeDeriv", true);
 
     /**
      * Note that without the Lambda-Switch, the derivative dPol/dEsv is incorrect at L=0.0 and L=1.0

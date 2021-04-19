@@ -154,7 +154,7 @@ class PhDynamics extends AlgorithmsScript {
 
     PhMD.Distribution distribution = PhMD.Distribution.CONTINUOUS
     // No MC steps yet.
-    int mcStepFrequency = 10
+    int mcStepFrequency = 0
     PhMD phmd = new PhMD(distribution, activeAssembly, molDyn, titrating, pH, mcStepFrequency)
 
     // Restart File
