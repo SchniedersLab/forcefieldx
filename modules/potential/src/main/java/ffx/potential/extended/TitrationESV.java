@@ -69,7 +69,7 @@ public final class TitrationESV extends ExtendedVariable {
    * @param multiRes a {@link ffx.potential.bonded.MultiResidue} object.
    */
   public TitrationESV(ExtendedSystem esvSystem, MultiResidue multiRes) {
-    super(esvSystem, multiRes, 0.5);
+    super(esvSystem, multiRes, 1.0);
     this.constPh = esvSystem.getConstantPh();
     this.titrating = multiRes;
     Titration titration = Titration.lookup(titrating.getActive());

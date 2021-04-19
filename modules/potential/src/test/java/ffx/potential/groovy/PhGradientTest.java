@@ -784,7 +784,7 @@ public class PhGradientTest extends PotentialTest{
     @Test
     public void testGradients() {
         logger.info(" Testing gradients for " + info + "at lambdas: " + key);
-        String[] args = {"-v", filename};
+        String[] args = {"-v","-d 0.000001", filename};
         binding.setVariable("args", args);
         // Construct and evaluate the PhGradient script.
         PhGradient pHGradient = new PhGradient(binding).run();

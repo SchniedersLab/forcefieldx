@@ -419,8 +419,7 @@ public class PhMD implements MonteCarloListener {
         molecularDynamics.setMonteCarloListener(this, MonteCarloNotification.EACH_STEP);
         break;
       case CONTINUOUS:
-        forceFieldEnergy.attachExtendedSystem(esvSystem);
-        molecularDynamics.attachExtendedSystem(esvSystem, 100);
+        molecularDynamics.attachExtendedSystem(esvSystem, 1000);
         break;
     }
   }
