@@ -245,6 +245,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
   private double hct_s;
   /** Born radius of each atom. */
   private double[] born;
+  private double[] bornAfterTanh;
   /** Flag to indicate if an atom should be included. */
   private boolean[] use = null;
   /** Periodic boundary conditions and symmetry. */
@@ -925,6 +926,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
     // Init and execute gkEnergyRegion (?)
 
     return gkEnergyRegion.getSelfEnergy();
+  }
+
+  public double[] getBorn(){
+    return bornRadiiRegion.getBorn();
   }
 
   /**
