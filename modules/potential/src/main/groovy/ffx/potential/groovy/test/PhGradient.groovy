@@ -380,6 +380,9 @@ class PhGradient extends PotentialScript {
 
     if(print){
       if(numESVs <= 4){
+        String lambdaList = esvSystem.getLambdaList()
+        logger.info(format("Lambda List: %s", lambdaList))
+        energy.energy(x,true)
         printPermutations(esvSystem, numESVs, energy, x)
       }
     }
