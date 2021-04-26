@@ -461,6 +461,7 @@ public abstract class ExtendedVariable {
             if (ExtUtils.verbose) {
                 logger.info(SB.toString());
             }
+            SB.setLength(0);
         }
     }
 
