@@ -595,9 +595,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
     esvSystem = system;
     esvSystem.createMDThetaArrays();
-    this.esvIntegrator = new Stochastic(5.0, esvSystem.getNumESVs(),esvSystem.theta,
+    this.esvIntegrator = new Stochastic(esvSystem.thetaFriction, esvSystem.getNumESVs(),esvSystem.theta_position,
             esvSystem.theta_velocity, esvSystem.theta_accel, esvSystem.theta_mass);
-    this.esvThermostat = new Adiabatic(esvSystem.getNumESVs(),esvSystem.theta, esvSystem.theta_velocity, esvSystem.theta_mass, potential.getVariableTypes());
+    this.esvThermostat = new Adiabatic(esvSystem.getNumESVs(),esvSystem.theta_position, esvSystem.theta_velocity, esvSystem.theta_mass, potential.getVariableTypes());
     printEsvFrequency = printFrequency;
     logger.info(
         format(" Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));

@@ -152,10 +152,7 @@ class PhDynamics extends AlgorithmsScript {
 
     molDyn = dynamics.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
 
-    PhMD.Distribution distribution = PhMD.Distribution.CONTINUOUS
-    // No MC steps yet.
-    int mcStepFrequency = 0
-    PhMD phmd = new PhMD(distribution, activeAssembly, molDyn, titrating, pH, mcStepFrequency)
+    PhMD phmd = new PhMD(activeAssembly, molDyn, titrating, pH)
 
     // Restart File
     File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")

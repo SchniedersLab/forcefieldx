@@ -37,11 +37,12 @@
 // ******************************************************************************
 package ffx.potential.extended;
 
-import static java.lang.String.format;
-
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.extended.TitrationUtils.Titration;
 import ffx.utilities.Constants;
+
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.log;
 
 /**
  * An extended system variable that allows continuous fractional protonation of an amino acid. All
@@ -56,77 +57,95 @@ import ffx.utilities.Constants;
  */
 public final class TitrationESV extends ExtendedVariable {
 
-  private final MultiResidue titrating; // from TitrationUtils.titrationFactory()
-  private final double referenceEnergy; // Model PMF coefficient A in A*(lambda-B)^2
-  private final double lambdaIntercept; // Model PMF coefficient B in A*(lambda-B)^2
-  private final double constPh; // Simulation pH.
-  private final double pKaModel; // Reference pKa value.
+    /**
+     * Model PMF coefficient A in A*(lambda-B)^2
+     */
+    private final double referenceEnergy;
+    /**
+     *  Model PMF coefficient B in A*(lambda-B)^2
+     */
+    private final double lambdaIntercept;
+    /**
+     * Simulation pH.
+     */
+    private final double constPh;
+    /**
+     * Reference pKa value.
+     */
+    private final double pKaModel;
 
-  /**
-   * Constructor for TitrationESV.
-   *
-   * @param esvSystem a {@link ffx.potential.extended.ExtendedSystem} object.
-   * @param multiRes a {@link ffx.potential.bonded.MultiResidue} object.
-   */
-  public TitrationESV(ExtendedSystem esvSystem, MultiResidue multiRes) {
-    super(esvSystem, multiRes, 1.0);
-    this.constPh = esvSystem.getConstantPh();
-    this.titrating = multiRes;
-    Titration titration = Titration.lookup(titrating.getActive());
-    this.referenceEnergy = titration.refEnergy;
-    this.lambdaIntercept = titration.lambdaIntercept;
-    this.pKaModel = titration.pKa;
-  }
+    private static final double LOG10 = log(10.0);
 
-  /** {@inheritDoc} */
-  @Override
-  public String getName() {
-    return format("Titr%d", esvIndex);
-  }
+    /**
+     * Constructor for TitrationESV.
+     *
+     * @param esvSystem a {@link ffx.potential.extended.ExtendedSystem} object.
+     * @param multiRes  a {@link ffx.potential.bonded.MultiResidue} object.
+     */
+    public TitrationESV(ExtendedSystem esvSystem, MultiResidue multiRes) {
+        super(esvSystem, multiRes, 1.0);
+        this.constPh = esvSystem.getConstantPh();
+        Titration titration = Titration.lookup(multiRes.getActive());
+        this.referenceEnergy = titration.refEnergy;
+        this.lambdaIntercept = titration.lambdaIntercept;
+        this.pKaModel = titration.pKa;
+    }
 
-  /** {@inheritDoc} */
-  @Override
-  protected double getTotalBias(double temperature, boolean print) {
-    double eDiscr = getDiscrBias();
-    double ePh = getPhBias(temperature);
-    return (eDiscr + ePh);
-  }
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getName() {
+        return format("Titr%d", esvIndex);
+    }
 
-  /** {@inheritDoc} */
-  @Override
-  protected double getTotalBiasDeriv(double temperature, boolean print) {
-    double dDiscr = getDiscrBiasDeriv();
-    double dPh = getPhBiasDeriv(temperature);
-    return (dDiscr + dPh);
-  }
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected double getTotalBias(double temperature, boolean print) {
+        double eDiscr = getDiscrBias();
+        double ePh = getPhBias(temperature);
+        return (eDiscr + ePh);
+    }
 
-  /**
-   * Eqs 5,6 from Wallace+Shen 2011 "Continuous constant pH M.D. in explicit..." U_pH(ldh) =
-   * log(10)*kb*T*(pKa_model - pH)*ldh U_mod(ldh) = potential of mean force for protonation (or
-   * -deprot) of model compound U_star = sum(ldh) { U_pH(ldh) + U_mod_prot(ldh) + U_barr(ldh) This
-   * method returns U_pH + U_mod_prot.
-   *
-   * @param temperature a double.
-   * @return a double.
-   */
-  protected double getPhBias(double temperature) {
-    double lambda = getLambda();
-    double uph = ExtConstants.log10 * Constants.R * temperature * (pKaModel - constPh) * (1-lambda);
-    double umod = -referenceEnergy * (lambda - lambdaIntercept) * (lambda - lambdaIntercept); //PMF Equation: A*(lambda-B)^2
-    // TODO Find PMFs for monomers/trimers/pentapeptides.
-    return uph + umod;
-  }
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected double getTotalBiasDeriv(double temperature, boolean print) {
+        double dDiscr = getDiscrBiasDeriv();
+        double dPh = getPhBiasDeriv(temperature);
+        return (dDiscr + dPh);
+    }
 
-  /**
-   * getPhBiasDeriv.
-   *
-   * @param temperature a double.
-   * @return a double.
-   */
-  protected double getPhBiasDeriv(double temperature) {
-    double lambda = getLambda();
-    double duphdl = ExtConstants.log10 * Constants.R * temperature * (pKaModel - constPh)* -1;
-    double dumoddl = -2*referenceEnergy*(lambda-lambdaIntercept);
-    return duphdl + dumoddl;
-  }
+    /**
+     * Eqs 5,6 from Wallace+Shen 2011 "Continuous constant pH M.D. in explicit..." U_pH(ldh) =
+     * log(10)*kb*T*(pKa_model - pH)*ldh U_mod(ldh) = potential of mean force for protonation (or
+     * -deprot) of model compound U_star = sum(ldh) { U_pH(ldh) + U_mod_prot(ldh) + U_barr(ldh) This
+     * method returns U_pH + U_mod_prot.
+     *
+     * @param temperature a double.
+     * @return a double.
+     */
+    protected double getPhBias(double temperature) {
+        double lambda = getLambda();
+        double uph = LOG10 * Constants.R * temperature * (pKaModel - constPh) * (1.0 - lambda);
+        double umod = -referenceEnergy * (lambda - lambdaIntercept) * (lambda - lambdaIntercept); //PMF Equation: A*(lambda-B)^2
+        // TODO Find PMFs for monomers/trimers/pentapeptides.
+        return uph + umod;
+    }
+
+    /**
+     * getPhBiasDeriv.
+     *
+     * @param temperature a double.
+     * @return a double.
+     */
+    protected double getPhBiasDeriv(double temperature) {
+        double lambda = getLambda();
+        double duphdl = LOG10 * Constants.R * temperature * (pKaModel - constPh) * -1.0;
+        double dumoddl = -2.0 * referenceEnergy * (lambda - lambdaIntercept);
+        return duphdl + dumoddl;
+    }
 }
