@@ -236,7 +236,7 @@
                   <version>[10,16.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
-                  <version>3.0.5</version>
+                  <version>3.1.0</version>
                 </requireMavenVersion>
                 <requirePluginVersions/>
               </rules>
@@ -840,7 +840,7 @@
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
-    <checkstyle.version>3.1.1</checkstyle.version>
+    <checkstyle.version>3.1.2</checkstyle.version>
     <ciftools-java.version>2.0.3</ciftools-java.version>
     <clean.version>3.1.0</clean.version>
     <clover.version>4.4.1</clover.version>
@@ -849,7 +849,7 @@
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.7</commons-configuration2.version>
     <commons-io.version>2.6</commons-io.version>
-    <commons-lang3.version>3.11</commons-lang3.version>
+    <commons-lang3.version>3.12.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
     <compileVersion>10</compileVersion>
@@ -858,14 +858,14 @@
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.0.0-M1</deploy.version>
     <enforcer.version>3.0.0-M3</enforcer.version>
-    <exec.version>1.6.0</exec.version>
+    <exec.version>3.0.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
-    <fastutil.version>8.4.3</fastutil.version>
+    <fastutil.version>8.5.4</fastutil.version>
     <!-- Version of FFX  -->
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
     <groovy-all.version>3.0.6.1</groovy-all.version>
-    <guava.version>30.0-jre</guava.version>
+    <guava.version>30.1.1-jre</guava.version>
     <install.version>3.0.0-M1</install.version>
     <jar.version>3.2.0</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
@@ -877,19 +877,19 @@
     <jna.version>5.6.0</jna.version>
     <jogamp-fat.version>2.4.0</jogamp-fat.version>
     <jopenmm.version>7.5.0-cuda10.2</jopenmm.version>
-    <junit.version>4.13.1</junit.version>
+    <junit.version>4.13.2</junit.version>
     <jxr.version>3.0.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.13.3</log4j.version>
+    <log4j.version>2.14.1</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
-    <picocli.version>4.5.1</picocli.version>
+    <picocli.version>4.6.1</picocli.version>
     <pj.version>1.0.1</pj.version>
     <pmd.skip>false</pmd.skip>
-    <pmd.version>3.13.0</pmd.version>
-    <project-info-reports.version>3.0.0</project-info-reports.version>
+    <pmd.version>3.14.0</pmd.version>
+    <project-info-reports.version>3.1.1</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <properties.version>1.0.0</properties.version>
@@ -897,11 +897,11 @@
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
     <release.version>3.0.0-M1</release.version>
-    <resources.version>3.1.0</resources.version>
+    <resources.version>3.2.0</resources.version>
     <scm.version>1.11.2</scm.version>
     <slf4j-nop.version>1.7.30</slf4j-nop.version>
-    <shade.version>3.2.3</shade.version>
-    <site.version>3.9.0</site.version>
+    <shade.version>3.2.4</shade.version>
+    <site.version>3.9.1</site.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
