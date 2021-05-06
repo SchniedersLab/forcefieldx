@@ -544,6 +544,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   protected final void setEsvDeriv(double dEdEsv) {
     if (esvTerm) {
       esvDerivLocal = dEdEsv;
+      //logger.info(String.format("%s: %6.8f", this, dEdEsv));
     }
   }
 

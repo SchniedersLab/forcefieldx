@@ -148,8 +148,13 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
       var e1 = rcb - bond1Eq;
       var dt = value - angleEq;
       var dr = force0 * e0 + force1 * e1;
-      var prefactor = rigidScale * esvLambda;
+      var prefactor = rigidScale;
       energy = prefactor * dr * dt;
+      if (esvTerm) {
+        setEsvDeriv(energy * dedesvChain);
+        energy = energy * esvLambda;
+        prefactor *= esvLambda;
+      }
       if (gradient) {
         var vdta = vab.X(vp).scaleI(-prefactor * dr * toDegrees(1.0 / (rab2 * rp)));
         var vdtc = vcb.X(vp).scaleI(prefactor * dr * toDegrees(1.0 / (rcb2 * rp)));
@@ -159,10 +164,6 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
         grad.sub(threadID, ib, ga.add(gc));
         grad.add(threadID, ic, gc);
       }
-    }
-    if (esvTerm) {
-      final var esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
-      setEsvDeriv(energy * dedesvChain * esvLambdaInv);
     }
     return energy;
   }
