@@ -37,30 +37,27 @@
 // ******************************************************************************
 package ffx.potential.extended;
 
-import static ffx.potential.extended.ExtUtils.prop;
-import static java.lang.String.format;
-
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.BondedUtils;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.*;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.Constants;
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.logging.Logger;
-import org.apache.commons.io.FilenameUtils;
+
+import static ffx.potential.extended.ExtUtils.prop;
+import static java.lang.String.format;
 
 /**
  * Helper methods to define titration-specific phenomena.
@@ -74,11 +71,9 @@ public class TitrationUtils {
 
   /** Constant <code>heavyStrandedDynamics=prop("phmd-heavyStrandedDynamics", false)</code> */
   public static final boolean heavyStrandedDynamics = prop("phmd-heavyStrandedDynamics", false);
+
   /** Constant <code>threeStateHistidines=prop("phmd-threeState", false)</code> */
   public static final boolean threeStateHistidines =
-      prop("phmd-threeState", false); // not yet implemented
-  /** Constant <code>threeStateCarboxylics=prop("phmd-threeState", false)</code> */
-  public static final boolean threeStateCarboxylics =
       prop("phmd-threeState", false); // not yet implemented
 
   private static final Logger logger = Logger.getLogger(TitrationUtils.class.getName());
@@ -362,11 +357,6 @@ public class TitrationUtils {
     // all cases (eliminates softcoring)
   }
 
-  /** initEsvPreloadProperties. */
-  public static void initEsvPreloadProperties() {
-    initEsvPreloadProperties(null);
-  }
-
   /**
    * isTitratableHydrogen.
    *
@@ -455,84 +445,6 @@ public class TitrationUtils {
    */
   public static MolecularAssembly openFullyProtonated(String filename) {
     return openFullyProtonated(new File(filename));
-  }
-
-  /**
-   * Perform the requested titration on the given MultiResidue. Remember to call reInit() on
-   * affected ForceFieldEnergy and MolecularDynamics objects!
-   *
-   * @param multiRes a {@link ffx.potential.bonded.MultiResidue} object.
-   * @param titration a {@link ffx.potential.extended.TitrationUtils.Titration} object.
-   * @param inactivateBackground a boolean.
-   * @return a {@link ffx.potential.extended.TitrationUtils.TitrationType} object.
-   */
-  public static TitrationType performTitration(
-      MultiResidue multiRes, Titration titration, boolean inactivateBackground) {
-    AminoAcid3 current = multiRes.getActive().getAminoAcid3();
-    final TitrationType type;
-    final AminoAcid3 target;
-    if (current == titration.protForm) {
-      type = TitrationType.DEPROT;
-      target = titration.deprotForm;
-    } else if (current == titration.deprotForm) {
-      type = TitrationType.PROT;
-      target = titration.protForm;
-    } else {
-      throw new IllegalStateException();
-    }
-    boolean success = multiRes.requestSetActiveResidue(target);
-    if (!success) {
-      logger.severe(
-          String.format(
-              "Couldn't perform requested titration for MultiRes: %s", multiRes.toString()));
-    }
-
-    List<Atom> oldAtoms = multiRes.getActive().getAtomList();
-    List<Atom> newAtoms = multiRes.getActive().getAtomList();
-
-    // identify which atoms were actually inserted/removed
-    List<Atom> removedAtoms = new ArrayList<>();
-    List<Atom> insertedAtoms = new ArrayList<>();
-    for (Atom oldAtom : oldAtoms) {
-      boolean found = false;
-      for (Atom newAtom : newAtoms) {
-        if (newAtom == oldAtom
-            || (newAtom.getResidueNumber() == oldAtom.getResidueNumber()
-                && newAtom.getName().equals(oldAtom.getName()))) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        removedAtoms.add(oldAtom);
-      }
-    }
-    for (Atom newAtom : newAtoms) {
-      boolean found = false;
-      for (Atom oldAtom : oldAtoms) {
-        if (newAtom == oldAtom
-            || (newAtom.getResidueNumber() == oldAtom.getResidueNumber()
-                && newAtom.getName().equals(oldAtom.getName()))) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        insertedAtoms.add(newAtom);
-      }
-    }
-    if (insertedAtoms.size() + removedAtoms.size() > 1) {
-      logger.warning("Protonate: removed + inserted atom count > 1.");
-    }
-
-    if (inactivateBackground) {
-      activateResidue(multiRes.getActive());
-      for (Residue res : multiRes.getInactive()) {
-        inactivateResidue(res);
-      }
-    }
-
-    return type;
   }
 
   /**
@@ -898,26 +810,20 @@ public class TitrationUtils {
      * @return a Titration instance.
      */
     public static Titration[] multiLookup(Residue res) {
-      List<Titration> titrations = new ArrayList<>();
       AminoAcid3 current = AminoAcid3.valueOf(res.getName());
+
       if (threeStateHistidines) {
         if (current == AminoAcid3.HIS || current == AminoAcid3.HID || current == AminoAcid3.HIE) {
           return new Titration[] {ZtoH, UtoH};
         }
       }
-      if (threeStateCarboxylics) {
-        if (current == AminoAcid3.ASP || current == AminoAcid3.ASH) {
-          //                    return new Titration[]{Dtod, Dtod2};
-        }
-        if (current == AminoAcid3.GLU || current == AminoAcid3.GLH) {
-          //                    return new Titration[]{Etoe, Etoe2};
-        }
-      }
+
       for (Titration titration : Titration.values()) {
         if (current == titration.protForm || current == titration.deprotForm) {
           return new Titration[] {titration};
         }
       }
+
       logger.warning(format("No titration lookup found for residue %s", res));
       return null;
     }

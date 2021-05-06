@@ -196,11 +196,14 @@ public class OutOfPlaneBend extends BondedTerm {
           units
               * outOfPlaneBendType.forceConstant
               * dv2
-              * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4)
-              * esvLambda;
+              * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
+      if (esvTerm) {
+        setEsvDeriv(energy * dedesvChain);
+        energy = energy * esvLambda;
+      }
       if (gradient) {
         var deddt =
-            units
+            units * esvLambda
                 * outOfPlaneBendType.forceConstant
                 * dv
                 * toDegrees(
@@ -208,8 +211,7 @@ public class OutOfPlaneBend extends BondedTerm {
                         + 3.0 * cubic * dv
                         + 4.0 * quartic * dv2
                         + 5.0 * quintic * dv3
-                        + 6.0 * sextic * dv4)
-                * esvLambda;
+                        + 6.0 * sextic * dv4);
         var dedcos = 0.0;
         if (ee != 0.0) {
           dedcos = -deddt * signum(ee) / sqrt(cc * bkk2);
@@ -245,10 +247,6 @@ public class OutOfPlaneBend extends BondedTerm {
         grad.add(threadID, ic, gc);
         grad.add(threadID, id, gd);
       }
-    }
-    if (esvTerm) {
-      var esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
-      setEsvDeriv(energy * dedesvChain * esvLambdaInv);
     }
     return energy;
   }

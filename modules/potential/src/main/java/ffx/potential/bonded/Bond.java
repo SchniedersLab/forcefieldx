@@ -211,7 +211,7 @@ public class Bond extends BondedTerm {
     var vb = atomB.getXYZ();
     var vab = va.sub(vb);
     value = vab.length();
-    var prefactor = units * rigidScale * bondType.forceConstant * esvLambda;
+    var prefactor = units * rigidScale * bondType.forceConstant;
     // dv is deviation from ideal
     var dv = value - bondType.distance;
     if (bondType.bondFunction.hasFlatBottom()) {
@@ -227,9 +227,13 @@ public class Bond extends BondedTerm {
       case FLAT_BOTTOM_QUARTIC:
         {
           energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2);
+          if (esvTerm) {
+            setEsvDeriv(energy * dedesvChain);
+            energy = energy * esvLambda;
+          }
           if (gradient) {
             // Compute the magnitude of the gradient.
-            var dedr = 2.0 * prefactor * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
+            var dedr = 2.0 * prefactor * esvLambda * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
             computeGradient(threadID, grad, atomA, atomB, vab, dedr);
           }
           break;
@@ -239,19 +243,19 @@ public class Bond extends BondedTerm {
       default:
         {
           energy = prefactor * dv2;
+          if (esvTerm) {
+            setEsvDeriv(energy * dedesvChain);
+            energy = energy * esvLambda;
+          }
           if (gradient) {
             // Compute the magnitude of the gradient.
-            var dedr = 2.0 * prefactor * dv;
+            var dedr = 2.0 * prefactor * esvLambda * dv;
             computeGradient(threadID, grad, atomA, atomB, vab, dedr);
           }
           break;
         }
     }
     value = dv;
-    if (esvTerm) {
-      final var esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
-      setEsvDeriv(energy * dedesvChain * esvLambdaInv);
-    }
     return energy;
   }
 
