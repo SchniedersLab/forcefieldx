@@ -419,7 +419,7 @@ public abstract class ExtendedVariable {
         this.lambda = lambda;
         this.lSwitch = (config.allowLambdaSwitch) ? switchingFunction.taper(lambda) : lambda;
         this.dlSwitch = (config.allowLambdaSwitch) ? switchingFunction.dtaper(lambda) : 1.0;
-        discrBias = discrBiasMag - 4.0 * discrBiasMag * (lambda - 0.5) * (lambda - 0.5);
+        discrBias = - 4.0 * discrBiasMag * (lambda - 0.5) * (lambda - 0.5);
         dDiscrBiasdL = -8.0 * discrBiasMag * (lambda - 0.5);
         if (updateComponents) {
             updateMultipoleTypes();
