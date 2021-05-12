@@ -1655,6 +1655,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
       time = logThermoForTime(step, time);
       if (step % printEsvFrequency == 0 && esvSystem != null) {
         logger.log(basicLogging, format(" %7.3e %s", totalSimTime, esvSystem.getLambdaList()));
+        potential.energy(x, true);
       }
 
       if (automaticWriteouts) {
