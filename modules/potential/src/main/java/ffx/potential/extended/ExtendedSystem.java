@@ -990,7 +990,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         public final boolean biasTerm = prop("esv.biasTerm", true);
         public final boolean verbose = prop("esv.verbose", false);
         public final boolean decomposeBonded = prop("esv.decomposeBonded", false);
-        public final boolean decomposeDeriv = prop("esv.decomposeDeriv", true);
+        public final boolean decomposeDeriv = prop("esv.decomposeDeriv", false);
 
         /**
          * Note that without the Lambda-Switch, the derivative dPol/dEsv is incorrect at L=0.0 and L=1.0
