@@ -149,6 +149,7 @@ public class GKEnergyRegion extends ParallelRegion {
   private AtomicDoubleArray sharedBornGrad;
   /** Self-energy for each atom */
   private AtomicDoubleArray selfEnergy;
+  private double[] finishedSelfEnergies;
   /** Cross-term energy for each atom */
   private AtomicDoubleArray crossEnergy;
 
@@ -278,6 +279,7 @@ public class GKEnergyRegion extends ParallelRegion {
       double crossSum = 0.0;
       for (int i=0; i<nAtoms; i++) {
         double self = selfEnergy.get(i);
+        finishedSelfEnergies[i] = self;
         double cross = crossEnergy.get(i);
         if(logger.isLoggable(Level.FINE)){logger.info(format("GKSELF   %5d %16.8f %16.8f", i, self, cross));}
         selfSum += self;
