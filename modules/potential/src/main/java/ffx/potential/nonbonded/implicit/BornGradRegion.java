@@ -115,6 +115,10 @@ public class BornGradRegion extends ParallelRegion {
   private boolean neckCorrection = false;
   /** Flag for using tanh correction, default to false for now. */
   private boolean tanhCorrection = false;
+  private double[] tanhInputIi;
+  private double beta0 = 1.0;
+  private double beta1 = 1.0;
+  private double beta2 = 1.0;
 
   public BornGradRegion(int nt, boolean perfectHCTScale) {
     bornCRLoop = new BornCRLoop[nt];
@@ -122,23 +126,6 @@ public class BornGradRegion extends ParallelRegion {
       bornCRLoop[i] = new BornCRLoop();
     }
     this.perfectHCTScale = perfectHCTScale;
-  }
-
-  /**
-   * Overloaded BornGradRegion constructor to include set-able neckCorrection and tanhCorrection terms
-   * @param nt Number of threads
-   * @param perfectHCTScale Boolean to determine if perfect HCT scale factors are being used
-   * @param neckCorrection Boolean to determine if the neck correction is being used
-   * @param tanhCorrection Boolean to determine if the tanh correction is being used
-   */
-  public BornGradRegion(int nt, boolean perfectHCTScale, boolean neckCorrection, boolean tanhCorrection){
-    bornCRLoop = new BornCRLoop[nt];
-    for(int i = 0; i < nt; i++){
-      bornCRLoop[i] = new BornCRLoop();
-    }
-    this.perfectHCTScale = perfectHCTScale;
-    this.neckCorrection = neckCorrection;
-    this.tanhCorrection = tanhCorrection;
   }
 
   /**
@@ -164,7 +151,13 @@ public class BornGradRegion extends ParallelRegion {
       double[] baseRadius,
       double[] descreenRadius,
       double[] overlapScale,
+      boolean neckCorrection,
       double[] neckScale,
+      boolean tanhCorrection,
+      double[] tanhInputIi,
+      double beta0,
+      double beta1,
+      double beta2,
       boolean[] use,
       double cut2,
       boolean nativeEnvironmentApproximation,
@@ -178,7 +171,13 @@ public class BornGradRegion extends ParallelRegion {
     this.baseRadius = baseRadius;
     this.descreenRadius = descreenRadius;
     this.overlapScale = overlapScale;
+    this.neckCorrection = neckCorrection;
     this.neckScale = neckScale;
+    this.tanhCorrection = tanhCorrection;
+    this.tanhInputIi = tanhInputIi;
+    this.beta0 = beta0;
+    this.beta1 = beta1;
+    this.beta2 = beta2;
     this.use = use;
     this.cut2 = cut2;
     this.nativeEnvironmentApproximation = nativeEnvironmentApproximation;
@@ -253,6 +252,7 @@ public class BornGradRegion extends ParallelRegion {
           termi = factor / pow(termi, (4.0 * oneThird));
           if(tanhCorrection){
             // add chain rule term for tanh function
+            termi = (termi * BornRescalingTanh.getTanhContribution(tanhInputIi[i],descreenRi));
           }
           int[] list = neighborLists[iSymOp][i];
           for (int k : list) {
@@ -295,6 +295,10 @@ public class BornGradRegion extends ParallelRegion {
               if (rbk < 50.0 && descreenRi > 0.0) {
                 double termk = PI4_3 / (rbk * rbk * rbk);
                 termk = factor / pow(termk, (4.0 * oneThird));
+                if(tanhCorrection){
+                  // add chain rule term for tanh function
+                  termk = (termk * BornRescalingTanh.getTanhContribution(tanhInputIi[i],descreenRi));
+                }
                 double de = descreenDerivative(r, r2, baseRk, descreenRi, overlapScale[i]);
                 // TODO: Add neck contribution to atom k being descreeened by atom i.
                 if(neckCorrection) {
@@ -353,7 +357,7 @@ public class BornGradRegion extends ParallelRegion {
         return 0.0;
       }
 
-      // Get Aij and Bij from Aguilar/Onufriev 2010 paper
+      // Get Aij and Bij
       double[] constants = NeckIntegralOnufriev.NeckIntegralOnufrievConstants.run(radius, radiusK);
 
       double Aij = constants[0];

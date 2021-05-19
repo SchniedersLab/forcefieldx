@@ -547,7 +547,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     bornRadiiRegion = new BornRadiiRegion(threadCount, forceField, perfectHCTScale);
     permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount, forceField);
     inducedGKFieldRegion = new InducedGKFieldRegion(threadCount, forceField);
-    bornGradRegion = new BornGradRegion(threadCount, perfectHCTScale, neckCorrection, bornRadiiRegion.getTanhCorrectionBoolean());
+    bornGradRegion = new BornGradRegion(threadCount, perfectHCTScale);
     gkEnergyRegion =
         new GKEnergyRegion(threadCount, forceField, polarization, nonPolar, surfaceTension, probe);
 
@@ -1174,7 +1174,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
             baseRadius,
             descreenRadius,
             overlapScale,
+            neckCorrection,
             neckScale,
+            bornRadiiRegion.getTanhCorrectionBoolean(),
+            bornRadiiRegion.getTanhInputIi(),
+            bornRadiiRegion.getBeta0(),
+            bornRadiiRegion.getBeta1(),
+            bornRadiiRegion.getBeta2(),
             use,
             cut2,
             nativeEnvironmentApproximation,

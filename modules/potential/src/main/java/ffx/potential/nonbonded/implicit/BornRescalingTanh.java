@@ -19,6 +19,8 @@ public class BornRescalingTanh {
      * 1/50^3 where 50 Angstroms is the maximum Born radius
      */
     private static final double recipMaxBornRadius3 = 1.0 / Math.pow(MaxBornRadius, 3.0);
+    private static final double PI4_3 = 4.0 / 3.0 * PI;
+    private static final double oneThird = 1.0 / 3.0;
 
     // Set defaults to Aguliar/Onufriev original numbers: beta0 = 1.0 beta1 = 18.4377 beta2 = 343.7171
     private static double beta0 = 0.3;
@@ -32,7 +34,6 @@ public class BornRescalingTanh {
         // Ri_inverse = ((1/rhoi^3) - ((1/rhoi^3)-(1/50^3))*tanh(beta0*Psi*rhoi^3 - beta1*(Psi*rhoi^3)^2 + beta2*(Psi*rhoi^3)^3))^1/3
         // Set up tanh function components
 
-        double PI4_3 = 4.0 / 3.0 * PI;
         double rhoi3 = rhoi * rhoi * rhoi;
         // Here, Psi = Ii, which is passed in
         double rhoi3Psi = rhoi3 * Math.abs(Ii);
@@ -45,6 +46,25 @@ public class BornRescalingTanh {
         double output = Math.copySign(Math.tanh(input),Ii);
         //logger.info("Ii: "+Ii+" input: "+input+" output: "+output+" returned: "+tanh_constant*output);
         return tanh_constant * output;
+    }
+
+    public static double getTanhContribution(double Ii, double rhoi){
+
+        double rhoi3 = rhoi * rhoi * rhoi;
+        // Here, Psi = Ii, which is passed in
+        double rhoi3Psi = rhoi3 * Math.abs(Ii);
+        double rhoi6Psi2 = rhoi3Psi * rhoi3Psi;
+        double rhoi9Psi3 = rhoi6Psi2 * rhoi3Psi;
+
+        double rhoi6Psi = rhoi3 * rhoi3 * Math.abs(Ii);
+        double rhoi9Psi2 = rhoi6Psi2 * rhoi3;
+        // If the output of the tanh function is 1.0, then the Born radius will be MaxBornRadius
+        double tanh_constant = PI4_3 * ((1.0 / rhoi3) - recipMaxBornRadius3);
+
+        double input = beta0 * rhoi3Psi - beta1 * rhoi6Psi2 + beta2 * rhoi9Psi3;
+        double chainRuleTerm = beta0 * rhoi3 - 2 * beta1 * rhoi6Psi + 3 * beta2 * rhoi9Psi2;
+
+        return tanh_constant * chainRuleTerm * (1 - Math.pow(Math.tanh(input),2));
     }
 
     // Getters and setters for optimizing constants
