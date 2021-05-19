@@ -37,9 +37,13 @@
 // ******************************************************************************
 package ffx.potential.extended;
 
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.MultiResidue;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.ResidueEnumerations;
 import ffx.potential.extended.TitrationUtils.Titration;
 import ffx.utilities.Constants;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.log;
@@ -84,11 +88,23 @@ public final class TitrationESV extends ExtendedVariable {
      */
     public TitrationESV(ExtendedSystem esvSystem, MultiResidue multiRes) {
         super(esvSystem, multiRes, 1.0);
+        MolecularAssembly mola = esvSystem.getMolecularAssembly();
+        CompositeConfiguration properties = mola.getProperties();
         this.constPh = esvSystem.getConstantPh();
-        Titration titration = Titration.lookup(multiRes.getActive());
-        this.referenceEnergy = titration.refEnergy;
-        this.lambdaIntercept = titration.lambdaIntercept;
-        this.pKaModel = titration.pKa;
+        Residue currentRes = multiRes.getActive();
+        Titration titration = Titration.lookup(currentRes);
+        ResidueEnumerations.AminoAcid3 currentAA3 = ResidueEnumerations.AminoAcid3.valueOf(currentRes.getName());
+        if(currentAA3 == ResidueEnumerations.AminoAcid3.LYS || currentAA3 == ResidueEnumerations.AminoAcid3.LYD){
+            this.referenceEnergy = properties.getDouble("PMF-LYS-ReferenceEnergy",titration.refEnergy);
+            this.lambdaIntercept = properties.getDouble("PMF-LYS-LambdaIntercept",titration.lambdaIntercept);
+            this.pKaModel = properties.getDouble("PMF-LYS-pkaModel",titration.pKa);
+        }
+        else{
+            this.referenceEnergy = titration.refEnergy;
+            this.lambdaIntercept = titration.lambdaIntercept;
+            this.pKaModel = titration.pKa;
+        }
+
     }
 
     /**
