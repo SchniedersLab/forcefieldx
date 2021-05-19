@@ -771,12 +771,12 @@ public class TitrationUtils {
     ctoC(8.18, 60.168, 0.0, AminoAcid3.CYD, AminoAcid3.CYS),
     Dtod(3.90, 53.188, 0.0, AminoAcid3.ASP, AminoAcid3.ASH),
     Etoe(4.25, 59.390, 0.0, AminoAcid3.GLU, AminoAcid3.GLH),
-    ktoK(10.53, -58.53,0.00, AminoAcid3.LYD, AminoAcid3.LYS),
+    ktoK(10.53, -58.53,0.0, AminoAcid3.LYD, AminoAcid3.LYS),
     ytoY(10.07, 34.961, 0.0, AminoAcid3.TYD, AminoAcid3.TYR),
     UtoH(6.00, -42.923, 0.0, AminoAcid3.HID, AminoAcid3.HIS),
     ZtoH(6.00, 00.000, 0.0, AminoAcid3.HIE, AminoAcid3.HIS),
-    TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcid3.UNK, AminoAcid3.UNK),
-    TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcid3.UNK, AminoAcid3.UNK);
+    TerminalNH3toNH2(8.23, 0.0, 0.0, AminoAcid3.UNK, AminoAcid3.UNK),
+    TerminalCOOHtoCOO(3.55, 0.0, 0.0, AminoAcid3.UNK, AminoAcid3.UNK);
 
     public final double pKa;
     public final double refEnergy;
