@@ -1428,7 +1428,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
   public void setSneck(double sneck_input){
     this.sneck = sneck_input;
+    initAtomArrays();
   }
+
+  public void setTanhBetas(double[] betas){
+    bornRadiiRegion.setBeta0(betas[0]);
+    bornRadiiRegion.setBeta1(betas[1]);
+    bornRadiiRegion.setBeta2(betas[2]);
+  }
+
+  public double getSneck(){return this.sneck;}
 
   void setLambdaFunction(double lPow, double dlPow, double dl2Pow) {
     if (lambdaTerm) {

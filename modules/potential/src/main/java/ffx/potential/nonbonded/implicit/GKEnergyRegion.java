@@ -277,6 +277,7 @@ public class GKEnergyRegion extends ParallelRegion {
       if(logger.isLoggable(Level.FINE)){logger.info(" Generalized Kirkwood Self-Energies and Cross-Energies\n");}
       double selfSum = 0.0;
       double crossSum = 0.0;
+      finishedSelfEnergies = new double[nAtoms];
       for (int i=0; i<nAtoms; i++) {
         double self = selfEnergy.get(i);
         finishedSelfEnergies[i] = self;

@@ -296,6 +296,9 @@ public class BornRadiiRegion extends ParallelRegion {
     return tanhInputIi;
   }
 
+  public void setBeta0(double beta0_input){this.beta0 = beta0_input;}
+  public void setBeta1(double beta1_input){this.beta1 = beta1_input;}
+  public void setBeta2(double beta2_input){this.beta2 = beta2_input;}
   /**
    * Compute Born radii for a range of atoms via the Grycuk method.
    *

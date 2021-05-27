@@ -23,9 +23,9 @@ public class BornRescalingTanh {
     private static final double oneThird = 1.0 / 3.0;
 
     // Set defaults to Aguliar/Onufriev original numbers: beta0 = 1.0 beta1 = 18.4377 beta2 = 343.7171
-    private static double beta0 = 0.3;
-    private static double beta1 = 0.0;
-    private static double beta2 = 0.0;
+    private static double beta0 = 0.4720;
+    private static double beta1 = 1.0252;
+    private static double beta2 = 0.2488;
 
     // Pass in Psi and rhoi for rescaling
     public static double rescale(double Ii, double rhoi) {
