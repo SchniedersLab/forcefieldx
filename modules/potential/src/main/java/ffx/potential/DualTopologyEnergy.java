@@ -157,6 +157,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   private boolean doValenceRestraint1;
   /** Include a valence restaint energy for atoms being "disappeared." */
   private boolean doValenceRestraint2;
+  /** Use System 1 Bonded Energy. */
+  private boolean useFirstSystemBondedEnergy;
   /** End-state restraint energy of topology 1 (kcal/mol). */
   private double restraintEnergy1 = 0;
   /** End-state restraint energy of topology 2 (kcal/mol). */
@@ -222,9 +224,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     nAtoms2 = atoms2.length;
 
     ForceField forceField1 = topology1.getForceField();
-    this.doValenceRestraint1 = forceField1.getBoolean("LAMBDA_VALENCE_RESTRAINTS", true);
+    doValenceRestraint1 = forceField1.getBoolean("LAMBDA_VALENCE_RESTRAINTS", true);
     ForceField forceField2 = topology2.getForceField();
-    this.doValenceRestraint2 = forceField2.getBoolean("LAMBDA_VALENCE_RESTRAINTS", true);
+    doValenceRestraint2 = forceField2.getBoolean("LAMBDA_VALENCE_RESTRAINTS", true);
+
+    useFirstSystemBondedEnergy = forceField2.getBoolean("USE_FIRST_SYSTEM_BONDED_ENERGY", false);
 
     CompositeConfiguration properties = topology1.getProperties();
     boolean doPinSoftcore = properties.getBoolean("doPinSoftcore", false);
@@ -572,7 +576,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * Returns the number of shared variables (3* number of shared atoms).
+   * Returns the number of shared variables (3 * number of shared atoms).
    *
    * @return An int
    */
@@ -710,14 +714,25 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             + f2L * restraintd2EdL2_1
             + 2.0 * dF2dL * restraintdEdL_1
             + d2F2dL2 * restraintEnergy1;
-    double e2 =
-        f2L * d2EdL2_2
-            + 2.0 * dF2dL * dEdL_2
-            + d2F2dL2 * energy2
-            + f1L * restraintd2EdL2_2
-            + 2.0 * dF1dL * restraintdEdL_2
-            + d2F1dL2 * restraintEnergy2;
-    return e1 + e2;
+    if (!useFirstSystemBondedEnergy) {
+      double e2 =
+          f2L * d2EdL2_2
+              + 2.0 * dF2dL * dEdL_2
+              + d2F2dL2 * energy2
+              + f1L * restraintd2EdL2_2
+              + 2.0 * dF1dL * restraintdEdL_2
+              + d2F1dL2 * restraintEnergy2;
+      return e1 + e2;
+    } else {
+      double e2 =
+          f2L * d2EdL2_2
+              + 2.0 * dF2dL * dEdL_2
+              + d2F2dL2 * energy2
+              - f2L * restraintd2EdL2_2
+              - 2.0 * dF2dL * restraintdEdL_2
+              - d2F2dL2 * restraintEnergy2;
+      return e1 + e2;
+    }
   }
 
   /** {@inheritDoc} */
@@ -726,8 +741,13 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     // Subtraction is implicit, as dEdL_2 and dF2dL are both multiplied by
     // negative 1 when set.
     double e1 = f1L * dEdL_1 + dF1dL * energy1 + f2L * restraintdEdL_1 + dF2dL * restraintEnergy1;
-    double e2 = f2L * dEdL_2 + dF2dL * energy2 + f1L * restraintdEdL_2 + dF1dL * restraintEnergy2;
-    return e1 + e2;
+    if (!useFirstSystemBondedEnergy) {
+      double e2 = f2L * dEdL_2 + dF2dL * energy2 + f1L * restraintdEdL_2 + dF1dL * restraintEnergy2;
+      return e1 + e2;
+    } else {
+      double e2 = f2L * dEdL_2 + dF2dL * energy2 - f2L * restraintdEdL_2 - dF2dL * restraintEnergy2;
+      return e1 + e2;
+    }
   }
 
   /** {@inheritDoc} */
@@ -744,42 +764,61 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     for (int i = 0; i < nActive1; i++) {
       Atom a = activeAtoms1[i];
       if (!doUnpin.test(a)) {
-        g[indexCommon++] =
-            f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
-        g[indexCommon++] =
-            f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
-        g[indexCommon++] =
-            f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
+        g[indexCommon++] = f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
+        g[indexCommon++] = f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
+        g[indexCommon++] = f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
       } else {
-        g[indexUnique++] =
-            f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
-        g[indexUnique++] =
-            f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
-        g[indexUnique++] =
-            f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
+        g[indexUnique++] = f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
+        g[indexUnique++] = f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
+        g[indexUnique++] = f1L * gl1[index] + dF1dL * g1[index] + f2L * rgl1[index] + dF2dL * rg1[index++];
       }
     }
 
     // Coordinate Gradient from Topology 2.
-    index = 0;
-    indexCommon = 0;
-    for (int i = 0; i < nActive2; i++) {
-      Atom a = activeAtoms2[i];
-      if (a.isActive()) {
-        if (!doUnpin.test(a)) {
-          g[indexCommon++] +=
-              (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index] + dF1dL * rg2[index++]);
-          g[indexCommon++] +=
-              (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index] + dF1dL * rg2[index++]);
-          g[indexCommon++] +=
-              (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index] + dF1dL * rg2[index++]);
-        } else {
-          g[indexUnique++] =
-              (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index] + dF1dL * rg2[index++]);
-          g[indexUnique++] =
-              (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index] + dF1dL * rg2[index++]);
-          g[indexUnique++] =
-              (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index] + dF1dL * rg2[index++]);
+    if (!useFirstSystemBondedEnergy) {
+      index = 0;
+      indexCommon = 0;
+      for (int i = 0; i < nActive2; i++) {
+        Atom a = activeAtoms2[i];
+        if (a.isActive()) {
+          if (!doUnpin.test(a)) {
+            g[indexCommon++] += (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index]
+                + dF1dL * rg2[index++]);
+            g[indexCommon++] += (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index]
+                + dF1dL * rg2[index++]);
+            g[indexCommon++] += (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index]
+                + dF1dL * rg2[index++]);
+          } else {
+            g[indexUnique++] = (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index]
+                + dF1dL * rg2[index++]);
+            g[indexUnique++] = (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index]
+                + dF1dL * rg2[index++]);
+            g[indexUnique++] = (-f2L * gl2[index] + dF2dL * g2[index] - f1L * rgl2[index]
+                + dF1dL * rg2[index++]);
+          }
+        }
+      }
+    } else {
+      index = 0;
+      indexCommon = 0;
+      for (int i = 0; i < nActive2; i++) {
+        Atom a = activeAtoms2[i];
+        if (a.isActive()) {
+          if (!doUnpin.test(a)) {
+            g[indexCommon++] += (-f2L * gl2[index] + dF2dL * g2[index] + f2L * rgl2[index]
+                - dF2dL * rg2[index++]);
+            g[indexCommon++] += (-f2L * gl2[index] + dF2dL * g2[index] + f2L * rgl2[index]
+                - dF2dL * rg2[index++]);
+            g[indexCommon++] += (-f2L * gl2[index] + dF2dL * g2[index] + f2L * rgl2[index]
+                - dF2dL * rg2[index++]);
+          } else {
+            g[indexUnique++] = (-f2L * gl2[index] + dF2dL * g2[index] + f2L * rgl2[index]
+                - dF2dL * rg2[index++]);
+            g[indexUnique++] = (-f2L * gl2[index] + dF2dL * g2[index] + f2L * rgl2[index]
+                - dF2dL * rg2[index++]);
+            g[indexUnique++] = (-f2L * gl2[index] + dF2dL * g2[index] + f2L * rgl2[index]
+                - dF2dL * rg2[index++]);
+          }
         }
       }
     }
@@ -996,19 +1035,37 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       }
     }
 
-    // Coordinate Gradient from Topology 2.
-    indexCommon = 0;
-    index = 0;
-    for (int i = 0; i < nActive2; i++) {
-      Atom a = activeAtoms2[i];
-      if (!doUnpin.test(a)) {
-        g[indexCommon++] += f2L * g2[index] + f1L * rg2[index++];
-        g[indexCommon++] += f2L * g2[index] + f1L * rg2[index++];
-        g[indexCommon++] += f2L * g2[index] + f1L * rg2[index++];
-      } else {
-        g[indexUnique++] = f2L * g2[index] + f1L * rg2[index++];
-        g[indexUnique++] = f2L * g2[index] + f1L * rg2[index++];
-        g[indexUnique++] = f2L * g2[index] + f1L * rg2[index++];
+    if (!useFirstSystemBondedEnergy) {
+      // Coordinate Gradient from Topology 2.
+      indexCommon = 0;
+      index = 0;
+      for (int i = 0; i < nActive2; i++) {
+        Atom a = activeAtoms2[i];
+        if (!doUnpin.test(a)) {
+          g[indexCommon++] += f2L * g2[index] + f1L * rg2[index++];
+          g[indexCommon++] += f2L * g2[index] + f1L * rg2[index++];
+          g[indexCommon++] += f2L * g2[index] + f1L * rg2[index++];
+        } else {
+          g[indexUnique++] = f2L * g2[index] + f1L * rg2[index++];
+          g[indexUnique++] = f2L * g2[index] + f1L * rg2[index++];
+          g[indexUnique++] = f2L * g2[index] + f1L * rg2[index++];
+        }
+      }
+    } else {
+      // Coordinate Gradient from Topology 2.
+      indexCommon = 0;
+      index = 0;
+      for (int i = 0; i < nActive2; i++) {
+        Atom a = activeAtoms2[i];
+        if (!doUnpin.test(a)) {
+          g[indexCommon++] += f2L * g2[index] - f2L * rg2[index++];
+          g[indexCommon++] += f2L * g2[index] - f2L * rg2[index++];
+          g[indexCommon++] += f2L * g2[index] - f2L * rg2[index++];
+        } else {
+          g[indexUnique++] = f2L * g2[index] - f2L * rg2[index++];
+          g[indexUnique++] = f2L * g2[index] - f2L * rg2[index++];
+          g[indexUnique++] = f2L * g2[index] - f2L * rg2[index++];
+        }
       }
     }
 
@@ -1101,7 +1158,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     @Override
     public void finish() {
       // Apply the dual-topology scaling for the total energy.
-      totalEnergy = f1L * energy1 + f2L * restraintEnergy1 + f2L * energy2 + f1L * restraintEnergy2;
+      if (!useFirstSystemBondedEnergy) {
+        totalEnergy = f1L * energy1 + f2L * restraintEnergy1 + f2L * energy2 + f1L * restraintEnergy2;
+      } else {
+        totalEnergy = f1L * energy1 + f2L * restraintEnergy1 + f2L * energy2 - f2L * restraintEnergy2;
+      }
 
       if (gradient) {
         packGradient(x, g);
@@ -1164,7 +1225,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         lambdaInterface1.getdEdXdL(gl1);
 
         if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
-          forceFieldEnergy1.setLambdaBondedTerms(true);
+          forceFieldEnergy1.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 1");
           }
@@ -1172,7 +1233,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           restraintdEdL_1 = forceFieldEnergy1.getdEdL();
           restraintd2EdL2_1 = forceFieldEnergy1.getd2EdL2();
           forceFieldEnergy1.getdEdXdL(rgl1);
-          forceFieldEnergy1.setLambdaBondedTerms(false);
+          forceFieldEnergy1.setLambdaBondedTerms(false, false);
         } else {
           restraintEnergy1 = 0.0;
           restraintdEdL_1 = 0.0;
@@ -1190,12 +1251,12 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         energy1 = potential1.energy(x1, verbose);
         if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
           ForceFieldEnergy ffE1 = (ForceFieldEnergy) potential1;
-          ffE1.setLambdaBondedTerms(true);
+          ffE1.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 1");
           }
           restraintEnergy1 = potential1.energy(x1, verbose);
-          ffE1.setLambdaBondedTerms(false);
+          ffE1.setLambdaBondedTerms(false, false);
         } else {
           restraintEnergy1 = 0.0;
         }
@@ -1235,7 +1296,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         lambdaInterface2.getdEdXdL(gl2);
 
         if (doValenceRestraint2) {
-          forceFieldEnergy2.setLambdaBondedTerms(true);
+          forceFieldEnergy2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 2");
           }
@@ -1243,7 +1304,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           restraintdEdL_2 = -forceFieldEnergy2.getdEdL();
           restraintd2EdL2_2 = forceFieldEnergy2.getd2EdL2();
           forceFieldEnergy2.getdEdXdL(rgl2);
-          forceFieldEnergy2.setLambdaBondedTerms(false);
+          forceFieldEnergy2.setLambdaBondedTerms(false, false);
         } else {
           restraintEnergy2 = 0.0;
           restraintdEdL_2 = 0.0;
@@ -1261,12 +1322,12 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         energy2 = potential2.energy(x2, verbose);
         if (doValenceRestraint2 && potential2 instanceof ForceFieldEnergy) {
           ForceFieldEnergy ffE2 = (ForceFieldEnergy) potential2;
-          ffE2.setLambdaBondedTerms(true);
+          ffE2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 2");
           }
           restraintEnergy2 = potential2.energy(x2, verbose);
-          ffE2.setLambdaBondedTerms(false);
+          ffE2.setLambdaBondedTerms(false, false);
         } else {
           restraintEnergy2 = 0.0;
         }
