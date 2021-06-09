@@ -221,6 +221,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   protected double[] optimizationScaling = null;
   /** Indicates only bonded energy terms effected by Lambda should be evaluated. */
   boolean lambdaBondedTerms = false;
+  /** Indicates all bonded energy terms should be evaluated if lambdaBondedTerms is true. */
+  boolean lambdaAllBondedTerms = false;
+
   /** Flag to indicate proper shutdown of the ForceFieldEnergy. */
   boolean destroyed = false;
   /**
@@ -3716,9 +3719,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * Setter for the field <code>lambdaBondedTerms</code>.
    *
    * @param lambdaBondedTerms a boolean.
+   * @param lambdaAllBondedTerms a boolean.
    */
-  void setLambdaBondedTerms(boolean lambdaBondedTerms) {
+  void setLambdaBondedTerms(boolean lambdaBondedTerms, boolean lambdaAllBondedTerms) {
     this.lambdaBondedTerms = lambdaBondedTerms;
+    this.lambdaAllBondedTerms = lambdaAllBondedTerms;
   }
 
   /**
@@ -4457,7 +4462,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
            * If it is scaled internally by lambda, we assume that the energy term is not meant to be internally complemented.
            * In that case, we skip evaluation into restraintEnergy.
            */
-          boolean used = !lambdaBondedTerms || (term.applyLambda() && !term.isLambdaScaled());
+          boolean used = !lambdaBondedTerms || lambdaAllBondedTerms || (term.applyLambda() && !term.isLambdaScaled());
           if (used) {
             localEnergy += term.energy(gradient, threadID, grad, lambdaGrad);
             if (computeRMSD) {
