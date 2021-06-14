@@ -384,6 +384,7 @@ public class BornRadiiRegion extends ParallelRegion {
                 localBorn[i] += descreenIK;
                 // TODO: Neck contribution to atom i being descreeened by atom k.
                 if (neckCorrection) {
+                  //logger.info("Neck Correction true in BornRadiiRegion");
                 /* if(neckDescreen(r,baseRi,descreenRk,numBoundHeavyAtoms) != 0) {
                   logger.info(format("Modify local Born for atom %d with neck from %d by %2.8f. Separation Distance: %2.8f",
                                   i + 1, k + 1, neckDescreen(r, baseRi, descreenRk,numBoundHeavyAtoms),r));
@@ -399,6 +400,7 @@ public class BornRadiiRegion extends ParallelRegion {
                 localBorn[k] += descreenKI;
                 // TODO: Neck contribution to atom k being descreeened by atom i.
                 if(neckCorrection) {
+                  //logger.info("Neck Correction true in BornRadiiRegion");
                   /* if(neckDescreen(r,baseRi,descreenRk, numBoundHeavyAtoms) != 0) {
                   logger.info(format("Modify local Born for atom %d with neck from %d by %2.8f. Separation Distance: %2.8f",
                           k + 1, i + 1, neckDescreen(r, baseRk, descreenRi, numBoundHeavyAtoms),r));
@@ -421,6 +423,7 @@ public class BornRadiiRegion extends ParallelRegion {
               if (sk > 0.0) {
                 localBorn[i] += descreen(r, r2, baseRi, descreenRk, sk);
                 if(neckCorrection){
+                  //logger.info("Neck Correction true in BornRadiiRegion");
                   // TODO: Neck contribution to atom i being descreeened by atom k.
                   localBorn[i] += neckDescreen(r, baseRi, descreenRk,neckScale[i]);
                 }
@@ -451,24 +454,22 @@ public class BornRadiiRegion extends ParallelRegion {
      * @return this contribution to the descreening integral.
      */
     private double neckDescreen(double r, double radius, double radiusK, double sneck) {
-      double neckIntegral;
+      double neckIntegral = 0.0;
       double radiusWater = 1.4;
 
+      if (r > radius + radiusK + 2.0 * radiusWater) {
+        return 0.0;
+      }
       // Get Aij and Bij from Aguilar/Onufriev 2010 paper
       double[] constants = NeckIntegralOnufriev.NeckIntegralOnufrievConstants.run(radius, radiusK);
 
       double Aij = constants[0];
       double Bij = constants[1];
 
-      //logger.info(format("Aij: %2.8f Bij: %2.8f", Aij, Bij));
-      if (r > radius + radiusK + 2.0 * radiusWater || Bij > r) {
-        return 0.0;
-      }
-
+      //logger.info(format("Energy Inputs: Ri %2.4f Rk %2.4f\nEnergy Outputs: Aij %2.4f Bij %2.4f",radius,radiusK,constants[0],constants[1]));
       // If a neck is formed, Aij can never be zero
       if (Aij <= 0.000000000) {
-        // Set to minimum in Aij matrix
-        Aij = 0.0000161523;
+        logger.warning("Aij is set to 0.000 or below");
       }
 
       double rMinusBij = r - Bij;
