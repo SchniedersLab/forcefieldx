@@ -1,6 +1,7 @@
 package ffx.potential.nonbonded.implicit;
 
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 
@@ -23,9 +24,9 @@ public class BornRescalingTanh {
     private static final double oneThird = 1.0 / 3.0;
 
     // Set defaults to Aguliar/Onufriev original numbers: beta0 = 1.0 beta1 = 18.4377 beta2 = 343.7171
-    private static double beta0 = 0.4720;
-    private static double beta1 = 1.0252;
-    private static double beta2 = 0.2488;
+    private static double beta0 = 0.8000;
+    private static double beta1 = 0.2451;
+    private static double beta2 = 0.0364;
 
     // Pass in Psi and rhoi for rescaling
     public static double rescale(double Ii, double rhoi) {
@@ -40,7 +41,7 @@ public class BornRescalingTanh {
         double rhoi6Psi2 = rhoi3Psi * rhoi3Psi;
         double rhoi9Psi3 = rhoi6Psi2 * rhoi3Psi;
         // If the output of the tanh function is 1.0, then the Born radius will be MaxBornRadius
-        double tanh_constant = PI4_3*((1.0 / rhoi3) - recipMaxBornRadius3);
+        double tanh_constant = PI4_3 * ((1.0 / rhoi3) - recipMaxBornRadius3);
 
         double input = beta0 * rhoi3Psi - beta1 * rhoi6Psi2 + beta2 * rhoi9Psi3;
         double output = Math.copySign(Math.tanh(input),Ii);
@@ -62,9 +63,10 @@ public class BornRescalingTanh {
         double tanh_constant = PI4_3 * ((1.0 / rhoi3) - recipMaxBornRadius3);
 
         double input = beta0 * rhoi3Psi - beta1 * rhoi6Psi2 + beta2 * rhoi9Psi3;
-        double chainRuleTerm = beta0 * rhoi3 - 2 * beta1 * rhoi6Psi + 3 * beta2 * rhoi9Psi2;
+        double chainRuleTerm = beta0 * rhoi3 - 2.0 * beta1 * rhoi6Psi + 3.0 * beta2 * rhoi9Psi2;
+        double tanh2 = Math.tanh(input) * Math.tanh(input);
 
-        return tanh_constant * chainRuleTerm * (1 - Math.pow(Math.tanh(input),2));
+        return tanh_constant * chainRuleTerm * (1.0 - tanh2);
     }
 
     // Getters and setters for optimizing constants
