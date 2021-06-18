@@ -71,15 +71,20 @@
 
 package ffx.potential.constraint;
 
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.DoubleMath.normalize;
+import static ffx.numerics.math.DoubleMath.sub;
+import static java.lang.System.arraycopy;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import ffx.numerics.Constraint;
-import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import java.util.logging.Logger;
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * SETTLE triatomic distance constraints, intended for rigid water models.
@@ -92,6 +97,7 @@ import org.apache.commons.math3.util.FastMath;
  * @since 1.0
  */
 public class SettleConstraint implements Constraint {
+
   private static final Logger logger = Logger.getLogger(SettleConstraint.class.getName());
 
   private final int index0;
@@ -153,8 +159,8 @@ public class SettleConstraint implements Constraint {
   static double lawOfCosines(double distAB, double distBC, double angABC) {
     double val = distAB * distAB;
     val += distBC * distBC;
-    val -= (2 * distAB * distBC * FastMath.cos(FastMath.toRadians(angABC)));
-    val = FastMath.sqrt(val);
+    val -= (2.0 * distAB * distBC * cos(toRadians(angABC)));
+    val = sqrt(val);
     return val;
   }
 
@@ -201,7 +207,7 @@ public class SettleConstraint implements Constraint {
     double yc0 = apos2[1] - apos0[1];
     double zc0 = apos2[2] - apos0[2];
 
-    double invTotalMass = 1 / (m0 + m1 + m2);
+    double invTotalMass = 1.0 / (m0 + m1 + m2);
     double xcom = (xp0[0] * m0 + (xb0 + xp1[0]) * m1 + (xc0 + xp2[0]) * m2) * invTotalMass;
     double ycom = (xp0[1] * m0 + (yb0 + xp1[1]) * m1 + (yc0 + xp2[1]) * m2) * invTotalMass;
     double zcom = (xp0[2] * m0 + (zb0 + xp1[2]) * m1 + (zc0 + xp2[2]) * m2) * invTotalMass;
@@ -367,9 +373,9 @@ public class SettleConstraint implements Constraint {
       eBC[i] = apos2[i] - apos1[i];
       eCA[i] = apos0[i] - apos2[i];
     }
-    DoubleMath.normalize(eAB, eAB);
-    DoubleMath.normalize(eBC, eBC);
-    DoubleMath.normalize(eCA, eCA);
+    normalize(eAB, eAB);
+    normalize(eBC, eBC);
+    normalize(eCA, eCA);
     /*eAB /= sqrt(eAB[0]*eAB[0] + eAB[1]*eAB[1] + eAB[2]*eAB[2]);
     eBC /= sqrt(eBC[0]*eBC[0] + eBC[1]*eBC[1] + eBC[2]*eBC[2]);
     eCA /= sqrt(eCA[0]*eCA[0] + eCA[1]*eCA[1] + eCA[2]*eCA[2]);*/
@@ -392,24 +398,24 @@ public class SettleConstraint implements Constraint {
     double mABCinv = 1 / (mA * mB * mC);
     double denom =
         (((s2A * mB + s2B * mA) * mC
-                        + (s2A * mB * mB + 2 * (cA * cB * cC + 1) * mA * mB + s2B * mA * mA))
-                    * mC
-                + s2C * mA * mB * (mA + mB))
+            + (s2A * mB * mB + 2 * (cA * cB * cC + 1) * mA * mB + s2B * mA * mA))
+            * mC
+            + s2C * mA * mB * (mA + mB))
             * mABCinv;
     double tab =
         ((cB * cC * mA - cA * mB - cA * mC) * vCA
-                + (cA * cC * mB - cB * mC - cB * mA) * vBC
-                + (s2C * mA * mA * mB * mB * mABCinv + (mA + mB + mC)) * vAB)
+            + (cA * cC * mB - cB * mC - cB * mA) * vBC
+            + (s2C * mA * mA * mB * mB * mABCinv + (mA + mB + mC)) * vAB)
             / denom;
     double tbc =
         ((cA * cB * mC - cC * mB - cC * mA) * vCA
-                + (s2A * mB * mB * mC * mC * mABCinv + (mA + mB + mC)) * vBC
-                + (cA * cC * mB - cB * mA - cB * mC) * vAB)
+            + (s2A * mB * mB * mC * mC * mABCinv + (mA + mB + mC)) * vBC
+            + (cA * cC * mB - cB * mA - cB * mC) * vAB)
             / denom;
     double tca =
         ((s2B * mA * mA * mC * mC * mABCinv + (mA + mB + mC)) * vCA
-                + (cA * cB * mC - cC * mB - cC * mA) * vBC
-                + (cB * cC * mA - cA * mB - cA * mC) * vAB)
+            + (cA * cB * mC - cC * mB - cC * mA) * vBC
+            + (cB * cC * mA - cA * mB - cA * mC) * vAB)
             / denom;
 
     double invMA = 1.0 / mA;
@@ -424,9 +430,9 @@ public class SettleConstraint implements Constraint {
     v1 += (eBC*tbc - eAB*tab)*inverseMasses[atom2[index]];
     v2 += (eCA*tca - eBC*tbc)*inverseMasses[atom3[index]];*/
 
-    System.arraycopy(v0, 0, v, xi0, 3);
-    System.arraycopy(v1, 0, v, xi1, 3);
-    System.arraycopy(v2, 0, v, xi2, 3);
+    arraycopy(v0, 0, v, xi0, 3);
+    arraycopy(v1, 0, v, xi1, 3);
+    arraycopy(v2, 0, v, xi2, 3);
     /* velocities[atom1[index]] = v0;
     velocities[atom2[index]] = v1;
     velocities[atom3[index]] = v2; */
@@ -457,9 +463,9 @@ public class SettleConstraint implements Constraint {
     double[] x0 = new double[3];
     double[] x1 = new double[3];
     double[] x2 = new double[3];
-    System.arraycopy(x, xi0, x0, 0, 3);
-    System.arraycopy(x, xi1, x1, 0, 3);
-    System.arraycopy(x, xi2, x2, 0, 3);
+    arraycopy(x, xi0, x0, 0, 3);
+    arraycopy(x, xi1, x1, 0, 3);
+    arraycopy(x, xi2, x2, 0, 3);
 
     for (int i = 0; i < 3; i++) {
       // 0-1 bond.
@@ -502,37 +508,37 @@ public class SettleConstraint implements Constraint {
       double[] v0 = new double[3];
       double[] v1 = new double[3];
       double[] v2 = new double[3];
-      System.arraycopy(v, xi0, v0, 0, 3);
-      System.arraycopy(v, xi1, v1, 0, 3);
-      System.arraycopy(v, xi2, v2, 0, 3);
+      arraycopy(v, xi0, v0, 0, 3);
+      arraycopy(v, xi1, v1, 0, 3);
+      arraycopy(v, xi2, v2, 0, 3);
 
       // Obtain relative velocities.
       double[] v01 = new double[3];
       double[] v02 = new double[3];
       double[] v12 = new double[3];
-      DoubleMath.sub(v1, v0, v01);
-      DoubleMath.sub(v2, v0, v02);
-      DoubleMath.sub(v2, v1, v12);
+      sub(v1, v0, v01);
+      sub(v2, v0, v02);
+      sub(v2, v1, v12);
 
       // Obtain bond vectors.
       double[] x01 = new double[3];
       double[] x02 = new double[3];
       double[] x12 = new double[3];
-      DoubleMath.sub(x1, x0, x01);
-      DoubleMath.sub(x2, x0, x02);
-      DoubleMath.sub(x2, x1, x12);
+      sub(x1, x0, x01);
+      sub(x2, x0, x02);
+      sub(x2, x1, x12);
 
-      double xv01 = DoubleMath.dot(v01, x01);
-      double xv02 = DoubleMath.dot(v02, x02);
-      double xv12 = DoubleMath.dot(v12, x12);
+      double xv01 = dot(v01, x01);
+      double xv02 = dot(v02, x02);
+      double xv12 = dot(v12, x12);
 
-      if (Math.abs(xv01) > vTol) {
+      if (abs(xv01) > vTol) {
         return false;
       }
-      if (Math.abs(xv02) > vTol) {
+      if (abs(xv02) > vTol) {
         return false;
       }
-      if (Math.abs(xv12) > vTol) {
+      if (abs(xv12) > vTol) {
         return false;
       }
     }

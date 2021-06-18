@@ -18,6 +18,7 @@ import org.apache.commons.math3.linear.RealVectorPreservingVisitor;
 import org.apache.commons.math3.util.FastMath;
 
 public class CcmaConstraint implements Constraint {
+
   public static final double DEFAULT_CCMA_NONZERO_CUTOFF = 0.01;
   private static final Logger logger = Logger.getLogger(CcmaConstraint.class.getName());
   private static final int DEFAULT_MAX_ITERS = 150;
@@ -59,6 +60,7 @@ public class CcmaConstraint implements Constraint {
       final Atom[] allAtoms,
       final double[] masses,
       double nonzeroCutoff) {
+
     long time = -System.nanoTime();
     int nBonds = constrainedBonds.size();
     int nAngles = constrainedAngles.size();
@@ -256,7 +258,7 @@ public class CcmaConstraint implements Constraint {
     IntStream.range(0, nConstraints)
         .
         // parallel(). // I have no idea if OpenMapRealMatrix is thread-safe.
-        forEach(
+            forEach(
             (int i) -> {
               double[] rowI = kInvDense.getRow(i);
               for (int j = 0; j < nConstraints; j++) {
@@ -361,8 +363,8 @@ public class CcmaConstraint implements Constraint {
   }
 
   /**
-   * Much of the math for applying to coordinates/velocities is the same. As such, OpenMM just uses
-   * a single driver method with a flag to indicate velocities or positions.
+   * Much of the math for applying to coordinates/velocities is the same. As such, OpenMM just uses a
+   * single driver method with a flag to indicate velocities or positions.
    *
    * @param xPrior Either pre-step coordinates (positions) or current coordinates (velocities)
    * @param output Output vector, either constrained coordinates or velocities
@@ -485,7 +487,8 @@ public class CcmaConstraint implements Constraint {
 
     /** {@inheritDoc} */
     @Override
-    public void start(int dimension, int start, int end) {}
+    public void start(int dimension, int start, int end) {
+    }
 
     /** {@inheritDoc} */
     @Override

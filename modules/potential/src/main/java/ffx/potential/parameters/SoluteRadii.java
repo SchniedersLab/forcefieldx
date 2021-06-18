@@ -975,7 +975,7 @@ public class SoluteRadii {
         SoluteType soluteType = forceField.getSoluteType(Integer.toString(key));
         if (soluteType != null) {
           if (soluteType.gkDiameter <= 0.0) {
-            logger.severe(format(" Invalid solute type: %s", soluteType.toString()));
+            logger.severe(format(" Invalid solute type: %s", soluteType));
           }
           baseRadius[i] = soluteType.gkDiameter * 0.5;
         }
@@ -991,6 +991,6 @@ public class SoluteRadii {
     } catch (Exception e) {
       soluteRadiiType = SOLUTE_RADII_TYPE.SOLUTE;
     }
-    logger.info(format("   Radii:                  %20s", soluteRadiiType.toString()));
+    logger.info(format("   Radii:                  %20s", soluteRadiiType));
   }
 }
