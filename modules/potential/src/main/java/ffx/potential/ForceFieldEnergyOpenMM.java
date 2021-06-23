@@ -88,7 +88,11 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_addTorsionTorsion;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionGrid;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_addParticle;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_AlchemicalMethod.OpenMM_AmoebaVdwForce_Decouple;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_CutoffPeriodic;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_NoCutoff;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_addParticleType;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_addParticle_1;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setAlchemicalMethod;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setCutoffDistance;
@@ -287,10 +291,7 @@ import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 import edu.rit.mp.CharacterBuf;
 import edu.rit.pj.Comm;
-import edu.uiowa.jopenmm.OpenMMAmoebaLibrary;
-import edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod;
 import edu.uiowa.jopenmm.OpenMMLibrary;
-import edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean;
 import edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_NonbondedMethod;
 import edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_NonbondedMethod;
 import edu.uiowa.jopenmm.OpenMMUtils;
@@ -1619,6 +1620,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private double[] exceptionChargeProd;
     /** Double array, holds epsilon quantity value for exceptions. */
     private double[] exceptionEps;
+    /**
+     * A map from vdW class values to OpenMM vdW types.
+     */
+    private Map<Integer, Integer> vdwClassToOpenMMType;
+    /**
+     * A class for a special vdW type that specifies zero energy (eps = 0.0; sigma = 1.0) for use
+     * with the FFX "use" flag (e.g. use = false should give zero vdW energy for a many-body
+     * expansion).
+     */
+    private int vdWClassForNoInteraction;
     /**
      * Lambda flag to indicate control of electrostatic scaling. If both elec and vdW are being
      * scaled, then vdW is scaled first, followed by elec.
@@ -3324,44 +3335,60 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         radScale = 0.5;
       }
 
+      /*
+        The vdW class used to specify no vdW interactions for an atom will be Zero
+        if all atom classes are greater than zero. Otherwise:
+        vdWClassForNoInteraction = min(atomClass) - 1
+       */
+      vdWClassForNoInteraction = 0;
+      // Add vdW parameters to the force and record their type.
+      vdwClassToOpenMMType = new HashMap<>();
+      for (int i = 0; i < nAtoms; i++) {
+        Atom atom = atoms[i];
+        VDWType vdwType = atom.getVDWType();
+        int atomClass = vdwType.atomClass;
+        if (!vdwClassToOpenMMType.containsKey(atomClass)) {
+          double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
+          double rad = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+          int type = OpenMM_AmoebaVdwForce_addParticleType(amoebaVDWForce, rad, eps);
+          vdwClassToOpenMMType.put(atomClass, type);
+          if (atomClass <= vdWClassForNoInteraction) {
+            vdWClassForNoInteraction = atomClass - 1;
+          }
+        }
+      }
+      // Add a special vdW type for zero vdW energy and forces (e.g. to support the FFX "use" flag).
+      int type = OpenMM_AmoebaVdwForce_addParticleType(amoebaVDWForce, OpenMM_NmPerAngstrom, 0.0);
+      vdwClassToOpenMMType.put(vdWClassForNoInteraction, type);
+
       int[] ired = vdW.getReductionIndex();
       for (int i = 0; i < nAtoms; i++) {
         Atom atom = atoms[i];
         VDWType vdwType = atom.getVDWType();
+        int atomClass = vdwType.atomClass;
+        type = vdwClassToOpenMMType.get(atomClass);
         int isAlchemical = atom.applyLambda() ? 1 : 0;
-        OpenMM_AmoebaVdwForce_addParticle(
-            amoebaVDWForce,
-            ired[i],
-            OpenMM_NmPerAngstrom * vdwType.radius * radScale,
-            OpenMM_KJPerKcal * vdwType.wellDepth,
-            vdwType.reductionFactor,
+        OpenMM_AmoebaVdwForce_addParticle_1(amoebaVDWForce, ired[i], type, vdwType.reductionFactor,
             isAlchemical);
       }
 
-      OpenMM_AmoebaVdwForce_setCutoffDistance(
-          amoebaVDWForce, nonbondedCutoff.off * OpenMM_NmPerAngstrom);
+      double cutoff = nonbondedCutoff.off * OpenMM_NmPerAngstrom;
+      OpenMM_AmoebaVdwForce_setCutoffDistance(amoebaVDWForce, cutoff);
+
       if (vdW.getDoLongRangeCorrection()) {
-        OpenMM_AmoebaVdwForce_setUseDispersionCorrection(
-            amoebaVDWForce, OpenMM_Boolean.OpenMM_True);
+        OpenMM_AmoebaVdwForce_setUseDispersionCorrection(amoebaVDWForce, OpenMM_True);
       } else {
-        OpenMM_AmoebaVdwForce_setUseDispersionCorrection(
-            amoebaVDWForce, OpenMM_Boolean.OpenMM_False);
+        OpenMM_AmoebaVdwForce_setUseDispersionCorrection(amoebaVDWForce, OpenMM_False);
       }
 
       if (crystal.aperiodic()) {
-        OpenMM_AmoebaVdwForce_setNonbondedMethod(
-            amoebaVDWForce, OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_NoCutoff);
+        OpenMM_AmoebaVdwForce_setNonbondedMethod(amoebaVDWForce, OpenMM_AmoebaVdwForce_NoCutoff);
       } else {
-        OpenMM_AmoebaVdwForce_setNonbondedMethod(
-            amoebaVDWForce,
-            OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_CutoffPeriodic);
+        OpenMM_AmoebaVdwForce_setNonbondedMethod(amoebaVDWForce, OpenMM_AmoebaVdwForce_CutoffPeriodic);
       }
 
       if (vdwLambdaTerm) {
-        OpenMM_AmoebaVdwForce_setAlchemicalMethod(
-            amoebaVDWForce,
-            OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_AlchemicalMethod
-                .OpenMM_AmoebaVdwForce_Decouple);
+        OpenMM_AmoebaVdwForce_setAlchemicalMethod(amoebaVDWForce, OpenMM_AmoebaVdwForce_Decouple);
         OpenMM_AmoebaVdwForce_setSoftcoreAlpha(amoebaVDWForce, vdWSoftcoreAlpha);
         OpenMM_AmoebaVdwForce_setSoftcorePower(amoebaVDWForce, (int) vdwSoftcorePower);
       }
@@ -4154,22 +4181,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       for (Atom atom : atoms) {
         int index = atom.getXyzIndex() - 1;
         VDWType vdwType = atom.getVDWType();
-        double useFactor = 1.0;
-        if (!atom.getUse()) {
-          useFactor = 0.0;
-        }
 
+        // Get the OpenMM index for this vdW type.
+        int type = vdwClassToOpenMMType.get(vdwType.atomClass);
+        if (!atom.getUse()) {
+          // Get the OpenMM index for a special vdW type that has no interactions.
+          type = vdwClassToOpenMMType.get(vdWClassForNoInteraction);
+        }
         int isAlchemical = atom.applyLambda() ? 1 : 0;
-        double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
-        int typeIndex = -1;
+        double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
+        double rad = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
         OpenMM_AmoebaVdwForce_setParticleParameters(
-            amoebaVDWForce,
-            index,
-            ired[index],
-            OpenMM_NmPerAngstrom * vdwType.radius * radScale,
-            eps,
-            vdwType.reductionFactor,
-            isAlchemical, typeIndex);
+            amoebaVDWForce, index, ired[index],
+            rad, eps, vdwType.reductionFactor, isAlchemical, type);
       }
 
       if (context.contextPointer != null) {

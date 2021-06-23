@@ -96,13 +96,13 @@ public class VanDerWaalsForm {
   /** Store the Eps for each class */
   double[] eps;
   /** Store combined radius and epsilon values. */
-  private double[][] radEps;
+  private final double[][] radEps;
   /**
    * Store combined radius and epsilon values for 1-4 interactions.
    *
    * <p>Currently this is specific to the CHARMM force fields.
    */
-  private double[][] radEps14;
+  private final double[][] radEps14;
   /**
    * Constructor for VanDerWaalsForm.
    *
@@ -198,6 +198,9 @@ public class VanDerWaalsForm {
     scale13 = forceField.getDouble("VDW_13_SCALE", 0.0);
     scale14 = forceField.getDouble("VDW_14_SCALE", 1.0);
     double scale15 = forceField.getDouble("VDW_15_SCALE", 1.0);
+    if (scale15 != 1.0) {
+      logger.severe(" Van Der Waals 1-5 masking rules are not supported.");
+    }
 
     // The convention in TINKER is a vdw-14-scale factor of 2.0 means to scale by 0.5.
     if (scale12 > 1.0) {
@@ -208,10 +211,6 @@ public class VanDerWaalsForm {
     }
     if (scale14 > 1.0) {
       scale14 = 1.0 / scale14;
-    }
-
-    if (scale15 != 1.0) {
-      logger.severe(" Van Der Waals 1-5 masking rules are not supported.");
     }
 
     Map<String, VDWType> map = forceField.getVDWTypes();
