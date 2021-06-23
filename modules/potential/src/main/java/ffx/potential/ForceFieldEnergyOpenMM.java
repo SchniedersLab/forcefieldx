@@ -40,16 +40,6 @@ package ffx.potential;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_destroy;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_set;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaAngleForce_addAngle;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaAngleForce_create;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleCubic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaAngleForce_setAmoebaGlobalAnglePentic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleQuartic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleSextic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaBondForce_addBond;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaBondForce_create;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaBondForce_setAmoebaGlobalBondCubic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaBondForce_setAmoebaGlobalBondQuartic;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_NonbondedMethod.OpenMM_AmoebaGKCavitationForce_NoCutoff;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_addParticle;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_create;
@@ -65,12 +55,6 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirk
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaInPlaneAngleForce_addAngle;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaInPlaneAngleForce_create;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleCubic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAnglePentic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleQuartic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleSextic;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent12;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent13;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent14;
@@ -101,16 +85,6 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setPmeGridDimensions;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setPolarizationType;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_updateParametersInContext;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaOutOfPlaneBendForce_addOutOfPlaneBend;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaOutOfPlaneBendForce_create;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendCubic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendPentic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendQuartic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendSextic;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaPiTorsionForce_addPiTorsion;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaPiTorsionForce_create;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaStretchBendForce_addStretchBend;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaStretchBendForce_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_addTorsionTorsion;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionGrid;
@@ -160,6 +134,9 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setPeriodicBoxVectors;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setPositions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setVelocities;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_addAngle;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_addPerAngleParameter;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addBond;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addGlobalParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addPerBondParameter;
@@ -212,6 +189,9 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_resize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_set;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_setForceGroup;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_setName;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_addBond;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_append;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_destroy;
@@ -292,6 +272,7 @@ import static java.lang.Double.isFinite;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -2174,31 +2155,38 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       if (bonds == null || bonds.length < 1) {
         return;
       }
-      PointerByReference amoebaBondForce = OpenMM_AmoebaBondForce_create();
+
+      String energy;
+      if (bonds[0].bondType.bondFunction == BondFunction.QUARTIC) {
+        energy = format("k*(d^2 + %.15g*d^3 + %.15g*d^4); d=r-r0",
+            BondType.cubic / OpenMM_NmPerAngstrom,
+            BondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+      } else {
+        energy = "k*(d^2); d=r-r0";
+      }
+      PointerByReference amoebaBondForce = OpenMM_CustomBondForce_create(energy);
+      OpenMM_CustomBondForce_addPerBondParameter(amoebaBondForce, "r0");
+      OpenMM_CustomBondForce_addPerBondParameter(amoebaBondForce, "k");
+      OpenMM_Force_setName(amoebaBondForce, "AmoebaBond");
+
       double kParameterConversion =
           OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
       for (Bond bond : bonds) {
         int i1 = bond.getAtom(0).getXyzIndex() - 1;
         int i2 = bond.getAtom(1).getXyzIndex() - 1;
         BondType bondType = bond.bondType;
-        OpenMM_AmoebaBondForce_addBond(
-            amoebaBondForce,
-            i1,
-            i2,
-            bond.bondType.distance * OpenMM_NmPerAngstrom,
-            kParameterConversion * bondType.forceConstant * BondType.units);
+        double r0 = bondType.distance * OpenMM_NmPerAngstrom;
+        double k = kParameterConversion * bondType.forceConstant * BondType.units;
+        OpenMM_DoubleArray_append(parameters, r0);
+        OpenMM_DoubleArray_append(parameters, k);
+        OpenMM_CustomBondForce_addBond(amoebaBondForce, i1, i2, parameters);
+        OpenMM_DoubleArray_resize(parameters, 0);
       }
-
-      if (bonds[0].bondType.bondFunction == BondFunction.QUARTIC) {
-        OpenMM_AmoebaBondForce_setAmoebaGlobalBondCubic(
-            amoebaBondForce, BondType.cubic / OpenMM_NmPerAngstrom);
-        OpenMM_AmoebaBondForce_setAmoebaGlobalBondQuartic(
-            amoebaBondForce, BondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
-      }
+      OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("BOND_FORCE_GROUP", 0);
-
       OpenMM_Force_setForceGroup(amoebaBondForce, forceGroup);
       OpenMM_System_addForce(system, amoebaBondForce);
       logger.log(Level.INFO, format("  Bonds \t\t%6d\t\t%1d", bonds.length, forceGroup));
@@ -2222,38 +2210,40 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       if (nAngles < 1) {
         return;
       }
-
       boolean rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
+      String energy;
+      if (angles[0].angleType.angleFunction == AngleFunction.SEXTIC) {
+        energy = format(
+            "k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6); d=%.15g*theta-theta0",
+            AngleType.cubic, AngleType.quartic, AngleType.quintic, AngleType.sextic, 180.0 / PI);
+      } else {
+        energy = format("k*(d^2); d=%.15g*theta-theta0", 180.0 / PI);
+      }
+      PointerByReference amoebaAngleForce = OpenMM_CustomAngleForce_create(energy);
+      OpenMM_CustomAngleForce_addPerAngleParameter(amoebaAngleForce, "theta0");
+      OpenMM_CustomAngleForce_addPerAngleParameter(amoebaAngleForce, "k");
+      OpenMM_Force_setName(amoebaAngleForce, "AmoebaAngle");
 
-      PointerByReference amoebaAngleForce = OpenMM_AmoebaAngleForce_create();
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
       for (Angle angle : normalAngles) {
-        int i1 = angle.getAtom(0).getXyzIndex() - 1;
-        int i2 = angle.getAtom(1).getXyzIndex() - 1;
-        int i3 = angle.getAtom(2).getXyzIndex() - 1;
-        int nh = angle.nh;
         if (isHydrogenAngle(angle) && rigidHydrogenAngles) {
           logger.info(
               "Not adding angle to AmoebaAngleForce because angle is constrained: " + angle);
         } else {
-          OpenMM_AmoebaAngleForce_addAngle(
-              amoebaAngleForce,
-              i1,
-              i2,
-              i3,
-              angle.angleType.angle[nh],
-              OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
+          int i1 = angle.getAtom(0).getXyzIndex() - 1;
+          int i2 = angle.getAtom(1).getXyzIndex() - 1;
+          int i3 = angle.getAtom(2).getXyzIndex() - 1;
+          double theta0 = angle.angleType.angle[angle.nh];
+          double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          OpenMM_DoubleArray_append(parameters, theta0);
+          OpenMM_DoubleArray_append(parameters, k);
+          OpenMM_CustomAngleForce_addAngle(amoebaAngleForce, i1, i2, i3, parameters);
+          OpenMM_DoubleArray_resize(parameters, 0);
         }
       }
-
-      if (angles[0].angleType.angleFunction == AngleFunction.SEXTIC) {
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleCubic(amoebaAngleForce, AngleType.cubic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleQuartic(amoebaAngleForce, AngleType.quartic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAnglePentic(amoebaAngleForce, AngleType.quintic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleSextic(amoebaAngleForce, AngleType.sextic);
-      }
+      OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("ANGLE_FORCE_GROUP", 0);
-
       OpenMM_Force_setForceGroup(amoebaAngleForce, forceGroup);
       OpenMM_System_addForce(system, amoebaAngleForce);
       logger.log(Level.INFO, format("  Angles \t\t%6d\t\t%1d", nAngles, forceGroup));
@@ -2278,36 +2268,47 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return;
       }
 
-      PointerByReference amoebaInPlaneAngleForce = OpenMM_AmoebaInPlaneAngleForce_create();
+      String energy = format(
+          "k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6); d=theta-theta0; "
+              + "theta = %.15g*pointangle(x1, y1, z1, projx, projy, projz, x3, y3, z3); "
+              + "projx = x2-nx*dot; projy = y2-ny*dot; projz = z2-nz*dot; "
+              + "dot = nx*(x2-x3) + ny*(y2-y3) + nz*(z2-z3); "
+              + "nx = px/norm; ny = py/norm; nz = pz/norm; "
+              + "norm = sqrt(px*px + py*py + pz*pz); "
+              + "px = (d1y*d2z-d1z*d2y); py = (d1z*d2x-d1x*d2z); pz = (d1x*d2y-d1y*d2x); "
+              + "d1x = x1-x4; d1y = y1-y4; d1z = z1-z4; "
+              + "d2x = x3-x4; d2y = y3-y4; d2z = z3-z4",
+          AngleType.cubic, AngleType.quartic, AngleType.quintic, AngleType.sextic, 180.0 / PI);
+      PointerByReference amoebaInPlaneAngleForce = OpenMM_CustomCompoundBondForce_create(4, energy);
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaInPlaneAngleForce, "theta0");
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaInPlaneAngleForce, "k");
+      OpenMM_Force_setName(amoebaInPlaneAngleForce, "AmoebaInPlaneAngle");
+
+      PointerByReference particles = OpenMM_IntArray_create(0);
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
       for (Angle angle : inPlaneAngles) {
         int i1 = angle.getAtom(0).getXyzIndex() - 1;
         int i2 = angle.getAtom(1).getXyzIndex() - 1;
         int i3 = angle.getAtom(2).getXyzIndex() - 1;
         int i4 = angle.getAtom4().getXyzIndex() - 1;
-        int nh = angle.nh;
-        OpenMM_AmoebaInPlaneAngleForce_addAngle(
-            amoebaInPlaneAngleForce,
-            i1,
-            i2,
-            i3,
-            i4,
-            angle.angleType.angle[nh],
-            OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
+        OpenMM_IntArray_append(particles, i1);
+        OpenMM_IntArray_append(particles, i2);
+        OpenMM_IntArray_append(particles, i3);
+        OpenMM_IntArray_append(particles, i4);
+        double theta0 = angle.angleType.angle[angle.nh];
+        double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+        OpenMM_DoubleArray_append(parameters, theta0);
+        OpenMM_DoubleArray_append(parameters, k);
+        OpenMM_CustomCompoundBondForce_addBond(amoebaInPlaneAngleForce, particles, parameters);
+        OpenMM_IntArray_resize(particles, 0);
+        OpenMM_DoubleArray_resize(parameters, 0);
       }
-      OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleCubic(
-          amoebaInPlaneAngleForce, AngleType.cubic);
-      OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleQuartic(
-          amoebaInPlaneAngleForce, AngleType.quartic);
-      OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAnglePentic(
-          amoebaInPlaneAngleForce, AngleType.quintic);
-      OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleSextic(
-          amoebaInPlaneAngleForce, AngleType.sextic);
+      OpenMM_IntArray_destroy(particles);
+      OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("IN_PLANE_ANGLE_FORCE_GROUP", 0);
-
       OpenMM_Force_setForceGroup(amoebaInPlaneAngleForce, forceGroup);
       OpenMM_System_addForce(system, amoebaInPlaneAngleForce);
-
       logger.log(Level.INFO, format("  In-plane Angles \t%6d\t\t%1d", nAngles, forceGroup));
     }
 
@@ -2317,7 +2318,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       if (ureyBradleys == null || ureyBradleys.length < 1) {
         return;
       }
-      PointerByReference amoebaUreyBradleyForce = OpenMM_AmoebaBondForce_create();
+
+      PointerByReference amoebaUreyBradleyForce = OpenMM_HarmonicBondForce_create();
       double kParameterConversion =
           UreyBradleyType.units * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
@@ -2325,26 +2327,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int i1 = ureyBradley.getAtom(0).getXyzIndex() - 1;
         int i2 = ureyBradley.getAtom(2).getXyzIndex() - 1;
         UreyBradleyType ureyBradleyType = ureyBradley.ureyBradleyType;
-        OpenMM_AmoebaBondForce_addBond(
-            amoebaUreyBradleyForce,
-            i1,
-            i2,
-            ureyBradleyType.distance * OpenMM_NmPerAngstrom,
-            ureyBradleyType.forceConstant * kParameterConversion);
+        double length = ureyBradleyType.distance * OpenMM_NmPerAngstrom;
+        // The implementation of UreyBradley in FFX & Tinker: k x^2
+        // The implementation of Harmonic Bond Force in OpenMM:  k x^2 / 2
+        double k = 2.0 * ureyBradleyType.forceConstant * kParameterConversion;
+        OpenMM_HarmonicBondForce_addBond(amoebaUreyBradleyForce, i1, i2, length, k);
       }
 
-      OpenMM_AmoebaBondForce_setAmoebaGlobalBondCubic(
-          amoebaUreyBradleyForce, UreyBradleyType.cubic / OpenMM_NmPerAngstrom);
-      OpenMM_AmoebaBondForce_setAmoebaGlobalBondQuartic(
-          amoebaUreyBradleyForce,
-          UreyBradleyType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
-
       int forceGroup = forceField.getInteger("UREY_BRADLEY_FORCE", 0);
-
       OpenMM_Force_setForceGroup(amoebaUreyBradleyForce, forceGroup);
       OpenMM_System_addForce(system, amoebaUreyBradleyForce);
-      logger.log(
-          Level.INFO, format("  Urey-Bradleys \t%6d\t\t%1d", ureyBradleys.length, forceGroup));
+      logger
+          .log(Level.INFO, format("  Urey-Bradleys \t%6d\t\t%1d", ureyBradleys.length, forceGroup));
     }
 
     /** Add an out-of-plane bend force to the OpenMM System. */
@@ -2353,38 +2347,48 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
         return;
       }
-      PointerByReference amoebaOutOfPlaneBendForce = OpenMM_AmoebaOutOfPlaneBendForce_create();
 
+      String energy = format(
+          "k*(theta^2 + %.15g*theta^3 + %.15g*theta^4 + %.15g*theta^5 + %.15g*theta^6); "
+              + "theta = %.15g*pointangle(x2, y2, z2, x4, y4, z4, projx, projy, projz); "
+              + "projx = x2-nx*dot; projy = y2-ny*dot; projz = z2-nz*dot; "
+              + "dot = nx*(x2-x3) + ny*(y2-y3) + nz*(z2-z3); "
+              + "nx = px/norm; ny = py/norm; nz = pz/norm; "
+              + "norm = sqrt(px*px + py*py + pz*pz); "
+              + "px = (d1y*d2z-d1z*d2y); py = (d1z*d2x-d1x*d2z); pz = (d1x*d2y-d1y*d2x); "
+              + "d1x = x1-x4; d1y = y1-y4; d1z = z1-z4; "
+              + "d2x = x3-x4; d2y = y3-y4; d2z = z3-z4",
+          OutOfPlaneBendType.cubic, OutOfPlaneBendType.quartic, OutOfPlaneBendType.quintic,
+          OutOfPlaneBendType.sextic, 180.0 / PI);
+      PointerByReference amoebaOutOfPlaneBendForce = OpenMM_CustomCompoundBondForce_create(4,
+          energy);
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaOutOfPlaneBendForce, "k");
+      OpenMM_Force_setName(amoebaOutOfPlaneBendForce, "AmoebaOutOfPlaneBend");
+
+      PointerByReference particles = OpenMM_IntArray_create(0);
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
       for (OutOfPlaneBend outOfPlaneBend : outOfPlaneBends) {
+        OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
         int i1 = outOfPlaneBend.getAtom(0).getXyzIndex() - 1;
         int i2 = outOfPlaneBend.getAtom(1).getXyzIndex() - 1;
         int i3 = outOfPlaneBend.getAtom(2).getXyzIndex() - 1;
         int i4 = outOfPlaneBend.getAtom(3).getXyzIndex() - 1;
-        OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
-
-        OpenMM_AmoebaOutOfPlaneBendForce_addOutOfPlaneBend(
-            amoebaOutOfPlaneBendForce,
-            i1,
-            i2,
-            i3,
-            i4,
-            OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * OutOfPlaneBendType.units);
+        double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * OutOfPlaneBendType.units;
+        OpenMM_IntArray_append(particles, i1);
+        OpenMM_IntArray_append(particles, i2);
+        OpenMM_IntArray_append(particles, i3);
+        OpenMM_IntArray_append(particles, i4);
+        OpenMM_DoubleArray_append(parameters, k);
+        OpenMM_CustomCompoundBondForce_addBond(amoebaOutOfPlaneBendForce, particles, parameters);
+        OpenMM_IntArray_resize(particles, 0);
+        OpenMM_DoubleArray_resize(parameters, 0);
       }
-      OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendCubic(
-          amoebaOutOfPlaneBendForce, OutOfPlaneBendType.cubic);
-      OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendQuartic(
-          amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quartic);
-      OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendPentic(
-          amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quintic);
-      OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendSextic(
-          amoebaOutOfPlaneBendForce, OutOfPlaneBendType.sextic);
-
+      OpenMM_IntArray_destroy(particles);
+      OpenMM_DoubleArray_destroy(parameters);
       int forceGroup = forceField.getInteger("OUT_OF_PLANE_BEND_FORCE_GROUP", 0);
-
       OpenMM_Force_setForceGroup(amoebaOutOfPlaneBendForce, forceGroup);
       OpenMM_System_addForce(system, amoebaOutOfPlaneBendForce);
-      logger.log(
-          Level.INFO,
+      logger.log(Level.INFO,
           format("  Out-of-Plane Bends \t%6d\t\t%1d", outOfPlaneBends.length, forceGroup));
     }
 
@@ -2395,30 +2399,44 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return;
       }
 
-      PointerByReference amoebaStretchBendForce = OpenMM_AmoebaStretchBendForce_create();
+      String energy = format(
+          "(k1*(distance(p1,p2)-r12) + k2*(distance(p2,p3)-r23))*(%.15g*(angle(p1,p2,p3)-theta0))",
+          180.0 / PI);
+      PointerByReference amoebaStretchBendForce = OpenMM_CustomCompoundBondForce_create(3, energy);
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaStretchBendForce, "r12");
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaStretchBendForce, "r23");
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaStretchBendForce, "theta0");
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaStretchBendForce, "k1");
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaStretchBendForce, "k2");
+      OpenMM_Force_setName(amoebaStretchBendForce, "AmoebaStretchBend");
+
+      PointerByReference particles = OpenMM_IntArray_create(0);
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
       for (StretchBend stretchBend : stretchBends) {
         int i1 = stretchBend.getAtom(0).getXyzIndex() - 1;
         int i2 = stretchBend.getAtom(1).getXyzIndex() - 1;
         int i3 = stretchBend.getAtom(2).getXyzIndex() - 1;
-        double angle = stretchBend.angleEq;
-        double beq0 = stretchBend.bond0Eq;
-        double beq1 = stretchBend.bond1Eq;
-        double fc0 = stretchBend.force0;
-        double fc1 = stretchBend.force1;
-        OpenMM_AmoebaStretchBendForce_addStretchBend(
-            amoebaStretchBendForce,
-            i1,
-            i2,
-            i3,
-            beq0 * OpenMM_NmPerAngstrom,
-            beq1 * OpenMM_NmPerAngstrom,
-            OpenMM_RadiansPerDegree * angle,
-            (OpenMM_KJPerKcal / OpenMM_NmPerAngstrom) * fc0,
-            (OpenMM_KJPerKcal / OpenMM_NmPerAngstrom) * fc1);
+        double r12 = stretchBend.bond0Eq * OpenMM_NmPerAngstrom;
+        double r23 = stretchBend.bond1Eq * OpenMM_NmPerAngstrom;
+        double theta0 = stretchBend.angleEq * OpenMM_RadiansPerDegree;
+        double k1 = stretchBend.force0 * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
+        double k2 = stretchBend.force1 * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
+        OpenMM_IntArray_append(particles, i1);
+        OpenMM_IntArray_append(particles, i2);
+        OpenMM_IntArray_append(particles, i3);
+        OpenMM_DoubleArray_append(parameters, r12);
+        OpenMM_DoubleArray_append(parameters, r23);
+        OpenMM_DoubleArray_append(parameters, theta0);
+        OpenMM_DoubleArray_append(parameters, k1);
+        OpenMM_DoubleArray_append(parameters, k2);
+        OpenMM_CustomCompoundBondForce_addBond(amoebaStretchBendForce, particles, parameters);
+        OpenMM_IntArray_resize(particles, 0);
+        OpenMM_DoubleArray_resize(parameters, 0);
       }
+      OpenMM_IntArray_destroy(particles);
+      OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("STRETCH_BEND_FORCE_GROUP", 0);
-
       OpenMM_Force_setForceGroup(amoebaStretchBendForce, forceGroup);
       OpenMM_System_addForce(system, amoebaStretchBendForce);
       logger.log(
@@ -2506,8 +2524,20 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return;
       }
 
-      PointerByReference amoebaPiTorsionForce = OpenMM_AmoebaPiTorsionForce_create();
-      double units = PiTorsionType.units;
+      String energy = "2*k*sin(phi)^2;"
+          + "phi = pointdihedral(x3+c1x, y3+c1y, z3+c1z, x3, y3, z3, x4, y4, z4, x4+c2x, y4+c2y, z4+c2z); "
+          + "c1x = (d14y*d24z-d14z*d24y); c1y = (d14z*d24x-d14x*d24z); c1z = (d14x*d24y-d14y*d24x); "
+          + "c2x = (d53y*d63z-d53z*d63y); c2y = (d53z*d63x-d53x*d63z); c2z = (d53x*d63y-d53y*d63x); "
+          + "d14x = x1-x4; d14y = y1-y4; d14z = z1-z4; "
+          + "d24x = x2-x4; d24y = y2-y4; d24z = z2-z4; "
+          + "d53x = x5-x3; d53y = y5-y3; d53z = z5-z3; "
+          + "d63x = x6-x3; d63y = y6-y3; d63z = z6-z3";
+      PointerByReference amoebaPiTorsionForce = OpenMM_CustomCompoundBondForce_create(6, energy);
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaPiTorsionForce, "k");
+      OpenMM_Force_setName(amoebaPiTorsionForce, "AmoebaPiTorsion");
+
+      PointerByReference particles = OpenMM_IntArray_create(0);
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
       for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
         int a1 = piOrbitalTorsion.getAtom(0).getXyzIndex() - 1;
         int a2 = piOrbitalTorsion.getAtom(1).getXyzIndex() - 1;
@@ -2516,23 +2546,25 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int a5 = piOrbitalTorsion.getAtom(4).getXyzIndex() - 1;
         int a6 = piOrbitalTorsion.getAtom(5).getXyzIndex() - 1;
         PiTorsionType type = piOrbitalTorsion.piTorsionType;
-        OpenMM_AmoebaPiTorsionForce_addPiTorsion(
-            amoebaPiTorsionForce,
-            a1,
-            a2,
-            a3,
-            a4,
-            a5,
-            a6,
-            OpenMM_KJPerKcal * type.forceConstant * units);
+        double k = OpenMM_KJPerKcal * type.forceConstant * PiTorsionType.units;
+        OpenMM_IntArray_append(particles, a1);
+        OpenMM_IntArray_append(particles, a2);
+        OpenMM_IntArray_append(particles, a3);
+        OpenMM_IntArray_append(particles, a4);
+        OpenMM_IntArray_append(particles, a5);
+        OpenMM_IntArray_append(particles, a6);
+        OpenMM_DoubleArray_append(parameters, k);
+        OpenMM_CustomCompoundBondForce_addBond(amoebaPiTorsionForce, particles, parameters);
+        OpenMM_IntArray_resize(particles, 0);
+        OpenMM_DoubleArray_resize(parameters, 0);
       }
+      OpenMM_IntArray_destroy(particles);
+      OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("PI_ORBITAL_TORSION_FORCE_GROUP", 0);
-
       OpenMM_Force_setForceGroup(amoebaPiTorsionForce, forceGroup);
       OpenMM_System_addForce(system, amoebaPiTorsionForce);
-      logger.log(
-          Level.INFO,
+      logger.log(Level.INFO,
           format("  Pi-Orbital Torsions  \t%6d\t\t%1d", piOrbitalTorsions.length, forceGroup));
     }
 
@@ -4454,7 +4486,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       double[] overlapScale = gk.getOverlapScale();
       double[] baseRadii = gk.getBaseRadii();
       double[] descreenRadius = gk.getDescreenRadii();
-      
+
       boolean nea = gk.getNativeEnvironmentApproximation();
 
       for (Atom atom : atoms) {
