@@ -15,7 +15,7 @@ public class BARTest extends AlgorithmsTest {
         }
         
         // Set-up the input arguments for the script.
-        String[] args = {"--t1", "298","--nw","8","--ac","1-13", "src/main/java/ffx/algorithms/structures/testBar/dimethylphosphate.10.xyz"};
+        String[] args = {"-t", "298","--nw","8","--ac","1-13", "src/main/java/ffx/algorithms/structures/testBar/dimethylphosphate.10.xyz"};
         binding.setVariable("args", args);
         // Evaluate the script.
         BAR bar = new BAR(binding).run();

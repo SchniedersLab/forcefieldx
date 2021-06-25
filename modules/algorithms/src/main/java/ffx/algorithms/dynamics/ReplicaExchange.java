@@ -45,10 +45,13 @@ import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.parameters.ForceField;
 import java.io.IOException;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * The ReplicaExchange implements temperature and lambda replica exchange methods.
@@ -59,20 +62,16 @@ import java.util.logging.Logger;
 public class ReplicaExchange implements Terminatable {
 
   private static final Logger logger = Logger.getLogger(ReplicaExchange.class.getName());
-  private final AlgorithmListener algorithmListener;
   private final int nReplicas;
   private final Random random;
   /** Parallel Java world communicator. */
   private final Comm world;
-  /** Number of processes is equal to the number of replicas. */
-  private final int numProc;
   /** Rank of this process. */
   private final int rank;
   /**
-   * The parameters array stores communicated parameters for each process (i.e. each RepEx system).
+   * The parameters array stores communicated parameters for each process
+   * (i.e. each RepEx system).
    * Currently the array is of size [number of Processes][2].
-   *
-   * <p>
    */
   private final double[][] parameters;
   /**
@@ -90,7 +89,6 @@ public class ReplicaExchange implements Terminatable {
   private final int[] temp2Rank;
   private final int[] rank2Temp;
   private double[] temperatures;
-  private final double lowTemperature;
   private final int[] acceptedCount;
 
   /**
@@ -104,13 +102,16 @@ public class ReplicaExchange implements Terminatable {
       MolecularDynamics molecularDynamics, AlgorithmListener listener, double temperature) {
 
     this.replica = molecularDynamics;
-    this.algorithmListener = listener;
-    this.lowTemperature = temperature;
 
+    // MolecularAssembly[] molecularAssemblies = molecularDynamics.getAssemblies();
+    // CompositeConfiguration properties = molecularAssemblies[0].getProperties()
+    
     // Set up the Replica Exchange communication variables for Parallel Java communication between
     // nodes.
     world = Comm.world();
-    numProc = world.size();
+
+    // Number of processes is equal to the number of replicas.
+    int numProc = world.size();
     rank = world.rank();
 
     nReplicas = numProc;
@@ -119,7 +120,7 @@ public class ReplicaExchange implements Terminatable {
     rank2Temp = new int[nReplicas];
     acceptedCount = new int[nReplicas];
 
-    setExponentialTemperatureLadder(lowTemperature, 0.05);
+    setExponentialTemperatureLadder(temperature, 0.05);
 
     random = new Random();
     random.setSeed(0);
@@ -138,7 +139,7 @@ public class ReplicaExchange implements Terminatable {
   }
 
   /**
-   * sample.
+   * Sample.
    *
    * @param cycles a int.
    * @param nSteps a int.
