@@ -10,17 +10,17 @@ public class BARFilesTest extends AlgorithmsTest {
     /** Tests BAR script with tinker bar files input. */
     @Test
     public void testBARFiles() {
+
         if (!ffxOpenMM) {
             return;
         }
-
+        
         // Set-up the input arguments for the script.
-        String[] args = {"--t1", "298","--nw","8","--ac","1-13", "--utb", "src/main/java/ffx/algorithms/structures/testBar/dimethylphosphate.100.xyz"};
+        String[] args = {"-t", "298","--nw","8","--ac","1-13", "--utb", "src/main/java/ffx/algorithms/structures/testBar/dimethylphosphate.100.xyz"};
         binding.setVariable("args", args);
         // Evaluate the script.
         BAR bar = new BAR(binding).run();
         algorithmsScript = bar;
-
 
         double expectedFepFor= -115.4001;
         double actualFepFor = bar.getFepFor();

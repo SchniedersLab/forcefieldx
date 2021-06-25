@@ -167,13 +167,13 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private double d2sc2dL2 = 0.0;
   /** Generalized extended system variables. */
   private ExtendedSystem esvSystem;
-
   private int numESVs = 0;
   private double[] esvLambda;
   private double[] esvLambdaSwitch;
   private double[] esvSwitchDeriv;
   private boolean[] esvAtoms;
   private int[] atomEsvID;
+
   /** A local copy of atomic coordinates, including reductions on the hydrogen atoms. */
   private double[] coordinates;
   /** Reduced coordinates of size: [nSymm][nAtoms * 3] */
@@ -394,9 +394,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     if (vdwLambdaAlpha < 0.0) {
       vdwLambdaAlpha = 0.05;
     }
-    if (vdwLambdaExponent < 1.0) {
-      vdwLambdaExponent = 1.0;
-    }
+
     intermolecularSoftcore = forceField.getBoolean("INTERMOLECULAR_SOFTCORE", false);
     intramolecularSoftcore = forceField.getBoolean("INTRAMOLECULAR_SOFTCORE", false);
 
@@ -1231,10 +1229,13 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     @Override
     public void setFactors(int i, int k) {
       final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
+      // sc1 is the softcore alpha to prevent atomic separation from going to zero.
       sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
+      // sc2 is the softcore power takes scales the vdW energy to zero.
+      sc2 = esvLambdaProduct;
+      // These derivatives are with respect to the overall esvLambdaProduct.
       dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
       d2sc1dL2 = 2.0 * vdwLambdaAlpha;
-      sc2 = esvLambdaProduct;
       dsc2dL = 1.0;
       d2sc2dL2 = 0.0;
     }
