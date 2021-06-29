@@ -144,6 +144,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * Default Sneck scaling factor from Aguilar/Onufriev 2010
    */
   private static final double DEFAULT_SNECK = 0.4058;
+  /** Default value of beta0 for tanh scaling */
+  private static final double DEFAULT_BETA0 = 0.3;
+  /** Default value of beta1 for tanh scaling */
+  private static final double DEFAULT_BETA1 = 0.0;
+  /** Default value of beta2 for tanh scaling */
+  private static final double DEFAULT_BETA2 = 0.0;
   /**
    * Default surface tension for apolar models without an explicit dispersion term. This is lower
    * than CAVDISP, since the favorable dispersion term is implicitly included.
@@ -246,6 +252,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
   private double sneck;
   /** If true, the descreening integral includes the tanh correction to better approximate molecular surface */
   private final boolean tanhCorrection;
+  private final double beta0;
+  private final double beta1;
+  private final double beta2;
   /** Base overlap scale factor. */
   private double gkOverlapScale;
   /** If true, HCT overlap scale factors are element-specific */
@@ -386,6 +395,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
     neckCorrection = forceField.getBoolean("NECK_CORRECTION",false);
     sneck = forceField.getDouble("SNECK",DEFAULT_SNECK);
     tanhCorrection = forceField.getBoolean("TANH_CORRECTION",false);
+    beta0 = forceField.getDouble("BETA0",DEFAULT_BETA0);
+    beta1 = forceField.getDouble("BETA1",DEFAULT_BETA1);
+    beta2 = forceField.getDouble("BETA2",DEFAULT_BETA2);
     elementHCTScaleFactors = new HashMap<>();
     hct_n = forceField.getDouble("HCT_N",DEFAULT_HCT_SCALE);
     hct_c = forceField.getDouble("HCT_C",DEFAULT_HCT_SCALE);
@@ -567,9 +579,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(format("   Sneck:                              %8.4f",sneck));
     logger.info(format("   Use Tanh Correction                 %8B",tanhCorrection));
     if(bornRadiiRegion.getTanhCorrectionBoolean()){
-      logger.info(format("    Beta0:                             %8.4f",bornRadiiRegion.getBeta0()));
-      logger.info(format("    Beta1:                             %8.4f",bornRadiiRegion.getBeta1()));
-      logger.info(format("    Beta2:                             %8.4f",bornRadiiRegion.getBeta2()));
+      logger.info(format("    Beta0:                             %8.4f",beta0));
+      logger.info(format("    Beta1:                             %8.4f",beta1));
+      logger.info(format("    Beta2:                             %8.4f",beta2));
     }
     logger.info(format("   GaussVol HCT Scale Factors:         %8B", perfectHCTScale));
     logger.info(format("   Element-Specific HCT Scale Factors: %8B", elementHCTScale));
@@ -647,7 +659,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
           baseRadius,
           descreenRadius,
           overlapScale,
+          neckCorrection,
           neckScale,
+          tanhCorrection,
+          beta0,
+          beta1,
+          beta2,
           descreenOffset,
           use,
           cut2,
@@ -1187,9 +1204,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             descreenOffset,
             tanhCorrection,
             bornRadiiRegion.getTanhInputIi(),
-            bornRadiiRegion.getBeta0(),
-            bornRadiiRegion.getBeta1(),
-            bornRadiiRegion.getBeta2(),
+            beta0,
+            beta1,
+            beta2,
             use,
             cut2,
             nativeEnvironmentApproximation,

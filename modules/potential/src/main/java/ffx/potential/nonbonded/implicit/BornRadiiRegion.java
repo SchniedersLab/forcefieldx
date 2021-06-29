@@ -123,19 +123,11 @@ public class BornRadiiRegion extends ParallelRegion {
    * Boolean indicating whether or not to use the tanh volume correction for the implicit solvent
    */
   private boolean tanhCorrection;
-  /** Value of beta0 for tanh scaling */
   private double beta0;
-  /** Value of beta1 for tanh scaling */
   private double beta1;
-  /** Value of beta2 for tanh scaling */
   private double beta2;
-  /** Default value of beta0 for tanh scaling */
-  private static final double DEFAULT_BETA0 = 0.3;
-  /** Default value of beta1 for tanh scaling */
-  private static final double DEFAULT_BETA1 = 0.0;
-  /** Default value of beta2 for tanh scaling */
-  private static final double DEFAULT_BETA2 = 0.0;
   private double[] bornAfterTanh;
+  private double[] tanhInputIi;
 
   public BornRadiiRegion(int nt, ForceField forceField, boolean perfectHCTScale) {
     bornRadiiLoop = new BornRadiiLoop[nt];
@@ -144,11 +136,6 @@ public class BornRadiiRegion extends ParallelRegion {
     }
     ecavTot = new SharedDouble(0.0);
     verboseRadii = forceField.getBoolean("VERBOSE_BORN_RADII", false);
-    neckCorrection = forceField.getBoolean("NECK_CORRECTION", false);
-    tanhCorrection = forceField.getBoolean("TANH_CORRECTION", false);
-    beta0 = forceField.getDouble("BETA0",DEFAULT_BETA0);
-    beta1 = forceField.getDouble("BETA1",DEFAULT_BETA1);
-    beta2 = forceField.getDouble("BETA2",DEFAULT_BETA2);
     bornAfterTanh = new double[400];
     this.perfectHCTScale = perfectHCTScale;
     if (verboseRadii) {
@@ -159,6 +146,7 @@ public class BornRadiiRegion extends ParallelRegion {
   @Override
   public void finish() {
     int nAtoms = atoms.length;
+    tanhInputIi = new double[atoms.length];
     double bigRadius = BornRescalingTanh.MaxBornRadius;
     for (int i = 0; i < nAtoms; i++) {
       final double baseRi = baseRadius[i];
@@ -174,10 +162,9 @@ public class BornRadiiRegion extends ParallelRegion {
           BornRescalingTanh.setBeta0(beta0);
           BornRescalingTanh.setBeta1(beta1);
           BornRescalingTanh.setBeta2(beta2);
-          // Apply tanh scaling and check the value of the correction before and after
-          double correctionBefore = correction;
+          tanhInputIi[i] = correction;
           correction = BornRescalingTanh.rescale(correction,baseRi);
-          //System.out.println("Correction before : "+correctionBefore+" Correction after: "+correction);
+          //System.out.println("Correction before : "+tanhInputIi[i]+" Correction after: "+correction);
         }
         double sum = PI4_3 / (baseRi * baseRi * baseRi) + correction;
         if (sum <= 0.0) {
@@ -255,7 +242,12 @@ public class BornRadiiRegion extends ParallelRegion {
       double[] baseRadius,
       double[] descreenRadius,
       double[] overlapScale,
+      boolean neckCorrection,
       double[] neckScale,
+      boolean tanhCorrection,
+      double beta0,
+      double beta1,
+      double beta2,
       double descreenOffset,
       boolean[] use,
       double cut2,
@@ -268,7 +260,12 @@ public class BornRadiiRegion extends ParallelRegion {
     this.baseRadius = baseRadius;
     this.descreenRadius = descreenRadius;
     this.overlapScale = overlapScale;
+    this.neckCorrection = neckCorrection;
     this.neckScale = neckScale;
+    this.tanhCorrection = tanhCorrection;
+    this.beta0 = beta0;
+    this.beta1 = beta1;
+    this.beta2 = beta2;
     this.descreenOffset = descreenOffset;
     this.use = use;
     this.cut2 = cut2;
@@ -312,6 +309,9 @@ public class BornRadiiRegion extends ParallelRegion {
   }
   public double getBeta2(){
     return beta2;
+  }
+  public double[] getTanhInputIi(){
+    return tanhInputIi;
   }
 
   /**
