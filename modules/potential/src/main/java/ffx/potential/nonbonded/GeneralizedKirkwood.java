@@ -252,9 +252,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
   private double sneck;
   /** If true, the descreening integral includes the tanh correction to better approximate molecular surface */
   private final boolean tanhCorrection;
-  private final double beta0;
-  private final double beta1;
-  private final double beta2;
+  private double beta0;
+  private double beta1;
+  private double beta2;
   /** Base overlap scale factor. */
   private double gkOverlapScale;
   /** If true, HCT overlap scale factors are element-specific */
@@ -578,7 +578,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(format("   Use Neck Correction:                %8B", neckCorrection));
     logger.info(format("   Sneck:                              %8.4f",sneck));
     logger.info(format("   Use Tanh Correction                 %8B",tanhCorrection));
-    if(bornRadiiRegion.getTanhCorrectionBoolean()){
+    if(tanhCorrection){
       logger.info(format("    Beta0:                             %8.4f",beta0));
       logger.info(format("    Beta1:                             %8.4f",beta1));
       logger.info(format("    Beta2:                             %8.4f",beta2));
@@ -1464,6 +1464,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
   public void setSneck(double sneck_input){
     this.sneck = sneck_input;
+  }
+
+  public void setTanhBetas(double[] betas){
+    this.beta0 = betas[0];
+    this.beta1 = betas[1];
+    this.beta2 = betas[2];
   }
 
   void setLambdaFunction(double lPow, double dlPow, double dl2Pow) {

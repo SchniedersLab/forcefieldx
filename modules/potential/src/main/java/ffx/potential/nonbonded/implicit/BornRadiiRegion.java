@@ -176,21 +176,6 @@ public class BornRadiiRegion extends ParallelRegion {
                     i + 1, born[i], baseRadius[i]));
           }
         } else {
-          /*if (tanhCorrection) {
-            double prevBorn = 1.0 / pow(sum/PI4_3,oneThird);
-            if(i<2){System.out.println("Born before tanh: "+prevBorn);}
-            if(i<2){System.out.println("Sum before tanh : "+sum);}
-            //sum = sum - correction;
-            //sum = sum + (correction/PI4_3);
-            //System.out.println("Sum updated : "+sum);
-            //System.out.println("Correction before tanh: "+correction);
-            //System.out.println("Scaled correction     : "+correction/PI4_3);
-            //correction = BornRescalingTanh.Tanh.rescale((-1)*correction/PI4_3, prevBorn);
-            //System.out.println("Correction after tanh : "+correction);
-            //sum = sum - correction;
-            //sum = BornRescalingTanh.Tanh.rescale(sum, baseRi);
-            if(i<2){System.out.println("Sum after tanh  : "+sum);}
-          }*/
           born[i] = 1.0 / pow(sum / PI4_3, oneThird);
           //if(i<2){System.out.println("Born after tanh : "+born[i]);}
           //bornAfterTanh[i] = 1.0 / pow(sum, oneThird);
@@ -388,11 +373,6 @@ public class BornRadiiRegion extends ParallelRegion {
                 localBorn[i] += descreenIK;
                 // TODO: Neck contribution to atom i being descreeened by atom k.
                 if (neckCorrection) {
-                  //logger.info("Neck Correction true in BornRadiiRegion");
-                /* if(neckDescreen(r,baseRi,descreenRk,numBoundHeavyAtoms) != 0) {
-                  logger.info(format("Modify local Born for atom %d with neck from %d by %2.8f. Separation Distance: %2.8f",
-                                  i + 1, k + 1, neckDescreen(r, baseRi, descreenRk,numBoundHeavyAtoms),r));
-                }*/
                   localBorn[i] += neckDescreen(r, baseRi, descreenRk,neckScale[i]);
                 }
               }
@@ -404,11 +384,6 @@ public class BornRadiiRegion extends ParallelRegion {
                 localBorn[k] += descreenKI;
                 // TODO: Neck contribution to atom k being descreeened by atom i.
                 if(neckCorrection) {
-                  //logger.info("Neck Correction true in BornRadiiRegion");
-                  /* if(neckDescreen(r,baseRi,descreenRk, numBoundHeavyAtoms) != 0) {
-                  logger.info(format("Modify local Born for atom %d with neck from %d by %2.8f. Separation Distance: %2.8f",
-                          k + 1, i + 1, neckDescreen(r, baseRk, descreenRi, numBoundHeavyAtoms),r));
-                }*/
                   localBorn[k] += neckDescreen(r, baseRk, descreenRi, neckScale[k]);
                 }
               }
