@@ -237,17 +237,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /** If true, hydrogen atoms displace solvent */
   private final boolean descreenWithHydrogen;
   /** If true, the descreening integral includes overlaps with the volume of the descreened atom */
-  private boolean perfectHCTScale;
+  private final boolean perfectHCTScale;
+  /** Offset applied to descreening radii to help improve stability of descreening integral */
+  private double descreenOffset;
   /** If true, the descreening integral includes the neck correction to better approximate molecular surface */
-  private boolean neckCorrection;
+  private final boolean neckCorrection;
   /** Maximum Sneck scaling parameter value */
   private double sneck;
   /** If true, the descreening integral includes the tanh correction to better approximate molecular surface */
-  private boolean tanhCorrection;
+  private final boolean tanhCorrection;
   /** Base overlap scale factor. */
   private double gkOverlapScale;
   /** If true, HCT overlap scale factors are element-specific */
-  private boolean elementHCTScale;
+  private final boolean elementHCTScale;
   /** Element-specific HCT overlap scale factors */
   private HashMap<String,Double> elementHCTScaleFactors;
   private double hct_n;
@@ -380,6 +382,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     } else {
       perfectHCTScale = false;
     }
+    descreenOffset = forceField.getDouble("DESCREEN_OFFSET",0.0);
     neckCorrection = forceField.getBoolean("NECK_CORRECTION",false);
     sneck = forceField.getDouble("SNECK",DEFAULT_SNECK);
     tanhCorrection = forceField.getBoolean("TANH_CORRECTION",false);
@@ -559,6 +562,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(format("   Solvent Dielectric:                 %8.3f", epsilon));
     logger.info(format("   Descreen with vdW Radii:            %8B", descreenWithVDW));
     logger.info(format("   Descreen with Hydrogen Atoms:       %8B", descreenWithHydrogen));
+    logger.info(format("   Descreen Offset:                    %8.4f",descreenOffset));
     logger.info(format("   Use Neck Correction:                %8B", neckCorrection));
     logger.info(format("   Sneck:                              %8.4f",sneck));
     logger.info(format("   Use Tanh Correction                 %8B",tanhCorrection));
@@ -644,6 +648,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
           descreenRadius,
           overlapScale,
           neckScale,
+          descreenOffset,
           use,
           cut2,
           nativeEnvironmentApproximation,
@@ -1179,6 +1184,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             overlapScale,
             neckCorrection,
             neckScale,
+            descreenOffset,
             tanhCorrection,
             bornRadiiRegion.getTanhInputIi(),
             bornRadiiRegion.getBeta0(),
@@ -1389,7 +1395,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
           neckScale[i] = 1.00;
         } else {
           neckScale[i] = sneck*(5.0-numBoundHeavyAtoms)/4.0;
-          neckScale[i] = Math.pow(sneck,(5.0-numBoundHeavyAtoms)/4.0);
+          //neckScale[i] = Math.pow(sneck,(5.0-numBoundHeavyAtoms)/4.0);
           /*if(numBoundHeavyAtoms == 1){
             neckScale[i] = sneck;
           } else if(numBoundHeavyAtoms == 2){

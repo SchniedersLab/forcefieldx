@@ -110,6 +110,7 @@ public class BornGradRegion extends ParallelRegion {
      * number of bound non-hydrogen atoms
      */
     private double[] neckScale;
+    private double descreenOffset;
     /**
      * If true, the descreening integral includes overlaps with the volume of the descreened atom
      */
@@ -186,6 +187,7 @@ public class BornGradRegion extends ParallelRegion {
             double[] overlapScale,
             boolean neckCorrection,
             double[] neckScale,
+            double descreenOffset,
             boolean tanhCorrection,
             double[] tanhInputIi,
             double beta0,
@@ -206,6 +208,7 @@ public class BornGradRegion extends ParallelRegion {
         this.overlapScale = overlapScale;
         this.neckCorrection = neckCorrection;
         this.neckScale = neckScale;
+        this.descreenOffset = descreenOffset;
         this.tanhCorrection = tanhCorrection;
         this.tanhInputIi = tanhInputIi;
         this.beta0 = beta0;
@@ -293,7 +296,7 @@ public class BornGradRegion extends ParallelRegion {
                         throw new EnergyException(
                                 format(" %s\n Born radii CR %d %8.3f", atoms[i], i, bornGrad), true);
                     }
-                    final double baseRi = max(baseRadius[i], descreenRadius[i]);
+                    final double baseRi = max(baseRadius[i], descreenRadius[i]) + descreenOffset;
                     final double descreenRi = descreenRadius[i];
                     final double xi = x[i];
                     final double yi = y[i];
@@ -304,7 +307,7 @@ public class BornGradRegion extends ParallelRegion {
                         if (!nativeEnvironmentApproximation && !use[k]) {
                             continue;
                         }
-                        final double baseRk = max(baseRadius[k], descreenRadius[k]);
+                        final double baseRk = max(baseRadius[k], descreenRadius[k]) + descreenOffset;
                         final double descreenRk = descreenRadius[k];
                         if (k != i) {
                             dx_local[0] = xyz[0][k] - xi;

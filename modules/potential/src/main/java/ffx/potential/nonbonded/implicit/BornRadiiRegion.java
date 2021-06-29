@@ -106,6 +106,7 @@ public class BornRadiiRegion extends ParallelRegion {
   private boolean nativeEnvironmentApproximation;
   /** If true, the descreening integral includes overlaps with the volume of the descreened atom */
   private final boolean perfectHCTScale;
+  private double descreenOffset = 0.0;
 
   private SharedDoubleArray sharedBorn;
   private SharedDouble ecavTot;
@@ -166,6 +167,7 @@ public class BornRadiiRegion extends ParallelRegion {
       } else {
         //double sum = sharedBorn.get(i);
         double correction = sharedBorn.get(i);
+        //logger.info(format("Psi for atom %d: %2.8f",i,correction));
         // TODO: Implement/test tanh correction
         if(tanhCorrection){
           // Set tanh beta constants based on input values and/or defaults
@@ -254,6 +256,7 @@ public class BornRadiiRegion extends ParallelRegion {
       double[] descreenRadius,
       double[] overlapScale,
       double[] neckScale,
+      double descreenOffset,
       boolean[] use,
       double cut2,
       boolean nativeEnvironmentApproximation,
@@ -266,6 +269,7 @@ public class BornRadiiRegion extends ParallelRegion {
     this.descreenRadius = descreenRadius;
     this.overlapScale = overlapScale;
     this.neckScale = neckScale;
+    this.descreenOffset = descreenOffset;
     this.use = use;
     this.cut2 = cut2;
     this.nativeEnvironmentApproximation = nativeEnvironmentApproximation;
@@ -354,14 +358,14 @@ public class BornRadiiRegion extends ParallelRegion {
           if (!nativeEnvironmentApproximation && !use[i]) {
             continue;
           }
-          final double baseRi = max(baseRadius[i], descreenRadius[i]);
+          final double baseRi = max(baseRadius[i], descreenRadius[i]) + descreenOffset;
           final double descreenRi = descreenRadius[i];
           final double xi = x[i];
           final double yi = y[i];
           final double zi = z[i];
           int[] list = neighborLists[iSymOp][i];
           for (int k : list) {
-            final double baseRk = max(baseRadius[k], descreenRadius[k]);
+            final double baseRk = max(baseRadius[k], descreenRadius[k]) + descreenOffset;
             final double descreenRk = descreenRadius[k];
             assert (descreenRk > 0.0);
             if (!nativeEnvironmentApproximation && !use[k]) {
@@ -465,6 +469,7 @@ public class BornRadiiRegion extends ParallelRegion {
 
       double Aij = constants[0];
       double Bij = constants[1];
+      //logger.info(format("Aij: %2.10f Bij %2.4f",Aij,Bij));
 
       //logger.info(format("Energy Inputs: Ri %2.4f Rk %2.4f\nEnergy Outputs: Aij %2.4f Bij %2.4f",radius,radiusK,constants[0],constants[1]));
       // If a neck is formed, Aij can never be zero
