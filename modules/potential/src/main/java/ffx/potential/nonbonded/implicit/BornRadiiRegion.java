@@ -295,7 +295,6 @@ public class BornRadiiRegion extends ParallelRegion {
               continue;
             }
             if (i != k) {
-              boolean is_12or13 = atoms[i].is_12_or_13(atoms[k]);
               final double xr = xyz[0][k] - xi;
               final double yr = xyz[1][k] - yi;
               final double zr = xyz[2][k] - zi;
@@ -313,7 +312,7 @@ public class BornRadiiRegion extends ParallelRegion {
 //                  logger.info(format(" Descreen %d %d %16.8f", i + 1, k + 1, descreenIK));
 //                }
               }
-              if (neckCorrection && !is_12or13 && !atoms[k].isHydrogen()) {
+              if (neckCorrection && !atoms[k].isHydrogen()) {
                 // TODO: Add neck contribution to atom i being descreeened by atom k.
                 /*if(neckDescreen(r,baseRi,baseRk) != 0.0) {
                   logger.info(
@@ -332,7 +331,7 @@ public class BornRadiiRegion extends ParallelRegion {
 //                  logger.info(format(" Descreen %d %d %16.8f", k + 1, i + 1, descreenKI));
 //                }
               }
-              if (neckCorrection && !is_12or13 && !atoms[i].isHydrogen()) {
+              if (neckCorrection && !atoms[i].isHydrogen()) {
                 // TODO: Add neck contribution to atom k being descreeened by atom i.
                /* if(neckDescreen(r,baseRk,baseRi) != 0.0) {
                   logger.info(format("Modify local Born for atom %d with neck from %d by %2.8f",

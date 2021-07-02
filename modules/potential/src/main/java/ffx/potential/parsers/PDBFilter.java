@@ -417,6 +417,9 @@ public final class PDBFilter extends SystemFilter {
    * @param mutations a {@link java.util.List} object.
    */
   public void mutate(List<Mutation> mutations) {
+    if (this.mutations == null) {
+      this.mutations = new ArrayList<>();
+    }
     this.mutations.addAll(mutations);
   }
 

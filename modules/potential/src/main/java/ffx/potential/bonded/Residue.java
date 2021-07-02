@@ -56,7 +56,6 @@ import org.jogamp.java3d.Node;
 import org.jogamp.vecmath.Color3f;
 import org.jogamp.vecmath.Point2d;
 import org.jogamp.vecmath.Point3d;
-import org.jogamp.vecmath.Vector3d;
 
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.
@@ -94,8 +93,8 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   /** Constant <code>Ramachandran="new String[17]"</code> */
   public static String[] Ramachandran = new String[17];
 
-  private static Point3d point3d = new Point3d();
-  private static Point2d point2d = new Point2d();
+  private static final Point3d point3d = new Point3d();
+  private static final Point2d point2d = new Point2d();
 
   static {
     String origAtEndStr = System.getProperty("ro-origAtEnd");
@@ -200,8 +199,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   private Character chainID;
   /** Unique segID. */
   private String segID;
-  /** Secondary structure type. */
-  private SSType ssType = SSType.NONE;
   /** The rotamers for this residue. */
   private Rotamer[] rotamers = null;
   /** The current rotamer in use. */
@@ -213,8 +210,8 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   /** 3-letter nucleic acid code. */
   private NA3 na;
   /**
-   * These arrays store default coordinates for certain atoms in nucleic acid Residues. C1', O4',
-   * and C4' are the critical sugar atoms off which every other atom is drawn when applyRotamer is
+   * These arrays store default coordinates for certain atoms in nucleic acid Residues. C1', O4', and
+   * C4' are the critical sugar atoms off which every other atom is drawn when applyRotamer is
    * called. The backbone corrections, however, move these atoms, so they must be reverted to their
    * original coordinates each time applyRotamer is called.
    *
@@ -311,10 +308,8 @@ public class Residue extends MSGroup implements Comparable<Residue> {
       currentAtom = (Atom) atoms.contains(newAtom);
       if (currentAtom == null) {
         currentAtom = newAtom;
-
         currentAtom.setResName(getName());
         currentAtom.setResidueNumber(resNumber);
-
         atoms.add(newAtom);
         setFinalized(false);
       } else {
@@ -367,8 +362,12 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   /** {@inheritDoc} */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     Residue residue = (Residue) o;
     return Objects.equals(segID, residue.segID)
         && Objects.equals(getResidueNumber(), residue.getResidueNumber())
@@ -403,7 +402,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   public AminoAcid3 getAminoAcid3() {
     if (this.residueType != ResidueType.AA) {
       throw new IllegalArgumentException(
-          String.format(" This residue is " + "not an amino acid: %s", this.toString()));
+          String.format(" This residue is " + "not an amino acid: %s", this));
     } else if (aa == AA3.UNK) {
       logger.fine(String.format("UNK stored for residue with name: %s", getName()));
       return AminoAcid3.UNK;
@@ -412,8 +411,8 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
-   * Returns a list of backbone atoms; for our purposes, nucleic acid backbone atoms are those of
-   * the nucleobase.
+   * Returns a list of backbone atoms; for our purposes, nucleic acid backbone atoms are those of the
+   * nucleobase.
    *
    * @return List of backbone (or nucleobase) atoms.
    */
@@ -425,7 +424,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
         ret = new ArrayList<>(atoms);
         for (Atom atom : atoms) {
           String name = atom.getName().toUpperCase();
-          if (name.contains("\'")
+          if (name.contains("'")
               || name.equals("P")
               || name.startsWith("OP")
               || name.equals("H5T")
@@ -487,23 +486,22 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    */
   public Residue getNextResidue() {
     switch (residueType) {
-      case AA:
-        {
-          Atom carbon = (Atom) getAtomNode("C");
-          if (carbon == null) {
-            return null;
-          }
-          List<Bond> bonds = carbon.getBonds();
-          for (Bond b : bonds) {
-            Atom other = b.get1_2(carbon);
-            if (other.getName().equalsIgnoreCase("N")) {
-              return (Residue) other.getParent().getParent();
-            }
-          }
-          break;
+      case AA: {
+        Atom carbon = (Atom) getAtomNode("C");
+        if (carbon == null) {
+          return null;
         }
+        List<Bond> bonds = carbon.getBonds();
+        for (Bond b : bonds) {
+          Atom other = b.get1_2(carbon);
+          if (other.getName().equalsIgnoreCase("N")) {
+            return (Residue) other.getParent().getParent();
+          }
+        }
+        break;
+      }
       case NA:
-        Atom oxygen = (Atom) getAtomNode("O3\'");
+        Atom oxygen = (Atom) getAtomNode("O3'");
         if (oxygen == null) {
           return null;
         }
@@ -530,7 +528,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   public NucleicAcid3 getNucleicAcid3() {
     if (this.residueType != ResidueType.NA) {
       throw new IllegalArgumentException(
-          String.format(" This residue is " + "not a nucleic acid: %s", this.toString()));
+          String.format(" This residue is " + "not a nucleic acid: %s", this));
     } else if (na == NA3.UNK) {
       return NucleicAcid3.UNK;
     }
@@ -589,21 +587,20 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    */
   public Residue getPreviousResidue() {
     switch (residueType) {
-      case AA:
-        {
-          Atom nitrogen = (Atom) getAtomNode("N");
-          if (nitrogen == null) {
-            return null;
-          }
-          List<Bond> bonds = nitrogen.getBonds();
-          for (Bond b : bonds) {
-            Atom other = b.get1_2(nitrogen);
-            if (other.getName().equalsIgnoreCase("C")) {
-              return (Residue) other.getParent().getParent();
-            }
-          }
-          break;
+      case AA: {
+        Atom nitrogen = (Atom) getAtomNode("N");
+        if (nitrogen == null) {
+          return null;
         }
+        List<Bond> bonds = nitrogen.getBonds();
+        for (Bond b : bonds) {
+          Atom other = b.get1_2(nitrogen);
+          if (other.getName().equalsIgnoreCase("C")) {
+            return (Residue) other.getParent().getParent();
+          }
+        }
+        break;
+      }
       case NA:
         Atom phosphate = (Atom) getAtomNode("P");
         if (phosphate == null) {
@@ -612,7 +609,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
         List<Bond> bonds = phosphate.getBonds();
         for (Bond b : bonds) {
           Atom other = b.get1_2(phosphate);
-          if (other.getName().equalsIgnoreCase("O3\'")) {
+          if (other.getName().equalsIgnoreCase("O3'")) {
             return (Residue) other.getParent().getParent();
           }
         }
@@ -625,8 +622,8 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
-   * Returns a reference Atom for a Residue, primarily intended for rough distance calculations.
-   * This atom should be roughly centrally located within the residue, and be invariant.
+   * Returns a reference Atom for a Residue, primarily intended for rough distance calculations. This
+   * atom should be roughly centrally located within the residue, and be invariant.
    *
    * @return A reference Atom.
    */
@@ -823,7 +820,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
            * denoted with ' at the end. Note that we add the side chain
            * atoms for NAs, instead of removing the backbone.
            */
-          if (name.contains("\'") || name.equals("P") || name.startsWith("OP")) {
+          if (name.contains("'") || name.equals("P") || name.startsWith("OP")) {
             ret.add(atom);
           }
         }
@@ -897,11 +894,11 @@ public class Residue extends MSGroup implements Comparable<Residue> {
           break;
       }
       C1sCoords = new double[3];
-      ((Atom) getAtomNode("C1\'")).getXYZ(C1sCoords);
+      ((Atom) getAtomNode("C1'")).getXYZ(C1sCoords);
       O4sCoords = new double[3];
-      ((Atom) getAtomNode("O4\'")).getXYZ(O4sCoords);
+      ((Atom) getAtomNode("O4'")).getXYZ(O4sCoords);
       C4sCoords = new double[3];
-      ((Atom) getAtomNode("C4\'")).getXYZ(C4sCoords);
+      ((Atom) getAtomNode("C4'")).getXYZ(C4sCoords);
 
       /*
        With the place flag set false, applySugarPucker returns
@@ -919,12 +916,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
   }
 
-  /** printSideChainCOM */
-  public void logSideChainCOM() {
-    double[] com = this.getSideChainCOM();
-    logger.info(String.format(" %s %8.3f %8.3f %8.3f ", getName(), com[0], com[1], com[2]));
-  }
-
   /**
    * {@inheritDoc}
    *
@@ -932,7 +923,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    */
   @Override
   public void print() {
-    logger.info(" " + toString());
+    logger.info(" " + this);
     for (Atom a : getAtomNode().getAtomList()) {
       a.print();
     }
@@ -970,7 +961,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
       }
       mat = RendererCache.materialFactory(color);
     } else if (newColorModel == RendererCache.ColorModel.STRUCTURE) {
-      color = SSTypeColor.get(ssType);
+      color = SSTypeColor.get(SSType.NONE);
       mat = RendererCache.materialFactory(color);
     }
     super.setColor(newColorModel, color, mat);
@@ -1030,7 +1021,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     if (addChainID) {
       sb.append(chainID);
     }
-    sb.append(toString());
+    sb.append(this);
     return sb.toString();
   }
 
@@ -1070,14 +1061,14 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     MSNode atoms = getAtomNode();
     if (atoms.contains(atomToDelete) != null) {
       logger.info(
-          " The following atom is being deleted from the model:\n" + atomToDelete.toString());
+          " The following atom is being deleted from the model:\n" + atomToDelete);
       atoms.remove(atomToDelete);
     }
   }
 
   /**
-   * Returns the position of this (presumably nucleic acid) Residue's default O3' coordinates given
-   * a North pucker.
+   * Returns the position of this (presumably nucleic acid) Residue's default O3' coordinates given a
+   * North pucker.
    *
    * @return a new double[] with default XYZ coordinates for O3' in a North pucker.
    */
@@ -1088,8 +1079,8 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
-   * Returns the position of this (presumably nucleic acid) Residue's default O3' coordinates given
-   * a South pucker.
+   * Returns the position of this (presumably nucleic acid) Residue's default O3' coordinates given a
+   * South pucker.
    *
    * @return a new double[] with default XYZ coordinates for O3' in a South pucker.
    */
@@ -1129,31 +1120,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   double[] getC4sCoords() {
     double[] ret = new double[3];
     arraycopy(C4sCoords, 0, ret, 0, ret.length);
-    return ret;
-  }
-
-  /**
-   * getSideChainCOM.
-   *
-   * @return an array of {@link double} objects.
-   */
-  private double[] getSideChainCOM() {
-    Vector3d v = new Vector3d();
-    Vector3d v2 = new Vector3d();
-    int count = 0;
-    for (Atom a : getSideChainAtoms()) {
-      String id = a.getName();
-      if (!id.equals("CA") && !id.equals("N") && !id.equals("C") && !id.equals("O")) {
-        a.getV3D(v2);
-        v.add(v2);
-        count++;
-      } else if (id.equals("CA")) {
-        a.print();
-      }
-    }
-    v.scale(1.0 / count);
-    double[] ret = new double[3];
-    v.get(ret);
     return ret;
   }
 

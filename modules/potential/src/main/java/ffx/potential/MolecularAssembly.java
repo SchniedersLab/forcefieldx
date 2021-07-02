@@ -39,9 +39,6 @@ package ffx.potential;
 
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
-import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
-import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
 import static ffx.potential.extended.ExtUtils.prop;
 import static java.lang.String.format;
 
@@ -57,9 +54,9 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.StringUtils;
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,7 +66,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -132,7 +128,6 @@ public class MolecularAssembly extends MSGroup {
   private Vector3d offset;
   private int cycles = 1;
   private int currentCycle = 1;
-  private List<String> altLoc = null;
   // 3D Graphics Nodes - There is a diagram explaining the MolecularAssembly
   // Scenegraph below
   private BranchGroup branchGroup;
@@ -191,20 +186,6 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
-   * addAltLocation
-   *
-   * @param s a {@link java.lang.String} object.
-   */
-  public void addAltLocation(String s) {
-    if (altLoc == null) {
-      altLoc = new Vector<>();
-    }
-    if (!altLoc.contains(s)) {
-      altLoc.add(s);
-    }
-  }
-
-  /**
    * Adds a header line to this MolecularAssembly (particularly for PDB formats)
    *
    * @param line Line to add.
@@ -250,7 +231,7 @@ public class MolecularAssembly extends MSGroup {
         setFinalized(false);
         return c;
       } else {
-        return (Polymer) Polymers.get(index);
+        return Polymers.get(index);
       }
     } else if (o instanceof Molecule) {
       Molecule m = (Molecule) o;
@@ -258,7 +239,7 @@ public class MolecularAssembly extends MSGroup {
       if (m.getAtomNode().getChildCount() == 1) {
         ions.add(m);
         if (ionHashMap.containsKey(key)) {
-          logger.info(" Ion map already contains " + m.toString());
+          logger.info(" Ion map already contains " + m);
         } else {
           ionHashMap.put(m.getKey(), m);
         }
@@ -266,7 +247,7 @@ public class MolecularAssembly extends MSGroup {
       } else if (Utilities.isWaterOxygen((Atom) m.getAtomNode().getChildAt(0))) {
         water.add(m);
         if (waterHashMap.containsKey(key)) {
-          logger.info(" Water map already contains " + m.toString());
+          logger.info(" Water map already contains " + m);
         } else {
           waterHashMap.put(m.getKey(), m);
         }
@@ -274,7 +255,7 @@ public class MolecularAssembly extends MSGroup {
       } else {
         molecules.add(m);
         if (moleculeHashMap.containsKey(key)) {
-          logger.info(" Molecule map already contains " + m.toString());
+          logger.info(" Molecule map already contains " + m);
         } else {
           moleculeHashMap.put(m.getKey(), m);
         }
@@ -336,7 +317,7 @@ public class MolecularAssembly extends MSGroup {
       logger.info(
           format(
               "\n Applying random Cartesian SymOp to molecule %d:\n%s",
-              moleculeNum, symOp.toString()));
+              moleculeNum, symOp));
       for (Atom atom : atoms) {
         atom.getXYZ(xyz);
         crystal.applyCartesianSymOp(xyz, xyz, symOp);
@@ -703,7 +684,7 @@ public class MolecularAssembly extends MSGroup {
         logger.fine(sb.toString());
       }
     }
-    if (!java.awt.GraphicsEnvironment.isHeadless()) {
+    if (!GraphicsEnvironment.isHeadless()) {
       createScene(!finalizeGroups);
       center();
     }
@@ -767,7 +748,7 @@ public class MolecularAssembly extends MSGroup {
     switch (fractionalMode) {
       case MOLECULE:
         // Move polymers togethers.
-        Polymer polymers[] = getChains();
+        Polymer[] polymers = getChains();
         if (polymers != null && polymers.length > 0) {
           count += polymers.length;
         }
@@ -843,17 +824,7 @@ public class MolecularAssembly extends MSGroup {
    * @return an array of {@link java.lang.String} objects.
    */
   public String[] getAltLocations() {
-    if (altLoc == null || altLoc.isEmpty()) {
-      return null;
-    }
-
-    String[] names = new String[altLoc.size()];
-    int i = 0;
-    for (String s : altLoc) {
-      names[i++] = s;
-    }
-
-    return names;
+    return null;
   }
 
   /**
@@ -990,7 +961,7 @@ public class MolecularAssembly extends MSGroup {
       }
       if ((alwaysLog || isNonstandard) && (Math.abs(Math.round(charge) - charge) > 1.0E-5)) {
         logger.warning(
-            String.format(" Node %s has non-unitary charge %12.8f", node.toString(), charge));
+            String.format(" Node %s has non-unitary charge %12.8f", node, charge));
       }
       totalCharge += charge;
     }
@@ -1385,32 +1356,6 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
-   * getResiduePosition.
-   *
-   * @param residueNumber a int.
-   * @return a {@link ffx.potential.bonded.Residue.ResiduePosition} object.
-   */
-  public ResiduePosition getResiduePosition(int residueNumber) {
-    ResiduePosition position;
-    int numberOfResidues = 0;
-    Polymer polymers[] = getChains();
-    int nPolymers = polymers.length;
-    for (int i = 0; i < nPolymers; i++) {
-      Polymer polymer = polymers[i];
-      List<Residue> residues = polymer.getResidues();
-      numberOfResidues += residues.size();
-    }
-    if (residueNumber == 0) {
-      position = FIRST_RESIDUE;
-    } else if (residueNumber == numberOfResidues - 1) {
-      position = LAST_RESIDUE;
-    } else {
-      position = MIDDLE_RESIDUE;
-    }
-    return position;
-  }
-
-  /**
    * getTransformGroup
    *
    * @return a {@link org.jogamp.java3d.TransformGroup} object.
@@ -1494,8 +1439,8 @@ public class MolecularAssembly extends MSGroup {
    * @param d an array of double.
    */
   public void moveCenter(double[] d) {
-    for (ListIterator<Atom> li = getAtomList().listIterator(); li.hasNext(); ) {
-      (li.next()).move(d);
+    for (Atom atom : getAtomList()) {
+      atom.move(d);
     }
   }
 
@@ -1721,7 +1666,7 @@ public class MolecularAssembly extends MSGroup {
       li.remove();
       // This is code for cycling between two MolecularAssemblies
       if (group.getUserData() != null) {
-        logger.info(format("%s %s", group.toString(), group.getUserData().toString()));
+        logger.info(format("%s %s", group, group.getUserData().toString()));
         /*
          * Object userData = group.getUserData(); if (userData!=this) {
          * // The appearance has already been set during a recursive
@@ -1758,8 +1703,8 @@ public class MolecularAssembly extends MSGroup {
   /** {@inheritDoc} */
   @Override
   public void setColor(RendererCache.ColorModel newColorModel, Color3f color, Material mat) {
-    for (ListIterator<MSNode> li = getAtomNodeList().listIterator(); li.hasNext(); ) {
-      MSGroup group = (MSGroup) li.next();
+    for (MSNode msNode : getAtomNodeList()) {
+      MSGroup group = (MSGroup) msNode;
       group.setColor(newColorModel, color, mat);
     }
 
@@ -1785,11 +1730,6 @@ public class MolecularAssembly extends MSGroup {
     this.potentialEnergy = potentialEnergy;
   }
 
-  /** setPropertiesFromForceField. */
-  public void setPropertiesFromForceField() {
-    this.properties = forceField.getProperties();
-  }
-
   /** {@inheritDoc} */
   @Override
   public void setView(RendererCache.ViewModel newViewModel, List<BranchGroup> newShapes) {
@@ -1808,10 +1748,10 @@ public class MolecularAssembly extends MSGroup {
       if (newViewModel == RendererCache.ViewModel.DETAIL && childNodes.isLive()) {
         childNodes.detach();
       }
-      /**
-       * We'll collect new Scenegraph Shapes in our newShapeNode This is to avoid the case where
-       * setView is called from the root node and all new shapes for every MolecularAssembly would
-       * then be put into the same List.
+      /*
+       We'll collect new Scenegraph Shapes in our newShapeNode This is to avoid the case where
+       setView is called from the root node and all new shapes for every MolecularAssembly would
+       then be put into the same List.
        */
       super.setView(newViewModel, myNewShapes);
       List<Molecule> moleculeList = getList(Molecule.class, new ArrayList<>());
@@ -1848,19 +1788,6 @@ public class MolecularAssembly extends MSGroup {
     }
 
     lineAttributes.setLineWidth(f);
-  }
-
-  /** sidePolymerCOM */
-  public void sidePolymerCOM() {
-    List<Residue> residues = getResidueList();
-    Residue r;
-
-    ListIterator<Residue> li;
-
-    for (li = residues.listIterator(); li.hasNext(); ) {
-      r = li.next();
-      r.logSideChainCOM();
-    }
   }
 
   /**

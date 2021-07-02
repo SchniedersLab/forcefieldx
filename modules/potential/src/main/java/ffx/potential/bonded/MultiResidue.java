@@ -38,11 +38,9 @@
 package ffx.potential.bonded;
 
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
-import static ffx.potential.extended.ExtUtils.prop;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
@@ -66,16 +64,13 @@ import org.jogamp.vecmath.Color3f;
 public class MultiResidue extends Residue {
 
   private static final Logger logger = Logger.getLogger(MultiResidue.class.getName());
-  private static final boolean automaticReinitialization = prop("mr-autoReinit", true);
-  private final List<MultiResidue> linkedMultiRes = new ArrayList<>(4);
+
   /** The force field in use. */
   ForceField forceField;
   /** The active residue. */
   private Residue activeResidue;
   /** List of residues under consideration. */
-  private List<Residue> consideredResidues;
-  /** The ForceFieldEnergy in use. */
-  private ForceFieldEnergy forceFieldEnergy;
+  private final List<Residue> consideredResidues;
   /** Current rotamers. */
   private Rotamer[] rotamers;
   /** The original rotamer. */
@@ -86,19 +81,16 @@ public class MultiResidue extends Residue {
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
    */
-  public MultiResidue(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy) {
+  public MultiResidue(Residue residue, ForceField forceField) {
     super(
-        "MultiResidue",
+        "" + residue.getResidueNumber() + "-" + "MultiResidue",
         residue.getResidueNumber(),
         residue.residueType,
         residue.getChainID(),
         residue.getChainID().toString());
     this.forceField = forceField;
-    this.forceFieldEnergy = forceFieldEnergy;
     activeResidue = residue;
-    setName(activeResidue.getName());
     // Initialize consideredResidue list.
     consideredResidues = new ArrayList<>();
     consideredResidues.add(residue);
@@ -122,37 +114,53 @@ public class MultiResidue extends Residue {
    * @param newResidue a {@link ffx.potential.bonded.Residue} object.
    */
   public void addResidue(Residue newResidue) {
-    addResidue(newResidue, true);
-  }
+    // Add the new residue to list.
+    consideredResidues.add(newResidue);
 
-  /**
-   * addResiduesByName.
-   *
-   * @param resNames a {@link java.util.List} object.
-   */
-  public void addResiduesByName(List<String> resNames) {
-    boolean resAdded = false;
-    Residue currentRes = activeResidue;
-    for (String resName : resNames) {
-      try {
-        AminoAcid3 aa3 = AminoAcid3.valueOf(resName.toUpperCase());
-        logger.info(
-            format(" Adding residue %s to multi-residue " + "%s", aa3.toString(), this.toString()));
-        addResidue(new Residue(aa3.toString(), getResidueNumber(), getResidueType()));
-        resAdded = true;
-      } catch (IllegalArgumentException e) {
-        logger.warning(
-            format(
-                " Could not parse %s as an amino " + "acid; not adding to multi-residue %s",
-                resName, this.toString()));
-      }
+    // Get references to nearby residues.
+    Residue prevResidue = activeResidue.getPreviousResidue();
+    Residue nextResidue = activeResidue.getNextResidue();
+    Residue prev2Residue = null;
+    if (prevResidue != null) {
+      prev2Residue = prevResidue.getPreviousResidue();
     }
-    if (resAdded) {
-      setActiveResidue(currentRes);
-      if (automaticReinitialization) {
-        forceFieldEnergy.reInit();
-      }
+    Residue next2Residue = null;
+    if (nextResidue != null) {
+      next2Residue = nextResidue.getNextResidue();
     }
+
+    moveBackBoneAtoms(activeResidue, newResidue);
+
+    // Pass references of the active Residues' joints to the new Residue.
+    List<Joint> joints = activeResidue.getJoints();
+    for (Joint joint : joints) {
+      newResidue.addJoint(joint);
+    }
+
+    // Make the new Residue active.
+    activeResidue.removeFromParent();
+    add(newResidue);
+    activeResidue = newResidue;
+
+    // Build side-chain atoms and assign atom types for the new Residue.
+    try {
+      assignAminoAcidAtomTypes(newResidue, prevResidue, nextResidue, forceField, null);
+      if (nextResidue != null) {
+        Atom C = (Atom) newResidue.getAtomNode("C");
+        Atom nextN = (Atom) nextResidue.getAtomNode("N");
+        for (Joint joint : joints) {
+          Bond bond = joint.getBondList().get(0);
+          if (bond.containsAtom(C) && bond.containsAtom(nextN)) {
+            C.setBond(bond);
+          }
+        }
+      }
+    } catch (MissingHeavyAtomException | MissingAtomTypeException exception) {
+      logger.severe(exception.toString());
+    }
+    newResidue.finalize(true, forceField);
+
+    updateGeometry(newResidue, prevResidue, nextResidue, prev2Residue, next2Residue);
   }
 
   /** {@inheritDoc} */
@@ -183,16 +191,21 @@ public class MultiResidue extends Residue {
    * {@inheritDoc}
    *
    * <p>Overidden equals method that return true if object is not equals to this, is of the same
-   * class, has the same parent Polymer, the same sequence number, the same ResidueType, and the
-   * same AA3/NA3.
+   * class, has the same parent Polymer, the same sequence number, the same ResidueType, and the same
+   * AA3/NA3.
    */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     MultiResidue multiResidue = (MultiResidue) o;
-    return getResidueCount() == multiResidue.getResidueCount()
-        && Objects.equals(getParent(), multiResidue.getParent());
+    return Objects.equals(getSegID(), multiResidue.getSegID())
+        && Objects.equals(getResidueNumber(), multiResidue.getResidueNumber())
+        && Objects.equals(getName(), multiResidue.getName());
   }
 
   /** {@inheritDoc} */
@@ -315,7 +328,7 @@ public class MultiResidue extends Residue {
 
   /** {@inheritDoc} */
   @Override
-  public List getDangelingAtoms() {
+  public List<Atom> getDangelingAtoms() {
     return activeResidue.getDangelingAtoms();
   }
 
@@ -465,7 +478,7 @@ public class MultiResidue extends Residue {
   /** {@inheritDoc} */
   @Override
   public int hashCode() {
-    return Objects.hash(getResidueCount(), getParent());
+    return Objects.hash(getSegID(), getResidueNumber(), getName());
   }
 
   /** {@inheritDoc} */
@@ -502,14 +515,8 @@ public class MultiResidue extends Residue {
       }
     }
     logger.warning(
-        format(" Couldn't assign residue %s to MultiResidue %s.", aa.toString(), this.toString()));
+        format(" Couldn't assign residue %s to MultiResidue %s.", aa, this));
     return false;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void revertState(ResidueState state) {
-    revertState(state, true);
   }
 
   /**
@@ -535,7 +542,34 @@ public class MultiResidue extends Residue {
    * @return a boolean.
    */
   public boolean setActiveResidue(Residue residue) {
-    return setActiveResidue(residue, true);
+    if (!consideredResidues.contains(residue)) {
+      return false;
+    }
+    if (residue == activeResidue) {
+      return true;
+    }
+    Residue prevResidue = activeResidue.getPreviousResidue();
+    Residue nextResidue = activeResidue.getNextResidue();
+    Residue prev2Residue = null;
+    if (prevResidue != null) {
+      prev2Residue = prevResidue.getPreviousResidue();
+    }
+    Residue next2Residue = null;
+    if (nextResidue != null) {
+      next2Residue = nextResidue.getNextResidue();
+    }
+
+    activeResidue.removeFromParent();
+
+    // Move backbone atoms to the new active residue.
+    moveBackBoneAtoms(activeResidue, residue);
+    updateGeometry(residue, prevResidue, nextResidue, prev2Residue, next2Residue);
+    activeResidue = residue;
+
+    setName(toString());
+    add(activeResidue);
+
+    return true;
   }
 
   /**
@@ -546,7 +580,17 @@ public class MultiResidue extends Residue {
    * @return True if successful
    */
   public boolean setActiveResidue(AminoAcid3 aa) {
-    return setActiveResidue(aa, true);
+    Residue residue = null;
+    for (Residue res : consideredResidues) {
+      if (res.getAminoAcid3() == aa) {
+        residue = res;
+        break;
+      }
+    }
+    if (residue == null) {
+      return false;
+    }
+    return setActiveResidue(residue);
   }
 
   /** {@inheritDoc} */
@@ -612,7 +656,7 @@ public class MultiResidue extends Residue {
   public String toString() {
     int resNum = consideredResidues.get(0).getResidueNumber();
     StringBuilder sb = new StringBuilder();
-    sb.append("Multi-").append(resNum).append("-");
+    sb.append(resNum).append("-");
     for (Residue res : consideredResidues) {
       int num = ResidueEnumerations.getAminoAcidNumber(res.getName());
       String aa1 = ResidueEnumerations.AminoAcid1.values()[num].toString();
@@ -671,24 +715,17 @@ public class MultiResidue extends Residue {
     return allRotamers;
   }
 
-  private void revertState(ResidueState state, boolean isFirst) {
+  @Override
+  public void revertState(ResidueState state) {
     Residue res = state.getStateResidue();
     if (!setActiveResidue(res)) {
       throw new IllegalArgumentException(
           format(
               " Could not revert " + "multi-residue %s to residue identity %s",
-              this.toString(), state.getStateResidue().toString()));
+              this, state.getStateResidue().toString()));
     }
     for (Atom atom : getAtomList()) {
       atom.moveTo(state.getAtomCoords(atom));
-    }
-    if (isFirst && !linkedMultiRes.isEmpty()) {
-      double[] chi = RotamerLibrary.measureRotamer(this, false);
-      Rotamer rot = new Rotamer(res, chi, null);
-      for (MultiResidue multiRes : linkedMultiRes) {
-        multiRes.setActiveResidue(res.getAminoAcid3(), false);
-        RotamerLibrary.applyRotamer(multiRes, rot);
-      }
     }
   }
 
@@ -705,7 +742,6 @@ public class MultiResidue extends Residue {
     Atom N = (Atom) fromResidue.getAtomNode("N");
     Atom O = (Atom) fromResidue.getAtomNode("O");
 
-    // Detach them from their parent Residue.
     CA.removeFromParent();
     HA.removeFromParent();
     C.removeFromParent();
@@ -741,6 +777,7 @@ public class MultiResidue extends Residue {
 
       H1.removeFromParent();
       H2.removeFromParent();
+
       H1.clearGeometry();
       H2.clearGeometry();
       H1.setResName(resName);
@@ -773,12 +810,12 @@ public class MultiResidue extends Residue {
         Atom OH = (Atom) fromResidue.getAtomNode("OH");
         Atom HO = (Atom) fromResidue.getAtomNode("HO");
         OH.removeFromParent();
-        OH.clearGeometry();
-        OH.setResName(resName);
-        toResidue.addMSNode(OH);
         HO.removeFromParent();
+        OH.clearGeometry();
         HO.clearGeometry();
+        OH.setResName(resName);
         HO.setResName(resName);
+        toResidue.addMSNode(OH);
         toResidue.addMSNode(HO);
       }
     }
@@ -865,126 +902,4 @@ public class MultiResidue extends Residue {
     }
   }
 
-  private void addResidue(Residue newResidue, boolean isFirst) {
-    // Add the new residue to list.
-    consideredResidues.add(newResidue);
-
-    // Get references to nearby residues.
-    Residue prevResidue = activeResidue.getPreviousResidue();
-    Residue nextResidue = activeResidue.getNextResidue();
-    Residue prev2Residue = null;
-    if (prevResidue != null) {
-      prev2Residue = prevResidue.getPreviousResidue();
-    }
-    Residue next2Residue = null;
-    if (nextResidue != null) {
-      next2Residue = nextResidue.getNextResidue();
-    }
-
-    // Move atoms from the active Residue to the new Residue.
-    moveBackBoneAtoms(activeResidue, newResidue);
-
-    // Pass references of the active Residues' joints to the new Residue.
-    List<Joint> joints = activeResidue.getJoints();
-    for (Joint joint : joints) {
-      newResidue.addJoint(joint);
-    }
-
-    // Make the new Residue active.
-    activeResidue.removeFromParent();
-    activeResidue = newResidue;
-    add(activeResidue);
-
-    // Build side-chain atoms and assign atom types for the new Residue.
-    try {
-      assignAminoAcidAtomTypes(newResidue, prevResidue, nextResidue, forceField, null);
-      if (nextResidue != null) {
-        Atom C = (Atom) newResidue.getAtomNode("C");
-        Atom nextN = (Atom) nextResidue.getAtomNode("N");
-        for (Joint joint : joints) {
-          Bond bond = (Bond) joint.getBondList().get(0);
-          if (bond.containsAtom(C) && bond.containsAtom(nextN)) {
-            C.setBond(bond);
-          }
-        }
-      }
-    } catch (MissingHeavyAtomException | MissingAtomTypeException exception) {
-      logger.severe(exception.toString());
-    }
-    newResidue.finalize(true, forceField);
-
-    updateGeometry(newResidue, prevResidue, nextResidue, prev2Residue, next2Residue);
-
-    // If you are the residue pinged by the API, update linked MultiResidues.
-    if (isFirst) {
-      for (MultiResidue mres : linkedMultiRes) {
-        Residue newRes =
-            new Residue(
-                newResidue.getAminoAcid3().toString(),
-                newResidue.getResidueNumber(),
-                ResidueType.AA);
-        mres.addResidue(newRes, false);
-      }
-    }
-  }
-
-  /**
-   * Request the passed residue be set active.
-   *
-   * @param residue The residue to set active.
-   * @return true if the passed residue is now active.
-   */
-  private boolean setActiveResidue(Residue residue, boolean isFirst) {
-    if (!consideredResidues.contains(residue)) {
-      return false;
-    }
-    if (residue == activeResidue) {
-      return true;
-    }
-    Residue prevResidue = activeResidue.getPreviousResidue();
-    Residue nextResidue = activeResidue.getNextResidue();
-    Residue prev2Residue = null;
-    if (prevResidue != null) {
-      prev2Residue = prevResidue.getPreviousResidue();
-    }
-    Residue next2Residue = null;
-    if (nextResidue != null) {
-      next2Residue = nextResidue.getNextResidue();
-    }
-
-    activeResidue.removeFromParent();
-
-    // Move backbone atoms to the new active residue.
-    moveBackBoneAtoms(activeResidue, residue);
-    updateGeometry(residue, prevResidue, nextResidue, prev2Residue, next2Residue);
-    activeResidue = residue;
-    setName(activeResidue.getName());
-    add(activeResidue);
-
-    if (automaticReinitialization) {
-      forceFieldEnergy.reInit();
-    }
-    if (isFirst) {
-      for (MultiResidue mres : linkedMultiRes) {
-        if (!mres.setActiveResidue(residue.getAminoAcid3(), false)) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  private boolean setActiveResidue(AminoAcid3 aa, boolean isFirst) {
-    Residue residue = null;
-    for (Residue res : consideredResidues) {
-      if (res.getAminoAcid3() == aa) {
-        residue = res;
-        break;
-      }
-    }
-    if (residue == null) {
-      return false;
-    }
-    return setActiveResidue(residue, isFirst);
-  }
 }
