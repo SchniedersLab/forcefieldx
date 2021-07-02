@@ -41,6 +41,7 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.cli.RepExOptions
 import ffx.algorithms.dynamics.Barostat
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.ReplicaExchange
@@ -77,12 +78,15 @@ class Dynamics extends AlgorithmsScript {
   @Mixin
   WriteoutOptions writeOut
 
-  /**
+  @Mixin
+  RepExOptions repEx
+
+  /*/
    * -r or --repEx to execute temperature replica exchange.
-   */
+
   @Option(names = ['-x', '--repEx'], paramLabel = 'false',
       description = 'Execute temperature replica exchange')
-  boolean repEx = false
+  boolean repEx = false*/
 
   /**
    * One or more filenames.
@@ -165,7 +169,7 @@ class Dynamics extends AlgorithmsScript {
     Comm world = Comm.world()
     int size = world.size()
 
-    if (!repEx || size < 2) {
+    if (!repEx.repEx || size < 2) {
       logger.info("\n Running molecular dynamics on " + modelFilename)
       // Restart File
       File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
@@ -194,10 +198,10 @@ class Dynamics extends AlgorithmsScript {
 
       molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
       ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
-          dynamicsOptions.temperature)
+          dynamicsOptions.temperature, repEx.exponent)
 
       long totalSteps = dynamicsOptions.steps
-      int nSteps = 100
+      int nSteps = repEx.replicaSteps
       int cycles = (int) (totalSteps / nSteps)
       if (cycles <= 0) {
         cycles = 1

@@ -97,9 +97,10 @@ public class ReplicaExchange implements Terminatable {
    * @param molecularDynamics a {@link MolecularDynamics} object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param temperature a double.
+   * @param exponent a double to set temperature ladder
    */
   public ReplicaExchange(
-      MolecularDynamics molecularDynamics, AlgorithmListener listener, double temperature) {
+      MolecularDynamics molecularDynamics, AlgorithmListener listener, double temperature, double exponent) {
 
     this.replica = molecularDynamics;
 
@@ -120,7 +121,7 @@ public class ReplicaExchange implements Terminatable {
     rank2Temp = new int[nReplicas];
     acceptedCount = new int[nReplicas];
 
-    setExponentialTemperatureLadder(temperature, 0.05);
+    setExponentialTemperatureLadder(temperature, exponent);
 
     random = new Random();
     random.setSeed(0);
