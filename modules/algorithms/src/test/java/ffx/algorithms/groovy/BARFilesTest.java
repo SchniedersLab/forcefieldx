@@ -16,7 +16,7 @@ public class BARFilesTest extends AlgorithmsTest {
         }
         
         // Set-up the input arguments for the script.
-        String[] args = {"-t", "298","--nw","8","--ac","1-13", "--utb", "src/main/java/ffx/algorithms/structures/testBar/dimethylphosphate.100.xyz"};
+        String[] args = {"-t", "298","--nw","8","--ac","1-13", "--utb", "src/main/java/ffx/algorithms/structures/testBar/singleTopology/dimethylphosphate.100.xyz"};
         binding.setVariable("args", args);
         // Evaluate the script.
         BAR bar = new BAR(binding).run();
@@ -32,27 +32,27 @@ public class BARFilesTest extends AlgorithmsTest {
 
         double expectedhFor= -157.1466;
         double actualhFor = bar.gethFor();
-        Assert.assertEquals(expectedhFor, actualhFor, 33);
+        Assert.assertEquals(expectedhFor, actualhFor, 50);
 
         double expectedhBack= 123.5150;
         double actualhBack = bar.gethBack();
-        Assert.assertEquals(expectedhBack, actualhBack, 70);
+        Assert.assertEquals(expectedhBack, actualhBack, 90);
 
         double expectedhBAR= -29.0062;
         double actualhBAR = bar.gethBAR();
-        Assert.assertEquals(expectedhBAR, actualhBAR, 6);
+        Assert.assertEquals(expectedhBAR, actualhBAR, 4);
 
         double expectedsFor= -0.1401;
         double actualsFor = bar.getsFor();
-        Assert.assertEquals(expectedsFor, actualsFor, 0.05);
+        Assert.assertEquals(expectedsFor, actualsFor, 0.15);
 
         double expectedsBack= 0.8127;
         double actualsBack = bar.getsBack();
-        Assert.assertEquals(expectedsBack, actualsBack, 0.05);
+        Assert.assertEquals(expectedsBack, actualsBack, 0.3);
 
         double expectedsBAR= 0.2958;
         double actualsBAR = bar.getsBAR();
-        Assert.assertEquals(expectedsBAR, actualsBAR, 0.05);
+        Assert.assertEquals(expectedsBAR, actualsBAR, 0.1);
 
         double expectedBARIteration = -117.1754;
         double actualBARIteration = bar.getBarEnergy();
