@@ -843,6 +843,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       if (esvSystem.isUnshared(i)) {
         esvAtoms[i] = true;
         esvLambda[i] = esvSystem.getLambda(i);
+        //logger.info(format("i: %d vdWESVlambda: %f",i,esvLambda[i]));
         esvLambdaSwitch[i] = esvSystem.getLambdaSwitch(i);
         esvSwitchDeriv[i] = esvSystem.getSwitchDeriv(i);
         atomEsvID[i] = esvSystem.getEsvIndex(i);

@@ -42,9 +42,11 @@ import ffx.algorithms.cli.DynamicsOptions
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
+import ffx.potential.bonded.ResidueEnumerations
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.extended.ExtendedVariable
+import ffx.potential.extended.TautomerESV
 import ffx.potential.extended.TitrationESV
 import ffx.potential.extended.TitrationUtils
 import ffx.algorithms.dynamics.integrators.Stochastic
@@ -152,6 +154,7 @@ class ProtonMDDriver extends AlgorithmsScript {
 
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly)
     List<ExtendedVariable> titratingESVs = new ArrayList<>()
+    List<ExtendedVariable> tautomerESVs = new ArrayList<>()
     esvSystem.setConstantPh(pH)
     for (Residue res : titrating) {
       ffx.potential.bonded.MultiResidue multi = TitrationUtils.titratingMultiresidueFactory(activeAssembly, res)
@@ -161,6 +164,17 @@ class ProtonMDDriver extends AlgorithmsScript {
         inactivateResidue(background)
       }
       esvSystem.addVariable(esv)
+      if(esvSystem.config.tautomer){
+        ResidueEnumerations.AminoAcid3 currentAA3 = ResidueEnumerations.AminoAcid3.valueOf(res.getName());
+        if (currentAA3 == ResidueEnumerations.AminoAcid3.HIS || currentAA3 == ResidueEnumerations.AminoAcid3.HID
+                || currentAA3 == ResidueEnumerations.AminoAcid3.HIE || currentAA3 == ResidueEnumerations.AminoAcid3.ASH
+                || currentAA3 == ResidueEnumerations.AminoAcid3.ASP || currentAA3 == ResidueEnumerations.AminoAcid3.GLH
+                || currentAA3 == ResidueEnumerations.AminoAcid3.GLU){
+          TautomerESV tautomerESV = new TautomerESV(esvSystem, multi);
+          tautomerESVs.add(tautomerESV);
+          esvSystem.addVariable(tautomerESV);
+        }
+      }
     }
     potential.attachExtendedSystem(esvSystem)
     logger.info(format(" Extended system with %d residues.", titratingESVs.size()))
@@ -188,7 +202,8 @@ class ProtonMDDriver extends AlgorithmsScript {
     //Initialize theta velocity to Maxwell distribution based on temperature in radians/psec
     double[] theta_v = new double[numberOfESVVariables]
     for (int i = 0; i < numberOfESVVariables; i++) {
-      theta_v[i] = random.nextGaussian() * sqrt(kB * 298.15 / theta_mass[i])
+      //theta_v[i] = random.nextGaussian() * sqrt(kB * 298.15 / theta_mass[i])
+      theta_v[i] = sqrt(kB * 298.15 / theta_mass[i])
     }
 
     double[] x = new double[potential.getNumberOfVariables()]
@@ -221,7 +236,9 @@ class ProtonMDDriver extends AlgorithmsScript {
       //Update ESV lambda from new theta values
       for(int i = 0; i < numberOfESVVariables; i++) {
         double sinTheta = sin(theta[i])
-        esvSystem.setLambda(i, sinTheta * sinTheta)
+        //esvSystem.setLambda(i, sinTheta * sinTheta)
+        esvSystem.getEsv(i).updateLambda(sinTheta * sinTheta, true)
+        esvSystem.updateListeners()
       }
 
       //Gather derivatives

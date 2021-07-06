@@ -79,9 +79,9 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
     private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
 
-    public static final double THETA_MASS = 10.0;
+    public static final double THETA_MASS = 10.0; //Atomic Mass Units
 
-    public static final double THETA_FRICTION = 5.0;
+    public static final double THETA_FRICTION = 5.0; // 1/psec
 
     /**
      * Constant <code>esvSystemActive=false</code>
@@ -829,12 +829,9 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             double sinTheta = sin(theta_position[esv.getEsvIndex()]);
             double oldLambda = esv.getLambda();
             esv.updateLambda(sinTheta * sinTheta, true);
+            updateListeners();
             double newLambda = esv.getLambda();
-            logger.info(format(
-                    " Propagating ESV[%d]: %g --> %g ",
-                    esv.esvIndex,
-                    oldLambda,
-                    newLambda));
+            logger.info(format(" Propagating ESV[%d]: %g --> %g ", esv.esvIndex, oldLambda, newLambda));
         }
     }
 
@@ -880,7 +877,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     /**
      * updateListeners.
      */
-    protected void updateListeners() {
+    private void updateListeners() {
         if (config.vanDerWaals) {
             vanDerWaals.updateEsvLambda();
         }
@@ -982,7 +979,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     }
 
     public static class ExtendedSystemConfig {
-
+        public final boolean tautomer = prop("esv.tautomer", false);
         public final boolean bonded = prop("esv.bonded", false);
         public final boolean vanDerWaals = prop("esv.vanDerWaals", true);
         public final boolean electrostatics = prop("esv.electrostatics", true);
@@ -997,7 +994,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
          */
         public final boolean allowLambdaSwitch = prop("esv.allowLambdaSwitch", true);
         public final boolean nonlinearMultipoles = prop("esv.nonlinearMultipoles", false); // sigmoid lambda Mpole switch
-        public final double discrBias = prop("esv.biasMagnitude", 1.0);
+        public final double discrBias = prop("esv.biasMagnitude", 0.0);
         public final boolean forceRoomTemp = prop("esv.forceRoomTemp", false);
         public final boolean propagation = prop("esv.propagation", true);
 

@@ -600,7 +600,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
     this.esvThermostat = new Adiabatic(esvSystem.getNumESVs(),esvSystem.theta_position, esvSystem.theta_velocity, esvSystem.theta_mass, potential.getVariableTypes());
     printEsvFrequency = printFrequency;
     logger.info(
-        format(" Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
+        format("  Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
+    logger.info(format("  Extended System Theta Friction: %f", esvSystem.thetaFriction));
+    logger.info(format("  Extended System Theta Mass: %f", esvSystem.theta_mass[0]));
+    logger.info(format("  Extended System Lambda Print Frequency: %d (fsec)", printFrequency));
     reInit();
   }
 

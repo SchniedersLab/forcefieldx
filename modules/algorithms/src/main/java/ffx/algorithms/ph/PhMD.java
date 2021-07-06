@@ -44,14 +44,8 @@ import static java.lang.String.format;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.MultiTerminus;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.extended.ExtendedVariable;
-import ffx.potential.extended.TitrationESV;
-import ffx.potential.extended.TitrationUtils;
+import ffx.potential.bonded.*;
+import ffx.potential.extended.*;
 import ffx.potential.extended.TitrationUtils.TitrationConfig;
 import ffx.potential.parameters.ForceField;
 import java.util.ArrayList;
@@ -94,6 +88,7 @@ public class PhMD  {
 
   private final List<MultiTerminus> titratingTermini = new ArrayList<>();
   private final List<ExtendedVariable> titratingESVs = new ArrayList<>();
+  private final List<ExtendedVariable> tautomerESVs = new ArrayList<>();
 
   private ExtendedSystem esvSystem;
 
@@ -149,10 +144,21 @@ public class PhMD  {
           inactivateResidue(background);
         }
         esvSystem.addVariable(esv);
-      }
+        if(esvSystem.config.tautomer){
+          ResidueEnumerations.AminoAcid3 currentAA3 = ResidueEnumerations.AminoAcid3.valueOf(res.getName());
+          if (currentAA3 == ResidueEnumerations.AminoAcid3.HIS || currentAA3 == ResidueEnumerations.AminoAcid3.HID
+                  || currentAA3 == ResidueEnumerations.AminoAcid3.HIE || currentAA3 == ResidueEnumerations.AminoAcid3.ASH
+                  || currentAA3 == ResidueEnumerations.AminoAcid3.ASP || currentAA3 == ResidueEnumerations.AminoAcid3.GLH
+                  || currentAA3 == ResidueEnumerations.AminoAcid3.GLU){
+            TautomerESV tautomerESV = new TautomerESV(esvSystem, multi);
+            tautomerESVs.add(tautomerESV);
+            esvSystem.addVariable(tautomerESV);
+          }
+        }
+    }
     forceFieldEnergy.attachExtendedSystem(esvSystem);
     logger.info(format(" Continuous pHMD readied with %d residues.", titratingESVs.size()));
-    molecularDynamics.attachExtendedSystem(esvSystem, 1000);
+    molecularDynamics.attachExtendedSystem(esvSystem, 100);
   }
 
   /** Wraps reinitialization calls so as to provide un-fucked atom numbering. */
