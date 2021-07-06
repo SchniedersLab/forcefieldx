@@ -994,7 +994,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
          */
         public final boolean allowLambdaSwitch = prop("esv.allowLambdaSwitch", true);
         public final boolean nonlinearMultipoles = prop("esv.nonlinearMultipoles", false); // sigmoid lambda Mpole switch
-        public final double discrBias = prop("esv.biasMagnitude", 0.0);
+        public final double discrBias = prop("esv.biasMagnitude", 1.0);
         public final boolean forceRoomTemp = prop("esv.forceRoomTemp", false);
         public final boolean propagation = prop("esv.propagation", true);
 

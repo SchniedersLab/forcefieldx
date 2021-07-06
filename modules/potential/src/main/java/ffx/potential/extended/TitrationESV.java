@@ -39,6 +39,9 @@ package ffx.potential.extended;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.*;
+import ffx.potential.bonded.MultiResidue;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.ResidueEnumerations;
 import ffx.potential.extended.TitrationUtils.Titration;
 import ffx.potential.parameters.MultipoleType;
 import ffx.utilities.Constants;
@@ -98,7 +101,8 @@ public final class TitrationESV extends ExtendedVariable {
      * @param multiRes  a {@link ffx.potential.bonded.MultiResidue} object.
      */
     public TitrationESV(ExtendedSystem esvSystem, MultiResidue multiRes) {
-        super(esvSystem, multiRes, 0.0);
+        super(esvSystem, multiRes, 1.0);
+
         MolecularAssembly mola = esvSystem.getMolecularAssembly();
         CompositeConfiguration properties = mola.getProperties();
         this.constPh = esvSystem.getConstantPh();
@@ -115,7 +119,6 @@ public final class TitrationESV extends ExtendedVariable {
             this.lambdaIntercept = titration.lambdaIntercept;
             this.pKaModel = titration.pKa;
         }
-
     }
 
     /**
