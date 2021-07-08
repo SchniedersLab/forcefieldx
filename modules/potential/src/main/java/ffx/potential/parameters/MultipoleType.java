@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.normalize;
+import static ffx.numerics.math.DoubleMath.scale;
 import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.potential.parameters.ForceField.ELEC_FORM.FIXED_CHARGE;
 import static ffx.potential.parameters.ForceField.ForceFieldType.MULTIPOLE;
@@ -253,14 +254,12 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * checkMultipoleChirality.
    *
-   * @param multipole an array of {@link double} objects.
    * @param frame a {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} object.
    * @param frameCoords an array of {@link double} objects.
    * @param localOrigin an array of {@link double} objects.
    * @return Whether this multipole underwent chiral inversion.
    */
   public static boolean checkMultipoleChirality(
-      double[] multipole,
       MultipoleFrameDefinition frame,
       double[] localOrigin,
       double[][] frameCoords) {
@@ -274,12 +273,15 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     zAxis[0] = frameCoords[0][0];
     zAxis[1] = frameCoords[0][1];
     zAxis[2] = frameCoords[0][2];
+
     xAxis[0] = frameCoords[1][0];
     xAxis[1] = frameCoords[1][1];
     xAxis[2] = frameCoords[1][2];
+
     yAxis[0] = frameCoords[2][0];
     yAxis[1] = frameCoords[2][1];
     yAxis[2] = frameCoords[2][2];
+
     sub(localOrigin, yAxis, yMinOrigin);
     sub(zAxis, yAxis, zAxis);
     sub(xAxis, yAxis, xAxis);
@@ -301,9 +303,38 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   public static double[][] getRotationMatrix(
       MultipoleFrameDefinition frame, double[] localOrigin, double[][] frameCoords) {
     double[][] rotmat = new double[3][3];
+    getRotationMatrix(frame, localOrigin, frameCoords, rotmat);
+    return rotmat;
+  }
+
+  /**
+   * Return the rotation matrix for the local to lab frame.
+   *
+   * @param frame the multipole frame definition
+   * @param frameCoords the coordinates of the frame atoms
+   * @param localOrigin the local origin of the frame
+   * @param rotmat the rotation matrix.
+   */
+  public static void getRotationMatrix(
+      MultipoleFrameDefinition frame, double[] localOrigin, double[][] frameCoords, double[][] rotmat) {
     double[] zAxis = new double[3];
     double[] xAxis = new double[3];
+    double[] yAxis = new double[3];
+
+    // Use the identity matrix as the default rotation matrix
+    rotmat[0][0] = 1.0;
+    rotmat[1][0] = 0.0;
+    rotmat[2][0] = 0.0;
+    rotmat[0][1] = 0.0;
+    rotmat[1][1] = 1.0;
+    rotmat[2][1] = 0.0;
+    rotmat[0][2] = 0.0;
+    rotmat[1][2] = 0.0;
+    rotmat[2][2] = 1.0;
+
     switch (frame) {
+      case NONE:
+        return;
       case BISECTOR:
         zAxis[0] = frameCoords[0][0];
         zAxis[1] = frameCoords[0][1];
@@ -326,7 +357,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         normalize(xAxis, xAxis);
         break;
       case ZTHENBISECTOR:
-        double[] yAxis = new double[3];
         zAxis[0] = frameCoords[0][0];
         zAxis[1] = frameCoords[0][1];
         zAxis[2] = frameCoords[0][2];
@@ -336,6 +366,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         yAxis[0] = frameCoords[2][0];
         yAxis[1] = frameCoords[2][1];
         yAxis[2] = frameCoords[2][2];
+        // Z-Axis
         sub(zAxis, localOrigin, zAxis);
         normalize(zAxis, zAxis);
         rotmat[0][2] = zAxis[0];
@@ -345,6 +376,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         normalize(xAxis, xAxis);
         sub(yAxis, localOrigin, yAxis);
         normalize(yAxis, yAxis);
+        // Sum the normalized vectors to the bisector atoms.
         add(xAxis, yAxis, xAxis);
         normalize(xAxis, xAxis);
         dot = dot(xAxis, zAxis);
@@ -361,16 +393,51 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         rotmat[0][2] = zAxis[0];
         rotmat[1][2] = zAxis[1];
         rotmat[2][2] = zAxis[2];
-        xAxis[0] = random();
-        xAxis[1] = random();
-        xAxis[2] = random();
+        // X-Axis: initially assume its along the global X-axis.
+        xAxis[0] = 1.0;
+        xAxis[1] = 0.0;
+        xAxis[2] = 0.0;
+        // If the Z-axis is close to the global X-axis,
+        // assume a X-axis along the global Y-axis.
+        dot = rotmat[0][2];
+        if (abs(dot) > 0.866) {
+          xAxis[0] = 0.0;
+          xAxis[1] = 1.0;
+          dot = rotmat[1][2];
+        }
+        DoubleMath.scale(zAxis, dot, zAxis);
+        sub(xAxis, zAxis, xAxis);
+        normalize(xAxis, xAxis);
+        break;
+      // 3-Fold frame rotation matrix elements for Z- and X-axes.
+      case THREEFOLD:
+        zAxis[0] = frameCoords[0][0];
+        zAxis[1] = frameCoords[0][1];
+        zAxis[2] = frameCoords[0][2];
+        sub(zAxis, localOrigin, zAxis);
+        normalize(zAxis, zAxis);
+        xAxis[0] = frameCoords[1][0];
+        xAxis[1] = frameCoords[1][1];
+        xAxis[2] = frameCoords[1][2];
+        sub(xAxis, localOrigin, xAxis);
+        normalize(xAxis, xAxis);
+        yAxis[0] = frameCoords[2][0];
+        yAxis[1] = frameCoords[2][1];
+        yAxis[2] = frameCoords[2][2];
+        sub(yAxis, localOrigin, yAxis);
+        normalize(yAxis, yAxis);
+        add(zAxis, xAxis, zAxis);
+        add(zAxis, yAxis, zAxis);
+        normalize(zAxis, zAxis);
+        rotmat[0][2] = zAxis[0];
+        rotmat[1][2] = zAxis[1];
+        rotmat[2][2] = zAxis[2];
         dot = dot(xAxis, zAxis);
         DoubleMath.scale(zAxis, dot, zAxis);
         sub(xAxis, zAxis, xAxis);
         normalize(xAxis, xAxis);
         break;
       case ZTHENX:
-      default:
         zAxis[0] = frameCoords[0][0];
         zAxis[1] = frameCoords[0][1];
         zAxis[2] = frameCoords[0][2];
@@ -387,6 +454,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         DoubleMath.scale(zAxis, dot, zAxis);
         sub(xAxis, zAxis, xAxis);
         normalize(xAxis, xAxis);
+        break;
+      default:
+        throw new IllegalStateException("Unexpected value: " + frame);
     }
     // Set the X elements.
     rotmat[0][0] = xAxis[0];
@@ -396,18 +466,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     rotmat[0][1] = rotmat[2][0] * rotmat[1][2] - rotmat[1][0] * rotmat[2][2];
     rotmat[1][1] = rotmat[0][0] * rotmat[2][2] - rotmat[2][0] * rotmat[0][2];
     rotmat[2][1] = rotmat[1][0] * rotmat[0][2] - rotmat[0][0] * rotmat[1][2];
-    return rotmat;
-  }
-
-  /**
-   * invertMultipoleChirality.
-   *
-   * @param mpole an array of {@link double} objects.
-   */
-  public static void invertMultipoleChirality(double[] mpole) {
-    mpole[t010] = -mpole[t010];
-    mpole[t110] = -mpole[t110];
-    mpole[t011] = -mpole[t011];
   }
 
   /**
@@ -807,9 +865,18 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
       double[][] quadrupole,
       double[] rotatedDipole,
       double[][] rotatedQuadrupole) {
+
+    // Initialize the rotated multipole to zero.
+    fill(rotatedDipole, 0.0);
+    for (int i = 0; i < 3; i++) {
+       fill(rotatedQuadrupole[i], 0.0);
+    }
+
+    // Compute the rotated multipole.
     for (int i = 0; i < 3; i++) {
       double[] rotmati = rotmat[i];
       double[] quadrupolei = rotatedQuadrupole[i];
+      rotatedDipole[i] = 0.0;
       for (int j = 0; j < 3; j++) {
         double[] rotmatj = rotmat[j];
         rotatedDipole[i] += rotmati[j] * dipole[j];

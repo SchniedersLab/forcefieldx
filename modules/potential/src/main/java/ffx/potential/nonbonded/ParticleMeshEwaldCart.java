@@ -73,6 +73,10 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.extended.ExtendedSystem;
+import ffx.potential.nonbonded.ParticleMeshEwaldQI.LambdaFactors;
+import ffx.potential.nonbonded.ParticleMeshEwaldQI.LambdaFactorsESV;
+import ffx.potential.nonbonded.ParticleMeshEwaldQI.LambdaFactorsOST;
 import ffx.potential.nonbonded.ReciprocalSpace.FFTMethod;
 import ffx.potential.nonbonded.pme.DirectRegion;
 import ffx.potential.nonbonded.pme.ExpandInducedDipolesRegion;
@@ -717,7 +721,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     // Expand coordinates and rotate multipoles into the global frame.
     initializationRegion.init(
         lambdaTerm,
-        gradient,
+        esvTerm,
+        isAtomTitrating,
         lambdaScaleMultipoles,
         atoms,
         coordinates,
@@ -726,6 +731,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         axisAtom,
         localMultipole,
         globalMultipole,
+        dMultipoledTirationESV,
         polarizability,
         use,
         neighborLists,
@@ -1186,6 +1192,21 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
       // The size of reduced neighbor list depends on the size of the real space cutoff.
       realSpaceNeighborParameters.allocate(nAtoms, nSymm);
+
+      // Lambda factors are different for OST and ESV interactions.
+      lambdaFactors = new LambdaFactors[maxThreads];
+      for (int i = 0; i < maxThreads; i++) {
+        if (esvTerm) {
+          // Invoked every time through inner loops.
+          lambdaFactors[i] = new LambdaFactorsESV();
+        } else if (lambdaTerm) {
+          // Invoked on calls to setLambda().
+          lambdaFactors[i] = new LambdaFactorsOST();
+        } else {
+          // Invoked never; inoperative defaults.
+          lambdaFactors[i] = LambdaDefaults;
+        }
+      }
     }
 
     // Initialize the soft core lambda mask to false for all atoms.
@@ -3353,4 +3374,364 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
               realSpaceEnergyRegion.getInteractions()));
     }
   }
+
+  /**
+   * Flag to indicate use of extended variables that interpolate
+   * permanent multipoles and/or atomic polarizability between
+   * states (e.g., for protonation and/or tautamers).
+   */
+  private boolean esvTerm = false;
+
+  /**
+   * The ExtendedSystem instance controls use of extended variables.
+   */
+  private ExtendedSystem extendedSystem = null;
+
+  /**
+   * Number of extended system variables.
+   */
+  private int numESVs = 0;
+
+  /**
+   * The partial derivative of the permanent multipole real space
+   * energy with respect to each ESV.
+   */
+  SharedDouble[] dUPermRealdEsv = null;
+  /**
+   * The partial derivative of the permanent multipole reciprocal space
+   * energy with respect to each ESV.
+   */
+  SharedDouble[] dUPermRecipdEsv = null;
+  /**
+   * The partial derivative of the permanent multipole self energy
+   * with respect to each ESV.
+   */
+  SharedDouble[] dUPermSelfdEsv = null;
+
+  /**
+   * Attach system with extended variable such as titrations.
+   *
+   * @param system a {@link ffx.potential.extended.ExtendedSystem} object.
+   */
+  public void attachExtendedSystem(ExtendedSystem system) {
+    // Set object handles.
+    esvTerm = true;
+    extendedSystem = system;
+    numESVs = extendedSystem.size();
+
+    // Update atoms and reinitialize arrays for consistency with the ExtendedSystem.
+    setAtoms(extendedSystem.getExtendedAtoms(), extendedSystem.getExtendedMolecule());
+
+    // Allocate shared derivative storage.
+    dUPermRealdEsv = new SharedDouble[numESVs];
+    dUPermRecipdEsv = new SharedDouble[numESVs];
+    dUPermSelfdEsv = new SharedDouble[numESVs];
+    for (int i = 0; i < numESVs; i++) {
+      dUPermRealdEsv[i] = new SharedDouble(0.0);
+      dUPermRecipdEsv[i] = new SharedDouble(0.0);
+      dUPermSelfdEsv[i] = new SharedDouble(0.0);
+    }
+
+    updateEsvLambda();
+    logger.info(format(" Attached extended system (%d variables) to PME.\n", numESVs));
+  }
+
+  /**
+   * Flag to indicate if each atom is titrating.
+   */
+  boolean[] isAtomTitrating = null;
+  /**
+   * The scalar ESV that is operating on each atom (or 1.0 if the atom is not under ESV control).
+   */
+  double[] perAtomTitrationESV = null;
+  /**
+   * The index of the ESV that is operating on each atom (or -1 if the atom is not under ESV control).
+   */
+  Integer[] perAtomESVIndex = null;
+
+  /**
+   * The partial derivative of each multipole with respect to its titration ESV
+   * (or 0.0 if the atom is not under titration ESV control).
+   */
+  double[][][] dMultipoledTirationESV = null;
+  
+  /**
+   * OST and ESV specific factors that effect real space interactions.
+   */
+  LambdaFactors[] lambdaFactors = null;
+  
+  /** Precalculate ESV factors subsequent to lambda propagation. */
+  public void updateEsvLambda() {
+    if (!esvTerm) {
+      return;
+    }
+
+    // Query ExtendedSystem to create local preloads of all lambda quantities.
+    numESVs = extendedSystem.size();
+    if (perAtomTitrationESV == null || perAtomTitrationESV.length < nAtoms) {
+      isAtomTitrating = new boolean[nAtoms];
+      perAtomTitrationESV = new double[nAtoms];
+      perAtomESVIndex = new Integer[nAtoms];
+      fill(isAtomTitrating, false);
+      fill(perAtomTitrationESV, 1.0);
+      fill(perAtomESVIndex, null);
+    }
+
+    // Allocate space for dM/dTitratonESV
+    if (dMultipoledTirationESV == null || dMultipoledTirationESV.length != nSymm
+        || dMultipoledTirationESV[0].length != nAtoms) {
+      dMultipoledTirationESV = new double[nSymm][nAtoms][10];
+    }
+    
+    for (int i = 0; i < nAtoms; i++) {
+      isAtomTitrating[i] = extendedSystem.isExtended(i);
+      perAtomTitrationESV[i] = extendedSystem.getLambda(i);
+      perAtomESVIndex[i] = extendedSystem.getEsvIndex(i);
+      Atom ai = atoms[i];
+      if (ai.getPolarizeType() == null) {
+        logger.warning("Null polarize type during ESV init.");
+        continue;
+      }
+      polarizability[i] = ai.getScaledPolarizability();
+    }
+  }
+
+  /**
+   * The setFactors(i,k,lambdaMode) method is called every time through the inner PME loops,
+   * avoiding an "if (esv)" branch statement.
+   *
+   * A plain OST run will have an object of type LambdaFactorsOST instead,
+   * which contains an empty version of setFactors(i,k,lambdaMode).
+   *
+   * The OST version instead sets new factors only on lambda updates, in setLambda(i,k).
+   *
+   * Interactions involving neither lambda receive the (inoperative) defaults below.
+   */
+  public class LambdaFactors {
+
+    /** lambda * esvLambda[i] * esvLambda[k] */
+    protected double lambdaProd = 1.0;
+    /** Interatomic buffer distance: alpha*(1-lambda)*(1-lambda). */
+    protected double lfAlpha = 0.0;
+    /** First lambda derivative of buffer distance. */
+    protected double dlfAlpha = 0.0;
+    /** Second lambda derivative of buffer distance. */
+    protected double d2lfAlpha = 0.0;
+    /** Lambda to its permanent exponent. */
+    protected double lfPowPerm = 1.0;
+    /** First lambda derivative of lPowPerm. */
+    protected double dlfPowPerm = 0.0;
+    /** Second lambda derivative of lPowPerm. */
+    protected double d2lfPowPerm = 0.0;
+    /** Lambda to its polarization exponent. */
+    protected double lfPowPol = 1.0;
+    /** First lambda derivative of lPowPol. */
+    protected double dlfPowPol = 0.0;
+    /** Second lambda derivative of lPowPol. */
+    protected double d2lfPowPol = 0.0;
+    /** Derivative of lambdaProduct w.r.t. lambda. */
+    protected double dLpdL = 1.0;
+    /** Derivative of lambdaProduct w.r.t. esvLambda[i]. */
+    protected double dLpdLi = 1.0;
+    /** Derivative of lambdaProduct w.r.t. esvLambda[k]. */
+    protected double dLpdLk = 1.0;
+    /** Atom indices used only by LambdaFactorsESV::print. */
+    protected int[] ik = new int[2];
+
+    public void print() {
+      StringBuilder sb = new StringBuilder();
+      if (this instanceof LambdaFactorsESV) {
+        sb.append(format("  (QI-ESV)  i,k:%d,%d", ik[0], ik[1]));
+      } else {
+        sb.append("  (QI-OST)");
+      }
+      sb.append(format(
+              "  lambda:%.2f  lAlpha:%.2f,%.2f,%.2f  lPowPerm:%.2f,%.2f,%.2f  lPowPol:%.2f,%.2f,%.2f",
+              lambdaProd,
+              lfAlpha,
+              dlfAlpha,
+              d2lfAlpha,
+              lfPowPerm,
+              dlfPowPerm,
+              d2lfPowPerm,
+              lfPowPol,
+              dlfPowPol,
+              d2lfPowPol));
+      
+      sb.append(format(
+          "\n    permExp:%.2f  permAlpha:%.2f  permWindow:%.2f,%.2f  polExp:%.2f  polWindow:%.2f,%.2f",
+              alchemicalParameters.permLambdaExponent,
+              alchemicalParameters.permLambdaAlpha,
+              alchemicalParameters.permLambdaStart,
+              alchemicalParameters.permLambdaEnd,
+              alchemicalParameters.polLambdaExponent,
+              alchemicalParameters.polLambdaStart,
+              alchemicalParameters.polLambdaEnd));
+      logger.info(sb.toString());
+    }
+
+    /**
+     * Overriden by the ESV version which updates with every softcore interaction.
+     *
+     * @param i Atom i index.
+     * @param k Atom k index.
+     * @param mode the LambdaMode
+     */
+    public void setFactors(int i, int k, LambdaMode mode) {
+      /* no-op */
+    }
+
+    /** Overriden by the OST version which updates only during setLambda(). */
+    public void setFactors() {
+      /* no-op */
+    }
+  }
+
+  public class LambdaFactorsOST extends LambdaFactors {
+
+    @Override
+    public void setFactors() {
+      lambdaProd = lambda;
+      lfAlpha = alchemicalParameters.lAlpha;
+      dlfAlpha = alchemicalParameters.dlAlpha;
+      d2lfAlpha = alchemicalParameters.d2lAlpha;
+      lfPowPerm = alchemicalParameters.permanentScale;
+      dlfPowPerm = alchemicalParameters.dlPowPerm * alchemicalParameters.dEdLSign;
+      d2lfPowPerm = alchemicalParameters.d2lPowPerm * alchemicalParameters.dEdLSign;
+      lfPowPol = alchemicalParameters.polarizationScale;
+      dlfPowPol = alchemicalParameters.dlPowPol * alchemicalParameters.dEdLSign;
+      d2lfPowPol = alchemicalParameters.d2lPowPol * alchemicalParameters.dEdLSign;
+    }
+  }
+
+  public class LambdaFactorsESV extends LambdaFactors {
+
+    @Override
+    public void setFactors(int i, int k, LambdaMode mode) {
+      logger.info(format("Invoked Qi setFactors() method with i,k=%d,%d", i, k));
+      ik[0] = i;
+      ik[1] = k;
+      final double L = lambda;
+      lambdaProd = L * perAtomTitrationESV[i] * perAtomTitrationESV[k];
+      final double esvli = perAtomTitrationESV[i];
+      final double esvlk = perAtomTitrationESV[k];
+      dLpdL = esvli * esvlk;
+      dLpdLi = L * esvlk;
+      dLpdLk = L * esvli;
+
+      // Permanent Lambda Window (e.g., 0 .. 1).
+      double permLambdaExponent = alchemicalParameters.permLambdaExponent;
+      double permLambdaStart = alchemicalParameters.permLambdaStart;
+      double permLambdaEnd = alchemicalParameters.permLambdaEnd;
+
+      double permWindow = 1.0 / (permLambdaEnd - permLambdaStart);
+      double permLambda = (lambdaProd - permLambdaStart) * permWindow;
+      lfPowPerm = pow(permLambda, alchemicalParameters.permLambdaExponent);
+      dlfPowPerm = (permLambdaExponent < 1)
+              ? 0.0 : permLambdaExponent * pow(permLambda, permLambdaExponent - 1) * permWindow;
+      d2lfPowPerm = (permLambdaExponent < 2)
+              ? 0.0 : permLambdaExponent
+                  * (permLambdaExponent - 1)
+                  * pow(permLambda, permLambdaExponent - 2)
+                  * permWindow
+                  * permWindow;
+
+      // Polarization Lambda Window (e.g., 0 .. 1).
+      double polLambdaExponent = alchemicalParameters.polLambdaExponent;
+      double polLambdaStart = alchemicalParameters.polLambdaStart;
+      double polLambdaEnd = alchemicalParameters.polLambdaEnd;
+
+      double polWindow = 1.0 / (polLambdaEnd - polLambdaStart);
+      double polLambda = (lambdaProd - polLambdaStart) * polWindow;
+      lfPowPol = pow(polLambda, polLambdaExponent);
+      dlfPowPol = (polLambdaExponent < 1)
+              ? 0.0 : polLambdaExponent * pow(polLambda, polLambdaExponent - 1) * polWindow;
+      d2lfPowPol = (polLambdaExponent < 2)
+              ? 0.0 : polLambdaExponent
+                  * (polLambdaExponent - 1)
+                  * pow(polLambda, polLambdaExponent - 2)
+                  * polWindow
+                  * polWindow;
+
+      // Permanent Lambda Softcore Alpha.
+      double permLambdaAlpha = alchemicalParameters.permLambdaAlpha;
+      lfAlpha = permLambdaAlpha * (1.0 - permLambda) * (1.0 - permLambda);
+      dlfAlpha = permLambdaAlpha * (1.0 - permLambda) * permWindow;
+      d2lfAlpha = -permLambdaAlpha * permWindow * permWindow;
+
+      /*
+        Follow the logic of
+        1) condensedEnergy
+        2) noLigand
+        and
+        3) ligandElec
+
+        to set permanentScale (lfPowPerm) and polarizationScale (lfPowPol),
+        substituting lambdaProduct for lambda.
+       */
+      switch (mode) {
+        case CONDENSED:
+          lfPowPerm = 1.0 - lfPowPerm;
+          dlfPowPerm = -dlfPowPerm; // handles dEdLSign
+          d2lfPowPerm = -d2lfPowPerm; // handles dEdLSign
+          if (polarization == Polarization.NONE || lambda < polLambdaStart) {
+            lfPowPol = 0.0;
+            dlfPowPol = 0.0;
+            d2lfPowPol = 0.0;
+          } else if (lambda <= polLambdaEnd) {
+            // No change necessary.
+          } else {
+            lfPowPol = 1.0;
+            dlfPowPol = 0.0;
+            d2lfPowPol = 0.0;
+          }
+          break;
+        case CONDENSED_NO_LIGAND:
+          // There's no treatment of polLambdaStart in ::condensedNoLigandSCF?
+          lfPowPerm = 1.0 - lfPowPerm;
+          dlfPowPerm = -dlfPowPerm;
+          d2lfPowPerm = -d2lfPowPerm;
+          if (polarization == Polarization.NONE) {
+            lfPowPol = 0.0;
+            dlfPowPol = 0.0;
+            d2lfPowPol = 0.0;
+          } else if (lambda <= polLambdaEnd) {
+            lfPowPol = 1.0 - lfPowPol;
+            dlfPowPol = -dlfPowPol;
+            d2lfPowPol = -d2lfPowPol;
+          } else {
+            lfPowPol = 0.0;
+            dlfPowPol = 0.0;
+            d2lfPowPol = 0.0;
+          }
+          break;
+        case VAPOR:
+          // There's no treatment of polLambdaStart in ::ligandElec?
+          lfPowPerm = 1.0 - lfPowPerm;
+          dlfPowPerm = -dlfPowPerm;
+          d2lfPowPerm = -d2lfPowPerm;
+          lfAlpha = 0.0;
+          dlfAlpha = 0.0;
+          d2lfAlpha = 0.0;
+          if (polarization == Polarization.NONE || lambdaProd > polLambdaEnd) {
+            lfPowPol = 0.0;
+            dlfPowPol = 0.0;
+            d2lfPowPol = 0.0;
+          } else if (lambdaProd <= polLambdaEnd) {
+            lfPowPol = 1.0 - lfPowPol;
+            dlfPowPol = -dlfPowPol;
+            d2lfPowPol = -d2lfPowPol;
+          }
+          break;
+        case OFF:
+        default:
+      }
+    }
+  }
+
+  /**
+   * The defaults are effectively final, as the implementation of setFactors in the base
+   * class is always a no-op.
+   */
+  public final LambdaFactors LambdaDefaults = new LambdaFactors();
 }
