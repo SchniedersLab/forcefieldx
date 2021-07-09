@@ -7,11 +7,7 @@ sudo: false
 matrix:
   include:
     - os: linux
-      jdk: oraclejdk11
-    - os: linux
       jdk: oraclejdk16
-    - os: osx
-      osx_image: xcode12.5
 
 cache:
   directories:
