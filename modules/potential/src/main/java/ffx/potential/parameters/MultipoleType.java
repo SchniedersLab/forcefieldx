@@ -40,7 +40,6 @@ package ffx.potential.parameters;
 import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.normalize;
-import static ffx.numerics.math.DoubleMath.scale;
 import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.potential.parameters.ForceField.ELEC_FORM.FIXED_CHARGE;
 import static ffx.potential.parameters.ForceField.ForceFieldType.MULTIPOLE;
@@ -52,7 +51,6 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.random;
 
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Atom;
@@ -273,15 +271,12 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     zAxis[0] = frameCoords[0][0];
     zAxis[1] = frameCoords[0][1];
     zAxis[2] = frameCoords[0][2];
-
     xAxis[0] = frameCoords[1][0];
     xAxis[1] = frameCoords[1][1];
     xAxis[2] = frameCoords[1][2];
-
     yAxis[0] = frameCoords[2][0];
     yAxis[1] = frameCoords[2][1];
     yAxis[2] = frameCoords[2][2];
-
     sub(localOrigin, yAxis, yMinOrigin);
     sub(zAxis, yAxis, zAxis);
     sub(xAxis, yAxis, xAxis);
@@ -490,7 +485,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
       if (polarizeType != null) {
         atom.setPolarizeType(polarizeType);
       } else {
-        String message = " No polarization type was found for " + atom.toString();
+        String message = " No polarization type was found for " + atom;
         logger.info(message);
         double polarizability = 0.0;
         double thole = 0.0;
@@ -1023,9 +1018,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         logger.warning(
             format(
                 "Multipole frame definition mismatch during weighting:\n\t%s->%s,\n\t%s->%s",
-                types[0].toString(),
+                types[0],
                 types[0].frameDefinition.toString(),
-                type.toString(),
+                type,
                 type.frameDefinition.toString()));
         throw new IllegalArgumentException();
       }

@@ -74,9 +74,6 @@ import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.nonbonded.ParticleMeshEwaldQI.LambdaFactors;
-import ffx.potential.nonbonded.ParticleMeshEwaldQI.LambdaFactorsESV;
-import ffx.potential.nonbonded.ParticleMeshEwaldQI.LambdaFactorsOST;
 import ffx.potential.nonbonded.ReciprocalSpace.FFTMethod;
 import ffx.potential.nonbonded.pme.DirectRegion;
 import ffx.potential.nonbonded.pme.ExpandInducedDipolesRegion;
@@ -113,9 +110,8 @@ import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer
  * contribution is contained within this class and the reciprocal space contribution is delegated to
  * the {@link ReciprocalSpace} class.
  *
- * @author Michael J. Schnieders<br>
- *     derived from:<br>
- *     TINKER code by Jay Ponder, Pengyu Ren and Tom Darden.<br>
+ * @author Michael J. Schnieders<br> derived from:<br> TINKER code by Jay Ponder, Pengyu Ren and Tom
+ *     Darden.<br>
  * @see <br>
  *     <a href="http://dx.doi.org/10.1021/ct300035u" target="_blank"> M. J. Schnieders, J.
  *     Baltrusaitis, Y. Shi, G. Chattree, L. Zheng, W. Yang and P. Ren, The Structure,
@@ -157,7 +153,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   private final double poleps;
   /** Specify an SCF predictor algorithm. */
   private final SCFPredictor scfPredictor;
-
   private final SCFPredictorParameters scfPredictorParameters;
   private final EwaldParameters ewaldParameters;
   private final ScaleParameters scaleParameters;
@@ -388,7 +383,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       logger.fine(
           format(
               " SCF algorithm %s is not supported by FFX reference implementation; falling back to CG!",
-              scfAlgorithm.toString()));
+              scfAlgorithm));
       scfAlgorithm = SCFAlgorithm.CG;
     }
 
@@ -1291,7 +1286,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       isSoft[i] = soft;
       if (soft) {
         count++;
-        sb.append(ai.toString()).append("\n");
+        sb.append(ai).append("\n");
       }
     }
 
@@ -2423,7 +2418,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       }
     }
     if (sb.length() > 0) {
-      String message = "Fatal exception: Error assigning multipoles. " + sb.toString();
+      String message = "Fatal exception: Error assigning multipoles. " + sb;
       logger.log(Level.SEVERE, message);
     }
   }
@@ -2454,8 +2449,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     final int numThreads;
     /**
-     * Neighbor lists, without atoms beyond the real space cutoff.
-     * [nSymm][nAtoms][nIncludedNeighbors]
+     * Neighbor lists, without atoms beyond the real space cutoff. [nSymm][nAtoms][nIncludedNeighbors]
      */
     public int[][][] realSpaceLists;
     /** Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms] */
@@ -2538,6 +2532,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
   /** Scale factors for group based polarization rules and energy masking rules. */
   public class ScaleParameters {
+
     /** The interaction energy between 1-2 multipoles is scaled by m12scale. */
     public final double m12scale;
     /** The interaction energy between 1-3 multipoles is scaled by m13scale. */
@@ -2775,7 +2770,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
               lambda,
               permanentScale,
               polarizationScale,
-              format("%+f", dEdLSign).substring(0, 1),
+              format("%+f", dEdLSign).charAt(0),
               doPolarization,
               doPermanentRealSpace));
       sb.append(
@@ -2907,6 +2902,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   }
 
   public class SCFPredictorParameters {
+
     /** Induced dipole predictor order. */
     public int predictorOrder;
     /** Induced dipole predictor index. */
@@ -2945,7 +2941,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       }
 
       final double[] aspc = {
-        22.0 / 7.0, -55.0 / 14.0, 55.0 / 21.0, -22.0 / 21.0, 5.0 / 21.0, -1.0 / 42.0
+          22.0 / 7.0, -55.0 / 14.0, 55.0 / 21.0, -22.0 / 21.0, 5.0 / 21.0, -1.0 / 42.0
       };
 
       // Initialize a pointer into predictor induced dipole array.
@@ -3288,6 +3284,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   }
 
   public class PMETimings {
+
     public final long[] realSpacePermTime;
     public final long[] realSpaceEnergyTime;
     public final long[] realSpaceSCFTime;
@@ -3376,9 +3373,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   }
 
   /**
-   * Flag to indicate use of extended variables that interpolate
-   * permanent multipoles and/or atomic polarizability between
-   * states (e.g., for protonation and/or tautamers).
+   * Flag to indicate use of extended variables that interpolate permanent multipoles and/or atomic
+   * polarizability between states (e.g., for protonation and/or tautamers).
    */
   private boolean esvTerm = false;
 
@@ -3393,18 +3389,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   private int numESVs = 0;
 
   /**
-   * The partial derivative of the permanent multipole real space
-   * energy with respect to each ESV.
+   * The partial derivative of the permanent multipole real space energy with respect to each ESV.
    */
   SharedDouble[] dUPermRealdEsv = null;
   /**
-   * The partial derivative of the permanent multipole reciprocal space
-   * energy with respect to each ESV.
+   * The partial derivative of the permanent multipole reciprocal space energy with respect to each
+   * ESV.
    */
   SharedDouble[] dUPermRecipdEsv = null;
   /**
-   * The partial derivative of the permanent multipole self energy
-   * with respect to each ESV.
+   * The partial derivative of the permanent multipole self energy with respect to each ESV.
    */
   SharedDouble[] dUPermSelfdEsv = null;
 
@@ -3445,21 +3439,22 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
    */
   double[] perAtomTitrationESV = null;
   /**
-   * The index of the ESV that is operating on each atom (or -1 if the atom is not under ESV control).
+   * The index of the ESV that is operating on each atom (or -1 if the atom is not under ESV
+   * control).
    */
   Integer[] perAtomESVIndex = null;
 
   /**
-   * The partial derivative of each multipole with respect to its titration ESV
-   * (or 0.0 if the atom is not under titration ESV control).
+   * The partial derivative of each multipole with respect to its titration ESV (or 0.0 if the atom
+   * is not under titration ESV control).
    */
   double[][][] dMultipoledTirationESV = null;
-  
+
   /**
    * OST and ESV specific factors that effect real space interactions.
    */
   LambdaFactors[] lambdaFactors = null;
-  
+
   /** Precalculate ESV factors subsequent to lambda propagation. */
   public void updateEsvLambda() {
     if (!esvTerm) {
@@ -3482,7 +3477,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         || dMultipoledTirationESV[0].length != nAtoms) {
       dMultipoledTirationESV = new double[nSymm][nAtoms][10];
     }
-    
+
     for (int i = 0; i < nAtoms; i++) {
       isAtomTitrating[i] = extendedSystem.isExtended(i);
       perAtomTitrationESV[i] = extendedSystem.getLambda(i);
@@ -3497,14 +3492,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   }
 
   /**
-   * The setFactors(i,k,lambdaMode) method is called every time through the inner PME loops,
-   * avoiding an "if (esv)" branch statement.
-   *
-   * A plain OST run will have an object of type LambdaFactorsOST instead,
-   * which contains an empty version of setFactors(i,k,lambdaMode).
-   *
+   * The setFactors(i,k,lambdaMode) method is called every time through the inner PME loops, avoiding
+   * an "if (esv)" branch statement.
+   * <p>
+   * A plain OST run will have an object of type LambdaFactorsOST instead, which contains an empty
+   * version of setFactors(i,k,lambdaMode).
+   * <p>
    * The OST version instead sets new factors only on lambda updates, in setLambda(i,k).
-   *
+   * <p>
    * Interactions involving neither lambda receive the (inoperative) defaults below.
    */
   public class LambdaFactors {
@@ -3546,27 +3541,27 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         sb.append("  (QI-OST)");
       }
       sb.append(format(
-              "  lambda:%.2f  lAlpha:%.2f,%.2f,%.2f  lPowPerm:%.2f,%.2f,%.2f  lPowPol:%.2f,%.2f,%.2f",
-              lambdaProd,
-              lfAlpha,
-              dlfAlpha,
-              d2lfAlpha,
-              lfPowPerm,
-              dlfPowPerm,
-              d2lfPowPerm,
-              lfPowPol,
-              dlfPowPol,
-              d2lfPowPol));
-      
+          "  lambda:%.2f  lAlpha:%.2f,%.2f,%.2f  lPowPerm:%.2f,%.2f,%.2f  lPowPol:%.2f,%.2f,%.2f",
+          lambdaProd,
+          lfAlpha,
+          dlfAlpha,
+          d2lfAlpha,
+          lfPowPerm,
+          dlfPowPerm,
+          d2lfPowPerm,
+          lfPowPol,
+          dlfPowPol,
+          d2lfPowPol));
+
       sb.append(format(
           "\n    permExp:%.2f  permAlpha:%.2f  permWindow:%.2f,%.2f  polExp:%.2f  polWindow:%.2f,%.2f",
-              alchemicalParameters.permLambdaExponent,
-              alchemicalParameters.permLambdaAlpha,
-              alchemicalParameters.permLambdaStart,
-              alchemicalParameters.permLambdaEnd,
-              alchemicalParameters.polLambdaExponent,
-              alchemicalParameters.polLambdaStart,
-              alchemicalParameters.polLambdaEnd));
+          alchemicalParameters.permLambdaExponent,
+          alchemicalParameters.permLambdaAlpha,
+          alchemicalParameters.permLambdaStart,
+          alchemicalParameters.permLambdaEnd,
+          alchemicalParameters.polLambdaExponent,
+          alchemicalParameters.polLambdaStart,
+          alchemicalParameters.polLambdaEnd));
       logger.info(sb.toString());
     }
 
@@ -3628,13 +3623,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       double permLambda = (lambdaProd - permLambdaStart) * permWindow;
       lfPowPerm = pow(permLambda, alchemicalParameters.permLambdaExponent);
       dlfPowPerm = (permLambdaExponent < 1)
-              ? 0.0 : permLambdaExponent * pow(permLambda, permLambdaExponent - 1) * permWindow;
+          ? 0.0 : permLambdaExponent * pow(permLambda, permLambdaExponent - 1) * permWindow;
       d2lfPowPerm = (permLambdaExponent < 2)
-              ? 0.0 : permLambdaExponent
-                  * (permLambdaExponent - 1)
-                  * pow(permLambda, permLambdaExponent - 2)
-                  * permWindow
-                  * permWindow;
+          ? 0.0 : permLambdaExponent
+          * (permLambdaExponent - 1)
+          * pow(permLambda, permLambdaExponent - 2)
+          * permWindow
+          * permWindow;
 
       // Polarization Lambda Window (e.g., 0 .. 1).
       double polLambdaExponent = alchemicalParameters.polLambdaExponent;
@@ -3645,13 +3640,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       double polLambda = (lambdaProd - polLambdaStart) * polWindow;
       lfPowPol = pow(polLambda, polLambdaExponent);
       dlfPowPol = (polLambdaExponent < 1)
-              ? 0.0 : polLambdaExponent * pow(polLambda, polLambdaExponent - 1) * polWindow;
+          ? 0.0 : polLambdaExponent * pow(polLambda, polLambdaExponent - 1) * polWindow;
       d2lfPowPol = (polLambdaExponent < 2)
-              ? 0.0 : polLambdaExponent
-                  * (polLambdaExponent - 1)
-                  * pow(polLambda, polLambdaExponent - 2)
-                  * polWindow
-                  * polWindow;
+          ? 0.0 : polLambdaExponent
+          * (polLambdaExponent - 1)
+          * pow(polLambda, polLambdaExponent - 2)
+          * polWindow
+          * polWindow;
 
       // Permanent Lambda Softcore Alpha.
       double permLambdaAlpha = alchemicalParameters.permLambdaAlpha;
@@ -3730,8 +3725,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   }
 
   /**
-   * The defaults are effectively final, as the implementation of setFactors in the base
-   * class is always a no-op.
+   * The defaults are effectively final, as the implementation of setFactors in the base class is
+   * always a no-op.
    */
   public final LambdaFactors LambdaDefaults = new LambdaFactors();
 }

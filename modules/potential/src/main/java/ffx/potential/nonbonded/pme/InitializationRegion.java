@@ -37,12 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.numerics.math.DoubleMath.add;
-import static ffx.numerics.math.DoubleMath.dot;
-import static ffx.numerics.math.DoubleMath.normalize;
-import static ffx.numerics.math.DoubleMath.scale;
-import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.potential.parameters.MultipoleType.checkMultipoleChirality;
 import static ffx.potential.parameters.MultipoleType.getRotationMatrix;
 import static ffx.potential.parameters.MultipoleType.rotateMultipole;
 import static ffx.potential.parameters.MultipoleType.t000;
@@ -55,7 +49,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.max;
 
 import edu.rit.pj.IntegerForLoop;
@@ -97,8 +90,13 @@ public class InitializationRegion extends ParallelRegion {
   private final boolean useDipoles;
   /** If set to false, multipole quadrupoles are set to zero (default is true). */
   private final boolean useQuadrupoles;
-
+  /**
+   * Initialization Loops
+   */
   private final InitializationLoop[] initializationLoop;
+  /**
+   * Rotate Multipole Loops
+   */
   private final RotateMultipolesLoop[] rotateMultipolesLoop;
   /**
    * If lambdaTerm is true, some ligand atom interactions with the environment are being turned

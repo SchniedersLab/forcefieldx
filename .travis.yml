@@ -7,15 +7,11 @@ sudo: false
 matrix:
   include:
     - os: linux
-      jdk: openjdk10
-    - os: linux
       jdk: oraclejdk11
     - os: linux
-      jdk: oraclejdk14
+      jdk: oraclejdk16
     - os: osx
-      osx_image: xcode10.1
-    - os: osx
-      osx_image: xcode11.3
+      osx_image: xcode12.5
 
 cache:
   directories:
@@ -25,7 +21,6 @@ notifications:
   email:
     recipients:
       michael-schnieders@uiowa.edu
-      jacob-litman@uiowa.edu
     on_success: change
     on_failure: always
 
