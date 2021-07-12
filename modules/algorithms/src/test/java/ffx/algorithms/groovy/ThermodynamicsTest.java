@@ -1699,7 +1699,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
     thermodynamics.run();
     OrthogonalSpaceTempering orthogonalSpaceTempering = thermodynamics.getOST();
     Histogram histogram = orthogonalSpaceTempering.getHistogram();
-    double delG = histogram.updateFLambda(true, false);
+    double delG = histogram.updateFreeEnergyEstimate(true, false);
     assertEquals(
         format(" Test %s: not within tolerance %12.5g", info, feTol),
         freeEnergy,

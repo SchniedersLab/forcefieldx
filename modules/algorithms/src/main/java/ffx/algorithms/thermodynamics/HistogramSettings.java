@@ -194,6 +194,7 @@ public class HistogramSettings {
   /** Flag set to false once OST statistics are reset at lambdaResetValue. */
   private boolean resetStatistics = DEFAULT_RESET_STATISTICS;
 
+  private boolean metaDynamics = false;
   private boolean writeIndependent = false;
   private boolean independentWalkers = false;
   /** Flag indicating if a histogram file was read in. */
@@ -238,7 +239,7 @@ public class HistogramSettings {
         biasCutoff = hr.getBiasCutoff();
         countInterval = hr.getCountInterval();
         setDL(hr.getLambdaBins());
-        dFL = hr.getDFLambda();
+        dFL = hr.getdUdLBinWidth();
         histogramRead = true;
       }
     } else {
@@ -346,6 +347,19 @@ public class HistogramSettings {
   public void setTemperOffset(double temperingOffset) {
     temperOffset = temperingOffset;
     temperOffsetSet = true;
+  }
+
+  /**
+   * Returns the value of metaDynamics.
+   *
+   * @return metaDynamics.
+   */
+  public boolean isMetaDynamics() {
+    return metaDynamics;
+  }
+
+  public void setMetaDynamics(boolean metaDynamics) {
+    this.metaDynamics = metaDynamics;
   }
 
   /**

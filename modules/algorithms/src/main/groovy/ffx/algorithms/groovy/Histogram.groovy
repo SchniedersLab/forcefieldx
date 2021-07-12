@@ -137,7 +137,7 @@ class Histogram extends AlgorithmsScript {
     if (pmf) {
       orthogonalSpaceTempering.setMolecularAssembly(activeAssembly)
       OrthogonalSpaceTempering.Histogram histogram = orthogonalSpaceTempering.getHistogram()
-      histogram.updateFLambda(false, true)
+      histogram.updateFreeEnergyEstimate(false, true)
       StringBuffer sb = histogram.evaluateTotalPMF()
 
       String dirName = saveDir.toString() + File.separator

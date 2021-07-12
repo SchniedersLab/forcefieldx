@@ -65,21 +65,21 @@ class HistogramWriter extends PrintWriter {
 
   /** Write the Histogram file. */
   void writeHistogramFile() {
-    printf("Temperature     %15.3f\n", histogram.temperature);
-    printf("Lambda-Mass     %15.8e\n", histogram.thetaMass);
-    printf("Lambda-Friction %15.8e\n", histogram.thetaFriction);
-    printf("Bias-Mag        %15.8e\n", histogram.getBiasMagnitude());
-    printf("Bias-Cutoff     %15d\n", histogram.biasCutoff);
-    printf("Count-Interval  %15d\n", histogram.countInterval);
-    printf("Lambda-Bins     %15d\n", histogram.lambdaBins);
-    printf("FLambda-Bins    %15d\n", histogram.FLambdaBins);
-    printf("Flambda-Min     %15.8e\n", histogram.minFLambda);
-    printf("Flambda-Width   %15.8e\n", histogram.dFL);
+    printf("Temperature      %15.3f\n", histogram.temperature);
+    printf("Lambda-Mass      %15.8e\n", histogram.thetaMass);
+    printf("Lambda-Friction  %15.8e\n", histogram.thetaFriction);
+    printf("Bias-Mag         %15.8e\n", histogram.getBiasMagnitude());
+    printf("Bias-Cutoff      %15d\n", histogram.biasCutoff);
+    printf("Count-Interval   %15d\n", histogram.countInterval);
+    printf("Lambda-Bins      %15d\n", histogram.lambdaBins);
+    printf("dUdL-Bins        %15d\n", histogram.dUdLBins);
+    printf("Min-dUdL         %15.8e\n", histogram.mindUdL);
+    printf("dUdL-Bin-Width   %15.8e\n", histogram.dUdLBinWidth);
     int flag = 1; // Legacy of the old tempering scheme.
-    printf("Tempering       %15d\n", flag);
+    printf("Tempering        %15d\n", flag);
     for (int i = 0; i < histogram.lambdaBins; i++) {
       printf("%g", histogram.getRecursionKernelValue(i, 0));
-      for (int j = 1; j < histogram.FLambdaBins; j++) {
+      for (int j = 1; j < histogram.dUdLBins; j++) {
         printf(" %g", histogram.getRecursionKernelValue(i, j));
       }
       println();
