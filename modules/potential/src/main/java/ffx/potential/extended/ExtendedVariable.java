@@ -454,7 +454,7 @@ public abstract class ExtendedVariable {
     protected double getThetaMass(){return thetaMass; }
 
     /**
-     * Invoked by ExtendedSystem after lambda changes and by PME after multipole rotation.
+     * Invoked by ExtendedSystem after lambda changes.
      */
     protected final void updateMultipoleTypes() {
         if (!config.electrostatics) {
@@ -479,8 +479,8 @@ public abstract class ExtendedVariable {
             } else {
                 Utype = bg.getMultipoleType();
             }
-            MultipoleType types[] = new MultipoleType[]{Ptype, Utype};
-            double mWeights[], mdotWeights[];
+            MultipoleType[] types = new MultipoleType[]{Ptype, Utype};
+            double[] mWeights, mdotWeights;
             if (config.allowLambdaSwitch && config.nonlinearMultipoles) {
                 mWeights = new double[]{lSwitch, 1.0 - lSwitch};
                 mdotWeights = new double[]{dlSwitch, -dlSwitch};
@@ -494,17 +494,15 @@ public abstract class ExtendedVariable {
             }
             StringBuilder sb = new StringBuilder();
             if (Utype == null) {
-                sb.append(format("Error @ESV.updateMultipoleTypes: bgType null."));
-                sb.append(format("   fg: %s, '%s'", fg.toString(), fg.getName()));
-                sb.append(format(" Background atoms available for match: "));
+                sb.append("Error @ESV.updateMultipoleTypes: bgType null.");
+                sb.append(format("   fg: %s, '%s'", fg, fg.getName()));
+                sb.append(" Background atoms available for match: ");
                 for (Atom debug : atomsBackground) {
                     sb.append(format("   bg: %s, '%s'", debug.toString(), debug.getName()));
                 }
                 logger.warning(sb.toString());
                 continue;
             }
-            final double[] esvMultipole;
-            final double[] esvMultipoleDot;
             final MultipoleType esvType;
             final MultipoleType esvDotType;
             try {
@@ -527,15 +525,13 @@ public abstract class ExtendedVariable {
                 fg.setEsv(this, esvType, esvDotType);
             }
 
-            sb.append(
-                    format(
-                            " Assigning ESV MultipoleTypes for atom %s\n",
-                            fg.describe(Descriptions.Resnum_Name)));
-            sb.append(format("  U: %.2f*%s\n", lambda, Ptype.toCompactBohrString()));
-            sb.append(format("  P: %.2f*%s\n", 1.0 - lambda, Utype.toCompactBohrString()));
-            sb.append(format("  M:      %s\n", fg.getEsvMultipole().toCompactBohrString()));
-            sb.append(format("  Mdot:   %s\n", fg.getEsvMultipoleDot().toCompactBohrString()));
             if (logger.isLoggable(Level.FINE)) {
+                sb.append(format(" Assigning ESV MultipoleTypes for atom %s\n",
+                        fg.describe(Descriptions.Resnum_Name)));
+                sb.append(format("  U: %.2f*%s\n", lambda, Ptype.toCompactBohrString()));
+                sb.append(format("  P: %.2f*%s\n", 1.0 - lambda, Utype.toCompactBohrString()));
+                sb.append(format("  M:      %s\n", fg.getEsvMultipole().toCompactBohrString()));
+                sb.append(format("  Mdot:   %s\n", fg.getEsvMultipoleDot().toCompactBohrString()));
                 logger.info(sb.toString());
             }
         }

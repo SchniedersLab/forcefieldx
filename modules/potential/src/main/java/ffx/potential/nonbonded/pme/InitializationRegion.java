@@ -37,11 +37,8 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.numerics.math.DoubleMath.add;
-import static ffx.numerics.math.DoubleMath.dot;
-import static ffx.numerics.math.DoubleMath.normalize;
-import static ffx.numerics.math.DoubleMath.scale;
-import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.potential.parameters.MultipoleType.getRotationMatrix;
+import static ffx.potential.parameters.MultipoleType.rotateMultipole;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t002;
@@ -52,7 +49,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.max;
 
 import edu.rit.pj.IntegerForLoop;
@@ -64,6 +60,7 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
 import java.util.List;
@@ -93,16 +90,27 @@ public class InitializationRegion extends ParallelRegion {
   private final boolean useDipoles;
   /** If set to false, multipole quadrupoles are set to zero (default is true). */
   private final boolean useQuadrupoles;
-
+  /**
+   * Initialization Loops
+   */
   private final InitializationLoop[] initializationLoop;
+  /**
+   * Rotate Multipole Loops
+   */
   private final RotateMultipolesLoop[] rotateMultipolesLoop;
   /**
    * If lambdaTerm is true, some ligand atom interactions with the environment are being turned
    * on/off.
    */
   private boolean lambdaTerm;
-  /** If true, compute coordinate gradient. */
-  private boolean gradient;
+  /**
+   * If esvTerm is true, the electrostatics of some atoms are being titrated.
+   */
+  private boolean esvTerm;
+  /**
+   * Flag to indicate if each atom is titrating.
+   */
+  boolean[] isAtomTitrating;
   /** Scale multipole moments by a lambda scale factor. */
   private double lambdaScaleMultipoles;
   /** An ordered array of atoms in the system. */
@@ -119,24 +127,12 @@ public class InitializationRegion extends ParallelRegion {
   private double[][] localMultipole;
   /** Dimensions of [nsymm][nAtoms][10] */
   private double[][][] globalMultipole;
-
+  /** Dimensions of [nsymm][nAtoms][10] */
+  private double[][][] titrationMultipole;
+  /** Polarizability of each atom */
   private double[] polarizability;
   /**
-   * When computing the polarization energy at Lambda there are 3 pieces.
-   *
-   * <p>1.) Upol(1) = The polarization energy computed normally (ie. system with ligand).
-   *
-   * <p>2.) Uenv = The polarization energy of the system without the ligand.
-   *
-   * <p>3.) Uligand = The polarization energy of the ligand by itself.
-   *
-   * <p>Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
-   *
-   * <p>Set the "use" array to true for all atoms for part 1. Set the "use" array to true for all
-   * atoms except the ligand for part 2. Set the "use" array to true only for the ligand atoms for
-   * part 3.
-   *
-   * <p>The "use" array can also be employed to turn off atoms for computing the electrostatic
+   * The "use" array can be employed to turn off atoms for computing the electrostatic
    * energy of sub-structures.
    */
   private boolean[] use;
@@ -188,7 +184,8 @@ public class InitializationRegion extends ParallelRegion {
 
   public void init(
       boolean lambdaTerm,
-      boolean gradient,
+      boolean esvTerm,
+      boolean[] isAtomTitrating,
       double lambdaScaleMultipoles,
       Atom[] atoms,
       double[][][] coordinates,
@@ -197,6 +194,7 @@ public class InitializationRegion extends ParallelRegion {
       int[][] axisAtom,
       double[][] localMultipole,
       double[][][] globalMultipole,
+      double[][][] titrationMultipole,
       double[] polarizability,
       boolean[] use,
       int[][][] neighborLists,
@@ -207,7 +205,8 @@ public class InitializationRegion extends ParallelRegion {
       AtomicDoubleArray3D lambdaGrad,
       AtomicDoubleArray3D lambdaTorque) {
     this.lambdaTerm = lambdaTerm;
-    this.gradient = gradient;
+    this.esvTerm = esvTerm;
+    this.isAtomTitrating = isAtomTitrating;
     this.lambdaScaleMultipoles = lambdaScaleMultipoles;
     this.atoms = atoms;
     this.coordinates = coordinates;
@@ -216,6 +215,7 @@ public class InitializationRegion extends ParallelRegion {
     this.axisAtom = axisAtom;
     this.localMultipole = localMultipole;
     this.globalMultipole = globalMultipole;
+    this.titrationMultipole = titrationMultipole;
     this.polarizability = polarizability;
     this.use = use;
     this.neighborLists = neighborLists;
@@ -330,9 +330,7 @@ public class InitializationRegion extends ParallelRegion {
 
     // Local variables
     private final double[] localOrigin = new double[3];
-    private final double[] xAxis = new double[3];
-    private final double[] yAxis = new double[3];
-    private final double[] zAxis = new double[3];
+    private final double[][] frameCoords = new double[4][3];
     private final double[][] rotmat = new double[3][3];
     private final double[] tempDipole = new double[3];
     private final double[][] tempQuadrupole = new double[3][3];
@@ -371,220 +369,39 @@ public class InitializationRegion extends ParallelRegion {
           if (!useQuadrupoles) {
             quadrupoleScale = 0.0;
           }
-          final double[] in = localMultipole[ii];
-          final double[] out = globalMultipole[iSymm][ii];
+
           double elecScale = 1.0;
           if (!atom.getElectrostatics()) {
             elecScale = 0.0;
           }
+
+          double[] in = (esvTerm && isAtomTitrating[ii])
+              ? atom.getEsvMultipole().getMultipole()
+              : localMultipole[ii];
+
           if (rotateMultipoles) {
+            // Local frame origin is the location of the current atomic multipole atom.
             localOrigin[0] = x[ii];
             localOrigin[1] = y[ii];
             localOrigin[2] = z[ii];
+            // Collect coordinates of the frame defining atoms.
             int[] referenceSites = axisAtom[ii];
-            for (int i = 0; i < 3; i++) {
-              zAxis[i] = 0.0;
-              xAxis[i] = 0.0;
-              dipole[i] = 0.0;
-              for (int j = 0; j < 3; j++) {
-                quadrupole[i][j] = 0.0;
-              }
+            int nSites = 0;
+            if (referenceSites != null) {
+              nSites = referenceSites.length;
             }
-            if (frame[ii] == MultipoleFrameDefinition.NONE) {
-              out[t000] = in[0] * chargeScale * elecScale;
-              out[t100] = 0.0;
-              out[t010] = 0.0;
-              out[t001] = 0.0;
-              out[t200] = 0.0;
-              out[t020] = 0.0;
-              out[t002] = 0.0;
-              out[t110] = 0.0;
-              out[t101] = 0.0;
-              out[t011] = 0.0;
-              PolarizeType polarizeType = atoms[ii].getPolarizeType();
-              if (polarizeType != null) {
-                polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
-              } else {
-                // Fixed charge force field.
-                polarizability[ii] = 0.0;
-              }
-              continue;
+            for (int i = 0; i < nSites; i++) {
+              int index = referenceSites[i];
+              frameCoords[i][0] = x[index];
+              frameCoords[i][1] = y[index];
+              frameCoords[i][2] = z[index];
             }
 
-            // Use the identity matrix as the default rotation matrix
-            rotmat[0][0] = 1.0;
-            rotmat[1][0] = 0.0;
-            rotmat[2][0] = 0.0;
-            rotmat[0][2] = 0.0;
-            rotmat[1][2] = 0.0;
-            rotmat[2][2] = 1.0;
-            switch (frame[ii]) {
-                // Z-only frame rotation matrix elements for Z- and X-axes.
-              case ZONLY:
-                // Z-Axis
-                int index = referenceSites[0];
-                zAxis[0] = x[index];
-                zAxis[1] = y[index];
-                zAxis[2] = z[index];
-                sub(zAxis, localOrigin, zAxis);
-                normalize(zAxis, zAxis);
-                rotmat[0][2] = zAxis[0];
-                rotmat[1][2] = zAxis[1];
-                rotmat[2][2] = zAxis[2];
-                // X-Axis: initially assume its along the global X-axis.
-                xAxis[0] = 1.0;
-                xAxis[1] = 0.0;
-                xAxis[2] = 0.0;
-                // If the Z-axis is close to the global X-axisassume a X-axis along the global
-                // Y-axis.
-                double dot = rotmat[0][2];
-                if (abs(dot) > 0.866) {
-                  xAxis[0] = 0.0;
-                  xAxis[1] = 1.0;
-                  dot = rotmat[1][2];
-                }
-                scale(zAxis, dot, zAxis);
-                sub(xAxis, zAxis, xAxis);
-                normalize(xAxis, xAxis);
-                rotmat[0][0] = xAxis[0];
-                rotmat[1][0] = xAxis[1];
-                rotmat[2][0] = xAxis[2];
-                break;
-                // Z-then-X frame rotation matrix elements for Z- and X-axes.
-              case ZTHENX:
-                // Z-Axis
-                index = referenceSites[0];
-                zAxis[0] = x[index];
-                zAxis[1] = y[index];
-                zAxis[2] = z[index];
-                sub(zAxis, localOrigin, zAxis);
-                normalize(zAxis, zAxis);
-                rotmat[0][2] = zAxis[0];
-                rotmat[1][2] = zAxis[1];
-                rotmat[2][2] = zAxis[2];
-                // X-Axis
-                index = referenceSites[1];
-                xAxis[0] = x[index];
-                xAxis[1] = y[index];
-                xAxis[2] = z[index];
-                sub(xAxis, localOrigin, xAxis);
-                dot = dot(xAxis, zAxis);
-                scale(zAxis, dot, zAxis);
-                sub(xAxis, zAxis, xAxis);
-                normalize(xAxis, xAxis);
-                rotmat[0][0] = xAxis[0];
-                rotmat[1][0] = xAxis[1];
-                rotmat[2][0] = xAxis[2];
-                break;
-                // Bisector frame rotation matrix elements for Z- and X-axes.
-              case BISECTOR:
-                // Z-Axis
-                index = referenceSites[0];
-                zAxis[0] = x[index];
-                zAxis[1] = y[index];
-                zAxis[2] = z[index];
-                index = referenceSites[1];
-                xAxis[0] = x[index];
-                xAxis[1] = y[index];
-                xAxis[2] = z[index];
-                sub(zAxis, localOrigin, zAxis);
-                normalize(zAxis, zAxis);
-                sub(xAxis, localOrigin, xAxis);
-                normalize(xAxis, xAxis);
-                add(xAxis, zAxis, zAxis);
-                normalize(zAxis, zAxis);
-                rotmat[0][2] = zAxis[0];
-                rotmat[1][2] = zAxis[1];
-                rotmat[2][2] = zAxis[2];
-                // X-axis
-                dot = dot(xAxis, zAxis);
-                scale(zAxis, dot, zAxis);
-                sub(xAxis, zAxis, xAxis);
-                normalize(xAxis, xAxis);
-                rotmat[0][0] = xAxis[0];
-                rotmat[1][0] = xAxis[1];
-                rotmat[2][0] = xAxis[2];
-                break;
-                // Z-then-Bisector frame rotation matrix elements for Z- and X-axes.
-              case ZTHENBISECTOR:
-                // Z-Axis
-                index = referenceSites[0];
-                zAxis[0] = x[index];
-                zAxis[1] = y[index];
-                zAxis[2] = z[index];
-                sub(zAxis, localOrigin, zAxis);
-                normalize(zAxis, zAxis);
-                rotmat[0][2] = zAxis[0];
-                rotmat[1][2] = zAxis[1];
-                rotmat[2][2] = zAxis[2];
-                index = referenceSites[1];
-                xAxis[0] = x[index];
-                xAxis[1] = y[index];
-                xAxis[2] = z[index];
-                sub(xAxis, localOrigin, xAxis);
-                normalize(xAxis, xAxis);
-                index = referenceSites[2];
-                yAxis[0] = x[index];
-                yAxis[1] = y[index];
-                yAxis[2] = z[index];
-                sub(yAxis, localOrigin, yAxis);
-                normalize(yAxis, yAxis);
-                // Sum the normalized vectors to the bisector atoms.
-                add(xAxis, yAxis, xAxis);
-                normalize(xAxis, xAxis);
-                dot = dot(xAxis, zAxis);
-                scale(zAxis, dot, zAxis);
-                sub(xAxis, zAxis, xAxis);
-                normalize(xAxis, xAxis);
-                rotmat[0][0] = xAxis[0];
-                rotmat[1][0] = xAxis[1];
-                rotmat[2][0] = xAxis[2];
-                break;
-                // 3-Fold frame rotation matrix elements for Z- and X-axes.
-              case THREEFOLD:
-                // Z-Axis
-                index = referenceSites[0];
-                zAxis[0] = x[index];
-                zAxis[1] = y[index];
-                zAxis[2] = z[index];
-                sub(zAxis, localOrigin, zAxis);
-                normalize(zAxis, zAxis);
-                index = referenceSites[1];
-                xAxis[0] = x[index];
-                xAxis[1] = y[index];
-                xAxis[2] = z[index];
-                sub(xAxis, localOrigin, xAxis);
-                normalize(xAxis, xAxis);
-                index = referenceSites[2];
-                yAxis[0] = x[index];
-                yAxis[1] = y[index];
-                yAxis[2] = z[index];
-                sub(yAxis, localOrigin, yAxis);
-                normalize(yAxis, yAxis);
-                add(zAxis, xAxis, zAxis);
-                add(zAxis, yAxis, zAxis);
-                normalize(zAxis, zAxis);
-                rotmat[0][2] = zAxis[0];
-                rotmat[1][2] = zAxis[1];
-                rotmat[2][2] = zAxis[2];
-                // X-Axis
-                dot = dot(xAxis, zAxis);
-                scale(zAxis, dot, zAxis);
-                sub(xAxis, zAxis, xAxis);
-                normalize(xAxis, xAxis);
-                rotmat[0][0] = xAxis[0];
-                rotmat[1][0] = xAxis[1];
-                rotmat[2][0] = xAxis[2];
-                break;
-            }
-            // Find the Y-Axis from the X-Axis and Z-Axis.
-            rotmat[0][1] = rotmat[2][0] * rotmat[1][2] - rotmat[1][0] * rotmat[2][2];
-            rotmat[1][1] = rotmat[0][0] * rotmat[2][2] - rotmat[2][0] * rotmat[0][2];
-            rotmat[2][1] = rotmat[1][0] * rotmat[0][2] - rotmat[0][0] * rotmat[1][2];
-            // Do the rotation.
+            // Load the dipole for rotation.
             tempDipole[0] = in[t100];
             tempDipole[1] = in[t010];
             tempDipole[2] = in[t001];
+            // Load the quadrupole for rotation.
             tempQuadrupole[0][0] = in[t200];
             tempQuadrupole[1][1] = in[t020];
             tempQuadrupole[2][2] = in[t002];
@@ -594,72 +411,71 @@ public class InitializationRegion extends ParallelRegion {
             tempQuadrupole[1][0] = in[t110];
             tempQuadrupole[2][0] = in[t101];
             tempQuadrupole[2][1] = in[t011];
-
             // Check for chiral flipping.
-            if (frame[ii] == MultipoleFrameDefinition.ZTHENX && referenceSites.length == 3) {
-              localOrigin[0] = x[ii];
-              localOrigin[1] = y[ii];
-              localOrigin[2] = z[ii];
-              int index = referenceSites[0];
-              zAxis[0] = x[index];
-              zAxis[1] = y[index];
-              zAxis[2] = z[index];
-              index = referenceSites[1];
-              xAxis[0] = x[index];
-              xAxis[1] = y[index];
-              xAxis[2] = z[index];
-              index = referenceSites[2];
-              yAxis[0] = x[index];
-              yAxis[1] = y[index];
-              yAxis[2] = z[index];
-              sub(localOrigin, yAxis, localOrigin);
-              sub(zAxis, yAxis, zAxis);
-              sub(xAxis, yAxis, xAxis);
-              double c1 = zAxis[1] * xAxis[2] - zAxis[2] * xAxis[1];
-              double c2 = xAxis[1] * localOrigin[2] - xAxis[2] * localOrigin[1];
-              double c3 = localOrigin[1] * zAxis[2] - localOrigin[2] * zAxis[1];
-              double vol = localOrigin[0] * c1 + zAxis[0] * c2 + xAxis[0] * c3;
-              if (vol < 0.0) {
-                tempDipole[1] = -tempDipole[1];
-                tempQuadrupole[0][1] = -tempQuadrupole[0][1];
-                tempQuadrupole[1][0] = -tempQuadrupole[1][0];
-                tempQuadrupole[1][2] = -tempQuadrupole[1][2];
-                tempQuadrupole[2][1] = -tempQuadrupole[2][1];
-              }
+
+            boolean needsChiralInversion = false;
+            /*
+            boolean needsChiralInversion = checkMultipoleChirality(frame[ii], localOrigin, frameCoords);
+            if (needsChiralInversion) {
+              // Flip the sign of the Y-dipole
+              tempDipole[1] = -tempDipole[1];
+              // Flip the sign of the XY-quadrupole
+              tempQuadrupole[0][1] = -tempQuadrupole[0][1];
+              tempQuadrupole[1][0] = -tempQuadrupole[1][0];
+              // Flip the sign of the YZ-quadrupole
+              tempQuadrupole[1][2] = -tempQuadrupole[1][2];
+              tempQuadrupole[2][1] = -tempQuadrupole[2][1];
             }
-            for (int i = 0; i < 3; i++) {
-              double[] rotmati = rotmat[i];
-              double[] quadrupolei = quadrupole[i];
-              for (int j = 0; j < 3; j++) {
-                double[] rotmatj = rotmat[j];
-                dipole[i] += rotmati[j] * tempDipole[j];
-                if (j < i) {
-                  quadrupolei[j] = quadrupole[j][i];
-                } else {
-                  for (int k = 0; k < 3; k++) {
-                    double[] localQuadrupolek = tempQuadrupole[k];
-                    quadrupolei[j] +=
-                        rotmati[k]
-                            * (rotmatj[0] * localQuadrupolek[0]
-                                + rotmatj[1] * localQuadrupolek[1]
-                                + rotmatj[2] * localQuadrupolek[2]);
-                  }
-                }
-              }
-            }
+            */
+            getRotationMatrix(frame[ii], localOrigin, frameCoords, rotmat);
+            rotateMultipole(rotmat, tempDipole, tempQuadrupole, dipole, quadrupole);
+
+            double[] out = globalMultipole[iSymm][ii];
+            // Set the charge.
             out[t000] = in[0] * chargeScale * elecScale;
+            // Set the dipole in the global frame.
             out[t100] = dipole[0] * dipoleScale * elecScale;
             out[t010] = dipole[1] * dipoleScale * elecScale;
             out[t001] = dipole[2] * dipoleScale * elecScale;
+            // Set the quadrupole in the global frame.
             out[t200] = quadrupole[0][0] * quadrupoleScale * elecScale;
             out[t020] = quadrupole[1][1] * quadrupoleScale * elecScale;
             out[t002] = quadrupole[2][2] * quadrupoleScale * elecScale;
             out[t110] = quadrupole[0][1] * quadrupoleScale * elecScale;
             out[t101] = quadrupole[0][2] * quadrupoleScale * elecScale;
             out[t011] = quadrupole[1][2] * quadrupoleScale * elecScale;
+            /* For ESV atoms, also rotate and scale the Mdot multipole. */
+            if (esvTerm && isAtomTitrating[ii]) {
+              final MultipoleType esvMultipoleDot = atom.getEsvMultipoleDot();
+              final double mdotCharge = esvMultipoleDot.getCharge();
+              final double[] mdotDipole = esvMultipoleDot.getDipole();
+              final double[][] mdotQuad = esvMultipoleDot.getQuadrupole();
+              if (needsChiralInversion) {
+                mdotDipole[1] = -mdotDipole[1];
+                mdotQuad[0][1] = -mdotQuad[0][1];
+                mdotQuad[1][0] = -mdotQuad[1][0];
+                mdotQuad[1][2] = -mdotQuad[1][2];
+                mdotQuad[2][1] = -mdotQuad[2][1];
+              }
+              rotateMultipole(rotmat, mdotDipole, mdotQuad, dipole, quadrupole);
+              out = titrationMultipole[iSymm][ii];
+              out[t000] = mdotCharge * chargeScale * elecScale;
+              // Load the dipole in the global frame.
+              out[t100] = dipole[0] * dipoleScale * elecScale;
+              out[t010] = dipole[1] * dipoleScale * elecScale;
+              out[t001] = dipole[2] * dipoleScale * elecScale;
+              // Load the quadrupole in the global frame.
+              out[t200] = quadrupole[0][0] * quadrupoleScale * elecScale;
+              out[t020] = quadrupole[1][1] * quadrupoleScale * elecScale;
+              out[t002] = quadrupole[2][2] * quadrupoleScale * elecScale;
+              out[t110] = quadrupole[0][1] * quadrupoleScale * elecScale;
+              out[t101] = quadrupole[0][2] * quadrupoleScale * elecScale;
+              out[t011] = quadrupole[1][2] * quadrupoleScale * elecScale;
+            }
           } else {
             // No multipole rotation for isolating torque vs. non-torque pieces of the multipole
             // energy gradient.
+            double[] out = globalMultipole[iSymm][ii];
             out[t000] = in[t000] * chargeScale * elecScale;
             out[t100] = in[t100] * dipoleScale * elecScale;
             out[t010] = in[t010] * dipoleScale * elecScale;
@@ -670,9 +486,31 @@ public class InitializationRegion extends ParallelRegion {
             out[t110] = in[t110] * quadrupoleScale * elecScale;
             out[t101] = in[t101] * quadrupoleScale * elecScale;
             out[t011] = in[t011] * quadrupoleScale * elecScale;
+            /* For ESV atoms, also rotate and scale the Mdot multipole. */
+            if (esvTerm && isAtomTitrating[ii]) {
+              final MultipoleType esvMultipoleDot = atom.getEsvMultipoleDot();
+              in = esvMultipoleDot.getMultipole();
+              out = titrationMultipole[iSymm][ii];
+              out[t000] = in[t000] * chargeScale * elecScale;
+              out[t100] = in[t100] * dipoleScale * elecScale;
+              out[t010] = in[t010] * dipoleScale * elecScale;
+              out[t001] = in[t001] * dipoleScale * elecScale;
+              out[t200] = in[t200] * quadrupoleScale * elecScale;
+              out[t020] = in[t020] * quadrupoleScale * elecScale;
+              out[t002] = in[t002] * quadrupoleScale * elecScale;
+              out[t110] = in[t110] * quadrupoleScale * elecScale;
+              out[t101] = in[t101] * quadrupoleScale * elecScale;
+              out[t011] = in[t011] * quadrupoleScale * elecScale;
+            }
           }
+
+          // Load the polarizability.
           PolarizeType polarizeType = atoms[ii].getPolarizeType();
-          polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
+          if (polarizeType != null) {
+            polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
+          } else {
+            polarizability[ii] = 0.0;
+          }
         }
       }
     }
