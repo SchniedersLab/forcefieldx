@@ -1,5 +1,6 @@
 package ffx.algorithms.thermodynamics;
 
+import static edu.rit.mp.DoubleBuf.buffer;
 import static java.lang.String.format;
 
 import edu.rit.mp.DoubleBuf;
@@ -26,19 +27,25 @@ public class SynchronousSend {
   /** Number of processes. */
   private final int numProc;
   /**
-   * The recursionWeights stores the [Lambda, FLambda] weight for each process. Therefore the array
-   * is of size [number of Processes][2].
+   * The counts array stores [Lambda, dU/dL, temper] for each process. Therefore the array is of size
+   * [numProc][3].
    *
-   * <p>Each 2 entry array must be wrapped inside a Parallel Java DoubleBuf for the All-Gather
+   * <p>Each 3 entry array must be wrapped inside a Parallel Java DoubleBuf for the All-Gather
    * communication calls.
    */
-  private final double[][] recursionWeights;
-
-  private final double[] myRecursionWeight;
-  /** These DoubleBufs wrap the recursionWeight arrays. */
-  private final DoubleBuf[] recursionWeightsBuf;
-
-  private final DoubleBuf myRecursionWeightBuf;
+  private final double[][] counts;
+  /**
+   * myCounts is a convenience pointer for this process to counts[rank].
+   */
+  private final double[] myCounts;
+  /**
+   * countsBuf wraps the counts arrays for each process.
+   */
+  private final DoubleBuf[] countsBuf;
+  /**
+   * myCountsBuf is a convenience pointer for this process to countsBuf[rank].
+   */
+  private final DoubleBuf myCountsBuf;
   private boolean independentWalkers;
   /** The histograms to update. */
   private Histogram[] histograms;
@@ -58,13 +65,13 @@ public class SynchronousSend {
     numProc = world.size();
     rank = world.rank();
     // Use synchronous communication.
-    recursionWeights = new double[numProc][3];
-    recursionWeightsBuf = new DoubleBuf[numProc];
+    counts = new double[numProc][3];
+    countsBuf = new DoubleBuf[numProc];
     for (int i = 0; i < numProc; i++) {
-      recursionWeightsBuf[i] = DoubleBuf.buffer(recursionWeights[i]);
+      countsBuf[i] = buffer(counts[i]);
     }
-    myRecursionWeight = recursionWeights[rank];
-    myRecursionWeightBuf = recursionWeightsBuf[rank];
+    myCounts = counts[rank];
+    myCountsBuf = countsBuf[rank];
 
     this.histograms = histograms;
     this.rankToHistogramMap = rankToHistogramMap;
@@ -85,25 +92,15 @@ public class SynchronousSend {
    */
   public void send(double lambda, double dUdL, double temperingWeight) {
     // All-Gather counts from each walker.
-    myRecursionWeight[0] = lambda;
-    myRecursionWeight[1] = dUdL;
-    myRecursionWeight[2] = temperingWeight;
+    myCounts[0] = lambda;
+    myCounts[1] = dUdL;
+    myCounts[2] = temperingWeight;
 
     try {
-      world.allGather(myRecursionWeightBuf, recursionWeightsBuf);
+      world.allGather(myCountsBuf, countsBuf);
     } catch (IOException ex) {
       String message = " Multi-walker OST allGather failed.";
       logger.log(Level.SEVERE, message, ex);
-    }
-
-    // Find the minimum and maximum FLambda bin for the gathered counts.
-    for (int i = 0; i < numProc; i++) {
-      // Only include this walkers bias.
-      if (independentWalkers && i != rank) {
-        continue;
-      }
-      int his = rankToHistogramMap[i];
-      histograms[his].checkRecursionKernelSize(recursionWeights[i][1]);
     }
 
     // Increment the Recursion Kernel(s) based on the input of each walker.
@@ -117,22 +114,22 @@ public class SynchronousSend {
       int his = rankToHistogramMap[i];
       Histogram currentHistogram = histograms[his];
 
-      currentHistogram.setLastReceivedLambda(recursionWeights[i][0]);
-      currentHistogram.setLastReceiveddUdL(recursionWeights[i][1]);
+      double walkerLambda = counts[i][0];
+      double walkerdUdL = counts[i][1];
+      double weight = counts[i][2];
 
-      int walkerLambda = currentHistogram.indexForLambda(recursionWeights[i][0]);
-      int walkerFLambda = currentHistogram.binForFLambda(recursionWeights[i][1]);
-      double weight = recursionWeights[i][2];
+      currentHistogram.setLastReceivedLambda(walkerLambda);
+      currentHistogram.setLastReceiveddUdL(walkerdUdL);
 
       boolean resetStatistics = currentHistogram.getResetStatistics();
       double lambdaResetValue = currentHistogram.getLambdaResetValue();
-      if (resetStatistics && recursionWeights[i][0] > lambdaResetValue) {
+      if (resetStatistics && walkerLambda > lambdaResetValue) {
         currentHistogram.allocateRecursionKernel();
-        logger.info(format(" Cleared OST histogram (Lambda = %6.4f).", recursionWeights[i][0]));
+        logger.info(format(" Cleared OST histogram (Lambda = %6.4f).", walkerLambda));
       }
 
       // For i == rank, the addBias method will handle updating FLambda (and optionally printing).
-      currentHistogram.addToRecursionKernelValue(walkerLambda, walkerFLambda, weight, i != rank);
+      currentHistogram.addToRecursionKernelValue(walkerLambda, walkerdUdL, weight, i != rank);
     }
   }
 

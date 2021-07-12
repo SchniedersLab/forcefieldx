@@ -239,7 +239,7 @@ public class HistogramSettings {
         biasCutoff = hr.getBiasCutoff();
         countInterval = hr.getCountInterval();
         setDL(hr.getLambdaBins());
-        dFL = hr.getDFLambda();
+        dFL = hr.getdUdLBinWidth();
         histogramRead = true;
       }
     } else {
