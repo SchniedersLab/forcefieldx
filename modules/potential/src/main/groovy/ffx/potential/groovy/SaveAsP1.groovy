@@ -37,12 +37,11 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
 import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine
 import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 /**
@@ -55,15 +54,16 @@ import picocli.CommandLine.Parameters
 @Command(description = " Expand the system to P1 and then save it.", name = "ffxc SaveAsP1")
 class SaveAsP1 extends PotentialScript {
 
-  @CommandLine.Mixin
+  @Mixin
   SaveOptions saveOptions
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is a PDB or XYZ coordinate file.
    */
-  @Parameters(arity = "1", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  private String filename = null
+
 
   /**
    * SaveAsP1 Constructor.
@@ -85,15 +85,15 @@ class SaveAsP1 extends PotentialScript {
    */
   @Override
   SaveAsP1 run() {
+
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    MolecularAssembly[] assemblies
-    if (filenames != null && filenames.size() > 0) {
-      assemblies = potentialFunctions.openAll(filenames.get(0))
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }

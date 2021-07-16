@@ -60,6 +60,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt
 
 /**
  * The Superpose script superposes molecules in an arc/multiple model pdb file (all versus all or one versus all) or in two pdb/xyz files.
+ * TODO: Create a Superpose Unit Test.
+ *
  * <br>
  * Usage:
  * <br>
@@ -132,11 +134,11 @@ class Superpose extends PotentialScript {
   private boolean verbose = true
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is an atomic coordinate file in PDB or XYZ format.
    */
-  @Parameters(arity = "1", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  String filename = null
 
   public ForceFieldEnergy forceFieldEnergy = null
   private File outFile
@@ -164,19 +166,18 @@ class Superpose extends PotentialScript {
    */
   @Override
   Superpose run() {
+
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
+
     // Turn off non-bonded terms for efficiency.
     System.setProperty("vdwterm", "false")
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-      if (filenames.size() > 1) {
-        MolecularAssembly[] assemblies2 = [potentialFunctions.open(filenames.get(1))]
-      }
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename);
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }

@@ -119,11 +119,11 @@ class Solvator extends PotentialScript {
   private String seedString = null
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is an atomic coordinate file in PDB or XYZ format.
    */
-  @Parameters(arity = "1", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  String filename = null
 
   private MolecularAssembly solute
   private MolecularAssembly solvent
@@ -160,6 +160,8 @@ class Solvator extends PotentialScript {
    */
   @Override
   Solvator run() {
+
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
@@ -171,15 +173,12 @@ class Solvator extends PotentialScript {
 
     // Reduce cutoff distances to avoid ill behavior caused by default aperiodic 900-1000A cutoffs.
     String nlistCuts = Double.toString(2.0 * boundary)
-    logger.info(" Setting vdW and ewald cutoffs to " + nlistCuts +
-        " Angstroms to avoid issues with default aperiodic cutoffs.")
     System.setProperty("vdw-cutoff", nlistCuts)
     System.setProperty("ewald-cutoff", nlistCuts)
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }

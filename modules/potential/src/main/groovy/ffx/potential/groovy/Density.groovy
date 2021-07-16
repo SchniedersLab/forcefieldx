@@ -40,14 +40,13 @@ package ffx.potential.groovy
 
 import ffx.crystal.Crystal
 import ffx.numerics.math.SummaryStatistics
-import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.parsers.SystemFilter
-import ffx.utilities.Constants
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine
 import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
@@ -63,7 +62,7 @@ import static java.lang.String.format
 @Command(description = " Calculates system density.", name = "ffxc Density")
 class Density extends PotentialScript {
 
-  @CommandLine.Mixin
+  @Mixin
   private WriteoutOptions writeout
 
   /**
@@ -95,11 +94,11 @@ class Density extends PotentialScript {
   private boolean doPrint = false
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is a PDB or XYZ coordinate file.
    */
-  @Parameters(arity = "1", paramLabel = "files",
-      description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  @Parameters(arity = "1", paramLabel = "file",
+      description = 'An atomic coordinate file in PDB or XYZ format.')
+  String filename = null
 
   /**
    * Density constructor.
@@ -121,67 +120,59 @@ class Density extends PotentialScript {
    */
   @Override
   Density run() {
+
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    if (filenames == null || filenames.isEmpty() || stride < 1) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
-    for (String filename : filenames) {
-      MolecularAssembly molecularAssembly = null
-      try {
-        molecularAssembly = potentialFunctions.open(filename)
-        SystemFilter openFilter = potentialFunctions.getFilter()
-        double totMass = molecularAssembly.getMass()
-        Crystal crystal = molecularAssembly.getCrystal()
+    SystemFilter openFilter = potentialFunctions.getFilter()
+    double totMass = activeAssembly.getMass()
+    Crystal crystal = activeAssembly.getCrystal().getUnitCell()
 
-        if (crystal.aperiodic()) {
-          logger.info(
-              format(" System %s appears aperiodic: total mass %16.7g g/mol", filename, totMass))
-        } else {
-          double volume = crystal.getUnitCell().volume * Constants.LITERS_PER_CUBIC_ANGSTROM * 0.001
-          double density = crystal.getDensity(totMass)
-          int nFrames = openFilter.countNumModels()
-          double[] densities = new double[nFrames]
-          double[][] unitCellParams = new double[nFrames][]
-          int lastFrame = (finish < 1) ? nFrames : finish
+    if (crystal.aperiodic()) {
+      logger.info(format(" System %s appears aperiodic: total mass %16.7g g/mol", filename, totMass))
+    } else {
+      double volume = crystal.volume / crystal.numSymOps
+      double density = crystal.getDensity(totMass)
+      int nFrames = openFilter.countNumModels()
+      double[] densities = new double[nFrames]
+      int lastFrame = (finish < 1) ? nFrames : finish
 
-          densities[0] = density
-          unitCellParams[0] = crystal.getUnitCellParams()
-          logger.info(format(" Evaluating density for system %s: total mass %16.7g g/mol", filename,
-              totMass))
-          logger.info(
-              format(" Density at frame %9d is %16.7g g/mL from a volume of %16.7g Ang^3", 1,
-                  density, volume))
+      densities[0] = density
+      logger.info(
+          format(" Evaluating density for system %s with mass %16.7g (g/mol).", filename, totMass))
+      logger.info(
+          format(" Density at frame %9d is %16.7g (g/mL) from a volume of %16.7g (A^3)", 1, density,
+              volume))
 
-          int ctr = 1
-          // TODO: Optimize by skipping frames by stride.
-          while (openFilter.readNext(false, false)) {
-            volume = crystal.getUnitCell().volume
-            density = crystal.getDensity(totMass)
-            logger.info(format(" Density at frame %9d is %16.7g g/mL from a volume of %16.7g Ang^3",
-                ++ctr, density, volume))
-            int i = ctr - 1
-            densities[i] = density
-            unitCellParams[i] = crystal.getUnitCellParams()
-          }
+      int ctr = 1
+      // TODO: Optimize by skipping frames by stride.
+      while (openFilter.readNext(false, false)) {
+        volume = crystal.volume / crystal.numSymOps
+        density = crystal.getDensity(totMass)
+        logger.info(
+            format(" Density at frame %9d is %16.7g (g/mL) from a volume of %16.7g (A^3)", ++ctr,
+                density, volume))
+        int i = ctr - 1
+        densities[i] = density
+      }
 
-          SummaryStatistics densStats = new SummaryStatistics(densities, start - 1, lastFrame,
-              stride)
-          logger.info(" Summary statistics for density:")
-          logger.info(densStats.toString())
+      SummaryStatistics densStats = new SummaryStatistics(densities, start - 1, lastFrame, stride)
+      logger.info(" Summary statistics for density:")
+      logger.info(densStats.toString())
 
-          if (doPrint) {
-            crystal.setDensity(densStats.mean, totMass)
-            String outFileName = FilenameUtils.removeExtension(filename)
-            writeout.saveFile(outFileName, potentialFunctions, molecularAssembly)
-          }
-        }
-      } finally {
-        molecularAssembly?.destroy()
+      if (doPrint) {
+        crystal.setDensity(densStats.mean, totMass)
+        String outFileName = FilenameUtils.removeExtension(filename)
+        writeout.saveFile(outFileName, potentialFunctions, activeAssembly)
       }
     }
 

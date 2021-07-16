@@ -156,4 +156,41 @@ public abstract class PotentialScript extends FFXScript {
 
     return true;
   }
+
+  /**
+   * If a filename is supplied, open it and return the MolecularAssembly.
+   * Otherwise, the current activeAssembly is returned (which may be null).
+   *
+   * @param filename Filename to open.
+   * @return The active assembly.
+   */
+  public MolecularAssembly getActiveAssembly(String filename) {
+    if (filename != null) {
+      // Open the supplied file.
+      MolecularAssembly[] assemblies = {potentialFunctions.open(filename)};
+      activeAssembly = assemblies[0];
+    }
+    return activeAssembly;
+  }
+
+  /**
+   * If a filename is supplied, open it and return the MolecularAssemblies.
+   * Otherwise, the current activeAssembly is returned (which may be null).
+   *
+   * @param filename Filename to open.
+   * @return The active assemblies.
+   */
+  public MolecularAssembly[] getActiveAssemblies(String filename) {
+    MolecularAssembly[] assemblies;
+    if (filename != null) {
+      // Open the supplied file.
+      assemblies = potentialFunctions.openAll(filename);
+      activeAssembly = assemblies[0];
+      return assemblies;
+    } else {
+      assemblies = new MolecularAssembly[] {activeAssembly};
+    }
+    return assemblies;
+  }
+
 }

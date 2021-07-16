@@ -59,12 +59,12 @@ import java.util.stream.Collectors
 class Frac2Cart extends PotentialScript {
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is a PDB or XYZ coordinate file.
    */
-  @Parameters(arity = "1..*", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
+  String filename = null
 
-  List<String> filenames = null
   private MolecularAssembly[] assemblies
 
   public double[][] cartCoordinates = null
@@ -91,18 +91,16 @@ class Frac2Cart extends PotentialScript {
   @Override
   Frac2Cart run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      assemblies = potentialFunctions.openAll(filenames.get(0))
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load one or more MolecularAssembly instances.
+    assemblies = getActiveAssemblies(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
-    } else {
-      assemblies = [activeAssembly]
     }
 
     String modelFilename = activeAssembly.getFile().getAbsolutePath()

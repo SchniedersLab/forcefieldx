@@ -59,11 +59,11 @@ import java.util.stream.Collectors
 class Cart2Frac extends PotentialScript {
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument should be a file in PDB or XYZ format.
    */
-  @Parameters(arity = "1..*", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  String filename = null
 
   /**
    * Save a reference to the MolecularAssembly instances to destroy their potentials.
@@ -117,18 +117,16 @@ class Cart2Frac extends PotentialScript {
   @Override
   Cart2Frac run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      molecularAssemblies = potentialFunctions.openAll(filenames.get(0))
-      activeAssembly = molecularAssemblies[0]
-    } else if (activeAssembly == null) {
+    // Load one or more MolecularAssembly instances.
+    molecularAssemblies = getActiveAssemblies(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
-    } else {
-      molecularAssemblies = [activeAssembly]
     }
 
     String modelFilename = activeAssembly.getFile().getAbsolutePath()
