@@ -39,7 +39,6 @@ package ffx.potential.groovy
 
 import ffx.crystal.Crystal
 import ffx.crystal.SymOp
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
@@ -92,15 +91,15 @@ class SaveAsXYZ extends PotentialScript {
    * --wS or --writeSnapshot Write out a specific snapshot. Provide the number of the snapshot to be written.
    */
   @Option(names = ['--wS', '--writeSnapshot'], paramLabel = "0", defaultValue = "0",
-          description = 'Write out a specific snapshot.')
+      description = 'Write out a specific snapshot.')
   private int writeSnapshot = 0
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is a PDB coordinate file.
    */
-  @Parameters(arity = "1", paramLabel = "files",
-      description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  @Parameters(arity = "1", paramLabel = "file",
+      description = 'The atomic coordinate file PDB format.')
+  private String filename = null
 
   /**
    * SaveAsXYZ Constructor.
@@ -123,21 +122,19 @@ class SaveAsXYZ extends PotentialScript {
   @Override
   SaveAsXYZ run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
-
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
-
     SystemFilter openFilter = potentialFunctions.getFilter()
+    String modelFilename = activeAssembly.getFile().getAbsolutePath()
     int numModels = openFilter.countNumModels()
 
     int offset = 0
@@ -180,12 +177,14 @@ class SaveAsXYZ extends PotentialScript {
     String dirName = saveDir.getAbsolutePath()
     String fileName = FilenameUtils.getName(modelFilename)
 
-    if(writeSnapshot>=1){
-      XYZFilter snapshotFilter = new XYZFilter(new File(dirName + File.separator + fileName), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+    if (writeSnapshot >= 1) {
+      XYZFilter snapshotFilter = new XYZFilter(new File(dirName + File.separator + fileName),
+          activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
       openFilter.readNext(true)
-      int counter=1
-      if(counter==writeSnapshot) {
-        File snapshotFile = new File(dirName + File.separator + "snapshot" + counter.toString()+".xyz")
+      int counter = 1
+      if (counter == writeSnapshot) {
+        File snapshotFile = new File(
+            dirName + File.separator + "snapshot" + counter.toString() + ".xyz")
         potentialFunctions.versionFile(snapshotFile)
         saveOptions.preSaveOperations(activeAssembly)
         logger.info("\n Writing out XYZ for " + snapshotFile.toString())
@@ -193,8 +192,9 @@ class SaveAsXYZ extends PotentialScript {
       }
       while (openFilter.readNext(false)) {
         counter++
-        if(counter==writeSnapshot) {
-          File snapshotFile = new File(dirName + File.separator + "snapshot" + counter.toString()+".xyz")
+        if (counter == writeSnapshot) {
+          File snapshotFile = new File(
+              dirName + File.separator + "snapshot" + counter.toString() + ".xyz")
           potentialFunctions.versionFile(snapshotFile)
           saveOptions.preSaveOperations(activeAssembly)
           logger.info("\n Writing out XYZ for " + snapshotFile.toString())

@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.*
 import ffx.potential.bonded.Residue.ResidueType
 import ffx.potential.bonded.RotamerLibrary.NucleicSugarPucker
@@ -113,12 +112,13 @@ class SaveRotamers extends PotentialScript {
       description = 'Adjusts the pucker of the 5\' residue to match the rotamer.')
   boolean upstreamPucker = false
 
+
   /**
-   * One or more filenames.
+   * The final argument is an XYZ or PDB coordinate file.
    */
-  @Parameters(arity = "1", paramLabel = "files",
-      description = "XYZ or PDB input file.")
-  private List<String> filenames
+  @Parameters(arity = "1", paramLabel = "file",
+      description = 'The atomic coordinate file in XYZ or PDB format.')
+  private String filename = null
 
   /**
    * SaveRotamers Constructor.
@@ -141,21 +141,18 @@ class SaveRotamers extends PotentialScript {
   @Override
   SaveRotamers run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      modelFilename = filenames.get(0)
-      MolecularAssembly[] assemblies = [potentialFunctions.open(modelFilename)]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
-    } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
+    String modelFilename = activeAssembly.getFile().getAbsolutePath()
 
     RotamerLibrary rLib = new RotamerLibrary(
         RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), true)

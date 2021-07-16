@@ -74,11 +74,11 @@ class Fasta extends PotentialScript {
   private int lastResidue = -1
 
   /**
-   * The final argument should be an Fasta file.
+   * The final argument should be a Fasta file.
    */
-  @Parameters(arity = "1", paramLabel = "Fasta file",
-      description = 'FASTA file.')
-  List<String> filenames = null
+  @Parameters(arity = "1", paramLabel = "file",
+      description = 'A file in FASTA format.')
+  String fastaName = null
 
   private ProteinSequence proteinSequence
 
@@ -107,12 +107,10 @@ class Fasta extends PotentialScript {
       return this
     }
 
-    if (filenames === null || filenames.size() == 0) {
+    if (fastaName == null) {
       logger.info(helpString())
       return this
     }
-
-    String fastaName = filenames.get(0)
 
     logger.info("\n Opening FASTA " + fastaName)
 

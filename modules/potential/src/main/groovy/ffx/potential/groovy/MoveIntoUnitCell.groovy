@@ -58,14 +58,13 @@ import java.util.stream.Collectors
 class MoveIntoUnitCell extends PotentialScript {
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is a PDB or XYZ coordinate file.
    */
-  @Parameters(arity = "1..*", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
+  String filename = null
 
-  List<String> filenames = null
-  MolecularAssembly[] assemblies = null
-
+  MolecularAssembly[] molecularAssemblies = null
   public double[][] origCoordinates = null
   public double[][] unitCellCoordinates = null
 
@@ -90,27 +89,24 @@ class MoveIntoUnitCell extends PotentialScript {
   @Override
   MoveIntoUnitCell run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      assemblies = potentialFunctions.openAll(filenames.get(0))
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load one or more MolecularAssembly instances.
+    molecularAssemblies = getActiveAssemblies(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
-    } else {
-      assemblies = [activeAssembly]
     }
 
     String modelFilename = activeAssembly.getFile().getAbsolutePath()
-    logger.
-        info("\n Moving molecular centers of mass into the unit cell for " + modelFilename + "\n")
+    logger.info("\n Moving molecular centers of mass into the unit cell for " + modelFilename + "\n")
 
     // Loop over each system.
-    for (int i = 0; i < assemblies.length; i++) {
-      MolecularAssembly molecularAssembly = assemblies[i]
+    for (int i = 0; i < molecularAssemblies.length; i++) {
+      MolecularAssembly molecularAssembly = molecularAssemblies[i]
 
       Atom[] atoms = molecularAssembly.getAtomArray()
       int n = atoms.length
@@ -143,9 +139,9 @@ class MoveIntoUnitCell extends PotentialScript {
     fileName = FilenameUtils.removeExtension(fileName)
 
     if (ext.toUpperCase().contains("XYZ")) {
-      potentialFunctions.saveAsXYZ(assemblies[0], new File(dirName + fileName + ".xyz"))
+      potentialFunctions.saveAsXYZ(molecularAssemblies[0], new File(dirName + fileName + ".xyz"))
     } else {
-      potentialFunctions.saveAsPDB(assemblies, new File(dirName + fileName + ".pdb"))
+      potentialFunctions.saveAsPDB(molecularAssemblies, new File(dirName + fileName + ".pdb"))
     }
 
     return this
@@ -153,10 +149,10 @@ class MoveIntoUnitCell extends PotentialScript {
 
   @Override
   List<Potential> getPotentials() {
-    if (assemblies == null) {
+    if (molecularAssemblies == null) {
       return new ArrayList<Potential>()
     } else {
-      return Arrays.stream(assemblies).
+      return Arrays.stream(molecularAssemblies).
           filter {a -> a != null
           }.map {a -> a.getPotentialEnergy()
       }.filter {e -> e != null

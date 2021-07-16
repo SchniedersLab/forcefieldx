@@ -2518,8 +2518,28 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       int currentLambdaBin = indexForLambda(currentLambda);
       int currentdUdLBin = binFordUdL(currentdUdLambda);
 
+      // TODO: create a "Hill" class for Lambda based on either Gaussian hills or b-Spline hills
+      //  Simple constructor.
+      //  init: initialize the instance based on the current lambda.
+      //  getWeight: return the weight given a bin offset.
+      //  getWeightDerivative: return the partial derivative of the weight.
+      // Example input
+      // double lambdaForBin = lambdaForIndex(currentLambdaBin);
+      // double x = (currentLambda - lambdaForBin) / lambdaBinWidth + 0.5;
+
+      // TODO: create a "Hill" class for dUdL based on either Gaussian hills or b-Spline hills
+      //  Simple constructor.
+      //  init: initialize the instance based on the current dUdL.
+      //  getWeight: return the weight given a bin offset.
+      //  getWeightDerivative: return the partial derivative of the weight.
+      // Example input
+      // double dUdLForBin = dUdLForIndex(currentdUdLBin);
+      // double x = (currentdUdL - dUdLForBin) / dUdLBinWidth + 0.5;
+
       for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
         int lambdaBin = currentLambdaBin + iL;
+
+        // Pass in the bin offset to the weight instance.
 
         double deltaL = currentLambda - (lambdaBin * lambdaBinWidth);
         double deltaL2 = deltaL * deltaL;
@@ -2555,6 +2575,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * This calculates the 1D OST bias and its derivative with respect to Lambda.
      *
      * <p>See Equation 8 in http://doi.org/10.1021/ct300035u.
+     *
+     * TODO: Not correct for Metadynamics yet.
      *
      * @return a double.
      */

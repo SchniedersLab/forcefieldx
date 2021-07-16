@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
 import ffx.potential.parsers.PDBFilter
@@ -72,11 +71,11 @@ class SaveAsPDB extends PotentialScript {
   private int writeSnapshot = 0
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is an XYZ or ARC coordinate file.
    */
-  @Parameters(arity = "1", paramLabel = "files",
-      description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  @Parameters(arity = "1", paramLabel = "file",
+      description = 'The atomic coordinate file in XYZ or ARC format.')
+  private String filename = null
 
   /**
    * SaveAsPDB Constructor.
@@ -99,20 +98,18 @@ class SaveAsPDB extends PotentialScript {
   @Override
   SaveAsPDB run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    SystemFilter openFilter = null
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-      openFilter = potentialFunctions.getFilter()
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
-
+    SystemFilter openFilter = potentialFunctions.getFilter()
     String modelFilename = activeAssembly.getFile().getAbsolutePath()
 
     logger.info("\n Saving PDB for " + modelFilename)

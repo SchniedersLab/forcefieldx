@@ -45,8 +45,8 @@ import ffx.potential.parsers.PDBFilter
 import org.apache.commons.io.FilenameUtils
 import org.biojava.nbio.core.sequence.ProteinSequence
 import org.biojava.nbio.core.sequence.io.FastaReaderHelper
-import picocli.CommandLine
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static ffx.potential.parsers.PDBFilter.toPDBAtomLine
@@ -68,14 +68,14 @@ class RGNtoPDB extends PotentialScript {
    * The final argument(s) should be an RGN output file and a sequence file in FASTA format.
    */
   @Parameters(arity = "2..3", paramLabel = "files",
-      description = 'RGN output and a FASTA file.')
+      description = 'The RGN output and a FASTA file.')
   List<String> filenames = null
 
   /**
    * --pN or --proteinNet boolean to indicate whether the tertiary is from RGN output or from a ProteinNet file.
    */
-  @CommandLine.Option(names = ["--pN", "--proteinNet"], paramLabel = 'false',
-          description = 'Indicates whether the tertiary format follows RGN output or ProteinNet input.')
+  @Option(names = ["--pN", "--proteinNet"], paramLabel = 'false',
+      description = 'Indicates whether the tertiary format follows RGN output or ProteinNet input.')
   boolean proteinNet = false
 
   /**
@@ -130,7 +130,7 @@ class RGNtoPDB extends PotentialScript {
     int lineNumber = 0
     while (lineNumber < 5) {
       lines[lineNumber] = cr.readLine().trim()
-      if(!proteinNet){
+      if (!proteinNet) {
         tokenizedLines[lineNumber] = lines[lineNumber].split(" +")
       } else {
         tokenizedLines[lineNumber] = lines[lineNumber].split("\t")
@@ -166,8 +166,7 @@ class RGNtoPDB extends PotentialScript {
       reader.close()
     }
 
-
-      // Configure the base directory if it has not been set.
+    // Configure the base directory if it has not been set.
     File saveDir = baseDir
     rgnName = rgnFile.getAbsolutePath()
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
@@ -193,7 +192,7 @@ class RGNtoPDB extends PotentialScript {
         String oneLetterResidue = sequence.charAt(i)
         String resName = convertToThreeLetter(oneLetterResidue)
 
-        if(includeBFactors){
+        if (includeBFactors) {
           bfactor = Double.parseDouble(bfactorLines[i])
         }
 
