@@ -44,14 +44,9 @@ import ffx.potential.bonded.PolymerUtils
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.utils.PotentialsUtils
-import ffx.utilities.FFXScript
-import ffx.potential.bonded.PolymerUtils
 import ffx.potential.bonded.Residue
 import picocli.CommandLine
-import java.util.ArrayList
-
 import static ffx.numerics.math.DoubleMath.dist
-import static ffx.numerics.math.DoubleMath.log
 import static java.lang.String.format
 import org.apache.commons.io.FilenameUtils
 
@@ -67,8 +62,6 @@ class ChainBreaks extends PotentialScript {
 
     MolecularAssembly molecularAssembly
     List<String> chainBreaks = new ArrayList<>()
-    List<double[]> cCoor = new ArrayList<>()
-    List<double[]> nCoor = new ArrayList<>()
     List<double[]> newCoordinates
     PotentialsUtils potentialsUtils = new PotentialsUtils()
 
@@ -107,7 +100,7 @@ class ChainBreaks extends PotentialScript {
         String pdbName = FilenameUtils.getBaseName(filenames.get(0))
         String newPDBpath = FilenameUtils.getFullPath(filenames.get(0)).replace(filenames.get(0),"")  + pdbName + "_edited.pdb"
         File newPDBFile = new File (newPDBpath)
-        logger.info(format(" Saving New Coordinates to %s", filenames.get(0) + "_edited.pdb"))
+        logger.info(format(" Saving New Coordinates to %s", filenames.get(0).replace(".pdb", "") + "_edited.pdb"))
         potentialsUtils.saveAsPDB(molecularAssembly, newPDBFile, false, false)
         
         return this
