@@ -43,7 +43,9 @@ import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
-import picocli.CommandLine
+import  picocli.CommandLine.Command
+import  picocli.CommandLine.Option
+import  picocli.CommandLine.Parameters
 
 import java.util.logging.Level
 
@@ -56,7 +58,7 @@ import static java.lang.String.format
  * <br>
  * ffxc test.EnergyOpenMM &lt;filename&gt;
  */
-@CommandLine.Command(description = " Compute energies and gradients with both FFX and OpenMM.", name = "ffxc test.EnergyOpenMM")
+@Command(description = " Compute energies and gradients with both FFX and OpenMM.", name = "ffxc test.EnergyOpenMM")
 class EnergyOpenMM extends PotentialScript {
 
   public double energy = 0.0
@@ -65,23 +67,23 @@ class EnergyOpenMM extends PotentialScript {
   /**
    * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
    */
-  @CommandLine.Option(names = ['--es1', '--noElecStart1'], paramLabel = "1",
+  @Option(names = ['--es1', '--noElecStart1'], paramLabel = "1",
       description = 'Starting no-electrostatics atom for 1st topology')
   private int es1 = 1
 
   /**
    * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
    */
-  @CommandLine.Option(names = ['--ef1', '--noElecFinal1'], paramLabel = "-1",
+  @Option(names = ['--ef1', '--noElecFinal1'], paramLabel = "-1",
       description = 'Final no-electrostatics atom for 1st topology')
   private int ef1 = -1
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is a single filename in PDB or XYZ format.
    */
-  @CommandLine.Parameters(arity = "1", paramLabel = "files",
-      description = 'The atomic coordinate file in PDB or XYZ format.')
-  private List<String> filenames = null
+  @Parameters(arity = "1", paramLabel = "file",
+      description = "A PDB or XYZ coordinate file.")
+  String filename = null
 
   /**
    * EnergyOpenMM Constructor.
@@ -100,14 +102,15 @@ class EnergyOpenMM extends PotentialScript {
 
   @Override
   EnergyOpenMM run() {
+
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }

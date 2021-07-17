@@ -129,9 +129,9 @@ class XYZtoQE extends PotentialScript {
   /**
    * The final argument(s) should be one or more filenames.
    */
-  @Parameters(arity = "1", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'XYZ file to be converted.')
-  List<String> filenames = null
+  String filename = null
 
   /**
    * XYZtoQE Constructor.
@@ -154,19 +154,17 @@ class XYZtoQE extends PotentialScript {
   @Override
   XYZtoQE run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
-
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
 
     activeAssembly.computeFractionalCoordinates()
 
@@ -174,19 +172,21 @@ class XYZtoQE extends PotentialScript {
 
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(getFullPath(modelFilename))
+      saveDir = new File(getFullPath(filename))
     }
     String dirName = saveDir.getAbsolutePath()
-    String fileName = getName(modelFilename)
-    fileName = removeExtension(fileName) + ".in"
-    File modelFile = new File(dirName + File.separator + fileName)
+    String name = getName(filename)
+    name = removeExtension(name)
+    File modelFile = new File(dirName + File.separator + name + ".in")
+
+    logger.info(format("\n Converting %s to QE format\n", filename))
 
     Crystal crystal = activeAssembly.getCrystal().getUnitCell()
     double xtalA = crystal.a
     double xtalB = crystal.b
     double xtalC = crystal.c
 
-    HashMap<String, Double> atomTypes = new HashMap<String, Double>()
+    HashMap<String, Double> atomTypes = new HashMap<>()
     String atomicPositions = ""
     for (atom in atoms) {
       if (!atomTypes.containsKey(atom.name)) {
@@ -206,7 +206,7 @@ class XYZtoQE extends PotentialScript {
         "\tetot_conv_thr = %6.4E,\n" +
         "\tforc_conv_thr = %6.4E,\n" +
         "\tnstep = %d,\n" +
-        "/\n", removeExtension(fileName), etot_conv_thr, forc_conv_thr, nstep))
+        "/\n", name, etot_conv_thr, forc_conv_thr, nstep))
     // structural information on the system under investigation
     bwQE.write(format("&SYSTEM\n" +
         "\tspace_group = " + crystal.spaceGroup.number + ",\n" +
@@ -292,8 +292,10 @@ class XYZtoQE extends PotentialScript {
     }
 
     bwQE.write("K_POINTS automatic\n" + k1 + " " + k2 + " " + k3 + " 1 1 1\n")
-
     bwQE.close()
+
+    logger.info(format(" Saved QE file: %s", modelFile))
+
     return this
   }
 }

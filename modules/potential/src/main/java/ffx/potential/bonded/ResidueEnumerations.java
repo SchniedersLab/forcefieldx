@@ -156,34 +156,35 @@ public class ResidueEnumerations {
   }
 
   public enum AminoAcid3 {
+    // TODO: Check GLY, SER, THR, CYS and CYD multipole assignment during MultiResidue use.
     GLY,
-    ALA,
-    VAL,
-    LEU,
-    ILE,
+    ALA(true),
+    VAL(true),
+    LEU(true),
+    ILE(true),
     SER,
     THR,
-    CYS(true, false),
+    CYS(false, true, false),
     CYX,
-    CYD(true, true),
+    CYD(false, true, true),
     PRO,
-    PHE,
-    TYR(true, false),
-    TYD(true, true),
-    TRP,
-    HIS(true, false),
-    HID(true, true),
-    HIE(true, true),
-    ASP(true, false),
-    ASH(true, true),
-    ASN,
-    GLU(true, false),
-    GLH(true, true),
-    GLN,
-    MET,
-    LYS(true, false),
-    LYD(true, true),
-    ARG,
+    PHE(true),
+    TYR(true, true, false),
+    TYD(true, true, true),
+    TRP(true),
+    HIS(true, true, false),
+    HID(true, true, true),
+    HIE(true, true, true),
+    ASP(true, true, false),
+    ASH(true, true, true),
+    ASN(true),
+    GLU(true, true, false),
+    GLH(true, true, true),
+    GLN(true),
+    MET(true),
+    LYS(true, true, false),
+    LYD(true, true, true),
+    ARG(true),
     ORN,
     AIB,
     PCA,
@@ -195,18 +196,27 @@ public class ResidueEnumerations {
     NME,
     UNK;
 
+    public final boolean useWithMultiResidue;
     public final boolean isTitratable;
-    public final boolean nonstandardProtonation;
+    public final boolean nonStandardProtonation;
 
     AminoAcid3() {
+      useWithMultiResidue = false;
       isTitratable = false;
-      nonstandardProtonation = false;
+      nonStandardProtonation = false;
     }
 
-    AminoAcid3(boolean titr, boolean nonstd) {
-      isTitratable = titr;
-      nonstandardProtonation = nonstd;
-      if (nonstandardProtonation && !isTitratable) {
+    AminoAcid3(boolean useWithMultiResidue) {
+      this.useWithMultiResidue = useWithMultiResidue;
+      isTitratable = false;
+      nonStandardProtonation = false;
+    }
+
+    AminoAcid3(boolean useWithMultiResidue, boolean isTitratable, boolean nonStandardProtonation) {
+      this.useWithMultiResidue = useWithMultiResidue;
+      this.isTitratable = isTitratable;
+      this.nonStandardProtonation = nonStandardProtonation;
+      if (nonStandardProtonation && !this.isTitratable) {
         throw new IllegalArgumentException(
             String.format(
                 " Amino acid class %s cannot be both nonstandard and non-titratable!", this));
