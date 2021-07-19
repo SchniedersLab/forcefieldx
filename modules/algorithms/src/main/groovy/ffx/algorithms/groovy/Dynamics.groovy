@@ -188,6 +188,7 @@ class Dynamics extends AlgorithmsScript {
         } else {
             logger.info("\n Running replica exchange molecular dynamics on " + modelFilename)
             int rank = (size > 1) ? world.rank() : 0
+            logger.info("Rank:" + rank.toString())
 
             List<File> structureFiles = files.stream().
                     map { fn -> new File(new File(FilenameUtils.normalize(fn)).getAbsolutePath())
@@ -215,7 +216,7 @@ class Dynamics extends AlgorithmsScript {
                         FilenameUtils.getName(structureFile.getName()))))
             }
             structureFiles = rankedFiles
-            logger.info(rankedFiles.toString())
+            logger.info("ranked Files:" + rankedFiles.get(0))
             File dyn = new File(withRankName + ".dyn")
 
             /*File rankDirectory = new File(structureFile.getParent() + File.separator
@@ -227,7 +228,7 @@ class Dynamics extends AlgorithmsScript {
 
             if (!dyn.exists()) {
               dyn = null
-            }*/
+            }
 
             molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
             ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
@@ -241,7 +242,7 @@ class Dynamics extends AlgorithmsScript {
             }
 
             replicaExchange.
-                    sample(cycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
+                    sample(cycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)*/
         }
 
         return this
