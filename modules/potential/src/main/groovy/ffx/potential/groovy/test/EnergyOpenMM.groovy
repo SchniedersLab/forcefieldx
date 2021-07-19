@@ -40,12 +40,11 @@ package ffx.potential.groovy.test
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.ForceFieldEnergyOpenMM
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
-import  picocli.CommandLine.Command
-import  picocli.CommandLine.Option
-import  picocli.CommandLine.Parameters
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 import java.util.logging.Level
 
@@ -115,7 +114,9 @@ class EnergyOpenMM extends PotentialScript {
       return this
     }
 
-    String filename = activeAssembly.getFile().getAbsolutePath()
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
     logger.info(" Running Energy on " + filename)
 
     forceFieldEnergy = activeAssembly.getPotentialEnergy()

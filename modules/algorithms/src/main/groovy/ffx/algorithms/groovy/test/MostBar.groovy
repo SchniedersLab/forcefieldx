@@ -36,7 +36,7 @@
 //
 //******************************************************************************
 
-package ffx.algorithms.groovy
+package ffx.algorithms.groovy.test
 
 import edu.rit.pj.ParallelTeam
 import ffx.algorithms.cli.AlgorithmsScript

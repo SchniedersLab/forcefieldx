@@ -39,7 +39,6 @@
 package ffx.potential.groovy.test
 
 import ffx.crystal.Crystal
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import picocli.CommandLine.Command
@@ -123,7 +122,7 @@ class XYZtoQE extends PotentialScript {
    * --hx or --hexagonal Perform QE caclulation on hexagonal rather than rhombohedral representation
    */
   @Option(names = ['--hx', '--hexagonal'], paramLabel = "true", defaultValue = "true",
-          description = 'Perform QE on hexagonal system.')
+      description = 'Perform QE on hexagonal system.')
   private boolean hexagonal = true
 
   /**
@@ -166,9 +165,13 @@ class XYZtoQE extends PotentialScript {
       return this
     }
 
-    activeAssembly.computeFractionalCoordinates()
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
 
-    Atom[] atoms = activeAssembly.getAtomArray()
+    logger.info(format("\n Converting %s to QE format\n", filename))
+
+    // TODO: Is this call necessary?
+    activeAssembly.computeFractionalCoordinates()
 
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
@@ -179,8 +182,6 @@ class XYZtoQE extends PotentialScript {
     name = removeExtension(name)
     File modelFile = new File(dirName + File.separator + name + ".in")
 
-    logger.info(format("\n Converting %s to QE format\n", filename))
-
     Crystal crystal = activeAssembly.getCrystal().getUnitCell()
     double xtalA = crystal.a
     double xtalB = crystal.b
@@ -188,6 +189,8 @@ class XYZtoQE extends PotentialScript {
 
     HashMap<String, Double> atomTypes = new HashMap<>()
     String atomicPositions = ""
+
+    Atom[] atoms = activeAssembly.getAtomArray()
     for (atom in atoms) {
       if (!atomTypes.containsKey(atom.name)) {
         atomTypes.put(atom.name, atom.getAtomType().atomicWeight)
@@ -227,7 +230,7 @@ class XYZtoQE extends PotentialScript {
         // "\txdm_a1 = 0.6512,\n" +
         // "\txdm_a2 = 1.4633,\n" +
         "/\n", ecutwfc, ecutrho))
-    if(hexagonal){
+    if (hexagonal) {
       bwQE.write("\trhombohedral = .FALSE.,\n")
     }
     bwQE.write("/\n")

@@ -126,9 +126,10 @@ class CoordShakeEnergy extends PotentialScript {
       return this
     }
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
 
-    logger.info("\n Running CoordShakeEnergy on " + modelFilename)
+    logger.info("\n Running CoordShakeEnergy on " + filename)
 
     // Turn on computation of lambda derivatives if softcore atoms exist or a single topology has lambda specified.
     boolean lambdaTerm = initialLambda >= 0.0

@@ -65,7 +65,7 @@ class Frac2Cart extends PotentialScript {
       description = 'The atomic coordinate file in PDB or XYZ format.')
   String filename = null
 
-  private MolecularAssembly[] assemblies
+  private MolecularAssembly[] molecularAssemblies
 
   public double[][] cartCoordinates = null
   public double[][] fracCoordinates = null
@@ -97,29 +97,32 @@ class Frac2Cart extends PotentialScript {
     }
 
     // Load one or more MolecularAssembly instances.
-    assemblies = getActiveAssemblies(filename)
+    molecularAssemblies = getActiveAssemblies(filename)
     if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
-    logger.info("\n Converting from fractional to Cartesian coordinates for " + modelFilename)
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Converting from fractional to Cartesian coordinates for " + filename)
 
     // Loop over each system.
-    for (int i = 0; i < assemblies.length; i++) {
-      def system = assemblies[i]
-      Crystal crystal = system.getCrystal().getUnitCell()
+    for (int i = 0; i < molecularAssemblies.length; i++) {
+      def molecularAssembly = molecularAssemblies[i]
+      Crystal crystal = molecularAssembly.getCrystal().getUnitCell()
 
-      List<Atom> atoms = system.getAtomList()
-      fracCoordinates = new double[atoms.size()][3]
-      cartCoordinates = new double[atoms.size()][3]
+      Atom[] atoms = molecularAssembly.getAtomArray()
+      int nAtoms = atoms.length;
+      fracCoordinates = new double[nAtoms][3]
+      cartCoordinates = new double[nAtoms][3]
 
       double[] frac = new double[3]
       double[] cart = new double[3]
 
-      int index = 0
-      for (Atom atom in atoms) {
+      for (int index = 0; index < nAtoms; index++) {
+        Atom atom = atoms[index]
         atom.getXYZ(frac)
         crystal.toCartesianCoordinates(frac, cart)
         atom.moveTo(cart)
@@ -130,26 +133,25 @@ class Frac2Cart extends PotentialScript {
 
         fracCoordinates[index][0] = frac[0]
         fracCoordinates[index][1] = frac[1]
-        fracCoordinates[index++][2] = frac[2]
-
+        fracCoordinates[index][2] = frac[2]
       }
     }
 
     // Configure the base directory if it has not been set.
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+      saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
     String dirName = saveDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(modelFilename)
-    String ext = FilenameUtils.getExtension(fileName)
-    fileName = FilenameUtils.removeExtension(fileName)
+    String name = FilenameUtils.getName(filename)
+    String ext = FilenameUtils.getExtension(name)
+    name = FilenameUtils.removeExtension(name)
 
     if (ext.toUpperCase().contains("XYZ")) {
-      potentialFunctions.saveAsXYZ(assemblies[0], new File(dirName + fileName + ".xyz"))
+      potentialFunctions.saveAsXYZ(molecularAssemblies[0], new File(dirName + name + ".xyz"))
     } else {
-      potentialFunctions.saveAsPDB(assemblies, new File(dirName + fileName + ".pdb"))
+      potentialFunctions.saveAsPDB(molecularAssemblies, new File(dirName + name + ".pdb"))
     }
 
     return this
@@ -157,10 +159,10 @@ class Frac2Cart extends PotentialScript {
 
   @Override
   List<Potential> getPotentials() {
-    if (assemblies == null) {
+    if (molecularAssemblies == null) {
       return new ArrayList<Potential>()
     } else {
-      return Arrays.stream(assemblies).filter {
+      return Arrays.stream(molecularAssemblies).filter {
         a -> a != null
       }.map {a -> a.getPotentialEnergy()
       }.filter {e -> e != null

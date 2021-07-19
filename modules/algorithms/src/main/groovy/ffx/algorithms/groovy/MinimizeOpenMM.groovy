@@ -68,12 +68,14 @@ class MinimizeOpenMM extends AlgorithmsScript {
   @Mixin
   MinimizeOptions minimizeOptions
 
-  /**
-   * The final argument(s) should be one or more filenames.
-   */
-  @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
 
-  private List<String> filenames
+  /**
+   * A PDB or XYZ filename.
+   */
+  @Parameters(arity = "1", paramLabel = "file",
+      description = "XYZ or PDB input file.")
+  private String filename
+
   private ForceFieldEnergy forceFieldEnergy
 
   /**
@@ -97,6 +99,7 @@ class MinimizeOpenMM extends AlgorithmsScript {
   @Override
   MinimizeOpenMM run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
@@ -107,17 +110,17 @@ class MinimizeOpenMM extends AlgorithmsScript {
       System.setProperty("platform", "OMM")
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
-    atomSelectionOptions.setActiveAtoms(activeAssembly)
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+    atomSelectionOptions.setActiveAtoms(activeAssembly)
 
     forceFieldEnergy = activeAssembly.getPotentialEnergy()
     switch (forceFieldEnergy.getPlatform()) {
@@ -142,23 +145,23 @@ class MinimizeOpenMM extends AlgorithmsScript {
       minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)
 
       if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
-        baseDir = new File(FilenameUtils.getFullPath(modelFilename))
+        baseDir = new File(FilenameUtils.getFullPath(filename))
       }
 
       String dirName = baseDir.toString() + File.separator
-      String fileName = FilenameUtils.getName(modelFilename)
-      String ext = FilenameUtils.getExtension(fileName)
-      fileName = FilenameUtils.removeExtension(fileName)
+      String name = FilenameUtils.getName(filename)
+      String ext = FilenameUtils.getExtension(name)
+      name = FilenameUtils.removeExtension(name)
 
       File saveFile
       if (ext.toUpperCase().contains("XYZ")) {
-        saveFile = new File(dirName + fileName + ".xyz")
+        saveFile = new File(dirName + name + ".xyz")
         algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
       } else if (ext.toUpperCase().contains("ARC")) {
-        saveFile = new File(dirName + fileName + ".arc")
+        saveFile = new File(dirName + name + ".arc")
         algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
       } else {
-        saveFile = new File(dirName + fileName + ".pdb")
+        saveFile = new File(dirName + name + ".pdb")
         algorithmFunctions.saveAsPDB(activeAssembly, saveFile)
       }
 

@@ -128,8 +128,12 @@ class MultiRes extends PotentialScript {
       return this
     }
 
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
     if (name.toUpperCase() == 'PRO') {
       logger.info(" Proline is not supported with a MultiResidue.")
+      return this
     }
 
     logger.info("\n Running MultiResidue on " + filename + "\n")
@@ -149,6 +153,7 @@ class MultiRes extends PotentialScript {
           startingResidueAA3 = AminoAcid3.valueOf(residue.getName())
           if (!startingResidueAA3.useWithMultiResidue) {
             logger.info(format(" %s is not supported with a MultiResidue.", startingResidueAA3))
+            return this
           }
           multiResidue = new MultiResidue(residue, forceField)
           polymer.addMultiResidue(multiResidue)

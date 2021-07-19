@@ -102,7 +102,10 @@ class Biotype extends PotentialScript {
       return this
     }
 
-    logger.info("\n Running Biotype on " + activeAssembly.toString())
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Running Biotype on " + filename)
 
     Atom[] atoms = activeAssembly.getAtomArray()
     String mol = atoms[0].getAtomType().environment

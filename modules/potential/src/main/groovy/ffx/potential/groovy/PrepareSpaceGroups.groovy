@@ -163,8 +163,10 @@ class PrepareSpaceGroups extends PotentialScript {
       return this
     }
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
-    logger.info("\n Preparing space group directories for " + modelFilename)
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Preparing space group directories for " + filename)
 
     energy = activeAssembly.getPotentialEnergy()
     CompositeConfiguration properties = activeAssembly.getProperties()

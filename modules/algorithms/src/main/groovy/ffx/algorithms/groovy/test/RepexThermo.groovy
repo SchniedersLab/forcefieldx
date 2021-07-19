@@ -35,12 +35,13 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy
+package ffx.algorithms.groovy.test
 
 import edu.rit.pj.Comm
 import ffx.algorithms.cli.RepexOSTOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
+import ffx.algorithms.groovy.Thermodynamics
 import ffx.algorithms.thermodynamics.MonteCarloOST
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.algorithms.thermodynamics.RepExOST

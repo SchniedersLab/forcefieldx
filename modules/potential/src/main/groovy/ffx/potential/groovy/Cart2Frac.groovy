@@ -75,7 +75,7 @@ class Cart2Frac extends PotentialScript {
    * @return
    */
   double[][][] getCart() {
-    return cart
+    return cartCoordinates
   }
 
   /**
@@ -83,18 +83,18 @@ class Cart2Frac extends PotentialScript {
    * @return
    */
   double[][][] getFrac() {
-    return frac
+    return fracCoordinates
   }
 
   /**
    * Cartesian coordinate input.
    */
-  private double[][][] cart = null
+  private double[][][] cartCoordinates = null
 
   /**
    * Fractional coordinate output.
    */
-  private double[][][] frac = null
+  private double[][][] fracCoordinates = null
 
   /**
    * Cart2Frac constructor.
@@ -129,11 +129,12 @@ class Cart2Frac extends PotentialScript {
       return this
     }
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
 
     int num = molecularAssemblies.length
-    cart = new double[num]
-    frac = new double[num]
+    cartCoordinates = new double[num]
+    fracCoordinates = new double[num]
 
     // Loop over each system.
     for (int i = 0; i < num; i++) {
@@ -142,48 +143,49 @@ class Cart2Frac extends PotentialScript {
           molecularAssembly.toString())
       Crystal crystal = molecularAssembly.getCrystal().getUnitCell()
 
-      List<Atom> atoms = molecularAssembly.getAtomList()
-      frac[i] = new double[atoms.size()][3]
-      cart[i] = new double[atoms.size()][3]
+      Atom[] atoms = molecularAssembly.getAtomArray()
+      int nAtoms = atoms.length;
+      fracCoordinates[i] = new double[nAtoms][3]
+      cartCoordinates[i] = new double[nAtoms][3]
 
       double[] frac = new double[3]
       double[] cart = new double[3]
 
-      int index = 0
-      for (Atom atom in atoms) {
+      for (int index = 0; index < nAtoms; index++) {
+        Atom atom = atoms[index]
         atom.getXYZ(cart)
         crystal.toFractionalCoordinates(cart, frac)
         atom.moveTo(frac)
 
-        this.cart[i][index][0] = cart[0]
-        this.cart[i][index][1] = cart[1]
-        this.cart[i][index][2] = cart[2]
+        cartCoordinates[i][index][0] = cart[0]
+        cartCoordinates[i][index][1] = cart[1]
+        cartCoordinates[i][index][2] = cart[2]
 
-        this.frac[i][index][0] = frac[0]
-        this.frac[i][index][1] = frac[1]
-        this.frac[i][index++][2] = frac[2]
+        fracCoordinates[i][index][0] = frac[0]
+        fracCoordinates[i][index][1] = frac[1]
+        fracCoordinates[i][index][2] = frac[2]
       }
     }
 
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+      saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
-    String fileName = FilenameUtils.getName(modelFilename)
-    String ext = FilenameUtils.getExtension(fileName)
-    fileName = FilenameUtils.removeExtension(fileName)
+    String name = FilenameUtils.getName(filename)
+    String ext = FilenameUtils.getExtension(name)
+    name = FilenameUtils.removeExtension(name)
 
     String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
 
     if (ext.toUpperCase().contains("XYZ")) {
-      potentialFunctions.saveAsXYZ(molecularAssemblies[0], new File(dirName + fileName + ".xyz"))
+      potentialFunctions.saveAsXYZ(molecularAssemblies[0], new File(dirName + name + ".xyz"))
     } else {
-      potentialFunctions.saveAsPDB(molecularAssemblies, new File(dirName + fileName + ".pdb"))
+      potentialFunctions.saveAsPDB(molecularAssemblies, new File(dirName + name + ".pdb"))
     }
 
-    binding.setVariable("cart", cart)
-    binding.setVariable("frac", frac)
+    binding.setVariable("cart", cartCoordinates)
+    binding.setVariable("frac", fracCoordinates)
 
     return this
   }

@@ -111,10 +111,13 @@ class Timer extends PotentialScript {
       return this
     }
 
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
     if (timer.noGradient) {
-      logger.info("\n Timing energy for " + activeAssembly.toString())
+      logger.info("\n Timing energy for " + filename)
     } else {
-      logger.info("\n Timing energy and gradient for " + activeAssembly.toString())
+      logger.info("\n Timing energy and gradient for " + filename)
     }
 
     // The number of iterations.

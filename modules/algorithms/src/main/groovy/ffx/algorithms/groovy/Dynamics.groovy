@@ -47,13 +47,11 @@ import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.ReplicaExchange
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.WriteoutOptions
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
-import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
@@ -81,19 +79,12 @@ class Dynamics extends AlgorithmsScript {
   @Mixin
   RepExOptions repEx
 
-  /*/
-   * -r or --repEx to execute temperature replica exchange.
-
-  @Option(names = ['-x', '--repEx'], paramLabel = 'false',
-      description = 'Execute temperature replica exchange')
-  boolean repEx = false*/
-
   /**
-   * One or more filenames.
+   * A PDB or XYZ filename.
    */
-  @Parameters(arity = "1..*", paramLabel = "files",
-      description = "XYZ or PDB input files.")
-  private List<String> filenames
+  @Parameters(arity = "1", paramLabel = "file",
+      description = "XYZ or PDB input file.")
+  private String filename
 
   /**
    * Creation of a public field to try and make the JUnit test work, original code does not declare this as a public field.
@@ -131,27 +122,28 @@ class Dynamics extends AlgorithmsScript {
   @Override
   Dynamics run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
+    // Init DynamicsOptions (e.g. the thermostat and barostat flags).
     dynamicsOptions.init()
 
-    String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-      modelFilename = filenames.get(0)
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
-    } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
 
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    // Set active atoms.
     atomSelectionOptions.setActiveAtoms(activeAssembly)
 
-    File structureFile = new File(FilenameUtils.normalize(modelFilename))
+    File structureFile = new File(FilenameUtils.normalize(filename))
     structureFile = new File(structureFile.getAbsolutePath())
     String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
 
@@ -170,9 +162,9 @@ class Dynamics extends AlgorithmsScript {
     int size = world.size()
 
     if (!repEx.repEx || size < 2) {
-      logger.info("\n Running molecular dynamics on " + modelFilename)
+      logger.info("\n Running molecular dynamics on " + filename)
       // Restart File
-      File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+      File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
       if (!dyn.exists()) {
         dyn = null
       }
@@ -183,7 +175,7 @@ class Dynamics extends AlgorithmsScript {
           dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
 
     } else {
-      logger.info("\n Running replica exchange molecular dynamics on " + modelFilename)
+      logger.info("\n Running replica exchange molecular dynamics on " + filename)
       int rank = world.rank()
       File rankDirectory = new File(structureFile.getParent() + File.separator
           + Integer.toString(rank))

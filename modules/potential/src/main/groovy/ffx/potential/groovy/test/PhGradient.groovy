@@ -140,6 +140,9 @@ class PhGradient extends PotentialScript {
       return this
     }
 
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
     logger.info("\n Testing the atomic coordinate gradient of " + filename + "\n")
 
     // Select all possible titrating residues.

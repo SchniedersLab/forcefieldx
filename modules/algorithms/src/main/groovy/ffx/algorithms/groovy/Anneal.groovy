@@ -73,11 +73,11 @@ class Anneal extends AlgorithmsScript {
   WriteoutOptions writeOut
 
   /**
-   * One or more filenames.
+   * An XYZ or PDB input file.
    */
-  @Parameters(arity = "1", paramLabel = "files",
-      description = "XYZ or PDB input files.")
-  private List<String> filenames
+  @Parameters(arity = "1", paramLabel = "file",
+      description = "XYZ or PDB input file.")
+  private String filename
 
   private SimulatedAnnealing simulatedAnnealing = null
 
@@ -104,29 +104,31 @@ class Anneal extends AlgorithmsScript {
   @Override
   Anneal run() {
 
+    // Init the context and bind variables.
     if (!init()) {
-      return null
+      return this
     }
 
+    // Init DynamicsOptions (e.g. the thermostat and barostat flags).
     dynamics.init()
 
-    String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    // Set active atoms.
     atomSelectionOptions.setActiveAtoms(activeAssembly)
 
-    modelFilename = activeAssembly.getFile().getAbsolutePath()
+    logger.info("\n Running simulated annealing on " + filename + "\n")
 
-    logger.info("\n Running simulated annealing on " + modelFilename + "\n")
-
-    // Restart File
-    File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+    // Define the path to the restart File.
+    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
     if (!dyn.exists()) {
       dyn = null
     }
@@ -145,11 +147,11 @@ class Anneal extends AlgorithmsScript {
     simulatedAnnealing.anneal()
 
     if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
-      baseDir = new File(FilenameUtils.getFullPath(modelFilename))
+      baseDir = new File(FilenameUtils.getFullPath(filename))
     }
 
     String dirName = baseDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(modelFilename)
+    String fileName = FilenameUtils.getName(filename)
     fileName = FilenameUtils.removeExtension(fileName)
 
     writeOut.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly)
