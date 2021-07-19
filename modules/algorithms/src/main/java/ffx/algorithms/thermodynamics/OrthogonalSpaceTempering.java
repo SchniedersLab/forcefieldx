@@ -2847,5 +2847,73 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         return synchronousSend.getHistogramIndex();
       }
     }
+
+
+    /*private class LambdaHill{
+      private double currentLambda;
+      private double weight;
+      private double weightDerivative;
+      private int order = 3;
+      private int derivativeOrder = 1;
+      UniformBSpline spline = new UniformBSpline();
+      double x;
+
+      LambdaHill(double currentLambda) {
+        this.currentLambda = currentLambda;
+      }
+
+      private void setX(){
+        double lambdaForBin = lambdaForIndex(currentLambdaBin);
+        x = (currentLambda - lambdaForBin) / lambdaBinWidth + 0.5;
+      }
+
+      private double getWeight(){
+          double[] coefficients = new double[order];
+          coefficients = spline.bspline(x, order, coefficients);
+      }
+
+      private double getWeightDerivates(){
+          double[][] derivativeCoeff = new double[order][derivativeOrder+1];
+          double[][] derivativeWork = new double[order][order];
+          weightCoeff = spline.bsplineDerivatives(x, order, derivativeOrder, derivativeCoeff, derivativeWork);
+
+      }
+
+
+      }
+
+      private class DUDLHill{
+        private double dUdLambda;
+        private double weight;
+        private double weightDerivative;
+        private int order = 3;
+        private int derivativeOrder = 1;
+        UniformBSpline spline = new UniformBSpline();
+        double x;
+
+        DUDLHill(double dUdLambda) {
+          this.dUdLambda = dUdLambda;
+        }
+
+        private void setX(){
+          double dUdLForBin = dUdLForIndex(currentdUdLBin);
+          x = (currentdUdL - dUdLForBin) / dUdLBinWidth + 0.5;
+        }
+
+        private double getWeight(){
+
+            UniformBSpline spline = new UniformBSpline();
+            double[] coefficients = new double[3];
+            coefficients = spline.bspline(x, 3, coefficients);
+
+        }
+
+        private doulble getWeightDerivative(){
+            double[][] derivativeCoeff = new double[order][derivativeOrder+1];
+            double[][] derivativeWork = new double[order][order];
+            weightCoeff = spline.bsplineDerivatives(x, order, derivativeOrder, derivativeCoeff, derivativeWork);
+        }
+    }*/
   }
+
 }
