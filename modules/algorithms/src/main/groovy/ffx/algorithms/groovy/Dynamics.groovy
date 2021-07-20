@@ -221,16 +221,6 @@ class Dynamics extends AlgorithmsScript {
             logger.info("ranked Files:" + rankedFiles.get(0))
             File dyn = new File(withRankName + ".dyn")
 
-            /*File rankDirectory = new File(structureFile.getParent() + File.separator
-                + Integer.toString(rank))
-            if (!rankDirectory.exists()) {
-              rankDirectory.mkdir()
-            }
-            String withRankName = rankDirectory.getPath() + File.separator + baseFilename
-
-            if (!dyn.exists()) {
-              dyn = null
-            }*/
             activeAssembly.setFile(rankedFiles.get(0))
             molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
             ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,

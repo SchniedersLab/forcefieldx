@@ -42,6 +42,20 @@ class SortArc extends AlgorithmsScript {
             description = "If set, auto-determine lambda values and subdirectories (overrides other flags).")
     private int nWindows = -1
 
+    @Option(names = ["--bT", '--sortByTemp'], paramLabel = "false",
+            description = "If set, sort archive files by temperature values")
+    private boolean sortTemp = false
+
+    @Option(names = ["--sT", '--startTemp'], paramLabel = "298.15",
+            defaultValue = "298.15",
+            description = "Sets the starting temperature for the exponential temperature ladder if sorting by temperature.")
+    private double lowTemperature = 298.15
+
+    @Option(names = ["--ex", '--exponent'], paramLabel = "0.5",
+            defaultValue = "0.5",
+            description = "Sets the exponent for the exponential temperature ladder if sorting by temperature.")
+    private double exponent = 0.5
+
     /**
      * The final argument(s) should be filenames for lambda windows in order..
      */
@@ -50,6 +64,7 @@ class SortArc extends AlgorithmsScript {
     List<String> filenames = null
 
     private double[] lambdaValues
+    private double[] temperatureValues
     private SystemFilter[] openers
     private SystemFilter[][] writers
     private String[] files
@@ -105,10 +120,18 @@ class SortArc extends AlgorithmsScript {
                 }
 
             }
+
             lambdaValues = new double[nWindows]
+            temperatureValues = new double[nWindows]
             for (int i = 0; i < nWindows; i++) {
-                lambdaValues[i] = alchemical.getInitialLambda(nWindows, i, false);
+                if (sortTemp) {
+                    temperatureValues[i] = lowTemperature * exp(exponent * i);
+                } else {
+                    lambdaValues[i] = alchemical.getInitialLambda(nWindows, i, false);
+                }
             }
+
+
         }
 
         if (filenames == null) {
@@ -199,21 +222,30 @@ class SortArc extends AlgorithmsScript {
                     String remarkLine = openers[j].getRemarkLines()
 
 
-
                     double lambda = 0
+                    double temp = 0
                     if (remarkLine.contains(" Lambda: ")) {
                         String[] tokens = remarkLine.split(" +")
                         for (int p = 0; p < tokens.length; p++) {
                             if (tokens[p].startsWith("Lambda")) {
                                 lambda = Double.parseDouble(tokens[p + 1])
                             }
+                            if (tokens[p].startsWith("Temp")) {
+                                temp = Double.parseDouble(tokens[p + 1])
+                            }
                         }
 
                     }
 
-                    for(int k=0; k<nWindows; k++){
-                        double diff = Math.abs(lambdaValues[k] - lambda)
-                        if (diff < tolerance ) {
+                    double diff
+                    for (int k = 0; k < nWindows; k++) {
+                        if (sortTemp) {
+                            diff = Math.abs(temperatureValues[k] - temp)
+                        } else {
+                            diff = Math.abs(lambdaValues[k] - lambda)
+                        }
+
+                        if (diff < tolerance) {
                             writers[k][j].writeFile(saveFile[k][j], true, remarkLine)
                             //set topology back to archive being read in
                             topologies[j].setFile(arcFiles[i][j])
