@@ -210,6 +210,7 @@ class Dynamics extends AlgorithmsScript {
             }
             rankDirName = rankDirName + File.separator
             withRankName = format("%s%s", rankDirName, FilenameUtils.getName(filePathNoExtension))
+            logger.info("With Rank Name:" + withRankName)
 
             for (File structureFile : structureFiles) {
                 rankedFiles.add(new File(format("%s%s", rankDirName,
@@ -228,7 +229,7 @@ class Dynamics extends AlgorithmsScript {
 
             if (!dyn.exists()) {
               dyn = null
-            }
+            }*/
 
             molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
             ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
@@ -242,7 +243,7 @@ class Dynamics extends AlgorithmsScript {
             }
 
             replicaExchange.
-                    sample(cycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)*/
+                    sample(cycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
         }
 
         return this
