@@ -2,9 +2,7 @@ package ffx.potential.extended;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.*;
-import ffx.potential.extended.TitrationUtils.Titration;
 import ffx.potential.parameters.MultipoleType;
-import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.util.List;
@@ -41,6 +39,7 @@ public class TautomerESV extends ExtendedVariable {
         MolecularAssembly mola = esvSystem.getMolecularAssembly();
         CompositeConfiguration properties = mola.getProperties();
         this.constPh = esvSystem.getConstantPh();
+        this.pairTitrationESV(esvSystem, pairedTitrationIndex, this.getEsvIndex());
     }
 
     protected void pairTitrationESV(ExtendedSystem esvSystem, int pairedTitrationIndex, int esvIndex){
