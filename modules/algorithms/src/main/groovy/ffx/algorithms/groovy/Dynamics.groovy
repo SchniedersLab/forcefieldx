@@ -200,6 +200,7 @@ class Dynamics extends AlgorithmsScript {
             File histogramRestart = new File(filePathNoExtension + ".his")
 
             String withRankName = filePathNoExtension
+            String baseName = FilenameUtils.getBaseName(filenames.get(0))
 
             List<File> rankedFiles = new ArrayList<>(nFiles)
             String rankDirName = FilenameUtils.getFullPath(filePathNoExtension)
@@ -230,7 +231,7 @@ class Dynamics extends AlgorithmsScript {
             if (!dyn.exists()) {
               dyn = null
             }*/
-
+            activeAssembly.setFile(rankedFiles.get(0))
             molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
             ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
                     dynamicsOptions.temperature, repEx.exponent)
