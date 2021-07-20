@@ -38,7 +38,6 @@
 package ffx.algorithms.thermodynamics;
 
 import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS;
-//import static ffx.numerics.spline.UniformBSpline;
 import static ffx.utilities.Constants.R;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
@@ -60,6 +59,7 @@ import ffx.algorithms.optimize.Minimize;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
+import ffx.numerics.spline.UniformBSpline;
 import ffx.numerics.integrate.DataSet;
 import ffx.numerics.integrate.DoublesDataSet;
 import ffx.numerics.integrate.Integrate1DNumeric;
@@ -2723,7 +2723,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                     double weight;
 
                     //if(spline){
-                        //LambdaHill lambdaHill = new LambdaHill(currentLambda);
+                      //  LambdaHill lambdaHill = new LambdaHill(currentLambda);
                         //weight = lambdaHill.getWeight();
                     //} else {
                         weight = mirrorFactor * getRecursionKernelValue(lambdaBin, dUdLBin);
@@ -3029,7 +3029,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             }
         }
 
-        /*public void init(double currentLambda){
+       /* public void init(double currentLambda){
             LambdaHill lambdaHill = new LambdaHill(currentLambda);
         }
 
@@ -3052,6 +3052,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             }
 
             private void setX() {
+                //get lambda bin
                 lambdaForBin = lambdaForIndex(currentLambdaBin);
                 x = (currentLambda - lambdaForBin) / lambdaBinWidth + 0.5;
             }
@@ -3086,6 +3087,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             }
 
             private void setX() {
+
                 double dUdLForBin = dUdLForIndex(currentdUdLBin);
                 x = (currentdUdL - dUdLForBin) / dUdLBinWidth + 0.5;
             }
@@ -3096,7 +3098,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                 coefficients = spline.bspline(x, 3, coefficients);
             }
 
-            private doulble getWeightDerivative() {
+            private double getWeightDerivative() {
                 double[] weightCoeff = new double[order];
                 double[][] derivativeCoeff = new double[order][derivativeOrder + 1];
                 double[][] derivativeWork = new double[order][order];

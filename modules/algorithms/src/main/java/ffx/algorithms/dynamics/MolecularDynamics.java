@@ -1215,13 +1215,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
       linesList.add(lamString);
     }
 
-    String tempString = format("Temp: %.2f", currentTemperature);
+    String tempString = format("Temp: %.2f", thermostat.getTargetTemperature());
     linesList.add(tempString);
 
     Comm world = Comm.world();
     if (world != null && world.size() > 1) {
       String rankString = format("Rank: %d", world.rank());
-
       linesList.add(rankString);
     }
 
