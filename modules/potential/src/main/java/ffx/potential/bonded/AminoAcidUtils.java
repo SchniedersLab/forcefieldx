@@ -72,7 +72,7 @@ import java.util.logging.Logger;
 public class AminoAcidUtils {
 
   private static final Logger logger = Logger.getLogger(AminoAcidUtils.class.getName());
-  
+
   /** Constant <code>backboneAtoms</code> */
   public static final String[] backboneAtoms = {"N", "H", "CA", "HA", "C", "O"};
   /** Repeating atomic numbers of an amino acid chain. */
@@ -334,10 +334,7 @@ public class AminoAcidUtils {
       "CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "NE1", "HE1", "CE2", "CE3", "HE3", "CZ2", "HZ2",
       "CZ3", "HZ3", "CH2", "HH2"
   };
-  /** Constant <code>histidineAtoms</code> */
-  private static final String[] histidineAtoms = {
-      "CB", "HB2", "HB3", "CG", "ND1", "HD1", "CD2", "HD2", "CE1", "HE1", "NE2", "HE2"
-  };
+
   /** Constant <code>aspartateAtoms</code> */
   private static final String[] aspartateAtoms = {"CB", "HB2", "HB3", "CG", "OD1", "OD2"};
   /** Constant <code>asparagineAtoms</code> */
@@ -356,16 +353,124 @@ public class AminoAcidUtils {
   private static final String[] methionineAtoms = {
       "CB", "HB2", "HB3", "CG", "HG2", "HG3", "SD", "CE", "HE1", "HE2", "HE3"
   };
+
+  enum LysStates {
+    LYD, LYS
+  }
+
+  enum HisStates {
+    HIS, HID, HIE
+  }
+
   /** Constant <code>lysineAtoms</code> */
-  private static final String[] lysineAtoms = {
-      "CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "CE", "HE2", "HE3", "NZ", "HZ1",
-      "HZ2", "HZ3"
-  };
+  public enum LysineAtomNames {
+    CB(0,0), HB2(1,1), HB3(1,1),
+    CG(2,2), HG2(3,3), HG3(3,3),
+    CD(4,4), HD2(5,5), HD3(5,5),
+    CE(6,6), HE2(7,7), HE3(7,7),
+    NZ(8,8), HZ1(9,9), HZ2(9,9),
+    HZ3(9, -1);
+
+    /**
+     * Biotype offset relative to the CB biotype for LYS.
+     */
+    private int offsetLYS;
+
+    /**
+     * Biotype offset relative to the CB biotype for LYD.
+     */
+    private int offsetLYD;
+
+    public int getOffsetLYS(LysStates state) {
+      if (state == LysStates.LYS) {
+        return offsetLYS;
+      } else {
+        return offsetLYD;
+      }
+    }
+
+    /**
+     * Init the Lysine atom names.
+     * @param offsetLYS Biotype offset relative to the CB biotype for LYS.
+     * @param offsetLYD Biotype offset relative to the CB biotype for LYD.
+     */
+    LysineAtomNames(int offsetLYS, int offsetLYD) {
+      this.offsetLYS = offsetLYS;
+      this.offsetLYD = offsetLYD;
+    }
+  }
+
+  /** Constant <code>HistidineAtoms</code> */
+  public enum HistidineAtomNames {
+    // HIS, HID, HIE
+    CB(0, 0,0),
+    HB2(1, 1,1),
+    HB3(1,1,1),
+    CG(2, 2,2),
+    ND1(3,3,3),
+    // No HD1 proton for HIE; HIE HD1 offset is -1.
+    HD1(4,4,-1),
+    CD2(5,5,4),
+    HD2(6,6,5),
+    CE1(7,7,6),
+    HE1(8,8,7),
+    NE2(9,9,8),
+    // No HE2 proton for HID; HID HE2 offset is -1
+    HE2(10,-1 ,9);
+
+    /**
+     * Biotype offset relative to the CB biotype for charged histidine (HIS).
+     */
+    private int offsetHIS;
+
+    /**
+     * Biotype offset relative to the CB biotype for neutral histidine
+     * protonated on the delta nitrogren (HID).
+     *
+     * This is set to negative -1 for the epsilon hydrogen.
+     */
+    private int offsetHID;
+
+    /**
+     * Biotype offset relative to the CB biotype for neutral histidine
+     * protonated the epsilon nitrogen (HIE).
+     *
+     * This is set to negative -1 for the delta hydrogen.
+     */
+    private int offsetHIE;
+
+    public int getOffsetHIS(HisStates state) {
+      if (state == HisStates.HIS) {
+        return offsetHIS;
+      } else if (state == HisStates.HID) {
+        return offsetHID;
+      } else {
+        return offsetHIE;
+      }
+    }
+
+    /**
+     * Init the Histidine atom names.
+     * @param offsetHIS Biotype relative to the CB biotype for HIS.
+     * @param offsetHID Biotype relative to the CB biotype for HID.
+     * @param offsetHIE Biotype relative to the CB biotype for HIE.
+     */
+    HistidineAtomNames(int offsetHIS, int offsetHID, int offsetHIE) {
+      this.offsetHIS = offsetHIS;
+      this.offsetHID = offsetHID;
+      this.offsetHIE = offsetHIE;
+    }
+  }
+
   /** Constant <code>arginineAtoms</code> */
   private static final String[] arginineAtoms = {
       "CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "NE", "HE", "CZ", "NH1", "HH11",
       "HH12", "NH2", "HH21", "HH22"
   };
+
+  public static String[] getNames(Class<? extends Enum<?>> e) {
+    return Arrays.stream(e.getEnumConstants()).map(Enum::name).toArray(String[]::new);
+  }
 
   /**
    * Stoichiometry of side chains can be used for identification, accept for a couple cases: 1.)
@@ -2222,7 +2327,7 @@ public class AminoAcidUtils {
         atomNames.addAll(Arrays.asList(backboneAtoms));
         break;
       case HIS:
-        atomNames.addAll(Arrays.asList(histidineAtoms));
+        atomNames.addAll(Arrays.asList(getNames(HistidineAtomNames.class)));
         atomNames.addAll(Arrays.asList(backboneAtoms));
         break;
       case ASP:
@@ -2246,7 +2351,7 @@ public class AminoAcidUtils {
         atomNames.addAll(Arrays.asList(backboneAtoms));
         break;
       case LYS:
-        atomNames.addAll(Arrays.asList(lysineAtoms));
+        atomNames.addAll(Arrays.asList(getNames(LysineAtomNames.class)));
         atomNames.addAll(Arrays.asList(backboneAtoms));
         break;
       case ARG:
