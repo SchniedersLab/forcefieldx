@@ -38,7 +38,6 @@
 package ffx.potential.groovy
 
 import ffx.potential.bonded.*
-import ffx.potential.bonded.Residue.ResidueType
 import ffx.potential.bonded.RotamerLibrary.NucleicSugarPucker
 import ffx.potential.cli.PotentialScript
 import org.apache.commons.io.FilenameUtils
@@ -196,7 +195,7 @@ class SaveRotamers extends PotentialScript {
     if (upstreamPucker) {
       // Exception gets thrown if it's an amino acid, since "NA" is undefined.
       try {
-        if (residue.getResidueType() == ResidueType.NA) {
+        if (residue.getResidueType() == Residue.ResidueType.NA) {
           prevResidue = (Residue) residue.getPreviousResidue()
           // If no previous residue, set upstream pucker false.
           // The method used will ensure prevResidue is a nucleic acid.

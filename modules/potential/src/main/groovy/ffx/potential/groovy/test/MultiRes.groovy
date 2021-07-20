@@ -38,18 +38,18 @@
 package ffx.potential.groovy.test
 
 import ffx.potential.ForceFieldEnergy
+import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.MultiResidue
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
-import ffx.potential.bonded.Residue.ResidueType
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.ForceField
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import static java.lang.String.format;
+import static java.lang.String.format
 
 /**
  * The MultiResidue script evaluates the energy of a MultiResidue system.
@@ -170,12 +170,12 @@ class MultiRes extends PotentialScript {
       for (AminoAcid3 aa3 : AminoAcid3.getEnumConstants()) {
         if (aa3 != startingResidueAA3 && aa3.useWithMultiResidue) {
           logger.info(" Adding Residue: " + aa3.toString())
-          multiResidue.addResidue(new Residue(aa3.toString(), resID, ResidueType.AA))
+          multiResidue.addResidue(new Residue(aa3.toString(), resID, Residue.ResidueType.AA))
         }
       }
     } else {
       logger.info(" Adding Residue: " + name.toUpperCase())
-      multiResidue.addResidue(new Residue(name.toUpperCase(), resID, ResidueType.AA))
+      multiResidue.addResidue(new Residue(name.toUpperCase(), resID, Residue.ResidueType.AA))
     }
 
     int numResidues = multiResidue.getResidueCount()

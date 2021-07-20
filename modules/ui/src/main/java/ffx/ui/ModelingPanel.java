@@ -42,6 +42,10 @@ import static java.lang.String.format;
 import static java.util.Arrays.copyOfRange;
 
 import ffx.potential.Utilities.FileType;
+import ffx.potential.bonded.AminoAcidUtils;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.NucleicAcidUtils;
+import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.bonded.Residue;
 import ffx.potential.parsers.SystemFilter;
 import ffx.ui.commands.DTDResolver;
@@ -384,12 +388,12 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
       String entry = new String(acidTextField.getText());
       // Allow editing - should add more input validation here
       if (!entry.equals("")) {
-        String s[] = entry.trim().split(" +");
+        String[] s = entry.trim().split(" +");
         String newResidue = s[0].toUpperCase();
         if ("NUCLEIC".equals(arg)) {
           // Residue.NA3Set.contains(newResidue);
           try {
-            Residue.NA3.valueOf(newResidue);
+            NucleicAcidUtils.NucleicAcid3.valueOf(newResidue);
             acidComboBox.removeItemAt(index);
             acidComboBox.insertItemAt("" + index + " " + entry, index);
           } catch (Exception e) {
@@ -397,7 +401,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
           }
         } else {
           try {
-            Residue.AA3.valueOf(newResidue);
+            AminoAcidUtils.AminoAcid3.valueOf(newResidue);
             acidComboBox.removeItemAt(index);
             acidComboBox.insertItemAt("" + index + " " + entry, index);
           } catch (Exception e) {
@@ -460,7 +464,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
     acidComboBox.setSelectedIndex(index);
     String s = (String) acidComboBox.getItemAt(index);
     if (s != null) {
-      acidTextField.setText(s.substring(s.indexOf(" "), s.length()).trim());
+      acidTextField.setText(s.substring(s.indexOf(" ")).trim());
     } else {
       acidTextField.setText("");
     }
@@ -648,7 +652,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
       return aminoPanel;
     }
     JPanel buttonPanel = new JPanel(new GridLayout(4, 5, 2, 2));
-    Residue.AA3[] a = Residue.AA3.values();
+    AminoAcid3[] a = AminoAcidUtils.AminoAcid3.values();
     for (int i = 0; i < 20; i++) {
       JButton button = new JButton(a[i].name());
       button.setActionCommand("PROTEIN");
@@ -683,7 +687,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
       return nucleicPanel;
     }
     nucleicPanel = new JPanel(new GridLayout(3, 4, 2, 2));
-    Residue.NA3 a[] = Residue.NA3.values();
+    NucleicAcid3[] a = NucleicAcidUtils.NucleicAcid3.values();
     for (int i = 0; i < 8; i++) {
       JButton button = new JButton(a[i].name());
       button.setActionCommand("NUCLEIC");
@@ -1413,6 +1417,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
               for (String key : keywords) {
                 if (systemKeywords.containsKey(key.toUpperCase())) {
                   isEnabled = true;
+                  break;
                 }
               }
             }

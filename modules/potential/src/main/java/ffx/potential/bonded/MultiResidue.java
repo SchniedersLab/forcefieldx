@@ -43,8 +43,8 @@ import static java.lang.System.arraycopy;
 
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
 import java.util.ArrayList;
 import java.util.List;
@@ -401,13 +401,13 @@ public class MultiResidue extends Residue {
 
     if (library.getUsingOrigCoordsRotamer()) {
       if (originalRotamer == null
-          && (residueType == ResidueType.AA || residueType == ResidueType.NA)) {
+          && (residueType == Residue.ResidueType.AA || residueType == Residue.ResidueType.NA)) {
         ResidueState origState = storeState();
         double[] chi = RotamerLibrary.measureRotamer(activeResidue, false);
-        if (residueType == ResidueType.AA) {
+        if (residueType == Residue.ResidueType.AA) {
           AminoAcid3 aa3 = this.getAminoAcid3();
           originalRotamer = new Rotamer(aa3, origState, chi);
-        } else if (residueType == ResidueType.NA) {
+        } else if (residueType == Residue.ResidueType.NA) {
           NucleicAcid3 na3 = this.getNucleicAcid3();
           originalRotamer = new Rotamer(na3, origState, chi);
         }
@@ -502,15 +502,15 @@ public class MultiResidue extends Residue {
   /**
    * Request the passed amino acid be set as the active residue.
    *
-   * @param aa a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+   * @param aa a {@link AminoAcid3} object.
    * @return true if the request is satisfied.
    */
   public boolean requestSetActiveResidue(AminoAcid3 aa) {
-    if (aa == AminoAcid3.valueOf(activeResidue.getName())) {
+    if (aa == AminoAcidUtils.AminoAcid3.valueOf(activeResidue.getName())) {
       return true;
     }
     for (Residue res : consideredResidues) {
-      if (aa == AminoAcid3.valueOf(res.getName())) {
+      if (aa == AminoAcidUtils.AminoAcid3.valueOf(res.getName())) {
         return setActiveResidue(res);
       }
     }
@@ -576,7 +576,7 @@ public class MultiResidue extends Residue {
    * Method may be redundant with requestSetActiveResidue. Will not function correctly if there is
    * more than one residue of type UNK (unknown).
    *
-   * @param aa a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+   * @param aa a {@link AminoAcid3} object.
    * @return True if successful
    */
   public boolean setActiveResidue(AminoAcid3 aa) {
@@ -658,8 +658,8 @@ public class MultiResidue extends Residue {
     StringBuilder sb = new StringBuilder();
     sb.append(resNum).append("-");
     for (Residue res : consideredResidues) {
-      int num = ResidueEnumerations.getAminoAcidNumber(res.getName());
-      String aa1 = ResidueEnumerations.AminoAcid1.values()[num].toString();
+      int num = AminoAcidUtils.getAminoAcidNumber(res.getName());
+      String aa1 = AminoAcidUtils.AminoAcid1.values()[num].toString();
       if (res == activeResidue) {
         sb.append("[").append(aa1).append("]");
       } else {

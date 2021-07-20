@@ -38,16 +38,17 @@
 package ffx.algorithms.groovy.test
 
 import ffx.algorithms.misc.GenerateRotamers
+import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
 import groovy.cli.picocli.CliBuilder
 import org.apache.commons.io.FilenameUtils
 
 Residue residue = null;
 int nChi;
 File outFile;
-AminoAcid3 baseResidue = AminoAcid3.UNK;
+AminoAcid3 baseResidue = AminoAcidUtils.AminoAcid3.UNK;
 boolean useBase = false;
 int initDepth = 0;
 int finalDepth = -1;
@@ -113,7 +114,7 @@ if (residue == null) {
 
 if (options.b) {
   try {
-    baseResidue = AminoAcid3.valueOf(options.b.toUpperCase());
+    baseResidue = AminoAcidUtils.AminoAcid3.valueOf(options.b.toUpperCase());
     useBase = true;
   } catch (Exception ex) {
     logger.warning(String.format(" Could not find residue matching %s", options.b));

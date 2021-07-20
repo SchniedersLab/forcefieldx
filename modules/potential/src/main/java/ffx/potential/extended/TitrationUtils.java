@@ -42,12 +42,14 @@ import static java.lang.String.format;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.BondedUtils;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
@@ -57,7 +59,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.OptionalDouble;
 import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
 
@@ -163,7 +164,7 @@ public class TitrationUtils {
   /**
    * Select titrating residues by amino acid.
    *
-   * @param aa a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+   * @param aa a {@link AminoAcid3} object.
    * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
    * @return a {@link java.util.List} object.
    */
@@ -553,7 +554,7 @@ public class TitrationUtils {
             ? titration.protForm.toString()
             : titration.deprotForm.toString();
     int resNumber = residue.getResidueNumber();
-    Residue.ResidueType resType = residue.getResidueType();
+    ResidueType resType = residue.getResidueType();
     Residue newRes = new Residue(targetName, resNumber, resType);
 
     // Wrap both states in a MultiResidue.
@@ -726,15 +727,15 @@ public class TitrationUtils {
    * energy of protonation, obtained via (OST) metadynamics on capped monomers.
    */
   public enum Titration {
-    ctoC(8.18, 60.168, 0.0, AminoAcid3.CYD, AminoAcid3.CYS),
-    Dtod(3.90, 53.188, 0.0, AminoAcid3.ASP, AminoAcid3.ASH),
-    Etoe(4.25, 59.390, 0.0, AminoAcid3.GLU, AminoAcid3.GLH),
-    ktoK(10.53, -53.390, 0.073697, AminoAcid3.LYD, AminoAcid3.LYS),
-    ytoY(10.07, 34.961, 0.0, AminoAcid3.TYD, AminoAcid3.TYR),
-    UtoH(6.00, -42.923, 0.0, AminoAcid3.HID, AminoAcid3.HIS),
-    ZtoH(6.00, 00.000, 0.0, AminoAcid3.HIE, AminoAcid3.HIS),
-    TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcid3.UNK, AminoAcid3.UNK),
-    TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcid3.UNK, AminoAcid3.UNK);
+    ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
+    Dtod(3.90, 53.188, 0.0, AminoAcidUtils.AminoAcid3.ASP, AminoAcidUtils.AminoAcid3.ASH),
+    Etoe(4.25, 59.390, 0.0, AminoAcidUtils.AminoAcid3.GLU, AminoAcidUtils.AminoAcid3.GLH),
+    ktoK(10.53, -53.390, 0.073697, AminoAcidUtils.AminoAcid3.LYD, AminoAcidUtils.AminoAcid3.LYS),
+    ytoY(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYD, AminoAcidUtils.AminoAcid3.TYR),
+    UtoH(6.00, -42.923, 0.0, AminoAcidUtils.AminoAcid3.HID, AminoAcidUtils.AminoAcid3.HIS),
+    ZtoH(6.00, 00.000, 0.0, AminoAcidUtils.AminoAcid3.HIE, AminoAcidUtils.AminoAcid3.HIS),
+    TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
+    TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 
     public final double pKa;
     public final double refEnergy;
@@ -769,10 +770,10 @@ public class TitrationUtils {
      * @return a Titration instance.
      */
     public static Titration[] multiLookup(Residue res) {
-      AminoAcid3 current = AminoAcid3.valueOf(res.getName());
+      AminoAcid3 current = AminoAcidUtils.AminoAcid3.valueOf(res.getName());
 
       if (threeStateHistidines) {
-        if (current == AminoAcid3.HIS || current == AminoAcid3.HID || current == AminoAcid3.HIE) {
+        if (current == AminoAcidUtils.AminoAcid3.HIS || current == AminoAcidUtils.AminoAcid3.HID || current == AminoAcidUtils.AminoAcid3.HIE) {
           return new Titration[] {ZtoH, UtoH};
         }
       }

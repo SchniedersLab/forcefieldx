@@ -41,8 +41,8 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.max;
 
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 
 /**
  * The Rotamer Class usually represents one immutable amino acid Rotamer. It is additionally being
@@ -75,8 +75,8 @@ public class Rotamer {
 
   /**
    * Constructs a Rotamer from a Residue, an array of torsions, and optionally an array of torsion
-   * bin widths. Intended to be agnostic to AA vs. NA vs. other, and not require explicitly
-   * passed-in sigmas.
+   * bin widths. Intended to be agnostic to AA vs. NA vs. other, and not require explicitly passed-in
+   * sigmas.
    *
    * @param res Residue to construct rotamer for
    * @param chis Torsion angles
@@ -132,7 +132,7 @@ public class Rotamer {
   /**
    * Constructor for Rotamer.
    *
-   * @param name a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+   * @param name a {@link AminoAcid3} object.
    * @param values a double.
    */
   public Rotamer(AminoAcid3 name, double... values) {
@@ -158,7 +158,7 @@ public class Rotamer {
   /**
    * Constructor for Rotamer.
    *
-   * @param name a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
+   * @param name a {@link NucleicAcid3} object.
    * @param values a double.
    */
   public Rotamer(NucleicAcid3 name, double... values) {
@@ -213,7 +213,7 @@ public class Rotamer {
   /**
    * Constructor for Rotamer.
    *
-   * @param name a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+   * @param name a {@link AminoAcid3} object.
    * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
    * @param values a double.
    */
@@ -240,7 +240,7 @@ public class Rotamer {
   /**
    * Constructor for Rotamer.
    *
-   * @param name a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
+   * @param name a {@link NucleicAcid3} object.
    * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
    * @param values a double.
    */

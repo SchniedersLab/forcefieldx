@@ -43,8 +43,9 @@ import static org.apache.commons.math3.util.FastMath.min;
 import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.parsers.PDBFilter;
 import java.io.File;
 import java.util.List;
@@ -119,8 +120,8 @@ public class RosenbluthCBMC implements MonteCarloListener {
     }
 
     for (int i = targets.size() - 1; i >= 0; i--) {
-      AminoAcid3 name = AminoAcid3.valueOf(targets.get(i).getName());
-      if (name == AminoAcid3.GLY || name == AminoAcid3.PRO || name == AminoAcid3.ALA) {
+      AminoAcid3 name = AminoAcidUtils.AminoAcid3.valueOf(targets.get(i).getName());
+      if (name == AminoAcidUtils.AminoAcid3.GLY || name == AminoAcidUtils.AminoAcid3.PRO || name == AminoAcidUtils.AminoAcid3.ALA) {
         targets.remove(i);
       }
     }

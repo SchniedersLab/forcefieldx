@@ -38,8 +38,8 @@
 package ffx.potential.groovy
 
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Atom
-import ffx.potential.bonded.ResidueEnumerations
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import org.apache.commons.io.FilenameUtils
@@ -193,7 +193,7 @@ class RGNtoPDB extends PotentialScript {
         String resName = convertToThreeLetter(oneLetterResidue)
 
         if (includeBFactors) {
-          bfactor = Double.parseDouble(bfactorLines[i])
+          bfactor = parseDouble(bfactorLines[i])
         }
 
         // Write N
@@ -237,7 +237,7 @@ class RGNtoPDB extends PotentialScript {
    * @return The three letter amino acid code.
    */
   private static String convertToThreeLetter(String res) {
-    ResidueEnumerations.AminoAcid3 aminoAcid3 = ResidueEnumerations.getAminoAcid3From1(res)
+    AminoAcidUtils.AminoAcid3 aminoAcid3 = AminoAcidUtils.getAminoAcid3From1(res)
     return aminoAcid3.toString()
   }
 

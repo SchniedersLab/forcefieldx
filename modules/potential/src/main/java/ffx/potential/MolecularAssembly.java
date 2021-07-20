@@ -54,6 +54,7 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.StringUtils;
 import java.awt.GraphicsEnvironment;
@@ -520,12 +521,7 @@ public class MolecularAssembly extends MSGroup {
     la.setCapability(LineArray.ALLOW_COUNT_READ);
     la.setCapability(LineArray.ALLOW_INTERSECT);
     la.setCapability(LineArray.ALLOW_FORMAT_READ);
-    // Create a normal
-    // for (ListIterator<MSNode> li = bondlist.listIterator(); li.hasNext(); ){
-    // la.setCoordinate(i, a1);
-    // la.setColor(i, col);
-    // la.setNormal(i++, a1);
-    // }
+
     ColoringAttributes cola =
         new ColoringAttributes(new Color3f(), ColoringAttributes.SHADE_GOURAUD);
     Appearance app = new Appearance();
@@ -1892,7 +1888,7 @@ public class MolecularAssembly extends MSGroup {
     return getResidue(atom, create, Residue.ResidueType.UNK);
   }
 
-  private Atom getResidue(Atom atom, boolean create, Residue.ResidueType defaultRT) {
+  private Atom getResidue(Atom atom, boolean create, ResidueType defaultRT) {
     Character chainID = atom.getChainID();
     String resName = atom.getResidueName();
     int resNum = atom.getResidueNumber();
