@@ -130,7 +130,6 @@ class SortArc extends AlgorithmsScript {
                     lambdaValues[i] = alchemical.getInitialLambda(nWindows, i, false);
                 }
             }
-            logger.info(temperatureValues.toString())
         }
 
         if (filenames == null) {
@@ -153,7 +152,6 @@ class SortArc extends AlgorithmsScript {
                 arcFiles[i][j] = arcFile
                 archiveNewPath[i][j] = directoryPath + i + File.separator + FilenameUtils.getBaseName(files[j]) + "_E" + i + ".arc"
                 saveFile[i][j] = new File(archiveNewPath[i][j])
-                logger.info("New Path: " + archiveNewPath[i][j])
             }
         }
 
@@ -192,7 +190,6 @@ class SortArc extends AlgorithmsScript {
 
             for (int i = 0; i < nWindows; i++) {
                 File arc = saveFile[i][j]
-                logger.info(saveFile[i][j].toString())
                 writers[i][j] = new XYZFilter(arc, topologies[j], topologies[j].getForceField(), additionalProperties)
             }
         }
@@ -203,7 +200,7 @@ class SortArc extends AlgorithmsScript {
         } else {
             tolerance = 1.0e-4
         }
-        
+
         for (int j = 0; j < nTopology; j++) {
 
             for (int i = 0; i < nWindows; i++) {
@@ -242,7 +239,6 @@ class SortArc extends AlgorithmsScript {
                     for (int k = 0; k < nWindows; k++) {
                         if (sortTemp) {
                             diff = Math.abs(temperatureValues[k] - temp)
-                            logger.info("Diff: " + diff)
                         } else {
                             diff = Math.abs(lambdaValues[k] - lambda)
                         }
