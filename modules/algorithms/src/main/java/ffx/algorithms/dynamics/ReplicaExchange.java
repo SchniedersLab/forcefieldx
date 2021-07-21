@@ -45,13 +45,10 @@ import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.parameters.ForceField;
 import java.io.IOException;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * The ReplicaExchange implements temperature and lambda replica exchange methods.

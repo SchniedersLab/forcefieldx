@@ -41,10 +41,6 @@ import static ffx.potential.bonded.AminoAcidUtils.AA_CB;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
 
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
-import ffx.potential.bonded.AminoAcidUtils.HisStates;
-import ffx.potential.bonded.AminoAcidUtils.HistidineAtomNames;
-import ffx.potential.bonded.AminoAcidUtils.LysStates;
-import ffx.potential.bonded.AminoAcidUtils.LysineAtomNames;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
@@ -69,10 +65,6 @@ public class ConstantPhUtils {
 
   enum AspStates {
     ASP, ASH1, ASH2
-  }
-
-  enum GluStates {
-    GLU, GLH1, GLH2
   }
 
   /** Constant <code>AspartateAtomNames</code> */
@@ -127,6 +119,10 @@ public class ConstantPhUtils {
       this.offsetASH1 = offsetASH1;
       this.offsetASH2 = offsetASH2;
     }
+  }
+
+  enum GluStates {
+    GLU, GLH1, GLH2
   }
 
   /** Constant <code>GlutamateAtomNames</code> */
@@ -185,6 +181,116 @@ public class ConstantPhUtils {
       this.offsetGLU = offsetGLU;
       this.offsetGLH1 = offsetGLH1;
       this.offsetGLH2 = offsetGLH2;
+    }
+  }
+
+  enum LysStates {
+    LYD, LYS
+  }
+
+  /** Constant <code>lysineAtoms</code> */
+  public enum LysineAtomNames {
+    CB(0, 0), HB2(1, 1), HB3(1, 1),
+    CG(2, 2), HG2(3, 3), HG3(3, 3),
+    CD(4, 4), HD2(5, 5), HD3(5, 5),
+    CE(6, 6), HE2(7, 7), HE3(7, 7),
+    NZ(8, 8), HZ1(9, 9), HZ2(9, 9),
+    HZ3(9, -1);
+
+    /**
+     * Biotype offset relative to the CB biotype for LYS.
+     */
+    private int offsetLYS;
+
+    /**
+     * Biotype offset relative to the CB biotype for LYD.
+     */
+    private int offsetLYD;
+
+    public int getOffsetLYS(LysStates state) {
+      if (state == LysStates.LYS) {
+        return offsetLYS;
+      } else {
+        return offsetLYD;
+      }
+    }
+
+    /**
+     * Init the Lysine atom names.
+     *
+     * @param offsetLYS Biotype offset relative to the CB biotype for LYS.
+     * @param offsetLYD Biotype offset relative to the CB biotype for LYD.
+     */
+    LysineAtomNames(int offsetLYS, int offsetLYD) {
+      this.offsetLYS = offsetLYS;
+      this.offsetLYD = offsetLYD;
+    }
+  }
+
+  enum HisStates {
+    HIS, HID, HIE
+  }
+
+  /** Constant <code>HistidineAtoms</code> */
+  public enum HistidineAtomNames {
+    // HIS, HID, HIE
+    CB(0, 0, 0),
+    HB2(1, 1, 1),
+    HB3(1, 1, 1),
+    CG(2, 2, 2),
+    ND1(3, 3, 3),
+    // No HD1 proton for HIE; HIE HD1 offset is -1.
+    HD1(4, 4, -1),
+    CD2(5, 5, 4),
+    HD2(6, 6, 5),
+    CE1(7, 7, 6),
+    HE1(8, 8, 7),
+    NE2(9, 9, 8),
+    // No HE2 proton for HID; HID HE2 offset is -1
+    HE2(10, -1, 9);
+
+    /**
+     * Biotype offset relative to the CB biotype for charged histidine (HIS).
+     */
+    private int offsetHIS;
+
+    /**
+     * Biotype offset relative to the CB biotype for neutral histidine protonated on the delta
+     * nitrogren (HID).
+     * <p>
+     * This is set to negative -1 for the epsilon hydrogen.
+     */
+    private int offsetHID;
+
+    /**
+     * Biotype offset relative to the CB biotype for neutral histidine protonated the epsilon
+     * nitrogen (HIE).
+     * <p>
+     * This is set to negative -1 for the delta hydrogen.
+     */
+    private int offsetHIE;
+
+    public int getOffsetHIS(HisStates state) {
+      if (state == HisStates.HIS) {
+        return offsetHIS;
+      } else if (state == HisStates.HID) {
+        return offsetHID;
+      } else {
+        return offsetHIE;
+      }
+    }
+
+    /**
+     * Init the Histidine atom names.
+     *
+     * @param offsetHIS Biotype relative to the CB biotype for HIS.
+     * @param offsetHID Biotype relative to the CB biotype for HID.
+     * @param offsetHIE Biotype relative to the CB biotype for HIE.
+     */
+    HistidineAtomNames(int offsetHIS, int offsetHID, int offsetHIE) {
+      this.offsetHIS = offsetHIS;
+      this.offsetHID = offsetHID;
+      this.offsetHIE = offsetHIE;
     }
   }
 

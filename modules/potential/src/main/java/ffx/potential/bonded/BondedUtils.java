@@ -55,6 +55,7 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.AminoAcidUtils.SideChainType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
@@ -96,7 +97,7 @@ public class BondedUtils {
    *
    * @param a1 a {@link ffx.potential.bonded.Atom} object.
    * @param a2 a {@link ffx.potential.bonded.Atom} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Bond} object.
    */
@@ -125,7 +126,7 @@ public class BondedUtils {
    * @param atomName a {@link java.lang.String} object.
    * @param bondedTo a {@link ffx.potential.bonded.Atom} object.
    * @param key a int.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Atom} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
@@ -167,7 +168,7 @@ public class BondedUtils {
    * @param angle2 a double.
    * @param chiral a int.
    * @param lookUp a int.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @return a {@link ffx.potential.bonded.Atom} object.
    */
   public static Atom buildHeavy(
@@ -199,7 +200,7 @@ public class BondedUtils {
    * @param angle2 a double.
    * @param chiral a int.
    * @param lookUp a int.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Atom} object.
    */
@@ -233,6 +234,50 @@ public class BondedUtils {
   }
 
   /**
+   * buildHeavy.
+   *
+   * @param residue a {@link ffx.potential.bonded.MSGroup} object.
+   * @param atomName a {@link ffx.potential.bonded.AminoAcidUtils.SideChainType} object.
+   * @param ia a {@link ffx.potential.bonded.Atom} object.
+   * @param bond a double.
+   * @param ib a {@link ffx.potential.bonded.Atom} object.
+   * @param angle1 a double.
+   * @param ic a {@link ffx.potential.bonded.Atom} object.
+   * @param angle2 a double.
+   * @param chiral a int.
+   * @param forceField a {@link ForceField} object.
+   * @param bondList a {@link java.util.List} object.
+   * @return a {@link ffx.potential.bonded.Atom} object.
+   */
+  public static Atom buildHeavy(
+      MSGroup residue,
+      SideChainType atomName,
+      Atom ia,
+      double bond,
+      Atom ib,
+      double angle1,
+      Atom ic,
+      double angle2,
+      int chiral,
+      ForceField forceField,
+      List<Bond> bondList) {
+    AtomType atomType = findAtomType(atomName.getType(), forceField);
+    return buildHeavyAtom(
+        residue,
+        atomName.name(),
+        ia,
+        bond,
+        ib,
+        angle1,
+        ic,
+        angle2,
+        chiral,
+        atomType,
+        forceField,
+        bondList);
+  }
+
+  /**
    * buildHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.MSGroup} object.
@@ -245,11 +290,11 @@ public class BondedUtils {
    * @param angle2 a double.
    * @param chiral a int.
    * @param lookUp a int.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Atom} object.
    */
-  public static Atom buildHydrogen(
+  public static Atom buildH(
       MSGroup residue,
       String atomName,
       Atom ia,
@@ -279,6 +324,50 @@ public class BondedUtils {
   }
 
   /**
+   * buildHydrogen.
+   *
+   * @param residue a {@link ffx.potential.bonded.MSGroup} object.
+   * @param atomName a {@link ffx.potential.bonded.AminoAcidUtils.SideChainType} object.
+   * @param ia a {@link ffx.potential.bonded.Atom} object.
+   * @param bond a double.
+   * @param ib a {@link ffx.potential.bonded.Atom} object.
+   * @param angle1 a double.
+   * @param ic a {@link ffx.potential.bonded.Atom} object.
+   * @param angle2 a double.
+   * @param chiral a int.
+   * @param forceField a {@link ForceField} object.
+   * @param bondList a {@link java.util.List} object.
+   * @return a {@link ffx.potential.bonded.Atom} object.
+   */
+  public static Atom buildH(
+      MSGroup residue,
+      SideChainType atomName,
+      Atom ia,
+      double bond,
+      Atom ib,
+      double angle1,
+      Atom ic,
+      double angle2,
+      int chiral,
+      ForceField forceField,
+      List<Bond> bondList) {
+    AtomType atomType = findAtomType(atomName.getType(), forceField);
+    return buildHydrogenAtom(
+        residue,
+        atomName.name(),
+        ia,
+        bond,
+        ib,
+        angle1,
+        ic,
+        angle2,
+        chiral,
+        atomType,
+        forceField,
+        bondList);
+  }
+
+  /**
    * buildHydrogenAtom.
    *
    * @param residue a {@link ffx.potential.bonded.MSGroup} object.
@@ -291,7 +380,7 @@ public class BondedUtils {
    * @param angle2 a double.
    * @param chiral a int.
    * @param atomType a {@link ffx.potential.parameters.AtomType} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Atom} object.
    */
@@ -365,7 +454,7 @@ public class BondedUtils {
    * findAtomType.
    *
    * @param key a int.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @return a {@link ffx.potential.parameters.AtomType} object.
    */
   public static AtomType findAtomType(int key, ForceField forceField) {
@@ -815,7 +904,7 @@ public class BondedUtils {
    * @param angle2 a double.
    * @param chiral a int.
    * @param atomType a {@link ffx.potential.parameters.AtomType} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Atom} object.
    */

@@ -37,41 +37,18 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import ffx.numerics.Potential
-import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Atom
-import ffx.potential.bonded.MultiResidue
-import ffx.potential.bonded.Polymer
-import ffx.potential.bonded.Residue
-import ffx.potential.bonded.Rotamer
-import ffx.potential.bonded.RotamerLibrary
-import ffx.potential.cli.AtomSelectionOptions
-import ffx.potential.cli.GradientOptions
 import ffx.potential.cli.PotentialScript
-import ffx.potential.extended.ExtendedSystem
-import ffx.potential.extended.ExtendedVariable
-import ffx.potential.extended.TitrationESV
-import ffx.potential.extended.TitrationUtils
 import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.ForceFieldFilter
 import ffx.potential.parsers.PDBFilter
-import ffx.potential.utils.PotentialsUtils
 import ffx.utilities.Keyword
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import java.util.stream.IntStream
-
-import static ffx.potential.extended.TitrationUtils.inactivateResidue
-import static ffx.utilities.StringUtils.parseAtomRanges
 import static java.lang.String.format
-import static org.apache.commons.math3.util.FastMath.abs
-import static org.apache.commons.math3.util.FastMath.sqrt
 
 /**
  * The Gradient script evaluates the consistency of the energy and gradient.
