@@ -54,7 +54,7 @@ class SortArc extends AlgorithmsScript {
     @Option(names = ["--ex", '--exponent'], paramLabel = "0.5",
             defaultValue = "0.5",
             description = "Sets the exponent for the exponential temperature ladder if sorting by temperature.")
-    private double exponent = 0.5
+    private double exponent = 0.05
 
     /**
      * The final argument(s) should be filenames for lambda windows in order..
@@ -71,6 +71,7 @@ class SortArc extends AlgorithmsScript {
     private Configuration additionalProperties
     private List<String> windowFiles = new ArrayList<>()
     MolecularAssembly[] topologies
+    MolecularAssembly ma
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
 
@@ -108,7 +109,6 @@ class SortArc extends AlgorithmsScript {
         files = new String[nTopology]
         for (int i = 0; i < nTopology; i++) {
             files[i] = filenames.get(i)
-            logger.info(files[i])
         }
 
         if (nWindows != -1) {
@@ -125,13 +125,12 @@ class SortArc extends AlgorithmsScript {
             temperatureValues = new double[nWindows]
             for (int i = 0; i < nWindows; i++) {
                 if (sortTemp) {
-                    temperatureValues[i] = lowTemperature * exp(exponent * i);
+                    temperatureValues[i] = lowTemperature * Math.exp(exponent * i);
                 } else {
                     lambdaValues[i] = alchemical.getInitialLambda(nWindows, i, false);
                 }
             }
-
-
+            logger.info(temperatureValues.toString())
         }
 
         if (filenames == null) {
@@ -147,20 +146,14 @@ class SortArc extends AlgorithmsScript {
 
 
         for (int j = 0; j < nTopology; j++) {
-            logger.info("Directory path " + directoryPath)
-            logger.info("the full path is" + FilenameUtils.getFullPath(files[j]))
             String archiveName = FilenameUtils.getBaseName(files[j]) + ".arc"
-
             for (int i = 0; i < nWindows; i++) {
                 archiveFullPaths[i][j] = directoryPath + i + File.separator + archiveName
-
                 File arcFile = new File(archiveFullPaths[i][j])
                 arcFiles[i][j] = arcFile
-                boolean fileExist = arcFile.exists()
-                logger.info(archiveFullPaths[i][j] + ": " + fileExist.toString())
                 archiveNewPath[i][j] = directoryPath + i + File.separator + FilenameUtils.getBaseName(files[j]) + "_E" + i + ".arc"
-                logger.info(archiveNewPath[i][j])
                 saveFile[i][j] = new File(archiveNewPath[i][j])
+                logger.info("New Path: " + archiveNewPath[i][j])
             }
         }
 
@@ -189,8 +182,11 @@ class SortArc extends AlgorithmsScript {
 
         topologies = new MolecularAssembly[nTopology]
         for (int j = 0; j < nTopology; j++) {
-            MolecularAssembly ma =
-                    alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
+            if(filenames[j].contains(".pdb")){
+                ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
+            } else {
+                ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
+            }
             topologies[j] = ma
             openers[j] = algorithmFunctions.getFilter()
 
@@ -201,8 +197,13 @@ class SortArc extends AlgorithmsScript {
             }
         }
 
-        double tolerance = 1.0e-4
-
+        double tolerance
+        if (sortTemp){
+            tolerance = 1.0e-2
+        } else {
+            tolerance = 1.0e-4
+        }
+        
         for (int j = 0; j < nTopology; j++) {
 
             for (int i = 0; i < nWindows; i++) {
@@ -241,6 +242,7 @@ class SortArc extends AlgorithmsScript {
                     for (int k = 0; k < nWindows; k++) {
                         if (sortTemp) {
                             diff = Math.abs(temperatureValues[k] - temp)
+                            logger.info("Diff: " + diff)
                         } else {
                             diff = Math.abs(lambdaValues[k] - lambda)
                         }
