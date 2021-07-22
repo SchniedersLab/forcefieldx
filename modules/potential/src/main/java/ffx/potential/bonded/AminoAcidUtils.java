@@ -705,7 +705,7 @@ public class AminoAcidUtils {
   public enum ASD implements SideChainType {
     CB(0), HB2(1), HB3(1),
     CG(2),
-    OD1(4), OD2(4), HD1(5), HD2(5);
+    OD1(3), OD2(3), HD1(4), HD2(4);
 
     /**
      * Biotype for this atom.
@@ -873,7 +873,7 @@ public class AminoAcidUtils {
     CB(0), HB2(1), HB3(1),
     CG(2), HG2(3), HG3(3),
     CD(4),
-    OE1(6), OE2(6), HE1(7), HE2(7);
+    OE1(5), OE2(5), HE1(6), HE2(6);
 
     /**
      * Biotype for this atom.
@@ -3330,14 +3330,17 @@ public class AminoAcidUtils {
   /**
    * Constant <code>AA_CB</code>
    * <p>
-   * GLY ALA VAL LEU ILE SER THR CYS CYX CYD PRO PHE TYR TYD TRP HIS HID HIE ASP ASH ASD ASN GLU GLH
-   * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
+   * GLY ALA VAL LEU ILE SER THR CYS
+   * CYX CYD PRO PHE TYR TYD TRP HIS
+   * HID HIE ASP ASH ASD ASN GLU GLH
+   * GLD GLN MET LYS LYD ARG ORN AIB
+   * PCA H2N FOR ACE COH NH2 NME UNK
    */
   public static final int[] AA_CB = {
       0, 13, 21, 33, 47, 61, 71, 83,
       93, 102, 110, 122, 137, 153, 168, 191,
-      208, 224, 240, 250, 250, 262, 274, 286,
-      286, 300, 314, 327, 343, 359, 376, 389,
+      208, 224, 240, 250, 806, 262, 274, 286,
+      817, 300, 314, 327, 343, 359, 376, 389,
       397, 0, 0, 0, 0, 0, 0, 0
   };
 }

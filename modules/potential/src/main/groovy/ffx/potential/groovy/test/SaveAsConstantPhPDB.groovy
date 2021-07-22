@@ -38,6 +38,7 @@
 package ffx.potential.groovy.test
 
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.ConstantPhUtils
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.ForceFieldFilter
@@ -127,6 +128,8 @@ class SaveAsConstantPhPDB extends PotentialScript {
     if (!pdbFilter.writeFile(modelFile, false, false, true)) {
       logger.info(format(" Save failed for %s", activeAssembly))
     }
+
+    ConstantPhUtils constantPhUtils = new ConstantPhUtils(forceField)
 
     return this
   }
