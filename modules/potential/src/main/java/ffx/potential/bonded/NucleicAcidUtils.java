@@ -40,7 +40,7 @@ package ffx.potential.bonded;
 import static ffx.numerics.math.DoubleMath.dist;
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.buildHeavy;
-import static ffx.potential.bonded.BondedUtils.buildHydrogen;
+import static ffx.potential.bonded.BondedUtils.buildH;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.LAST_RESIDUE;
@@ -55,7 +55,6 @@ import ffx.potential.bonded.AminoAcidUtils.ResiduePosition;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -569,7 +568,7 @@ public class NucleicAcidUtils {
 
         // Build the backbone hydrogen atoms.
         if (position == FIRST_RESIDUE && phosphate == null) {
-          buildHydrogen(
+          buildH(
               residue,
               "HO5'",
               sugarO5,
@@ -583,7 +582,7 @@ public class NucleicAcidUtils {
               forceField,
               bondList);
         }
-        buildHydrogen(
+        buildH(
             residue,
             "H5'",
             sugarC5,
@@ -596,7 +595,7 @@ public class NucleicAcidUtils {
             NA_H51[naNumber],
             forceField,
             bondList);
-        buildHydrogen(
+        buildH(
             residue,
             "H5''",
             sugarC5,
@@ -609,7 +608,7 @@ public class NucleicAcidUtils {
             NA_H52[naNumber],
             forceField,
             bondList);
-        buildHydrogen(
+        buildH(
             residue,
             "H4'",
             sugarC4,
@@ -622,7 +621,7 @@ public class NucleicAcidUtils {
             NA_H4[naNumber],
             forceField,
             bondList);
-        buildHydrogen(
+        buildH(
             residue,
             "H3'",
             sugarC3,
@@ -636,7 +635,7 @@ public class NucleicAcidUtils {
             forceField,
             bondList);
         if (isDNA) {
-          buildHydrogen(
+          buildH(
               residue,
               "H2'",
               sugarC2,
@@ -649,7 +648,7 @@ public class NucleicAcidUtils {
               NA_H21[naNumber],
               forceField,
               bondList);
-          buildHydrogen(
+          buildH(
               residue,
               "H2''",
               sugarC2,
@@ -663,7 +662,7 @@ public class NucleicAcidUtils {
               forceField,
               bondList);
         } else {
-          buildHydrogen(
+          buildH(
               residue,
               "H2'",
               sugarC2,
@@ -681,7 +680,7 @@ public class NucleicAcidUtils {
           if (nucleicAcid == NucleicAcid3.OMC || nucleicAcid == NucleicAcid3.OMG) {
             Atom CM2 = buildHeavy(residue, "CM2", sugarO2, 1427, forceField, bondList);
             Atom HM21 =
-                buildHydrogen(
+                buildH(
                     residue,
                     "HM21",
                     CM2,
@@ -694,7 +693,7 @@ public class NucleicAcidUtils {
                     1428,
                     forceField,
                     bondList);
-            buildHydrogen(
+            buildH(
                 residue,
                 "HM22",
                 CM2,
@@ -707,7 +706,7 @@ public class NucleicAcidUtils {
                 1429,
                 forceField,
                 bondList);
-            buildHydrogen(
+            buildH(
                 residue,
                 "HM23",
                 CM2,
@@ -721,7 +720,7 @@ public class NucleicAcidUtils {
                 forceField,
                 bondList);
           } else {
-            buildHydrogen(
+            buildH(
                 residue,
                 "HO2'",
                 sugarO2,
@@ -736,7 +735,7 @@ public class NucleicAcidUtils {
                 bondList);
           }
         }
-        buildHydrogen(
+        buildH(
             residue,
             "H1'",
             sugarC1,
@@ -750,7 +749,7 @@ public class NucleicAcidUtils {
             forceField,
             bondList);
         if (position == LAST_RESIDUE || numberOfResidues == 1) {
-          buildHydrogen(residue, "HO3'", sugarO3, 1.00e0, sugarC3, 109.5e0,
+          buildH(residue, "HO3'", sugarO3, 1.00e0, sugarC3, 109.5e0,
               sugarC4, 180.0e0, 0, NA_HO3T[naNumber], forceField, bondList);
           // Else, if it is terminated by a 3' phosphate cap:
           // Will need to see how PDB would label a 3' phosphate cap.
@@ -884,7 +883,7 @@ public class NucleicAcidUtils {
    * @param O4s a {@link ffx.potential.bonded.Atom} object.
    * @param C2s a {@link ffx.potential.bonded.Atom} object.
    * @param glyco a double.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -919,13 +918,13 @@ public class NucleicAcidUtils {
         buildHeavy(residue, "C4", N3, 1.35, C2, 110.9, N1, 0.0, 0, 1018, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1030, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H61", N6, 1.00e0, C6, 120.0e0, N7, 180.0e0, 0, 1028, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H62", N6, 1.00e0, C6, 120.0e0, N7, 0.0e0, 0, 1029, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1026, forceField, bondList);
     return residue;
   }
@@ -938,7 +937,7 @@ public class NucleicAcidUtils {
    * @param O4s a {@link ffx.potential.bonded.Atom} object.
    * @param C2s a {@link ffx.potential.bonded.Atom} object.
    * @param glyco a double.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -968,13 +967,13 @@ public class NucleicAcidUtils {
     Atom C6 =
         buildHeavy(residue, "C6", C5, 1.36, C4, 116.9, N3, 0.0, 0, 1083, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1086, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1087, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H5", C5, 1.08e0, C4, 121.6e0, N3, 180.0e0, 0, 1088, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1089, forceField, bondList);
     return residue;
   }
@@ -987,7 +986,7 @@ public class NucleicAcidUtils {
    * @param O4s a {@link ffx.potential.bonded.Atom} object.
    * @param C2s a {@link ffx.potential.bonded.Atom} object.
    * @param glyco a double.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -1023,13 +1022,13 @@ public class NucleicAcidUtils {
         buildHeavy(residue, "C4", N3, 1.35, C2, 110.9, N1, 0.0, 0, 1133, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1145, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H61", N6, 1.00e0, C6, 120.0e0, N7, 180.0e0, 0, 1143, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H62", N6, 1.00e0, C6, 120.0e0, N7, 0.0e0, 0, 1144, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1141, forceField, bondList);
     return residue;
   }
@@ -1042,7 +1041,7 @@ public class NucleicAcidUtils {
    * @param O4s a {@link ffx.potential.bonded.Atom} object.
    * @param C2s a {@link ffx.potential.bonded.Atom} object.
    * @param glyco a double.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -1072,13 +1071,13 @@ public class NucleicAcidUtils {
     Atom C6 =
         buildHeavy(residue, "C6", C5, 1.36, C4, 116.9, N3, 0.0, 0, 1196, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1199, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1200, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H5", C5, 1.08e0, C4, 121.6e0, N3, 180.0e0, 0, 1201, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1202, forceField, bondList);
     return residue;
   }
@@ -1091,7 +1090,7 @@ public class NucleicAcidUtils {
    * @param O4s a {@link ffx.potential.bonded.Atom} object.
    * @param C2s a {@link ffx.potential.bonded.Atom} object.
    * @param glyco a double.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -1129,13 +1128,13 @@ public class NucleicAcidUtils {
         buildHeavy(residue, "C4", N3, 1.36, C2, 112.3, N1, 0.0, 0, 1162, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1175, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1170, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1172, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1173, forceField, bondList);
     return residue;
   }
@@ -1148,7 +1147,7 @@ public class NucleicAcidUtils {
    * @param O4s a {@link ffx.potential.bonded.Atom} object.
    * @param C2s a {@link ffx.potential.bonded.Atom} object.
    * @param glyco a double.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -1179,16 +1178,16 @@ public class NucleicAcidUtils {
     Atom C6 =
         buildHeavy(residue, "C6", C5, 1.34, C4, 120.8, N3, 0.0, 0, 1223, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H3", N3, 1.00e0, C2, 116.8e0, N1, 180.0e0, 0, 1225, forceField, bondList);
     Atom H =
-        buildHydrogen(
+        buildH(
             residue, "H71", C7, 1.09e0, C5, 109.5e0, C4, 0.0e0, 0, 1228, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H72", C7, 1.09e0, C5, 109.5e0, H, 109.5e0, 1, 1228, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H73", C7, 1.09e0, C5, 109.5e0, H, 109.5e0, -1, 1228, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1229, forceField, bondList);
     return residue;
   }
@@ -1201,7 +1200,7 @@ public class NucleicAcidUtils {
    * @param O4s a {@link ffx.potential.bonded.Atom} object.
    * @param C2s a {@link ffx.potential.bonded.Atom} object.
    * @param glyco a double.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -1238,13 +1237,13 @@ public class NucleicAcidUtils {
         buildHeavy(residue, "C4", N3, 1.36, C2, 112.3, N1, 0.0, 0, 1048, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1061, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1056, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1058, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1059, forceField, bondList);
     return residue;
   }
@@ -1254,7 +1253,7 @@ public class NucleicAcidUtils {
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param C1s a {@link ffx.potential.bonded.Atom} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
@@ -1272,15 +1271,15 @@ public class NucleicAcidUtils {
     Atom C5 = buildHeavy(residue, "C5", C4, 1354, forceField, bondList);
     Atom C6 = buildHeavy(residue, "C6", C5, 1355, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1357, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H51", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, 1, 1359, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H52", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, -1, 1360, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H61", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, 1, 1361, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H62", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, -1, 1362, forceField, bondList);
     return residue;
   }
@@ -1290,7 +1289,7 @@ public class NucleicAcidUtils {
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param C1s a {@link ffx.potential.bonded.Atom} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
@@ -1311,22 +1310,22 @@ public class NucleicAcidUtils {
     Atom CM1 = buildHeavy(residue, "CM1", N1, 1619, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1614, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H6", C6, 1.08e0, C5, 109.5e0, C4, 180.0e0, 0, 1623, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1618, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HN61", N6, 1.00e0, C6, 109.5e0, C5, 0.0e0, 0, 1616, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HN62", N6, 1.00e0, C6, 109.5e0, C5, 109.5e0, 0, 1617, forceField, bondList);
     Atom HM11 =
-        buildHydrogen(
+        buildH(
             residue, "HM11", CM1, 1.08e0, N1, 109.5e0, C2, 0.0e0, 0, 1620, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM12", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, 1, 1621, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM13", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, -1, 1622, forceField, bondList);
     return residue;
   }
@@ -1336,7 +1335,7 @@ public class NucleicAcidUtils {
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param C1s a {@link ffx.potential.bonded.Atom} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
@@ -1359,23 +1358,23 @@ public class NucleicAcidUtils {
     Atom CM2 = buildHeavy(residue, "CM2", N2, 1396, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1391, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1388, forceField, bondList);
     Atom HM11 =
-        buildHydrogen(
+        buildH(
             residue, "HM11", CM1, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1393, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM12", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, 1, 1394, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM13", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, -1, 1395, forceField, bondList);
     Atom HM21 =
-        buildHydrogen(
+        buildH(
             residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1397, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1398, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1399, forceField, bondList);
     return residue;
   }
@@ -1385,7 +1384,7 @@ public class NucleicAcidUtils {
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param C1s a {@link ffx.potential.bonded.Atom} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
@@ -1407,17 +1406,17 @@ public class NucleicAcidUtils {
     Atom CM2 = buildHeavy(residue, "CM2", N2, 1330, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1329, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1325, forceField, bondList);
-    buildHydrogen(residue, "H2", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1327, forceField, bondList);
+    buildH(residue, "H2", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1327, forceField, bondList);
     Atom HM21 =
-        buildHydrogen(
+        buildH(
             residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1331, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1332, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1333, forceField, bondList);
     return residue;
   }
@@ -1427,7 +1426,7 @@ public class NucleicAcidUtils {
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param C1s a {@link ffx.potential.bonded.Atom} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
@@ -1445,18 +1444,18 @@ public class NucleicAcidUtils {
     Atom C6 = buildHeavy(residue, "C6", C5, 1513, forceField, bondList);
     Atom CM5 = buildHeavy(residue, "CM5", C5, 1519, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1516, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H42", N4, 1.00e0, C4, 120.0e0, C5, 0.0e0, 0, 1517, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1518, forceField, bondList);
     Atom HM51 =
-        buildHydrogen(
+        buildH(
             residue, "HM51", CM5, 1.08e0, C5, 109.5e0, C4, 0.0e0, 0, 1520, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM52", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, 1, 1521, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM53", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, -1, 1522, forceField, bondList);
     return residue;
   }
@@ -1466,7 +1465,7 @@ public class NucleicAcidUtils {
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param C1s a {@link ffx.potential.bonded.Atom} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
@@ -1485,16 +1484,16 @@ public class NucleicAcidUtils {
     Atom C6 = buildHeavy(residue, "C6", C5, 1580, forceField, bondList);
     Atom C5M = buildHeavy(residue, "C5M", C5, 1585, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1582, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1584, forceField, bondList);
     Atom H5M1 =
-        buildHydrogen(
+        buildH(
             residue, "H5M1", C5M, 1.08e0, C5, 109.5e0, C6, 0.0e0, 0, 1586, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H5M2", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, 1, 1587, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H5M3", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, -1, 1588, forceField, bondList);
     return residue;
   }
@@ -1504,7 +1503,7 @@ public class NucleicAcidUtils {
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param C1s a {@link ffx.potential.bonded.Atom} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
@@ -1526,22 +1525,22 @@ public class NucleicAcidUtils {
     Atom CM7 = buildHeavy(residue, "CM7", N7, 1555, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H81", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, 1, 1553, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H82", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, -1, 1554, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1548, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1550, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H22", N2, 1.00e0, C2, 120.0e0, N3, 0.0e0, 0, 1551, forceField, bondList);
     Atom HM71 =
-        buildHydrogen(
+        buildH(
             residue, "HM71", CM7, 1.08e0, N7, 109.5e0, C8, 0.0e0, 0, 1556, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM72", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, 1, 1557, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HM73", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, -1, 1558, forceField, bondList);
     return residue;
   }
@@ -1554,7 +1553,7 @@ public class NucleicAcidUtils {
    * @param O4s a {@link ffx.potential.bonded.Atom} object.
    * @param C2s a {@link ffx.potential.bonded.Atom} object.
    * @param glyco a double.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -1577,7 +1576,7 @@ public class NucleicAcidUtils {
    * @param O4s a {@link ffx.potential.bonded.Atom} object.
    * @param C2s a {@link ffx.potential.bonded.Atom} object.
    * @param glyco a double.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -1701,7 +1700,7 @@ public class NucleicAcidUtils {
       double dihedralOP1 = toDegrees(DoubleMath.dihedralAngle(xyzRiboC, xyzRiboO, xyzP, xyzOP1));
 
       Atom OP3 =
-          buildHydrogen(
+          buildH(
               residue,
               "OP3",
               P,
@@ -1756,7 +1755,7 @@ public class NucleicAcidUtils {
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param C1s a {@link ffx.potential.bonded.Atom} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
@@ -1774,9 +1773,9 @@ public class NucleicAcidUtils {
     Atom C4 = buildHeavy(residue, "C4", N3, 1484, forceField, bondList);
     Atom O4 = buildHeavy(residue, "O4", C4, 1489, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
-    buildHydrogen(residue, "H1", N1, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1491, forceField, bondList);
-    buildHydrogen(residue, "H3", N3, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1488, forceField, bondList);
-    buildHydrogen(
+    buildH(residue, "H1", N1, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1491, forceField, bondList);
+    buildH(residue, "H3", N3, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1488, forceField, bondList);
+    buildH(
         residue, "H6", C6, 1.08e0, C5, 120.0e0, C1s, 0.0e0, 0, 1490, forceField, bondList);
     return residue;
   }
@@ -1804,7 +1803,7 @@ public class NucleicAcidUtils {
    * @param O4s a {@link ffx.potential.bonded.Atom} object.
    * @param C2s a {@link ffx.potential.bonded.Atom} object.
    * @param glyco a double.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -1833,11 +1832,11 @@ public class NucleicAcidUtils {
     Atom C6 =
         buildHeavy(residue, "C6", C5, 1.34, O4, 119.2, C4, 0.0, 0, 1111, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1113, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H5", C5, 1.08e0, C4, 120.4e0, N3, 180.0e0, 0, 1115, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1116, forceField, bondList);
 
     return residue;
@@ -1848,7 +1847,7 @@ public class NucleicAcidUtils {
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param C1s a {@link ffx.potential.bonded.Atom} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param forceField a {@link ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
@@ -1886,47 +1885,47 @@ public class NucleicAcidUtils {
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
     buildBond(N1, C12, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1651, forceField, bondList);
     Atom H31 =
-        buildHydrogen(
+        buildH(
             residue, "H31", C3, 1.08e0, N3, 109.5e0, C4, 0.0e0, 0, 1653, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H32", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, 1, 1654, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H33", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, -1, 1655, forceField, bondList);
     Atom H101 =
-        buildHydrogen(
+        buildH(
             residue, "H101", C10, 1.08e0, C11, 109.5e0, N2, 0.0e0, 0, 1659, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H102", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, 1, 1660, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H103", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, -1, 1661, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H131", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, 1, 1663, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H132", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, -1, 1664, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H141", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, 1, 1666, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H142", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, -1, 1667, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H15", C15, 1.08e0, C14, 109.5e0, O18, 180.e0, 0, 1669, forceField, bondList);
     Atom H191 =
-        buildHydrogen(
+        buildH(
             residue, "H191", C19, 1.08e0, O18, 109.5e0, C16, 0.0e0, 0, 1671, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H192", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, 1, 1672, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H193", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, -1, 1673, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "HN2", N20, 1.00e0, C15, 109.5e0, O22, 180.0e0, 0, 1678, forceField, bondList);
     Atom H241 =
-        buildHydrogen(
+        buildH(
             residue, "H241", C24, 1.08e0, O23, 109.5e0, C21, 0.0e0, 0, 1683, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H242", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, 1, 1684, forceField, bondList);
-    buildHydrogen(
+    buildH(
         residue, "H243", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, -1, 1685, forceField, bondList);
     return residue;
   }

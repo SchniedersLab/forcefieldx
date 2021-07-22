@@ -39,9 +39,7 @@ package ffx.potential.utils;
 
 import static ffx.numerics.math.DoubleMath.dist;
 import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.acos;
-import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sin;

@@ -46,7 +46,6 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -173,7 +172,7 @@ public class ForceField {
   /**
    * Get for the URL for the named force field.
    *
-   * @param forceField a {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
+   * @param forceField a {@link ForceField.ForceFieldName} object.
    * @return a {@link java.net.URL} object.
    */
   public static URL getForceFieldURL(ForceFieldName forceField) {
@@ -611,7 +610,7 @@ public class ForceField {
   /**
    * getForceFieldTypeCount
    *
-   * @param type a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+   * @param type a {@link ForceField.ForceFieldType} object.
    * @return a int.
    */
   @SuppressWarnings("unchecked")

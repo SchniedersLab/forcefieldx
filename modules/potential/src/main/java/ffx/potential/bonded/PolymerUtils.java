@@ -47,7 +47,7 @@ import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
 import static ffx.potential.bonded.Bond.logNoBondType;
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.buildHeavy;
-import static ffx.potential.bonded.BondedUtils.buildHydrogen;
+import static ffx.potential.bonded.BondedUtils.buildH;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 import static ffx.potential.bonded.NamingUtils.checkHydrogenAtomNames;
@@ -302,7 +302,7 @@ public class PolymerUtils {
         try {
           Atom O = buildHeavy(wat, "O", null, 2001, forceField, bondList);
           Atom H1 =
-              buildHydrogen(
+              buildH(
                   wat,
                   "H1",
                   O,
@@ -316,7 +316,7 @@ public class PolymerUtils {
                   forceField,
                   bondList);
           Atom H2 =
-              buildHydrogen(
+              buildH(
                   wat, "H2", O, 0.96e0, H1, 109.5e0, null, 120.0e0, 0, 2002, forceField, bondList);
           O.setHetero(true);
           H1.setHetero(true);
