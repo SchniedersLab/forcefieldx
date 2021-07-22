@@ -39,8 +39,8 @@ package ffx.potential.groovy.test
 
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
+import ffx.potential.bonded.MultiResidue
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.ResidueEnumerations
 import ffx.potential.cli.AtomSelectionOptions
@@ -51,9 +51,10 @@ import ffx.potential.extended.ExtendedVariable
 import ffx.potential.extended.TautomerESV
 import ffx.potential.extended.TitrationESV
 import ffx.potential.extended.TitrationUtils
-import picocli.CommandLine
+import ffx.potential.utils.PotentialsUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import java.util.stream.IntStream
@@ -61,8 +62,8 @@ import java.util.stream.IntStream
 import static ffx.potential.extended.TitrationUtils.inactivateResidue
 import static ffx.utilities.StringUtils.parseAtomRanges
 import static java.lang.String.format
-import static org.apache.commons.math3.util.FastMath.sqrt
 import static org.apache.commons.math3.util.FastMath.abs
+import static org.apache.commons.math3.util.FastMath.sqrt
 
 /**
  * The Gradient script evaluates the consistency of the energy and gradient.
@@ -83,26 +84,26 @@ class PhGradient extends PotentialScript {
   /**
    * --pH or --constantPH Constant pH value for the test.
    */
-  @CommandLine.Option(names = ['--pH', '--constantPH'], paramLabel = '7.4',
+  @Option(names = ['--pH', '--constantPH'], paramLabel = '7.4',
       description = 'Constant pH value for the test.')
   double pH = 7.4
 
   /**
    * --esvLambda ESV Lambda at which to test gradient.
    */
-  @CommandLine.Option(names = ['--esvLambda'], paramLabel = '0.5',
-          description = 'ESV Lambda at which to test gradient.')
+  @Option(names = ['--esvLambda'], paramLabel = '0.5',
+      description = 'ESV Lambda at which to test gradient.')
   double esvLambda = 0.5
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument should be a PDB coordinate file.
    */
-  @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  @Parameters(arity = "1", paramLabel = "file", description = 'The atomic coordinate file in PDB format.')
+  String filename = null
 
   private ForceFieldEnergy energy
   //For unit test of endstate energies.
-  public HashMap<String,double[]> endstateEnergyMap = new HashMap<String,double[]>()
+  public HashMap<String, double[]> endstateEnergyMap = new HashMap<String, double[]>()
   public int nFailures = 0
   public int nESVFailures = 0
 
@@ -133,20 +134,18 @@ class PhGradient extends PotentialScript {
 
     TitrationUtils.initDiscountPreloadProperties()
 
-    String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly molecularAssembly =
-          TitrationUtils.openFullyProtonated(new File(filenames.get(0)))
-      MolecularAssembly[] assemblies = [molecularAssembly]
-      activeAssembly = assemblies[0]
+    if (filename != null) {
+      activeAssembly = TitrationUtils.
+          openFullyProtonated(new File(filename), (PotentialsUtils) potentialFunctions)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
-    } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
 
-    logger.info("\n Testing the atomic coordinate gradient of " + modelFilename + "\n")
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Testing the atomic coordinate gradient of " + filename + "\n")
 
     // Select all possible titrating residues.
     List<Residue> titrating = TitrationUtils.chooseTitratables(activeAssembly)
@@ -156,8 +155,9 @@ class PhGradient extends PotentialScript {
     List<ExtendedVariable> titratingESVs = new ArrayList<>()
     List<ExtendedVariable> tautomerESVs = new ArrayList<>()
     esvSystem.setConstantPh(pH)
+
     for (Residue res : titrating) {
-      ffx.potential.bonded.MultiResidue multi = TitrationUtils.titratingMultiresidueFactory(activeAssembly, res)
+      MultiResidue multi = TitrationUtils.titratingMultiresidueFactory(activeAssembly, res)
       TitrationESV esv = new TitrationESV(esvSystem, multi)
       titratingESVs.add(esv)
       if(esvSystem.config.tautomer){
@@ -176,12 +176,13 @@ class PhGradient extends PotentialScript {
       }
       esvSystem.addVariable(esv)
     }
+
     energy.attachExtendedSystem(esvSystem)
     logger.info(format(" Extended system with %d residues.", titratingESVs.size()))
 
     // Set all ESV variables to 0.5
     int numESVs = titratingESVs.size()
-    for (int i=0; i<numESVs; i++) {
+    for (int i = 0; i < numESVs; i++) {
       esvSystem.setLambda(i, esvLambda)
     }
 
@@ -341,43 +342,43 @@ class PhGradient extends PotentialScript {
 
     // Set all ESV variables to 0.5
     //int numESVs = titratingESVs.size()
-    for (int i=0; i<numESVs; i++) {
+    for (int i = 0; i < numESVs; i++) {
       esvSystem.setLambda(i, esvLambda)
     }
 
     energy.getCoordinates(x)
     energy.energyAndGradient(x, g)
-    double eMinus = 0
-    double ePlus = 0
     double[] esvDerivs = esvSystem.derivatives
 
     // Check the dU/dL_i analytic results vs. finite-differences for extended system variables.
     // Loop over extended system variables
-    for (int i=0; i<numESVs; i++) {
-      //Calculate backward finite difference if very close to lambda=1
-      if(esvLambda + step > 1){
+    for (int i = 0; i < numESVs; i++) {
+      double eMinus
+      double ePlus
+      // Calculate backward finite difference if very close to lambda=1
+      if (esvLambda + step > 1) {
         esvSystem.setLambda(i, esvLambda - 2 * step)
         eMinus = energy.energy(x)
         esvSystem.setLambda(i, esvLambda)
         ePlus = energy.energy(x)
       }
 
-      //Calculate forward finite difference if very close to lambda=0
-      else if(esvLambda - step < 0){
+      // Calculate forward finite difference if very close to lambda=0
+      else if (esvLambda - step < 0) {
         esvSystem.setLambda(i, esvLambda + 2 * step)
         ePlus = energy.energy(x)
         esvSystem.setLambda(i, esvLambda)
         eMinus = energy.energy(x)
       }
 
-      //Calculate central finite difference
+      // Calculate central finite difference
       else {
         esvSystem.setLambda(i, esvLambda + step)
         ePlus = energy.energy(x)
         esvSystem.setLambda(i, esvLambda - step)
         eMinus = energy.energy(x)
         esvSystem.setLambda(i, esvLambda)
-        }
+      }
 
       double fdDeriv = (ePlus - eMinus) / width
       double error = abs(fdDeriv - esvDerivs[i])
@@ -392,11 +393,11 @@ class PhGradient extends PotentialScript {
       }
     }
 
-    if(print){
-      if(numESVs <= 4){
+    if (print) {
+      if (numESVs <= 4) {
         String lambdaList = esvSystem.getLambdaList()
         logger.info(format("Lambda List: %s", lambdaList))
-        energy.energy(x,true)
+        energy.energy(x, true)
         printPermutations(esvSystem, numESVs, energy, x)
       }
     }
@@ -404,27 +405,28 @@ class PhGradient extends PotentialScript {
     return this
   }
 
-  private void printPermutations(ExtendedSystem esvSystem, int numESVs, ForceFieldEnergy energy, double[] x){
-    for (int i=0; i<numESVs; i++) {
+  private void printPermutations(ExtendedSystem esvSystem, int numESVs, ForceFieldEnergy energy,
+      double[] x) {
+    for (int i = 0; i < numESVs; i++) {
       esvSystem.setLambda(i, 0.0)
     }
     energy.getCoordinates(x)
-    printPermutationsR(esvSystem, numESVs-1, energy, x)
+    printPermutationsR(esvSystem, numESVs - 1, energy, x)
   }
 
-  private void printPermutationsR(ExtendedSystem esvSystem, int esvID, ForceFieldEnergy energy, double[] x){
-    for (int i=0; i<=1; i++){
-      esvSystem.setLambda(esvID,(double) i)
-      if(esvID!=0){
-        printPermutationsR(esvSystem, esvID-1, energy, x)
-      }
-      else{
-        double[] energyAndInteractionList = new double [26]
+  private void printPermutationsR(ExtendedSystem esvSystem, int esvID, ForceFieldEnergy energy,
+      double[] x) {
+    for (int i = 0; i <= 1; i++) {
+      esvSystem.setLambda(esvID, (double) i)
+      if (esvID != 0) {
+        printPermutationsR(esvSystem, esvID - 1, energy, x)
+      } else {
+        double[] energyAndInteractionList = new double[26]
         String lambdaList = esvSystem.getLambdaList()
         logger.info(format("Lambda List: %s", lambdaList))
 
         //Add ForceFieldEnergy to hashmap for testing. Protonation endstates used as key in map.
-        energy.energy(x,true)
+        energy.energy(x, true)
 
         // Bond Energy
         energyAndInteractionList[0] = energy.getBondEnergy()
@@ -467,7 +469,7 @@ class PhGradient extends PotentialScript {
         // Total Energy
         energyAndInteractionList[25] = energy.getTotalEnergy()
 
-        endstateEnergyMap.put(lambdaList,energyAndInteractionList)
+        endstateEnergyMap.put(lambdaList, energyAndInteractionList)
         logger.info(format("\n"))
       }
     }

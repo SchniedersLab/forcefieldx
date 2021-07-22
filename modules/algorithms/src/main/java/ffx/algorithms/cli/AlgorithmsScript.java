@@ -170,4 +170,41 @@ public class AlgorithmsScript extends FFXScript {
       return new File(newName);
     }
   }
+
+  /**
+   * If a filename is supplied, open it and return the MolecularAssembly.
+   * Otherwise, the current activeAssembly is returned (which may be null).
+   *
+   * @param filename Filename to open.
+   * @return The active assembly.
+   */
+  public MolecularAssembly getActiveAssembly(String filename) {
+    if (filename != null) {
+      // Open the supplied file.
+      MolecularAssembly[] assemblies = {algorithmFunctions.open(filename)};
+      activeAssembly = assemblies[0];
+    }
+    return activeAssembly;
+  }
+
+  /**
+   * If a filename is supplied, open it and return the MolecularAssemblies.
+   * Otherwise, the current activeAssembly is returned (which may be null).
+   *
+   * @param filename Filename to open.
+   * @return The active assemblies.
+   */
+  public MolecularAssembly[] getActiveAssemblies(String filename) {
+    MolecularAssembly[] assemblies;
+    if (filename != null) {
+      // Open the supplied file.
+      assemblies = algorithmFunctions.openAll(filename);
+      activeAssembly = assemblies[0];
+      return assemblies;
+    } else {
+      assemblies = new MolecularAssembly[] {activeAssembly};
+    }
+    return assemblies;
+  }
+
 }

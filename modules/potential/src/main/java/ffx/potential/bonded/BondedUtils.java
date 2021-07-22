@@ -54,6 +54,7 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
@@ -136,9 +137,13 @@ public class BondedUtils {
       int key,
       ForceField forceField,
       List<Bond> bondList)
-      throws MissingHeavyAtomException {
+      throws MissingHeavyAtomException, MissingAtomTypeException {
     Atom atom = (Atom) residue.getAtomNode(atomName);
     AtomType atomType = findAtomType(key, forceField);
+    if (atomType == null) {
+       Residue res = (Residue) residue;
+       throw new MissingAtomTypeException(res, atom);
+    }
     if (atom == null) {
       throw new MissingHeavyAtomException(atomName, atomType, bondedTo);
     }
@@ -373,7 +378,7 @@ public class BondedUtils {
         logger.severe(
             format(
                 "The atom type %s was not found for biotype %s.",
-                bioType.atomType, bioType.toString()));
+                bioType.atomType, bioType));
       }
     }
     return null;
@@ -434,96 +439,92 @@ public class BondedUtils {
 
     switch (residue.getAminoAcid3()) {
       case LYS:
-      case LYD:
-        {
-          /** For lysine: find the nitrogen bonded to a carbon that does not have two protons. */
-          List<Atom> nitrogens = findAtomsOfElement(residue, 7);
-          for (Atom nitrogen : nitrogens) {
-            List<Atom> carbons = findBondedAtoms(nitrogen, 6);
-            if (carbons.size() == 2) {
-              nitrogenCandidates.add(nitrogen);
-            } else if (findBondedAtoms(carbons.get(0), 1).size() < 2) {
-              nitrogenCandidates.add(nitrogen);
-            }
-          }
-          if (nitrogenCandidates.isEmpty()) {
-            throw new IllegalArgumentException(
-                format(" Could not identify N atom of residue %s!", residue));
+      case LYD: {
+        /* For lysine: find the nitrogen bonded to a carbon that does not have two protons. */
+        List<Atom> nitrogens = findAtomsOfElement(residue, 7);
+        for (Atom nitrogen : nitrogens) {
+          List<Atom> carbons = findBondedAtoms(nitrogen, 6);
+          if (carbons.size() == 2) {
+            nitrogenCandidates.add(nitrogen);
+          } else if (findBondedAtoms(carbons.get(0), 1).size() < 2) {
+            nitrogenCandidates.add(nitrogen);
           }
         }
-        break;
-        // Arginine and histidine can be handled very similarly.
+        if (nitrogenCandidates.isEmpty()) {
+          throw new IllegalArgumentException(
+              format(" Could not identify N atom of residue %s!", residue));
+        }
+      }
+      break;
+      // Arginine and histidine can be handled very similarly.
       case ARG:
       case HIS:
       case HIE:
-      case HID:
-        {
-          /**
-           * Easiest to the carbon bonded to all the sidechain nitrogens, then find the nitrogen not
-           * thus bonded.
-           */
-          List<Atom> nitrogens = findAtomsOfElement(residue, 7);
-          Atom commonC =
-              findAtomsOfElement(residue, 6).stream()
-                  .filter((Atom carbon) -> findBondedAtoms(carbon, 7).size() >= 2)
-                  .findAny()
-                  .get();
-          nitrogenCandidates =
-              nitrogens.stream()
-                  .filter((Atom nitr) -> !atomAttachedToAtom(nitr, commonC))
-                  .collect(Collectors.toList());
-        }
-        break;
+      case HID: {
+        /*
+         * Easiest to the carbon bonded to all the sidechain nitrogens, then find the nitrogen not
+         * thus bonded.
+         */
+        List<Atom> nitrogens = findAtomsOfElement(residue, 7);
+        Atom commonC =
+            findAtomsOfElement(residue, 6).stream()
+                .filter((Atom carbon) -> findBondedAtoms(carbon, 7).size() >= 2)
+                .findAny()
+                .get();
+        nitrogenCandidates =
+            nitrogens.stream()
+                .filter((Atom nitr) -> !atomAttachedToAtom(nitr, commonC))
+                .collect(Collectors.toList());
+      }
+      break;
       case ASN:
-      case GLN:
-        {
-          /**
-           * Find a bonded carbon that is not bonded to an oxygen. Both N and ND/NE have an attached
-           * carbonyl carbon. Only N will have CA attached.
-           */
-          List<Atom> nitrogens = findAtomsOfElement(residue, 7);
-          for (Atom nitrogen : nitrogens) {
-            List<Atom> bondedCarbs = findBondedAtoms(nitrogen, 6);
-            for (Atom carbon : bondedCarbs) {
-              if (!hasAttachedAtom(carbon, 8)) {
-                nitrogenCandidates.add(nitrogen);
-              }
-            }
-          }
-          if (nitrogenCandidates.isEmpty()) {
-            throw new IllegalArgumentException(
-                format(" Could not identify N atom of residue %s!", residue));
-          }
-        }
-        break;
-      case TRP:
-        {
-          /**
-           * For tryptophan: If at an N-terminus, there will be only one bonded carbon. Else, one
-           * carbon will be a carbonyl carbon.
-           */
-          List<Atom> nitrogens = findAtomsOfElement(residue, 7);
-          for (Atom nitrogen : nitrogens) {
-            List<Atom> bondedCarbs = findBondedAtoms(nitrogen, 6);
-            if (bondedCarbs.size() == 1) {
+      case GLN: {
+        /*
+         * Find a bonded carbon that is not bonded to an oxygen. Both N and ND/NE have an attached
+         * carbonyl carbon. Only N will have CA attached.
+         */
+        List<Atom> nitrogens = findAtomsOfElement(residue, 7);
+        for (Atom nitrogen : nitrogens) {
+          List<Atom> bondedCarbs = findBondedAtoms(nitrogen, 6);
+          for (Atom carbon : bondedCarbs) {
+            if (!hasAttachedAtom(carbon, 8)) {
               nitrogenCandidates.add(nitrogen);
             }
-            for (Atom carbon : bondedCarbs) {
-              if (hasAttachedAtom(carbon, 8)) {
-                nitrogenCandidates.add(nitrogen);
-              }
-            }
-          }
-          if (nitrogenCandidates.isEmpty()) {
-            throw new IllegalArgumentException(
-                format(" Could not identify N atom of residue %s!", residue));
           }
         }
-        break;
+        if (nitrogenCandidates.isEmpty()) {
+          throw new IllegalArgumentException(
+              format(" Could not identify N atom of residue %s!", residue));
+        }
+      }
+      break;
+      case TRP: {
+        /*
+         * For tryptophan: If at an N-terminus, there will be only one bonded carbon. Else, one
+         * carbon will be a carbonyl carbon.
+         */
+        List<Atom> nitrogens = findAtomsOfElement(residue, 7);
+        for (Atom nitrogen : nitrogens) {
+          List<Atom> bondedCarbs = findBondedAtoms(nitrogen, 6);
+          if (bondedCarbs.size() == 1) {
+            nitrogenCandidates.add(nitrogen);
+          }
+          for (Atom carbon : bondedCarbs) {
+            if (hasAttachedAtom(carbon, 8)) {
+              nitrogenCandidates.add(nitrogen);
+            }
+          }
+        }
+        if (nitrogenCandidates.isEmpty()) {
+          throw new IllegalArgumentException(
+              format(" Could not identify N atom of residue %s!", residue));
+        }
+      }
+      break;
       case ACE:
         return null;
       default:
-        /** All others should only have one nitrogen atom. */
+        /* All others should only have one nitrogen atom. */
         nitrogenCandidates = findAtomsOfElement(residue, 7);
         break;
     }
@@ -532,7 +533,7 @@ public class BondedUtils {
       case 0:
         logger.warning(
             " Did not find any atoms that might be the amide nitrogen for residue "
-                + residue.toString());
+                + residue);
         return null;
       case 1:
         return nitrogenCandidates.get(0);
@@ -568,8 +569,8 @@ public class BondedUtils {
   }
 
   /**
-   * Find the O4' of a nucleic acid Residue. This is fairly unique in standard nucleotides, as O4'
-   * is the only ether oxygen (bonded to two carbons).
+   * Find the O4' of a nucleic acid Residue. This is fairly unique in standard nucleotides, as O4' is
+   * the only ether oxygen (bonded to two carbons).
    *
    * @param residue Residue to find O4' of.
    * @return O4'.
@@ -592,53 +593,47 @@ public class BondedUtils {
     List<Atom> resAtoms = residue.getAtomList();
     List<Atom> caCandidates =
         findBondedAtoms(N, 6).stream()
-            .filter((Atom carbon) -> resAtoms.contains(carbon))
+            .filter(resAtoms::contains)
             .collect(Collectors.toList());
 
-    switch (residue.getAminoAcid3()) {
-      case PRO:
-        {
-          Atom CA = null;
-          Atom CD = null;
-          Atom aceC = null;
-          for (Atom caCand : caCandidates) {
-            if (hasAttachedAtom(caCand, 8)) {
-              aceC = caCand;
-            } else {
-              List<Atom> attachedH = findBondedAtoms(caCand, 1);
-              if (attachedH.size() == 1) {
-                CA = caCand;
-              } else if (attachedH.size() == 2) {
-                CD = caCand;
-              } else {
-                throw new IllegalArgumentException(format(" Error in parsing proline %s", residue));
-              }
-            }
-          }
-          assert CA != null && CD != null;
-          if (aceC != null) {
-            nameAcetylCap(residue, aceC);
-          }
-          return CA;
-        }
-      default:
-        {
-          if (caCandidates.size() == 1) {
-            return caCandidates.get(0);
+    if (residue.getAminoAcid3() == AminoAcid3.PRO) {
+      Atom CA = null;
+      Atom CD = null;
+      Atom aceC = null;
+      for (Atom caCand : caCandidates) {
+        if (hasAttachedAtom(caCand, 8)) {
+          aceC = caCand;
+        } else {
+          List<Atom> attachedH = findBondedAtoms(caCand, 1);
+          if (attachedH.size() == 1) {
+            CA = caCand;
+          } else if (attachedH.size() == 2) {
+            CD = caCand;
           } else {
-            Atom CA = null;
-            Atom aceC = null;
-            for (Atom caCand : caCandidates) {
-              if (hasAttachedAtom(caCand, 8)) {
-                aceC = caCand;
-              } else {
-                CA = caCand;
-              }
-            }
-            nameAcetylCap(residue, aceC);
-            return CA;
+            throw new IllegalArgumentException(format(" Error in parsing proline %s", residue));
           }
         }
+      }
+      assert CA != null && CD != null;
+      if (aceC != null) {
+        nameAcetylCap(residue, aceC);
+      }
+      return CA;
+    }
+    if (caCandidates.size() == 1) {
+      return caCandidates.get(0);
+    } else {
+      Atom CA = null;
+      Atom aceC = null;
+      for (Atom caCand : caCandidates) {
+        if (hasAttachedAtom(caCand, 8)) {
+          aceC = caCand;
+        } else {
+          CA = caCand;
+        }
+      }
+      nameAcetylCap(residue, aceC);
+      return CA;
     }
   }
 
@@ -916,13 +911,13 @@ public class BondedUtils {
     double zsin0 = sin(angle1);
     double zsin1 = sin(angle2);
     double[] ret = new double[3];
-    double x[] = new double[3];
+    double[] x = new double[3];
 
     // No partners
     if (ia == null) {
       x[0] = x[1] = x[2] = 0.0;
     } else if (ib == null) {
-      double xa[] = new double[3];
+      double[] xa = new double[3];
       arraycopy(ia, 0, xa, 0, ia.length);
       // One partner - place on the z-axis
       x[0] = xa[0];
@@ -1051,9 +1046,9 @@ public class BondedUtils {
     @Override
     public String toString() {
       StringBuilder sb = new StringBuilder();
-      sb.append(format(" Atom %s", atom.toString()));
+      sb.append(format(" Atom %s", atom));
       if (residue != null) {
-        sb.append(format("\n of residue %c-%s", residue.getChainID(), residue.toString()));
+        sb.append(format("\n of residue %c-%s", residue.getChainID(), residue));
       }
       sb.append("\n could not be assigned an atom type.\n");
       return sb.toString();
@@ -1077,7 +1072,7 @@ public class BondedUtils {
     public String toString() {
       StringBuilder sb = new StringBuilder();
       if (atomType != null) {
-        sb.append(format("\n An atom of type\n %s\n", atomType.toString()));
+        sb.append(format("\n An atom of type\n %s\n", atomType));
       } else {
         sb.append(format("\n Atom %s", atomName));
       }

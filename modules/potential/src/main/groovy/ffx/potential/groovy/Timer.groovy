@@ -39,7 +39,6 @@ package ffx.potential.groovy
 
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.TimerOptions
 import picocli.CommandLine.Command
@@ -66,11 +65,11 @@ class Timer extends PotentialScript {
   private TimerOptions timer
 
   /**
-   * One or more filenames.
+   * The final argument is an atomic coordinate file in PDB or XYZ format.
    */
-  @Parameters(arity = "1", paramLabel = "files",
-      description = "XYZ or PDB input files.")
-  private List<String> filenames
+  @Parameters(arity = "1", paramLabel = "file",
+      description = 'The atomic coordinate file in PDB or XYZ format.')
+  String filename = null
 
   private ForceFieldEnergy energy = null
 
@@ -95,6 +94,7 @@ class Timer extends PotentialScript {
   @Override
   Timer run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
@@ -104,18 +104,20 @@ class Timer extends PotentialScript {
       System.setProperty("pj.nt", Integer.toString(timer.threads))
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename);
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
     if (timer.noGradient) {
-      logger.info("\n Timing energy for " + activeAssembly.toString())
+      logger.info("\n Timing energy for " + filename)
     } else {
-      logger.info("\n Timing energy and gradient for " + activeAssembly.toString())
+      logger.info("\n Timing energy and gradient for " + filename)
     }
 
     // The number of iterations.

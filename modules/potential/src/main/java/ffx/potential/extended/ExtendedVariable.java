@@ -458,7 +458,7 @@ public abstract class ExtendedVariable {
     protected double getThetaMass(){return thetaMass; }
 
     /**
-     * Invoked by ExtendedSystem after lambda changes and by PME after multipole rotation.
+     * Invoked by ExtendedSystem after lambda changes.
      */
     protected abstract void updateMultipoleTypes();
 

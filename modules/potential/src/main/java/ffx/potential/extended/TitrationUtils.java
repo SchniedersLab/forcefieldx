@@ -37,27 +37,30 @@
 // ******************************************************************************
 package ffx.potential.extended;
 
-import ffx.numerics.Potential;
+import static ffx.potential.extended.ExtUtils.prop;
+import static java.lang.String.format;
+
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.*;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.AminoAcidUtils;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.BondedUtils;
+import ffx.potential.bonded.MultiResidue;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.Constants;
-import org.apache.commons.io.FilenameUtils;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.OptionalDouble;
 import java.util.logging.Logger;
-
-import static ffx.potential.extended.ExtUtils.prop;
-import static java.lang.String.format;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * Helper methods to define titration-specific phenomena.
@@ -66,7 +69,6 @@ import static java.lang.String.format;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@SuppressWarnings("serial")
 public class TitrationUtils {
 
   /** Constant <code>heavyStrandedDynamics=prop("phmd-heavyStrandedDynamics", false)</code> */
@@ -79,7 +81,8 @@ public class TitrationUtils {
   private static final Logger logger = Logger.getLogger(TitrationUtils.class.getName());
 
   /** Utility class */
-  private TitrationUtils() {}
+  private TitrationUtils() {
+  }
 
   /**
    * activateResidue.
@@ -101,14 +104,13 @@ public class TitrationUtils {
    */
   public static List<Residue> chooseTitratables(MolecularAssembly searchMe) {
     List<Residue> chosen = new ArrayList<>();
-    Polymer polymers[] = searchMe.getChains();
-    for (int i = 0; i < polymers.length; i++) {
-      List<Residue> residues = polymers[i].getResidues();
-      for (int j = 0; j < residues.size(); j++) {
-        Residue res = residues.get(j);
+    Polymer[] polymers = searchMe.getChains();
+    for (Polymer polymer : polymers) {
+      List<Residue> residues = polymer.getResidues();
+      for (Residue res : residues) {
         Titration[] avail = Titration.multiLookup(res);
         if (avail != null) {
-          chosen.add(residues.get(j));
+          chosen.add(res);
         }
       }
     }
@@ -126,16 +128,15 @@ public class TitrationUtils {
   public static List<Residue> chooseTitratables(
       double pH, double window, MolecularAssembly searchMe) {
     List<Residue> chosen = new ArrayList<>();
-    Polymer polymers[] = searchMe.getChains();
-    for (int i = 0; i < polymers.length; i++) {
-      List<Residue> residues = polymers[i].getResidues();
-      for (int j = 0; j < residues.size(); j++) {
-        Residue res = residues.get(j);
+    Polymer[] polymers = searchMe.getChains();
+    for (Polymer polymer : polymers) {
+      List<Residue> residues = polymer.getResidues();
+      for (Residue res : residues) {
         Titration[] avail = Titration.multiLookup(res);
         for (Titration titration : avail) {
           double pKa = titration.pKa;
           if (pKa >= pH - window && pKa <= pH + window) {
-            chosen.add(residues.get(j));
+            chosen.add(res);
           }
         }
       }
@@ -163,13 +164,13 @@ public class TitrationUtils {
   /**
    * Select titrating residues by amino acid.
    *
-   * @param aa a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+   * @param aa a {@link AminoAcid3} object.
    * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
    * @return a {@link java.util.List} object.
    */
   public static List<Residue> chooseTitratables(AminoAcid3 aa, MolecularAssembly searchMe) {
     List<Residue> chosen = new ArrayList<>();
-    Polymer polymers[] = searchMe.getChains();
+    Polymer[] polymers = searchMe.getChains();
     for (Polymer polymer : polymers) {
       List<Residue> residues = polymer.getResidues();
       for (Residue res : residues) {
@@ -222,7 +223,7 @@ public class TitrationUtils {
    */
   public static List<Residue> chooseTitratables(char chain, int resID, MolecularAssembly searchMe) {
     List<Residue> chosen = new ArrayList<>();
-    Polymer polymers[] = searchMe.getChains();
+    Polymer[] polymers = searchMe.getChains();
     for (Polymer polymer : polymers) {
       if (polymer.getChainID() == chain) {
         List<Residue> residues = polymer.getResidues();
@@ -248,7 +249,7 @@ public class TitrationUtils {
     if (residue.getChainID() == null) {
       logger.severe("No chain ID for residue " + residue);
     }
-    Polymer polymers[] = mola.getChains();
+    Polymer[] polymers = mola.getChains();
     Polymer location = null;
     for (Polymer p : polymers) {
       if (p.getChainID().equals(residue.getChainID())) {
@@ -294,67 +295,26 @@ public class TitrationUtils {
    * @param cutoffs a {@link java.lang.Double} object.
    */
   public static void initEsvPreloadProperties(Double cutoffs) {
-    // Active Potential
-    // System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
     System.setProperty("esvterm", "true");
-    //System.setProperty("lambdaterm", "true");
-    // System.setProperty("bondterm", "true");
-    // System.setProperty("angleterm", "true");
-    // System.setProperty("strbndterm", "true");
-    // System.setProperty("ureyterm", "true");
-    // System.setProperty("opbendterm", "true");
-    // System.setProperty("torsionterm", "true");
-    // System.setProperty("pitorsterm", "true");
-    // System.setProperty("tortorterm", "true");
-    // System.setProperty("improperterm", "true");
-
     // Optional Potential
-    // System.setProperty("vdwterm", "true"); // van der Waals
     System.setProperty("esv.vdw", "true");
-    // System.setProperty("mpoleterm", "true"); // permanent real space
     System.setProperty("pme-qi", "true");
     System.setProperty("esv.pme", "true");
-    // System.setProperty("recipterm", "true"); // permanent reciprocal space
-
-    // Inactive Potential
-    // System.setProperty("polarizeterm", "false"); // polarization
-    // System.setProperty("polarization", "NONE");
-    // System.setProperty("gkterm", "false");
-    // System.setProperty("restrainterm", "false");
-    // System.setProperty("comrestrainterm", "false");
-    // System.setProperty("lambda_torsions", "false");
-
     // Potential Settings
     System.setProperty("permanent-lambda-alpha", "2.0");
     System.setProperty("permanent-lambda-exponent", "3.0");
-
     // Polarize on the whole range [0,1]
     System.setProperty("polarization-lambda-start", "0.0");
-
     // Polarization is not soft-cored, only a factor of lambda is applied.
     System.setProperty("polarization-lambda-exponent", "0.0");
-
     // No special SCF between proton atoms that are being turned off.
     System.setProperty("ligand-vapor-elec", "false");
-
     // No special SCF for the protein without protons.
     System.setProperty("no-ligand-condensed-scf", "false");
-
     // Protons on different amino acids do not feel each other when turned off.
     System.setProperty("intramolecular-softcore", "true");
-
     // Protons on different proteins do not feel each other when turned off.
     System.setProperty("intermolecular-softcore", "true");
-
-    // ESV Settings
-    //        System.setProperty("esv.biasTerm", "true");             // include discretization and
-    // pH biases
-    //        System.setProperty("esv.scaleBonded", "true");          // include effects on bonded
-    // terms
-    //        System.setProperty("esv.backgroundBonded", "true");     // hook up BG bonded terms to
-    // FG node
-    //        System.setProperty("esv.scaleUnshared", "true");        // use multipole scaling in
-    // all cases (eliminates softcoring)
   }
 
   /**
@@ -416,7 +376,20 @@ public class TitrationUtils {
    * @param structure a {@link java.io.File} object.
    * @return a {@link ffx.potential.MolecularAssembly} object.
    */
-  public static MolecularAssembly openFullyProtonated(File structure) {
+  public static MolecularAssembly openFullyProtonated(
+      File structure) {
+    PotentialsUtils utils = new PotentialsUtils();
+    return openFullyProtonated(structure, utils);
+  }
+
+  /**
+   * openFullyProtonated.
+   *
+   * @param structure a {@link java.io.File} object.
+   * @return a {@link ffx.potential.MolecularAssembly} object.
+   */
+  public static MolecularAssembly openFullyProtonated(
+      File structure, PotentialsUtils utils) {
     String name = format("%s-prot", FilenameUtils.removeExtension(structure.getName()));
     MolecularAssembly mola = new MolecularAssembly(name);
     mola.setFile(structure);
@@ -433,7 +406,6 @@ public class TitrationUtils {
       }
     }
 
-    PotentialsUtils utils = new PotentialsUtils();
     return utils.openWithMutations(structure, mutations);
   }
 
@@ -566,41 +538,36 @@ public class TitrationUtils {
    * Create a MultiResidue from the given Residue by adding its alternated protonation state(s) as
    * alternate possibilities.
    *
-   * @param mola a {@link ffx.potential.MolecularAssembly} object.
-   * @param res a {@link ffx.potential.bonded.Residue} object.
+   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @return a {@link ffx.potential.bonded.MultiResidue} object.
    */
-  public static MultiResidue titratingMultiresidueFactory(MolecularAssembly mola, Residue res) {
-    ForceField ff = mola.getForceField();
-    Potential potential = mola.getPotentialEnergy();
-    if (!(potential instanceof ForceFieldEnergy)) {
-      logger.warning(
-          String.format("TitrationFactory only supported by ForceFieldEnergy potentials."));
-      throw new IllegalStateException();
-    }
-    ForceFieldEnergy ffe = (ForceFieldEnergy) potential;
+  public static MultiResidue titratingMultiresidueFactory(MolecularAssembly molecularAssembly,
+      Residue residue) {
+    ForceField forceField = molecularAssembly.getForceField();
+    ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
 
-    /* Create new titration state. */
-    Titration titration = Titration.lookup(res);
+    // Create new titration state.
+    Titration titration = Titration.lookup(residue);
     String targetName =
-        (titration.protForm != res.getAminoAcid3())
+        (titration.protForm != residue.getAminoAcid3())
             ? titration.protForm.toString()
             : titration.deprotForm.toString();
-    int resNumber = res.getResidueNumber();
-    Residue.ResidueType resType = res.getResidueType();
+    int resNumber = residue.getResidueNumber();
+    ResidueType resType = residue.getResidueType();
     Residue newRes = new Residue(targetName, resNumber, resType);
 
-    /* Wrap both states in a MultiResidue. */
-    MultiResidue multiRes = new MultiResidue(res, ff, ffe);
-    Polymer polymer = findResiduePolymer(res, mola);
-    polymer.addMultiResidue(multiRes);
-    multiRes.addResidue(newRes);
+    // Wrap both states in a MultiResidue.
+    MultiResidue multiResidue = new MultiResidue(residue, forceField);
+    Polymer polymer = findResiduePolymer(residue, molecularAssembly);
+    polymer.addMultiResidue(multiResidue);
+    multiResidue.addResidue(newRes);
 
-    /* Begin in protonated state by default. */
-    multiRes.setActiveResidue(titration.protForm);
-    propagateInactiveResidues(multiRes, false);
-    ffe.reInit();
-    return multiRes;
+    // Begin in the protonated state by default.
+    multiResidue.setActiveResidue(titration.protForm);
+    propagateInactiveResidues(multiResidue, false);
+    forceFieldEnergy.reInit();
+    return multiResidue;
   }
 
   /**
@@ -616,92 +583,84 @@ public class TitrationUtils {
     for (Residue inactive : inactives) {
       List<Atom> resetMe = new ArrayList<>();
       switch (inactive.getName()) {
-        case "LYS":
-          {
-            Atom HZ3 = (Atom) inactive.getAtomNode("HZ3");
-            Atom NZ = (Atom) inactive.getAtomNode("NZ");
-            Atom CE = (Atom) inactive.getAtomNode("CE");
-            Atom HZ1 = (Atom) inactive.getAtomNode("HZ1");
-            BondedUtils.intxyz(HZ3, NZ, 1.02, CE, 109.5, HZ1, 109.5, -1);
-            resetMe.add(HZ3);
-            break;
-          }
-        case "ASH":
-          {
-            Atom HD2 = (Atom) inactive.getAtomNode("HD2");
-            Atom OD2 = (Atom) inactive.getAtomNode("OD2");
-            Atom CG = (Atom) inactive.getAtomNode("CG");
-            Atom OD1 = (Atom) inactive.getAtomNode("OD1");
-            BondedUtils.intxyz(HD2, OD2, 0.98, CG, 108.7, OD1, 0.0, 0);
-            resetMe.add(HD2);
-            break;
-          }
-        case "GLH":
-          {
-            Atom HE2 = (Atom) inactive.getAtomNode("HE2");
-            Atom OE2 = (Atom) inactive.getAtomNode("OE2");
-            Atom CD = (Atom) inactive.getAtomNode("CD");
-            Atom OE1 = (Atom) inactive.getAtomNode("OE1");
-            BondedUtils.intxyz(HE2, OE2, 0.98, CD, 108.7, OE1, 0.0, 0);
-            resetMe.add(HE2);
-            break;
-          }
-        case "HIS":
-          {
-            Atom HE2 = (Atom) inactive.getAtomNode("HE2");
-            Atom NE2 = (Atom) inactive.getAtomNode("NE2");
-            Atom CD2 = (Atom) inactive.getAtomNode("CD2");
-            Atom CE1 = (Atom) inactive.getAtomNode("CE1");
-            Atom HD1 = (Atom) inactive.getAtomNode("HD1");
-            Atom ND1 = (Atom) inactive.getAtomNode("ND1");
-            Atom CG = (Atom) inactive.getAtomNode("CG");
-            Atom CB = (Atom) inactive.getAtomNode("CB");
-            BondedUtils.intxyz(HE2, NE2, 1.02, CD2, 126.0, CE1, 126.0, 1);
-            BondedUtils.intxyz(HD1, ND1, 1.02, CG, 126.0, CB, 0.0, 0);
-            resetMe.add(HE2);
-            resetMe.add(HD1);
-            break;
-          }
-        case "HID":
-          {
-            Atom HD1 = (Atom) inactive.getAtomNode("HD1");
-            Atom ND1 = (Atom) inactive.getAtomNode("ND1");
-            Atom CG = (Atom) inactive.getAtomNode("CG");
-            Atom CB = (Atom) inactive.getAtomNode("CB");
-            BondedUtils.intxyz(HD1, ND1, 1.02, CG, 126.0, CB, 0.0, 0);
-            resetMe.add(HD1);
-            break;
-          }
-        case "HIE":
-          {
-            Atom HE2 = (Atom) inactive.getAtomNode("HE2");
-            Atom NE2 = (Atom) inactive.getAtomNode("NE2");
-            Atom CD2 = (Atom) inactive.getAtomNode("CD2");
-            Atom CE1 = (Atom) inactive.getAtomNode("CE1");
-            BondedUtils.intxyz(HE2, NE2, 1.02, CD2, 126.0, CE1, 126.0, 1);
-            resetMe.add(HE2);
-            break;
-          }
-        case "CYS":
-          {
-            Atom HG = (Atom) inactive.getAtomNode("HG");
-            Atom SG = (Atom) inactive.getAtomNode("SG");
-            Atom CB = (Atom) inactive.getAtomNode("CB");
-            Atom CA = (Atom) inactive.getAtomNode("CA");
-            BondedUtils.intxyz(HG, SG, 1.34, CB, 96.0, CA, 180.0, 0);
-            resetMe.add(HG);
-            break;
-          }
-        case "TYR":
-          {
-            Atom HH = (Atom) inactive.getAtomNode("HH");
-            Atom OH = (Atom) inactive.getAtomNode("OH");
-            Atom CZ = (Atom) inactive.getAtomNode("CZ");
-            Atom CE2 = (Atom) inactive.getAtomNode("CE2");
-            BondedUtils.intxyz(HH, OH, 0.97, CZ, 108.0, CE2, 0.0, 0);
-            resetMe.add(HH);
-            break;
-          }
+        case "LYS": {
+          Atom HZ3 = (Atom) inactive.getAtomNode("HZ3");
+          Atom NZ = (Atom) inactive.getAtomNode("NZ");
+          Atom CE = (Atom) inactive.getAtomNode("CE");
+          Atom HZ1 = (Atom) inactive.getAtomNode("HZ1");
+          BondedUtils.intxyz(HZ3, NZ, 1.02, CE, 109.5, HZ1, 109.5, -1);
+          resetMe.add(HZ3);
+          break;
+        }
+        case "ASH": {
+          Atom HD2 = (Atom) inactive.getAtomNode("HD2");
+          Atom OD2 = (Atom) inactive.getAtomNode("OD2");
+          Atom CG = (Atom) inactive.getAtomNode("CG");
+          Atom OD1 = (Atom) inactive.getAtomNode("OD1");
+          BondedUtils.intxyz(HD2, OD2, 0.98, CG, 108.7, OD1, 0.0, 0);
+          resetMe.add(HD2);
+          break;
+        }
+        case "GLH": {
+          Atom HE2 = (Atom) inactive.getAtomNode("HE2");
+          Atom OE2 = (Atom) inactive.getAtomNode("OE2");
+          Atom CD = (Atom) inactive.getAtomNode("CD");
+          Atom OE1 = (Atom) inactive.getAtomNode("OE1");
+          BondedUtils.intxyz(HE2, OE2, 0.98, CD, 108.7, OE1, 0.0, 0);
+          resetMe.add(HE2);
+          break;
+        }
+        case "HIS": {
+          Atom HE2 = (Atom) inactive.getAtomNode("HE2");
+          Atom NE2 = (Atom) inactive.getAtomNode("NE2");
+          Atom CD2 = (Atom) inactive.getAtomNode("CD2");
+          Atom CE1 = (Atom) inactive.getAtomNode("CE1");
+          Atom HD1 = (Atom) inactive.getAtomNode("HD1");
+          Atom ND1 = (Atom) inactive.getAtomNode("ND1");
+          Atom CG = (Atom) inactive.getAtomNode("CG");
+          Atom CB = (Atom) inactive.getAtomNode("CB");
+          BondedUtils.intxyz(HE2, NE2, 1.02, CD2, 126.0, CE1, 126.0, 1);
+          BondedUtils.intxyz(HD1, ND1, 1.02, CG, 126.0, CB, 0.0, 0);
+          resetMe.add(HE2);
+          resetMe.add(HD1);
+          break;
+        }
+        case "HID": {
+          Atom HD1 = (Atom) inactive.getAtomNode("HD1");
+          Atom ND1 = (Atom) inactive.getAtomNode("ND1");
+          Atom CG = (Atom) inactive.getAtomNode("CG");
+          Atom CB = (Atom) inactive.getAtomNode("CB");
+          BondedUtils.intxyz(HD1, ND1, 1.02, CG, 126.0, CB, 0.0, 0);
+          resetMe.add(HD1);
+          break;
+        }
+        case "HIE": {
+          Atom HE2 = (Atom) inactive.getAtomNode("HE2");
+          Atom NE2 = (Atom) inactive.getAtomNode("NE2");
+          Atom CD2 = (Atom) inactive.getAtomNode("CD2");
+          Atom CE1 = (Atom) inactive.getAtomNode("CE1");
+          BondedUtils.intxyz(HE2, NE2, 1.02, CD2, 126.0, CE1, 126.0, 1);
+          resetMe.add(HE2);
+          break;
+        }
+        case "CYS": {
+          Atom HG = (Atom) inactive.getAtomNode("HG");
+          Atom SG = (Atom) inactive.getAtomNode("SG");
+          Atom CB = (Atom) inactive.getAtomNode("CB");
+          Atom CA = (Atom) inactive.getAtomNode("CA");
+          BondedUtils.intxyz(HG, SG, 1.34, CB, 96.0, CA, 180.0, 0);
+          resetMe.add(HG);
+          break;
+        }
+        case "TYR": {
+          Atom HH = (Atom) inactive.getAtomNode("HH");
+          Atom OH = (Atom) inactive.getAtomNode("OH");
+          Atom CZ = (Atom) inactive.getAtomNode("CZ");
+          Atom CE2 = (Atom) inactive.getAtomNode("CE2");
+          BondedUtils.intxyz(HH, OH, 0.97, CZ, 108.0, CE2, 0.0, 0);
+          resetMe.add(HH);
+          break;
+        }
         default:
       }
       for (Atom a : resetMe) {
@@ -735,7 +694,7 @@ public class TitrationUtils {
     BETA,
     BOLTZMANN,
     DIRAC_CURRENT,
-    DIRAC_POINTFIVE;
+    DIRAC_POINTFIVE
   }
 
   /** Global override of MC acceptance criteria. */
@@ -743,7 +702,7 @@ public class TitrationUtils {
     NONE,
     ACCEPT,
     REJECT,
-    ONCE;
+    ONCE
   }
 
   /**
@@ -753,14 +712,14 @@ public class TitrationUtils {
   public enum Snapshots {
     INTERLEAVED,
     SEPARATE,
-    NONE;
+    NONE
   }
 
   public enum HistidineMode {
     HIE_ONLY,
     HID_ONLY,
     SINGLE,
-    DOUBLE;
+    DOUBLE
   }
 
   /**
@@ -778,6 +737,7 @@ public class TitrationUtils {
     TerminalNH3toNH2(8.23, 0.0, 0.0, AminoAcid3.UNK, AminoAcid3.UNK),
     TerminalCOOHtoCOO(3.55, 0.0, 0.0, AminoAcid3.UNK, AminoAcid3.UNK);
 
+
     public final double pKa;
     public final double refEnergy;
     public final double lambdaIntercept;
@@ -785,7 +745,8 @@ public class TitrationUtils {
     public final AminoAcid3 deprotForm;
 
     /** Invoked by Enum; use the factory method to obtain instances. */
-    private Titration(double pKa, double refEnergy, double lambdaIntercept, AminoAcid3 deprotForm, AminoAcid3 protForm) {
+    Titration(double pKa, double refEnergy, double lambdaIntercept, AminoAcid3 deprotForm,
+        AminoAcid3 protForm) {
       this.pKa = pKa;
       this.refEnergy = refEnergy;
       this.lambdaIntercept = lambdaIntercept;
@@ -810,10 +771,10 @@ public class TitrationUtils {
      * @return a Titration instance.
      */
     public static Titration[] multiLookup(Residue res) {
-      AminoAcid3 current = AminoAcid3.valueOf(res.getName());
+      AminoAcid3 current = AminoAcidUtils.AminoAcid3.valueOf(res.getName());
 
       if (threeStateHistidines) {
-        if (current == AminoAcid3.HIS || current == AminoAcid3.HID || current == AminoAcid3.HIE) {
+        if (current == AminoAcidUtils.AminoAcid3.HIS || current == AminoAcidUtils.AminoAcid3.HID || current == AminoAcidUtils.AminoAcid3.HIE) {
           return new Titration[] {ZtoH, UtoH};
         }
       }
@@ -824,14 +785,14 @@ public class TitrationUtils {
         }
       }
 
-      logger.warning(format("No titration lookup found for residue %s", res));
+      logger.fine(format("No titration lookup found for %s", res));
       return null;
     }
   }
 
   public enum TitrationType {
     PROT,
-    DEPROT;
+    DEPROT
   }
 
   /** Advanced options to both DiscreteMCMD and DiscountPh. */
@@ -840,25 +801,8 @@ public class TitrationUtils {
     public final ContinuousSeedDistribution seedDistribution =
         prop("phmd-seedMode", ContinuousSeedDistribution.class, ContinuousSeedDistribution.FLAT);
     public final Snapshots snapshots = prop("phmd-snapshots", Snapshots.class, Snapshots.NONE);
-    public final HistidineMode histidineMode =
-        prop("phmd-histidineMode", HistidineMode.class, HistidineMode.HIE_ONLY);
-    public final OptionalDouble referenceOverride =
-        prop("phmd-referenceOverride", OptionalDouble.empty());
     public final double meltdownTemperature = prop("phmd-meltdownTemp", 6000.0);
-    public final double warningTemperature = prop("phmd-warningTemp", 1000.0);
-    public final boolean logTimings = prop("phmd-logTimings", false);
     public final boolean titrateTermini = prop("phmd-termini", false);
-    public final boolean zeroReferences = prop("phmd-zeroReferences", true);
-    public final int debugLogLevel = prop("phmd-debugLog", 0);
-    public final boolean useConformationalBias = prop("phmd-cbmcRotamerMoves", false);
-    public final boolean inactivateBackground = prop("phmd-inactivateBackground", false);
-    public final boolean zeroReferenceEnergies =
-        prop("phmd-zeroReferences", false, "Zeroing all reference energies!");
-    public final OptionalDouble refOverride =
-        prop(
-            "phmd-refOverride",
-            OptionalDouble.empty(),
-            "Reference protonation energies overridden!");
     public MCOverride mcOverride = prop("phmd-override", MCOverride.class, MCOverride.NONE);
 
     public void print() {

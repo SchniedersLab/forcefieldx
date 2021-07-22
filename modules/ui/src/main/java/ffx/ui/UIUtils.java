@@ -37,16 +37,27 @@
 // ******************************************************************************
 package ffx.ui;
 
+import static java.lang.String.format;
+
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.AlgorithmUtils;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parsers.ForceFieldFilter;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.parsers.SystemFilter;
+import ffx.utilities.Keyword;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * UIUtils implements core and extended functionality for many Force Field X algorithms and scripts,
@@ -74,9 +85,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
   public void close(MolecularAssembly assembly) {
     Optional<FFXSystem> origSys = switchTo(assembly);
     mainPanel.closeWait();
-    if (origSys.isPresent()) {
-      switchBack(origSys.get());
-    }
+    origSys.ifPresent(this::switchBack);
   }
 
   @Override
@@ -90,9 +99,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     // assembly.
     Optional<FFXSystem> origSys = switchTo(assembly);
     ForceFieldEnergy ffe = modelingShell.energy();
-    if (origSys.isPresent()) {
-      switchBack(origSys.get());
-    }
+    origSys.ifPresent(this::switchBack);
     return ffe;
   }
 
@@ -134,9 +141,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     Optional<FFXSystem> origSys = switchTo(assembly);
     modelingShell.md(
         nStep, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
-    if (origSys.isPresent()) {
-      switchBack(origSys.get());
-    }
+    origSys.ifPresent(this::switchBack);
   }
 
   @Override
@@ -144,9 +149,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     Optional<FFXSystem> origSys = switchTo(assembly);
     Potential pot = modelingShell.minimize(eps);
 
-    if (origSys.isPresent()) {
-      switchBack(origSys.get());
-    }
+    origSys.ifPresent(this::switchBack);
     return pot;
   }
 
@@ -188,13 +191,58 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     return systems;
   }
 
+  /**
+   * Mutates file on-the-fly as it is being opened. Used to open files for pHMD in fully-protonated
+   * form.
+   *
+   * @param file a {@link java.io.File} object.
+   * @param mutations a {@link java.util.List} object.
+   * @return a {@link ffx.potential.MolecularAssembly} object.
+   */
+  @Override
+  public MolecularAssembly openWithMutations(File file, List<Mutation> mutations) {
+    file = new File(FilenameUtils.normalize(file.getAbsolutePath()));
+    // Set the Current Working Directory based on this file.
+    mainPanel.setCWD(file.getParentFile());
+
+    // Create the CompositeConfiguration properties.
+    CompositeConfiguration properties = Keyword.loadProperties(file);
+    // Create an FFXSystem for this file.
+    FFXSystem newSystem = new FFXSystem(file, "Open with mutations", properties);
+    // Create a Force Field.
+    ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
+    ForceField forceField = forceFieldFilter.parse();
+    String[] patches = properties.getStringArray("patch");
+    for (String patch : patches) {
+      logger.info(" Attempting to read force field patch from " + patch + ".");
+      CompositeConfiguration patchConfiguration = new CompositeConfiguration();
+      patchConfiguration.addProperty("parameters", patch);
+      forceFieldFilter = new ForceFieldFilter(patchConfiguration);
+      ForceField patchForceField = forceFieldFilter.parse();
+      forceField.append(patchForceField);
+      if (RotamerLibrary.addRotPatch(patch)) {
+        logger.info(format(" Loaded rotamer definitions from patch %s.", patch));
+      }
+    }
+    newSystem.setForceField(forceField);
+
+    PDBFilter pdbFilter = new PDBFilter(file, newSystem, forceField, properties);
+    pdbFilter.mutate(mutations);
+    UIFileOpener opener = new UIFileOpener(pdbFilter, mainPanel);
+    opener.run();
+    lastFilter = pdbFilter;
+    if (opener.getAllAssemblies().length > 1) {
+      logger.log(
+          Level.WARNING, "Found multiple assemblies in file {0}, opening first.", file.getName());
+    }
+    return opener.getAssembly();
+  }
+
   @Override
   public double returnEnergy(MolecularAssembly assembly) {
     Optional<FFXSystem> origSys = switchTo(assembly);
     double e = modelingShell.returnEnergy();
-    if (origSys.isPresent()) {
-      switchBack(origSys.get());
-    }
+    origSys.ifPresent(this::switchBack);
     return e;
   }
 
@@ -208,9 +256,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     Optional<FFXSystem> origSys = switchTo(assembly);
     mainPanel.saveAsP1(file);
     lastFilter = mainPanel.getFilter();
-    if (origSys.isPresent()) {
-      switchBack(origSys.get());
-    }
+    origSys.ifPresent(this::switchBack);
   }
 
   @Override
@@ -218,9 +264,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     Optional<FFXSystem> origSys = switchTo(assembly);
     mainPanel.saveAsPDB(file);
     lastFilter = mainPanel.getFilter();
-    if (origSys.isPresent()) {
-      switchBack(origSys.get());
-    }
+    origSys.ifPresent(this::switchBack);
   }
 
   @Override
@@ -228,9 +272,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     Optional<FFXSystem> origSys = switchTo(assembly);
     mainPanel.saveAsPDB(file, false, append);
     lastFilter = mainPanel.getFilter();
-    if (origSys.isPresent()) {
-      switchBack(origSys.get());
-    }
+    origSys.ifPresent(this::switchBack);
   }
 
   @Override
@@ -244,9 +286,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     Optional<FFXSystem> origSys = switchTo(assembly);
     mainPanel.saveAsXYZ(file);
     lastFilter = mainPanel.getFilter();
-    if (origSys.isPresent()) {
-      switchBack(origSys.get());
-    }
+    origSys.ifPresent(this::switchBack);
   }
 
   @Override
@@ -254,9 +294,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     Optional<FFXSystem> origSys = switchTo(assembly);
     mainPanel.savePDBSymMates(file, "_symMate");
     lastFilter = mainPanel.getFilter();
-    if (origSys.isPresent()) {
-      switchBack(origSys.get());
-    }
+    origSys.ifPresent(this::switchBack);
   }
 
   @Override
@@ -264,9 +302,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     Optional<FFXSystem> origSys = switchTo(assembly);
     mainPanel.savePDBSymMates(file, suffix);
     lastFilter = mainPanel.getFilter();
-    if (origSys.isPresent()) {
-      switchBack(origSys.get());
-    }
+    origSys.ifPresent(this::switchBack);
   }
 
   @Override
@@ -308,7 +344,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
   /**
    * Switches the hierarchy's active system back to what it was.
    *
-   * @param origSystem
+   * @param origSystem The active system.
    */
   private void switchBack(FFXSystem origSystem) {
     if (origSystem != null) {

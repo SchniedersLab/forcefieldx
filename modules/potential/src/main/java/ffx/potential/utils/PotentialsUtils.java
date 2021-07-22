@@ -313,7 +313,7 @@ public class PotentialsUtils implements PotentialsFunctions {
       final String spacegroup = forceField.getString("SPACEGROUP", "P1");
       Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
       if (!filter.writeFileAsP1(file, false, crystal)) {
-        logger.info(format(" Save failed for %s", assembly.toString()));
+        logger.info(format(" Save failed for %s", assembly));
       }
       lastFilter = filter;
     }
@@ -343,7 +343,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     } else {
       PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
       if (!pdbFilter.writeFile(file, append, false, writeEnd)) {
-        logger.info(format(" Save failed for %s", assembly.toString()));
+        logger.info(format(" Save failed for %s", assembly));
       }
       lastFilter = pdbFilter;
     }
@@ -383,7 +383,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     } else {
       XYZFilter xyzFilter = new XYZFilter(file, assembly, null, null);
       if (!xyzFilter.writeFile(file, false)) {
-        logger.info(format(" Save failed for %s", assembly.toString()));
+        logger.info(format(" Save failed for %s", assembly));
       }
       lastFilter = xyzFilter;
     }
@@ -406,7 +406,7 @@ public class PotentialsUtils implements PotentialsFunctions {
       PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
       lastFilter = pdbFilter;
       if (!pdbFilter.writeFile(file, false)) {
-        logger.info(format(" Save failed for %s", assembly.toString()));
+        logger.info(format(" Save failed for %s", assembly));
       } else {
         Crystal crystal = assembly.getCrystal();
         int nSymOps = crystal.spaceGroup.getNumberOfSymOps();

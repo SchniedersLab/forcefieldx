@@ -63,6 +63,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt
 
 /**
  * The Cluster script clusters structures utilizing RMSD.
+ * TODO: Create a unit test for the Cluster script.
  *
  * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
@@ -130,7 +131,7 @@ class Cluster extends PotentialScript {
    * The final argument(s) should be one or more filenames.
    */
   @Parameters(arity = "1", paramLabel = "files",
-      description = 'The RMSD matrix.')
+      description = 'The RMSD distance matrix.')
   List<String> filenames = null
 
   /**
@@ -166,6 +167,8 @@ class Cluster extends PotentialScript {
    */
   @Override
   Cluster run() {
+
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }

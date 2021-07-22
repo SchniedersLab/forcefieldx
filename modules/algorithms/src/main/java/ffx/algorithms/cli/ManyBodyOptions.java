@@ -44,7 +44,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import java.io.File;
@@ -263,7 +262,7 @@ public class ManyBodyOptions {
             if (p.getChainID() == chainID) {
               List<Residue> rs = p.getResidues();
               for (Residue r : rs) {
-                if (ignoreNA && r.getResidueType() == ResidueType.NA) {
+                if (ignoreNA && r.getResidueType() == Residue.ResidueType.NA) {
                   continue;
                 }
                 if (r.getResidueNumber() == i) {
@@ -285,7 +284,7 @@ public class ManyBodyOptions {
         for (Polymer p : polymers) {
           List<Residue> rs = p.getResidues();
           for (Residue r : rs) {
-            if (ignoreNA && r.getResidueType() == ResidueType.NA) {
+            if (ignoreNA && r.getResidueType() == Residue.ResidueType.NA) {
               continue;
             }
             Rotamer[] rotamers = r.getRotamers(rotamerLibrary);

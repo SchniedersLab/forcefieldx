@@ -78,27 +78,27 @@ class CrystalMin extends AlgorithmsScript {
   /**
    * -c or --coords to cycle between lattice and coordinate optimization until both satisfy the convergence criteria.
    */
-  @Option(names = ["-c", "--coords"], paramLabel = 'false',
+  @Option(names = ["-c", "--coords"], paramLabel = 'false', defaultValue = "false",
       description = 'Cycle between lattice and coordinate optimization until both satisfy the convergence criteria.')
-  boolean coords = false
+  boolean coords
   /**
    * -f or --fractional to set the optimization to maintain fractional coordinates [ATOM/MOLECULE/OFF].
    */
-  @Option(names = ["-f", "--fractional"], paramLabel = 'molecule',
+  @Option(names = ["-f", "--fractional"], paramLabel = 'molecule', defaultValue = "MOLECULE",
       description = 'Maintain fractional coordinates during lattice optimization [OFF/MOLECULE/ATOM].')
-  String fractional = "MOLECULE"
+  String fractional
   /**
    * -t or --tensor to print out partial derivatives of the energy with respect to unit cell parameters.
    */
-  @Option(names = ["-t", "--tensor"], paramLabel = 'false',
+  @Option(names = ["-t", "--tensor"], paramLabel = 'false', defaultValue = "false",
       description = 'Compute partial derivatives of the energy with respect to unit cell parameters.')
-  boolean tensor = false
+  boolean tensor
 
   /**
-   * The final argument(s) should be a filename.
+   * The final argument(s) should be an XYZ or PDB filename.
    */
-  @Parameters(arity = "1", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
-  List<String> filenames = null
+  @Parameters(arity = "1", paramLabel = "file", description = 'Atomic coordinate files in PDB or XYZ format.')
+  String filename = null
 
   private XtalEnergy xtalEnergy
   private CrystalMinimize crystalMinimize
@@ -124,23 +124,22 @@ class CrystalMin extends AlgorithmsScript {
   @Override
   CrystalMin run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-      modelFilename = filenames.get(0)
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
-    } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
 
-    logger.info("\n Running CrystalMinimize on " + modelFilename)
+    // Set the filename
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Running CrystalMinimize on " + filename)
     logger.info("\n RMS gradient convergence criteria: " + minimizeOptions.eps)
 
     atomSelectionOptions.setActiveAtoms(activeAssembly)
@@ -169,30 +168,29 @@ class CrystalMin extends AlgorithmsScript {
     }
 
     // Handle Single Topology Cases.
-    modelFilename = activeAssembly.getFile().getAbsolutePath()
     if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
-      baseDir = new File(FilenameUtils.getFullPath(modelFilename))
+      baseDir = new File(FilenameUtils.getFullPath(filename))
     }
 
     String dirName = baseDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(modelFilename)
-    String ext = FilenameUtils.getExtension(fileName)
-    fileName = FilenameUtils.removeExtension(fileName)
+    String name = FilenameUtils.getName(filename)
+    String ext = FilenameUtils.getExtension(name)
+    name = FilenameUtils.removeExtension(name)
     File saveFile
     SystemFilter writeFilter
     if (ext.toUpperCase().contains("XYZ")) {
-      saveFile = new File(dirName + fileName + ".xyz")
+      saveFile = new File(dirName + name + ".xyz")
       writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())
       algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
     } else if (ext.toUpperCase().contains("ARC")) {
-      saveFile = new File(dirName + fileName + ".arc")
+      saveFile = new File(dirName + name + ".arc")
       saveFile = algorithmFunctions.versionFile(saveFile)
       writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())
       algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
     } else {
-      saveFile = new File(dirName + fileName + ".pdb")
+      saveFile = new File(dirName + name + ".pdb")
       saveFile = algorithmFunctions.versionFile(saveFile)
       writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())

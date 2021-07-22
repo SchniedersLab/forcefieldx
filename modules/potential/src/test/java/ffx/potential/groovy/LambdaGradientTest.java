@@ -50,7 +50,7 @@ import org.junit.Test;
  * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
  */
-public class CrystalThermoPathTest extends PotentialTest {
+public class LambdaGradientTest extends PotentialTest {
 
   /** Tests the End States of the LambdaGradient class. */
   @Test

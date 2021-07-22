@@ -36,6 +36,7 @@ public class BARFilter {
     private double[] volume1;
     private double[] volume2;
     private int snaps;
+    private int snaps2;
     private int startingSnap = 0;
     private int endingSnap = 0;
     private int count = 0;
@@ -110,6 +111,7 @@ public class BARFilter {
         ArrayList<Double> vol1 = new ArrayList<Double>();
         ArrayList<Double> vol2 = new ArrayList<Double>();
         int snapshots = 0;
+        int xyzCount=0;
         try (BufferedReader br = new BufferedReader(new FileReader(givenFile))) {
 
             String str = "";
@@ -143,7 +145,13 @@ public class BARFilter {
                 } else {
 
                     if (data.contains(".xyz") || tokens.length < 3) {
-                        snaps = Integer.parseInt(tokens[0]);
+                        xyzCount += 1;
+                        if(xyzCount == 1) {
+                            snaps = Integer.parseInt(tokens[0]);
+                        } else if (xyzCount ==2){
+                            snaps2 = Integer.parseInt(tokens[0]);
+                        }
+
                     } else if (count <= snaps + 1 && count != 1) {
                         if (tokens.length == 4) {
                             vol1.add(Double.parseDouble(tokens[3]));
@@ -172,26 +180,32 @@ public class BARFilter {
             } else {
                 e1l1 = new double[snaps];
                 e1l2 = new double[snaps];
-                e2l1 = new double[snaps];
-                e2l2 = new double[snaps];
+                e2l1 = new double[snaps2];
+                e2l2 = new double[snaps2];
                 volume1 = new double[snaps];
-                volume2 = new double[snaps];
+                volume2 = new double[snaps2];
             }
 
 
             for (int i = 0; i < ens1lam1.size(); i++) {
                 e1l1[i] = ens1lam1.get(i);
                 e1l2[i] = ens1lam2.get(i);
-                e2l1[i] = ens2lam1.get(i);
-                e2l2[i] = ens2lam2.get(i);
-
-
                 if (!vol1.isEmpty()) {
                     volume1[i] = vol1.get(i);
+                }
+
+            }
+
+            for (int i = 0; i < ens2lam1.size(); i++) {
+                e2l1[i] = ens2lam1.get(i);
+                e2l2[i] = ens2lam2.get(i);
+                if (!vol1.isEmpty()) {
                     volume2[i] = vol2.get(i);
                 }
 
             }
+
+
 
             // Read blank lines at the top of the file
 
@@ -243,7 +257,7 @@ public class BARFilter {
 
             fileName2.append("  ").append(name);
 
-            bw.write(format("%8d %9.3f  %s\n", snaps, temp, name));
+            bw.write(format("%8d %9.3f  %s\n", snaps2, temp, name));
             for (int i = 0; i < snaps2; i++) {
                 if (isPBC) {
                     bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, e2l1[i], e2l2[i], volume2[i]));

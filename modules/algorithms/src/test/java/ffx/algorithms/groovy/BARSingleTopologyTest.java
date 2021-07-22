@@ -4,7 +4,7 @@ import ffx.algorithms.misc.AlgorithmsTest;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class BARTest extends AlgorithmsTest {
+public class BARSingleTopologyTest extends AlgorithmsTest {
 
 
     /** Tests BAR script with nw input. */
@@ -15,7 +15,7 @@ public class BARTest extends AlgorithmsTest {
         }
         
         // Set-up the input arguments for the script.
-        String[] args = {"-t", "298","--nw","8","--ac","1-13", "src/main/java/ffx/algorithms/structures/testBar/dimethylphosphate.10.xyz"};
+        String[] args = {"-t", "298","--nw","8","--ac","1-13", "src/main/java/ffx/algorithms/structures/testBar/singleTopology/dimethylphosphate.10.xyz"};
         binding.setVariable("args", args);
         // Evaluate the script.
         BAR bar = new BAR(binding).run();

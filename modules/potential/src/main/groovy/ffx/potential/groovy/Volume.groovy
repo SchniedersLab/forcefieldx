@@ -38,7 +38,6 @@
 package ffx.potential.groovy
 
 import edu.rit.pj.ParallelTeam
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.nonbonded.implicit.ConnollyRegion
@@ -120,12 +119,13 @@ class Volume extends PotentialScript {
       description = "Print out all components of volume of molecule and offset.")
   private boolean verbose = false
 
+
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is an atomic coordinate file in PDB or XYZ format.
    */
-  @Parameters(arity = "1", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  String filename = null
 
   /**
    * JUnit Testing Variables
@@ -153,20 +153,23 @@ class Volume extends PotentialScript {
    */
   @Override
   Volume run() {
+
+    // Init the context and bind variables.
     if (!init()) {
       return null
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = potentialFunctions.openAll(filenames.get(0))
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return null
     }
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
-    logger.info("\n Calculating volume and surface area for " + modelFilename)
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Calculating volume and surface area for " + filename)
 
     Atom[] atoms = activeAssembly.getAtomArray()
     int nAtoms = atoms.length

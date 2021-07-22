@@ -102,8 +102,7 @@ public final class ExtUtils {
             if (type == null) {
                 logger.severe(
                         format(
-                                "No MultipoleType could be assigned:\n %s --> %s",
-                                bg.toString(), bg.getAtomType()));
+                                "No MultipoleType could be assigned:\n %s --> %s", bg, bg.getAtomType()));
             }
         }
     }

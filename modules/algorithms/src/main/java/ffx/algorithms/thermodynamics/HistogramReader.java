@@ -67,9 +67,9 @@ public class HistogramReader extends BufferedReader {
   private int biasCutoff;
   private int countInterval;
   private int lambdaBins;
-  private int FLambdaBins;
-  private double minFLambda;
-  private double dFL;
+  private int dUdLBins;
+  private double mindUdL;
+  private double dUdLBinWidth;
   private int temperingFlag;
   private double[][] counts;
 
@@ -100,8 +100,8 @@ public class HistogramReader extends BufferedReader {
     return countInterval;
   }
 
-  public double getDFLambda() {
-    return dFL;
+  public double getdUdLBinWidth() {
+    return dUdLBinWidth;
   }
 
   public int getLambdaBins() {
@@ -130,15 +130,15 @@ public class HistogramReader extends BufferedReader {
       biasCutoff = parseInt(readLine().split(" +")[1]);
       countInterval = parseInt(readLine().split(" +")[1]);
       lambdaBins = parseInt(readLine().split(" +")[1]);
-      FLambdaBins = parseInt(readLine().split(" +")[1]);
-      minFLambda = parseDouble(readLine().split(" +")[1]);
-      dFL = parseDouble(readLine().split(" +")[1]);
+      dUdLBins = parseInt(readLine().split(" +")[1]);
+      mindUdL = parseDouble(readLine().split(" +")[1]);
+      dUdLBinWidth = parseDouble(readLine().split(" +")[1]);
       temperingFlag = parseInt(readLine().split(" +")[1]);
 
-      counts = new double[lambdaBins][FLambdaBins];
+      counts = new double[lambdaBins][dUdLBins];
       for (int i = 0; i < lambdaBins; i++) {
         String[] countToks = readLine().split(" +");
-        for (int j = 0; j < FLambdaBins; j++) {
+        for (int j = 0; j < dUdLBins; j++) {
           counts[i][j] = parseDouble(countToks[j]);
         }
       }
@@ -160,14 +160,14 @@ public class HistogramReader extends BufferedReader {
 
   /** Applies values to mutable histogram fields. */
   private void applyToHistogram() {
-    histogram.FLambdaBins = FLambdaBins;
-    histogram.minFLambda = minFLambda;
+    histogram.dUdLBins = dUdLBins;
+    histogram.mindUdL = mindUdL;
 
     // Allocate memory for the recursion kernel.
     histogram.allocateRecursionKernel();
 
     for (int i = 0; i < histogram.lambdaBins; i++) {
-      for (int j = 0; j < histogram.FLambdaBins; j++) {
+      for (int j = 0; j < histogram.dUdLBins; j++) {
         histogram.setRecursionKernelValue(i, j, counts[i][j]);
       }
     }

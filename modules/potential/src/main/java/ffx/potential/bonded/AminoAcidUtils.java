@@ -38,27 +38,21 @@
 package ffx.potential.bonded;
 
 import static ffx.numerics.math.DoubleMath.dihedralAngle;
+import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.FIRST_RESIDUE;
+import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.LAST_RESIDUE;
+import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.MIDDLE_RESIDUE;
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.buildHeavy;
 import static ffx.potential.bonded.BondedUtils.buildHydrogen;
 import static ffx.potential.bonded.BondedUtils.buildHydrogenAtom;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
 import static ffx.potential.bonded.BondedUtils.intxyz;
-import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
-import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
-import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
-import static ffx.potential.bonded.ResidueEnumerations.aminoAcidHeavyAtoms;
-import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
-import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.numerics.math.Double3;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
-import ffx.potential.bonded.Residue.AA3;
-import ffx.potential.bonded.Residue.ResiduePosition;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import java.util.ArrayList;
@@ -77,170 +71,223 @@ import java.util.logging.Logger;
  */
 public class AminoAcidUtils {
 
-  /** Constant <code>nCapBackboneAtoms</code> */
-  public static final String[] nCapBackboneAtoms = {"N", "H1", "H2", "H3", "CA", "HA", "C", "O"};
+  private static final Logger logger = Logger.getLogger(AminoAcidUtils.class.getName());
+
   /** Constant <code>backboneAtoms</code> */
   public static final String[] backboneAtoms = {"N", "H", "CA", "HA", "C", "O"};
+  /** Repeating atomic numbers of an amino acid chain. */
+  public static final int[] AAPATTERN = {7, 6, 6};
+  /** Constant <code>AA3toAA1</code> */
+  static final HashMap<AminoAcid3, AminoAcid1> AA3toAA1 = new HashMap<>();
+  /** Constant <code>AA1toAA3</code> */
+  public static final HashMap<AminoAcid1, AminoAcid3> AA1toAA3 = new HashMap<>();
+  /** List of values from the AminoAcid1 enum. */
+  public static final List<AminoAcid1> aminoAcid1List = Arrays.asList(AminoAcid1.values());
+  /** Constant <code>aminoAcidList</code> */
+  public static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
+
   /**
    * Biotype keys for amino acid backbone atom types. These are consistent with parameter files from
-   * TINKER v. 6.1 (June 2012). <br>
-   * xType[0][..] are for N-terminal residues. <br>
-   * xType[1][..] are mid-chain residues. <br>
-   * xType[2][..] are for C-terminal residues.
+   * TINKER v. 6.1 (June 2012). <br> xType[0][..] are for N-terminal residues. <br> xType[1][..] are
+   * mid-chain residues. <br> xType[2][..] are for C-terminal residues.
+   * <p>
+   * GLY ALA VAL LEU ILE SER THR CYS CYX CYD PRO PHE TYR TYD TRP HIS HID HIE ASP ASH ASD ASN GLU GLH
+   * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
    */
   public static final int[][] AA_N = {
-    {
-      403, 409, 415, 421, 427, 433, 439, 445,
-      451, 457, 463, 471, 477, 483, 489, 495,
-      501, 507, 513, 519, 525, 531, 537, 543,
-      549, 555, 561, 567, 573, 579, 391, 762,
-      0, 0, 0, 0, 0, 403
-    },
-    {
-      1, 7, 15, 27, 41, 55, 65, 77,
-      87, 96, 105, 116, 131, 147, 162, 185,
-      202, 218, 234, 244, 256, 268, 280, 294,
-      308, 321, 337, 353, 370, 384, 391, 0,
-      0, 0, 0, 0, 0, 1
-    },
-    {
-      584, 590, 596, 602, 608, 614, 620, 626,
-      632, 638, 644, 649, 655, 661, 667, 673,
-      679, 685, 691, 697, 703, 709, 715, 721,
-      727, 733, 739, 745, 751, 757, 0, 0,
-      0, 0, 773, 775, 777, 584
-    }
-  };
-  /** Constant <code>AA_CA</code> */
-  public static final int[][] AA_CA = {
-    {
-      404, 410, 416, 422, 428, 434, 440, 446,
-      452, 458, 464, 472, 478, 484, 490, 496,
-      502, 508, 514, 520, 526, 532, 538, 544,
-      550, 556, 562, 568, 574, 580, 392, 0,
-      0, 767, 0, 0, 0, 404
-    },
-    {
-      2, 8, 16, 28, 42, 56, 66, 78,
-      88, 97, 106, 117, 132, 148, 163, 186,
-      203, 219, 235, 245, 257, 269, 281, 295,
-      309, 322, 338, 354, 371, 385, 392, 0,
-      0, 0, 0, 0, 0, 2
-    },
-    {
-      585, 591, 597, 603, 609, 615, 621, 627,
-      633, 639, 645, 650, 656, 662, 668, 674,
-      680, 686, 692, 698, 704, 710, 716, 722,
-      728, 734, 740, 746, 752, 758, 0, 0,
-      0, 0, 0, 0, 779, 585
-    }
-  };
-  /** Constant <code>AA_C</code> */
-  public static final int[][] AA_C = {
-    {
-      405, 411, 417, 423, 429, 435, 441, 447,
-      453, 459, 465, 473, 479, 485, 491, 497,
-      503, 509, 515, 521, 527, 533, 539, 545,
-      551, 557, 563, 569, 575, 581, 393, 0,
-      764, 769, 0, 0, 0, 405
-    },
-    {
-      3, 9, 17, 29, 43, 57, 67, 79,
-      89, 98, 107, 118, 133, 149, 164, 187,
-      204, 220, 236, 246, 258, 270, 282, 296,
-      310, 323, 339, 355, 372, 386, 393, 0,
-      0, 0, 0, 0, 0, 3
-    },
-    {
-      586, 592, 598, 604, 610, 616, 622, 628,
-      634, 640, 646, 651, 657, 663, 669, 675,
-      681, 687, 693, 699, 705, 711, 717, 723,
-      729, 735, 741, 747, 753, 759, 0, 0,
-      0, 0, 771, 0, 0, 586
-    }
-  };
-  /** Constant <code>AA_HN</code> */
-  public static final int[][] AA_HN = {
-    {
-      406, 412, 418, 424, 430, 436, 442, 448,
-      454, 460, 466, 474, 480, 486, 492, 498,
-      504, 510, 516, 522, 528, 534, 540, 546,
-      552, 558, 564, 570, 576, 582, 394, 763,
-      0, 0, 0, 0, 0, 406
-    },
-    {
-      4, 10, 18, 30, 44, 58, 68, 80,
-      90, 99, 0, 119, 134, 150, 165, 188,
-      205, 221, 237, 247, 259, 271, 283, 297,
-      311, 324, 340, 356, 373, 387, 394, 0,
-      0, 0, 0, 0, 0, 4
-    },
-    {
-      587, 593, 599, 605, 611, 617, 623, 629,
-      635, 641, 0, 652, 658, 664, 670, 676,
-      682, 688, 694, 700, 706, 712, 718, 724,
-      730, 736, 742, 748, 754, 760, 0, 0,
-      0, 0, 774, 776, 778, 587
-    }
-  };
-  /** Constant <code>AA_O</code> */
-  public static final int[][] AA_O = {
-    {
-      407, 413, 419, 425, 431, 437, 443, 449,
-      455, 461, 467, 475, 481, 487, 493, 499,
-      505, 511, 517, 523, 529, 535, 541, 547,
-      553, 559, 565, 571, 577, 583, 395, 0,
-      766, 770, 0, 0, 0, 407
-    },
-    {
-      5, 11, 19, 31, 45, 59, 69, 81,
-      91, 100, 108, 120, 135, 151, 166, 189,
-      206, 222, 238, 248, 260, 272, 284, 298,
-      312, 325, 341, 357, 374, 388, 395, 0,
-      0, 0, 0, 0, 0, 5
-    },
-    {
-      588, 594, 600, 606, 612, 618, 624, 630,
-      636, 642, 647, 653, 659, 665, 671, 677,
-      683, 689, 695, 701, 707, 713, 719, 725,
-      731, 737, 743, 749, 755, 761, 0, 0,
-      0, 0, 772, 0, 0, 588
-    }
-  };
-  /** Constant <code>AA_HA</code> */
-  public static final int[][] AA_HA = {
-    {
-      408, 414, 420, 426, 432, 438, 444, 450,
-      456, 462, 468, 476, 482, 488, 494, 500,
-      506, 512, 518, 524, 530, 536, 542, 548,
-      554, 560, 566, 572, 578, 0, 396, 0,
-      765, 768, 0, 0, 0, 408
-    },
-    {
-      6, 12, 20, 32, 46, 60, 70, 82,
-      92, 101, 109, 121, 136, 152, 167, 190,
-      207, 223, 239, 249, 261, 273, 285, 299,
-      313, 326, 342, 358, 375, 0, 396, 0,
-      0, 0, 0, 0, 0, 6
-    },
-    {
-      589, 595, 601, 607, 613, 619, 625, 631,
-      637, 643, 648, 654, 660, 666, 672, 678,
-      684, 690, 696, 702, 708, 714, 720, 726,
-      732, 738, 744, 750, 756, 0, 0, 0,
-      0, 0, 0, 0, 780, 589
-    }
-  };
-  /** Constant <code>AA_CB</code> */
-  public static final int[] AA_CB = {
-    0, 13, 21, 33, 47, 61, 71, 83,
-    93, 102, 110, 122, 137, 153, 168, 191,
-    208, 224, 240, 250, 262, 274, 286, 300,
-    314, 327, 343, 359, 376, 389, 397, 0,
-    0, 0, 0, 0, 0, 0
+      {
+          403, 409, 415, 421, 427, 433, 439, 445,
+          451, 457, 463, 471, 477, 483, 489, 495,
+          501, 507, 513, 519, 519, 525, 531, 537,
+          537, 543, 549, 555, 561, 567, 573, 579,
+          391, 762, 0, 0, 0, 0, 0, 403
+      },
+      {
+          1, 7, 15, 27, 41, 55, 65, 77,
+          87, 96, 105, 116, 131, 147, 162, 185,
+          202, 218, 234, 244, 244, 256, 268, 280,
+          280, 294, 308, 321, 337, 353, 370, 384,
+          391, 0, 0, 0, 0, 0, 0, 1
+      },
+      {
+          584, 590, 596, 602, 608, 614, 620, 626,
+          632, 638, 644, 649, 655, 661, 667, 673,
+          679, 685, 691, 697, 697, 703, 709, 715,
+          715, 721, 727, 733, 739, 745, 751, 757,
+          0, 0, 0, 0, 773, 775, 777, 584
+      }
   };
 
-  private static final Logger logger = Logger.getLogger(AminoAcidUtils.class.getName());
+  /**
+   * Constant <code>AA_CA</code>
+   * <p>
+   * GLY ALA VAL LEU ILE SER THR CYS CYX CYD PRO PHE TYR TYD TRP HIS HID HIE ASP ASH ASD ASN GLU GLH
+   * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
+   */
+  public static final int[][] AA_CA = {
+      {
+          404, 410, 416, 422, 428, 434, 440, 446,
+          452, 458, 464, 472, 478, 484, 490, 496,
+          502, 508, 514, 520, 520, 526, 532, 538,
+          538, 544, 550, 556, 562, 568, 574, 580,
+          392, 0, 0, 767, 0, 0, 0, 404
+      },
+      {
+          2, 8, 16, 28, 42, 56, 66, 78,
+          88, 97, 106, 117, 132, 148, 163, 186,
+          203, 219, 235, 245, 245, 257, 269, 281,
+          281, 295, 309, 322, 338, 354, 371, 385,
+          392, 0, 0, 0, 0, 0, 0, 2
+      },
+      {
+          585, 591, 597, 603, 609, 615, 621, 627,
+          633, 639, 645, 650, 656, 662, 668, 674,
+          680, 686, 692, 698, 698, 704, 710, 716,
+          716, 722, 728, 734, 740, 746, 752, 758,
+          0, 0, 0, 0, 0, 0, 779, 585
+      }
+  };
+
+  /**
+   * Constant <code>AA_C</code>
+   * <p>
+   * GLY ALA VAL LEU ILE SER THR CYS CYX CYD PRO PHE TYR TYD TRP HIS HID HIE ASP ASH ASD ASN GLU GLH
+   * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
+   */
+  public static final int[][] AA_C = {
+      {
+          405, 411, 417, 423, 429, 435, 441, 447,
+          453, 459, 465, 473, 479, 485, 491, 497,
+          503, 509, 515, 521, 521, 527, 533, 539,
+          539, 545, 551, 557, 563, 569, 575, 581,
+          393, 0, 764, 769, 0, 0, 0, 405
+      },
+      {
+          3, 9, 17, 29, 43, 57, 67, 79,
+          89, 98, 107, 118, 133, 149, 164, 187,
+          204, 220, 236, 246, 246, 258, 270, 282,
+          282, 296, 310, 323, 339, 355, 372, 386,
+          393, 0, 0, 0, 0, 0, 0, 3
+      },
+      {
+          586, 592, 598, 604, 610, 616, 622, 628,
+          634, 640, 646, 651, 657, 663, 669, 675,
+          681, 687, 693, 699, 699, 705, 711, 717,
+          717, 723, 729, 735, 741, 747, 753, 759,
+          0, 0, 0, 0, 771, 0, 0, 586
+      }
+  };
+  /**
+   * Constant <code>AA_HN</code>
+   * <p>
+   * GLY ALA VAL LEU ILE SER THR CYS CYX CYD PRO PHE TYR TYD TRP HIS HID HIE ASP ASH ASD ASN GLU GLH
+   * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
+   */
+  public static final int[][] AA_HN = {
+      {
+          406, 412, 418, 424, 430, 436, 442, 448,
+          454, 460, 466, 474, 480, 486, 492, 498,
+          504, 510, 516, 522, 522, 528, 534, 540,
+          540, 546, 552, 558, 564, 570, 576, 582,
+          394, 763, 0, 0, 0, 0, 0, 406
+      },
+      {
+          4, 10, 18, 30, 44, 58, 68, 80,
+          90, 99, 0, 119, 134, 150, 165, 188,
+          205, 221, 237, 247, 247, 259, 271, 283,
+          283, 297, 311, 324, 340, 356, 373, 387,
+          394, 0, 0, 0, 0, 0, 0, 4
+      },
+      {
+          587, 593, 599, 605, 611, 617, 623, 629,
+          635, 641, 0, 652, 658, 664, 670, 676,
+          682, 688, 694, 700, 700, 706, 712, 718,
+          718, 724, 730, 736, 742, 748, 754, 760,
+          0, 0, 0, 0, 774, 776, 778, 587
+      }
+  };
+
+  /**
+   * Constant <code>AA_O</code>
+   * <p>
+   * GLY ALA VAL LEU ILE SER THR CYS CYX CYD PRO PHE TYR TYD TRP HIS HID HIE ASP ASH ASD ASN GLU GLH
+   * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
+   */
+  public static final int[][] AA_O = {
+      {
+          407, 413, 419, 425, 431, 437, 443, 449,
+          455, 461, 467, 475, 481, 487, 493, 499,
+          505, 511, 517, 523, 523, 529, 535, 541,
+          541, 547, 553, 559, 565, 571, 577, 583,
+          395, 0, 766, 770, 0, 0, 0, 407
+      },
+      {
+          5, 11, 19, 31, 45, 59, 69, 81,
+          91, 100, 108, 120, 135, 151, 166, 189,
+          206, 222, 238, 248, 248, 260, 272, 284,
+          284, 298, 312, 325, 341, 357, 374, 388,
+          395, 0, 0, 0, 0, 0, 0, 5
+      },
+      {
+          588, 594, 600, 606, 612, 618, 624, 630,
+          636, 642, 647, 653, 659, 665, 671, 677,
+          683, 689, 695, 701, 701, 707, 713, 719,
+          719, 725, 731, 737, 743, 749, 755, 761,
+          0, 0, 0, 0, 772, 0, 0, 588
+      }
+  };
+  /**
+   * Constant <code>AA_HA</code>
+   * <p>
+   * GLY ALA VAL LEU ILE SER THR CYS CYX CYD PRO PHE TYR TYD TRP HIS HID HIE ASP ASH ASD ASN GLU GLH
+   * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
+   */
+  public static final int[][] AA_HA = {
+      {
+          408, 414, 420, 426, 432, 438, 444, 450,
+          456, 462, 468, 476, 482, 488, 494, 500,
+          506, 512, 518, 524, 524, 530, 536, 542,
+          542, 548, 554, 560, 566, 572, 578, 0,
+          396, 0, 765, 768, 0, 0, 0, 408
+      },
+      {
+          6, 12, 20, 32, 46, 60, 70, 82,
+          92, 101, 109, 121, 136, 152, 167, 190,
+          207, 223, 239, 249, 249, 261, 273, 285,
+          285, 299, 313, 326, 342, 358, 375, 0,
+          396, 0, 0, 0, 0, 0, 0, 6
+      },
+      {
+          589, 595, 601, 607, 613, 619, 625, 631,
+          637, 643, 648, 654, 660, 666, 672, 678,
+          684, 690, 696, 702, 702, 708, 714, 720,
+          720, 726, 732, 738, 744, 750, 756, 0,
+          0, 0, 0, 0, 0, 0, 780, 589
+      }
+  };
+  /**
+   * Constant <code>AA_CB</code>
+   * <p>
+   * GLY ALA VAL LEU ILE SER THR CYS CYX CYD PRO PHE TYR TYD TRP HIS HID HIE ASP ASH ASD ASN GLU GLH
+   * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
+   */
+  public static final int[] AA_CB = {
+      0, 13, 21, 33, 47, 61, 71, 83,
+      93, 102, 110, 122, 137, 153, 168, 191,
+      208, 224, 240, 250, 250, 262, 274, 286,
+      286, 300, 314, 327, 343, 359, 376, 389,
+      397, 0, 0, 0, 0, 0, 0, 0
+  };
+
+  /** Constant <code>aminoAcidHeavyAtoms</code> */
+  public static final int[] aminoAcidHeavyAtoms = {
+      /*GLY */ 4, /*ALA */ 5, /*VAL*/ 7, /*LEU */ 8, /*ILE */ 8, /*SER */ 6, /*THR */ 7, /*CYS */ 6,
+      /*CYX */ 6, /*CYD */ 6, /*PRO*/ 7, /*PHE*/ 11, /*TYR*/ 12, /*TYD*/ 12, /*TRP*/ 14, /*HIS*/ 10,
+      /*HID*/ 10, /*HIE*/ 10, /*ASP*/ 8, /*ASH */ 8, /*ASD */ 8, /*ASN */ 8, /*GLU */ 9, /*GLH */ 9,
+      /*GLD */ 9, /*GLN */ 9, /*MET*/ 8, /*LYS */ 9, /*LYD */ 9, /*ARG*/ 11, /*ORN */ 8, /*AIB */ 6,
+      /*PCA */ 8, /*H2N */ 0, /*FOR*/ 0, /*ACE */ 0, /*COH */ 0, /*NH2*/  0, /*NME */ 0, /*UNK */ 0
+  };
+
   /** Constant <code>glycineBackboneAtoms</code> */
   private static final String[] glycineBackboneAtoms = {"N", "H", "CA", "HA2", "HA3", "C", "O"};
   /** Constant <code>prolineBackboneAtoms</code> */
@@ -251,77 +298,230 @@ public class AminoAcidUtils {
   private static final String[] glycineAtoms = {"HA2"};
   /** Constant <code>valineAtoms</code> */
   private static final String[] valineAtoms = {
-    "CB", "HB", "CG1", "HG11", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23"
+      "CB", "HB", "CG1", "HG11", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23"
   };
   /** Constant <code>leucineAtoms</code> */
   private static final String[] leucineAtoms = {
-    "CB", "HB2", "HB3", "CG", "HG", "CD1", "HD11", "HD12", "HD13", "CD2", "HD21", "HD22", "HD23"
+      "CB", "HB2", "HB3", "CG", "HG", "CD1", "HD11", "HD12", "HD13", "CD2", "HD21", "HD22", "HD23"
   };
   /** Constant <code>isoleucineAtoms</code> */
   private static final String[] isoleucineAtoms = {
-    "CB", "HB", "CG1", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23", "CD1", "HD11", "HD12", "HD13"
+      "CB", "HB", "CG1", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23", "CD1", "HD11", "HD12", "HD13"
   };
   /** Constant <code>serineAtoms</code> */
   private static final String[] serineAtoms = {"CB", "HB2", "HB3", "OG", "HG"};
   /** Constant <code>threonineAtoms</code> */
   private static final String[] threonineAtoms = {
-    "CB", "HB", "OG1", "HG1", "CG2", "HG21", "HG22", "HG23"
+      "CB", "HB", "OG1", "HG1", "CG2", "HG21", "HG22", "HG23"
   };
   /** Constant <code>cysteineAtoms</code> */
   private static final String[] cysteineAtoms = {"CB", "HB2", "HB3", "SG", "HG"};
   /** Constant <code>prolineAtoms</code> */
   private static final String[] prolineAtoms = {
-    "CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3"
+      "CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3"
   };
   /** Constant <code>phenylalanineAtoms</code> */
   private static final String[] phenylalanineAtoms = {
-    "CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "HZ"
+      "CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "HZ"
   };
   /** Constant <code>tyrosineAtoms</code> */
   private static final String[] tyrosineAtoms = {
-    "CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "OH",
-    "HH"
+      "CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "OH",
+      "HH"
   };
   /** Constant <code>tryptophanAtoms</code> */
   private static final String[] tryptophanAtoms = {
-    "CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "NE1", "HE1", "CE2", "CE3", "HE3", "CZ2", "HZ2",
-    "CZ3", "HZ3", "CH2", "HH2"
+      "CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "NE1", "HE1", "CE2", "CE3", "HE3", "CZ2", "HZ2",
+      "CZ3", "HZ3", "CH2", "HH2"
   };
-  /** Constant <code>histidineAtoms</code> */
-  private static final String[] histidineAtoms = {
-    "CB", "HB2", "HB3", "CG", "ND1", "HD1", "CD2", "HD2", "CE1", "HE1", "NE2", "HE2"
-  };
+
   /** Constant <code>aspartateAtoms</code> */
   private static final String[] aspartateAtoms = {"CB", "HB2", "HB3", "CG", "OD1", "OD2"};
   /** Constant <code>asparagineAtoms</code> */
   private static final String[] asparagineAtoms = {
-    "CB", "HB2", "HB3", "CG", "OD1", "ND2", "HD21", "HD22"
+      "CB", "HB2", "HB3", "CG", "OD1", "ND2", "HD21", "HD22"
   };
   /** Constant <code>glutamateAtoms</code> */
   private static final String[] glutamateAtoms = {
-    "CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "OE2"
+      "CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "OE2"
   };
   /** Constant <code>glutamineAtoms</code> */
   private static final String[] glutamineAtoms = {
-    "CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "NE2", "HE21", "HE22"
+      "CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "NE2", "HE21", "HE22"
   };
   /** Constant <code>methionineAtoms</code> */
   private static final String[] methionineAtoms = {
-    "CB", "HB2", "HB3", "CG", "HG2", "HG3", "SD", "CE", "HE1", "HE2", "HE3"
-  };
-  /** Constant <code>lysineAtoms</code> */
-  private static final String[] lysineAtoms = {
-    "CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "CE", "HE2", "HE3", "NZ", "HZ1",
-    "HZ2", "HZ3"
-  };
-  /** Constant <code>arginineAtoms</code> */
-  private static final String[] arginineAtoms = {
-    "CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "NE", "HE", "CZ", "NH1", "HH11",
-    "HH12", "NH2", "HH21", "HH22"
+      "CB", "HB2", "HB3", "CG", "HG2", "HG3", "SD", "CE", "HE1", "HE2", "HE3"
   };
 
+  enum LysStates {
+    LYD, LYS
+  }
+
+  enum HisStates {
+    HIS, HID, HIE
+  }
+
+  /** Constant <code>lysineAtoms</code> */
+  public enum LysineAtomNames {
+    CB(0,0), HB2(1,1), HB3(1,1),
+    CG(2,2), HG2(3,3), HG3(3,3),
+    CD(4,4), HD2(5,5), HD3(5,5),
+    CE(6,6), HE2(7,7), HE3(7,7),
+    NZ(8,8), HZ1(9,9), HZ2(9,9),
+    HZ3(9, -1);
+
+    /**
+     * Biotype offset relative to the CB biotype for LYS.
+     */
+    private int offsetLYS;
+
+    /**
+     * Biotype offset relative to the CB biotype for LYD.
+     */
+    private int offsetLYD;
+
+    public int getOffsetLYS(LysStates state) {
+      if (state == LysStates.LYS) {
+        return offsetLYS;
+      } else {
+        return offsetLYD;
+      }
+    }
+
+    /**
+     * Init the Lysine atom names.
+     * @param offsetLYS Biotype offset relative to the CB biotype for LYS.
+     * @param offsetLYD Biotype offset relative to the CB biotype for LYD.
+     */
+    LysineAtomNames(int offsetLYS, int offsetLYD) {
+      this.offsetLYS = offsetLYS;
+      this.offsetLYD = offsetLYD;
+    }
+  }
+
+  /** Constant <code>HistidineAtoms</code> */
+  public enum HistidineAtomNames {
+    // HIS, HID, HIE
+    CB(0, 0,0),
+    HB2(1, 1,1),
+    HB3(1,1,1),
+    CG(2, 2,2),
+    ND1(3,3,3),
+    // No HD1 proton for HIE; HIE HD1 offset is -1.
+    HD1(4,4,-1),
+    CD2(5,5,4),
+    HD2(6,6,5),
+    CE1(7,7,6),
+    HE1(8,8,7),
+    NE2(9,9,8),
+    // No HE2 proton for HID; HID HE2 offset is -1
+    HE2(10,-1 ,9);
+
+    /**
+     * Biotype offset relative to the CB biotype for charged histidine (HIS).
+     */
+    private int offsetHIS;
+
+    /**
+     * Biotype offset relative to the CB biotype for neutral histidine
+     * protonated on the delta nitrogren (HID).
+     *
+     * This is set to negative -1 for the epsilon hydrogen.
+     */
+    private int offsetHID;
+
+    /**
+     * Biotype offset relative to the CB biotype for neutral histidine
+     * protonated the epsilon nitrogen (HIE).
+     *
+     * This is set to negative -1 for the delta hydrogen.
+     */
+    private int offsetHIE;
+
+    public int getOffsetHIS(HisStates state) {
+      if (state == HisStates.HIS) {
+        return offsetHIS;
+      } else if (state == HisStates.HID) {
+        return offsetHID;
+      } else {
+        return offsetHIE;
+      }
+    }
+
+    /**
+     * Init the Histidine atom names.
+     * @param offsetHIS Biotype relative to the CB biotype for HIS.
+     * @param offsetHID Biotype relative to the CB biotype for HID.
+     * @param offsetHIE Biotype relative to the CB biotype for HIE.
+     */
+    HistidineAtomNames(int offsetHIS, int offsetHID, int offsetHIE) {
+      this.offsetHIS = offsetHIS;
+      this.offsetHID = offsetHID;
+      this.offsetHIE = offsetHIE;
+    }
+  }
+
+  /** Constant <code>arginineAtoms</code> */
+  private static final String[] arginineAtoms = {
+      "CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "NE", "HE", "CZ", "NH1", "HH11",
+      "HH12", "NH2", "HH21", "HH22"
+  };
+
+  public static String[] getNames(Class<? extends Enum<?>> e) {
+    return Arrays.stream(e.getEnumConstants()).map(Enum::name).toArray(String[]::new);
+  }
+
+  /**
+   * Stoichiometry of side chains can be used for identification, accept for a couple cases: 1.)
+   * Proline & Valine 2.) (Iso)Leucine 3.) DNA Gaunine/RNA Adenine. This Hashtable returns the
+   * 3-letter name for amino acids, a single character for nucleic acids, or an integer indicating a
+   * special case.
+   */
+  public static final HashMap<String, String> sidechainStoichiometry = new HashMap<>();
+
+  static {
+    // Amino Acid Side Chains
+    sidechainStoichiometry.put("S1C3", "MET");
+    sidechainStoichiometry.put("S1C1", "CYS");
+    sidechainStoichiometry.put("O1C1", "SER");
+    sidechainStoichiometry.put("O1C2", "THR");
+    sidechainStoichiometry.put("O1C7", "TYR");
+    sidechainStoichiometry.put("O2C2", "ASP");
+    sidechainStoichiometry.put("O2C3", "GLU");
+    sidechainStoichiometry.put("O1N1C2", "ASN");
+    sidechainStoichiometry.put("O1N1C3", "GLN");
+    sidechainStoichiometry.put("N3C4", "ARG");
+    sidechainStoichiometry.put("N2C4", "HIS");
+    sidechainStoichiometry.put("N1C9", "TRP");
+    sidechainStoichiometry.put("N1C4", "LYS");
+    sidechainStoichiometry.put("C7", "PHE");
+    sidechainStoichiometry.put("H", "GLY");
+    sidechainStoichiometry.put("C1", "ALA");
+    // DNA
+    sidechainStoichiometry.put("O2N3C6", "DC");
+    sidechainStoichiometry.put("O1N5C7", "DA");
+    sidechainStoichiometry.put("O3N2C7", "DT");
+    // RNA
+    sidechainStoichiometry.put("O3N5C7", "G");
+    sidechainStoichiometry.put("O3N3C6", "C");
+    sidechainStoichiometry.put("O4N2C6", "U");
+    // SPECIAL CASES
+    sidechainStoichiometry.put("C3", "1"); // Proline / Valine
+    sidechainStoichiometry.put("C4", "2"); // (Iso)Leucine
+    sidechainStoichiometry.put("O2N5C7", "3"); // DNA Gaunine / RNA Adenine
+
+    AminoAcid1[] aa1 = AminoAcid1.values();
+    AminoAcid3[] aa3 = AminoAcid3.values();
+    for (int i = 0; i < AminoAcid1.values().length; i++) {
+      AA1toAA3.put(aa1[i], aa3[i]);
+      AA3toAA1.put(aa3[i], aa1[i]);
+    }
+  }
+
   /** Private constructor. */
-  private AminoAcidUtils() {}
+  private AminoAcidUtils() {
+  }
 
   /**
    * Assign atom types to an amino acid polymer.
@@ -669,7 +869,7 @@ public class AminoAcidUtils {
         logger.warning(
             format(
                 " An atom for residue %s has the wrong number of bonds:\n %s",
-                residueName, atom.toString()));
+                residueName, atom));
         logger.info(format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
         for (Bond bond : atom.getBonds()) {
           logger.info(" " + bond.toString());
@@ -1209,8 +1409,6 @@ public class AminoAcidUtils {
         buildHeavy(residue, "CG2", CB, 1.54, CA, 109.5, CG1, 109.5, 1, k + 4, forceField, bondList);
     Atom CD1 =
         buildHeavy(residue, "CD1", CG1, 1.54, CB, 109.5, CA, 180, 0, k + 6, forceField, bondList);
-    //  CD1 = setHeavy(residue, "CD", CG1, 1.54, CB, 109.5, CA, 180, 0, k + 6, forceField,
-    // bondList);
     Atom HB =
         buildHydrogen(
             residue, "HB", CB, 1.11, CA, 109.4, CG2, 109.4, 1, k + 1, forceField, bondList);
@@ -1431,6 +1629,42 @@ public class AminoAcidUtils {
   }
 
   /**
+   * buildTwoProtonAsparticAcid.
+   *
+   * @param residue a {@link ffx.potential.bonded.Residue} object.
+   * @param CA a {@link ffx.potential.bonded.Atom} object.
+   * @param N a {@link ffx.potential.bonded.Atom} object.
+   * @param C a {@link ffx.potential.bonded.Atom} object.
+   * @param k a int.
+   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param bondList a {@link java.util.List} object.
+   * @return a {@link ffx.potential.bonded.Residue} object.
+   */
+  public static Residue buildTwoProtonAsparticAcid(
+      Residue residue, Atom CA, Atom N, Atom C, int k, ForceField forceField, List<Bond> bondList) {
+    Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
+    Atom CG =
+        buildHeavy(residue, "CG", CB, 1.51, CA, 107.8, N, 180, 0, k + 2, forceField, bondList);
+    Atom OD1 =
+        buildHeavy(residue, "OD1", CG, 1.25, CB, 117.0, CA, 0.0, 0, k + 4, forceField, bondList);
+    Atom OD2 =
+        buildHeavy(residue, "OD2", CG, 1.25, CB, 117.0, OD1, 126.0, 1, k + 4, forceField, bondList);
+    Atom HB2 =
+        buildHydrogen(
+            residue, "HB2", CB, 1.11, CA, 109.4, CG, 107.9, 1, k + 1, forceField, bondList);
+    Atom HB3 =
+        buildHydrogen(
+            residue, "HB3", CB, 1.11, CA, 109.4, CG, 107.9, -1, k + 1, forceField, bondList);
+    Atom HD1 =
+        buildHydrogen(
+            residue, "HD1", OD1, 0.98, CG, 108.7, OD2, 0.0, 0, k + 5, forceField, bondList);
+    Atom HD2 =
+        buildHydrogen(
+            residue, "HD2", OD2, 0.98, CG, 108.7, OD1, 0.0, 0, k + 5, forceField, bondList);
+    return residue;
+  }
+
+  /**
    * buildNeutralGlutamicAcid.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
@@ -1465,6 +1699,50 @@ public class AminoAcidUtils {
     Atom HG3 =
         buildHydrogen(
             residue, "HG3", CG, 1.11, CB, 109.4, CD, 107.9, -1, k + 3, forceField, bondList);
+    Atom HE2 =
+        buildHydrogen(
+            residue, "HE2", OE2, 0.98, CD, 108.7, OE1, 0.0, 0, k + 7, forceField, bondList);
+    return residue;
+  }
+
+  /**
+   * buildTwoProtonGlutamicAcid.
+   *
+   * @param residue a {@link ffx.potential.bonded.Residue} object.
+   * @param CA a {@link ffx.potential.bonded.Atom} object.
+   * @param N a {@link ffx.potential.bonded.Atom} object.
+   * @param C a {@link ffx.potential.bonded.Atom} object.
+   * @param k a int.
+   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param bondList a {@link java.util.List} object.
+   * @return a {@link ffx.potential.bonded.Residue} object.
+   */
+  public static Residue buildTwoProtonGlutamicAcid(
+      Residue residue, Atom CA, Atom N, Atom C, int k, ForceField forceField, List<Bond> bondList) {
+    Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
+    Atom CG =
+        buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
+    Atom CD =
+        buildHeavy(residue, "CD", CG, 1.51, CB, 107.8, CA, 180, 0, k + 4, forceField, bondList);
+    Atom OE1 =
+        buildHeavy(residue, "OE1", CD, 1.25, CG, 117.0, CB, 180, 0, k + 6, forceField, bondList);
+    Atom OE2 =
+        buildHeavy(residue, "OE2", CD, 1.25, CG, 117.0, OE1, 126.0, 1, k + 6, forceField, bondList);
+    Atom HB2 =
+        buildHydrogen(
+            residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1, forceField, bondList);
+    Atom HB3 =
+        buildHydrogen(
+            residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1, forceField, bondList);
+    Atom HG2 =
+        buildHydrogen(
+            residue, "HG2", CG, 1.11, CB, 109.4, CD, 107.9, 1, k + 3, forceField, bondList);
+    Atom HG3 =
+        buildHydrogen(
+            residue, "HG3", CG, 1.11, CB, 109.4, CD, 107.9, -1, k + 3, forceField, bondList);
+    Atom HE1 =
+        buildHydrogen(
+            residue, "HE1", OE1, 0.98, CD, 108.7, OE2, 0.0, 0, k + 7, forceField, bondList);
     Atom HE2 =
         buildHydrogen(
             residue, "HE2", OE2, 0.98, CD, 108.7, OE1, 0.0, 0, k + 7, forceField, bondList);
@@ -1706,7 +1984,7 @@ public class AminoAcidUtils {
    * @param N a {@link ffx.potential.bonded.Atom} object.
    * @param C a {@link ffx.potential.bonded.Atom} object.
    * @param k a int.
-   * @param position a {@link ffx.potential.bonded.Residue.ResiduePosition} object.
+   * @param position a {@link ResiduePosition} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
@@ -1997,7 +2275,7 @@ public class AminoAcidUtils {
    */
   public static void copyResidue(Residue fromResidue, Residue toResidue) {
     String resName = fromResidue.getName();
-    AA3 res = AA3.valueOf(resName);
+    AminoAcid3 res = AminoAcid3.valueOf(resName);
     List<String> atomNames = new ArrayList<>();
     switch (res) {
       case ALA:
@@ -2049,7 +2327,7 @@ public class AminoAcidUtils {
         atomNames.addAll(Arrays.asList(backboneAtoms));
         break;
       case HIS:
-        atomNames.addAll(Arrays.asList(histidineAtoms));
+        atomNames.addAll(Arrays.asList(getNames(HistidineAtomNames.class)));
         atomNames.addAll(Arrays.asList(backboneAtoms));
         break;
       case ASP:
@@ -2073,7 +2351,7 @@ public class AminoAcidUtils {
         atomNames.addAll(Arrays.asList(backboneAtoms));
         break;
       case LYS:
-        atomNames.addAll(Arrays.asList(lysineAtoms));
+        atomNames.addAll(Arrays.asList(getNames(LysineAtomNames.class)));
         atomNames.addAll(Arrays.asList(backboneAtoms));
         break;
       case ARG:
@@ -2222,6 +2500,9 @@ public class AminoAcidUtils {
       case ASH:
         buildNeutralAsparticAcid(residue, CA, N, C, k, forceField, bondList);
         break;
+      case ASD:
+        buildTwoProtonAsparticAcid(residue, CA, N, C, k, forceField, bondList);
+        break;
       case ASN:
         buildAsparagine(residue, CA, N, C, k, forceField, bondList);
         break;
@@ -2230,6 +2511,9 @@ public class AminoAcidUtils {
         break;
       case GLH:
         buildNeutralGlutamicAcid(residue, CA, N, C, k, forceField, bondList);
+        break;
+      case GLD:
+        buildTwoProtonGlutamicAcid(residue, CA, N, C, k, forceField, bondList);
         break;
       case GLN:
         buildGlutamine(residue, CA, N, C, k, forceField, bondList);
@@ -2416,13 +2700,11 @@ public class AminoAcidUtils {
                   }
                   break;
                 case 1:
-                  switch (numBonds) {
-                    case 0:
-                      intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                      break;
-                    default:
-                      logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
-                      patched = false;
+                  if (numBonds == 0) {
+                    intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                  } else {
+                    logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
+                    patched = false;
                   }
                   break;
                 default:
@@ -2471,8 +2753,8 @@ public class AminoAcidUtils {
    * etc.
    *
    * @param aminoAcidNumber a int.
-   * @param aminoAcid a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
-   * @param position a {@link ffx.potential.bonded.Residue.ResiduePosition} object.
+   * @param aminoAcid a {@link AminoAcid3} object.
+   * @param position a {@link ResiduePosition} object.
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    */
@@ -2538,5 +2820,204 @@ public class AminoAcidUtils {
 
     Atom toAtom = (Atom) toResidue.getAtomNode(atomName);
     toAtom.setXYZ(fromAtom.getXYZ(null));
+  }
+
+  /**
+   * getAminoAcid.
+   *
+   * @param residueName a {@link String} object.
+   * @return a {@link AminoAcid3} object.
+   */
+  public static AminoAcid3 getAminoAcid(String residueName) {
+    for (AminoAcid3 aminoAcid : aminoAcidList) {
+      if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+        return aminoAcid;
+      }
+    }
+    return AminoAcid3.UNK;
+  }
+
+  /**
+   * This method takes a one letter amino acid code and converts it to a three letter amino acid
+   * code. This method relies on the AminoAcid1 and AminoAcid3 enums having amino acids in exactly
+   * the same order.
+   *
+   * @param residueName The one letter amino acid code.
+   * @return The three letter amino acid code.
+   */
+  public static AminoAcid3 getAminoAcid3From1(String residueName) {
+    for (AminoAcid1 aminoAcid : aminoAcid1List) {
+      if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+        int position = AminoAcid1.valueOf(residueName).ordinal();
+        AminoAcid3 aminoAcid3 = AminoAcid3.values()[position];
+        return aminoAcid3;
+      }
+    }
+    return AminoAcid3.UNK;
+  }
+
+  /**
+   * getAminoAcidNumber.
+   *
+   * @param residueName a {@link String} object.
+   * @return a int.
+   */
+  public static int getAminoAcidNumber(String residueName) {
+    int aminoAcidNumber = -1;
+    for (AminoAcid3 aminoAcid : aminoAcidList) {
+      aminoAcidNumber++;
+      if (aminoAcid.toString().equalsIgnoreCase(residueName)) {
+        break;
+      }
+    }
+    return aminoAcidNumber;
+  }
+
+  /**
+   * The 20 standard amino acids.
+   */
+  public enum AA {
+    GLYCINE,
+    ALANINE,
+    VALINE,
+    LEUCINE,
+    ISOLEUCINE,
+    SERINE,
+    THREONINE,
+    CYSTEINE,
+    PROLINE,
+    PHENYLALANINE,
+    TYROSINE,
+    TRYPTOPHAN,
+    ASPARTATE,
+    ASPARAGINE,
+    GLUTAMATE,
+    GLUTAMINE,
+    METHIONINE,
+    LYSINE,
+    ARGININE,
+    HISTIDINE
+  }
+
+  /** Single letter amino acid codes (need to */
+  public enum AminoAcid1 {
+    G,
+    A,
+    V,
+    L,
+    I,
+    S,
+    T,
+    C,
+    X,
+    c,
+    P,
+    F,
+    Y,
+    y,
+    W,
+    H,
+    U,
+    Z,
+    D, // ASP
+    d, // ASH
+    p, // ASD (double protonation)
+    N,
+    E, // GLU
+    e, // GLH
+    q, // GLD (double protonation)
+    Q,
+    M,
+    K,
+    k,
+    R,
+    O,
+    B,
+    J,
+    t,
+    f,
+    a,
+    o,
+    n,
+    m,
+    x
+  }
+
+  public enum AminoAcid3 {
+    // TODO: Check GLY, SER, THR, CYS and CYD multipole assignment during MultiResidue use.
+    GLY,
+    ALA(true),
+    VAL(true),
+    LEU(true),
+    ILE(true),
+    SER,
+    THR,
+    CYS(false, true, false),
+    CYX,
+    CYD(false, true, true),
+    PRO,
+    PHE(true),
+    TYR(true, true, false),
+    TYD(true, true, true),
+    TRP(true),
+    HIS(true, true, false),
+    HID(true, true, true),
+    HIE(true, true, true),
+    ASP(true, true, false),
+    ASH(true, true, true),
+    ASD(true, true, true),
+    ASN(true),
+    GLU(true, true, false),
+    GLH(true, true, true),
+    GLD(true, true, true),
+    GLN(true),
+    MET(true),
+    LYS(true, true, false),
+    LYD(true, true, true),
+    ARG(true),
+    ORN,
+    AIB,
+    PCA,
+    H2N,
+    FOR,
+    ACE,
+    COH,
+    NH2,
+    NME,
+    UNK;
+
+    public final boolean useWithMultiResidue;
+    public final boolean isTitratable;
+    public final boolean nonStandardProtonation;
+
+    AminoAcid3() {
+      useWithMultiResidue = false;
+      isTitratable = false;
+      nonStandardProtonation = false;
+    }
+
+    AminoAcid3(boolean useWithMultiResidue) {
+      this.useWithMultiResidue = useWithMultiResidue;
+      isTitratable = false;
+      nonStandardProtonation = false;
+    }
+
+    AminoAcid3(boolean useWithMultiResidue, boolean isTitratable, boolean nonStandardProtonation) {
+      this.useWithMultiResidue = useWithMultiResidue;
+      this.isTitratable = isTitratable;
+      this.nonStandardProtonation = nonStandardProtonation;
+      if (nonStandardProtonation && !this.isTitratable) {
+        throw new IllegalArgumentException(
+            format(
+                " Amino acid class %s cannot be both nonstandard and non-titratable!", this));
+      }
+    }
+  }
+
+  /** The location of a residue within a chain. */
+  public enum ResiduePosition {
+    FIRST_RESIDUE,
+    MIDDLE_RESIDUE,
+    LAST_RESIDUE
   }
 }

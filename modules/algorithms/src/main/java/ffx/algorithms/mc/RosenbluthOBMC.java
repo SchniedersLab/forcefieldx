@@ -45,9 +45,10 @@ import static org.apache.commons.math3.util.FastMath.min;
 import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parsers.PDBFilter;
@@ -331,7 +332,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
   }
 
   private Torsion getChiZeroTorsion(Residue residue) {
-    AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+    AminoAcid3 name = AminoAcidUtils.AminoAcid3.valueOf(residue.getName());
     List<Torsion> torsions = residue.getTorsionList();
     switch (name) {
       case VAL:

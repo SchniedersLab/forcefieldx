@@ -44,9 +44,9 @@ import static ffx.potential.bonded.BondedUtils.findNucleotideO4s;
 import static ffx.potential.bonded.BondedUtils.getAlphaCarbon;
 import static ffx.potential.bonded.BondedUtils.hasAttachedAtom;
 import static ffx.potential.bonded.BondedUtils.sortAtomsByDistance;
-import static ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import static ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
-import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import static ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
+import static ffx.potential.bonded.AminoAcidUtils.getAminoAcid;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
@@ -140,6 +140,9 @@ public class NamingUtils {
         // No known errors with valine
         break;
       case LEU:
+      case SER:
+      case CYD:
+      case ASP:
         betas = new ArrayList<>();
         for (Atom atom : resAtoms) {
           if (atom.getName().toUpperCase().contains("HB")) {
@@ -156,15 +159,6 @@ public class NamingUtils {
           }
         }
         renameIsoleucineHydrogens(residue, ileAtoms);
-        break;
-      case SER:
-        betas = new ArrayList<>();
-        for (Atom atom : resAtoms) {
-          if (atom.getName().toUpperCase().contains("HB")) {
-            betas.add(atom);
-          }
-        }
-        renameBetaHydrogens(residue, betas, 23);
         break;
       case THR:
         Atom HG1 = (Atom) residue.getAtomNode("HG1");
@@ -196,15 +190,6 @@ public class NamingUtils {
         break;
       case CYX:
         // I pray this is never important, because I don't have an example CYX to work from.
-        break;
-      case CYD:
-        betas = new ArrayList<>();
-        for (Atom atom : resAtoms) {
-          if (atom.getName().toUpperCase().contains("HB")) {
-            betas.add(atom);
-          }
-        }
-        renameBetaHydrogens(residue, betas, 23);
         break;
       case PRO:
         betas = new ArrayList<>();
@@ -374,15 +359,6 @@ public class NamingUtils {
         renameBetaHydrogens(residue, betas, 23);
         renameEpsilonHydrogens(residue, epsilons, 12);
         break;
-      case ASP:
-        betas = new ArrayList<>();
-        for (Atom atom : resAtoms) {
-          if (atom.getName().toUpperCase().contains("HB")) {
-            betas.add(atom);
-          }
-        }
-        renameBetaHydrogens(residue, betas, 23);
-        break;
       case ASH:
         betas = new ArrayList<>();
         HD2 = (Atom) residue.getAtomNode("HD2");
@@ -396,6 +372,20 @@ public class NamingUtils {
           }
         }
         renameBetaHydrogens(residue, betas, 23);
+        break;
+      case ASD:
+        betas = new ArrayList<>();
+        deltas = new ArrayList<>();
+        for (Atom atom : resAtoms) {
+          atomName = atom.getName().toUpperCase();
+          if (atomName.contains("HB")) {
+            betas.add(atom);
+          } else if (atomName.contains("HD")) {
+            deltas.add(atom);
+          }
+        }
+        renameBetaHydrogens(residue, betas, 23);
+        renameDeltaHydrogens(residue, deltas, 12);
         break;
       case ASN:
         betas = new ArrayList<>();
@@ -412,6 +402,7 @@ public class NamingUtils {
         renameAsparagineHydrogens(residue, HD2s);
         break;
       case GLU:
+      case MET:
         betas = new ArrayList<>();
         gammas = new ArrayList<>();
         for (Atom atom : resAtoms) {
@@ -443,6 +434,24 @@ public class NamingUtils {
         renameBetaHydrogens(residue, betas, 23);
         renameGammaHydrogens(residue, gammas, 23);
         break;
+      case GLD:
+        betas = new ArrayList<>();
+        gammas = new ArrayList<>();
+        epsilons = new ArrayList<>();
+        for (Atom atom : resAtoms) {
+          atomName = atom.getName().toUpperCase();
+          if (atomName.contains("HB")) {
+            betas.add(atom);
+          } else if (atomName.contains("HG")) {
+            gammas.add(atom);
+          } else if (atomName.contains("HE")) {
+            epsilons.add(atom);
+          }
+        }
+        renameBetaHydrogens(residue, betas, 23);
+        renameGammaHydrogens(residue, gammas, 23);
+        renameEpsilonHydrogens(residue, epsilons, 12);
+        break;
       case GLN:
         betas = new ArrayList<>();
         gammas = new ArrayList<>();
@@ -461,21 +470,7 @@ public class NamingUtils {
         renameGammaHydrogens(residue, gammas, 23);
         renameGlutamineHydrogens(residue, epsilons);
         break;
-      case MET:
-        betas = new ArrayList<>();
-        gammas = new ArrayList<>();
-        // Epsilons should not break, as they are 1-3.
-        for (Atom atom : resAtoms) {
-          atomName = atom.getName().toUpperCase();
-          if (atomName.contains("HB")) {
-            betas.add(atom);
-          } else if (atomName.contains("HG")) {
-            gammas.add(atom);
-          }
-        }
-        renameBetaHydrogens(residue, betas, 23);
-        renameGammaHydrogens(residue, gammas, 23);
-        break;
+      // Epsilons should not break, as they are 1-3.
       case LYS:
         betas = new ArrayList<>();
         gammas = new ArrayList<>();
@@ -624,7 +619,7 @@ public class NamingUtils {
       residue.setChainID('Z');
     }
     final Atom N = findNitrogenAtom(residue);
-    ResidueEnumerations.AminoAcid3 aa3 = residue.getAminoAcid3();
+    AminoAcid3 aa3 = residue.getAminoAcid3();
     if (N != null) {
       N.setName("N");
 
@@ -666,7 +661,7 @@ public class NamingUtils {
         throw new IllegalArgumentException(
             format(" Could not find carbonyl carbon for residue %s!", residue));
       }
-      if (CB == null && aa3 != ResidueEnumerations.AminoAcid3.GLY) {
+      if (CB == null && aa3 != AminoAcidUtils.AminoAcid3.GLY) {
         throw new IllegalArgumentException(
             format(" Could not find beta carbon for residue %s!", residue));
       }
@@ -692,39 +687,31 @@ public class NamingUtils {
       }
 
       List<Atom> amideProtons = findBondedAtoms(N, 1);
-      switch (amideProtons.size()) {
-        case 1:
-          amideProtons.get(0).setName("H");
-          break;
-        default:
-          // Should catch both N-termini and proline.
-          for (int i = 1; i <= amideProtons.size(); i++) {
-            amideProtons.get(i - 1).setName(format("H%d", i));
-          }
-          break;
+      if (amideProtons.size() == 1) {
+        amideProtons.get(0).setName("H");
+      } else {// Should catch both N-termini and proline.
+        for (int i = 1; i <= amideProtons.size(); i++) {
+          amideProtons.get(i - 1).setName(format("H%d", i));
+        }
       }
 
       // All common atoms are now named: N, H[1-3], CA, HA[2-3], CB, C, O[XT], [HO]
       renameCommonAminoAcids(residue, aa3, CA, CB);
     } else {
-      switch (aa3) {
-        case ACE:
-          {
-            Atom O = findAtomsOfElement(residue, 8).get(0);
-            O.setName("O");
-            Atom C = findBondedAtoms(O, 6).get(0);
-            C.setName("C");
-            Atom CH3 = findBondedAtoms(C, 6).get(0);
-            CH3.setName("CH3");
-            List<Atom> hydrogens = findBondedAtoms(CH3, 1);
-            for (int i = 1; i <= 3; i++) {
-              hydrogens.get(i - 1).setName(format("H%d", i));
-            }
-          }
-          break;
-        default:
-          throw new IllegalArgumentException(
-              format(" Could not find nitrogen atom for residue %s!", residue));
+      if (aa3 == AminoAcid3.ACE) {
+        Atom O = findAtomsOfElement(residue, 8).get(0);
+        O.setName("O");
+        Atom C = findBondedAtoms(O, 6).get(0);
+        C.setName("C");
+        Atom CH3 = findBondedAtoms(C, 6).get(0);
+        CH3.setName("CH3");
+        List<Atom> hydrogens = findBondedAtoms(CH3, 1);
+        for (int i = 1; i <= 3; i++) {
+          hydrogens.get(i - 1).setName(format("H%d", i));
+        }
+      } else {
+        throw new IllegalArgumentException(
+            format(" Could not find nitrogen atom for residue %s!", residue));
       }
     }
   }
@@ -850,9 +837,7 @@ public class NamingUtils {
         return;
     }
     for (Atom HBatom : HBn) {
-      if (resAtoms.contains(HBatom)) {
-        resAtoms.remove(HBatom);
-      }
+      resAtoms.remove(HBatom);
     }
     if (!resAtoms.isEmpty() && HBn[0] == null && (indexes == 12 || indexes == 13)) {
       resAtoms.get(0).setName("HB1");
@@ -924,7 +909,7 @@ public class NamingUtils {
           Atom SG = renameAlkyl(CB, CA, 2, 'B').get();
           SG.setName("SG");
           if (hasAttachedAtom(SG, 1)) {
-            assert aa3 == ResidueEnumerations.AminoAcid3.CYS;
+            assert aa3 == AminoAcidUtils.AminoAcid3.CYS;
             findBondedAtoms(SG, 1).get(0).setName("HG");
           } else if (hasAttachedAtom(SG, 16)) {
             logger.finer(format(" SG atom %s likely part of a disulfide bond.", SG));
@@ -935,6 +920,7 @@ public class NamingUtils {
         break;
       case ASP:
       case ASH:
+      case ASD:
         {
           Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
           CG.setName("CG");
@@ -948,13 +934,18 @@ public class NamingUtils {
             }
           }
 
+          // Check for double protonation for constant pH.
+          if (hasAttachedAtom(ODs.get(0),1) && hasAttachedAtom(ODs.get(1), 1)) {
+            protonatedOD = 2;
+          }
+
           switch (protonatedOD) {
             case -1:
               ODs.get(0).setName("OD1");
               ODs.get(1).setName("OD2");
               break;
             case 0:
-              if (aa3 != ResidueEnumerations.AminoAcid3.ASH) {
+              if (aa3 != AminoAcidUtils.AminoAcid3.ASH) {
                 residue.setName("ASH");
               }
               ODs.get(0).setName("OD2");
@@ -962,18 +953,28 @@ public class NamingUtils {
               ODs.get(1).setName("OD1");
               break;
             case 1:
-              if (aa3 != ResidueEnumerations.AminoAcid3.ASH) {
+              if (aa3 != AminoAcidUtils.AminoAcid3.ASH) {
                 residue.setName("ASH");
               }
               ODs.get(1).setName("OD2");
               findBondedAtoms(ODs.get(1), 1).get(0).setName("HD2");
               ODs.get(0).setName("OD1");
               break;
+            case 2:
+              if (aa3 != AminoAcidUtils.AminoAcid3.ASD) {
+                residue.setName("ASD");
+              }
+              ODs.get(0).setName("OD1");
+              findBondedAtoms(ODs.get(0), 1).get(0).setName("HD1");
+              ODs.get(1).setName("OD2");
+              findBondedAtoms(ODs.get(1), 1).get(0).setName("HD2");
+              break;
           }
         }
         break;
       case GLU:
       case GLH:
+      case GLD:
         {
           Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
           Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
@@ -988,13 +989,18 @@ public class NamingUtils {
             }
           }
 
+          // Check for double protonation for constant pH.
+          if (hasAttachedAtom(OEs.get(0),1) && hasAttachedAtom(OEs.get(1), 1)) {
+            protonatedOE = 2;
+          }
+
           switch (protonatedOE) {
             case -1:
               OEs.get(0).setName("OE1");
               OEs.get(1).setName("OE2");
               break;
             case 0:
-              if (aa3 != ResidueEnumerations.AminoAcid3.GLH) {
+              if (aa3 != AminoAcidUtils.AminoAcid3.GLH) {
                 residue.setName("GLH");
               }
               OEs.get(0).setName("OE2");
@@ -1002,12 +1008,21 @@ public class NamingUtils {
               OEs.get(1).setName("OE1");
               break;
             case 1:
-              if (aa3 != ResidueEnumerations.AminoAcid3.GLH) {
+              if (aa3 != AminoAcidUtils.AminoAcid3.GLH) {
                 residue.setName("GLH");
               }
               OEs.get(1).setName("OE2");
               findBondedAtoms(OEs.get(1), 1).get(0).setName("HE2");
               OEs.get(0).setName("OE1");
+              break;
+            case 2:
+              if (aa3 != AminoAcidUtils.AminoAcid3.GLD) {
+                residue.setName("GLD");
+              }
+              OEs.get(0).setName("OE1");
+              findBondedAtoms(OEs.get(0), 1).get(0).setName("HE1");
+              OEs.get(1).setName("OE2");
+              findBondedAtoms(OEs.get(1), 1).get(0).setName("HE2");
               break;
           }
         }
@@ -1063,7 +1078,7 @@ public class NamingUtils {
 
           // All constant atoms found: now check protonation state.
           if (epsProtonated && deltaProtonated) {
-            assert aa3 == ResidueEnumerations.AminoAcid3.HIS;
+            assert aa3 == AminoAcidUtils.AminoAcid3.HIS;
           } else if (epsProtonated) {
             residue.setName("HIE");
           } else if (deltaProtonated) {
@@ -1112,7 +1127,7 @@ public class NamingUtils {
               residue.setName("LYD");
               break;
             case 3:
-              assert aa3 == ResidueEnumerations.AminoAcid3.LYS;
+              assert aa3 == AminoAcidUtils.AminoAcid3.LYS;
               break;
             default:
               throw new IllegalArgumentException(
@@ -1276,7 +1291,7 @@ public class NamingUtils {
           Atom OH = findBondedAtoms(CZ, 8).get(0);
           OH.setName("OH");
           if (hasAttachedAtom(OH, 1)) {
-            assert aa3 == ResidueEnumerations.AminoAcid3.TYR;
+            assert aa3 == AminoAcidUtils.AminoAcid3.TYR;
             findBondedAtoms(OH, 1).get(0).setName("HH");
           } else {
             residue.setName("TYD");
@@ -1284,7 +1299,7 @@ public class NamingUtils {
         }
         break;
       default:
-        throw new IllegalArgumentException((format(" Amino acid %s not recognized!", residue)));
+        throw new IllegalArgumentException((format(" Amino acid %s (%s) not recognized!", residue, aa3)));
     }
   }
 
@@ -1299,7 +1314,7 @@ public class NamingUtils {
     if (optO4s.isPresent()) {
       // Name O4', which is the unique ether oxygen.
       Atom O4s = optO4s.get();
-      O4s.setName("O4\'");
+      O4s.setName("O4'");
 
       // C1' is bonded to a nitrogen (at least for non-abasic sites), C4' isn't
       List<Atom> bondedC = findBondedAtoms(O4s, 6);
@@ -1311,20 +1326,20 @@ public class NamingUtils {
       for (Atom c : bondedC) {
         if (hasAttachedAtom(c, 7)) {
           C1s = c;
-          C1s.setName("C1\'");
+          C1s.setName("C1'");
           H1s = findBondedAtoms(C1s, 1).get(0);
-          H1s.setName("H1\'");
+          H1s.setName("H1'");
           N19 = findBondedAtoms(C1s, 7).get(0);
         } else {
           C4s = c;
-          C4s.setName("C4\'");
-          findBondedAtoms(C4s, 1).get(0).setName("H4\'");
+          C4s.setName("C4'");
+          findBondedAtoms(C4s, 1).get(0).setName("H4'");
         }
       }
       assert C4s != null && C1s != null;
 
       Atom C2s = findBondedAtoms(C1s, 6).get(0);
-      C2s.setName("C2\'");
+      C2s.setName("C2'");
 
       bondedC = findBondedAtoms(C4s, 6);
       Atom C5s = null;
@@ -1333,44 +1348,44 @@ public class NamingUtils {
       for (Atom c : bondedC) {
         if (c.getBonds().stream().anyMatch(b -> b.get1_2(c) == C2s)) {
           C3s = c;
-          C3s.setName("C3\'");
+          C3s.setName("C3'");
           O3s = findBondedAtoms(C3s, 8).get(0);
-          O3s.setName("O3\'");
-          findBondedAtoms(C3s, 1).get(0).setName("H3\'");
+          O3s.setName("O3'");
+          findBondedAtoms(C3s, 1).get(0).setName("H3'");
           if (hasAttachedAtom(O3s, 1)) {
-            findBondedAtoms(O3s, 1).get(0).setName("HO3\'");
+            findBondedAtoms(O3s, 1).get(0).setName("HO3'");
           } // Else, handle the possibility of 3'-P cap later.
         } else {
           C5s = c;
-          C5s.setName("C5\'");
+          C5s.setName("C5'");
           List<Atom> allH5List = findBondedAtoms(C5s, 1);
           Atom[] allH5s = allH5List.toArray(new Atom[0]);
           sortAtomsByDistance(O4s, allH5s);
-          allH5s[0].setName("H5\'");
-          allH5s[1].setName("H5\'\'");
+          allH5s[0].setName("H5'");
+          allH5s[1].setName("H5''");
         }
       }
 
       if (hasAttachedAtom(C2s, 8)) {
         Atom O2s = findBondedAtoms(C2s, 8).get(0);
-        O2s.setName("O2\'");
-        findBondedAtoms(O2s, 1).get(0).setName("HO2\'");
-        findBondedAtoms(C2s, 1).get(0).setName("H2\'");
+        O2s.setName("O2'");
+        findBondedAtoms(O2s, 1).get(0).setName("HO2'");
+        findBondedAtoms(C2s, 1).get(0).setName("H2'");
       } else {
         List<Atom> bothH2List = findBondedAtoms(C2s, 1);
         Atom[] bothH2 = bothH2List.toArray(new Atom[0]);
         sortAtomsByDistance(H1s, bothH2);
         // Best-guess assignment, but is sometimes the other way around.
-        bothH2[0].setName("H2\'\'");
-        bothH2[1].setName("H2\'");
+        bothH2[0].setName("H2''");
+        bothH2[1].setName("H2'");
       }
 
       // logger.info(format(" C5\' null: %b", C5s == null));
       Atom O5s = findBondedAtoms(C5s, 8).get(0);
-      O5s.setName("O5\'");
+      O5s.setName("O5'");
 
       if (hasAttachedAtom(O5s, 1)) {
-        findBondedAtoms(O5s, 1).get(0).setName("HO5\'");
+        findBondedAtoms(O5s, 1).get(0).setName("HO5'");
       } else if (hasAttachedAtom(O5s, 15)) {
         Atom P = findBondedAtoms(O5s, 15).get(0);
         P.setName("P");
@@ -1454,7 +1469,7 @@ public class NamingUtils {
       }
       renameCommonNucleobase(N19, C1s, na3);
     } else {
-      logger.warning(" Could not find O4\' for residue " + residue);
+      logger.warning(" Could not find O4' for residue " + residue);
     }
   }
 
@@ -1466,7 +1481,7 @@ public class NamingUtils {
    * @param na3 Identity of the nucleic acid.
    */
   public static void renameCommonNucleobase(
-      Atom N19, Atom C1s, ResidueEnumerations.NucleicAcid3 na3) {
+      Atom N19, Atom C1s, NucleicAcid3 na3) {
     switch (na3) {
       case ADE:
       case DAD:
@@ -1585,7 +1600,7 @@ public class NamingUtils {
         keyAtoms.put("C6", C6);
       }
     }
-    /** Common atoms: N1, C2, N3, C4, C5, C6, N7, C8, H8, N9. */
+    /* Common atoms: N1, C2, N3, C4, C5, C6, N7, C8, H8, N9. */
     return keyAtoms;
   }
 
@@ -1653,9 +1668,7 @@ public class NamingUtils {
         return;
     }
     for (Atom HDatom : HDn) {
-      if (resAtoms.contains(HDatom)) {
-        resAtoms.remove(HDatom);
-      }
+      resAtoms.remove(HDatom);
     }
     if (!resAtoms.isEmpty() && HDn[0] == null && (indexes == 12 || indexes == 13)) {
       resAtoms.get(0).setName("HD1");
@@ -1697,9 +1710,7 @@ public class NamingUtils {
         return;
     }
     for (Atom HEatom : HEn) {
-      if (resAtoms.contains(HEatom)) {
-        resAtoms.remove(HEatom);
-      }
+      resAtoms.remove(HEatom);
     }
     if (!resAtoms.isEmpty() && HEn[0] == null && (indexes == 12 || indexes == 13)) {
       resAtoms.get(0).setName("HE1");
@@ -1741,9 +1752,7 @@ public class NamingUtils {
         return;
     }
     for (Atom HGatom : HGn) {
-      if (resAtoms.contains(HGatom)) {
-        resAtoms.remove(HGatom);
-      }
+      resAtoms.remove(HGatom);
     }
     if (!resAtoms.isEmpty() && HGn[0] == null && (indexes == 12 || indexes == 13)) {
       resAtoms.get(0).setName("HG1");
@@ -1890,7 +1899,7 @@ public class NamingUtils {
       residue.setChainID('Z');
     }
     assert residue.getResidueType() == Residue.ResidueType.NA;
-    ResidueEnumerations.NucleicAcid3 na3 = residue.getNucleicAcid3(true);
+    NucleicAcid3 na3 = residue.getNucleicAcid3(true);
     residue.setName(na3.toString());
     switch (na3) {
       case ADE:
@@ -1905,7 +1914,7 @@ public class NamingUtils {
         renameCommonNucleicAcid(residue, na3);
         break;
       default:
-        logger.info(" Could not rename atoms for nonstandard nucleic acid " + na3.toString());
+        logger.info(" Could not rename atoms for nonstandard nucleic acid " + na3);
         break;
     }
   }
@@ -1936,9 +1945,7 @@ public class NamingUtils {
         return;
     }
     for (Atom HZatom : HZn) {
-      if (resAtoms.contains(HZatom)) {
-        resAtoms.remove(HZatom);
-      }
+      resAtoms.remove(HZatom);
     }
     if (!resAtoms.isEmpty() && HZn[0] == null && (indexes == 12 || indexes == 13)) {
       resAtoms.get(0).setName("HZ1");

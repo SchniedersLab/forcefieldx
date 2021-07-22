@@ -44,11 +44,12 @@ import static java.lang.System.arraycopy;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
@@ -202,7 +203,7 @@ public class RosenbluthChiAllMove implements MCMove {
     if (torsionSampling) {
       logger.info(" Torsion Sampler engaged!");
       HashMap<Integer, BackBondedList> map =
-          createBackBondedMap(AminoAcid3.valueOf(target.getName()));
+          createBackBondedMap(AminoAcidUtils.AminoAcid3.valueOf(target.getName()));
       List<Torsion> allTors = new ArrayList<>();
       for (int i = 0; i < map.size(); i++) {
         Torsion tors = map.get(i).torsion;
@@ -431,7 +432,7 @@ public class RosenbluthChiAllMove implements MCMove {
   private void engageCheap() {
     report.append(format(" Rosenbluth CBMC Move: %4d  (%s)\n", moveNumber, target));
 
-    AminoAcid3 name = AminoAcid3.valueOf(target.getName());
+    AminoAcid3 name = AminoAcidUtils.AminoAcid3.valueOf(target.getName());
     double[] chi = RotamerLibrary.measureRotamer(target, false);
     HashMap<Integer, BackBondedList> map = createBackBondedMap(name);
 
@@ -551,7 +552,7 @@ public class RosenbluthChiAllMove implements MCMove {
   private void engageExpensive() {
     report.append(format(" Rosenbluth CBMC Move: %4d  %s\n", moveNumber, target));
 
-    AminoAcid3 name = AminoAcid3.valueOf(target.getName());
+    AminoAcid3 name = AminoAcidUtils.AminoAcid3.valueOf(target.getName());
     double[] chi = RotamerLibrary.measureRotamer(target, false);
     HashMap<Integer, BackBondedList> map = createBackBondedMap(name);
 
@@ -722,7 +723,7 @@ public class RosenbluthChiAllMove implements MCMove {
   }
 
   private Rotamer createRotamer(Residue res, double[] chi) {
-    return createRotamer(AminoAcid3.valueOf(res.getName()), chi);
+    return createRotamer(AminoAcidUtils.AminoAcid3.valueOf(res.getName()), chi);
   }
 
   private void updateAll() {
@@ -1102,8 +1103,8 @@ public class RosenbluthChiAllMove implements MCMove {
    */
   private double[] measureLysine(Residue residue, boolean print) {
     if (!residue.getName().contains("LY")
-        || (residue.getAminoAcid3() != AminoAcid3.LYS
-            && residue.getAminoAcid3() != AminoAcid3.LYD)) {
+        || (residue.getAminoAcid3() != AminoAcidUtils.AminoAcid3.LYS
+            && residue.getAminoAcid3() != AminoAcidUtils.AminoAcid3.LYD)) {
       logger.severe("Yeah that ain't a lysine.");
     }
     double[] chi = new double[4];

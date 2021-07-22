@@ -94,10 +94,12 @@ class MutatePDB extends AlgorithmsScript {
   boolean allChains = false
 
   /**
-   * One or more filenames.
+   * A PDB filename.
    */
-  @Parameters(arity = "1", paramLabel = "files", description = "A PDB input files.")
-  private List<String> filenames
+  @Parameters(arity = "1", paramLabel = "file",
+      description = "A PDB input file.")
+  private String filename
+
   private ForceFieldEnergy forceFieldEnergy
 
   /**
@@ -125,17 +127,17 @@ class MutatePDB extends AlgorithmsScript {
       return this
     }
 
+
+    // The "false" assembly provides access to the chainIDs without compromising the mutated molecular assembly.
     // Used if --allChains is true.
-    // The false assembly provides access to the chainIDs without compromising the mutated molecular assembly.
-    MolecularAssembly falseAssembly
-    // Set false assembly.
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-      falseAssembly = assemblies[0]
-    } else if (falseAssembly == null) {
+
+    // Load the MolecularAssembly.
+    MolecularAssembly falseAssembly = getActiveAssembly(filename)
+    if (falseAssembly == null) {
       logger.info(helpString())
       return this
     }
+
     // For every chain, mutate the residue.
     Polymer[] chains = falseAssembly.getChains()
 
@@ -151,7 +153,6 @@ class MutatePDB extends AlgorithmsScript {
     logger.info("\n Mutating residue number " + resID + " of chain " + chain + " to " + resName)
 
     // Read in command line.
-    String filename = filenames.get(0)
     File structureFile = new File(filename)
     int index = filename.lastIndexOf(".")
     String name = filename.substring(0, index)

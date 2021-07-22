@@ -118,11 +118,11 @@ class PrepareSpaceGroups extends PotentialScript {
   String sg
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is a single filename in PDB or XYZ format.
    */
-  @Parameters(arity = "1..*", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  String filename = null
 
   public int numberCreated = 0
   private ForceFieldEnergy energy
@@ -148,35 +148,36 @@ class PrepareSpaceGroups extends PotentialScript {
   @Override
   PrepareSpaceGroups run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
+    // Turn off periodic PME.
     System.setProperty("ewald-alpha", "0.0")
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
 
-    logger.info("\n Preparing space group directories for " + modelFilename)
+    logger.info("\n Preparing space group directories for " + filename)
 
     energy = activeAssembly.getPotentialEnergy()
-    CompositeConfiguration config = activeAssembly.getProperties()
+    CompositeConfiguration properties = activeAssembly.getProperties()
 
     File coordFile = activeAssembly.getFile()
     String coordName = FilenameUtils.getName(coordFile.getPath())
 
-    File propertyFile = new File(config.getString("propertyFile"))
+    File propertyFile = new File(properties.getString("propertyFile"))
 
     Atom[] atoms = activeAssembly.getAtomArray()
     double mass = activeAssembly.getMass()
-    double density = density
     if (density < 0.0) {
       density = 1.0
     }

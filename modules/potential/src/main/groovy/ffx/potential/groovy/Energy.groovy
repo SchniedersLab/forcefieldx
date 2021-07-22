@@ -100,11 +100,11 @@ class Energy extends PotentialScript {
   private boolean verbose = false
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is a PDB or XYZ coordinate file.
    */
-  @Parameters(arity = "1", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
-  private List<String> filenames = null
+  private String filename = null
 
   public double energy = 0.0
   public ForceFieldEnergy forceFieldEnergy = null
@@ -129,19 +129,21 @@ class Energy extends PotentialScript {
    * Execute the script.
    */
   Energy run() {
-
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      activeAssembly = potentialFunctions.open(filenames.get(0))
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
-    String filename = activeAssembly.getFile().getAbsolutePath()
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
     logger.info("\n Running Energy on " + filename)
 
     // Apply atom selections

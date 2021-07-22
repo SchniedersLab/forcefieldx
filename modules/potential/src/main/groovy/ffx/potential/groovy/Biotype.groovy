@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Bond
 import ffx.potential.cli.PotentialScript
@@ -55,9 +54,12 @@ import picocli.CommandLine.Parameters
 @Command(description = " Print out Biotype records for the atoms in an XYZ file.", name = "ffxc Biotype")
 class Biotype extends PotentialScript {
 
-  @Parameters(arity = "1..*", paramLabel = "files",
-      description = "An XYZ file.")
-  List<String> xyzFile = null
+  /**
+   * The final argument is a single filename in XYZ format.
+   */
+  @Parameters(arity = "1", paramLabel = "files",
+      description = "An XYZ coordinate file.")
+  String filename = null
 
   // Create a List of bioptype String entries.
   private List<BioType> bioTypes = null
@@ -85,22 +87,25 @@ class Biotype extends PotentialScript {
     return bioTypes
   }
 
-
   @Override
   Biotype run() {
+
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    if (xyzFile != null && xyzFile.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(xyzFile.get(0))]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
-    logger.info("\n Running Biotype on " + activeAssembly.toString())
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Running Biotype on " + filename)
 
     Atom[] atoms = activeAssembly.getAtomArray()
     String mol = atoms[0].getAtomType().environment
