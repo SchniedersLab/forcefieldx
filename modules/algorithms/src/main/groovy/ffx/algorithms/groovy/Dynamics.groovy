@@ -81,13 +81,6 @@ class Dynamics extends AlgorithmsScript {
   @Mixin
   RepExOptions repEx
 
-  /*/
-   * -r or --repEx to execute temperature replica exchange.
-
-  @Option(names = ['-x', '--repEx'], paramLabel = 'false',
-      description = 'Execute temperature replica exchange')
-  boolean repEx = false*/
-
   /**
    * One or more filenames.
    */
@@ -152,9 +145,6 @@ class Dynamics extends AlgorithmsScript {
     // Set active atoms.
     atomSelectionOptions.setActiveAtoms(activeAssembly)
 
-    File structureFile = new File(FilenameUtils.normalize(filename))
-    structureFile = new File(structureFile.getAbsolutePath())
-    String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
 
     potential = activeAssembly.getPotentialEnergy()
     double[] x = new double[potential.getNumberOfVariables()]
@@ -195,15 +185,14 @@ class Dynamics extends AlgorithmsScript {
 
             File firstStructure = structureFiles.get(0)
             String filePathNoExtension = firstStructure.getAbsolutePath().replaceFirst(~/\.[^.]+$/, "")
-            File histogramRestart = new File(filePathNoExtension + ".his")
 
             String withRankName = filePathNoExtension
-            String baseName = FilenameUtils.getBaseName(filenames.get(0))
 
             List<File> rankedFiles = new ArrayList<>(nFiles)
             String rankDirName = FilenameUtils.getFullPath(filePathNoExtension)
             rankDirName = format("%s%d", rankDirName, rank)
             File rankDirectory = new File(rankDirName)
+
             if (!rankDirectory.exists()) {
                 rankDirectory.mkdir()
             }
