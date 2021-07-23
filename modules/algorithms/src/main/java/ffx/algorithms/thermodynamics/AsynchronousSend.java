@@ -114,7 +114,7 @@ class AsynchronousSend extends Thread {
         histogram.world.receive(null, receiveCountBuf);
       } catch (InterruptedIOException ioe) {
         String message =
-            " CountReceiveThread was interrupted at world.receive; "
+            " AsynchronousSend was interrupted at world.receive; "
                 + "future message passing may be in an error state.";
         logger.log(Level.WARNING, message, ioe);
         break;

@@ -39,6 +39,7 @@ package ffx.algorithms.thermodynamics;
 
 import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS;
 import static ffx.utilities.Constants.R;
+import static ffx.utilities.FileUtils.relativePathTo;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -71,7 +72,6 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
-import ffx.utilities.FileUtils;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -1300,6 +1300,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     /** Once the lambda reset value is reached, OST statistics are reset. */
     private final double lambdaResetValue;
     private final boolean writeIndependent;
+    /**
+     * Use a Metadynamics potential instead of OST.
+     */
     private final boolean metaDynamics;
     private final boolean independentWalkers;
     /**
@@ -1506,9 +1509,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       // Attempt to load a restart file if one exists.
       readRestart();
 
-      histogramFileName = FileUtils.relativePathTo(histogramFile).toString();
+      histogramFileName = relativePathTo(histogramFile).toString();
       if (lambdaFile != null) {
-        lambdaFileName = FileUtils.relativePathTo(lambdaFile).toString();
+        lambdaFileName = relativePathTo(lambdaFile).toString();
       } else {
         lambdaFileName = FilenameUtils.removeExtension(histogramFileName) + ".lam";
       }
@@ -1609,18 +1612,16 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     public String toString() {
-      StringBuilder sb = new StringBuilder(" OST Histogram");
-      sb.append(format("\n  Gaussian bias magnitude: %6.3f (kcal/mol)", biasMag));
-      sb.append(format("\n  Tempering offset:        %6.3f (kcal/mol)", temperOffset));
-      sb.append(format("\n  Tempering rate:          %6.3f", temperingFactor));
-      sb.append(format("\n  Discrete lambda:         %6B", discreteLambda));
-      sb.append(format("\n  Number of Lambda bins:   %6d", lambdaBins));
-      sb.append(format("\n  Lambda bin width:        %6.3f", lambdaBinWidth));
-      sb.append(format("\n  Number of dU/dL bins:    %6d", dUdLBins));
-      sb.append(format("\n  dU/dL bin width:         %6.3f (kcal/mol)", dUdLBinWidth));
-      sb.append(format("\n  Histogram restart:       %s",
-          FileUtils.relativePathTo(histogramFile)));
-      return sb.toString();
+      return " OST Histogram"
+          + format("\n  Gaussian bias magnitude: %6.3f (kcal/mol)", biasMag)
+          + format("\n  Tempering offset:        %6.3f (kcal/mol)", temperOffset)
+          + format("\n  Tempering rate:          %6.3f", temperingFactor)
+          + format("\n  Discrete lambda:         %6B", discreteLambda)
+          + format("\n  Number of Lambda bins:   %6d", lambdaBins)
+          + format("\n  Lambda bin width:        %6.3f", lambdaBinWidth)
+          + format("\n  Number of dU/dL bins:    %6d", dUdLBins)
+          + format("\n  dU/dL bin width:         %6.3f (kcal/mol)", dUdLBinWidth)
+          + format("\n  Histogram restart:       %s", relativePathTo(histogramFile));
     }
 
     public synchronized double updateFreeEnergyEstimate(boolean print, boolean save) {
@@ -2087,14 +2088,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           continue;
         }
         double guessLam = lambdaLadder[guessBin];
-        double guessErr = Math.abs(guessLam - lambda);
+        double guessErr = abs(guessLam - lambda);
         if (guessErr < minErr) {
           minErr = guessErr;
           minErrBin = guessBin;
         }
       }
 
-      assert minErr < 1.0E-6 && minErrBin > -1;
+      assert minErr < 1.0E-6;
       return minErrBin;
     }
 
@@ -2465,37 +2466,43 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       int currentLambdaBin = indexForLambda(currentLambda);
       int currentdUdLBin = binFordUdL(currentdUdL);
 
+      double bias1D;
       double bias2D = 0.0;
-      if (biasMag > 0.0) {
-        for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
 
-          int lambdaBin = currentLambdaBin + iL;
-          double deltaL = currentLambda - (lambdaBin * lambdaBinWidth);
-          double deltaL2 = deltaL * deltaL;
-          double expL2 = exp(-deltaL2 / (2.0 * lambdaVariance));
+      if (!metaDynamics) {
+        if (biasMag > 0.0) {
+          for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
 
-          // Mirror conditions for recursion kernel counts.
-          lambdaBin = lambdaMirror(lambdaBin);
-          double mirrorFactor = mirrorFactor(lambdaBin);
+            int lambdaBin = currentLambdaBin + iL;
+            double deltaL = currentLambda - (lambdaBin * lambdaBinWidth);
+            double deltaL2 = deltaL * deltaL;
+            double expL2 = exp(-deltaL2 / (2.0 * lambdaVariance));
 
-          for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
-            int dUdLBin = currentdUdLBin + iFL;
+            // Mirror conditions for recursion kernel counts.
+            lambdaBin = lambdaMirror(lambdaBin);
+            double mirrorFactor = mirrorFactor(lambdaBin);
 
-            double weight = mirrorFactor * getRecursionKernelValue(lambdaBin, dUdLBin);
-            if (weight <= 0.0) {
-              continue;
+            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+              int dUdLBin = currentdUdLBin + iFL;
+
+              double weight = mirrorFactor * getRecursionKernelValue(lambdaBin, dUdLBin);
+              if (weight <= 0.0) {
+                continue;
+              }
+
+              double deltaFL = currentdUdL - dUdLforBin(dUdLBin);
+              double deltaFL2 = deltaFL * deltaFL;
+              double bias = weight * biasMag * expL2 * exp(-deltaFL2 / (2.0 * dUdLVariance));
+              bias2D += bias;
             }
-
-            double deltaFL = currentdUdL - dUdLforBin(dUdLBin);
-            double deltaFL2 = deltaFL * deltaFL;
-            double bias = weight * biasMag * expL2 * exp(-deltaFL2 / (2.0 * dUdLVariance));
-            bias2D += bias;
           }
         }
-      }
 
-      // Compute the energy for the recursion worker at F(L) using interpolation.
-      double bias1D = energyAndGradient1D(currentLambda, false);
+        // Compute the energy for the recursion worker at F(L) using interpolation.
+        bias1D = energyAndGradient1D(currentLambda, false);
+      } else {
+        bias1D = energyAndGradientMeta(currentLambda, false);
+      }
 
       // Return the total bias.
       return bias1D + bias2D;
