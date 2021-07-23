@@ -133,6 +133,9 @@ class Density extends PotentialScript {
       return this
     }
 
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
     SystemFilter openFilter = potentialFunctions.getFilter()
     double totMass = activeAssembly.getMass()
     Crystal crystal = activeAssembly.getCrystal().getUnitCell()

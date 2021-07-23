@@ -41,7 +41,7 @@ import static ffx.potential.bonded.BondedUtils.determineIntxyz;
 import static java.lang.System.arraycopy;
 
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -355,9 +355,9 @@ public class Loop {
       arraycopy(determineIntxyz(c, 1.2255, ca, 122.4, fn, 180, 0), 0, o, 0, 3); // O
       coordsArray = fillCoordsArray(O, coordsArray, o);
 
-      AminoAcid3 name = AminoAcid3.valueOf(newResidue.getName());
+      AminoAcid3 name = AminoAcidUtils.AminoAcid3.valueOf(newResidue.getName());
 
-      if (name != AminoAcid3.GLY) {
+      if (name != AminoAcidUtils.AminoAcid3.GLY) {
         Atom HA = (Atom) newResidue.getAtomNode("HA");
         double[] ha = coordsArray[HA.getIndex() - 1];
         arraycopy(determineIntxyz(ca, 1.0, n, 109.5, c, 109.5, -1), 0, ha, 0, 3); // HA

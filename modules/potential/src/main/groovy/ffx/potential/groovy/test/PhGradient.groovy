@@ -39,7 +39,6 @@ package ffx.potential.groovy.test
 
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MultiResidue
 import ffx.potential.bonded.Residue
@@ -51,9 +50,9 @@ import ffx.potential.extended.ExtendedVariable
 import ffx.potential.extended.TitrationESV
 import ffx.potential.extended.TitrationUtils
 import ffx.potential.utils.PotentialsUtils
-import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import java.util.stream.IntStream
@@ -83,22 +82,22 @@ class PhGradient extends PotentialScript {
   /**
    * --pH or --constantPH Constant pH value for the test.
    */
-  @CommandLine.Option(names = ['--pH', '--constantPH'], paramLabel = '7.4',
+  @Option(names = ['--pH', '--constantPH'], paramLabel = '7.4',
       description = 'Constant pH value for the test.')
   double pH = 7.4
 
   /**
    * --esvLambda ESV Lambda at which to test gradient.
    */
-  @CommandLine.Option(names = ['--esvLambda'], paramLabel = '0.5',
+  @Option(names = ['--esvLambda'], paramLabel = '0.5',
       description = 'ESV Lambda at which to test gradient.')
   double esvLambda = 0.5
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument should be a PDB coordinate file.
    */
-  @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  @Parameters(arity = "1", paramLabel = "file", description = 'The atomic coordinate file in PDB format.')
+  String filename = null
 
   private ForceFieldEnergy energy
   //For unit test of endstate energies.
@@ -133,22 +132,18 @@ class PhGradient extends PotentialScript {
 
     TitrationUtils.initDiscountPreloadProperties()
 
-    String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly molecularAssembly =
-          TitrationUtils.openFullyProtonated(
-              new File(filenames.get(0)), (PotentialsUtils) potentialFunctions)
-
-      MolecularAssembly[] assemblies = [molecularAssembly]
-      activeAssembly = assemblies[0]
+    if (filename != null) {
+      activeAssembly = TitrationUtils.
+          openFullyProtonated(new File(filename), (PotentialsUtils) potentialFunctions)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
-    } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
 
-    logger.info("\n Testing the atomic coordinate gradient of " + modelFilename + "\n")
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Testing the atomic coordinate gradient of " + filename + "\n")
 
     // Select all possible titrating residues.
     List<Residue> titrating = TitrationUtils.chooseTitratables(activeAssembly)
@@ -339,14 +334,14 @@ class PhGradient extends PotentialScript {
 
     energy.getCoordinates(x)
     energy.energyAndGradient(x, g)
-    double eMinus = 0
-    double ePlus = 0
     double[] esvDerivs = esvSystem.derivatives
 
     // Check the dU/dL_i analytic results vs. finite-differences for extended system variables.
     // Loop over extended system variables
     for (int i = 0; i < numESVs; i++) {
-      //Calculate backward finite difference if very close to lambda=1
+      double eMinus
+      double ePlus
+      // Calculate backward finite difference if very close to lambda=1
       if (esvLambda + step > 1) {
         esvSystem.setLambda(i, esvLambda - 2 * step)
         eMinus = energy.energy(x)
@@ -354,7 +349,7 @@ class PhGradient extends PotentialScript {
         ePlus = energy.energy(x)
       }
 
-      //Calculate forward finite difference if very close to lambda=0
+      // Calculate forward finite difference if very close to lambda=0
       else if (esvLambda - step < 0) {
         esvSystem.setLambda(i, esvLambda + 2 * step)
         ePlus = energy.energy(x)
@@ -362,7 +357,7 @@ class PhGradient extends PotentialScript {
         eMinus = energy.energy(x)
       }
 
-      //Calculate central finite difference
+      // Calculate central finite difference
       else {
         esvSystem.setLambda(i, esvLambda + step)
         ePlus = energy.energy(x)

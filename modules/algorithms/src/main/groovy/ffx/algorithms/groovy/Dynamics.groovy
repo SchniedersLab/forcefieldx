@@ -56,12 +56,6 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import java.util.stream.Collectors
-
-import static java.lang.String.format
-import static java.lang.String.format
-import static java.lang.String.format
-
 /**
  * The Dynamics script implements molecular and stochastic dynamics algorithms.
  * <br>
@@ -72,118 +66,122 @@ import static java.lang.String.format
 @Command(description = " Run dynamics on a system.", name = "ffxc Dynamics")
 class Dynamics extends AlgorithmsScript {
 
-    @Mixin
-    AtomSelectionOptions atomSelectionOptions
+  @Mixin
+  AtomSelectionOptions atomSelectionOptions
 
-    @Mixin
-    DynamicsOptions dynamicsOptions
+  @Mixin
+  DynamicsOptions dynamicsOptions
 
-    @Mixin
-    BarostatOptions barostatOptions
+  @Mixin
+  BarostatOptions barostatOptions
 
-    @Mixin
-    WriteoutOptions writeOut
+  @Mixin
+  WriteoutOptions writeOut
 
-    @Mixin
-    RepExOptions repEx
+  @Mixin
+  RepExOptions repEx
 
+  /*/
+   * -r or --repEx to execute temperature replica exchange.
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files",
-            description = "XYZ or PDB input files.")
-    private List<String> filenames
+  @Option(names = ['-x', '--repEx'], paramLabel = 'false',
+      description = 'Execute temperature replica exchange')
+  boolean repEx = false*/
 
-    /**
-     * Creation of a public field to try and make the JUnit test work, original code does not declare this as a public field.
-     * Originally it is declared in the run method
-     */
-    public Potential potential = null
-    public MolecularDynamics molDyn = null
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files",
+      description = "XYZ or PDB input files.")
+  private List<String> filenames
 
-    MolecularDynamics getMolecularDynamics() {
-        return molDyn
+  /**
+   * Creation of a public field to try and make the JUnit test work, original code does not declare this as a public field.
+   * Originally it is declared in the run method
+   */
+  public Potential potential = null
+  public MolecularDynamics molDyn = null
+
+  MolecularDynamics getMolecularDynamics() {
+    return molDyn
+  }
+
+  Potential getPotentialObject() {
+    return potential
+  }
+
+  /**
+   * Dynamics Constructor.
+   */
+  Dynamics() {
+    this(new Binding())
+  }
+
+  /**
+   * Dynamics Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Dynamics(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  Dynamics run() {
+
+    // Init the context and bind variables.
+    if (!init()) {
+      return this
     }
 
-    Potential getPotentialObject() {
-        return potential
+    // Init DynamicsOptions (e.g. the thermostat and barostat flags).
+    dynamicsOptions.init()
+
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
     }
 
-    /**
-     * Dynamics Constructor.
-     */
-    Dynamics() {
-        this(new Binding())
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    // Set active atoms.
+    atomSelectionOptions.setActiveAtoms(activeAssembly)
+
+    File structureFile = new File(FilenameUtils.normalize(filename))
+    structureFile = new File(structureFile.getAbsolutePath())
+    String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
+
+    potential = activeAssembly.getPotentialEnergy()
+    double[] x = new double[potential.getNumberOfVariables()]
+    potential.getCoordinates(x)
+    potential.energy(x, true)
+
+    if (barostatOptions.pressure > 0) {
+      CrystalPotential crystalPotential = (CrystalPotential) potential
+      Barostat barostat = barostatOptions.createBarostat(activeAssembly, crystalPotential)
+      potential = barostat
     }
 
-    /**
-     * Dynamics Constructor.
-     * @param binding The Groovy Binding to use.
-     */
-    Dynamics(Binding binding) {
-        super(binding)
-    }
+    Comm world = Comm.world()
+    int size = world.size()
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    Dynamics run() {
+    if (!repEx.repEx || size < 2) {
+      logger.info("\n Running molecular dynamics on " + filename)
+      // Restart File
+      File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
+      if (!dyn.exists()) {
+        dyn = null
+      }
 
-        if (!init()) {
-            return this
-        }
+      molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
 
-        dynamicsOptions.init()
-
-        String modelFilename
-        if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-            activeAssembly = assemblies[0]
-            modelFilename = filenames.get(0)
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        } else {
-            modelFilename = activeAssembly.getFile().getAbsolutePath()
-        }
-
-        atomSelectionOptions.setActiveAtoms(activeAssembly)
-
-        /* File structureFile = new File(FilenameUtils.normalize(modelFilename))
-         structureFile = new File(structureFile.getAbsolutePath())
-         String baseFilename = FilenameUtils.removeExtension(structureFile.getName())*/
-
-        potential = activeAssembly.getPotentialEnergy()
-        double[] x = new double[potential.getNumberOfVariables()]
-        potential.getCoordinates(x)
-        potential.energy(x, true)
-
-        if (barostatOptions.pressure > 0) {
-            CrystalPotential crystalPotential = (CrystalPotential) potential
-            Barostat barostat = barostatOptions.createBarostat(activeAssembly, crystalPotential)
-            potential = barostat
-        }
-
-        Comm world = Comm.world()
-        int size = world.size()
-        List<String> files = filenames
-        int nFiles = filenames.size()
-        nFiles = (nFiles < 1) ? 1 : nFiles
-
-        if (!repEx.repEx || size < 2) {
-            logger.info("\n Running molecular dynamics on " + modelFilename)
-            // Restart File
-            File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
-            if (!dyn.exists()) {
-                dyn = null
-            }
-
-            molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
-
-            molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
-                    dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
+      molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
+          dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
 
         } else {
             logger.info("\n Running replica exchange molecular dynamics on " + modelFilename)
@@ -221,37 +219,36 @@ class Dynamics extends AlgorithmsScript {
             logger.info("ranked Files:" + rankedFiles.get(0))
             File dyn = new File(withRankName + ".dyn")
 
-            activeAssembly.setFile(rankedFiles.get(0))
-            molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
-            ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
-                    dynamicsOptions.temperature, repEx.exponent)
+      molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
+      ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
+          dynamicsOptions.temperature, repEx.exponent)
 
-            long totalSteps = dynamicsOptions.steps
-            int nSteps = repEx.replicaSteps
-            int cycles = (int) (totalSteps / nSteps)
-            if (cycles <= 0) {
-                cycles = 1
-            }
+      long totalSteps = dynamicsOptions.steps
+      int nSteps = repEx.replicaSteps
+      int cycles = (int) (totalSteps / nSteps)
+      if (cycles <= 0) {
+        cycles = 1
+      }
 
-            replicaExchange.
-                    sample(cycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
-        }
-
-        return this
+      replicaExchange.
+          sample(cycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    List<Potential> getPotentials() {
-        List<Potential> potentials
-        if (potential == null) {
-            potentials = Collections.emptyList()
-        } else {
-            potentials = Collections.singletonList(potential)
-        }
-        return potentials
+    return this
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  List<Potential> getPotentials() {
+    List<Potential> potentials
+    if (potential == null) {
+      potentials = Collections.emptyList()
+    } else {
+      potentials = Collections.singletonList(potential)
     }
+    return potentials
+  }
 
 }

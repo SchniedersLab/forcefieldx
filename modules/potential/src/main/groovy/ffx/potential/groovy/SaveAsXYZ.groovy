@@ -133,8 +133,11 @@ class SaveAsXYZ extends PotentialScript {
       logger.info(helpString())
       return this
     }
+
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
     SystemFilter openFilter = potentialFunctions.getFilter()
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
     int numModels = openFilter.countNumModels()
 
     int offset = 0
@@ -172,13 +175,13 @@ class SaveAsXYZ extends PotentialScript {
 
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+      saveDir = new File(FilenameUtils.getFullPath(filename))
     }
     String dirName = saveDir.getAbsolutePath()
-    String fileName = FilenameUtils.getName(modelFilename)
+    String name = FilenameUtils.getName(filename)
 
     if (writeSnapshot >= 1) {
-      XYZFilter snapshotFilter = new XYZFilter(new File(dirName + File.separator + fileName),
+      XYZFilter snapshotFilter = new XYZFilter(new File(dirName + File.separator + name),
           activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
       openFilter.readNext(true)
       int counter = 1
@@ -205,18 +208,18 @@ class SaveAsXYZ extends PotentialScript {
       return this
     }
 
-    logger.info("\n Writing out XYZ for " + modelFilename)
+    logger.info("\n Writing out XYZ for " + filename)
 
     if (numModels <= 1) {
-      fileName = FilenameUtils.removeExtension(fileName) + ".xyz"
-      File modelFile = new File(dirName + File.separator + fileName)
+      name = FilenameUtils.removeExtension(name) + ".xyz"
+      File modelFile = new File(dirName + File.separator + name)
 
       saveOptions.preSaveOperations(activeAssembly)
       potentialFunctions.save(activeAssembly, modelFile)
     } else {
       //Save to an arc file rather than an xyz file if more than one model exists.
-      fileName = FilenameUtils.removeExtension(fileName) + ".arc"
-      File modelFile = new File(dirName + File.separator + fileName)
+      name = FilenameUtils.removeExtension(name) + ".arc"
+      File modelFile = new File(dirName + File.separator + name)
 
       File saveFile = potentialFunctions.versionFile(modelFile)
       saveOptions.preSaveOperations(activeAssembly)

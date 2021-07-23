@@ -37,10 +37,14 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import static ffx.potential.bonded.AminoAcidUtils.AA1toAA3;
+import static ffx.potential.bonded.NucleicAcidUtils.NA1toNA3;
 import static java.lang.System.arraycopy;
 
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid1;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid1;
+import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -76,16 +80,11 @@ public class Residue extends MSGroup implements Comparable<Residue> {
           .thenComparingInt(Residue::getResidueNumber)
           .thenComparing(Residue::getResidueType)
           .thenComparing(Residue::getName);
-  /** Constant <code>NA1toNA3</code> */
-  private static final HashMap<NA1, NA3> NA1toNA3 = new HashMap<>();
+
   /** Constant <code>NA3Color</code> */
-  private static final HashMap<NA3, Color3f> NA3Color = new HashMap<>();
-  /** Constant <code>AA1toAA3</code> */
-  private static final HashMap<AA1, AA3> AA1toAA3 = new HashMap<>();
-  /** Constant <code>AA3toAA1</code> */
-  private static final HashMap<AA3, AA1> AA3toAA1 = new HashMap<>();
+  private static final HashMap<NucleicAcid3, Color3f> NA3Color = new HashMap<>();
   /** Constant <code>AA3Color</code> */
-  private static final HashMap<AA3, Color3f> AA3Color = new HashMap<>();
+  private static final HashMap<AminoAcid3, Color3f> AA3Color = new HashMap<>();
   /** Constant <code>SSTypeColor</code> */
   private static final HashMap<SSType, Color3f> SSTypeColor = new HashMap<>();
   /** Flag to indicate use of original coordinates as a rotamer. */
@@ -110,62 +109,51 @@ public class Residue extends MSGroup implements Comparable<Residue> {
       addOrigRot = false;
     }
 
-    AA1[] aa1 = AA1.values();
-    AA3[] aa3 = AA3.values();
-    for (int i = 0; i < AA1.values().length; i++) {
-      AA1toAA3.put(aa1[i], aa3[i]);
-      AA3toAA1.put(aa3[i], aa1[i]);
-    }
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.ADE, RendererCache.RED);
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.CYT, RendererCache.MAGENTA);
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.GUA, RendererCache.BLUE);
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.URI, RendererCache.YELLOW);
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.DAD, RendererCache.RED);
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.DCY, RendererCache.MAGENTA);
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.DGU, RendererCache.BLUE);
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.DTY, RendererCache.ORANGE);
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.MP1, RendererCache.GREEN);
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.DP2, RendererCache.GREEN);
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.TP3, RendererCache.GREEN);
+    NA3Color.put(NucleicAcidUtils.NucleicAcid3.UNK, RendererCache.CYAN);
 
-    NA1[] na1 = NA1.values();
-    NA3[] na3 = NA3.values();
-    for (int i = 0; i < NA1.values().length; i++) {
-      NA1toNA3.put(na1[i], na3[i]);
-    }
-
-    NA3Color.put(NA3.A, RendererCache.RED);
-    NA3Color.put(NA3.C, RendererCache.MAGENTA);
-    NA3Color.put(NA3.G, RendererCache.BLUE);
-    NA3Color.put(NA3.U, RendererCache.YELLOW);
-    NA3Color.put(NA3.DA, RendererCache.RED);
-    NA3Color.put(NA3.DC, RendererCache.MAGENTA);
-    NA3Color.put(NA3.DG, RendererCache.BLUE);
-    NA3Color.put(NA3.DT, RendererCache.ORANGE);
-    NA3Color.put(NA3.MPO, RendererCache.GREEN);
-    NA3Color.put(NA3.DPO, RendererCache.GREEN);
-    NA3Color.put(NA3.TPO, RendererCache.GREEN);
-    NA3Color.put(NA3.UNK, RendererCache.CYAN);
-
-    AA3Color.put(AA3.ALA, RendererCache.GRAY);
-    AA3Color.put(AA3.ARG, RendererCache.BLUE);
-    AA3Color.put(AA3.ASN, RendererCache.BLUE);
-    AA3Color.put(AA3.ASP, RendererCache.RED);
-    AA3Color.put(AA3.CYS, RendererCache.YELLOW);
-    AA3Color.put(AA3.GLN, RendererCache.BLUE);
-    AA3Color.put(AA3.GLU, RendererCache.RED);
-    AA3Color.put(AA3.GLY, RendererCache.GRAY);
-    AA3Color.put(AA3.ILE, RendererCache.GRAY);
-    AA3Color.put(AA3.LEU, RendererCache.GRAY);
-    AA3Color.put(AA3.LYS, RendererCache.BLUE);
-    AA3Color.put(AA3.MET, RendererCache.YELLOW);
-    AA3Color.put(AA3.PHE, RendererCache.GREEN);
-    AA3Color.put(AA3.PRO, RendererCache.ORANGE);
-    AA3Color.put(AA3.SER, RendererCache.BLUE);
-    AA3Color.put(AA3.THR, RendererCache.BLUE);
-    AA3Color.put(AA3.TRP, RendererCache.GREEN);
-    AA3Color.put(AA3.TYR, RendererCache.GREEN);
-    AA3Color.put(AA3.VAL, RendererCache.GRAY);
-    AA3Color.put(AA3.HIS, RendererCache.BLUE);
-    AA3Color.put(AA3.HIE, RendererCache.BLUE);
-    AA3Color.put(AA3.HID, RendererCache.BLUE);
-    AA3Color.put(AA3.ORN, RendererCache.ORANGE);
-    AA3Color.put(AA3.AIB, RendererCache.ORANGE);
-    AA3Color.put(AA3.PCA, RendererCache.ORANGE);
-    AA3Color.put(AA3.FOR, RendererCache.RED);
-    AA3Color.put(AA3.ACE, RendererCache.RED);
-    AA3Color.put(AA3.NH2, RendererCache.BLUE);
-    AA3Color.put(AA3.NME, RendererCache.BLUE);
-    AA3Color.put(AA3.UNK, RendererCache.MAGENTA);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.ALA, RendererCache.GRAY);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.ARG, RendererCache.BLUE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.ASN, RendererCache.BLUE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.ASP, RendererCache.RED);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.CYS, RendererCache.YELLOW);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.GLN, RendererCache.BLUE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.GLU, RendererCache.RED);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.GLH, RendererCache.RED);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.GLD, RendererCache.RED);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.GLY, RendererCache.GRAY);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.ILE, RendererCache.GRAY);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.LEU, RendererCache.GRAY);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.LYS, RendererCache.BLUE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.MET, RendererCache.YELLOW);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.PHE, RendererCache.GREEN);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.PRO, RendererCache.ORANGE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.SER, RendererCache.BLUE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.THR, RendererCache.BLUE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.TRP, RendererCache.GREEN);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.TYR, RendererCache.GREEN);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.VAL, RendererCache.GRAY);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.HIS, RendererCache.BLUE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.HIE, RendererCache.BLUE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.HID, RendererCache.BLUE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.ORN, RendererCache.ORANGE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.AIB, RendererCache.ORANGE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.PCA, RendererCache.ORANGE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.FOR, RendererCache.RED);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.ACE, RendererCache.RED);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.NH2, RendererCache.BLUE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.NME, RendererCache.BLUE);
+    AA3Color.put(AminoAcidUtils.AminoAcid3.UNK, RendererCache.MAGENTA);
 
     SSTypeColor.put(SSType.NONE, RendererCache.WHITE);
     SSTypeColor.put(SSType.SHEET, RendererCache.PINK);
@@ -206,9 +194,9 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   /** Short string describing this residue. */
   private String shortString = null;
   /** 3-letter amino acid code. */
-  private AA3 aa;
+  private AminoAcid3 aa;
   /** 3-letter nucleic acid code. */
-  private NA3 na;
+  private NucleicAcid3 na;
   /**
    * These arrays store default coordinates for certain atoms in nucleic acid Residues. C1', O4', and
    * C4' are the critical sugar atoms off which every other atom is drawn when applyRotamer is
@@ -227,7 +215,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    * Default Constructor where num is this Residue's position in the Polymer.
    *
    * @param num a int.
-   * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+   * @param rt a {@link ResidueType} object.
    */
   public Residue(int num, ResidueType rt) {
     super();
@@ -240,7 +228,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    * Constructor for Residue.
    *
    * @param name a {@link java.lang.String} object.
-   * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+   * @param rt a {@link ResidueType} object.
    */
   public Residue(String name, ResidueType rt) {
     super(name);
@@ -253,7 +241,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    *
    * @param name a {@link java.lang.String} object.
    * @param num a int.
-   * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+   * @param rt a {@link ResidueType} object.
    */
   public Residue(String name, int num, ResidueType rt) {
     this(name, rt);
@@ -265,7 +253,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    *
    * @param name a {@link java.lang.String} object.
    * @param resNumber a int.
-   * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+   * @param rt a {@link ResidueType} object.
    * @param chainID a {@link java.lang.Character} object.
    * @param segID a {@link java.lang.String} object.
    */
@@ -282,7 +270,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    * @param name a {@link java.lang.String} object.
    * @param num a int.
    * @param atoms a {@link ffx.potential.bonded.MSNode} object.
-   * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+   * @param rt a {@link ResidueType} object.
    * @param forceField the ForceField to use when created bonded terms.
    */
   public Residue(String name, int num, MSNode atoms, ResidueType rt, ForceField forceField) {
@@ -397,17 +385,17 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   /**
    * getAminoAcid3.
    *
-   * @return a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+   * @return a {@link AminoAcid3} object.
    */
   public AminoAcid3 getAminoAcid3() {
     if (this.residueType != ResidueType.AA) {
       throw new IllegalArgumentException(
           String.format(" This residue is " + "not an amino acid: %s", this));
-    } else if (aa == AA3.UNK) {
+    } else if (aa == AminoAcidUtils.AminoAcid3.UNK) {
       logger.fine(String.format("UNK stored for residue with name: %s", getName()));
-      return AminoAcid3.UNK;
+      return AminoAcidUtils.AminoAcid3.UNK;
     }
-    return AminoAcid3.valueOf(getName());
+    return AminoAcidUtils.AminoAcid3.valueOf(getName());
   }
 
   /**
@@ -523,20 +511,20 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   /**
    * getNucleicAcid3.
    *
-   * @return a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
+   * @return a {@link NucleicAcid3} object.
    */
   public NucleicAcid3 getNucleicAcid3() {
     if (this.residueType != ResidueType.NA) {
       throw new IllegalArgumentException(
           String.format(" This residue is " + "not a nucleic acid: %s", this));
-    } else if (na == NA3.UNK) {
-      return NucleicAcid3.UNK;
+    } else if (na == NucleicAcidUtils.NucleicAcid3.UNK) {
+      return NucleicAcidUtils.NucleicAcid3.UNK;
     }
 
     try {
-      return NucleicAcid3.valueOf(getName());
+      return NucleicAcidUtils.NucleicAcid3.valueOf(getName());
     } catch (Exception e) {
-      return NucleicAcid3.UNK;
+      return NucleicAcidUtils.NucleicAcid3.UNK;
     }
   }
 
@@ -545,30 +533,30 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    * or 2-letter names.
    *
    * @param matchShortName Try to match 1- or 2-letter names (e.g. A to ADE).
-   * @return a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
+   * @return a {@link NucleicAcid3} object.
    */
   public NucleicAcid3 getNucleicAcid3(boolean matchShortName) {
     NucleicAcid3 na3 = getNucleicAcid3();
-    if (na3 == NucleicAcid3.UNK && matchShortName) {
+    if (na3 == NucleicAcidUtils.NucleicAcid3.UNK && matchShortName) {
       switch (getName()) {
         case "A":
-          return NucleicAcid3.ADE;
+          return NucleicAcidUtils.NucleicAcid3.ADE;
         case "C":
-          return NucleicAcid3.CYT;
+          return NucleicAcidUtils.NucleicAcid3.CYT;
         case "G":
-          return NucleicAcid3.GUA;
+          return NucleicAcidUtils.NucleicAcid3.GUA;
         case "T":
-          return NucleicAcid3.THY;
+          return NucleicAcidUtils.NucleicAcid3.THY;
         case "U":
-          return NucleicAcid3.URI;
+          return NucleicAcidUtils.NucleicAcid3.URI;
         case "DA":
-          return NucleicAcid3.DAD;
+          return NucleicAcidUtils.NucleicAcid3.DAD;
         case "DC":
-          return NucleicAcid3.DCY;
+          return NucleicAcidUtils.NucleicAcid3.DCY;
         case "DG":
-          return NucleicAcid3.DGU;
+          return NucleicAcidUtils.NucleicAcid3.DGU;
         case "DT":
-          return NucleicAcid3.DTY;
+          return NucleicAcidUtils.NucleicAcid3.DTY;
         case "DU":
           throw new IllegalArgumentException(
               " No NucleicAcid3 enum exists for DU (presumed to be deoxy-uracil)!");
@@ -662,7 +650,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   /**
    * Getter for the field <code>residueType</code>.
    *
-   * @return a {@link ffx.potential.bonded.Residue.ResidueType} object.
+   * @return a {@link ResidueType} object.
    */
   public ResidueType getResidueType() {
     return residueType;
@@ -717,9 +705,9 @@ public class Residue extends MSGroup implements Comparable<Residue> {
         double[] chi = RotamerLibrary.measureRotamer(this, false);
         switch (residueType) {
           case AA:
-            AminoAcid3 aa3 = AminoAcid3.UNK;
+            AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.UNK;
             try {
-              aa3 = AminoAcid3.valueOf(getName());
+              aa3 = AminoAcidUtils.AminoAcid3.valueOf(getName());
             } catch (Exception e) {
               //
             }
@@ -728,9 +716,9 @@ public class Residue extends MSGroup implements Comparable<Residue> {
             rotamers[0] = originalRotamer;
             break;
           case NA:
-            NucleicAcid3 na3 = NucleicAcid3.UNK;
+            NucleicAcid3 na3 = NucleicAcidUtils.NucleicAcid3.UNK;
             try {
-              na3 = NucleicAcid3.valueOf(getName());
+              na3 = NucleicAcidUtils.NucleicAcid3.valueOf(getName());
             } catch (Exception e) {
               //
             }
@@ -877,7 +865,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
     boolean isDeoxy;
     try {
-      switch (NucleicAcid3.valueOf(this.getName())) {
+      switch (NucleicAcidUtils.NucleicAcid3.valueOf(this.getName())) {
         case DAD:
         case DCY:
         case DGU:
@@ -1151,229 +1139,30 @@ public class Residue extends MSGroup implements Comparable<Residue> {
         aa = null;
         try {
           if (name.length() >= 2) {
-            aa = AA3.valueOf(name);
+            aa = AminoAcidUtils.AminoAcid3.valueOf(name);
           } else if (name.length() == 1) {
-            AA1 aa1 = AA1.valueOf(name);
+            AminoAcid1 aa1 = AminoAcidUtils.AminoAcid1.valueOf(name);
             aa = AA1toAA3.get(aa1);
           }
         } catch (Exception e) {
           logger.fine(String.format("Exception assigning AA3 for residue: %s", name));
-          aa = AA3.UNK;
+          aa = AminoAcidUtils.AminoAcid3.UNK;
         }
         break;
       case NA:
         na = null;
         try {
           if (name.length() >= 2) {
-            na = NA3.parse(name);
+            na = NucleicAcidUtils.NucleicAcid3.parse(name);
           } else if (name.length() == 1) {
-            NA1 na1 = NA1.valueOf(name);
+            NucleicAcid1 na1 = NucleicAcidUtils.NucleicAcid1.valueOf(name);
             na = NA1toNA3.get(na1);
           }
         } catch (Exception e) {
-          na = NA3.UNK;
+          na = NucleicAcidUtils.NucleicAcid3.UNK;
         }
         break;
     }
-  }
-
-  /** The location of a residue within a chain. */
-  public enum ResiduePosition {
-    FIRST_RESIDUE,
-    MIDDLE_RESIDUE,
-    LAST_RESIDUE
-  }
-
-  public enum AA {
-    GLYCINE,
-    ALANINE,
-    VALINE,
-    LEUCINE,
-    ISOLEUCINE,
-    SERINE,
-    THREONINE,
-    CYSTEINE,
-    PROLINE,
-    PHENYLALANINE,
-    TYROSINE,
-    TRYPTOPHAN,
-    ASPARTATE,
-    ASPARAGINE,
-    GLUTAMATE,
-    GLUTAMINE,
-    METHIONINE,
-    LYSINE,
-    ARGININE,
-    HISTIDINE
-  }
-
-  public enum AA1 {
-    G,
-    A,
-    V,
-    L,
-    I,
-    S,
-    T,
-    C,
-    P,
-    F,
-    Y,
-    W,
-    D,
-    N,
-    E,
-    Q,
-    M,
-    K,
-    R,
-    H,
-    U,
-    Z,
-    O,
-    B,
-    J,
-    f,
-    a,
-    n,
-    m,
-    X
-  }
-
-  public enum AA3 {
-    GLY,
-    ALA,
-    VAL,
-    LEU,
-    ILE,
-    SER,
-    THR,
-    CYS,
-    PRO,
-    PHE,
-    TYR,
-    TRP,
-    ASP,
-    ASN,
-    GLU,
-    GLN,
-    MET,
-    LYS,
-    ARG,
-    HIS,
-    HID,
-    HIE,
-    ORN,
-    AIB,
-    PCA,
-    FOR,
-    ACE,
-    NH2,
-    NME,
-    UNK,
-    ASH,
-    GLH,
-    LYD,
-    CYD,
-    TYD
-  }
-
-  public enum NA {
-    ADENINE,
-    CYTOSINE,
-    GUANINE,
-    URACIL,
-    DEOXYADENINE,
-    DEOXYCYTOSINE,
-    DEOXYGUANINE,
-    THYMINE,
-    MONOPHOSPHATE,
-    DIPHOSPHATE,
-    TRIPHOSPHATE
-  }
-
-  public enum NA1 {
-    A,
-    C,
-    G,
-    U,
-    D,
-    I,
-    B,
-    T,
-    P,
-    Q,
-    R,
-    X
-  }
-
-  public enum NA3 {
-    A,
-    C,
-    G,
-    U,
-    DA,
-    DC,
-    DG,
-    DT,
-    MPO,
-    DPO,
-    TPO,
-    UNK;
-
-    /**
-     * Best-guess parse of a String to an NA3.
-     *
-     * @param name Parse to NA3.
-     * @return Corresponding NA3.
-     * @throws IllegalArgumentException For 'DU', which has no implemented NA3.
-     */
-    public static NA3 parse(String name) throws IllegalArgumentException {
-      // Only semi-abnormal cases: THY parses to DT instead of T, and DU throws an exception.
-      switch (name.toUpperCase()) {
-        case "ADE":
-        case "A":
-          return A;
-        case "CYT":
-        case "C":
-          return C;
-        case "GUA":
-        case "G":
-          return G;
-        case "URI":
-        case "U":
-          return U;
-        case "DAD":
-        case "DA":
-          return DA;
-        case "DCY":
-        case "DC":
-          return DC;
-        case "DGU":
-        case "DG":
-          return DG;
-        case "DTY":
-        case "THY":
-        case "DT":
-          return DT;
-        case "DU":
-          throw new IllegalArgumentException(" No NA3 value exists for deoxy-uracil!");
-        case "MPO":
-          return MPO;
-        case "DPO":
-          return DPO;
-        case "TPO":
-          return TPO;
-        default:
-          return UNK;
-      }
-    }
-  }
-
-  public enum ResidueType {
-    NA,
-    AA,
-    UNK
   }
 
   public enum SSType {
@@ -1381,5 +1170,14 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     HELIX,
     SHEET,
     TURN
+  }
+
+  /**
+   * Residue type [NA, AA, UNK].
+   */
+  public enum ResidueType {
+    NA,
+    AA,
+    UNK
   }
 }

@@ -43,7 +43,6 @@ import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
 import picocli.CommandLine.Command
@@ -66,10 +65,11 @@ class ManyBody extends AlgorithmsScript {
   ManyBodyOptions manyBody
 
   /**
-   * One or more filenames.
+   * An XYZ or PDB input file.
    */
-  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
-  private List<String> filenames
+  @Parameters(arity = "1", paramLabel = "file",
+      description = "XYZ or PDB input file.")
+  private String filename
 
   ForceFieldEnergy potentialEnergy
   boolean testing = null
@@ -105,21 +105,19 @@ class ManyBody extends AlgorithmsScript {
       System.setProperty("gk-suppressWarnings", "true")
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-      if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
-        renameAtomsToPDBStandard(activeAssembly)
-      }
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
+    if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
+      renameAtomsToPDBStandard(activeAssembly)
+    }
+
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
     potentialEnergy = activeAssembly.getPotentialEnergy()
-
-    // End rotamer adding code
 
     RotamerOptimization rotamerOptimization = new RotamerOptimization(
         activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)

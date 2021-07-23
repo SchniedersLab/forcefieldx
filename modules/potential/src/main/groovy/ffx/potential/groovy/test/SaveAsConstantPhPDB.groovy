@@ -35,48 +35,51 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.groovy
+package ffx.potential.groovy.test
 
+import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.ConstantPhUtils
 import ffx.potential.cli.PotentialScript
-import ffx.potential.cli.SaveOptions
+import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.ForceFieldFilter
+import ffx.potential.parsers.PDBFilter
+import ffx.utilities.Keyword
+import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
+import static java.lang.String.format
+
 /**
- * The SaveAsP1 script expands a specified file to P1
+ * The Gradient script evaluates the consistency of the energy and gradient.
  * <br>
  * Usage:
  * <br>
- * ffxc SaveAsP1 [options] &lt;filename&gt;
+ * ffxc test.Gradient [options] &lt;filename&gt;
  */
-@Command(description = " Expand the system to P1 and then save it.", name = "ffxc SaveAsP1")
-class SaveAsP1 extends PotentialScript {
-
-  @Mixin
-  SaveOptions saveOptions
+@Command(description = " Test the potential energy gradient.", name = "ffxc test.Gradient")
+class SaveAsConstantPhPDB extends PotentialScript {
 
   /**
-   * The final argument is a PDB or XYZ coordinate file.
+   * The final argument should be a PDB coordinate file.
    */
   @Parameters(arity = "1", paramLabel = "file",
-      description = 'The atomic coordinate file in PDB or XYZ format.')
-  private String filename = null
-
+      description = 'The atomic coordinate file in PDB format.')
+  String filename = null
 
   /**
-   * SaveAsP1 Constructor.
+   * SaveAsConstantPhPDB constructor.
    */
-  SaveAsP1() {
+  SaveAsConstantPhPDB() {
     this(new Binding())
   }
 
   /**
-   * SaveAsP1 Constructor.
-   * @param binding Groovy Binding to use.
+   * SaveAsConstantPhPDB constructor.
+   * @param binding The Groovy Binding to use.
    */
-  SaveAsP1(Binding binding) {
+  SaveAsConstantPhPDB(Binding binding) {
     super(binding)
   }
 
@@ -84,24 +87,32 @@ class SaveAsP1 extends PotentialScript {
    * Execute the script.
    */
   @Override
-  SaveAsP1 run() {
+  SaveAsConstantPhPDB run() {
 
-    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    // Load the MolecularAssembly.
-    activeAssembly = getActiveAssembly(filename)
-    if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
-    }
+    logger.info("\n Adding constant pH protons to: " + filename + "\n")
 
-    // Set the filename.
-    filename = activeAssembly.getFile().getAbsolutePath()
+    // Read in command line.
+    File structureFile = new File(filename)
+    int index = filename.lastIndexOf(".")
+    String name = filename.substring(0, index)
+    activeAssembly = new MolecularAssembly(name)
+    activeAssembly.setFile(structureFile)
 
-    logger.info("\n Expanding to P1 for " + filename)
+    CompositeConfiguration properties = Keyword.loadProperties(structureFile)
+    ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties)
+    ForceField forceField = forceFieldFilter.parse()
+    activeAssembly.setForceField(forceField)
+
+    PDBFilter pdbFilter = new PDBFilter(structureFile, activeAssembly, forceField, properties)
+    pdbFilter.setConstantPH(true)
+
+    pdbFilter.readFile()
+    pdbFilter.applyAtomProperties()
+    activeAssembly.finalize(true, forceField)
 
     // Configure the base directory if it has not been set.
     File saveDir = baseDir
@@ -109,15 +120,18 @@ class SaveAsP1 extends PotentialScript {
       saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
-    String name = FilenameUtils.getName(filename)
-    String dirName = saveDir.getAbsolutePath()
-    File saveLocation = new File(dirName + File.separator + name)
+    String dirName = saveDir.toString() + File.separator
+    String fileName = FilenameUtils.getName(filename)
+    fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
+    File modelFile = new File(dirName + fileName)
 
-    logger.info(" Saving P1 file to: " + saveLocation)
+    if (!pdbFilter.writeFile(modelFile, false, false, true)) {
+      logger.info(format(" Save failed for %s", activeAssembly))
+    }
 
-    saveOptions.preSaveOperations(activeAssembly)
-    potentialFunctions.saveAsP1(activeAssembly, saveLocation)
+    ConstantPhUtils constantPhUtils = new ConstantPhUtils(forceField)
 
     return this
   }
+
 }

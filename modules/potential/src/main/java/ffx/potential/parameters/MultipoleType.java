@@ -77,6 +77,10 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
       new double[] {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   /** Constant <code>zeroD</code> */
   public static final double[] zeroD = new double[] {0.0, 0.0, 0.0};
+  /** Constant <code>zeroD</code> */
+  public static final double[][] zeroQ
+      = new double[][] {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+
   /** Constant <code>chrg=t000</code> */
   public static final int t000 = 0;
   /** Constant <code>t100=1</code> */

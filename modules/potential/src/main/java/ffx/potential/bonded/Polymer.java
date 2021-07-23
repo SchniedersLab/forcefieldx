@@ -261,9 +261,9 @@ public class Polymer extends MSGroup {
     // Join the residues in the Polymer
     if (link) {
       Residue residue = getFirstResidue();
-      if (residue.residueType == ResidueType.AA) {
+      if (residue.residueType == Residue.ResidueType.AA) {
         getAtomNode().setName("Amino Acids " + "(" + residues.size() + ")");
-      } else if (residue.residueType == ResidueType.NA) {
+      } else if (residue.residueType == Residue.ResidueType.NA) {
         getAtomNode().setName("Nucleic Acids " + "(" + residues.size() + ")");
       } else {
         getAtomNode().setName("Residues " + "(" + residues.size() + ")");
@@ -286,7 +286,7 @@ public class Polymer extends MSGroup {
         }
       }
 
-      if (residue.residueType == ResidueType.AA) {
+      if (residue.residueType == Residue.ResidueType.AA) {
         getTermNode().setName("Peptide Bonds " + "(" + joints.getChildCount() + ")");
       } else {
         getTermNode().setName("Linkages " + "(" + joints.getChildCount() + ")");
@@ -420,7 +420,7 @@ public class Polymer extends MSGroup {
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
   public Residue getResidue(
-      String resName, int resNum, boolean create, Residue.ResidueType defaultRT) {
+      String resName, int resNum, boolean create, ResidueType defaultRT) {
     for (Enumeration<TreeNode> e = getAtomNode().children(); e.hasMoreElements(); ) {
       Residue r = (Residue) e.nextElement();
       if (r.getResidueNumber() == resNum && r.getName().equalsIgnoreCase(resName)) {
@@ -434,11 +434,11 @@ public class Polymer extends MSGroup {
     resName = resName.toUpperCase();
     if (resName.length() == 1) {
       try {
-        ResidueEnumerations.NucleicAcid1.valueOf(resName);
+        NucleicAcidUtils.NucleicAcid1.valueOf(resName);
         residue = new Residue(resName, resNum, Residue.ResidueType.NA, chainID, getName());
       } catch (Exception e) {
         try {
-          ResidueEnumerations.AminoAcid1.valueOf(resName);
+          AminoAcidUtils.AminoAcid1.valueOf(resName);
           residue = new Residue(resName, resNum, Residue.ResidueType.AA, chainID, getName());
         } catch (Exception ex) {
           //
@@ -446,11 +446,11 @@ public class Polymer extends MSGroup {
       }
     } else if (resName.length() >= 2) {
       try {
-        ResidueEnumerations.NucleicAcid3.valueOf(resName);
+        NucleicAcidUtils.NucleicAcid3.valueOf(resName);
         residue = new Residue(resName, resNum, Residue.ResidueType.NA, chainID, getName());
       } catch (Exception e) {
         try {
-          ResidueEnumerations.AminoAcid3.valueOf(resName);
+          AminoAcidUtils.AminoAcid3.valueOf(resName);
           residue = new Residue(resName, resNum, Residue.ResidueType.AA, chainID, getName());
         } catch (Exception ex) {
           //

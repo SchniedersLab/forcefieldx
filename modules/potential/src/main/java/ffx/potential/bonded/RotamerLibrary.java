@@ -43,9 +43,9 @@ import static java.lang.String.format;
 
 import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.bonded.Residue.ResidueType;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.AngleType;
 import java.io.BufferedReader;
 import java.io.File;
@@ -78,12 +78,12 @@ public class RotamerLibrary {
    * Number of amino acid residues types currently recognized, although there are not rotamer
    * libraries for each yet.
    */
-  private static final int numberOfAminoAcids = AminoAcid3.values().length;
+  private static final int numberOfAminoAcids = AminoAcidUtils.AminoAcid3.values().length;
   /**
    * Number of nucleic acid residues types currently recognized, although there are not rotamer
    * libraries for each yet.
    */
-  private static final int numberOfNucleicAcids = NucleicAcid3.values().length;
+  private static final int numberOfNucleicAcids = NucleicAcidUtils.NucleicAcid3.values().length;
 
   private static final ProteinLibrary DEFAULT_PROTEIN_LIB = ProteinLibrary.Richardson;
   private static final NucleicAcidLibrary DEFAULT_NA_LIB = NucleicAcidLibrary.RICHARDSON;
@@ -95,72 +95,29 @@ public class RotamerLibrary {
   private static final Map<AminoAcid3, Map<String, Double>> idealAngleGeometries;
 
   static {
-    Map<AminoAcid3, Map<String, Double>> angleGeos = new HashMap<>();
-
-    Map<String, Double> pheMap = new HashMap<>();
-    pheMap.put("CD1-CG-CB", 120.3);
-    pheMap.put("CD2-CG-CB", 120.3);
-    pheMap.put("CE1-CD1-CG", 120.3);
-    pheMap.put("CE2-CD2-CG", 120.3);
-    pheMap.put("CZ-CE1-CD1", 120.0);
-    pheMap.put("CZ-CE2-CD2", 120.0);
-    angleGeos.put(AminoAcid3.PHE, Collections.unmodifiableMap(pheMap));
-
-    Map<String, Double> tyrMap = new HashMap<>();
-    tyrMap.put("CD1-CG-CB", 120.3);
-    tyrMap.put("CD2-CG-CB", 120.3);
-    tyrMap.put("CE1-CD1-CG", 120.3);
-    tyrMap.put("CE2-CD2-CG", 120.3);
-    tyrMap.put("CZ-CE1-CD1", 120.0);
-    tyrMap.put("CZ-CE2-CD2", 120.0);
-    angleGeos.put(AminoAcid3.TYR, Collections.unmodifiableMap(tyrMap));
-
-    Map<String, Double> tydMap = new HashMap<>();
-    tydMap.put("CD1-CG-CB", 120.5);
-    tydMap.put("CD2-CG-CB", 120.5);
-    tydMap.put("CE1-CD1-CG", 120.4);
-    tydMap.put("CE2-CD2-CG", 120.4);
-    tydMap.put("CZ-CE1-CD1", 120.8);
-    tydMap.put("CZ-CE2-CD2", 120.8);
-    angleGeos.put(AminoAcid3.TYD, Collections.unmodifiableMap(tydMap));
-
-    Map<String, Double> hisMap = new HashMap<>();
-    hisMap.put("ND1-CG-CB", 122.1);
-    hisMap.put("CD2-CG-CB", 131.0);
-    hisMap.put("CD2-CG-ND1", 106.8);
-    hisMap.put("CE1-ND1-CG", 109.5);
-    hisMap.put("NE2-CD2-CG", 107.1);
-    angleGeos.put(AminoAcid3.HIS, Collections.unmodifiableMap(hisMap));
-
-    Map<String, Double> hidMap = new HashMap<>();
-    hidMap.put("ND1-CG-CB", 123.5);
-    hidMap.put("CD2-CG-CB", 132.3);
-    hidMap.put("CD2-CG-ND1", 104.2);
-    hidMap.put("CE1-ND1-CG", 108.8);
-    hidMap.put("NE2-CD2-CG", 111.2);
-    angleGeos.put(AminoAcid3.HID, Collections.unmodifiableMap(hidMap));
-
-    Map<String, Double> hieMap = new HashMap<>();
-    hieMap.put("ND1-CG-CB", 120.2);
-    hieMap.put("CD2-CG-CB", 129.1);
-    hieMap.put("CD2-CG-ND1", 110.7);
-    hieMap.put("CE1-ND1-CG", 105.1);
-    hieMap.put("NE2-CD2-CG", 104.6);
-    angleGeos.put(AminoAcid3.HIE, Collections.unmodifiableMap(hieMap));
-
-    Map<String, Double> trpMap = new HashMap<>();
-    trpMap.put("CD1-CG-CB", 126.4);
-    trpMap.put("CD2-CG-CB", 126.5);
-    trpMap.put("CD2-CG-CD1", 107.1);
-    trpMap.put("NE1-CD1-CG", 106.9);
-    trpMap.put("CE2-NE1-CD1", 109.4);
-    trpMap.put("CE3-CD2-CE2", 121.6);
-    trpMap.put("CZ2-CE2-CD2", 123.5);
-    trpMap.put("CZ3-CE3-CD2", 116.7);
-    trpMap.put("CH2-CZ2-CE2", 116.2);
-    angleGeos.put(AminoAcid3.TRP, Collections.unmodifiableMap(trpMap));
-
-    idealAngleGeometries = Collections.unmodifiableMap(angleGeos);
+    idealAngleGeometries = Map.of(
+        AminoAcid3.PHE,
+        Map.of("CD1-CG-CB", 120.3, "CD2-CG-CB", 120.3, "CE1-CD1-CG", 120.3, "CE2-CD2-CG", 120.3,
+            "CZ-CE1-CD1", 120.0, "CZ-CE2-CD2", 120.0),
+        AminoAcid3.TYR,
+        Map.of("CD1-CG-CB", 120.3, "CD2-CG-CB", 120.3, "CE1-CD1-CG", 120.3, "CE2-CD2-CG", 120.3,
+            "CZ-CE1-CD1", 120.0, "CZ-CE2-CD2", 120.0),
+        AminoAcid3.TYD,
+        Map.of("CD1-CG-CB", 120.5, "CD2-CG-CB", 120.5, "CE1-CD1-CG", 120.4, "CE2-CD2-CG", 120.4,
+            "CZ-CE1-CD1", 120.8, "CZ-CE2-CD2", 120.8),
+        AminoAcid3.HIS,
+        Map.of("ND1-CG-CB", 122.1, "CD2-CG-CB", 131.0, "CD2-CG-ND1", 106.8, "CE1-ND1-CG", 109.5,
+            "NE2-CD2-CG", 107.1),
+        AminoAcid3.HID,
+        Map.of("ND1-CG-CB", 123.5, "CD2-CG-CB", 132.3, "CD2-CG-ND1", 104.2, "CE1-ND1-CG", 108.8,
+            "NE2-CD2-CG", 111.2),
+        AminoAcid3.HIE,
+        Map.of("ND1-CG-CB", 120.2, "CD2-CG-CB", 129.1, "CD2-CG-ND1", 110.7, "CE1-ND1-CG", 105.1,
+            "NE2-CD2-CG", 104.6),
+        AminoAcid3.TRP,
+        Map.of("CD1-CG-CB", 126.4, "CD2-CG-CB", 126.5, "CD2-CG-CD1", 107.1, "NE1-CD1-CG", 106.9,
+            "CE2-NE1-CD1", 109.4, "CE3-CD2-CE2", 121.6, "CZ2-CE2-CD2", 123.5, "CZ3-CE3-CD2", 116.7,
+            "CH2-CZ2-CE2", 116.2));
   }
 
   /**
@@ -176,8 +133,8 @@ public class RotamerLibrary {
   /** The idealized amino acid rotamer library in use. Defaults to the Richardson library. */
   private final ProteinLibrary proteinLibrary;
   /**
-   * The idealized nucleic acid rotamer library in use. Defaults to the Richardson library...
-   * partially because there's no other library.
+   * The idealized nucleic acid rotamer library in use. Defaults to the Richardson library as there's
+   * no other library.
    */
   private final NucleicAcidLibrary nucleicAcidLibrary;
 
@@ -195,8 +152,8 @@ public class RotamerLibrary {
   /**
    * Constructor for RotamerLibrary.
    *
-   * @param protLibrary A {@link ffx.potential.bonded.RotamerLibrary.ProteinLibrary} to use as the
-   *     idealized amino acid rotamer library.
+   * @param protLibrary A {@link ffx.potential.bonded.RotamerLibrary.ProteinLibrary} to use as
+   *     the idealized amino acid rotamer library.
    * @param origCoords Whether to use original-coordinates rotamers.
    */
   public RotamerLibrary(ProteinLibrary protLibrary, boolean origCoords) {
@@ -206,8 +163,8 @@ public class RotamerLibrary {
   /**
    * Constructor for RotamerLibrary.
    *
-   * @param naLibrary A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as the
-   *     idealized nucleic acid rotamer library.
+   * @param naLibrary A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as
+   *     the idealized nucleic acid rotamer library.
    * @param origCoords Whether to use original-coordinates rotamers.
    */
   public RotamerLibrary(NucleicAcidLibrary naLibrary, boolean origCoords) {
@@ -217,10 +174,10 @@ public class RotamerLibrary {
   /**
    * Constructor for RotamerLibrary.
    *
-   * @param protLibrary A {@link ffx.potential.bonded.RotamerLibrary.ProteinLibrary} to use as the
-   *     idealized amino acid rotamer library.
-   * @param naLibrary A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as the
-   *     idealized nucleic acid rotamer library.
+   * @param protLibrary A {@link ffx.potential.bonded.RotamerLibrary.ProteinLibrary} to use as
+   *     the idealized amino acid rotamer library.
+   * @param naLibrary A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as
+   *     the idealized nucleic acid rotamer library.
    * @param origCoords Whether to use original-coordinates rotamers.
    */
   public RotamerLibrary(
@@ -315,12 +272,12 @@ public class RotamerLibrary {
     double[] ret = new double[3];
 
     // Constituents of the sugar
-    Atom C1s = (Atom) residue.getAtomNode("C1\'");
+    Atom C1s = (Atom) residue.getAtomNode("C1'");
     // C2' will only be used if place is true.
-    Atom C3s = (Atom) residue.getAtomNode("C3\'");
-    Atom O4s = (Atom) residue.getAtomNode("O4\'");
-    Atom C4s = (Atom) residue.getAtomNode("C4\'");
-    Atom O3s = (Atom) residue.getAtomNode("O3\'");
+    Atom C3s = (Atom) residue.getAtomNode("C3'");
+    Atom O4s = (Atom) residue.getAtomNode("O4'");
+    Atom C4s = (Atom) residue.getAtomNode("C4'");
+    Atom O3s = (Atom) residue.getAtomNode("O3'");
 
     // Bonds and angles necessary to draw C3' and O3'.
     Bond C3s_C4s = C4s.getBond(C3s);
@@ -347,7 +304,7 @@ public class RotamerLibrary {
      * Then, use O3_SP_NORTH or SOUTH to place O3.
      */
     if (place) {
-      Atom C2s = (Atom) residue.getAtomNode("C2\'");
+      Atom C2s = (Atom) residue.getAtomNode("C2'");
       Bond C3s_C2s = C3s.getBond(C2s);
       double dC3s_C2s = C3s_C2s.bondType.distance;
       Angle C4s_C3s_C2s = C4s.getAngle(C3s, C2s);
@@ -440,12 +397,8 @@ public class RotamerLibrary {
     for (Polymer polymer : polymers) {
       List<Residue> current = polymer.getResidues();
       for (Residue residuej : current) {
-        switch (residuej.getResidueType()) {
-          case NA:
-            residuej.initializeDefaultAtomicCoordinates();
-            break;
-          default:
-            break;
+        if (residuej.getResidueType() == ResidueType.NA) {
+          residuej.initializeDefaultAtomicCoordinates();
         }
       }
     }
@@ -464,451 +417,428 @@ public class RotamerLibrary {
       residue = ((MultiResidue) residue).getActive();
     }
     AminoAcid3 name = residue.getAminoAcid3();
-    /*try {
-        name = AminoAcid3.valueOf(residue.getName());
-    } catch (IllegalArgumentException ex) {
-        logger.info(String.format("(IAE) valueOf(%s)", residue.getName()));
-        throw ex;
-    }*/
     switch (name) {
-      case VAL:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CG1 = (Atom) residue.getAtomNode("CG1");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG1)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-              break;
+      case VAL: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CG1 = (Atom) residue.getAtomNode("CG1");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG1)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+            break;
+          }
+        }
+        return 1;
+      }
+      case LEU: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD1 = (Atom) residue.getAtomNode("CD1");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 1;
-        }
-      case LEU:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD1 = (Atom) residue.getAtomNode("CD1");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, CG, CD1)) {
-              chi[1] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
+          if (torsion.compare(CA, CB, CG, CD1)) {
+            chi[1] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 2;
         }
-      case ILE:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CD1 = (Atom) residue.getAtomNode("CD1");
-          Atom CG1 = (Atom) residue.getAtomNode("CG1");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG1)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, CG1, CD1)) {
-              chi[1] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
+        return 2;
+      }
+      case ILE: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CD1 = (Atom) residue.getAtomNode("CD1");
+        Atom CG1 = (Atom) residue.getAtomNode("CG1");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG1)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 2;
-        }
-      case SER:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom OG = (Atom) residue.getAtomNode("OG");
-          Atom HG = (Atom) residue.getAtomNode("HG");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, OG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, OG, HG)) {
-              chi[1] = torsion.getValue();
-              if (Double.isNaN(chi[1])) {
-                chi[1] = 180.0; // Possible numeric instability?
-              }
-              if (print) {
-                logger.info(torsion.toString());
-              }
+          if (torsion.compare(CA, CB, CG1, CD1)) {
+            chi[1] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 2;
         }
-      case THR:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom OG1 = (Atom) residue.getAtomNode("OG1");
-          Atom HG1 = (Atom) residue.getAtomNode("HG1");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, OG1)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, OG1, HG1)) {
-              chi[1] = torsion.getValue();
-              if (Double.isNaN(chi[1])) {
-                chi[1] = 180.0; // Possible numeric instability?
-              }
-              if (print) {
-                logger.info(torsion.toString());
-              }
+        return 2;
+      }
+      case SER: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom OG = (Atom) residue.getAtomNode("OG");
+        Atom HG = (Atom) residue.getAtomNode("HG");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, OG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 2;
+          if (torsion.compare(CA, CB, OG, HG)) {
+            chi[1] = torsion.getValue();
+            if (Double.isNaN(chi[1])) {
+              chi[1] = 180.0; // Possible numeric instability?
+            }
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
         }
+        return 2;
+      }
+      case THR: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom OG1 = (Atom) residue.getAtomNode("OG1");
+        Atom HG1 = (Atom) residue.getAtomNode("HG1");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, OG1)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
+          if (torsion.compare(CA, CB, OG1, HG1)) {
+            chi[1] = torsion.getValue();
+            if (Double.isNaN(chi[1])) {
+              chi[1] = 180.0; // Possible numeric instability?
+            }
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
+        }
+        return 2;
+      }
       case CYS:
       case CYX:
-      case CYD:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom SG = (Atom) residue.getAtomNode("SG");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, SG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-              break;
+      case CYD: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom SG = (Atom) residue.getAtomNode("SG");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, SG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+            break;
+          }
+        }
+        return 1;
+      }
+      case PHE: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CD1 = (Atom) residue.getAtomNode("CD1");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+            break;
+          }
+        }
+        return 1;
+      }
+      case PRO: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CD = (Atom) residue.getAtomNode("CD");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 1;
-        }
-      case PHE:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CD1 = (Atom) residue.getAtomNode("CD1");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-              break;
+          if (torsion.compare(CA, CB, CG, CD)) {
+            chi[1] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 1;
         }
-      case PRO:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CD = (Atom) residue.getAtomNode("CD");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, CG, CD)) {
-              chi[1] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
+        return 2;
+      }
+      case TYR: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CD1 = (Atom) residue.getAtomNode("CD1");
+        Atom CE2 = (Atom) residue.getAtomNode("CE2");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CZ = (Atom) residue.getAtomNode("CZ");
+        Atom OH = (Atom) residue.getAtomNode("OH");
+        Atom HH = (Atom) residue.getAtomNode("HH");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 2;
-        }
-      case TYR:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CD1 = (Atom) residue.getAtomNode("CD1");
-          Atom CE2 = (Atom) residue.getAtomNode("CE2");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CZ = (Atom) residue.getAtomNode("CZ");
-          Atom OH = (Atom) residue.getAtomNode("OH");
-          Atom HH = (Atom) residue.getAtomNode("HH");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, CG, CD1)) {
-              chi[1] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CE2, CZ, OH, HH)) {
-              chi[2] = torsion.getValue();
-              if (Double.isNaN(chi[2])) {
-                chi[2] = 180.0; // Possible numeric instability?
-              }
-              if (print) {
-                logger.info(torsion.toString());
-              }
+          if (torsion.compare(CA, CB, CG, CD1)) {
+            chi[1] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 3;
+          if (torsion.compare(CE2, CZ, OH, HH)) {
+            chi[2] = torsion.getValue();
+            if (Double.isNaN(chi[2])) {
+              chi[2] = 180.0; // Possible numeric instability?
+            }
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
         }
+        return 3;
+      }
       case TYD:
-      case TRP:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CD1 = (Atom) residue.getAtomNode("CD1");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, CG, CD1)) {
-              chi[1] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
+      case TRP: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CD1 = (Atom) residue.getAtomNode("CD1");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 2;
+          if (torsion.compare(CA, CB, CG, CD1)) {
+            chi[1] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
         }
+        return 2;
+      }
       case HIS:
       case HIE:
-      case HID:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom ND1 = (Atom) residue.getAtomNode("ND1");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, CG, ND1)) {
-              chi[1] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
+      case HID: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom ND1 = (Atom) residue.getAtomNode("ND1");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 2;
-        }
-      case ASP:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-              break;
+          if (torsion.compare(CA, CB, CG, ND1)) {
+            chi[1] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 1;
         }
+        return 2;
+      }
+      case ASP: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+            break;
+          }
+        }
+        return 1;
+      }
       case ASH:
-      case ASN:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom OD1 = (Atom) residue.getAtomNode("OD1");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, CG, OD1)) {
-              chi[1] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
+      case ASN: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom OD1 = (Atom) residue.getAtomNode("OD1");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 2;
+          if (torsion.compare(CA, CB, CG, OD1)) {
+            chi[1] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
         }
+        return 2;
+      }
       case GLU:
       case GLN:
-      case GLH:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD = (Atom) residue.getAtomNode("CD");
-          Atom OE1 = (Atom) residue.getAtomNode("OE1");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, CG, CD)) {
-              chi[1] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CB, CG, CD, OE1)) {
-              chi[2] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
+      case GLH: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD = (Atom) residue.getAtomNode("CD");
+        Atom OE1 = (Atom) residue.getAtomNode("OE1");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 3;
-        }
-      case MET:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CE = (Atom) residue.getAtomNode("CE");
-          Atom SD = (Atom) residue.getAtomNode("SD");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, CG, SD)) {
-              chi[1] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CB, CG, SD, CE)) {
-              chi[2] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
+          if (torsion.compare(CA, CB, CG, CD)) {
+            chi[1] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 3;
+          if (torsion.compare(CB, CG, CD, OE1)) {
+            chi[2] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
         }
+        return 3;
+      }
+      case MET: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CE = (Atom) residue.getAtomNode("CE");
+        Atom SD = (Atom) residue.getAtomNode("SD");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
+          if (torsion.compare(CA, CB, CG, SD)) {
+            chi[1] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
+          if (torsion.compare(CB, CG, SD, CE)) {
+            chi[2] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
+        }
+        return 3;
+      }
       case LYS:
-      case LYD:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CD = (Atom) residue.getAtomNode("CD");
-          Atom CE = (Atom) residue.getAtomNode("CE");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom NZ = (Atom) residue.getAtomNode("NZ");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, CG, CD)) {
-              chi[1] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CB, CG, CD, CE)) {
-              chi[2] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CG, CD, CE, NZ)) {
-              chi[3] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
+      case LYD: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CD = (Atom) residue.getAtomNode("CD");
+        Atom CE = (Atom) residue.getAtomNode("CE");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom NZ = (Atom) residue.getAtomNode("NZ");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 4;
-        }
-      case ARG:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CD = (Atom) residue.getAtomNode("CD");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CZ = (Atom) residue.getAtomNode("CZ");
-          Atom NE = (Atom) residue.getAtomNode("NE");
-          for (Torsion torsion : residue.getTorsionList()) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              chi[0] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CA, CB, CG, CD)) {
-              chi[1] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CB, CG, CD, NE)) {
-              chi[2] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
-            }
-            if (torsion.compare(CG, CD, NE, CZ)) {
-              chi[3] = torsion.getValue();
-              if (print) {
-                logger.info(torsion.toString());
-              }
+          if (torsion.compare(CA, CB, CG, CD)) {
+            chi[1] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
             }
           }
-          return 4;
+          if (torsion.compare(CB, CG, CD, CE)) {
+            chi[2] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
+          if (torsion.compare(CG, CD, CE, NZ)) {
+            chi[3] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
         }
+        return 4;
+      }
+      case ARG: {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CD = (Atom) residue.getAtomNode("CD");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CZ = (Atom) residue.getAtomNode("CZ");
+        Atom NE = (Atom) residue.getAtomNode("NE");
+        for (Torsion torsion : residue.getTorsionList()) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            chi[0] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
+          if (torsion.compare(CA, CB, CG, CD)) {
+            chi[1] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
+          if (torsion.compare(CB, CG, CD, NE)) {
+            chi[2] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
+          if (torsion.compare(CG, CD, NE, CZ)) {
+            chi[3] = torsion.getValue();
+            if (print) {
+              logger.info(torsion.toString());
+            }
+          }
+        }
+        return 4;
+      }
       case UNK:
         chi = new double[7];
         String resName = residue.getName().toUpperCase();
@@ -918,10 +848,9 @@ public class RotamerLibrary {
         } else {
           throw new IllegalArgumentException(format("(IAE) valueOf(%s)", residue.getName()));
         }
-      default:
-        {
-          return 0;
-        }
+      default: {
+        return 0;
+      }
     }
   }
 
@@ -932,10 +861,10 @@ public class RotamerLibrary {
    * @return Delta torsion (sugar pucker angle).
    */
   public static double measureDelta(Residue residue) {
-    Atom C5s = (Atom) residue.getAtomNode("C5\'");
-    Atom C4s = (Atom) residue.getAtomNode("C4\'");
-    Atom C3s = (Atom) residue.getAtomNode("C3\'");
-    Atom O3s = (Atom) residue.getAtomNode("O3\'");
+    Atom C5s = (Atom) residue.getAtomNode("C5'");
+    Atom C4s = (Atom) residue.getAtomNode("C4'");
+    Atom C3s = (Atom) residue.getAtomNode("C3'");
+    Atom O3s = (Atom) residue.getAtomNode("O3'");
     Torsion torsion = O3s.getTorsion(C3s, C4s, C5s);
     return torsion.getValue();
   }
@@ -1068,7 +997,7 @@ public class RotamerLibrary {
       List<String> applyLines = new ArrayList<>();
       // List<Rotamer> rotamers = new ArrayList<>();
       List<String> rotLines = new ArrayList<>();
-      ResidueType rType = ResidueType.AA;
+      ResidueType rType = Residue.ResidueType.AA;
       String line = br.readLine();
       while (line != null) {
         line = line.trim();
@@ -1081,14 +1010,14 @@ public class RotamerLibrary {
           String[] toks = line.split("\\s+");
           switch (toks[1]) {
             case "AA":
-              rType = ResidueType.AA;
+              rType = Residue.ResidueType.AA;
               break;
             case "NA":
-              rType = ResidueType.NA;
+              rType = Residue.ResidueType.NA;
               break;
             case "UNK":
             default:
-              rType = ResidueType.UNK;
+              rType = Residue.ResidueType.UNK;
               break;
           }
         } else if (line.startsWith("ROTAMER")) {
@@ -1107,10 +1036,10 @@ public class RotamerLibrary {
           }
           switch (rType) {
             case AA:
-              rotamers.add(new Rotamer(AminoAcid3.UNK, values));
+              rotamers.add(new Rotamer(AminoAcidUtils.AminoAcid3.UNK, values));
               break;
             case NA:
-              rotamers.add(new Rotamer(NucleicAcid3.UNK, values));
+              rotamers.add(new Rotamer(NucleicAcidUtils.NucleicAcid3.UNK, values));
               break;
             case UNK:
             default:
@@ -1128,8 +1057,8 @@ public class RotamerLibrary {
           NonstandardRotLibrary nrlib =
               new NonstandardRotLibrary(
                   resName,
-                  applyLines.toArray(new String[applyLines.size()]),
-                  rotamers.toArray(new Rotamer[rotamers.size()]));
+                  applyLines.toArray(new String[0]),
+                  rotamers.toArray(new Rotamer[0]));
           nonstdRotCache.put(resName, nrlib);
         }
         return true;
@@ -1140,7 +1069,7 @@ public class RotamerLibrary {
       logger.warning(
           format(
               " Exception in parsing rotamer patch " + "file %s: %s",
-              rpatchFile.getName(), ex.toString()));
+              rpatchFile.getName(), ex));
       return false;
     }
   }
@@ -1182,1340 +1111,1315 @@ public class RotamerLibrary {
       name = residue.getAminoAcid3();
     }
     switch (name) {
-      case VAL:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG1 = (Atom) residue.getAtomNode("CG1");
-          Atom CG2 = (Atom) residue.getAtomNode("CG2");
-          Atom HB = (Atom) residue.getAtomNode("HB");
-          Atom HG11 = (Atom) residue.getAtomNode("HG11");
-          Atom HG12 = (Atom) residue.getAtomNode("HG12");
-          Atom HG13 = (Atom) residue.getAtomNode("HG13");
-          Atom HG21 = (Atom) residue.getAtomNode("HG21");
-          Atom HG22 = (Atom) residue.getAtomNode("HG22");
-          Atom HG23 = (Atom) residue.getAtomNode("HG23");
-          Bond CG_CB = CB.getBond(CG1);
-          Bond HB_CB = CB.getBond(HB);
-          Bond HG_CG = HG11.getBond(CG1);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_CG = HG_CG.bondType.distance;
-          Angle CG_CB_CA = CG1.getAngle(CB, CA);
-          Angle HB_CB_CA = HB.getAngle(CB, CA);
-          Angle HG_CG_CB = HG11.getAngle(CG1, CB);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
-          intxyz(CG1, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CG2, CB, dCG_CB, CA, dCG_CB_CA, CG1, 109.5, -1);
-          intxyz(HB, CB, dHB_CB, CA, dHB_CB_CA, CG1, 109.4, 1);
-          intxyz(HG11, CG1, dHG_CG, CB, dHG_CG_CB, CA, 180.0, 0);
-          intxyz(HG12, CG1, dHG_CG, CB, dHG_CG_CB, HG11, 109.4, 1);
-          intxyz(HG13, CG1, dHG_CG, CB, dHG_CG_CB, HG11, 109.4, -1);
-          intxyz(HG21, CG2, dHG_CG, CB, dHG_CG_CB, CA, 180.0, 0);
-          intxyz(HG22, CG2, dHG_CG, CB, dHG_CG_CB, HG21, 109.4, 1);
-          intxyz(HG23, CG2, dHG_CG, CB, dHG_CG_CB, HG21, 109.4, -1);
-          break;
-        }
-      case LEU:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD1 = (Atom) residue.getAtomNode("CD1");
-          Atom CD2 = (Atom) residue.getAtomNode("CD2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HG = (Atom) residue.getAtomNode("HG");
-          Atom HD11 = (Atom) residue.getAtomNode("HD11");
-          Atom HD12 = (Atom) residue.getAtomNode("HD12");
-          Atom HD13 = (Atom) residue.getAtomNode("HD13");
-          Atom HD21 = (Atom) residue.getAtomNode("HD21");
-          Atom HD22 = (Atom) residue.getAtomNode("HD22");
-          Atom HD23 = (Atom) residue.getAtomNode("HD23");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD_CG = CD1.getBond(CG);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HG_CG = HG.getBond(CG);
-          Bond HD_CD = HD11.getBond(CD1);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD_CG = CD_CG.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_CG = HG_CG.bondType.distance;
-          double dHD_CD = HD_CD.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle CD_CG_CB = CD1.getAngle(CG, CB);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HG_CG_CB = HG.getAngle(CG, CB);
-          Angle HD_CD_CG = HD11.getAngle(CD1, CG);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
-          double dHD_CD_CG = HD_CD_CG.angleType.angle[HD_CD_CG.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD1, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(CD2, CG, dCD_CG, CB, dCD_CG_CB, CD1, 109.5, -1);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HG, CG, dHG_CG, CB, dHG_CG_CB, CD1, 109.4, 1);
-          intxyz(HD11, CD1, dHD_CD, CG, dHD_CD_CG, CB, 180.0, 0);
-          intxyz(HD12, CD1, dHD_CD, CG, dHD_CD_CG, HD11, 109.4, 1);
-          intxyz(HD13, CD1, dHD_CD, CG, dHD_CD_CG, HD11, 109.4, -1);
-          intxyz(HD21, CD2, dHD_CD, CG, dHD_CD_CG, CB, 180.0, 0);
-          intxyz(HD22, CD2, dHD_CD, CG, dHD_CD_CG, HD21, 109.4, 1);
-          intxyz(HD23, CD2, dHD_CD, CG, dHD_CD_CG, HD21, 109.4, -1);
-          break;
-        }
-      case ILE:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG1 = (Atom) residue.getAtomNode("CG1");
-          Atom CG2 = (Atom) residue.getAtomNode("CG2");
-          Atom CD1 = (Atom) residue.getAtomNode("CD1");
-          Atom HB = (Atom) residue.getAtomNode("HB");
-          Atom HG12 = (Atom) residue.getAtomNode("HG12");
-          Atom HG13 = (Atom) residue.getAtomNode("HG13");
-          Atom HG21 = (Atom) residue.getAtomNode("HG21");
-          Atom HG22 = (Atom) residue.getAtomNode("HG22");
-          Atom HG23 = (Atom) residue.getAtomNode("HG23");
-          Atom HD11 = (Atom) residue.getAtomNode("HD11");
-          Atom HD12 = (Atom) residue.getAtomNode("HD12");
-          Atom HD13 = (Atom) residue.getAtomNode("HD13");
-          Bond CG1_CB = CG1.getBond(CB);
-          Bond CG2_CB = CG2.getBond(CB);
-          Bond CD1_CG1 = CD1.getBond(CG1);
-          Bond HB_CB = HB.getBond(CB);
-          Bond HG1_CG = HG12.getBond(CG1);
-          Bond HG2_CG = HG22.getBond(CG2);
-          Bond HD_CD = HD12.getBond(CD1);
-          double dCG1_CB = CG1_CB.bondType.distance;
-          double dCG2_CB = CG2_CB.bondType.distance;
-          double dCD1_CG1 = CD1_CG1.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG1_CG = HG1_CG.bondType.distance;
-          double dHG2_CG = HG2_CG.bondType.distance;
-          double dHD_CD = HD_CD.bondType.distance;
-          Angle CG1_CB_CA = CG1.getAngle(CB, CA);
-          Angle CG2_CB_CA = CG2.getAngle(CB, CA);
-          Angle CD1_CG1_CB = CD1.getAngle(CG1, CB);
-          Angle HB_CB_CA = HB.getAngle(CB, CA);
-          Angle HG1_CG_CB = HG12.getAngle(CG1, CB);
-          Angle HG2_CG_CB = HG21.getAngle(CG2, CB);
-          Angle HD_CD1_CG1 = HD11.getAngle(CD1, CG1);
-          double dCG1_CB_CA = CG1_CB_CA.angleType.angle[CG1_CB_CA.nh];
-          double dCG2_CB_CA = CG2_CB_CA.angleType.angle[CG2_CB_CA.nh];
-          double dCD1_CG1_CB = CD1_CG1_CB.angleType.angle[CD1_CG1_CB.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG1_CG_CB = HG1_CG_CB.angleType.angle[HG1_CG_CB.nh];
-          double dHG2_CG_CB = HG2_CG_CB.angleType.angle[HG2_CG_CB.nh];
-          double dHD_CD1_CG1 = HD_CD1_CG1.angleType.angle[HD_CD1_CG1.nh];
-          intxyz(CG1, CB, dCG1_CB, CA, dCG1_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CG2, CB, dCG2_CB, CA, dCG2_CB_CA, CG1, 109.5, 1);
-          intxyz(CD1, CG1, dCD1_CG1, CB, dCD1_CG1_CB, CA, rotamer.chi2, 0);
-          intxyz(HB, CB, dHB_CB, CA, dHB_CB_CA, CG2, 109.4, 1);
-          intxyz(HG12, CG1, dHG1_CG, CB, dHG1_CG_CB, CD1, 109.4, 1);
-          intxyz(HG13, CG1, dHG1_CG, CB, dHG1_CG_CB, CD1, 109.4, -1);
-          intxyz(HG21, CG2, dHG2_CG, CB, dHG2_CG_CB, CG1, 180.0, 0);
-          intxyz(HG22, CG2, dHG2_CG, CB, dHG2_CG_CB, HG21, 109.0, 1);
-          intxyz(HG23, CG2, dHG2_CG, CB, dHG2_CG_CB, HG21, 109.0, -1);
-          intxyz(HD11, CD1, dHD_CD, CG1, dHD_CD1_CG1, CB, 180.0, 0);
-          intxyz(HD12, CD1, dHD_CD, CG1, dHD_CD1_CG1, HD11, 109.0, 1);
-          intxyz(HD13, CD1, dHD_CD, CG1, dHD_CD1_CG1, HD11, 109.0, -1);
-          break;
-        }
-      case SER:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom OG = (Atom) residue.getAtomNode("OG");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HG = (Atom) residue.getAtomNode("HG");
-          Bond OG_CB = OG.getBond(CB);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HG_OG = HG.getBond(OG);
-          double dOG_CB = OG_CB.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_OG = HG_OG.bondType.distance;
-          Angle OG_CB_CA = OG.getAngle(CB, CA);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HG_OG_CB = HG.getAngle(OG, CB);
-          double dOG_CB_CA = OG_CB_CA.angleType.angle[OG_CB_CA.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_OG_CB = HG_OG_CB.angleType.angle[HG_OG_CB.nh];
-          intxyz(OG, CB, dOG_CB, CA, dOG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, OG, 106.7, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, OG, 106.7, -1);
+      case VAL: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG1 = (Atom) residue.getAtomNode("CG1");
+        Atom CG2 = (Atom) residue.getAtomNode("CG2");
+        Atom HB = (Atom) residue.getAtomNode("HB");
+        Atom HG11 = (Atom) residue.getAtomNode("HG11");
+        Atom HG12 = (Atom) residue.getAtomNode("HG12");
+        Atom HG13 = (Atom) residue.getAtomNode("HG13");
+        Atom HG21 = (Atom) residue.getAtomNode("HG21");
+        Atom HG22 = (Atom) residue.getAtomNode("HG22");
+        Atom HG23 = (Atom) residue.getAtomNode("HG23");
+        Bond CG_CB = CB.getBond(CG1);
+        Bond HB_CB = CB.getBond(HB);
+        Bond HG_CG = HG11.getBond(CG1);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_CG = HG_CG.bondType.distance;
+        Angle CG_CB_CA = CG1.getAngle(CB, CA);
+        Angle HB_CB_CA = HB.getAngle(CB, CA);
+        Angle HG_CG_CB = HG11.getAngle(CG1, CB);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
+        intxyz(CG1, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CG2, CB, dCG_CB, CA, dCG_CB_CA, CG1, 109.5, -1);
+        intxyz(HB, CB, dHB_CB, CA, dHB_CB_CA, CG1, 109.4, 1);
+        intxyz(HG11, CG1, dHG_CG, CB, dHG_CG_CB, CA, 180.0, 0);
+        intxyz(HG12, CG1, dHG_CG, CB, dHG_CG_CB, HG11, 109.4, 1);
+        intxyz(HG13, CG1, dHG_CG, CB, dHG_CG_CB, HG11, 109.4, -1);
+        intxyz(HG21, CG2, dHG_CG, CB, dHG_CG_CB, CA, 180.0, 0);
+        intxyz(HG22, CG2, dHG_CG, CB, dHG_CG_CB, HG21, 109.4, 1);
+        intxyz(HG23, CG2, dHG_CG, CB, dHG_CG_CB, HG21, 109.4, -1);
+        break;
+      }
+      case LEU: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD1 = (Atom) residue.getAtomNode("CD1");
+        Atom CD2 = (Atom) residue.getAtomNode("CD2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HG = (Atom) residue.getAtomNode("HG");
+        Atom HD11 = (Atom) residue.getAtomNode("HD11");
+        Atom HD12 = (Atom) residue.getAtomNode("HD12");
+        Atom HD13 = (Atom) residue.getAtomNode("HD13");
+        Atom HD21 = (Atom) residue.getAtomNode("HD21");
+        Atom HD22 = (Atom) residue.getAtomNode("HD22");
+        Atom HD23 = (Atom) residue.getAtomNode("HD23");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD_CG = CD1.getBond(CG);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HG_CG = HG.getBond(CG);
+        Bond HD_CD = HD11.getBond(CD1);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD_CG = CD_CG.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_CG = HG_CG.bondType.distance;
+        double dHD_CD = HD_CD.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle CD_CG_CB = CD1.getAngle(CG, CB);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HG_CG_CB = HG.getAngle(CG, CB);
+        Angle HD_CD_CG = HD11.getAngle(CD1, CG);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
+        double dHD_CD_CG = HD_CD_CG.angleType.angle[HD_CD_CG.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD1, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(CD2, CG, dCD_CG, CB, dCD_CG_CB, CD1, 109.5, -1);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HG, CG, dHG_CG, CB, dHG_CG_CB, CD1, 109.4, 1);
+        intxyz(HD11, CD1, dHD_CD, CG, dHD_CD_CG, CB, 180.0, 0);
+        intxyz(HD12, CD1, dHD_CD, CG, dHD_CD_CG, HD11, 109.4, 1);
+        intxyz(HD13, CD1, dHD_CD, CG, dHD_CD_CG, HD11, 109.4, -1);
+        intxyz(HD21, CD2, dHD_CD, CG, dHD_CD_CG, CB, 180.0, 0);
+        intxyz(HD22, CD2, dHD_CD, CG, dHD_CD_CG, HD21, 109.4, 1);
+        intxyz(HD23, CD2, dHD_CD, CG, dHD_CD_CG, HD21, 109.4, -1);
+        break;
+      }
+      case ILE: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG1 = (Atom) residue.getAtomNode("CG1");
+        Atom CG2 = (Atom) residue.getAtomNode("CG2");
+        Atom CD1 = (Atom) residue.getAtomNode("CD1");
+        Atom HB = (Atom) residue.getAtomNode("HB");
+        Atom HG12 = (Atom) residue.getAtomNode("HG12");
+        Atom HG13 = (Atom) residue.getAtomNode("HG13");
+        Atom HG21 = (Atom) residue.getAtomNode("HG21");
+        Atom HG22 = (Atom) residue.getAtomNode("HG22");
+        Atom HG23 = (Atom) residue.getAtomNode("HG23");
+        Atom HD11 = (Atom) residue.getAtomNode("HD11");
+        Atom HD12 = (Atom) residue.getAtomNode("HD12");
+        Atom HD13 = (Atom) residue.getAtomNode("HD13");
+        Bond CG1_CB = CG1.getBond(CB);
+        Bond CG2_CB = CG2.getBond(CB);
+        Bond CD1_CG1 = CD1.getBond(CG1);
+        Bond HB_CB = HB.getBond(CB);
+        Bond HG1_CG = HG12.getBond(CG1);
+        Bond HG2_CG = HG22.getBond(CG2);
+        Bond HD_CD = HD12.getBond(CD1);
+        double dCG1_CB = CG1_CB.bondType.distance;
+        double dCG2_CB = CG2_CB.bondType.distance;
+        double dCD1_CG1 = CD1_CG1.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG1_CG = HG1_CG.bondType.distance;
+        double dHG2_CG = HG2_CG.bondType.distance;
+        double dHD_CD = HD_CD.bondType.distance;
+        Angle CG1_CB_CA = CG1.getAngle(CB, CA);
+        Angle CG2_CB_CA = CG2.getAngle(CB, CA);
+        Angle CD1_CG1_CB = CD1.getAngle(CG1, CB);
+        Angle HB_CB_CA = HB.getAngle(CB, CA);
+        Angle HG1_CG_CB = HG12.getAngle(CG1, CB);
+        Angle HG2_CG_CB = HG21.getAngle(CG2, CB);
+        Angle HD_CD1_CG1 = HD11.getAngle(CD1, CG1);
+        double dCG1_CB_CA = CG1_CB_CA.angleType.angle[CG1_CB_CA.nh];
+        double dCG2_CB_CA = CG2_CB_CA.angleType.angle[CG2_CB_CA.nh];
+        double dCD1_CG1_CB = CD1_CG1_CB.angleType.angle[CD1_CG1_CB.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG1_CG_CB = HG1_CG_CB.angleType.angle[HG1_CG_CB.nh];
+        double dHG2_CG_CB = HG2_CG_CB.angleType.angle[HG2_CG_CB.nh];
+        double dHD_CD1_CG1 = HD_CD1_CG1.angleType.angle[HD_CD1_CG1.nh];
+        intxyz(CG1, CB, dCG1_CB, CA, dCG1_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CG2, CB, dCG2_CB, CA, dCG2_CB_CA, CG1, 109.5, 1);
+        intxyz(CD1, CG1, dCD1_CG1, CB, dCD1_CG1_CB, CA, rotamer.chi2, 0);
+        intxyz(HB, CB, dHB_CB, CA, dHB_CB_CA, CG2, 109.4, 1);
+        intxyz(HG12, CG1, dHG1_CG, CB, dHG1_CG_CB, CD1, 109.4, 1);
+        intxyz(HG13, CG1, dHG1_CG, CB, dHG1_CG_CB, CD1, 109.4, -1);
+        intxyz(HG21, CG2, dHG2_CG, CB, dHG2_CG_CB, CG1, 180.0, 0);
+        intxyz(HG22, CG2, dHG2_CG, CB, dHG2_CG_CB, HG21, 109.0, 1);
+        intxyz(HG23, CG2, dHG2_CG, CB, dHG2_CG_CB, HG21, 109.0, -1);
+        intxyz(HD11, CD1, dHD_CD, CG1, dHD_CD1_CG1, CB, 180.0, 0);
+        intxyz(HD12, CD1, dHD_CD, CG1, dHD_CD1_CG1, HD11, 109.0, 1);
+        intxyz(HD13, CD1, dHD_CD, CG1, dHD_CD1_CG1, HD11, 109.0, -1);
+        break;
+      }
+      case SER: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom OG = (Atom) residue.getAtomNode("OG");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HG = (Atom) residue.getAtomNode("HG");
+        Bond OG_CB = OG.getBond(CB);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HG_OG = HG.getBond(OG);
+        double dOG_CB = OG_CB.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_OG = HG_OG.bondType.distance;
+        Angle OG_CB_CA = OG.getAngle(CB, CA);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HG_OG_CB = HG.getAngle(OG, CB);
+        double dOG_CB_CA = OG_CB_CA.angleType.angle[OG_CB_CA.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_OG_CB = HG_OG_CB.angleType.angle[HG_OG_CB.nh];
+        intxyz(OG, CB, dOG_CB, CA, dOG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, OG, 106.7, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, OG, 106.7, -1);
+        intxyz(HG, OG, dHG_OG, CB, dHG_OG_CB, CA, 180.0, 0);
+        if (rotamer.length == 2) {
+          intxyz(HG, OG, dHG_OG, CB, dHG_OG_CB, CA, rotamer.chi2, 0);
+        } else {
           intxyz(HG, OG, dHG_OG, CB, dHG_OG_CB, CA, 180.0, 0);
-          if (rotamer.length == 2) {
-            intxyz(HG, OG, dHG_OG, CB, dHG_OG_CB, CA, rotamer.chi2, 0);
-          } else {
-            intxyz(HG, OG, dHG_OG, CB, dHG_OG_CB, CA, 180.0, 0);
-          }
-          break;
         }
-      case THR:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom OG1 = (Atom) residue.getAtomNode("OG1");
-          Atom CG2 = (Atom) residue.getAtomNode("CG2");
-          Atom HB = (Atom) residue.getAtomNode("HB");
-          Atom HG1 = (Atom) residue.getAtomNode("HG1");
-          Atom HG21 = (Atom) residue.getAtomNode("HG21");
-          Atom HG22 = (Atom) residue.getAtomNode("HG22");
-          Atom HG23 = (Atom) residue.getAtomNode("HG23");
-          Bond OG1_CB = OG1.getBond(CB);
-          Bond CG2_CB = CG2.getBond(CB);
-          Bond HB_CB = HB.getBond(CB);
-          Bond HG1_OG1 = HG1.getBond(OG1);
-          Bond HG2_CG2 = HG21.getBond(CG2);
-          double dOG1_CB = OG1_CB.bondType.distance;
-          double dCG2_CB = CG2_CB.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG1_OG1 = HG1_OG1.bondType.distance;
-          double dHG2_CG2 = HG2_CG2.bondType.distance;
-          Angle OG1_CB_CA = OG1.getAngle(CB, CA);
-          Angle CG2_CB_CA = CG2.getAngle(CB, CA);
-          Angle HB_CB_CA = HB.getAngle(CB, CA);
-          Angle HG1_OG1_CB = HG1.getAngle(OG1, CB);
-          Angle HG2_CG2_CB = HG21.getAngle(CG2, CB);
-          double dOG1_CB_CA = OG1_CB_CA.angleType.angle[OG1_CB_CA.nh];
-          double dCG2_CB_CA = CG2_CB_CA.angleType.angle[CG2_CB_CA.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG1_OG1_CB = HG1_OG1_CB.angleType.angle[HG1_OG1_CB.nh];
-          double dHG2_CG2_CB = HG2_CG2_CB.angleType.angle[HG2_CG2_CB.nh];
-          intxyz(OG1, CB, dOG1_CB, CA, dOG1_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CG2, CB, dCG2_CB, CA, dCG2_CB_CA, OG1, 107.7, 1);
-          intxyz(HB, CB, dHB_CB, CA, dHB_CB_CA, OG1, 106.7, -1);
-          intxyz(HG1, OG1, dHG1_OG1, CB, dHG1_OG1_CB, CA, 180.0, 0);
-          if (rotamer.length == 2) {
-            intxyz(HG1, OG1, dHG1_OG1, CB, dHG1_OG1_CB, CA, rotamer.chi2, 0);
-          } else {
-            intxyz(HG1, OG1, dHG1_OG1, CB, dHG1_OG1_CB, CA, 180, 0);
-          }
-          intxyz(HG21, CG2, dHG2_CG2, CB, dHG2_CG2_CB, CA, 180.0, 0);
-          intxyz(HG22, CG2, dHG2_CG2, CB, dHG2_CG2_CB, HG21, 109.0, 1);
-          intxyz(HG23, CG2, dHG2_CG2, CB, dHG2_CG2_CB, HG21, 109.0, -1);
-          break;
+        break;
+      }
+      case THR: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom OG1 = (Atom) residue.getAtomNode("OG1");
+        Atom CG2 = (Atom) residue.getAtomNode("CG2");
+        Atom HB = (Atom) residue.getAtomNode("HB");
+        Atom HG1 = (Atom) residue.getAtomNode("HG1");
+        Atom HG21 = (Atom) residue.getAtomNode("HG21");
+        Atom HG22 = (Atom) residue.getAtomNode("HG22");
+        Atom HG23 = (Atom) residue.getAtomNode("HG23");
+        Bond OG1_CB = OG1.getBond(CB);
+        Bond CG2_CB = CG2.getBond(CB);
+        Bond HB_CB = HB.getBond(CB);
+        Bond HG1_OG1 = HG1.getBond(OG1);
+        Bond HG2_CG2 = HG21.getBond(CG2);
+        double dOG1_CB = OG1_CB.bondType.distance;
+        double dCG2_CB = CG2_CB.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG1_OG1 = HG1_OG1.bondType.distance;
+        double dHG2_CG2 = HG2_CG2.bondType.distance;
+        Angle OG1_CB_CA = OG1.getAngle(CB, CA);
+        Angle CG2_CB_CA = CG2.getAngle(CB, CA);
+        Angle HB_CB_CA = HB.getAngle(CB, CA);
+        Angle HG1_OG1_CB = HG1.getAngle(OG1, CB);
+        Angle HG2_CG2_CB = HG21.getAngle(CG2, CB);
+        double dOG1_CB_CA = OG1_CB_CA.angleType.angle[OG1_CB_CA.nh];
+        double dCG2_CB_CA = CG2_CB_CA.angleType.angle[CG2_CB_CA.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG1_OG1_CB = HG1_OG1_CB.angleType.angle[HG1_OG1_CB.nh];
+        double dHG2_CG2_CB = HG2_CG2_CB.angleType.angle[HG2_CG2_CB.nh];
+        intxyz(OG1, CB, dOG1_CB, CA, dOG1_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CG2, CB, dCG2_CB, CA, dCG2_CB_CA, OG1, 107.7, 1);
+        intxyz(HB, CB, dHB_CB, CA, dHB_CB_CA, OG1, 106.7, -1);
+        intxyz(HG1, OG1, dHG1_OG1, CB, dHG1_OG1_CB, CA, 180.0, 0);
+        if (rotamer.length == 2) {
+          intxyz(HG1, OG1, dHG1_OG1, CB, dHG1_OG1_CB, CA, rotamer.chi2, 0);
+        } else {
+          intxyz(HG1, OG1, dHG1_OG1, CB, dHG1_OG1_CB, CA, 180, 0);
         }
+        intxyz(HG21, CG2, dHG2_CG2, CB, dHG2_CG2_CB, CA, 180.0, 0);
+        intxyz(HG22, CG2, dHG2_CG2, CB, dHG2_CG2_CB, HG21, 109.0, 1);
+        intxyz(HG23, CG2, dHG2_CG2, CB, dHG2_CG2_CB, HG21, 109.0, -1);
+        break;
+      }
       case CYS:
-      case CYX:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom SG = (Atom) residue.getAtomNode("SG");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HG = (Atom) residue.getAtomNode("HG");
-          if (CA == null
-              || CB == null
-              || N == null
-              || SG == null
-              || HB2 == null
-              || HB3 == null
-              || HG == null) {
-            break;
-          }
-          Bond SG_CB = SG.getBond(CB);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HG_SG = HG.getBond(SG);
-          double dSG_CB = SG_CB.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_SG = HG_SG.bondType.distance;
-          Angle SG_CB_CA = SG.getAngle(CB, CA);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HG_SG_CB = HG.getAngle(SG, CB);
-          double dSG_CB_CA = SG_CB_CA.angleType.angle[SG_CB_CA.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_SG_CB = HG_SG_CB.angleType.angle[HG_SG_CB.nh];
-          intxyz(SG, CB, dSG_CB, CA, dSG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, SG, 112.0, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, SG, 112.0, -1);
-          intxyz(HG, SG, dHG_SG, CB, dHG_SG_CB, CA, 180.0, 0);
+      case CYX: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom SG = (Atom) residue.getAtomNode("SG");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HG = (Atom) residue.getAtomNode("HG");
+        if (CA == null
+            || CB == null
+            || N == null
+            || SG == null
+            || HB2 == null
+            || HB3 == null
+            || HG == null) {
           break;
         }
-      case CYD:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom SG = (Atom) residue.getAtomNode("SG");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Bond SG_CB = SG.getBond(CB);
-          Bond HB_CB = HB2.getBond(CB);
-          double dSG_CB = SG_CB.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          Angle SG_CB_CA = SG.getAngle(CB, CA);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          double dSG_CB_CA = SG_CB_CA.angleType.angle[SG_CB_CA.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          intxyz(SG, CB, dSG_CB, CA, dSG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, SG, 112.0, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, SG, 112.0, -1);
-          break;
+        Bond SG_CB = SG.getBond(CB);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HG_SG = HG.getBond(SG);
+        double dSG_CB = SG_CB.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_SG = HG_SG.bondType.distance;
+        Angle SG_CB_CA = SG.getAngle(CB, CA);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HG_SG_CB = HG.getAngle(SG, CB);
+        double dSG_CB_CA = SG_CB_CA.angleType.angle[SG_CB_CA.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_SG_CB = HG_SG_CB.angleType.angle[HG_SG_CB.nh];
+        intxyz(SG, CB, dSG_CB, CA, dSG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, SG, 112.0, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, SG, 112.0, -1);
+        intxyz(HG, SG, dHG_SG, CB, dHG_SG_CB, CA, 180.0, 0);
+        break;
+      }
+      case CYD: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom SG = (Atom) residue.getAtomNode("SG");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Bond SG_CB = SG.getBond(CB);
+        Bond HB_CB = HB2.getBond(CB);
+        double dSG_CB = SG_CB.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        Angle SG_CB_CA = SG.getAngle(CB, CA);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        double dSG_CB_CA = SG_CB_CA.angleType.angle[SG_CB_CA.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        intxyz(SG, CB, dSG_CB, CA, dSG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, SG, 112.0, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, SG, 112.0, -1);
+        break;
+      }
+      case PHE: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD1 = (Atom) residue.getAtomNode("CD1");
+        Atom CD2 = (Atom) residue.getAtomNode("CD2");
+        Atom CE1 = (Atom) residue.getAtomNode("CE1");
+        Atom CE2 = (Atom) residue.getAtomNode("CE2");
+        Atom CZ = (Atom) residue.getAtomNode("CZ");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HD1 = (Atom) residue.getAtomNode("HD1");
+        Atom HD2 = (Atom) residue.getAtomNode("HD2");
+        Atom HE1 = (Atom) residue.getAtomNode("HE1");
+        Atom HE2 = (Atom) residue.getAtomNode("HE2");
+        Atom HZ = (Atom) residue.getAtomNode("HZ");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD_CG = CD1.getBond(CG);
+        Bond CE_CD = CE1.getBond(CD1);
+        Bond HB_CB = HB2.getBond(CB);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD_CG = CD_CG.bondType.distance;
+        double dCE_CD = CE_CD.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+
+        double dHD_CD = HD1.getBond(CD1).bondType.distance;
+        double dHE_CE = HE1.getBond(CE1).bondType.distance;
+        double dHZ_CZ = HZ.getBond(CZ).bondType.distance;
+
+        double dCG_CB_CA = getAngle(name, CG, CB, CA);
+        double dCD_CG_CB = getAngle(name, CD1, CG, CB);
+        double dCE_CD_CG = getAngle(name, CE1, CD1, CG);
+        double dHB_CB_CA = getAngle(name, HB2, CB, CA);
+
+        double dHD_CD_CG = getAngle(name, HD1, CD1, CG);
+        double dHD_CD_CE = getAngle(name, HD1, CD1, CE1);
+        double dHE_CE_CD = getAngle(name, HE1, CE1, CD1);
+        double dHE_CE_CZ = getAngle(name, HE1, CE1, CZ);
+        double dHZ_CZ_CE = getAngle(name, HZ, CZ, CE1);
+
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD1, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(CD2, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2 + 180, 0);
+        intxyz(CE1, CD1, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
+        intxyz(CE2, CD2, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
+        applyCZ(name, CZ, CG, CE1, CD1, CE2, CD2);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+
+        intxyz(HD1, CD1, dHD_CD, CG, dHD_CD_CG, CE1, dHD_CD_CE, 3);
+        intxyz(HD2, CD2, dHD_CD, CG, dHD_CD_CG, CE2, dHD_CD_CE, 3);
+        intxyz(HE1, CE1, dHE_CE, CD1, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
+        intxyz(HE2, CE2, dHE_CE, CD2, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
+        intxyz(HZ, CZ, dHZ_CZ, CE1, dHZ_CZ_CE, CE2, dHZ_CZ_CE, 3);
+        break;
+      }
+      case PRO: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD = (Atom) residue.getAtomNode("CD");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HG2 = (Atom) residue.getAtomNode("HG2");
+        Atom HG3 = (Atom) residue.getAtomNode("HG3");
+        Atom HD2 = (Atom) residue.getAtomNode("HD2");
+        Atom HD3 = (Atom) residue.getAtomNode("HD3");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD_CG = CD.getBond(CG);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HG_CG = HG2.getBond(CG);
+        Bond HD_CD = HD2.getBond(CD);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD_CG = CD_CG.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_CG = HG_CG.bondType.distance;
+        double dHD_CD = HD_CD.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle CD_CG_CB = CD.getAngle(CG, CB);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HG_CG_CB = HG2.getAngle(CG, CB);
+        Angle HD_CD_CG = HD2.getAngle(CD, CG);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
+        double dHD_CD_CG = HD_CD_CG.angleType.angle[HD_CD_CG.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, 1);
+        intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, -1);
+        intxyz(HD2, CD, dHD_CD, CG, dHD_CD_CG, N, 109.4, 1);
+        intxyz(HD3, CD, dHD_CD, CG, dHD_CD_CG, N, 109.4, -1);
+        break;
+      }
+      case TYR: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD1 = (Atom) residue.getAtomNode("CD1");
+        Atom CD2 = (Atom) residue.getAtomNode("CD2");
+        Atom CE1 = (Atom) residue.getAtomNode("CE1");
+        Atom CE2 = (Atom) residue.getAtomNode("CE2");
+        Atom CZ = (Atom) residue.getAtomNode("CZ");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HD1 = (Atom) residue.getAtomNode("HD1");
+        Atom HD2 = (Atom) residue.getAtomNode("HD2");
+        Atom HE1 = (Atom) residue.getAtomNode("HE1");
+        Atom HE2 = (Atom) residue.getAtomNode("HE2");
+        Atom OH = (Atom) residue.getAtomNode("OH");
+        Atom HH = (Atom) residue.getAtomNode("HH");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD_CG = CD1.getBond(CG);
+        Bond CE_CD = CE1.getBond(CD1);
+        Bond HB_CB = HB2.getBond(CB);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD_CG = CD_CG.bondType.distance;
+        double dCE_CD = CE_CD.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+
+        double dHD_CD = HD1.getBond(CD1).bondType.distance;
+        double dHE_CE = HE1.getBond(CE1).bondType.distance;
+        double dOH_CZ = OH.getBond(CZ).bondType.distance;
+        double dHH_OH = HH.getBond(OH).bondType.distance;
+
+        double dCG_CB_CA = getAngle(name, CG, CB, CA);
+        double dCD_CG_CB = getAngle(name, CD1, CG, CB);
+        double dCE_CD_CG = getAngle(name, CE1, CD1, CG);
+        double dHB_CB_CA = getAngle(name, HB2, CB, CA);
+
+        double dHD_CD_CG = getAngle(name, HD1, CD1, CG);
+        double dHD_CD_CE = getAngle(name, HD1, CD1, CE1);
+        double dHE_CE_CD = getAngle(name, HE1, CE1, CD1);
+        double dHE_CE_CZ = getAngle(name, HE1, CE1, CZ);
+        double dOH_CZ_CE = getAngle(name, OH, CZ, CE1);
+        double dHH_OH_CZ = getAngle(name, HH, OH, CZ);
+
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD1, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(CD2, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2 + 180, 0);
+        intxyz(CE1, CD1, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
+        intxyz(CE2, CD2, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
+        applyCZ(name, CZ, CG, CE1, CD1, CE2, CD2);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+
+        intxyz(HD1, CD1, dHD_CD, CG, dHD_CD_CG, CE1, dHD_CD_CE, 3);
+        intxyz(HD2, CD2, dHD_CD, CG, dHD_CD_CG, CE2, dHD_CD_CE, 3);
+        intxyz(HE1, CE1, dHE_CE, CD1, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
+        intxyz(HE2, CE2, dHE_CE, CD2, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
+        intxyz(OH, CZ, dOH_CZ, CE1, dOH_CZ_CE, CE2, dOH_CZ_CE, 3);
+
+        if (rotamer.length == 3) {
+          intxyz(HH, OH, dHH_OH, CZ, dHH_OH_CZ, CE2, rotamer.chi3, 0);
+        } else {
+          intxyz(HH, OH, dHH_OH, CZ, dHH_OH_CZ, CE2, 0.0, 0);
         }
-      case PHE:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD1 = (Atom) residue.getAtomNode("CD1");
-          Atom CD2 = (Atom) residue.getAtomNode("CD2");
-          Atom CE1 = (Atom) residue.getAtomNode("CE1");
-          Atom CE2 = (Atom) residue.getAtomNode("CE2");
-          Atom CZ = (Atom) residue.getAtomNode("CZ");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HD1 = (Atom) residue.getAtomNode("HD1");
-          Atom HD2 = (Atom) residue.getAtomNode("HD2");
-          Atom HE1 = (Atom) residue.getAtomNode("HE1");
-          Atom HE2 = (Atom) residue.getAtomNode("HE2");
-          Atom HZ = (Atom) residue.getAtomNode("HZ");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD_CG = CD1.getBond(CG);
-          Bond CE_CD = CE1.getBond(CD1);
-          Bond HB_CB = HB2.getBond(CB);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD_CG = CD_CG.bondType.distance;
-          double dCE_CD = CE_CD.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
+        break;
+      }
+      case TYD: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD1 = (Atom) residue.getAtomNode("CD1");
+        Atom CD2 = (Atom) residue.getAtomNode("CD2");
+        Atom CE1 = (Atom) residue.getAtomNode("CE1");
+        Atom CE2 = (Atom) residue.getAtomNode("CE2");
+        Atom CZ = (Atom) residue.getAtomNode("CZ");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HD1 = (Atom) residue.getAtomNode("HD1");
+        Atom HD2 = (Atom) residue.getAtomNode("HD2");
+        Atom HE1 = (Atom) residue.getAtomNode("HE1");
+        Atom HE2 = (Atom) residue.getAtomNode("HE2");
+        Atom OH = (Atom) residue.getAtomNode("OH");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD_CG = CD1.getBond(CG);
+        Bond CE_CD = CE1.getBond(CD1);
+        Bond HB_CB = HB2.getBond(CB);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD_CG = CD_CG.bondType.distance;
+        double dCE_CD = CE_CD.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
 
-          double dHD_CD = HD1.getBond(CD1).bondType.distance;
-          double dHE_CE = HE1.getBond(CE1).bondType.distance;
-          double dHZ_CZ = HZ.getBond(CZ).bondType.distance;
+        double dHD_CD = HD1.getBond(CD1).bondType.distance;
+        double dHE_CE = HE1.getBond(CE1).bondType.distance;
+        double dOH_CZ = OH.getBond(CZ).bondType.distance;
 
-          double dCG_CB_CA = getAngle(name, CG, CB, CA);
-          double dCD_CG_CB = getAngle(name, CD1, CG, CB);
-          double dCE_CD_CG = getAngle(name, CE1, CD1, CG);
-          double dHB_CB_CA = getAngle(name, HB2, CB, CA);
+        double dCG_CB_CA = getAngle(name, CG, CB, CA);
+        double dCD_CG_CB = getAngle(name, CD1, CG, CB);
+        double dCE_CD_CG = getAngle(name, CE1, CD1, CG);
+        double dHB_CB_CA = getAngle(name, HB2, CB, CA);
 
-          double dHD_CD_CG = getAngle(name, HD1, CD1, CG);
-          double dHD_CD_CE = getAngle(name, HD1, CD1, CE1);
-          double dHE_CE_CD = getAngle(name, HE1, CE1, CD1);
-          double dHE_CE_CZ = getAngle(name, HE1, CE1, CZ);
-          double dHZ_CZ_CE = getAngle(name, HZ, CZ, CE1);
+        double dHD_CD_CG = getAngle(name, HD1, CD1, CG);
+        double dHD_CD_CE = getAngle(name, HD1, CD1, CE1);
+        double dHE_CE_CD = getAngle(name, HE1, CE1, CD1);
+        double dHE_CE_CZ = getAngle(name, HE1, CE1, CZ);
+        double dOH_CZ_CE = getAngle(name, OH, CZ, CE1);
 
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD1, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(CD2, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2 + 180, 0);
-          intxyz(CE1, CD1, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
-          intxyz(CE2, CD2, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
-          applyCZ(name, CZ, CG, CE1, CD1, CE2, CD2);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD1, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(CD2, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2 + 180, 0);
+        intxyz(CE1, CD1, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
+        intxyz(CE2, CD2, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
+        applyCZ(name, CZ, CG, CE1, CD1, CE2, CD2);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
 
-          intxyz(HD1, CD1, dHD_CD, CG, dHD_CD_CG, CE1, dHD_CD_CE, 3);
-          intxyz(HD2, CD2, dHD_CD, CG, dHD_CD_CG, CE2, dHD_CD_CE, 3);
-          intxyz(HE1, CE1, dHE_CE, CD1, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
-          intxyz(HE2, CE2, dHE_CE, CD2, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
-          intxyz(HZ, CZ, dHZ_CZ, CE1, dHZ_CZ_CE, CE2, dHZ_CZ_CE, 3);
-          break;
-        }
-      case PRO:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD = (Atom) residue.getAtomNode("CD");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HG2 = (Atom) residue.getAtomNode("HG2");
-          Atom HG3 = (Atom) residue.getAtomNode("HG3");
-          Atom HD2 = (Atom) residue.getAtomNode("HD2");
-          Atom HD3 = (Atom) residue.getAtomNode("HD3");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD_CG = CD.getBond(CG);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HG_CG = HG2.getBond(CG);
-          Bond HD_CD = HD2.getBond(CD);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD_CG = CD_CG.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_CG = HG_CG.bondType.distance;
-          double dHD_CD = HD_CD.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle CD_CG_CB = CD.getAngle(CG, CB);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HG_CG_CB = HG2.getAngle(CG, CB);
-          Angle HD_CD_CG = HD2.getAngle(CD, CG);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
-          double dHD_CD_CG = HD_CD_CG.angleType.angle[HD_CD_CG.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, 1);
-          intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, -1);
-          intxyz(HD2, CD, dHD_CD, CG, dHD_CD_CG, N, 109.4, 1);
-          intxyz(HD3, CD, dHD_CD, CG, dHD_CD_CG, N, 109.4, -1);
-          break;
-        }
-      case TYR:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD1 = (Atom) residue.getAtomNode("CD1");
-          Atom CD2 = (Atom) residue.getAtomNode("CD2");
-          Atom CE1 = (Atom) residue.getAtomNode("CE1");
-          Atom CE2 = (Atom) residue.getAtomNode("CE2");
-          Atom CZ = (Atom) residue.getAtomNode("CZ");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HD1 = (Atom) residue.getAtomNode("HD1");
-          Atom HD2 = (Atom) residue.getAtomNode("HD2");
-          Atom HE1 = (Atom) residue.getAtomNode("HE1");
-          Atom HE2 = (Atom) residue.getAtomNode("HE2");
-          Atom OH = (Atom) residue.getAtomNode("OH");
-          Atom HH = (Atom) residue.getAtomNode("HH");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD_CG = CD1.getBond(CG);
-          Bond CE_CD = CE1.getBond(CD1);
-          Bond HB_CB = HB2.getBond(CB);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD_CG = CD_CG.bondType.distance;
-          double dCE_CD = CE_CD.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
+        intxyz(HD1, CD1, dHD_CD, CG, dHD_CD_CG, CE1, dHD_CD_CE, 3);
+        intxyz(HD2, CD2, dHD_CD, CG, dHD_CD_CG, CE2, dHD_CD_CE, 3);
+        intxyz(HE1, CE1, dHE_CE, CD1, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
+        intxyz(HE2, CE2, dHE_CE, CD2, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
+        intxyz(OH, CZ, dOH_CZ, CE1, dOH_CZ_CE, CE2, dOH_CZ_CE, 3);
+        break;
+      }
+      case TRP: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD1 = (Atom) residue.getAtomNode("CD1");
+        Atom CD2 = (Atom) residue.getAtomNode("CD2");
+        Atom NE1 = (Atom) residue.getAtomNode("NE1");
+        Atom CE2 = (Atom) residue.getAtomNode("CE2");
+        Atom CE3 = (Atom) residue.getAtomNode("CE3");
+        Atom CZ2 = (Atom) residue.getAtomNode("CZ2");
+        Atom CZ3 = (Atom) residue.getAtomNode("CZ3");
+        Atom CH2 = (Atom) residue.getAtomNode("CH2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HD1 = (Atom) residue.getAtomNode("HD1");
+        Atom HE1 = (Atom) residue.getAtomNode("HE1");
+        Atom HE3 = (Atom) residue.getAtomNode("HE3");
+        Atom HZ2 = (Atom) residue.getAtomNode("HZ2");
+        Atom HZ3 = (Atom) residue.getAtomNode("HZ3");
+        Atom HH2 = (Atom) residue.getAtomNode("HH2");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD1_CG = CD1.getBond(CG);
+        Bond CD2_CG = CD2.getBond(CG);
+        Bond NE1_CD1 = NE1.getBond(CD1);
+        Bond CE2_NE1 = CE2.getBond(NE1);
+        Bond CE3_CD2 = CE3.getBond(CD2);
+        Bond CZ2_CE2 = CZ2.getBond(CE2);
+        Bond CZ3_CE3 = CZ3.getBond(CE3);
+        Bond CH2_CZ2 = CH2.getBond(CZ2);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HD1_CD1 = HD1.getBond(CD1);
+        Bond HE1_NE1 = HE1.getBond(NE1);
+        Bond HE3_CE3 = HE3.getBond(CE3);
+        Bond HZ2_CZ2 = HZ2.getBond(CZ2);
+        Bond HZ3_CZ3 = HZ3.getBond(CZ3);
+        Bond HH2_CH2 = HH2.getBond(CH2);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD1_CG = CD1_CG.bondType.distance;
+        double dCD2_CG = CD2_CG.bondType.distance;
+        double dNE1_CD1 = NE1_CD1.bondType.distance;
+        double dCE2_NE1 = CE2_NE1.bondType.distance;
+        double dCE3_CD2 = CE3_CD2.bondType.distance;
+        double dCZ2_CE2 = CZ2_CE2.bondType.distance;
+        double dCZ3_CE3 = CZ3_CE3.bondType.distance;
+        double dCH2_CZ2 = CH2_CZ2.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHD1_CD1 = HD1_CD1.bondType.distance;
+        double dHE1_NE1 = HE1_NE1.bondType.distance;
+        double dHE3_CE3 = HE3_CE3.bondType.distance;
+        double dHZ2_CZ2 = HZ2_CZ2.bondType.distance;
+        double dHZ3_CZ3 = HZ3_CZ3.bondType.distance;
+        double dHH2_CH2 = HH2_CH2.bondType.distance;
 
-          double dHD_CD = HD1.getBond(CD1).bondType.distance;
-          double dHE_CE = HE1.getBond(CE1).bondType.distance;
-          double dOH_CZ = OH.getBond(CZ).bondType.distance;
-          double dHH_OH = HH.getBond(OH).bondType.distance;
+        double dCG_CB_CA = getAngle(name, CG, CB, CA);
+        double dCD1_CG_CB = getAngle(name, CD1, CG, CB);
+        double dCD2_CG_CB = getAngle(name, CD2, CG, CB);
+        double dNE1_CD1_CG = getAngle(name, NE1, CD1, CG);
+        double dCE2_NE1_CD1 = getAngle(name, CE2, NE1, CD1);
+        double dCE3_CD2_CE2 = getAngle(name, CE3, CD2, CE2);
+        double dCZ2_CE2_CD2 = getAngle(name, CZ2, CE2, CD2);
+        double dCZ3_CE3_CD2 = getAngle(name, CZ3, CE3, CD2);
+        double dCH2_CZ2_CE2 = getAngle(name, CH2, CZ2, CE2);
+        double dHB_CB_CA = getAngle(name, HB2, CB, CA);
+        double dHD1_CD1_CG = getAngle(name, HD1, CD1, CG);
+        double dHD1_CD1_NE1 = getAngle(name, HD1, CD1, NE1);
+        double dHE1_NE1_CD1 = getAngle(name, HE1, NE1, CD1);
+        double dHE1_NE1_CE2 = getAngle(name, HE1, NE1, CE2);
+        double dHE3_CE3_CD2 = getAngle(name, HE3, CE3, CD2);
+        double dHE3_CE3_CZ3 = getAngle(name, HE3, CE3, CZ3);
+        double dHZ2_CZ2_CE2 = getAngle(name, HZ2, CZ2, CE2);
+        double dHZ2_CZ2_CH2 = getAngle(name, HZ2, CZ2, CH2);
+        double dHZ3_CZ3_CE3 = getAngle(name, HZ3, CZ3, CE3);
+        double dHZ3_CZ3_CH2 = getAngle(name, HZ3, CZ3, CH2);
+        double dHH2_CH2_CZ2 = getAngle(name, HH2, CH2, CZ2);
+        double dHH2_CH2_CZ3 = getAngle(name, HH2, CH2, CZ3);
 
-          double dCG_CB_CA = getAngle(name, CG, CB, CA);
-          double dCD_CG_CB = getAngle(name, CD1, CG, CB);
-          double dCE_CD_CG = getAngle(name, CE1, CD1, CG);
-          double dHB_CB_CA = getAngle(name, HB2, CB, CA);
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD1, CG, dCD1_CG, CB, dCD1_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(CD2, CG, dCD2_CG, CB, dCD2_CG_CB, CA, rotamer.chi2 + 180, 0);
+        intxyz(NE1, CD1, dNE1_CD1, CG, dNE1_CD1_CG, CD2, 0.0, 0);
+        intxyz(CE2, NE1, dCE2_NE1, CD1, dCE2_NE1_CD1, CG, 0.0, 0);
+        intxyz(CE3, CD2, dCE3_CD2, CE2, dCE3_CD2_CE2, NE1, 180.0, 0);
+        intxyz(CZ2, CE2, dCZ2_CE2, CD2, dCZ2_CE2_CD2, CE3, 0.0, 0);
+        intxyz(CZ3, CE3, dCZ3_CE3, CD2, dCZ3_CE3_CD2, CE2, 0.0, 0);
+        intxyz(CH2, CZ2, dCH2_CZ2, CE2, dCH2_CZ2_CE2, CD2, 0.0, 0);
+        // Continue using 109.4 degrees for tetrahedral hydrogens.
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HD1, CD1, dHD1_CD1, CG, dHD1_CD1_CG, NE1, dHD1_CD1_NE1, 3);
+        intxyz(HE1, NE1, dHE1_NE1, CD1, dHE1_NE1_CD1, CE2, dHE1_NE1_CE2, 3);
+        intxyz(HE3, CE3, dHE3_CE3, CD2, dHE3_CE3_CD2, CZ3, dHE3_CE3_CZ3, 3);
+        intxyz(HZ2, CZ2, dHZ2_CZ2, CE2, dHZ2_CZ2_CE2, CH2, dHZ2_CZ2_CH2, 3);
+        intxyz(HZ3, CZ3, dHZ3_CZ3, CE3, dHZ3_CZ3_CE3, CH2, dHZ3_CZ3_CH2, 3);
+        intxyz(HH2, CH2, dHH2_CH2, CZ2, dHH2_CH2_CZ2, CZ3, dHH2_CH2_CZ3, 3);
+        break;
+      }
+      case HIS: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom ND1 = (Atom) residue.getAtomNode("ND1");
+        Atom CD2 = (Atom) residue.getAtomNode("CD2");
+        Atom CE1 = (Atom) residue.getAtomNode("CE1");
+        Atom NE2 = (Atom) residue.getAtomNode("NE2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HD1 = (Atom) residue.getAtomNode("HD1");
+        Atom HD2 = (Atom) residue.getAtomNode("HD2");
+        Atom HE1 = (Atom) residue.getAtomNode("HE1");
+        Atom HE2 = (Atom) residue.getAtomNode("HE2");
+        Bond CG_CB = CG.getBond(CB);
+        Bond ND1_CG = ND1.getBond(CG);
+        Bond CD2_CG = CD2.getBond(CG);
+        Bond CE1_ND1 = CE1.getBond(ND1);
+        Bond NE2_CD2 = NE2.getBond(CD2);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HD1_ND1 = HD1.getBond(ND1);
+        Bond HD2_CD2 = HD2.getBond(CD2);
+        Bond HE1_CE1 = HE1.getBond(CE1);
+        Bond HE2_NE2 = HE2.getBond(NE2);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dND1_CG = ND1_CG.bondType.distance;
+        double dCD2_CG = CD2_CG.bondType.distance;
+        double dCE1_ND1 = CE1_ND1.bondType.distance;
+        double dNE2_CD2 = NE2_CD2.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHD1_ND1 = HD1_ND1.bondType.distance;
+        double dHD2_CD2 = HD2_CD2.bondType.distance;
+        double dHE1_CE1 = HE1_CE1.bondType.distance;
+        double dHE2_NE2 = HE2_NE2.bondType.distance;
 
-          double dHD_CD_CG = getAngle(name, HD1, CD1, CG);
-          double dHD_CD_CE = getAngle(name, HD1, CD1, CE1);
-          double dHE_CE_CD = getAngle(name, HE1, CE1, CD1);
-          double dHE_CE_CZ = getAngle(name, HE1, CE1, CZ);
-          double dOH_CZ_CE = getAngle(name, OH, CZ, CE1);
-          double dHH_OH_CZ = getAngle(name, HH, OH, CZ);
+        double dCG_CB_CA = getAngle(name, CG, CB, CA);
+        double dND1_CG_CB = getAngle(name, ND1, CG, CB);
+        double dCD2_CG_CB = getAngle(name, CD2, CG, CB);
+        double dCE1_ND1_CG = getAngle(name, CE1, ND1, CG);
+        double dNE2_CD2_CG = getAngle(name, NE2, CD2, CG);
+        double dHB_CB_CA = getAngle(name, HB2, CB, CA);
+        double dHD1_ND1_CG = getAngle(name, HD1, ND1, CG);
+        double dHD1_ND1_CE1 = getAngle(name, HD1, ND1, CE1);
+        double dHD2_CD2_CG = getAngle(name, HD2, CD2, CG);
+        double dHD2_CD2_NE2 = getAngle(name, HD2, CD2, NE2);
+        double dHE1_CE1_ND1 = getAngle(name, HE1, CE1, ND1);
+        double dHE1_CE1_NE2 = getAngle(name, HE1, CE1, NE2);
+        double dHE2_NE2_CD2 = getAngle(name, HE2, NE2, CD2);
+        double dHE2_NE2_CE1 = getAngle(name, HE2, NE2, CE1);
 
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD1, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(CD2, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2 + 180, 0);
-          intxyz(CE1, CD1, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
-          intxyz(CE2, CD2, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
-          applyCZ(name, CZ, CG, CE1, CD1, CE2, CD2);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(ND1, CG, dND1_CG, CB, dND1_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(CD2, CG, dCD2_CG, CB, dCD2_CG_CB, CA, rotamer.chi2 + 180, 0);
+        intxyz(CE1, ND1, dCE1_ND1, CG, dCE1_ND1_CG, CD2, 0.0, 0);
+        intxyz(NE2, CD2, dNE2_CD2, CG, dNE2_CD2_CG, ND1, 0.0, 0);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HD1, ND1, dHD1_ND1, CG, dHD1_ND1_CG, CE1, dHD1_ND1_CE1, 3);
+        intxyz(HD2, CD2, dHD2_CD2, CG, dHD2_CD2_CG, NE2, dHD2_CD2_NE2, 3);
+        intxyz(HE1, CE1, dHE1_CE1, ND1, dHE1_CE1_ND1, NE2, dHE1_CE1_NE2, 3);
+        intxyz(HE2, NE2, dHE2_NE2, CD2, dHE2_NE2_CD2, CE1, dHE2_NE2_CE1, 3);
+        break;
+      }
+      case HID: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom ND1 = (Atom) residue.getAtomNode("ND1");
+        Atom CD2 = (Atom) residue.getAtomNode("CD2");
+        Atom CE1 = (Atom) residue.getAtomNode("CE1");
+        Atom NE2 = (Atom) residue.getAtomNode("NE2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HD1 = (Atom) residue.getAtomNode("HD1");
+        Atom HD2 = (Atom) residue.getAtomNode("HD2");
+        Atom HE1 = (Atom) residue.getAtomNode("HE1");
+        Bond CG_CB = CG.getBond(CB);
+        Bond ND1_CG = ND1.getBond(CG);
+        Bond CD2_CG = CD2.getBond(CG);
+        Bond CE1_ND1 = CE1.getBond(ND1);
+        Bond NE2_CD2 = NE2.getBond(CD2);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HD1_ND1 = HD1.getBond(ND1);
+        Bond HD2_CD2 = HD2.getBond(CD2);
+        Bond HE1_CE1 = HE1.getBond(CE1);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dND1_CG = ND1_CG.bondType.distance;
+        double dCD2_CG = CD2_CG.bondType.distance;
+        double dCE1_ND1 = CE1_ND1.bondType.distance;
+        double dNE2_CD2 = NE2_CD2.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHD1_ND1 = HD1_ND1.bondType.distance;
+        double dHD2_CD2 = HD2_CD2.bondType.distance;
+        double dHE1_CE1 = HE1_CE1.bondType.distance;
 
-          intxyz(HD1, CD1, dHD_CD, CG, dHD_CD_CG, CE1, dHD_CD_CE, 3);
-          intxyz(HD2, CD2, dHD_CD, CG, dHD_CD_CG, CE2, dHD_CD_CE, 3);
-          intxyz(HE1, CE1, dHE_CE, CD1, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
-          intxyz(HE2, CE2, dHE_CE, CD2, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
-          intxyz(OH, CZ, dOH_CZ, CE1, dOH_CZ_CE, CE2, dOH_CZ_CE, 3);
+        double dCG_CB_CA = getAngle(name, CG, CB, CA);
+        double dND1_CG_CB = getAngle(name, ND1, CG, CB);
+        double dCD2_CG_CB = getAngle(name, CD2, CG, CB);
+        double dCE1_ND1_CG = getAngle(name, CE1, ND1, CG);
+        double dNE2_CD2_CG = getAngle(name, NE2, CD2, CG);
+        double dHB_CB_CA = getAngle(name, HB2, CB, CA);
+        double dHD1_ND1_CG = getAngle(name, HD1, ND1, CG);
+        double dHD1_ND1_CE1 = getAngle(name, HD1, ND1, CE1);
+        double dHD2_CD2_CG = getAngle(name, HD2, CD2, CG);
+        double dHD2_CD2_NE2 = getAngle(name, HD2, CD2, NE2);
+        double dHE1_CE1_ND1 = getAngle(name, HE1, CE1, ND1);
+        double dHE1_CE1_NE2 = getAngle(name, HE1, CE1, NE2);
 
-          if (rotamer.length == 3) {
-            intxyz(HH, OH, dHH_OH, CZ, dHH_OH_CZ, CE2, rotamer.chi3, 0);
-          } else {
-            intxyz(HH, OH, dHH_OH, CZ, dHH_OH_CZ, CE2, 0.0, 0);
-          }
-          break;
-        }
-      case TYD:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD1 = (Atom) residue.getAtomNode("CD1");
-          Atom CD2 = (Atom) residue.getAtomNode("CD2");
-          Atom CE1 = (Atom) residue.getAtomNode("CE1");
-          Atom CE2 = (Atom) residue.getAtomNode("CE2");
-          Atom CZ = (Atom) residue.getAtomNode("CZ");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HD1 = (Atom) residue.getAtomNode("HD1");
-          Atom HD2 = (Atom) residue.getAtomNode("HD2");
-          Atom HE1 = (Atom) residue.getAtomNode("HE1");
-          Atom HE2 = (Atom) residue.getAtomNode("HE2");
-          Atom OH = (Atom) residue.getAtomNode("OH");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD_CG = CD1.getBond(CG);
-          Bond CE_CD = CE1.getBond(CD1);
-          Bond HB_CB = HB2.getBond(CB);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD_CG = CD_CG.bondType.distance;
-          double dCE_CD = CE_CD.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(ND1, CG, dND1_CG, CB, dND1_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(CD2, CG, dCD2_CG, CB, dCD2_CG_CB, CA, rotamer.chi2 + 180, 0);
+        intxyz(CE1, ND1, dCE1_ND1, CG, dCE1_ND1_CG, CD2, 0.0, 0);
+        intxyz(NE2, CD2, dNE2_CD2, CG, dNE2_CD2_CG, ND1, 0.0, 0);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HD1, ND1, dHD1_ND1, CG, dHD1_ND1_CG, CE1, dHD1_ND1_CE1, 3);
+        intxyz(HD2, CD2, dHD2_CD2, CG, dHD2_CD2_CG, NE2, dHD2_CD2_NE2, 3);
+        intxyz(HE1, CE1, dHE1_CE1, ND1, dHE1_CE1_ND1, NE2, dHE1_CE1_NE2, 3);
+        break;
+      }
+      case HIE: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom ND1 = (Atom) residue.getAtomNode("ND1");
+        Atom CD2 = (Atom) residue.getAtomNode("CD2");
+        Atom CE1 = (Atom) residue.getAtomNode("CE1");
+        Atom NE2 = (Atom) residue.getAtomNode("NE2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HD2 = (Atom) residue.getAtomNode("HD2");
+        Atom HE1 = (Atom) residue.getAtomNode("HE1");
+        Atom HE2 = (Atom) residue.getAtomNode("HE2");
+        Bond CG_CB = CG.getBond(CB);
+        Bond ND1_CG = ND1.getBond(CG);
+        Bond CD2_CG = CD2.getBond(CG);
+        Bond CE1_ND1 = CE1.getBond(ND1);
+        Bond NE2_CD2 = NE2.getBond(CD2);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HD2_CD2 = HD2.getBond(CD2);
+        Bond HE1_CE1 = HE1.getBond(CE1);
+        Bond HE2_NE2 = HE2.getBond(NE2);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dND1_CG = ND1_CG.bondType.distance;
+        double dCD2_CG = CD2_CG.bondType.distance;
+        double dCE1_ND1 = CE1_ND1.bondType.distance;
+        double dNE2_CD2 = NE2_CD2.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHD2_CD2 = HD2_CD2.bondType.distance;
+        double dHE1_CE1 = HE1_CE1.bondType.distance;
+        double dHE2_NE2 = HE2_NE2.bondType.distance;
 
-          double dHD_CD = HD1.getBond(CD1).bondType.distance;
-          double dHE_CE = HE1.getBond(CE1).bondType.distance;
-          double dOH_CZ = OH.getBond(CZ).bondType.distance;
+        double dCG_CB_CA = getAngle(name, CG, CB, CA);
+        double dND1_CG_CB = getAngle(name, ND1, CG, CB);
+        double dCD2_CG_CB = getAngle(name, CD2, CG, CB);
+        double dCE1_ND1_CG = getAngle(name, CE1, ND1, CG);
+        double dNE2_CD2_CG = getAngle(name, NE2, CD2, CG);
+        double dHB_CB_CA = getAngle(name, HB2, CB, CA);
+        double dHD2_CD2_CG = getAngle(name, HD2, CD2, CG);
+        double dHD2_CD2_NE2 = getAngle(name, HD2, CD2, NE2);
+        double dHE1_CE1_ND1 = getAngle(name, HE1, CE1, ND1);
+        double dHE1_CE1_NE2 = getAngle(name, HE1, CE1, NE2);
+        double dHE2_NE2_CD2 = getAngle(name, HE2, NE2, CD2);
+        double dHE2_NE2_CE1 = getAngle(name, HE2, NE2, CE1);
 
-          double dCG_CB_CA = getAngle(name, CG, CB, CA);
-          double dCD_CG_CB = getAngle(name, CD1, CG, CB);
-          double dCE_CD_CG = getAngle(name, CE1, CD1, CG);
-          double dHB_CB_CA = getAngle(name, HB2, CB, CA);
-
-          double dHD_CD_CG = getAngle(name, HD1, CD1, CG);
-          double dHD_CD_CE = getAngle(name, HD1, CD1, CE1);
-          double dHE_CE_CD = getAngle(name, HE1, CE1, CD1);
-          double dHE_CE_CZ = getAngle(name, HE1, CE1, CZ);
-          double dOH_CZ_CE = getAngle(name, OH, CZ, CE1);
-
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD1, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(CD2, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2 + 180, 0);
-          intxyz(CE1, CD1, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
-          intxyz(CE2, CD2, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
-          applyCZ(name, CZ, CG, CE1, CD1, CE2, CD2);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-
-          intxyz(HD1, CD1, dHD_CD, CG, dHD_CD_CG, CE1, dHD_CD_CE, 3);
-          intxyz(HD2, CD2, dHD_CD, CG, dHD_CD_CG, CE2, dHD_CD_CE, 3);
-          intxyz(HE1, CE1, dHE_CE, CD1, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
-          intxyz(HE2, CE2, dHE_CE, CD2, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
-          intxyz(OH, CZ, dOH_CZ, CE1, dOH_CZ_CE, CE2, dOH_CZ_CE, 3);
-          break;
-        }
-      case TRP:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD1 = (Atom) residue.getAtomNode("CD1");
-          Atom CD2 = (Atom) residue.getAtomNode("CD2");
-          Atom NE1 = (Atom) residue.getAtomNode("NE1");
-          Atom CE2 = (Atom) residue.getAtomNode("CE2");
-          Atom CE3 = (Atom) residue.getAtomNode("CE3");
-          Atom CZ2 = (Atom) residue.getAtomNode("CZ2");
-          Atom CZ3 = (Atom) residue.getAtomNode("CZ3");
-          Atom CH2 = (Atom) residue.getAtomNode("CH2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HD1 = (Atom) residue.getAtomNode("HD1");
-          Atom HE1 = (Atom) residue.getAtomNode("HE1");
-          Atom HE3 = (Atom) residue.getAtomNode("HE3");
-          Atom HZ2 = (Atom) residue.getAtomNode("HZ2");
-          Atom HZ3 = (Atom) residue.getAtomNode("HZ3");
-          Atom HH2 = (Atom) residue.getAtomNode("HH2");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD1_CG = CD1.getBond(CG);
-          Bond CD2_CG = CD2.getBond(CG);
-          Bond NE1_CD1 = NE1.getBond(CD1);
-          Bond CE2_NE1 = CE2.getBond(NE1);
-          Bond CE3_CD2 = CE3.getBond(CD2);
-          Bond CZ2_CE2 = CZ2.getBond(CE2);
-          Bond CZ3_CE3 = CZ3.getBond(CE3);
-          Bond CH2_CZ2 = CH2.getBond(CZ2);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HD1_CD1 = HD1.getBond(CD1);
-          Bond HE1_NE1 = HE1.getBond(NE1);
-          Bond HE3_CE3 = HE3.getBond(CE3);
-          Bond HZ2_CZ2 = HZ2.getBond(CZ2);
-          Bond HZ3_CZ3 = HZ3.getBond(CZ3);
-          Bond HH2_CH2 = HH2.getBond(CH2);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD1_CG = CD1_CG.bondType.distance;
-          double dCD2_CG = CD2_CG.bondType.distance;
-          double dNE1_CD1 = NE1_CD1.bondType.distance;
-          double dCE2_NE1 = CE2_NE1.bondType.distance;
-          double dCE3_CD2 = CE3_CD2.bondType.distance;
-          double dCZ2_CE2 = CZ2_CE2.bondType.distance;
-          double dCZ3_CE3 = CZ3_CE3.bondType.distance;
-          double dCH2_CZ2 = CH2_CZ2.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHD1_CD1 = HD1_CD1.bondType.distance;
-          double dHE1_NE1 = HE1_NE1.bondType.distance;
-          double dHE3_CE3 = HE3_CE3.bondType.distance;
-          double dHZ2_CZ2 = HZ2_CZ2.bondType.distance;
-          double dHZ3_CZ3 = HZ3_CZ3.bondType.distance;
-          double dHH2_CH2 = HH2_CH2.bondType.distance;
-
-          double dCG_CB_CA = getAngle(name, CG, CB, CA);
-          double dCD1_CG_CB = getAngle(name, CD1, CG, CB);
-          double dCD2_CG_CB = getAngle(name, CD2, CG, CB);
-          double dNE1_CD1_CG = getAngle(name, NE1, CD1, CG);
-          double dCE2_NE1_CD1 = getAngle(name, CE2, NE1, CD1);
-          double dCE3_CD2_CE2 = getAngle(name, CE3, CD2, CE2);
-          double dCZ2_CE2_CD2 = getAngle(name, CZ2, CE2, CD2);
-          double dCZ3_CE3_CD2 = getAngle(name, CZ3, CE3, CD2);
-          double dCH2_CZ2_CE2 = getAngle(name, CH2, CZ2, CE2);
-          double dHB_CB_CA = getAngle(name, HB2, CB, CA);
-          double dHD1_CD1_CG = getAngle(name, HD1, CD1, CG);
-          double dHD1_CD1_NE1 = getAngle(name, HD1, CD1, NE1);
-          double dHE1_NE1_CD1 = getAngle(name, HE1, NE1, CD1);
-          double dHE1_NE1_CE2 = getAngle(name, HE1, NE1, CE2);
-          double dHE3_CE3_CD2 = getAngle(name, HE3, CE3, CD2);
-          double dHE3_CE3_CZ3 = getAngle(name, HE3, CE3, CZ3);
-          double dHZ2_CZ2_CE2 = getAngle(name, HZ2, CZ2, CE2);
-          double dHZ2_CZ2_CH2 = getAngle(name, HZ2, CZ2, CH2);
-          double dHZ3_CZ3_CE3 = getAngle(name, HZ3, CZ3, CE3);
-          double dHZ3_CZ3_CH2 = getAngle(name, HZ3, CZ3, CH2);
-          double dHH2_CH2_CZ2 = getAngle(name, HH2, CH2, CZ2);
-          double dHH2_CH2_CZ3 = getAngle(name, HH2, CH2, CZ3);
-
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD1, CG, dCD1_CG, CB, dCD1_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(CD2, CG, dCD2_CG, CB, dCD2_CG_CB, CA, rotamer.chi2 + 180, 0);
-          intxyz(NE1, CD1, dNE1_CD1, CG, dNE1_CD1_CG, CD2, 0.0, 0);
-          intxyz(CE2, NE1, dCE2_NE1, CD1, dCE2_NE1_CD1, CG, 0.0, 0);
-          intxyz(CE3, CD2, dCE3_CD2, CE2, dCE3_CD2_CE2, NE1, 180.0, 0);
-          intxyz(CZ2, CE2, dCZ2_CE2, CD2, dCZ2_CE2_CD2, CE3, 0.0, 0);
-          intxyz(CZ3, CE3, dCZ3_CE3, CD2, dCZ3_CE3_CD2, CE2, 0.0, 0);
-          intxyz(CH2, CZ2, dCH2_CZ2, CE2, dCH2_CZ2_CE2, CD2, 0.0, 0);
-          // Continue using 109.4 degrees for tetrahedral hydrogens.
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HD1, CD1, dHD1_CD1, CG, dHD1_CD1_CG, NE1, dHD1_CD1_NE1, 3);
-          intxyz(HE1, NE1, dHE1_NE1, CD1, dHE1_NE1_CD1, CE2, dHE1_NE1_CE2, 3);
-          intxyz(HE3, CE3, dHE3_CE3, CD2, dHE3_CE3_CD2, CZ3, dHE3_CE3_CZ3, 3);
-          intxyz(HZ2, CZ2, dHZ2_CZ2, CE2, dHZ2_CZ2_CE2, CH2, dHZ2_CZ2_CH2, 3);
-          intxyz(HZ3, CZ3, dHZ3_CZ3, CE3, dHZ3_CZ3_CE3, CH2, dHZ3_CZ3_CH2, 3);
-          intxyz(HH2, CH2, dHH2_CH2, CZ2, dHH2_CH2_CZ2, CZ3, dHH2_CH2_CZ3, 3);
-          break;
-        }
-      case HIS:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom ND1 = (Atom) residue.getAtomNode("ND1");
-          Atom CD2 = (Atom) residue.getAtomNode("CD2");
-          Atom CE1 = (Atom) residue.getAtomNode("CE1");
-          Atom NE2 = (Atom) residue.getAtomNode("NE2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HD1 = (Atom) residue.getAtomNode("HD1");
-          Atom HD2 = (Atom) residue.getAtomNode("HD2");
-          Atom HE1 = (Atom) residue.getAtomNode("HE1");
-          Atom HE2 = (Atom) residue.getAtomNode("HE2");
-          Bond CG_CB = CG.getBond(CB);
-          Bond ND1_CG = ND1.getBond(CG);
-          Bond CD2_CG = CD2.getBond(CG);
-          Bond CE1_ND1 = CE1.getBond(ND1);
-          Bond NE2_CD2 = NE2.getBond(CD2);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HD1_ND1 = HD1.getBond(ND1);
-          Bond HD2_CD2 = HD2.getBond(CD2);
-          Bond HE1_CE1 = HE1.getBond(CE1);
-          Bond HE2_NE2 = HE2.getBond(NE2);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dND1_CG = ND1_CG.bondType.distance;
-          double dCD2_CG = CD2_CG.bondType.distance;
-          double dCE1_ND1 = CE1_ND1.bondType.distance;
-          double dNE2_CD2 = NE2_CD2.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHD1_ND1 = HD1_ND1.bondType.distance;
-          double dHD2_CD2 = HD2_CD2.bondType.distance;
-          double dHE1_CE1 = HE1_CE1.bondType.distance;
-          double dHE2_NE2 = HE2_NE2.bondType.distance;
-
-          double dCG_CB_CA = getAngle(name, CG, CB, CA);
-          double dND1_CG_CB = getAngle(name, ND1, CG, CB);
-          double dCD2_CG_CB = getAngle(name, CD2, CG, CB);
-          double dCE1_ND1_CG = getAngle(name, CE1, ND1, CG);
-          double dNE2_CD2_CG = getAngle(name, NE2, CD2, CG);
-          double dHB_CB_CA = getAngle(name, HB2, CB, CA);
-          double dHD1_ND1_CG = getAngle(name, HD1, ND1, CG);
-          double dHD1_ND1_CE1 = getAngle(name, HD1, ND1, CE1);
-          double dHD2_CD2_CG = getAngle(name, HD2, CD2, CG);
-          double dHD2_CD2_NE2 = getAngle(name, HD2, CD2, NE2);
-          double dHE1_CE1_ND1 = getAngle(name, HE1, CE1, ND1);
-          double dHE1_CE1_NE2 = getAngle(name, HE1, CE1, NE2);
-          double dHE2_NE2_CD2 = getAngle(name, HE2, NE2, CD2);
-          double dHE2_NE2_CE1 = getAngle(name, HE2, NE2, CE1);
-
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(ND1, CG, dND1_CG, CB, dND1_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(CD2, CG, dCD2_CG, CB, dCD2_CG_CB, CA, rotamer.chi2 + 180, 0);
-          intxyz(CE1, ND1, dCE1_ND1, CG, dCE1_ND1_CG, CD2, 0.0, 0);
-          intxyz(NE2, CD2, dNE2_CD2, CG, dNE2_CD2_CG, ND1, 0.0, 0);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HD1, ND1, dHD1_ND1, CG, dHD1_ND1_CG, CE1, dHD1_ND1_CE1, 3);
-          intxyz(HD2, CD2, dHD2_CD2, CG, dHD2_CD2_CG, NE2, dHD2_CD2_NE2, 3);
-          intxyz(HE1, CE1, dHE1_CE1, ND1, dHE1_CE1_ND1, NE2, dHE1_CE1_NE2, 3);
-          intxyz(HE2, NE2, dHE2_NE2, CD2, dHE2_NE2_CD2, CE1, dHE2_NE2_CE1, 3);
-          break;
-        }
-      case HID:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom ND1 = (Atom) residue.getAtomNode("ND1");
-          Atom CD2 = (Atom) residue.getAtomNode("CD2");
-          Atom CE1 = (Atom) residue.getAtomNode("CE1");
-          Atom NE2 = (Atom) residue.getAtomNode("NE2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HD1 = (Atom) residue.getAtomNode("HD1");
-          Atom HD2 = (Atom) residue.getAtomNode("HD2");
-          Atom HE1 = (Atom) residue.getAtomNode("HE1");
-          Bond CG_CB = CG.getBond(CB);
-          Bond ND1_CG = ND1.getBond(CG);
-          Bond CD2_CG = CD2.getBond(CG);
-          Bond CE1_ND1 = CE1.getBond(ND1);
-          Bond NE2_CD2 = NE2.getBond(CD2);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HD1_ND1 = HD1.getBond(ND1);
-          Bond HD2_CD2 = HD2.getBond(CD2);
-          Bond HE1_CE1 = HE1.getBond(CE1);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dND1_CG = ND1_CG.bondType.distance;
-          double dCD2_CG = CD2_CG.bondType.distance;
-          double dCE1_ND1 = CE1_ND1.bondType.distance;
-          double dNE2_CD2 = NE2_CD2.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHD1_ND1 = HD1_ND1.bondType.distance;
-          double dHD2_CD2 = HD2_CD2.bondType.distance;
-          double dHE1_CE1 = HE1_CE1.bondType.distance;
-
-          double dCG_CB_CA = getAngle(name, CG, CB, CA);
-          double dND1_CG_CB = getAngle(name, ND1, CG, CB);
-          double dCD2_CG_CB = getAngle(name, CD2, CG, CB);
-          double dCE1_ND1_CG = getAngle(name, CE1, ND1, CG);
-          double dNE2_CD2_CG = getAngle(name, NE2, CD2, CG);
-          double dHB_CB_CA = getAngle(name, HB2, CB, CA);
-          double dHD1_ND1_CG = getAngle(name, HD1, ND1, CG);
-          double dHD1_ND1_CE1 = getAngle(name, HD1, ND1, CE1);
-          double dHD2_CD2_CG = getAngle(name, HD2, CD2, CG);
-          double dHD2_CD2_NE2 = getAngle(name, HD2, CD2, NE2);
-          double dHE1_CE1_ND1 = getAngle(name, HE1, CE1, ND1);
-          double dHE1_CE1_NE2 = getAngle(name, HE1, CE1, NE2);
-
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(ND1, CG, dND1_CG, CB, dND1_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(CD2, CG, dCD2_CG, CB, dCD2_CG_CB, CA, rotamer.chi2 + 180, 0);
-          intxyz(CE1, ND1, dCE1_ND1, CG, dCE1_ND1_CG, CD2, 0.0, 0);
-          intxyz(NE2, CD2, dNE2_CD2, CG, dNE2_CD2_CG, ND1, 0.0, 0);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HD1, ND1, dHD1_ND1, CG, dHD1_ND1_CG, CE1, dHD1_ND1_CE1, 3);
-          intxyz(HD2, CD2, dHD2_CD2, CG, dHD2_CD2_CG, NE2, dHD2_CD2_NE2, 3);
-          intxyz(HE1, CE1, dHE1_CE1, ND1, dHE1_CE1_ND1, NE2, dHE1_CE1_NE2, 3);
-          break;
-        }
-      case HIE:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom ND1 = (Atom) residue.getAtomNode("ND1");
-          Atom CD2 = (Atom) residue.getAtomNode("CD2");
-          Atom CE1 = (Atom) residue.getAtomNode("CE1");
-          Atom NE2 = (Atom) residue.getAtomNode("NE2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HD2 = (Atom) residue.getAtomNode("HD2");
-          Atom HE1 = (Atom) residue.getAtomNode("HE1");
-          Atom HE2 = (Atom) residue.getAtomNode("HE2");
-          Bond CG_CB = CG.getBond(CB);
-          Bond ND1_CG = ND1.getBond(CG);
-          Bond CD2_CG = CD2.getBond(CG);
-          Bond CE1_ND1 = CE1.getBond(ND1);
-          Bond NE2_CD2 = NE2.getBond(CD2);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HD2_CD2 = HD2.getBond(CD2);
-          Bond HE1_CE1 = HE1.getBond(CE1);
-          Bond HE2_NE2 = HE2.getBond(NE2);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dND1_CG = ND1_CG.bondType.distance;
-          double dCD2_CG = CD2_CG.bondType.distance;
-          double dCE1_ND1 = CE1_ND1.bondType.distance;
-          double dNE2_CD2 = NE2_CD2.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHD2_CD2 = HD2_CD2.bondType.distance;
-          double dHE1_CE1 = HE1_CE1.bondType.distance;
-          double dHE2_NE2 = HE2_NE2.bondType.distance;
-
-          double dCG_CB_CA = getAngle(name, CG, CB, CA);
-          double dND1_CG_CB = getAngle(name, ND1, CG, CB);
-          double dCD2_CG_CB = getAngle(name, CD2, CG, CB);
-          double dCE1_ND1_CG = getAngle(name, CE1, ND1, CG);
-          double dNE2_CD2_CG = getAngle(name, NE2, CD2, CG);
-          double dHB_CB_CA = getAngle(name, HB2, CB, CA);
-          double dHD2_CD2_CG = getAngle(name, HD2, CD2, CG);
-          double dHD2_CD2_NE2 = getAngle(name, HD2, CD2, NE2);
-          double dHE1_CE1_ND1 = getAngle(name, HE1, CE1, ND1);
-          double dHE1_CE1_NE2 = getAngle(name, HE1, CE1, NE2);
-          double dHE2_NE2_CD2 = getAngle(name, HE2, NE2, CD2);
-          double dHE2_NE2_CE1 = getAngle(name, HE2, NE2, CE1);
-
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(ND1, CG, dND1_CG, CB, dND1_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(CD2, CG, dCD2_CG, CB, dCD2_CG_CB, CA, rotamer.chi2 + 180, 0);
-          intxyz(CE1, ND1, dCE1_ND1, CG, dCE1_ND1_CG, CD2, 0.0, 0);
-          intxyz(NE2, CD2, dNE2_CD2, CG, dNE2_CD2_CG, ND1, 0.0, 0);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HD2, CD2, dHD2_CD2, CG, dHD2_CD2_CG, NE2, dHD2_CD2_NE2, 3);
-          intxyz(HE1, CE1, dHE1_CE1, ND1, dHE1_CE1_ND1, NE2, dHE1_CE1_NE2, 3);
-          intxyz(HE2, NE2, dHE2_NE2, CD2, dHE2_NE2_CD2, CE1, dHE2_NE2_CE1, 3);
-          break;
-        }
-      case ASP:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom OD1 = (Atom) residue.getAtomNode("OD1");
-          Atom OD2 = (Atom) residue.getAtomNode("OD2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Bond CG_CB = CG.getBond(CB);
-          Bond OD1_CG = OD1.getBond(CG);
-          Bond OD2_CG = OD2.getBond(CG);
-          Bond HB_CB = HB2.getBond(CB);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dOD1_CG = OD1_CG.bondType.distance;
-          double dOD2_CG = OD2_CG.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle OD1_CG_CB = OD1.getAngle(CG, CB);
-          Angle OD2_CG_CB = OD2.getAngle(CG, CB);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dOD1_CG_CB = OD1_CG_CB.angleType.angle[OD1_CG_CB.nh];
-          double dOD2_CG_CB = OD2_CG_CB.angleType.angle[OD2_CG_CB.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(OD1, CG, dOD1_CG, CB, dOD1_CG_CB, CA, 0.0, 0);
-          intxyz(OD2, CG, dOD2_CG, CB, dOD2_CG_CB, OD1, 126.0, 1);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, -1);
-          break;
-        }
-      case ASH:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom OD1 = (Atom) residue.getAtomNode("OD1");
-          Atom OD2 = (Atom) residue.getAtomNode("OD2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HD2 = (Atom) residue.getAtomNode("HD2");
-          Bond CG_CB = CG.getBond(CB);
-          Bond OD1_CG = OD1.getBond(CG);
-          Bond OD2_CG = OD2.getBond(CG);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HD2_OD2 = HD2.getBond(OD2);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dOD1_CG = OD1_CG.bondType.distance;
-          double dOD2_CG = OD2_CG.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHD2_OD2 = HD2_OD2.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle OD1_CG_CB = OD1.getAngle(CG, CB);
-          Angle OD2_CG_CB = OD2.getAngle(CG, CB);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HD2_OD2_CG = HD2.getAngle(OD2, CG);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dOD1_CG_CB = OD1_CG_CB.angleType.angle[OD1_CG_CB.nh];
-          double dOD2_CG_CB = OD2_CG_CB.angleType.angle[OD2_CG_CB.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHD2_OD2_CG = HD2_OD2_CG.angleType.angle[HD2_OD2_CG.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(OD1, CG, dOD1_CG, CB, dOD1_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(OD2, CG, dOD2_CG, CB, dOD2_CG_CB, OD1, 126.0, 1);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, -1);
-          intxyz(HD2, OD2, dHD2_OD2, CG, dHD2_OD2_CG, OD1, 0.0, 0);
-          break;
-        }
-      case ASN:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom OD1 = (Atom) residue.getAtomNode("OD1");
-          Atom ND2 = (Atom) residue.getAtomNode("ND2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HD21 = (Atom) residue.getAtomNode("HD21");
-          Atom HD22 = (Atom) residue.getAtomNode("HD22");
-          Bond CG_CB = CG.getBond(CB);
-          Bond OD1_CG = OD1.getBond(CG);
-          Bond ND2_CG = ND2.getBond(CG);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HD2_ND2 = HD21.getBond(ND2);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dOD1_CG = OD1_CG.bondType.distance;
-          double dND2_CG = ND2_CG.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHD2_ND2 = HD2_ND2.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle OD1_CG_CB = OD1.getAngle(CG, CB);
-          Angle ND2_CG_CB = ND2.getAngle(CG, CB);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HD2_ND2_CG = HD21.getAngle(ND2, CG);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dOD1_CG_CB = OD1_CG_CB.angleType.angle[OD1_CG_CB.nh];
-          double dND2_CG_CB = ND2_CG_CB.angleType.angle[ND2_CG_CB.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHD2_ND2_CG = HD2_ND2_CG.angleType.angle[HD2_ND2_CG.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(OD1, CG, dOD1_CG, CB, dOD1_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(ND2, CG, dND2_CG, CB, dND2_CG_CB, OD1, 124.0, 1);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, -1);
-          intxyz(HD21, ND2, dHD2_ND2, CG, dHD2_ND2_CG, CB, 0.0, 0);
-          intxyz(HD22, ND2, dHD2_ND2, CG, dHD2_ND2_CG, HD21, 120.0, 1);
-          break;
-        }
-      case GLU:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD = (Atom) residue.getAtomNode("CD");
-          Atom OE1 = (Atom) residue.getAtomNode("OE1");
-          Atom OE2 = (Atom) residue.getAtomNode("OE2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HG2 = (Atom) residue.getAtomNode("HG2");
-          Atom HG3 = (Atom) residue.getAtomNode("HG3");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD_CG = CD.getBond(CG);
-          Bond OE1_CD = OE1.getBond(CD);
-          Bond OE2_CD = OE2.getBond(CD);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HG_CG = HG2.getBond(CG);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD_CG = CD_CG.bondType.distance;
-          double dOE1_CD = OE1_CD.bondType.distance;
-          double dOE2_CD = OE2_CD.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_CG = HG_CG.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle CD_CG_CB = CD.getAngle(CG, CB);
-          Angle OE1_CD_CG = OE1.getAngle(CD, CG);
-          Angle OE2_CD_CG = OE2.getAngle(CD, CG);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HG_CG_CB = HG2.getAngle(CG, CB);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
-          double dOE1_CD_CG = OE1_CD_CG.angleType.angle[OE1_CD_CG.nh];
-          double dOE2_CD_CG = OE2_CD_CG.angleType.angle[OE2_CD_CG.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(OE1, CD, dOE1_CD, CG, dOE1_CD_CG, CB, rotamer.chi3, 0);
-          intxyz(OE2, CD, dOE2_CD, CG, dOE2_CD_CG, OE1, 126.0, 1);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, 1);
-          intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, -1);
-          break;
-        }
-      case GLH:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD = (Atom) residue.getAtomNode("CD");
-          Atom OE1 = (Atom) residue.getAtomNode("OE1");
-          Atom OE2 = (Atom) residue.getAtomNode("OE2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HG2 = (Atom) residue.getAtomNode("HG2");
-          Atom HG3 = (Atom) residue.getAtomNode("HG3");
-          Atom HE2 = (Atom) residue.getAtomNode("HE2");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD_CG = CD.getBond(CG);
-          Bond OE1_CD = OE1.getBond(CD);
-          Bond OE2_CD = OE2.getBond(CD);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HG_CG = HG2.getBond(CG);
-          Bond HE2_OE2 = HE2.getBond(OE2);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD_CG = CD_CG.bondType.distance;
-          double dOE1_CD = OE1_CD.bondType.distance;
-          double dOE2_CD = OE2_CD.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_CG = HG_CG.bondType.distance;
-          double dHE2_OE2 = HE2_OE2.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle CD_CG_CB = CD.getAngle(CG, CB);
-          Angle OE1_CD_CG = OE1.getAngle(CD, CG);
-          Angle OE2_CD_CG = OE2.getAngle(CD, CG);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HG_CG_CB = HG2.getAngle(CG, CB);
-          Angle HE2_OE2_CD = HE2.getAngle(OE2, CD);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
-          double dOE1_CD_CG = OE1_CD_CG.angleType.angle[OE1_CD_CG.nh];
-          double dOE2_CD_CG = OE2_CD_CG.angleType.angle[OE2_CD_CG.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
-          double dHE2_OE2_CD = HE2_OE2_CD.angleType.angle[HE2_OE2_CD.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(OE1, CD, dOE1_CD, CG, dOE1_CD_CG, CB, rotamer.chi3, 0);
-          intxyz(OE2, CD, dOE2_CD, CG, dOE2_CD_CG, OE1, 126.0, 1);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, 1);
-          intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, -1);
-          intxyz(HE2, OE2, dHE2_OE2, CD, dHE2_OE2_CD, OE1, 0.0, 0);
-          break;
-        }
-      case GLN:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD = (Atom) residue.getAtomNode("CD");
-          Atom OE1 = (Atom) residue.getAtomNode("OE1");
-          Atom NE2 = (Atom) residue.getAtomNode("NE2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HG2 = (Atom) residue.getAtomNode("HG2");
-          Atom HG3 = (Atom) residue.getAtomNode("HG3");
-          Atom HE21 = (Atom) residue.getAtomNode("HE21");
-          Atom HE22 = (Atom) residue.getAtomNode("HE22");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD_CG = CD.getBond(CG);
-          Bond OE1_CD = OE1.getBond(CD);
-          Bond NE2_CD = NE2.getBond(CD);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HG_CG = HG2.getBond(CG);
-          Bond HE2_NE2 = HE21.getBond(NE2);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD_CG = CD_CG.bondType.distance;
-          double dOE1_CD = OE1_CD.bondType.distance;
-          double dNE2_CD = NE2_CD.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_CG = HG_CG.bondType.distance;
-          double dHE2_NE2 = HE2_NE2.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle CD_CG_CB = CD.getAngle(CG, CB);
-          Angle OE1_CD_CG = OE1.getAngle(CD, CG);
-          Angle NE2_CD_CG = NE2.getAngle(CD, CG);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HG_CG_CB = HG2.getAngle(CG, CB);
-          Angle HE2_NE2_CD = HE21.getAngle(NE2, CD);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
-          double dOE1_CD_CG = OE1_CD_CG.angleType.angle[OE1_CD_CG.nh];
-          double dNE2_CD_CG = NE2_CD_CG.angleType.angle[NE2_CD_CG.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
-          double dHE2_NE2_CD = HE2_NE2_CD.angleType.angle[HE2_NE2_CD.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(OE1, CD, dOE1_CD, CG, dOE1_CD_CG, CB, rotamer.chi3, 0);
-          intxyz(NE2, CD, dNE2_CD, CG, dNE2_CD_CG, OE1, 124.0, 1);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, 1);
-          intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, -1);
-          intxyz(HE21, NE2, dHE2_NE2, CD, dHE2_NE2_CD, CG, 0.0, 0);
-          intxyz(HE22, NE2, dHE2_NE2, CD, dHE2_NE2_CD, HE21, 120.0, 1);
-          break;
-        }
-      case MET:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom SD = (Atom) residue.getAtomNode("SD");
-          Atom CE = (Atom) residue.getAtomNode("CE");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HG2 = (Atom) residue.getAtomNode("HG2");
-          Atom HG3 = (Atom) residue.getAtomNode("HG3");
-          Atom HE1 = (Atom) residue.getAtomNode("HE1");
-          Atom HE2 = (Atom) residue.getAtomNode("HE2");
-          Atom HE3 = (Atom) residue.getAtomNode("HE3");
-          Bond CG_CB = CG.getBond(CB);
-          Bond SD_CG = SD.getBond(CG);
-          Bond CE_SD = CE.getBond(SD);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HG_CG = HG2.getBond(CG);
-          Bond HE_CE = HE1.getBond(CE);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dSD_CG = SD_CG.bondType.distance;
-          double dCE_SD = CE_SD.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_CG = HG_CG.bondType.distance;
-          double dHE_CE = HE_CE.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle SD_CG_CB = SD.getAngle(CG, CB);
-          Angle CE_SD_CG = CE.getAngle(SD, CG);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HG_CG_CB = HG2.getAngle(CG, CB);
-          Angle HE_CE_SD = HE1.getAngle(CE, SD);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dSD_CG_CB = SD_CG_CB.angleType.angle[SD_CG_CB.nh];
-          double dCE_SD_CG = CE_SD_CG.angleType.angle[CE_SD_CG.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
-          double dHE_CE_SD = HE_CE_SD.angleType.angle[HE_CE_SD.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(SD, CG, dSD_CG, CB, dSD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(CE, SD, dCE_SD, CG, dCE_SD_CG, CB, rotamer.chi3, 0);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, SD, 112.0, 1);
-          intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, SD, 112.0, -1);
-          intxyz(HE1, CE, dHE_CE, SD, dHE_CE_SD, CG, 180.0, 0);
-          intxyz(HE2, CE, dHE_CE, SD, dHE_CE_SD, HE1, 109.4, 1);
-          intxyz(HE3, CE, dHE_CE, SD, dHE_CE_SD, HE1, 109.4, -1);
-          break;
-        }
-      case LYS:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD = (Atom) residue.getAtomNode("CD");
-          Atom CE = (Atom) residue.getAtomNode("CE");
-          Atom NZ = (Atom) residue.getAtomNode("NZ");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HG2 = (Atom) residue.getAtomNode("HG2");
-          Atom HG3 = (Atom) residue.getAtomNode("HG3");
-          Atom HD2 = (Atom) residue.getAtomNode("HD2");
-          Atom HD3 = (Atom) residue.getAtomNode("HD3");
-          Atom HE2 = (Atom) residue.getAtomNode("HE2");
-          Atom HE3 = (Atom) residue.getAtomNode("HE3");
-          Atom HZ1 = (Atom) residue.getAtomNode("HZ1");
-          Atom HZ2 = (Atom) residue.getAtomNode("HZ2");
-          Atom HZ3 = (Atom) residue.getAtomNode("HZ3");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD_CG = CD.getBond(CG);
-          Bond CE_CD = CE.getBond(CD);
-          Bond NZ_CE = NZ.getBond(CE);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HG_CG = HG2.getBond(CG);
-          Bond HD_CD = HD2.getBond(CD);
-          Bond HE_CE = HE2.getBond(CE);
-          Bond HZ_NZ = HZ1.getBond(NZ);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD_CG = CD_CG.bondType.distance;
-          double dCE_CD = CE_CD.bondType.distance;
-          double dNZ_CE = NZ_CE.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_CG = HG_CG.bondType.distance;
-          double dHD_CD = HD_CD.bondType.distance;
-          double dHE_CE = HE_CE.bondType.distance;
-          double dHZ_NZ = HZ_NZ.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle CD_CG_CB = CD.getAngle(CG, CB);
-          Angle CE_CD_CG = CE.getAngle(CD, CG);
-          Angle NZ_CE_CD = NZ.getAngle(CE, CD);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HG_CG_CB = HG2.getAngle(CG, CB);
-          Angle HD_CD_CG = HD2.getAngle(CD, CG);
-          Angle HE_CE_CD = HE2.getAngle(CE, CD);
-          Angle HZ_NZ_CE = HZ1.getAngle(NZ, CE);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
-          double dCE_CD_CG = CE_CD_CG.angleType.angle[CE_CD_CG.nh];
-          double dNZ_CE_CD = NZ_CE_CD.angleType.angle[NZ_CE_CD.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
-          double dHD_CD_CG = HD_CD_CG.angleType.angle[HD_CD_CG.nh];
-          double dHE_CE_CD = HE_CE_CD.angleType.angle[HE_CE_CD.nh];
-          double dHZ_NZ_CE = HZ_NZ_CE.angleType.angle[HZ_NZ_CE.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(CE, CD, dCE_CD, CG, dCE_CD_CG, CB, rotamer.chi3, 0);
-          intxyz(NZ, CE, dNZ_CE, CD, dNZ_CE_CD, CG, rotamer.chi4, 0);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, 1);
-          intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, -1);
-          intxyz(HD2, CD, dHD_CD, CG, dHD_CD_CG, CE, 109.4, 1);
-          intxyz(HD3, CD, dHD_CD, CG, dHD_CD_CG, CE, 109.4, -1);
-          intxyz(HE2, CE, dHE_CE, CD, dHE_CE_CD, NZ, 108.8, 1);
-          intxyz(HE3, CE, dHE_CE, CD, dHE_CE_CD, NZ, 108.8, -1);
-          intxyz(HZ1, NZ, dHZ_NZ, CE, dHZ_NZ_CE, CD, 180.0, 0);
-          intxyz(HZ2, NZ, dHZ_NZ, CE, dHZ_NZ_CE, HZ1, 109.5, 1);
-          intxyz(HZ3, NZ, dHZ_NZ, CE, dHZ_NZ_CE, HZ1, 109.5, -1);
-          break;
-        }
-      case LYD:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD = (Atom) residue.getAtomNode("CD");
-          Atom CE = (Atom) residue.getAtomNode("CE");
-          Atom NZ = (Atom) residue.getAtomNode("NZ");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HG2 = (Atom) residue.getAtomNode("HG2");
-          Atom HG3 = (Atom) residue.getAtomNode("HG3");
-          Atom HD2 = (Atom) residue.getAtomNode("HD2");
-          Atom HD3 = (Atom) residue.getAtomNode("HD3");
-          Atom HE2 = (Atom) residue.getAtomNode("HE2");
-          Atom HE3 = (Atom) residue.getAtomNode("HE3");
-          Atom HZ1 = (Atom) residue.getAtomNode("HZ1");
-          Atom HZ2 = (Atom) residue.getAtomNode("HZ2");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD_CG = CD.getBond(CG);
-          Bond CE_CD = CE.getBond(CD);
-          Bond NZ_CE = NZ.getBond(CE);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HG_CG = HG2.getBond(CG);
-          Bond HD_CD = HD2.getBond(CD);
-          Bond HE_CE = HE2.getBond(CE);
-          Bond HZ_NZ = HZ1.getBond(NZ);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD_CG = CD_CG.bondType.distance;
-          double dCE_CD = CE_CD.bondType.distance;
-          double dNZ_CE = NZ_CE.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_CG = HG_CG.bondType.distance;
-          double dHD_CD = HD_CD.bondType.distance;
-          double dHE_CE = HE_CE.bondType.distance;
-          double dHZ_NZ = HZ_NZ.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle CD_CG_CB = CD.getAngle(CG, CB);
-          Angle CE_CD_CG = CE.getAngle(CD, CG);
-          Angle NZ_CE_CD = NZ.getAngle(CE, CD);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HG_CG_CB = HG2.getAngle(CG, CB);
-          Angle HD_CD_CG = HD2.getAngle(CD, CG);
-          Angle HE_CE_CD = HE2.getAngle(CE, CD);
-          Angle HZ_NZ_CE = HZ1.getAngle(NZ, CE);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
-          double dCE_CD_CG = CE_CD_CG.angleType.angle[CE_CD_CG.nh];
-          double dNZ_CE_CD = NZ_CE_CD.angleType.angle[NZ_CE_CD.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
-          double dHD_CD_CG = HD_CD_CG.angleType.angle[HD_CD_CG.nh];
-          double dHE_CE_CD = HE_CE_CD.angleType.angle[HE_CE_CD.nh];
-          double dHZ_NZ_CE = HZ_NZ_CE.angleType.angle[HZ_NZ_CE.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(CE, CD, dCE_CD, CG, dCE_CD_CG, CB, rotamer.chi3, 0);
-          intxyz(NZ, CE, dNZ_CE, CD, dNZ_CE_CD, CG, rotamer.chi4, 0);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, 1);
-          intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, -1);
-          intxyz(HD2, CD, dHD_CD, CG, dHD_CD_CG, CE, 109.4, 1);
-          intxyz(HD3, CD, dHD_CD, CG, dHD_CD_CG, CE, 109.4, -1);
-          intxyz(HE2, CE, dHE_CE, CD, dHE_CE_CD, NZ, 108.8, 1);
-          intxyz(HE3, CE, dHE_CE, CD, dHE_CE_CD, NZ, 108.8, -1);
-          intxyz(HZ1, NZ, dHZ_NZ, CE, dHZ_NZ_CE, CD, 180.0, 0);
-          intxyz(HZ2, NZ, dHZ_NZ, CE, dHZ_NZ_CE, HZ1, 109.5, 1);
-          break;
-        }
-      case ARG:
-        {
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          Atom CD = (Atom) residue.getAtomNode("CD");
-          Atom NE = (Atom) residue.getAtomNode("NE");
-          Atom CZ = (Atom) residue.getAtomNode("CZ");
-          Atom NH1 = (Atom) residue.getAtomNode("NH1");
-          Atom NH2 = (Atom) residue.getAtomNode("NH2");
-          Atom HB2 = (Atom) residue.getAtomNode("HB2");
-          Atom HB3 = (Atom) residue.getAtomNode("HB3");
-          Atom HG2 = (Atom) residue.getAtomNode("HG2");
-          Atom HG3 = (Atom) residue.getAtomNode("HG3");
-          Atom HD2 = (Atom) residue.getAtomNode("HD2");
-          Atom HD3 = (Atom) residue.getAtomNode("HD3");
-          Atom HE = (Atom) residue.getAtomNode("HE");
-          Atom HH11 = (Atom) residue.getAtomNode("HH11");
-          Atom HH12 = (Atom) residue.getAtomNode("HH12");
-          Atom HH21 = (Atom) residue.getAtomNode("HH21");
-          Atom HH22 = (Atom) residue.getAtomNode("HH22");
-          Bond CG_CB = CG.getBond(CB);
-          Bond CD_CG = CD.getBond(CG);
-          Bond NE_CD = NE.getBond(CD);
-          Bond CZ_NE = CZ.getBond(NE);
-          Bond NH_CZ = NH1.getBond(CZ);
-          Bond HB_CB = HB2.getBond(CB);
-          Bond HG_CG = HG2.getBond(CG);
-          Bond HD_CD = HD2.getBond(CD);
-          Bond HE_NE = HE.getBond(NE);
-          Bond HH_NH = HH11.getBond(NH1);
-          double dCG_CB = CG_CB.bondType.distance;
-          double dCD_CG = CD_CG.bondType.distance;
-          double dNE_CD = NE_CD.bondType.distance;
-          double dCZ_NE = CZ_NE.bondType.distance;
-          double dNH_CZ = NH_CZ.bondType.distance;
-          double dHB_CB = HB_CB.bondType.distance;
-          double dHG_CG = HG_CG.bondType.distance;
-          double dHD_CD = HD_CD.bondType.distance;
-          double dHE_NE = HE_NE.bondType.distance;
-          double dHH_NH = HH_NH.bondType.distance;
-          Angle CG_CB_CA = CG.getAngle(CB, CA);
-          Angle CD_CG_CB = CD.getAngle(CG, CB);
-          Angle NE_CD_CG = NE.getAngle(CD, CG);
-          Angle CZ_NE_CD = CZ.getAngle(NE, CD);
-          Angle NH_CZ_NE = NH1.getAngle(CZ, NE);
-          Angle HB_CB_CA = HB2.getAngle(CB, CA);
-          Angle HG_CG_CB = HG2.getAngle(CG, CB);
-          Angle HD_CD_CG = HD2.getAngle(CD, CG);
-          Angle HE_NE_CD = HE.getAngle(NE, CD);
-          Angle HH_NH_CZ = HH11.getAngle(NH1, CZ);
-          double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-          double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
-          double dNE_CD_CG = NE_CD_CG.angleType.angle[NE_CD_CG.nh];
-          double dCZ_NE_CD = CZ_NE_CD.angleType.angle[CZ_NE_CD.nh];
-          double dNH_CZ_NE = NH_CZ_NE.angleType.angle[NH_CZ_NE.nh];
-          double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-          double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
-          double dHD_CD_CG = HD_CD_CG.angleType.angle[HD_CD_CG.nh];
-          double dHE_NE_CD = HE_NE_CD.angleType.angle[HE_NE_CD.nh];
-          double dHH_NH_CZ = HH_NH_CZ.angleType.angle[HH_NH_CZ.nh];
-          intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-          intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-          intxyz(NE, CD, dNE_CD, CG, dNE_CD_CG, CB, rotamer.chi3, 0);
-          intxyz(CZ, NE, dCZ_NE, CD, dCZ_NE_CD, CG, rotamer.chi4, 0);
-          intxyz(NH1, CZ, dNH_CZ, NE, dNH_CZ_NE, CD, 180, 0);
-          intxyz(NH2, CZ, dNH_CZ, NE, dNH_CZ_NE, NH1, 120.0, 1);
-          intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
-          intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-          intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, 1);
-          intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, -1);
-          intxyz(HD2, CD, dHD_CD, CG, dHD_CD_CG, NE, 109.4, 1);
-          intxyz(HD3, CD, dHD_CD, CG, dHD_CD_CG, NE, 109.4, -1);
-          intxyz(HE, NE, dHE_NE, CD, dHE_NE_CD, CZ, 120.0, 1);
-          intxyz(HH11, NH1, dHH_NH, CZ, dHH_NH_CZ, NE, 180.0, 0);
-          intxyz(HH12, NH1, dHH_NH, CZ, dHH_NH_CZ, HH11, 120.0, 1);
-          intxyz(HH21, NH2, dHH_NH, CZ, dHH_NH_CZ, NE, 180.0, 0);
-          intxyz(HH22, NH2, dHH_NH, CZ, dHH_NH_CZ, HH21, 120.0, 1);
-          break;
-        }
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(ND1, CG, dND1_CG, CB, dND1_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(CD2, CG, dCD2_CG, CB, dCD2_CG_CB, CA, rotamer.chi2 + 180, 0);
+        intxyz(CE1, ND1, dCE1_ND1, CG, dCE1_ND1_CG, CD2, 0.0, 0);
+        intxyz(NE2, CD2, dNE2_CD2, CG, dNE2_CD2_CG, ND1, 0.0, 0);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HD2, CD2, dHD2_CD2, CG, dHD2_CD2_CG, NE2, dHD2_CD2_NE2, 3);
+        intxyz(HE1, CE1, dHE1_CE1, ND1, dHE1_CE1_ND1, NE2, dHE1_CE1_NE2, 3);
+        intxyz(HE2, NE2, dHE2_NE2, CD2, dHE2_NE2_CD2, CE1, dHE2_NE2_CE1, 3);
+        break;
+      }
+      case ASP: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom OD1 = (Atom) residue.getAtomNode("OD1");
+        Atom OD2 = (Atom) residue.getAtomNode("OD2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Bond CG_CB = CG.getBond(CB);
+        Bond OD1_CG = OD1.getBond(CG);
+        Bond OD2_CG = OD2.getBond(CG);
+        Bond HB_CB = HB2.getBond(CB);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dOD1_CG = OD1_CG.bondType.distance;
+        double dOD2_CG = OD2_CG.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle OD1_CG_CB = OD1.getAngle(CG, CB);
+        Angle OD2_CG_CB = OD2.getAngle(CG, CB);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dOD1_CG_CB = OD1_CG_CB.angleType.angle[OD1_CG_CB.nh];
+        double dOD2_CG_CB = OD2_CG_CB.angleType.angle[OD2_CG_CB.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(OD1, CG, dOD1_CG, CB, dOD1_CG_CB, CA, 0.0, 0);
+        intxyz(OD2, CG, dOD2_CG, CB, dOD2_CG_CB, OD1, 126.0, 1);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, -1);
+        break;
+      }
+      case ASH: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom OD1 = (Atom) residue.getAtomNode("OD1");
+        Atom OD2 = (Atom) residue.getAtomNode("OD2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HD2 = (Atom) residue.getAtomNode("HD2");
+        Bond CG_CB = CG.getBond(CB);
+        Bond OD1_CG = OD1.getBond(CG);
+        Bond OD2_CG = OD2.getBond(CG);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HD2_OD2 = HD2.getBond(OD2);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dOD1_CG = OD1_CG.bondType.distance;
+        double dOD2_CG = OD2_CG.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHD2_OD2 = HD2_OD2.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle OD1_CG_CB = OD1.getAngle(CG, CB);
+        Angle OD2_CG_CB = OD2.getAngle(CG, CB);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HD2_OD2_CG = HD2.getAngle(OD2, CG);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dOD1_CG_CB = OD1_CG_CB.angleType.angle[OD1_CG_CB.nh];
+        double dOD2_CG_CB = OD2_CG_CB.angleType.angle[OD2_CG_CB.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHD2_OD2_CG = HD2_OD2_CG.angleType.angle[HD2_OD2_CG.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(OD1, CG, dOD1_CG, CB, dOD1_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(OD2, CG, dOD2_CG, CB, dOD2_CG_CB, OD1, 126.0, 1);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, -1);
+        intxyz(HD2, OD2, dHD2_OD2, CG, dHD2_OD2_CG, OD1, 0.0, 0);
+        break;
+      }
+      case ASN: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom OD1 = (Atom) residue.getAtomNode("OD1");
+        Atom ND2 = (Atom) residue.getAtomNode("ND2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HD21 = (Atom) residue.getAtomNode("HD21");
+        Atom HD22 = (Atom) residue.getAtomNode("HD22");
+        Bond CG_CB = CG.getBond(CB);
+        Bond OD1_CG = OD1.getBond(CG);
+        Bond ND2_CG = ND2.getBond(CG);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HD2_ND2 = HD21.getBond(ND2);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dOD1_CG = OD1_CG.bondType.distance;
+        double dND2_CG = ND2_CG.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHD2_ND2 = HD2_ND2.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle OD1_CG_CB = OD1.getAngle(CG, CB);
+        Angle ND2_CG_CB = ND2.getAngle(CG, CB);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HD2_ND2_CG = HD21.getAngle(ND2, CG);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dOD1_CG_CB = OD1_CG_CB.angleType.angle[OD1_CG_CB.nh];
+        double dND2_CG_CB = ND2_CG_CB.angleType.angle[ND2_CG_CB.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHD2_ND2_CG = HD2_ND2_CG.angleType.angle[HD2_ND2_CG.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(OD1, CG, dOD1_CG, CB, dOD1_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(ND2, CG, dND2_CG, CB, dND2_CG_CB, OD1, 124.0, 1);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, -1);
+        intxyz(HD21, ND2, dHD2_ND2, CG, dHD2_ND2_CG, CB, 0.0, 0);
+        intxyz(HD22, ND2, dHD2_ND2, CG, dHD2_ND2_CG, HD21, 120.0, 1);
+        break;
+      }
+      case GLU: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD = (Atom) residue.getAtomNode("CD");
+        Atom OE1 = (Atom) residue.getAtomNode("OE1");
+        Atom OE2 = (Atom) residue.getAtomNode("OE2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HG2 = (Atom) residue.getAtomNode("HG2");
+        Atom HG3 = (Atom) residue.getAtomNode("HG3");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD_CG = CD.getBond(CG);
+        Bond OE1_CD = OE1.getBond(CD);
+        Bond OE2_CD = OE2.getBond(CD);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HG_CG = HG2.getBond(CG);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD_CG = CD_CG.bondType.distance;
+        double dOE1_CD = OE1_CD.bondType.distance;
+        double dOE2_CD = OE2_CD.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_CG = HG_CG.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle CD_CG_CB = CD.getAngle(CG, CB);
+        Angle OE1_CD_CG = OE1.getAngle(CD, CG);
+        Angle OE2_CD_CG = OE2.getAngle(CD, CG);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HG_CG_CB = HG2.getAngle(CG, CB);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
+        double dOE1_CD_CG = OE1_CD_CG.angleType.angle[OE1_CD_CG.nh];
+        double dOE2_CD_CG = OE2_CD_CG.angleType.angle[OE2_CD_CG.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(OE1, CD, dOE1_CD, CG, dOE1_CD_CG, CB, rotamer.chi3, 0);
+        intxyz(OE2, CD, dOE2_CD, CG, dOE2_CD_CG, OE1, 126.0, 1);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, 1);
+        intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, -1);
+        break;
+      }
+      case GLH: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD = (Atom) residue.getAtomNode("CD");
+        Atom OE1 = (Atom) residue.getAtomNode("OE1");
+        Atom OE2 = (Atom) residue.getAtomNode("OE2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HG2 = (Atom) residue.getAtomNode("HG2");
+        Atom HG3 = (Atom) residue.getAtomNode("HG3");
+        Atom HE2 = (Atom) residue.getAtomNode("HE2");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD_CG = CD.getBond(CG);
+        Bond OE1_CD = OE1.getBond(CD);
+        Bond OE2_CD = OE2.getBond(CD);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HG_CG = HG2.getBond(CG);
+        Bond HE2_OE2 = HE2.getBond(OE2);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD_CG = CD_CG.bondType.distance;
+        double dOE1_CD = OE1_CD.bondType.distance;
+        double dOE2_CD = OE2_CD.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_CG = HG_CG.bondType.distance;
+        double dHE2_OE2 = HE2_OE2.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle CD_CG_CB = CD.getAngle(CG, CB);
+        Angle OE1_CD_CG = OE1.getAngle(CD, CG);
+        Angle OE2_CD_CG = OE2.getAngle(CD, CG);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HG_CG_CB = HG2.getAngle(CG, CB);
+        Angle HE2_OE2_CD = HE2.getAngle(OE2, CD);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
+        double dOE1_CD_CG = OE1_CD_CG.angleType.angle[OE1_CD_CG.nh];
+        double dOE2_CD_CG = OE2_CD_CG.angleType.angle[OE2_CD_CG.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
+        double dHE2_OE2_CD = HE2_OE2_CD.angleType.angle[HE2_OE2_CD.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(OE1, CD, dOE1_CD, CG, dOE1_CD_CG, CB, rotamer.chi3, 0);
+        intxyz(OE2, CD, dOE2_CD, CG, dOE2_CD_CG, OE1, 126.0, 1);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, 1);
+        intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, -1);
+        intxyz(HE2, OE2, dHE2_OE2, CD, dHE2_OE2_CD, OE1, 0.0, 0);
+        break;
+      }
+      case GLN: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD = (Atom) residue.getAtomNode("CD");
+        Atom OE1 = (Atom) residue.getAtomNode("OE1");
+        Atom NE2 = (Atom) residue.getAtomNode("NE2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HG2 = (Atom) residue.getAtomNode("HG2");
+        Atom HG3 = (Atom) residue.getAtomNode("HG3");
+        Atom HE21 = (Atom) residue.getAtomNode("HE21");
+        Atom HE22 = (Atom) residue.getAtomNode("HE22");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD_CG = CD.getBond(CG);
+        Bond OE1_CD = OE1.getBond(CD);
+        Bond NE2_CD = NE2.getBond(CD);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HG_CG = HG2.getBond(CG);
+        Bond HE2_NE2 = HE21.getBond(NE2);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD_CG = CD_CG.bondType.distance;
+        double dOE1_CD = OE1_CD.bondType.distance;
+        double dNE2_CD = NE2_CD.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_CG = HG_CG.bondType.distance;
+        double dHE2_NE2 = HE2_NE2.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle CD_CG_CB = CD.getAngle(CG, CB);
+        Angle OE1_CD_CG = OE1.getAngle(CD, CG);
+        Angle NE2_CD_CG = NE2.getAngle(CD, CG);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HG_CG_CB = HG2.getAngle(CG, CB);
+        Angle HE2_NE2_CD = HE21.getAngle(NE2, CD);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
+        double dOE1_CD_CG = OE1_CD_CG.angleType.angle[OE1_CD_CG.nh];
+        double dNE2_CD_CG = NE2_CD_CG.angleType.angle[NE2_CD_CG.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
+        double dHE2_NE2_CD = HE2_NE2_CD.angleType.angle[HE2_NE2_CD.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(OE1, CD, dOE1_CD, CG, dOE1_CD_CG, CB, rotamer.chi3, 0);
+        intxyz(NE2, CD, dNE2_CD, CG, dNE2_CD_CG, OE1, 124.0, 1);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, 1);
+        intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, -1);
+        intxyz(HE21, NE2, dHE2_NE2, CD, dHE2_NE2_CD, CG, 0.0, 0);
+        intxyz(HE22, NE2, dHE2_NE2, CD, dHE2_NE2_CD, HE21, 120.0, 1);
+        break;
+      }
+      case MET: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom SD = (Atom) residue.getAtomNode("SD");
+        Atom CE = (Atom) residue.getAtomNode("CE");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HG2 = (Atom) residue.getAtomNode("HG2");
+        Atom HG3 = (Atom) residue.getAtomNode("HG3");
+        Atom HE1 = (Atom) residue.getAtomNode("HE1");
+        Atom HE2 = (Atom) residue.getAtomNode("HE2");
+        Atom HE3 = (Atom) residue.getAtomNode("HE3");
+        Bond CG_CB = CG.getBond(CB);
+        Bond SD_CG = SD.getBond(CG);
+        Bond CE_SD = CE.getBond(SD);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HG_CG = HG2.getBond(CG);
+        Bond HE_CE = HE1.getBond(CE);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dSD_CG = SD_CG.bondType.distance;
+        double dCE_SD = CE_SD.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_CG = HG_CG.bondType.distance;
+        double dHE_CE = HE_CE.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle SD_CG_CB = SD.getAngle(CG, CB);
+        Angle CE_SD_CG = CE.getAngle(SD, CG);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HG_CG_CB = HG2.getAngle(CG, CB);
+        Angle HE_CE_SD = HE1.getAngle(CE, SD);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dSD_CG_CB = SD_CG_CB.angleType.angle[SD_CG_CB.nh];
+        double dCE_SD_CG = CE_SD_CG.angleType.angle[CE_SD_CG.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
+        double dHE_CE_SD = HE_CE_SD.angleType.angle[HE_CE_SD.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(SD, CG, dSD_CG, CB, dSD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(CE, SD, dCE_SD, CG, dCE_SD_CG, CB, rotamer.chi3, 0);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, SD, 112.0, 1);
+        intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, SD, 112.0, -1);
+        intxyz(HE1, CE, dHE_CE, SD, dHE_CE_SD, CG, 180.0, 0);
+        intxyz(HE2, CE, dHE_CE, SD, dHE_CE_SD, HE1, 109.4, 1);
+        intxyz(HE3, CE, dHE_CE, SD, dHE_CE_SD, HE1, 109.4, -1);
+        break;
+      }
+      case LYS: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD = (Atom) residue.getAtomNode("CD");
+        Atom CE = (Atom) residue.getAtomNode("CE");
+        Atom NZ = (Atom) residue.getAtomNode("NZ");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HG2 = (Atom) residue.getAtomNode("HG2");
+        Atom HG3 = (Atom) residue.getAtomNode("HG3");
+        Atom HD2 = (Atom) residue.getAtomNode("HD2");
+        Atom HD3 = (Atom) residue.getAtomNode("HD3");
+        Atom HE2 = (Atom) residue.getAtomNode("HE2");
+        Atom HE3 = (Atom) residue.getAtomNode("HE3");
+        Atom HZ1 = (Atom) residue.getAtomNode("HZ1");
+        Atom HZ2 = (Atom) residue.getAtomNode("HZ2");
+        Atom HZ3 = (Atom) residue.getAtomNode("HZ3");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD_CG = CD.getBond(CG);
+        Bond CE_CD = CE.getBond(CD);
+        Bond NZ_CE = NZ.getBond(CE);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HG_CG = HG2.getBond(CG);
+        Bond HD_CD = HD2.getBond(CD);
+        Bond HE_CE = HE2.getBond(CE);
+        Bond HZ_NZ = HZ1.getBond(NZ);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD_CG = CD_CG.bondType.distance;
+        double dCE_CD = CE_CD.bondType.distance;
+        double dNZ_CE = NZ_CE.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_CG = HG_CG.bondType.distance;
+        double dHD_CD = HD_CD.bondType.distance;
+        double dHE_CE = HE_CE.bondType.distance;
+        double dHZ_NZ = HZ_NZ.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle CD_CG_CB = CD.getAngle(CG, CB);
+        Angle CE_CD_CG = CE.getAngle(CD, CG);
+        Angle NZ_CE_CD = NZ.getAngle(CE, CD);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HG_CG_CB = HG2.getAngle(CG, CB);
+        Angle HD_CD_CG = HD2.getAngle(CD, CG);
+        Angle HE_CE_CD = HE2.getAngle(CE, CD);
+        Angle HZ_NZ_CE = HZ1.getAngle(NZ, CE);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
+        double dCE_CD_CG = CE_CD_CG.angleType.angle[CE_CD_CG.nh];
+        double dNZ_CE_CD = NZ_CE_CD.angleType.angle[NZ_CE_CD.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
+        double dHD_CD_CG = HD_CD_CG.angleType.angle[HD_CD_CG.nh];
+        double dHE_CE_CD = HE_CE_CD.angleType.angle[HE_CE_CD.nh];
+        double dHZ_NZ_CE = HZ_NZ_CE.angleType.angle[HZ_NZ_CE.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(CE, CD, dCE_CD, CG, dCE_CD_CG, CB, rotamer.chi3, 0);
+        intxyz(NZ, CE, dNZ_CE, CD, dNZ_CE_CD, CG, rotamer.chi4, 0);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, 1);
+        intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, -1);
+        intxyz(HD2, CD, dHD_CD, CG, dHD_CD_CG, CE, 109.4, 1);
+        intxyz(HD3, CD, dHD_CD, CG, dHD_CD_CG, CE, 109.4, -1);
+        intxyz(HE2, CE, dHE_CE, CD, dHE_CE_CD, NZ, 108.8, 1);
+        intxyz(HE3, CE, dHE_CE, CD, dHE_CE_CD, NZ, 108.8, -1);
+        intxyz(HZ1, NZ, dHZ_NZ, CE, dHZ_NZ_CE, CD, 180.0, 0);
+        intxyz(HZ2, NZ, dHZ_NZ, CE, dHZ_NZ_CE, HZ1, 109.5, 1);
+        intxyz(HZ3, NZ, dHZ_NZ, CE, dHZ_NZ_CE, HZ1, 109.5, -1);
+        break;
+      }
+      case LYD: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD = (Atom) residue.getAtomNode("CD");
+        Atom CE = (Atom) residue.getAtomNode("CE");
+        Atom NZ = (Atom) residue.getAtomNode("NZ");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HG2 = (Atom) residue.getAtomNode("HG2");
+        Atom HG3 = (Atom) residue.getAtomNode("HG3");
+        Atom HD2 = (Atom) residue.getAtomNode("HD2");
+        Atom HD3 = (Atom) residue.getAtomNode("HD3");
+        Atom HE2 = (Atom) residue.getAtomNode("HE2");
+        Atom HE3 = (Atom) residue.getAtomNode("HE3");
+        Atom HZ1 = (Atom) residue.getAtomNode("HZ1");
+        Atom HZ2 = (Atom) residue.getAtomNode("HZ2");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD_CG = CD.getBond(CG);
+        Bond CE_CD = CE.getBond(CD);
+        Bond NZ_CE = NZ.getBond(CE);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HG_CG = HG2.getBond(CG);
+        Bond HD_CD = HD2.getBond(CD);
+        Bond HE_CE = HE2.getBond(CE);
+        Bond HZ_NZ = HZ1.getBond(NZ);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD_CG = CD_CG.bondType.distance;
+        double dCE_CD = CE_CD.bondType.distance;
+        double dNZ_CE = NZ_CE.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_CG = HG_CG.bondType.distance;
+        double dHD_CD = HD_CD.bondType.distance;
+        double dHE_CE = HE_CE.bondType.distance;
+        double dHZ_NZ = HZ_NZ.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle CD_CG_CB = CD.getAngle(CG, CB);
+        Angle CE_CD_CG = CE.getAngle(CD, CG);
+        Angle NZ_CE_CD = NZ.getAngle(CE, CD);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HG_CG_CB = HG2.getAngle(CG, CB);
+        Angle HD_CD_CG = HD2.getAngle(CD, CG);
+        Angle HE_CE_CD = HE2.getAngle(CE, CD);
+        Angle HZ_NZ_CE = HZ1.getAngle(NZ, CE);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
+        double dCE_CD_CG = CE_CD_CG.angleType.angle[CE_CD_CG.nh];
+        double dNZ_CE_CD = NZ_CE_CD.angleType.angle[NZ_CE_CD.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
+        double dHD_CD_CG = HD_CD_CG.angleType.angle[HD_CD_CG.nh];
+        double dHE_CE_CD = HE_CE_CD.angleType.angle[HE_CE_CD.nh];
+        double dHZ_NZ_CE = HZ_NZ_CE.angleType.angle[HZ_NZ_CE.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(CE, CD, dCE_CD, CG, dCE_CD_CG, CB, rotamer.chi3, 0);
+        intxyz(NZ, CE, dNZ_CE, CD, dNZ_CE_CD, CG, rotamer.chi4, 0);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, 1);
+        intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, -1);
+        intxyz(HD2, CD, dHD_CD, CG, dHD_CD_CG, CE, 109.4, 1);
+        intxyz(HD3, CD, dHD_CD, CG, dHD_CD_CG, CE, 109.4, -1);
+        intxyz(HE2, CE, dHE_CE, CD, dHE_CE_CD, NZ, 108.8, 1);
+        intxyz(HE3, CE, dHE_CE, CD, dHE_CE_CD, NZ, 108.8, -1);
+        intxyz(HZ1, NZ, dHZ_NZ, CE, dHZ_NZ_CE, CD, 180.0, 0);
+        intxyz(HZ2, NZ, dHZ_NZ, CE, dHZ_NZ_CE, HZ1, 109.5, 1);
+        break;
+      }
+      case ARG: {
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        Atom CD = (Atom) residue.getAtomNode("CD");
+        Atom NE = (Atom) residue.getAtomNode("NE");
+        Atom CZ = (Atom) residue.getAtomNode("CZ");
+        Atom NH1 = (Atom) residue.getAtomNode("NH1");
+        Atom NH2 = (Atom) residue.getAtomNode("NH2");
+        Atom HB2 = (Atom) residue.getAtomNode("HB2");
+        Atom HB3 = (Atom) residue.getAtomNode("HB3");
+        Atom HG2 = (Atom) residue.getAtomNode("HG2");
+        Atom HG3 = (Atom) residue.getAtomNode("HG3");
+        Atom HD2 = (Atom) residue.getAtomNode("HD2");
+        Atom HD3 = (Atom) residue.getAtomNode("HD3");
+        Atom HE = (Atom) residue.getAtomNode("HE");
+        Atom HH11 = (Atom) residue.getAtomNode("HH11");
+        Atom HH12 = (Atom) residue.getAtomNode("HH12");
+        Atom HH21 = (Atom) residue.getAtomNode("HH21");
+        Atom HH22 = (Atom) residue.getAtomNode("HH22");
+        Bond CG_CB = CG.getBond(CB);
+        Bond CD_CG = CD.getBond(CG);
+        Bond NE_CD = NE.getBond(CD);
+        Bond CZ_NE = CZ.getBond(NE);
+        Bond NH_CZ = NH1.getBond(CZ);
+        Bond HB_CB = HB2.getBond(CB);
+        Bond HG_CG = HG2.getBond(CG);
+        Bond HD_CD = HD2.getBond(CD);
+        Bond HE_NE = HE.getBond(NE);
+        Bond HH_NH = HH11.getBond(NH1);
+        double dCG_CB = CG_CB.bondType.distance;
+        double dCD_CG = CD_CG.bondType.distance;
+        double dNE_CD = NE_CD.bondType.distance;
+        double dCZ_NE = CZ_NE.bondType.distance;
+        double dNH_CZ = NH_CZ.bondType.distance;
+        double dHB_CB = HB_CB.bondType.distance;
+        double dHG_CG = HG_CG.bondType.distance;
+        double dHD_CD = HD_CD.bondType.distance;
+        double dHE_NE = HE_NE.bondType.distance;
+        double dHH_NH = HH_NH.bondType.distance;
+        Angle CG_CB_CA = CG.getAngle(CB, CA);
+        Angle CD_CG_CB = CD.getAngle(CG, CB);
+        Angle NE_CD_CG = NE.getAngle(CD, CG);
+        Angle CZ_NE_CD = CZ.getAngle(NE, CD);
+        Angle NH_CZ_NE = NH1.getAngle(CZ, NE);
+        Angle HB_CB_CA = HB2.getAngle(CB, CA);
+        Angle HG_CG_CB = HG2.getAngle(CG, CB);
+        Angle HD_CD_CG = HD2.getAngle(CD, CG);
+        Angle HE_NE_CD = HE.getAngle(NE, CD);
+        Angle HH_NH_CZ = HH11.getAngle(NH1, CZ);
+        double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+        double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
+        double dNE_CD_CG = NE_CD_CG.angleType.angle[NE_CD_CG.nh];
+        double dCZ_NE_CD = CZ_NE_CD.angleType.angle[CZ_NE_CD.nh];
+        double dNH_CZ_NE = NH_CZ_NE.angleType.angle[NH_CZ_NE.nh];
+        double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+        double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
+        double dHD_CD_CG = HD_CD_CG.angleType.angle[HD_CD_CG.nh];
+        double dHE_NE_CD = HE_NE_CD.angleType.angle[HE_NE_CD.nh];
+        double dHH_NH_CZ = HH_NH_CZ.angleType.angle[HH_NH_CZ.nh];
+        intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+        intxyz(CD, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+        intxyz(NE, CD, dNE_CD, CG, dNE_CD_CG, CB, rotamer.chi3, 0);
+        intxyz(CZ, NE, dCZ_NE, CD, dCZ_NE_CD, CG, rotamer.chi4, 0);
+        intxyz(NH1, CZ, dNH_CZ, NE, dNH_CZ_NE, CD, 180, 0);
+        intxyz(NH2, CZ, dNH_CZ, NE, dNH_CZ_NE, NH1, 120.0, 1);
+        intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+        intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+        intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, 1);
+        intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 109.4, -1);
+        intxyz(HD2, CD, dHD_CD, CG, dHD_CD_CG, NE, 109.4, 1);
+        intxyz(HD3, CD, dHD_CD, CG, dHD_CD_CG, NE, 109.4, -1);
+        intxyz(HE, NE, dHE_NE, CD, dHE_NE_CD, CZ, 120.0, 1);
+        intxyz(HH11, NH1, dHH_NH, CZ, dHH_NH_CZ, NE, 180.0, 0);
+        intxyz(HH12, NH1, dHH_NH, CZ, dHH_NH_CZ, HH11, 120.0, 1);
+        intxyz(HH21, NH2, dHH_NH, CZ, dHH_NH_CZ, NE, 180.0, 0);
+        intxyz(HH22, NH2, dHH_NH, CZ, dHH_NH_CZ, HH21, 120.0, 1);
+        break;
+      }
       case UNK:
         String resName = residue.getName().toUpperCase();
         if (nonstdRotCache.containsKey(resName)) {
@@ -2551,11 +2455,11 @@ public class RotamerLibrary {
    * @param prevResidue Residue 5' of residue.
    */
   private static void applyNABackbone(Residue residue, Rotamer rotamer, Residue prevResidue) {
-    Atom O3s = (Atom) residue.getAtomNode("O3\'");
-    Atom C3s = (Atom) residue.getAtomNode("C3\'");
-    Atom C4s = (Atom) residue.getAtomNode("C4\'");
-    Atom C5s = (Atom) residue.getAtomNode("C5\'");
-    Atom O5s = (Atom) residue.getAtomNode("O5\'");
+    Atom O3s = (Atom) residue.getAtomNode("O3'");
+    Atom C3s = (Atom) residue.getAtomNode("C3'");
+    Atom C4s = (Atom) residue.getAtomNode("C4'");
+    Atom C5s = (Atom) residue.getAtomNode("C5'");
+    Atom O5s = (Atom) residue.getAtomNode("O5'");
     /*
      * Two of the following atoms will be null, depending on whether
      * there is a previous residue, whether it is a 5' PO4 cap, or whether
@@ -2563,7 +2467,7 @@ public class RotamerLibrary {
      */
     Atom P = (Atom) residue.getAtomNode("P");
     Atom OP3 = (Atom) residue.getAtomNode("OP3");
-    Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
+    Atom HO5s = (Atom) residue.getAtomNode("HO5'");
 
     Bond C4s_C5s = C4s.getBond(C5s);
     double dC4s_C5s = C4s_C5s.bondType.distance;
@@ -2625,17 +2529,17 @@ public class RotamerLibrary {
       boolean isDeoxy,
       boolean is3sTerminal) {
     // Backbone atoms of this residue to be adjusted
-    Atom C3s = (Atom) residue.getAtomNode("C3\'");
-    Atom O4s = (Atom) residue.getAtomNode("O4\'");
-    Atom C4s = (Atom) residue.getAtomNode("C4\'");
-    Atom C5s = (Atom) residue.getAtomNode("C5\'");
-    Atom O5s = (Atom) residue.getAtomNode("O5\'");
+    Atom C3s = (Atom) residue.getAtomNode("C3'");
+    Atom O4s = (Atom) residue.getAtomNode("O4'");
+    Atom C4s = (Atom) residue.getAtomNode("C4'");
+    Atom C5s = (Atom) residue.getAtomNode("C5'");
+    Atom O5s = (Atom) residue.getAtomNode("O5'");
     Atom P = (Atom) residue.getAtomNode("P");
-    Atom C1s = (Atom) residue.getAtomNode("C1\'");
-    Atom C2s = (Atom) residue.getAtomNode("C2\'");
+    Atom C1s = (Atom) residue.getAtomNode("C1'");
+    Atom C2s = (Atom) residue.getAtomNode("C2'");
 
     // This reference being used solely to get ideal bond lengths & angles.
-    Atom O3sPrev = (Atom) prevResidue.getAtomNode("O3\'");
+    Atom O3sPrev = (Atom) prevResidue.getAtomNode("O3'");
     double[] O3sPriorCoords;
 
     // Original position of O3' (i-1). Will be used to draw the correction
@@ -2714,18 +2618,9 @@ public class RotamerLibrary {
       applyState(residue, rotamer);
       return 0;
     }
-    NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
     Residue prevResidue = residue.getPreviousResidue();
-    boolean is3sTerminal = false; // 3' terminal
-    if (residue.getNextResidue() == null) {
-      is3sTerminal = true;
-    }
-
-    // Check if this is a 3' phosphate being listed as its own residue.
-    /* if (residue.getAtomList().size() == 1) {
-    return;
-    } */
-    boolean isDeoxy = residue.getAtomNode("O2\'") == null;
+    boolean is3sTerminal = residue.getNextResidue() == null; // 3' terminal
+    boolean isDeoxy = residue.getAtomNode("O2'") == null;
 
     // Note: chi values will generally be applied from chi7 to chi1.
     // Will have to add an else-if to handle DNA C3'-exo configurations.
@@ -2733,11 +2628,11 @@ public class RotamerLibrary {
     NucleicSugarPucker prevSugarPucker = NucleicSugarPucker.checkPucker(rotamer.chi1, isDeoxy);
 
     // Revert C1', O4', and C4' coordinates to PDB defaults.
-    Atom C1s = (Atom) residue.getAtomNode("C1\'");
+    Atom C1s = (Atom) residue.getAtomNode("C1'");
     C1s.moveTo(residue.getC1sCoords());
-    Atom O4s = (Atom) residue.getAtomNode("O4\'");
+    Atom O4s = (Atom) residue.getAtomNode("O4'");
     O4s.moveTo(residue.getO4sCoords());
-    Atom C4s = (Atom) residue.getAtomNode("C4\'");
+    Atom C4s = (Atom) residue.getAtomNode("C4'");
     C4s.moveTo(residue.getC4sCoords());
 
     // Presently, the exterior method loadPriorAtomicCoordinates() directly
@@ -2775,52 +2670,48 @@ public class RotamerLibrary {
       boolean isDeoxy,
       boolean is3sTerminal,
       NucleicSugarPucker prevSugarPucker) {
-    Atom C1s = (Atom) residue.getAtomNode("C1\'");
-    Atom C2s = (Atom) residue.getAtomNode("C2\'");
-    Atom C3s = (Atom) residue.getAtomNode("C3\'");
-    Atom C4s = (Atom) residue.getAtomNode("C4\'");
-    Atom O4s = (Atom) residue.getAtomNode("O4\'");
-    Atom O3s = (Atom) residue.getAtomNode("O3\'");
+    Atom C1s = (Atom) residue.getAtomNode("C1'");
+    Atom C2s = (Atom) residue.getAtomNode("C2'");
+    Atom C3s = (Atom) residue.getAtomNode("C3'");
+    Atom C4s = (Atom) residue.getAtomNode("C4'");
+    Atom O4s = (Atom) residue.getAtomNode("O4'");
+    Atom O3s = (Atom) residue.getAtomNode("O3'");
     // O2s will be null in DNA.
-    Atom O2s = (Atom) residue.getAtomNode("O2\'");
+    Atom O2s = (Atom) residue.getAtomNode("O2'");
 
     // Hydrogens attached to the sugar
     // Hydrogens in DNA.  Will be null in RNA.
-    Atom H2ss = (Atom) residue.getAtomNode("H2\'\'");
+    Atom H2ss = (Atom) residue.getAtomNode("H2''");
     // Hydrogens in RNA.  Will be null in DNA.
-    Atom H2s = (Atom) residue.getAtomNode("H2\'");
-    Atom HO2s = (Atom) residue.getAtomNode("HO2\'");
+    Atom H2s = (Atom) residue.getAtomNode("H2'");
+    Atom HO2s = (Atom) residue.getAtomNode("HO2'");
     // Common hydrogens
-    Atom H3s = (Atom) residue.getAtomNode("H3\'");
-    Atom H4s = (Atom) residue.getAtomNode("H4\'");
-    Atom H1s = (Atom) residue.getAtomNode("H1\'");
-    Atom H5s = (Atom) residue.getAtomNode("H5\'");
-    Atom H5ss = (Atom) residue.getAtomNode("H5\'\'");
+    Atom H3s = (Atom) residue.getAtomNode("H3'");
+    Atom H4s = (Atom) residue.getAtomNode("H4'");
+    Atom H1s = (Atom) residue.getAtomNode("H1'");
+    Atom H5s = (Atom) residue.getAtomNode("H5'");
+    Atom H5ss = (Atom) residue.getAtomNode("H5''");
 
-    Atom C5s = (Atom) residue.getAtomNode("C5\'");
-    Atom O5s = (Atom) residue.getAtomNode("O5\'");
+    Atom C5s = (Atom) residue.getAtomNode("C5'");
+    Atom O5s = (Atom) residue.getAtomNode("O5'");
     Atom P = (Atom) residue.getAtomNode("P");
     Atom OP1 = (Atom) residue.getAtomNode("OP1");
     Atom OP2 = (Atom) residue.getAtomNode("OP2");
 
     // Build atachments to C2'.
-    if (isDeoxy) {
-      Bond C2s_H2s = C2s.getBond(H2s);
-      double dC2s_H2s = C2s_H2s.bondType.distance;
-      Angle C3s_C2s_H2s = C3s.getAngle(C2s, H2s);
-      double dC3s_C2s_H2s = C3s_C2s_H2s.angleType.angle[C3s_C2s_H2s.nh];
-      intxyz(H2s, C2s, dC2s_H2s, C3s, dC3s_C2s_H2s, C1s, 109.4, 1);
+    Bond C2s_H2s = C2s.getBond(H2s);
+    double dC2s_H2s = C2s_H2s.bondType.distance;
+    Angle C3s_C2s_H2s = C3s.getAngle(C2s, H2s);
+    double dC3s_C2s_H2s = C3s_C2s_H2s.angleType.angle[C3s_C2s_H2s.nh];
 
+    if (isDeoxy) {
+      intxyz(H2s, C2s, dC2s_H2s, C3s, dC3s_C2s_H2s, C1s, 109.4, 1);
       Bond C2s_H2ss = C2s.getBond(H2ss);
       double dC2s_H2ss = C2s_H2ss.bondType.distance;
       Angle C3s_C2s_H2ss = C3s.getAngle(C2s, H2ss);
       double dC3s_C2s_H2ss = C3s_C2s_H2ss.angleType.angle[C3s_C2s_H2ss.nh];
       intxyz(H2ss, C2s, dC2s_H2ss, C3s, dC3s_C2s_H2ss, C1s, 109.4, -1);
     } else {
-      Bond C2s_H2s = C2s.getBond(H2s);
-      double dC2s_H2s = C2s_H2s.bondType.distance;
-      Angle C3s_C2s_H2s = C3s.getAngle(C2s, H2s);
-      double dC3s_C2s_H2s = C3s_C2s_H2s.angleType.angle[C3s_C2s_H2s.nh];
       intxyz(H2s, C2s, dC2s_H2s, C3s, dC3s_C2s_H2s, C1s, 109.4, -1);
 
       Bond C2s_O2s = C2s.getBond(O2s);
@@ -2875,7 +2766,7 @@ public class RotamerLibrary {
 
     if (is3sTerminal) {
       // TODO: Determine proper labels for 3' phosphate caps so they may be implemented.
-      Atom HO3s = (Atom) residue.getAtomNode("HO3\'");
+      Atom HO3s = (Atom) residue.getAtomNode("HO3'");
       // if (HO3s != null) {
       Bond O3s_HO3s = O3s.getBond(HO3s);
       double dO3s_HO3s = O3s_HO3s.bondType.distance;
@@ -2932,7 +2823,7 @@ public class RotamerLibrary {
         OP2.moveTo(OP2XYZ);
       }
     } else {
-      Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
+      Atom HO5s = (Atom) residue.getAtomNode("HO5'");
       Bond O5s_HO5s = O5s.getBond(HO5s);
       double dO5s_HO5s = O5s_HO5s.bondType.distance;
       Angle C5s_O5s_HO5s = C5s.getAngle(O5s, HO5s);
@@ -3074,15 +2965,15 @@ public class RotamerLibrary {
    * @return The number of rotamers this Residue has.
    */
   private static int measureNARotamer(Residue residue, double[] chi, boolean print) {
-    NucleicAcid3 name = NucleicAcid3.valueOf(residue.getName());
+    NucleicAcid3 name = NucleicAcidUtils.NucleicAcid3.valueOf(residue.getName());
     Residue prevResidue = residue.getPreviousResidue();
     Torsion torsion;
 
-    Atom C5s = (Atom) residue.getAtomNode("C5\'");
-    Atom C4s = (Atom) residue.getAtomNode("C4\'");
-    Atom C3s = (Atom) residue.getAtomNode("C3\'");
-    Atom O3s = (Atom) residue.getAtomNode("O3\'");
-    Atom O5s = (Atom) residue.getAtomNode("O5\'");
+    Atom C5s = (Atom) residue.getAtomNode("C5'");
+    Atom C4s = (Atom) residue.getAtomNode("C4'");
+    Atom C3s = (Atom) residue.getAtomNode("C3'");
+    Atom O3s = (Atom) residue.getAtomNode("O3'");
+    Atom O5s = (Atom) residue.getAtomNode("O5'");
     Atom P = (Atom) residue.getAtomNode("P");
 
     int nRot = 7;
@@ -3106,7 +2997,7 @@ public class RotamerLibrary {
            * If there is an HO5s, measure alpha based on HO5s.  Else,
            * measure zeta (i-1) based on OP3 and alpha on P.
            */
-          Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
+          Atom HO5s = (Atom) residue.getAtomNode("HO5'");
           if (HO5s != null) {
             torsion = HO5s.getTorsion(O5s, C5s, C4s);
             chi[4] = torsion.getValue();
@@ -3147,10 +3038,10 @@ public class RotamerLibrary {
         case THY:
         case DCY:
         case DTY:
-          Atom O3sPrev = (Atom) prevResidue.getAtomNode("O3\'");
-          Atom C3sPrev = (Atom) prevResidue.getAtomNode("C3\'");
-          Atom C4sPrev = (Atom) prevResidue.getAtomNode("C4\'");
-          Atom C5sPrev = (Atom) prevResidue.getAtomNode("C5\'");
+          Atom O3sPrev = (Atom) prevResidue.getAtomNode("O3'");
+          Atom C3sPrev = (Atom) prevResidue.getAtomNode("C3'");
+          Atom C4sPrev = (Atom) prevResidue.getAtomNode("C4'");
+          Atom C5sPrev = (Atom) prevResidue.getAtomNode("C5'");
 
           torsion = C5sPrev.getTorsion(C4sPrev, C3sPrev, O3sPrev);
           chi[0] = torsion.getValue();
@@ -3216,7 +3107,7 @@ public class RotamerLibrary {
       nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
     } else {
       logger.warning(
-          format(" Could not measure chi angles " + "for residue %s", residue.toString()));
+          format(" Could not measure chi angles " + "for residue %s", residue));
     }
   }
 
@@ -3236,47 +3127,42 @@ public class RotamerLibrary {
           logger.info(format(" Readabilifications %b with %s", doRead, line));
         } else if (doRead && !toks[0].startsWith("#")) {
           switch (toks[0]) {
-            case "RES":
-              {
-                String segID = toks[2];
-                int resnum = Integer.parseInt(toks[4]);
-                for (Polymer poly : polys) {
-                  if (poly.getName().equals(segID)) {
-                    currentRes = poly.getResidue(resnum);
-                    break;
-                  }
+            case "RES": {
+              String segID = toks[2];
+              int resnum = Integer.parseInt(toks[4]);
+              for (Polymer poly : polys) {
+                if (poly.getName().equals(segID)) {
+                  currentRes = poly.getResidue(resnum);
+                  break;
                 }
               }
-              break;
-            case "ENDROT":
-              {
-                // TODO: Publish rotamer & revert coordinates.
-                ResidueState rotamerState = currentRes.storeState();
-                currentRes.addRotamer(Rotamer.stateToRotamer(rotamerState));
-                currentRes.revertState(origState);
-                logger.info(format(" Adding a rotamer to %s", currentRes));
+            }
+            break;
+            case "ENDROT": {
+              // TODO: Publish rotamer & revert coordinates.
+              ResidueState rotamerState = currentRes.storeState();
+              currentRes.addRotamer(Rotamer.stateToRotamer(rotamerState));
+              currentRes.revertState(origState);
+              logger.info(format(" Adding a rotamer to %s", currentRes));
+            }
+            break;
+            case "ROT": {
+              origState = currentRes.storeState();
+            }
+            break;
+            case "ATOM": {
+              String name = toks[1];
+              Atom atom = (Atom) currentRes.getAtomNode(name);
+              double[] xyz = new double[3];
+              for (int i = 0; i < 3; i++) {
+                xyz[i] = Double.parseDouble(toks[i + 2]);
               }
-              break;
-            case "ROT":
-              {
-                origState = currentRes.storeState();
-              }
-              break;
-            case "ATOM":
-              {
-                String name = toks[1];
-                Atom atom = (Atom) currentRes.getAtomNode(name);
-                double[] xyz = new double[3];
-                for (int i = 0; i < 3; i++) {
-                  xyz[i] = Double.parseDouble(toks[i + 2]);
-                }
-                atom.setXYZ(xyz);
-              }
-              break;
-            default:
-              {
-                logger.warning(" Unrecognized line! " + line);
-              }
+              atom.setXYZ(xyz);
+            }
+            break;
+            default: {
+              logger.warning(" Unrecognized line! " + line);
+            }
           }
         }
         line = br.readLine();
@@ -3348,7 +3234,7 @@ public class RotamerLibrary {
     int nRot = rotamers.length;
 
     double[] currChi =
-        residue.getResidueType().equals(ResidueType.AA) ? new double[4] : new double[7];
+        residue.getResidueType().equals(Residue.ResidueType.AA) ? new double[4] : new double[7];
     int numChis = measureRotamer(residue, currChi, false);
     double[] chiRMSD = new double[nRot];
     double lowestRMSD = Double.MAX_VALUE;
@@ -3416,42 +3302,41 @@ public class RotamerLibrary {
     }
     switch (residue.getResidueType()) {
       case AA:
-        AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
+        AminoAcid3 aa = AminoAcidUtils.AminoAcid3.valueOf(residue.getName());
         // Now check for cysteines in a disulfide bond.
         switch (aa) {
           case CYS:
           case CYX:
-          case CYD:
-            {
-              List<Atom> cysAtoms = residue.getAtomList();
-              // First find the sulfur on atomic number, then on starting with S.
-              Optional<Atom> s =
-                  cysAtoms.stream().filter(a -> a.getAtomType().atomicNumber == 16).findAny();
-              if (!s.isPresent()) {
-                s = cysAtoms.stream().filter(a -> a.getName().startsWith("S")).findAny();
-              }
-              if (s.isPresent()) {
-                Atom theS = s.get();
-                boolean attachedS =
-                    theS.getBonds().stream()
-                        .map(b -> b.get1_2(theS))
-                        .anyMatch(
-                            a -> a.getAtomType().atomicNumber == 16 || a.getName().startsWith("S"));
-                if (attachedS) {
-                  // Return a null rotamer array if it's disulfide-bonded.
-                  return null;
-                }
-              } else {
-                logger.warning(
-                    format(" No sulfur atom found attached to %s residue %s!", aa, residue));
-              }
+          case CYD: {
+            List<Atom> cysAtoms = residue.getAtomList();
+            // First find the sulfur on atomic number, then on starting with S.
+            Optional<Atom> s =
+                cysAtoms.stream().filter(a -> a.getAtomType().atomicNumber == 16).findAny();
+            if (!s.isPresent()) {
+              s = cysAtoms.stream().filter(a -> a.getName().startsWith("S")).findAny();
             }
-            break;
-            // Default: no-op (we are checking for cysteine disulfide bonds).
+            if (s.isPresent()) {
+              Atom theS = s.get();
+              boolean attachedS =
+                  theS.getBonds().stream()
+                      .map(b -> b.get1_2(theS))
+                      .anyMatch(
+                          a -> a.getAtomType().atomicNumber == 16 || a.getName().startsWith("S"));
+              if (attachedS) {
+                // Return a null rotamer array if it's disulfide-bonded.
+                return null;
+              }
+            } else {
+              logger.warning(
+                  format(" No sulfur atom found attached to %s residue %s!", aa, residue));
+            }
+          }
+          break;
+          // Default: no-op (we are checking for cysteine disulfide bonds).
         }
         return getRotamers(aa);
       case NA:
-        NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
+        NucleicAcid3 na = NucleicAcidUtils.NucleicAcid3.valueOf(residue.getName());
         return getRotamers(na);
       default:
         if (nonstdRotCache.containsKey(residue.getName().toUpperCase())) {
@@ -3518,25 +3403,18 @@ public class RotamerLibrary {
         aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
         aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
         break;
-        /*
-         * TODO: Figure out proline rotamers.  I have dihedrals from
-         * the Richardson lab/Kinemages website (downloaded PDB, used
-         * the get_dihedral function to extract the dihedrals), and they
-         * conflict with these rotamers.  Plus, this library only
-         * specifies one of the two necessary dihedrals.
-         */
+      /*
+       * TODO: Figure out proline rotamers.  I have dihedrals from
+       * the Richardson lab/Kinemages website (downloaded PDB, used
+       * the get_dihedral function to extract the dihedrals), and they
+       * conflict with these rotamers.  Plus, this library only
+       * specifies one of the two necessary dihedrals.
+       */
       case PRO:
         aminoAcidRotamerCache[n] = new Rotamer[3];
         aminoAcidRotamerCache[n][0] = new Rotamer(name, 24.0, 8.0);
         aminoAcidRotamerCache[n][1] = new Rotamer(name, 0.0, 8.0);
         aminoAcidRotamerCache[n][2] = new Rotamer(name, -24.0, 8.0);
-        /*
-        aminoAcidRotamerCache[n] = new Rotamer[2];
-        // The exo- conformation
-        aminoAcidRotamerCache[n][0] = new Rotamer(name, -27.9, 0, 39.0, 0);
-        // The endo- conformation
-        aminoAcidRotamerCache[n][2] = new Rotamer(name, 25.6, 0, -35.8, 0);
-        */
         break;
       case PHE:
         aminoAcidRotamerCache[n] = new Rotamer[4];
@@ -4219,8 +4097,8 @@ public class RotamerLibrary {
     }
 
     /**
-     * Converts an integer to a corresponding ProteinLibrary. Deprecated in favor of using the
-     * actual name.
+     * Converts an integer to a corresponding ProteinLibrary. Deprecated in favor of using the actual
+     * name.
      *
      * @param library Index of the library.
      * @return A ProteinLibrary.
@@ -4295,6 +4173,7 @@ public class RotamerLibrary {
   }
 
   public static class RotamerGuess {
+
     private final Residue residue;
     private final Rotamer rotamer;
     private final int rotIndex;
@@ -4319,10 +4198,6 @@ public class RotamerLibrary {
       return rotamer;
     }
 
-    public int getRotamerIndex() {
-      return rotIndex;
-    }
-
     public String toString() {
       return format(
           " Residue %7s is most likely in rotamer %2d (%s), with an RMSD of %9.5f degrees.",
@@ -4332,6 +4207,7 @@ public class RotamerLibrary {
 
   /** Class contains rotamer information for a nonstandard amino acid. */
   private static class NonstandardRotLibrary {
+
     private final String resName;
     private final String[] placeRecords; // Must be ordered correctly!
     private final List<Rotamer> stdRotamers; // "Library" rotamers for this residue.
@@ -4342,21 +4218,8 @@ public class RotamerLibrary {
       this.stdRotamers = new ArrayList<>(Arrays.asList(stdRotamers));
     }
 
-    String getResName() {
-      return resName;
-    }
-
     Rotamer[] getRotamers() {
-      return stdRotamers.toArray(new Rotamer[stdRotamers.size()]);
-    }
-
-    /**
-     * Intended for use when rotamers added separately from the initial definition file.
-     *
-     * @param newRots
-     */
-    void addRotamers(Rotamer[] newRots) {
-      stdRotamers.addAll(Arrays.asList(newRots));
+      return stdRotamers.toArray(new Rotamer[0]);
     }
 
     /**
@@ -4389,13 +4252,13 @@ public class RotamerLibrary {
     /**
      * Applies a nonstandard rotamer to an amino acid.
      *
-     * @param residue
-     * @param rotamer
+     * @param residue Residue to apply rotamer to.
+     * @param rotamer The rotamer to apply.
      */
     void applyNonstdRotamer(Residue residue, Rotamer rotamer) {
       if (!residue.getName().equalsIgnoreCase(resName)) {
         throw new IllegalArgumentException(
-            format(" Residue %s is " + "not of type %s", residue.toString(), resName));
+            format(" Residue %s is " + "not of type %s", residue, resName));
       }
       for (String record : placeRecords) {
         String[] toks = record.split("\\s+");
@@ -4411,31 +4274,6 @@ public class RotamerLibrary {
         if (toks[0].equalsIgnoreCase("PLACECHI")) {
           int chiNum = Integer.parseInt(toks[5]);
           dtors = rotamer.angles[chiNum - 1];
-          /*switch (chiNum) {
-              case 1:
-                  dtors = rotamer.chi1;
-                  break;
-              case 2:
-                  dtors = rotamer.chi2;
-                  break;
-              case 3:
-                  dtors = rotamer.chi3;
-                  break;
-              case 4:
-                  dtors = rotamer.chi4;
-                  break;
-              case 5:
-                  dtors = rotamer.chi5;
-                  break;
-              case 6:
-                  dtors = rotamer.chi6;
-                  break;
-              case 7:
-                  dtors = rotamer.chi7;
-                  break;
-              default:
-                  throw new IllegalArgumentException(" Must be chi 1-7");
-          }*/
         } else {
           dtors = Double.parseDouble(toks[5]);
         }

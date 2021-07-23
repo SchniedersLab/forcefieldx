@@ -166,8 +166,10 @@ class Volume extends PotentialScript {
       return null
     }
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
-    logger.info("\n Calculating volume and surface area for " + modelFilename)
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Calculating volume and surface area for " + filename)
 
     Atom[] atoms = activeAssembly.getAtomArray()
     int nAtoms = atoms.length

@@ -71,10 +71,10 @@ class Gradient extends PotentialScript {
   GradientOptions gradientOptions
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is a single filename in PDB or XYZ format.
    */
-  @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  @Parameters(arity = "1", paramLabel = "file", description = "A PDB or XYZ coordinate file.")
+  String filename = null
 
   private ForceFieldEnergy energy
   public int nFailures = 0
@@ -100,23 +100,22 @@ class Gradient extends PotentialScript {
   @Override
   Gradient run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      modelFilename = filenames.get(0)
-      MolecularAssembly[] assemblies = potentialFunctions.openAll(modelFilename)
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
-    } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
 
-    logger.info("\n Testing the atomic coordinate gradient of " + modelFilename + "\n")
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Testing the atomic coordinate gradient of " + filename + "\n")
 
     energy = activeAssembly.getPotentialEnergy()
     Atom[] atoms = activeAssembly.getAtomArray()
@@ -145,8 +144,7 @@ class Gradient extends PotentialScript {
     } else {
       atomsToTest = parseAtomRanges(" Gradient atoms", gradientOptions.gradientAtoms, nAtoms)
       logger.info(
-          " Checking gradient for active atoms in the range: " + gradientOptions.gradientAtoms +
-              "\n")
+          " Checking gradient for active atoms in the range: " + gradientOptions.gradientAtoms + "\n")
     }
 
     // Map selected atom numbers to active atom numbers

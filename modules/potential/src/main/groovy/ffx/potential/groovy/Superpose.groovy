@@ -41,13 +41,14 @@ import ffx.numerics.math.Double3
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Residue
-import ffx.potential.bonded.ResidueEnumerations
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
+import org.apache.commons.lang3.StringUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -116,7 +117,7 @@ class Superpose extends PotentialScript {
    * --secondaryStructure Calculate RMSD only on atoms that are part of an alpha helix or beta sheet.
    */
   @Option(names = ['--secondaryStructure'], paramLabel = "",
-          description = 'Use a secondary structure string to identify which atoms should be part of the RMSD.')
+      description = 'Use a secondary structure string to identify which atoms should be part of the RMSD.')
   private String secondaryStructure = ""
 
   /**
@@ -176,7 +177,7 @@ class Superpose extends PotentialScript {
     System.setProperty("vdwterm", "false")
 
     // Load the MolecularAssembly.
-    activeAssembly = getActiveAssembly(filename);
+    activeAssembly = getActiveAssembly(filename)
     if (activeAssembly == null) {
       logger.info(helpString())
       return this
@@ -233,22 +234,26 @@ class Superpose extends PotentialScript {
           })
 
       // If the secondary structure element is being used, then find helices and sheets and filter out any atoms that are not part of a helix or sheet.
-      if(!secondaryStructure.isEmpty()){
+      if (!secondaryStructure.isEmpty()) {
         secondaryStructure = validateSecondaryStructurePrediction(activeAssembly)
         checkForAppropriateResidueIdentities(activeAssembly)
         String helixChar = "H"
         String sheetChar = "E"
 
         ArrayList<ArrayList<Integer>> helices =
-                extractSecondaryElement(secondaryStructure, helixChar, 2)
+            extractSecondaryElement(secondaryStructure, helixChar, 2)
         ArrayList<ArrayList<Integer>> sheets =
-                extractSecondaryElement(secondaryStructure, sheetChar, 2)
+            extractSecondaryElement(secondaryStructure, sheetChar, 2)
 
         atomIndexStream = atomIndexStream.filter({int i ->
           Atom ati = atoms[i]
-          int resNum = ati.getResidueNumber()-1
-          boolean isHelix = (helices.stream().filter({return resNum >= it.get(0) && resNum <= it.get(1)}).count() != 0)
-          boolean isSheet = (sheets.stream().filter({return resNum >= it.get(0) && resNum <= it.get(1)}).count() != 0)
+          int resNum = ati.getResidueNumber() - 1
+          boolean isHelix = (helices.stream().filter({
+            return resNum >= it.get(0) && resNum <= it.get(1)
+          }).count() != 0)
+          boolean isSheet = (sheets.stream().filter({
+            return resNum >= it.get(0) && resNum <= it.get(1)
+          }).count() != 0)
           return isHelix || isSheet
         })
       }
@@ -289,9 +294,9 @@ class Superpose extends PotentialScript {
           atomIndexStream = atomIndexStream.filter({int i ->
             Atom ati = atoms[i]
             String atName = ati.getName().toUpperCase()
-            boolean caReference = atName.equals("CA") && ati.getAtomType().atomicNumber == 6
-            boolean cReference = atName.equals("C") && ati.getAtomType().atomicNumber == 6
-            boolean nReference = atName.equals("N") && ati.getAtomType().atomicNumber == 7
+            boolean caReference = atName == "CA" && ati.getAtomType().atomicNumber == 6
+            boolean cReference = atName == "C" && ati.getAtomType().atomicNumber == 6
+            boolean nReference = atName == "N" && ati.getAtomType().atomicNumber == 7
             return caReference || cReference || nReference
           })
           selectionType = "C, C-Alpha, and N backbone atoms."
@@ -332,9 +337,11 @@ class Superpose extends PotentialScript {
       if (!frameComparison) {
         // Do one vs. all comparison.
         if (dRMSD) {
-          logger.info(format("\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation    dRMSD"))
+          logger.info(format(
+              "\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation    dRMSD"))
         } else if (verbose) {
-          logger.info(format("\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation"))
+          logger.info(format(
+              "\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation"))
         }
         if (filenames.size() != 2) {
           // The first snapshot is being used for all comparisons here; therefore, snapshot = 1.
@@ -345,8 +352,9 @@ class Superpose extends PotentialScript {
           // The systemFilter is from the 2nd file read in, which could have multiple models.
           trajectoryRMSD(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 0)
         }
-      } else if (filenames.size() >= 2 && frameComparison){
-          logger.severe("\n Cannot perform all versus all superposition (-A) with two different model files. Please choose one versus all when using two model files.")
+      } else if (filenames.size() >= 2 && frameComparison) {
+        logger.severe(
+            "\n Cannot perform all versus all superposition (-A) with two different model files. Please choose one versus all when using two model files.")
       } else {
         // Do the all vs. all comparison.
         if (storeMatrix) {
@@ -354,13 +362,15 @@ class Superpose extends PotentialScript {
         }
 
         // Open a second copy of the system.
-        MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
+        MolecularAssembly[] assemblies = [potentialFunctions.open(filename)]
         SystemFilter systemFilter2 = potentialFunctions.getFilter()
 
         if (dRMSD) {
-          logger.info(format("\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation    dRMSD"))
+          logger.info(format(
+              "\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation    dRMSD"))
         } else if (verbose) {
-          logger.info(format("\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation"))
+          logger.info(format(
+              "\n Coordinate RMSD\n Snapshots      Original  After Translation  After Rotation"))
         }
 
         // Rewind the file to the first structure.
@@ -371,7 +381,8 @@ class Superpose extends PotentialScript {
           forceFieldEnergy.getCoordinates(x)
 
           // Compare the coordinates in x to all coordinates in the ensemble using systemFilter2.
-          trajectoryRMSD(systemFilter2, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, snapshot1)
+          trajectoryRMSD(systemFilter2, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed,
+              snapshot1)
         }
       }
     }
@@ -447,11 +458,13 @@ class Superpose extends PotentialScript {
         if (dRMSD) {
           double disRMSD = calcDRMSD(xUsed, x2Used, nUsed * 3)
           logger.info(format(
-              " %6d  %6d  %7.3f            %7.3f         %7.3f  %7.3f", snapshot1, snapshot2, origRMSD,
+              " %6d  %6d  %7.3f            %7.3f         %7.3f  %7.3f", snapshot1, snapshot2,
+              origRMSD,
               translatedRMSD, rotatedRMSD, disRMSD))
         } else if (verbose) {
           logger.info(format(
-              " %6d  %6d  %7.3f            %7.3f         %7.3f", snapshot1, snapshot2, origRMSD, translatedRMSD,
+              " %6d  %6d  %7.3f            %7.3f         %7.3f", snapshot1, snapshot2, origRMSD,
+              translatedRMSD,
               rotatedRMSD))
         }
 
@@ -479,32 +492,35 @@ class Superpose extends PotentialScript {
    * @param elementType Character indicating type of secondary element being searched (helix, coil, sheet).
    * @param minNumResidues Integer minimum of consecutive secondary structure predictions
    * to create a secondary element.
-   * @return ArrayList<ArrayList<Integer>> Contains starting and ending residues for each secondary element.
+   * @return ArrayList<ArrayList<Integer> > Contains starting and ending residues for each secondary element.
    */
-  ArrayList<ArrayList<Integer>> extractSecondaryElement(String ss, String elementType, int minNumResidues) {
-    //Will hold starting and ending indices for all found secondary elements of the requested type.
+  static ArrayList<ArrayList<Integer>> extractSecondaryElement(String ss, String elementType,
+      int minNumResidues) {
+    // Will hold starting and ending indices for all found secondary elements of the requested type.
     ArrayList<ArrayList<Integer>> allElements = new ArrayList<ArrayList<Integer>>()
-    int lastMatch = 0 //Track of the most recent index to have a character matching the requested elementType.
-    int i = 0 //Iterates through each index in the secondary structure string.
+    // Track of the most recent index to have a character matching the requested elementType.
+    int lastMatch = 0
+    // Iterates through each index in the secondary structure string.
+    int i = 0
     while (i < ss.length()) {
-      if (ss[i].equals(elementType)) {
+      if (ss[i] == elementType) {
         int elementStartIndex = i
-        //Set the starting index for the secondary element as soon as the value at the ith index matches the
-        //requested element type.
+        // Set the starting index for the secondary element as soon as the value at the ith index matches the
+        //  requested element type.
         for (int j = i + 1; j <= ss.length(); j++) {
-          //Use the jth index to iterate through the secondary structure prediction until the end of the
+          // Use the jth index to iterate through the secondary structure prediction until the end of the
           // secondary element is found.
           if (j < ss.length()) {
-            if (!ss[j].equals(elementType)) {
+            if (ss[j] != elementType) {
               if (j == lastMatch + 1) {
-                //If the most recent lastMatch is only one index away, then check and store the
+                // If the most recent lastMatch is only one index away, then check and store the
                 // starting and ending indices of the secondary element.
                 i = j
-                //Set i=j so that i begins searching for the next element at the end of the most recent
+                // Set i=j so that i begins searching for the next element at the end of the most recent
                 // secondary element.
                 int elementLength = j - elementStartIndex
                 if (elementLength > minNumResidues) {
-                  //If secondary element is above minimum length, store starting and ending indices
+                  // If secondary element is above minimum length, store starting and ending indices
                   // of secondary element.
                   ArrayList<Integer> currentElement = new ArrayList<Integer>()
                   currentElement.add((Integer) elementStartIndex)
@@ -512,17 +528,17 @@ class Superpose extends PotentialScript {
                   allElements.add(currentElement)
                 }
                 j = ss.length() + 1
-                //Since end of current secondary element has been found, exit inner j loop.
+                // Since end of current secondary element has been found, exit inner j loop.
               }
             } else {
               lastMatch = j
               i++
-              //If the jth index in the secondary structure string matches the requested element,
+              // If the jth index in the secondary structure string matches the requested element,
               // increment j until the end of the secondary element is found.
             }
           }
           if (j == ss.length()) {
-            //Handle the case when a secondary element is at the very end of the secondary structure string.
+            // Handle the case when a secondary element is at the very end of the secondary structure string.
             i = ss.length() + 1
             if (j == lastMatch + 1) {
               int elementLength = j - elementStartIndex
@@ -533,13 +549,13 @@ class Superpose extends PotentialScript {
                 allElements.add(currentElement)
               }
               j = ss.length() + 1
-              //Since end of current secondary element has been found, exit inner j loop.
+              // Since end of current secondary element has been found, exit inner j loop.
             }
           }
         }
       } else {
         i++
-        //Increment i until end of secondary structure prediction or until requested secondary element is found.
+        // Increment i until end of secondary structure prediction or until requested secondary element is found.
       }
     }
     return allElements
@@ -566,24 +582,24 @@ class Superpose extends PotentialScript {
     // Only one secondary structure restraint should exist per residue.
     if (numSecondaryStructure == 0) {
       logger.warning(
-              " No secondary structure restraints have been provided. Simulation will proceed "
-                      + "with all residues having random coil secondary structure restraints.")
-      String randomCoil = org.apache.commons.lang3.StringUtils.leftPad("", numResidues, ".")
+          " No secondary structure restraints have been provided. Simulation will proceed "
+              + "with all residues having random coil secondary structure restraints.")
+      String randomCoil = StringUtils.leftPad("", numResidues, ".")
       return randomCoil
     } else if (numSecondaryStructure < numResidues) {
       logger.warning(
-              " Too few secondary structure restraints exist for number of residues present. "
-                      + "Random coil will be added to end residues without provided secondary structure restraints.")
-      String extraCoil =
-              org.apache.commons.lang3.StringUtils.rightPad(secondaryStructure, numResidues, '.')
+          " Too few secondary structure restraints exist for number of residues present. "
+              +
+              "Random coil will be added to end residues without provided secondary structure restraints.")
+      String extraCoil = StringUtils.rightPad(secondaryStructure, numResidues, '.')
       return extraCoil
     } else if (numSecondaryStructure == numResidues) {
       logger.info(" Secondary structure restraints will be added for all residues.")
       return secondaryStructure
     } else if (numSecondaryStructure > numResidues) {
       logger.warning(
-              " Too many secondary structure restraints exist for number of residues present."
-                      + " Provided secondary structure restraints will be truncated.")
+          " Too many secondary structure restraints exist for number of residues present."
+              + " Provided secondary structure restraints will be truncated.")
       String truncated = secondaryStructure.substring(0, numResidues)
       return truncated
     } else {
@@ -603,24 +619,24 @@ class Superpose extends PotentialScript {
     ArrayList<Residue> residues = (ArrayList<Residue>) molecularAssembly.getResidueList()
     for (int i = 0; i < secondaryStructure.length(); i++) {
       Residue residue = residues.get(i)
-      ResidueEnumerations.AminoAcid3 aminoAcid3 = residue.getAminoAcid3()
+      AminoAcid3 aminoAcid3 = residue.getAminoAcid3()
 
       String aminoAcidString = aminoAcid3.toString()
-      String NMEString = Residue.AA3.NME.toString()
-      String ACEString = Residue.AA3.ACE.toString()
+      String NMEString = AminoAcid3.NME.toString()
+      String ACEString = AminoAcid3.ACE.toString()
 
-      if (aminoAcidString.equals(NMEString) || aminoAcidString.equals((ACEString))) {
-        char character = secondaryStructure.charAt(i);
+      if (aminoAcidString == NMEString || aminoAcidString == (ACEString)) {
+        char character = secondaryStructure.charAt(i)
         if (character == 'H') {
           logger.info(
-                  " Secondary structure was modified to accommodate non-standard amino acid residue.")
+              " Secondary structure was modified to accommodate non-standard amino acid residue.")
           secondaryStructure =
-                  secondaryStructure.substring(0, i) + '.' + secondaryStructure.substring(i + 1)
+              secondaryStructure.substring(0, i) + '.' + secondaryStructure.substring(i + 1)
         } else if (character == 'E') {
           logger.info(
-                  " Secondary structure was modified to accommodate non-standard amino acid residue.")
+              " Secondary structure was modified to accommodate non-standard amino acid residue.")
           secondaryStructure =
-                  secondaryStructure.substring(0, i) + '.' + secondaryStructure.substring(i + 1)
+              secondaryStructure.substring(0, i) + '.' + secondaryStructure.substring(i + 1)
         }
       }
     }

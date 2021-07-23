@@ -38,7 +38,6 @@
 package ffx.potential.groovy
 
 import ffx.potential.bonded.*
-import ffx.potential.bonded.Residue.ResidueType
 import ffx.potential.bonded.RotamerLibrary.NucleicSugarPucker
 import ffx.potential.cli.PotentialScript
 import org.apache.commons.io.FilenameUtils
@@ -152,7 +151,9 @@ class SaveRotamers extends PotentialScript {
       logger.info(helpString())
       return this
     }
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
 
     RotamerLibrary rLib = new RotamerLibrary(
         RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), true)
@@ -194,7 +195,7 @@ class SaveRotamers extends PotentialScript {
     if (upstreamPucker) {
       // Exception gets thrown if it's an amino acid, since "NA" is undefined.
       try {
-        if (residue.getResidueType() == ResidueType.NA) {
+        if (residue.getResidueType() == Residue.ResidueType.NA) {
           prevResidue = (Residue) residue.getPreviousResidue()
           // If no previous residue, set upstream pucker false.
           // The method used will ensure prevResidue is a nucleic acid.
@@ -214,8 +215,8 @@ class SaveRotamers extends PotentialScript {
       }
     }
 
-    String ext = FilenameUtils.getExtension(modelFilename)
-    modelFilename = FilenameUtils.removeExtension(modelFilename)
+    String ext = FilenameUtils.getExtension(filename)
+    filename = FilenameUtils.removeExtension(filename)
 
     if (saveAllRotamers) {
       if (allStart >= nrotamers) {
@@ -230,10 +231,10 @@ class SaveRotamers extends PotentialScript {
           }
           if (ext.toUpperCase().contains("XYZ")) {
             logger.info(String.format("Saving rotamer %d", i))
-            potentialFunctions.saveAsXYZ(activeAssembly, new File(modelFilename + ".xyz"))
+            potentialFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"))
           } else {
             logger.info(String.format("Saving rotamer %d", i))
-            potentialFunctions.saveAsPDB(activeAssembly, new File(modelFilename + ".pdb"))
+            potentialFunctions.saveAsPDB(activeAssembly, new File(filename + ".pdb"))
           }
         }
       }
@@ -257,10 +258,10 @@ class SaveRotamers extends PotentialScript {
           }
           if (ext.toUpperCase().contains("XYZ")) {
             logger.info(String.format("Saving rotamer %d", i))
-            potentialFunctions.saveAsXYZ(activeAssembly, new File(modelFilename + ".xyz"))
+            potentialFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"))
           } else {
             logger.info(String.format("Saving rotamer %d", i))
-            potentialFunctions.saveAsPDB(activeAssembly, new File(modelFilename + ".pdb"))
+            potentialFunctions.saveAsPDB(activeAssembly, new File(filename + ".pdb"))
           }
         }
       }

@@ -39,8 +39,9 @@ package ffx.algorithms.mc;
 
 import static java.lang.String.format;
 
+import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
@@ -70,7 +71,7 @@ public class RosenbluthChi0Move implements MCMove {
    */
   RosenbluthChi0Move(Residue target) {
     this.target = target;
-    AminoAcid3 name = AminoAcid3.valueOf(target.getName());
+    AminoAcid3 name = AminoAcidUtils.AminoAcid3.valueOf(target.getName());
     origState = target.storeState();
     double[] chi = RotamerLibrary.measureRotamer(target, false);
     theta = ThreadLocalRandom.current().nextDouble(360.0) - 180;

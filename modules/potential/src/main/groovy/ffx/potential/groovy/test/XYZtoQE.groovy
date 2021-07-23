@@ -39,7 +39,6 @@
 package ffx.potential.groovy.test
 
 import ffx.crystal.Crystal
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import picocli.CommandLine.Command
@@ -123,15 +122,15 @@ class XYZtoQE extends PotentialScript {
    * --hx or --hexagonal Perform QE caclulation on hexagonal rather than rhombohedral representation
    */
   @Option(names = ['--hx', '--hexagonal'], paramLabel = "true", defaultValue = "true",
-          description = 'Perform QE on hexagonal system.')
+      description = 'Perform QE on hexagonal system.')
   private boolean hexagonal = true
 
   /**
    * The final argument(s) should be one or more filenames.
    */
-  @Parameters(arity = "1", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'XYZ file to be converted.')
-  List<String> filenames = null
+  String filename = null
 
   /**
    * XYZtoQE Constructor.
@@ -154,40 +153,44 @@ class XYZtoQE extends PotentialScript {
   @Override
   XYZtoQE run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
 
+    logger.info(format("\n Converting %s to QE format\n", filename))
+
+    // TODO: Is this call necessary?
     activeAssembly.computeFractionalCoordinates()
-
-    Atom[] atoms = activeAssembly.getAtomArray()
 
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(getFullPath(modelFilename))
+      saveDir = new File(getFullPath(filename))
     }
     String dirName = saveDir.getAbsolutePath()
-    String fileName = getName(modelFilename)
-    fileName = removeExtension(fileName) + ".in"
-    File modelFile = new File(dirName + File.separator + fileName)
+    String name = getName(filename)
+    name = removeExtension(name)
+    File modelFile = new File(dirName + File.separator + name + ".in")
 
     Crystal crystal = activeAssembly.getCrystal().getUnitCell()
     double xtalA = crystal.a
     double xtalB = crystal.b
     double xtalC = crystal.c
 
-    HashMap<String, Double> atomTypes = new HashMap<String, Double>()
+    HashMap<String, Double> atomTypes = new HashMap<>()
     String atomicPositions = ""
+
+    Atom[] atoms = activeAssembly.getAtomArray()
     for (atom in atoms) {
       if (!atomTypes.containsKey(atom.name)) {
         atomTypes.put(atom.name, atom.getAtomType().atomicWeight)
@@ -206,7 +209,7 @@ class XYZtoQE extends PotentialScript {
         "\tetot_conv_thr = %6.4E,\n" +
         "\tforc_conv_thr = %6.4E,\n" +
         "\tnstep = %d,\n" +
-        "/\n", removeExtension(fileName), etot_conv_thr, forc_conv_thr, nstep))
+        "/\n", name, etot_conv_thr, forc_conv_thr, nstep))
     // structural information on the system under investigation
     bwQE.write(format("&SYSTEM\n" +
         "\tspace_group = " + crystal.spaceGroup.number + ",\n" +
@@ -227,7 +230,7 @@ class XYZtoQE extends PotentialScript {
         // "\txdm_a1 = 0.6512,\n" +
         // "\txdm_a2 = 1.4633,\n" +
         "/\n", ecutwfc, ecutrho))
-    if(hexagonal){
+    if (hexagonal) {
       bwQE.write("\trhombohedral = .FALSE.,\n")
     }
     bwQE.write("/\n")
@@ -292,8 +295,10 @@ class XYZtoQE extends PotentialScript {
     }
 
     bwQE.write("K_POINTS automatic\n" + k1 + " " + k2 + " " + k3 + " 1 1 1\n")
-
     bwQE.close()
+
+    logger.info(format(" Saved QE file: %s", modelFile))
+
     return this
   }
 }

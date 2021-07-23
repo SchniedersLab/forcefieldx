@@ -39,6 +39,7 @@ package ffx.potential.bonded;
 
 import static java.lang.String.format;
 
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.RelativeSolvationType;
 import java.util.HashMap;
@@ -58,16 +59,7 @@ public class RelativeSolvation {
   /** Look-up of non-standard energies. */
   private final Map<String, Double> nonStdEnergies;
   /** Solvation library in use. */
-  private SolvationLibrary solvationLibrary;
-
-  /**
-   * Constructor for RelativeSolvation.
-   *
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   */
-  public RelativeSolvation(ForceField forceField) {
-    this(SolvationLibrary.GK, forceField);
-  }
+  private final SolvationLibrary solvationLibrary;
 
   /**
    * Constructor for RelativeSolvation.
@@ -133,25 +125,6 @@ public class RelativeSolvation {
     return energy;
   }
 
-  /**
-   * Getter for the field <code>solvationLibrary</code>.
-   *
-   * @return a {@link ffx.potential.bonded.RelativeSolvation.SolvationLibrary} object.
-   */
-  public SolvationLibrary getSolvationLibrary() {
-    return solvationLibrary;
-  }
-
-  /**
-   * Setter for the field <code>solvationLibrary</code>.
-   *
-   * @param solvationLibrary a {@link ffx.potential.bonded.RelativeSolvation.SolvationLibrary}
-   *     object.
-   */
-  public void setSolvationLibrary(SolvationLibrary solvationLibrary) {
-    this.solvationLibrary = solvationLibrary;
-  }
-
   /** {@inheritDoc} */
   @Override
   public String toString() {
@@ -212,7 +185,7 @@ public class RelativeSolvation {
    * @return Relative solvation energy
    */
   private double getExplicitSolvationEnergy(Residue residue) {
-    ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
+    AminoAcid3 name = residue.getAminoAcid3();
     switch (name) {
       case ALA:
         return 0.58;
@@ -281,7 +254,7 @@ public class RelativeSolvation {
    * @return Solvation energy
    */
   private double getMacCallumTIP4PSolvationEnergy(Residue residue) {
-    ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
+    AminoAcid3 name = residue.getAminoAcid3();
     switch (name) {
       case ALA:
         return 9.8;
@@ -336,7 +309,7 @@ public class RelativeSolvation {
    * @return Solvation energy
    */
   private double getMacCallumSPCSolvationEnergy(Residue residue) {
-    ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
+    AminoAcid3 name = residue.getAminoAcid3();
     switch (name) {
       case ALA:
         return 9.3;
@@ -391,7 +364,7 @@ public class RelativeSolvation {
    * @return Solvation energy
    */
   private double getCabaniSolvationEnergy(Residue residue) {
-    ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
+    AminoAcid3 name = residue.getAminoAcid3();
     switch (name) {
       case ALA:
         return 8.4;
@@ -446,7 +419,7 @@ public class RelativeSolvation {
    * @return Solvation energy
    */
   private double getWolfendenSolvationEnergy(Residue residue) {
-    ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
+    AminoAcid3 name = residue.getAminoAcid3();
     switch (name) {
       case ALA:
         return 8.1;
@@ -493,6 +466,18 @@ public class RelativeSolvation {
     }
   }
 
+  /**
+   * Citations: Wolfenden et al: Wolfenden, R., Andersson, L., Cullis, P. M. and Southgate, C. C.
+   * B. (1981) AFFINITIES OF AMINO-ACID SIDE-CHAINS FOR SOLVENT WATER. Biochemistry. 20, 849-855
+   *
+   * <p>Cabani et al: Cabani, S., Gianni, P., Mollica, V. and Lepori, L. (1981) GROUP
+   * CONTRIBUTIONS TO THE THERMODYNAMIC PROPERTIES OF NON-IONIC ORGANIC SOLUTES IN DILUTE
+   * AQUEOUS-SOLUTION. Journal of Solution Chemistry. 10, 563-595
+   *
+   * <p>MacCallum OPLS libraries: Maccallum, J. L. and Tieleman, D. P. (2003) Calculation of the
+   * water-cyclohexane transfer free energies of neutral amino acid side-chain analogs using the
+   * OPLS all-atom force field. Journal of Computational Chemistry. 24, 1930-1935
+   */
   public enum SolvationLibrary {
     WOLFENDEN,
     CABANI,
@@ -504,17 +489,5 @@ public class RelativeSolvation {
     OPLS_GK,
     AUTO,
     NONE
-    /**
-     * Citations: Wolfenden et al: Wolfenden, R., Andersson, L., Cullis, P. M. and Southgate, C. C.
-     * B. (1981) AFFINITIES OF AMINO-ACID SIDE-CHAINS FOR SOLVENT WATER. Biochemistry. 20, 849-855
-     *
-     * <p>Cabani et al: Cabani, S., Gianni, P., Mollica, V. and Lepori, L. (1981) GROUP
-     * CONTRIBUTIONS TO THE THERMODYNAMIC PROPERTIES OF NON-IONIC ORGANIC SOLUTES IN DILUTE
-     * AQUEOUS-SOLUTION. Journal of Solution Chemistry. 10, 563-595
-     *
-     * <p>MacCallum OPLS libraries: Maccallum, J. L. and Tieleman, D. P. (2003) Calculation of the
-     * water-cyclohexane transfer free energies of neutral amino acid side-chain analogs using the
-     * OPLS all-atom force field. Journal of Computational Chemistry. 24, 1930-1935
-     */
   }
 }

@@ -42,23 +42,26 @@ import static ffx.numerics.math.DoubleMath.dist;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.scale;
 import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.potential.bonded.AminoAcidUtils.aminoAcidList;
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
 import static ffx.potential.bonded.Bond.logNoBondType;
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.buildHeavy;
-import static ffx.potential.bonded.BondedUtils.buildHydrogen;
+import static ffx.potential.bonded.BondedUtils.buildH;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 import static ffx.potential.bonded.NamingUtils.checkHydrogenAtomNames;
 import static ffx.potential.bonded.NucleicAcidUtils.assignNucleicAcidAtomTypes;
-import static ffx.potential.bonded.ResidueEnumerations.aminoAcidList;
-import static ffx.potential.bonded.ResidueEnumerations.nucleicAcidList;
+import static ffx.potential.bonded.NucleicAcidUtils.nucleicAcidList;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.random;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
+import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
@@ -112,7 +115,7 @@ public class PolymerUtils {
         for (Residue residue : residues) {
           String name = residue.getName().toUpperCase();
           boolean aa = false;
-          for (ResidueEnumerations.AminoAcid3 amino : aminoAcidList) {
+          for (AminoAcid3 amino : aminoAcidList) {
             if (amino.toString().equalsIgnoreCase(name)) {
               aa = true;
               checkHydrogenAtomNames(residue, fileStandard);
@@ -164,39 +167,39 @@ public class PolymerUtils {
           // Convert 1 and 2-character nucleic acid names to 3-character names.
           switch (name) {
             case "A":
-              name = ResidueEnumerations.NucleicAcid3.ADE.toString();
+              name = NucleicAcidUtils.NucleicAcid3.ADE.toString();
               break;
             case "C":
-              name = ResidueEnumerations.NucleicAcid3.CYT.toString();
+              name = NucleicAcidUtils.NucleicAcid3.CYT.toString();
               break;
             case "G":
-              name = ResidueEnumerations.NucleicAcid3.GUA.toString();
+              name = NucleicAcidUtils.NucleicAcid3.GUA.toString();
               break;
             case "T":
-              name = ResidueEnumerations.NucleicAcid3.THY.toString();
+              name = NucleicAcidUtils.NucleicAcid3.THY.toString();
               break;
             case "U":
-              name = ResidueEnumerations.NucleicAcid3.URI.toString();
+              name = NucleicAcidUtils.NucleicAcid3.URI.toString();
               break;
             case "YG":
-              name = ResidueEnumerations.NucleicAcid3.YYG.toString();
+              name = NucleicAcidUtils.NucleicAcid3.YYG.toString();
               break;
             case "DA":
-              name = ResidueEnumerations.NucleicAcid3.DAD.toString();
+              name = NucleicAcidUtils.NucleicAcid3.DAD.toString();
               break;
             case "DC":
-              name = ResidueEnumerations.NucleicAcid3.DCY.toString();
+              name = NucleicAcidUtils.NucleicAcid3.DCY.toString();
               break;
             case "DG":
-              name = ResidueEnumerations.NucleicAcid3.DGU.toString();
+              name = NucleicAcidUtils.NucleicAcid3.DGU.toString();
               break;
             case "DT":
-              name = ResidueEnumerations.NucleicAcid3.DTY.toString();
+              name = NucleicAcidUtils.NucleicAcid3.DTY.toString();
               break;
           }
           residue.setName(name);
-          ResidueEnumerations.NucleicAcid3 nucleicAcid = null;
-          for (ResidueEnumerations.NucleicAcid3 nucleic : nucleicAcidList) {
+          NucleicAcid3 nucleicAcid = null;
+          for (NucleicAcid3 nucleic : nucleicAcidList) {
             String nuc3 = nucleic.toString();
             nuc3 = nuc3.substring(nuc3.length() - 3);
             if (nuc3.equalsIgnoreCase(name)) {
@@ -281,7 +284,7 @@ public class PolymerUtils {
               break;
             default:
               logger.severe(
-                  format(" Check residue %s of chain %s.", ion.toString(), ion.getChainID()));
+                  format(" Check residue %s of chain %s.", ion, ion.getChainID()));
           }
         } catch (Exception e) {
           logger.log(Level.INFO, Utilities.stackTraceToString(e));
@@ -299,7 +302,7 @@ public class PolymerUtils {
         try {
           Atom O = buildHeavy(wat, "O", null, 2001, forceField, bondList);
           Atom H1 =
-              buildHydrogen(
+              buildH(
                   wat,
                   "H1",
                   O,
@@ -313,7 +316,7 @@ public class PolymerUtils {
                   forceField,
                   bondList);
           Atom H2 =
-              buildHydrogen(
+              buildH(
                   wat, "H2", O, 0.96e0, H1, 109.5e0, null, 120.0e0, 0, 2002, forceField, bondList);
           O.setHetero(true);
           H1.setHetero(true);
@@ -344,7 +347,7 @@ public class PolymerUtils {
           patched = false;
           break;
         } else {
-          logger.fine(" " + atom.toString() + " -> " + atomType.toString());
+          logger.fine(" " + atom + " -> " + atomType);
           atom.setAtomType(atomType);
           types.remove(atomName);
         }
@@ -532,7 +535,7 @@ public class PolymerUtils {
         }
       }
       if (!patched) {
-        logger.log(Level.WARNING, format(" Deleting unrecognized molecule %s.", m.toString()));
+        logger.log(Level.WARNING, format(" Deleting unrecognized molecule %s.", m));
         molecularAssembly.deleteMolecule((Molecule) m);
       } else {
         logger.info(" Patch for " + moleculeName + " succeeded.");
@@ -616,7 +619,7 @@ public class PolymerUtils {
       logger.info(
           format(
               "\n Checking for missing residues in chain %s between residues %d and %d.",
-              polymer.toString(), seqBegin, seqEnd));
+              polymer, seqBegin, seqEnd));
 
       int firstResID = polymer.getFirstResidue().getResidueNumber();
       for (int i = 0; i < resNames.length; i++) {
@@ -752,7 +755,7 @@ public class PolymerUtils {
                 C.getSegID(),
                 true);
         currentResidue.addMSNode(newO);
-        logger.info(format(" Building residue %8s.", currentResidue.toString()));
+        logger.info(format(" Building residue %8s.", currentResidue));
       }
     }
     return xyzIndex;
@@ -763,7 +766,7 @@ public class PolymerUtils {
 
     // Chain-start atom: N (amino)/O5* (nucleic)
     // Chain-end atom:   C (amino)/O3* (nucleic)
-    Residue.ResidueType rType = residues.get(0).getResidueType();
+    ResidueType rType = residues.get(0).getResidueType();
     String startAtName;
     String endAtName;
     switch (rType) {
@@ -780,8 +783,8 @@ public class PolymerUtils {
           startAtName = "O5*";
           endAtName = "O3*";
         } else {
-          startAtName = "O5\'";
-          endAtName = "O3\'";
+          startAtName = "O5'";
+          endAtName = "O3'";
         }
         break;
       case UNK:
@@ -831,7 +834,7 @@ public class PolymerUtils {
           sb.append(
               format(
                   "\n C-N distance of %6.2f A for %c-%s and %c-%s.",
-                  r, ch1, previousResidue.toString(), ch2, residue.toString()));
+                  r, ch1, previousResidue, ch2, residue));
         } else {
           // Continue the current chain.
           subChain.add(residue);
@@ -928,8 +931,6 @@ public class PolymerUtils {
 
         Residue r1 = c1.getResidue(parseInt(resnum1.substring(1)));
         Residue r2 = c2.getResidue(parseInt(resnum2.substring(1)));
-        /*Residue r1 = c1.getResidue(Hybrid36.decode(4, ssbond.substring(17, 21)));
-        Residue r2 = c2.getResidue(Hybrid36.decode(4, ssbond.substring(31, 35)));*/
         List<Atom> atoms1 = r1.getAtomList();
         List<Atom> atoms2 = r2.getAtomList();
         Atom SG1 = null;

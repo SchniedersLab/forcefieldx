@@ -38,20 +38,19 @@
 package ffx.potential;
 
 import static ffx.numerics.math.DoubleMath.sub;
-import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.NucleicAcidUtils;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
@@ -65,55 +64,12 @@ import java.util.logging.Logger;
 public final class Utilities {
 
   private static final Logger logger = Logger.getLogger(Utilities.class.getName());
-  /** Repeating atomic numbers of an amino acid chain. */
-  private static final int[] AAPATTERN = {7, 6, 6};
-  /** Repeating atomic numbers of a nucleic acid chain. */
-  private static final int[] NAPATTERN = {8, 6, 6, 6, 8};
-  /**
-   * Stoichiometry of side chains can be used for identification, accept for a couple cases: 1.)
-   * Proline & Valine 2.) (Iso)Leucine 3.) DNA Gaunine/RNA Adenine. This Hashtable returns the
-   * 3-letter name for amino acids, a single character for nucleic acids, or an integer indicating a
-   * special case.
-   */
-  private static final HashMap<String, String> sidechainStoichiometry = new HashMap<>();
   /**
    * The algorithms used to split arrays of atoms into a structural hierarchy use a bunch of List
    * instances. Pooling them seems like it might be a performance win - although better algorithms
    * probably exist. This is currently backed by ArrayLists.
    */
-  private static List<List<Atom>> atomListPool = new ArrayList<>();
-
-  static {
-    // Amino Acid Side Chains
-    sidechainStoichiometry.put("S1C3", "MET");
-    sidechainStoichiometry.put("S1C1", "CYS");
-    sidechainStoichiometry.put("O1C1", "SER");
-    sidechainStoichiometry.put("O1C2", "THR");
-    sidechainStoichiometry.put("O1C7", "TYR");
-    sidechainStoichiometry.put("O2C2", "ASP");
-    sidechainStoichiometry.put("O2C3", "GLU");
-    sidechainStoichiometry.put("O1N1C2", "ASN");
-    sidechainStoichiometry.put("O1N1C3", "GLN");
-    sidechainStoichiometry.put("N3C4", "ARG");
-    sidechainStoichiometry.put("N2C4", "HIS");
-    sidechainStoichiometry.put("N1C9", "TRP");
-    sidechainStoichiometry.put("N1C4", "LYS");
-    sidechainStoichiometry.put("C7", "PHE");
-    sidechainStoichiometry.put("H", "GLY");
-    sidechainStoichiometry.put("C1", "ALA");
-    // DNA
-    sidechainStoichiometry.put("O2N3C6", "DC");
-    sidechainStoichiometry.put("O1N5C7", "DA");
-    sidechainStoichiometry.put("O3N2C7", "DT");
-    // RNA
-    sidechainStoichiometry.put("O3N5C7", "G");
-    sidechainStoichiometry.put("O3N3C6", "C");
-    sidechainStoichiometry.put("O4N2C6", "U");
-    // SPECIAL CASES
-    sidechainStoichiometry.put("C3", "1"); // Proline / Valine
-    sidechainStoichiometry.put("C4", "2"); // (ISO)Leucine
-    sidechainStoichiometry.put("O2N5C7", "3"); // DNA Gaunine / RNA Adenine
-  }
+  private static final List<List<Atom>> atomListPool = new ArrayList<>();
 
   /**
    * Finds the RMS deviation between the atoms of MolecularAssembly m1 and m2 provided they have the
@@ -296,7 +252,7 @@ public final class Utilities {
     if (i > 35) {
       i = i % 36;
     }
-    Character c;
+    char c;
     if (i < 26) {
       // 65 is 'A'. 90 is 'Z'.
       c = (char) (i + 65);
@@ -316,15 +272,11 @@ public final class Utilities {
    */
   public static String stackTraceToString(Throwable ex) {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try (PrintStream ps = new PrintStream(baos, true, "UTF-8")) {
+    try (PrintStream ps = new PrintStream(baos, true, StandardCharsets.UTF_8)) {
       ex.printStackTrace(ps);
-      return new String(baos.toByteArray(), StandardCharsets.UTF_8);
-    } catch (UnsupportedEncodingException uex) {
-      logger.warning(
-          format(
-              " UTF-8 encoding somehow not " + "supported by PrintStream for exception %s.",
-              ex.toString()));
-      ex.printStackTrace();
+      return baos.toString(StandardCharsets.UTF_8);
+    } catch (Exception e) {
+      e.printStackTrace();
       return "";
     }
   }
@@ -435,7 +387,7 @@ public final class Utilities {
       key.append("H"); // Glycine
     }
 
-    String resname = sidechainStoichiometry.get(key.toString());
+    String resname = AminoAcidUtils.sidechainStoichiometry.get(key.toString());
 
     if (resname == null) {
       resname = "Unknown";
@@ -493,14 +445,14 @@ public final class Utilities {
     }
     Residue residue = null;
     try {
-      Residue.NA3.valueOf(resname.toUpperCase());
+      NucleicAcidUtils.NucleicAcid3.valueOf(resname.toUpperCase());
       residue = new Residue(resname, Residue.ResidueType.NA);
     } catch (Exception e) {
       //
     }
     if (residue == null) {
       try {
-        Residue.AA3.valueOf(resname.toUpperCase());
+        AminoAcidUtils.AminoAcid3.valueOf(resname.toUpperCase());
         residue = new Residue(resname, Residue.ResidueType.AA);
       } catch (Exception e) {
         //
@@ -982,10 +934,6 @@ public final class Utilities {
         }
         // Nitrogen is only in the backbone in peptide bonds or at an N-terminus.
       } else if (anum == 7) {
-        // Atom carbonyl = findCarbonyl(currentAtom);
-        // if (carbonyl == null) {
-        //    return null;
-        // }
         Atom alphaCarbon = findAlphaCarbon(currentAtom);
         if (alphaCarbon == null) {
           return null;
@@ -1002,11 +950,6 @@ public final class Utilities {
           anum3 = a.getAtomicNumber();
           if (anum3 == 6) {
             return null;
-            // a = path.get(size - 3);
-            // int anum4 = a.getAtomicNumber();
-            // if (anum4 == 6) {
-            //    return null;
-            // }
           }
         }
       }
@@ -1199,7 +1142,7 @@ public final class Utilities {
 
     // Initialization
     if (type == PolymerType.AMINOACID) {
-      pattern = AAPATTERN;
+      pattern = AminoAcidUtils.AAPATTERN;
       if (backbone.size() < start + pattern.length) {
         return null;
       }
@@ -1213,7 +1156,7 @@ public final class Utilities {
         return null;
       }
     } else if (type == PolymerType.NUCLEICACID) {
-      pattern = NAPATTERN;
+      pattern = NucleicAcidUtils.NAPATTERN;
       if (backbone.size() < start + pattern.length) {
         return null;
       }

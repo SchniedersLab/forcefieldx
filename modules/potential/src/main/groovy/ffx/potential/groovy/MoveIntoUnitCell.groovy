@@ -101,47 +101,51 @@ class MoveIntoUnitCell extends PotentialScript {
       return this
     }
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
-    logger.info("\n Moving molecular centers of mass into the unit cell for " + modelFilename + "\n")
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Moving molecular centers of mass into the unit cell for " + filename + "\n")
 
     // Loop over each system.
     for (int i = 0; i < molecularAssemblies.length; i++) {
       MolecularAssembly molecularAssembly = molecularAssemblies[i]
 
       Atom[] atoms = molecularAssembly.getAtomArray()
-      int n = atoms.length
-      origCoordinates = new double[n][3]
-      unitCellCoordinates = new double[n][3]
-      int index = 0
-      for (Atom atom : atoms) {
+      int nAtoms = atoms.length
+      origCoordinates = new double[nAtoms][3]
+      unitCellCoordinates = new double[nAtoms][3]
+
+      for (int index = 0; index < nAtoms; index++) {
+        Atom atom = atoms[index]
         origCoordinates[index][0] = atom.getX()
         origCoordinates[index][1] = atom.getY()
-        origCoordinates[index++][2] = atom.getZ()
+        origCoordinates[index][2] = atom.getZ()
       }
       molecularAssembly.moveAllIntoUnitCell()
-      index = 0
-      for (Atom atom : atoms) {
+
+      for (int index = 0; index < nAtoms; index++) {
+        Atom atom = atoms[index]
         unitCellCoordinates[index][0] = atom.getX()
         unitCellCoordinates[index][1] = atom.getY()
-        unitCellCoordinates[index++][2] = atom.getZ()
+        unitCellCoordinates[index][2] = atom.getZ()
       }
     }
 
     // Configure the base directory if it has not been set.
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+      saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
     String dirName = saveDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(modelFilename)
-    String ext = FilenameUtils.getExtension(fileName)
-    fileName = FilenameUtils.removeExtension(fileName)
+    String name = FilenameUtils.getName(filename)
+    String ext = FilenameUtils.getExtension(name)
+    name = FilenameUtils.removeExtension(name)
 
     if (ext.toUpperCase().contains("XYZ")) {
-      potentialFunctions.saveAsXYZ(molecularAssemblies[0], new File(dirName + fileName + ".xyz"))
+      potentialFunctions.saveAsXYZ(molecularAssemblies[0], new File(dirName + name + ".xyz"))
     } else {
-      potentialFunctions.saveAsPDB(molecularAssemblies, new File(dirName + fileName + ".pdb"))
+      potentialFunctions.saveAsPDB(molecularAssemblies, new File(dirName + name + ".pdb"))
     }
 
     return this

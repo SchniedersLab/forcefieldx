@@ -141,7 +141,9 @@ class Energy extends PotentialScript {
       return this
     }
 
-    String filename = activeAssembly.getFile().getAbsolutePath()
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
     logger.info("\n Running Energy on " + filename)
 
     // Apply atom selections
