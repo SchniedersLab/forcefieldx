@@ -37,328 +37,241 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import ffx.crystal.Crystal
-import ffx.crystal.SymOp
-import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.utils.ProgressiveAlignmentOfCrystals
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import java.util.logging.Level
-import java.util.stream.Collectors
-
-import static ffx.potential.utils.CrystalSuperposeFunctions.generateBaseSphere
-import static ffx.potential.utils.CrystalSuperposeFunctions.mimicSphere
-import static ffx.potential.utils.Superpose.*
 import static java.lang.String.format
-import static org.apache.commons.math3.util.FastMath.PI
-import static org.apache.commons.math3.util.FastMath.cbrt
 
 /**
- * The PACCOM script calculates intracrystollographic distances.
+ * Quantifies the similarity of input crystals based on progressive alignments.
+ * This script is based off of the PACCOM code created by Okimasa Okada.
  *
  * @author Okimasa OKADA
+ * @author Aaron J. Nessler and Michael J. Schnieders
  * created by Okimasa OKADA 2017/3/31
  * revised by Okimasa OKADA 2019/2/25
- * ported to FFX by Aaron Nessler, Kaleb Bierstedt, and Micheal Schnieders 2020
+ * ported to FFX by Aaron Nessler and Micheal Schnieders 2020
+ * revised by Aaron Nessler and Michael Schnieders 2021
  * <br>
  * Usage:
  * <br>
  * ffxc test.CrystalSuperpose &lt;filename&gt &lt;filename&gt;
  */
-@Command(description = " Compare crystal packings based on intermolecular distances.", name = "ffxc test.CrystalSuperpose")
+@Command(description = " Compare crystal polymorphs based on intermolecular distances of aligned crystals.", name = "ffxc test.CrystalSuperpose")
 class CrystalSuperpose extends PotentialScript {
 
-  /**
-   * --nm or --numberMolecules Number of molecules to include from each crystal in RMSD comparison.
-   */
-  @Option(names = ['--nm', '--numberMolecules'], paramLabel = '50',
-      description = 'Determines crystal sphere size for comparison.')
-  int nMolecules = 50
+    /**
+     * --nm or --numMolecules Number of asymmetric units to include from each crystal in RMSD comparison.
+     */
+    @Option(names = ['--na', '--numAU'], paramLabel = '20',
+            description = 'Determines number of asymmetric units to include in final comparison.')
+    int nAU = 20
 
-  /**
-   * --im or --inflatedMolecules Number of molecules in the inflated sphere.
-   */
-  @Option(names = ['--im', '--inflatedMolecules'], paramLabel = '500',
-      description = 'Determines number of molecules in inflated sphere.')
-  int inflatedMolecules = 500
+    /**
+     * --im or --inflatedAU Number of molecules in the inflated sphere.
+     */
+    @Option(names = ['--ia', '--inflatedAU'], paramLabel = '100',
+            description = 'Specifies the minimum number of asymmetric units in the inflated crystal.')
+    int inflatedAU = 200
 
-  // TODO: implement allVsAll
-  /**
-   * --all or --allVsAll Compute RMSD of between each file.
-   */
-  @Option(names = ['--all', '--allVsAll'], paramLabel = "false", defaultValue = "false",
-      description = 'Calculate the RMSD between each sphere.')
-  private boolean allVsAll = false
+    /**
+     * --ns or --numSearch Number of molecules to loop through in first system.
+     */
+    @Option(names = ['--ns', '--numSearch'], paramLabel = '-1',
+            description = 'Determines number of asymmetric units to search in first system (mirror check).')
+    int numSearch = 5
 
-  /**
-   * --op or --originalPACCOM Use Algorithm supplied by original PACCOM.
-   */
-  @Option(names = ['--op', '--originalPACCOM'], paramLabel = "false", defaultValue = "false",
-      description = 'Utilize a version of PACCOM that mirrors original.')
-  private static boolean original = false
+    /**
+     * --ns2 or --numSearch2 Number of molecules to loop through in second system.
+     */
+    @Option(names = ['--ns2', '--numSearch2'], paramLabel = '-1',
+            description = 'Determines number of asymmetric units to search in second system (mirror check).')
+    int numSearch2 = 5
 
-  /**
-   * -s or --save Save out individual XYZ/PDB files for each created sphere.
-   */
-  @Option(names = ['-s', '--save'], paramLabel = "false", defaultValue = "false",
-      description = 'Save each sphere as an aperiodic system to a PDB file.')
-  private boolean saveFiles = false
+    /**
+     * --nms or --noMirrorSearch Internal loop over (--ns) molecules to check for mirrors.
+     */
+    @Option(names = ['--nms', '--noMirrorSearch'], paramLabel = "false", defaultValue = "false",
+            description = 'Loop over structures looking for mirrors.')
+    private static boolean noMirrorSearch = false
 
-  // TODO: implement closestDistance
-  /**
-   * --cd or --closestDistance Neighbor molecules calculated via closest atom (not currently implemented).
-   */
-//    @Option(names = ['--cd', '--closestDistance'], paramLabel = "false", defaultValue = "false",
-//            description = 'Neighbors calculated via closest atom.')
-//    private static boolean closestDistance = false
+    /**
+     * -w or --write Write out a distance matrix for each comparison.
+     */
+    @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
+            description = 'Write a distance comparison matrix to a text file.')
+    private static boolean write = false
 
-  /**
-   * --nh or --noHydrogens Perform comparison without hydrogens.
-   */
-  @Option(names = ['--nh', '--noHydrogens'], paramLabel = "false", defaultValue = "false",
-      description = 'Crystal RMSD calculated without hydrogen atoms.')
-  private static boolean noHydrogens = false
+    /**
+     * --sp or --savePDB Save out a PDB.
+     */
+    @Option(names = ['--sp', '--savePDB'], paramLabel = "false", defaultValue = "false",
+            description = 'Save out a PDB file for the comparison.')
+    private static boolean save = false
 
-  /**
-   * Select individual atoms to match and calculate RMSD rather than using all atoms.
-   */
-  @Option(names = ['--ca', '--centerAtoms'], arity = "1..*", paramLabel = "atom integers",
-      description = 'Specify atoms to match and calculate RMSD. Otherwise, all atom.')
-  private int[] centerAtoms = null
+    /**
+     * -f or --force Perform comparison even if a single asymmetric unit from each crystal differs
+     */
+    @Option(names = ['-f', '--force'], paramLabel = "false", defaultValue = "false",
+            description = 'Force comparison regardless of single asymmetric unit RMSD.')
+    private static boolean force = false
 
-  /**
-   * The final argument(s) should be two or more filenames.
-   */
-  @Parameters(arity = "2..*", paramLabel = "files",
-      description = 'Atomic coordinate files to compare in XYZ format.')
-  List<String> filenames = null
+    /**
+     * --nh or --noHydrogens Perform comparison without hydrogen atoms.
+     */
+    @Option(names = ['--nh', '--noHydrogens'], paramLabel = "false", defaultValue = "false",
+            description = 'Crystal RMSD calculated without hydrogen atoms.')
+    private static boolean noHydrogens = false
 
-  private MolecularAssembly baseAssembly
+    //TODO finish implementing symmetric flag.
+    /**
+     * --sym or --symmetric Attempt prioritization in a symmetric manner (should produce symmetric distance matrix).
+     */
+    @Option(names = ['--sym', '--symmetric'], paramLabel = "false", defaultValue = "false",
+            description = 'Attempt to enforce symmetric output matrix.')
+    private static boolean symmetric = false
 
-  private MolecularAssembly[] assemblies
+    /**
+     * Select individual atoms to calculate RMSD rather than using all atoms.
+     */
+    @Option(names = ['--da', '--desiredAtoms'], arity = "1..*", paramLabel = "atom integers",
+            description = 'Specify atoms to calculate RMSD. Otherwise, all atom.')
+    private int[] desiredAtoms = null
 
-  public double[][] coordinates = null
+    /**
+     * CrystalSuperpose Test requires a public variable containing observables to test.
+     */
+    public double[][] distMatrix
 
-  /**
-   * CrystalSuperpose Constructor.
-   */
-  CrystalSuperpose() {
-    this(new Binding())
-  }
+    /**
+     * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
+     */
+    @Parameters(arity = "1..2", paramLabel = "files",
+            description = 'Atomic coordinate files to compare in XYZ format.')
+    List<String> filenames = null
 
-  /**
-   * CrystalSuperpose Constructor.
-   * @param binding Groovy Binding to use.
-   */
-  CrystalSuperpose(Binding binding) {
-    super(binding)
-  }
-
-  /**
-   * Execute the script.
-   */
-  @Override
-  CrystalSuperpose run() {
-    System.setProperty("vdwterm", "false")
-    // Read in structures
-    if (!init()) {
-      return
+    /**
+     * CrystalSuperpose Constructor.
+     */
+    CrystalSuperpose() {
+        this(new Binding())
     }
 
-    // Ensure file exists/create active molecular assembly
-    if (filenames != null && filenames.size() > 1) {
-      baseAssembly = potentialFunctions.open(filenames.get(0))
-      assemblies = potentialFunctions.openAll(filenames.get(1))
-    } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return
-    } else {
-      assemblies = [activeAssembly]
+    /**
+     * CrystalSuperpose Constructor.
+     * @param binding Groovy Binding to use.
+     */
+    CrystalSuperpose(Binding binding) {
+        super(binding)
     }
 
-    List<Atom> exampleAtoms = baseAssembly.getAtomList()
-    int nAtoms = exampleAtoms.size()
-    int numHydrogens = 0
+    /**
+     * Execute the script.
+     */
+    @Override
+    CrystalSuperpose run() {
+        // Turn off non-bonded interactions.
+        System.setProperty("vdwterm", "false")
 
-    // If comparison atoms are not specified, use all atoms.
-    int[] comparisonAtoms
-    if (centerAtoms != null) {
-      comparisonAtoms = new int[centerAtoms.length]
-      for (int i = 0; i < centerAtoms.size(); i++) {
-        comparisonAtoms[i] = centerAtoms[i] - 1
-        if (comparisonAtoms[i] < 0 || comparisonAtoms[i] >= nAtoms) {
-          logger.severe(" Selected atoms are outside of molecular size.")
-        }
-      }
-    } else {
-      if (noHydrogens) {
-        int n = 0
-        for (int i = 0; i < nAtoms; i++) {
-          if (!exampleAtoms.get(i).isHydrogen()) {
-            n++
-          }
-        }
-        comparisonAtoms = new int[n]
-        n = 0
-        for (int i = 0; i < nAtoms; i++) {
-          if (!exampleAtoms.get(i).isHydrogen()) {
-            comparisonAtoms[n++] = i
-          }
-        }
-      } else {
-        comparisonAtoms = new int[nAtoms]
-        for (int i = 0; i < nAtoms; i++) {
-          comparisonAtoms[i] = i
-        }
-      }
-    }
-
-    int compareAtomsSize = comparisonAtoms.size()
-    logger.info(format(" Number of atoms being compared: %d of %d",
-        compareAtomsSize, nAtoms))
-
-    if (logger.isLoggable(Level.FINE)) {
-      for (int integerVal : comparisonAtoms) {
-        logger.fine(format(" %d", integerVal + 1))
-      }
-    }
-
-    // Here we will use the unit cell, to create a new replicates crystal that may be
-    // a different size (i.e. larger).
-    Crystal unitCell = baseAssembly.getCrystal().getUnitCell()
-    double asymmetricUnitVolume = unitCell.volume / unitCell.getNumSymOps()
-    // Add wiggle room for boundary cutoffs
-    double inflationFactor = 1.0
-    // Estimate a radius that will include "nExpanded".
-    double radius = cbrt((3.0 / (4.0 * PI) * inflatedMolecules * asymmetricUnitVolume)) + inflationFactor
-
-    logger.info(format(" Copies in target sphere:     %16d", inflatedMolecules))
-    logger.info(format(" Estimated spherical radius:  %16.2f", radius))
-    logger.info(format(" Number of copies to compare: %16d", nMolecules))
-
-    // Generate the base sphere
-    logger.info(" Expanding system 1.")
-    // Save the SymOps used to expand System 1.
-    List<SymOp> symOps = new ArrayList<>()
-    MolecularAssembly baseSphere =
-        generateBaseSphere(baseAssembly, nMolecules, original, radius, symOps)
-
-    // This is ReplicatesCrystal that was used to generate a sphere of molecules.
-    Crystal baseCrystal = baseAssembly.getCrystal()
-
-    // Loop over systems that should be superposed on the first system.
-    for (MolecularAssembly molecularAssembly : assemblies) {
-      // Collect asymmetric unit atomic coordinates.
-      Atom[] atoms = molecularAssembly.getAtomArray()
-      double[] x = new double[nAtoms]
-      double[] y = new double[nAtoms]
-      double[] z = new double[nAtoms]
-      for (int i = 0; i < nAtoms; i++) {
-        Atom atom = atoms[i]
-        x[i] = atom.getX()
-        y[i] = atom.getY()
-        z[i] = atom.getZ()
-      }
-
-      // Allocate space for coordinates after application of a SymOp.
-      double[] xS = new double[nAtoms]
-      double[] yS = new double[nAtoms]
-      double[] zS = new double[nAtoms]
-
-      // Init the RMSD to its max value.
-      double rmsdValue = Double.MAX_VALUE
-
-      // Loop over the unit cell SymOps
-      Crystal unitCellCrystal = molecularAssembly.getCrystal().getUnitCell()
-      int numSymOps = unitCellCrystal.getNumSymOps()
-
-      logger.info(format("\n Looping over SymOps"))
-      for (int iSym = 0; iSym < numSymOps; iSym++) {
-
-        // Apply SymOp to the asymmetric unit atoms.
-        SymOp symOp = unitCellCrystal.spaceGroup.getSymOp(iSym)
-        logger.finer(format(" SymOp: %d \n%s", iSym, symOp.toString()))
-        unitCellCrystal.applySymOp(nAtoms, x, y, z, xS, yS, zS, symOp)
-
-        // Update atomic positions
-        for (int i = 0; i < nAtoms; i++) {
-          atoms[i].moveTo(xS[i], yS[i], zS[i])
+        // Init the context and bind variables.
+        if (!init()) {
+            return this
         }
 
-        // Compute the RMSD
-        double tempRMSD = crystalComparison(baseSphere, baseCrystal, symOps, molecularAssembly, radius)
-        logger.info(format(" SymOp %2d RMSD: %16.8f A", iSym, tempRMSD))
-        if (tempRMSD < rmsdValue) {
-          rmsdValue = tempRMSD
+        // Ensure file exists.
+        if (filenames == null) {
+            logger.info(helpString())
+            return this
         }
-      }
 
-      logger.info(format("\n Best RMSD: %16.8f A", rmsdValue))
+        // Number of files to read in.
+        int numFiles = filenames.size()
+
+        // System Filter containing structures stored in file 0.
+        SystemFilter systemFilter
+        // System Filter containing structures stored in file 1.
+        SystemFilter systemFilter2
+
+        // If only one file compare structures within to self. Otherwise compare structures between files 0 and 1.
+        if(numFiles==1){
+            potentialFunctions.openAll(filenames.get(0))
+            systemFilter = potentialFunctions.getFilter()
+            //Need to reinitialize a new filter object
+            potentialFunctions.openAll(filenames.get(0))
+            systemFilter2 = potentialFunctions.getFilter()
+        }else{
+            potentialFunctions.openAll(filenames.get(0))
+            systemFilter = potentialFunctions.getFilter()
+            potentialFunctions.openAll(filenames.get(1))
+            systemFilter2 = potentialFunctions.getFilter()
+        }
+
+        // Example atoms to determine single molecule characteristics (e.g. number of atoms, hydrogens, etc.)
+        final List<Atom> exampleAtoms = systemFilter.getActiveMolecularSystem().getAtomList()
+        // Number of atoms in asymmetric unit.
+        int nAtoms = exampleAtoms.size()
+
+        // If comparison atoms are not specified, use all atoms.
+        Integer[] comparisonAtoms
+        if (desiredAtoms != null) {
+            comparisonAtoms = new int[desiredAtoms.length]
+            for (int i = 0; i < desiredAtoms.size(); i++) {
+                comparisonAtoms[i] = desiredAtoms[i] - 1
+                if (comparisonAtoms[i] < 0 || comparisonAtoms[i] >= nAtoms) {
+                    logger.severe(" Selected atoms are outside of molecular size.")
+                    return this
+                }
+            }
+        } else {
+            //TODO implement no hydrgoens && centerAtoms
+            if (noHydrogens) {
+                int n = 0
+                for (int i = 0; i < nAtoms; i++) {
+                    if (!exampleAtoms.get(i).isHydrogen()) {
+                        n++
+                    }
+                }
+                comparisonAtoms = new int[n]
+                n = 0
+                for (int i = 0; i < nAtoms; i++) {
+                    if (!exampleAtoms.get(i).isHydrogen()) {
+                        comparisonAtoms[n++] = i
+                    }
+                }
+            } else {
+                comparisonAtoms = new int[nAtoms]
+                for (int i = 0; i < nAtoms; i++) {
+                    comparisonAtoms[i] = i
+                }
+            }
+        }
+        // Number of atoms being included for comparison.
+        int compareAtomsSize = comparisonAtoms.size()
+        logger.info(format(" Number of atoms being compared: %3d of %3d\n",
+                compareAtomsSize, nAtoms))
+        // Current method to save PDB only works when using all atoms...
+        if(compareAtomsSize != nAtoms && save){
+            save = false
+            logger.warning(" Saving a PDB is not compatible with subsets of atoms (--nh and --da).")
+        }
+
+        // If search is desired ensure inner loop will be used. Else use single comparison.
+        if(noMirrorSearch){
+            numSearch = 1
+            numSearch2 = 1
+        }
+
+        // Create object to perform comparison (I believe this was a necessary step to achieve parallelization...)
+        ProgressiveAlignmentOfCrystals progressiveAlignmentOfCrystals = new ProgressiveAlignmentOfCrystals(systemFilter, systemFilter2)
+        // Compare structures in SystemFilter and SystemFilter2.
+        distMatrix = progressiveAlignmentOfCrystals.comparisons(nAtoms, Arrays.asList(comparisonAtoms), nAU, inflatedAU,
+                numSearch, numSearch2, write, force, symmetric, save)
+
+        return this
     }
-
-    return this
-  }
-
-  double crystalComparison(MolecularAssembly baseSphere, Crystal baseCrystal,
-      List<SymOp> symOps, MolecularAssembly assembly2, double radius) {
-
-    // Collect the atomic positions for both systems.
-    Atom[] baseAtoms = baseSphere.getAtomList()
-    int nExpanded = baseAtoms.size()
-    double[] x1 = new double[nExpanded * 3]
-    for (int i = 0; i < nExpanded; i++) {
-      // TODO: Pull out a subset of atoms (i.e. no hydrogen; only selected heavy atoms)
-      Atom a = baseAtoms[i]
-      x1[i * 3] = a.getX()
-      x1[i * 3 + 1] = a.getY()
-      x1[i * 3 + 2] = a.getZ()
-    }
-
-    // Apply the baseSphere symOps to the second assembly.
-    logger.fine(" Generating Mimic Sphere:")
-    double[] x2 = mimicSphere(baseCrystal, assembly2, symOps, radius)
-
-    double[] mass = new double[nExpanded]
-    Arrays.fill(mass, 1.0)
-
-    logger.fine(format("\n Superposing %d atoms.", nExpanded))
-    // RMSD before alignment.
-    double originalRMSD = rmsd(x1, x2, mass)
-
-    // Calculate the translation on only the used subset, but apply it to the entire structure.
-    applyTranslation(x1, calculateTranslation(x1, mass))
-    applyTranslation(x2, calculateTranslation(x2, mass))
-    double translatedRMSD = rmsd(x1, x2, mass)
-
-    // Calculate the rotation on only the used subset, but apply it to the entire structure.
-    applyRotation(x2, calculateRotation(x1, x2, mass))
-    double rotatedRMSD = rmsd(x1, x2, mass)
-
-    logger.fine(
-        format(" RMSD Original %16.8f, Translate %16.8f, Rotate %16.8f",
-            originalRMSD, translatedRMSD, rotatedRMSD))
-
-    // Compute the RMSD.
-    return rotatedRMSD
-  }
-
-  @Override
-  List<Potential> getPotentials() {
-    if (assemblies == null) {
-      return new ArrayList<Potential>()
-    } else {
-      return Arrays.stream(assemblies).
-          filter {a -> a != null
-          }.
-          map {a -> a.getPotentialEnergy()
-          }.
-          filter {e -> e != null
-          }.
-          collect(Collectors.toList())
-    }
-  }
 }
