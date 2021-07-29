@@ -41,7 +41,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.*;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.ResidueEnumerations;
 import ffx.potential.extended.TitrationUtils.Titration;
 import ffx.potential.parameters.MultipoleType;
 import ffx.utilities.Constants;
@@ -108,8 +107,8 @@ public final class TitrationESV extends ExtendedVariable {
         this.constPh = esvSystem.getConstantPh();
         Residue currentRes = multiRes.getActive();
         Titration titration = Titration.lookup(currentRes);
-        ResidueEnumerations.AminoAcid3 currentAA3 = ResidueEnumerations.AminoAcid3.valueOf(currentRes.getName());
-        if(currentAA3 == ResidueEnumerations.AminoAcid3.LYS || currentAA3 == ResidueEnumerations.AminoAcid3.LYD){
+        AminoAcidUtils.AminoAcid3 currentAA3 = AminoAcidUtils.AminoAcid3.valueOf(currentRes.getName());
+        if(currentAA3 == AminoAcidUtils.AminoAcid3.LYS || currentAA3 == AminoAcidUtils.AminoAcid3.LYD){
             this.referenceEnergy = properties.getDouble("PMF-LYS-ReferenceEnergy",titration.refEnergy);
             this.lambdaIntercept = properties.getDouble("PMF-LYS-LambdaIntercept",titration.lambdaIntercept);
             this.pKaModel = properties.getDouble("PMF-LYS-pkaModel",titration.pKa);
@@ -162,9 +161,9 @@ public final class TitrationESV extends ExtendedVariable {
             }
             StringBuilder sb = new StringBuilder();
             if (Utype == null) {
-                sb.append(format("Error @ESV.updateMultipoleTypes: bgType null."));
+                sb.append("Error @ESV.updateMultipoleTypes: bgType null.");
                 sb.append(format("   fg: %s, '%s'", fg.toString(), fg.getName()));
-                sb.append(format(" Background atoms available for match: "));
+                sb.append(" Background atoms available for match: ");
                 for (Atom debug : atomsBackground) {
                     sb.append(format("   bg: %s, '%s'", debug.toString(), debug.getName()));
                 }
