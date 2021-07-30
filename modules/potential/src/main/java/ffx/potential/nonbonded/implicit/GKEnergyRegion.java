@@ -194,6 +194,8 @@ public class GKEnergyRegion extends ParallelRegion {
 //    for(int i = 0; i < selfEnergy.size(); i++){
 //      logger.info("Self Energy from GK Region for atom "+i+" :   "+selfEnergy.get(i));
 //    }
+    int nAtoms = atoms.length;
+    selfEnergy.reduce(0, nAtoms - 1);
     return selfEnergy;
   }
 

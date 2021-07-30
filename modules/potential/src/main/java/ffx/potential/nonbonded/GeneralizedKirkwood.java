@@ -250,6 +250,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
   private final boolean neckCorrection;
   /** Maximum Sneck scaling parameter value */
   private double sneck;
+  private final boolean adjustedSneck;
   /** If true, the descreening integral includes the tanh correction to better approximate molecular surface */
   private final boolean tanhCorrection;
   private double beta0;
@@ -394,6 +395,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     descreenOffset = forceField.getDouble("DESCREEN_OFFSET",0.0);
     neckCorrection = forceField.getBoolean("NECK_CORRECTION",false);
     sneck = forceField.getDouble("SNECK",DEFAULT_SNECK);
+    adjustedSneck = forceField.getBoolean("ADJUSTED_SNECK",true);
     tanhCorrection = forceField.getBoolean("TANH_CORRECTION",false);
     beta0 = forceField.getDouble("BETA0",DEFAULT_BETA0);
     beta1 = forceField.getDouble("BETA1",DEFAULT_BETA1);
@@ -577,6 +579,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(format("   Descreen Offset:                    %8.4f",descreenOffset));
     logger.info(format("   Use Neck Correction:                %8B", neckCorrection));
     logger.info(format("   Sneck:                              %8.4f",sneck));
+    logger.info(format("   Adjusted Sneck:                     %8B",adjustedSneck));
     logger.info(format("   Use Tanh Correction                 %8B",tanhCorrection));
     if(tanhCorrection){
       logger.info(format("    Beta0:                             %8.4f",beta0));
@@ -1400,28 +1403,24 @@ public class GeneralizedKirkwood implements LambdaInterface {
       if(overlapScale[i] == 0.0){
         neckScale[i] = 0.0;
       } else {
-        // Determine number of bound heavy atoms for each non-hydrogen atom.
-        for(Atom boundAtom : atoms[i].get12List()){
-          if(!boundAtom.isHydrogen()){
-            numBoundHeavyAtoms++;
+        if (adjustedSneck) {
+          // Determine number of bound heavy atoms for each non-hydrogen atom if adjusted Sneck is being used
+          for (Atom boundAtom : atoms[i].get12List()) {
+            if (!boundAtom.isHydrogen()) {
+              numBoundHeavyAtoms++;
+            }
           }
-        }
-        // Use this number to determine Sneck scaling parameter
-        if(numBoundHeavyAtoms == 0){
-          // Sneck for lone ions or molecules like methane, which are not descreened by any other atoms
-          neckScale[i] = 1.00;
-        } else {
-          neckScale[i] = sneck*(5.0-numBoundHeavyAtoms)/4.0;
-          //neckScale[i] = Math.pow(sneck,(5.0-numBoundHeavyAtoms)/4.0);
-          /*if(numBoundHeavyAtoms == 1){
-            neckScale[i] = sneck;
-          } else if(numBoundHeavyAtoms == 2){
-            neckScale[i] = Math.pow(sneck,0.9);
-          } else if(numBoundHeavyAtoms == 3){
-            neckScale[i] = Math.pow(sneck,0.8);
+          // Use this number to determine Sneck scaling parameter
+          if (numBoundHeavyAtoms == 0) {
+            // Sneck for lone ions or molecules like methane, which are not descreened by any other atoms
+            neckScale[i] = 1.00;
           } else {
-            neckScale[i] = Math.pow(sneck,0.7);
-          }*/
+            neckScale[i] = sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
+            //neckScale[i] = Math.pow(sneck,(5.0-numBoundHeavyAtoms)/4.0);
+          }
+        } else{
+          // Non-adjusted Sneck - set neckScale to the max (input) Sneck value for all non-hydrogen atoms
+          neckScale[i] = sneck;
         }
       }
     }
@@ -1464,6 +1463,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
   public void setSneck(double sneck_input){
     this.sneck = sneck_input;
+    initAtomArrays();
   }
 
   public void setTanhBetas(double[] betas){
