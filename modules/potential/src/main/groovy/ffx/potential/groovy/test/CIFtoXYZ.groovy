@@ -73,6 +73,7 @@ import java.nio.file.Paths
 import static ffx.numerics.math.DoubleMath.dihedralAngle
 import static ffx.potential.bonded.BondedUtils.intxyz
 import static ffx.potential.parsers.PDBFilter.toPDBAtomLine
+import static org.openscience.cdk.tools.periodictable.PeriodicTable.getSymbol
 import static java.lang.String.format
 
 /**
@@ -286,9 +287,9 @@ class CIFtoXYZ extends PotentialScript {
         }
         cifCDKAtoms.remove(nullCDKAtoms)
 
-        for (int i = 0; i < nXYZAtoms; i++) {
-          xyzCDKAtoms.addAtom(new org.openscience.cdk.Atom(xyzAtoms[i].getAtomType().name,
-                  new Point3d(xyzAtoms[i].getXYZ(null))))
+        for(Atom atom : xyzAtoms){
+          String atomName = getSymbol(atom.getAtomType().atomicNumber)
+          xyzCDKAtoms.addAtom(new org.openscience.cdk.Atom(atomName, new Point3d(atom.getXYZ(null))))
         }
 
         // Add known XYZ bonds. A limitation is all are given a Bond order of 1.

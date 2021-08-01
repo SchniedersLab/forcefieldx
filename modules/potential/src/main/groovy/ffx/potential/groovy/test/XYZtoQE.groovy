@@ -65,9 +65,9 @@ class XYZtoQE extends PotentialScript {
   /**
    * --ns or --numSteps Number of structural optimization steps performed in this run.
    */
-  @Option(names = ['--ns', '--nstep'], paramLabel = "50", defaultValue = "50",
+  @Option(names = ['--ns', '--nstep'], paramLabel = "500", defaultValue = "500",
       description = 'Number of structural optimization steps performed in this run.')
-  private int nstep = 50
+  private int nstep = 500
 
   /**
    * --ec or --etot_conv_thr Convergence threshold on total energy (a.u) for ionic minimization.
@@ -93,16 +93,16 @@ class XYZtoQE extends PotentialScript {
   /**
    * --rho or --ecutrho Kinetic energy cutoff (Ry) for charge density and potential.
    */
-  @Option(names = ['--rho', '--ecutrho'], paramLabel = "200.0", defaultValue = "200.0",
+  @Option(names = ['--rho', '--ecutrho'], paramLabel = "500.0", defaultValue = "500.0",
       description = 'Kinetic energy cutoff (Ry) for charge density and potential.')
-  private double ecutrho = 200.0
+  private double ecutrho = 500.0
 
   /**
    * --em or --electron_maxstep Maximum number of iterations in a scf step.
    */
-  @Option(names = ['--em', '--electron_maxstep'], paramLabel = "100", defaultValue = "100",
+  @Option(names = ['--em', '--electron_maxstep'], paramLabel = "1500", defaultValue = "1500",
       description = 'Maximum number of iterations in a scf step.')
-  private int electron_maxstep = 100
+  private int electron_maxstep = 1500
 
   /**
    * --ct or --conv_thr Convergence threshold for self consistency.
@@ -114,12 +114,12 @@ class XYZtoQE extends PotentialScript {
   /**
    * --mb or --mixing_beta Mixing factor for self-consistency.
    */
-  @Option(names = ['--mb', '--mixing_beta'], paramLabel = "0.7", defaultValue = "0.7",
+  @Option(names = ['--mb', '--mixing_beta'], paramLabel = "0.5", defaultValue = "0.5",
       description = 'Mixing factor for self-consistency.')
-  private double mixing_beta = 0.7
+  private double mixing_beta = 0.5
 
   /**
-   * --hx or --hexagonal Perform QE caclulation on hexagonal rather than rhombohedral representation
+   * --hx or --hexagonal Perform QE calculation on hexagonal rather than rhombohedral representation
    */
   @Option(names = ['--hx', '--hexagonal'], paramLabel = "true", defaultValue = "true",
       description = 'Perform QE on hexagonal system.')
@@ -169,9 +169,6 @@ class XYZtoQE extends PotentialScript {
     filename = activeAssembly.getFile().getAbsolutePath()
 
     logger.info(format("\n Converting %s to QE format\n", filename))
-
-    // TODO: Is this call necessary?
-    activeAssembly.computeFractionalCoordinates()
 
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
@@ -266,7 +263,7 @@ class XYZtoQE extends PotentialScript {
     int k3
     if (xtalA < 5) {
       k1 = 8
-    } else if (xtalA <= 8) {
+    } else if (xtalA <= 7) {
       k1 = 6
     } else if (xtalA <= 12) {
       k1 = 4
@@ -276,7 +273,7 @@ class XYZtoQE extends PotentialScript {
 
     if (xtalB < 5) {
       k2 = 8
-    } else if (xtalB <= 8) {
+    } else if (xtalB <= 7) {
       k2 = 6
     } else if (xtalB <= 12) {
       k2 = 4
@@ -286,7 +283,7 @@ class XYZtoQE extends PotentialScript {
 
     if (xtalC < 5) {
       k3 = 8
-    } else if (xtalC <= 8) {
+    } else if (xtalC <= 7) {
       k3 = 6
     } else if (xtalC <= 12) {
       k3 = 4
