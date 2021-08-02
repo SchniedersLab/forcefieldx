@@ -37,53 +37,54 @@
 // ******************************************************************************
 package ffx.potential.groovy;
 
-import ffx.potential.utils.PotentialTest;
-import org.junit.Test;
-import ffx.potential.groovy.test.CrystalSuperpose;
-
 import static org.junit.Assert.assertEquals;
 
+import ffx.potential.utils.PotentialTest;
+import org.junit.Test;
+
 /**
- * Tests test.CrystalSuperpose command to determine that crystals are being compared correctly.
- *  Based on CrystalSuperposeTest.java
+ * Tests test.CrystalSuperpose command to verify crystals are being aligned and compared.
  *
  * @author Aaron J. Nessler
  */
 
-public class ProgressiveAlignmentTest extends PotentialTest{
+public class ProgressiveAlignmentTest extends PotentialTest {
 
-    private final double tolerance = 0.001;
-    //TODO: add more tests with more parameters
-    /** Tests the CrystalSuperpose script. */
-    @Test
-    public void testBaseProgressiveAlignment() {
-        // Set-up the input arguments for the SaveAsPDB script.
-        String[] args = {"src/main/java/ffx/potential/structures/C23.arc"};
-        binding.setVariable("args", args);
-        binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+  private final double tolerance = 0.001;
 
-        // Construct and evaluate the CrystalSuperpose script.
-        CrystalSuperpose CrystalSuperpose = new CrystalSuperpose(binding).run();
-        potentialScript = CrystalSuperpose;
-        assertEquals(0.0, CrystalSuperpose.distMatrix[0][0], tolerance);
-        assertEquals(0.2016, CrystalSuperpose.distMatrix[0][1], tolerance);
-        assertEquals(0.2211, CrystalSuperpose.distMatrix[0][2], tolerance);
-        assertEquals(0.2016, CrystalSuperpose.distMatrix[1][0], tolerance);
-        assertEquals(0.0, CrystalSuperpose.distMatrix[1][1], tolerance);
-        assertEquals(0.0865, CrystalSuperpose.distMatrix[1][2], tolerance);
-        assertEquals(0.2211, CrystalSuperpose.distMatrix[2][0], tolerance);
-        assertEquals(0.0865, CrystalSuperpose.distMatrix[2][1], tolerance);
-        assertEquals(0.0, CrystalSuperpose.distMatrix[2][2], tolerance);
-    }
+  // TODO: add more tests with more parameters
 
-    @Test
-    public void testProgressiveAlignmentHelp() {
-        // Set-up the input arguments for the CrystalSuperpose script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
+  /** Tests the CrystalSuperpose script. */
+  @Test
+  public void testBaseProgressiveAlignment() {
 
-        // Construct and evaluate the CrystalSuperpose script.
-        CrystalSuperpose CrystalSuperpose = new CrystalSuperpose(binding).run();
-        potentialScript = CrystalSuperpose;
-    }
+    // Set-up the input arguments for the CrystalSuperpose script.
+    String[] args = {"src/main/java/ffx/potential/structures/C23.arc"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CrystalSuperpose script.
+    SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
+    potentialScript = SuperposeCrystals;
+    assertEquals(0.0000, SuperposeCrystals.distMatrix[0][0], tolerance);
+    assertEquals(0.2016, SuperposeCrystals.distMatrix[0][1], tolerance);
+    assertEquals(0.2211, SuperposeCrystals.distMatrix[0][2], tolerance);
+    assertEquals(0.2016, SuperposeCrystals.distMatrix[1][0], tolerance);
+    assertEquals(0.0000, SuperposeCrystals.distMatrix[1][1], tolerance);
+    assertEquals(0.0865, SuperposeCrystals.distMatrix[1][2], tolerance);
+    assertEquals(0.2211, SuperposeCrystals.distMatrix[2][0], tolerance);
+    assertEquals(0.0865, SuperposeCrystals.distMatrix[2][1], tolerance);
+    assertEquals(0.0000, SuperposeCrystals.distMatrix[2][2], tolerance);
+  }
+
+  @Test
+  public void testProgressiveAlignmentHelp() {
+    // Set-up the input arguments for the CrystalSuperpose script.
+    String[] args = {"-h"};
+    binding.setVariable("args", args);
+
+    // Construct and evaluate the CrystalSuperpose script.
+    SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
+    potentialScript = SuperposeCrystals;
+  }
 }
