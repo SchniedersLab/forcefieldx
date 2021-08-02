@@ -41,8 +41,9 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Residue
-import ffx.potential.bonded.ResidueEnumerations
+import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.extended.ExtendedVariable
@@ -165,11 +166,11 @@ class ProtonMDDriver extends AlgorithmsScript {
       }
       esvSystem.addVariable(esv)
       if(esvSystem.config.tautomer){
-        ResidueEnumerations.AminoAcid3 currentAA3 = ResidueEnumerations.AminoAcid3.valueOf(res.getName());
-        if (currentAA3 == ResidueEnumerations.AminoAcid3.HIS || currentAA3 == ResidueEnumerations.AminoAcid3.HID
-                || currentAA3 == ResidueEnumerations.AminoAcid3.HIE || currentAA3 == ResidueEnumerations.AminoAcid3.ASH
-                || currentAA3 == ResidueEnumerations.AminoAcid3.ASP || currentAA3 == ResidueEnumerations.AminoAcid3.GLH
-                || currentAA3 == ResidueEnumerations.AminoAcid3.GLU){
+        AminoAcidUtils.AminoAcid3 currentAA3 = AminoAcidUtils.AminoAcid3.valueOf(res.getName());
+        if (currentAA3 == AminoAcidUtils.AminoAcid3.HIS || currentAA3 == AminoAcidUtils.AminoAcid3.HID
+                || currentAA3 == AminoAcidUtils.AminoAcid3.HIE || currentAA3 == AminoAcidUtils.AminoAcid3.ASH
+                || currentAA3 == AminoAcidUtils.AminoAcid3.ASP || currentAA3 == AminoAcidUtils.AminoAcid3.GLH
+                || currentAA3 == AminoAcidUtils.AminoAcid3.GLU){
           TautomerESV tautomerESV = new TautomerESV(esvSystem, multi);
           tautomerESVs.add(tautomerESV);
           esvSystem.addVariable(tautomerESV);
