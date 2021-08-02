@@ -210,7 +210,7 @@ class Dynamics extends AlgorithmsScript {
 
             molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
             ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
-                    dynamicsOptions.temperature, repEx.exponent)
+                    dynamicsOptions.temperature, repEx.exponent, repEx.monteCarlo)
 
             long totalSteps = dynamicsOptions.steps
             int nSteps = repEx.replicaSteps
