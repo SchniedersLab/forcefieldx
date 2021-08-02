@@ -39,10 +39,10 @@ package ffx.potential.groovy.test
 
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
+import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MultiResidue
 import ffx.potential.bonded.Residue
-import ffx.potential.bonded.ResidueEnumerations
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.GradientOptions
 import ffx.potential.cli.PotentialScript
@@ -161,11 +161,11 @@ class PhGradient extends PotentialScript {
       TitrationESV esv = new TitrationESV(esvSystem, multi)
       titratingESVs.add(esv)
       if(esvSystem.config.tautomer){
-        ResidueEnumerations.AminoAcid3 currentAA3 = ResidueEnumerations.AminoAcid3.valueOf(res.getName());
-        if (currentAA3 == ResidueEnumerations.AminoAcid3.HIS || currentAA3 == ResidueEnumerations.AminoAcid3.HID
-                || currentAA3 == ResidueEnumerations.AminoAcid3.HIE || currentAA3 == ResidueEnumerations.AminoAcid3.ASH
-                || currentAA3 == ResidueEnumerations.AminoAcid3.ASP || currentAA3 == ResidueEnumerations.AminoAcid3.GLH
-                || currentAA3 == ResidueEnumerations.AminoAcid3.GLU){
+        AminoAcidUtils.AminoAcid3 currentAA3 = AminoAcidUtils.AminoAcid3.valueOf(res.getName())
+        if (currentAA3 == AminoAcidUtils.AminoAcid3.HIS || currentAA3 == AminoAcidUtils.AminoAcid3.HID
+                || currentAA3 == AminoAcidUtils.AminoAcid3.HIE || currentAA3 == AminoAcidUtils.AminoAcid3.ASH
+                || currentAA3 == AminoAcidUtils.AminoAcid3.ASP || currentAA3 == AminoAcidUtils.AminoAcid3.GLH
+                || currentAA3 == AminoAcidUtils.AminoAcid3.GLU){
           TautomerESV tautomerESV = new TautomerESV(esvSystem, multi);
           tautomerESVs.add(tautomerESV);
           esvSystem.addVariable(tautomerESV);
