@@ -39,6 +39,7 @@ package ffx.potential.groovy.test
 
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
+import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MultiResidue
 import ffx.potential.bonded.Residue
@@ -157,6 +158,7 @@ class PhGradient extends PotentialScript {
       MultiResidue multi = TitrationUtils.titratingMultiresidueFactory(activeAssembly, res)
       TitrationESV esv = new TitrationESV(esvSystem, multi)
       titratingESVs.add(esv)
+
       for (Residue background : multi.getInactive()) {
         inactivateResidue(background)
       }
