@@ -37,46 +37,42 @@
 // ******************************************************************************
 package ffx.potential.groovy;
 
-
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
-import ffx.potential.groovy.Cluster;
-
-import static org.junit.Assert.assertEquals;
 
 /**
- * Tests test.Cluster command to determine that crystals are being compared correctly.
- *  Based on ProgressiveAlignmentTest.java
+ * Tests the Cluster command to assess clustering based on distances.
  *
  * @author Aaron J. Nessler
  */
+public class ClusterTest extends PotentialTest {
 
-public class ClusterTest extends PotentialTest{
+  private final double tolerance = 0.001;
 
-    private final double tolerance = 0.001;
-    //TODO: add more tests with more parameters
-    /** Tests the Cluster script. */
-    @Test
-    public void testBaseCluster() {
-        // Set-up the input arguments for the SaveAsPDB script.
-        String[] args = {"-a","0", "-k", "10",  "-r", "src/main/java/ffx/potential/structures/dist.txt"};
-        binding.setVariable("args", args);
-        binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+  //TODO: add more tests with more parameters
 
-        // Construct and evaluate the Cluster script.
-        Cluster cluster = new Cluster(binding).run();
-        potentialScript = cluster;
-        // TODO validate output.
-    }
+  /** Tests the Cluster script. */
+  @Test
+  public void testBaseCluster() {
+    // Set-up the input arguments for the Cluser script.
+    String[] args = {"-a", "0", "-k", "10", "-r", "src/main/java/ffx/potential/structures/dist.txt"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    @Test
-    public void testClusterHelp() {
-        // Set-up the input arguments for the Cluster script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
+    // Construct and evaluate the Cluster script.
+    Cluster cluster = new Cluster(binding).run();
+    potentialScript = cluster;
+    // TODO validate output.
+  }
 
-        // Construct and evaluate the Cluster script.
-        Cluster cluster = new Cluster(binding).run();
-        potentialScript = cluster;
-    }
+  @Test
+  public void testClusterHelp() {
+    // Set-up the input arguments for the Cluster script.
+    String[] args = {"-h"};
+    binding.setVariable("args", args);
+
+    // Construct and evaluate the Cluster script.
+    Cluster cluster = new Cluster(binding).run();
+    potentialScript = cluster;
+  }
 }

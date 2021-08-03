@@ -37,45 +37,43 @@
 // ******************************************************************************
 package ffx.potential.groovy;
 
+import ffx.potential.groovy.XYZtoQE;
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
-import ffx.potential.groovy.test.XYZtoQE;
-
-import static org.junit.Assert.assertEquals;
 
 /**
- * Tests test.XYZtoQE command to determine that crystals are being compared correctly.
- *  Based on ClusterTest.java
+ * Tests test.XYZtoQE command to test saving an XYZ file to QE format.
  *
  * @author Aaron J. Nessler
  */
 
-public class XYZtoQETest extends PotentialTest{
+public class XYZtoQETest extends PotentialTest {
 
-    private final double tolerance = 0.001;
-    //TODO: add more tests with more parameters
-    /** Tests the XYZtoQE script. */
-    @Test
-    public void testBaseXYZtoQE() {
-        // Set-up the input arguments for the SaveAsPDB script.
-        String[] args = {"src/main/java/ffx/potential/structures/cbz.xyz"};
-        binding.setVariable("args", args);
-        binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+  private final double tolerance = 0.001;
+  //TODO: add more tests with more parameters
 
-        // Construct and evaluate the XYZtoQE script.
-        XYZtoQE xyzToQE = new XYZtoQE(binding).run();
-        potentialScript = xyzToQE;
-        // TODO validate output.
-    }
+  /** Tests the XYZtoQE script. */
+  @Test
+  public void testXYZtoQE() {
+    // Set-up the input arguments for the SaveAsPDB script.
+    String[] args = {"src/main/java/ffx/potential/structures/cbz.xyz"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    @Test
-    public void testXYZtoQEHelp() {
-        // Set-up the input arguments for the XYZtoQE script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
+    // Construct and evaluate the XYZtoQE script.
+    XYZtoQE xyzToQE = new XYZtoQE(binding).run();
+    potentialScript = xyzToQE;
+    // TODO validate output.
+  }
 
-        // Construct and evaluate the XYZtoQE script.
-        XYZtoQE xyzToQE = new XYZtoQE(binding).run();
-        potentialScript = xyzToQE;
-    }
+  @Test
+  public void testXYZtoQEHelp() {
+    // Set-up the input arguments for the XYZtoQE script.
+    String[] args = {"-h"};
+    binding.setVariable("args", args);
+
+    // Construct and evaluate the XYZtoQE script.
+    XYZtoQE xyzToQE = new XYZtoQE(binding).run();
+    potentialScript = xyzToQE;
+  }
 }

@@ -382,12 +382,24 @@ public class ConstantPhUtils {
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          //multipole[i] = titrationLambda * lys[i] + (1.0 - titrationLambda) * lyd[i];
+          multipole[i] = titrationLambda * his[i] + (1.0 - titrationLambda) * (tautomerLambda * hid[i] + (1 - tautomerLambda) * hie[i]);
         }
         break;
       case ASD:
+        double[] asp =  aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
+        double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
+        double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = titrationLambda * (tautomerLambda * ash1[i] + (1 - tautomerLambda) * ash2[i]) + (1.0 - titrationLambda) * asp[i];
+        }
         break;
       case GLD:
+        double[] glu =  gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
+        double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
+        double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = titrationLambda * (tautomerLambda * glh1[i] + (1 - tautomerLambda) * glh2[i]) + (1.0 - titrationLambda) * glu[i];
+        }
         break;
       default:
         return multipole;
@@ -406,10 +418,28 @@ public class ConstantPhUtils {
         }
         break;
       case HIS:
+        double[] his = hisMultipoleTypes[HisStates.HIS.ordinal()][atomIndex].getMultipole();
+        double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
+        double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = his[i] - (tautomerLambda * hid[i] + (1 - tautomerLambda) * hie[i]);
+        }
         break;
       case ASD:
+        double[] asp =  aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
+        double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
+        double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = (tautomerLambda * ash1[i] + (1 - tautomerLambda) * ash2[i]) - asp[i];
+        }
         break;
       case GLD:
+        double[] glu =  gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
+        double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
+        double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = (tautomerLambda * glh1[i] + (1 - tautomerLambda) * glh2[i]) - glu[i];
+        }
         break;
       default:
         return multipole;
@@ -421,10 +451,28 @@ public class ConstantPhUtils {
       double titrationLambda, double tautomerLambda, double[] multipole) {
     switch (aminoAcid3) {
       case HIS:
+        double[] his = hisMultipoleTypes[HisStates.HIS.ordinal()][atomIndex].getMultipole();
+        double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
+        double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = titrationLambda * his[i] + (1.0 - titrationLambda) * (hid[i] - hie[i]);
+        }
         break;
       case ASD:
+        double[] asp =  aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
+        double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
+        double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = titrationLambda * (ash1[i] - ash2[i]) + (1.0 - titrationLambda) * asp[i];
+        }
         break;
       case GLD:
+        double[] glu =  gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
+        double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
+        double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = titrationLambda * (glh1[i] - glh2[i]) + (1.0 - titrationLambda) * glu[i];
+        }
         break;
       case LYS: // No tautomers for LYS.
       default:
@@ -441,15 +489,23 @@ public class ConstantPhUtils {
         double lyd = lysPolarizeTypes[LysStates.LYD.ordinal()][atomIndex].polarizability;
         return titrationLambda * lys + (1.0 - titrationLambda) * lyd;
       case HIS:
-        break;
+        double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
+        double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
+        double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
+        return titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hid + (1 - tautomerLambda) * hie);
       case ASD:
-        break;
+        double asp =  aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
+        double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
+        double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
+        return titrationLambda * (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2) + (1.0 - titrationLambda) * asp;
       case GLD:
-        break;
+        double glu =  gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
+        double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
+        double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
+        return titrationLambda * (tautomerLambda * glh1 + (1 - tautomerLambda) * glh2) + (1.0 - titrationLambda) * glu;
       default:
         return defaultPolarizability;
     }
-    return defaultPolarizability;
   }
 
   public double getPolarizabilityTitrationDeriv(AminoAcid3 aminoAcid3, int atomIndex,
@@ -460,31 +516,47 @@ public class ConstantPhUtils {
         double lyd = lysPolarizeTypes[LysStates.LYD.ordinal()][atomIndex].polarizability;
         return lys - lyd;
       case HIS:
-        break;
+        double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
+        double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
+        double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
+        return his - (tautomerLambda * hid + (1 - tautomerLambda) * hie);
       case ASD:
-        break;
+        double asp =  aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
+        double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
+        double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
+        return (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2) - asp;
       case GLD:
-        break;
+        double glu =  gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
+        double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
+        double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
+        return (tautomerLambda * glh1 + (1 - tautomerLambda) * glh2) - glu;
       default:
         return 0.0;
     }
-    return 0.0;
   }
 
   public double getPolarizabilityTautomerDeriv(AminoAcid3 aminoAcid3, int atomIndex,
       double titrationLambda, double tautomerLambda) {
     switch (aminoAcid3) {
       case HIS:
-        break;
+        double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
+        double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
+        double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
+        return titrationLambda * his + (1.0 - titrationLambda) * (hid - hie);
       case ASD:
-        break;
+        double asp =  aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
+        double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
+        double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
+        return titrationLambda * (ash1 - ash2) + (1.0 - titrationLambda) * asp;
       case GLD:
-        break;
+        double glu =  gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
+        double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
+        double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
+        return titrationLambda * (glh1 - glh2) + (1.0 - titrationLambda) * glu;
       case LYS: // No tautomers for LYS.
       default:
         return 0.0;
     }
-    return 0.0;
   }
 
   private void constructHISState(int biotypeCB, HisStates hisState) {

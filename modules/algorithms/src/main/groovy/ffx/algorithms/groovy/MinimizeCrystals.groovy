@@ -43,7 +43,6 @@ import ffx.algorithms.optimize.CrystalMinimize
 import ffx.algorithms.optimize.Minimize
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
 import ffx.potential.MolecularAssembly.FractionalMode
 import ffx.potential.XtalEnergy
 import ffx.potential.cli.AtomSelectionOptions
@@ -67,7 +66,7 @@ import static org.apache.commons.math3.util.FastMath.abs
  * ffxc CrystalMin [options] &lt;filename&gt;
  */
 @Command(description = " Minimize crystal unit cell parameters.", name = "ffxc CrystalMin")
-class CrystalMin extends AlgorithmsScript {
+class MinimizeCrystals extends AlgorithmsScript {
 
   @Mixin
   MinimizeOptions minimizeOptions
@@ -106,7 +105,7 @@ class CrystalMin extends AlgorithmsScript {
   /**
    * CrystalMin Constructor.
    */
-  CrystalMin() {
+  MinimizeCrystals() {
     this(new Binding())
   }
 
@@ -114,7 +113,7 @@ class CrystalMin extends AlgorithmsScript {
    * CrystalMin Constructor.
    * @param binding The Groovy Binding to use.
    */
-  CrystalMin(Binding binding) {
+  MinimizeCrystals(Binding binding) {
     super(binding)
   }
 
@@ -122,7 +121,7 @@ class CrystalMin extends AlgorithmsScript {
    * {@inheritDoc}
    */
   @Override
-  CrystalMin run() {
+  MinimizeCrystals run() {
 
     // Init the context and bind variables.
     if (!init()) {
