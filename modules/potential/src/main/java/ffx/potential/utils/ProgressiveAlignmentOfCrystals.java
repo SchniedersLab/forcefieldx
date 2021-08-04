@@ -47,14 +47,13 @@ import static ffx.potential.utils.Superpose.rmsd;
 import static ffx.potential.utils.Superpose.rotate;
 import static ffx.potential.utils.Superpose.translate;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static org.apache.commons.io.FilenameUtils.getName;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.cbrt;
-import static org.apache.commons.math3.util.FastMath.ceil;
 import static org.apache.commons.math3.util.FastMath.cos;
-import static org.apache.commons.math3.util.FastMath.floorDiv;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -76,7 +75,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -132,13 +130,13 @@ public class ProgressiveAlignmentOfCrystals {
    */
   public final double[][] distMatrix;
   /**
-   * The default restart row is 0. A larger value may be set by the "readMatrix" method
-   * if a restart is requested.
+   * The default restart row is 0. A larger value may be set by the "readMatrix" method if a restart
+   * is requested.
    */
   private int restartRow = 0;
   /**
-   * The default restart column is 0. A larger value may be set by the "readMatrix" method
-   * if a restart is requested.
+   * The default restart column is 0. A larger value may be set by the "readMatrix" method if a
+   * restart is requested.
    */
   private int restartColumn = 0;
 
@@ -155,8 +153,7 @@ public class ProgressiveAlignmentOfCrystals {
    */
   private final int rank;
   /**
-   * The distances arrays store an RSMD values from each process.
-   * The array is of size [numProc][1].
+   * The distances arrays store an RSMD values from each process. The array is of size [numProc][1].
    */
   private final double[][] distances;
   /**
@@ -257,8 +254,8 @@ public class ProgressiveAlignmentOfCrystals {
     } else {
       File file = new File(pacFileName);
       if (file.exists() && file.delete()) {
-          logger.info(format(" PAC RMSD file (%s) was deleted.", pacFileName));
-          logger.info(" To restart from a previous run, use the '-r' flag.");
+        logger.info(format(" PAC RMSD file (%s) was deleted.", pacFileName));
+        logger.info(" To restart from a previous run, use the '-r' flag.");
       }
     }
 
@@ -276,19 +273,14 @@ public class ProgressiveAlignmentOfCrystals {
       baseFilter.readNext(false, false);
     }
 
-    // Read ahead to the target starting conformation.
-    if (restartColumn > 0) {
-      logger.info(format(" Restart Column %d > 0 is not supported.", restartColumn));
-      restartColumn = 0;
-    }
-
-    // Padding of the target array size is required for parallelization.
+    // Padding of the target array size (inner loop limit) is for parallelization.
     // Target conformations are parallelized over available nodes.
+    // For example, if numProc = 8 and targetSize = 12, then paddedTargetSize = 16.
     int paddedTargetSize = targetSize;
-    int pad = targetSize % numProc;
-    if (pad != 0) {
-      paddedTargetSize = targetSize - pad + numProc;
-      logger.info(format(" Target size %d vs. Padded size %d", targetSize, paddedTargetSize));
+    int extra = targetSize % numProc;
+    if (extra != 0) {
+      paddedTargetSize = targetSize - extra + numProc;
+      logger.fine(format(" Target size %d vs. Padded size %d", targetSize, paddedTargetSize));
     }
 
     for (int row = restartRow; row < baseSize; row++) {
@@ -377,7 +369,7 @@ public class ProgressiveAlignmentOfCrystals {
   private double compare(int nAtoms, List<Integer> comparisonAtoms, int nAU, int inflatedAU,
       int numSearch, int numSearch2, boolean force, boolean symmetric, boolean save) {
 
-    logger.fine(format(" Number of copies to compare: %4d", nAU));
+    logger.finer(format(" Number of copies to compare: %4d", nAU));
     MolecularAssembly baseAssembly = baseFilter.getActiveMolecularSystem();
     MolecularAssembly baseSphere = generateInflatedSphere(baseAssembly, inflatedAU);
 
@@ -393,7 +385,7 @@ public class ProgressiveAlignmentOfCrystals {
       return Double.NaN;
     }
 
-    logger.fine(format(" Number entities in base sphere: %3d", nBaseMols));
+    logger.finer(format(" Number entities in base sphere: %3d", nBaseMols));
     // Save coordinates from expanded sphere and save out central molecule coordinates.
     Atom[] baseAtoms = baseSphere.getAtomArray();
 
@@ -437,7 +429,7 @@ public class ProgressiveAlignmentOfCrystals {
 
     MolecularAssembly targetSphere = generateInflatedSphere(molecularAssembly, inflatedAU);
 
-    logger.info(format("\n Trial      RMSD_1  RMSD_3 %7s", rmsdLabel));
+    logger.fine(format("\n Trial      RMSD_1  RMSD_3 %7s", rmsdLabel));
     int nTargetMols;
     if (targetSphere.getMolecules() != null && targetSphere.getChainNames() != null) {
       nTargetMols = targetSphere.getMolecules().size() + targetSphere.getChainNames().length;
@@ -450,7 +442,7 @@ public class ProgressiveAlignmentOfCrystals {
       return Double.NaN;
     }
 
-    logger.fine(format(" Number entities in target sphere: %d", nTargetMols));
+    logger.finer(format(" Number entities in target sphere: %d", nTargetMols));
     // Save coordinates from expanded sphere and save out central molecule coordinates
     Atom[] targetAtoms = targetSphere.getAtomArray();
     double[] targetXYZ = new double[compareAtomsSize * nTargetMols * 3];
@@ -502,7 +494,7 @@ public class ProgressiveAlignmentOfCrystals {
           molDist12_2);
 
       for (int m = 0; m < numSearch2; m++) {
-        logger.fine("\n");
+        logger.finer("\n");
         // Switch m center most molecules (looking for chirality)
         center = molDist22[m].getIndex();
         DoubleIndexPair[] molDist2_2 = new DoubleIndexPair[nTargetMols];
@@ -530,11 +522,11 @@ public class ProgressiveAlignmentOfCrystals {
         translate(baseMolCoords, mass, targetMolCoords, mass);
         rotate(baseMolCoords, targetMolCoords, mass);
         double checkRMSD0 = rmsd(baseMolCoords, targetMolCoords, mass);
-        logger.fine(format(" Center Molecule RMSD: %16.8f", checkRMSD0));
+        logger.finer(format(" Center Molecule RMSD: %16.8f", checkRMSD0));
         // If center most molecule's RMSD is large any crystal matches may not be accurate.
 
         if (checkRMSD0 < 5.0 || force) {
-          logger.fine(" Rotation 1:");
+          logger.finer(" Rotation 1:");
           //Note "mass" uses masses "massCheck" is not weighted.
           firstRotation(baseXYZ, targetXYZ, mass, molDist12_2[0].getIndex(),
               molDist22_2[0].getIndex());
@@ -555,7 +547,7 @@ public class ProgressiveAlignmentOfCrystals {
             targetMolCoords[atomIndex + 2] = targetXYZ[targetCenterMol + atomIndex + 2];
           }
           double checkRMSD1 = rmsd(baseMolCoords, targetMolCoords, mass);
-          logger.fine(format(" Center Molecule RMSD after rot 1: %16.8f", checkRMSD1));
+          logger.finer(format(" Center Molecule RMSD after rot 1: %16.8f", checkRMSD1));
 //                    }
 
           // Check center of mass for center numCheck most entities and distance to center-most.
@@ -591,7 +583,7 @@ public class ProgressiveAlignmentOfCrystals {
           // At this point both systems have completed first rotation/translation
           //  Therefore both center-most molecules should be overlapped.
           // TODO could have prioritization favor closest distance from molDist12 or molDist22.
-          logger.fine(" Match molecules between systems");
+          logger.finer(" Match molecules between systems");
 
           int nMols = Math.min(nBaseMols, nTargetMols);
 
@@ -631,7 +623,7 @@ public class ProgressiveAlignmentOfCrystals {
             }
           }
 
-          logger.fine(" Rotation 2:");
+          logger.finer(" Rotation 2:");
           //Note "mass" uses masses "massCheck" is not weighted.
           if (reverse) {
             secondRotation(targetXYZ, baseXYZ, mass, molDist22_2, matchMols);
@@ -658,13 +650,13 @@ public class ProgressiveAlignmentOfCrystals {
 
           double[] mass3 = new double[compareAtomsSize * 3];
           for (int i = 0; i < 3; i++) {
-            System.arraycopy(mass, 0, mass3, i * compareAtomsSize, compareAtomsSize);
+            arraycopy(mass, 0, mass3, i * compareAtomsSize, compareAtomsSize);
           }
           double checkRMSD2 = rmsd(baseMolCoords, targetMolCoords, mass3);
 
           // Rotations 1 and 2 have been completed and both systems should be overlapped
           //  Isolate center most nAU from System 1 and matching molecules from System 2
-          logger.fine(" Final rotation:");
+          logger.finer(" Final rotation:");
           double[] baseNMols = new double[nAU * compareAtomsSize * 3];
           if (reverse) {
             for (int i = 0; i < nAU; i++) {
@@ -690,7 +682,7 @@ public class ProgressiveAlignmentOfCrystals {
             }
           }
 
-          logger.fine(" Match Molecules:");
+          logger.finer(" Match Molecules:");
           matchMols = new DoubleIndexPair[nAU];
           if (reverse) {
             matchMolecules(matchMols, targetXYZ, baseXYZ, mass, molDist22_2, molDist12_2);
@@ -737,7 +729,7 @@ public class ProgressiveAlignmentOfCrystals {
 
           double[] massN = new double[compareAtomsSize * nAU];
           for (int i = 0; i < nAU; i++) {
-            System.arraycopy(mass, 0, massN, i * compareAtomsSize, compareAtomsSize);
+            arraycopy(mass, 0, massN, i * compareAtomsSize, compareAtomsSize);
           }
 
           translate(baseNMols, massN, targetNMols, massN);
@@ -762,18 +754,17 @@ public class ProgressiveAlignmentOfCrystals {
             targetMolCoords[atomIndex + 2] = targetNMols[atomIndex + 2];
           }
           double checkRMSD3 = rmsd(baseMolCoords, targetMolCoords, mass);
-          logger.fine(format(" Center Molecule RMSD final: %16.8f", checkRMSD3));
+          logger.finer(format(" Center Molecule RMSD final: %16.8f", checkRMSD3));
 
           double rmsdSymOp = rmsd(baseNMols, targetNMols, massN);
-          logger.info(format(" %2d of %2d: %7.4f %7.4f %7.4f", l * numSearch2 + m + 1,
+          logger.fine(format(" %2d of %2d: %7.4f %7.4f %7.4f", l * numSearch2 + m + 1,
               numSearch * numSearch2, checkRMSD1, checkRMSD2, rmsdSymOp));
           if (rmsdSymOp < bestRMSD) {
             bestRMSD = rmsdSymOp;
           }
           addLooseUnequal(crystalCheckRMSDs, round(rmsdSymOp, 6));
         } else {
-          logger.fine(
-              format(" Center molecule %2d has an RMSD of %7.4f and was skipped.", m, checkRMSD0));
+          logger.finer(format(" Center molecule %2d has an RMSD of %7.4f and was skipped.", m, checkRMSD0));
         }
       }
     }
@@ -796,11 +787,11 @@ public class ProgressiveAlignmentOfCrystals {
 
     int numUnique = crystalCheckRMSDs.size();
     if (numUnique > 4) {
-      logger.info(format(
+      logger.finer(format(
           " PAC determined %2d unique values. Consider increasing the number of inflated molecules.\n %s",
           numUnique, message));
     } else {
-      logger.fine(message);
+      logger.finer(message);
     }
 
     return finalRMSD;
@@ -811,7 +802,7 @@ public class ProgressiveAlignmentOfCrystals {
    *
    * @param filename The PAC RMSD matrix file to read from.
    */
-  public void readMatrix(String filename) {
+  private void readMatrix(String filename) {
     restartRow = 0;
     restartColumn = 0;
     int nRow = distMatrix.length;
@@ -830,16 +821,17 @@ public class ProgressiveAlignmentOfCrystals {
           row[restartColumn] = Double.parseDouble(tokens[restartColumn]);
         }
         if (nTokens != nColumn) {
-          logger.fine(
+          logger.info(
               format(" Row %d of the PAC RMSD matrix is not complete (%d found of %d expected).",
                   restartRow + 1, nTokens, nColumn));
-          restartColumn = nTokens;
+          logger.info(" The incomplete row in the PAC RMSD matrix file should be deleted.");
+          restartColumn = 0;
           break;
         }
       }
     } catch (Exception e) {
       if (restartRow != nRow) {
-        logger.fine(format(" Row %d of the PAC RMSD matrix has no entries.", restartRow));
+        logger.info(format(" Row %d of the PAC RMSD matrix has no entries.", restartRow));
         restartColumn = 0;
       } else {
         logger.info(" Exception reading in PAC RMSD matrix:\n " + e);
@@ -854,15 +846,21 @@ public class ProgressiveAlignmentOfCrystals {
     }
   }
 
+  /**
+   * This method calls <code>world.AllGather</code> to collect numProc PAC RMSD values.
+   *
+   * @param row Current row of the PAC RMSD matrix.
+   * @param column Current column of the PAC RMSD matrix.
+   */
   private void gatherRMSDs(int row, int column) {
     try {
-      logger.info(" Receiving results.");
+      logger.finer(" Receiving results.");
       world.allGather(myBuffer, buffers);
       for (int i = 0; i < numProc; i++) {
         int c = (column + 1) - numProc + i;
         if (c < targetSize) {
           distMatrix[row][c] = distances[i][0];
-          logger.info(format(" %d %d %16.8f", row, c, distances[i][0]));
+          logger.finer(format(" %d %d %16.8f", row, c, distances[i][0]));
         }
       }
     } catch (Exception e) {
@@ -870,16 +868,22 @@ public class ProgressiveAlignmentOfCrystals {
     }
   }
 
+  /**
+   * Write one row of the PAC RMSD matrix.
+   *
+   * @param row Current row of the PAC RMSD matrix.
+   * @param filename Filename to write to.
+   */
   private void writeRow(int row, String filename) {
     try (FileWriter fw = new FileWriter(filename, true);
         BufferedWriter bw = new BufferedWriter(fw)) {
-      for (int col = 0; col < targetSize; col++) {
-        bw.append(format("%16.14f", distMatrix[row][col]));
-        if (col < targetSize - 1) {
-          bw.append(" ");
+      for (int column = 0; column < targetSize; column++) {
+        bw.write(format("%16.14f", distMatrix[row][column]));
+        if (column < targetSize - 1) {
+          bw.write(" ");
         }
       }
-      bw.append("\n");
+      bw.write("\n");
     } catch (Exception e) {
       logger.info(" Exception writing PAC RMSD file: " + e);
     }
@@ -1052,15 +1056,15 @@ public class ProgressiveAlignmentOfCrystals {
       }
     }
 
-    if (logger.isLoggable(Level.FINE)) {
+    if (logger.isLoggable(Level.FINER)) {
       double[][] targetCenterMols = new double[nTargetMols][3];
       centerOfMass(targetCenterMols, targetXYZ, mass, matchMols);
       for (int i = 0; i < desiredMols; i++) {
-        logger.fine(
+        logger.finer(
             format(" Base position:   %d: %8.4f %8.4f %8.4f", i, baseMols[i][0], baseMols[i][1],
                 baseMols[i][2]));
-        logger.fine(format(" Match Distance:  %d: %8.4f", i, matchMols[i].getDoubleValue()));
-        logger.fine(format(" Target position: %d: %8.4f %8.4f %8.4f", i, targetCenterMols[i][0],
+        logger.finer(format(" Match Distance:  %d: %8.4f", i, matchMols[i].getDoubleValue()));
+        logger.finer(format(" Target position: %d: %8.4f %8.4f %8.4f", i, targetCenterMols[i][0],
             targetCenterMols[i][1], targetCenterMols[i][2]));
       }
     }
@@ -1144,20 +1148,20 @@ public class ProgressiveAlignmentOfCrystals {
     double radius = cbrt(inflatedAU * asymmetricUnitVolume) / 2;
     // double radius = cbrt(((3.0 / (4.0 * PI)) * inflatedAU * asymmetricUnitVolume));
 
-    logger.fine(format(" Desired copies in target sphere:     %3d", inflatedAU));
-    logger.fine(format(" Asymmetric Unit Volume:  %4.2f", asymmetricUnitVolume));
-    logger.fine(format(" Estimated spherical radius:  %4.2f", radius));
+    logger.finer(format(" Desired copies in target sphere:     %3d", inflatedAU));
+    logger.finer(format(" Asymmetric Unit Volume:  %4.2f", asymmetricUnitVolume));
+    logger.finer(format(" Estimated spherical radius:  %4.2f", radius));
 
     Crystal replicatesCrystal = ReplicatesCrystal.replicatesCrystalFactory(unitCell, radius * 2.0);
 
-    logger.fine(" Replicates crystal " + replicatesCrystal.toString());
+    logger.finer(" Replicates crystal " + replicatesCrystal.toString());
 
     // Update the Molecular Assembly with the ReplicatesCrystal (used outside this method).
     molecularAssembly.setCrystal(replicatesCrystal);
 
     // Symmetry coordinates for each molecule in replicates crystal
     int nSymm = replicatesCrystal.getNumSymOps();
-    logger.fine(format(" Number of replicates: %3d", nSymm));
+    logger.finer(format(" Number of replicates: %3d", nSymm));
     double[][] xS = new double[nSymm][nAtoms];
     double[][] yS = new double[nSymm][nAtoms];
     double[][] zS = new double[nSymm][nAtoms];
@@ -1213,9 +1217,8 @@ public class ProgressiveAlignmentOfCrystals {
     // Convert (0.5, 0.5, 0.5) to Cartesian Coordinates
     double[] fracCenter = {0.5, 0.5, 0.5};
     replicatesCrystal.toCartesianCoordinates(fracCenter, cartCenter);
-    logger.fine(
-        format(" Expanded Crystal Center: %16.8f %16.8f %16.8f", cartCenter[0], cartCenter[1],
-            cartCenter[2]));
+    logger.finer(format(" Expanded Crystal Center: %16.8f %16.8f %16.8f",
+        cartCenter[0], cartCenter[1], cartCenter[2]));
 
     for (int i = 0; i < nSymm; i++) {
       // Then compute Euclidean distance from Cartesian center of the replicates cell
@@ -1231,12 +1234,12 @@ public class ProgressiveAlignmentOfCrystals {
     List<Bond> bondList = molecularAssembly.getBondList();
     ArrayList<Atom> newAtomList = new ArrayList<>();
     int atomIndex = 0;
-    logger.finer("\n Copy  SymOp        Distance");
+    logger.finest("\n Copy  SymOp        Distance");
     for (int n = 0; n < nSymm; n++) {
       // Current molecule
       int iSym = molsDists[n].getIndex();
       double distance = molsDists[n].getDoubleValue();
-      logger.finer(format(" %4d  %5d  %16.8f", n, iSym, distance));
+      logger.finest(format(" %4d  %5d  %16.8f", n, iSym, distance));
 
       ArrayList<Atom> atomList = new ArrayList<>();
       // Create a new set of Atoms for each SymOp molecule
@@ -1294,7 +1297,7 @@ public class ProgressiveAlignmentOfCrystals {
    *     0 should be at origin.
    */
   public static void standardOrientation(double[] coordsXYZ, int[] atomIndices) {
-    //Used in QEtoXYZ.groovy which is not ready for git which is why this method appears unused.
+    // Used in QEtoXYZ.groovy which is not ready for git which is why this method appears unused.
     int numCoords = coordsXYZ.length / 3;
     double[] atomCoords = new double[3 * 3];
     atomCoords[0] = coordsXYZ[atomIndices[0]];
@@ -1318,7 +1321,7 @@ public class ProgressiveAlignmentOfCrystals {
 
     // TODO: Delete atomsCoordsOrig?
     double[] atomsCoordsOrig = new double[3 * 3];
-    System.arraycopy(atomCoords, 0, atomsCoordsOrig, 0, 9);
+    arraycopy(atomCoords, 0, atomsCoordsOrig, 0, 9);
 
     logger.fine(
         format(" START: N1:\t%16.15f %16.15f %16.15f", atomCoords[0], atomCoords[1], atomCoords[2]));

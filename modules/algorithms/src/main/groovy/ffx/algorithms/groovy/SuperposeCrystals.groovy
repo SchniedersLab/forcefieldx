@@ -40,14 +40,15 @@ package ffx.algorithms.groovy
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.utils.ProgressiveAlignmentOfCrystals
 import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
-import static java.util.Arrays.asList
 import static org.apache.commons.io.FilenameUtils.getBaseName
 import static org.apache.commons.io.FilenameUtils.getFullPath
 
@@ -69,19 +70,22 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
 @Command(description = " Compare crystal polymorphs based on a RMSD of aligned crystal coordinates.", name = "ffxc CrystalSuperpose")
 class SuperposeCrystals extends AlgorithmsScript {
 
+  @Mixin
+  AtomSelectionOptions atomSelectionOptions
+
   /**
    * --nm or --numMolecules Number of asymmetric units to include from each crystal in RMSD comparison.
    */
   @Option(names = ['--na', '--numAU'], paramLabel = '20', defaultValue = '20',
       description = 'Set the number of asymmetric units to include in final PAC RMSD.')
-  int nAU
+  int numAU
 
   /**
-   * --ia or --inflatedAU Number of asymmetric units in the inflated sphere.
+   * --ni or --numInflatedAU Number of asymmetric units in the inflated sphere.
    */
-  @Option(names = ['--ia', '--inflatedAU'], paramLabel = '200', defaultValue = '200',
+  @Option(names = ['--ni', '--numInflatedAU'], paramLabel = '200', defaultValue = '200',
       description = 'Specifies the number asymmetric units in the expanded crystal.')
-  int inflatedAU
+  int numInflatedAU
 
   /**
    * --ns or --numSearch The number of molecules to loop through in first system.
@@ -137,7 +141,7 @@ class SuperposeCrystals extends AlgorithmsScript {
    */
   @Option(names = ['--nh', '--noHydrogen'], paramLabel = "false", defaultValue = "false",
       description = 'PAC RMSD will not include hydrogen atoms.')
-  private static boolean noHydrogens
+  private static boolean noHydrogen
 
   // TODO finish implementing symmetric flag.
   /**
@@ -146,14 +150,6 @@ class SuperposeCrystals extends AlgorithmsScript {
   @Option(names = ['--sym', '--symmetric'], paramLabel = "false", defaultValue = "false",
       description = 'Enforce generation of a symmetric PAC RMSD matrix.')
   private static boolean symmetric
-
-  // TODO use the default FFX selection criteria.
-  /**
-   * --da or --desiredAtoms Select atoms to be used for the PAC RMSD, rather than using all atoms.
-   */
-  @Option(names = ['--da', '--desiredAtoms'], arity = "1..*", paramLabel = "atom indices",
-      description = 'Select atoms to be used for the PAC RMSD, rather than using all atoms.')
-  private int[] desiredAtoms = null
 
   /**
    * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
@@ -211,9 +207,9 @@ class SuperposeCrystals extends AlgorithmsScript {
     baseFilter = algorithmFunctions.getFilter()
     // Example atoms to determine single molecule characteristics (e.g. number of atoms, hydrogen, etc.)
     MolecularAssembly activeAssembly = baseFilter.getActiveMolecularSystem()
-    List<Atom> baseAtoms = activeAssembly.getAtomList()
-    // Number of atoms in asymmetric unit.
-    int nAtoms = baseAtoms.size()
+
+    // Apply atom selections
+    atomSelectionOptions.setActiveAtoms(activeAssembly)
 
     // Number of files to read in.
     int numFiles = filenames.size()
@@ -231,45 +227,31 @@ class SuperposeCrystals extends AlgorithmsScript {
       targetFilter = algorithmFunctions.getFilter()
     }
 
-    Integer[] pacAtoms
-    if (desiredAtoms != null) {
-      pacAtoms = new int[desiredAtoms.length]
-      for (int i = 0; i < desiredAtoms.size(); i++) {
-        pacAtoms[i] = desiredAtoms[i] - 1
-        if (pacAtoms[i] < 0 || pacAtoms[i] >= nAtoms) {
-          logger.info(
-              format(" A requested atom for the PAC RMSD is invalid (%d).", pacAtoms[i]))
-          return this
+    // Atom array from the 1st assembly.
+    Atom[] baseAtoms = activeAssembly.getAtomArray()
+    int nAtoms = baseAtoms.size()
+
+    // Collect selected atoms.
+    ArrayList<Integer> atomList = new ArrayList<>()
+    for (int i = 0; i < nAtoms; i++) {
+      Atom atom = baseAtoms[i]
+      if (atom.isActive()) {
+        if (!noHydrogen || !atom.isHydrogen()) {
+          atomList.add(i)
         }
       }
-    } else {
-      // TODO implement no hydrgoens && centerAtoms
-      if (noHydrogens) {
-        int n = 0
-        for (int i = 0; i < nAtoms; i++) {
-          if (!baseAtoms.get(i).isHydrogen()) {
-            n++
-          }
-        }
-        pacAtoms = new int[n]
-        n = 0
-        for (int i = 0; i < nAtoms; i++) {
-          if (!baseAtoms.get(i).isHydrogen()) {
-            pacAtoms[n++] = i
-          }
-        }
-      } else {
-        // If comparison atoms are not specified, use all atoms.
-        pacAtoms = new int[nAtoms]
-        for (int i = 0; i < nAtoms; i++) {
-          pacAtoms[i] = i
-        }
-      }
+      // Reset all atoms to active once the selection is recorded.
+      atom.setActive(true)
+    }
+
+    if (atomList.size() < 1) {
+      logger.info("\n No atoms will were selected for the PAC RMSD.")
+      return this
     }
 
     // Number of atoms included in the PAC RMSD.
-    int nPACAtoms = pacAtoms.size()
-    logger.info(format("\n %3d atoms will be used for PAC RMSD out of %3d.\n", nPACAtoms, nAtoms))
+    int nPACAtoms = atomList.size()
+    logger.info(format("\n %d atoms will be used for the PAC RMSD out of %d.\n", nPACAtoms, nAtoms))
 
     // Current method to save PDB only works when using all atoms.
     // TODO: Overcome this restriction.
@@ -292,10 +274,8 @@ class SuperposeCrystals extends AlgorithmsScript {
     String path = getFullPath(filenames.get(0))
     String pacFilename = path + basename + ".txt"
 
-    ArrayList<Integer> pacList = asList(pacAtoms)
-    distMatrix = pac.comparisons(nAtoms, pacList, nAU, inflatedAU,
+    distMatrix = pac.comparisons(nAtoms, atomList, numAU, numInflatedAU,
         numSearch, numSearch2, force, symmetric, savePDB, restart, write, pacFilename)
-
 
     return this
   }
